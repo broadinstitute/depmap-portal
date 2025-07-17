@@ -113,7 +113,7 @@ def format_dep_dist_caption(
         return None
 
 
-def get_order(has_predictability: bool):
+def get_order(has_predictability: bool, has_heatmap: bool):
     # hardcoded approximate heights of the different cards.  These values are used for sorting cards into columns such that column heights are as close as they can be
     tile_large = 650
     tile_medium = 450
@@ -125,10 +125,12 @@ def get_order(has_predictability: bool):
         CompoundTileEnum.availability.value: tile_small,
     }
     anywhere_cards = {
-        CompoundTileEnum.heatmap.value: tile_medium,
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
     }
+    if has_heatmap:
+        anywhere_cards[CompoundTileEnum.heatmap.value] = tile_medium
+
     bottom_left_card = (CompoundTileEnum.description.value, tile_large)
 
     num_cols = len(header_cards)

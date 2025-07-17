@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 import uuid
 
+from depmap import data_access
+from depmap.tile.temp_utils import compound_is_in_oncref_dataset
 from flask.globals import current_app
 import pandas as pd
 
@@ -187,7 +189,18 @@ def render_compound_tile(
         CompoundTileEnum.celfie.value: get_celfie_html,
     }
 
-    if current_app.config["ENABLED_FEATURES"].new_compound_page_tabs:
+    # TEMP: Right now, the heatmap tile and tab is only available for OncRef, and drc_compound_datasets only
+    # has one element in it, so before showing these features we need to check if the compound is in the Breadbox
+    # version of the OncRef dataset.
+    compound_is_in_dataset = compound_is_in_oncref_dataset(
+        compound, drc_compound_datasets, data_access
+    )
+
+    show_heatmap_tab = (
+        current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+        and compound_is_in_dataset
+    )
+    if show_heatmap_tab:
         tiles[CompoundTileEnum.heatmap.value] = get_heatmap_html
 
     if tile_name not in tiles:
