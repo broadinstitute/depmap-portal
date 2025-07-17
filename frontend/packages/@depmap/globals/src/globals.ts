@@ -36,11 +36,6 @@ export const depmapContactUrl: string = (window as any).depmapContactUrl;
 export const enabledFeatures: Record<string, boolean> =
   (window as any).enabledFeatures || makeMockEnabledFeatures();
 
-export const isLocalDevEnvironment = [
-  "127.0.0.1:5000",
-  "'localhost:8001'",
-].includes(window.location.host);
-
 // Just a convenience function for looking up this flag.
 export const isElara: boolean = Boolean(enabledFeatures.elara);
 
