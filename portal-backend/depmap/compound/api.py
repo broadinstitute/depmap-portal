@@ -24,34 +24,3 @@ class DoseCurveData(Resource):
         )
 
         return dose_curve_info
-
-
-def _get_structure_image(compound_id: str) -> Optional[str]:
-    compound = Compound.get_by_compound_id(compound_id)
-
-    # Only allowing this to be none because that's what the old structure and detail
-    # tile did. We must not have images for every compound.
-    # Generate the structure URL
-    structure_url = (
-        "https://storage.googleapis.com/depmap-compound-images/{}.svg".format(
-            urllib.parse.quote(
-                compound.smiles
-            )  # Encode a compound SMILES string such as
-            # "CN(C)C/C=C/C(=O)Nc1cc2c(Nc3ccc(F)c(Cl)c3)ncnc2cc1O[C@H]1CCOC1" to
-            # "CN%28C%29C/C%3DC/C%28%3DO%29Nc1cc2c%28Nc3ccc%28F%29c%28Cl%29c3%29ncnc2cc1O%5BC%40H%5D1CCOC1"
-        )
-        if compound and compound.smiles
-        else None
-    )
-
-    # Validate the structure URL
-    if structure_url and not is_url_valid(structure_url):
-        structure_url = None
-
-    return structure_url
-
-
-@namespace.route("/structure_image/<compound_id>")
-class StructureImage(Resource):
-    def get(self, compound_id):
-        return _get_structure_image(compound_id=compound_id)

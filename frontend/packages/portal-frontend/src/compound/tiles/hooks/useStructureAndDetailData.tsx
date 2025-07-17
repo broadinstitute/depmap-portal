@@ -1,13 +1,24 @@
 import { useEffect, useState } from "react";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { breadboxAPI } from "@depmap/api";
 import { fetchMetadata } from "src/compound/fetchDataHelpers";
+import { compoundImageBaseURL, pythonQuote } from "src/compound/utils";
 
 interface CompoundDetailsResponse {
   GeneSymbolOfTargets: { [compoundId: string]: string[] };
   TargetOrMechanism: { [compoundId: string]: string };
-  SMILES: { [compoundId: string]: string };
+  SMILES: { [compoundId: string]: string | null };
   PubChemCID: { [compoundId: string]: string };
   ChEMBLID: { [compoundId: string]: string };
+}
+
+function getCompoundImageUrl(smiles: string | null): string | null {
+  if (smiles === null || smiles === "") {
+    return null;
+  }
+
+  const encodedSmiles = pythonQuote(smiles);
+  const imageUrl = `${compoundImageBaseURL}${encodedSmiles}.svg`;
+  return imageUrl;
 }
 
 export default function useStructureAndDetailData(compoundId: string) {
@@ -30,7 +41,6 @@ export default function useStructureAndDetailData(compoundId: string) {
       setError(false);
       try {
         const bbapi = breadboxAPI;
-        const dapi = legacyPortalAPI; // only need the legacy api to get the structure image
 
         const columnsOfInterest = [
           "GeneSymbolOfTargets",
@@ -50,9 +60,9 @@ export default function useStructureAndDetailData(compoundId: string) {
 
         setMetdata(compoundDetailMetadata);
 
-        // Get structure image
-        const strucImg = await dapi.getStructureImageUrl(compoundId);
-        setStructureImageUrl(strucImg);
+        const smiles = compoundDetailMetadata?.SMILES[compoundId];
+        const imgUrl = getCompoundImageUrl(smiles);
+        setStructureImageUrl(imgUrl);
 
         setIsLoading(false);
       } catch (e) {
