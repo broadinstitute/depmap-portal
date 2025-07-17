@@ -180,6 +180,7 @@ function polyfillProxy() {
     "initSublineagePlot",
     "initCelfiePage",
     "initEnrichmentTile",
+    "initStructureAndDetailTile",
   ].forEach((prop) => {
     Object.defineProperty(proxy, prop, {
       get() {

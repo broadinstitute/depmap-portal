@@ -2,7 +2,6 @@ from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_m
 from flask_restplus import Namespace, Resource
 from flask import request
 
-
 namespace = Namespace("compound", description="View compound data in the portal")
 
 
