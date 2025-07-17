@@ -1,8 +1,6 @@
 from dataclasses import dataclass
 import uuid
 
-from depmap import data_access
-from depmap.tile.temp_utils import compound_is_in_oncref_dataset
 from flask.globals import current_app
 import pandas as pd
 
@@ -96,6 +94,7 @@ def render_tile(subject_type, tile_name, identifier):
             for x in compound_experiment_and_datasets
             if not x[1].is_ic50 and not x[1].is_dose_replicate
         ]  # filter for non ic50 or dose replicate datasets
+
         rendered_tile = render_compound_tile(
             tile_name, compound, compound_experiment_and_datasets, args_dict
         )
@@ -187,17 +186,8 @@ def render_compound_tile(
         CompoundTileEnum.correlations.value: get_correlations_html,
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
+        CompoundTileEnum.heatmap.value: get_heatmap_html,
     }
-
-    # TEMP: Right now, the heatmap tile and tab is only available for OncRef, and drc_compound_datasets only
-    # has one element in it, so before showing these features we need to check if the compound is in the Breadbox
-    # version of the OncRef dataset.
-    if current_app.config[
-        "ENABLED_FEATURES"
-    ].new_compound_page_tabs and compound_is_in_oncref_dataset(
-        compound, drc_compound_datasets
-    ):
-        tiles[CompoundTileEnum.heatmap.value] = get_heatmap_html
 
     if tile_name not in tiles:
         abort(400)
