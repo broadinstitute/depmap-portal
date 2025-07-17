@@ -66,6 +66,17 @@ export function useSliceTableState({
     rowFilters,
     selectedRowIds,
   });
+
+  let shouldShowLabelColumn = true;
+
+  if (
+    columns &&
+    columns.length >= 2 &&
+    columns[0].meta.idLabel === columns[1].meta.idLabel
+  ) {
+    shouldShowLabelColumn = false;
+  }
+
   const PlotlyLoader = usePlotlyLoader();
 
   const handleClickAddColumn = useCallback(async () => {
@@ -180,5 +191,6 @@ export function useSliceTableState({
     handleClickFilterButton,
     rowSelection,
     setRowSelection,
+    shouldShowLabelColumn,
   };
 }

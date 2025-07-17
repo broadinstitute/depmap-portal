@@ -23,7 +23,7 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
   try {
     response = await fetch(url, {
-      credentials: "include",
+      credentials: process.env.NODE_ENV === "development" ? "omit" : "include",
       ...options,
       headers,
     });

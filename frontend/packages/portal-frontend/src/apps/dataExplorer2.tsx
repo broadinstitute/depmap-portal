@@ -21,8 +21,6 @@ import {
   fetchDimensionLabels,
   fetchDimensionLabelsOfDataset,
   fetchDimensionLabelsToDatasetsMapping,
-  fetchGeneTeaEnrichment,
-  fetchGeneTeaTermContext,
   fetchLinearRegression,
   fetchMetadataColumn,
   fetchMetadataSlices,
@@ -67,8 +65,6 @@ const App = () => {
           fetchContextSummary={fetchContextSummary}
           fetchMetadataColumn={fetchMetadataColumn}
           fetchCorrelation={fetchCorrelation}
-          fetchGeneTeaEnrichment={fetchGeneTeaEnrichment}
-          fetchGeneTeaTermContext={fetchGeneTeaTermContext}
           fetchLinearRegression={fetchLinearRegression}
           fetchMetadataSlices={fetchMetadataSlices}
           fetchPlotDimensions={fetchPlotDimensions}
