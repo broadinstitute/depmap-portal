@@ -578,7 +578,9 @@ export default function Datasets() {
                 // If only one dataset is selected, assign that as the dataset to edit
                 if (selections.length === 1) {
                   const selectedDataset = datasets.find(
-                    (dataset) => dataset.id === selections[0]
+                    (dataset) =>
+                      dataset.id === selections[0] ||
+                      dataset.given_id === selections[0]
                   );
                   setDatasetToEdit(selectedDataset || null);
                 }

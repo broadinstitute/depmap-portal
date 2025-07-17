@@ -309,22 +309,27 @@ function transformToTableData(
   // Process each data response and collect row IDs
   dataResponses.forEach((response, index) => {
     const firstKey = Object.keys(response)[0];
-    let values: (number | string | null)[] = [];
+    let keyedValues: Record<string, string | number | null> = {};
 
     if (Object.keys(response).length === 0) {
       return;
     }
 
     if (Object.keys(response).length === 1) {
-      values = Object.values(response[firstKey]);
+      keyedValues = response[firstKey];
     } else {
       const firstNestedKey = Object.keys(response[firstKey])[0];
-      values = Object.values(response).map((o) => o[firstNestedKey]);
+      keyedValues = Object.fromEntries(
+        Object.entries(response).map(([key, value]) => [
+          key,
+          value[firstNestedKey],
+        ])
+      );
     }
 
     const uniqueKey = columnKeys[index];
-    columnData[uniqueKey] = values;
-    Object.keys(values).forEach((id) => allRowIds.add(id));
+    columnData[uniqueKey] = Object.values(keyedValues);
+    Object.keys(keyedValues).forEach((id) => allRowIds.add(id));
   });
 
   // Step 2: Build data rows
@@ -400,7 +405,9 @@ function transformToTableData(
       displayLabel = labelColumnDisplayName;
     }
 
-    const dataset = datasets.find((d) => d.id === slice.dataset_id);
+    const dataset = datasets.find(
+      (d) => d.given_id === slice.dataset_id || d.id === slice.dataset_id
+    );
 
     if (!dataset) {
       throw new Error(`Unknown dataset "${slice.dataset_id}"`);

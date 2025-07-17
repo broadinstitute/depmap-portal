@@ -46,6 +46,7 @@ function SliceTable({
     handleClickDownload,
     handleClickAddColumn,
     handleClickFilterButton,
+    shouldShowLabelColumn,
   } = useSliceTableState({
     index_type_name,
     initialSlices,
@@ -88,6 +89,7 @@ function SliceTable({
           enableRowSelection={enableRowSelection}
           enableMultiRowSelection
           enableStickyFirstColumn
+          columnVisibility={{ label: shouldShowLabelColumn }}
           defaultSort={(a, b) => {
             const aId = getRowId(a);
             const bId = getRowId(b);
