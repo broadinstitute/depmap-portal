@@ -142,7 +142,6 @@ function HeatmapTabMainContent({
       .map((col) => col.accessor)
       .filter(
         (accessor) =>
-          accessor !== "modelId" &&
           !hiddenDoseViabilityCols.map((a) => a.accessor).includes(accessor)
       );
   }, [doseViabilityTableColumns]);

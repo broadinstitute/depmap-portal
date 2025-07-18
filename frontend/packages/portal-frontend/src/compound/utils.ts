@@ -19,6 +19,7 @@ export function pythonQuote(str: string): string {
 }
 
 export const hiddenDoseViabilityCols = [
+  { accessor: "modelId", Header: "Model ID", maxWidth: 120, minWidth: 80 },
   {
     accessor: "ec50",
     Header: "EC50",
@@ -46,7 +47,6 @@ export const hiddenDoseViabilityCols = [
 ];
 
 export const staticDoseViabilityCols = [
-  { accessor: "modelId", Header: "Model ID", maxWidth: 120, minWidth: 80 },
   {
     accessor: "auc",
     Header: "AUC",
