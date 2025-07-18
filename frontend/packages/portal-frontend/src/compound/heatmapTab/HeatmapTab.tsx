@@ -7,7 +7,7 @@ import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
-import { DoseTableDataProvider } from "../hooks/DoseTableDataContext";
+import { DoseTableDataProvider } from "../hooks/DoseViabilityDataContext";
 
 interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];

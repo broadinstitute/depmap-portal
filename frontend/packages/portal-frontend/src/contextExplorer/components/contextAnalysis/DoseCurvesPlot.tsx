@@ -176,16 +176,16 @@ const getTraces = (
           curves.data[index].name
         }<br><b>DepMap ID:</b> ${curves.data[index].id}
     <br><b>Lower Asymptote:</b> ${curves.data[index].lowerA.toFixed(
-      4
+      3
     )}<br><b>Upper Asymptote:</b> ${curves.data[index].upperA.toFixed(
-          4
+          3
         )}<br><b>ec50:</b> ${curves.data[index].ec50.toFixed(
-          4
-        )}<br><b>slope:</b> ${curves.data[index].slope.toFixed(4)}`
+          3
+        )}<br><b>slope:</b> ${curves.data[index].slope.toFixed(3)}`
       ),
       hovertemplate:
-        "<b>Dose:</b> %{x:.4f}<br>" +
-        "<b>Viability</b>: %{y:.4f}<br>" +
+        "<b>Dose:</b> %{x:.3f}<br>" +
+        "<b>Viability</b>: %{y:.3f}<br>" +
         "%{text}",
       type: "curve",
       mode: "lines",
