@@ -34,10 +34,6 @@ function HeatmapTabMainContent({
     isLoading,
   } = useDoseViabilityDataContext();
 
-  if (tableFormattedData) {
-    console.log(Object.keys(tableFormattedData[0]));
-  }
-
   const { heatmapFormattedData, doseMin, doseMax } = useHeatmapData(
     tableFormattedData,
     doseColumnNames
