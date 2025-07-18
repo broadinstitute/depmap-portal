@@ -17,3 +17,41 @@ export function pythonQuote(str: string): string {
     (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase()
   );
 }
+
+export const hiddenDoseViabilityCols = [
+  {
+    accessor: "ec50",
+    Header: "EC50",
+    maxWidth: 120,
+    minWidth: 80,
+  },
+  {
+    accessor: "upperAsymptote",
+    Header: "Upper Asymptote",
+    maxWidth: 120,
+    minWidth: 80,
+  },
+  {
+    accessor: "lowerAsymptote",
+    Header: "Lower Asymptote",
+    maxWidth: 120,
+    minWidth: 80,
+  },
+  {
+    accessor: "slope",
+    Header: "Slope",
+    maxWidth: 120,
+    minWidth: 80,
+  },
+];
+
+export const staticDoseViabilityCols = [
+  { accessor: "modelId", Header: "Model ID", maxWidth: 120, minWidth: 80 },
+  {
+    accessor: "auc",
+    Header: "AUC",
+    maxWidth: 120,
+    minWidth: 80,
+  },
+  ...hiddenDoseViabilityCols,
+];

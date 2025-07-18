@@ -1,54 +1,40 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
-import useDoseCurvesData from "./hooks/useDoseCurvesData";
 import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
-import {
-  CurveParams,
-  CompoundDoseCurveData,
-  DRCDatasetOptions,
-} from "@depmap/types";
+import { CurveParams, CompoundDoseCurveData } from "@depmap/types";
 import CompoundPlotSelections from "../CompoundPlotSelections";
-import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
+import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
+import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
 
 interface DoseCurvesMainContentProps {
-  dataset: DRCDatasetOptions | null;
   doseUnits: string;
   showReplicates: boolean;
   showUnselectedLines: boolean;
   compoundName: string;
-  compoundId: string;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
 }
 
 function DoseCurvesMainContent({
-  dataset,
   doseUnits,
   showReplicates,
   showUnselectedLines,
   compoundName,
-  compoundId,
   handleShowUnselectedLinesOnSelectionsCleared,
 }: DoseCurvesMainContentProps) {
   const {
-    doseColumnNames,
     tableFormattedData,
-    error,
-    isLoading,
-  } = useDoseTableDataContext();
-  const api = useDeprecatedDataExplorerApi();
-
-  const {
-    doseCurveDataError,
-    doseCurveDataIsLoading,
     doseCurveData,
     doseMin,
     doseMax,
-  } = useDoseCurvesData(dataset, compoundId, doseColumnNames);
+    error,
+    isLoading,
+  } = useDoseViabilityDataContext();
+  const api = useDeprecatedDataExplorerApi();
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
@@ -78,7 +64,8 @@ function DoseCurvesMainContent({
 
   // Format cellLine column to link to cell line pages
   const doseViabilityTableColumns = useMemo(() => {
-    const staticColumns = ["cellLine", "modelId", "auc"];
+    const staticColumns = staticDoseViabilityCols.map((col) => col.accessor);
+
     const columns = [
       {
         accessor: "cellLine",
@@ -109,24 +96,16 @@ function DoseCurvesMainContent({
           );
         },
       },
-      {
-        accessor: "modelId",
-        Header: "Model ID",
-        maxWidth: 120,
-        minWidth: 80,
-      },
-      {
-        accessor: "auc",
-        Header: "AUC",
-        maxWidth: 120,
-        minWidth: 80,
-      },
+      ...staticDoseViabilityCols,
       // Add dynamic dose columns
       ...(sortedTableData && sortedTableData.length > 0
         ? Array.from(
             new Set(sortedTableData.flatMap((row) => Object.keys(row)))
           )
-            .filter((colName) => !staticColumns.includes(colName))
+            .filter(
+              (colName) =>
+                !staticColumns.includes(colName) && colName !== "cellLine"
+            )
             .map((colName) => ({
               accessor: colName,
               Header: colName,
@@ -177,7 +156,11 @@ function DoseCurvesMainContent({
   const defaultCols = useMemo(() => {
     return doseViabilityTableColumns
       .map((col) => col.accessor)
-      .filter((accessor) => accessor !== "modelId");
+      .filter(
+        (accessor) =>
+          accessor !== "modelId" &&
+          !hiddenDoseViabilityCols.map((a) => a.accessor).includes(accessor)
+      );
   }, [doseViabilityTableColumns]);
 
   return (
@@ -191,7 +174,7 @@ function DoseCurvesMainContent({
         </p>
       </div>
       <div className={styles.mainContentGrid}>
-        {doseCurveDataError ? (
+        {error ? (
           <div className={styles.mainContentGridErrorMessage}>
             Error loading dose curve data.
           </div>
@@ -199,7 +182,7 @@ function DoseCurvesMainContent({
           <>
             <div style={styles.plot}>
               <DoseCurvesPlotSection
-                isLoading={doseCurveDataIsLoading}
+                isLoading={isLoading}
                 compoundName={compoundName}
                 plotElement={plotElement}
                 curvesData={visibleCurveData}
