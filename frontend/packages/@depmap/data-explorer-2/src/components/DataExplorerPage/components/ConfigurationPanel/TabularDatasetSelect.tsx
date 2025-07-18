@@ -40,7 +40,9 @@ function TabularDatasetSelect({ slice_type, value, onChange }: Props) {
 
   const dataset =
     tabularDatasets && datasetId
-      ? tabularDatasets.find((d) => d.id === datasetId)
+      ? tabularDatasets.find(
+          (d) => d.given_id === datasetId || d.id === datasetId
+        )
       : null;
 
   const columnOptions = dataset

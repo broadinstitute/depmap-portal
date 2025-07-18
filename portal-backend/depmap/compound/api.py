@@ -3,7 +3,6 @@ from flask_restplus import Namespace, Resource
 from depmap.compound.models import drc_compound_datasets
 from flask import request
 
-
 namespace = Namespace("compound", description="View compound data in the portal")
 
 

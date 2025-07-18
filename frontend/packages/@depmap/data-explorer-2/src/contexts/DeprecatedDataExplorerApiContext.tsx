@@ -157,29 +157,6 @@ const defaultValue = {
     throw new Error("Not implemented");
   },
 
-  fetchGeneTeaEnrichment: (
-    genes: string[],
-    limit: number | null
-  ): Promise<{
-    term: string[];
-    synonyms: string[][];
-    coincident: string[][];
-    fdr: number[];
-    matchingGenes: string[][];
-    total: number;
-  }> => {
-    window.console.log("fetchGeneTeaEnrichment:", { genes, limit });
-    throw new Error("Not implemented");
-  },
-
-  fetchGeneTeaTermContext: (
-    term: string,
-    genes: string[]
-  ): Promise<Record<string, string>> => {
-    window.console.log("fetchGeneTeaTermContext:", { term, genes });
-    throw new Error("Not implemented");
-  },
-
   fetchLinearRegression: (
     index_type: string,
     dimensions: Record<string, DataExplorerPlotConfigDimension>,

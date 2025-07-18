@@ -22,6 +22,7 @@ import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
+import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -210,6 +211,7 @@ export function initEnrichmentTile(
   );
 }
 
+
 export function initHeatmapTile(
   elementId: string,
   compoundId: string,
@@ -221,6 +223,18 @@ export function initHeatmapTile(
         compoundId={compoundId}
         compoundName={compoundName}
       />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initStructureAndDetailTile(
+  elementId: string,
+  compoundId: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <StructureAndDetailTile compoundId={compoundId} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
