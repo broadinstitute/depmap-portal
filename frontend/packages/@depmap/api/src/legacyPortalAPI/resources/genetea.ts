@@ -1,5 +1,5 @@
 import qs from "qs";
-import { enabledFeatures, isLocalDevEnvironment } from "@depmap/globals";
+import { enabledFeatures } from "@depmap/globals";
 import { getJson } from "../client";
 
 // Do not use in production! For local development only.
@@ -49,9 +49,10 @@ export async function fetchGeneTeaEnrichment(
     };
   }
 
-  const body = isLocalDevEnvironment
-    ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
-    : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
+  const body =
+    process.env.NODE_ENV === "development"
+      ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
+      : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
   // `enriched_terms` can be null when there are no relevant terms. We'll
   // return a wrapper object to distinguish this from some kind of error.
@@ -106,9 +107,10 @@ export async function fetchGeneTeaTermContext(
       }
     | { message: string }; // error message
 
-  const body = isLocalDevEnvironment
-    ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
-    : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
+  const body =
+    process.env.NODE_ENV === "development"
+      ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
+      : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
   if ("message" in body) {
     throw new Error(body.message);
