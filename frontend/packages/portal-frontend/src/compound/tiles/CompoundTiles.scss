@@ -1,3 +1,27 @@
+.StructureAndDetailTile {
+  .metadataLine {
+    font-size: 14px;
+    font-family: "Lato";
+    line-height: 24px;
+    display: flex;
+    align-items: baseline;
+    overflow: hidden;
+    word-wrap: break-word;
+    max-width: 380px;
+    & a {
+      overflow: hidden;
+      max-width: 380px;
+    }
+    .metadataLineLabel {
+      font-weight: 700;
+      text-align: left;
+    }
+    .metadataLineLabel:after {
+      content: "\00a0"; /* Unicode for non-breaking space */
+    }
+  }
+}
+
 .HeatmapTile {
   .triangleWithLabel {
     display: flex;
@@ -59,27 +83,6 @@
     }
     td:first-child {
       border-left: 0;
-
-.StructureAndDetailTile {
-  .metadataLine {
-    font-size: 14px;
-    font-family: "Lato";
-    line-height: 24px;
-    display: flex;
-    align-items: baseline;
-    overflow: hidden;
-    word-wrap: break-word;
-    max-width: 380px;
-    & a {
-      overflow: hidden;
-      max-width: 380px;
-    }
-    .metadataLineLabel {
-      font-weight: 700;
-      text-align: left;
-    }
-    .metadataLineLabel:after {
-      content: "\00a0"; /* Unicode for non-breaking space */
     }
   }
 }
