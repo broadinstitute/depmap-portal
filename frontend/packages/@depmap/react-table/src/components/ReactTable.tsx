@@ -34,6 +34,13 @@ type TableProps<TData extends RowData> = {
   enableStickyFirstColumn?: boolean;
   // Custom default sort function that applies when no column sorts are active
   defaultSort?: (a: TData, b: TData) => number;
+  // Column visibility control
+  columnVisibility?: Record<string, boolean>;
+  onColumnVisibilityChange?: (
+    updater:
+      | Record<string, boolean>
+      | ((old: Record<string, boolean>) => Record<string, boolean>)
+  ) => void;
   // Optional ref to expose table methods
   tableRef?: React.RefObject<{
     resetColumnResizing: () => void;
@@ -52,6 +59,8 @@ function ReactTable<TData extends RowData>({
   getRowId = undefined,
   enableStickyFirstColumn = false,
   defaultSort = undefined,
+  columnVisibility = {},
+  onColumnVisibilityChange = undefined,
   tableRef = undefined,
 }: TableProps<TData>) {
   const {
@@ -74,6 +83,8 @@ function ReactTable<TData extends RowData>({
     getRowId,
     defaultSort,
     enableStickyFirstColumn,
+    columnVisibility,
+    onColumnVisibilityChange,
   });
 
   // Expose methods via ref if provided

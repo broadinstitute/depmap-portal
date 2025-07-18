@@ -25,6 +25,7 @@ const App = () => {
             value={indexTypeName}
             onChange={setIndexTypeName}
             useContextBuilderV2
+            title="Dimension type"
           />
         </div>
         <div

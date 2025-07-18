@@ -17,22 +17,13 @@ function DataSliceSelect({
   defaultValue,
   onChange,
 }: Props) {
-  let defaultSource: "metadata_column" | "matrix_dataset" | null = null;
+  const [source, setSource] = useState(() => {
+    if (["feature_id", "sample_id"].includes(defaultValue?.identifier_type)) {
+      return "matrix_dataset" as const;
+    }
 
-  if (defaultValue?.identifier_type === "column") {
-    defaultSource = "metadata_column";
-  }
-
-  if (
-    defaultValue?.identifier_type === "feature_id" ||
-    defaultValue?.identifier_type === "sample_id"
-  ) {
-    defaultSource = "matrix_dataset";
-  }
-
-  const [source, setSource] = useState<
-    "metadata_column" | "matrix_dataset" | null
-  >(defaultSource);
+    return "metadata_column" as const;
+  });
 
   return (
     <div>

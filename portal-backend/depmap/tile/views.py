@@ -180,11 +180,11 @@ def render_compound_tile(
     tiles = {
         CompoundTileEnum.predictability.value: get_predictability_html,
         CompoundTileEnum.selectivity.value: get_enrichment_html,
-        CompoundTileEnum.description.value: get_description_html,
         CompoundTileEnum.sensitivity.value: get_sensitivity_html,
         CompoundTileEnum.correlations.value: get_correlations_html,
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
+        CompoundTileEnum.description.value: get_structure_and_detail_html,
     }
     if tile_name not in tiles:
         abort(400)
@@ -355,9 +355,23 @@ def get_enrichment_html(
         f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
         f"""(
         function() {{
-            console.log("about to call initEnrichmentTile");
             DepMap.initEnrichmentTile("{div_id}", "{entity_label}", "{entity.type}");
-            console.log("after initEnrichmentTile");
+        }})""",
+    )
+
+
+def get_structure_and_detail_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    div_id = str(uuid.uuid4())
+    compound_name = entity.label
+    compound_id = Compound.get_by_label(compound_name).compound_id
+
+    return RenderedTile(
+        f'<div id="{div_id}"></div>',
+        f"""(
+        function() {{
+            DepMap.initStructureAndDetailTile("{div_id}", "{compound_id}");
         }})""",
     )
 
