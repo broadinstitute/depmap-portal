@@ -67,7 +67,6 @@ export interface TabularDataset {
   group_id: string;
   group: any;
   is_transient: boolean;
-  value_type: string | null;
   columns_metadata: { [key: string]: ColumnMetadata };
   dataset_metadata: { [key: string]: string } | null;
   given_id: string | null;
@@ -117,14 +116,3 @@ export type TabularDatasetDataArgs =
       identifier: "id" | "label";
       columns?: string[] | null;
     }; // indices and identifer both present and non-null
-
-export type MatrixDatasetDataArgs = {
-  features: string[];
-  feature_identifier: "id" | "label";
-  samples?: string[];
-  sample_identifier?: "id";
-  aggregate?: {
-    aggregate_by: string;
-    aggregation: string;
-  };
-};

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import ReactSelect from "react-select";
 import { breadboxAPI, cached } from "@depmap/api";
 import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import PlotConfigSelect from "../PlotConfigSelect";
 import {
   capitalize,
   sortDimensionTypes,
@@ -39,7 +39,7 @@ function ContextTypeSelect({
           const opts = dimensionTypes
             .map((dt) => ({
               value: dt.name,
-              label: capitalize(dt.display_name),
+              label: dt.display_name,
             }))
             .sort((a, b) => {
               const indexA = sorted.indexOf(a.value);
@@ -67,25 +67,22 @@ function ContextTypeSelect({
     })();
   }, [deprecatedApi, useContextBuilderV2]);
 
-  const selectedValue = options.find((option) => {
-    return option.value === value;
-  });
-
   return (
-    <div className={styles.ContextTypeSelect}>
-      <div>
-        <label htmlFor="context-type">{title}</label>
-      </div>
-      <ReactSelect
-        id="context-type"
-        options={options}
-        value={selectedValue}
-        onChange={(option) => {
-          onChange(option!.value);
-        }}
-        isLoading={options.length === 0}
-      />
-    </div>
+    <PlotConfigSelect
+      show
+      enable
+      label={<div style={{ fontSize: 13 }}>{title}</div>}
+      inlineLabel
+      styles={{
+        control: (base: any) => ({ ...base, fontSize: 14 }),
+        menu: (base: any) => ({ ...base, fontSize: 14, width: 400 }),
+      }}
+      className={styles.ContextTypeSelect}
+      options={options}
+      value={value}
+      onChange={onChange as (nextValue: string | null) => void}
+      isLoading={options.length === 0}
+    />
   );
 }
 

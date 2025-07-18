@@ -40,11 +40,8 @@ function AllSelects({
   className = undefined,
   onHeightChange = undefined,
   removeWrapperDiv = false,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   includeAllInContextOptions,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onClickCreateContext,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   onClickSaveAsContext,
 }: Props) {
   const {

@@ -25,7 +25,9 @@ export function handleError(
 ) {
   if (error instanceof MismatchedSliceTypeError) {
     const slice_type = datasets.find(
-      (d) => d.id === prevState.dimension.dataset_id
+      (d) =>
+        d.id === prevState.dimension.dataset_id ||
+        d.given_id === prevState.dimension.dataset_id
     )?.slice_type;
 
     window.console.error(error);

@@ -28,6 +28,7 @@ interface AlignedData {
     meta: {
       idLabel: string;
       units: string;
+      value_type: string | null;
       datasetName: string;
       csvHeader: string;
       sliceQuery: SliceQuery;
@@ -35,7 +36,7 @@ interface AlignedData {
       isViewable: boolean;
     };
   }>;
-  data: Record<string, string | number | null>[];
+  data: Record<string, string | number | undefined>[];
   loading: boolean;
   error: string | null;
   exportToCsv: () => string;
@@ -246,10 +247,10 @@ const truncateMiddle = (str: string, maxLength = 45): string => {
  * @returns Filtered data array
  */
 function applyRowFilters(
-  data: Record<string, string | number | null>[],
+  data: Record<string, string | number | undefined>[],
   filters: RowFilters,
   selectedRowIds?: Set<string>
-): Record<string, string | number | null>[] {
+) {
   return data.filter((row) => {
     // Apply hideUnselectedRows filter
     if (filters.hideUnselectedRows && selectedRowIds) {
@@ -303,27 +304,43 @@ function transformToTableData(
   // Step 1: Create unique column keys and collect all row IDs
   const columnKeys = slices.map(createUniqueColumnKey);
   const allRowIds = new Set<string>();
-  const columnData: Record<string, Record<string, string | number>> = {};
+  const columnData: Record<string, (number | string | null)[]> = {};
 
   // Process each data response and collect row IDs
   dataResponses.forEach((response, index) => {
-    const originalKey = Object.keys(response)[0];
-    const uniqueKey = columnKeys[index];
-    const values = response[originalKey];
+    const firstKey = Object.keys(response)[0];
+    let keyedValues: Record<string, string | number | null> = {};
 
-    columnData[uniqueKey] = values;
-    Object.keys(values).forEach((id) => allRowIds.add(id));
+    if (Object.keys(response).length === 0) {
+      return;
+    }
+
+    if (Object.keys(response).length === 1) {
+      keyedValues = response[firstKey];
+    } else {
+      const firstNestedKey = Object.keys(response[firstKey])[0];
+      keyedValues = Object.fromEntries(
+        Object.entries(response).map(([key, value]) => [
+          key,
+          value[firstNestedKey],
+        ])
+      );
+    }
+
+    const uniqueKey = columnKeys[index];
+    columnData[uniqueKey] = Object.values(keyedValues);
+    Object.keys(keyedValues).forEach((id) => allRowIds.add(id));
   });
 
   // Step 2: Build data rows
-  let data = Array.from(allRowIds).map((rowId) => {
-    const row: Record<string, string | number | null> = { id: rowId };
+  let data = Array.from(allRowIds).map((rowId, index) => {
+    const row: Record<string, string | number | undefined> = { id: rowId };
 
     columnKeys.forEach((columnKey) => {
       // Use `undefined` instead of `null` for missing values because it
       // works better with table sorting (react-table columns have a
       // `sortUndefined: "last"` option but no equivalent for nulls).
-      row[columnKey] = columnData[columnKey]?.[rowId] ?? undefined;
+      row[columnKey] = columnData[columnKey]?.[index] ?? undefined;
     });
 
     return row;
@@ -348,6 +365,7 @@ function transformToTableData(
       idLabel: idColumnDisplayName,
       units: "",
       datasetName: "",
+      value_type: "text",
       csvHeader: idColumnDisplayName,
       sliceQuery: {
         dataset_id: indexType.metadata_dataset_id!,
@@ -387,18 +405,28 @@ function transformToTableData(
       displayLabel = labelColumnDisplayName;
     }
 
+    const dataset = datasets.find(
+      (d) => d.given_id === slice.dataset_id || d.id === slice.dataset_id
+    );
+
+    if (!dataset) {
+      throw new Error(`Unknown dataset "${slice.dataset_id}"`);
+    }
+
     // Find the dataset name (empty for tabular datasets)
     const datasetName =
-      slice.identifier_type === "column"
-        ? ""
-        : datasets.find((d) => d.id === slice.dataset_id)?.name || "";
+      slice.identifier_type === "column" ? "" : dataset.name || "";
 
     // Find the dataset units (empty for tabular datasets)
     const units =
       slice.identifier_type === "column"
         ? ""
-        : (datasets.find((d) => d.id === slice.dataset_id) as MatrixDataset)
-            ?.units || "";
+        : (dataset as MatrixDataset).units || "";
+
+    const value_type =
+      dataset.format === "matrix_dataset"
+        ? dataset.value_type
+        : dataset.columns_metadata[slice.identifier].col_type;
 
     return {
       size: columnKey === "label" ? ID_AND_LABEL_COLUMN_SIZE : undefined,
@@ -408,6 +436,7 @@ function transformToTableData(
         isViewable: columnKey !== "label",
         idLabel: displayLabel,
         units,
+        value_type,
         datasetName,
         csvHeader: [displayLabel, units, datasetName]
           .filter(Boolean)

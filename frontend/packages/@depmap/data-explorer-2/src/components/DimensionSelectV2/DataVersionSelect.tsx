@@ -67,7 +67,9 @@ function DataVersionSelect({
       const groups: Record<string, typeof options> = {};
 
       options.forEach((option) => {
-        const dataset = datasets.find((d) => d.id === option.value)!;
+        const dataset = datasets.find(
+          (d) => d.id === option.value || d.given_id === option.value
+        )!;
         groups[dataset.data_type] ||= [];
         groups[dataset.data_type].push(option);
       });

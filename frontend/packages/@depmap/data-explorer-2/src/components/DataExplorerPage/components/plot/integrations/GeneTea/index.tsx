@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "react-bootstrap";
+import { cached, legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
-import {
-  DeprecatedDataExplorerApiResponse,
-  useDeprecatedDataExplorerApi,
-} from "../../../../../../contexts/DeprecatedDataExplorerApiContext";
 import { DataExplorerContext } from "@depmap/types";
 import ExplanatoryText from "./ExplanatoryText";
 import GeneTeaTable from "./GeneTeaTable";
@@ -17,10 +14,9 @@ interface Props {
   onClickColorByContext: (context: DataExplorerContext) => void;
 }
 
-type GeneTeaEnrichedTerms = DeprecatedDataExplorerApiResponse["fetchGeneTeaEnrichment"];
+type GeneTeaEnrichedTerms = LegacyPortalApiResponse["fetchGeneTeaEnrichment"];
 
 function GeneTea({ selectedLabels, onClickColorByContext }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<GeneTeaEnrichedTerms | null>(null);
   const [error, setError] = useState(false);
@@ -49,7 +45,9 @@ function GeneTea({ selectedLabels, onClickColorByContext }: Props) {
 
       (async () => {
         try {
-          const fetchedData = await api.fetchGeneTeaEnrichment(
+          const fetchedData = await cached(
+            legacyPortalAPI
+          ).fetchGeneTeaEnrichment(
             [...selectedLabels],
             showAllRows ? null : DEFAULT_NUM_ROWS
           );
@@ -62,7 +60,7 @@ function GeneTea({ selectedLabels, onClickColorByContext }: Props) {
         }
       })();
     }
-  }, [api, selectedLabels, showAllRows]);
+  }, [selectedLabels, showAllRows]);
 
   const showTable = data && data.term.length > 0;
   const numMoreTerms = data ? data.total - data.term.length : 0;

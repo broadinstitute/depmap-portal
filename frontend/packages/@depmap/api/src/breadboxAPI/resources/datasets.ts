@@ -12,7 +12,6 @@ import {
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
 import { getJson, postJson, deleteJson, postMultipart } from "../client";
-import { MatrixDatasetDataArgs } from "@depmap/types/src/Dataset";
 
 export function getDatasets(
   params?: Partial<{
@@ -42,8 +41,12 @@ export function getMatrixDatasetData(
   args: {
     sample_identifier?: "id" | "label";
     feature_identifier?: "id" | "label";
-    samples?: string[];
-    features?: string[];
+    samples?: string[] | null;
+    features?: string[] | null;
+    aggregate?: {
+      aggregate_by: "features" | "samples";
+      aggregation: "mean" | "median" | "25%tile" | "75%tile";
+    };
   }
 ) {
   if (!args.sample_identifier && !args.feature_identifier) {
@@ -60,14 +63,24 @@ export function getMatrixDatasetData(
     throw new Error("Must supply `features`");
   }
 
-  const url = `/datasets/matrix/${datasetId}`;
+  const finalArgs: typeof args = { ...args };
 
-  return postJson<{ [key: string]: Record<string, any> }>(url, {
-    sample_identifier: args.sample_identifier || undefined,
-    feature_identifier: args.feature_identifier || undefined,
-    samples: args.samples || undefined,
-    features: args.features || undefined,
-  });
+  // WORKAROUND: `aggregate` is silently ignored if you don't
+  // defined both dimensions (merely passing `null` is enough).
+  if (args.aggregate) {
+    if (!args.samples) {
+      finalArgs.samples = null;
+    }
+
+    if (!args.features) {
+      finalArgs.features = null;
+    }
+  }
+
+  return postJson<{ [key: string]: Record<string, any> }>(
+    `/datasets/matrix/${datasetId}`,
+    finalArgs
+  );
 }
 
 export function getTabularDatasetData(
@@ -92,15 +105,6 @@ export function getDatasetFeatures(datasetId: string) {
   );
 }
 
-export function getMatrixDatasetFeaturesData(
-  datasetId: string,
-  args: MatrixDatasetDataArgs
-): Promise<{ [key: string]: Record<string, any> }> {
-  const url = `/datasets/matrix/${datasetId}`;
-
-  return postJson<{ [key: string]: Record<string, any> }>(url, args);
-}
-
 export function searchDimensions({
   prefix,
   substring,
@@ -123,7 +127,7 @@ export function getMatrixDatasetFeatures(dataset_id: string) {
 
 export function getMatrixDatasetSamples(dataset_id: string) {
   return getJson<{ id: string; label: string }[]>(
-    `/datasets/features/${dataset_id}`
+    `/datasets/samples/${dataset_id}`
   );
 }
 
