@@ -5,7 +5,7 @@ export function useDoseViabilityDataContext() {
   const ctx = useContext(DoseViabilityDataContext);
   if (!ctx) {
     throw new Error(
-      "useDoseViabilityDataContext must be used within a DoseTableDataProvider"
+      "useDoseViabilityDataContext must be used within a DoseViabilityDataProvider"
     );
   }
   return ctx;

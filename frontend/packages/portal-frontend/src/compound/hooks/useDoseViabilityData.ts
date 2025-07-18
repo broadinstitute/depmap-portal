@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CompoundDoseCurveData,
   CurveParams,
@@ -104,7 +104,11 @@ export default function useDoseViabilityData(
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
+    requestIdRef.current += 1;
+    const thisRequestId = requestIdRef.current;
     if (!dataset) {
       setTableFormattedData(null);
       setDoseColumnNames([]);
@@ -187,6 +191,11 @@ export default function useDoseViabilityData(
               .map((d) => parseFloat(d.split(" ")[0]))
               .filter((n) => !Number.isNaN(n))
           : [];
+
+        // Don't set state if the request is stale to avoid a race condition that
+        // could cause incorrect data to display in the UI as a result of rapidly
+        // changing props (e.g. switching between different datasets).
+        if (requestIdRef.current !== thisRequestId) return;
         setDoseMin(doseValues.length > 0 ? Math.min(...doseValues) : null);
         setDoseMax(doseValues.length > 0 ? Math.max(...doseValues) : null);
 
@@ -195,6 +204,7 @@ export default function useDoseViabilityData(
         setDoseCurveData(doseCurvesResponse);
         setIsLoading(false);
       } catch (e) {
+        if (requestIdRef.current !== thisRequestId) return;
         window.console.error(e);
         setTableFormattedData(null);
         setDoseColumnNames([]);
