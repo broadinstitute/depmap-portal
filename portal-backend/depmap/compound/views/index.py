@@ -4,6 +4,7 @@ import os
 import tempfile
 from typing import Any, List, Optional
 import zipfile
+from depmap.tile.temp_utils import compound_is_in_oncref_dataset
 import requests
 import urllib.parse
 
@@ -93,7 +94,17 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+    # TEMP: Right now, the heatmap tile and tab is only available for OncRef, and drc_compound_datasets only
+    # has one element in it, so before showing these features we need to check if the compound is in the Breadbox
+    # version of the OncRef dataset.
+    compound_is_in_dataset = compound_is_in_oncref_dataset(
+        compound, drc_compound_datasets
+    )
+
+    show_heatmap_tab = (
+        current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+        and compound_is_in_dataset
+    )
 
     return render_template(
         "compounds/index.html",
@@ -109,7 +120,7 @@ def view_compound(name):
             "shared-portal-files", "Tools/Predictability_methodology.pdf"
         ),
         has_datasets=has_datasets,
-        order=get_order(has_predictability),
+        order=get_order(has_predictability, has_heatmap=show_heatmap_tab),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         dose_curve_options_new=format_dose_curve_options_new_tab_if_available(),
         has_celfie=has_celfie,

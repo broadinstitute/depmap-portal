@@ -13,7 +13,7 @@ export type CompoundDoseViability = Record<
   Record<ModelID, Viability>
 >;
 
-type TableRow = {
+export type TableRow = {
   modelId: string;
   cellLine: CellLineName;
   auc: number;

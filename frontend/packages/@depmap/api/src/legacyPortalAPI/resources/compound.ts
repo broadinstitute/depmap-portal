@@ -2,6 +2,7 @@ import {
   CompoundDoseCurveData,
   CurveParams,
   CurvePlotPoints,
+  DRCDatasetOptions,
 } from "@depmap/types";
 import { getJson } from "../client";
 
@@ -33,6 +34,19 @@ export function getCompoundDoseCurveData(
 
   return getJson<CompoundDoseCurveData>(
     `/api/compound/dose_curve_data`,
+    params
+  );
+}
+
+export function getPrioritizedDataset(
+  compoundId: string
+): Promise<DRCDatasetOptions> {
+  const params = {
+    compound_id: compoundId,
+  };
+
+  return getJson<DRCDatasetOptions>(
+    `/api/compound/prioritized_dataset`,
     params
   );
 }
