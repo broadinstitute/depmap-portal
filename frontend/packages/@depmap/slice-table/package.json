@@ -1,0 +1,28 @@
+{
+  "name": "@depmap/slice-table",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "@depmap/api": "1.0.0",
+    "@depmap/common-components": "1.0.0",
+    "@depmap/data-explorer-2": "1.0.0",
+    "@depmap/globals": "1.0.0",
+    "@depmap/react-table": "1.0.0",
+    "@depmap/types": "1.0.0",
+    "classnames": "^2.3.1",
+    "papaparse": "^4.6.0",
+    "react-bootstrap": "^0.32.3"
+  },
+  "devDependencies": {
+    "@types/papaparse": "^4.5.2",
+    "@types/react-bootstrap": "^0.32.24"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35",
+    "react-dom": "^16.9.8"
+  }
+}

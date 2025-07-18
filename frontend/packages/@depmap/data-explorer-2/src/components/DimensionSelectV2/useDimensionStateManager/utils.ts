@@ -1,9 +1,9 @@
+import { breadboxAPI, cached } from "@depmap/api";
 import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfigDimensionV2,
   MatrixDataset,
 } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 
 export async function validateDimension(
   dimension: Partial<DataExplorerPlotConfigDimensionV2>
@@ -19,14 +19,12 @@ let datasetsByIndexType: Record<
   DataExplorerDatasetDescriptor[]
 > | null = null;
 
-export async function fetchDatasetsByIndexType(
-  api: ReturnType<typeof useDataExplorerApi>
-) {
+export async function fetchDatasetsByIndexType() {
   if (datasetsByIndexType) {
     return datasetsByIndexType;
   }
 
-  const datasets = await api.fetchDatasets();
+  const datasets = await cached(breadboxAPI).getDatasets();
   datasetsByIndexType = {};
 
   datasets.forEach((dataset) => {
@@ -88,7 +86,6 @@ export async function fetchDatasetsByIndexType(
 }
 
 export async function inferSliceType(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   dataType: string | null
 ) {
@@ -96,7 +93,7 @@ export async function inferSliceType(
     return undefined;
   }
 
-  const ds = await fetchDatasetsByIndexType(api);
+  const ds = await fetchDatasetsByIndexType();
   const sliceTypes = new Set<string>();
 
   ds[index_type].forEach((dataset) => {
@@ -109,7 +106,6 @@ export async function inferSliceType(
 }
 
 export async function inferDataType(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   slice_type: string | null
 ) {
@@ -117,7 +113,7 @@ export async function inferDataType(
     return null;
   }
 
-  const ds = await fetchDatasetsByIndexType(api);
+  const ds = await fetchDatasetsByIndexType();
   const dataTypes = new Set<string>();
 
   ds[index_type].forEach((dataset) => {
@@ -130,7 +126,6 @@ export async function inferDataType(
 }
 
 export async function inferTypesFromDatasetId(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   dataset_id: string
 ) {
@@ -141,17 +136,13 @@ export async function inferTypesFromDatasetId(
     };
   }
 
-  const ds = await fetchDatasetsByIndexType(api);
+  const ds = await fetchDatasetsByIndexType();
   const dataset = ds[index_type].find((d) => {
     return d.id === dataset_id || d.given_id === dataset_id;
   });
 
   if (!dataset) {
-    window.console.warn(`Unknown dataset "${dataset_id}"!`);
-    return {
-      inferredSliceType: undefined,
-      inferredDataType: null,
-    };
+    throw new Error(`Unknown dataset "${dataset_id}"!`);
   }
 
   return {
@@ -161,7 +152,6 @@ export async function inferTypesFromDatasetId(
 }
 
 export async function inferDatasetId(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   slice_type: string | null,
   dataType: string | null
@@ -170,7 +160,7 @@ export async function inferDatasetId(
     return undefined;
   }
 
-  const datasets = await fetchDatasetsByIndexType(api);
+  const datasets = await fetchDatasetsByIndexType();
   const ids = new Set<string>();
 
   datasets[index_type].forEach((dataset) => {
@@ -182,11 +172,8 @@ export async function inferDatasetId(
   return ids.size === 1 ? [...ids][0] : undefined;
 }
 
-export async function findDataType(
-  api: ReturnType<typeof useDataExplorerApi>,
-  dataset_id: string | null
-) {
-  const datasets = await api.fetchDatasets();
+export async function findDataType(dataset_id: string | null) {
+  const datasets = await cached(breadboxAPI).getDatasets();
   const dataset = datasets.find((d) => {
     return d.id === dataset_id || d.given_id === dataset_id;
   });
@@ -195,7 +182,6 @@ export async function findDataType(
 }
 
 export async function findHighestPriorityDataset(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   slice_type: string,
   dataType: string
@@ -204,7 +190,7 @@ export async function findHighestPriorityDataset(
     return undefined;
   }
 
-  const datasets = await fetchDatasetsByIndexType(api);
+  const datasets = await fetchDatasetsByIndexType();
   const dataset = datasets[index_type]
     .filter((d) => {
       return (

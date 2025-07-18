@@ -1,23 +1,29 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import GroupedBarSuplots from "./GroupedBarSuplots";
+import { ModelDataWithSubgroup, Subgroup } from "../models/subplotData";
+import PlotSpinner from "src/plot/components/PlotSpinner";
 import { breadboxAPI } from "@depmap/api";
-import {
-  BarSubplotData,
-  Subgroup,
-  SubgroupSubtypes,
-} from "../models/subplotData";
 
 export default function SubGroupsPlot() {
-  const [data, setData] = React.useState<SubgroupSubtypes | null>(null);
+
+  const [data, setData] = useState<any | null>(null);
+  const [subgroups, setSubgroups] = useState<Subgroup[]>([
+    "CNS/Brain",
+    "Heme",
+    "Solid",
+  ]);
+  const [counts, setCounts] = useState<Record<string, number> | null>(null);
+  const [subtypeCounts, setSubtypeCounts] = useState<Record<
+    string,
+    number
+  > | null>(null);
   const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     (async () => {
       try {
         // Get depmap models data
-        const dimensionType = await breadboxAPI.getDimensionType(
-          "depmap_model"
-        );
+        const dimensionType = await breadboxAPI.getDimensionType("depmap_model");
         if (dimensionType.metadata_dataset_id) {
           const modelSubsetColData = await breadboxAPI.getTabularDatasetData(
             dimensionType.metadata_dataset_id,
@@ -25,6 +31,7 @@ export default function SubGroupsPlot() {
               columns: [
                 "OncotreeLineage",
                 "OncotreeSubtype",
+                "ModelSubtypeFeatures",
                 "PediatricModelType",
               ],
             }
@@ -44,32 +51,85 @@ export default function SubGroupsPlot() {
             }
           }
 
-          // Filter by pediatric models and group by subtype groups
-          const pedModelData: SubgroupSubtypes = Object.entries(
+          // Filter by pediatric models, add lineage subgroup, add subtype feature
+          const pedModelData: ModelDataWithSubgroup[] = Object.values(
             modelSubsetIndexData
-          ).reduce(
-            (acc, [, modelData]) => {
-              if (modelData.PediatricModelType === "TRUE") {
-                const subtype: string = modelData.OncotreeSubtype;
-                if (modelData.OncotreeLineage === "CNS/Brain") {
-                  acc["CNS/Brain"].push(subtype);
-                } else if (
-                  ["Myeloid", "Lymphoid"].includes(modelData.OncotreeLineage)
-                ) {
-                  acc.Heme.push(subtype);
-                } else {
-                  acc.Solid.push(subtype);
-                }
+          )
+            .filter((modelInfo) => {
+              return modelInfo.PediatricModelType === "True";
+            })
+            .map((modelInfo) => {
+              const subtype: string = modelInfo.OncotreeSubtype;
+              // if model subtype feature is null, set subtype as subtype feature
+              const subtypeFeature: string = modelInfo.ModelSubtypeFeatures
+                ? modelInfo.ModelSubtypeFeatures
+                : modelInfo.OncotreeSubtype;
+
+              // define subgroup for models based on lineage
+              let subgroup: Subgroup;
+              if (modelInfo.OncotreeLineage === "CNS/Brain") {
+                subgroup = "CNS/Brain";
+              } else if (
+                ["Myeloid", "Lymphoid"].includes(modelInfo.OncotreeLineage)
+              ) {
+                subgroup = "Heme";
+              } else {
+                subgroup = "Solid";
               }
-              return acc;
-            },
-            {
-              "CNS/Brain": new Array<string>(),
-              Heme: new Array<string>(),
-              Solid: new Array<string>(),
-            }
-          );
-          setData(pedModelData);
+
+              return {
+                // NOTE: (subtype, subtypeFeature) is unique within subgroups but (subgroup, subtypeFeature) can be repeated. We will make each (subgroup, subtype, subtypeFeature) unique in case
+                key: `${subgroup}-${subtype}-${subtypeFeature}`, // key used as unique identifier for count map
+                subgroup,
+                subtype,
+                subtypeFeature,
+              };
+            });
+
+          // NOTE: The following sort/group is important to ensure the bars are displayed accurately.
+          // Data with same subgroups are next to each other and total subtype counts are displayed in descending order
+
+          // Count map: { [parent_type,type,subtype] -> count }
+          const allCounts: Record<string, number> = {};
+          const subtypeTotalCount: Record<string, number> = {};
+          const subgroupTotalCount: Record<string, number> = {};
+          const subgroupToModel: Record<Subgroup, ModelDataWithSubgroup[]> = {
+            "CNS/Brain": [],
+            Heme: [],
+            Solid: [],
+          };
+          pedModelData.forEach((d) => {
+            allCounts[d.key] = (allCounts[d.key] || 0) + 1;
+            subtypeTotalCount[d.subtype] =
+              (subtypeTotalCount[d.subtype] || 0) + 1;
+            subgroupTotalCount[d.subgroup] =
+              (subgroupTotalCount[d.subgroup] || 0) + 1;
+            subgroupToModel[d.subgroup].push(d);
+          });
+
+          // Sort subgroups from highest to lowest based on how many models with subgroup
+          const sortedSubgroups = Object.entries(subgroupTotalCount)
+            .sort((a, b) => b[1] - a[1])
+            .map(([key]) => key) as Subgroup[];
+          setSubgroups(sortedSubgroups);
+
+          // Sort the model data by its subgroup and total counts across subtypes
+          let pedModelSorted: ModelDataWithSubgroup[] = [];
+          sortedSubgroups.forEach((subgroup) => {
+            subgroupToModel[subgroup].sort((a, b) => {
+              const totalA = subtypeTotalCount[a.subtype];
+              const totalB = subtypeTotalCount[b.subtype];
+              if (totalB !== totalA) {
+                return totalB - totalA; // descending
+              }
+              return allCounts[b.key] - allCounts[a.key];
+            });
+            pedModelSorted = pedModelSorted.concat(subgroupToModel[subgroup]);
+          });
+
+          setData(pedModelSorted);
+          setCounts(allCounts);
+          setSubtypeCounts(subtypeTotalCount);
         } else {
           setHasError(true);
         }
@@ -80,105 +140,42 @@ export default function SubGroupsPlot() {
     })();
   }, []);
 
-  const subplotsData = useMemo(() => {
-    if (data) {
-      const subgroupSubtypesCounts: {
-        key: Subgroup;
-        subtypeLabels: string[];
-        labels: string[];
-        values: number[];
-        maxCount: number;
-      }[] = Object.entries(data).map(([subgroup, subtypes]) => {
-        // Count subtype labels
-        const subtypesCountMap = subtypes.reduce((acc, label) => {
-          acc[label] = (acc[label] || 0) + 1;
-          return acc;
-        }, {} as { [key: string]: number });
-
-        // Sort subtype labels by count descending
-        const sortedEntries = Object.entries(subtypesCountMap).sort(
-          (a, b) => b[1] - a[1]
-        );
-
-        // Extract subtype labels and values. Additionally, truncate label, if necessary for subtype label in x axis
-        const labels: string[] = [];
-        const subtypeLabels: string[] = [];
-        const counts: number[] = [];
-        sortedEntries.forEach(([label, count]) => {
-          subtypeLabels.push(
-            label.length > 25 ? label.substring(0, 25).concat("...") : label
-          );
-          labels.push(label);
-          counts.push(count);
-        });
-
-        // Track the max value for top-level sorting
-        const maxCount = counts[0];
-
-        return {
-          key: subgroup,
-          subtypeLabels,
-          labels,
-          values: counts,
-          maxCount,
-        } as {
-          key: Subgroup;
-          subtypeLabels: string[];
-          labels: string[];
-          values: number[];
-          maxCount: number;
-        };
-      });
-
-      // Sort by maxCount descending
-      subgroupSubtypesCounts.sort((a, b) => b.maxCount - a.maxCount);
-
-      // Define subgroup colors
-      const subgroupToColor: {
-        [key in Subgroup]: { color: string; line: string };
-      } = {
-        "CNS/Brain": { color: "#f5db84", line: "#f5c422" },
-        Heme: { color: "#d3b2db", line: "#ba37db" },
-        Solid: { color: "#a3bce6", line: "#1154bf" },
-      };
-
-      const subgroupSubtypesData: BarSubplotData[] = subgroupSubtypesCounts.map(
-        ({ key, subtypeLabels, labels, values }) => {
-          return {
-            xAxisLabels: subtypeLabels,
-            labels,
-            values,
-            name: key,
-            color: subgroupToColor[key].color,
-            lineColor: subgroupToColor[key].line,
-          };
-        }
-      );
-      return subgroupSubtypesData;
-    }
-    return [];
-  }, [data]);
+  const errorDiv = (
+    <div
+      style={{
+        display: "flex",
+        height: "200px",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
+      <i>Plot failed to load! Try again later.</i>
+    </div>
+  );
 
   if (hasError) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          height: "200px",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <i>Plot failed to load! Try again later.</i>
-      </div>
-    );
+    return errorDiv;
   }
-  if (data) {
+  if (data && counts && subtypeCounts) {
+    // something is wrong if length of model data is 0
+    if (data.length === 0) {
+      return errorDiv;
+    }
+
     return (
       <div>
-        <GroupedBarSuplots subplotsData={subplotsData} />
+        <GroupedBarSuplots
+          subgroups={subgroups}
+          subplotsData={data}
+          countData={counts}
+          subtypeCountData={subtypeCounts}
+        />
       </div>
     );
   }
-  return <div>Loading...</div>;
+  return (
+    <div>
+      <PlotSpinner />
+    </div>
+  );
 }

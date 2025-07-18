@@ -12,6 +12,7 @@ import {
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
 import { getJson, postJson, deleteJson, postMultipart } from "../client";
+import { MatrixDatasetDataArgs } from "@depmap/types/src/Dataset";
 
 export function getDatasets(
   params?: Partial<{
@@ -36,18 +37,68 @@ export function updateDataset(
   return postJson<Dataset>(`/datasets/${datasetId}`, datasetUpdateArgs);
 }
 
+export function getMatrixDatasetData(
+  datasetId: string,
+  args: {
+    sample_identifier?: "id" | "label";
+    feature_identifier?: "id" | "label";
+    samples?: string[];
+    features?: string[];
+  }
+) {
+  if (!args.sample_identifier && !args.feature_identifier) {
+    throw new Error(
+      "Must supply at least a `sample_identifier` or `feature_identifier`"
+    );
+  }
+
+  if (args.sample_identifier && !args.samples?.length) {
+    throw new Error("Must supply `samples`");
+  }
+
+  if (args.feature_identifier && !args.features?.length) {
+    throw new Error("Must supply `features`");
+  }
+
+  const url = `/datasets/matrix/${datasetId}`;
+
+  return postJson<{ [key: string]: Record<string, any> }>(url, {
+    sample_identifier: args.sample_identifier || undefined,
+    feature_identifier: args.feature_identifier || undefined,
+    samples: args.samples || undefined,
+    features: args.features || undefined,
+  });
+}
+
 export function getTabularDatasetData(
   datasetId: string,
   args: TabularDatasetDataArgs
 ) {
   const url = `/datasets/tabular/${datasetId}`;
-  return postJson<{ [key: string]: Record<string, any> }>(url, args);
+  return postJson<{
+    [key: string]: Record<string, any>;
+  }>(url, args);
+}
+
+export function getDatasetSamples(datasetId: string) {
+  return getJson<{ id: string; label: string }[]>(
+    `/datasets/samples/${datasetId}`
+  );
 }
 
 export function getDatasetFeatures(datasetId: string) {
   return getJson<{ id: string; label: string }[]>(
     `/datasets/features/${datasetId}`
   );
+}
+
+export function getMatrixDatasetFeaturesData(
+  datasetId: string,
+  args: MatrixDatasetDataArgs
+): Promise<{ [key: string]: Record<string, any> }> {
+  const url = `/datasets/matrix/${datasetId}`;
+
+  return postJson<{ [key: string]: Record<string, any> }>(url, args);
 }
 
 export function searchDimensions({

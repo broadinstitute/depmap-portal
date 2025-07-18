@@ -18,6 +18,7 @@ type ExtendedPlotType = HTMLDivElement &
     zoomIn: () => void;
     zoomOut: () => void;
     resetZoom: () => void;
+    zoomToSelection: (selections: Set<number>) => void;
     annotateSelected: () => void;
     removeAnnotations: () => void;
     isPointInView: (pointIndex: number) => boolean;

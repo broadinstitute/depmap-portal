@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
-import { useDataExplorerApi } from "../../contexts/DataExplorerApiContext";
+import { breadboxAPI, cached } from "@depmap/api";
 import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import {
   capitalize,
@@ -13,10 +13,15 @@ interface Props {
   value: string;
   onChange: (nextValue: string) => void;
   useContextBuilderV2: boolean;
+  title?: string;
 }
 
-function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
-  const api = useDataExplorerApi();
+function ContextTypeSelect({
+  value,
+  onChange,
+  useContextBuilderV2,
+  title = "Context type",
+}: Props) {
   const deprecatedApi = useDeprecatedDataExplorerApi();
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
@@ -26,7 +31,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
     (async () => {
       try {
         if (useContextBuilderV2) {
-          const dimensionTypes = await api.fetchDimensionTypes();
+          const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
           const sorted = sortDimensionTypes(
             dimensionTypes.map(({ name }) => name)
           );
@@ -60,7 +65,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
         window.console.error(e);
       }
     })();
-  }, [api, deprecatedApi, useContextBuilderV2]);
+  }, [deprecatedApi, useContextBuilderV2]);
 
   const selectedValue = options.find((option) => {
     return option.value === value;
@@ -69,7 +74,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
   return (
     <div className={styles.ContextTypeSelect}>
       <div>
-        <label htmlFor="context-type">Context type</label>
+        <label htmlFor="context-type">{title}</label>
       </div>
       <ReactSelect
         id="context-type"

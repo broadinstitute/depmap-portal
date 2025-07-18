@@ -1,6 +1,6 @@
 include "xrefs-common.conseq"
 
-# SET_TAIGA_PREPROCESSOR virtual_dataset_id "public-25q2-c5ef.82"
+# SET_TAIGA_PREPROCESSOR virtual_dataset_id "public-25q2-c5ef.111"
 
 let RELEASE_LABEL="Public 25Q2"
 
@@ -79,12 +79,6 @@ add-if-missing {
   'category' : 'expression',
 }
 
-# biomarker-matrix
-add-if-missing {
-  'type': 'raw-expr-matrix-profile',
-  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionAllGenesTPMLogp1Profile"),
-  'category' : 'expression',
-}
 
 # profile-map
 add-if-missing {

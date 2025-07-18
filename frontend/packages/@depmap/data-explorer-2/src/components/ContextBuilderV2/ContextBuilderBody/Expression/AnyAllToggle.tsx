@@ -34,13 +34,13 @@ function AnyAllToggle({ path, value }: Props) {
       </div>
       {value === "and" ? (
         <span>
-          of the following {path.length > 0 ? "sub-conditions " : "conditions "}
-          <b>must</b> be met:
+          of the following {path.length > 0 ? "grouped rules " : "rules "}
+          <b>must</b> match:
         </span>
       ) : (
         <span>
-          of the following {path.length > 0 ? "sub-conditions " : "conditions "}
-          <i>can</i> be met:
+          of the following {path.length > 0 ? "grouped rules " : "rules "}
+          <i>may</i> match:
         </span>
       )}
     </div>

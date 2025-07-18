@@ -137,6 +137,7 @@ function AllSelects({
       />
       <DataVersionSelect
         show={removeWrapperDiv || Boolean(dataType || dataset_id)}
+        shouldGroupByDataType={!dataType}
         isLoading={isLoading}
         isUnknownDataset={isUnknownDataset}
         value={dataset_id || null}

@@ -2,14 +2,17 @@ import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useReducer,
+  useRef,
   useState,
 } from "react";
 import {
   DataExplorerContextV2,
   DataExplorerContextVariable,
   isValidSliceQuery,
+  SliceQuery,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
 import { Expr, isBoolean } from "../utils/expressionUtils";
@@ -38,6 +41,14 @@ const ContextBuilderState = createContext({
   onClickSave: () => {},
   shouldShowValidation: false,
   isInitializing: false,
+  isEmptyExpression: false,
+  showTableView: false,
+  setShowTableView: (() => {}) as React.Dispatch<React.SetStateAction<boolean>>,
+  tableOnlySlices: [] as SliceQuery[],
+  setTableOnlySlices: (() => {}) as React.Dispatch<
+    React.SetStateAction<SliceQuery[]>
+  >,
+  uniqueVariableSlices: [] as SliceQuery[],
 });
 
 export const useContextBuilderState = () => {
@@ -125,6 +136,55 @@ export const ContextBuilderStateProvider = ({
     vars,
   ]);
 
+  const isEmptyExpression = useMemo(() => {
+    if (Object.keys(mainExpr).length === 1) {
+      const key = Object.keys(mainExpr)[0];
+      return Array.isArray(mainExpr[key]) && mainExpr[key].length === 0;
+    }
+
+    return false;
+  }, [mainExpr]);
+
+  const lastValidExpressionRef = useRef<Expr | null>(null);
+
+  useEffect(() => {
+    if (isCompleteExpression(mainExpr)) {
+      lastValidExpressionRef.current = mainExpr;
+    }
+  }, [mainExpr]);
+
+  const [showTableView, setShowTableView] = useState(false);
+  const [tableOnlySlices, setTableOnlySlices] = useState<SliceQuery[]>([]);
+
+  useEffect(() => {
+    if (
+      showTableView &&
+      !isCompleteExpression(mainExpr) &&
+      lastValidExpressionRef.current
+    ) {
+      dispatch({
+        type: "update-value",
+        payload: {
+          path: [],
+          value: lastValidExpressionRef.current as Expr,
+        },
+      });
+    }
+  }, [mainExpr, showTableView]);
+
+  const uniqueVariableSlices = useMemo(() => {
+    const jsonSlices = [...fullySpecifiedVars].map((varName) => {
+      const { dataset_id, identifier, identifier_type } = vars[varName];
+      return JSON.stringify({
+        dataset_id,
+        identifier,
+        identifier_type,
+      });
+    });
+
+    return [...new Set(jsonSlices)].map((s) => JSON.parse(s) as SliceQuery);
+  }, [fullySpecifiedVars, vars]);
+
   return (
     <ContextBuilderState.Provider
       value={{
@@ -139,6 +199,12 @@ export const ContextBuilderStateProvider = ({
         shouldShowValidation,
         onClickSave,
         isInitializing,
+        isEmptyExpression,
+        showTableView,
+        setShowTableView,
+        tableOnlySlices,
+        setTableOnlySlices,
+        uniqueVariableSlices,
         dimension_type: contextToEdit.dimension_type as string,
       }}
     >

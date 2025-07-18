@@ -101,9 +101,8 @@ class DiscourseClient:
                 # Store response results
                 db[url] = topics
                 db.commit()
-
             data = db[url]
-            assert data
+            assert data is not None, f"Failed to get category topics for {url}"
         return data
 
     def get_topic_main_post(self, topic_id: int):

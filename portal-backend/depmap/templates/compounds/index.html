@@ -8,9 +8,10 @@ output="public/css/view_entity.css", "css/entities/view_entity.scss",
 {% endassets %} {% endblock %} {% block content_class %}container-fluid{%
 endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
-show_dose_curve_tab = dose_curve_options | length > 0 %} {% set show_celfie_tab
-= has_celfie %} {% set show_aliases = compound_aliases|length > 0 %} {% block
-content %}
+show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
+show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
+show_heatmap_tab = show_heatmap_tab %} {% set show_celfie_tab = has_celfie %} {%
+set show_aliases = compound_aliases|length > 0 %} {% block content %}
 <br />
 <div class="header">
   <div>
@@ -54,7 +55,24 @@ active_tab_set = False %}
       >Dose curves</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %} {% if show_predictability_tab %}
+  {% set active_tab_set = True %} {% endif %} {% if show_dose_curve_tab_new %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#dose-curves-new"
+      aria-controls="dose-curves-new"
+      role="tab"
+      data-toggle="tab"
+      >Dose curves NEW</a
+    >
+  </li>
+  {% if show_heatmap_tab %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a href="#heatmap" aria-controls="heatmap" role="tab" data-toggle="tab"
+      >Heatmap</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %} {% set active_tab_set = True %} {%
+  endif %}{% if show_predictability_tab %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#predictability"
@@ -105,16 +123,7 @@ active_tab_set = False %}
     id="dependency"
   >
     <div class="sticky_datasets" id="dataset">
-      {# id is just for sticky_datasets #}
       <div id="entity-summary-root"></div>
-      <script>
-        $(function () { // document ready for middle-of-html js
-            DepMap.initEntitySummary(
-                "entity-summary-root",
-                {{summary|tojson}},
-            );
-        })
-      </script>
     </div>
     {% set active_tab_set = True %}
   </div>
@@ -125,15 +134,24 @@ active_tab_set = False %}
     id="dose-curves"
   >
     <div id="dose-curves-tab-content"></div>
-    <script>
-      $(function () { // document ready for middle-of-html js
-          DepMap.initDoseResponseTab(
-              "dose-curves-tab-content",
-          {{dose_curve_options | tojson}},
-          "{{ compound_units }}"
-      );
-      });
-    </script>
+    {% set active_tab_set = True %}
+  </div>
+  {% endif %} {% if show_dose_curve_tab_new %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="dose-curves-new"
+  >
+    <div id="new-dose-curves-tab-content"></div>
+    {% set active_tab_set = True %}
+  </div>
+  {% endif %} {% if show_heatmap_tab %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="heatmap"
+  >
+    <div id="heatmap-tab-content"></div>
     {% set active_tab_set = True %}
   </div>
   {% endif %} {% if show_predictability_tab %}
@@ -161,7 +179,20 @@ active_tab_set = False %}
 <p style="padding: 15px 0">No data was found on this compound.</p>
 {% endif %} {% endblock %} {% block js %}
 <script>
-  // This is the only place we still use jquery-stickytabs. It should be
+  window.DepMap = window.DepMap || {};
+  DepMap.initOverviewTab = function() {
+    // async_cards.js logic
+    {% include "entities/partials/async_cards.js" %}
+    // loadAsyncTile calls
+    {% for group in order %}
+      {% for tile_name, _ in group %}
+        loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", {{tile_name | tojson}}, {{name | tojson }}, "{{tile_name}}_placeholder");
+      {% endfor %}
+    {% endfor %}
+  };
+</script>
+<script>
+   // This is the only place we still use jquery-stickytabs. It should be
   // removed after this page is converted to React because it doesn't
   // play nice with our React Tabs component (it wants to stomp out the
   // ?tab= query parameter).
@@ -170,33 +201,61 @@ active_tab_set = False %}
     for (let context of $(".sticky_datasets")) {
       $(context).stickyDatasets();
     }
-  });
-</script>
-<script type="text/javascript">
-  $(function () { // document ready for middle-of-html js
-      {% include "entities/partials/async_cards.js" %}
-      {% for group in order %}
-        {% for tile_name, _ in group %}
-          loadAsyncTile("{{ config.APPLICATION_ROOT }}", "compound", {{tile_name | tojson}}, {{name | tojson }}, "{{tile_name}}_placeholder")
-        {% endfor %}
-      {% endfor %}
-  });
-  function clickTab(target) { // outside for function definition
-      $(`.nav-tabs a[href="${target}"]`).click();
-  }
-</script>
-{% if show_predictability_tab %}
-<script>
-  $(function () { // document ready for middle-of-html js
-      DepMap.initPredictiveTab(
+    // Lazy load tab content
+    var loadedTabs = {};
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+      var target = $(e.target).attr('href');
+      if (loadedTabs[target]) return;
+      if (target === "#overview") {
+        DepMap.initOverviewTab();
+      } else if (target === "#dependency") {
+        DepMap.initEntitySummary(
+          "entity-summary-root",
+          {{ summary | tojson }}
+        );
+      } else if (target === "#dose-curves") {
+        DepMap.initDoseResponseTab(
+          "dose-curves-tab-content",
+          {{ dose_curve_options | tojson }},
+          "{{ compound_units }}"
+        );
+      } else if (target === "#dose-curves-new") {
+        DepMap.initDoseCurvesTab(
+          "new-dose-curves-tab-content",
+          {{ name | tojson }},
+          {{ compound_id | tojson }},
+          {{ dose_curve_options_new | tojson }},
+          "{{ compound_units }}"
+        );
+      } else if (target === "#heatmap") {
+        DepMap.initHeatmapTab(
+          "heatmap-tab-content",
+          {{ name | tojson }},
+          {{ compound_id | tojson }},
+          {{ dose_curve_options_new | tojson }},
+          "{{ compound_units }}"
+        );
+      } else if (target === "#predictability") {
+        DepMap.initPredictiveTab(
           'predictive-tab-root',
           {{ name | tojson }},
           {{ name | tojson }},
           "compound",
-          {{ predictability_custom_downloads_link | tojson }} ,
+          {{ predictability_custom_downloads_link | tojson }},
           {{ predictability_methodology_link | tojson }}
-      );
+        );
+      }
+      loadedTabs[target] = true;
+    });
+    // Optionally, trigger the active tab on page load
+    var $active = $('.nav-tabs li.active a');
+    if ($active.length) {
+      $active.trigger('shown.bs.tab');
+    }
   });
+  function clickTab(target) {
+    $(`.nav-tabs a[href="${target}"]`).click();
+  }
 </script>
-{% endif %} {% endblock %} {% block toxic_js %} {% include "mailchimp.html" %}
-{% endblock %}
+{% endblock %} {% block toxic_js %} {% include "mailchimp.html" %} {% endblock
+%}

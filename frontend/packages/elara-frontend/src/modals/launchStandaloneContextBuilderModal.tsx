@@ -1,6 +1,8 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
 import { DataExplorerContextV2 } from "@depmap/types";
+import PlotlyLoader from "src/plot/components/PlotlyLoader";
 
 const ElaraStandaloneContextBuilder = React.lazy(
   () =>
@@ -33,18 +35,20 @@ export default function launchStandaloneContextBuilderModal(
 
   ReactDOM.render(
     <React.Suspense fallback={null}>
-      <ElaraStandaloneContextBuilder
-        context={context}
-        hash={hash}
-        onSave={onSave}
-        onHide={() => {
-          if (onHide) {
-            onHide();
-          }
+      <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+        <ElaraStandaloneContextBuilder
+          context={context}
+          hash={hash}
+          onSave={onSave}
+          onHide={() => {
+            if (onHide) {
+              onHide();
+            }
 
-          hide();
-        }}
-      />
+            hide();
+          }}
+        />
+      </PlotlyLoaderProvider>
     </React.Suspense>,
     container
   );

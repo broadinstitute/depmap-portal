@@ -46,8 +46,6 @@ function usePrecomputedAssocationData({
   const stringifedDimension = JSON.stringify(dimension);
 
   useEffect(() => {
-    setIsLoading(true);
-
     const parsed = JSON.parse(stringifedDimension);
 
     if (!isCompleteDimension(parsed)) {
@@ -55,16 +53,19 @@ function usePrecomputedAssocationData({
       return;
     }
 
-    const sliceQuery = convertDimensionToSliceQuery(parsed);
+    (async () => {
+      setIsLoading(true);
 
-    if (!sliceQuery) {
-      setError(true);
-      return;
-    }
+      try {
+        const sliceQuery = await convertDimensionToSliceQuery(parsed);
 
-    api
-      .fetchAssociations(sliceQuery)
-      .then((rawData) => {
+        if (!sliceQuery) {
+          setIsLoading(false);
+          setError(true);
+          return;
+        }
+
+        const rawData = await api.fetchAssociations(sliceQuery);
         const lookup: DatasetLookup = {};
 
         rawData.associated_datasets.forEach((datasetInfo) => {
@@ -76,13 +77,14 @@ function usePrecomputedAssocationData({
         setDatasetLookup(lookup);
         setDatasetName(rawData.dataset_name);
         setDimensionLabel(rawData.dimension_label);
-        setIsLoading(false);
         setError(false);
-      })
-      .catch((e) => {
+      } catch (e) {
         window.console.error(e);
         setError(true);
-      });
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   }, [api, stringifedDimension]);
 
   const sortedFilteredAssociatedDimensions = useMemo(() => {
