@@ -1,5 +1,16 @@
 import qs from "qs";
 
+const cache: Record<string, Promise<unknown> | null> = {};
+let useCache = false;
+
+export const cacheOn = () => {
+  useCache = true;
+};
+
+export const cacheOff = () => {
+  useCache = false;
+};
+
 async function request<T>(url: string, options: RequestInit): Promise<T> {
   let response: Response;
 
@@ -61,33 +72,75 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
 const makeGetJson = (urlPrefix: string) => <T>(
   url: string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  queryParameters?: Record<string, any>
+  queryParameters?: Record<string, unknown>
 ): Promise<T> => {
-  let fullUrl = `${urlPrefix}${url}`;
+  const getJson = () => {
+    let fullUrl = `${urlPrefix}${url}`;
 
-  if (queryParameters) {
-    fullUrl += "?" + qs.stringify(queryParameters);
+    if (
+      queryParameters &&
+      Object.values(queryParameters).some((val) => val !== undefined)
+    ) {
+      fullUrl += "?" + qs.stringify(queryParameters, { arrayFormat: "repeat" });
+    }
+
+    return request<T>(fullUrl, { method: "GET" });
+  };
+
+  if (!useCache) {
+    return getJson();
   }
 
-  return request<T>(fullUrl, { method: "GET" });
+  const json = JSON.stringify(queryParameters || {});
+  const cacheKey = `${url}-${json}`;
+
+  if (!cache[cacheKey]) {
+    cache[cacheKey] = getJson().catch((e) => {
+      delete cache[cacheKey];
+      throw e;
+    });
+  }
+
+  return cache[cacheKey] as Promise<T>;
 };
 
 const makePostJson = (urlPrefix: string) => async <T>(
   url: string,
   payload: unknown
 ): Promise<T> => {
-  return request<T>(`${urlPrefix}${url}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  const postJson = () => {
+    return request<T>(`${urlPrefix}${url}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  };
+
+  if (!useCache) {
+    return postJson();
+  }
+
+  const json = JSON.stringify(payload || {});
+  const cacheKey = `${url}-${json}`;
+
+  if (!cache[cacheKey]) {
+    cache[cacheKey] = postJson().catch((e) => {
+      delete cache[cacheKey];
+      throw e;
+    });
+  }
+
+  return cache[cacheKey] as Promise<T>;
 };
 
 const makePatchJson = (urlPrefix: string) => async <T>(
   url: string,
   payload: unknown
 ): Promise<T> => {
+  if (useCache) {
+    window.console.warn("PATCH requests cannot be cached");
+  }
+
   return request<T>(`${urlPrefix}${url}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -99,6 +152,10 @@ const makeDeleteJson = (urlPrefix: string) => async <T>(
   url: string,
   payload?: unknown
 ): Promise<T> => {
+  if (useCache) {
+    window.console.warn("DELETE requests cannot be cached");
+  }
+
   const options: RequestInit = {
     method: "DELETE",
     headers: { "Content-Type": "application/json" },
@@ -118,6 +175,10 @@ const makePostMultipart = (urlPrefix: string) => async <T>(
     Blob | string | File | number | boolean | null | undefined
   >
 ): Promise<T> => {
+  if (useCache) {
+    window.console.warn("Multipart POST requests cannot be cached");
+  }
+
   const formData = new FormData();
 
   Object.entries(args).forEach(([key, value]) => {
@@ -139,6 +200,10 @@ const makePatchMultipart = (urlPrefix: string) => async <T>(
     Blob | string | File | number | boolean | null | undefined
   >
 ): Promise<T> => {
+  if (useCache) {
+    window.console.warn("Multipart PATCH requests cannot be cached");
+  }
+
   const formData = new FormData();
 
   Object.entries(args).forEach(([key, value]) => {

@@ -74,16 +74,18 @@ export const getUrlPrefix = () => {
 };
 
 export function toPortalLink(relativeUrl: string) {
-  const assetUrl = relativeUrl
-    .trim()
-    .replace(/^\//, "")
-    .split("/")
-    .map(encodeURIComponent)
-    .join("/");
-  let fullUrl = `${encodeURI(getUrlPrefix())}/${assetUrl}`;
+  if (isElara) {
+    throw new Error("Portal links are not supported in Elara!");
+  }
 
-  if (!fullUrl.startsWith("/")) {
-    fullUrl = "/" + fullUrl;
+  const trimmed = relativeUrl.trim().replace(/^\//, "");
+  const [path, queryAndFragment] = trimmed.split(/(?=[?#])/); // Split at first ? or #
+
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  let fullUrl = `${encodeURI(getUrlPrefix())}/${encodedPath}`;
+
+  if (queryAndFragment) {
+    fullUrl += queryAndFragment; // preserve ?query=... and/or #fragment
   }
 
   return fullUrl;
@@ -93,24 +95,14 @@ export function toPortalLink(relativeUrl: string) {
 // Use this for images (i.e. files in the img/ subfolder) and for other
 // static resources.
 export function toStaticUrl(relativeUrl: string) {
-  const assetUrl = relativeUrl
-    .trim()
-    .replace(/^\//, "")
-    .split("/")
-    .map(encodeURIComponent)
-    .join("/");
+  const trimmed = relativeUrl.trim().replace(/^\//, "");
+  const [path, queryAndFragment] = trimmed.split(/(?=[?#])/); // Split at first ? or #
 
-  if (isElara) {
-    return `/static/${assetUrl}`;
-  }
+  const encodedPath = path.split("/").map(encodeURIComponent).join("/");
+  const assetUrl = `${encodedPath}${queryAndFragment || ""}`;
+  const staticFolder = isElara ? "elara/static" : "static";
 
-  let fullUrl = `${encodeURI(getUrlPrefix())}/static/${assetUrl}`;
-
-  if (!fullUrl.startsWith("/")) {
-    fullUrl = "/" + fullUrl;
-  }
-
-  return fullUrl;
+  return `${encodeURI(getUrlPrefix())}/${staticFolder}/${assetUrl}`;
 }
 
 // Currently, the `errorHandler` doesn't really do anything special outside of

@@ -9,7 +9,7 @@ import {
   EnrichedLineagesTileData,
   SearchOptionsByTreeType,
 } from "@depmap/types";
-import { getJson, getJsonCached } from "../client";
+import { getJson } from "../client";
 
 enum DataType {
   PRISMRepurposing,
@@ -120,7 +120,7 @@ export function getContextExplorerBoxPlotData(
   min_frac_dep_in: number,
   doShowPositiveEffectSizes: boolean
 ) {
-  return getJsonCached<ContextPlotBoxData>(
+  return getJson<ContextPlotBoxData>(
     "/api/context_explorer/context_box_plot_data",
     {
       selected_subtype_code,
@@ -151,17 +151,14 @@ export function getContextExplorerDoseResponsePoints(
   selectedLevel: number,
   treeType: string
 ) {
-  return getJsonCached<DoseCurveData>(
-    "/api/context_explorer/context_dose_curves",
-    {
-      dataset_name: datasetName,
-      subtype_code: subtypeCode,
-      entity_full_label: compoundLabel,
-      level: selectedLevel,
-      out_group_type: outGroupType,
-      tree_type: treeType,
-    }
-  );
+  return getJson<DoseCurveData>("/api/context_explorer/context_dose_curves", {
+    dataset_name: datasetName,
+    subtype_code: subtypeCode,
+    entity_full_label: compoundLabel,
+    level: selectedLevel,
+    out_group_type: outGroupType,
+    tree_type: treeType,
+  });
 }
 
 export function getContextPath(selectedCode: string) {

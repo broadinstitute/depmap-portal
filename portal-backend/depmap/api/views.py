@@ -9,6 +9,7 @@ from depmap.health_check.api import namespace as health_check_namespace
 from depmap.context_explorer.api import namespace as context_explorer_namespace
 from depmap.dataset_manager.api import namespace as dataset_manager_namespace
 from depmap.data_page.api import namespace as data_page_namespace
+from depmap.compound.api import namespace as compound_namespace
 from depmap.predictability_prototype.api import (
     namespace as predictability_prototype_namespace,
 )
@@ -37,6 +38,7 @@ api.add_namespace(health_check_namespace)
 api.add_namespace(celery_namespace)
 api.add_namespace(download_namespace)
 api.add_namespace(dataset_manager_namespace)
+api.add_namespace(compound_namespace)
 
 
 @api.route("/error")

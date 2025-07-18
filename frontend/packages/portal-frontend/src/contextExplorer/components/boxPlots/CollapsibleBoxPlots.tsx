@@ -170,7 +170,7 @@ function CollapsibleBoxPlots({
 
   const xAxisTitle = useMemo(() => {
     if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-      return "AUC";
+      return boxPlotData?.dataset_units || "";
     }
 
     if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
@@ -178,7 +178,7 @@ function CollapsibleBoxPlots({
     }
 
     return "Gene Effect";
-  }, [datasetId]);
+  }, [datasetId, boxPlotData]);
 
   const xAxisRange = useMemo(() => {
     const sigSelectedData =
@@ -213,8 +213,20 @@ function CollapsibleBoxPlots({
     return [min, max];
   }, [boxPlotData, otherBoxData]);
 
+  // HACK: so that Plotly will resize the plot when the user switches to this tab.
+  // Without this hack, if the plot loads while this tab is inactive, Plotly does not
+  // properly calculate plot size, and this can cause the plot to drastically overflow its bounds.
+  const [key, setKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const handler = () => setKey((k) => k + 1);
+    window.addEventListener("changeTab:overview", handler);
+    return () => window.removeEventListener("changeTab:overview", handler);
+  }, []);
+
   return (
     <PanelGroup
+      key={key}
       accordion
       id="context-explorer-box-plots"
       activeKey={activeKey}
@@ -238,30 +250,32 @@ function CollapsibleBoxPlots({
       )}
       <>
         {otherSigBoxData?.map((otherCard: OtherSigBoxCardData) =>
-          Object.keys(otherCard).map((level0Code) => (
-            <>
-              {otherCard[level0Code].levelZeroPlotInfo !== undefined &&
-                otherCard[level0Code].subContextInfo.length > 0 && (
-                  <Panel
-                    eventKey={level0Code}
-                    key={`otherSigLevelZeroBoxData${level0Code}`}
-                  >
-                    <SignificantBoxPlotCardPanel
-                      selectedCode={selectedCode}
-                      activeKey={activeKey}
-                      level0Code={level0Code}
-                      xAxisRange={xAxisRange}
-                      card={otherCard}
-                      entityType={entityType}
-                      drugDottedLine={drugDottedLine}
-                      urlPrefix={urlPrefix}
-                      tab={tab}
-                      xAxisTitle={xAxisTitle}
-                    />
-                  </Panel>
-                )}
-            </>
-          ))
+          Object.keys(otherCard)
+            .filter((level0Code) => {
+              return (
+                otherCard[level0Code].levelZeroPlotInfo !== undefined &&
+                otherCard[level0Code].subContextInfo.length > 0
+              );
+            })
+            .map((level0Code) => (
+              <Panel
+                eventKey={level0Code}
+                key={`otherSigLevelZeroBoxData${level0Code}`}
+              >
+                <SignificantBoxPlotCardPanel
+                  selectedCode={selectedCode}
+                  activeKey={activeKey}
+                  level0Code={level0Code}
+                  xAxisRange={xAxisRange}
+                  card={otherCard}
+                  entityType={entityType}
+                  drugDottedLine={drugDottedLine}
+                  urlPrefix={urlPrefix}
+                  tab={tab}
+                  xAxisTitle={xAxisTitle}
+                />
+              </Panel>
+            ))
         )}
         <OtherSolidAndHemeBoxPlots
           otherBoxData={otherBoxData}

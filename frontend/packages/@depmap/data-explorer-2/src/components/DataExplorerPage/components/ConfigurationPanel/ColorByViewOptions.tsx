@@ -15,7 +15,7 @@ import TabularDatasetSelect from "./TabularDatasetSelect";
 import styles from "../../styles/ConfigurationPanel.scss";
 
 const DimensionSelect = isElara
-  ? (DimensionSelectV2 as typeof DimensionSelectV1)
+  ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
   : DimensionSelectV1;
 
 const SliceLabelSelect = isElara

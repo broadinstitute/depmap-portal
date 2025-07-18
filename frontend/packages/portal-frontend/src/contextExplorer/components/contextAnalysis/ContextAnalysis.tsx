@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { legacyPortalAPI } from "@depmap/api";
+import { cached, legacyPortalAPI } from "@depmap/api";
 import { toPortalLink } from "@depmap/globals";
 import {
   ContextAnalysisTableType,
@@ -305,7 +305,9 @@ function ContextAnalysis({
     (tableData: ContextAnalysisTableType) => {
       const getDrugXAxisLabel = () => {
         if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-          return "In-context mean AUC";
+          // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
+          // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
+          return `In-context mean AUC`;
         }
 
         return "In-context mean log2(viability)";
@@ -313,7 +315,7 @@ function ContextAnalysis({
 
       const getDrugYAxisLabel = () => {
         if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-          return "Out-group mean AUC";
+          return `Out-group mean AUC`;
         }
         return "Out-group mean log2(viability)";
       };
@@ -691,7 +693,9 @@ function ContextAnalysis({
       // setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
       setBoxplotError(false);
-      const boxplotPromise = legacyPortalAPI.getContextExplorerBoxPlotData(
+      const boxplotPromise = cached(
+        legacyPortalAPI
+      ).getContextExplorerBoxPlotData(
         selectedContextNameInfo.subtype_code,
         treeType,
         datasetId,
@@ -1108,7 +1112,7 @@ function ContextAnalysis({
                 selectedOutGroupType={outgroup.value}
                 selectedTreeType={treeType}
                 getContextExplorerDoseResponsePoints={
-                  legacyPortalAPI.getContextExplorerDoseResponsePoints
+                  cached(legacyPortalAPI).getContextExplorerDoseResponsePoints
                 }
               />
             </div>

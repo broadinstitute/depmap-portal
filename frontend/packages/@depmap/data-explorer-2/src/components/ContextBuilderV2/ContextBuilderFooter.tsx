@@ -7,7 +7,7 @@ interface Props {
 }
 
 function ContextBuilderFooter({ onClickCancel }: Props) {
-  const { onClickSave } = useContextBuilderState();
+  const { onClickSave, isEmptyExpression } = useContextBuilderState();
 
   return (
     <Modal.Footer>
@@ -18,7 +18,12 @@ function ContextBuilderFooter({ onClickCancel }: Props) {
       >
         Cancel
       </Button>
-      <Button id="save-context-builder" bsStyle="primary" onClick={onClickSave}>
+      <Button
+        id="save-context-builder"
+        bsStyle="primary"
+        onClick={onClickSave}
+        disabled={isEmptyExpression}
+      >
         Save
       </Button>
     </Modal.Footer>

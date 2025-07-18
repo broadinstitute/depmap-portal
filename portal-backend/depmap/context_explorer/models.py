@@ -54,6 +54,7 @@ class ContextPlotBoxData:
     drug_dotted_line: Any
     entity_label: str
     entity_overview_page_label: str
+    dataset_units: str
 
 
 @dataclass

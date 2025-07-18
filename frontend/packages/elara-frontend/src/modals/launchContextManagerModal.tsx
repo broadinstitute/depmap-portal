@@ -1,5 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
+import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
+import PlotlyLoader from "src/plot/components/PlotlyLoader";
 
 const ElaraContextManager = React.lazy(
   () =>
@@ -20,10 +22,12 @@ export default function launchContextManagerModal(options?: {
 
   ReactDOM.render(
     <React.Suspense fallback={null}>
-      <ElaraContextManager
-        onHide={hide}
-        initialContextType={options?.initialContextType}
-      />
+      <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+        <ElaraContextManager
+          onHide={hide}
+          initialContextType={options?.initialContextType}
+        />
+      </PlotlyLoaderProvider>
     </React.Suspense>,
     container
   );

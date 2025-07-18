@@ -33,12 +33,17 @@ RUN virtualenv /install/dsub && \
 
 # install sparkles v5 (requires python==3.10 )
 RUN virtualenv --python=python3.10 /install/sparkles && \
-    /install/sparkles/bin/pip install https://github.com/broadinstitute/sparklespray/releases/download/v5.4.0/sparklespray-5.4.0.tar.gz && \
+    /install/sparkles/bin/pip install https://github.com/broadinstitute/sparklespray/releases/download/v5.4.1/sparklespray-5.4.1.tar.gz && \
     ln -s /install/sparkles/bin/sparkles /root/.local/bin
 
-# install gsutil
-RUN virtualenv /install/gsutil && /install/gsutil/bin/pip install gsutil && \
-    ln -s /install/gsutil/bin/gsutil /root/.local/bin
+# install gcloud SDK
+RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" \
+    > /etc/apt/sources.list.d/google-cloud-sdk.list && \
+    curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
+    gpg --dearmor > /usr/share/keyrings/cloud.google.gpg && \
+    apt-get update && \
+    apt-get install -y google-cloud-sdk && \
+    ln -s $(which gsutil) /root/.local/bin/gsutil
 
 # install conseq in virtual environment
 COPY conseq-settings /root/.conseq
