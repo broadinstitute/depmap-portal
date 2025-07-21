@@ -8,6 +8,18 @@ interface Props {
   onClearSelection: () => void;
 }
 
+const hideStandardPlotlyZoomHandles = (plot: PlotlyHTMLElement) => {
+  const dragLayer = plot.querySelector(".draglayer") as SVGGElement;
+
+  const rects = dragLayer.querySelectorAll(
+    ".drag:not(.nsewdrag)"
+  ) as NodeListOf<SVGRectElement>;
+
+  [...rects].forEach((el) => {
+    el.style.setProperty("display", "none");
+  });
+};
+
 const addMouseListeners = ({
   plot,
   onMouseOut,
@@ -148,6 +160,7 @@ function customizeDragLayer({
   if ((plot as any).alreadyConfigured) {
     return;
   }
+  hideStandardPlotlyZoomHandles(plot);
   addMouseListeners({
     plot,
     onMouseOut,

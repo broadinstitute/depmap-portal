@@ -26,6 +26,12 @@ type SelectionOptions<TData> = {
   getRowId?: (row: TData) => string;
   enableStickyFirstColumn?: boolean;
   defaultSort?: (a: TData, b: TData) => number;
+  columnVisibility?: Record<string, boolean>;
+  onColumnVisibilityChange?: (
+    updater:
+      | Record<string, boolean>
+      | ((old: Record<string, boolean>) => Record<string, boolean>)
+  ) => void;
 };
 
 export function useTableInstance<TData extends RowData>(
@@ -41,6 +47,8 @@ export function useTableInstance<TData extends RowData>(
     getRowId,
     enableStickyFirstColumn = false,
     defaultSort = undefined,
+    columnVisibility: controlledColumnVisibility,
+    onColumnVisibilityChange,
   } = selectionOptions;
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -48,6 +56,9 @@ export function useTableInstance<TData extends RowData>(
     internalRowSelection,
     setInternalRowSelection,
   ] = useState<RowSelectionState>({});
+  const [internalColumnVisibility, setInternalColumnVisibility] = useState<
+    Record<string, boolean>
+  >({});
   const [containerWidth, setContainerWidth] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -69,6 +80,12 @@ export function useTableInstance<TData extends RowData>(
   const rowSelection = controlledRowSelection ?? internalRowSelection;
   const handleRowSelectionChange =
     onRowSelectionChange ?? setInternalRowSelection;
+
+  // Use controlled column visibility if provided, otherwise use internal state
+  const columnVisibility =
+    controlledColumnVisibility ?? internalColumnVisibility;
+  const handleColumnVisibilityChange =
+    onColumnVisibilityChange ?? setInternalColumnVisibility;
 
   // Function to synchronize header scroll with body scroll
   const syncScroll = useCallback((scrollLeft: number) => {
@@ -158,9 +175,11 @@ export function useTableInstance<TData extends RowData>(
       sorting,
       rowSelection,
       columnSizing,
+      columnVisibility,
     },
     onSortingChange: setSorting,
     onRowSelectionChange: handleRowSelectionChange,
+    onColumnVisibilityChange: handleColumnVisibilityChange,
     onColumnSizingChange: (updater) => {
       if (typeof updater === "function") {
         const newSizing = updater(columnSizing);
