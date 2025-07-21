@@ -59,7 +59,6 @@ function FiltersPanel({
   return (
     <div className={styles.FiltersPanel}>
       <h4 className={styles.sectionTitle}>Dataset</h4>
-      <h6>More dataset options coming soon!</h6>
       <Select
         defaultValue={datasetSelectOptions[0]}
         value={selectedDatasetOption}
