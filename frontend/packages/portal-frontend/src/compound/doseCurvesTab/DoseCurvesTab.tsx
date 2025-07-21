@@ -7,7 +7,7 @@ import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
-import { DoseTableDataProvider } from "../hooks/DoseViabilityDataContext";
+import { DoseViabilityDataProvider } from "../hooks/DoseViabilityDataContext";
 
 interface DoseCurvesTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -59,7 +59,10 @@ function DoseCurvesTab({
     <DeprecatedDataExplorerApiProvider
       evaluateLegacyContext={evaluateLegacyContext}
     >
-      <DoseTableDataProvider dataset={selectedDataset} compoundId={compoundId}>
+      <DoseViabilityDataProvider
+        dataset={selectedDataset}
+        compoundId={compoundId}
+      >
         <div className={styles.doseCurvesTabGrid}>
           <div className={styles.doseCurvesTabFilters}>
             <FiltersPanel
@@ -93,7 +96,7 @@ function DoseCurvesTab({
             />
           </div>
         </div>
-      </DoseTableDataProvider>
+      </DoseViabilityDataProvider>
     </DeprecatedDataExplorerApiProvider>
   );
 }
