@@ -1,6 +1,10 @@
-import { useEffect, useState } from "react";
-import { DRCDatasetOptions } from "@depmap/types";
-import { breadboxAPI, cached } from "@depmap/api";
+import { useEffect, useRef, useState } from "react";
+import {
+  CompoundDoseCurveData,
+  CurveParams,
+  DRCDatasetOptions,
+} from "@depmap/types";
+import { breadboxAPI, legacyPortalAPI, cached } from "@depmap/api";
 import { TableFormattedData } from "../types";
 import { fetchMetadata } from "../fetchDataHelpers";
 
@@ -8,7 +12,8 @@ function buildTableData(
   viabilityAtDose: any,
   dosefMetadata: any,
   modelMetadata: any,
-  aucs: Record<string, number>
+  aucs: Record<string, number>,
+  doseCurvesResponse: CompoundDoseCurveData
 ): { table: TableFormattedData; orderedDoseColumns: string[] } {
   const tableLookup: Record<string, Record<string, number>> = {};
   const allDoseKeys = new Set<string>();
@@ -34,6 +39,16 @@ function buildTableData(
   const orderedDoseColumns = Array.from(allDoseKeys).sort(
     (a, b) => (doseKeyToVal.get(a) ?? 0) - (doseKeyToVal.get(b) ?? 0)
   );
+  // Build a lookup for curve_params by id for fast access
+  const curveParamsById: Record<string, CurveParams> = {};
+  if (doseCurvesResponse && Array.isArray(doseCurvesResponse.curve_params)) {
+    for (const params of doseCurvesResponse.curve_params) {
+      if (params.id) {
+        curveParamsById[params.id] = params;
+      }
+    }
+  }
+
   const table = Object.entries(tableLookup).map(([modelId, doseMap]) => {
     const row: any = {
       cellLine: modelMetadata.CellLineName[modelId],
@@ -43,12 +58,35 @@ function buildTableData(
     orderedDoseColumns.forEach((doseKey) => {
       row[doseKey] = doseMap[doseKey];
     });
+    // Add curve params if available
+    const curveParams = curveParamsById[modelId];
+    if (curveParams) {
+      row.ec50 = curveParams.ec50;
+      row.slope = curveParams.slope;
+      row.lowerAsymptote = curveParams.lowerAsymptote;
+      row.upperAsymptote = curveParams.upperAsymptote;
+    }
     return row;
   });
   return { table, orderedDoseColumns };
 }
 
-export default function useDoseTableData(
+export async function fetchCompoundDoseCurveData(
+  compoundId: string,
+  drcDatasetLabel: string,
+  replicateDataset: string
+): Promise<CompoundDoseCurveData | null> {
+  const dapi = legacyPortalAPI;
+  const curveData = await cached(dapi).getCompoundDoseCurveData!(
+    compoundId,
+    drcDatasetLabel,
+    replicateDataset
+  );
+
+  return curveData;
+}
+
+export default function useDoseViabilityData(
   dataset: DRCDatasetOptions | null,
   compoundId: string
 ) {
@@ -57,13 +95,24 @@ export default function useDoseTableData(
     setTableFormattedData,
   ] = useState<TableFormattedData | null>(null);
   const [doseColumnNames, setDoseColumnNames] = useState<string[]>([]);
+  const [
+    doseCurveData,
+    setDoseCurveData,
+  ] = useState<CompoundDoseCurveData | null>(null);
+  const [doseMin, setDoseMin] = useState<number | null>(null);
+  const [doseMax, setDoseMax] = useState<number | null>(null);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
+    requestIdRef.current += 1;
+    const thisRequestId = requestIdRef.current;
     if (!dataset) {
       setTableFormattedData(null);
       setDoseColumnNames([]);
+      setDoseCurveData(null);
       setError(false);
       setIsLoading(false);
       return;
@@ -77,9 +126,7 @@ export default function useDoseTableData(
         const datasetFeatures = await cached(bbapi).getDatasetFeatures(
           dataset.viability_dataset_given_id
         );
-
         const featureLabels = datasetFeatures.map((df) => df.label);
-
         const viabilityFeatureLabels = featureLabels.filter((label) =>
           label.startsWith(compoundId)
         );
@@ -89,6 +136,7 @@ export default function useDoseTableData(
           doseMetadata,
           modelMetadata,
           aucsListResponse,
+          doseCurvesResponse,
         ] = await Promise.all([
           cached(bbapi).getMatrixDatasetData(
             dataset.viability_dataset_given_id,
@@ -106,15 +154,28 @@ export default function useDoseTableData(
             ["Dose", "DoseUnit"],
             bbapi
           ),
-          fetchMetadata<{
-            CellLineName: Record<string, string>;
-          }>("depmap_model", null, ["CellLineName"], bbapi),
+          // For getting model id --> cell line name
+          fetchMetadata<{ CellLineName: Record<string, string> }>(
+            "depmap_model",
+            null,
+            ["CellLineName"],
+            bbapi
+          ),
+          // For getting the AUC column of the dose viability table.
           cached(bbapi).getMatrixDatasetData(dataset.auc_dataset_given_id, {
             features: [compoundId],
             feature_identifier: "id",
           }),
+          // For getting dose curves plot data, including replicates. Curve_params are also
+          // added to the dose viability table below.
+          fetchCompoundDoseCurveData(
+            compoundId,
+            dataset.drc_dataset_label,
+            dataset.replicate_dataset
+          ),
         ]);
 
+        // AUC will be an additional column added to the table
         const aucs = aucsListResponse[compoundId];
 
         // Build table and columns
@@ -122,21 +183,47 @@ export default function useDoseTableData(
           viabilityAtDose,
           doseMetadata,
           modelMetadata,
-          aucs
+          aucs,
+          doseCurvesResponse! // For adding the dose curve params as columns to the table
         );
+
+        // For determining the min/max of dose curve axes
+        const doseValues = Array.isArray(orderedDoseColumns)
+          ? orderedDoseColumns
+              .map((d) => parseFloat(d.split(" ")[0]))
+              .filter((n) => !Number.isNaN(n))
+          : [];
+
+        // Don't set state if the request is stale to avoid a race condition that
+        // could cause incorrect data to display in the UI as a result of rapidly
+        // changing props (e.g. switching between different datasets).
+        if (requestIdRef.current !== thisRequestId) return;
+        setDoseMin(doseValues.length > 0 ? Math.min(...doseValues) : null);
+        setDoseMax(doseValues.length > 0 ? Math.max(...doseValues) : null);
 
         setTableFormattedData(table);
         setDoseColumnNames(orderedDoseColumns);
+        setDoseCurveData(doseCurvesResponse);
         setIsLoading(false);
       } catch (e) {
+        if (requestIdRef.current !== thisRequestId) return;
         window.console.error(e);
         setTableFormattedData(null);
         setDoseColumnNames([]);
+        setDoseCurveData(null);
         setError(true);
         setIsLoading(false);
       }
     })();
   }, [dataset, compoundId]);
 
-  return { tableFormattedData, doseColumnNames, error, isLoading };
+  return {
+    tableFormattedData,
+    doseCurveData,
+    doseColumnNames,
+    doseMin,
+    doseMax,
+    error,
+    isLoading,
+  };
 }
