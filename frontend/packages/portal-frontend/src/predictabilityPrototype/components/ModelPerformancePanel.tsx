@@ -157,7 +157,7 @@ const ModelPerformancePanel = ({
                           }
                           featureTypeLabel={
                             modelPerformanceInfo.feature_summaries[feature]
-                              .feature_type_label
+                              .feature_type
                           }
                           relatedType={
                             modelPerformanceInfo.feature_summaries[feature]

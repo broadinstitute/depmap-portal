@@ -64,7 +64,7 @@ export type FeatureInfoSummary = {
 
 export type FeatureSummary = {
   feature_label: string;
-  feature_type_label: string;
+  feature_type: string;
   dim_type: string;
   feature_importance: number;
   related_type: RelatedType | null;
