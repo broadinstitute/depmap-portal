@@ -48,7 +48,7 @@ function HeatmapTab({
         setSelectedDatasetOption(selection);
         const selectedCompoundDataset = datasetOptions.filter(
           (option: DRCDatasetOptions) =>
-            option.viability_dataset_id === selection.value
+            option.viability_dataset_given_id === selection.value
         )[0];
         setSelectedDataset(selectedCompoundDataset);
         // setShowInsensitiveLines(true);
@@ -81,7 +81,7 @@ function HeatmapTab({
               datasetOptions={datasetOptions}
               selectedDatasetOption={
                 selectedDatasetOption || {
-                  value: datasetOptions[0].viability_dataset_id,
+                  value: datasetOptions[0].viability_dataset_given_id,
                   label: datasetOptions[0].display_name,
                 }
               }

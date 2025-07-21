@@ -4,7 +4,6 @@ import os
 import tempfile
 from typing import Any, List, Optional
 import zipfile
-from depmap.tile.temp_utils import compound_is_in_oncref_dataset
 import requests
 import urllib.parse
 
@@ -94,17 +93,7 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    # TEMP: Right now, the heatmap tile and tab is only available for OncRef, and drc_compound_datasets only
-    # has one element in it, so before showing these features we need to check if the compound is in the Breadbox
-    # version of the OncRef dataset.
-    compound_is_in_dataset = compound_is_in_oncref_dataset(
-        compound, drc_compound_datasets
-    )
-
-    show_heatmap_tab = (
-        current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
-        and compound_is_in_dataset
-    )
+    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
 
     return render_template(
         "compounds/index.html",
@@ -122,7 +111,9 @@ def view_compound(name):
         has_datasets=has_datasets,
         order=get_order(has_predictability, has_heatmap=show_heatmap_tab),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
-        dose_curve_options_new=format_dose_curve_options_new_tab_if_available(),
+        dose_curve_options_new=format_dose_curve_options_new_tab_if_available(
+            compound=compound
+        ),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
@@ -211,7 +202,7 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab_if_available():
+def format_dose_curve_options_new_tab_if_available(compound: Compound):
     """
     Used for jinja rendering of the dose curve tab
     """
@@ -219,22 +210,15 @@ def format_dose_curve_options_new_tab_if_available():
         "ENABLED_FEATURES"
     ].new_compound_page_tabs
 
+    valid_options = []
     if show_new_dose_curves_tab:
-        dose_curve_options = [
-            {
-                "display_name": dataset.display_name,
-                "viability_dataset_id": dataset.viability_dataset_given_id,
-                "replicate_dataset": dataset.replicate_dataset,
-                "auc_dataset_id": dataset.auc_dataset_given_id,
-                "ic50_dataset_id": dataset.ic50_dataset_given_id,
-                "drc_dataset_label": dataset.drc_dataset_label,
-            }
-            for dataset in drc_compound_datasets
-        ]
-
-        return dose_curve_options
+        for d in drc_compound_datasets:
+            if data_access.valid_row(d.auc_dataset_given_id, compound.label):
+                valid_options.append(d)
     else:
         return []
+
+    return valid_options
 
 
 def is_url_valid(url):

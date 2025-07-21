@@ -43,7 +43,7 @@ function FiltersPanel({
   const datasetSelectOptions = datasetOptions.map(
     (compoundDataset: DRCDatasetOptions) => {
       return {
-        value: compoundDataset.viability_dataset_id,
+        value: compoundDataset.viability_dataset_given_id,
         label: compoundDataset.display_name,
       };
     }

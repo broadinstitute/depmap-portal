@@ -471,10 +471,10 @@ def test_format_dose_curve_options_new_tab_if_available_true(app):
         assert len(result) == 1
         assert result[0] == {
             "display_name": "PRISM OncRef",
-            "viability_dataset_id": "Prism_oncology_viability",
+            "viability_dataset_given_id": "Prism_oncology_viability",
             "replicate_dataset": "Prism_oncology_dose_replicate",
-            "auc_dataset_id": "Prism_oncology_AUC_collapsed",
-            "ic50_dataset_id": "Prism_oncology_ic50",
+            "auc_dataset_given_id": "Prism_oncology_AUC_collapsed",
+            "ic50_dataset_given_id": "Prism_oncology_ic50",
             "drc_dataset_label": "Prism_oncology_per_curve",
         }
 
@@ -482,5 +482,5 @@ def test_format_dose_curve_options_new_tab_if_available_true(app):
 def test_format_dose_curve_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_dose_curve_options_new_tab_if_available()
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory())
         assert result == []

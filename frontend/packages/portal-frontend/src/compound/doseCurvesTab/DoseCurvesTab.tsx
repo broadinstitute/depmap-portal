@@ -36,6 +36,7 @@ function DoseCurvesTab({
   useEffect(() => {
     if (datasetOptions) {
       setSelectedDataset(datasetOptions[0]);
+      console.log("hi");
     }
   }, [datasetOptions]);
 
@@ -43,13 +44,15 @@ function DoseCurvesTab({
     (selection: { value: string; label: string } | null) => {
       if (selection) {
         setSelectedDatasetOption(selection);
-        const selectedCompoundDataset = datasetOptions.filter(
+        const selectedCompoundDataset = datasetOptions.find(
           (option: DRCDatasetOptions) =>
-            option.viability_dataset_id === selection.value
-        )[0];
-        setSelectedDataset(selectedCompoundDataset);
-        setShowReplicates(true);
-        setShowUnselectedLines(true);
+            option.viability_dataset_given_id === selection.value
+        );
+        if (selectedCompoundDataset) {
+          setSelectedDataset(selectedCompoundDataset);
+          setShowReplicates(true);
+          setShowUnselectedLines(true);
+        }
       }
     },
     [datasetOptions]
@@ -67,7 +70,7 @@ function DoseCurvesTab({
               datasetOptions={datasetOptions}
               selectedDatasetOption={
                 selectedDatasetOption || {
-                  value: datasetOptions[0].viability_dataset_id,
+                  value: datasetOptions[0].viability_dataset_given_id,
                   label: datasetOptions[0].display_name,
                 }
               }
