@@ -7,7 +7,7 @@ import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
-import { DoseTableDataProvider } from "../hooks/DoseViabilityDataContext";
+import { DoseViabilityDataProvider } from "../hooks/DoseViabilityDataContext";
 
 interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -35,6 +35,9 @@ function HeatmapTab({
   // const [showInsensitiveLines, setShowInsensitiveLines] =
   //   useState<boolean>(true);
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
+  const [selectedDoses, setSelectedDoses] = useState<
+    { value: number; label: string }[]
+  >([]);
 
   useEffect(() => {
     if (datasetOptions) {
@@ -53,14 +56,11 @@ function HeatmapTab({
         setSelectedDataset(selectedCompoundDataset);
         // setShowInsensitiveLines(true);
         setShowUnselectedLines(true);
+        setSelectedDoses([]);
       }
     },
     [datasetOptions]
   );
-
-  const [selectedDoses, setSelectedDoses] = useState<
-    { value: number; label: string }[]
-  >([]);
 
   const handleFilterByDose = useCallback(
     (selections: Array<{ value: number; label: string }> | null) => {
@@ -73,7 +73,10 @@ function HeatmapTab({
     <DeprecatedDataExplorerApiProvider
       evaluateLegacyContext={evaluateLegacyContext}
     >
-      <DoseTableDataProvider dataset={selectedDataset} compoundId={compoundId}>
+      <DoseViabilityDataProvider
+        dataset={selectedDataset}
+        compoundId={compoundId}
+      >
         <div className={styles.doseCurvesTabGrid}>
           <div className={styles.doseCurvesTabFilters}>
             <FiltersPanel
@@ -86,6 +89,7 @@ function HeatmapTab({
                 }
               }
               handleFilterByDose={handleFilterByDose}
+              selectedDose={selectedDoses}
               showUnselectedLines={showUnselectedLines}
               handleToggleShowUnselectedLines={(nextValue: boolean) =>
                 setShowUnselectedLines(nextValue)
@@ -104,7 +108,7 @@ function HeatmapTab({
             />
           </div>
         </div>
-      </DoseTableDataProvider>
+      </DoseViabilityDataProvider>
     </DeprecatedDataExplorerApiProvider>
   );
 }

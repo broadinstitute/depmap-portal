@@ -22,7 +22,7 @@ interface DoseViabilityDataProviderProps {
   children: ReactNode;
 }
 
-export function DoseTableDataProvider({
+export function DoseViabilityDataProvider({
   dataset,
   compoundId,
   children,
