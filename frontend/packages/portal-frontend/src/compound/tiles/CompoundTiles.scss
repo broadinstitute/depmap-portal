@@ -22,6 +22,71 @@
   }
 }
 
+.HeatmapTile {
+  .triangleWithLabel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-right: 4px;
+  }
+
+  .triangleLabel {
+    margin-bottom: 2px;
+  }
+
+  .triangleSVG {
+    flex-shrink: 0;
+    width: 18px;
+    height: 160px;
+    display: block;
+    margin-right: 4px;
+  }
+  .heatmapWithTriangle {
+    display: flex;
+    height: 100%;
+  }
+  .heatmapContainer {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .subHeader {
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 10px;
+  }
+
+  .subHeader2 {
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 4px;
+  }
+
+  .tableColumnHeader {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .heatmapTileTable {
+    margin-left: 34px;
+    th {
+      border-left: 50px solid transparent;
+      border-top: 4px solid transparent;
+    }
+    th:first-child {
+      border-left: 0;
+    }
+
+    td {
+      border-left: 50px solid transparent;
+      border-top: 4px solid transparent;
+    }
+    td:first-child {
+      border-left: 0;
+    }
+  }
+}
+
 .errorMessage {
   padding: 24px;
   text-align: center;
@@ -33,4 +98,30 @@
   height: 13px;
   margin: 1px 3px 4px 3px;
   cursor: pointer;
+}
+
+.buttonLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  cursor: pointer;
+
+  &:active {
+    text-decoration: underline;
+  }
+
+  &:hover {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
+
+.heatmapSeparator {
+  border: 0;
+  border-top: 1px solid #999999;
+  margin: 16px 0px;
 }
