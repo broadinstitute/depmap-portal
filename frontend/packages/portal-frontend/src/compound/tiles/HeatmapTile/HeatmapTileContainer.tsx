@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { DoseTableDataProvider } from "../../hooks/DoseTableDataContext";
 import { DRCDatasetOptions } from "@depmap/types";
 import { HeatmapTile } from "./HeatmapTile";
 import { legacyPortalAPI } from "@depmap/api";
+import { DoseViabilityDataProvider } from "src/compound/hooks/DoseViabilityDataContext";
 
 interface HeatmapTileContainerProps {
   compoundId: string;
@@ -28,8 +28,8 @@ export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
   }, [compoundId]);
 
   return (
-    <DoseTableDataProvider dataset={dataset} compoundId={compoundId}>
+    <DoseViabilityDataProvider dataset={dataset} compoundId={compoundId}>
       <HeatmapTile compoundName={compoundName} isLoadingDataset={isLoading} />
-    </DoseTableDataProvider>
+    </DoseViabilityDataProvider>
   );
 };

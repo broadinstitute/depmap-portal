@@ -2,7 +2,7 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
 import { DRCDatasetOptions } from "@depmap/types";
-import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
+import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
 import styles from "../CompoundDoseViability.scss";
 
 interface FiltersPanelProps {
@@ -38,7 +38,7 @@ function FiltersPanel({
   // handleToggleShowInsensitiveLines,
   handleToggleShowUnselectedLines,
 }: FiltersPanelProps) {
-  const { doseColumnNames } = useDoseTableDataContext();
+  const { doseColumnNames } = useDoseViabilityDataContext();
 
   const datasetSelectOptions = datasetOptions.map(
     (compoundDataset: DRCDatasetOptions) => {

@@ -8,7 +8,8 @@ import styles from "../CompoundDoseViability.scss";
 import useHeatmapData from "./hooks/useHeatmapData";
 import HeatmapPlotSection from "./HeatmapPlotSection";
 import CompoundPlotSelections from "../CompoundPlotSelections";
-import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
+import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
+import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
 
 interface HeatmapTabMainContentProps {
   compoundName: string;
@@ -31,7 +32,7 @@ function HeatmapTabMainContent({
     doseColumnNames,
     error,
     isLoading,
-  } = useDoseTableDataContext();
+  } = useDoseViabilityDataContext();
 
   const { heatmapFormattedData, doseMin, doseMax } = useHeatmapData(
     tableFormattedData,
@@ -77,7 +78,7 @@ function HeatmapTabMainContent({
   }, [heatmapFormattedData, selectedDoses]);
 
   const doseViabilityTableColumns = useMemo(() => {
-    const staticColumns = ["cellLine", "modelId", "auc"];
+    const staticColumns = staticDoseViabilityCols.map((col) => col.accessor);
     const columns = [
       {
         accessor: "cellLine",
@@ -108,24 +109,16 @@ function HeatmapTabMainContent({
           );
         },
       },
-      {
-        accessor: "modelId",
-        Header: "Model ID",
-        maxWidth: 120,
-        minWidth: 80,
-      },
-      {
-        accessor: "auc",
-        Header: "AUC",
-        maxWidth: 120,
-        minWidth: 80,
-      },
+      ...staticDoseViabilityCols,
       // Add dynamic dose columns
       ...(sortedTableData && sortedTableData.length > 0
         ? Array.from(
             new Set(sortedTableData.flatMap((row) => Object.keys(row)))
           )
-            .filter((colName) => !staticColumns.includes(colName))
+            .filter(
+              (colName) =>
+                !staticColumns.includes(colName) && colName !== "cellLine"
+            )
             .map((colName) => ({
               accessor: colName,
               Header: colName,
@@ -147,7 +140,10 @@ function HeatmapTabMainContent({
   const defaultCols = useMemo(() => {
     return doseViabilityTableColumns
       .map((col) => col.accessor)
-      .filter((accessor) => accessor !== "modelId");
+      .filter(
+        (accessor) =>
+          !hiddenDoseViabilityCols.map((a) => a.accessor).includes(accessor)
+      );
   }, [doseViabilityTableColumns]);
 
   return (

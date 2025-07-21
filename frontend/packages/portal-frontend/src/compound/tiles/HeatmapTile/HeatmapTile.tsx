@@ -3,7 +3,7 @@ import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 import styles from "../CompoundTiles.scss";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import { useDoseTableDataContext } from "src/compound/hooks/DoseTableDataContext";
+import { useDoseViabilityDataContext } from "src/compound/hooks/DoseViabilityDataContext";
 import useHeatmapData from "src/compound/heatmapTab/hooks/useHeatmapData";
 import PrototypeBrushableHeatmap from "src/compound/heatmapTab/doseViabilityHeatmap/components/PrototypeBrushableHeatmap";
 import { sortHeatmapByViability } from "src/compound/heatmapTab/heatmapPlotUtils";
@@ -25,7 +25,7 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
     doseColumnNames,
     error,
     isLoading,
-  } = useDoseTableDataContext();
+  } = useDoseViabilityDataContext();
 
   const { heatmapFormattedData } = useHeatmapData(
     tableFormattedData,
