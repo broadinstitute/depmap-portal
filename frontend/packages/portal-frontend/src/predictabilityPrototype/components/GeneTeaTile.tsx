@@ -1,5 +1,5 @@
 import GeneTea from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea";
-import React from "react";
+import React, { useState } from "react";
 import { Tab, Tabs } from "react-bootstrap";
 
 import PlotSpinner from "src/plot/components/PlotSpinner";
@@ -25,6 +25,8 @@ const GeneTeaTile = ({
   entityLabel,
   topFeaturesData,
 }: GeneTeaTileProps) => {
+  const [showSearchTerms, setShowSearchTerms] = useState<boolean>(false);
+
   return (
     <article className="card_wrapper stacked-boxplot-tile">
       <div className="card_border container_fluid" style={{ height: "560px" }}>
@@ -55,9 +57,19 @@ const GeneTeaTile = ({
                     marginBottom: "20px",
                   }}
                 >
-                  Search terms are derived from genes in the top 100{" "}
-                  {screenTypeLabel} overall features.
+                  Search terms (
+                  <button
+                    type="button"
+                    onClick={() => setShowSearchTerms(!showSearchTerms)}
+                  >
+                    Click to {showSearchTerms ? "hide" : "show"}
+                  </button>
+                  ) are derived from genes in the top 100 {screenTypeLabel}{" "}
+                  overall features.
                 </p>
+                {showSearchTerms && (
+                  <TopFeaturesTableTile selectedLabels={selectedLabels} />
+                )}
                 <GeneTea
                   selectedLabels={
                     new Set<string>(selectedLabels.map((label) => label.name))
@@ -66,11 +78,6 @@ const GeneTeaTile = ({
                     console.log(_);
                   }}
                 />
-              </Tab>
-              <Tab eventKey={3} title="Search Terms">
-                <div style={{ height: "150px" }}>
-                  <TopFeaturesTableTile selectedLabels={selectedLabels} />
-                </div>
               </Tab>
             </Tabs>
           )}
