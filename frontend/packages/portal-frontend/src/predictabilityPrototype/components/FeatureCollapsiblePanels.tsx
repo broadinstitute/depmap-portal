@@ -161,6 +161,9 @@ interface FeatureCollapsiblePanelProps {
   screenType: string;
 }
 
+// We don't have TCGA data loaded at this time, so don't show this plot yet.
+const showTumorModelComparison = false;
+
 const FeatureCollapsiblePanels = ({
   modelName,
   feature,
@@ -179,66 +182,64 @@ const FeatureCollapsiblePanels = ({
     >
       <div className="collapsible-sub-panel-list">
         <div className={styles.featurePanel}>
-          <div className={styles.featureGraph1}>
-            {isOpen && (
-              <FeatureVsGeneEffectPlot
-                modelName={modelName}
-                geneSymbol={geneSymbol}
-                featureNameType={featureNameType}
-                feature={feature}
-                dimType={dimType}
-                panelIndex={panelIndex}
-                screenType={screenType}
-                getFeatureVsGeneEffectData={
-                  legacyPortalAPI.getPredictabilityFeatureGeneEffectData
-                }
-              />
-            )}
-          </div>
-          <div className={styles.featureGraph2}>
-            {isOpen && (
-              <PredictabilityBoxOrBarPlot
-                modelName={modelName}
-                geneSymbol={geneSymbol}
-                featureNameType={featureNameType}
-                featureName={feature}
-                dimType={dimType}
-                panelIndex={panelIndex}
-                screenType={screenType}
-                getPredictabilityBoxPlotData={
-                  legacyPortalAPI.getPredictabilityBoxOrBarPlotData
-                }
-              />
-            )}
-          </div>
-          <div className={styles.featureGraph3}>
-            {isOpen && (
-              <RelatedFeaturesCorrPlot
-                modelName={modelName}
-                geneSymbol={geneSymbol}
-                featureNameType={featureNameType}
-                feature={feature}
-                panelIndex={panelIndex}
-                screenType={screenType}
-                getRelatedFeaturesCorrPlotData={
-                  legacyPortalAPI.getRelatedFeatureCorrData
-                }
-              />
-            )}
-          </div>
-          <div className={styles.featureGraph4}>
-            {isOpen && (
-              <PredictabilityWaterfallPlot
-                modelName={modelName}
-                geneSymbol={geneSymbol}
-                featureNameType={featureNameType}
-                feature={feature}
-                panelIndex={panelIndex}
-                screenType={screenType}
-                getWaterfallPlotData={legacyPortalAPI.getWaterfallData}
-              />
-            )}
-          </div>
+          {isOpen && (
+            <>
+              <div className={styles.featureGraph1}>
+                <FeatureVsGeneEffectPlot
+                  modelName={modelName}
+                  geneSymbol={geneSymbol}
+                  featureNameType={featureNameType}
+                  feature={feature}
+                  dimType={dimType}
+                  panelIndex={panelIndex}
+                  screenType={screenType}
+                  getFeatureVsGeneEffectData={
+                    legacyPortalAPI.getPredictabilityFeatureGeneEffectData
+                  }
+                />
+              </div>
+              {showTumorModelComparison && (
+                <div className={styles.featureGraph2}>
+                  <PredictabilityBoxOrBarPlot
+                    modelName={modelName}
+                    geneSymbol={geneSymbol}
+                    featureNameType={featureNameType}
+                    featureName={feature}
+                    dimType={dimType}
+                    panelIndex={panelIndex}
+                    screenType={screenType}
+                    getPredictabilityBoxPlotData={
+                      legacyPortalAPI.getPredictabilityBoxOrBarPlotData
+                    }
+                  />
+                </div>
+              )}
+              <div className={styles.featureGraph3}>
+                <RelatedFeaturesCorrPlot
+                  modelName={modelName}
+                  geneSymbol={geneSymbol}
+                  featureNameType={featureNameType}
+                  feature={feature}
+                  panelIndex={panelIndex}
+                  screenType={screenType}
+                  getRelatedFeaturesCorrPlotData={
+                    legacyPortalAPI.getRelatedFeatureCorrData
+                  }
+                />
+              </div>
+              <div className={styles.featureGraph4}>
+                <PredictabilityWaterfallPlot
+                  modelName={modelName}
+                  geneSymbol={geneSymbol}
+                  featureNameType={featureNameType}
+                  feature={feature}
+                  panelIndex={panelIndex}
+                  screenType={screenType}
+                  getWaterfallPlotData={legacyPortalAPI.getWaterfallData}
+                />
+              </div>{" "}
+            </>
+          )}
         </div>
       </div>
     </div>
