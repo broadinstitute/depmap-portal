@@ -36,7 +36,7 @@
 .featurePanel {
   display: grid;
   grid-template-columns: repeat(3, 3fr);
-  grid-template-rows: repeat(2, 2fr);
+  grid-template-rows: repeat(1, 2fr);
   row-gap: 0px;
   column-gap: 0px;
   padding-bottom: 15px;
@@ -52,7 +52,7 @@
 
   @media (max-width: 980px) {
     grid-template-columns: repeat(1, 1fr);
-    grid-template-rows: repeat(4, 4fr);
+    grid-template-rows: repeat(3, 4fr);
   }
 }
 

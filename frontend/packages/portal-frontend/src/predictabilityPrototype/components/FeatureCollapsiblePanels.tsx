@@ -214,7 +214,7 @@ const FeatureCollapsiblePanels = ({
                   />
                 </div>
               )}
-              <div className={styles.featureGraph3}>
+              <div className={styles.featureGraph2}>
                 <RelatedFeaturesCorrPlot
                   modelName={modelName}
                   geneSymbol={geneSymbol}
@@ -227,7 +227,7 @@ const FeatureCollapsiblePanels = ({
                   }
                 />
               </div>
-              <div className={styles.featureGraph4}>
+              <div className={styles.featureGraph3}>
                 <PredictabilityWaterfallPlot
                   modelName={modelName}
                   geneSymbol={geneSymbol}
