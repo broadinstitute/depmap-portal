@@ -75,7 +75,10 @@ const makeGetJson = (urlPrefix: string) => <T>(
   queryParameters?: Record<string, unknown>
 ): Promise<T> => {
   const getJson = () => {
-    let fullUrl = `${urlPrefix}${url}`;
+    let fullUrl =
+      url.startsWith("https://") || url.startsWith("http://")
+        ? url
+        : `${urlPrefix}${url}`;
 
     if (
       queryParameters &&
