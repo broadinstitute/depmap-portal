@@ -5,6 +5,8 @@ import numpy as np
 import pandas as pd
 from pandas.core.algorithms import isin
 
+from breadbox.io.data_validation import DataFrameWrapper, PandasDataFrameWrapper
+
 # This is the Object dtype with metadata for HDF5 to parse it as (variable-length)
 # string. The metadata is not used for checking equality.
 # See https://docs.h5py.org/en/3.2.1/strings.html
@@ -21,38 +23,40 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
     )
 
 
-def write_hdf5_file(path: str, df: pd.DataFrame, dtype: Literal["float", "str"]):
+def write_hdf5_file(path: str, dfw: DataFrameWrapper, dtype: Literal["float", "str"]):
     f = h5py.File(path, mode="w")
     try:
-        # Get the row,col positions where df values are not null
-        rows_idx, cols_idx = np.where(df.notnull())
-        total_nulls = df.size - len(rows_idx)
-        # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
-        if total_nulls / df.size > 0.6:
+        if isinstance(dfw, PandasDataFrameWrapper):
+            df = dfw.df
+            if dfw.is_sparse():
+                dataset = f.create_dataset(
+                    "data",
+                    shape=df.shape,
+                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    chunks=(
+                        1,
+                        1,
+                    ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
+                )
+                # only insert nonnull values into hdf5 at given positions
+                for row_idx, col_idx in zip(rows_idx, cols_idx):
+                    dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
+            else:
+                dfw = PandasDataFrameWrapper(df)
+
+            # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
             dataset = f.create_dataset(
                 "data",
                 shape=df.shape,
                 dtype=h5py.string_dtype() if dtype == "str" else np.float64,
-                chunks=(
-                    1,
-                    1,
-                ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
             )
-            # only insert nonnull values into hdf5 at given positions
-            for row_idx, col_idx in zip(rows_idx, cols_idx):
-                dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
-        else:
-            if dtype == "str":
-                # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
-                df = df.fillna("")
 
-            # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
-            f.create_dataset(
-                "data",
-                shape=df.shape,
-                dtype=h5py.string_dtype() if dtype == "str" else np.float64,
-                data=df.values,
-            )
+            for column_idx in batched_columns(dfw.get_column_names()):
+                df_cols = dfw.read_columns(column_idx)
+                if dtype == "str":
+                    # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
+                    df = df.fillna("")
+                dataset[:, column_idx] = df_cols
 
         create_index_dataset(f, "features", df.columns)
         create_index_dataset(f, "samples", df.index)

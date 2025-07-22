@@ -1,6 +1,6 @@
 import csv
 from dataclasses import dataclass
-from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Union
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Union, Protocol
 import io
 import json
 
@@ -28,6 +28,60 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
+
+
+class DataFrameWrapper(Protocol):
+    def get_index_names(self) -> List[str]:
+        ...
+
+    def get_column_names(self) -> List[str]:
+        ...
+
+    def read_columns(self, columns: list[str]) -> pd.DataFrame:
+        ...
+
+    def is_sparse(self) -> bool:
+        ...
+
+
+class ParquetDataFrameWrapper:
+    def __init__(self, parquet_path: str):
+        self.parquet_path = parquet_path
+
+    def get_index_names(self) -> List[str]:
+        raise NotImplementedError()
+
+    def get_column_names(self) -> List[str]:
+        raise NotImplementedError()
+
+    def read_columns(self, columns: list[str]) -> pd.DataFrame:
+        raise NotImplementedError()
+
+    def is_sparse(self) -> bool:
+        return False
+
+
+class PandasDataFrameWrapper:
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+
+    def get_index_names(self) -> List[str]:
+        return self.df.index.to_list()
+
+    def get_column_names(self) -> List[str]:
+        return self.df.columns
+
+    def read_columns(self, columns: list[str]) -> pd.DataFrame:
+        return self.df.loc[:, columns]
+
+    def is_sparse(self) -> bool:
+        # Get the row,col positions where df values are not null
+        rows_idx, cols_idx = np.where(self.df.notnull())
+        total_nulls = self.df.size - len(rows_idx)
+        # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
+        is_sparse = total_nulls / self.df.size > 0.6
+        return is_sparse
+
 
 pd.set_option("mode.use_inf_as_na", True)
 
@@ -526,12 +580,15 @@ def process_annotation_list_values(
 ##### NEW DATASET UPLOAD FUNCTIONS #####
 
 
+# class DataFrameWrapper
+
+
 def read_and_validate_matrix_df(
     file_path: str,
     value_type: ValueType,
     allowed_values: Optional[List[str]],
     data_file_format: str,
-) -> pd.DataFrame:
+) -> DataFrameWrapper:
     with open(file_path, "rb") as fd:
         if data_file_format == "csv":
             df = _read_csv(fd, value_type)
@@ -550,7 +607,7 @@ def read_and_validate_matrix_df(
 
     verify_unique_rows_and_cols(df)
 
-    return df
+    return DataFrameWrapperImpl(df)
 
 
 def read_and_validate_tabular_df(

@@ -100,7 +100,7 @@ def dataset_upload(
         )
 
         feature_labels_and_warnings = _get_dimension_labels_and_warnings(
-            db, data_df.columns.to_list(), feature_type
+            db, data_df.get_column_names(), feature_type
         )
         if len(feature_labels_and_warnings.warnings) > 0:
             assert feature_type is not None
@@ -113,7 +113,7 @@ def dataset_upload(
             )
 
         sample_labels_and_warnings = _get_dimension_labels_and_warnings(
-            db, data_df.index.to_list(), sample_type
+            db, data_df.get_index_names(), sample_type
         )
         if len(sample_labels_and_warnings.warnings) > 0:
             unknown_ids.append(
