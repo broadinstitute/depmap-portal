@@ -48,17 +48,24 @@ class DataFrameWrapper(Protocol):
 class ParquetDataFrameWrapper:
     def __init__(self, parquet_path: str):
         self.parquet_path = parquet_path
+        self.schema = pq.read_schema(parquet_path)
 
     def get_index_names(self) -> List[str]:
-        raise NotImplementedError()
+        index_col = self.schema.names[0]
+        index_names = pd.read_parquet(
+            self.parquet_path, columns=[index_col], engine="pyarrow"
+        )[index_col].to_list()
+        return index_names
 
     def get_column_names(self) -> List[str]:
-        raise NotImplementedError()
+        col_names = self.schema.names[1:]  # Exclude the index column
+        return col_names
 
     def read_columns(self, columns: list[str]) -> pd.DataFrame:
-        raise NotImplementedError()
+        return pd.read_parquet(self.parquet_path, columns=columns, engine="pyarrow")
 
     def is_sparse(self) -> bool:
+        # For now, we bypass checking sparsity for Parquet files to reduce complexity.
         return False
 
 
