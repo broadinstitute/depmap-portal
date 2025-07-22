@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Union, Protocol
 import io
 import json
+import pyarrow.parquet as pq
 
 import numpy as np
 import pandas as pd
@@ -64,20 +65,21 @@ class ParquetDataFrameWrapper:
 class PandasDataFrameWrapper:
     def __init__(self, df: pd.DataFrame):
         self.df = df
+        # Get the row,col positions where df values are not null
+        rows_idx, cols_idx = np.where(df.notnull())
+        self.nonnull_indices = list(zip(rows_idx, cols_idx))
 
     def get_index_names(self) -> List[str]:
         return self.df.index.to_list()
 
     def get_column_names(self) -> List[str]:
-        return self.df.columns
+        return self.df.columns.to_list()
 
     def read_columns(self, columns: list[str]) -> pd.DataFrame:
         return self.df.loc[:, columns]
 
     def is_sparse(self) -> bool:
-        # Get the row,col positions where df values are not null
-        rows_idx, cols_idx = np.where(self.df.notnull())
-        total_nulls = self.df.size - len(rows_idx)
+        total_nulls = self.df.size - len(self.nonnull_indices)
         # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
         is_sparse = total_nulls / self.df.size > 0.6
         return is_sparse
@@ -262,30 +264,33 @@ def _validate_data_value_type(
         return df.astype(np.float64)
 
 
-def _read_parquet(file, value_type: ValueType) -> pd.DataFrame:
+def _read_parquet(file, value_type: ValueType) -> ParquetDataFrameWrapper:
+    # TODO: Read parquet file schema and validate it against value_type
+    # NOTE: Parquet files have the types encoded in the file
+
     # It appears that pd.read_parquet() by default uses pyarrow. However, for some reason
     #  when reading a file with 20k columns, the memory usage balloons
-    # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
-    df = pd.read_parquet(file, engine="fastparquet").convert_dtypes()
+    # # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
+    # df = pd.read_parquet(file, engine="fastparquet").convert_dtypes()
 
-    # parquet files have the types encoded in the file, so we'll convert after the fact
-    if value_type == ValueType.continuous:
-        dtype = "Float64"
-    elif value_type == ValueType.categorical or value_type == ValueType.list_strings:
-        dtype = "string"
-    else:
-        raise ValueError(f"Invalid value type: {value_type}")
+    # # parquet files have the types encoded in the file, so we'll convert after the fact
+    # if value_type == ValueType.continuous:
+    #     dtype = "Float64"
+    # elif value_type == ValueType.categorical or value_type == ValueType.list_strings:
+    #     dtype = "string"
+    # else:
+    #     raise ValueError(f"Invalid value type: {value_type}")
 
-    cols = df.columns
-    # the first column will be treated as the index. Make sure it's of type string
-    df = df.astype({col: ("string" if i == 0 else dtype) for i, col in enumerate(cols)})
-    return df
+    # cols = df.columns
+    # # the first column will be treated as the index. Make sure it's of type string
+    # df = df.astype({col: ("string" if i == 0 else dtype) for i, col in enumerate(cols)})
+    return ParquetDataFrameWrapper(file)
 
 
 from typing import cast
 
 
-def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
+def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
     # When pandas reads non-unique columns from a CSV, it mangles them to make them unique.
     # As a workaround, load and validate the columns first using csv.DictReader.
     text_io = io.TextIOWrapper(file, encoding="utf-8")
@@ -311,7 +316,7 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
 
     df = pd.read_csv(file, dtype=dtypes)  # pyright: ignore
 
-    return df
+    return PandasDataFrameWrapper(df)
 
 
 def _validate_data_file(
@@ -591,23 +596,25 @@ def read_and_validate_matrix_df(
 ) -> DataFrameWrapper:
     with open(file_path, "rb") as fd:
         if data_file_format == "csv":
-            df = _read_csv(fd, value_type)
+            df_wrapper = _read_csv(fd, value_type)
         elif data_file_format == "parquet":
-            df = _read_parquet(fd, value_type)
+            df_wrapper = _read_parquet(fd, value_type)
         else:
             raise FileValidationError(
                 f"data_file_format was unrecognized: {data_file_format}"
             )
 
-    # now make the first column into the index
-    df.set_index(df.columns[0], inplace=True)
+    if data_file_format == "csv" and isinstance(df_wrapper, PandasDataFrameWrapper):
+        df = df_wrapper.df
+        # now make the first column into the index
+        df_wrapper.df.set_index(df.columns[0], inplace=True)
+        # for categorical values, this will map strings to integers (representing the index into allowed_values)
+        df_wrapper.df = _validate_data_value_type(
+            df_wrapper.df, value_type, allowed_values
+        )
+        verify_unique_rows_and_cols(df_wrapper.df)
 
-    # for categorical values, this will map strings to integers (representing the index into allowed_values)
-    df = _validate_data_value_type(df, value_type, allowed_values)
-
-    verify_unique_rows_and_cols(df)
-
-    return DataFrameWrapperImpl(df)
+    return df_wrapper
 
 
 def read_and_validate_tabular_df(

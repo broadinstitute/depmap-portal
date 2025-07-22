@@ -14,7 +14,7 @@ DATA_FILE: str = "data.hdf5"
 
 def save_dataset_file(
     dataset_id: str,
-    data_df: DataFrameWrapper,
+    df_wrapper: DataFrameWrapper,
     value_type: ValueType,
     filestore_location: str,
 ):
@@ -27,7 +27,7 @@ def save_dataset_file(
         dtype = "float"
 
     write_hdf5_file(
-        get_file_location(dataset_id, filestore_location, DATA_FILE), data_df, dtype
+        get_file_location(dataset_id, filestore_location, DATA_FILE), df_wrapper, dtype
     )
 
 

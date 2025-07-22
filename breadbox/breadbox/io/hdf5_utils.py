@@ -23,12 +23,15 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
     )
 
 
-def write_hdf5_file(path: str, dfw: DataFrameWrapper, dtype: Literal["float", "str"]):
+def write_hdf5_file(
+    path: str, df_wrapper: DataFrameWrapper, dtype: Literal["float", "str"]
+):
     f = h5py.File(path, mode="w")
     try:
-        if isinstance(dfw, PandasDataFrameWrapper):
-            df = dfw.df
-            if dfw.is_sparse():
+        if isinstance(df_wrapper, PandasDataFrameWrapper):
+            df = df_wrapper.df
+            # If the DataFrame is sparse, we need to store only
+            if df_wrapper.is_sparse():
                 dataset = f.create_dataset(
                     "data",
                     shape=df.shape,
@@ -39,29 +42,49 @@ def write_hdf5_file(path: str, dfw: DataFrameWrapper, dtype: Literal["float", "s
                     ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
                 )
                 # only insert nonnull values into hdf5 at given positions
-                for row_idx, col_idx in zip(rows_idx, cols_idx):
+                for row_idx, col_idx in df_wrapper.nonnull_indices:
                     dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
             else:
-                dfw = PandasDataFrameWrapper(df)
-
-            # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
+                # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
+                dataset = f.create_dataset(
+                    "data",
+                    shape=df.shape,
+                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    data=df.values,
+                )
+        else:
+            # For ParquetDataFrameWrapper
+            # TODO: This can probably be used for PandasDataFrameWrapper as well
+            # NOTE: Our number of columns are usually much larger than rows so we batch by columns to avoid memory issues
+            # TODO: If hdf5 file size becomes an issue, we can consider using compression or chunking
+            cols = df_wrapper.get_column_names()
+            rows = df_wrapper.get_index_names()
+            shape = (len(rows), len(cols))
             dataset = f.create_dataset(
                 "data",
-                shape=df.shape,
+                shape=shape,
                 dtype=h5py.string_dtype() if dtype == "str" else np.float64,
             )
 
-            for column_idx in batched_columns(dfw.get_column_names()):
-                df_cols = dfw.read_columns(column_idx)
+            for column_idx in batched_columns(df_wrapper.get_column_names()):
+                df_by_cols = df_wrapper.read_columns(column_idx)
                 if dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
-                    df = df.fillna("")
-                dataset[:, column_idx] = df_cols
+                    df_by_cols = df_by_cols.fillna("")
+                dataset[:, column_idx] = df_by_cols
 
-        create_index_dataset(f, "features", df.columns)
-        create_index_dataset(f, "samples", df.index)
+        create_index_dataset(f, "features", df_wrapper.get_column_names())
+        create_index_dataset(f, "samples", df_wrapper.get_index_names())
     finally:
         f.close()
+
+
+def batched_columns(column_names: List[str], batch_size: int = 5000):
+    """
+    Returns a generator that yields batches of column names to avoid memory issues with large datasets (e.g. >200k columns).
+    """
+    for i in range(0, len(column_names), batch_size):
+        yield column_names[i : i + batch_size]
 
 
 def read_hdf5_file(

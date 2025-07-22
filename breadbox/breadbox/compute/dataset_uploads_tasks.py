@@ -92,7 +92,7 @@ def dataset_upload(
         )
         sample_type = _get_dimension_type(db, dataset_params.sample_type, "sample")
 
-        data_df = read_and_validate_matrix_df(
+        df_wrapper = read_and_validate_matrix_df(
             file_path,
             dataset_params.value_type,
             dataset_params.allowed_values,
@@ -100,7 +100,7 @@ def dataset_upload(
         )
 
         feature_labels_and_warnings = _get_dimension_labels_and_warnings(
-            db, data_df.get_column_names(), feature_type
+            db, df_wrapper.get_column_names(), feature_type
         )
         if len(feature_labels_and_warnings.warnings) > 0:
             assert feature_type is not None
@@ -111,9 +111,8 @@ def dataset_upload(
                     IDs=feature_labels_and_warnings.warnings,
                 )
             )
-
         sample_labels_and_warnings = _get_dimension_labels_and_warnings(
-            db, data_df.get_index_names(), sample_type
+            db, df_wrapper.get_index_names(), sample_type
         )
         if len(sample_labels_and_warnings.warnings) > 0:
             unknown_ids.append(
@@ -156,7 +155,10 @@ def dataset_upload(
             dataset_params.description,
         )
         save_dataset_file(
-            dataset_id, data_df, dataset_params.value_type, settings.filestore_location
+            dataset_id,
+            df_wrapper,
+            dataset_params.value_type,
+            settings.filestore_location,
         )
 
     else:
