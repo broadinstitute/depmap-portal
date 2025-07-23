@@ -101,7 +101,7 @@ class FeatureFlags:
 
     @property
     def new_compound_page_tabs(self):
-        return self.is_skyros()
+        return self.is_prerelease_env()
 
     # TODO: This should be VERY temporary and is only here to hide
     # the extra datasets while discrepancies in IDs are resolved.
