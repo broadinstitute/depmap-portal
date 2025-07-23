@@ -1,3 +1,4 @@
+from depmap.settings.settings import TestConfig
 import pandas as pd
 import pytest
 from flask import url_for
@@ -5,7 +6,7 @@ from json import loads as json_loads
 
 from depmap import data_access
 from depmap.dataset.models import DependencyDataset
-from depmap.compound.models import Compound
+from depmap.compound.models import Compound, DRCCompoundDataset, drc_compound_datasets
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
     get_sensitivity_tab_info,
@@ -28,6 +29,7 @@ from tests.factories import (
     PredictiveModelFactory,
 )
 from tests.utilities import interactive_test_utils
+from tests.utilities.override_fixture import override
 
 
 def test_render_view_compound(populated_db):
@@ -464,19 +466,51 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         assert len(r_no_predictability_table_json) == 0
 
 
-def test_format_dose_curve_options_new_tab_if_available_true(app):
+def test_format_dose_curve_options_new_tab_if_available_true(app, monkeypatch):
     with app.app_context():
-        result = format_dose_curve_options_new_tab_if_available()
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory())
         assert isinstance(result, list)
         assert len(result) == 1
-        assert result[0] == {
-            "display_name": "PRISM OncRef",
-            "viability_dataset_given_id": "Prism_oncology_viability",
-            "replicate_dataset": "Prism_oncology_dose_replicate",
-            "auc_dataset_given_id": "Prism_oncology_AUC_collapsed",
-            "ic50_dataset_given_id": "Prism_oncology_ic50",
-            "drc_dataset_label": "Prism_oncology_per_curve",
-        }
+        assert result[0] == DRCCompoundDataset(
+            display_name="PRISM OncRef",
+            viability_dataset_given_id="Prism_oncology_viability",
+            replicate_dataset="Prism_oncology_dose_replicate",
+            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+            ic50_dataset_given_id="Prism_oncology_ic50",
+            drc_dataset_label="Prism_oncology_per_curve",
+        )
+
+
+def config(request):
+    class TestFeatureFlags:
+        def new_compound_page_tabs(self):
+            return True
+
+        def show_all_new_dose_curve_tab_datasets(self):
+            return True
+
+    class TestVersionConfig(TestConfig):
+        ENABLED_FEATURES = TestFeatureFlags
+
+    return TestVersionConfig
+
+
+@override(config=config)
+def test_dose_curve_options_all_datasets_available(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory())
+        assert isinstance(result, list)
+        assert result == drc_compound_datasets
 
 
 def test_format_dose_curve_options_new_tab_if_available_false(app):
