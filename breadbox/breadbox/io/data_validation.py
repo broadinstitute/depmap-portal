@@ -1,9 +1,8 @@
 import csv
 from dataclasses import dataclass
-from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Union, Protocol
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence
 import io
 import json
-import pyarrow.parquet as pq
 
 import numpy as np
 import pandas as pd
@@ -22,6 +21,11 @@ from breadbox.models.dataset import (
     DimensionType,
     TabularColumn,
 )
+from breadbox.schemas.dataframe_wrapper import (
+    DataFrameWrapper,
+    PandasDataFrameWrapper,
+    ParquetDataFrameWrapper,
+)
 from breadbox.io.filestore_crud import save_dataset_file
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
@@ -29,67 +33,6 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
-
-
-class DataFrameWrapper(Protocol):
-    def get_index_names(self) -> List[str]:
-        ...
-
-    def get_column_names(self) -> List[str]:
-        ...
-
-    def read_columns(self, columns: list[str]) -> pd.DataFrame:
-        ...
-
-    def is_sparse(self) -> bool:
-        ...
-
-
-class ParquetDataFrameWrapper:
-    def __init__(self, parquet_path: str):
-        self.parquet_path = parquet_path
-        self.schema = pq.read_schema(parquet_path)
-
-    def get_index_names(self) -> List[str]:
-        index_col = self.schema.names[0]
-        index_names = pd.read_parquet(
-            self.parquet_path, columns=[index_col], engine="pyarrow"
-        )[index_col].to_list()
-        return index_names
-
-    def get_column_names(self) -> List[str]:
-        col_names = self.schema.names[1:]  # Exclude the index column
-        return col_names
-
-    def read_columns(self, columns: list[str]) -> pd.DataFrame:
-        return pd.read_parquet(self.parquet_path, columns=columns, engine="pyarrow")
-
-    def is_sparse(self) -> bool:
-        # For now, we bypass checking sparsity for Parquet files to reduce complexity.
-        return False
-
-
-class PandasDataFrameWrapper:
-    def __init__(self, df: pd.DataFrame):
-        self.df = df
-        # Get the row,col positions where df values are not null
-        rows_idx, cols_idx = np.where(df.notnull())
-        self.nonnull_indices = list(zip(rows_idx, cols_idx))
-
-    def get_index_names(self) -> List[str]:
-        return self.df.index.to_list()
-
-    def get_column_names(self) -> List[str]:
-        return self.df.columns.to_list()
-
-    def read_columns(self, columns: list[str]) -> pd.DataFrame:
-        return self.df.loc[:, columns]
-
-    def is_sparse(self) -> bool:
-        total_nulls = self.df.size - len(self.nonnull_indices)
-        # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
-        is_sparse = total_nulls / self.df.size > 0.6
-        return is_sparse
 
 
 pd.set_option("mode.use_inf_as_na", True)
@@ -605,7 +548,7 @@ def read_and_validate_matrix_df(
         if data_file_format == "csv":
             df_wrapper = _read_csv(fd, value_type)
         elif data_file_format == "parquet":
-            df_wrapper = _read_parquet(fd, value_type)
+            df_wrapper = _read_parquet(file_path, value_type)
         else:
             raise FileValidationError(
                 f"data_file_format was unrecognized: {data_file_format}"
