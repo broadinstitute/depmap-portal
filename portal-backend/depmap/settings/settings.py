@@ -103,6 +103,15 @@ class FeatureFlags:
     def new_compound_page_tabs(self):
         return self.is_skyros()
 
+    # TODO: This should be VERY temporary and is only here to hide
+    # the extra datasets while discrepancies in IDs are resolved.
+    # This only affects the dose curves tab that pulls from the legacy db
+    # for the plot due to a reliance on old sqlite tables to draw
+    # the curves and replicates.
+    @property
+    def show_all_new_dose_curve_tab_datasets(self):
+        return False
+
     @property
     def data_page(self):
         return True

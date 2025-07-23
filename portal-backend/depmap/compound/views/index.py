@@ -114,6 +114,9 @@ def view_compound(name):
         dose_curve_options_new=format_dose_curve_options_new_tab_if_available(
             compound=compound
         ),
+        heatmap_dataset_options=format_heatmap_options_new_tab_if_available(
+            compound=compound
+        ),
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
@@ -212,9 +215,32 @@ def format_dose_curve_options_new_tab_if_available(compound: Compound):
 
     valid_options = []
     if show_new_dose_curves_tab:
-        for d in drc_compound_datasets:
-            if data_access.valid_row(d.auc_dataset_given_id, compound.label):
-                valid_options.append(d)
+        for drc_dataset in drc_compound_datasets:
+            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound.label):
+                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
+                if (
+                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
+                    or current_app.config[
+                        "ENABLED_FEATURES"
+                    ].show_all_new_dose_curve_tab_datasets
+                ):
+                    valid_options.append(drc_dataset)
+    else:
+        return []
+
+    return valid_options
+
+
+def format_heatmap_options_new_tab_if_available(compound: Compound):
+    show_new_dose_curves_tab = current_app.config[
+        "ENABLED_FEATURES"
+    ].new_compound_page_tabs
+
+    valid_options = []
+    if show_new_dose_curves_tab:
+        for drc_dataset in drc_compound_datasets:
+            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound.label):
+                valid_options.append(drc_dataset)
     else:
         return []
 
