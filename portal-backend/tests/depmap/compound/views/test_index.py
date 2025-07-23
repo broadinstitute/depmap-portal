@@ -9,6 +9,7 @@ from depmap.dataset.models import DependencyDataset
 from depmap.compound.models import Compound, DRCCompoundDataset, drc_compound_datasets
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
+    format_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -466,6 +467,7 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         assert len(r_no_predictability_table_json) == 0
 
 
+# TEMP: Only show OncRef in the Heatmap tab, even if all other datasets are valid
 def test_format_dose_curve_options_new_tab_if_available_true(app, monkeypatch):
     with app.app_context():
 
@@ -473,7 +475,7 @@ def test_format_dose_curve_options_new_tab_if_available_true(app, monkeypatch):
             return True
 
         monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
-        result = format_dose_curve_options_new_tab_if_available(CompoundFactory())
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
         assert len(result) == 1
         assert result[0] == DRCCompoundDataset(
@@ -484,6 +486,19 @@ def test_format_dose_curve_options_new_tab_if_available_true(app, monkeypatch):
             ic50_dataset_given_id="Prism_oncology_ic50",
             drc_dataset_label="Prism_oncology_per_curve",
         )
+
+
+# Always show all valid datasets in the Heatmap tab
+def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        assert isinstance(result, list)
+        assert result == drc_compound_datasets
 
 
 def config(request):
@@ -508,7 +523,7 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
             return True
 
         monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
-        result = format_dose_curve_options_new_tab_if_available(CompoundFactory())
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
         assert result == drc_compound_datasets
 
@@ -516,5 +531,5 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
 def test_format_dose_curve_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_dose_curve_options_new_tab_if_available(CompoundFactory())
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert result == []

@@ -94,10 +94,10 @@ def view_compound(name):
         )
 
     dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
-        compound=compound
+        compound_label=compound.label
     )
     heatmap_dataset_options = format_heatmap_options_new_tab_if_available(
-        compound=compound
+        compound_label=compound.label
     )
 
     # If there are no no valid dataset options, hide the heatmap tab and tile
@@ -210,7 +210,7 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab_if_available(compound: Compound):
+def format_dose_curve_options_new_tab_if_available(compound_label: str):
     """
     Used for jinja rendering of the dose curve tab
     """
@@ -221,7 +221,7 @@ def format_dose_curve_options_new_tab_if_available(compound: Compound):
     valid_options = []
     if show_new_dose_curves_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound.label):
+            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound_label):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
                 if (
                     drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
@@ -234,13 +234,13 @@ def format_dose_curve_options_new_tab_if_available(compound: Compound):
     return valid_options
 
 
-def format_heatmap_options_new_tab_if_available(compound: Compound):
+def format_heatmap_options_new_tab_if_available(compound_label: str):
     show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
 
     valid_options = []
     if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound.label):
+            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound_label):
                 valid_options.append(drc_dataset)
 
     return valid_options
