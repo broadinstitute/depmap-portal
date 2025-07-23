@@ -73,7 +73,11 @@ const DoseViabilityTable: React.FC<DoseViabilityTableProps> = ({
     return roundedTableData && selectedTableRows.size > 0
       ? getSortedTableDataWithSelectionsOnTop(sortedByAUCData)
       : sortedByAUCData;
-  }, [roundedTableData, selectedTableRows]);
+  }, [
+    roundedTableData,
+    selectedTableRows,
+    getSortedTableDataWithSelectionsOnTop,
+  ]);
 
   let tableContent;
   if (error) {

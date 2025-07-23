@@ -153,7 +153,11 @@ export default function InteractiveBrushableHeatmap({
       ].flat(),
     };
 
-    Plotly.react(plot, plotlyData, layout, { staticPlot: false });
+    Plotly.react(plot, plotlyData, layout, {
+      staticPlot: false,
+      displaylogo: false,
+      modeBarButtonsToRemove: ["select2d", "lasso2d"],
+    });
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: object) => void][] = [];
@@ -187,7 +191,7 @@ export default function InteractiveBrushableHeatmap({
       const nextLayout = { ...plot.layout };
       (plot.layout.shapes as any) = undefined;
       zoom("reset");
-      Plotly.react(plot, plot.data, nextLayout, plot.config);
+      Plotly.react(plot, plot.data, nextLayout, {});
     };
 
     on("plotly_afterplot", () => {
