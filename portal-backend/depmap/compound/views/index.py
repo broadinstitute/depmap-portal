@@ -93,7 +93,15 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+    dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
+        compound=compound
+    )
+    heatmap_dataset_options = format_heatmap_options_new_tab_if_available(
+        compound=compound
+    )
+
+    # If there are no no valid dataset options, hide the heatmap tab and tile
+    show_heatmap_tab = len(heatmap_dataset_options) > 0
 
     return render_template(
         "compounds/index.html",
@@ -111,12 +119,9 @@ def view_compound(name):
         has_datasets=has_datasets,
         order=get_order(has_predictability, has_heatmap=show_heatmap_tab),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
-        dose_curve_options_new=format_dose_curve_options_new_tab_if_available(
-            compound=compound
-        ),
-        heatmap_dataset_options=format_heatmap_options_new_tab_if_available(
-            compound=compound
-        ),
+        # If len(dose_curve_options_new) is 0, hide the tab in the index.html
+        dose_curve_options_new=dose_curve_options_new,
+        heatmap_dataset_options=heatmap_dataset_options,
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
@@ -225,24 +230,18 @@ def format_dose_curve_options_new_tab_if_available(compound: Compound):
                     ].show_all_new_dose_curve_tab_datasets
                 ):
                     valid_options.append(drc_dataset)
-    else:
-        return []
 
     return valid_options
 
 
 def format_heatmap_options_new_tab_if_available(compound: Compound):
-    show_new_dose_curves_tab = current_app.config[
-        "ENABLED_FEATURES"
-    ].new_compound_page_tabs
+    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
 
     valid_options = []
-    if show_new_dose_curves_tab:
+    if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
             if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound.label):
                 valid_options.append(drc_dataset)
-    else:
-        return []
 
     return valid_options
 
