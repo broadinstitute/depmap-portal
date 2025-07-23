@@ -40,6 +40,11 @@ function DoseCurvesMainContent({
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
 
   useEffect(() => {
+    // If dose curve data changed, invalidate the plot
+    setPlotElement(null);
+  }, [doseCurveData]);
+
+  useEffect(() => {
     legacyPortalAPI.getCellLineUrlRoot().then((urlRoot: string) => {
       setCellLineUrlRoot(urlRoot);
     });

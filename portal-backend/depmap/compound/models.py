@@ -62,14 +62,14 @@ drc_compound_datasets = [
         ic50_dataset_given_id=None,
         display_name="CTD^2",
     ),
-    # DRCCompoundDataset(
-    #     drc_dataset_label="repurposing_per_curve",
-    #     viability_dataset_given_id="REPURPOSING_Viability",
-    #     replicate_dataset="Repurposing_secondary_dose_replicate",
-    #     auc_dataset_given_id="Repurposing_secondary_AUC_collapsed",
-    #     ic50_dataset_given_id=None,
-    #     display_name="PRISM Drug Repurposing",
-    # ),
+    DRCCompoundDataset(
+        drc_dataset_label="repurposing_per_curve",
+        viability_dataset_given_id="REPURPOSING_Viability",
+        replicate_dataset="Repurposing_secondary_dose_replicate",
+        auc_dataset_given_id="REPURPOSING_AUC_collapsed",
+        ic50_dataset_given_id=None,
+        display_name="PRISM Drug Repurposing",
+    ),
 ]
 
 gene_compound_target_association = db.Table(

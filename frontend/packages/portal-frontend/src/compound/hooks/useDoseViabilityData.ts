@@ -102,7 +102,7 @@ export default function useDoseViabilityData(
   const [doseMin, setDoseMin] = useState<number | null>(null);
   const [doseMax, setDoseMax] = useState<number | null>(null);
   const [error, setError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const requestIdRef = useRef(0);
 
