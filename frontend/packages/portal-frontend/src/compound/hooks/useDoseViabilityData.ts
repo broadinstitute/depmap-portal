@@ -22,9 +22,15 @@ function buildTableData(
     const modelValues = modelValuesRaw as Record<string, number | null>;
     Object.entries(modelValues).forEach(([model, log2Viability]) => {
       if (log2Viability !== null) {
-        const dose = dosefMetadata.Dose[label];
+        // wrap toFixed(4) in the parse float and then convert back to number to avoid trailing zeros (e.g. 3.0000)
+        // while still rounding long decimal points like 0.123456789 to 0.1234
+        const dose = parseFloat(
+          dosefMetadata.Dose[label].toFixed(4)
+        ).toString();
+
         const unit = dosefMetadata.DoseUnit[label];
         const doseKey = `${dose} ${unit}`;
+
         doseKeyToVal.set(doseKey, parseFloat(dose));
         allDoseKeys.add(doseKey);
         if (!tableLookup[model]) {
@@ -53,7 +59,8 @@ function buildTableData(
     const row: any = {
       cellLine: modelMetadata.CellLineName[modelId],
       modelId,
-      auc: parseFloat(aucs[modelId]?.toFixed(3) ?? "NaN"),
+      // Use toFixed(4) to match rounding of the old dose curves page
+      auc: parseFloat(aucs[modelId]?.toFixed(4) ?? "NaN"),
     };
     orderedDoseColumns.forEach((doseKey) => {
       row[doseKey] = doseMap[doseKey];

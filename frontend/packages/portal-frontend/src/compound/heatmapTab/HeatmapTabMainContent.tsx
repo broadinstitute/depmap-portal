@@ -10,6 +10,7 @@ import HeatmapPlotSection from "./HeatmapPlotSection";
 import CompoundPlotSelections from "../CompoundPlotSelections";
 import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
 import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
+import { TableFormattedData } from "../types";
 
 interface HeatmapTabMainContentProps {
   compoundName: string;
@@ -58,7 +59,6 @@ function HeatmapTabMainContent({
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    sortedTableData,
   } = useHeatmapSelectionHandlers(
     heatmapFormattedData,
     tableFormattedData,
@@ -111,9 +111,13 @@ function HeatmapTabMainContent({
       },
       ...staticDoseViabilityCols,
       // Add dynamic dose columns
-      ...(sortedTableData && sortedTableData.length > 0
+      ...(tableFormattedData && tableFormattedData.length > 0
         ? Array.from(
-            new Set(sortedTableData.flatMap((row) => Object.keys(row)))
+            new Set(
+              (tableFormattedData as TableFormattedData).flatMap((row) =>
+                Object.keys(row)
+              )
+            )
           )
             .filter(
               (colName) =>
@@ -128,7 +132,7 @@ function HeatmapTabMainContent({
         : []),
     ];
     return columns;
-  }, [cellLineUrlRoot, sortedTableData]);
+  }, [cellLineUrlRoot, tableFormattedData]);
 
   // Make sure "Cell Line" and "AUC" always come first, followed by the dose
   // columns in order of smallest to largest dose.
@@ -202,7 +206,7 @@ function HeatmapTabMainContent({
         <DoseViabilityTable
           error={error}
           isLoading={isLoading}
-          sortedTableData={sortedTableData ?? []}
+          tableData={tableFormattedData ?? []}
           doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}
           defaultCols={defaultCols}

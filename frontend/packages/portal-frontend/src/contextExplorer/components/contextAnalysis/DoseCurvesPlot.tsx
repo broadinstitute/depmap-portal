@@ -310,8 +310,8 @@ const buildPointsTracesWithIds = (setAsArray: CurvePlotPoints[]) => {
     newTraces.push(...pointTraceInfo.traces);
 
     const [newMinX, newMaxX] = pointTraceInfo.range;
-    minX = minX == null ? newMinX : Math.min(newMinX, minX);
-    maxX = maxX == null ? newMaxX : Math.max(newMaxX, maxX);
+    // minX = minX; // == null ? newMinX : Math.min(newMinX, minX);
+    // maxX = maxX; // == null ? newMaxX : Math.max(newMaxX, maxX);
   });
 
   return { range: [minX!, maxX!], traces: newTraces };
