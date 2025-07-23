@@ -1,11 +1,14 @@
 from typing import List, Optional, Literal
 
+from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
 import h5py
 import numpy as np
 import pandas as pd
 from pandas.core.algorithms import isin
 
 from breadbox.io.data_validation import DataFrameWrapper, PandasDataFrameWrapper
+import pyarrow as pa
+from pyarrow.parquet import ParquetFile
 
 # This is the Object dtype with metadata for HDF5 to parse it as (variable-length)
 # string. The metadata is not used for checking equality.
@@ -24,7 +27,10 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
 
 
 def write_hdf5_file(
-    path: str, df_wrapper: DataFrameWrapper, dtype: Literal["float", "str"]
+    path: str,
+    df_wrapper: DataFrameWrapper,
+    dtype: Literal["float", "str"],
+    batch_size: int = 10000,  # Adjust batch size as needed
 ):
     f = h5py.File(path, mode="w")
     try:
@@ -53,10 +59,12 @@ def write_hdf5_file(
                     data=df.values,
                 )
         else:
+            assert isinstance(df_wrapper, ParquetDataFrameWrapper)
             # For ParquetDataFrameWrapper
             # TODO: This can probably be used for PandasDataFrameWrapper as well
             # NOTE: Our number of columns are usually much larger than rows so we batch by columns to avoid memory issues
             # TODO: If hdf5 file size becomes an issue, we can consider using compression or chunking
+
             cols = df_wrapper.get_column_names()
             rows = df_wrapper.get_index_names()
             shape = (len(rows), len(cols))
@@ -66,15 +74,26 @@ def write_hdf5_file(
                 dtype=h5py.string_dtype() if dtype == "str" else np.float64,
             )
 
-            for column_idx in batched_columns(df_wrapper.get_column_names()):
-                df_by_cols = df_wrapper.read_columns(column_idx)
+            parquet_file = ParquetFile(df_wrapper.parquet_path)
+
+            for i in range(0, len(cols), batch_size):
+                print(f"Processing batch {i+1}...")
+                col_batch = cols[i : i + batch_size]
+                chunk_df = parquet_file.read(columns=col_batch).to_pandas()
+
+                if i == 0:
+                    print(chunk_df.shape)
+                    print(chunk_df)
                 if dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
-                    df_by_cols = df_by_cols.fillna("")
-                dataset[:, column_idx] = df_by_cols
+                    chunk_df = chunk_df.fillna("")
+                # Find the correct column slice to write
+                start_col = i * batch_size
+                end_col = start_col + batch_size
+                dataset[:, start_col:end_col] = chunk_df.values
 
-        create_index_dataset(f, "features", df_wrapper.get_column_names())
-        create_index_dataset(f, "samples", df_wrapper.get_index_names())
+        create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
+        create_index_dataset(f, "samples", pd.Index(df_wrapper.get_index_names()))
     finally:
         f.close()
 
