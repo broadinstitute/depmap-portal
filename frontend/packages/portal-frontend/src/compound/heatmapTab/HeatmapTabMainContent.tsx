@@ -160,38 +160,46 @@ function HeatmapTabMainContent({
           plot or table.
         </p>
       </div>
-      <div className={styles.mainContentGrid}>
+      {error ? (
+        <div className={styles.errorMessage}>Error loading heatmap data.</div>
+      ) : (
         <>
-          <div className={styles.plotArea}>
-            <HeatmapPlotSection
-              isLoading={isLoading}
-              compoundName={compoundName}
-              plotElement={plotElement}
-              heatmapFormattedData={heatmapFormattedData}
-              doseMin={doseMin}
-              doseMax={doseMax}
-              doseUnits={doseUnits}
-              selectedModelIds={selectedModelIds}
-              handleSetSelectedPlotModels={handleSetSelectedPlotModels}
-              handleSetPlotElement={setPlotElement}
-              displayNameModelIdMap={displayNameModelIdMap}
-              visibleZIndexes={visibleZIndexes}
-              showUnselectedLines={showUnselectedLines}
-            />
-          </div>
-          <div className={styles.selectionsArea}>
-            <CompoundPlotSelections
-              selectedIds={selectedModelIds}
-              selectedLabels={new Set(selectedLabels)}
-              onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
-              onClickClearSelection={handleClearSelection}
-              onClickSetSelectionFromContext={
-                heatmapFormattedData ? handleSetSelectionFromContext : undefined
-              }
-            />
-          </div>
+          <div className={styles.mainContentGrid}>
+            <div className={styles.plotArea}>
+              <HeatmapPlotSection
+                isLoading={isLoading}
+                compoundName={compoundName}
+                plotElement={plotElement}
+                heatmapFormattedData={heatmapFormattedData}
+                doseMin={doseMin}
+                doseMax={doseMax}
+                doseUnits={doseUnits}
+                selectedModelIds={selectedModelIds}
+                handleSetSelectedPlotModels={handleSetSelectedPlotModels}
+                handleSetPlotElement={setPlotElement}
+                displayNameModelIdMap={displayNameModelIdMap}
+                visibleZIndexes={visibleZIndexes}
+                showUnselectedLines={showUnselectedLines}
+              />
+            </div>
+            <div className={styles.selectionsArea}>
+              <CompoundPlotSelections
+                selectedIds={selectedModelIds}
+                selectedLabels={new Set(selectedLabels)}
+                onClickSaveSelectionAsContext={
+                  handleClickSaveSelectionAsContext
+                }
+                onClickClearSelection={handleClearSelection}
+                onClickSetSelectionFromContext={
+                  heatmapFormattedData
+                    ? handleSetSelectionFromContext
+                    : undefined
+                }
+              />
+            </div>
+          </div>{" "}
         </>
-      </div>
+      )}
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentCellLines}>
         <h3>Cell Lines</h3>
