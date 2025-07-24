@@ -241,7 +241,14 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
     if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
             if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound_label):
-                valid_options.append(drc_dataset)
+                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
+                if (
+                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
+                    or current_app.config[
+                        "ENABLED_FEATURES"
+                    ].show_all_new_dose_curve_tab_datasets
+                ):
+                    valid_options.append(drc_dataset)
 
     return valid_options
 

@@ -496,7 +496,6 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         )
 
 
-# Always show all valid datasets in the Heatmap tab
 def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
     with app.app_context():
 
@@ -504,12 +503,17 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
             return True
 
         monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
-        # Note: We don't specifically check for a length of 1 here, because the Heatmap pulls all data for the
-        # plot and table from Breadbox, so any dataset discrepancies mentioned in the TODO
-        # above for the dose curves will not apply to the Heatmap.
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
-        assert isinstance(result, list)
-        assert result == drc_compound_datasets
+        assert len(result) == 1
+        assert result[0] == DRCCompoundDataset(
+            display_name="PRISM OncRef",
+            viability_dataset_given_id="Prism_oncology_viability",
+            replicate_dataset="Prism_oncology_dose_replicate",
+            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+            drc_dataset_label="Prism_oncology_per_curve",
+        )
 
 
 def config(request):

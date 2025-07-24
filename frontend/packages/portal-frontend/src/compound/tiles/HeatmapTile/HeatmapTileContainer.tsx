@@ -20,7 +20,7 @@ export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
     (async () => {
       setIsLoading(true);
       const prioritizedDataset = await legacyPortalAPI.getPrioritizedDataset(
-        compoundId
+        compoundName
       );
       setDataset(prioritizedDataset);
       setIsLoading(false);
