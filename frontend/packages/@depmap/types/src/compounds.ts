@@ -62,6 +62,6 @@ export interface DRCDatasetOptions {
   viability_dataset_given_id: string;
   replicate_dataset: string;
   auc_dataset_given_id: string;
-  ic50_dataset_id?: string;
+  ic50_dataset_given_id?: string;
   drc_dataset_label: string;
 }

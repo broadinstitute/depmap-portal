@@ -343,7 +343,7 @@ class BBClient:
         name: str,
         units: str,
         data_type: str,
-        data_df: pd.DataFrame,
+        data_df: Optional[pd.DataFrame],
         feature_type: Optional[str],
         sample_type: str,
         is_transient: bool = False,
@@ -358,18 +358,31 @@ class BBClient:
         timeout=None,
         log_status=lambda msg: None,
             description:Optional[str] = None,
+            data_parquet : Optional[str] = None,
     ) -> AddDatasetResponse:
         log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
+        if data_parquet is not None:
+            assert data_df is None, "Cannot have both data_parquet and data_df not None"
+            upload_parquet = True
+
         if upload_parquet:
-            with tempfile.NamedTemporaryFile() as tmp:
-                log_status(f"writing parquet")
-                data_df.to_parquet(tmp.name, index=False)
+            if data_parquet is None:
+                assert data_df is not None
+                with tempfile.NamedTemporaryFile() as tmp:
+                    log_status(f"writing parquet")
+                    data_df.to_parquet(tmp.name, index=False)
+                    log_status(f"uploading parquet")
+                    uploaded_file = self.upload_file(tmp)
+            else:
                 log_status(f"uploading parquet")
-                uploaded_file = self.upload_file(tmp)
+                with open(data_parquet, "rb") as f:
+                    uploaded_file = self.upload_file(f)
+
             data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
         else:
+            assert data_df is not None, "If not using parquet, you must provide a dataframe"
             log_status("Writing CSV")
             buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
             log_status(f"Uploading CSV")

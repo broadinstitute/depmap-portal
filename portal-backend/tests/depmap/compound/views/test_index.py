@@ -472,8 +472,9 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         assert len(r_no_predictability_table_json) == 0
 
 
-# TEMP: Only show OncRef in the Heatmap tab, even if all other datasets are valid
-def test_format_dose_curve_options_new_tab_if_available_true(app, monkeypatch):
+def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
+    app, monkeypatch
+):
     with app.app_context():
 
         def mock_valid_row(a, b):
@@ -482,6 +483,9 @@ def test_format_dose_curve_options_new_tab_if_available_true(app, monkeypatch):
         monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
+
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
         assert len(result) == 1
         assert result[0] == DRCCompoundDataset(
             display_name="PRISM OncRef",
@@ -501,6 +505,9 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
             return True
 
         monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        # Note: We don't specifically check for a length of 1 here, because the Heatmap pulls all data for the
+        # plot and table from Breadbox, so any dataset discrepancies mentioned in the TODO
+        # above for the dose curves will not apply to the Heatmap.
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
         assert result == drc_compound_datasets
@@ -537,4 +544,11 @@ def test_format_dose_curve_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert result == []
+
+
+def test_format_heatmap_options_new_tab_if_available_false(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
         assert result == []

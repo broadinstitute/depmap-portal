@@ -145,6 +145,7 @@ export default function useDoseViabilityData(
           aucsListResponse,
           doseCurvesResponse,
         ] = await Promise.all([
+          // For getting the values for the dose viability table dose columns and the heatmap.
           cached(bbapi).getMatrixDatasetData(
             dataset.viability_dataset_given_id,
             {

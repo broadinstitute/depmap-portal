@@ -649,6 +649,3 @@ def get_predictability_files():
 def view_genomic_associations(compound_name: str):
     # This is broken and being replaced
     return render_template("entities/celfie_page.html", celfie=None)
-
-
-# %%
