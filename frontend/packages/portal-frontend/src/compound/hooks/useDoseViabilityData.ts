@@ -124,7 +124,7 @@ export default function useDoseViabilityData(
         const bbapi = breadboxAPI;
 
         const datasetFeatures = await cached(bbapi).getDatasetFeatures(
-          dataset.viability_dataset_id
+          dataset.viability_dataset_given_id
         );
         const featureLabels = datasetFeatures.map((df) => df.label);
         const viabilityFeatureLabels = featureLabels.filter((label) =>
@@ -139,10 +139,13 @@ export default function useDoseViabilityData(
           doseCurvesResponse,
         ] = await Promise.all([
           // For getting the values for the dose viability table dose columns and the heatmap.
-          cached(bbapi).getMatrixDatasetData(dataset.viability_dataset_id, {
-            features: viabilityFeatureLabels,
-            feature_identifier: "label",
-          }),
+          cached(bbapi).getMatrixDatasetData(
+            dataset.viability_dataset_given_id,
+            {
+              features: viabilityFeatureLabels,
+              feature_identifier: "label",
+            }
+          ),
           fetchMetadata<{
             Dose: Record<string, number>;
             DoseUnit: Record<string, string>;
@@ -160,7 +163,7 @@ export default function useDoseViabilityData(
             bbapi
           ),
           // For getting the AUC column of the dose viability table.
-          cached(bbapi).getMatrixDatasetData(dataset.auc_dataset_id, {
+          cached(bbapi).getMatrixDatasetData(dataset.auc_dataset_given_id, {
             features: [compoundId],
             feature_identifier: "id",
           }),
