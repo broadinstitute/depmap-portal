@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button, Modal } from "react-bootstrap";
-import { ApiContext } from "@depmap/api";
+import { legacyPortalAPI } from "@depmap/api";
 import {
   CellData,
   loadCellLines,
@@ -77,47 +77,41 @@ function CellLineSelectorModal({
     Set<string>
   >(new Set());
 
-  const { getApi } = useContext(ApiContext);
+  useEffect(() => {
+    legacyPortalAPI.getCellLineSelectorLines().then((cellLines) => {
+      const cellLineData = loadCellLines(cellLines);
+      const td = [...cellLineData.values()];
+      setTableData(td);
+
+      if (useModelNames) {
+        setSelection(modelNamesToIDs(initialSelection, td));
+      }
+    });
+  }, [useModelNames, initialSelection]);
 
   useEffect(() => {
-    getApi()
-      .getCellLineSelectorLines()
-      .then((cellLines) => {
-        const cellLineData = loadCellLines(cellLines);
-        const td = [...cellLineData.values()];
-        setTableData(td);
+    legacyPortalAPI.getCellignerColorMap().then((colorsObj) => {
+      const lineageMap = new Map<string, string>();
+      const diseaseMap = new Map<string, string>();
+      const numEntries = colorsObj.color.length;
 
-        if (useModelNames) {
-          setSelection(modelNamesToIDs(initialSelection, td));
-        }
-      });
-  }, [useModelNames, initialSelection, getApi]);
+      for (let i = 0; i < numEntries; i++) {
+        lineageMap.set(colorsObj.lineage[i], colorsObj.color[i]);
+        diseaseMap.set(colorsObj.primaryDisease[i], colorsObj.color[i]);
+      }
 
-  useEffect(() => {
-    getApi()
-      .getCellignerColorMap()
-      .then((colorsObj) => {
-        const lineageMap = new Map<string, string>();
-        const diseaseMap = new Map<string, string>();
-        const numEntries = colorsObj.color.length;
+      const maps = new Map<string, Map<string, string>>([
+        ["lineage", lineageMap],
+        ["primaryDisease", diseaseMap],
+      ]);
 
-        for (let i = 0; i < numEntries; i++) {
-          lineageMap.set(colorsObj.lineage[i], colorsObj.color[i]);
-          diseaseMap.set(colorsObj.primaryDisease[i], colorsObj.color[i]);
-        }
-
-        const maps = new Map<string, Map<string, string>>([
-          ["lineage", lineageMap],
-          ["primaryDisease", diseaseMap],
-        ]);
-
-        setColorMaps(maps);
-      });
-  }, [getApi]);
+      setColorMaps(maps);
+    });
+  }, []);
 
   useEffect(() => {
-    getApi().getCellLineUrlRoot().then(setCellLineUrlRoot);
-  }, [getApi]);
+    legacyPortalAPI.getCellLineUrlRoot().then(setCellLineUrlRoot);
+  }, []);
 
   const isLoading = !tableData || !colorMaps || !cellLineUrlRoot;
 

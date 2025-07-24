@@ -216,9 +216,6 @@ def _read_parquet(file, value_type: ValueType) -> pd.DataFrame:
     # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
     df = pd.read_parquet(file, engine="fastparquet").convert_dtypes()
 
-    # the first column will be treated as the index. Make sure it's of type string
-    df[df.columns[0]] = df[df.columns[0]].astype("string")
-
     # parquet files have the types encoded in the file, so we'll convert after the fact
     if value_type == ValueType.continuous:
         dtype = "Float64"
@@ -227,7 +224,9 @@ def _read_parquet(file, value_type: ValueType) -> pd.DataFrame:
     else:
         raise ValueError(f"Invalid value type: {value_type}")
 
-    df[df.columns[1:]] = df[df.columns[1:]].astype(dtype)
+    cols = df.columns
+    # the first column will be treated as the index. Make sure it's of type string
+    df = df.astype({col: ("string" if i == 0 else dtype) for i, col in enumerate(cols)})
     return df
 
 

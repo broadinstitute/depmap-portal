@@ -56,7 +56,6 @@ from depmap.interactive.nonstandard.models import (
     NonstandardMatrix,
     RowNonstandardMatrix,
     ColNonstandardMatrix,
-    PrivateDatasetMetadata,
     CellLineNameType,
 )
 from depmap.correlation.models import CorrelatedDataset
@@ -312,6 +311,7 @@ class DoseResponseCurveFactory(SQLAlchemyModelFactory):
     slope = 0
     upper_asymptote = 0
     lower_asymptote = 0
+    drc_dataset_label = "GDSC1"
 
 
 class GeneFactory(SQLAlchemyModelFactory):
@@ -1037,26 +1037,6 @@ class NonstandardMatrixLoaderMetadataFactory(SQLAlchemyModelFactory):
         lambda number: "dataset-id.{}".format(number)
     )
     transpose = False
-
-
-class PrivateDatasetMetadataFactory(SQLAlchemyModelFactory):
-    # Note: A NonstandardMatrix object must also be created in order for this to show up in the interactive config, because get_allowed_private_datasets loops through all nonstandard matrices
-    class Meta:
-        model = PrivateDatasetMetadata
-
-        # Use the not-so-global scoped_session
-        # Warning: DO NOT USE common.Session()!
-        sqlalchemy_session = _db.session
-
-    uuid = factory.Sequence(lambda number: str(uuid.UUID(int=number)))
-    csv_path = factory.Sequence(lambda number: "private_factory_{}.csv".format(number))
-    display_name = factory.Sequence(lambda number: "Private Dataset {}".format(number))
-    units = "units"
-    feature_name = "feature"
-    is_transpose = True
-    cell_line_name_type = CellLineNameType.depmap_id
-    owner_id = PUBLIC_ACCESS_GROUP
-    data_type = "user_upload"
 
 
 class PredictiveModelFactory(SQLAlchemyModelFactory):

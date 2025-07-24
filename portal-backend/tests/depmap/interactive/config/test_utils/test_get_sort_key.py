@@ -10,7 +10,6 @@ from tests.factories import (
     DependencyDatasetFactory,
     NonstandardMatrixFactory,
     CustomDatasetConfigFactory,
-    PrivateDatasetMetadataFactory,
 )
 from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override

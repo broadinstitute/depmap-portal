@@ -1,12 +1,15 @@
+import { breadboxAPI, cached } from "@depmap/api";
 import { SearchDimenionsResponse } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
+import {
+  fetchDimensionIdentifiers,
+  fetchDatasetIdentifiers,
+} from "../api-helpers";
 
 async function fetchDataTypeCompatibleIds(
-  api: ReturnType<typeof useDataExplorerApi>,
   slice_type: string,
   dataType: string | null
 ) {
-  const ids = await api.fetchDimensionIdentifiers(
+  const ids = await fetchDimensionIdentifiers(
     slice_type,
     dataType || undefined
   );
@@ -15,7 +18,6 @@ async function fetchDataTypeCompatibleIds(
 }
 
 async function fetchDataVersionCompatibleIds(
-  api: ReturnType<typeof useDataExplorerApi>,
   slice_type: string,
   dataset_id: string | null
 ) {
@@ -23,15 +25,12 @@ async function fetchDataVersionCompatibleIds(
     return null;
   }
 
-  const ids = await api.fetchDatasetIdentifiers(slice_type, dataset_id);
+  const ids = await fetchDatasetIdentifiers(slice_type, dataset_id);
   return new Set(ids.map(({ id }) => id));
 }
 
-async function fetchDimensionTypeDisplayName(
-  api: ReturnType<typeof useDataExplorerApi>,
-  dimensionTypeName: string
-) {
-  const dimensionTypes = await api.fetchDimensionTypes();
+async function fetchDimensionTypeDisplayName(dimensionTypeName: string) {
+  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
 
   if (!dimType) {
@@ -41,16 +40,12 @@ async function fetchDimensionTypeDisplayName(
   return dimType.display_name || dimType.name;
 }
 
-async function fetchDatasetName(
-  api: ReturnType<typeof useDataExplorerApi>,
-
-  dataset_id: string | null
-) {
+async function fetchDatasetName(dataset_id: string | null) {
   if (!dataset_id) {
     return "";
   }
 
-  const datasets = await api.fetchDatasets();
+  const datasets = await cached(breadboxAPI).getDatasets();
   const dataset = datasets.find((d) => {
     return d.id === dataset_id || d.given_id === dataset_id;
   });
@@ -67,26 +62,22 @@ const chainLength = (str: string) => str.split(".").length;
 async function convertSearchResultToOptions(
   tokens: string[],
   result: SearchDimenionsResponse,
-  api: ReturnType<typeof useDataExplorerApi>,
   slice_type: string,
   dataType: string | null,
   dataset_id: string | null
 ) {
-  let error = false;
-
   const asyncData = await (() => {
     return Promise.all([
-      fetchDataTypeCompatibleIds(api, slice_type, dataType),
-      fetchDataVersionCompatibleIds(api, slice_type, dataset_id),
-      fetchDimensionTypeDisplayName(api, slice_type),
-      fetchDatasetName(api, dataset_id),
+      fetchDataTypeCompatibleIds(slice_type, dataType),
+      fetchDataVersionCompatibleIds(slice_type, dataset_id),
+      fetchDimensionTypeDisplayName(slice_type),
+      fetchDatasetName(dataset_id),
     ]).catch((e) => {
       window.console.log(e);
-      error = true;
     });
   })();
 
-  if (error) {
+  if (!asyncData) {
     return [];
   }
 
@@ -95,7 +86,7 @@ async function convertSearchResultToOptions(
     dataVersionCompatibleIds,
     dimesionTypeDisplayName,
     datasetName,
-  ] = asyncData!;
+  ] = asyncData;
 
   return result
     .map(({ id, label, matching_properties }) => {

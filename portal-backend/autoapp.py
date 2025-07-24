@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional
 import faulthandler
 import signal
 from werkzeug.wsgi import ProxyMiddleware
-from werkzeug.wrappers import Request
+from werkzeug.wrappers import Request, Response
 from depmap.read_config import read_config
 from itsdangerous import Serializer
 
@@ -63,6 +63,12 @@ class UserOverrideMiddleware:
 
         # NOTE: See Standard environ keys: https://wsgi.readthedocs.io/en/latest/definitions.html
         if environ["PATH_INFO"].startswith("/breadbox"):
+            # Allow navigating to /breadbox/elara without a trailing slash
+            if environ["PATH_INFO"] == "/breadbox/elara":
+                return Response(
+                    "", status=307, headers={"Location": "/breadbox/elara/"}
+                )(environ, start_response)
+
             request = Request(environ)
             signed_user_override = request.cookies.get(
                 "breadbox_username_override", None

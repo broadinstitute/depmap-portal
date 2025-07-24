@@ -67,7 +67,6 @@ export interface TabularDataset {
   group_id: string;
   group: any;
   is_transient: boolean;
-  value_type: string | null;
   columns_metadata: { [key: string]: ColumnMetadata };
   dataset_metadata: { [key: string]: string } | null;
   given_id: string | null;
@@ -108,3 +107,12 @@ export interface DatasetTableData {
   sampleType: string | null;
   dataType: string | null;
 }
+
+// all of the properties are optional, however if indices is provided then identifier must also be provided
+export type TabularDatasetDataArgs =
+  | { indices?: null; identifier?: null; columns?: string[] | null } // indices and identifer both missing or null
+  | {
+      indices: string[];
+      identifier: "id" | "label";
+      columns?: string[] | null;
+    }; // indices and identifer both present and non-null

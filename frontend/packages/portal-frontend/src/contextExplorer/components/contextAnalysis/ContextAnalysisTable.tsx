@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useState } from "react";
 import styles from "src/contextExplorer/styles/ContextExplorer.scss";
-
-import WideTable from "@depmap/wide-table";
+import { toPortalLink } from "@depmap/globals";
 import {
-  ContextAnalysisTableRow,
   ContextAnalysisTableType,
   ContextExplorerDatasets,
-} from "src/contextExplorer/models/types";
+} from "@depmap/types";
+import WideTable from "@depmap/wide-table";
+import { ContextAnalysisTableRow } from "src/contextExplorer/models/types";
 import { getSelectivityValLabel } from "src/contextExplorer/utils";
 
 interface ContextAnalysisTableProps {
@@ -14,7 +14,6 @@ interface ContextAnalysisTableProps {
   pointVisibility: boolean[];
   handleSelectRowAndPoint: (entityLabel: string) => void;
   selectedTableLabels: Set<string> | null;
-  entityUrlRoot: string | null;
   entityType: string;
   datasetId: ContextExplorerDatasets;
 }
@@ -25,7 +24,6 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     pointVisibility,
     handleSelectRowAndPoint,
     selectedTableLabels,
-    entityUrlRoot,
     entityType,
     datasetId,
   } = props;
@@ -95,7 +93,9 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
 
     const getDrugInGroupLabel = () => {
       if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-        return "In-context mean AUC";
+        // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
+        // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
+        return `In-context mean AUC`;
       }
 
       return "In-context mean log2(viability)";
@@ -103,7 +103,9 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
 
     const getDrugOutGroupLabel = () => {
       if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
-        return "Out-group mean AUC";
+        // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
+        // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
+        return `Out-group mean AUC`;
       }
       return "Out-group mean log2(viability)";
     };
@@ -117,21 +119,17 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         minWidth: 120,
         customFilter: renderFilterPlaceholder,
         Cell: (row: any) => (
-          <>
-            {entityUrlRoot ? (
-              <a
-                href={`${entityUrlRoot}${entityLabelMap[row.value] as string}`}
-                target="_blank"
-                rel="noreferrer"
-                key={row.value}
-                style={{ textDecoration: "underline" }}
-              >
-                {row.value}
-              </a>
-            ) : (
-              <p>{row.value}</p>
+          <a
+            href={toPortalLink(
+              `/${entityType}/${entityLabelMap[row.value] as string}`
             )}
-          </>
+            target="_blank"
+            rel="noreferrer"
+            key={row.value}
+            style={{ textDecoration: "underline" }}
+          >
+            {row.value}
+          </a>
         ),
       },
       {
@@ -211,7 +209,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       initialCols = [...initialCols, ...geneOnlyColumns];
     }
     setColumns(initialCols);
-  }, [data, pointVisibility, entityUrlRoot, entityType, datasetId]);
+  }, [data, pointVisibility, entityType, datasetId]);
 
   const handleChangeSelection = (selections: string[]) => {
     handleSelectRowAndPoint(selections[0]);

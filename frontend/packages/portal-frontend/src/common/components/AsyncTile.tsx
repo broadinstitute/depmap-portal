@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import cx from "classnames";
 import uniqueId from "lodash.uniqueid";
-import { fetchUrlPrefix } from "src/common/utilities/context";
+import { getUrlPrefix } from "@depmap/globals";
 import styles from "src/common/styles/async_tile.module.scss";
 
 interface Props {
@@ -47,7 +47,7 @@ const AsyncTile = ({
       }
 
       try {
-        const urlPrefix = fetchUrlPrefix().replace(/^\/$/, "");
+        const urlPrefix = getUrlPrefix().replace(/^\/$/, "");
         const res = await fetch(urlPrefix + url);
 
         if (res.status >= 200 && res.status <= 299) {

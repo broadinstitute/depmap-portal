@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import ReactSelect from "react-select";
-import { useDataExplorerApi } from "../../contexts/DataExplorerApiContext";
+import { breadboxAPI, cached } from "@depmap/api";
 import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import PlotConfigSelect from "../PlotConfigSelect";
 import {
   capitalize,
   sortDimensionTypes,
@@ -13,10 +13,15 @@ interface Props {
   value: string;
   onChange: (nextValue: string) => void;
   useContextBuilderV2: boolean;
+  title?: string;
 }
 
-function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
-  const api = useDataExplorerApi();
+function ContextTypeSelect({
+  value,
+  onChange,
+  useContextBuilderV2,
+  title = "Context type",
+}: Props) {
   const deprecatedApi = useDeprecatedDataExplorerApi();
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
@@ -26,7 +31,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
     (async () => {
       try {
         if (useContextBuilderV2) {
-          const dimensionTypes = await api.fetchDimensionTypes();
+          const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
           const sorted = sortDimensionTypes(
             dimensionTypes.map(({ name }) => name)
           );
@@ -34,7 +39,7 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
           const opts = dimensionTypes
             .map((dt) => ({
               value: dt.name,
-              label: capitalize(dt.display_name),
+              label: dt.display_name,
             }))
             .sort((a, b) => {
               const indexA = sorted.indexOf(a.value);
@@ -60,27 +65,24 @@ function ContextTypeSelect({ value, onChange, useContextBuilderV2 }: Props) {
         window.console.error(e);
       }
     })();
-  }, [api, deprecatedApi, useContextBuilderV2]);
-
-  const selectedValue = options.find((option) => {
-    return option.value === value;
-  });
+  }, [deprecatedApi, useContextBuilderV2]);
 
   return (
-    <div className={styles.ContextTypeSelect}>
-      <div>
-        <label htmlFor="context-type">Context type</label>
-      </div>
-      <ReactSelect
-        id="context-type"
-        options={options}
-        value={selectedValue}
-        onChange={(option) => {
-          onChange(option!.value);
-        }}
-        isLoading={options.length === 0}
-      />
-    </div>
+    <PlotConfigSelect
+      show
+      enable
+      label={<div style={{ fontSize: 13 }}>{title}</div>}
+      inlineLabel
+      styles={{
+        control: (base: any) => ({ ...base, fontSize: 14 }),
+        menu: (base: any) => ({ ...base, fontSize: 14, width: 400 }),
+      }}
+      className={styles.ContextTypeSelect}
+      options={options}
+      value={value}
+      onChange={onChange as (nextValue: string | null) => void}
+      isLoading={options.length === 0}
+    />
   );
 }
 

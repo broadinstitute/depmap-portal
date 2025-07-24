@@ -246,6 +246,18 @@ _hardcoded_metadata_slices = {
             "name": "PatientTumorGrade",
             "valueType": "categorical",
         },
+        "slice/depmap_model_metadata/PediatricModelType/label": {
+            "name": "PediatricModelType",
+            "valueType": "categorical",
+        },
+        "slice/depmap_model_metadata/PediatricModelType/label": {
+            "name": "PediatricModelType",
+            "valueType": "categorical",
+            # TODO: Remove this when it gets merged back into master.
+            # This flag is no longer used and will be ignored.
+            # We should clean it up just avoid confusion.
+            "isBreadboxMetadata": True,
+        },
         "slice/depmap_model_metadata/PlateCoating/label": {
             "name": "PlateCoating",
             "valueType": "categorical",

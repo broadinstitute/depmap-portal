@@ -2,21 +2,17 @@ import "src/public-path";
 
 import React from "react";
 import ReactDOM from "react-dom";
-import {
-  CustomList,
-  renderCellLineSelectorModal,
-} from "@depmap/cell-line-selector";
+import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
+import { CustomList } from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams } from "@depmap/utils";
-import { getDapi } from "src/common/utilities/context";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
-import { EntitySummaryResponse } from "src/dAPI";
 import { Option } from "src/common/models/utilities";
 import { DataExplorerContext } from "@depmap/types";
 
@@ -25,8 +21,12 @@ import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
+import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
+import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
+
+type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
 
 if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
@@ -37,6 +37,22 @@ const DoseResponseTab = React.lazy(
     import(
       /* webpackChunkName: "DoseResponseTab" */
       "src/compound/components/DoseResponseTab"
+    )
+);
+
+const DoseCurvesTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "DoseCurvesTab" */
+      "src/compound/doseCurvesTab/DoseCurvesTab"
+    )
+);
+
+const HeatmapTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "HeatmapTab" */
+      "src/compound/heatmapTab/HeatmapTab"
     )
 );
 
@@ -104,12 +120,6 @@ const renderWithErrorBoundary = (
   ReactDOM.render(<ErrorBoundary>{element}</ErrorBoundary>, container);
 };
 
-export function launchCellLineSelectorModal() {
-  const container = document.getElementById("cell_line_selector_modal"); // defined in layout.html
-
-  renderCellLineSelectorModal(getDapi, container);
-}
-
 export function showTermsAndConditionsModal() {
   const container = document.getElementById("modal-container");
   ReactDOM.render(<TermsAndConditionsModal />, container);
@@ -136,6 +146,13 @@ export function launchContextManagerModal(options?: {
     </React.Suspense>,
     container
   );
+}
+
+export function launchCellLineSelectorModal() {
+  launchContextManagerModal({
+    initialContextType: "depmap_model",
+    showHelpText: true,
+  });
 }
 
 export function editContext(context: DataExplorerContext, hash: string) {
@@ -194,6 +211,35 @@ export function initEnrichmentTile(
   );
 }
 
+
+export function initHeatmapTile(
+  elementId: string,
+  compoundId: string,
+  compoundName: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTileContainer
+        compoundId={compoundId}
+        compoundName={compoundName}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initStructureAndDetailTile(
+  elementId: string,
+  compoundId: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <StructureAndDetailTile compoundId={compoundId} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
 export function initPredictiveTab(
   elementId: string,
   entityId: number,
@@ -224,6 +270,47 @@ export function initDoseResponseTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+// New dose curves tab
+export function initDoseCurvesTab(
+  elementId: string,
+  name: string,
+  compoundId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <DoseCurvesTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+        compoundId={compoundId}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initHeatmapTab(
+  elementId: string,
+  name: string,
+  compoundId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+        compoundId={compoundId}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -369,8 +456,6 @@ export function initCelfiePage(
   dependencyProfileOptions: Array<DatasetOption>,
   howToImg: string
 ) {
-  const dapi = getDapi();
-  dapi.startTrace("celfieInit");
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CelfiePage
@@ -381,7 +466,7 @@ export function initCelfiePage(
           connectivity,
           topFeature
         ) =>
-          dapi.getConstellationGraphs(
+          legacyPortalAPI.getConstellationGraphs(
             taskIds,
             null,
             similarityMeasure,
@@ -390,27 +475,17 @@ export function initCelfiePage(
             topFeature
           )
         }
-        getVolcanoData={(taskId: string) => {
-          // const span = dapi.startSpan("getVolcanoData")
-          return dapi.getTaskStatus(taskId).finally(() => {
-            // span.end();
-          });
-        }}
+        getVolcanoData={legacyPortalAPI.getTaskStatus}
         similarityOptions={similarityOptions}
         colorOptions={colorOptions}
         connectivityOptions={connectivityOptions}
         targetFeatureLabel={targetFeatureLabel}
         datasets={datasets}
-        getComputeUnivariateAssociations={(params) => {
-          const span = dapi.startSpan("computeUnivariateAssociations");
-          return dapi.withSpan(span, () =>
-            dapi.computeUnivariateAssociations(params).finally(() => {
-              span.end();
-            })
-          );
-        }}
+        getComputeUnivariateAssociations={
+          legacyPortalAPI.computeUnivariateAssociations
+        }
         dependencyProfileOptions={dependencyProfileOptions}
-        onCelfieInitialized={() => dapi.endTrace()}
+        onCelfieInitialized={() => {}}
         howToImg={howToImg}
         methodIcon={toStaticUrl("img/predictability/pdf.svg")}
         methodPdf={toStaticUrl("pdf/Genomic_Associations_Methodology.pdf")}

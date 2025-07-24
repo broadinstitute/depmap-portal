@@ -77,44 +77,7 @@ from depmap.gene.models import Gene
 from depmap.public.resources import refresh_all_category_topics, read_forum_api_key
 from depmap.discourse.client import DiscourseClient
 from breadbox_facade import BBClient, BreadboxException, ColumnMetadata, AnnotationType
-
-
-def _get_relabel_updates():
-    def _mk_updates(display_name, new_type):
-        return [
-            f"""UPDATE nonstandard_private_dataset_metadata_write_only 
-                    set data_type = '{new_type}',
-                    priority = 1000 
-                    where display_name = '{display_name}'""",
-            f"""update nonstandard_matrix_write_only 
-                    set data_type = '{new_type}' 
-                    where nonstandard_dataset_id in (
-                        select uuid 
-                        from nonstandard_private_dataset_metadata_write_only 
-                        where display_name = '{display_name}')
-            """,
-        ]
-
-    statements = []
-    statements.extend(
-        _mk_updates("Olink Proteomics", DataTypeEnum.protein_expression.name)
-    )
-    statements.extend(
-        _mk_updates(
-            "ATAC Pseudobulk Gene Accessibility 23Q4",
-            DataTypeEnum.gene_accessibility.name,
-        )
-    )
-    statements.extend(_mk_updates("Paralogs 23Q4", DataTypeEnum.crispr.name))
-    return statements
-
-
-def _relabel_new_datasets_hack():
-    statements = _get_relabel_updates()
-
-    for statement in statements:
-        log.info("Executing: %s", statement)
-        db.session.execute(statement)
+from depmap.compound.models import drc_compound_datasets
 
 
 def _recreate_td_predictive_model():
@@ -625,7 +588,19 @@ def _load_real_data(
                 curve_params_file_path = gcsc_depmap.download_to_cache(
                     curve["filename"]
                 )
-                dataset_loader.load_curve_parameters_csv(curve_params_file_path)
+                # assert that curve label exists
+                assert curve["label"] is not None
+                
+                # make sure that the label for the DRC dataset is in drc_compound_datasets if we're loading data for it
+                # Currently only checking for Prism_oncology_per_curve because that's the only one we have data for
+                # the others are not ready yet
+                if curve["label"] == "Prism_oncology_per_curve":
+                    assert curve["label"] in [
+                        x.drc_dataset_label for x in drc_compound_datasets
+                    ]
+                dataset_loader.load_curve_parameters_csv(
+                    curve_params_file_path, curve["label"]
+                )
 
     def get_subtype_context_file():
         metadata = gcsc_depmap.read_json("metadata/subtype_context_matrix_out.json")[
@@ -924,10 +899,6 @@ def _load_real_data(
     # load taiga aliases for everything else. this needs to happen after Datasets, TabularDatasets, and NonstandardDatasets are loaded
     db.session.commit()  # flush first, anything previously added
 
-    with checkpoint("relabel-new-datasets") as needed:
-        if needed:
-            _relabel_new_datasets_hack()
-
     # process taiga_ids after private datasets have been loaded
     if process_downloads:
         with transaction():
@@ -1108,6 +1079,9 @@ def load_sample_data(
         depmap_model_loader.load_subtype_contexts(
             os.path.join(loader_data_dir, "cell_line/subtype_contexts.csv")
         )
+        context_explorer_loader.load_subtype_tree(
+            os.path.join(loader_data_dir, "cell_line/subtype_tree.csv")
+        )
 
         str_profile_loader.load_str_profiles(
             os.path.join(loader_data_dir, "str_profile/sample_str_profile.csv")
@@ -1169,19 +1143,21 @@ def load_sample_data(
 
         log.info("adding dose response curve parameter data")
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/ctd2_per_curve.csv"
+            "sample_data/compound/ctd2_per_curve.csv", "ctd2_per_curve"
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/gdsc1_per_curve.csv"
+            "sample_data/compound/gdsc1_per_curve.csv", "GDSC1"
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/gdsc2_per_curve.csv"
+            "sample_data/compound/gdsc2_per_curve.csv", "GDSC2"
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/repurposing_secondary_per_curve.csv"
+            "sample_data/compound/repurposing_secondary_per_curve.csv",
+            "repurposing_per_curve",
         )
         dataset_loader.load_curve_parameters_csv(
-            "sample_data/compound/prism_oncology_per_curve.csv"
+            "sample_data/compound/prism_oncology_per_curve.csv",
+            "Prism_oncology_per_curve",
         )
     with transaction():
         log.info("Adding biomarker data")

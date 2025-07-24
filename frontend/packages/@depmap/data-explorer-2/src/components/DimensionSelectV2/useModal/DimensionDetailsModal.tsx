@@ -6,7 +6,6 @@ import {
   DataExplorerContextV2,
   DataExplorerPlotConfigDimensionV2,
 } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { Mode, State } from "../useDimensionStateManager/types";
 import ModalDimensionSelect from "./ModalDimensionSelect";
 import DatasetDetails from "./DatasetDetails";
@@ -29,7 +28,6 @@ function DimensionDetailsModal({
   onCancel,
   initialState,
 }: Props) {
-  const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [dimension, setDimension] = useState(initialState.dimension);
 
@@ -55,7 +53,7 @@ function DimensionDetailsModal({
         }
       })();
     }
-  }, [api, dimension]);
+  }, [dimension]);
 
   return (
     <Modal show bsSize="large" onHide={onCancel}>

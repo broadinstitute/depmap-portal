@@ -30,6 +30,8 @@ const defaultWideTableProps: WideTableProps = {
     { accessor: "Column 3" },
   ],
   defaultColumnsToShow: ["Column 1", "Column 3"],
+  singleSelectionMode: false,
+  selectedTableLabels: new Set(),
 };
 
 export const TwoVisibleColumnsOneHidden = () => (

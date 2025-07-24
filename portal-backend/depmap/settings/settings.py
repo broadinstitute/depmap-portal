@@ -100,6 +100,10 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
+    def new_compound_page_tabs(self):
+        return self.is_skyros()
+
+    @property
     def data_page(self):
         return True
 
@@ -184,6 +188,10 @@ class FeatureFlags:
     @property
     def anchor_screen_dashboard(self):
         return self.is_dmc_like()
+
+    @property
+    def show_peddep_landing_page(self):
+        return self.is_public()
 
 
 def make_log_config(log_dir):

@@ -45,6 +45,8 @@ def map_to_given_ids(mat: pd.DataFrame, parameters: dict) -> pd.DataFrame:
             parameters["compounds_taiga_id"],
             parameters["features_taiga_id"],
         )
+    elif feature_id_format == "label":
+        given_ids = feature_names
     else:
         raise Exception(f"unknown feature_id_format: {feature_id_format}")
 

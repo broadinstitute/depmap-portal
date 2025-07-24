@@ -1,12 +1,9 @@
 import React, { useCallback, useMemo } from "react";
 import VanillaAsycSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
+import { breadboxAPI } from "@depmap/api";
 import extendReactSelect from "../../../../utils/extend-react-select";
-import {
-  formatOptionLabel,
-  toReactSelectOptions,
-  useSharedApi,
-} from "../utils";
+import { formatOptionLabel, toReactSelectOptions } from "../utils";
 
 interface Props {
   value: string | null;
@@ -25,7 +22,6 @@ function CompoundSearcher({
   compoundNames,
   swatchColor,
 }: Props) {
-  const api = useSharedApi();
   const handleChange = useCallback(
     (option?: { label: string; value: string } | null) => {
       onChange(option?.value || null);
@@ -35,7 +31,7 @@ function CompoundSearcher({
 
   const loadOptions = useCallback(
     async (inputValue: string) => {
-      const searchResults = await api.searchDimensions({
+      const searchResults = await breadboxAPI.searchDimensions({
         substring: inputValue,
         limit: 100,
         type_name: "compound",
@@ -43,7 +39,7 @@ function CompoundSearcher({
 
       return toReactSelectOptions(searchResults, inputValue, compoundNames, {});
     },
-    [api, compoundNames]
+    [compoundNames]
   );
 
   const defaultOptions = useMemo(() => {

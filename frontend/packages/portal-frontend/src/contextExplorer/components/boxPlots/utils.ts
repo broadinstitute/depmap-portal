@@ -1,9 +1,5 @@
-import {
-  BoxCardData,
-  BoxData,
-  BoxPlotInfo,
-  ContextPlotBoxData,
-} from "src/contextExplorer/models/types";
+import { BoxCardData, BoxData, ContextPlotBoxData } from "@depmap/types";
+import { BoxPlotInfo } from "src/contextExplorer/models/types";
 
 export const GeneEntityBoxColorList = [
   { r: 53, g: 132, b: 181 },
@@ -13,8 +9,8 @@ export const GeneEntityBoxColorList = [
 ];
 
 export const CompoundEntityBoxColorList = [
-  { r: 102, g: 153, b: 51 },
-  { r: 102, g: 153, b: 51 },
+  { r: 197, g: 82, b: 82 },
+  { r: 197, g: 82, b: 82 },
 ];
 
 export const InsignificantColor = { r: 255, g: 255, b: 255 };

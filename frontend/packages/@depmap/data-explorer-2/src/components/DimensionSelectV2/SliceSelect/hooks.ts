@@ -1,7 +1,7 @@
-import { useCallback, useContext, useEffect, useState } from "react";
-import { ApiContext } from "@depmap/api";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
+import { useCallback, useEffect, useState } from "react";
+import { breadboxAPI } from "@depmap/api";
 import { useDimensionType } from "../../../utils/misc";
+import { fetchDimensionIdentifiers } from "../api-helpers";
 import convertSearchResultToOptions from "./convertSearchResultToOptions";
 import { tokenize } from "./utils";
 
@@ -26,7 +26,6 @@ export const useDefaultOptions = (
   dataType: string | null,
   dataset_id: string | null
 ) => {
-  const api = useDataExplorerApi();
   const [defaultOptions, setDefaultOptions] = useState<
     { value: string; label: string }[]
   >([]);
@@ -34,7 +33,7 @@ export const useDefaultOptions = (
 
   useEffect(() => {
     (async () => {
-      const identifiers = await api.fetchDimensionIdentifiers(slice_type);
+      const identifiers = await fetchDimensionIdentifiers(slice_type);
 
       // Make this look like a search result so we can reuse the logic of
       // `convertSearchResultToOptions`.
@@ -55,7 +54,6 @@ export const useDefaultOptions = (
       const options = await convertSearchResultToOptions(
         [],
         result,
-        api,
         slice_type,
         dataType,
         dataset_id
@@ -64,7 +62,7 @@ export const useDefaultOptions = (
       setDefaultOptions(options);
       setIsLoadingDefaultOptions(false);
     })();
-  }, [api, slice_type, dataType, dataset_id]);
+  }, [slice_type, dataType, dataset_id]);
 
   return { defaultOptions, isLoadingDefaultOptions };
 };
@@ -74,14 +72,11 @@ export const useSearch = (
   dataType: string | null,
   dataset_id: string | null
 ) => {
-  const deApi = useDataExplorerApi();
-  const sharedApi = useContext(ApiContext);
-
   return useCallback(
     async (input: string) => {
       const tokens = tokenize(input);
 
-      const result = await sharedApi.getApi().searchDimensions({
+      const result = await breadboxAPI.searchDimensions({
         substring: tokens,
         type_name: slice_type,
         limit: 100,
@@ -90,13 +85,12 @@ export const useSearch = (
       return convertSearchResultToOptions(
         tokens,
         result,
-        deApi,
         slice_type,
         dataType,
         dataset_id
       );
     },
-    [deApi, sharedApi, slice_type, dataType, dataset_id]
+    [slice_type, dataType, dataset_id]
   );
 };
 

@@ -41,6 +41,7 @@ from breadbox_client.api.types import update_dimension_type as update_dimension_
 from breadbox_client.api.temp import get_associations as get_associations_client
 from breadbox_client.api.temp import add_associations as add_associations_client
 from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
+from breadbox_client.api.temp import evaluate_context as evaluate_context_client
 #
 
 from breadbox_client.models import (
@@ -58,6 +59,8 @@ from breadbox_client.models import (
     ColumnMetadata,
     ComputeParams,
     ComputeResponse,
+    Context,
+    ContextMatchResponse,
     DatasetMetadata,
     DataType,
     FeatureSampleIdentifier,
@@ -296,6 +299,7 @@ class BBClient:
         taiga_id: Optional[str] = None,
         given_id: Optional[str] = None,
         timeout=None,
+        description=None,
     ):
         metadata = TableDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
@@ -320,6 +324,7 @@ class BBClient:
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
+            description=description if description else UNSET,
         )
         breadbox_response = add_dataset_uploads_client.sync_detailed(
             client=self.client,
@@ -347,7 +352,8 @@ class BBClient:
         dataset_metadata: Optional[dict] = None,
         upload_parquet=False,
         timeout=None,
-        log_status=lambda msg: None
+        log_status=lambda msg: None,
+            description:Optional[str] = None,
     ) -> AddDatasetResponse:
         log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
@@ -383,7 +389,8 @@ class BBClient:
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
-            data_file_format=data_file_format
+            data_file_format=data_file_format,
+            description=description
         )
         log_status(f"calling add_dataset_uploads_client.sync_detailed")
         breadbox_response = add_dataset_uploads_client.sync_detailed(
@@ -402,7 +409,8 @@ class BBClient:
         name: Union[str, Unset] = UNSET,
         dataset_metadata: Optional[dict] = None,
         group_id: Union[str, Unset] = UNSET,
-        given_id: Union[str, Unset] = UNSET,
+        given_id: Union[str, Unset, None] = UNSET,
+        description: Union[str, Unset, None] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
@@ -419,7 +427,8 @@ class BBClient:
             name=name,
             dataset_metadata=metadata,
             group_id=group_id,
-            given_id=given_id
+            given_id=given_id,
+            description=description,
         )
         breadbox_response = update_dataset_client.sync_detailed(
             dataset_id=dataset_id,
@@ -511,7 +520,8 @@ class BBClient:
         breadbox_response = remove_group_access_client.sync_detailed(client=self.client, group_entry_id=group_entry_id)
         return self._parse_client_response(breadbox_response)
 
-    # ASSOCIATIONS
+    # TEMP
+
     def get_associations(self) -> List[AssociationTable]:
         breadbox_response = get_associations_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
@@ -528,6 +538,11 @@ class BBClient:
     def get_associations_for_slice(self, dataset_id: str, identifier: str, identifier_type: str) -> Associations:
         breadbox_response = get_associations_for_slice_client.sync_detailed(client=self.client, body=SliceQuery(dataset_id=dataset_id, identifier=identifier,
                                                                                     identifier_type=SliceQueryIdentifierType(identifier_type)))
+        return self._parse_client_response(breadbox_response)
+    
+    def evaluate_context(self, context_expression: dict) -> ContextMatchResponse:
+        request_body = Context.from_dict(context_expression)
+        breadbox_response = evaluate_context_client.sync_detailed(client=self.client, body=request_body)
         return self._parse_client_response(breadbox_response)
 
     # API
