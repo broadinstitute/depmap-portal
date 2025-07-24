@@ -25,7 +25,6 @@ class DRCCompoundDataset:
     viability_dataset_given_id: str
     replicate_dataset: str
     auc_dataset_given_id: str
-    ic50_dataset_given_id: Optional[str]
     display_name: str
 
 
@@ -35,7 +34,6 @@ drc_compound_datasets = [
         viability_dataset_given_id="Prism_oncology_viability",
         replicate_dataset="Prism_oncology_dose_replicate",
         auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-        ic50_dataset_given_id="Prism_oncology_ic50",
         display_name="PRISM OncRef",
     ),
     DRCCompoundDataset(
@@ -43,7 +41,6 @@ drc_compound_datasets = [
         viability_dataset_given_id="GDSC2_Viability",
         replicate_dataset="GDSC2_dose_replicate",
         auc_dataset_given_id="GDSC2_AUC_collapsed",
-        ic50_dataset_given_id="GDSC2_IC50",
         display_name="GDSC2",
     ),
     DRCCompoundDataset(
@@ -51,7 +48,6 @@ drc_compound_datasets = [
         viability_dataset_given_id="GDSC1_Viability",
         replicate_dataset="GDSC1_dose_replicate",
         auc_dataset_given_id="GDSC1_AUC_collapsed",
-        ic50_dataset_given_id="GDSC1_IC50",
         display_name="GDSC1",
     ),
     DRCCompoundDataset(
@@ -59,7 +55,6 @@ drc_compound_datasets = [
         viability_dataset_given_id="CTRP_Viability",
         replicate_dataset="CTRP_dose_replicate",
         auc_dataset_given_id="CTRP_AUC_collapsed",
-        ic50_dataset_given_id=None,
         display_name="CTD^2",
     ),
     DRCCompoundDataset(
@@ -67,7 +62,6 @@ drc_compound_datasets = [
         viability_dataset_given_id="REPURPOSING_Viability",
         replicate_dataset="Repurposing_secondary_dose_replicate",
         auc_dataset_given_id="REPURPOSING_AUC_collapsed",
-        ic50_dataset_given_id=None,
         display_name="PRISM Drug Repurposing",
     ),
 ]

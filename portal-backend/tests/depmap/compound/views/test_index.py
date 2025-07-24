@@ -492,7 +492,6 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
             viability_dataset_given_id="Prism_oncology_viability",
             replicate_dataset="Prism_oncology_dose_replicate",
             auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-            ic50_dataset_given_id="Prism_oncology_ic50",
             drc_dataset_label="Prism_oncology_per_curve",
         )
 

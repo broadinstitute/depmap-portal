@@ -36,7 +36,6 @@ class PrioritizedDataset(Resource):
                 "viability_dataset_given_id": dataset.viability_dataset_given_id,
                 "replicate_dataset": dataset.replicate_dataset,
                 "auc_dataset_given_id": dataset.auc_dataset_given_id,
-                "ic50_dataset_id": dataset.ic50_dataset_given_id,
                 "drc_dataset_label": dataset.drc_dataset_label,
             }
             for dataset in drc_compound_datasets
