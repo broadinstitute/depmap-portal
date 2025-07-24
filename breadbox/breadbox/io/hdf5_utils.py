@@ -79,11 +79,14 @@ def write_hdf5_file(
             for i in range(0, len(cols), batch_size):
                 print(f"Processing batch {i+1}...")
                 col_batch = cols[i : i + batch_size]
-                chunk_df = parquet_file.read(columns=col_batch).to_pandas()
+                chunk_df = pd.read_parquet(
+                    df_wrapper.parquet_path, columns=col_batch, engine="pyarrow"
+                )
 
                 if i == 0:
+                    print("got df!")
                     print(chunk_df.shape)
-                    print(chunk_df)
+
                 if dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     chunk_df = chunk_df.fillna("")
@@ -97,12 +100,12 @@ def write_hdf5_file(
         f.close()
 
 
-def batched_columns(column_names: List[str], batch_size: int = 5000):
-    """
-    Returns a generator that yields batches of column names to avoid memory issues with large datasets (e.g. >200k columns).
-    """
-    for i in range(0, len(column_names), batch_size):
-        yield column_names[i : i + batch_size]
+# def batched_columns(column_names: List[str], batch_size: int = 5000):
+#     """
+#     Returns a generator that yields batches of column names to avoid memory issues with large datasets (e.g. >200k columns).
+#     """
+#     for i in range(0, len(column_names), batch_size):
+#         yield column_names[i : i + batch_size]
 
 
 def read_hdf5_file(

@@ -430,6 +430,8 @@ def _validate_dataset_dimensions(
     )
 
 
+# TODO: Remove this function and replace with read_and_validate_matrix_df/read_and_validate_tabular_df.
+# I believe this is used in
 def validate_and_upload_dataset_files(
     db: SessionWithUser,
     dataset_id: str,
@@ -443,15 +445,13 @@ def validate_and_upload_dataset_files(
 ) -> DataframeValidatedFile:
 
     if data_file_format == "csv":
-        unchecked_df = _read_csv(data_file.file, value_type)
+        unchecked_df = _read_csv(data_file.file, value_type).get_df()
     elif data_file_format == "parquet":
-        unchecked_df = _read_parquet(data_file.file, value_type)
+        unchecked_df = _read_parquet(data_file.file, value_type).get_df()
     else:
         raise FileValidationError(
             f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
         )
-
-    unchecked_df.set_index(unchecked_df.columns[0], inplace=True)
 
     data_df = _validate_data_file(unchecked_df, value_type, allowed_values,)
 
