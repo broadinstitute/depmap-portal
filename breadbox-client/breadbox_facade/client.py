@@ -369,6 +369,7 @@ class BBClient:
 
         if upload_parquet:
             if data_parquet is None:
+                assert data_df is not None
                 with tempfile.NamedTemporaryFile() as tmp:
                     log_status(f"writing parquet")
                     data_df.to_parquet(tmp.name, index=False)
@@ -381,6 +382,7 @@ class BBClient:
 
             data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
         else:
+            assert data_df is not None, "If not using parquet, you must provide a dataframe"
             log_status("Writing CSV")
             buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
             log_status(f"Uploading CSV")
