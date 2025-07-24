@@ -17,6 +17,9 @@ class DataFrameWrapper(Protocol):
     def is_sparse(self) -> bool:
         ...
 
+    def get_df(self) -> pd.DataFrame:
+        ...
+
 
 class ParquetDataFrameWrapper:
     def __init__(self, parquet_path: str):
@@ -44,6 +47,13 @@ class ParquetDataFrameWrapper:
         # For now, we bypass checking sparsity for Parquet files to reduce complexity.
         return False
 
+    def get_df(self) -> pd.DataFrame:
+        if len(self.get_column_names()) > 10000:
+            raise Exception(
+                "Parquet file has too many columns to read into memory at once."
+            )
+        return pd.read_parquet(self.parquet_path, engine="pyarrow")
+
 
 class PandasDataFrameWrapper:
     def __init__(self, df: pd.DataFrame):
@@ -66,3 +76,6 @@ class PandasDataFrameWrapper:
         # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
         is_sparse = total_nulls / self.df.size > 0.6
         return is_sparse
+
+    def get_df(self) -> pd.DataFrame:
+        return self.df

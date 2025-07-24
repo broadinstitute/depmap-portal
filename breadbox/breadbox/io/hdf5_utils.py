@@ -88,9 +88,8 @@ def write_hdf5_file(
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     chunk_df = chunk_df.fillna("")
                 # Find the correct column slice to write
-                start_col = i * batch_size
-                end_col = start_col + batch_size
-                dataset[:, start_col:end_col] = chunk_df.values
+                end_col = i + batch_size
+                dataset[:, i:end_col] = chunk_df.values
 
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
         create_index_dataset(f, "samples", pd.Index(df_wrapper.get_index_names()))
