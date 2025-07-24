@@ -2,6 +2,7 @@ from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+from sqlalchemy import text
 
 
 # this is the Alembic Config object, which provides
@@ -10,7 +11,8 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-fileConfig(config.config_file_name)
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -64,7 +66,10 @@ def run_migrations_online():
     and associate a connection with the context.
 
     """
-    configuration = config.get_section(config.config_ini_section)
+    configuration = config.get_section(config.config_ini_section) or {}
+    # In alembic the get_section() method can return None if the section doesn't exist, but engine_from_config() in sqlalchemy 2.0 requires a non-None dictionary (e.g. Dict[str, Any] )
+    # Hence, we are using the or {}
+
     configuration["sqlalchemy.url"] = get_url()
     connectable = engine_from_config(
         configuration, prefix="sqlalchemy.", poolclass=pool.NullPool,
@@ -75,7 +80,7 @@ def run_migrations_online():
         # problems with foreign key constraints. To work around this, we'll explicitly
         # disable foreign key constraints at the before running migrations and the
         # explicitly check the constraints after applying the migrations
-        connection.execute("PRAGMA foreign_keys = OFF")
+        connection.execute(text("PRAGMA foreign_keys = OFF"))
 
         context.configure(
             connection=connection,
@@ -90,7 +95,7 @@ def run_migrations_online():
         # verify there are no broken foreign key constraints
         print("Checking fk constraints...")
         # if there are violated constraint, the pragma returns a row for each
-        rows = connection.execute("pragma foreign_key_check").fetchall()
+        rows = connection.execute(text("pragma foreign_key_check")).fetchall()
         if len(rows) > 0:
             for row in rows:
                 print("FK violated:", row)
@@ -100,7 +105,8 @@ def run_migrations_online():
 
         # shouldn't matter, but since I explictly disabled the constraints at the start
         # I'd like to turn it back on at the end.
-        connection.execute("PRAGMA foreign_keys = ON")
+        connection.execute(text("PRAGMA foreign_keys = ON"))
+        connection.commit()
 
 
 if context.is_offline_mode():
