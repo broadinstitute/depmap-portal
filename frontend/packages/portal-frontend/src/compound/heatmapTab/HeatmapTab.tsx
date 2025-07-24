@@ -35,6 +35,9 @@ function HeatmapTab({
   // const [showInsensitiveLines, setShowInsensitiveLines] =
   //   useState<boolean>(true);
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
+  const [selectedDoses, setSelectedDoses] = useState<
+    { value: number; label: string }[]
+  >([]);
 
   useEffect(() => {
     if (datasetOptions) {
@@ -53,14 +56,11 @@ function HeatmapTab({
         setSelectedDataset(selectedCompoundDataset);
         // setShowInsensitiveLines(true);
         setShowUnselectedLines(true);
+        setSelectedDoses([]);
       }
     },
     [datasetOptions]
   );
-
-  const [selectedDoses, setSelectedDoses] = useState<
-    { value: number; label: string }[]
-  >([]);
 
   const handleFilterByDose = useCallback(
     (selections: Array<{ value: number; label: string }> | null) => {
@@ -89,6 +89,7 @@ function HeatmapTab({
                 }
               }
               handleFilterByDose={handleFilterByDose}
+              selectedDose={selectedDoses}
               showUnselectedLines={showUnselectedLines}
               handleToggleShowUnselectedLines={(nextValue: boolean) =>
                 setShowUnselectedLines(nextValue)

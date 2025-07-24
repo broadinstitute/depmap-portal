@@ -10,6 +10,7 @@ import { CurveParams, CompoundDoseCurveData } from "@depmap/types";
 import CompoundPlotSelections from "../CompoundPlotSelections";
 import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
 import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
+import { TableFormattedData } from "src/compound/types";
 
 interface DoseCurvesMainContentProps {
   doseUnits: string;
@@ -40,6 +41,11 @@ function DoseCurvesMainContent({
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
 
   useEffect(() => {
+    // If dose curve data changed, invalidate the plot
+    setPlotElement(null);
+  }, [doseCurveData]);
+
+  useEffect(() => {
     legacyPortalAPI.getCellLineUrlRoot().then((urlRoot: string) => {
       setCellLineUrlRoot(urlRoot);
     });
@@ -54,7 +60,6 @@ function DoseCurvesMainContent({
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    sortedTableData,
   } = useDoseCurvesSelectionHandlers(
     doseCurveData,
     tableFormattedData,
@@ -98,9 +103,13 @@ function DoseCurvesMainContent({
       },
       ...staticDoseViabilityCols,
       // Add dynamic dose columns
-      ...(sortedTableData && sortedTableData.length > 0
+      ...(tableFormattedData && tableFormattedData.length > 0
         ? Array.from(
-            new Set(sortedTableData.flatMap((row) => Object.keys(row)))
+            new Set(
+              (tableFormattedData as TableFormattedData).flatMap((row) =>
+                Object.keys(row)
+              )
+            )
           )
             .filter(
               (colName) =>
@@ -115,7 +124,7 @@ function DoseCurvesMainContent({
         : []),
     ];
     return columns;
-  }, [cellLineUrlRoot, sortedTableData]);
+  }, [cellLineUrlRoot, tableFormattedData]);
 
   // Make sure "Cell Line" and "AUC" always come first, followed by the dose
   // columns in order of smallest to largest dose.
@@ -228,7 +237,7 @@ function DoseCurvesMainContent({
         <DoseViabilityTable
           error={error}
           isLoading={isLoading}
-          sortedTableData={sortedTableData ?? []}
+          tableData={tableFormattedData ?? []}
           doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}
           defaultCols={defaultCols}

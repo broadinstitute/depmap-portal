@@ -492,21 +492,36 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
             viability_dataset_given_id="Prism_oncology_viability",
             replicate_dataset="Prism_oncology_dose_replicate",
             auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-            ic50_dataset_given_id="Prism_oncology_ic50",
             drc_dataset_label="Prism_oncology_per_curve",
         )
 
-        # Note: We don't specifically check for a length of 1 here, because the Heatmap pulls all data for the
-        # plot and table from Breadbox, so any dataset discrepancies mentioned in the TODO
-        # above for the dose curves will not apply to the Heatmap.
+
+def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
-        assert isinstance(result, list)
-        assert result == drc_compound_datasets
+        assert len(result) == 1
+        assert result[0] == DRCCompoundDataset(
+            display_name="PRISM OncRef",
+            viability_dataset_given_id="Prism_oncology_viability",
+            replicate_dataset="Prism_oncology_dose_replicate",
+            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+            drc_dataset_label="Prism_oncology_per_curve",
+        )
 
 
 def config(request):
     class TestFeatureFlags:
         def new_compound_page_tabs(self):
+            return True
+
+        def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
             return True
 
     class TestVersionConfig(TestConfig):
@@ -516,17 +531,16 @@ def config(request):
 
 
 @override(config=config)
-def test_dose_curve_and_heatmap_options_compound_not_in_dataset(app, monkeypatch):
+def test_dose_curve_options_all_datasets_available(app, monkeypatch):
     with app.app_context():
 
         def mock_valid_row(a, b):
-            return False
+            return True
 
         monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
-        assert result == []
-        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
-        assert result == []
+        assert isinstance(result, list)
+        assert result == drc_compound_datasets
 
 
 def test_format_dose_curve_options_new_tab_if_available_false(app):
@@ -536,7 +550,7 @@ def test_format_dose_curve_options_new_tab_if_available_false(app):
         assert result == []
 
 
-def test_format_heatmap_options_new_tab_if_available(app):
+def test_format_heatmap_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)

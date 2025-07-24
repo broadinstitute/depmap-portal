@@ -43,13 +43,15 @@ function DoseCurvesTab({
     (selection: { value: string; label: string } | null) => {
       if (selection) {
         setSelectedDatasetOption(selection);
-        const selectedCompoundDataset = datasetOptions.filter(
+        const selectedCompoundDataset = datasetOptions.find(
           (option: DRCDatasetOptions) =>
             option.viability_dataset_given_id === selection.value
-        )[0];
-        setSelectedDataset(selectedCompoundDataset);
-        setShowReplicates(true);
-        setShowUnselectedLines(true);
+        );
+        if (selectedCompoundDataset) {
+          setSelectedDataset(selectedCompoundDataset);
+          setShowReplicates(true);
+          setShowUnselectedLines(true);
+        }
       }
     },
     [datasetOptions]

@@ -16,6 +16,7 @@ interface FiltersPanelProps {
   handleFilterByDose: (
     selections: Array<{ value: number; label: string }> | null
   ) => void;
+  selectedDose: any;
   // Toggle Switches
   showUnselectedLines: boolean;
   handleToggleShowUnselectedLines: (nextValue: boolean) => void;
@@ -32,6 +33,7 @@ function FiltersPanel({
   selectedDatasetOption,
   // Dose
   handleFilterByDose,
+  selectedDose,
   // Toggle Switches
   // showInsensitiveLines,
   showUnselectedLines,
@@ -57,7 +59,6 @@ function FiltersPanel({
   return (
     <div className={styles.FiltersPanel}>
       <h4 className={styles.sectionTitle}>Dataset</h4>
-      <h6>More dataset options coming soon!</h6>
       <Select
         defaultValue={datasetSelectOptions[0]}
         value={selectedDatasetOption}
@@ -76,6 +77,7 @@ function FiltersPanel({
       </h4>
       <Select
         options={doseSelectOptions}
+        value={selectedDose}
         isMulti
         isDisabled={!doseColumnNames}
         onChange={(values: any) => {

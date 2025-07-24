@@ -103,7 +103,10 @@ export default function StaticBrushableHeatmap({
     ];
     const layout = getStaticLayout(xAxisTitle, yAxisTitle);
 
-    Plotly.react(plot, plotlyData, layout, { staticPlot: true });
+    Plotly.react(plot, plotlyData, layout, {
+      staticPlot: true,
+      displayModeBar: false,
+    });
   }, [data, Plotly, hovertemplate, legendTitle, xAxisTitle, yAxisTitle]);
 
   return <div ref={ref} />;
