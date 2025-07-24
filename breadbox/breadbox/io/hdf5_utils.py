@@ -35,7 +35,10 @@ def write_hdf5_file(
     f = h5py.File(path, mode="w")
     try:
         if isinstance(df_wrapper, PandasDataFrameWrapper):
-            df = df_wrapper.df
+            df = df_wrapper.get_df()
+            # Convert to float type so hdf5 can store it as float64
+            if dtype == "float":
+                df = df.astype(np.float64)
             # If the DataFrame is sparse, we need to store only
             if df_wrapper.is_sparse():
                 dataset = f.create_dataset(
