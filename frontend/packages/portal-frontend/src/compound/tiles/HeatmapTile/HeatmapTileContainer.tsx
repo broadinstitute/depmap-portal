@@ -25,7 +25,7 @@ export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
       setDataset(prioritizedDataset);
       setIsLoading(false);
     })();
-  }, [compoundId]);
+  }, [compoundName]);
 
   return (
     <DoseViabilityDataProvider dataset={dataset} compoundId={compoundId}>
