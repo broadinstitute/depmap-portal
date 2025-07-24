@@ -33,8 +33,13 @@ from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 
 
-def test_render_view_compound(populated_db):
+def test_render_view_compound(populated_db, monkeypatch):
     with populated_db.app.test_client() as c:
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
