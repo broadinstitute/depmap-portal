@@ -227,7 +227,7 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
                     drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
                     or current_app.config[
                         "ENABLED_FEATURES"
-                    ].show_all_new_dose_curve_tab_datasets
+                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
                     valid_options.append(drc_dataset)
 
@@ -246,7 +246,7 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
                     drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
                     or current_app.config[
                         "ENABLED_FEATURES"
-                    ].show_all_new_dose_curve_tab_datasets
+                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
                     valid_options.append(drc_dataset)
 

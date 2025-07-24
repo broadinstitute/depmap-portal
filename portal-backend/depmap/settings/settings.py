@@ -105,11 +105,11 @@ class FeatureFlags:
 
     # TODO: This should be VERY temporary and is only here to hide
     # the extra datasets while discrepancies in IDs are resolved.
-    # This only affects the dose curves tab that pulls from the legacy db
-    # for the plot due to a reliance on old sqlite tables to draw
-    # the curves and replicates.
+    # This affects both the heatmap and the dose curves tab.
+    # The dose curve uses legacy db curves and replicates for the plot and table.
+    # The heatmap table has hidden-by-default dose curve param columns.
     @property
-    def show_all_new_dose_curve_tab_datasets(self):
+    def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
         return False
 
     @property

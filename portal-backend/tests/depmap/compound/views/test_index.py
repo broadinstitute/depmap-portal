@@ -521,7 +521,7 @@ def config(request):
         def new_compound_page_tabs(self):
             return True
 
-        def show_all_new_dose_curve_tab_datasets(self):
+        def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
             return True
 
     class TestVersionConfig(TestConfig):
