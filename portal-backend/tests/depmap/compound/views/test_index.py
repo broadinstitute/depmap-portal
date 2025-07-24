@@ -1,3 +1,4 @@
+from depmap.settings.settings import TestConfig
 import pandas as pd
 import pytest
 from flask import url_for
@@ -5,9 +6,10 @@ from json import loads as json_loads
 
 from depmap import data_access
 from depmap.dataset.models import DependencyDataset
-from depmap.compound.models import Compound
+from depmap.compound.models import Compound, DRCCompoundDataset, drc_compound_datasets
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
+    format_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -28,10 +30,16 @@ from tests.factories import (
     PredictiveModelFactory,
 )
 from tests.utilities import interactive_test_utils
+from tests.utilities.override_fixture import override
 
 
-def test_render_view_compound(populated_db):
+def test_render_view_compound(populated_db, monkeypatch):
     with populated_db.app.test_client() as c:
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
@@ -464,23 +472,72 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         assert len(r_no_predictability_table_json) == 0
 
 
-def test_format_dose_curve_options_new_tab_if_available_true(app):
+def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
+    app, monkeypatch
+):
     with app.app_context():
-        result = format_dose_curve_options_new_tab_if_available()
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
+
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
         assert len(result) == 1
-        assert result[0] == {
-            "display_name": "PRISM OncRef",
-            "viability_dataset_id": "Prism_oncology_viability",
-            "replicate_dataset": "Prism_oncology_dose_replicate",
-            "auc_dataset_id": "Prism_oncology_AUC_collapsed",
-            "ic50_dataset_id": "Prism_oncology_ic50",
-            "drc_dataset_label": "Prism_oncology_per_curve",
-        }
+        assert result[0] == DRCCompoundDataset(
+            display_name="PRISM OncRef",
+            viability_dataset_given_id="Prism_oncology_viability",
+            replicate_dataset="Prism_oncology_dose_replicate",
+            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+            ic50_dataset_given_id="Prism_oncology_ic50",
+            drc_dataset_label="Prism_oncology_per_curve",
+        )
+
+        # Note: We don't specifically check for a length of 1 here, because the Heatmap pulls all data for the
+        # plot and table from Breadbox, so any dataset discrepancies mentioned in the TODO
+        # above for the dose curves will not apply to the Heatmap.
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        assert isinstance(result, list)
+        assert result == drc_compound_datasets
+
+
+def config(request):
+    class TestFeatureFlags:
+        def new_compound_page_tabs(self):
+            return True
+
+    class TestVersionConfig(TestConfig):
+        ENABLED_FEATURES = TestFeatureFlags
+
+    return TestVersionConfig
+
+
+@override(config=config)
+def test_dose_curve_and_heatmap_options_compound_not_in_dataset(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return False
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert result == []
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        assert result == []
 
 
 def test_format_dose_curve_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_dose_curve_options_new_tab_if_available()
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert result == []
+
+
+def test_format_heatmap_options_new_tab_if_available(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
         assert result == []
