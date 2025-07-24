@@ -46,7 +46,7 @@ class ParquetDataFrameWrapper:
         return col_names
 
     def read_columns(self, columns: list[str]) -> pd.DataFrame:
-        return pd.read_parquet(self.parquet_path, columns=columns, engine="pyarrow")
+        return pd.read_parquet(self.parquet_path, columns=columns, engine="fastparquet")
 
     def is_sparse(self) -> bool:
         # For now, we bypass checking sparsity for Parquet files to reduce complexity.

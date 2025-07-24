@@ -30,7 +30,7 @@ def write_hdf5_file(
     path: str,
     df_wrapper: DataFrameWrapper,
     dtype: Literal["float", "str"],
-    batch_size: int = 10000,  # Adjust batch size as needed
+    batch_size: int = 5000,  # Adjust batch size as needed
 ):
     f = h5py.File(path, mode="w")
     try:
@@ -67,7 +67,6 @@ def write_hdf5_file(
         else:
             assert isinstance(df_wrapper, ParquetDataFrameWrapper)
             # For ParquetDataFrameWrapper
-            # TODO: This can probably be used for PandasDataFrameWrapper as well
             # NOTE: Our number of columns are usually much larger than rows so we batch by columns to avoid memory issues
             # TODO: If hdf5 file size becomes an issue, we can consider using compression or chunking
 
@@ -80,24 +79,18 @@ def write_hdf5_file(
                 dtype=h5py.string_dtype() if dtype == "str" else np.float64,
             )
 
-            parquet_file = ParquetFile(df_wrapper.parquet_path)
-
             for i in range(0, len(cols), batch_size):
-                print(f"Processing batch {i+1}...")
-                col_batch = cols[i : i + batch_size]
-                chunk_df = pd.read_parquet(
-                    df_wrapper.parquet_path, columns=col_batch, engine="pyarrow"
-                )
+                # Find the correct column slice to write
+                end_col = i + batch_size
 
-                if i == 0:
-                    print("got df!")
-                    print(chunk_df.shape)
+                col_batch = cols[i:end_col]
+                # Read the chunk of data from the Parquet file
+                chunk_df = df_wrapper.read_columns(col_batch)
 
                 if dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     chunk_df = chunk_df.fillna("")
-                # Find the correct column slice to write
-                end_col = i + batch_size
+
                 dataset[:, i:end_col] = chunk_df.values
 
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))

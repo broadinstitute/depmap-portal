@@ -1,23 +1,27 @@
 import numpy as np
 import pandas as pd
-from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
+from breadbox.schemas.dataframe_wrapper import (
+    ParquetDataFrameWrapper,
+    PandasDataFrameWrapper,
+)
 from breadbox.io.hdf5_utils import write_hdf5_file
 import pytest
 import h5py
 
 
 @pytest.fixture
-def test_dataframe(row_length: int = 500, col_length: int = 20000):
+def test_dataframe(row_length: int = 500, col_length: int = 11000):
     cols = [f"Col-{i}" for i in range(col_length)]
     rows = [f"Row-{i}" for i in range(row_length)]
     data = np.round(np.random.uniform(0.0, 10.0, size=(row_length, col_length)), 6)
-    # NOTE: the client reads in a dataframe with index as a column, so reset the index
-    test_df = pd.DataFrame(data, columns=cols, index=rows).reset_index()
+    test_df = pd.DataFrame(data, columns=cols, index=rows)
     return test_df
 
 
 @pytest.fixture
 def test_parquet_file(tmpdir, test_dataframe):
+    # NOTE: the client reads in a dataframe with index as a column, so reset the index
+    test_dataframe.reset_index(inplace=True)
     path = tmpdir.join("test.parquet")
     test_dataframe.to_parquet(path, index=False)
     return str(path)
@@ -31,6 +35,23 @@ def test_parquet_wrapper(tmpdir, test_dataframe, test_parquet_file):
         len(test_dataframe),
         2,
     )
+    assert parquet_wrapper.is_sparse() == False
+    assert parquet_wrapper.is_numeric_cols() == True
+    with pytest.raises(Exception):
+        parquet_wrapper.get_df()
+
+
+def test_pandas_wrapper(tmpdir, test_dataframe):
+    pandas_wrapper = PandasDataFrameWrapper(test_dataframe)
+    assert pandas_wrapper.get_index_names() == test_dataframe.index.to_list()
+    assert pandas_wrapper.get_column_names() == test_dataframe.columns.to_list()
+    assert pandas_wrapper.read_columns(["Col-0", "Col-1"]).shape == (
+        len(test_dataframe),
+        2,
+    )
+    assert pandas_wrapper.is_sparse() == False
+    assert pandas_wrapper.get_df().equals(test_dataframe)
+    assert pandas_wrapper.is_numeric_cols() == True
 
 
 def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
@@ -45,7 +66,7 @@ def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
     # Verify output
     with h5py.File(output_h5, "r") as f:
         data: h5py.Dataset = f["data"][:]
-        assert data.shape == (500, 20000)
+        assert data.shape == (500, 11000)
         # Check if the first column matches the first column of the original dataframe
         assert (data[:, 0] == test_dataframe.iloc[:, 1]).all()
         indices: h5py.Dataset = f["samples"][:]
