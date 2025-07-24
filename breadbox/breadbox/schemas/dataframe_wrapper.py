@@ -1,6 +1,8 @@
-from typing import Protocol, List
+from typing import Protocol, List, Dict
 import pandas as pd
+from pandas.api.types import is_numeric_dtype
 import numpy as np
+import pyarrow as pa
 import pyarrow.parquet as pq
 
 
@@ -18,6 +20,9 @@ class DataFrameWrapper(Protocol):
         ...
 
     def get_df(self) -> pd.DataFrame:
+        ...
+
+    def is_numeric_cols(self) -> bool:
         ...
 
 
@@ -54,6 +59,21 @@ class ParquetDataFrameWrapper:
             )
         return pd.read_parquet(self.parquet_path, engine="pyarrow")
 
+    def is_numeric_cols(self) -> bool:
+
+        for i, field in enumerate(self.schema):
+            arrow_type = field.type
+
+            if i == 0:  # Skip the index column
+                continue
+
+            if not (
+                pa.types.is_integer(arrow_type) or pa.types.is_floating(arrow_type)
+            ):
+                return False
+
+        return True
+
 
 class PandasDataFrameWrapper:
     def __init__(self, df: pd.DataFrame):
@@ -79,3 +99,7 @@ class PandasDataFrameWrapper:
 
     def get_df(self) -> pd.DataFrame:
         return self.df
+
+    def is_numeric_cols(self) -> bool:
+        df = self.get_df()
+        return all([is_numeric_dtype(df[col].dtypes) for col in df.columns])
