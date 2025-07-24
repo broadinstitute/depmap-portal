@@ -33,6 +33,7 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
+import pyarrow
 
 
 pd.set_option("mode.use_inf_as_na", True)
@@ -161,7 +162,7 @@ def _parse_list_strings(val):
 def _validate_data_value_type(
     dfw: DataFrameWrapper, value_type: ValueType, allowed_values: Optional[List]
 ):
-
+    # NOTE: We're making an assumption here that large parquet files are always numeric so smaller parquet files are ok to convert to df
     if value_type == ValueType.categorical:
         df = dfw.get_df()
         assert (
@@ -210,7 +211,6 @@ def _validate_data_value_type(
         # astype(str) will stringify 'None' or '<NA>'. Using pd.StringDtype() will preserve <NA>
         return PandasDataFrameWrapper(df.astype(pd.StringDtype()))
     else:
-
         if not dfw.is_numeric_cols():
             raise FileValidationError(
                 "All values must be numeric for continuous datasets."
@@ -218,27 +218,25 @@ def _validate_data_value_type(
         return dfw
 
 
-def _read_parquet(file, value_type: ValueType) -> ParquetDataFrameWrapper:
-    # TODO: Read parquet file schema and validate it against value_type
-    # NOTE: Parquet files have the types encoded in the file
-
-    # It appears that pd.read_parquet() by default uses pyarrow. However, for some reason
-    #  when reading a file with 20k columns, the memory usage balloons
-    # # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
-    # df = pd.read_parquet(file, engine="fastparquet").convert_dtypes()
-
-    # # parquet files have the types encoded in the file, so we'll convert after the fact
-    # if value_type == ValueType.continuous:
-    #     dtype = "Float64"
-    # elif value_type == ValueType.categorical or value_type == ValueType.list_strings:
-    #     dtype = "string"
-    # else:
-    #     raise ValueError(f"Invalid value type: {value_type}")
-
-    # cols = df.columns
-    # # the first column will be treated as the index. Make sure it's of type string
-    # df = df.astype({col: ("string" if i == 0 else dtype) for i, col in enumerate(cols)})
-    return ParquetDataFrameWrapper(file)
+def _read_parquet(file) -> ParquetDataFrameWrapper:
+    parquet_wrapper = ParquetDataFrameWrapper(file)
+    cols = parquet_wrapper.get_column_names()
+    if len(cols) != len(set(cols)):
+        raise FileValidationError(
+            f"Make sure all column names in the parquet file are unique."
+        )
+    indices = parquet_wrapper.get_index_names()
+    if len(indices) != len(set(indices)):
+        raise FileValidationError(
+            f"Make sure all index names (col 0) in the parquet file are unique."
+        )
+    # the first column will be treated as the index. Make sure it's of type string
+    index_col = parquet_wrapper.schema.names[0]
+    if not pyarrow.types.is_string(parquet_wrapper.schema.field(index_col).type):
+        raise FileValidationError(
+            f"Make sure the first column in the parquet file is the index and is of type string."
+        )
+    return parquet_wrapper
 
 
 from typing import cast
@@ -456,7 +454,7 @@ def validate_and_upload_dataset_files(
     if data_file_format == "csv":
         unchecked_dfw = _read_csv(data_file.file, value_type)
     elif data_file_format == "parquet":
-        unchecked_dfw = _read_parquet(data_file.file, value_type)
+        unchecked_dfw = _read_parquet(data_file.file)
     else:
         raise FileValidationError(
             f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
@@ -553,15 +551,17 @@ def read_and_validate_matrix_df(
     allowed_values: Optional[List[str]],
     data_file_format: str,
 ) -> DataFrameWrapper:
-    with open(file_path, "rb") as fd:
-        if data_file_format == "csv":
+
+    if data_file_format == "parquet":
+        df_wrapper = _read_parquet(file_path)
+
+    elif data_file_format == "csv":
+        with open(file_path, "rb") as fd:
             df_wrapper = _read_csv(fd, value_type)
-        elif data_file_format == "parquet":
-            df_wrapper = _read_parquet(file_path, value_type)
-        else:
-            raise FileValidationError(
-                f"data_file_format was unrecognized: {data_file_format}"
-            )
+    else:
+        raise FileValidationError(
+            f"data_file_format was unrecognized: {data_file_format}"
+        )
 
     # for categorical values, this will map strings to integers (representing the index into allowed_values)
     df_wrapper = _validate_data_value_type(df_wrapper, value_type, allowed_values)
