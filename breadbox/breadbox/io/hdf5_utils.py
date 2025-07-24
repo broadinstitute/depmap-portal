@@ -54,6 +54,9 @@ def write_hdf5_file(
                 for row_idx, col_idx in df_wrapper.nonnull_indices:
                     dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
             else:
+                if dtype == "str":
+                    # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
+                    df = df.fillna("")
                 # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
                 dataset = f.create_dataset(
                     "data",
