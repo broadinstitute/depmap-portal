@@ -23,13 +23,26 @@ from breadbox_facade import BBClient
 # First, instantiate the client:
 client = BBClient(base_url="https://depmap.org/portal/breadbox/", user="someusername")
 
-# View the full list datasets we have available: 
+# View the full list datasets we have available.
 datasets = client.get_datasets()
 
-# Load the full contents of a matrix dataset into a pandas dataframe
-df = client.get_matrix_dataset_data(dataset_id={some_dataset_id})
+# View the full list of data types availeble:
+data_types = client.get_data_types()
 
-# Or, get the contents of a tabular dataset (our metadata is stored in tabular datasets)
+# View the full list of dimension types availeble:
+dimension_types = client.get_dimension_types()
+
+# Load all available features (columns) for a given dataset:
+feature_ids_and_labels = get_dataset_features({some_dataset_id})
+
+# Load a particular column of data into a pandas dataframe (ex. all dependency data for the KRAS gene)
+df = client.get_matrix_dataset_data(
+    dataset_id={some_crispr_dependency_dataset_id},
+    features=["KRAS"], 
+    feature_identifier="label",
+)
+
+# Get the full contents of a tabular dataset (our metadata is stored in tabular datasets)
 df = client.get_tabular_dataset_data(dataset_id={some_other_dataset_id})
 ```
 

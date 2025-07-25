@@ -26,6 +26,7 @@ import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
+import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
@@ -218,6 +219,22 @@ export function initEnrichmentTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initHeatmapTile(
+  elementId: string,
+  compoundId: string,
+  compoundName: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTileContainer
+        compoundId={compoundId}
+        compoundName={compoundName}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

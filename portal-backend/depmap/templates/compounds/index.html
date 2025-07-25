@@ -257,7 +257,7 @@ active_tab_set = False %}
           "heatmap-tab-content",
           {{ name | tojson }},
           {{ compound_id | tojson }},
-          {{ dose_curve_options_new | tojson }},
+          {{ heatmap_dataset_options | tojson }},
           "{{ compound_units }}"
         );
       } else if (target === "#predictability") {

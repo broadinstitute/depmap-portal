@@ -588,7 +588,9 @@ def _load_real_data(
                 curve_params_file_path = gcsc_depmap.download_to_cache(
                     curve["filename"]
                 )
-                # make sure that the label for the DRC dataset is in drc_compound_datasets if we're loading data for it
+                # assert that curve label exists
+                assert curve["label"] is not None
+
                 assert curve["label"] in [
                     x.drc_dataset_label for x in drc_compound_datasets
                 ]

@@ -93,7 +93,15 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+    dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
+        compound_label=compound.label
+    )
+    heatmap_dataset_options = format_heatmap_options_new_tab_if_available(
+        compound_label=compound.label
+    )
+
+    # If there are no no valid dataset options, hide the heatmap tab and tile
+    show_heatmap_tab = len(heatmap_dataset_options) > 0
 
     return render_template(
         "compounds/index.html",
@@ -109,9 +117,11 @@ def view_compound(name):
             "shared-portal-files", "Tools/Predictability_methodology.pdf"
         ),
         has_datasets=has_datasets,
-        order=get_order(has_predictability),
+        order=get_order(has_predictability, has_heatmap=show_heatmap_tab),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
-        dose_curve_options_new=format_dose_curve_options_new_tab_if_available(),
+        # If len(dose_curve_options_new) is 0, hide the tab in the index.html
+        dose_curve_options_new=dose_curve_options_new,
+        heatmap_dataset_options=heatmap_dataset_options,
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
@@ -200,7 +210,7 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab_if_available():
+def format_dose_curve_options_new_tab_if_available(compound_label: str):
     """
     Used for jinja rendering of the dose curve tab
     """
@@ -208,22 +218,39 @@ def format_dose_curve_options_new_tab_if_available():
         "ENABLED_FEATURES"
     ].new_compound_page_tabs
 
+    valid_options = []
     if show_new_dose_curves_tab:
-        dose_curve_options = [
-            {
-                "display_name": dataset.display_name,
-                "viability_dataset_id": dataset.viability_dataset_given_id,
-                "replicate_dataset": dataset.replicate_dataset,
-                "auc_dataset_id": dataset.auc_dataset_given_id,
-                "ic50_dataset_id": dataset.ic50_dataset_given_id,
-                "drc_dataset_label": dataset.drc_dataset_label,
-            }
-            for dataset in drc_compound_datasets
-        ]
+        for drc_dataset in drc_compound_datasets:
+            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound_label):
+                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
+                if (
+                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
+                    or current_app.config[
+                        "ENABLED_FEATURES"
+                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
+                ):
+                    valid_options.append(drc_dataset)
 
-        return dose_curve_options
-    else:
-        return []
+    return valid_options
+
+
+def format_heatmap_options_new_tab_if_available(compound_label: str):
+    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+
+    valid_options = []
+    if show_heatmap_tab:
+        for drc_dataset in drc_compound_datasets:
+            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound_label):
+                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
+                if (
+                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
+                    or current_app.config[
+                        "ENABLED_FEATURES"
+                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
+                ):
+                    valid_options.append(drc_dataset)
+
+    return valid_options
 
 
 def is_url_valid(url):
@@ -629,6 +656,3 @@ def get_predictability_files():
 def view_genomic_associations(compound_name: str):
     # This is broken and being replaced
     return render_template("entities/celfie_page.html", celfie=None)
-
-
-# %%

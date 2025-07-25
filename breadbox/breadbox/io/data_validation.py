@@ -102,7 +102,7 @@ def _validate_dimension_type_metadata_file(
             f"Please make sure your file has unique column names."
         )
 
-    validate_all_columns_have_types(cols, annotation_type_mapping)
+    validate_all_columns_have_types(cols.tolist(), annotation_type_mapping)
 
     bytes_buf.seek(0)
 
@@ -178,7 +178,9 @@ def _validate_data_value_type(
         ] + [
             None
         ]  # Data values can include missing values
-        if not lower_df.isin(lower_allowed_values).all().all():
+        if not bool(
+            lower_df.isin(lower_allowed_values).all(axis=None)
+        ):  # Flattened and checked all values
             raise FileValidationError(
                 f"Value must be in list of allowed values: {allowed_values}"
             )

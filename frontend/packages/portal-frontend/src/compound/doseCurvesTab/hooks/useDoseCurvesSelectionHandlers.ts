@@ -120,20 +120,6 @@ function useDoseCurvesSelectionHandlers(
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
-  const sortedTableData: TableFormattedData = useMemo(() => {
-    if (!tableData) return [];
-    if (selectedTableRows.size === 0) return tableData;
-    // Selected rows at the top, in order of selection, then the rest in original order
-    const selectedIds = Array.from(selectedTableRows);
-    const selected = selectedIds
-      .map((id) => tableData.find((row) => row.modelId === id))
-      .filter((row): row is NonNullable<typeof row> => Boolean(row));
-    const unselected = tableData.filter(
-      (row) => !selectedTableRows.has(row.modelId)
-    );
-    return [...selected, ...unselected];
-  }, [selectedTableRows, tableData]);
-
   return {
     selectedModelIds,
     setselectedModelIds: setSelectedModelIds,
@@ -145,7 +131,6 @@ function useDoseCurvesSelectionHandlers(
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    sortedTableData,
   };
 }
 

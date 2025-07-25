@@ -28,7 +28,9 @@ def log_test():
 def ok():
     check_celery()
 
-    task = site_check_task.is_ok.delay()
+    # is_ok is a Celery task created with the @app.task decorator which is a method of that task object.
+    # However, the type checker doesn't understand this transformation and still thinks is_ok is a regular function. So ignoring.
+    task = site_check_task.is_ok.delay()  # pyright: ignore
     task.wait(timeout=60, interval=0.5)
 
     return format_task_status(task)

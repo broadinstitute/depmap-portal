@@ -9,8 +9,8 @@ export const GeneEntityBoxColorList = [
 ];
 
 export const CompoundEntityBoxColorList = [
-  { r: 102, g: 153, b: 51 },
-  { r: 102, g: 153, b: 51 },
+  { r: 197, g: 82, b: 82 },
+  { r: 197, g: 82, b: 82 },
 ];
 
 export const InsignificantColor = { r: 255, g: 255, b: 255 };

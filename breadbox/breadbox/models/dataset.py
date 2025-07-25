@@ -12,14 +12,14 @@ from sqlalchemy import (
     Text,
     DateTime,
 )
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, Mapped, mapped_column
 from sqlalchemy.sql import func
 from breadbox.schemas.dataset import ColumnMetadata
 
 from breadbox.db.base_class import Base, UUIDMixin
 from breadbox.models.group import GroupMixin
 from breadbox.models.data_type import DataType
-from typing import Any, TypeVar, Type, TYPE_CHECKING
+from typing import Any, TypeVar, Type, TYPE_CHECKING, Optional
 from ..schemas.dataset import ValueType, AnnotationType
 
 
@@ -53,11 +53,19 @@ class DimensionType(Base):
         CheckConstraint("(axis == 'feature') OR (axis == 'sample')", name="ck_axis"),
     )
 
-    name = Column(String, nullable=False, primary_key=True)
-    display_name = Column(String, nullable=False, default=default_display_name)
-    id_column = Column(String, nullable=False)  # The column name in the file
-    axis = Column(String, nullable=False)  # "feature" or "sample" type
-    dataset_id = Column(String, ForeignKey("dataset.id"))  # One to One relationship
+    name: Mapped[str] = mapped_column(String, nullable=False, primary_key=True)
+    display_name: Mapped[str] = mapped_column(
+        String, nullable=False, default=default_display_name
+    )
+    id_column: Mapped[str] = mapped_column(
+        String, nullable=False
+    )  # The column name in the file
+    axis: Mapped[str] = mapped_column(
+        String, nullable=False
+    )  # "feature" or "sample" type
+    dataset_id: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("dataset.id")
+    )  # One to One relationship
     dataset = relationship(
         "Dataset",
         backref=backref("dimension_type", uselist=False),
@@ -76,31 +84,37 @@ class Dataset(Base, UUIDMixin, GroupMixin):
         ),
     )
 
-    given_id = Column(String, unique=True)
-    name = Column(String, nullable=False)
-    short_name = Column(String, nullable=True)
-    description = Column(String, nullable=True)
-    version = Column(String, nullable=True)
-    format = Column(String, nullable=False)
-    data_type = Column(String, ForeignKey(DataType.data_type), nullable=False)
-    is_transient = Column(Boolean, nullable=False)
+    given_id: Mapped[Optional[str]] = mapped_column(String, unique=True)
+    name: Mapped[str] = mapped_column(String, nullable=False)
+    short_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    version: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    format: Mapped[str] = mapped_column(String, nullable=False)
+    data_type: Mapped[str] = mapped_column(
+        String, ForeignKey(DataType.data_type), nullable=False
+    )
+    is_transient: Mapped[bool] = mapped_column(Boolean, nullable=False)
 
-    priority = Column(Integer, nullable=True)
-    taiga_id = Column(String, nullable=True)
+    priority: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
-    dataset_metadata = Column(JSON, nullable=True)  # jsonified dictionary
+    dataset_metadata: Mapped[Optional[dict]] = mapped_column(
+        JSON, nullable=True
+    )  # jsonified dictionary
     # DB calculates timestamp itself
-    upload_date = Column(
+    upload_date: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     # When row is updated, sqlalchemy inserts a new timestamp. DB calculates timestamp itself
-    update_date = Column(
+    update_date: Mapped[DateTime] = mapped_column(
         DateTime(timezone=True),
         onupdate=func.now(),
         server_default=func.now(),
         nullable=False,
     )
-    md5_hash = Column(String(32))  # NOTE: MD5 hashes are 128bits -> 32 hex digits
+    md5_hash: Mapped[Optional[str]] = mapped_column(
+        String(32)
+    )  # NOTE: MD5 hashes are 128bits -> 32 hex digits
 
     __mapper_args__ = {"polymorphic_on": format, "polymorphic_identity": "dataset"}
 
@@ -109,13 +123,13 @@ class TabularDataset(Dataset):
     __tablename__ = "tabular_dataset"
 
     # Cascade deletes so when Dataset row deleted, corresponding TabularDataset also deleted
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("dataset.id", ondelete="CASCADE"),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
-    index_type_name = Column(
+    index_type_name: Mapped[str] = mapped_column(
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     __mapper_args__ = {"polymorphic_identity": "tabular_dataset"}
@@ -154,25 +168,27 @@ class MatrixDataset(Dataset):
         ),
     )
     # Cascade deletes so when Dataset row deleted, corresponding MatrixDataset also deleted
-    id = Column(
+    id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("dataset.id", ondelete="CASCADE"),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
-    units = Column(
+    units: Mapped[str] = mapped_column(
         String, nullable=False
     )  # TODO: Limit to conitnuous value types later
-    feature_type_name = Column(
+    feature_type_name: Mapped[Optional[str]] = mapped_column(
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=True,
     )
-    sample_type_name = Column(
+    sample_type_name: Mapped[str] = mapped_column(
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     feature_type = relationship("DimensionType", foreign_keys=[feature_type_name])
     sample_type = relationship("DimensionType", foreign_keys=[sample_type_name])
-    value_type = Column(Enum(ValueType), nullable=False)
-    allowed_values = Column(JSON, nullable=True)  # jsonfied string of a list_strings
+    value_type: Mapped[ValueType] = mapped_column(Enum(ValueType), nullable=False)
+    allowed_values: Mapped[Optional[list]] = mapped_column(
+        JSON, nullable=True
+    )  # jsonfied string of a list_strings
 
     __mapper_args__ = {"polymorphic_identity": "matrix_dataset"}
 
@@ -195,25 +211,25 @@ class Dimension(Base, UUIDMixin, GroupMixin):
             name="units_for_tabular_subtype",
         ),
     )
-    dataset_id = Column(
+    dataset_id: Mapped[str] = mapped_column(
         String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
     )
     dataset = relationship(
         Dataset, backref=backref("dimensions", cascade="all, delete-orphan")
     )
-    given_id = Column(
+    given_id: Mapped[str] = mapped_column(
         String, nullable=False
     )  # name of series (column or index name of the dataset)
     # Denormalized data: this information is also stored in the dataset's corresponding
     # feature/sample/index type name column (the information is duplicated here for convenience)
-    dataset_dimension_type = Column(String, nullable=True)
-    subtype = Column(String, nullable=False)  # discriminator column
+    dataset_dimension_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    subtype: Mapped[str] = mapped_column(String, nullable=False)  # discriminator column
 
     # NOTE: The type stubs package 'sqlalchemy-stubs' with mypy plugin 'sqlmypy' does not support SQLAlchemy's declared attributes decorator (and the module it's imported from) and this is still an open issue (https://github.com/dropbox/sqlalchemy-stubs/issues/97).
     # We are using the SQLAlchemy single table inheritance model for potential performance benefits and in doing so, fields with the same name in different subtables need to use this decorator.
     # Although SQLAlchemy's first-party mypy plugin packaged at sqlalchemy2-stubs has support for the declared attributes decorator, it seems to require more explicit type mappings with SQLAlchemy models which the original sqlalchemy-stubs package could automatically infer.
     # We have decided to work around the issue by sticking with the sqlmypy plugin using sqlalchemy-stubs and moving those fields to the parent table with constraints on its values
-    index = Column(Integer, nullable=True)
+    index: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     __mapper_args__ = {"polymorphic_on": subtype, "polymorphic_identity": "dimension"}
 
@@ -239,10 +255,10 @@ class DatasetSample(Dimension):
 class TabularColumn(Dimension):
     __mapper_args__ = {"polymorphic_identity": "tabular_column"}
 
-    annotation_type = Column(
+    annotation_type: Mapped[Optional[AnnotationType]] = mapped_column(
         Enum(AnnotationType)
     )  # annotation type (i.e. text, categorical)
-    units = Column(String, nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     tabular_cells = relationship(
         "TabularCell",
@@ -252,7 +268,7 @@ class TabularColumn(Dimension):
         uselist=True,
     )
 
-    references_dimension_type_name = Column(
+    references_dimension_type_name: Mapped[Optional[str]] = mapped_column(
         String, ForeignKey("dimension_type.name"), nullable=True
     )
     references_dimension_type = relationship(DimensionType)
@@ -272,16 +288,18 @@ class TabularCell(Base, GroupMixin):
         ),
         UniqueConstraint("dimension_given_id", "tabular_column_id"),
     )
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    tabular_column_id = Column(String, ForeignKey("dimension.id", ondelete="CASCADE"))
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tabular_column_id: Mapped[str] = mapped_column(
+        String, ForeignKey("dimension.id", ondelete="CASCADE")
+    )
     tabular_column = relationship(
         "TabularColumn",
         primaryjoin="and_(TabularCell.tabular_column_id==TabularColumn.id)",
         back_populates="tabular_cells",
         lazy="select",
     )
-    dimension_given_id = Column(String, nullable=False)
-    value = Column(Text)
+    dimension_given_id: Mapped[str] = mapped_column(String, nullable=False)
+    value: Mapped[Optional[str]] = mapped_column(Text)
 
 
 class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
@@ -302,28 +320,28 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
         ),
     )
 
-    property = Column(String, nullable=False)
-    value = Column(String, nullable=True)
-    label = Column(String, nullable=False)
+    property: Mapped[str] = mapped_column(String, nullable=False)
+    value: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    label: Mapped[str] = mapped_column(String, nullable=False)
     # the uk for the bag of words
-    dimension_type_name = Column(
+    dimension_type_name: Mapped[str] = mapped_column(
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     dimension_type = relationship(DimensionType,)
-    dimension_given_id = Column(String, nullable=False)
+    dimension_given_id: Mapped[str] = mapped_column(String, nullable=False)
 
 
 class PropertyToIndex(Base, UUIDMixin, GroupMixin):
     __tablename__ = "property_to_index"
 
-    dimension_type_name = Column(
+    dimension_type_name: Mapped[str] = mapped_column(
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     dimension_type = relationship(
         DimensionType,
         backref=backref("properties_to_index", cascade="all, delete-orphan"),
     )
-    property = Column(String, nullable=False)
+    property: Mapped[str] = mapped_column(String, nullable=False)
 
 
 class PrecomputedAssociation(Base, UUIDMixin):
@@ -341,11 +359,17 @@ class PrecomputedAssociation(Base, UUIDMixin):
         ),
     )
 
-    dataset_1_id = Column(String, ForeignKey("dataset.id"), nullable=False)
+    dataset_1_id: Mapped[str] = mapped_column(
+        String, ForeignKey("dataset.id"), nullable=False
+    )
     dataset_1 = relationship(Dataset, foreign_keys=[dataset_1_id])
-    dataset_2_id = Column(String, ForeignKey("dataset.id"), nullable=False)
+    dataset_2_id: Mapped[str] = mapped_column(
+        String, ForeignKey("dataset.id"), nullable=False
+    )
     dataset_2 = relationship(Dataset, foreign_keys=[dataset_2_id])
 
-    axis = Column(String, nullable=False)  # "feature" or "sample" type
+    axis: Mapped[str] = mapped_column(
+        String, nullable=False
+    )  # "feature" or "sample" type
 
-    filename = Column(String, nullable=False)
+    filename: Mapped[str] = mapped_column(String, nullable=False)

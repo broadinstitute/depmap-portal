@@ -28,11 +28,6 @@
       grid-area: "selections";
     }
 
-    .mainContentGridErrorMessage {
-      grid-area: "plot / plot / selections / selections";
-      width: "100%";
-    }
-
     @media (max-width: 950px) {
       grid-template-areas:
         "selections"
