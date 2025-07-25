@@ -41,7 +41,7 @@ def test_render_view_compound(populated_db, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        monkeypatch.setattr(data_access, "valid_bb_row", mock_valid_row)
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
