@@ -14,7 +14,7 @@ def load_single_input_file_dependency_dataset(
 ):
     """
     This is used for loading things in the config that are in the dep_datasets list
-    These include CRISPR and RNAi datasets with gene entities, and AUC and IC50 datasets with compound experiment entities
+    These include CRISPR and RNAi datasets with gene entities, and AUC datasets with compound experiment entities
     This is NOT used for loading e.g. compound dose replicate datasets, even though they have a DependencyDataset enum
     """
     if "matrix_file_name_root" in dataset_metadata:

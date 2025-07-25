@@ -282,21 +282,11 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
     ),
-    DependencyEnum.GDSC1_IC50: DepDatasetMeta(
-        display_name="Drug sensitivity IC50 (Sanger GDSC1)",
-        units="ln(IC50) (μM)",
-        data_type=DataTypeEnum.drug_screen,
-    ),
     DependencyEnum.GDSC2_AUC: DepDatasetMeta(
         display_name="Drug sensitivity AUC (Sanger GDSC2)",
         units="AUC",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
-    ),
-    DependencyEnum.GDSC2_IC50: DepDatasetMeta(
-        display_name="Drug sensitivity IC50 (Sanger GDSC2)",
-        units="ln(IC50) (μM)",
-        data_type=DataTypeEnum.drug_screen,
     ),
     DependencyEnum.GDSC1_dose_replicate: DepDatasetMeta(
         display_name="Drug sensitivity replicate-level dose (Sanger GDSC1)",
@@ -359,11 +349,6 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
         priority=1,
-    ),
-    DependencyEnum.Prism_oncology_IC50: DepDatasetMeta(
-        display_name="PRISM OncRef IC50",  # display name overridden by dataset display name artifact
-        units="log2(IC50) (μM)",
-        data_type=DataTypeEnum.drug_screen,
     ),
     DependencyEnum.Prism_oncology_dose_replicate: DepDatasetMeta(
         display_name="PRISM OncRef Dose Replicate",
