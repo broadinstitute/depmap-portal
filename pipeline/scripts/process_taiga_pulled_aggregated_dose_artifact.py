@@ -24,9 +24,6 @@ def main():
         cached = tc.download_to_cache(taiga_id)
         shutil.copy2(cached, dest)
 
-    # this is handled by a different rule
-    assert dataset_label != "Prism_oncology_dose_replicate"
-    download_to_path(cell_lines_dataset_id, "cell_lines.csv")
     download_to_path(dataset_id, "out.csv")
     download_to_path(perturbations_dataset_id, "perturbations.csv")
 
