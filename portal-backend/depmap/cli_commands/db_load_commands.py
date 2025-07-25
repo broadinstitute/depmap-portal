@@ -1000,16 +1000,13 @@ def load_sample_data(
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
             DependencyEnum.GDSC1_AUC,
-            DependencyEnum.GDSC1_IC50,
             DependencyEnum.GDSC2_AUC,
-            DependencyEnum.GDSC2_IC50,
             DependencyEnum.CTRP_AUC,
             DependencyEnum.Repurposing_secondary_AUC,
             DependencyEnum.Repurposing_secondary_dose,
             DependencyEnum.Rep1M,
             DependencyEnum.Rep_all_single_pt,
             DependencyEnum.Prism_oncology_AUC,
-            DependencyEnum.Prism_oncology_IC50,
         ]
 
     if load_taiga_dependencies:

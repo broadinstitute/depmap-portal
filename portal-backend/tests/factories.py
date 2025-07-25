@@ -688,9 +688,7 @@ class DependencyDatasetFactory(DatasetFactory):
             lambda: "gene",
             {
                 DependencyDataset.DependencyEnum.GDSC1_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.GDSC1_IC50: "compound_experiment",
                 DependencyDataset.DependencyEnum.GDSC2_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.GDSC2_IC50: "compound_experiment",
                 DependencyDataset.DependencyEnum.CTRP_AUC: "compound_experiment",
                 DependencyDataset.DependencyEnum.Rep_all_single_pt: "compound_experiment",
                 DependencyDataset.DependencyEnum.Repurposing_secondary_AUC: "compound_experiment",
@@ -698,7 +696,6 @@ class DependencyDatasetFactory(DatasetFactory):
                 DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate: "compound_dose_replicate",
                 DependencyDataset.DependencyEnum.CTRP_dose_replicate: "compound_dose_replicate",
                 DependencyDataset.DependencyEnum.Prism_oncology_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.Prism_oncology_IC50: "compound_experiment",
                 DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate: "compound_dose_replicate",
             },
         )[o.name]
