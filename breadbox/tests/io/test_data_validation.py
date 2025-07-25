@@ -22,14 +22,14 @@ def test_verify_unique_rows_and_cols():
     # duplicate row index failure
     with pytest.raises(FileValidationError) as ex:
         verify_unique_rows_and_cols_df(
-            pd.DataFrame(0, columns=["C1", "C2"], index=["A", "B", "A"])
+            pd.DataFrame(0, columns=["C1", "C2"], index=["A", "B", "A"])  # type: ignore
         )
     assert "Encountered duplicate row indices (Sample IDs): A" == str(ex.value.detail)
 
     # duplicate col failure
     with pytest.raises(FileValidationError) as ex:
         verify_unique_rows_and_cols_df(
-            pd.DataFrame(0, columns=["C1", "C2", "C1"], index=["A", "B", "C"])
+            pd.DataFrame(0, columns=["C1", "C2", "C1"], index=["A", "B", "C"])  # type: ignore
         )
     assert "Encountered duplicate column names (Feature IDs): C1" == str(
         ex.value.detail
@@ -37,7 +37,7 @@ def test_verify_unique_rows_and_cols():
 
     # no problems
     verify_unique_rows_and_cols_df(
-        pd.DataFrame(0, columns=["C1", "C2", "C3"], index=["A", "B", "C"])
+        pd.DataFrame(0, columns=["C1", "C2", "C3"], index=["A", "B", "C"])  # type: ignore
     )
 
     # now check a long error to make sure it shortens it
@@ -45,7 +45,7 @@ def test_verify_unique_rows_and_cols():
     with pytest.raises(FileValidationError) as ex:
         columns = [f"C{i}" for i in range(20)]
         verify_unique_rows_and_cols_df(
-            pd.DataFrame(0, columns=columns + columns, index=["A", "B", "C"])
+            pd.DataFrame(0, columns=columns + columns, index=["A", "B", "C"])  # type: ignore
         )
     assert (
         "Encountered duplicate column names (Feature IDs): C0, C1, C2, C3, C4, ..., C15, C16, C17, C18, C19"
@@ -82,7 +82,7 @@ def test_read_and_validate_matrix_df_helper(tmpdir):
 
     # parse this matrix as categorical
     df = read_and_validate_matrix_df_helper(
-        to_csv(pd.DataFrame("3", columns=["C1", "C2"], index=["A", "B"])),
+        to_csv(pd.DataFrame("3", columns=["C1", "C2"], index=["A", "B"])),  # type: ignore
         ValueType.categorical,
         ["2", "3"],
         "csv",
@@ -95,7 +95,7 @@ def test_read_and_validate_matrix_df_helper(tmpdir):
 
     # parse this matrix as floats
     df = read_and_validate_matrix_df_helper(
-        to_csv(pd.DataFrame("0", columns=["C1", "C2"], index=["A", "B"])),
+        to_csv(pd.DataFrame("0", columns=["C1", "C2"], index=["A", "B"])),  # type: ignore
         ValueType.continuous,
         None,
         "csv",
@@ -105,7 +105,7 @@ def test_read_and_validate_matrix_df_helper(tmpdir):
 
     # make sure the index and columns are read as strings even if they're numeric values
     df = read_and_validate_matrix_df_helper(
-        to_csv(pd.DataFrame("0", columns=["10", "11"], index=["0", "1"])),
+        to_csv(pd.DataFrame("0", columns=["10", "11"], index=["0", "1"])),  # type: ignore
         ValueType.continuous,
         None,
         "csv",
