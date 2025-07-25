@@ -109,10 +109,6 @@ class Dataset(Model):
         return DATASET_METADATA[self.name].nominal_range
 
     @property
-    def is_ic50(self):
-        return self.units == "log2(IC50) (μM)" or self.units == "ln(IC50) (μM)"
-
-    @property
     def is_compound_experiment(self):
         return enums.DependencyEnum.is_compound_experiment_enum(self.name)
 
