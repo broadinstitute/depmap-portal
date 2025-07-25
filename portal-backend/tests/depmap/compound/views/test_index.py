@@ -1,3 +1,5 @@
+from depmap.data_access import breadbox_dao
+from depmap.interactive import interactive_utils
 from depmap.settings.settings import TestConfig
 import pandas as pd
 import pytest
@@ -39,7 +41,16 @@ def test_render_view_compound(populated_db, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
@@ -455,7 +466,16 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
 
@@ -477,7 +497,16 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
@@ -512,7 +541,16 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
         assert result == drc_compound_datasets

@@ -249,11 +249,20 @@ def is_continuous(dataset_id: str) -> bool:
     return interactive_utils.is_continuous(dataset_id)
 
 
+def dataset_exists(dataset_id: str) -> bool:
+    """
+    Check whether the given dataset exists in either the legacy or breadbox databases.
+    """
+    return interactive_utils.has_config(dataset_id) or breadbox_dao.is_breadbox_id(
+        dataset_id
+    )
+
+
 def valid_row(dataset_id: str, row_name: str) -> bool:
     """
     Check whether the given entity label exists in the given dataset.
     """
-    if is_breadbox_id(dataset_id):
+    if breadbox_dao.is_breadbox_id(dataset_id):
         return breadbox_dao.valid_row(dataset_id, row_name)
     return interactive_utils.valid_row(dataset_id, row_name)
 
