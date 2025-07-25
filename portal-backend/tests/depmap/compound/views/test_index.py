@@ -41,7 +41,11 @@ def test_render_view_compound(populated_db, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_bb_row", mock_valid_row)
+        def mock_dataset_exists(dataset_id):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        monkeypatch.setattr(data_access, "dataset_exists", mock_dataset_exists)
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
@@ -457,7 +461,11 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_bb_row", mock_valid_row)
+        def mock_dataset_exists(dataset_id):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        monkeypatch.setattr(data_access, "dataset_exists", mock_dataset_exists)
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
 
@@ -479,7 +487,11 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_bb_row", mock_valid_row)
+        def mock_dataset_exists(dataset_id):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        monkeypatch.setattr(data_access, "dataset_exists", mock_dataset_exists)
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
@@ -514,7 +526,11 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_bb_row", mock_valid_row)
+        def mock_dataset_exists(dataset_id):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        monkeypatch.setattr(data_access, "dataset_exists", mock_dataset_exists)
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
         assert result == drc_compound_datasets

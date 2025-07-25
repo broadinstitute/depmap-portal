@@ -221,7 +221,9 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
     valid_options = []
     if show_new_dose_curves_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.valid_bb_row(
+            if data_access.dataset_exists(
+                drc_dataset.auc_dataset_given_id
+            ) and data_access.valid_row(
                 drc_dataset.auc_dataset_given_id, compound_label
             ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
@@ -242,7 +244,9 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
     valid_options = []
     if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.valid_bb_row(
+            if data_access.dataset_exists(
+                drc_dataset.auc_dataset_given_id
+            ) and data_access.valid_row(
                 drc_dataset.auc_dataset_given_id, compound_label
             ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.

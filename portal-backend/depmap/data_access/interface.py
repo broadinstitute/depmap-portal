@@ -249,6 +249,15 @@ def is_continuous(dataset_id: str) -> bool:
     return interactive_utils.is_continuous(dataset_id)
 
 
+def dataset_exists(dataset_id: str) -> bool:
+    """
+    Check whether the given dataset exists in either the legacy or breadbox databases.
+    """
+    return interactive_utils.has_config(dataset_id) or breadbox_dao.is_breadbox_id(
+        dataset_id
+    )
+
+
 def valid_row(dataset_id: str, row_name: str) -> bool:
     """
     Check whether the given entity label exists in the given dataset.
@@ -367,16 +376,6 @@ def get_subsetted_df_by_labels_compound_friendly(dataset_id: str) -> pd.DataFram
 ##################################################
 # METHODS BELOW ARE ONLY SUPPORTABLE BY BREADBOX #
 ##################################################
-
-
-def valid_bb_row(dataset_id: str, row_name: str) -> bool:
-    """
-    Check whether a breadbox dataset exists with the given entity label in the given dataset.
-    """
-    if is_breadbox_id(dataset_id):
-        return breadbox_dao.valid_row(dataset_id, row_name)
-
-    return False
 
 
 def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:

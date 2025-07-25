@@ -18,6 +18,7 @@ from .interface import (
     get_slice_data,
     is_categorical,
     is_continuous,
+    dataset_exists,
     # compound-specific methods
     get_all_datasets_containing_compound,
     get_subsetted_df_by_labels_compound_friendly,
@@ -32,6 +33,4 @@ from .interface import (
     get_custom_cell_lines_dataset,
     get_metadata_dataset_id,
     has_config,
-    # Breadbox specific
-    valid_bb_row,
 )
