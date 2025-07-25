@@ -369,6 +369,16 @@ def get_subsetted_df_by_labels_compound_friendly(dataset_id: str) -> pd.DataFram
 ##################################################
 
 
+def valid_bb_row(dataset_id: str, row_name: str) -> bool:
+    """
+    Check whether a breadbox dataset exists with the given entity label in the given dataset.
+    """
+    if is_breadbox_id(dataset_id):
+        return breadbox_dao.valid_row(dataset_id, row_name)
+
+    return False
+
+
 def get_tabular_dataset_column(dataset_id: str, column_name: str) -> pd.Series:
     """
     Get a column of values from the given tabular dataset. 

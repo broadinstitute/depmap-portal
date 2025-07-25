@@ -32,4 +32,6 @@ from .interface import (
     get_custom_cell_lines_dataset,
     get_metadata_dataset_id,
     has_config,
+    # Breadbox specific
+    valid_bb_row,
 )
