@@ -1,3 +1,4 @@
+# type: ignore
 import numpy as np
 import pandas as pd
 from breadbox.schemas.dataframe_wrapper import (
@@ -65,7 +66,7 @@ def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
 
     # Verify output
     with h5py.File(output_h5, "r") as f:
-        data: h5py.Dataset = f["data"][:]
+        data = f["data"][:]
         assert data.shape == (500, 11000)
         # Check if the first column matches the first column of the original dataframe
         assert (data[:, 0] == test_dataframe.iloc[:, 1]).all()
