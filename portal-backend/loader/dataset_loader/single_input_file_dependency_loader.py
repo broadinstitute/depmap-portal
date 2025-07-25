@@ -50,9 +50,6 @@ def load_single_input_file_dependency_dataset(
     if DependencyEnum.is_compound_experiment_enum(dataset_enum):
         entity_lookup = compound_experiment_lookup
         entity_type = "compound_experiment"
-    elif DependencyDataset.is_dose_enum(dataset_enum):
-        entity_lookup = compound_dose_lookup
-        entity_type = "compound_dose"
     else:
         entity_lookup = None
         entity_type = "gene"

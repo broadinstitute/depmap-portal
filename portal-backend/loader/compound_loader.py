@@ -117,24 +117,6 @@ def get_target_genes(gene_name_of_targets):
     return genes
 
 
-def load_repurposing_compound_doses(hdf5_file_with_dose_rows):
-    """
-    Specifically assuming the format of the repurposing dose data
-    Expected format is <broad id>::<dose>::<screen id> or
-                       <broad id>::<dose>::<screen id>::PROS001_PR500
-    e.g. BRD-A57886255-001-01-1::0.15625::HTS002
-    """
-    doses = hdf5_utils.get_row_index(
-        source_dir=".", file_path=hdf5_file_with_dose_rows
-    )  # the function just wants the path split
-    input_list = []
-    for dose in doses:
-        broad_id, dose = dose.split("::")[:2]
-        input_list.append((broad_id, dose))
-
-    load_compound_doses(input_list, "BRD")
-
-
 def load_compound_doses(input_list, xref_type):
     """
     :param input_list: list of (xref, dose) tuples

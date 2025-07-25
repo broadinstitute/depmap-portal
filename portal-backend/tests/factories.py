@@ -694,7 +694,6 @@ class DependencyDatasetFactory(DatasetFactory):
                 DependencyDataset.DependencyEnum.CTRP_AUC: "compound_experiment",
                 DependencyDataset.DependencyEnum.Rep_all_single_pt: "compound_experiment",
                 DependencyDataset.DependencyEnum.Repurposing_secondary_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.Repurposing_secondary_dose: "compound_dose",
                 DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate: "compound_dose_replicate",
                 DependencyDataset.DependencyEnum.CTRP_dose_replicate: "compound_dose_replicate",
                 DependencyDataset.DependencyEnum.Prism_oncology_AUC: "compound_experiment",
