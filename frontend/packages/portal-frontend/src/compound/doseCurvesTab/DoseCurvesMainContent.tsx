@@ -181,13 +181,13 @@ function DoseCurvesMainContent({
           information. Click on items to select from the plot or table.
         </p>
       </div>
-      <div className={styles.mainContentGrid}>
-        {error ? (
-          <div className={styles.mainContentGridErrorMessage}>
-            Error loading dose curve data.
-          </div>
-        ) : (
-          <>
+      {error ? (
+        <div className={styles.errorMessage}>
+          Error loading dose curve data.
+        </div>
+      ) : (
+        <>
+          <div className={styles.mainContentGrid}>
             <div style={styles.plot}>
               <DoseCurvesPlotSection
                 isLoading={isLoading}
@@ -220,9 +220,9 @@ function DoseCurvesMainContent({
                 }
               />
             </div>
-          </>
-        )}
-      </div>
+          </div>{" "}
+        </>
+      )}
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentCellLines}>
         <h3>Cell Lines</h3>

@@ -6,6 +6,7 @@ import customizeDragLayer from "./customizeDragLayer";
 import { DO_LOG2_PLOT_DATA } from "src/compound/heatmapTab/heatmapPlotUtils";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import type { PlotlyHTMLElement, Layout, Data as PlotlyData } from "plotly.js";
+import usePlotResizer from "../../hooks/usePlotResizer";
 
 export default function InteractiveBrushableHeatmap({
   data,
@@ -21,6 +22,7 @@ export default function InteractiveBrushableHeatmap({
   Plotly,
 }: InteractiveHeatmapProps & { Plotly: PlotlyType }) {
   const ref = useRef<ExtendedPlotType>(null);
+  usePlotResizer(Plotly, ref);
 
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
 
@@ -86,6 +88,7 @@ export default function InteractiveBrushableHeatmap({
       hovermode: "closest",
       hoverlabel: { namelength: -1 },
       dragmode: false,
+      autosize: true,
       xaxis: {
         title: xAxisTitle,
         side: "top",
@@ -191,7 +194,7 @@ export default function InteractiveBrushableHeatmap({
       const nextLayout = { ...plot.layout };
       (plot.layout.shapes as any) = undefined;
       zoom("reset");
-      Plotly.react(plot, plot.data, nextLayout, {});
+      Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
     on("plotly_afterplot", () => {
@@ -216,6 +219,13 @@ export default function InteractiveBrushableHeatmap({
 
     on("plotly_hover", (e: any) => {
       setHoveredColumns([e.points[0].pointIndex[1]]);
+    });
+
+    // https://github.com/plotly/plotly.js/blob/55dda47/src/lib/prepare_regl.js
+    on("plotly_webglcontextlost", () => {
+      // Fixes a bug where points disappear after the browser has been left
+      // idle for some time.
+      Plotly.redraw(plot);
     });
 
     // Used for PlotControls.tsx to zoom to the highest resolution possible
