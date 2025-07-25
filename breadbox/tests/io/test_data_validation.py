@@ -121,7 +121,7 @@ def test_validate_tabular_df_schema(tmpdir):
     # fewer edge cases with tables. Just exercise columns with numbers to see if
     # anything weird happens
     df = _validate_tabular_df_schema(
-        to_csv(pd.DataFrame("0", columns=["13", "10", "11"], index=[1]), index=False),  # type: ignore[arg-type]
+        to_csv(pd.DataFrame("0", columns=["13", "10", "11"], index=[1]), index=False),
         {
             "10": ColumnMetadata(col_type=AnnotationType.text),
             "13": ColumnMetadata(col_type=AnnotationType.text),
@@ -139,7 +139,7 @@ def test_validate_tabular_df_schema(tmpdir):
     # didn't test parsing str lists, so do that here
     df = _validate_tabular_df_schema(
         to_csv(
-            pd.DataFrame([["0", json.dumps(["1", "2"])]], columns=["ID", "list"]),  # type: ignore[arg-type]
+            pd.DataFrame([["0", json.dumps(["1", "2"])]], columns=["ID", "list"]),
             index=False,
         ),
         {
@@ -167,7 +167,7 @@ def test_validate_tabular_df_schema(tmpdir):
                     "col6": [1, 0, 1],
                     "col7": [True, False, True],
                 },
-                columns=["ID", "col1", "col2", "col3", "col4", "col5", "col6", "col7"],  # type: ignore[arg-type]
+                columns=["ID", "col1", "col2", "col3", "col4", "col5", "col6", "col7"],
             ),
             index=False,
         ),
@@ -220,7 +220,7 @@ def test_incorrect_typing_tabular_df_schema(tmpdir):
             to_csv(
                 pd.DataFrame(
                     {"ID": ["id1", "id2", "id3"], "col1": ["val1", "val2", "val3"]},
-                    columns=["ID", "col1"],  # type: ignore[arg-type]
+                    columns=["ID", "col1"],
                 ),
                 index=False,
             ),
