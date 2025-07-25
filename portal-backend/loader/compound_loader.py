@@ -1,6 +1,6 @@
 import csv
 from collections import defaultdict
-from depmap.compound.models import Compound, CompoundExperiment, CompoundDose
+from depmap.compound.models import Compound, CompoundExperiment
 from depmap.entity.models import EntityAlias
 from depmap.gene.models import Gene
 from depmap.extensions import db
@@ -115,39 +115,3 @@ def get_target_genes(gene_name_of_targets):
         else:
             genes.append(gene)
     return genes
-
-
-def load_compound_doses(input_list, xref_type):
-    """
-    :param input_list: list of (xref, dose) tuples
-    :return:
-    """
-    num_missing_experiments = 0
-
-    for xref, dose in input_list:
-        compound_experiment = CompoundExperiment.get_by_xref(
-            xref, xref_type, must=False
-        )
-        if not compound_experiment:
-            log_data_issue(
-                "CompoundDose",
-                "CompoundExperiment for {}:{} not found".format(xref_type, xref),
-            )
-            num_missing_experiments += 1
-            pass
-        else:
-            label = CompoundDose.format_label(compound_experiment.label, dose)
-            db.session.add(
-                CompoundDose(
-                    label=label, compound_experiment=compound_experiment, dose=dose
-                )
-            )
-
-    num_loaded = len(input_list) - num_missing_experiments
-    assert num_loaded > num_missing_experiments
-
-    print(
-        "Loaded {} compound doses, skipped {} due to missing compound experiments".format(
-            num_loaded, num_missing_experiments
-        )
-    )

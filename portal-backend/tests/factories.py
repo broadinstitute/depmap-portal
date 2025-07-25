@@ -44,7 +44,6 @@ from depmap.antibody.models import Antibody
 from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.compound.models import (
     CompoundDoseReplicate,
-    CompoundDose,
     CompoundExperiment,
     Compound,
     DoseResponseCurve,
@@ -263,21 +262,6 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     )
     label = typing.cast(str, factory.Sequence(lambda number: "CTRP:{}".format(number)))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
-
-
-class CompoundDoseFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = CompoundDose
-
-        # Use the not-so-global scoped_session
-        # Warning: DO NOT USE common.Session()!
-        sqlalchemy_session = _db.session
-
-    type = "compound_dose"
-    label = factory.Sequence(lambda number: "BRD:{} dose".format(number))
-
-    compound_experiment = factory.LazyAttribute(lambda o: CompoundExperimentFactory())
-    dose = factory.Sequence(lambda number: number)
 
 
 class CompoundDoseReplicateFactory(SQLAlchemyModelFactory):

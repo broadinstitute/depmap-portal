@@ -19,8 +19,6 @@ from depmap.cell_line.models import (
 )
 from depmap.compound.models import (
     Compound,
-    CompoundDose,
-    CompoundDoseReplicate,
     CompoundExperiment,
 )
 from depmap.database import (
