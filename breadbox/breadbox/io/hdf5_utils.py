@@ -1,5 +1,6 @@
 from typing import List, Optional, Literal
 
+from breadbox.schemas.custom_http_exception import FileValidationError
 from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
 import h5py
 import numpy as np
@@ -69,7 +70,6 @@ def write_hdf5_file(
             # For ParquetDataFrameWrapper
             # NOTE: Our number of columns are usually much larger than rows so we batch by columns to avoid memory issues
             # TODO: If hdf5 file size becomes an issue, we can consider using compression or chunking
-
             cols = df_wrapper.get_column_names()
             rows = df_wrapper.get_index_names()
             shape = (len(rows), len(cols))
@@ -84,14 +84,23 @@ def write_hdf5_file(
                 end_col = i + batch_size
 
                 col_batch = cols[i:end_col]
+
                 # Read the chunk of data from the Parquet file
                 chunk_df = df_wrapper.read_columns(col_batch)
 
                 if dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     chunk_df = chunk_df.fillna("")
+                else:
+                    chunk_df = chunk_df.astype("float")
 
-                dataset[:, i:end_col] = chunk_df.values
+                values = chunk_df.values
+                try:
+                    dataset[:, i:end_col] = values
+                except Exception as e:
+                    raise FileValidationError(
+                        f"Failed to update {i}:{end_col} of hdf5 file {path} with {values}"
+                    ) from e
 
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
         create_index_dataset(f, "samples", pd.Index(df_wrapper.get_index_names()))
