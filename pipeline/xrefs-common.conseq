@@ -191,20 +191,34 @@ add-if-missing {
 }
 
 add-if-missing {
-    'type' : 'repurposing-curves',
-    'label' : 'Repurposing_secondary_AUC',
-    'dataset_id' : 'secondary-screen-0854.13/secondary_dose_response_curve_parameters'
-}
-
-add-if-missing {
-    'type' : 'repurposing-dose-replicate',
-    'label' : 'Repurposing_secondary_dose_replicate', # matches with Dataset enum
-    'dataset_id' : 'secondary-screen-0854.13/secondary_logfold_change',
-    'treatment_info_dataset_id': "secondary-screen-0854.13/secondary_replicate_treatment_info",
-    'cell_line_info_dataset_id' : 'secondary-screen-0854.13/cell_line_info'
-}
-
-add-if-missing {
     'type': 'harmonized-rppa',
     'dataset_id': 'harmonized-proteomics-datasets-754a.20/harmonized_RPPA_CCLE',
+}
+
+add-if-missing {
+  "type": "viability_dataset",
+  "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGLog2ViabilityMatrix",
+  "perturbations_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGLog2ViabilityConditions",
+  "label": "Repurposing_secondary_dose_replicate",
+  "units": "log_viability"
+}
+
+
+add-if-missing {
+  "type": "download_from_taiga",
+  "target_type": "dep-matrix",
+  "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGAUCMatrix",
+  "orig_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGAUCMatrix",
+  "label": "Repurposing_secondary_AUC",
+  "confounders_label": "",
+  "format": "hdf5"
+}
+
+add-if-missing {
+  "label": "Repurposing_secondary_per_curve",
+  "orig_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGResponseCurves",
+  "type": "download_from_taiga",
+  "target_type": "dose-response-curve-params",
+  "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGResponseCurves",
+  "format": "csv"
 }

@@ -54,7 +54,9 @@ rule process_taiga_pulled_artifact:
       with open("results.json", "w") as f:
          json.dump({"outputs": [artifact]}, f)
    """
+
 # TODO: Need to update to Taiga Client V3 but don't know what the requested format should be for download_to_cache
+# TODO: This rule is deprecated. After all the datasets have been moved to the new 'processed' versions, we can drop it
 rule process_taiga_pulled_aggregated_dose_artifact:
    inputs:
       download={"type": "download_aggregated_dose_from_taiga"},
@@ -72,4 +74,24 @@ rule process_taiga_pulled_aggregated_dose_artifact:
       "perturbations": {"$filename": "perturbations.csv"}
    }
    run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.cell_lines_dataset_id }} {{ inputs.download.perturbations_dataset_id }} {{ inputs.download.dataset_id }}"
+   run "python {{ inputs.hdf5_utils.filename }} to_hdf5 out.csv csv out.hdf5"
+
+
+rule fetch_viability_dataset_from_taiga:
+    inputs:
+      script=fileref("scripts/fetch_viability_dataset_from_taiga.py"),
+      download={"type": "viability_dataset"},
+      hdf5_utils=fileref("scripts/hdf5_utils.py")
+    outputs: {
+      "type": "aggregated-dose-replicate-level",
+      "label": "{{ inputs.download.label }}",
+      "dataset_id": "{{ inputs.download.dataset_id }}",
+      "orig_dataset_id": "{{ inputs.download.dataset_id }}",
+      "cell_lines_dataset_id": "none",
+      "perturbations_dataset_id": "{{ inputs.download.perturbations_dataset_id }}",
+      "hdf5_filename": {"$filename": "out.hdf5"},
+      "cell_lines_filename": {"$filename": "cell_lines.csv"},
+      "perturbations": {"$filename": "perturbations.csv"}
+   }
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.perturbations_dataset_id }} {{ inputs.download.dataset_id }} {{ inputs.download.units }}"
    run "python {{ inputs.hdf5_utils.filename }} to_hdf5 out.csv csv out.hdf5"

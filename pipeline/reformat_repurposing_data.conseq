@@ -1,58 +1,5 @@
 
 
-rule reformat_dose_level_repurposing_secondary:
-    inputs: script=fileref("scripts/compounds/repurposing/reformat_dose_level_repurposing_secondary.py"),
-        filter_script=fileref("scripts/compounds/repurposing/filter_repurposing_data.py"),
-        hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py'),
-        data={'type': 'repurposing-dose'},
-        taiga_token={"type": "config-file", "name": "taiga-token"}
-    outputs: {
-            'type': 'dep-matrix', 
-            "label": "Repurposing_secondary_dose", # matches with the enum
-            "orig_dataset_id": "{{inputs.data.dataset_id}}",
-            'filename': {'$filename': 'out.hdf5'}
-          }, {
-            'type': "dropped-repurposing-secondary-doses",
-            'filename': {'$filename': 'dropped.json'}
-          }
-    run "cp {{ inputs.taiga_token.filename }} ./.taiga-token"
-    run "python3 {{ inputs.filter_script.filename }} {{ inputs.data.dataset_id }} {{ inputs.data.treatment_info_dataset_id }} {{ inputs.data.cell_line_info_dataset_id }} --screens HTS002"
-    run "python3 {{inputs.script.filename}} filtered_data.csv filtered_treatment_info.csv"
-
-
-rule reformat_dose_replicate_level_repurposing_secondary:
-    executor: dsub {"min_ram": "10"}
-    inputs: script=fileref("scripts/compounds/repurposing/reformat_dose_replicate_level_repurposing_secondary.py"),
-        filter_script=fileref("scripts/compounds/repurposing/filter_repurposing_data.py"),
-        data={'type': 'repurposing-dose-replicate'},
-        taiga_token={"type": "config-file", "name": "taiga-token"}
-    outputs: {
-        "type": 'dose-replicate-level',
-        "label": "{{ inputs.data.label }}",
-        "orig_dataset_id": "{{ inputs.data.dataset_id }}",
-        "filename": {"$filename": "reformatted_dose_replicate_level_secondary_screen_repurposing_data.csv"} }
-
-    run "cp {{ inputs.taiga_token.filename }} ./.taiga-token"
-    run "python3 {{ inputs.filter_script.filename }} {{ inputs.data.dataset_id }} {{ inputs.data.treatment_info_dataset_id }} {{ inputs.data.cell_line_info_dataset_id }} --screens HTS002"
-    run "python3 {{inputs.script.filename}} filtered_data.csv filtered_treatment_info.csv"
-
-rule reformat_curve_params_secondary_repurposing_data:
-    executor: dsub {"min_ram": "20"}
-    inputs: script=filename("scripts/compounds/repurposing/reformat_dose_response_curve_params_repurposing_secondary.py"),
-        hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py'),
-        data={'type': 'repurposing-curves'},
-        taiga_token={"type": "config-file", "name": "taiga-token"}
-    outputs: {
-        "type": 'dose-response-curve-params',
-        "label": "repurposing_per_curve",
-        "orig_dataset_id": "{{ inputs.data.dataset_id }}",
-        "filename": {"$filename": "curves.csv"} },
-        {"type": 'dep-matrix',
-        "label": "{{ inputs.data.label }}",
-        "orig_dataset_id": "{{ inputs.data.dataset_id }}",
-        "filename": {"$filename": "auc.hdf5" } }
-    run "cp {{ inputs.taiga_token.filename }} ./.taiga-token"
-    run "python3 {{inputs.script.filename}} {{ inputs.data.dataset_id }}"
 
 rule reformat_repurposing_single_pt_data:
     inputs: script=fileref("scripts/compounds/repurposing/reformat_repurposing_single_pt.py"),
