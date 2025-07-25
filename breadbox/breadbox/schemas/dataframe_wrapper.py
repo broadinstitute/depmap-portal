@@ -33,16 +33,13 @@ class ParquetDataFrameWrapper:
 
     def get_index_names(self) -> List[str]:
         index_col = self.schema.names[0]
-        print("index_col", index_col)
         index_names = pd.read_parquet(
             self.parquet_path, columns=[index_col], engine="fastparquet"
         )[index_col].to_list()
-        print("index_names", index_names[:10])  # Print first 10 for debugging
         return index_names
 
     def get_column_names(self) -> List[str]:
         col_names = self.schema.names[1:]  # Exclude the index column
-        print("col_names", col_names[:10])  # Print first 10 for debugging
         return col_names
 
     def read_columns(self, columns: list[str]) -> pd.DataFrame:
