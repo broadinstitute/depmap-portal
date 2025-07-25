@@ -262,7 +262,7 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     """
     Check whether the given entity label exists in the given dataset.
     """
-    if is_breadbox_id(dataset_id):
+    if breadbox_dao.is_breadbox_id(dataset_id):
         return breadbox_dao.valid_row(dataset_id, row_name)
     return interactive_utils.valid_row(dataset_id, row_name)
 

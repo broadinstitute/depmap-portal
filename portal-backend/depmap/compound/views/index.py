@@ -4,6 +4,7 @@ import os
 import tempfile
 from typing import Any, List, Optional
 import zipfile
+from depmap.interactive import interactive_utils
 import requests
 import urllib.parse
 
@@ -219,6 +220,7 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
     ].new_compound_page_tabs
 
     valid_options = []
+
     if show_new_dose_curves_tab:
         for drc_dataset in drc_compound_datasets:
             if data_access.dataset_exists(
@@ -242,6 +244,7 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
     show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
 
     valid_options = []
+
     if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
             if data_access.dataset_exists(
