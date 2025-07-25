@@ -11,7 +11,7 @@ rule dep_dep_correlation:
         'type': 'dep-matrix-pearson-cor',
         'db': {'$filename': 'dep_dep_cor.db'},
         'label': '{{ inputs.dep.label }}',
-        'dep_dataset_id': '{{ inputs.dep.orig_dataset_id }}',
+        'dep_dataset_id': '{{ inputs.dep.orig_dataset_id | default(inputs.dep.dataset_id) }}',
         'category': 'dep'
     }
 
@@ -62,7 +62,7 @@ rule dep_bio_correlation:
         'type': 'dep-matrix-pearson-cor',
         'db': {'$filename': 'dep_biom_cor.db'},
         'label': '{{ inputs.dep.label }}',
-        'dep_dataset_id': '{{ inputs.dep.orig_dataset_id }}',
+        'dep_dataset_id': '{{ inputs.dep.orig_dataset_id | default(inputs.dep.dataset_id) }}',
         'category': '{{ inputs.biomarker.category }}',
         'biom_source_dataset_id': '{{ inputs.biomarker.source_dataset_id }}'
     }
