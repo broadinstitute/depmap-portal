@@ -316,12 +316,6 @@ DATASET_METADATA: Dict[
         nominal_range=(0, 1.1),
         global_priority=13,
     ),
-    DependencyEnum.Repurposing_secondary_dose: DepDatasetMeta(
-        display_name="Drug sensitivity dose-level (PRISM Repurposing Secondary Screen)",
-        units="log2 fold change (μM)",
-        data_type=DataTypeEnum.drug_screen,
-        global_priority=14,
-    ),
     DependencyEnum.Repurposing_secondary_dose_replicate: DepDatasetMeta(
         display_name="Drug sensitivity replicate-level dose (PRISM Repurposing Secondary Screen)",
         units="Viability",  # does not contain (μM), because this goes into the y axis of the dose response curve. the dose-axis label in dose curves is set in react code

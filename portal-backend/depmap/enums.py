@@ -40,7 +40,6 @@ class DependencyEnum(DatasetEnum):
     CTRP_dose_replicate = "CTRP_dose_replicate"
     GDSC1_dose_replicate = "GDSC1_dose_replicate"
     GDSC2_dose_replicate = "GDSC2_dose_replicate"
-    Repurposing_secondary_dose = "Repurposing_secondary_dose"
     Repurposing_secondary_dose_replicate = "Repurposing_secondary_dose_replicate"
     Rep1M = "Rep1M"
     Rep_all_single_pt = "Rep_all_single_pt"

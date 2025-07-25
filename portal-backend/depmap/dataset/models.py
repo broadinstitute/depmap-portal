@@ -19,8 +19,6 @@ from depmap.cell_line.models import (
 )
 from depmap.compound.models import (
     Compound,
-    CompoundDose,
-    CompoundDoseReplicate,
     CompoundExperiment,
 )
 from depmap.database import (
@@ -113,35 +111,6 @@ class Dataset(Model):
         return enums.DependencyEnum.is_compound_experiment_enum(self.name)
 
     @property
-    def is_dose(self):
-        """
-        A dose dataset refers to a dataset where there is one value per dose, collapsed across any replicates. See the CompoundDose entity
-        """
-        return DependencyDataset.is_dose_enum(self.name)
-
-    @staticmethod
-    def is_dose_enum(enum):
-        """
-        A dose dataset refers to a dataset where there is one value per dose, collapsed across any replicates. See the CompoundDose entity
-        """
-        return enum in {DependencyDataset.DependencyEnum.Repurposing_secondary_dose}
-
-    def get_dose_enum(self):
-        """
-        Gets the enum of the dose dataset associated with this self dataset
-        Or returns none if there is no dose dataset
-        A dose dataset refers to a dataset where there is one value per dose, collapsed across any replicates. See the CompoundDose entity
-        """
-        dataset_to_dose_dataset = {
-            DependencyDataset.DependencyEnum.Repurposing_secondary_AUC: DependencyDataset.DependencyEnum.Repurposing_secondary_dose,
-            DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate: DependencyDataset.DependencyEnum.Repurposing_secondary_dose,
-        }
-        if self.name in dataset_to_dose_dataset:
-            return dataset_to_dose_dataset[self.name]
-        else:
-            return None
-
-    @property
     def is_dose_replicate(self):
         return self.units == "Viability"
 
@@ -164,7 +133,6 @@ class Dataset(Model):
             DependencyDataset.DependencyEnum.GDSC1_AUC: DependencyDataset.DependencyEnum.GDSC1_dose_replicate,
             DependencyDataset.DependencyEnum.GDSC2_AUC: DependencyDataset.DependencyEnum.GDSC2_dose_replicate,
             DependencyDataset.DependencyEnum.Repurposing_secondary_AUC: DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
-            DependencyDataset.DependencyEnum.Repurposing_secondary_dose: DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
             DependencyDataset.DependencyEnum.Prism_oncology_AUC: DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate,
         }
         if self.name in dataset_to_dose_replicate_dataset:

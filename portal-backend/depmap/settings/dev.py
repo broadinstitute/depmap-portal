@@ -64,10 +64,6 @@ additional_dev_metadata = {
         "matrix_file_name_root": "dataset/repurposing-secondary-auc",
         "taiga_id": "placeholder-taiga-id.1",
     },
-    DependencyEnum.Repurposing_secondary_dose: {
-        "matrix_file_name_root": "dataset/repurposing-secondary-dose",
-        "taiga_id": "placeholder-taiga-id.1",
-    },
     DependencyEnum.Repurposing_secondary_dose_replicate: {
         "perturbation_csv_file": "compound/repurposing_secondary_dose_replicate_perturbations.csv",
         "cell_line_index_csv_file": "compound/repurposing_secondary_dose_replicate_cell_lines.csv",
