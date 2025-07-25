@@ -590,14 +590,10 @@ def _load_real_data(
                 )
                 # assert that curve label exists
                 assert curve["label"] is not None
-                
-                # make sure that the label for the DRC dataset is in drc_compound_datasets if we're loading data for it
-                # Currently only checking for Prism_oncology_per_curve because that's the only one we have data for
-                # the others are not ready yet
-                if curve["label"] == "Prism_oncology_per_curve":
-                    assert curve["label"] in [
-                        x.drc_dataset_label for x in drc_compound_datasets
-                    ]
+
+                assert curve["label"] in [
+                    x.drc_dataset_label for x in drc_compound_datasets
+                ]
                 dataset_loader.load_curve_parameters_csv(
                     curve_params_file_path, curve["label"]
                 )
@@ -1004,16 +1000,13 @@ def load_sample_data(
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
             DependencyEnum.GDSC1_AUC,
-            DependencyEnum.GDSC1_IC50,
             DependencyEnum.GDSC2_AUC,
-            DependencyEnum.GDSC2_IC50,
             DependencyEnum.CTRP_AUC,
             DependencyEnum.Repurposing_secondary_AUC,
             DependencyEnum.Repurposing_secondary_dose,
             DependencyEnum.Rep1M,
             DependencyEnum.Rep_all_single_pt,
             DependencyEnum.Prism_oncology_AUC,
-            DependencyEnum.Prism_oncology_IC50,
         ]
 
     if load_taiga_dependencies:

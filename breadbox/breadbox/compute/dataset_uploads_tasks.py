@@ -167,7 +167,7 @@ def dataset_upload(
             db, index_type, file_path, dataset_params.columns_metadata
         )
         dimension_labels_and_warnings = _get_dimension_labels_and_warnings(
-            db, data_df[index_type.id_column], index_type
+            db, data_df[index_type.id_column].tolist(), index_type
         )
         if len(dimension_labels_and_warnings.warnings) > 0:
             unknown_ids.append(

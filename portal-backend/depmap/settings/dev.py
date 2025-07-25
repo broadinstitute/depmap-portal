@@ -34,16 +34,8 @@ additional_dev_metadata = {
         "matrix_file_name_root": "dataset/gdsc1-auc",
         "taiga_id": "placeholder-gdsc-id.1",
     },
-    DependencyEnum.GDSC1_IC50: {
-        "matrix_file_name_root": "dataset/gdsc1-ic50",
-        "taiga_id": "placeholder-gdsc-id.1",
-    },
     DependencyEnum.GDSC2_AUC: {
         "matrix_file_name_root": "dataset/gdsc2-auc",
-        "taiga_id": "placeholder-gdsc-id.1",
-    },
-    DependencyEnum.GDSC2_IC50: {
-        "matrix_file_name_root": "dataset/gdsc2-ic50",
         "taiga_id": "placeholder-gdsc-id.1",
     },
     DependencyEnum.GDSC1_dose_replicate: {
@@ -92,10 +84,6 @@ additional_dev_metadata = {
     },
     DependencyEnum.Prism_oncology_AUC: {
         "matrix_file_name_root": "dataset/prism-oncology-auc",
-        "taiga_id": "placeholder-onc-id.1",
-    },
-    DependencyEnum.Prism_oncology_IC50: {
-        "matrix_file_name_root": "dataset/prism-oncology-ic50",
         "taiga_id": "placeholder-onc-id.1",
     },
     DependencyEnum.Prism_oncology_dose_replicate: {

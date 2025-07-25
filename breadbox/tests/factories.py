@@ -20,7 +20,7 @@ from breadbox.io.upload_utils import create_upload_file
 from breadbox.schemas.group import GroupIn
 import csv
 import numpy as np
-import factory
+from factory.base import Factory
 from breadbox import config
 from breadbox.config import Settings as realSettings
 from breadbox.schemas.types import AnnotationTypeMap, IdMapping, AnnotationType
@@ -36,7 +36,7 @@ import hashlib
 _unique_name_counter = 0
 
 
-class SettingsFactory(factory.Factory):
+class SettingsFactory(Factory):
     class Meta:
         model = config.Settings
 

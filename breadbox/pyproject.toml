@@ -1,28 +1,27 @@
 [tool.poetry]
 name = "breadbox"
-version = "3.34.2"
+version = "3.35.1"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"
-fastapi = "0.111.0"
-pandas = "^1.5.1"
+fastapi = "0.115.12"
+pandas = ">=2.2.0"
 h5py = "^3.5.0"
 python-dotenv = "^0.21.0"
 alembic = "^1.8.1"
-pre-commit = "2.17.0"
+pre-commit = ">=3.7.0"
 scipy = ">=1.11.0"
-sqlalchemy-stubs = "^0.4"
 celery = "^5.4.0"
-redis = "3.5.3"
+redis = "^4.5.0"
 pytest = "^7.2.0"
 httpx = "^0.23.1"
 uvicorn = "^0.20.0"
 pydantic = {extras = ["email"], version = "^2.7.1"}
-taigapy = {git = "https://github.com/broadinstitute/taigapy.git", rev = "0b67741f18fe6e3c2f508ee84b06ca3bed853b82"}
-SQLAlchemy= "^1.4.40"
+taigapy = {version = "3.14.0", source = "public-python"}
+SQLAlchemy= "^2.0.40"
 factory-boy = "^3.3.0"
 google-cloud-error-reporting = "^1.10.0"
 itsdangerous = "^2.1.2"
@@ -36,6 +35,7 @@ sqlitedict="^2.1.0"
 google-cloud-storage = "^3.1.0"
 packed-cor-tables = {version = "^0.2.0", source = "public-python"}
 orjson = "^3.10.16"
+python-multipart = "^0.0.20" # fastapi 0.115.12 needs this
 
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}
@@ -60,7 +60,7 @@ name = "cz_customize"   # Must use name 'cz_customize' in order to enable custom
 tag_format = "breadbox-$version"
 version_scheme = "pep440"
 version_provider = "poetry"
-version = "3.34.2"
+version = "3.35.1"
 version_files = [
     'pyproject.toml:version',
     '../breadbox-client/pyproject.toml:version',

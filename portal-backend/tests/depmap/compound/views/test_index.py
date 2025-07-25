@@ -1,3 +1,4 @@
+from depmap.settings.settings import TestConfig
 import pandas as pd
 import pytest
 from flask import url_for
@@ -5,9 +6,10 @@ from json import loads as json_loads
 
 from depmap import data_access
 from depmap.dataset.models import DependencyDataset
-from depmap.compound.models import Compound
+from depmap.compound.models import Compound, DRCCompoundDataset, drc_compound_datasets
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
+    format_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -28,10 +30,16 @@ from tests.factories import (
     PredictiveModelFactory,
 )
 from tests.utilities import interactive_test_utils
+from tests.utilities.override_fixture import override
 
 
-def test_render_view_compound(populated_db):
+def test_render_view_compound(populated_db, monkeypatch):
     with populated_db.app.test_client() as c:
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
@@ -54,7 +62,7 @@ def test_format_compound_summary(empty_db_mock_downloads):
 
     matrix = MatrixFactory(entities=[compound_exp_1, compound_exp_2])
     dataset = DependencyDatasetFactory(
-        matrix=matrix, name=DependencyDataset.DependencyEnum.GDSC1_IC50
+        matrix=matrix, name=DependencyDataset.DependencyEnum.GDSC1_AUC
     )  # no dose dataset
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
@@ -228,17 +236,13 @@ def test_format_dose_curve_multiple_curves(empty_db_mock_downloads):
     assert len(curve_params) == 2
 
 
-@pytest.mark.parametrize(
-    "has_ic50_dataset, has_ic50_row", [(True, True), (True, False), (False, False),],
-)
-def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row):
+def test_dose_table(empty_db_mock_downloads, app):
     # define inputs to factories and function calls
     cell_line_name = "CADOES1_BONE"
     cell_line_display_name = "CADOES1"
     xref_type = "CTRP"
     xref = "606135"
     xref_full = xref_type + ":" + xref
-    ic50_value = 0.4
 
     model = DepmapModelFactory(
         cell_line_name=cell_line_name, stripped_cell_line_name=cell_line_display_name
@@ -282,24 +286,6 @@ def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row
             using_depmap_model_table=True,
         ),
     )
-
-    if has_ic50_dataset:
-        if has_ic50_row:
-            matrix = MatrixFactory(
-                entities=[cpd_exp],
-                cell_lines=[model],
-                data=pd.DataFrame(
-                    {model.cell_line_name: [ic50_value]},
-                    index=["cpd_exp"]
-                    # I believe this index doesn't do anything? has to do with order that entities=[] is passed in?
-                ),
-                using_depmap_model_table=True,
-            )
-        else:
-            matrix = MatrixFactory()
-        ic50_dataset = DependencyDatasetFactory(
-            name=DependencyDataset.DependencyEnum.GDSC1_IC50, matrix=matrix
-        )
 
     auc_dataset = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.GDSC1_AUC,
@@ -360,9 +346,6 @@ def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row
                 "auc": 0.5,
             }
         }
-
-        if has_ic50_dataset and has_ic50_row:
-            expected[model.model_id]["ic50"] = ic50_value
 
         assert response == expected
 
@@ -464,23 +447,86 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         assert len(r_no_predictability_table_json) == 0
 
 
-def test_format_dose_curve_options_new_tab_if_available_true(app):
+def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
+    app, monkeypatch
+):
     with app.app_context():
-        result = format_dose_curve_options_new_tab_if_available()
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
+
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
         assert len(result) == 1
-        assert result[0] == {
-            "display_name": "PRISM OncRef",
-            "viability_dataset_id": "Prism_oncology_viability",
-            "replicate_dataset": "Prism_oncology_dose_replicate",
-            "auc_dataset_id": "Prism_oncology_AUC_collapsed",
-            "ic50_dataset_id": "Prism_oncology_ic50",
-            "drc_dataset_label": "Prism_oncology_per_curve",
-        }
+        assert result[0] == DRCCompoundDataset(
+            display_name="PRISM OncRef",
+            viability_dataset_given_id="Prism_oncology_viability",
+            replicate_dataset="Prism_oncology_dose_replicate",
+            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+            drc_dataset_label="Prism_oncology_per_curve",
+        )
+
+
+def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        assert len(result) == 1
+        assert result[0] == DRCCompoundDataset(
+            display_name="PRISM OncRef",
+            viability_dataset_given_id="Prism_oncology_viability",
+            replicate_dataset="Prism_oncology_dose_replicate",
+            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+            drc_dataset_label="Prism_oncology_per_curve",
+        )
+
+
+def config(request):
+    class TestFeatureFlags:
+        def new_compound_page_tabs(self):
+            return True
+
+        def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
+            return True
+
+    class TestVersionConfig(TestConfig):
+        ENABLED_FEATURES = TestFeatureFlags
+
+    return TestVersionConfig
+
+
+@override(config=config)
+def test_dose_curve_options_all_datasets_available(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert isinstance(result, list)
+        assert result == drc_compound_datasets
 
 
 def test_format_dose_curve_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_dose_curve_options_new_tab_if_available()
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert result == []
+
+
+def test_format_heatmap_options_new_tab_if_available_false(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
         assert result == []

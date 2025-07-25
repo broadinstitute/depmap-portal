@@ -72,7 +72,6 @@ from breadbox_client.models import (
     GroupOut,
     MatrixDatasetParams,
     MatrixDatasetParamsDatasetMetadataType0,
-    MatrixDatasetParamsFormat,
     MatrixDatasetResponse,
     MatrixDimensionsInfo,
     SampleTypeOut,
@@ -81,14 +80,11 @@ from breadbox_client.models import (
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
     TableDatasetParamsDatasetMetadataType0,
-    TableDatasetParamsFormat,
     TabularDatasetResponse,
     TabularDimensionsInfo,
     UpdateDimensionType,
     UploadFileResponse,
     ValueType,
-    MatrixDatasetUpdateParamsFormat,
-    TabularDatasetUpdateParamsFormat,
     MatrixDatasetParamsDataFileFormat,
 )
 
@@ -319,7 +315,7 @@ class BBClient:
             data_type=data_type,
             dataset_md5=uploaded_file.md5,
             file_ids=uploaded_file.file_ids,
-            format_=TableDatasetParamsFormat.TABULAR,
+            format_="tabular",
             group_id=group_id,
             index_type=index_type,
             name=name,
@@ -343,7 +339,7 @@ class BBClient:
         name: str,
         units: str,
         data_type: str,
-        data_df: pd.DataFrame,
+        data_df: Optional[pd.DataFrame],
         feature_type: Optional[str],
         sample_type: str,
         is_transient: bool = False,
@@ -358,18 +354,31 @@ class BBClient:
         timeout=None,
         log_status=lambda msg: None,
             description:Optional[str] = None,
+            data_parquet : Optional[str] = None,
     ) -> AddDatasetResponse:
         log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
+        if data_parquet is not None:
+            assert data_df is None, "Cannot have both data_parquet and data_df not None"
+            upload_parquet = True
+
         if upload_parquet:
-            with tempfile.NamedTemporaryFile() as tmp:
-                log_status(f"writing parquet")
-                data_df.to_parquet(tmp.name, index=False)
+            if data_parquet is None:
+                assert data_df is not None
+                with tempfile.NamedTemporaryFile() as tmp:
+                    log_status(f"writing parquet")
+                    data_df.to_parquet(tmp.name, index=False)
+                    log_status(f"uploading parquet")
+                    uploaded_file = self.upload_file(tmp)
+            else:
                 log_status(f"uploading parquet")
-                uploaded_file = self.upload_file(tmp)
+                with open(data_parquet, "rb") as f:
+                    uploaded_file = self.upload_file(f)
+
             data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
         else:
+            assert data_df is not None, "If not using parquet, you must provide a dataframe"
             log_status("Writing CSV")
             buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
             log_status(f"Uploading CSV")
@@ -381,7 +390,7 @@ class BBClient:
             data_type=data_type,
             dataset_md5=uploaded_file.md5,
             file_ids=uploaded_file.file_ids,
-            format_=MatrixDatasetParamsFormat.MATRIX,
+            format_="matrix",
             group_id=group_id,
             sample_type=sample_type,
             units=units,
@@ -421,10 +430,10 @@ class BBClient:
 
         dataset = self.get_dataset(dataset_id)
         if isinstance(dataset, MatrixDatasetResponse):
-            param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_=MatrixDatasetUpdateParamsFormat.MATRIX, **kwargs)
+            param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_="matrix", **kwargs)
         else:
             assert isinstance(dataset, TabularDatasetResponse)
-            param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_=TabularDatasetUpdateParamsFormat.TABULAR, **kwargs)
+            param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_="tabular", **kwargs)
 
         metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not None else UNSET
         params = param_factory(
