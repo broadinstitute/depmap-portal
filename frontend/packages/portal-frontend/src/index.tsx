@@ -19,10 +19,14 @@ import { DataExplorerContext } from "@depmap/types";
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import { initializeDevContexts } from "@depmap/data-explorer-2";
+import {
+  DeprecatedDataExplorerApiProvider,
+  initializeDevContexts,
+} from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
+import { evaluateLegacyContext } from "./data-explorer-2/deprecated-api";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -211,7 +215,6 @@ export function initEnrichmentTile(
   );
 }
 
-
 export function initHeatmapTile(
   elementId: string,
   compoundId: string,
@@ -285,12 +288,16 @@ export function initDoseCurvesTab(
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <DoseCurvesTab
-        datasetOptions={datasetOptions}
-        doseUnits={units}
-        compoundName={name}
-        compoundId={compoundId}
-      />
+      <DeprecatedDataExplorerApiProvider
+        evaluateLegacyContext={evaluateLegacyContext}
+      >
+        <DoseCurvesTab
+          datasetOptions={datasetOptions}
+          doseUnits={units}
+          compoundName={name}
+          compoundId={compoundId}
+        />
+      </DeprecatedDataExplorerApiProvider>
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -305,12 +312,16 @@ export function initHeatmapTab(
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <HeatmapTab
-        datasetOptions={datasetOptions}
-        doseUnits={units}
-        compoundName={name}
-        compoundId={compoundId}
-      />
+      <DeprecatedDataExplorerApiProvider
+        evaluateLegacyContext={evaluateLegacyContext}
+      >
+        <HeatmapTab
+          datasetOptions={datasetOptions}
+          doseUnits={units}
+          compoundName={name}
+          compoundId={compoundId}
+        />
+      </DeprecatedDataExplorerApiProvider>
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

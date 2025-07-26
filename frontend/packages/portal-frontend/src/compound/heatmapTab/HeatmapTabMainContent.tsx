@@ -1,8 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import useHeatmapSelectionHandlers from "./hooks/useHeatmapSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
 import useHeatmapData from "./hooks/useHeatmapData";
@@ -13,21 +11,32 @@ import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
 import { TableFormattedData } from "../types";
 
 interface HeatmapTabMainContentProps {
+  selectedPlotModelIds: Set<string>;
+  selectedTableRows: Set<string>;
   compoundName: string;
-  handleShowUnselectedLinesOnSelectionsCleared: () => void;
   showUnselectedLines: boolean;
   doseUnits: string;
   selectedDoses?: Set<number>;
+  handleSetSelectedPlotModels: (models: Set<string>) => void;
+  handleChangeTableSelection: (selections: string[]) => void;
+  handleClickSaveSelectionAsContext: () => void;
+  handleSetSelectionFromContext: () => Promise<void>;
+  handleClearSelection: () => void;
 }
 
 function HeatmapTabMainContent({
-  handleShowUnselectedLinesOnSelectionsCleared,
+  selectedTableRows,
+  selectedPlotModelIds,
   showUnselectedLines,
   doseUnits,
   selectedDoses = new Set(),
   compoundName,
+  handleSetSelectedPlotModels,
+  handleChangeTableSelection,
+  handleClickSaveSelectionAsContext,
+  handleSetSelectionFromContext,
+  handleClearSelection,
 }: HeatmapTabMainContentProps) {
-  const api = useDeprecatedDataExplorerApi();
   const {
     tableFormattedData,
     doseColumnNames,
@@ -49,22 +58,27 @@ function HeatmapTabMainContent({
     });
   }, []);
 
-  const {
-    selectedModelIds,
-    selectedTableRows,
-    selectedLabels,
-    displayNameModelIdMap,
-    handleSetSelectedPlotModels,
-    handleChangeTableSelection,
-    handleClickSaveSelectionAsContext,
-    handleSetSelectionFromContext,
-    handleClearSelection,
-  } = useHeatmapSelectionHandlers(
-    heatmapFormattedData,
-    tableFormattedData,
-    api,
-    handleShowUnselectedLinesOnSelectionsCleared
-  );
+  const displayNameModelIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (tableFormattedData) {
+      (tableFormattedData as TableFormattedData).forEach((row) => {
+        map.set(row.modelId, row.cellLine);
+      });
+    }
+    return map;
+  }, [tableFormattedData]);
+
+  // Get the selected cell line name labels for display in the Plot Selections panel.
+  const selectedLabels = useMemo(() => {
+    const displayNames: string[] = [];
+    [...selectedPlotModelIds].forEach((modelId: string) => {
+      const displayName = displayNameModelIdMap.get(modelId);
+      if (displayName) {
+        displayNames.push(displayName);
+      }
+    });
+    return displayNames;
+  }, [selectedPlotModelIds, displayNameModelIdMap]);
 
   // To hide/show the appropriate cells on Filter By Dose
   const visibleZIndexes = useMemo(() => {
@@ -174,7 +188,7 @@ function HeatmapTabMainContent({
                 doseMin={doseMin}
                 doseMax={doseMax}
                 doseUnits={doseUnits}
-                selectedModelIds={selectedModelIds}
+                selectedModelIds={selectedPlotModelIds}
                 handleSetSelectedPlotModels={handleSetSelectedPlotModels}
                 handleSetPlotElement={setPlotElement}
                 displayNameModelIdMap={displayNameModelIdMap}
@@ -184,7 +198,7 @@ function HeatmapTabMainContent({
             </div>
             <div className={styles.selectionsArea}>
               <CompoundPlotSelections
-                selectedIds={selectedModelIds}
+                selectedIds={selectedPlotModelIds}
                 selectedLabels={new Set(selectedLabels)}
                 onClickSaveSelectionAsContext={
                   handleClickSaveSelectionAsContext

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
-import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
@@ -13,19 +12,31 @@ import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
 import { TableFormattedData } from "src/compound/types";
 
 interface DoseCurvesMainContentProps {
+  selectedModelIds: Set<string>;
+  selectedTableRows: Set<string>;
   doseUnits: string;
   showReplicates: boolean;
   showUnselectedLines: boolean;
   compoundName: string;
-  handleShowUnselectedLinesOnSelectionsCleared: () => void;
+  handleClickCurve: (modelId: string) => void;
+  handleChangeTableSelection: (selections: string[]) => void;
+  handleClickSaveSelectionAsContext: () => void;
+  handleSetSelectionFromContext: () => Promise<void>;
+  handleClearSelection: () => void;
 }
 
 function DoseCurvesMainContent({
+  selectedModelIds,
+  selectedTableRows,
   doseUnits,
   showReplicates,
   showUnselectedLines,
   compoundName,
-  handleShowUnselectedLinesOnSelectionsCleared,
+  handleClickCurve,
+  handleChangeTableSelection,
+  handleClickSaveSelectionAsContext,
+  handleSetSelectionFromContext,
+  handleClearSelection,
 }: DoseCurvesMainContentProps) {
   const {
     tableFormattedData,
@@ -51,21 +62,27 @@ function DoseCurvesMainContent({
     });
   }, []);
 
-  const {
-    selectedModelIds,
-    selectedTableRows,
-    selectedLabels,
-    handleClickCurve,
-    handleChangeSelection,
-    handleClickSaveSelectionAsContext,
-    handleSetSelectionFromContext,
-    handleClearSelection,
-  } = useDoseCurvesSelectionHandlers(
-    doseCurveData,
-    tableFormattedData,
-    api,
-    handleShowUnselectedLinesOnSelectionsCleared
-  );
+  const displayNameModelIdMap = useMemo(() => {
+    const map = new Map<string, string>();
+    if (tableFormattedData) {
+      (tableFormattedData as TableFormattedData).forEach((row) => {
+        map.set(row.modelId, row.cellLine);
+      });
+    }
+    return map;
+  }, [tableFormattedData]);
+
+  // Get the selected cell line name labels for display in the Plot Selections panel.
+  const selectedLabels = useMemo(() => {
+    const displayNames: string[] = [];
+    [...selectedModelIds].forEach((modelId: string) => {
+      const displayName = displayNameModelIdMap.get(modelId);
+      if (displayName) {
+        displayNames.push(displayName);
+      }
+    });
+    return displayNames;
+  }, [selectedModelIds, displayNameModelIdMap]);
 
   // Format cellLine column to link to cell line pages
   const doseViabilityTableColumns = useMemo(() => {
@@ -242,7 +259,7 @@ function DoseCurvesMainContent({
           columnOrdering={columnOrdering}
           defaultCols={defaultCols}
           selectedTableRows={selectedTableRows}
-          handleChangeSelection={handleChangeSelection}
+          handleChangeSelection={handleChangeTableSelection}
         />
       </div>
     </div>

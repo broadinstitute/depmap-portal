@@ -1,56 +1,47 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { HeatmapFormattedData, TableFormattedData } from "../../types";
 
 function useHeatmapSelectionHandlers(
-  plotData: HeatmapFormattedData | null,
-  tableData: TableFormattedData | null,
+  selectedModelIds: Set<string>,
+  setSelectedModelIds: React.Dispatch<React.SetStateAction<Set<string>>>,
+  setSelectedTableRows: React.Dispatch<React.SetStateAction<Set<string>>>,
   deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
-  handleShowUnselectedLinesOnSelectionsCleared: () => void
+  setShowUnselectedLines: (value: React.SetStateAction<boolean>) => void
 ) {
-  const [selectedModelIds, setPlotSelectedModelIds] = useState<Set<string>>(
-    new Set([])
-  );
-  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
-    new Set([])
-  );
-
   const handleChangeTableSelection = useCallback(
     (selections: string[]) => {
-      if (plotData) {
-        setSelectedTableRows((xs) => {
-          let unselectedId: string;
-          const ys = new Set(xs);
+      setSelectedTableRows((xs) => {
+        let unselectedId: string;
+        const ys = new Set(xs);
 
-          if (selections.length < xs.size) {
-            unselectedId = [...xs].filter((x) => !selections.includes(x))[0];
-            ys.delete(unselectedId);
-          } else {
-            const newSelectedId = selections.filter(
-              (x) => ![...xs].includes(x)
-            )[0];
-            ys.add(newSelectedId);
+        if (selections.length < xs.size) {
+          unselectedId = [...xs].filter((x) => !selections.includes(x))[0];
+          ys.delete(unselectedId);
+        } else {
+          const newSelectedId = selections.filter(
+            (x) => ![...xs].includes(x)
+          )[0];
+          ys.add(newSelectedId);
+        }
+
+        selectedModelIds.forEach((curveId: string) => {
+          if (unselectedId && curveId !== unselectedId && !ys.has(curveId)) {
+            ys.add(curveId);
           }
-
-          selectedModelIds.forEach((curveId: string) => {
-            if (unselectedId && curveId !== unselectedId && !ys.has(curveId)) {
-              ys.add(curveId);
-            }
-          });
-          setPlotSelectedModelIds(ys);
-          return ys;
         });
-      }
+        setSelectedModelIds(ys);
+        return ys;
+      });
     },
-    [plotData, selectedModelIds]
+    [selectedModelIds, setSelectedModelIds, setSelectedTableRows]
   );
 
   const handleSetSelectedPlotModels = (models: Set<string>) => {
-    setPlotSelectedModelIds((prev) => {
+    setSelectedModelIds((prev) => {
       const next = new Set(prev);
       models.forEach((id) => next.add(id));
       setSelectedTableRows((tablePrev) => {
@@ -72,31 +63,8 @@ function useHeatmapSelectionHandlers(
     saveNewContext(context as DataExplorerContext);
   }, [selectedModelIds]);
 
-  const displayNameModelIdMap = useMemo(() => {
-    const map = new Map<string, string>();
-    if (tableData) {
-      tableData.forEach((row) => {
-        map.set(row.modelId, row.cellLine);
-      });
-    }
-    return map;
-  }, [tableData]);
-
-  // Get the selected cell line name labels for display in the Plot Selections panel.
-  const selectedLabels = useMemo(() => {
-    const displayNames: string[] = [];
-    [...selectedModelIds].forEach((modelId: string) => {
-      const displayName = displayNameModelIdMap.get(modelId);
-      if (displayName) {
-        displayNames.push(displayName);
-      }
-    });
-    return displayNames;
-  }, [selectedModelIds, displayNameModelIdMap]);
-
   const handleSetSelectionFromContext = useCallback(async () => {
-    const allModelIds = Array.from(displayNameModelIdMap.keys());
-    const allLabels = new Set(allModelIds);
+    const allLabels = new Set(selectedModelIds);
     const labels = await compoundPagePromptForSelectionFromContext(
       deApi,
       allLabels
@@ -104,21 +72,17 @@ function useHeatmapSelectionHandlers(
     if (labels === null) {
       return;
     }
-    setPlotSelectedModelIds(labels);
+    setSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [deApi, displayNameModelIdMap]);
+  }, [deApi, setSelectedModelIds, setSelectedTableRows, selectedModelIds]);
 
   const handleClearSelection = useCallback(() => {
-    setPlotSelectedModelIds(new Set([]));
+    setSelectedModelIds(new Set([]));
     setSelectedTableRows(new Set([]));
-    handleShowUnselectedLinesOnSelectionsCleared();
-  }, [handleShowUnselectedLinesOnSelectionsCleared]);
+    setShowUnselectedLines(true);
+  }, [setShowUnselectedLines, setSelectedTableRows, setSelectedModelIds]);
 
   return {
-    selectedModelIds,
-    selectedTableRows,
-    selectedLabels,
-    displayNameModelIdMap,
     handleSetSelectedPlotModels,
     handleChangeTableSelection,
     handleClickSaveSelectionAsContext,
