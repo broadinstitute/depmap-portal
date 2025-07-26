@@ -11,13 +11,15 @@ rule process_taiga_pulled_artifact:
 
       tc = taigapy.TaigaClient() # TODO: Need to update to Taiga Client V3 but don't know what the requested format should be for download_to_cache
 
-      ### The if blocks are here to convert the new oncref format to the old oncref format so that 
-      ### the oncref datasets can be ingested in the pipeline without much additional changes.
-      if {{ inputs.download.label == "Prism_oncology_AUC" or inputs.download.label == "Prism_oncology_IC50"}}:
+      label = {{ inputs.download.label | quoted }}
+
+      ### The if blocks are here to convert the new drug screen format to the old drug screen format so that 
+      ### the datasets can be ingested in the pipeline without much additional changes.
+      if label in ["Prism_oncology_AUC", "Prism_oncology_IC50", "GDSC1_AUC", "GDSC2_AUC", "Repurposing_secondary_AUC", "CTRP_AUC"]:
          prism_oncref_df = tc.get("{{ inputs.download.dataset_id }}")
          prism_oncref_df = prism_oncref_df.transpose()
          prism_oncref_df.to_csv("out.csv", index=True)
-      elif {{ inputs.download.label == "Prism_oncology_per_curve" }}:
+      elif label in ["Prism_oncology_per_curve", "Repurposing_secondary_per_curve", "ctd2_per_curve", "GDSC1", "GDSC2"]:
          prism_oncref_curves_df = tc.get("{{ inputs.download.dataset_id }}")
          prism_oncref_curves_df = prism_oncref_curves_df.rename(columns={
             'ModelID': 'cell_line_name',
@@ -29,6 +31,7 @@ rule process_taiga_pulled_artifact:
          })
          prism_oncref_curves_df.to_csv("out.csv", index=False)
       else:
+         assert label in [ "compound_metadata" ]
          cached = tc.download_to_cache("{{ inputs.download.dataset_id }}")
          shutil.copy2(cached, "out.csv")
       
