@@ -1,0 +1,67 @@
+rule process_drug_screen_auc_matrix:
+   inputs:
+      download={"type": "drug_screen_auc_matrix"},
+      script=fileref("scripts/process_drug_screen_auc_matrix.py")
+   outputs:
+     {
+      "label": "{{ inputs.download.label }}", 
+      "orig_dataset_id": "{{ inputs.download.dataset_id }}",
+      "type": "dep-matrix",
+      "dataset_id": "{{ inputs.download.dataset_id }}",
+      "filename": {"$filename": "{{ inputs.download.label }}.hdf5"},
+      "confounders_label": "{{ inputs.download.confounders_label }}"
+     }
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} {{ inputs.download.label }}.hdf5"
+
+
+rule process_drug_screen_drc:
+   inputs:
+      download={"type": "drug_screen_drc"},
+      script=fileref("scripts/process_drug_screen_drc.py")
+   outputs:
+      {
+         "type": "dose-response-curve-params",
+         "dataset_id": "{{ inputs.download.dataset_id }}",
+         "filename": {"$filename": "{{ inputs.download.label }}.csv"},
+         "label": "{{ inputs.download.label }}",
+         "orig_dataset_id": "{{ inputs.download.dataset_id }}"
+      }
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} {{ inputs.download.label }}.csv"
+
+rule process_download_csv_from_taiga:
+   inputs:
+      download={"type": "download_csv_from_taiga"},
+   run "python" with """
+      import shutil
+      import taigapy
+      import os
+
+      tc = taigapy.create_version_3_client()
+
+      label = {{ inputs.download.label | quoted }}
+
+      assert label in [ "compound_metadata" ]
+      cached = tc.download_to_cache("{{ inputs.download.dataset_id }}", LocalFormat.CSV_TABLE)
+      shutil.copy2(cached, "out.csv")
+      
+      assert os.path.exists("out.csv"), "Output file 'out.csv' not generated"
+	"""
+
+rule process_viability_dataset_from_taiga:
+    inputs:
+      script=fileref("scripts/process_viability_dataset_from_taiga.py"),
+      download={"type": "viability_dataset"},
+      hdf5_utils=fileref("scripts/hdf5_utils.py")
+    outputs: {
+      "type": "aggregated-dose-replicate-level",
+      "label": "{{ inputs.download.label }}",
+      "dataset_id": "{{ inputs.download.dataset_id }}",
+      "orig_dataset_id": "{{ inputs.download.dataset_id }}",
+      "cell_lines_dataset_id": "none",
+      "perturbations_dataset_id": "{{ inputs.download.perturbations_dataset_id }}",
+      "hdf5_filename": {"$filename": "out.hdf5"},
+      "cell_lines_filename": {"$filename": "cell_lines.csv"},
+      "perturbations": {"$filename": "perturbations.csv"}
+   }
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.perturbations_dataset_id }} {{ inputs.download.dataset_id }} {{ inputs.download.units }}"
+   run "python {{ inputs.hdf5_utils.filename }} to_hdf5 out.csv csv out.hdf5"

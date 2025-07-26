@@ -195,6 +195,17 @@ add-if-missing {
     'dataset_id': 'harmonized-proteomics-datasets-754a.20/harmonized_RPPA_CCLE',
 }
 
+####### Repurposing secondary screen
+
+add-if-missing {
+  "type": "drug_screen_auc_matrix",
+  "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGAUCMatrix",
+  "label": "Repurposing_secondary_AUC",
+  "confounders_label": "",
+  "conditions_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGLog2ViabilityConditions",
+  "sample_id_prefix": "BRD"
+}
+
 add-if-missing {
   "type": "viability_dataset",
   "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGLog2ViabilityMatrix",
@@ -203,22 +214,96 @@ add-if-missing {
   "units": "log_viability"
 }
 
-
 add-if-missing {
-  "type": "download_from_taiga",
-  "target_type": "dep-matrix",
-  "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGAUCMatrix",
-  "orig_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGAUCMatrix",
-  "label": "Repurposing_secondary_AUC",
-  "confounders_label": "",
-  "format": "hdf5"
-}
-
-add-if-missing {
+  "type": "drug_screen_drc",
   "label": "Repurposing_secondary_per_curve",
-  "orig_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGResponseCurves",
-  "type": "download_from_taiga",
-  "target_type": "dose-response-curve-params",
   "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGResponseCurves",
-  "format": "csv"
+  "conditions_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGLog2ViabilityConditions",
+  "sample_id_prefix": "BRD"
 }
+
+
+######### CTRP
+
+add-if-missing {
+  "type": "drug_screen_auc_matrix",
+  "dataset_id": "processed-ctd2-c6f3.2/CTRPAUCMatrix",
+  "label": "CTRP_AUC",
+  "confounders_label": "",
+  "conditions_dataset_id": "processed-ctd2-c6f3.2/CTRPLog2ViabilityCollapsedConditions",
+  "sample_id_prefix": "CTRP"
+}
+
+add-if-missing {
+  "type": "viability_dataset",
+  "dataset_id": "processed-ctd2-c6f3.2/CTRPLog2ViabilityMatrix",
+  "perturbations_dataset_id": "processed-ctd2-c6f3.2/CTRPLog2ViabilityConditions",
+  "label": "CTRP_dose_replicate",
+  "units": "log_viability"
+}
+
+add-if-missing {
+  "type": "drug_screen_drc",
+  "label": "ctd2_per_curve",
+  "dataset_id": "processed-ctd2-c6f3.2/CTRPResponseCurves",
+  "conditions_dataset_id": "processed-ctd2-c6f3.2/CTRPLog2ViabilityCollapsedConditions",
+  "sample_id_prefix": "CTRP"
+}
+
+######### GDSC1
+
+add-if-missing {
+  "type": "drug_screen_auc_matrix",
+  "label": "GDSC1_AUC",
+  "dataset_id": "processed-gdsc-ee73.2/GDSC1AUCMatrix",
+  "confounders_label": "",
+  "conditions_dataset_id": "processed-gdsc-ee73.2/GDSC1Log2ViabilityCollapsedConditions",
+  "sample_id_prefix": "GDSC1"
+}
+
+add-if-missing {
+  "type": "viability_dataset",
+  "label": "GDSC1_dose_replicate",
+  "dataset_id": "processed-gdsc-ee73.2/GDSC1Log2ViabilityMatrix",
+  "perturbations_dataset_id": "processed-gdsc-ee73.2/GDSC1Log2ViabilityConditions",
+  "units": "log_viability"
+}
+
+add-if-missing {
+  "type": "drug_screen_drc",
+  "label": "GDSC1",
+  "dataset_id": "processed-gdsc-ee73.2/GDSC1ResponseCurves",
+  "conditions_dataset_id": "processed-gdsc-ee73.2/GDSC1Log2ViabilityCollapsedConditions",
+  "sample_id_prefix": "GDSC1"
+}
+
+
+######### GDSC2
+
+add-if-missing {
+  "type": "drug_screen_auc_matrix",
+  "label": "GDSC2_AUC",
+  "dataset_id": "processed-gdsc-ee73.2/GDSC2AUCMatrix",
+  "confounders_label": "",
+  "conditions_dataset_id": "processed-gdsc-ee73.2/GDSC2Log2ViabilityCollapsedConditions",
+  "sample_id_prefix": "GDSC2"
+}
+
+add-if-missing {
+  "type": "viability_dataset",
+  "label": "GDSC2_dose_replicate",
+  "dataset_id": "processed-gdsc-ee73.2/GDSC2Log2ViabilityMatrix",
+  "perturbations_dataset_id": "processed-gdsc-ee73.2/GDSC2Log2ViabilityConditions",
+  "units": "log_viability"
+}
+
+add-if-missing {
+  "type": "drug_screen_drc",
+  "label": "GDSC2",
+  "dataset_id": "processed-gdsc-ee73.2/GDSC2ResponseCurves",
+  "conditions_dataset_id": "processed-gdsc-ee73.2/GDSC2Log2ViabilityCollapsedConditions",
+  "sample_id_prefix": "GDSC2"
+}
+
+
+
