@@ -19,13 +19,6 @@ output_filename = args.output_filename
 
 ### Convert the new drug screen format to the old drug screen format so that
 ### the datasets can be ingested in the pipeline without much additional changes.
-assert label in [
-    "Prism_oncology_per_curve",
-    "Repurposing_secondary_per_curve",
-    "ctd2_per_curve",
-    "GDSC1",
-    "GDSC2",
-]
 
 curves_df = tc.get(dataset_id)
 curves_df = curves_df.rename(
