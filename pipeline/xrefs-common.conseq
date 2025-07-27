@@ -216,7 +216,7 @@ add-if-missing {
 
 add-if-missing {
   "type": "drug_screen_drc",
-  "label": "Repurposing_secondary_per_curve",
+  "label": "repurposing_per_curve",
   "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGResponseCurves",
   "conditions_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGLog2ViabilityConditions",
   "sample_id_prefix": "BRD"
