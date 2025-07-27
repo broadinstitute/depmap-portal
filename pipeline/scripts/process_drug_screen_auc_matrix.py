@@ -34,30 +34,8 @@ data_df = tc.get(dataset_id)
 metadata_df = tc.get(conditions_dataset_id)
 # make a mapping of compound -> sample ID because the legacy backend is expecting sample IDs so we need to remap these
 
-sample_compound_ids = metadata_df[["SampleID", "CompoundID"]].drop_duplicates()
-assert (sum(sample_compound_ids["SampleID"].value_counts() > 1) == 0) and (
-    sum(sample_compound_ids["CompoundID"].value_counts() > 1) == 0
-), "There isn't a 1 to 1 mapping between Sample and Compound IDs"
 
-sample_by_compound_id = {
-    rec["CompoundID"]: rec["SampleID"] for rec in sample_compound_ids.to_records()
-}
-compound_by_sample_id = {
-    rec["SampleID"]: rec["CompoundID"] for rec in sample_compound_ids.to_records()
-}
-
-
-def fixup_sample_id(name):
-    # Here's a special case: For some reason oncref has PRC IDs (sample IDs), while all the others have compound IDs. So, check to
-    # see which kind of ID we have
-    if name in compound_by_sample_id:
-        # looks like it's a sample ID
-        assert name not in sample_by_compound_id
-        sample_id = name
-    else:
-        # looks like it must be a compound ID
-        sample_id = sample_by_compound_id[name]
-
+def add_prefix_if_needed(sample_id):
     # now we need to add the sample prefix to avoid sample ID collisions
     if ":" in sample_id:
         assert sample_id.startswith(
@@ -66,6 +44,39 @@ def fixup_sample_id(name):
         return sample_id
     else:
         return f"{sample_id_prefix}:{sample_id}"
+
+
+if label != "Prism_oncology_AUC":
+    sample_compound_ids = metadata_df[["SampleID", "CompoundID"]].drop_duplicates()
+    assert (sum(sample_compound_ids["SampleID"].value_counts() > 1) == 0) and (
+        sum(sample_compound_ids["CompoundID"].value_counts() > 1) == 0
+    ), "There isn't a 1 to 1 mapping between Sample and Compound IDs"
+
+    sample_by_compound_id = {
+        rec["CompoundID"]: rec["SampleID"] for rec in sample_compound_ids.to_records()
+    }
+    compound_by_sample_id = {
+        rec["SampleID"]: rec["CompoundID"] for rec in sample_compound_ids.to_records()
+    }
+
+    def fixup_sample_id(name):
+        # Here's a special case: For some reason oncref has PRC IDs (sample IDs), while all the others have compound IDs. So, check to
+        # see which kind of ID we have
+        if name in compound_by_sample_id:
+            # looks like it's a sample ID
+            assert name not in sample_by_compound_id
+            sample_id = name
+        else:
+            # looks like it must be a compound ID
+            sample_id = sample_by_compound_id[name]
+
+        return add_prefix_if_needed(sample_id)
+
+
+else:
+
+    def fixup_sample_id(name):
+        return add_prefix_if_needed(name)
 
 
 data_df.columns = [fixup_sample_id(x) for x in data_df.columns]
