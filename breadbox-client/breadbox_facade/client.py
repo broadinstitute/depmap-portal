@@ -7,7 +7,6 @@ from time import sleep, time
 from typing import Any, Dict, List, Literal, Optional, Union, IO
 from uuid import UUID
 
-
 import pandas as pd
 
 from breadbox_client import Client
@@ -430,7 +429,6 @@ class BBClient:
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
-from breadbox.schemas.types import DimensionType, DimensionIdentifiers
 
         dataset = self.get_dataset(dataset_id)
         if isinstance(dataset, MatrixDatasetResponse):
