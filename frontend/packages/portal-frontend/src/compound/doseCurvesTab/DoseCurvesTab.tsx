@@ -34,6 +34,12 @@ function DoseCurvesTab({
   });
   const [showReplicates, setShowReplicates] = useState<boolean>(true);
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
+  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
+    new Set([])
+  );
+  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
+    new Set([])
+  );
 
   const handleSelectDataset = useCallback(
     (selection: { value: string; label: string } | null) => {
@@ -47,6 +53,8 @@ function DoseCurvesTab({
           setSelectedDataset(selectedCompoundDataset);
           setShowReplicates(true);
           setShowUnselectedLines(true);
+          setSelectedTableRows(new Set([]));
+          setSelectedModelIds(new Set([]));
         }
       }
     },
@@ -91,6 +99,10 @@ function DoseCurvesTab({
               handleShowUnselectedLinesOnSelectionsCleared={() => {
                 setShowUnselectedLines(true);
               }}
+              selectedModelIds={selectedModelIds}
+              selectedTableRows={selectedTableRows}
+              handleSetSelectedTableRows={setSelectedTableRows}
+              handleSetSelectedPlotModelIds={setSelectedModelIds}
             />
           </div>
         </div>

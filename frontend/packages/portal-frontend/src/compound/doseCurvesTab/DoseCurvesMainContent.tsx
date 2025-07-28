@@ -17,7 +17,13 @@ interface DoseCurvesMainContentProps {
   showReplicates: boolean;
   showUnselectedLines: boolean;
   compoundName: string;
+  selectedModelIds: Set<string>;
+  selectedTableRows: Set<string>;
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
+  handleSetSelectedTableRows: React.Dispatch<React.SetStateAction<Set<string>>>;
+  handleSetSelectedPlotModelIds: React.Dispatch<
+    React.SetStateAction<Set<string>>
+  >;
 }
 
 function DoseCurvesMainContent({
@@ -26,6 +32,10 @@ function DoseCurvesMainContent({
   showUnselectedLines,
   compoundName,
   handleShowUnselectedLinesOnSelectionsCleared,
+  selectedModelIds,
+  selectedTableRows,
+  handleSetSelectedTableRows,
+  handleSetSelectedPlotModelIds,
 }: DoseCurvesMainContentProps) {
   const {
     tableFormattedData,
@@ -47,8 +57,6 @@ function DoseCurvesMainContent({
   }, []);
 
   const {
-    selectedModelIds,
-    selectedTableRows,
     selectedLabels,
     handleClickCurve,
     handleChangeSelection,
@@ -58,15 +66,18 @@ function DoseCurvesMainContent({
   } = useDoseCurvesSelectionHandlers(
     doseCurveData,
     tableFormattedData,
+    selectedModelIds,
+    selectedTableRows,
     api,
-    handleShowUnselectedLinesOnSelectionsCleared
+    handleShowUnselectedLinesOnSelectionsCleared,
+    handleSetSelectedTableRows,
+    handleSetSelectedPlotModelIds
   );
 
   useEffect(() => {
     // If dose curve data changed, invalidate the plot
-    handleClearSelection();
     setPlotElement(null);
-  }, [doseCurveData, handleClearSelection]);
+  }, [doseCurveData]);
 
   // Format cellLine column to link to cell line pages
   const doseViabilityTableColumns = useMemo(() => {

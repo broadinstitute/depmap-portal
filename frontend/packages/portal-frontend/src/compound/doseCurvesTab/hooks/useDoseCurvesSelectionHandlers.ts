@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { CompoundDoseCurveData, DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
@@ -9,38 +9,42 @@ import { TableFormattedData } from "src/compound/types";
 function useDoseCurvesSelectionHandlers(
   doseCurveData: CompoundDoseCurveData | null,
   tableData: TableFormattedData | null,
+  selectedModelIds: Set<string>,
+  selectedTableRows: Set<string>,
   deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
-  handleShowUnselectedLinesOnSelectionsCleared: () => void
+  handleShowUnselectedLinesOnSelectionsCleared: () => void,
+  handleSetSelectedTableRows: React.Dispatch<React.SetStateAction<Set<string>>>,
+  handleSetSelectedPlotModelIds: React.Dispatch<
+    React.SetStateAction<Set<string>>
+  >
 ) {
-  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
-    new Set([])
-  );
-  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
-    new Set([])
-  );
-
   // Handlers
   const handleClickCurve = useCallback(
     (modelId: string) => {
       if (doseCurveData) {
-        setSelectedModelIds((xs) => {
+        handleSetSelectedPlotModelIds((xs) => {
           const ys = new Set(xs);
           if (!xs?.has(modelId)) ys.add(modelId);
           selectedTableRows.forEach((rowId: string) => {
             if (!ys.has(rowId)) ys.add(rowId);
           });
-          setSelectedTableRows(ys);
+          handleSetSelectedTableRows(ys);
           return ys;
         });
       }
     },
-    [doseCurveData, selectedTableRows]
+    [
+      doseCurveData,
+      selectedTableRows,
+      handleSetSelectedTableRows,
+      handleSetSelectedPlotModelIds,
+    ]
   );
 
   const handleChangeSelection = useCallback(
     (selections: string[]) => {
       if (doseCurveData) {
-        setSelectedTableRows((xs) => {
+        handleSetSelectedTableRows((xs) => {
           let unselectedId: string | undefined;
           const ys = new Set(xs);
 
@@ -61,12 +65,17 @@ function useDoseCurvesSelectionHandlers(
               ys.add(curveId);
             }
           });
-          setSelectedModelIds(ys);
+          handleSetSelectedPlotModelIds(ys);
           return ys;
         });
       }
     },
-    [doseCurveData, selectedModelIds]
+    [
+      doseCurveData,
+      selectedModelIds,
+      handleSetSelectedTableRows,
+      handleSetSelectedPlotModelIds,
+    ]
   );
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
@@ -110,22 +119,29 @@ function useDoseCurvesSelectionHandlers(
       allLabels
     );
     if (labels === null) return;
-    setSelectedModelIds(labels);
-    setSelectedTableRows(labels);
-  }, [doseCurveData, deApi]);
+    handleSetSelectedPlotModelIds(labels);
+    handleSetSelectedTableRows(labels);
+  }, [
+    doseCurveData,
+    deApi,
+    handleSetSelectedTableRows,
+    handleSetSelectedPlotModelIds,
+  ]);
 
   const handleClearSelection = useCallback(() => {
-    setSelectedModelIds(new Set([]));
-    setSelectedTableRows(new Set([]));
+    handleSetSelectedPlotModelIds(new Set([]));
+    handleSetSelectedTableRows(new Set([]));
     handleShowUnselectedLinesOnSelectionsCleared();
-  }, [handleShowUnselectedLinesOnSelectionsCleared]);
+  }, [
+    handleShowUnselectedLinesOnSelectionsCleared,
+    handleSetSelectedPlotModelIds,
+    handleSetSelectedTableRows,
+  ]);
 
   return {
     selectedModelIds,
-    setselectedModelIds: setSelectedModelIds,
     selectedTableRows,
     selectedLabels,
-    setSelectedTableRows,
     handleClickCurve,
     handleChangeSelection,
     handleClickSaveSelectionAsContext,
