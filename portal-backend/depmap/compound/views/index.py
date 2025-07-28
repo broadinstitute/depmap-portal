@@ -103,6 +103,39 @@ def view_compound(name):
     # If there are no no valid dataset options, hide the heatmap tab and tile
     show_heatmap_tab = len(heatmap_dataset_options) > 0
 
+    # TODO: Temp while context explorer is still using compound experiments. Can eventually update these to just use data_access.valid_row(DependencyEnum.Prism_oncology_AUC.value, row_name=compound.label)
+    oncref_dataset = DependencyDataset.get_dataset_by_name(
+        DependencyEnum.Prism_oncology_AUC.name
+    )
+    oncref_compound_exp_dataset = next(
+        filter(
+            lambda item: item[1] == oncref_dataset, compound_experiment_and_datasets
+        ),
+        None,
+    )
+    oncref_exists_with_compound = data_access.dataset_exists(
+        DependencyEnum.Prism_oncology_AUC.value
+    ) and data_access.valid_row(
+        DependencyEnum.Prism_oncology_AUC.value,
+        row_name=oncref_compound_exp_dataset[0].label,
+    )
+
+    rep_dataset = DependencyDataset.get_dataset_by_name(
+        DependencyEnum.Rep_all_single_pt.name
+    )
+    rep_compound_exp_dataset = next(
+        filter(lambda item: item[1] == rep_dataset, compound_experiment_and_datasets),
+        None,
+    )
+    rep_exists_with_compound = data_access.dataset_exists(
+        DependencyEnum.Rep_all_single_pt.value
+    ) and data_access.valid_row(
+        DependencyEnum.Prism_oncology_AUC.value,
+        row_name=rep_compound_exp_dataset[0].label,
+    )
+
+    show_enriched_lineages = oncref_exists_with_compound or rep_exists_with_compound
+
     return render_template(
         "compounds/index.html",
         name=name,
@@ -117,7 +150,11 @@ def view_compound(name):
             "shared-portal-files", "Tools/Predictability_methodology.pdf"
         ),
         has_datasets=has_datasets,
-        order=get_order(has_predictability, has_heatmap=show_heatmap_tab),
+        order=get_order(
+            has_predictability,
+            has_heatmap=show_heatmap_tab,
+            show_enriched_lineages=show_enriched_lineages,
+        ),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         # If len(dose_curve_options_new) is 0, hide the tab in the index.html
         dose_curve_options_new=dose_curve_options_new,
