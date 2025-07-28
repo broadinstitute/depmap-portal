@@ -8,6 +8,7 @@ import {
   StackedBar,
   StackedBarBar,
 } from "@depmap/common-components";
+import { deprecatedDataExplorerAPI } from "@depmap/data-explorer-2";
 import {
   LongTable,
   LongTableColors,
@@ -199,24 +200,26 @@ export class LongTableCellLineSelector extends React.Component<
           <strong>Add a data column</strong>
           <br />
           <DataColumnSelect
-            onChange={(sliceId, valueType, api) => {
+            onChange={(sliceId, valueType) => {
               if (!sliceId) {
                 this.setState({
                   vector: undefined,
                   vectorId: undefined,
                 });
               } else {
-                api.fetchMetadataColumn(sliceId).then((metadataColumn) => {
-                  this.setState({
-                    vector: {
-                      cellLines: Object.keys(metadataColumn.indexed_values),
-                      values: Object.values(metadataColumn.indexed_values),
-                    },
-                    vectorId: sliceId,
-                    newColLabel: metadataColumn.label,
-                    newColType: valueType,
+                deprecatedDataExplorerAPI
+                  .fetchMetadataColumn(sliceId)
+                  .then((metadataColumn) => {
+                    this.setState({
+                      vector: {
+                        cellLines: Object.keys(metadataColumn.indexed_values),
+                        values: Object.values(metadataColumn.indexed_values),
+                      },
+                      vectorId: sliceId,
+                      newColLabel: metadataColumn.label,
+                      newColType: valueType,
+                    });
                   });
-                });
               }
             }}
           />

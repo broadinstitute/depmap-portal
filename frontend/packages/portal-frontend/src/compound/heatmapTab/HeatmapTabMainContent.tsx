@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import useHeatmapSelectionHandlers from "./hooks/useHeatmapSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
 import useHeatmapData from "./hooks/useHeatmapData";
@@ -27,7 +26,6 @@ function HeatmapTabMainContent({
   selectedDoses = new Set(),
   compoundName,
 }: HeatmapTabMainContentProps) {
-  const api = useDeprecatedDataExplorerApi();
   const {
     tableFormattedData,
     doseColumnNames,
@@ -62,7 +60,6 @@ function HeatmapTabMainContent({
   } = useHeatmapSelectionHandlers(
     heatmapFormattedData,
     tableFormattedData,
-    api,
     handleShowUnselectedLinesOnSelectionsCleared
   );
 

@@ -1,17 +1,18 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { breadboxAPI } from "@depmap/api";
 import {
   ContextSelector,
+  deprecatedDataExplorerAPI,
   fetchContext,
+  isBreadboxOnlyMode,
   isNegatedContext,
   isV2Context,
   negateContext,
   persistLegacyListAsContext,
   PlotConfigSelect,
-  useDataExplorerApi,
-  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
-import { DepMap, isElara } from "@depmap/globals";
-import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
+import { DepMap } from "@depmap/globals";
+import { DataExplorerContext } from "@depmap/types";
 import {
   getSelectedCellLineListName,
   setSelectedCellLineListName,
@@ -45,8 +46,6 @@ const ContextEnabledDropdown = ({
   defaultNone: boolean;
   onListSelect: LegacyCellLineListsDropdownProps["onListSelect"];
 }) => {
-  const api = useDataExplorerApi();
-  const deprecatedApi = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(!defaultNone);
   const [value, setValue] = useState<DataExplorerContext | null>(null);
 
@@ -62,13 +61,17 @@ const ContextEnabledDropdown = ({
       if (context && hash) {
         let labels: string[] = [];
 
-        if (isElara) {
-          const result = await api.evaluateContext(
-            (context as unknown) as DataExplorerContextV2
-          );
+        if (isBreadboxOnlyMode) {
+          if (!isV2Context(context)) {
+            throw new Error("Can't evaluate a legacy context with Breadbox!");
+          }
+
+          const result = await breadboxAPI.evaluateContext(context);
           labels = result.labels;
         } else {
-          labels = await deprecatedApi.evaluateLegacyContext(context);
+          labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
+            context
+          );
         }
 
         onListSelect({
@@ -80,7 +83,7 @@ const ContextEnabledDropdown = ({
         onListSelect({ name: "", lines: new Set() });
       }
     },
-    [api, deprecatedApi, defaultNone, onListSelect]
+    [defaultNone, onListSelect]
   );
 
   useEffect(() => {
@@ -93,10 +96,7 @@ const ContextEnabledDropdown = ({
       const selectedContextHash = getSelectedContextHash();
 
       if (selectedList && selectedList !== "None") {
-        const [hash, context] = await persistLegacyListAsContext(
-          deprecatedApi,
-          selectedList
-        );
+        const [hash, context] = await persistLegacyListAsContext(selectedList);
         setSelectedCellLineListName("None");
         handleChange(context, hash);
       }
@@ -123,7 +123,7 @@ const ContextEnabledDropdown = ({
 
       setIsLoading(false);
     })();
-  }, [deprecatedApi, value, defaultNone, handleChange]);
+  }, [value, defaultNone, handleChange]);
 
   const handleClickCreateContext = () => {
     DepMap.saveNewContext({ context_type: "depmap_model" }, null, handleChange);

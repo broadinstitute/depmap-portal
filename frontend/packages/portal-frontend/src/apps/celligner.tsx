@@ -1,8 +1,6 @@
 import "src/public-path";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
-import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import CellignerPage from "src/celligner/components/CellignerPage";
 import {
@@ -78,19 +76,15 @@ alignments.type.forEach((t, i) => {
 const App = () => {
   return (
     <ErrorBoundary>
-      <DeprecatedDataExplorerApiProvider
-        evaluateLegacyContext={evaluateLegacyContext}
-      >
-        <CellignerPage
-          alignmentsArr={alignments}
-          tumors={tumors}
-          models={cellLines}
-          subtypes={new Map(Object.entries(subtypes))}
-          cellLineUrl={cellLineUrl}
-          downloadUrl={downloadUrl}
-          methodologyUrl={methodologyUrl}
-        />
-      </DeprecatedDataExplorerApiProvider>
+      <CellignerPage
+        alignmentsArr={alignments}
+        tumors={tumors}
+        models={cellLines}
+        subtypes={new Map(Object.entries(subtypes))}
+        cellLineUrl={cellLineUrl}
+        downloadUrl={downloadUrl}
+        methodologyUrl={methodologyUrl}
+      />
     </ErrorBoundary>
   );
 };

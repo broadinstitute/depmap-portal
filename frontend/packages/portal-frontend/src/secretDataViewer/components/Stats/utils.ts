@@ -4,7 +4,7 @@ import {
   DataExplorerDatasetDescriptor,
 } from "@depmap/types";
 import { isCompleteExpression } from "@depmap/data-explorer-2";
-import { fetchDatasetsMatchingContextIncludingEntities } from "src/data-explorer-2/deprecated-api";
+import { fetchDatasetsMatchingContextIncludingEntities } from "src/secretDataViewer/deprecated-api";
 
 const compareCaseInsenstive = (a: string, b: string) => {
   return a.toLowerCase() < b.toLowerCase() ? -1 : 1;

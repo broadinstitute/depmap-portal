@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { DataExplorerContext } from "@depmap/types";
-import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { DatasetsByIndexType, DimensionLabelsToDatasetsMapping } from "./types";
+import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
+import { deprecatedDataExplorerAPI } from "../../../services/deprecatedDataExplorerAPI";
 
 interface Props {
   index_type: string | null;
@@ -26,8 +27,6 @@ export default function useDatasets({
   axis_type,
   context,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
-
   const [
     datasetsByIndexType,
     setDatasetsByIndexType,
@@ -47,14 +46,14 @@ export default function useDatasets({
   useEffect(() => {
     (async () => {
       try {
-        const data = await api.fetchDatasetsByIndexType();
+        const data = await dataExplorerAPI.fetchDatasetsByIndexType();
         setDatasetsByIndexType(data);
       } catch (e) {
         window.console.error(e);
         throw new Error("DimensionSelect: Error fetching datasets");
       }
     })();
-  }, [api]);
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -62,7 +61,7 @@ export default function useDatasets({
 
       try {
         if (slice_type) {
-          const mapping = await api.fetchDimensionLabelsToDatasetsMapping(
+          const mapping = await deprecatedDataExplorerAPI.fetchDimensionLabelsToDatasetsMapping(
             slice_type
           );
           setSliceMap(mapping);
@@ -76,7 +75,7 @@ export default function useDatasets({
         );
       }
     })();
-  }, [api, slice_type]);
+  }, [slice_type]);
 
   useEffect(() => {
     setContextLabels(new Set());
@@ -84,11 +83,13 @@ export default function useDatasets({
     if (axis_type === "aggregated_slice" && context) {
       setContextLabels(null);
 
-      api.evaluateLegacyContext(context).then((labels) => {
-        setContextLabels(new Set(labels));
-      });
+      deprecatedDataExplorerAPI
+        .evaluateLegacyContext(context)
+        .then((labels) => {
+          setContextLabels(new Set(labels));
+        });
     }
-  }, [api, axis_type, context]);
+  }, [axis_type, context]);
 
   const datasets = useMemo(() => {
     return datasetsByIndexType && index_type

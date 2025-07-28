@@ -3,13 +3,11 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { CompoundDoseCurveData, DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { TableFormattedData } from "src/compound/types";
 
 function useDoseCurvesSelectionHandlers(
   doseCurveData: CompoundDoseCurveData | null,
   tableData: TableFormattedData | null,
-  deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
   handleShowUnselectedLinesOnSelectionsCleared: () => void
 ) {
   const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
@@ -105,14 +103,11 @@ function useDoseCurvesSelectionHandlers(
     const allLabels = new Set(
       doseCurveData?.curve_params.map((curveParam) => curveParam.id!)
     );
-    const labels = await compoundPagePromptForSelectionFromContext(
-      deApi,
-      allLabels
-    );
+    const labels = await compoundPagePromptForSelectionFromContext(allLabels);
     if (labels === null) return;
     setSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [doseCurveData, deApi]);
+  }, [doseCurveData]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedModelIds(new Set([]));

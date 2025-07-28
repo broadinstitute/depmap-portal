@@ -3,7 +3,7 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
-import { DeprecatedDataExplorerApiResponse } from "../../../contexts/DeprecatedDataExplorerApiContext";
+import type { DeprecatedDataExplorerApiResponse } from "../../../services/deprecatedDataExplorerAPI";
 
 export type Mode = "entity-only" | "context-only" | "entity-or-context";
 export type PartialDimension = Partial<DataExplorerPlotConfigDimension>;

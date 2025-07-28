@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
-import { enabledFeatures, isElara } from "@depmap/globals";
+import { enabledFeatures } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import {
@@ -10,6 +9,7 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
 } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import {
   LegendKey,
   calcBins,
@@ -52,7 +52,6 @@ function DataExplorerDensity1DPlot({
   onClickSaveSelectionAsContext,
   onClickColorByContext,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [selectedLabels, setSelectedLabels] = useState<Set<string> | null>(
     null
@@ -320,14 +319,13 @@ function DataExplorerDensity1DPlot({
                 setSelectedLabels(null);
               }}
               onClickSetSelectionFromContext={
-                // TODO: Add support for this in Elara.
-                isElara
-                  ? undefined
+                // FIXME
+                isBreadboxOnlyMode
+                  ? () => {
+                      window.alert("Not currently supported with Breadbox!");
+                    }
                   : async () => {
-                      const labels = await promptForSelectionFromContext(
-                        api,
-                        data!
-                      );
+                      const labels = await promptForSelectionFromContext(data!);
 
                       if (labels === null) {
                         return;

@@ -1,12 +1,12 @@
 import React, { useCallback } from "react";
 import omit from "lodash.omit";
-import { isElara } from "@depmap/globals";
 import {
   ContextPath,
   DataExplorerContext,
   DataExplorerPlotConfig,
 } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
+import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
+import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import { logDirectPlotChange } from "../debug";
 import {
   defaultContextName,
@@ -26,15 +26,13 @@ export default function useClickHandlers(
     path: ContextPath | null
   ) => void
 ) {
-  const api = useDataExplorerApi();
-
   const handleClickSaveSelectionAsContext = (
     context_type: string,
     selectedLabels: Set<string>
   ) => {
     const labels = [...selectedLabels];
 
-    const context = isElara
+    const context = isBreadboxOnlyMode
       ? {
           name: defaultContextName(selectedLabels.size),
           dimension_type: context_type,
@@ -58,13 +56,15 @@ export default function useClickHandlers(
       const isModifierPressed = e.shiftKey || e.ctrlKey || e.metaKey;
       let identifiers: { id: string; label: string }[] = [];
 
-      if (isElara) {
+      if (isBreadboxOnlyMode) {
         const dimensionType =
           plot.plot_type === "correlation_heatmap"
             ? plot.dimensions.x!.slice_type
             : plot.index_type;
 
-        identifiers = await api.fetchDimensionIdentifiers(dimensionType);
+        identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
+          dimensionType
+        );
       }
 
       const nextPlot = toRelatedPlot(plot, selectedLabels, identifiers);
@@ -79,7 +79,7 @@ export default function useClickHandlers(
         window.open(url, "_blank", "noreferrer");
       }
     },
-    [api, plot, setPlot]
+    [plot, setPlot]
   );
 
   const handleClickColorByContext = useCallback(
