@@ -1,6 +1,6 @@
 /* eslint-disable */
 import * as React from "react";
-import { errorHandler, isElara } from "@depmap/globals";
+import { errorHandler } from "@depmap/globals";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import { Radio } from "react-bootstrap";
 import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
@@ -11,6 +11,7 @@ import {
   UnivariateAssociationsParams,
   VariableType,
 } from "@depmap/compute";
+import { isBreadboxOnlyMode } from "@depmap/data-explorer-2";
 import { assert } from "@depmap/utils";
 
 interface TwoClassQueryProps extends CommonQueryProps {
@@ -195,7 +196,7 @@ export class TwoClassQuery extends React.Component<
     };
 
     const runCustomAnalysis = () => {
-      return isElara
+      return isBreadboxOnlyMode
         ? breadboxAPI.computeUnivariateAssociations(params)
         : legacyPortalAPI.computeUnivariateAssociations(params);
     };

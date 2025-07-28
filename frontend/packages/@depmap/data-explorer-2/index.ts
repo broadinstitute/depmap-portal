@@ -12,17 +12,9 @@ export { default as DatasetMetadataSelector } from "./src/components/DatasetMeta
 export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";
 export { default as ContextTypeSelect } from "./src/components/ContextManager/ContextTypeSelect";
 
-export {
-  DataExplorerApiProvider,
-  useDataExplorerApi,
-} from "./src/contexts/DataExplorerApiContext";
-
-export {
-  DeprecatedDataExplorerApiProvider,
-  useDeprecatedDataExplorerApi,
-} from "./src/contexts/DeprecatedDataExplorerApiContext";
-
-export type { DeprecatedDataExplorerApiResponse } from "./src/contexts/DeprecatedDataExplorerApiContext";
+export { isBreadboxOnlyMode } from "./src/isBreadboxOnlyMode";
+export { deprecatedDataExplorerAPI } from "./src/services/deprecatedDataExplorerAPI";
+export type { DeprecatedDataExplorerApiResponse } from "./src/services/deprecatedDataExplorerAPI";
 
 export {
   DataExplorerSettingsProvider,

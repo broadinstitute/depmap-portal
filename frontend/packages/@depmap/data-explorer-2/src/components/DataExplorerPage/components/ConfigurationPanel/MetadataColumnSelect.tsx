@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { AnnotationType, SliceQuery, TabularDataset } from "@depmap/types";
-import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
 import renderConditionally from "../../../../utils/render-conditionally";
 import { fetchMetadataAndOtherTabularDatasets } from "../../../../utils/api-helpers";
 import PlotConfigSelect from "../../../PlotConfigSelect";
@@ -12,7 +11,6 @@ interface Props {
 }
 
 function MetadataColumnSelect({ slice_type, value, onChange }: Props) {
-  const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
 
   const [metadataDataset, setMetadataDataset] = useState<
@@ -28,7 +26,6 @@ function MetadataColumnSelect({ slice_type, value, onChange }: Props) {
       const {
         metadataDataset: mdd,
       } = await fetchMetadataAndOtherTabularDatasets(
-        api,
         slice_type,
         acceptedColTypes
       );
@@ -43,7 +40,7 @@ function MetadataColumnSelect({ slice_type, value, onChange }: Props) {
         );
       }
     })();
-  }, [api, slice_type]);
+  }, [slice_type]);
 
   const options = Object.keys(metadataDataset?.columns_metadata || {}).map(
     (key) => ({

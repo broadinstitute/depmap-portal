@@ -1,10 +1,10 @@
 import React from "react";
-import { isElara } from "@depmap/globals";
 import {
   ContextPath,
   DataExplorerContext,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import PlotConfiguration from "./PlotConfiguration";
 import AnalysisResult from "./AnalysisResult";
@@ -27,7 +27,7 @@ interface Props {
 }
 
 const xFeatureTypeHasAssociations = (slice_type?: string) => {
-  return isElara
+  return isBreadboxOnlyMode
     ? true
     : ["gene", "compound_experiment"].includes(slice_type as string);
 };

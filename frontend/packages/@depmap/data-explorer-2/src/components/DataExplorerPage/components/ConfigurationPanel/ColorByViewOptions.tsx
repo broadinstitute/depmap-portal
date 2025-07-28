@@ -1,6 +1,6 @@
 import React from "react";
-import { isElara } from "@depmap/globals";
 import { ContextPath, DataExplorerContext, FilterKey } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import ContextSelector from "../../../ContextSelector";
 import DatasetMetadataSelector from "../../../DatasetMetadataSelector";
 import DimensionSelectV1 from "../../../DimensionSelect";
@@ -14,11 +14,11 @@ import MetadataColumnSelect from "./MetadataColumnSelect";
 import TabularDatasetSelect from "./TabularDatasetSelect";
 import styles from "../../styles/ConfigurationPanel.scss";
 
-const DimensionSelect = isElara
+const DimensionSelect = isBreadboxOnlyMode
   ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
   : DimensionSelectV1;
 
-const SliceLabelSelect = isElara
+const SliceLabelSelect = isBreadboxOnlyMode
   ? ((SliceLabelSelectV2 as unknown) as typeof SliceLabelSelectV1)
   : SliceLabelSelectV1;
 

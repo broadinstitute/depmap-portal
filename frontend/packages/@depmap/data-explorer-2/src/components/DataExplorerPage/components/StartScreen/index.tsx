@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
 import { isElara } from "@depmap/globals";
 import { UploadFormat, UserUploadModal } from "@depmap/user-upload";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import StartScreenExamples from "./StartScreenExamples";
 import styles from "../../styles/DataExplorer2.scss";
 
@@ -55,13 +56,13 @@ function StartScreen({ tutorialLink }: Props) {
         isPrivate={false}
         isTransient
         taskKickoffFunction={(args) => {
-          if (isElara) {
+          if (isBreadboxOnlyMode) {
             // There is an Asana ticket to fix this.
             // https://app.asana.com/1/9513920295503/project/1200435587978125/task/1210026345785485
             // Note that Elara API used to have an implementation of postCustomCsv but it looks
             // like it takes different arguments that the Legacy Portal version.
             // https://github.com/broadinstitute/depmap-portal/blob/d9751a1/frontend/packages/elara-frontend/src/api.ts#L563-L575
-            throw new Error("Not implemented in Elara!");
+            throw new Error("Not implemented in Breadbox!");
           }
 
           return legacyPortalAPI.postCustomCsv({

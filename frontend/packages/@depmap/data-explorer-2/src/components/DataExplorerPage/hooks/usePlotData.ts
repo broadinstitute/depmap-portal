@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
+import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
@@ -7,7 +7,6 @@ import {
 } from "@depmap/types";
 
 export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
-  const api = useDeprecatedDataExplorerApi();
   const [data, setData] = useState<DataExplorerPlotResponse | null>(null);
   const [linreg_by_group, setLinRegInfoByGroup] = useState<LinRegInfo[] | null>(
     null
@@ -51,21 +50,21 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         let fetchedData: DataExplorerPlotResponse;
 
         if (plotConfig.plot_type === "correlation_heatmap") {
-          fetchedData = await api.fetchCorrelation(
+          fetchedData = await dataExplorerAPI.fetchCorrelation(
             plotConfig.index_type,
             plotConfig.dimensions,
             plotConfig.filters,
             plotConfig.use_clustering
           );
         } else if (plotConfig.plot_type === "waterfall") {
-          fetchedData = await api.fetchWaterfall(
+          fetchedData = await dataExplorerAPI.fetchWaterfall(
             plotConfig.index_type,
             plotConfig.dimensions,
             plotConfig.filters,
             plotConfig.metadata
           );
         } else {
-          fetchedData = await api.fetchPlotDimensions(
+          fetchedData = await dataExplorerAPI.fetchPlotDimensions(
             plotConfig.index_type,
             plotConfig.dimensions,
             plotConfig.filters,
@@ -80,7 +79,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         window.console.error(e);
       }
     })();
-  }, [api, plotConfig, fetchedPlotConfig]);
+  }, [plotConfig, fetchedPlotConfig]);
 
   useEffect(() => {
     setLinRegInfoByGroup(null);
@@ -92,7 +91,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         plotConfig.dimensions.x &&
         plotConfig.dimensions.y
       ) {
-        const fetchedData = await api.fetchLinearRegression(
+        const fetchedData = await dataExplorerAPI.fetchLinearRegression(
           plotConfig.index_type,
           plotConfig.dimensions,
           plotConfig.filters,
@@ -106,7 +105,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         }
       }
     })();
-  }, [api, plotConfig, fetchedPlotConfig]);
+  }, [plotConfig, fetchedPlotConfig]);
 
   return { data, linreg_by_group, fetchedPlotConfig, hadError };
 }

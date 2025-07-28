@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useReducer, useState } from "react";
-import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
+import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
 import {
   DEFAULT_EMPTY_PLOT,
   plotsAreEquivalentWhenSerialized,
@@ -33,8 +33,6 @@ function DataExplorer2MainContent({
   contactEmail,
   tutorialLink,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
-
   useEffect(() => {
     logInitialPlot(initialPlot);
   }, [initialPlot]);
@@ -58,7 +56,7 @@ function DataExplorer2MainContent({
 
       if (isCompletePlot(nextPlot)) {
         setIsInitialPageLoad(false);
-        const prevPlot = await readPlotFromQueryString(api);
+        const prevPlot = await readPlotFromQueryString();
 
         if (!plotsAreEquivalentWhenSerialized(prevPlot, nextPlot)) {
           const queryString = await plotToQueryString(nextPlot);
@@ -66,7 +64,7 @@ function DataExplorer2MainContent({
         }
       }
     },
-    [api, plot]
+    [plot]
   );
 
   useEffect(() => {
@@ -86,7 +84,7 @@ function DataExplorer2MainContent({
 
   useEffect(() => {
     const onPopState = (e: PopStateEvent) => {
-      readPlotFromQueryString(api).then((nextPlot) => {
+      readPlotFromQueryString().then((nextPlot) => {
         setPlot(nextPlot);
 
         const initial = window.location.search.substr(1) === "";
@@ -101,7 +99,7 @@ function DataExplorer2MainContent({
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, [api]);
+  }, []);
 
   const {
     ContextBuilder,
@@ -120,7 +118,10 @@ function DataExplorer2MainContent({
 
   return (
     <>
-      <main className={styles.DataExplorer2}>
+      <main
+        className={styles.DataExplorer2}
+        data-breadbox-only={isBreadboxOnlyMode}
+      >
         <ConfigurationPanel
           plot={plot}
           dispatch={dispatchPlotActionAndUpdateHistory}

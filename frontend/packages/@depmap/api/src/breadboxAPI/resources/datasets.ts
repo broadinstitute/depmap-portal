@@ -8,6 +8,7 @@ import {
   DatasetValueType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  SliceQuery,
   TabularDatasetDataArgs,
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
@@ -53,14 +54,6 @@ export function getMatrixDatasetData(
     throw new Error(
       "Must supply at least a `sample_identifier` or `feature_identifier`"
     );
-  }
-
-  if (args.sample_identifier && !args.samples?.length) {
-    throw new Error("Must supply `samples`");
-  }
-
-  if (args.feature_identifier && !args.features?.length) {
-    throw new Error("Must supply `features`");
   }
 
   const finalArgs: typeof args = { ...args };
@@ -129,6 +122,14 @@ export function getMatrixDatasetSamples(dataset_id: string) {
   return getJson<{ id: string; label: string }[]>(
     `/datasets/samples/${dataset_id}`
   );
+}
+
+export function getDimensionData(sliceQuery: SliceQuery) {
+  return postJson<{
+    ids: string[];
+    labels: string[];
+    values: string[];
+  }>("/datasets/dimension/data/", sliceQuery);
 }
 
 const assertCsvSingleColumnNoHeader = (
