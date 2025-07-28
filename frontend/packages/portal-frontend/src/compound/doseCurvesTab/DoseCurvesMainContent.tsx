@@ -6,7 +6,11 @@ import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
-import { CurveParams, CompoundDoseCurveData } from "@depmap/types";
+import {
+  CurveParams,
+  CompoundDoseCurveData,
+  DRCDatasetOptions,
+} from "@depmap/types";
 import CompoundPlotSelections from "../CompoundPlotSelections";
 import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
 import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
@@ -41,11 +45,6 @@ function DoseCurvesMainContent({
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);
 
   useEffect(() => {
-    // If dose curve data changed, invalidate the plot
-    setPlotElement(null);
-  }, [doseCurveData]);
-
-  useEffect(() => {
     legacyPortalAPI.getCellLineUrlRoot().then((urlRoot: string) => {
       setCellLineUrlRoot(urlRoot);
     });
@@ -66,6 +65,12 @@ function DoseCurvesMainContent({
     api,
     handleShowUnselectedLinesOnSelectionsCleared
   );
+
+  useEffect(() => {
+    // If dose curve data changed, invalidate the plot
+    handleClearSelection();
+    setPlotElement(null);
+  }, [doseCurveData]);
 
   // Format cellLine column to link to cell line pages
   const doseViabilityTableColumns = useMemo(() => {

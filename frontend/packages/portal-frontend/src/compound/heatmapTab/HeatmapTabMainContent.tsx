@@ -66,6 +66,11 @@ function HeatmapTabMainContent({
     handleShowUnselectedLinesOnSelectionsCleared
   );
 
+  useEffect(() => {
+    handleClearSelection();
+    setPlotElement(null);
+  }, [heatmapFormattedData]);
+
   // To hide/show the appropriate cells on Filter By Dose
   const visibleZIndexes = useMemo(() => {
     if (!heatmapFormattedData) return [];
