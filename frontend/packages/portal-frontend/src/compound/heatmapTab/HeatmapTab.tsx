@@ -22,14 +22,16 @@ function HeatmapTab({
   compoundName,
   compoundId,
 }: HeatmapTabProps) {
-  const [
-    selectedDataset,
-    setSelectedDataset,
-  ] = useState<DRCDatasetOptions | null>(null);
+  const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
+    datasetOptions[0]
+  );
   const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
     value: string;
     label: string;
-  } | null>(null);
+  }>({
+    value: datasetOptions[0].viability_dataset_given_id,
+    label: datasetOptions[0].display_name,
+  });
 
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
   const [selectedDoses, setSelectedDoses] = useState<
@@ -93,12 +95,7 @@ function HeatmapTab({
           <FiltersPanel
             handleSelectDataset={handleSelectDataset}
             datasetOptions={datasetOptions}
-            selectedDatasetOption={
-              selectedDatasetOption || {
-                value: datasetOptions[0].viability_dataset_given_id,
-                label: datasetOptions[0].display_name,
-              }
-            }
+            selectedDatasetOption={selectedDatasetOption}
             handleFilterByDose={handleFilterByDose}
             selectedDose={selectedDoses}
             showUnselectedLines={showUnselectedLines}

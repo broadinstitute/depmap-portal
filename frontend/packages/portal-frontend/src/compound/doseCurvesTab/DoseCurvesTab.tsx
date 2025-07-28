@@ -2,13 +2,10 @@ import React, { useCallback, useState } from "react";
 import DoseCurvesMainContent from "./DoseCurvesMainContent";
 import FiltersPanel from "./FiltersPanel";
 import { DRCDatasetOptions } from "@depmap/types";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
-import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
 import { DoseViabilityDataProvider } from "../hooks/DoseViabilityDataContext";
-import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
 
 interface DoseCurvesTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -23,14 +20,16 @@ function DoseCurvesTab({
   compoundName,
   compoundId,
 }: DoseCurvesTabProps) {
-  const [
-    selectedDataset,
-    setSelectedDataset,
-  ] = useState<DRCDatasetOptions | null>(null);
+  const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
+    datasetOptions[0]
+  );
   const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
     value: string;
     label: string;
-  } | null>(null);
+  }>({
+    value: datasetOptions[0].viability_dataset_given_id,
+    label: datasetOptions[0].display_name,
+  });
   const [showReplicates, setShowReplicates] = useState<boolean>(true);
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
   const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
@@ -38,23 +37,6 @@ function DoseCurvesTab({
   );
   const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
     new Set([])
-  );
-
-  const api = useDeprecatedDataExplorerApi();
-
-  const {
-    handleClickCurve,
-    handleChangeTableSelection,
-    handleClickSaveSelectionAsContext,
-    handleSetSelectionFromContext,
-    handleClearSelection,
-  } = useDoseCurvesSelectionHandlers(
-    selectedModelIds,
-    selectedTableRows,
-    setSelectedModelIds,
-    setSelectedTableRows,
-    api,
-    setShowUnselectedLines
   );
 
   const handleSelectDataset = useCallback(
@@ -77,6 +59,16 @@ function DoseCurvesTab({
     [datasetOptions]
   );
 
+  const handleSetSelectedTableRows = useCallback(
+    () => setSelectedTableRows,
+    []
+  );
+  const handleSetSelectedModelIds = useCallback(() => setSelectedModelIds, []);
+  const handleSetShowUnselectedLines = useCallback(
+    () => setShowUnselectedLines,
+    []
+  );
+
   return (
     <DoseViabilityDataProvider
       dataset={selectedDataset}
@@ -87,12 +79,7 @@ function DoseCurvesTab({
           <FiltersPanel
             handleSelectDataset={handleSelectDataset}
             datasetOptions={datasetOptions}
-            selectedDatasetOption={
-              selectedDatasetOption || {
-                value: datasetOptions[0].viability_dataset_given_id,
-                label: datasetOptions[0].display_name,
-              }
-            }
+            selectedDatasetOption={selectedDatasetOption}
             showReplicates={showReplicates}
             showUnselectedLines={showUnselectedLines}
             handleToggleShowReplicates={(nextValue: boolean) =>
@@ -111,13 +98,9 @@ function DoseCurvesTab({
             showReplicates={showReplicates}
             showUnselectedLines={showUnselectedLines}
             compoundName={compoundName}
-            handleClickCurve={handleClickCurve}
-            handleChangeTableSelection={handleChangeTableSelection}
-            handleClickSaveSelectionAsContext={
-              handleClickSaveSelectionAsContext
-            }
-            handleSetSelectionFromContext={handleSetSelectionFromContext}
-            handleClearSelection={handleClearSelection}
+            handleSetSelectedTableRows={handleSetSelectedTableRows}
+            handleSetSelectedModelIds={handleSetSelectedModelIds}
+            handleSetShowUnselectedLines={handleSetShowUnselectedLines}
           />
         </div>
       </div>

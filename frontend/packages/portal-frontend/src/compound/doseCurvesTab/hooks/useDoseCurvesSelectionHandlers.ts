@@ -6,6 +6,7 @@ import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptF
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 
 function useDoseCurvesSelectionHandlers(
+  allModelIds: Set<string>,
   selectedModelIds: Set<string>,
   selectedTableRows: Set<string>,
   setSelectedModelIds: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -25,7 +26,7 @@ function useDoseCurvesSelectionHandlers(
         return ys;
       });
     },
-    [selectedTableRows]
+    [selectedTableRows, setSelectedModelIds, setSelectedTableRows]
   );
 
   const handleChangeTableSelection = useCallback(
@@ -69,7 +70,7 @@ function useDoseCurvesSelectionHandlers(
   }, [selectedModelIds]);
 
   const handleSetSelectionFromContext = useCallback(async () => {
-    const allLabels = new Set(selectedModelIds);
+    const allLabels = new Set(allModelIds);
     const labels = await compoundPagePromptForSelectionFromContext(
       deApi,
       allLabels
@@ -79,7 +80,7 @@ function useDoseCurvesSelectionHandlers(
     }
     setSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [deApi, setSelectedModelIds, setSelectedTableRows, selectedModelIds]);
+  }, [deApi, setSelectedModelIds, setSelectedTableRows, allModelIds]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedModelIds(new Set([]));
