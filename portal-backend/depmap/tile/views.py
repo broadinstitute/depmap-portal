@@ -39,7 +39,7 @@ from depmap.compound.views.executive import (
 )
 from depmap.compound.views.index import format_about
 from depmap.gene.models import Gene
-from depmap.compound.models import Compound, CompoundExperiment
+from depmap.compound.models import Compound, CompoundExperiment, drc_compound_datasets
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
 from depmap.metmap.models import MetMap500
 from depmap.extensions import cansar, breadbox
@@ -92,8 +92,9 @@ def render_tile(subject_type, tile_name, identifier):
         compound_experiment_and_datasets = [
             x
             for x in compound_experiment_and_datasets
-            if not x[1].is_ic50 and not x[1].is_dose_replicate
-        ]  # filter for non ic50 or dose replicate datasets
+            if not x[1].is_dose_replicate
+        ]  # filter for non dose replicate datasets
+
         rendered_tile = render_compound_tile(
             tile_name, compound, compound_experiment_and_datasets, args_dict
         )
@@ -184,8 +185,10 @@ def render_compound_tile(
         CompoundTileEnum.correlations.value: get_correlations_html,
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
+        CompoundTileEnum.heatmap.value: get_heatmap_html,
         CompoundTileEnum.description.value: get_structure_and_detail_html,
     }
+
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
@@ -372,6 +375,23 @@ def get_structure_and_detail_html(
         f"""(
         function() {{
             DepMap.initStructureAndDetailTile("{div_id}", "{compound_id}");
+        }})""",
+    )
+
+
+def get_heatmap_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
+    compound = Compound.get_by_label(entity_label)
+    compound_id = compound.compound_id
+
+    return RenderedTile(
+        f'<div id="{div_id}"></div>',
+        f"""(
+        function() {{
+            DepMap.initHeatmapTile("{div_id}", "{compound_id}", "{entity_label}");
         }})""",
     )
 

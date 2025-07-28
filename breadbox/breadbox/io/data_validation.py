@@ -1,6 +1,6 @@
 import csv
 from dataclasses import dataclass
-from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Union
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence
 import io
 import json
 
@@ -21,6 +21,11 @@ from breadbox.models.dataset import (
     DimensionType,
     TabularColumn,
 )
+from breadbox.schemas.dataframe_wrapper import (
+    DataFrameWrapper,
+    PandasDataFrameWrapper,
+    ParquetDataFrameWrapper,
+)
 from breadbox.io.filestore_crud import save_dataset_file
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
@@ -28,6 +33,8 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
+import pyarrow
+
 
 pd.set_option("mode.use_inf_as_na", True)
 
@@ -102,7 +109,7 @@ def _validate_dimension_type_metadata_file(
             f"Please make sure your file has unique column names."
         )
 
-    validate_all_columns_have_types(cols, annotation_type_mapping)
+    validate_all_columns_have_types(cols.tolist(), annotation_type_mapping)
 
     bytes_buf.seek(0)
 
@@ -153,9 +160,11 @@ def _parse_list_strings(val):
 
 
 def _validate_data_value_type(
-    df: pd.DataFrame, value_type: ValueType, allowed_values: Optional[List]
+    dfw: DataFrameWrapper, value_type: ValueType, allowed_values: Optional[List]
 ):
+    # NOTE: We're making an assumption here that large parquet files are always numeric so smaller parquet files are ok to convert to df
     if value_type == ValueType.categorical:
+        df = dfw.get_df()
         assert (
             allowed_values
         ), "Allowed values must be specified for categorical datasets."
@@ -178,7 +187,9 @@ def _validate_data_value_type(
         ] + [
             None
         ]  # Data values can include missing values
-        if not lower_df.isin(lower_allowed_values).all().all():
+        if not bool(
+            lower_df.isin(lower_allowed_values).all(axis=None)
+        ):  # Flattened and checked all values
             raise FileValidationError(
                 f"Value must be in list of allowed values: {allowed_values}"
             )
@@ -187,8 +198,9 @@ def _validate_data_value_type(
         int_df = lower_df.applymap(lambda x: lower_allowed_values_map[x])
 
         int_df = int_df.astype(int)
-        return int_df
+        return PandasDataFrameWrapper(int_df)
     elif value_type == ValueType.list_strings:
+        df = dfw.get_df()
 
         def validate_list_strings(val):
             if not pd.isnull(val):
@@ -199,39 +211,40 @@ def _validate_data_value_type(
 
         df = df.applymap(validate_list_strings)
         # astype(str) will stringify 'None' or '<NA>'. Using pd.StringDtype() will preserve <NA>
-        return df.astype(pd.StringDtype())
+        return PandasDataFrameWrapper(df.astype(pd.StringDtype()))
     else:
-        if not all([is_numeric_dtype(df[col].dtypes) for col in df.columns]):
+        if not dfw.is_numeric_cols():
             raise FileValidationError(
                 "All values must be numeric for continuous datasets."
             )
-        return df.astype(np.float64)
+        return dfw
 
 
-def _read_parquet(file, value_type: ValueType) -> pd.DataFrame:
-    # It appears that pd.read_parquet() by default uses pyarrow. However, for some reason
-    #  when reading a file with 20k columns, the memory usage balloons
-    # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
-    df = pd.read_parquet(file, engine="fastparquet").convert_dtypes()
-
-    # parquet files have the types encoded in the file, so we'll convert after the fact
-    if value_type == ValueType.continuous:
-        dtype = "Float64"
-    elif value_type == ValueType.categorical or value_type == ValueType.list_strings:
-        dtype = "string"
-    else:
-        raise ValueError(f"Invalid value type: {value_type}")
-
-    cols = df.columns
+def _read_parquet(file) -> ParquetDataFrameWrapper:
+    parquet_wrapper = ParquetDataFrameWrapper(file)
+    cols = parquet_wrapper.get_column_names()
+    if len(cols) != len(set(cols)):
+        raise FileValidationError(
+            f"Make sure all column names in the parquet file are unique."
+        )
+    indices = parquet_wrapper.get_index_names()
+    if len(indices) != len(set(indices)):
+        raise FileValidationError(
+            f"Make sure all index names (col 0) in the parquet file are unique."
+        )
     # the first column will be treated as the index. Make sure it's of type string
-    df = df.astype({col: ("string" if i == 0 else dtype) for i, col in enumerate(cols)})
-    return df
+    index_col = parquet_wrapper.schema.names[0]
+    if not pyarrow.types.is_string(parquet_wrapper.schema.field(index_col).type):
+        raise FileValidationError(
+            f"Make sure the first column in the parquet file is the index and is of type string."
+        )
+    return parquet_wrapper
 
 
 from typing import cast
 
 
-def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
+def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
     # When pandas reads non-unique columns from a CSV, it mangles them to make them unique.
     # As a workaround, load and validate the columns first using csv.DictReader.
     text_io = io.TextIOWrapper(file, encoding="utf-8")
@@ -256,34 +269,36 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> pd.DataFrame:
     file.seek(0)
 
     df = pd.read_csv(file, dtype=dtypes)  # pyright: ignore
+    # set the first column as index
+    df.set_index(df.columns[0], inplace=True)
 
-    return df
+    return PandasDataFrameWrapper(df)
 
 
 def _validate_data_file(
-    df: pd.DataFrame, value_type: ValueType, allowed_values: Optional[List[str]],
-) -> pd.DataFrame:
+    dfw: DataFrameWrapper, value_type: ValueType, allowed_values: Optional[List[str]],
+) -> DataFrameWrapper:
     """
     Validates the data values against it's given value_type.
     Checks if all features and samples in dataset are unique.
     """
-
     # make sure all the values in df conform to value_type
-    df = _validate_data_value_type(df, value_type, allowed_values)
+    dfw = _validate_data_value_type(dfw, value_type, allowed_values)
+    verify_unique_rows_and_cols(dfw)
 
-    verify_unique_rows_and_cols(df)
-
-    return df
+    return dfw
 
 
-def verify_unique_rows_and_cols(df: pd.DataFrame):
-    duplicated_columns = df.columns[df.columns.duplicated()]
+def verify_unique_rows_and_cols(dfw: DataFrameWrapper):
+    columns = pd.Series(dfw.get_column_names())
+    duplicated_columns = columns[columns.duplicated()]
     if len(duplicated_columns) > 0:
         raise FileValidationError(
             f"Encountered duplicate column names (Feature IDs): {_format_abridged_list(duplicated_columns)}"
         )
 
-    duplicated_index = df.index[df.index.duplicated()]
+    indices = pd.Series(dfw.get_index_names())
+    duplicated_index = indices[indices.duplicated()]
     if len(duplicated_index) > 0:
         raise FileValidationError(
             f"Encountered duplicate row indices (Sample IDs): {_format_abridged_list(duplicated_index)}"
@@ -291,6 +306,7 @@ def verify_unique_rows_and_cols(df: pd.DataFrame):
 
 
 def _format_abridged_list(values, max_elements=10):
+
     if len(values) > max_elements:
         return f"{', '.join(values[:max_elements//2])}, ..., {', '.join(values[-max_elements//2:])}"
     else:
@@ -372,16 +388,17 @@ def _get_dimension_labels_and_warnings(
 # TODO:Remove and replace with above
 def _validate_dataset_dimensions(
     db: SessionWithUser,
-    data_df: pd.DataFrame,
+    dfw: DataFrameWrapper,
     feature_type: Optional[DimensionType],
     sample_type: DimensionType,
 ) -> DataframeValidatedFile:
-
+    indices = dfw.get_index_names()
     sample_given_id_to_index = pd.DataFrame(
-        {"index": range(len(data_df.index)), "given_id": list(data_df.index)}
+        {"index": range(len(indices)), "given_id": indices}
     )
+    columns = dfw.get_column_names()
     feature_given_id_to_index = pd.DataFrame(
-        {"index": range(len(data_df.columns)), "given_id": list(data_df.columns)}
+        {"index": range(len(columns)), "given_id": columns}
     )
 
     # If there is a specified type, get the labels from there
@@ -421,6 +438,9 @@ def _validate_dataset_dimensions(
     )
 
 
+# TODO: Remove this function and replace with read_and_validate_matrix_df.
+# I believe this is used in to be deprecated upload dataset task and tests related to it.
+# create_cell_line_group which could use new dataset upload functions
 def validate_and_upload_dataset_files(
     db: SessionWithUser,
     dataset_id: str,
@@ -434,24 +454,22 @@ def validate_and_upload_dataset_files(
 ) -> DataframeValidatedFile:
 
     if data_file_format == "csv":
-        unchecked_df = _read_csv(data_file.file, value_type)
+        unchecked_dfw = _read_csv(data_file.file, value_type)
     elif data_file_format == "parquet":
-        unchecked_df = _read_parquet(data_file.file, value_type)
+        unchecked_dfw = _read_parquet(data_file.file)
     else:
         raise FileValidationError(
             f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
         )
 
-    unchecked_df.set_index(unchecked_df.columns[0], inplace=True)
-
-    data_df = _validate_data_file(unchecked_df, value_type, allowed_values,)
+    data_dfw = _validate_data_file(unchecked_dfw, value_type, allowed_values,)
 
     dataframe_validated_dimensions = _validate_dataset_dimensions(
-        db, data_df, feature_type, sample_type
+        db, data_dfw, feature_type, sample_type
     )
 
     # TODO: Move save function to api layer. Need to make sure the db save is successful first
-    save_dataset_file(dataset_id, data_df, value_type, filestore_location)
+    save_dataset_file(dataset_id, data_dfw, value_type, filestore_location)
 
     return dataframe_validated_dimensions
 
@@ -526,31 +544,32 @@ def process_annotation_list_values(
 ##### NEW DATASET UPLOAD FUNCTIONS #####
 
 
+# class DataFrameWrapper
+
+
 def read_and_validate_matrix_df(
     file_path: str,
     value_type: ValueType,
     allowed_values: Optional[List[str]],
     data_file_format: str,
-) -> pd.DataFrame:
-    with open(file_path, "rb") as fd:
-        if data_file_format == "csv":
-            df = _read_csv(fd, value_type)
-        elif data_file_format == "parquet":
-            df = _read_parquet(fd, value_type)
-        else:
-            raise FileValidationError(
-                f"data_file_format was unrecognized: {data_file_format}"
-            )
+) -> DataFrameWrapper:
 
-    # now make the first column into the index
-    df.set_index(df.columns[0], inplace=True)
+    if data_file_format == "parquet":
+        df_wrapper = _read_parquet(file_path)
+
+    elif data_file_format == "csv":
+        with open(file_path, "rb") as fd:
+            df_wrapper = _read_csv(fd, value_type)
+    else:
+        raise FileValidationError(
+            f"data_file_format was unrecognized: {data_file_format}"
+        )
 
     # for categorical values, this will map strings to integers (representing the index into allowed_values)
-    df = _validate_data_value_type(df, value_type, allowed_values)
+    df_wrapper = _validate_data_value_type(df_wrapper, value_type, allowed_values)
+    verify_unique_rows_and_cols(df_wrapper)
 
-    verify_unique_rows_and_cols(df)
-
-    return df
+    return df_wrapper
 
 
 def read_and_validate_tabular_df(

@@ -13,7 +13,7 @@ rule process_taiga_pulled_artifact:
 
       ### The if blocks are here to convert the new oncref format to the old oncref format so that 
       ### the oncref datasets can be ingested in the pipeline without much additional changes.
-      if {{ inputs.download.label == "Prism_oncology_AUC" or inputs.download.label == "Prism_oncology_IC50"}}:
+      if {{ inputs.download.label == "Prism_oncology_AUC"}}:
          prism_oncref_df = tc.get("{{ inputs.download.dataset_id }}")
          prism_oncref_df = prism_oncref_df.transpose()
          prism_oncref_df.to_csv("out.csv", index=True)

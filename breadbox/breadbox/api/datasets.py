@@ -2,6 +2,7 @@ from typing import List, Optional, Set, Union
 from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
+from breadbox.utils.asserts import index_error_msg
 
 from fastapi import (
     APIRouter,
@@ -182,6 +183,7 @@ def get_feature_data(
             raise UserError(
                 f"Expected a matrix dataset. Unable to load feature data for tabular dataset: '{feature.dataset_id}' "
             )
+        assert feature.index is not None, index_error_msg(feature)
         # Read data from the HDF5 file
         df = get_feature_slice(dataset, [feature.index], settings.filestore_location)
         # Get the feature label
@@ -325,7 +327,9 @@ def get_matrix_dataset_data(
     ] = False,
 ):
     if dataset.format != "matrix_dataset":
-        raise UserError("This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead.")
+        raise UserError(
+            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
+        )
     try:
         df = dataset_service.get_subsetted_matrix_dataset_df(
             db,
@@ -358,7 +362,9 @@ def get_tabular_dataset_data(
     ] = False,
 ):
     if dataset.format != "tabular_dataset":
-        raise UserError("This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead.")
+        raise UserError(
+            "This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead."
+        )
     try:
         df = dataset_service.get_subsetted_tabular_dataset_df(
             db, user, dataset, tabular_dimensions_info, strict
@@ -401,7 +407,9 @@ def get_dataset_data(
 ):
     """Get dataset dataframe subset given the features and samples. Filtering should be possible using either labels (cell line name, gene name, etc.) or ids (depmap_id, entrez_id, etc.). If features or samples are not specified, return all features or samples"""
     if dataset.format != "matrix_dataset":
-        raise UserError("This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead.")
+        raise UserError(
+            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
+        )
     try:
         dim_info = MatrixDimensionsInfo(
             features=features,

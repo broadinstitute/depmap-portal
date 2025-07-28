@@ -51,7 +51,11 @@ export async function fetchGeneTeaEnrichment(
 
   const body =
     process.env.NODE_ENV === "development"
-      ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
+      ? await getJson<RawResponse>(
+          toCorsProxyUrl(geneTeaUrl, params),
+          undefined,
+          { credentials: "omit" }
+        )
       : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
   // `enriched_terms` can be null when there are no relevant terms. We'll
@@ -109,7 +113,11 @@ export async function fetchGeneTeaTermContext(
 
   const body =
     process.env.NODE_ENV === "development"
-      ? await getJson<RawResponse>(toCorsProxyUrl(geneTeaUrl, params))
+      ? await getJson<RawResponse>(
+          toCorsProxyUrl(geneTeaUrl, params),
+          undefined,
+          { credentials: "omit" }
+        )
       : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
   if ("message" in body) {

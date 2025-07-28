@@ -485,24 +485,12 @@ def load_populated_db_data():
                 "matrix_file_name_root": "dataset/gdsc1-auc",
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            DependencyDataset.DependencyEnum.GDSC1_IC50: {
-                "matrix_file_name_root": "dataset/gdsc1-auc",
-                "taiga_id": "placeholder-taiga-id.1",
-            },
             DependencyDataset.DependencyEnum.GDSC2_AUC: {
-                "matrix_file_name_root": "dataset/gdsc2-auc",
-                "taiga_id": "placeholder-taiga-id.1",
-            },
-            DependencyDataset.DependencyEnum.GDSC2_IC50: {
                 "matrix_file_name_root": "dataset/gdsc2-auc",
                 "taiga_id": "placeholder-taiga-id.1",
             },
             DependencyDataset.DependencyEnum.Prism_oncology_AUC: {
                 "matrix_file_name_root": "dataset/prism-oncology-auc",
-                "taiga_id": "placeholder-taiga-id.1",
-            },
-            DependencyDataset.DependencyEnum.Prism_oncology_IC50: {
-                "matrix_file_name_root": "dataset/prism-oncology-ic50",
                 "taiga_id": "placeholder-taiga-id.1",
             },
             DependencyDataset.DependencyEnum.Avana: {
