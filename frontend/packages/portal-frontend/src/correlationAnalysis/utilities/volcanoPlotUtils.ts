@@ -18,7 +18,20 @@ export const formatVolcanoTrace = (
           width: 1,
         },
         size: 7,
-        color: volcanoDataTrace.color,
+        color: volcanoDataTrace.label.map((label) => {
+          if (selectedFeatures.length) {
+            // gray out points that are not selected
+            return selectedFeatures.includes(label) ? traceColor : "lightgray";
+          }
+          if (
+            selectedFeatures.length === 0 &&
+            hasOtherSelectedFeatureTypeFeatures
+          ) {
+            return "lightgray";
+          }
+
+          return traceColor;
+        }),
         opacity: volcanoDataTrace.label.map((label) => {
           if (selectedFeatures.length) {
             return selectedFeatures.includes(label) ? 1 : 0.05;
