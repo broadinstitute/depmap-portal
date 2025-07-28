@@ -7,7 +7,7 @@ from time import sleep, time
 from typing import Any, Dict, List, Literal, Optional, Union, IO
 from uuid import UUID
 
-from breadbox.schemas.types import DimensionIdentifiers, DimensionType
+
 import pandas as pd
 
 from breadbox_client import Client
@@ -44,7 +44,6 @@ from breadbox_client.api.temp import get_associations as get_associations_client
 from breadbox_client.api.temp import add_associations as add_associations_client
 from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
 from breadbox_client.api.temp import evaluate_context as evaluate_context_client
-#
 
 from breadbox_client.models import (
     AccessType,
@@ -65,6 +64,8 @@ from breadbox_client.models import (
     ContextMatchResponse,
     DatasetMetadata,
     DataType,
+    DimensionIdentifiers, 
+    DimensionType,
     FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
@@ -429,6 +430,7 @@ class BBClient:
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
+from breadbox.schemas.types import DimensionType, DimensionIdentifiers
 
         dataset = self.get_dataset(dataset_id)
         if isinstance(dataset, MatrixDatasetResponse):
