@@ -333,7 +333,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       style={{
         display: "grid",
         gridTemplateColumns: "1fr 7fr",
-        gridAutoRows: "1fr 1fr",
+        gridAutoRows: "auto auto",
         gridTemplateAreas: "'a b b b b b b b''a c c c c c c c'",
         gap: "2rem",
         // marginBottom: "50px",
@@ -370,7 +370,9 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
 
         {isLoading ? (
-          <div style={{ display: "grid", placeItems: "center" }}>
+          <div
+            style={{ display: "grid", placeItems: "center", height: "500px" }}
+          >
             <PlotSpinner />
           </div>
         ) : (

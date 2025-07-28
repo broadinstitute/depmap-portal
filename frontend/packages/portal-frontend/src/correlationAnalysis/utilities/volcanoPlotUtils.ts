@@ -50,16 +50,18 @@ export const formatLayout = () => {
     height: 600,
     hovermode: "closest",
     margin: {
-      l: 50,
-      r: 50,
+      l: 70,
+      r: 0,
       b: 50,
       t: 30,
     },
     xaxis: {
-      title: "Correlation Coefficient",
+      title: { text: "Correlation Coefficient", font: { size: 12 } },
+      tickfont: { size: 10 },
     },
     yaxis: {
-      title: `-log10(q value)`,
+      title: { text: `-log10(q value)`, font: { size: 11 } },
+      tickfont: { size: 10 },
     },
   };
   return layout;

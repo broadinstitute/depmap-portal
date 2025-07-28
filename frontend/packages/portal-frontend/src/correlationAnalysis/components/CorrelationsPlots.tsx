@@ -60,7 +60,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
                 style={{
                   alignItems: "center", // vertical centering
                   justifyContent: "center", // horizontal centering
-                  fontSize: "18px",
+                  fontSize: "16px",
                   backgroundColor: "#eee",
                   overflowWrap: "break-word",
                   display: "flex",
