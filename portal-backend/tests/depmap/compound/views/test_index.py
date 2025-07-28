@@ -506,14 +506,20 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
-        assert len(result) == 1
-        assert result[0] == DRCCompoundDataset(
-            display_name="PRISM OncRef",
-            viability_dataset_given_id="Prism_oncology_viability",
-            replicate_dataset="Prism_oncology_dose_replicate",
-            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-            drc_dataset_label="Prism_oncology_per_curve",
-        )
+        assert len(result) >= 1
+        matches = [
+            x
+            for x in result
+            if x
+            == DRCCompoundDataset(
+                display_name="PRISM OncRef",
+                viability_dataset_given_id="Prism_oncology_viability",
+                replicate_dataset="Prism_oncology_dose_replicate",
+                auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+                drc_dataset_label="Prism_oncology_per_curve",
+            )
+        ]
+        assert len(matches) == 1
 
 
 def config(request):
