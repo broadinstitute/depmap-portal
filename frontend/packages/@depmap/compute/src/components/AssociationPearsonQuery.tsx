@@ -5,7 +5,7 @@ import { assert } from "@depmap/utils";
 import { Link } from "../models/legacy";
 import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
-import { isElara } from "@depmap/globals";
+import { isBreadboxOnlyMode } from "@depmap/data-explorer-2";
 import {
   AssociationOrPearsonAnalysisType,
   QuerySelections,
@@ -253,7 +253,7 @@ export default class AssociationPearsonQuery extends React.Component<
     }
 
     const runCustomAnalysis = () => {
-      return isElara
+      return isBreadboxOnlyMode
         ? breadboxAPI.computeUnivariateAssociations(params)
         : legacyPortalAPI.computeUnivariateAssociations(params);
     };

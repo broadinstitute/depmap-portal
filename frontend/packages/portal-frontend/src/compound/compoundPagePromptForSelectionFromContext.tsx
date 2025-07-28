@@ -3,17 +3,16 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
-import { DepMap } from "@depmap/globals";
-import { DataExplorerContext } from "@depmap/types";
 import {
   ContextSelector,
+  deprecatedDataExplorerAPI,
   getDimensionTypeLabel,
   pluralize,
-  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
+import { DepMap } from "@depmap/globals";
+import { DataExplorerContext } from "@depmap/types";
 
 export default async function compoundPagePromptForSelectionFromContext(
-  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   allPossibleLabels: Set<string>
 ) {
   const indexType = "depmap_model";
@@ -47,7 +46,9 @@ export default async function compoundPagePromptForSelectionFromContext(
           return;
         }
 
-        const labels = await api.evaluateLegacyContext(nextContext);
+        const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
+          nextContext
+        );
         const contextLabels = new Set(labels);
 
         const found = [...allPossibleLabels].filter((label) => {
@@ -115,7 +116,7 @@ export default async function compoundPagePromptForSelectionFromContext(
     return null;
   }
 
-  const labels = await api.evaluateLegacyContext(context);
+  const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(context);
   const contextLabels = new Set(labels);
   const matchingLabels = [...allPossibleLabels].filter((label) => {
     return allPossibleLabels.has(label) && contextLabels.has(label);

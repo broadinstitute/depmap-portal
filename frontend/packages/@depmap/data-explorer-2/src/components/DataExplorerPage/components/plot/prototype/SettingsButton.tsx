@@ -9,7 +9,7 @@ function SettingsButton() {
   return (
     <Tooltip
       id="settings-button-tooltip"
-      content="Configure styles"
+      content="Settings"
       placement="top"
       className={styles.settingsButtonTooltip}
     >

@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import { SliceQuery } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { isCompleteExpression } from "../../../utils/misc";
 import { Expr, isBoolean, getVariableNames } from "../utils/expressionUtils";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
 function useMatches(expr: Expr) {
-  const api = useDataExplorerApi();
   const [matchingIds, setMatchingIds] = useState<string[]>([]);
   const [numMatches, setNumMatches] = useState<number | null>(null);
   const [numCandidates, setNumCandidates] = useState<number | null>(null);
@@ -44,7 +43,7 @@ function useMatches(expr: Expr) {
 
       (async () => {
         try {
-          const result = await api.evaluateContext({
+          const result = await cached(breadboxAPI).evaluateContext({
             dimension_type,
             expr: flattenedExpr as Record<string, unknown>,
             vars: exprVars,
@@ -64,7 +63,7 @@ function useMatches(expr: Expr) {
     } else {
       setNumMatches(null);
     }
-  }, [api, expr, dimension_type, fullySpecifiedVars, vars]);
+  }, [expr, dimension_type, fullySpecifiedVars, vars]);
 
   return { isLoading, hasError, matchingIds, numMatches, numCandidates };
 }

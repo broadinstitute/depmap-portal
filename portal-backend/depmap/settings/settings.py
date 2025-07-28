@@ -202,6 +202,10 @@ class FeatureFlags:
     def show_peddep_landing_page(self):
         return self.is_public()
 
+    @property
+    def data_explorer_2_experimental_settings(self):
+        return self.is_skyros()
+
 
 def make_log_config(log_dir):
     return {
