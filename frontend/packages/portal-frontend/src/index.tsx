@@ -257,30 +257,9 @@ export function initCorrelationAnalysisTab(
   elementId: string,
   compoundName: string
 ) {
-  const bapi = breadboxAPI;
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelationAnalysis
-        compound={compoundName}
-        getDimensionType={(name: string) => {
-          return bapi.getDimensionType(name);
-        }}
-        getTabularDatasetData={(
-          datasetId: string,
-          args: {
-            identifier: "id" | "label";
-            columns?: string[] | null;
-          }
-        ) => {
-          return bapi.getTabularDatasetData(datasetId, args);
-        }}
-        getDatasetFeatures={(datasetId: string) => {
-          return bapi.getDatasetFeatures(datasetId);
-        }}
-        getCorrelationData={(sliceQuery: SliceQuery) => {
-          return bapi.fetchAssociations(sliceQuery);
-        }}
-      />
+      <CorrelationAnalysis compound={compoundName} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

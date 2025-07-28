@@ -8,9 +8,7 @@ interface CorrelationsPlotsProps {
   correlatedDatasetsToShow: string[];
   dosesToFilter: string[];
   doseColors: { hex: string | undefined; dose: string }[];
-  volcanoDataForCorrelatedDatasets: {
-    [key: string]: { [key: string]: VolcanoPlotData };
-  };
+  volcanoDataForCorrelatedDatasets: VolcanoDataForCorrelatedDataset;
   correlatedDatasetSelectedLabels: { [key: string]: string[] };
   forwardSelectedLabels: (
     correlatedDataset: string,
