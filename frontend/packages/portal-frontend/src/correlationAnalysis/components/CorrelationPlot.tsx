@@ -4,22 +4,22 @@ import { VolcanoPlotData, VolcanoPlotPoint } from "../models/VolcanoPlot";
 import { formatVolcanoTrace } from "../utilities/volcanoPlotUtils";
 
 interface CorrelationsPlotProps {
-  featureType: string;
+  correlatedDatasetName: string;
   data: VolcanoPlotData[];
   selectedFeatures: string[];
-  hasOtherSelectedFeatureTypeFeatures: boolean;
+  hasOtherSelectedCorrelatedDatasetFeatures: boolean;
   forwardPlotSelectedFeatures: (
-    featureType: string,
+    correlatedDataset: string,
     newSelectedLabels: string[]
   ) => void;
 }
 
 export default function CorrelationsPlot(props: CorrelationsPlotProps) {
   const {
-    featureType,
+    correlatedDatasetName,
     data,
     selectedFeatures,
-    hasOtherSelectedFeatureTypeFeatures,
+    hasOtherSelectedCorrelatedDatasetFeatures,
     forwardPlotSelectedFeatures,
   } = props;
 
@@ -30,22 +30,22 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         if (selectedFeatures.includes(selectedLabel)) {
           // deselect point if point is already selected
           forwardPlotSelectedFeatures(
-            featureType,
+            correlatedDatasetName,
             selectedFeatures.filter((label) => label !== selectedLabel)
           );
         } else {
           // add point to be among selected
-          forwardPlotSelectedFeatures(featureType, [
+          forwardPlotSelectedFeatures(correlatedDatasetName, [
             ...selectedFeatures,
             selectedLabel,
           ]);
         }
       } else {
         // only select one label at a time if key modifier not used
-        forwardPlotSelectedFeatures(featureType, [selectedLabel]);
+        forwardPlotSelectedFeatures(correlatedDatasetName, [selectedLabel]);
       }
     },
-    [selectedFeatures, featureType, forwardPlotSelectedFeatures]
+    [selectedFeatures, correlatedDatasetName, forwardPlotSelectedFeatures]
   );
 
   return (
@@ -54,7 +54,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
         volcanoTrace={formatVolcanoTrace(
           data,
           selectedFeatures,
-          hasOtherSelectedFeatureTypeFeatures
+          hasOtherSelectedCorrelatedDatasetFeatures
         )}
         onPointClick={onPointClick}
       />

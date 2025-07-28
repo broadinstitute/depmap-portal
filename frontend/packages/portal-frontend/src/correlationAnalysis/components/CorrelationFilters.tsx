@@ -12,8 +12,8 @@ export interface FilterOption {
 interface CorrelationFiltersProps {
   datasets: any[];
   onChangeDataset: (dataset: string) => void; // undetermined for now
-  featureTypes: any[];
-  onChangeFeatureTypes: (featureTypes: string[]) => void;
+  correlatedDatasets: any[];
+  onChangeCorrelatedDatasets: (correlatedDatasets: string[]) => void;
   doses: string[];
   onChangeDoses: (doses: string[]) => void;
   compoundName: string;
@@ -23,8 +23,8 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
   const {
     datasets,
     onChangeDataset,
-    featureTypes,
-    onChangeFeatureTypes,
+    correlatedDatasets,
+    onChangeCorrelatedDatasets,
     doses,
     onChangeDoses,
     compoundName,
@@ -33,10 +33,10 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
   const datasetOptions = datasets.map((dataset) => {
     return { label: dataset, value: dataset };
   });
-  const featureTypeOptions = featureTypes.map((featureType) => {
-    return { label: featureType, value: featureType };
+  const correlatedDatasetOptions = correlatedDatasets.map((corrDataset) => {
+    return { label: corrDataset, value: corrDataset };
   });
-  console.log("FEATURE TYPES", featureTypeOptions);
+  console.log("Correlated Dataset Options", correlatedDatasetOptions);
 
   const getDoseOptions = useCallback(() => {
     return doses.map((dose) => {
@@ -82,13 +82,16 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
           className={styles.filterStyle}
           placeholder="Select..."
           defaultOptions
-          options={featureTypeOptions}
+          options={correlatedDatasetOptions}
           isMulti
           onChange={(value, action) => {
             console.log(value, action);
-            onChangeFeatureTypes(
+            onChangeCorrelatedDatasets(
               value
-                ? value.map((selectedFeatureType) => selectedFeatureType.value)
+                ? value.map(
+                    (selectedCorrelatedDataset) =>
+                      selectedCorrelatedDataset.value
+                  )
                 : []
             );
           }}

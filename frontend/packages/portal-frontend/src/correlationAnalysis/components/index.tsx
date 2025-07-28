@@ -66,10 +66,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const [selectedDataset, setSelectedDataset] = React.useState<string>(
     "OncRef"
   );
-  const [featureTypes, setFeatureTypes] = React.useState<string[]>([]);
-  const [selectedFeatureTypes, setSelectedFeatureTypes] = React.useState<
-    string[]
-  >([]);
+  const [correlatedDatasets, setCorrelatedDatasets] = React.useState<string[]>(
+    []
+  );
+  const [
+    selectedCorrelatedDatasets,
+    setSelectedCorrelatedDatasets,
+  ] = React.useState<string[]>([]);
   const [selectedDoses, setSelectedDoses] = React.useState<string[]>([]);
   const [allSelectedLabels, setAllSelectedLabels] = React.useState<{
     [key: string]: string[];
@@ -182,7 +185,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             );
           });
 
-          setFeatureTypes(Object.keys(featureDatasetDoseCorrelates));
+          setCorrelatedDatasets(Object.keys(featureDatasetDoseCorrelates));
           const tabledata = getAllCorrelates(featureDatasetDoseCorrelates);
           setCorrelationAnalysisData(tabledata);
           setIsLoading(false);
@@ -203,7 +206,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   React.useEffect(() => {
     // if no filter applied, show all correlation analysis data
     if (
-      selectedFeatureTypes.length === 0 &&
+      selectedCorrelatedDatasets.length === 0 &&
       selectedDoses.length === 0 &&
       Object.keys(allSelectedLabels).length === 0
     ) {
@@ -216,14 +219,16 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       const filtered = correlationAnalysisData.filter((data) => {
         let keepCondition;
         // We want to keep data where feature type and dose is selected
-        if (selectedFeatureTypes.length && selectedDoses.length) {
+        if (selectedCorrelatedDatasets.length && selectedDoses.length) {
           keepCondition =
-            selectedFeatureTypes.includes(data["featureDataset"]) &&
+            selectedCorrelatedDatasets.includes(data["featureDataset"]) &&
             selectedDoses.includes(data["dose"]);
         }
         // keep data where feature type is selected
-        else if (selectedFeatureTypes.length) {
-          keepCondition = selectedFeatureTypes.includes(data["featureDataset"]);
+        else if (selectedCorrelatedDatasets.length) {
+          keepCondition = selectedCorrelatedDatasets.includes(
+            data["featureDataset"]
+          );
         }
         // keep data where dose is selected
         else if (selectedDoses.length) {
@@ -254,6 +259,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       const selectedIds = selectedDataWithLabelFront.map((data) => {
         return data.id;
       });
+      console.log("useEffect", selectedIds);
       setSelectedRows(new Set(selectedIds));
 
       // move selected features from plot or table up to front of data list
@@ -262,14 +268,14 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       );
     }
   }, [
-    selectedFeatureTypes,
+    selectedCorrelatedDatasets,
     selectedDoses,
     allSelectedLabels,
     correlationAnalysisData,
     compound,
   ]);
 
-  const volcanoDataForFeatureType = React.useMemo(() => {
+  const volcanoDataForCorrelatedDataset = React.useMemo(() => {
     if (correlationAnalysisData.length) {
       return correlationAnalysisData.reduce((acc, curRecord) => {
         const key = curRecord["featureDataset"];
@@ -347,10 +353,10 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         <CorrelationFilters
           datasets={Object.keys(datasetMap)}
           onChangeDataset={(dataset: string) => setSelectedDataset(dataset)}
-          featureTypes={featureTypes}
-          onChangeFeatureTypes={(newFeatureTypes: string[]) =>
-            setSelectedFeatureTypes(
-              newFeatureTypes !== null ? newFeatureTypes : []
+          correlatedDatasets={correlatedDatasets}
+          onChangeCorrelatedDatasets={(newCorrelatedDatasets: string[]) =>
+            setSelectedCorrelatedDatasets(
+              newCorrelatedDatasets !== null ? newCorrelatedDatasets : []
             )
           }
           doses={doseColors.map((doseColor) => doseColor.dose)}
@@ -377,22 +383,22 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           </div>
         ) : (
           <CorrelationsPlots
-            featureTypesToShow={
-              selectedFeatureTypes.length
-                ? selectedFeatureTypes
-                : Object.keys(volcanoDataForFeatureType)
+            correlatedDatasetsToShow={
+              selectedCorrelatedDatasets.length
+                ? selectedCorrelatedDatasets
+                : Object.keys(volcanoDataForCorrelatedDataset)
             }
             dosesToFilter={selectedDoses}
             doseColors={doseColors}
-            volcanoDataForFeatureTypes={volcanoDataForFeatureType}
-            featureTypeSelectedLabels={allSelectedLabels}
+            volcanoDataForCorrelatedDatasets={volcanoDataForCorrelatedDataset}
+            correlatedDatasetSelectedLabels={allSelectedLabels}
             forwardSelectedLabels={(
-              featureType: string,
+              correlatedDataset: string,
               newSelectedLabels: string[]
             ) => {
               setAllSelectedLabels({
                 ...allSelectedLabels,
-                [featureType]: newSelectedLabels,
+                [correlatedDataset]: newSelectedLabels,
               });
             }}
           />
@@ -429,17 +435,18 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
               const unselectedId = prevSelections.filter(
                 (x) => !selections.includes(x)
               )[0];
-              const featureTypeFeatureToRemove = filteredTableCorrelationAnalysisData.find(
+              const correlatedDatasetFeatureToRemove = filteredTableCorrelationAnalysisData.find(
                 (data) => data.id === unselectedId
               );
-              if (featureTypeFeatureToRemove) {
-                const feature = featureTypeFeatureToRemove["Feature"];
-                const featureType = featureTypeFeatureToRemove["Feature Type"];
+              if (correlatedDatasetFeatureToRemove) {
+                const feature = correlatedDatasetFeatureToRemove["Feature"];
+                const correlatedDataset =
+                  correlatedDatasetFeatureToRemove["Feature Type"];
                 setAllSelectedLabels({
                   ...allSelectedLabels,
-                  [featureType]: allSelectedLabels[featureType].filter(
-                    (label) => label !== feature
-                  ),
+                  [correlatedDataset]: allSelectedLabels[
+                    correlatedDataset
+                  ].filter((label) => label !== feature),
                 });
               }
             }
@@ -449,19 +456,22 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
               const newSelectedId = selections.filter(
                 (x) => !prevSelections.includes(x)
               )[0];
-              const featureTypeFeatureToAdd = filteredTableCorrelationAnalysisData.find(
+              const correlatedDatasetFeatureToAdd = filteredTableCorrelationAnalysisData.find(
                 (data) => data.id === newSelectedId
               );
-              if (featureTypeFeatureToAdd) {
-                const featureType = featureTypeFeatureToAdd["Feature Type"];
-                const feature = featureTypeFeatureToAdd["Feature"];
+              if (correlatedDatasetFeatureToAdd) {
+                const featureCorrelatedDataset =
+                  correlatedDatasetFeatureToAdd["featureDataset"];
+                const feature = correlatedDatasetFeatureToAdd["feature"];
                 const newSelectedLabels =
-                  featureType in allSelectedLabels
-                    ? [...allSelectedLabels[featureType]].concat(feature)
+                  featureCorrelatedDataset in allSelectedLabels
+                    ? [...allSelectedLabels[featureCorrelatedDataset]].concat(
+                        feature
+                      )
                     : [feature];
                 setAllSelectedLabels({
                   ...allSelectedLabels,
-                  [featureType]: newSelectedLabels,
+                  [featureCorrelatedDataset]: newSelectedLabels,
                 });
               }
             }
