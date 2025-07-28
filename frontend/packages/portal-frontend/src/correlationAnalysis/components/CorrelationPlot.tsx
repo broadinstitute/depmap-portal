@@ -49,17 +49,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
   );
 
   return (
-    <div>
-      <p>{selectedFeatures}</p>
-      <header
-        style={{
-          textAlign: "center",
-          fontSize: "18px",
-          backgroundColor: "#eee",
-        }}
-      >
-        {featureType}
-      </header>
+    <div style={{ maxWidth: "100%" }}>
       <VolcanoPlot
         volcanoTrace={formatVolcanoTrace(
           data,

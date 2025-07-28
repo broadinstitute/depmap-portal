@@ -55,7 +55,20 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
       <div className={styles.plotContainer}>
         {featureTypesToShow.map((featureType) => {
           return (
-            <div key={featureType + "-plot"}>
+            <div key={featureType + "-plot"} className={styles.plotItem}>
+              <div
+                style={{
+                  alignItems: "center", // vertical centering
+                  justifyContent: "center", // horizontal centering
+                  fontSize: "18px",
+                  backgroundColor: "#eee",
+                  overflowWrap: "break-word",
+                  display: "flex",
+                  flexGrow: 1, // makes sure header height fills rest of div height
+                }}
+              >
+                <header style={{ textAlign: "center" }}>{featureType}</header>
+              </div>
               <CorrelationsPlot
                 featureType={featureType}
                 data={Object.values(
