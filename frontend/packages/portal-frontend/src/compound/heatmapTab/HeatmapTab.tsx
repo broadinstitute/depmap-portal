@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import HeatmapTabMainContent from "./HeatmapTabMainContent";
 import FiltersPanel from "./FiltersPanel";
 import { DRCDatasetOptions } from "@depmap/types";
@@ -37,6 +37,12 @@ function HeatmapTab({
   const [selectedDoses, setSelectedDoses] = useState<
     { value: number; label: string }[]
   >([]);
+  const [selectedModelIds, setPlotSelectedModelIds] = useState<Set<string>>(
+    new Set([])
+  );
+  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
+    new Set([])
+  );
 
   const handleSelectDataset = useCallback(
     (selection: { value: string; label: string } | null) => {
@@ -49,6 +55,8 @@ function HeatmapTab({
         setSelectedDataset(selectedCompoundDataset);
         setShowUnselectedLines(true);
         setSelectedDoses([]);
+        setSelectedTableRows(new Set([]));
+        setPlotSelectedModelIds(new Set([]));
       }
     },
     [datasetOptions]
@@ -92,6 +100,10 @@ function HeatmapTab({
               handleShowUnselectedLinesOnSelectionsCleared={() => {
                 setShowUnselectedLines(true);
               }}
+              selectedModelIds={selectedModelIds}
+              selectedTableRows={selectedTableRows}
+              handleSetSelectedTableRows={setSelectedTableRows}
+              handleSetSelectedPlotModelIds={setPlotSelectedModelIds}
             />
           </div>
         </div>

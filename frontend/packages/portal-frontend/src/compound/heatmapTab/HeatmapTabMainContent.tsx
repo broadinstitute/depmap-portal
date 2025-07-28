@@ -17,7 +17,13 @@ interface HeatmapTabMainContentProps {
   handleShowUnselectedLinesOnSelectionsCleared: () => void;
   showUnselectedLines: boolean;
   doseUnits: string;
+  selectedModelIds: Set<string>;
+  selectedTableRows: Set<string>;
   selectedDoses?: Set<number>;
+  handleSetSelectedTableRows: React.Dispatch<React.SetStateAction<Set<string>>>;
+  handleSetSelectedPlotModelIds: React.Dispatch<
+    React.SetStateAction<Set<string>>
+  >;
 }
 
 function HeatmapTabMainContent({
@@ -26,6 +32,10 @@ function HeatmapTabMainContent({
   doseUnits,
   selectedDoses = new Set(),
   compoundName,
+  selectedModelIds,
+  selectedTableRows,
+  handleSetSelectedTableRows,
+  handleSetSelectedPlotModelIds,
 }: HeatmapTabMainContentProps) {
   const api = useDeprecatedDataExplorerApi();
   const {
@@ -50,8 +60,6 @@ function HeatmapTabMainContent({
   }, []);
 
   const {
-    selectedModelIds,
-    selectedTableRows,
     selectedLabels,
     displayNameModelIdMap,
     handleSetSelectedPlotModels,
@@ -62,14 +70,13 @@ function HeatmapTabMainContent({
   } = useHeatmapSelectionHandlers(
     heatmapFormattedData,
     tableFormattedData,
+    selectedModelIds,
+    selectedTableRows,
     api,
-    handleShowUnselectedLinesOnSelectionsCleared
+    handleShowUnselectedLinesOnSelectionsCleared,
+    handleSetSelectedTableRows,
+    handleSetSelectedPlotModelIds
   );
-
-  useEffect(() => {
-    handleClearSelection();
-    setPlotElement(null);
-  }, [heatmapFormattedData]);
 
   // To hide/show the appropriate cells on Filter By Dose
   const visibleZIndexes = useMemo(() => {

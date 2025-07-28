@@ -6,11 +6,7 @@ import DoseViabilityTable from "../DoseViabilityTable";
 import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
-import {
-  CurveParams,
-  CompoundDoseCurveData,
-  DRCDatasetOptions,
-} from "@depmap/types";
+import { CurveParams, CompoundDoseCurveData } from "@depmap/types";
 import CompoundPlotSelections from "../CompoundPlotSelections";
 import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
 import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
@@ -70,7 +66,7 @@ function DoseCurvesMainContent({
     // If dose curve data changed, invalidate the plot
     handleClearSelection();
     setPlotElement(null);
-  }, [doseCurveData]);
+  }, [doseCurveData, handleClearSelection]);
 
   // Format cellLine column to link to cell line pages
   const doseViabilityTableColumns = useMemo(() => {
