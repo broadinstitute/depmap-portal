@@ -270,8 +270,7 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
                     valid_options.append(drc_dataset)
-    breakpoint()
-    print(valid_options)
+
     return valid_options
 
 
