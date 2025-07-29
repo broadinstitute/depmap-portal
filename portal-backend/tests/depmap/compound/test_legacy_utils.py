@@ -5,7 +5,7 @@ from depmap.compound.legacy_utils import (
     get_compound_ids_by_experiment_id,
     get_compound_labels_by_experiment_label,
 )
-from depmap.compound.models import CompoundExperiment
+from depmap.compound.models import CompoundExperiment, Compound
 from depmap.dataset.models import DependencyDataset
 from tests.factories import (
     CompoundExperimentFactory,
@@ -42,16 +42,16 @@ def test_get_compound_ids_by_experiment_id(empty_db_mock_downloads):
 
     result = get_compound_ids_by_experiment_id(dataset_id)
     assert list(result.keys()) == [
-        compound_experiment_1A.entity_id,  # pyright: ignore
-        compound_experiment_2.entity_id,  # pyright: ignore
+        typing.cast(CompoundExperiment, compound_experiment_1A).entity_id,
+        typing.cast(CompoundExperiment, compound_experiment_2).entity_id,
     ]
     assert (
-        result[compound_experiment_1A.entity_id]
-        == compound1.compound_id  # pyright: ignore
+        result[typing.cast(CompoundExperiment, compound_experiment_1A).entity_id]
+        == typing.cast(Compound, compound1).compound_id
     )
     assert (
-        result[compound_experiment_2.entity_id]
-        == compound2.compound_id  # pyright: ignore
+        result[typing.cast(CompoundExperiment, compound_experiment_2).entity_id]
+        == typing.cast(Compound, compound2).compound_id  # pyright: ignore
     )
 
 
@@ -80,11 +80,17 @@ def test_get_compound_labels_by_experiment_labels(empty_db_mock_downloads):
 
     result = get_compound_labels_by_experiment_label(dataset_id)
     assert list(result.keys()) == [
-        compound_experiment_1A.label,
-        compound_experiment_2.label,
+        typing.cast(CompoundExperiment, compound_experiment_1A).label,
+        typing.cast(CompoundExperiment, compound_experiment_2).label,
     ]
-    assert result[compound_experiment_1A.label] == compound1.label  # pyright: ignore
-    assert result[compound_experiment_2.label] == compound2.label  # pyright: ignore
+    assert (
+        result[typing.cast(CompoundExperiment, compound_experiment_1A).label]
+        == typing.cast(Compound, compound1).label
+    )
+    assert (
+        result[typing.cast(CompoundExperiment, compound_experiment_2).label]
+        == typing.cast(Compound, compound2).label
+    )
 
 
 def test_does_legacy_dataset_exist_with_compound_experiment(empty_db_mock_downloads):
