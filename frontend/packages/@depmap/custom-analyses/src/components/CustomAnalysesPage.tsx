@@ -1,7 +1,7 @@
 import React from "react";
 import { Button, Radio } from "react-bootstrap";
 import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
-import { enabledFeatures, isElara } from "@depmap/globals";
+import { enabledFeatures } from "@depmap/globals";
 import {
   AnalysisType,
   AssociationPearsonQuery,
@@ -12,6 +12,7 @@ import {
   TwoClassQuery,
 } from "@depmap/compute";
 import { ProgressTracker } from "@depmap/common-components";
+import { isBreadboxOnlyMode } from "@depmap/data-explorer-2";
 import ResultsReadyModal from "./ResultsReadyModal";
 
 import styles from "../styles/CustomAnalysis.scss";
@@ -78,7 +79,7 @@ export default class CustomAnalysesPage extends React.Component<
       this.setState({ cellLineData });
     });
 
-    const getDatasets = isElara
+    const getDatasets = isBreadboxOnlyMode
       ? () =>
           breadboxAPI.getDatasets().then((datasets) => {
             return datasets
@@ -266,7 +267,7 @@ export default class CustomAnalysesPage extends React.Component<
                     });
                   }}
                   getTaskStatus={
-                    isElara
+                    isBreadboxOnlyMode
                       ? breadboxAPI.getTaskStatus
                       : legacyPortalAPI.getTaskStatus
                   }

@@ -2,7 +2,7 @@ import React from "react";
 import { Spinner } from "@depmap/common-components";
 import { DownloadFile, Release } from "@depmap/data-slicer";
 import { FileCard } from "@depmap/downloads";
-import { DeprecatedDataExplorerApiResponse } from "../../../contexts/DeprecatedDataExplorerApiContext";
+import type { DeprecatedDataExplorerApiResponse } from "../../../services/deprecatedDataExplorerAPI";
 import styles from "../../../styles/DimensionSelect.scss";
 
 interface Props {

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import useHeatmapSelectionHandlers from "./hooks/useHeatmapSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
+import { deprecatedDataExplorerAPI } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
 import useHeatmapData from "./hooks/useHeatmapData";
@@ -37,7 +37,7 @@ function HeatmapTabMainContent({
   handleSetSelectedTableRows,
   handleSetSelectedPlotModelIds,
 }: HeatmapTabMainContentProps) {
-  const api = useDeprecatedDataExplorerApi();
+  const api = deprecatedDataExplorerAPI;
   const {
     tableFormattedData,
     doseColumnNames,

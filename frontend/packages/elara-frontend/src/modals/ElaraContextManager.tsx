@@ -1,16 +1,5 @@
 import React from "react";
-import {
-  ContextManager,
-  DataExplorerApiProvider,
-} from "@depmap/data-explorer-2";
-import {
-  evaluateContext,
-  fetchDatasets,
-  fetchDatasetIdentifiers,
-  fetchDimensionIdentifiers,
-  fetchDimensionTypes,
-  fetchVariableDomain,
-} from "src/pages/DataExplorer/api";
+import { ContextManager } from "@depmap/data-explorer-2";
 
 interface Props {
   onHide: () => void;
@@ -22,21 +11,11 @@ function ElaraContextManager({
   initialContextType = undefined,
 }: Props) {
   return (
-    <DataExplorerApiProvider
-      evaluateContext={evaluateContext}
-      fetchVariableDomain={fetchVariableDomain}
-      fetchDatasets={fetchDatasets}
-      fetchDimensionTypes={fetchDimensionTypes}
-      fetchDatasetIdentifiers={fetchDatasetIdentifiers}
-      fetchDimensionIdentifiers={fetchDimensionIdentifiers}
-    >
-      <ContextManager
-        onHide={onHide}
-        initialContextType={initialContextType}
-        useContextBuilderV2
-        showHelpText={false}
-      />
-    </DataExplorerApiProvider>
+    <ContextManager
+      onHide={onHide}
+      initialContextType={initialContextType}
+      showHelpText={false}
+    />
   );
 }
 

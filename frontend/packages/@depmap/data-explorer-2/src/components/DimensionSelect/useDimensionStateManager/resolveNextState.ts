@@ -1,4 +1,4 @@
-import {
+import type {
   DataExplorerAggregation,
   DataExplorerDatasetDescriptor,
 } from "@depmap/types";

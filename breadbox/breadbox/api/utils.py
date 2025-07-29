@@ -6,9 +6,9 @@ from typing import Any, Callable, Optional, List
 
 
 def get_response_with_etag(
-    etag: str, 
-    if_none_match: Optional[List[str]],
-    get_response_content_callback: Callable[[], Any]
+    etag: str,
+    if_none_match: Optional[str],
+    get_response_content_callback: Callable[[], Any],
 ) -> Response:
     """
     Helper function to handle ETag-based caching. This etag should be a hashed 
@@ -18,9 +18,13 @@ def get_response_with_etag(
     up-to-date response, or a 200 OK response with the content from the callback.
     """
     common = {"media_type": "application/json", "headers": {"ETag": etag}}
-    if if_none_match and if_none_match[0] == etag:
+    if if_none_match and if_none_match == etag:
         return Response(status_code=status.HTTP_304_NOT_MODIFIED, **common)
-    return ORJSONResponse(status_code=status.HTTP_200_OK, content=get_response_content_callback(), **common)
+    return ORJSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=get_response_content_callback(),
+        **common
+    )
 
 
 def hash_id_list(values: list[str]):

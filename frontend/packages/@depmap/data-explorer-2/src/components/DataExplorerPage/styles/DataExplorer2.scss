@@ -120,6 +120,11 @@
   font-weight: normal;
   cursor: pointer;
 
+  .DataExplorer2[data-breadbox-only="true"] & {
+    color: #fff;
+    background-color: #7b8cb2;
+  }
+
   button {
     line-height: 10px;
     background-color: transparent;

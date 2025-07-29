@@ -3,7 +3,6 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { HeatmapFormattedData, TableFormattedData } from "../../types";
 
 function useHeatmapSelectionHandlers(
@@ -11,7 +10,6 @@ function useHeatmapSelectionHandlers(
   tableData: TableFormattedData | null,
   selectedModelIds: Set<string>,
   selectedTableRows: Set<string>,
-  deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
   handleShowUnselectedLinesOnSelectionsCleared: () => void,
   handleSetSelectedTableRows: React.Dispatch<React.SetStateAction<Set<string>>>,
   handleSetSelectedPlotModelIds: React.Dispatch<
@@ -110,17 +108,13 @@ function useHeatmapSelectionHandlers(
   const handleSetSelectionFromContext = useCallback(async () => {
     const allModelIds = Array.from(displayNameModelIdMap.keys());
     const allLabels = new Set(allModelIds);
-    const labels = await compoundPagePromptForSelectionFromContext(
-      deApi,
-      allLabels
-    );
+    const labels = await compoundPagePromptForSelectionFromContext(allLabels);
     if (labels === null) {
       return;
     }
     handleSetSelectedPlotModelIds(labels);
     handleSetSelectedTableRows(labels);
   }, [
-    deApi,
     displayNameModelIdMap,
     handleSetSelectedPlotModelIds,
     handleSetSelectedTableRows,

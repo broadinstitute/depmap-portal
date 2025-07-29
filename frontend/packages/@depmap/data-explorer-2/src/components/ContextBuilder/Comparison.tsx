@@ -6,8 +6,8 @@ import React, {
   useState,
 } from "react";
 import { get_values } from "json-logic-js";
+import { deprecatedDataExplorerAPI } from "../../services/deprecatedDataExplorerAPI";
 import { isPartialSliceId } from "../../utils/misc";
-import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import {
   Expr,
   floor,
@@ -72,7 +72,6 @@ function Comparison({
   slice_type,
   shouldShowValidation,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [, forceRender] = useState<null>();
   const ref = useRef<HTMLDivElement | null>(null);
@@ -165,7 +164,7 @@ function Comparison({
         const dataset_id = left.var.split("/")[1];
 
         try {
-          const data = await api.fetchDimensionLabelsOfDataset(
+          const data = await deprecatedDataExplorerAPI.fetchDimensionLabelsOfDataset(
             null,
             dataset_id
           );
@@ -184,14 +183,18 @@ function Comparison({
 
         try {
           if (slice_id === "entity_label") {
-            const data = await api.fetchDimensionLabels(slice_type);
+            const data = await deprecatedDataExplorerAPI.fetchDimensionLabels(
+              slice_type
+            );
             const labels = data.labels.sort(collator.compare);
             setSummary({
               value_type: "categorical",
               unique_values: labels,
             });
           } else {
-            const fetchedOptions = await api.fetchUniqueValuesOrRange(slice_id);
+            const fetchedOptions = await deprecatedDataExplorerAPI.fetchUniqueValuesOrRange(
+              slice_id
+            );
             setSummary(fetchedOptions);
           }
         } catch (e) {
@@ -202,7 +205,7 @@ function Comparison({
     } else {
       setSummary(null);
     }
-  }, [api, slice_type, slice_id, left, value_type]);
+  }, [slice_type, slice_id, left, value_type]);
 
   useEffect(() => {
     if (summary && summary.value_type === "continuous") {

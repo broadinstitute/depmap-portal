@@ -8,6 +8,11 @@ declare const afterEach: any;
 
 import * as Enzyme from "enzyme";
 import Adapter from "enzyme-adapter-react-16";
+
+import "@depmap/globals";
+
+(window as any).enabledFeaturesOverrides.data_explorer_2_experimental_settings = false;
+
 jest.mock(
   "plotly.js",
   () => {
@@ -19,7 +24,6 @@ jest.mock(
 Enzyme.configure({
   adapter: new Adapter(),
 });
-
 afterEach(() => {
   jest.resetAllMocks();
 });

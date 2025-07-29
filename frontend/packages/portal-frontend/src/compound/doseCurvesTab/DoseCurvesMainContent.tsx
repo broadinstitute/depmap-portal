@@ -3,7 +3,6 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import DoseCurvesPlotSection from "./DoseCurvesPlotSection";
 import useDoseCurvesSelectionHandlers from "./hooks/useDoseCurvesSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
 import { CurveParams, CompoundDoseCurveData } from "@depmap/types";
@@ -45,7 +44,6 @@ function DoseCurvesMainContent({
     error,
     isLoading,
   } = useDoseViabilityDataContext();
-  const api = useDeprecatedDataExplorerApi();
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [cellLineUrlRoot, setCellLineUrlRoot] = useState<string | null>(null);

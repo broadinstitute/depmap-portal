@@ -3,14 +3,13 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
+import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import ContextSelector from "../../../ContextSelector";
 import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerPlotResponse } from "@depmap/types";
 
 export default async function promptForSelectionFromContext(
-  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   data: DataExplorerPlotResponse
 ) {
   const filter = data!.filters?.visible;
@@ -54,7 +53,9 @@ export default async function promptForSelectionFromContext(
           return;
         }
 
-        const labels = await api.evaluateLegacyContext(nextContext);
+        const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
+          nextContext
+        );
         const contextLabels = new Set(labels);
 
         const found = [...datasetLabels].filter((label) => {
@@ -139,7 +140,7 @@ export default async function promptForSelectionFromContext(
     return null;
   }
 
-  const labels = await api.evaluateLegacyContext(context);
+  const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(context);
   const contextLabels = new Set(labels);
   const matchingLabels = data.index_labels.filter((label, i) => {
     return (

@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  DeprecatedDataExplorerApiResponse,
-  useDeprecatedDataExplorerApi,
-} from "../../../contexts/DeprecatedDataExplorerApiContext";
+import { deprecatedDataExplorerAPI } from "../../../services/deprecatedDataExplorerAPI";
+import type { DeprecatedDataExplorerApiResponse } from "../../../services/deprecatedDataExplorerAPI";
 import { isCompleteExpression, isPartialSliceId } from "../../../utils/misc";
 import {
   Expr,
@@ -45,7 +43,6 @@ export const useEvaluatedExpressionResult = (
   slice_type: string,
   expr: Expr
 ) => {
-  const api = useDeprecatedDataExplorerApi();
   const [result, setResult] = useState<
     DeprecatedDataExplorerApiResponse["fetchContextSummary"] | null
   >(null);
@@ -54,17 +51,19 @@ export const useEvaluatedExpressionResult = (
   useEffect(() => {
     (async () => {
       if (isCompleteExpression(expr)) {
-        const fetchedResult = await api.fetchContextSummary({
-          context_type: slice_type,
-          expr: normalizeExpr(expr),
-        });
+        const fetchedResult = await deprecatedDataExplorerAPI.fetchContextSummary(
+          {
+            context_type: slice_type,
+            expr: normalizeExpr(expr),
+          }
+        );
 
         setResult(fetchedResult);
       } else {
         setResult(null);
       }
     })();
-  }, [api, expr, slice_type]);
+  }, [expr, slice_type]);
 
   return result;
 };

@@ -3,7 +3,6 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { CompoundDoseCurveData, DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { TableFormattedData } from "src/compound/types";
 
 function useDoseCurvesSelectionHandlers(
@@ -11,7 +10,7 @@ function useDoseCurvesSelectionHandlers(
   tableData: TableFormattedData | null,
   selectedModelIds: Set<string>,
   selectedTableRows: Set<string>,
-  deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
+  deApi: any,
   handleShowUnselectedLinesOnSelectionsCleared: () => void,
   handleSetSelectedTableRows: React.Dispatch<React.SetStateAction<Set<string>>>,
   handleSetSelectedPlotModelIds: React.Dispatch<
@@ -114,10 +113,7 @@ function useDoseCurvesSelectionHandlers(
     const allLabels = new Set(
       doseCurveData?.curve_params.map((curveParam) => curveParam.id!)
     );
-    const labels = await compoundPagePromptForSelectionFromContext(
-      deApi,
-      allLabels
-    );
+    const labels = await compoundPagePromptForSelectionFromContext(allLabels);
     if (labels === null) return;
     handleSetSelectedPlotModelIds(labels);
     handleSetSelectedTableRows(labels);
