@@ -36,7 +36,6 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
   const correlatedDatasetOptions = correlatedDatasets.map((corrDataset) => {
     return { label: corrDataset, value: corrDataset };
   });
-  console.log("Correlated Dataset Options", correlatedDatasetOptions);
 
   const getDoseOptions = useCallback(() => {
     return doses.map((dose) => {
@@ -47,7 +46,9 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
   return (
     <div className={styles.correlationFilters}>
       <div className={styles.filters}>
-        <header>Dataset ({compoundName})</header>
+        <header>
+          <b>Dataset ({compoundName})</b>
+        </header>
         <Select
           className={styles.filterStyle}
           placeholder="Select..."
@@ -59,11 +60,17 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
           }}
         />
         <header
-          style={{ paddingBottom: "10px", borderTop: "1px solid darkgrey" }}
+          style={{
+            paddingTop: "20px",
+            paddingBottom: "10px",
+            borderTop: "1px solid darkgrey",
+          }}
         >
-          FILTERS
+          <b>FILTERS</b>
         </header>
-        <header>Dose</header>
+        <header>
+          <b>Dose</b>
+        </header>
         <Select
           className={styles.filterStyle}
           placeholder="Select..."
@@ -77,7 +84,9 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
             );
           }}
         />
-        <header>Correlated Dataset</header>
+        <header>
+          <b>Correlated Dataset</b>
+        </header>
         <Select
           className={styles.filterStyle}
           placeholder="Select..."
