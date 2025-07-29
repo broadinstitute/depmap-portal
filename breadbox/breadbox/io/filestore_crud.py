@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Union
 
 import pandas as pd
 
+from ..utils.progress_tracker import ProgressTracker
 from ..schemas.dataframe_wrapper import DataFrameWrapper
 from ..models.dataset import Dataset, MatrixDataset, ValueType
 from .hdf5_utils import write_hdf5_file, read_hdf5_file
@@ -17,6 +18,7 @@ def save_dataset_file(
     df_wrapper: DataFrameWrapper,
     value_type: ValueType,
     filestore_location: str,
+    progress: ProgressTracker,
 ):
     base_path = os.path.join(filestore_location, dataset_id)
     os.makedirs(base_path)
@@ -27,7 +29,10 @@ def save_dataset_file(
         dtype = "float"
 
     write_hdf5_file(
-        get_file_location(dataset_id, filestore_location, DATA_FILE), df_wrapper, dtype
+        get_file_location(dataset_id, filestore_location, DATA_FILE),
+        df_wrapper,
+        dtype,
+        progress,
     )
 
 

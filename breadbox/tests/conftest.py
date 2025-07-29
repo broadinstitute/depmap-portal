@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from fastapi.exceptions import HTTPException
 
 from breadbox.api.dependencies import get_db_with_user, get_user
+from breadbox.utils.progress_tracker import ProgressTracker
 from breadbox.config import Settings, get_settings
 from breadbox.db.base import Base
 from breadbox.db.session import SessionWithUser, SessionLocalWithUser
@@ -248,7 +249,9 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
         else:
             params = TableDatasetParams(**dataset_params)
         minimal_db.reset_user(user)
-        return dataset_uploads_tasks.dataset_upload(minimal_db, params, user)
+        return dataset_uploads_tasks.dataset_upload(
+            minimal_db, params, user, ProgressTracker()
+        )
 
     def mock_return_task(result):
         from celery.result import EagerResult

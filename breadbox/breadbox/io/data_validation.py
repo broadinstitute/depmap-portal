@@ -35,6 +35,7 @@ from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
 import pyarrow
 
+from ..utils.progress_tracker import ProgressTracker
 
 pd.set_option("mode.use_inf_as_na", True)
 
@@ -469,7 +470,9 @@ def validate_and_upload_dataset_files(
     )
 
     # TODO: Move save function to api layer. Need to make sure the db save is successful first
-    save_dataset_file(dataset_id, data_dfw, value_type, filestore_location)
+    save_dataset_file(
+        dataset_id, data_dfw, value_type, filestore_location, ProgressTracker()
+    )
 
     return dataframe_validated_dimensions
 

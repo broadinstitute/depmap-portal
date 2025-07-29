@@ -21,7 +21,7 @@ from breadbox.schemas.dataset import (
     AnnotationType,
 )
 from breadbox.schemas.custom_http_exception import FileValidationError
-from breadbox.compute.dataset_uploads_tasks import dataset_upload
+from breadbox.compute.dataset_uploads_tasks import dataset_upload, ProgressTracker
 
 from tests import factories
 
@@ -64,7 +64,9 @@ def test_matrix_dataset_uploads(
         **_default_params
     )
     user = settings.admin_users[0]
-    matrix_dataset_w_simple_metadata = dataset_upload(minimal_db, matrix_params, user)
+    matrix_dataset_w_simple_metadata = dataset_upload(
+        minimal_db, matrix_params, user, ProgressTracker()
+    )
     assert matrix_dataset_w_simple_metadata.datasetId
     dataset_id = matrix_dataset_w_simple_metadata.datasetId
 
@@ -99,7 +101,10 @@ def test_matrix_dataset_uploads(
         **_default_params
     )
     matrix_only_sample_type = dataset_upload(
-        minimal_db, matrix_params_only_sample_type, settings.admin_users[0]
+        minimal_db,
+        matrix_params_only_sample_type,
+        settings.admin_users[0],
+        ProgressTracker(),
     )
     assert matrix_only_sample_type.datasetId
     dataset_id = matrix_only_sample_type.datasetId
@@ -174,7 +179,9 @@ def test_tabular_uploads(
         **_default_params
     )
     user = settings.admin_users[0]
-    tabular_dataset = dataset_upload(minimal_db, tabular_params, user)
+    tabular_dataset = dataset_upload(
+        minimal_db, tabular_params, user, ProgressTracker()
+    )
     assert tabular_dataset.datasetId
     tabular_dataset_id = tabular_dataset.datasetId
     dataset = minimal_db.query(Dataset).filter(Dataset.id == tabular_dataset_id).one()
@@ -261,7 +268,9 @@ def test_tabular_bad_list_str_col(minimal_db, client, settings, private_group):
             },
             **_default_params
         )
-        dataset_upload(minimal_db, bad_list_str_params, settings.admin_users[0])
+        dataset_upload(
+            minimal_db, bad_list_str_params, settings.admin_users[0], ProgressTracker()
+        )
 
 
 def test_tabular_dup_ids_failure(client, private_group, minimal_db, settings):
@@ -299,4 +308,6 @@ def test_tabular_dup_ids_failure(client, private_group, minimal_db, settings):
             },
             **_default_params
         )
-        dataset_upload(minimal_db, repeated_ids_params, settings.admin_users[0])
+        dataset_upload(
+            minimal_db, repeated_ids_params, settings.admin_users[0], ProgressTracker()
+        )
