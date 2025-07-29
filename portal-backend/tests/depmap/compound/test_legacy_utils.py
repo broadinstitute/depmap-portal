@@ -169,11 +169,21 @@ def test_does_legacy_dataset_exist_with_compound_experiment(empty_db_mock_downlo
     ce_no_dataset: List[Tuple[CompoundExperiment, DependencyDataset]] = [
         (
             typing.cast(CompoundExperiment, compound_experiment_3),
-            typing.cast(DependencyDataset, DependencyDatasetFactory()),
+            typing.cast(
+                DependencyDataset,
+                DependencyDatasetFactory(
+                    name=DependencyDataset.DependencyEnum.GDSC1_AUC
+                ),
+            ),
         ),
         (
             typing.cast(CompoundExperiment, compound_experiment_3),
-            typing.cast(DependencyDataset, DependencyDatasetFactory()),
+            typing.cast(
+                DependencyDataset,
+                DependencyDatasetFactory(
+                    name=DependencyDataset.DependencyEnum.GDSC2_AUC
+                ),
+            ),
         ),
     ]
 
