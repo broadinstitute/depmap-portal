@@ -132,7 +132,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       const selectedIds = selectedDataWithLabelFront.map((data) => {
         return data.id;
       });
-      console.log("useEffect", selectedIds);
       setSelectedRows(new Set(selectedIds));
 
       // move selected features from plot or table up to front of data list
@@ -291,7 +290,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         <h2>Associated Features</h2>
         <p>Clicking on rows highlights features in the plots above</p>
         <div style={{ height: "20px" }}>
-          {selectedRows && (
+          {selectedRows.size ? (
             <button
               className={styles.linkButton}
               type="button"
@@ -302,7 +301,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             >
               Unselect all
             </button>
-          )}
+          ) : null}
         </div>
 
         <CorrelationsTable

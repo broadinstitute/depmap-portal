@@ -7,11 +7,13 @@ export const formatVolcanoTrace = (
   hasOtherSelectedFeatureTypeFeatures: boolean
 ) => {
   const traces = volcanoData.map((volcanoDataTrace) => {
+    const traceColor = volcanoDataTrace.color;
     const plotlyTrace: Partial<PlotData> = {
       name: volcanoDataTrace.name,
       x: volcanoDataTrace.x,
       y: volcanoDataTrace.y,
       text: volcanoDataTrace.label,
+      hovertext: volcanoDataTrace.text,
       marker: {
         line: {
           color: "black",
