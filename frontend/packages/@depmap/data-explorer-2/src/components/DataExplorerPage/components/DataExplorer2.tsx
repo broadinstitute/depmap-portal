@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
-import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
 import { DEFAULT_EMPTY_PLOT, readPlotFromQueryString } from "../utils";
 import DataExplorer2MainContent from "./DataExplorer2MainContent";
 import SpinnerOverlay from "./plot/SpinnerOverlay";
@@ -13,8 +12,6 @@ interface PageProps {
 }
 
 function DataExplorer2({ feedbackUrl, contactEmail, tutorialLink }: PageProps) {
-  const api = useDeprecatedDataExplorerApi();
-
   const [
     initialPlot,
     setInitialPlot,
@@ -24,14 +21,14 @@ function DataExplorer2({ feedbackUrl, contactEmail, tutorialLink }: PageProps) {
   useEffect(() => {
     (async () => {
       try {
-        const plot = await readPlotFromQueryString(api);
+        const plot = await readPlotFromQueryString();
         setInitialPlot(plot);
       } catch (e) {
         window.console.error(e);
         setError(true);
       }
     })();
-  }, [api]);
+  }, []);
 
   return initialPlot ? (
     <DataExplorer2MainContent

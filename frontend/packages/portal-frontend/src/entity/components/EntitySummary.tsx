@@ -12,12 +12,10 @@ import {
 } from "react-bootstrap";
 import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { Checkbox } from "@depmap/common-components";
-import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
 import { toPortalLink } from "@depmap/globals";
 import { encodeParams } from "@depmap/utils";
 import DropdownButton from "src/common/components/DropdownButton";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
-import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import { PlotHTMLElement } from "@depmap/plotly-wrapper";
 import SublineagePlot from "./SublineagePlot";
 import {
@@ -392,20 +390,16 @@ class EntitySummary extends React.Component<Props, State> {
 
   render() {
     return (
-      <DeprecatedDataExplorerApiProvider
-        evaluateLegacyContext={evaluateLegacyContext}
-      >
-        <Row>
-          <Col sm={2}>
-            {this.renderControls()}
-            {this.renderLegends()}
-          </Col>
-          <Col sm={10}>
-            {this.renderHeader()}
-            {this.renderPlots()}
-          </Col>
-        </Row>
-      </DeprecatedDataExplorerApiProvider>
+      <Row>
+        <Col sm={2}>
+          {this.renderControls()}
+          {this.renderLegends()}
+        </Col>
+        <Col sm={10}>
+          {this.renderHeader()}
+          {this.renderPlots()}
+        </Col>
+      </Row>
     );
   }
 }

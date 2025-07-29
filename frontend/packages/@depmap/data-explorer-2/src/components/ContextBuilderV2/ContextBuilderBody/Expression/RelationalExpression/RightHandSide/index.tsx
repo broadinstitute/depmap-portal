@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { isValidSliceQuery } from "@depmap/types";
-import { DataExplorerApiResponse } from "../../../../../../contexts/DataExplorerApiContext";
+import { DataExplorerApiResponse } from "../../../../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import {
   isListOperator,

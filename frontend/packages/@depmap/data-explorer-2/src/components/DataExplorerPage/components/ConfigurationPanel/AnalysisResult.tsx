@@ -4,11 +4,11 @@ import omit from "lodash.omit";
 import { Button } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import { ComputeResponseResult, CustomAnalysisResult } from "@depmap/compute";
+import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import {
   DataExplorerPlotConfigDimension,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
 import { usePlotlyLoader } from "../../../../contexts/PlotlyLoaderContext";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import Section from "../Section";
@@ -29,7 +29,6 @@ const labelFromDimension = (dimension: DataExplorerPlotConfigDimension) => {
 };
 
 function AnalysisResult({ plot, dispatch }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const PlotlyLoader = usePlotlyLoader();
   const [taskId, setTaskId] = useState<string | null>(null);
   const [result, setResult] = useState<ComputeResponseResult | null>(null);
@@ -60,7 +59,9 @@ function AnalysisResult({ plot, dispatch }: Props) {
       setStatus("loading");
 
       try {
-        const analysisResult = await api.fetchAnalysisResult(taskId);
+        const analysisResult = await deprecatedDataExplorerAPI.fetchAnalysisResult(
+          taskId
+        );
 
         setResult(analysisResult);
         // IMPORTANT! Keep this as `entityType`
@@ -71,7 +72,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
         window.console.error(e);
       }
     })();
-  }, [api, taskId]);
+  }, [taskId]);
 
   const clearAnalysis = useCallback(() => {
     const params = qs.parse(window.location.search.substr(1));

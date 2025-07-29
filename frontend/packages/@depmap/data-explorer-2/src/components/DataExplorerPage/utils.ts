@@ -3,7 +3,6 @@ import pako from "pako";
 import omit from "lodash.omit";
 import { Base64 } from "js-base64";
 import stableStringify from "json-stable-stringify";
-import { isElara } from "@depmap/globals";
 import {
   ContextPath,
   DataExplorerContext,
@@ -16,6 +15,8 @@ import {
   isValidSliceQuery,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../../isBreadboxOnlyMode";
+import { dataExplorerAPI } from "../../services/dataExplorerAPI";
 import {
   contextsMatch,
   isContextAll,
@@ -25,7 +26,6 @@ import {
 } from "../../utils/context";
 import { fetchContext, persistContext } from "../../utils/context-storage";
 import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
-import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
 import {
   hasSomeShorthandParams,
   omitShorthandParams,
@@ -53,7 +53,7 @@ export function toRelatedPlot(
   );
 
   const toSliceName = (label: string, slice_type: string) => {
-    if (isElara && slice_type === "depmap_model") {
+    if (isBreadboxOnlyMode && slice_type === "depmap_model") {
       return idToLabelMap[label];
     }
 
@@ -61,7 +61,7 @@ export function toRelatedPlot(
   };
 
   const toVarEqualityExpression = (label: string, slice_type: string) => {
-    if (isElara) {
+    if (isBreadboxOnlyMode) {
       let given_id = labelToIdMap[label];
 
       if (
@@ -80,7 +80,7 @@ export function toRelatedPlot(
   };
 
   const toVarInclusionExpression = (labels: string[]) => {
-    if (isElara) {
+    if (isBreadboxOnlyMode) {
       const ids =
         plot.index_type === "depmap_model"
           ? labels
@@ -93,7 +93,7 @@ export function toRelatedPlot(
   };
 
   const toSingleSliceContext = (slice_type: string, label: string) => {
-    if (isElara) {
+    if (isBreadboxOnlyMode) {
       return {
         name: toSliceName(label, slice_type),
         dimension_type: slice_type,
@@ -110,7 +110,7 @@ export function toRelatedPlot(
   };
 
   const toMultiSliceContext = (slice_type: string, labels: string[]) => {
-    if (isElara) {
+    if (isBreadboxOnlyMode) {
       return {
         name: defaultContextName(selectedLabels.size),
         dimension_type: slice_type,
@@ -614,9 +614,7 @@ const replaceLegacyPropertyNames = (plot: DataExplorerPlotConfig | null) => {
   return plot;
 };
 
-export async function readPlotFromQueryString(
-  api: ReturnType<typeof useDeprecatedDataExplorerApi>
-): Promise<DataExplorerPlotConfig> {
+export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig> {
   const params = qs.parse(window.location.search.substr(1));
   let plot: DataExplorerPlotConfig | null = null;
 
@@ -626,7 +624,7 @@ export async function readPlotFromQueryString(
   // below (which are typical of auto-generated URLs) but those params can
   // override any values parsed here.
   if (hasSomeShorthandParams(params)) {
-    const datasets = await api.fetchDatasetsByIndexType();
+    const datasets = await dataExplorerAPI.fetchDatasetsByIndexType();
     plot = parseShorthandParams(params, datasets);
   }
 

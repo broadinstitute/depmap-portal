@@ -4,20 +4,17 @@ import {
   DatasetMetadataSelector,
   DimensionSelect,
   PlotConfigSelect,
-  useDeprecatedDataExplorerApi,
 } from "@depmap/data-explorer-2";
 import styles from "../styles/cell_line_selector.scss";
 
 interface Props {
   onChange: (
     sliceId: string | null,
-    valueType: "continuous" | "categorical",
-    api: ReturnType<typeof useDeprecatedDataExplorerApi>
+    valueType: "continuous" | "categorical"
   ) => void;
 }
 
 function DataColumnSelect({ onChange }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [valueType, setValueType] = useState<
     "continuous" | "categorical" | null
   >(null);
@@ -32,7 +29,7 @@ function DataColumnSelect({ onChange }: Props) {
         value={valueType}
         onChange={(nextValueType) => {
           setValueType(nextValueType as "continuous" | "categorical");
-          onChange(null, nextValueType as "continuous" | "categorical", api);
+          onChange(null, nextValueType as "continuous" | "categorical");
           setValue(null);
         }}
         options={{
@@ -49,7 +46,7 @@ function DataColumnSelect({ onChange }: Props) {
           value={null}
           onChange={(dimension) => {
             const sliceId = convertDimensionToSliceId(dimension);
-            onChange(sliceId, valueType, api);
+            onChange(sliceId, valueType);
           }}
         />
       )}
@@ -66,9 +63,9 @@ function DataColumnSelect({ onChange }: Props) {
               partialOrCompleteSliceId &&
               partialOrCompleteSliceId.split("/").length === 4
             ) {
-              onChange(partialOrCompleteSliceId, valueType, api);
+              onChange(partialOrCompleteSliceId, valueType);
             } else {
-              onChange(null, valueType, api);
+              onChange(null, valueType);
             }
           }}
         />

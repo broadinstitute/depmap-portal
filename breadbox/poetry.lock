@@ -2571,6 +2571,22 @@ files = [
 windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
+name = "pypatch-and-run"
+version = "0.3.1"
+description = ""
+optional = false
+python-versions = ">=3.9,<4.0"
+files = [
+    {file = "pypatch_and_run-0.3.1-py3-none-any.whl", hash = "sha256:d03929214bad4f916bd063679e19ad26d6e69eb80fcfd6fcf674f4c2a7797fec"},
+    {file = "pypatch_and_run-0.3.1.tar.gz", hash = "sha256:c84a0f220a99839055716fd067e7803adb3999ae5e6fdeb155f61770cc5f55ab"},
+]
+
+[package.source]
+type = "legacy"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple"
+reference = "public-python"
+
+[[package]]
 name = "pyright"
 version = "1.1.400"
 description = "Command line wrapper for pyright"
@@ -3458,4 +3474,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6ab8e558f9ef6770353df54a96990e656eaa8e8177bd95b55b505e5fca0f08ff"
+content-hash = "932286dc71c4bc9130bf17ba8a46e2e6609bf308bcf51210e03e8765587ad97d"

@@ -14,12 +14,15 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import { initializeDevContexts } from "@depmap/data-explorer-2";
+import {
+  initializeDevContexts,
+  isBreadboxOnlyMode,
+} from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
@@ -155,7 +158,10 @@ export function launchCellLineSelectorModal() {
   });
 }
 
-export function editContext(context: DataExplorerContext, hash: string) {
+export function editContext(
+  context: DataExplorerContext | DataExplorerContextV2,
+  hash: string
+) {
   const container = document.getElementById("cell_line_selector_modal");
   const unmount = () =>
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
@@ -174,6 +180,13 @@ export function saveNewContext(
   onHide?: () => void,
   onSave?: (context: DataExplorerContext, hash: string) => void
 ) {
+  if (isBreadboxOnlyMode) {
+    // FIXME: We need to convert the context and
+    // make  sure it opens in ContextBuilderV2.
+    window.alert("Error: context is in legacy format.");
+    return;
+  }
+
   const container = document.getElementById("modal-container");
   const unmount = () =>
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
@@ -210,7 +223,6 @@ export function initEnrichmentTile(
     document.getElementById(elementId) as HTMLElement
   );
 }
-
 
 export function initHeatmapTile(
   elementId: string,

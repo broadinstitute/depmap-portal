@@ -2,7 +2,7 @@ import React from "react";
 import qs from "qs";
 import cx from "classnames";
 import { Button } from "react-bootstrap";
-import { isElara } from "@depmap/globals";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import DimensionSelectV1 from "../../../DimensionSelect";
 import DimensionSelectV2 from "../../../DimensionSelectV2";
 import {
@@ -31,7 +31,7 @@ interface Props {
   onClickSwapAxisConfigs: () => void;
 }
 
-const DimensionSelect = isElara
+const DimensionSelect = isBreadboxOnlyMode
   ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
   : DimensionSelectV1;
 

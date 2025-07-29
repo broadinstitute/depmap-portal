@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import type { DataExplorerContextVariable } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { fetchMetadataAndOtherTabularDatasets } from "../../../utils/api-helpers";
 import type { ExprReducerAction } from "./expressionReducer";
 
@@ -11,8 +10,6 @@ function useInitializer(
   setVar: (key: string, value: Partial<DataExplorerContextVariable>) => void,
   dispatch: React.Dispatch<ExprReducerAction>
 ) {
-  const api = useDataExplorerApi();
-
   // given_id is a special "virtual variable" that will match on IDs of the
   // given dimension type. That behavior is nice in the Context Evaluator, but
   // it's not very useful here in the builder. Users need to be able to select
@@ -43,7 +40,7 @@ function useInitializer(
       const {
         metadataDataset,
         metadataIdColumn,
-      } = await fetchMetadataAndOtherTabularDatasets(api, dimension_type);
+      } = await fetchMetadataAndOtherTabularDatasets(dimension_type);
 
       if (!metadataDataset) {
         throw new Error(
@@ -77,7 +74,7 @@ function useInitializer(
 
       setIsInitializing(false);
     })();
-  }, [api, dimension_type, mainExpr, setVar, dispatch]);
+  }, [dimension_type, mainExpr, setVar, dispatch]);
 
   return isInitializing;
 }

@@ -11,6 +11,7 @@ const SettingsModal = React.lazy(
 );
 
 export const DEFAULT_SETTINGS = {
+  useBreadboxBackend: false,
   plotStyles: {
     pointSize: 10,
     pointOpacity: 0.5,
@@ -140,6 +141,12 @@ export const DataExplorerSettingsProvider = ({
             );
             setSettings(updatedSettings);
             hide();
+
+            if (
+              updatedSettings.useBreadboxBackend !== settings.useBreadboxBackend
+            ) {
+              window.location.reload();
+            }
           }}
           onHide={hide}
         />

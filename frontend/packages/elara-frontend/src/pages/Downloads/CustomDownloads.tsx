@@ -1,8 +1,6 @@
 import React from "react";
 import { breadboxAPI } from "@depmap/api";
-import { DataExplorerApiProvider } from "@depmap/data-explorer-2";
 import ElaraDataSlicer from "./ElaraDataSlicer";
-import { evaluateContext } from "src/pages/DataExplorer/api";
 
 export default function CustomDownloads() {
   const titleLabel = "Custom downloads";
@@ -24,36 +22,31 @@ export default function CustomDownloads() {
   );
 
   return (
-    <DataExplorerApiProvider
-      fetchDimensionTypes={breadboxAPI.getDimensionTypes}
-      evaluateContext={evaluateContext}
+    <div
+      style={{
+        paddingLeft: "15px",
+        paddingRight: "15px",
+        marginLeft: "auto",
+        marginRight: "auto",
+      }}
     >
-      <div
-        style={{
-          paddingLeft: "15px",
-          paddingRight: "15px",
-          marginLeft: "auto",
-          marginRight: "auto",
-        }}
-      >
+      <div>
         <div>
-          <div>
-            <br />
-            {title}
+          <br />
+          {title}
 
-            <br />
-            <div>
-              <ElaraDataSlicer
-                exportData={breadboxAPI.exportData}
-                exportDataForMerge={breadboxAPI.exportDataForMerge}
-                getTaskStatus={breadboxAPI.getTaskStatus}
-                validateFeatures={breadboxAPI.validateFeaturesInDataset}
-              />
-            </div>
-            <br />
+          <br />
+          <div>
+            <ElaraDataSlicer
+              exportData={breadboxAPI.exportData}
+              exportDataForMerge={breadboxAPI.exportDataForMerge}
+              getTaskStatus={breadboxAPI.getTaskStatus}
+              validateFeatures={breadboxAPI.validateFeaturesInDataset}
+            />
           </div>
+          <br />
         </div>
       </div>
-    </DataExplorerApiProvider>
+    </div>
   );
 }

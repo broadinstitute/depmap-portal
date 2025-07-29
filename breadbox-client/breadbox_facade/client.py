@@ -34,6 +34,7 @@ from breadbox_client.api.groups import get_groups as get_groups_client
 from breadbox_client.api.types import add_dimension_type as add_dimension_type_client
 from breadbox_client.api.types import get_dimension_type as get_dimension_type_client
 from breadbox_client.api.types import get_dimension_types as get_dimension_types_client
+from breadbox_client.api.types import get_dimension_type_identifiers as get_dimension_type_identifiers_client
 from breadbox_client.api.types import get_feature_types as get_feature_types_client
 from breadbox_client.api.types import get_sample_types as get_sample_types_client
 from breadbox_client.api.types import remove_dimension_type as remove_dimension_type_client
@@ -42,7 +43,6 @@ from breadbox_client.api.temp import get_associations as get_associations_client
 from breadbox_client.api.temp import add_associations as add_associations_client
 from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
 from breadbox_client.api.temp import evaluate_context as evaluate_context_client
-#
 
 from breadbox_client.models import (
     AccessType,
@@ -63,6 +63,8 @@ from breadbox_client.models import (
     ContextMatchResponse,
     DatasetMetadata,
     DataType,
+    DimensionIdentifiers, 
+    DimensionType,
     FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
@@ -481,16 +483,20 @@ class BBClient:
         breadbox_response = update_dimension_type_client.sync_detailed(name=name, client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
-    def get_dimension_types(self):
+    def get_dimension_types(self) -> list[DimensionType]:
         breadbox_response = get_dimension_types_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def get_dimension_type(self, name: str):
+    def get_dimension_type(self, name: str) -> DimensionType:
         breadbox_response = get_dimension_type_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
     
     def delete_dimension_type(self, name: str):
         breadbox_response = remove_dimension_type_client.sync_detailed(name=name, client=self.client)
+        return self._parse_client_response(breadbox_response)
+    
+    def get_dimension_type_identifiers(self, name: str) -> List[DimensionIdentifiers]:
+        breadbox_response = get_dimension_type_identifiers_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
     
 

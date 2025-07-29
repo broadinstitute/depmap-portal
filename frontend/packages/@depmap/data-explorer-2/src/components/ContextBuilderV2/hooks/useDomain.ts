@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { isValidSliceQuery } from "@depmap/types";
 import {
+  dataExplorerAPI,
   DataExplorerApiResponse,
-  useDataExplorerApi,
-} from "../../../contexts/DataExplorerApiContext";
+} from "../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
 export default function useDomain(varName: string | null) {
-  const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [domain, setDomain] = useState<
@@ -22,7 +21,7 @@ export default function useDomain(varName: string | null) {
       setIsLoading(true);
       setHasError(false);
 
-      api
+      dataExplorerAPI
         .fetchVariableDomain(variable)
         .then(setDomain)
         .catch(() => {
@@ -34,7 +33,7 @@ export default function useDomain(varName: string | null) {
       setDomain(null);
       setIsLoading(false);
     }
-  }, [api, variable]);
+  }, [variable]);
 
   return { isLoading, hasError, domain };
 }

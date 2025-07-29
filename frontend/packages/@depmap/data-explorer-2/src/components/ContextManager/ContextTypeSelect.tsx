@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
-import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import { dataExplorerAPI } from "../../services/dataExplorerAPI";
 import PlotConfigSelect from "../PlotConfigSelect";
 import {
   capitalize,
@@ -22,7 +22,6 @@ function ContextTypeSelect({
   useContextBuilderV2,
   title = "Context type",
 }: Props) {
-  const deprecatedApi = useDeprecatedDataExplorerApi();
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
   );
@@ -49,7 +48,7 @@ function ContextTypeSelect({
 
           setOptions(opts);
         } else {
-          const datasetByIndexType = await deprecatedApi.fetchDatasetsByIndexType();
+          const datasetByIndexType = await dataExplorerAPI.fetchDatasetsByIndexType();
           const indexTypes = Object.keys(datasetByIndexType);
 
           const opts = sortDimensionTypes(indexTypes || [])
@@ -65,7 +64,7 @@ function ContextTypeSelect({
         window.console.error(e);
       }
     })();
-  }, [deprecatedApi, useContextBuilderV2]);
+  }, [useContextBuilderV2]);
 
   return (
     <PlotConfigSelect

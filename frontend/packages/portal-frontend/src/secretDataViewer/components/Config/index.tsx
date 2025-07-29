@@ -1,6 +1,5 @@
 import React, { useCallback } from "react";
 import {
-  DeprecatedDataExplorerApiProvider,
   PointsSelector,
   PlotConfigReducerAction,
 } from "@depmap/data-explorer-2";
@@ -8,15 +7,6 @@ import {
   DataExplorerPlotConfigDimension,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import {
-  evaluateLegacyContext,
-  fetchDatasetDetails,
-  fetchDatasetsByIndexType,
-  fetchDatasetsMatchingContextIncludingEntities,
-  fetchDimensionLabels,
-  fetchDimensionLabelsOfDataset,
-  fetchDimensionLabelsToDatasetsMapping,
-} from "src/data-explorer-2/deprecated-api";
 import HackedDimensionSelect from "src/secretDataViewer/components/Config/HackedDimensionSelect";
 import styles from "src/secretDataViewer/styles/DataViewer.scss";
 
@@ -55,47 +45,33 @@ function Config({ plot, dispatch }: Props) {
   );
 
   return (
-    <DeprecatedDataExplorerApiProvider
-      evaluateLegacyContext={evaluateLegacyContext}
-      fetchDatasetDetails={fetchDatasetDetails}
-      fetchDatasetsByIndexType={fetchDatasetsByIndexType}
-      fetchDatasetsMatchingContextIncludingEntities={
-        fetchDatasetsMatchingContextIncludingEntities
-      }
-      fetchDimensionLabels={fetchDimensionLabels}
-      fetchDimensionLabelsOfDataset={fetchDimensionLabelsOfDataset}
-      fetchDimensionLabelsToDatasetsMapping={
-        fetchDimensionLabelsToDatasetsMapping
-      }
-    >
-      <div className={styles.Config}>
-        <PointsSelector
-          show
-          enable={plot.plot_type}
-          value={plot.index_type}
-          plot_type={plot.plot_type}
-          onChange={(index_type: string) =>
-            dispatch({
-              type: "select_index_type",
-              payload: index_type,
-            })
-          }
-        />
-        <HackedDimensionSelect
-          className={styles.HackedDimensionSelect}
-          mode={mode}
-          onChange={onChange}
-          index_type={plot.index_type || null}
-          value={
-            (plot.dimensions?.x as Partial<DataExplorerPlotConfigDimension>) ||
-            null
-          }
-          includeAllInContextOptions
-          onClickCreateContext={() => {}}
-          onClickSaveAsContext={() => {}}
-        />
-      </div>
-    </DeprecatedDataExplorerApiProvider>
+    <div className={styles.Config}>
+      <PointsSelector
+        show
+        enable={plot.plot_type}
+        value={plot.index_type}
+        plot_type={plot.plot_type}
+        onChange={(index_type: string) =>
+          dispatch({
+            type: "select_index_type",
+            payload: index_type,
+          })
+        }
+      />
+      <HackedDimensionSelect
+        className={styles.HackedDimensionSelect}
+        mode={mode}
+        onChange={onChange}
+        index_type={plot.index_type || null}
+        value={
+          (plot.dimensions?.x as Partial<DataExplorerPlotConfigDimension>) ||
+          null
+        }
+        includeAllInContextOptions
+        onClickCreateContext={() => {}}
+        onClickSaveAsContext={() => {}}
+      />
+    </div>
   );
 }
 
