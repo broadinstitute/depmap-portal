@@ -181,7 +181,7 @@ class TestPost:
             client, tabular_data_file_bad_list_strings
         )
 
-        def mock_failed_task_result(db, params, user):
+        def mock_failed_task_result(db, params, user, progress):
             return {"result": "Column 'attr1' failed validator"}
 
         monkeypatch.setattr(
