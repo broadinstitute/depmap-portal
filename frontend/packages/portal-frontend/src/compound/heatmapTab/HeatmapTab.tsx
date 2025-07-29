@@ -2,7 +2,6 @@ import React, { useCallback, useState } from "react";
 import HeatmapTabMainContent from "./HeatmapTabMainContent";
 import FiltersPanel from "./FiltersPanel";
 import { DRCDatasetOptions } from "@depmap/types";
-import { deprecatedDataExplorerAPI } from "@depmap/data-explorer-2";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
