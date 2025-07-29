@@ -90,10 +90,8 @@ def render_tile(subject_type, tile_name, identifier):
             compound.entity_id
         )
         compound_experiment_and_datasets = [
-            x
-            for x in compound_experiment_and_datasets
-            if not x[1].is_ic50 and not x[1].is_dose_replicate
-        ]  # filter for non ic50 or dose replicate datasets
+            x for x in compound_experiment_and_datasets if not x[1].is_dose_replicate
+        ]  # filter for non dose replicate datasets
 
         rendered_tile = render_compound_tile(
             tile_name, compound, compound_experiment_and_datasets, args_dict

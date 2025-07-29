@@ -1,3 +1,5 @@
+from depmap.data_access import breadbox_dao
+from depmap.interactive import interactive_utils
 from depmap.settings.settings import TestConfig
 import pandas as pd
 import pytest
@@ -39,7 +41,16 @@ def test_render_view_compound(populated_db, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
@@ -62,7 +73,7 @@ def test_format_compound_summary(empty_db_mock_downloads):
 
     matrix = MatrixFactory(entities=[compound_exp_1, compound_exp_2])
     dataset = DependencyDatasetFactory(
-        matrix=matrix, name=DependencyDataset.DependencyEnum.GDSC1_IC50
+        matrix=matrix, name=DependencyDataset.DependencyEnum.GDSC1_AUC
     )  # no dose dataset
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
@@ -236,17 +247,13 @@ def test_format_dose_curve_multiple_curves(empty_db_mock_downloads):
     assert len(curve_params) == 2
 
 
-@pytest.mark.parametrize(
-    "has_ic50_dataset, has_ic50_row", [(True, True), (True, False), (False, False),],
-)
-def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row):
+def test_dose_table(empty_db_mock_downloads, app):
     # define inputs to factories and function calls
     cell_line_name = "CADOES1_BONE"
     cell_line_display_name = "CADOES1"
     xref_type = "CTRP"
     xref = "606135"
     xref_full = xref_type + ":" + xref
-    ic50_value = 0.4
 
     model = DepmapModelFactory(
         cell_line_name=cell_line_name, stripped_cell_line_name=cell_line_display_name
@@ -290,24 +297,6 @@ def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row
             using_depmap_model_table=True,
         ),
     )
-
-    if has_ic50_dataset:
-        if has_ic50_row:
-            matrix = MatrixFactory(
-                entities=[cpd_exp],
-                cell_lines=[model],
-                data=pd.DataFrame(
-                    {model.cell_line_name: [ic50_value]},
-                    index=["cpd_exp"]
-                    # I believe this index doesn't do anything? has to do with order that entities=[] is passed in?
-                ),
-                using_depmap_model_table=True,
-            )
-        else:
-            matrix = MatrixFactory()
-        ic50_dataset = DependencyDatasetFactory(
-            name=DependencyDataset.DependencyEnum.GDSC1_IC50, matrix=matrix
-        )
 
     auc_dataset = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.GDSC1_AUC,
@@ -368,9 +357,6 @@ def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row
                 "auc": 0.5,
             }
         }
-
-        if has_ic50_dataset and has_ic50_row:
-            expected[model.model_id]["ic50"] = ic50_value
 
         assert response == expected
 
@@ -480,7 +466,16 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
 
@@ -508,7 +503,16 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
         result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
@@ -549,7 +553,16 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
         def mock_valid_row(a, b):
             return True
 
-        monkeypatch.setattr(data_access, "valid_row", mock_valid_row)
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
         assert isinstance(result, list)
         assert result == drc_compound_datasets

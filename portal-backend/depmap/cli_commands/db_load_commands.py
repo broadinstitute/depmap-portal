@@ -443,18 +443,6 @@ def _load_real_data(
     dep_datasets = [
         DependencyDataset.DependencyEnum(x["label"]) for x in dep_matrices["dep"]
     ]
-    if DependencyDataset.DependencyEnum.Repurposing_secondary_dose in dep_datasets:
-        with checkpoint("compound-doses") as needed:
-            if needed:
-                log.info("Adding compound doses")
-                filename = [
-                    x["filename"]
-                    for x in dep_matrices["dep"]
-                    if x["label"]
-                    == DependencyDataset.DependencyEnum.Repurposing_secondary_dose.name
-                ][0]
-                score_file_path = gcsc_depmap.download_to_cache(filename)
-                compound_loader.load_repurposing_compound_doses(score_file_path)
 
     with checkpoint("cell-line-data") as needed:
         if needed:
@@ -1000,16 +988,12 @@ def load_sample_data(
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
             DependencyEnum.GDSC1_AUC,
-            DependencyEnum.GDSC1_IC50,
             DependencyEnum.GDSC2_AUC,
-            DependencyEnum.GDSC2_IC50,
             DependencyEnum.CTRP_AUC,
             DependencyEnum.Repurposing_secondary_AUC,
-            DependencyEnum.Repurposing_secondary_dose,
             DependencyEnum.Rep1M,
             DependencyEnum.Rep_all_single_pt,
             DependencyEnum.Prism_oncology_AUC,
-            DependencyEnum.Prism_oncology_IC50,
         ]
 
     if load_taiga_dependencies:
@@ -1051,14 +1035,6 @@ def load_sample_data(
 
         log.info("Adding compounds")
         compound_loader.load_compounds("sample_data/compound/compounds.csv")
-
-        if (
-            DependencyDataset.DependencyEnum.Repurposing_secondary_dose
-            in dep_datasets_config
-        ):
-            compound_loader.load_repurposing_compound_doses(
-                "sample_data/dataset/repurposing-secondary-dose_score.hdf5"
-            )
 
         # csv should contain metadata for all cell lines
         log.info("Adding cell line data")

@@ -221,7 +221,11 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
     valid_options = []
     if show_new_dose_curves_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound_label):
+            if data_access.dataset_exists(
+                drc_dataset.auc_dataset_given_id
+            ) and data_access.valid_row(
+                drc_dataset.auc_dataset_given_id, compound_label
+            ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
                 if (
                     drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
@@ -240,7 +244,11 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
     valid_options = []
     if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.valid_row(drc_dataset.auc_dataset_given_id, compound_label):
+            if data_access.dataset_exists(
+                drc_dataset.auc_dataset_given_id
+            ) and data_access.valid_row(
+                drc_dataset.auc_dataset_given_id, compound_label
+            ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
                 if (
                     drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
@@ -413,7 +421,6 @@ def dose_table(dataset_name, xref_full):
               "9-2":0.1122418195,
               "cell_line_display_name":"HT29",
               "auc":0.8729583436,
-              "ic50":null  # ic50 may optionally not be present if there is no ic50 dataset
            },
            "ACH-000279":{
               ...
@@ -476,11 +483,6 @@ def dose_table(dataset_name, xref_full):
     if auc_data is not None:
         df = df.merge(auc_data, left_index=True, right_index=True, how="left")
 
-    #### IC50
-    ic50_data = get_ic50_data(dataset_name, compound_experiment)
-    if ic50_data is not None:
-        df = df.merge(ic50_data, left_index=True, right_index=True, how="left")
-
     df = df.T
     return df.to_json()
 
@@ -505,31 +507,6 @@ def get_auc_data(dataset_name, compound_experiment):
         )
         auc_data.index.name = "depmap_id"
         return auc_data
-    else:
-        return None
-
-
-def get_ic50_data(dataset_name, compound_experiment):
-    dataset_to_ic50 = {
-        DependencyEnum.GDSC1_dose_replicate.name: DependencyEnum.GDSC1_IC50,
-        DependencyEnum.GDSC2_dose_replicate.name: DependencyEnum.GDSC2_IC50,
-        DependencyEnum.Prism_oncology_IC50.name: DependencyEnum.Prism_oncology_IC50,
-    }
-    if dataset_name in dataset_to_ic50 and DependencyDataset.has_entity(
-        dataset_to_ic50[dataset_name], compound_experiment.entity_id
-    ):
-        ic50_dataset_name = dataset_to_ic50[dataset_name].name
-        ic50_dataset = Dataset.get_dataset_by_name(ic50_dataset_name)
-        assert ic50_dataset is not None
-        ic50_matrix = ic50_dataset.matrix
-        ic50_data = ic50_matrix.get_cell_line_values_and_depmap_ids(
-            compound_experiment.entity_id
-        )
-        ic50_data = pd.DataFrame.from_dict(
-            ic50_data.to_dict(), orient="index", columns=["ic50"]
-        )
-        ic50_data.index.name = "depmap_id"
-        return ic50_data
     else:
         return None
 

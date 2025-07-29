@@ -288,7 +288,7 @@ def format_availability_tile(compound: Compound):
     appears in. This does NOT load the full list of datasets, but instead
     returns a curated subset that users are most interested in. 
     For example, we want to show whether there is "Repurposing" data, but don't need
-    to list all of the oncref datasets (AUC, IC50, etc.).
+    to list all of the oncref datasets (AUC, etc.).
     """
     compound_id = compound.compound_id
     # First, load ALL portal datasets containing the compound (for performance reasons).
