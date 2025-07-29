@@ -4,6 +4,7 @@ import os
 import tempfile
 from typing import Any, List, Optional
 import zipfile
+from depmap.compound import legacy_utils
 import requests
 import urllib.parse
 
@@ -103,38 +104,12 @@ def view_compound(name):
     # If there are no no valid dataset options, hide the heatmap tab and tile
     show_heatmap_tab = len(heatmap_dataset_options) > 0
 
-    # TODO: Temp while context explorer is still using compound experiments. Can eventually update these to just use data_access.valid_row(DependencyEnum.Prism_oncology_AUC.value, row_name=compound.label)
-    oncref_dataset = DependencyDataset.get_dataset_by_name(
-        DependencyEnum.Prism_oncology_AUC.name
+    # TODO: Update when context explorer moves to using compounds instead of compound experiments
+    show_enriched_lineages = legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
+        DependencyEnum.Prism_oncology_AUC.value, compound_experiment_and_datasets
+    ) or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
+        DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
     )
-    oncref_compound_exp_dataset = next(
-        filter(
-            lambda item: item[1] == oncref_dataset, compound_experiment_and_datasets
-        ),
-        None,
-    )
-    oncref_exists_with_compound = data_access.dataset_exists(
-        DependencyEnum.Prism_oncology_AUC.value
-    ) and data_access.valid_row(
-        DependencyEnum.Prism_oncology_AUC.value,
-        row_name=oncref_compound_exp_dataset[0].label,
-    )
-
-    rep_dataset = DependencyDataset.get_dataset_by_name(
-        DependencyEnum.Rep_all_single_pt.name
-    )
-    rep_compound_exp_dataset = next(
-        filter(lambda item: item[1] == rep_dataset, compound_experiment_and_datasets),
-        None,
-    )
-    rep_exists_with_compound = data_access.dataset_exists(
-        DependencyEnum.Rep_all_single_pt.value
-    ) and data_access.valid_row(
-        DependencyEnum.Prism_oncology_AUC.value,
-        row_name=rep_compound_exp_dataset[0].label,
-    )
-
-    show_enriched_lineages = oncref_exists_with_compound or rep_exists_with_compound
 
     return render_template(
         "compounds/index.html",
@@ -163,6 +138,7 @@ def view_compound(name):
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
         show_heatmap_tab=show_heatmap_tab,
+        show_enriched_lineages=show_enriched_lineages,
     )
 
 
@@ -294,7 +270,8 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
                     valid_options.append(drc_dataset)
-
+    breakpoint()
+    print(valid_options)
     return valid_options
 
 

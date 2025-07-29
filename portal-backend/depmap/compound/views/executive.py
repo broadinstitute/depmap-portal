@@ -120,19 +120,19 @@ def get_order(
     tile_large = 650
     tile_medium = 450
     tile_small = 300
-    header_cards = {
-        CompoundTileEnum.sensitivity.value: tile_medium,
-        CompoundTileEnum.correlations.value: tile_small,
-        CompoundTileEnum.availability.value: tile_small,
-    }
+
+    header_cards = {CompoundTileEnum.sensitivity.value: tile_medium}
 
     if show_enriched_lineages:
-        anywhere_cards[CompoundTileEnum.selectivity.value] = tile_large
+        header_cards[CompoundTileEnum.selectivity.value] = tile_large
+    header_cards[CompoundTileEnum.correlations.value] = tile_small
+    header_cards[CompoundTileEnum.availability.value] = tile_small
 
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
     }
+
     if has_heatmap:
         anywhere_cards[CompoundTileEnum.heatmap.value] = tile_medium
 
