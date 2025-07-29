@@ -66,7 +66,6 @@ function DoseCurvesMainContent({
     tableFormattedData,
     selectedModelIds,
     selectedTableRows,
-    api,
     handleShowUnselectedLinesOnSelectionsCleared,
     handleSetSelectedTableRows,
     handleSetSelectedPlotModelIds

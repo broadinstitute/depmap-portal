@@ -10,7 +10,6 @@ function useDoseCurvesSelectionHandlers(
   tableData: TableFormattedData | null,
   selectedModelIds: Set<string>,
   selectedTableRows: Set<string>,
-  deApi: any,
   handleShowUnselectedLinesOnSelectionsCleared: () => void,
   handleSetSelectedTableRows: React.Dispatch<React.SetStateAction<Set<string>>>,
   handleSetSelectedPlotModelIds: React.Dispatch<
@@ -119,7 +118,6 @@ function useDoseCurvesSelectionHandlers(
     handleSetSelectedTableRows(labels);
   }, [
     doseCurveData,
-    deApi,
     handleSetSelectedTableRows,
     handleSetSelectedPlotModelIds,
   ]);
