@@ -1,8 +1,11 @@
+from typing import List, Tuple
+import typing
 from depmap.compound.legacy_utils import (
     does_legacy_dataset_exist_with_compound_experiment,
     get_compound_ids_by_experiment_id,
     get_compound_labels_by_experiment_label,
 )
+from depmap.compound.models import CompoundExperiment
 from depmap.dataset.models import DependencyDataset
 from tests.factories import (
     CompoundExperimentFactory,
@@ -39,15 +42,17 @@ def test_get_compound_ids_by_experiment_id(empty_db_mock_downloads):
 
     result = get_compound_ids_by_experiment_id(dataset_id)
     assert list(result.keys()) == [
-        compound_experiment_1A.entity_id,
-        compound_experiment_2.entity_id,
-    ]  # pyright: ignore
+        compound_experiment_1A.entity_id,  # pyright: ignore
+        compound_experiment_2.entity_id,  # pyright: ignore
+    ]
     assert (
-        result[compound_experiment_1A.entity_id] == compound1.compound_id
-    )  # pyright: ignore
+        result[compound_experiment_1A.entity_id]
+        == compound1.compound_id  # pyright: ignore
+    )
     assert (
-        result[compound_experiment_2.entity_id] == compound2.compound_id
-    )  # pyright: ignore
+        result[compound_experiment_2.entity_id]
+        == compound2.compound_id  # pyright: ignore
+    )
 
 
 def test_get_compound_labels_by_experiment_labels(empty_db_mock_downloads):
@@ -114,9 +119,15 @@ def test_does_legacy_dataset_exist_with_compound_experiment(empty_db_mock_downlo
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-    compound_exp_and_dataset = [
-        (compound_experiment_2, rep_dataset),
-        (compound_experiment_1A, oncref_dataset),
+    compound_exp_and_dataset: List[Tuple[CompoundExperiment, DependencyDataset]] = [
+        (
+            typing.cast(CompoundExperiment, compound_experiment_2),
+            typing.cast(DependencyDataset, rep_dataset),
+        ),
+        (
+            typing.cast(CompoundExperiment, compound_experiment_1A),
+            typing.cast(DependencyDataset, oncref_dataset),
+        ),
     ]
 
     # 1. Return True if the dataset exists with that compound experiment
@@ -133,9 +144,15 @@ def test_does_legacy_dataset_exist_with_compound_experiment(empty_db_mock_downlo
     )
     assert dataset_exists_w_compound is False
 
-    dataset_no_ce = [
-        (compound_experiment_3, rep_dataset),
-        (compound_experiment_3, oncref_dataset),
+    dataset_no_ce: List[Tuple[CompoundExperiment, DependencyDataset]] = [
+        (
+            typing.cast(CompoundExperiment, compound_experiment_3),
+            typing.cast(DependencyDataset, rep_dataset),
+        ),
+        (
+            typing.cast(CompoundExperiment, compound_experiment_3),
+            typing.cast(DependencyDataset, oncref_dataset),
+        ),
     ]
     # 3. The dataset exists, but the compound we are searching for is not in that dataset.
     dataset_exists_w_compound = does_legacy_dataset_exist_with_compound_experiment(
@@ -143,10 +160,17 @@ def test_does_legacy_dataset_exist_with_compound_experiment(empty_db_mock_downlo
     )
     assert dataset_exists_w_compound is False
 
-    ce_no_dataset = [
-        (compound_experiment_3, DependencyDataset()),
-        (compound_experiment_3, DependencyDataset()),
+    ce_no_dataset: List[Tuple[CompoundExperiment, DependencyDataset]] = [
+        (
+            typing.cast(CompoundExperiment, compound_experiment_3),
+            typing.cast(DependencyDataset, DependencyDatasetFactory()),
+        ),
+        (
+            typing.cast(CompoundExperiment, compound_experiment_3),
+            typing.cast(DependencyDataset, DependencyDatasetFactory()),
+        ),
     ]
+
     # 4. The dataset exists, but the compound we are searching for is not in that dataset.
     dataset_exists_w_compound = does_legacy_dataset_exist_with_compound_experiment(
         dataset_name=dataset_name.value, compound_exp_and_dataset=ce_no_dataset
