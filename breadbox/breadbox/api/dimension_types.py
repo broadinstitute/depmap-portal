@@ -629,7 +629,9 @@ def get_dimension_type_identifiers(
     show_only_dimensions_in_datasets: Annotated[bool, Query()] = False,
     limit: Annotated[Union[int, None], Query()] = None,
     db: SessionWithUser = Depends(get_db_with_user),
-    if_none_match: Optional[List[str]] = Header(None), # etag from the client's cache
+    if_none_match: Annotated[
+        Union[str, None], Header()
+    ] = None,  # etag from the client's cache
 ):
     """
     For the given dimension type and filters, get all given IDs and labels.
@@ -640,7 +642,7 @@ def get_dimension_type_identifiers(
     dim_type = type_crud.get_dimension_type(db, name)
     if dim_type is None:
         raise HTTPException(404, f"Dimension type {name} not found")
-    
+
     filtered_dataset_ids: Optional[list[str]] = None
     if data_type is not None or show_only_dimensions_in_datasets:
         # Get subset of datasets matching the filters provided that the user has access to
@@ -654,14 +656,18 @@ def get_dimension_type_identifiers(
         filtered_dataset_ids = [dataset.id for dataset in filtered_datasets]
 
         if show_only_dimensions_in_datasets:
-            # Remove the metadata dataset if it's in our list of datasets 
-            filtered_dataset_ids = [dataset_id for dataset_id in filtered_dataset_ids if dataset_id != dim_type.dataset_id]
-    
+            # Remove the metadata dataset if it's in our list of datasets
+            filtered_dataset_ids = [
+                dataset_id
+                for dataset_id in filtered_dataset_ids
+                if dataset_id != dim_type.dataset_id
+            ]
+
     # Create an ETag based on the dimension type and the filtered dataset IDs
     etag = hash_id_list(
-        [dim_type.name] +
-        ([dim_type.dataset_id] if dim_type.dataset_id else []) + 
-        (sorted(filtered_dataset_ids) if filtered_dataset_ids else [])
+        [dim_type.name]
+        + ([dim_type.dataset_id] if dim_type.dataset_id else [])
+        + (sorted(filtered_dataset_ids) if filtered_dataset_ids else [])
     )
 
     def _get_response_content() -> list[DimensionIdentifiers]:
@@ -672,9 +678,8 @@ def get_dimension_type_identifiers(
             DimensionIdentifiers(id=id, label=label)
             for id, label in sorted(dimension_ids_and_labels.items())
         ]
-        
-    return get_response_with_etag(etag, if_none_match, _get_response_content)
 
+    return get_response_with_etag(etag, if_none_match, _get_response_content)
 
 
 @router.patch(
