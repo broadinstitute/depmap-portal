@@ -68,8 +68,8 @@ css_cdns = [
     "//fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900",
     "//use.fontawesome.com/releases/v5.0.13/css/all.css",  # maxcdn.bootstrapcdn.com doesn't have this version
     "//cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/css/bootstrap.min.css",
-    "//cdn.datatables.net/1.10.16/css/dataTables.bootstrap.min.css",
-    "//cdn.datatables.net/select/1.2.5/css/select.bootstrap.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.16/css/dataTables.bootstrap.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/datatables.net-select-bs/1.2.5/select.bootstrap.min.css",
     "//cdnjs.cloudflare.com/ajax/libs/selectize.js/0.12.4/css/selectize.bootstrap3.min.css",
 ]
 
@@ -97,9 +97,9 @@ js_cdns = [
     "//cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js",
     "//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.8.1/bootstrap-slider.min.js",
     "//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js",
-    "//cdn.datatables.net/1.10.13/js/jquery.dataTables.min.js",
-    "//cdn.datatables.net/1.10.13/js/dataTables.bootstrap.min.js",
-    "//cdn.datatables.net/select/1.2.5/js/dataTables.select.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/js/jquery.dataTables.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/js/dataTables.bootstrap.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/datatables.net-select/1.2.5/dataTables.select.min.js",
     # lodash core build functions: https://github.com/lodash/lodash/wiki/Build-Differences
     "//cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js",
     "//cdn.plot.ly/plotly-1.47.4.min.js",  # upgrading plotly may break axis text, see https://plotly.com/javascript/reference/#layout-yaxis-title-text
