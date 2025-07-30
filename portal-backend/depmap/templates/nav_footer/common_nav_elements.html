@@ -40,7 +40,7 @@
               <li><a href="{{ url_for('tda.view_tda_summary') }}">Target Discovery</a></li>
             {% endif %}
             {% if config.ENABLED_FEATURES.context_explorer %}
-            <li><a href="{{ url_for('context_explorer.view_context_explorer') }}">Context Explorer <i class="alpha-tag"><b>Alpha</b></i></a></li>
+            <li><a href="{{ url_for('context_explorer.view_context_explorer') }}">Context Explorer</a></li>
           {% endif %}
             {% if config.ENABLED_FEATURES.compound_dashboard_app %}
               <li><a href="{{ url_for('compound_dashboard.view_compound_dashboard') }}">Compound Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
