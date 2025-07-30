@@ -3,11 +3,11 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
-import { fetchDatasetsByIndexType } from "src/data-explorer-2/deprecated-api";
 import DataTypes from "src/secretDataViewer/components/Stats/DataTypes";
 import FeatureTypes from "src/secretDataViewer/components/Stats/FeatureTypes";
 import Datasets from "src/secretDataViewer/components/Stats/Datasets";
 import { useContextFilteredDatasetIds } from "src/secretDataViewer/components/Stats/utils";
+import { fetchDatasetsByIndexType } from "src/secretDataViewer/deprecated-api";
 import styles from "src/secretDataViewer/styles/DataViewer.scss";
 
 interface Props {

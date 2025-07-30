@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { breadboxAPI } from "@depmap/api";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
-import { useDeprecatedDataExplorerApi } from "../../../contexts/DeprecatedDataExplorerApiContext";
+import { deprecatedDataExplorerAPI } from "../../../services/deprecatedDataExplorerAPI";
 import { getDimensionTypeLabel } from "../../../utils/misc";
 import { SearchDimenionsResponse } from "@depmap/types";
 import styles from "../../../styles/DimensionSelect.scss";
@@ -58,7 +58,6 @@ function doNotOverlap(a: number[], b: number[]) {
 }
 
 async function fetchSliceLabelsAndAliases(
-  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
   slice_type: string | null,
   dataType: string | null,
   dataset_id: string | null,
@@ -72,7 +71,9 @@ async function fetchSliceLabelsAndAliases(
     };
   }
 
-  const mapping = await api.fetchDimensionLabelsToDatasetsMapping(slice_type);
+  const mapping = await deprecatedDataExplorerAPI.fetchDimensionLabelsToDatasetsMapping(
+    slice_type
+  );
   const labels = Object.keys(mapping.dimension_labels);
   const reasons: Record<string, string> = {};
 
@@ -128,7 +129,6 @@ export function useSliceLabels(
   dataset_id: string | null,
   units: string | null
 ) {
-  const api = useDeprecatedDataExplorerApi();
   const [error, setError] = useState(false);
   const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
   const [aliases, setAliases] = useState<Aliases | null>(null);
@@ -144,7 +144,6 @@ export function useSliceLabels(
       if (slice_type) {
         try {
           const fetchedData = await fetchSliceLabelsAndAliases(
-            api,
             slice_type,
             dataType,
             dataset_id,
@@ -160,17 +159,11 @@ export function useSliceLabels(
         }
       }
     })();
-  }, [api, slice_type, dataType, dataset_id, units]);
+  }, [slice_type, dataType, dataset_id, units]);
 
   const waitForCachedValues = useCallback(() => {
-    return fetchSliceLabelsAndAliases(
-      api,
-      slice_type,
-      dataType,
-      dataset_id,
-      units
-    );
-  }, [api, slice_type, dataType, dataset_id, units]);
+    return fetchSliceLabelsAndAliases(slice_type, dataType, dataset_id, units);
+  }, [slice_type, dataType, dataset_id, units]);
 
   return {
     aliases,

@@ -105,7 +105,7 @@ def test_load_curve_parameters_csv(empty_db_mock_downloads):
     )
     cell_line = CellLineFactory(cell_line_name="CADOES1_BONE")
     empty_db_mock_downloads.session.flush()
-    load_curve_parameters_csv("sample_data/compound/ctd2_per_curve.csv")
+    load_curve_parameters_csv("sample_data/compound/ctd2_per_curve.csv", "dataset")
 
     curve = DoseResponseCurve.query.filter(
         DoseResponseCurve.compound_exp == cpd_exp,
@@ -115,6 +115,7 @@ def test_load_curve_parameters_csv(empty_db_mock_downloads):
     assert curve.slope == -1
     assert curve.upper_asymptote == 2
     assert curve.lower_asymptote == 1
+    assert curve.drc_dataset_label == "dataset"
 
 
 def test_load_and_access_viability(empty_db_mock_downloads):
@@ -169,8 +170,8 @@ def test_load_and_access_viability(empty_db_mock_downloads):
         "sample_data/compound/ctd2_dose_replicate_perturbations.csv",
         "sample_data/compound/ctd2_dose_replicate_cell_lines.csv",
         "sample_data/compound/ctd2_dose_replicate.hdf5",
-        DependencyDataset.DependencyEnum.Repurposing_secondary_dose,
-        DATASET_METADATA[DependencyDataset.DependencyEnum.Repurposing_secondary_dose],
+        DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
+        DATASET_METADATA[DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate],
         "placeholder taiga id",
         PUBLIC_ACCESS_GROUP,
     )

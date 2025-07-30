@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import { DimensionType } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
 // Mimics the behavior of the built-in Promise.withResolvers().
@@ -20,7 +20,6 @@ function withResolvers<T>() {
 }
 
 export default function useDimensionType() {
-  const api = useDataExplorerApi();
   const promiseWrapper = useRef(withResolvers<DimensionType>());
   const { dimension_type } = useContextBuilderState();
   const [dimensionType, setDimensionType] = useState<DimensionType | null>(
@@ -28,8 +27,8 @@ export default function useDimensionType() {
   );
 
   useEffect(() => {
-    api
-      .fetchDimensionTypes()
+    cached(breadboxAPI)
+      .getDimensionTypes()
       .then((types) => {
         const typeInfo = types.find((t) => t.name === dimension_type);
 
@@ -48,7 +47,7 @@ export default function useDimensionType() {
         promiseWrapper.current.reject(errorMsg);
         throw new Error(errorMsg);
       });
-  }, [api, dimension_type]);
+  }, [dimension_type]);
 
   return {
     dimensionType,

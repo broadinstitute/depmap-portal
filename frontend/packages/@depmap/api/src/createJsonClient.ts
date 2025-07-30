@@ -72,16 +72,20 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
 const makeGetJson = (urlPrefix: string) => <T>(
   url: string,
-  queryParameters?: Record<string, unknown>
+  queryParameters?: Record<string, unknown>,
+  options?: RequestInit
 ): Promise<T> => {
   const getJson = () => {
     let fullUrl = `${urlPrefix}${url}`;
 
-    if (queryParameters && Object.keys(queryParameters).length > 0) {
+    if (
+      queryParameters &&
+      Object.values(queryParameters).some((val) => val !== undefined)
+    ) {
       fullUrl += "?" + qs.stringify(queryParameters, { arrayFormat: "repeat" });
     }
 
-    return request<T>(fullUrl, { method: "GET" });
+    return request<T>(fullUrl, { method: "GET", ...options });
   };
 
   if (!useCache) {

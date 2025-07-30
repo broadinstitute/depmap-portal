@@ -28,6 +28,7 @@ from depmap.compound.models import (
     CompoundDoseReplicate,
     CompoundExperiment,
     DoseResponseCurve,
+    drc_compound_datasets,
 )
 from depmap.compound.views.executive import (
     get_order,
@@ -54,7 +55,9 @@ blueprint = Blueprint(
 # (e.g. more sane gene names), we don't want to do this.
 @blueprint.route("/<path:name>")
 def view_compound(name):
+
     compound = Compound.get_by_label(name, must=False)
+
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
         [alias for alias in aliases if alias.lower() != name.lower()]
@@ -67,11 +70,14 @@ def view_compound(name):
         get_predictive_models_for_compound(compound_experiment_and_datasets)
     ) != 0
 
-
     # Figure out membership in different datasets
-    compound_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
+    compound_datasets = data_access.get_all_datasets_containing_compound(
+        compound.compound_id
+    )
     has_datasets = len(compound_datasets) != 0
-    sensitivity_tab_compound_summary = get_sensitivity_tab_info(compound.entity_id, compound_datasets)
+    sensitivity_tab_compound_summary = get_sensitivity_tab_info(
+        compound.entity_id, compound_datasets
+    )
     has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
     if has_celfie:
         celfie_dataset_options = []
@@ -84,13 +90,23 @@ def view_compound(name):
                 )
             )
         celfie = format_celfie(
-            entity_label=name, 
-            dependency_datasets=celfie_dataset_options
+            entity_label=name, dependency_datasets=celfie_dataset_options
         )
+
+    dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
+        compound_label=compound.label
+    )
+    heatmap_dataset_options = format_heatmap_options_new_tab_if_available(
+        compound_label=compound.label
+    )
+
+    # If there are no no valid dataset options, hide the heatmap tab and tile
+    show_heatmap_tab = len(heatmap_dataset_options) > 0
 
     return render_template(
         "compounds/index.html",
         name=name,
+        compound_id=compound.compound_id,
         title=name,
         compound_aliases=compound_aliases,
         summary=sensitivity_tab_compound_summary,
@@ -101,19 +117,25 @@ def view_compound(name):
             "shared-portal-files", "Tools/Predictability_methodology.pdf"
         ),
         has_datasets=has_datasets,
-        order=get_order(has_predictability),
+        order=get_order(has_predictability, has_heatmap=show_heatmap_tab),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
+        # If len(dose_curve_options_new) is 0, hide the tab in the index.html
+        dose_curve_options_new=dose_curve_options_new,
+        heatmap_dataset_options=heatmap_dataset_options,
         has_celfie=has_celfie,
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
+        show_heatmap_tab=show_heatmap_tab,
     )
 
 
-def get_sensitivity_tab_info(compound_entity_id: int, compound_datasets: list[MatrixDataset]) -> Optional[dict[str, Any]]:
+def get_sensitivity_tab_info(
+    compound_entity_id: int, compound_datasets: list[MatrixDataset]
+) -> Optional[dict[str, Any]]:
     """Get a dictionary of values containing layout information for the sensitivity tab."""
     if len(compound_datasets) == 0:
         return None
-    
+
     # Define the options that will appear in the datasets dropdown
     dataset_options = []
     for dataset in compound_datasets:
@@ -186,6 +208,57 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     )
 
     return option
+
+
+def format_dose_curve_options_new_tab_if_available(compound_label: str):
+    """
+    Used for jinja rendering of the dose curve tab
+    """
+    show_new_dose_curves_tab = current_app.config[
+        "ENABLED_FEATURES"
+    ].new_compound_page_tabs
+
+    valid_options = []
+    if show_new_dose_curves_tab:
+        for drc_dataset in drc_compound_datasets:
+            if data_access.dataset_exists(
+                drc_dataset.auc_dataset_given_id
+            ) and data_access.valid_row(
+                drc_dataset.auc_dataset_given_id, compound_label
+            ):
+                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
+                if (
+                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
+                    or current_app.config[
+                        "ENABLED_FEATURES"
+                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
+                ):
+                    valid_options.append(drc_dataset)
+
+    return valid_options
+
+
+def format_heatmap_options_new_tab_if_available(compound_label: str):
+    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
+
+    valid_options = []
+    if show_heatmap_tab:
+        for drc_dataset in drc_compound_datasets:
+            if data_access.dataset_exists(
+                drc_dataset.auc_dataset_given_id
+            ) and data_access.valid_row(
+                drc_dataset.auc_dataset_given_id, compound_label
+            ):
+                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
+                if (
+                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
+                    or current_app.config[
+                        "ENABLED_FEATURES"
+                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
+                ):
+                    valid_options.append(drc_dataset)
+
+    return valid_options
 
 
 def is_url_valid(url):
@@ -348,7 +421,6 @@ def dose_table(dataset_name, xref_full):
               "9-2":0.1122418195,
               "cell_line_display_name":"HT29",
               "auc":0.8729583436,
-              "ic50":null  # ic50 may optionally not be present if there is no ic50 dataset
            },
            "ACH-000279":{
               ...
@@ -411,11 +483,6 @@ def dose_table(dataset_name, xref_full):
     if auc_data is not None:
         df = df.merge(auc_data, left_index=True, right_index=True, how="left")
 
-    #### IC50
-    ic50_data = get_ic50_data(dataset_name, compound_experiment)
-    if ic50_data is not None:
-        df = df.merge(ic50_data, left_index=True, right_index=True, how="left")
-
     df = df.T
     return df.to_json()
 
@@ -440,31 +507,6 @@ def get_auc_data(dataset_name, compound_experiment):
         )
         auc_data.index.name = "depmap_id"
         return auc_data
-    else:
-        return None
-
-
-def get_ic50_data(dataset_name, compound_experiment):
-    dataset_to_ic50 = {
-        DependencyEnum.GDSC1_dose_replicate.name: DependencyEnum.GDSC1_IC50,
-        DependencyEnum.GDSC2_dose_replicate.name: DependencyEnum.GDSC2_IC50,
-        DependencyEnum.Prism_oncology_IC50.name: DependencyEnum.Prism_oncology_IC50,
-    }
-    if dataset_name in dataset_to_ic50 and DependencyDataset.has_entity(
-        dataset_to_ic50[dataset_name], compound_experiment.entity_id
-    ):
-        ic50_dataset_name = dataset_to_ic50[dataset_name].name
-        ic50_dataset = Dataset.get_dataset_by_name(ic50_dataset_name)
-        assert ic50_dataset is not None
-        ic50_matrix = ic50_dataset.matrix
-        ic50_data = ic50_matrix.get_cell_line_values_and_depmap_ids(
-            compound_experiment.entity_id
-        )
-        ic50_data = pd.DataFrame.from_dict(
-            ic50_data.to_dict(), orient="index", columns=["ic50"]
-        )
-        ic50_data.index.name = "depmap_id"
-        return ic50_data
     else:
         return None
 
@@ -591,6 +633,3 @@ def get_predictability_files():
 def view_genomic_associations(compound_name: str):
     # This is broken and being replaced
     return render_template("entities/celfie_page.html", celfie=None)
-
-
-# %%

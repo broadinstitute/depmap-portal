@@ -1,18 +1,9 @@
 import React from "react";
 import {
   ContextBuilderV2,
-  DataExplorerApiProvider,
   saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
 import { DataExplorerContextV2 } from "@depmap/types";
-import {
-  evaluateContext,
-  fetchDatasets,
-  fetchDatasetIdentifiers,
-  fetchDimensionIdentifiers,
-  fetchDimensionTypes,
-  fetchVariableDomain,
-} from "src/pages/DataExplorer/api";
 
 interface Props {
   /* The context to use as a starting point. This can be as simple as
@@ -66,22 +57,13 @@ function ElaraStandaloneContextBuilder({
   };
 
   return (
-    <DataExplorerApiProvider
-      evaluateContext={evaluateContext}
-      fetchVariableDomain={fetchVariableDomain}
-      fetchDatasets={fetchDatasets}
-      fetchDimensionTypes={fetchDimensionTypes}
-      fetchDatasetIdentifiers={fetchDatasetIdentifiers}
-      fetchDimensionIdentifiers={fetchDimensionIdentifiers}
-    >
-      <ContextBuilderV2
-        show
-        context={context}
-        isExistingContext={Boolean(hash)}
-        onClickSave={onClickSave}
-        onHide={onHide}
-      />
-    </DataExplorerApiProvider>
+    <ContextBuilderV2
+      show
+      context={context}
+      isExistingContext={Boolean(hash)}
+      onClickSave={onClickSave}
+      onHide={onHide}
+    />
   );
 }
 

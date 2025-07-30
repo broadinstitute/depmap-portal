@@ -3,6 +3,7 @@ from functools import partial
 from operator import contains
 import re
 from typing import Any, Dict, List, Literal, Optional
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound
 from depmap.context_explorer.models import (
@@ -455,6 +456,9 @@ def get_context_plot_box_data(
         else selected_sig_box_plot_card_data.insignificant
     )
 
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
+
     return ContextPlotBoxData(
         significant_selection=significant_selection,
         insignificant_selection=insignificant_selection,
@@ -464,6 +468,7 @@ def get_context_plot_box_data(
         drug_dotted_line=drug_dotted_line,
         entity_label=node_entity_data.entity_label,
         entity_overview_page_label=node_entity_data.entity_overview_page_label,
+        dataset_units=dataset_units,
     )
 
 
@@ -501,6 +506,9 @@ def get_organized_contexts(
             key=lambda x: level_0_sort_order.index(x.level_0_code),
         )
 
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
+
     ordered_box_plot_data = ContextPlotBoxData(
         significant_selection=context_box_plot_data.significant_selection,
         insignificant_selection=context_box_plot_data.insignificant_selection,
@@ -510,6 +518,7 @@ def get_organized_contexts(
         drug_dotted_line=context_box_plot_data.drug_dotted_line,
         entity_label=context_box_plot_data.entity_label,
         entity_overview_page_label=context_box_plot_data.entity_overview_page_label,
+        dataset_units=dataset_units,
     )
 
     return ordered_box_plot_data
@@ -542,8 +551,8 @@ def get_compound_experiment_and_dataset_name_from_compound(compound: Compound):
     compound_experiment_and_datasets = [
         x
         for x in compound_experiment_and_datasets
-        if not x[1].is_ic50 and not x[1].is_dose_replicate
-    ]  # filter for non ic50 or dose replicate datasets"
+        if not x[1].is_dose_replicate
+    ]  # filter for non dose replicate datasets"
     best_ce_and_d = temp_get_compound_experiment_dataset(
         compound_experiment_and_datasets
     )
@@ -623,6 +632,9 @@ def get_data_to_show_if_no_contexts_significant(
         all_sig_models=[],
     )
 
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
+
     ordered_box_plot_data = ContextPlotBoxData(
         significant_selection=[],
         insignificant_selection=None,
@@ -632,6 +644,7 @@ def get_data_to_show_if_no_contexts_significant(
         drug_dotted_line=drug_dotted_line,
         entity_label=entity_label,
         entity_overview_page_label=entity_overview_page_label,
+        dataset_units=dataset_units,
     )
 
     tile_data = EnrichedLineagesTileData(

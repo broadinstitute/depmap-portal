@@ -113,14 +113,14 @@ def format_dep_dist_caption(
         return None
 
 
-def get_order(has_predictability: bool):
+def get_order(has_predictability: bool, has_heatmap: bool):
     # hardcoded approximate heights of the different cards.  These values are used for sorting cards into columns such that column heights are as close as they can be
     tile_large = 650
     tile_medium = 450
     tile_small = 300
     header_cards = {
         CompoundTileEnum.sensitivity.value: tile_medium,
-        CompoundTileEnum.selectivity.value: tile_small,
+        CompoundTileEnum.selectivity.value: tile_large,
         CompoundTileEnum.correlations.value: tile_small,
         CompoundTileEnum.availability.value: tile_small,
     }
@@ -129,6 +129,9 @@ def get_order(has_predictability: bool):
         CompoundTileEnum.celfie.value: tile_large,
         CompoundTileEnum.correlated_dependencies.value: tile_large,  # TBD: Actually we want to group with CompoundTileEnum.correlations
     }
+    if has_heatmap:
+        anywhere_cards[CompoundTileEnum.heatmap.value] = tile_medium
+
     bottom_left_card = (CompoundTileEnum.description.value, tile_large)
 
     num_cols = len(header_cards)
@@ -285,7 +288,7 @@ def format_availability_tile(compound: Compound):
     appears in. This does NOT load the full list of datasets, but instead
     returns a curated subset that users are most interested in. 
     For example, we want to show whether there is "Repurposing" data, but don't need
-    to list all of the oncref datasets (AUC, IC50, etc.).
+    to list all of the oncref datasets (AUC, etc.).
     """
     compound_id = compound.compound_id
     # First, load ALL portal datasets containing the compound (for performance reasons).

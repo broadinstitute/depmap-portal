@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import cx from "classnames";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import { dataExplorerAPI } from "../../services/dataExplorerAPI";
 import PlotConfigSelect from "../PlotConfigSelect";
 import styles from "../../styles/DimensionSelect.scss";
 
@@ -29,13 +29,11 @@ const useNormalizedValue = (
   index_type: string | null
 ) => {
   const [normalizedValue, setNormalizedValue] = useState<string | null>(value);
-  const api = useDeprecatedDataExplorerApi();
-
   useEffect(() => {
     setNormalizedValue(value);
 
     if (value && index_type) {
-      api.fetchDatasetsByIndexType().then((allDatasets) => {
+      dataExplorerAPI.fetchDatasetsByIndexType().then((allDatasets) => {
         allDatasets[index_type].forEach((dataset) => {
           if (dataset.given_id === value) {
             setNormalizedValue(dataset.id);
@@ -43,7 +41,7 @@ const useNormalizedValue = (
         });
       });
     }
-  }, [api, value, index_type]);
+  }, [value, index_type]);
 
   return normalizedValue;
 };

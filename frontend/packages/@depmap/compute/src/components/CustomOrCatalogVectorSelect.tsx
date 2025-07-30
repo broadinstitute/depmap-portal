@@ -5,9 +5,9 @@ import {
   convertDimensionToSliceId,
   DimensionSelect,
   DimensionSelectV2,
+  isBreadboxOnlyMode,
   isCompleteDimension,
 } from "@depmap/data-explorer-2";
-import { isElara } from "@depmap/globals";
 import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotConfigDimensionV2,
@@ -81,7 +81,7 @@ export class CustomOrCatalogVectorSelect extends React.Component<
       }
     };
 
-    if (isElara) {
+    if (isBreadboxOnlyMode) {
       return (
         <DimensionSelectV2
           mode="entity-only"
@@ -213,7 +213,7 @@ export class CustomOrCatalogVectorSelect extends React.Component<
       isLoading: true,
     });
 
-    const postCustomCsvOneRow = isElara
+    const postCustomCsvOneRow = isBreadboxOnlyMode
       ? breadboxAPI.postCustomCsvOneRow
       : legacyPortalAPI.postCustomCsvOneRow;
 

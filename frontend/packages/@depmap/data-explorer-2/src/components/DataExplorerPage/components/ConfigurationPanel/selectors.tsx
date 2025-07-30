@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Checkbox } from "react-bootstrap";
-import { isElara } from "@depmap/globals";
-import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
+import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
+import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import {
   capitalize,
   getDimensionTypeLabel,
@@ -60,8 +60,6 @@ export function PointsSelector({
   plot_type,
   onChange,
 }: any) {
-  const api = useDeprecatedDataExplorerApi();
-
   const [
     datasetsByIndexType,
     setDatasetsByIndexType,
@@ -70,13 +68,13 @@ export function PointsSelector({
   useEffect(() => {
     (async () => {
       try {
-        const data = await api.fetchDatasetsByIndexType();
+        const data = await dataExplorerAPI.fetchDatasetsByIndexType();
         setDatasetsByIndexType(data);
       } catch (e) {
         window.console.error(e);
       }
     })();
-  }, [api]);
+  }, []);
 
   const types = sortDimensionTypes(
     Object.keys(datasetsByIndexType || {})
@@ -144,9 +142,6 @@ export function ColorByTypeSelector({
   slice_type: string;
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
-  const api = useDataExplorerApi();
-  const deprecatedApi = useDeprecatedDataExplorerApi();
-
   const sliceTypeLabel = capitalize(getDimensionTypeLabel(slice_type));
   const [hasLegacyColorProperty, setHasLegacyColorProperty] = useState(false);
   const [hasMetadataDataset, setHasMetadataDataset] = useState(false);
@@ -157,25 +152,27 @@ export function ColorByTypeSelector({
 
   useEffect(() => {
     (async () => {
-      if (isElara) {
+      if (isBreadboxOnlyMode) {
         const {
           metadataDataset,
           otherTabularDatasets,
-        } = await fetchMetadataAndOtherTabularDatasets(api, slice_type, [
+        } = await fetchMetadataAndOtherTabularDatasets(slice_type, [
           "categorical",
         ]);
 
         setHasMetadataDataset(Boolean(metadataDataset));
         setHasSomeCategoricalTabularColumns(otherTabularDatasets.length > 0);
       } else {
-        const keyedSlices = await deprecatedApi.fetchMetadataSlices(slice_type);
+        const keyedSlices = await deprecatedDataExplorerAPI.fetchMetadataSlices(
+          slice_type
+        );
         const slices = Object.values(keyedSlices);
         setHasLegacyColorProperty(
           slices.some((slice) => !slice.isHighCardinality)
         );
       }
     })();
-  }, [api, deprecatedApi, slice_type]);
+  }, [slice_type]);
 
   const options: Partial<Record<ColorByValue, string>> = {
     raw_slice: sliceTypeLabel,
@@ -208,11 +205,13 @@ export function ColorByTypeSelector({
     );
   }
 
-  if (isElara && hasMetadataDataset) {
+  if (isBreadboxOnlyMode && hasMetadataDataset) {
+    // FIXME: add helpContent for this option
     options.metadata_column = `${sliceTypeLabel} Annotation`;
   }
 
-  if (isElara && hasSomeCategoricalTabularColumns) {
+  if (isBreadboxOnlyMode && hasSomeCategoricalTabularColumns) {
+    // FIXME: add helpContent for this option
     options.tabular_dataset = "Tabular Dataset";
   }
 
@@ -233,10 +232,7 @@ export function ColorByTypeSelector({
           <span>
             Color by
             {slice_type && (
-              <HelpTip
-                id="color-by-help"
-                customContent={isElara ? "TODO: Elara help" : helpContent}
-              />
+              <HelpTip id="color-by-help" customContent={helpContent} />
             )}
           </span>
         }

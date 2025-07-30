@@ -94,4 +94,4 @@ export type { SliceQuery } from "./src/SliceQuery";
 
 // predicates (these are functions, not types, but they help to narrow types)
 export { instanceOfErrorDetail } from "./src/ErrorDetail";
-export { isValidSliceQuery } from "./src/SliceQuery";
+export { isValidSliceQuery, areSliceQueriesEqual } from "./src/SliceQuery";

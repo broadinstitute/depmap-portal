@@ -3,7 +3,7 @@ import cx from "classnames";
 import { Button, Modal } from "react-bootstrap";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { DataExplorerContext } from "@depmap/types";
-import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import { isBreadboxOnlyMode } from "../../isBreadboxOnlyMode";
 import { fetchContext } from "../../utils/context-storage";
 import ContextBuilderModal from "../ContextBuilder/ContextBuilderModal";
 import useCellLineSelectorModal from "../ContextBuilder/CellLineSelector/useCellLineSelectorModal";
@@ -25,16 +25,13 @@ interface Props {
   onHide: () => void;
   showHelpText: boolean;
   initialContextType?: string;
-  useContextBuilderV2?: boolean;
 }
 
 function ContextManager({
   onHide,
   showHelpText,
   initialContextType = "depmap_model",
-  useContextBuilderV2 = false,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [showContextModal, setShowContextModal] = useState(false);
   const [contextType, setContextType] = useState(initialContextType);
   const [, forceRender] = useState({});
@@ -118,10 +115,7 @@ function ContextManager({
     let context;
 
     if (isLegacyList) {
-      [hash, context] = await persistLegacyListAsContext(
-        api,
-        hashOrLegacyListName
-      );
+      [hash, context] = await persistLegacyListAsContext(hashOrLegacyListName);
     } else {
       hash = hashOrLegacyListName;
       context = await fetchContext(hash);
@@ -137,7 +131,7 @@ function ContextManager({
     let context;
 
     if (isLegacyList) {
-      [, context] = await persistLegacyListAsContext(api, hashOrLegacyListName);
+      [, context] = await persistLegacyListAsContext(hashOrLegacyListName);
     } else {
       context = await fetchContext(hashOrLegacyListName);
     }
@@ -203,7 +197,7 @@ function ContextManager({
       });
   };
 
-  const ContextBuilder = useContextBuilderV2
+  const ContextBuilder = isBreadboxOnlyMode
     ? (ContextBuilderV2 as any)
     : ContextBuilderModal;
 
@@ -237,7 +231,7 @@ function ContextManager({
           <ContextTypeSelect
             value={contextType}
             onChange={(value: string) => setContextType(value)}
-            useContextBuilderV2={useContextBuilderV2}
+            useContextBuilderV2={isBreadboxOnlyMode}
           />
           <div className={styles.ContextList}>
             <div
@@ -282,14 +276,16 @@ function ContextManager({
                   openContextEditor(null, { context_type: contextType });
                 }}
               >
-                Create new +
+                <i className="glyphicon glyphicon-plus" />
+                <span> Create new</span>
               </Button>
-              {contextType === "depmap_model" && !useContextBuilderV2 && (
+              {contextType === "depmap_model" && !isBreadboxOnlyMode && (
                 <Button
                   style={{ marginLeft: 10 }}
                   onClick={handleClickCreateWithCellLineSelector}
                 >
-                  Create new with Cell Line Selector +
+                  <i className="glyphicon glyphicon-plus" />
+                  <span> Create new with Cell Line Selector</span>
                 </Button>
               )}
             </div>

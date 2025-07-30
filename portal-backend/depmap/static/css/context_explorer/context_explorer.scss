@@ -25,6 +25,9 @@
   .panel-group > .panel {
     margin-bottom: 5px !important;
   }
+  .panel-default > .panel-heading {
+    background-color: transparent !important;
+  }
 }
 
 .btn.btn-link {

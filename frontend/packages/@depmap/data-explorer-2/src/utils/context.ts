@@ -1,10 +1,11 @@
+import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { isElara } from "@depmap/globals";
 import {
   DataExplorerContext,
   DataExplorerContextV2,
   StoredContexts,
 } from "@depmap/types";
-import { LocalStorageListStore } from "@depmap/cell-line-selector";
+import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 import { persistContext } from "./context-storage";
 
 export const isContextAll = (
@@ -29,7 +30,18 @@ export function isNegatedContext(
 }
 
 export const userContextStorageKey = () => {
-  return isElara ? "elara_contexts" : "user_contexts";
+  if (isElara) {
+    return "elara_contexts";
+  }
+
+  // FIXME: Eventually all contexts should be stored together. But we don't
+  // have a mechanism for converting between the legacy and modern format yet
+  // so we'll keep them separated for now.
+  if (isBreadboxOnlyMode) {
+    return "breadbox_contexts";
+  }
+
+  return "user_contexts";
 };
 
 export function loadContextsFromLocalStorage(context_type: string) {

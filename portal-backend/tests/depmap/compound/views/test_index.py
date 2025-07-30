@@ -1,3 +1,6 @@
+from depmap.data_access import breadbox_dao
+from depmap.interactive import interactive_utils
+from depmap.settings.settings import TestConfig
 import pandas as pd
 import pytest
 from flask import url_for
@@ -5,8 +8,10 @@ from json import loads as json_loads
 
 from depmap import data_access
 from depmap.dataset.models import DependencyDataset
-from depmap.compound.models import Compound
+from depmap.compound.models import Compound, DRCCompoundDataset, drc_compound_datasets
 from depmap.compound.views.index import (
+    format_dose_curve_options_new_tab_if_available,
+    format_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -27,10 +32,25 @@ from tests.factories import (
     PredictiveModelFactory,
 )
 from tests.utilities import interactive_test_utils
+from tests.utilities.override_fixture import override
 
 
-def test_render_view_compound(populated_db):
+def test_render_view_compound(populated_db, monkeypatch):
     with populated_db.app.test_client() as c:
+
+        def mock_valid_row(a, b):
+            return True
+
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
             assert r.status_code == 200, "{} with response code {}".format(
@@ -45,7 +65,7 @@ def test_format_compound_summary(empty_db_mock_downloads):
         the label of summary options includes the compound experiment label
     E.g. if first_dep_enum_name was a dataset instead of an enum, format_summary would error
     """
-    compound: Compound = CompoundFactory() # pyright: ignore
+    compound: Compound = CompoundFactory()  # pyright: ignore
 
     # two compound experiments just so that get_compound_experiment_datasets_with_compound returns a list
     compound_exp_1 = CompoundExperimentFactory(compound=compound)
@@ -53,14 +73,15 @@ def test_format_compound_summary(empty_db_mock_downloads):
 
     matrix = MatrixFactory(entities=[compound_exp_1, compound_exp_2])
     dataset = DependencyDatasetFactory(
-        matrix=matrix, name=DependencyDataset.DependencyEnum.GDSC1_IC50
+        matrix=matrix, name=DependencyDataset.DependencyEnum.GDSC1_AUC
     )  # no dose dataset
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
-
     datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
-    summary = get_sensitivity_tab_info(compound_entity_id=compound.entity_id, compound_datasets=datasets)
+    summary = get_sensitivity_tab_info(
+        compound_entity_id=compound.entity_id, compound_datasets=datasets
+    )
 
     # Even though there are two compound experiments, the dataset should appear once in the result
     expected_option_labels = {dataset.display_name}
@@ -226,17 +247,13 @@ def test_format_dose_curve_multiple_curves(empty_db_mock_downloads):
     assert len(curve_params) == 2
 
 
-@pytest.mark.parametrize(
-    "has_ic50_dataset, has_ic50_row", [(True, True), (True, False), (False, False),],
-)
-def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row):
+def test_dose_table(empty_db_mock_downloads, app):
     # define inputs to factories and function calls
     cell_line_name = "CADOES1_BONE"
     cell_line_display_name = "CADOES1"
     xref_type = "CTRP"
     xref = "606135"
     xref_full = xref_type + ":" + xref
-    ic50_value = 0.4
 
     model = DepmapModelFactory(
         cell_line_name=cell_line_name, stripped_cell_line_name=cell_line_display_name
@@ -280,24 +297,6 @@ def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row
             using_depmap_model_table=True,
         ),
     )
-
-    if has_ic50_dataset:
-        if has_ic50_row:
-            matrix = MatrixFactory(
-                entities=[cpd_exp],
-                cell_lines=[model],
-                data=pd.DataFrame(
-                    {model.cell_line_name: [ic50_value]},
-                    index=["cpd_exp"]
-                    # I believe this index doesn't do anything? has to do with order that entities=[] is passed in?
-                ),
-                using_depmap_model_table=True,
-            )
-        else:
-            matrix = MatrixFactory()
-        ic50_dataset = DependencyDatasetFactory(
-            name=DependencyDataset.DependencyEnum.GDSC1_IC50, matrix=matrix
-        )
 
     auc_dataset = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.GDSC1_AUC,
@@ -358,9 +357,6 @@ def test_dose_table(empty_db_mock_downloads, app, has_ic50_dataset, has_ic50_row
                 "auc": 0.5,
             }
         }
-
-        if has_ic50_dataset and has_ic50_row:
-            expected[model.model_id]["ic50"] = ic50_value
 
         assert response == expected
 
@@ -460,3 +456,127 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         r_no_predictability_table_json = r_no_predictability_table.get_json()
         assert r_no_predictability_table.status_code == 200
         assert len(r_no_predictability_table_json) == 0
+
+
+def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
+    app, monkeypatch
+):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert isinstance(result, list)
+
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
+        assert len(result) >= 1
+        matches = [
+            x
+            for x in result
+            if x
+            == DRCCompoundDataset(
+                display_name="PRISM OncRef",
+                viability_dataset_given_id="Prism_oncology_viability",
+                replicate_dataset="Prism_oncology_dose_replicate",
+                auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+                drc_dataset_label="Prism_oncology_per_curve",
+            )
+        ]
+        assert len(matches) == 1
+
+
+def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        assert len(result) >= 1
+        matches = [
+            x
+            for x in result
+            if x
+            == DRCCompoundDataset(
+                display_name="PRISM OncRef",
+                viability_dataset_given_id="Prism_oncology_viability",
+                replicate_dataset="Prism_oncology_dose_replicate",
+                auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+                drc_dataset_label="Prism_oncology_per_curve",
+            )
+        ]
+        assert len(matches) == 1
+
+
+def config(request):
+    class TestFeatureFlags:
+        def new_compound_page_tabs(self):
+            return True
+
+        def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
+            return True
+
+    class TestVersionConfig(TestConfig):
+        ENABLED_FEATURES = TestFeatureFlags
+
+    return TestVersionConfig
+
+
+@override(config=config)
+def test_dose_curve_options_all_datasets_available(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert isinstance(result, list)
+        assert result == drc_compound_datasets
+
+
+def test_format_dose_curve_options_new_tab_if_available_false(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        assert result == []
+
+
+def test_format_heatmap_options_new_tab_if_available_false(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        assert result == []

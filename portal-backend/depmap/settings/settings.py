@@ -100,6 +100,14 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
+    def new_compound_page_tabs(self):
+        return self.is_prerelease_env()
+
+    @property
+    def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
+        return True
+
+    @property
     def data_page(self):
         return True
 
@@ -188,6 +196,10 @@ class FeatureFlags:
     @property
     def show_peddep_landing_page(self):
         return self.is_public()
+
+    @property
+    def data_explorer_2_experimental_settings(self):
+        return self.is_skyros()
 
 
 def make_log_config(log_dir):

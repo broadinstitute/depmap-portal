@@ -14,14 +14,24 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
-import { DataExplorerContext } from "@depmap/types";
+
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  SliceQuery,
+} from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import { initializeDevContexts } from "@depmap/data-explorer-2";
+import {
+  initializeDevContexts,
+  isBreadboxOnlyMode,
+} from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
+import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
+import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -44,6 +54,22 @@ const DoseResponseTab = React.lazy(
     import(
       /* webpackChunkName: "DoseResponseTab" */
       "src/compound/components/DoseResponseTab"
+    )
+);
+
+const DoseCurvesTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "DoseCurvesTab" */
+      "src/compound/doseCurvesTab/DoseCurvesTab"
+    )
+);
+
+const HeatmapTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "HeatmapTab" */
+      "src/compound/heatmapTab/HeatmapTab"
     )
 );
 
@@ -146,7 +172,10 @@ export function launchCellLineSelectorModal() {
   });
 }
 
-export function editContext(context: DataExplorerContext, hash: string) {
+export function editContext(
+  context: DataExplorerContext | DataExplorerContextV2,
+  hash: string
+) {
   const container = document.getElementById("cell_line_selector_modal");
   const unmount = () =>
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
@@ -165,6 +194,13 @@ export function saveNewContext(
   onHide?: () => void,
   onSave?: (context: DataExplorerContext, hash: string) => void
 ) {
+  if (isBreadboxOnlyMode) {
+    // FIXME: We need to convert the context and
+    // make  sure it opens in ContextBuilderV2.
+    window.alert("Error: context is in legacy format.");
+    return;
+  }
+
   const container = document.getElementById("modal-container");
   const unmount = () =>
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
@@ -202,6 +238,22 @@ export function initEnrichmentTile(
   );
 }
 
+export function initHeatmapTile(
+  elementId: string,
+  compoundId: string,
+  compoundName: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTileContainer
+        compoundId={compoundId}
+        compoundName={compoundName}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
 export function initCorrelatedDependenciesTile(
   elementId: string,
   entityLabel: string
@@ -209,6 +261,18 @@ export function initCorrelatedDependenciesTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelatedDependenciesTile entityLabel={entityLabel} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initStructureAndDetailTile(
+  elementId: string,
+  compoundId: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <StructureAndDetailTile compoundId={compoundId} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -256,6 +320,47 @@ export function initCorrelationAnalysisTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis compound={compoundName} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+// New dose curves tab
+export function initDoseCurvesTab(
+  elementId: string,
+  name: string,
+  compoundId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <DoseCurvesTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+        compoundId={compoundId}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initHeatmapTab(
+  elementId: string,
+  name: string,
+  compoundId: string,
+  datasetOptions: Array<any>,
+  units: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <HeatmapTab
+        datasetOptions={datasetOptions}
+        doseUnits={units}
+        compoundName={name}
+        compoundId={compoundId}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

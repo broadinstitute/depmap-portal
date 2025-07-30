@@ -1,9 +1,15 @@
 from typing import List, Optional, Literal
 
+from breadbox.schemas.custom_http_exception import FileValidationError
+from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
 import h5py
 import numpy as np
 import pandas as pd
 from pandas.core.algorithms import isin
+
+from breadbox.io.data_validation import DataFrameWrapper, PandasDataFrameWrapper
+import pyarrow as pa
+from pyarrow.parquet import ParquetFile
 
 # This is the Object dtype with metadata for HDF5 to parse it as (variable-length)
 # string. The metadata is not used for checking equality.
@@ -21,43 +27,93 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
     )
 
 
-def write_hdf5_file(path: str, df: pd.DataFrame, dtype: Literal["float", "str"]):
+def write_hdf5_file(
+    path: str,
+    df_wrapper: DataFrameWrapper,
+    dtype: Literal["float", "str"],
+    batch_size: int = 5000,  # Adjust batch size as needed
+):
     f = h5py.File(path, mode="w")
     try:
-        # Get the row,col positions where df values are not null
-        rows_idx, cols_idx = np.where(df.notnull())
-        total_nulls = df.size - len(rows_idx)
-        # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
-        if total_nulls / df.size > 0.6:
+        if isinstance(df_wrapper, PandasDataFrameWrapper):
+            df = df_wrapper.get_df()
+            # Convert to float type so hdf5 can store it as float64
+            if dtype == "float":
+                df = df.astype(np.float64)
+            # If the DataFrame is sparse, we need to store only
+            if df_wrapper.is_sparse():
+                dataset = f.create_dataset(
+                    "data",
+                    shape=df.shape,
+                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    chunks=(
+                        1,
+                        1,
+                    ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
+                )
+                # only insert nonnull values into hdf5 at given positions
+                for row_idx, col_idx in df_wrapper.nonnull_indices:
+                    dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
+            else:
+                if dtype == "str":
+                    # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
+                    df = df.fillna("")
+                # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
+                dataset = f.create_dataset(
+                    "data",
+                    shape=df.shape,
+                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    data=df.values,
+                )
+        else:
+            assert isinstance(df_wrapper, ParquetDataFrameWrapper)
+            # For ParquetDataFrameWrapper
+            # NOTE: Our number of columns are usually much larger than rows so we batch by columns to avoid memory issues
+            # TODO: If hdf5 file size becomes an issue, we can consider using compression or chunking
+            cols = df_wrapper.get_column_names()
+            rows = df_wrapper.get_index_names()
+            shape = (len(rows), len(cols))
             dataset = f.create_dataset(
                 "data",
-                shape=df.shape,
+                shape=shape,
                 dtype=h5py.string_dtype() if dtype == "str" else np.float64,
-                chunks=(
-                    1,
-                    1,
-                ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
-            )
-            # only insert nonnull values into hdf5 at given positions
-            for row_idx, col_idx in zip(rows_idx, cols_idx):
-                dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
-        else:
-            if dtype == "str":
-                # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
-                df = df.fillna("")
-
-            # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
-            f.create_dataset(
-                "data",
-                shape=df.shape,
-                dtype=h5py.string_dtype() if dtype == "str" else np.float64,
-                data=df.values,
             )
 
-        create_index_dataset(f, "features", df.columns)
-        create_index_dataset(f, "samples", df.index)
+            for i in range(0, len(cols), batch_size):
+                # Find the correct column slice to write
+                end_col = i + batch_size
+
+                col_batch = cols[i:end_col]
+
+                # Read the chunk of data from the Parquet file
+                chunk_df = df_wrapper.read_columns(col_batch)
+
+                if dtype == "str":
+                    # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
+                    chunk_df = chunk_df.fillna("")
+                else:
+                    chunk_df = chunk_df.astype("float")
+
+                values = chunk_df.values
+                try:
+                    dataset[:, i:end_col] = values
+                except Exception as e:
+                    raise FileValidationError(
+                        f"Failed to update {i}:{end_col} of hdf5 file {path} with {values}"
+                    ) from e
+
+        create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
+        create_index_dataset(f, "samples", pd.Index(df_wrapper.get_index_names()))
     finally:
         f.close()
+
+
+# def batched_columns(column_names: List[str], batch_size: int = 5000):
+#     """
+#     Returns a generator that yields batches of column names to avoid memory issues with large datasets (e.g. >200k columns).
+#     """
+#     for i in range(0, len(column_names), batch_size):
+#         yield column_names[i : i + batch_size]
 
 
 def read_hdf5_file(
@@ -89,7 +145,9 @@ def read_hdf5_file(
         feature_ids = [x.decode("utf8") for x in feature_ids]
         sample_ids = [x.decode("utf8") for x in sample_ids]
 
-        df = pd.DataFrame(data=data, columns=feature_ids, index=sample_ids)
+        df = pd.DataFrame(
+            data=data, columns=pd.Index(feature_ids), index=pd.Index(sample_ids)
+        )
 
         # Must convert NaNs to None bc NaNs not json serializable
         if not keep_nans:

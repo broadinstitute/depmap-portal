@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+import pandas as pd
 
 from breadbox.db.session import SessionWithUser
 from ..config import Settings, get_settings
@@ -16,5 +17,8 @@ def get_cell_line_selector_lines(
     settings: Settings = Depends(get_settings),
 ):
     df = partial_crud.get_cell_line_selector_lines(db)
-    # df = df.replace({np.nan: None})
+    assert isinstance(
+        df, pd.DataFrame
+    ), "Expected DataFrame from get_cell_line_selector_lines"
+    df = df.replace({"nan": None})  # SQLALchemy 2.0 returns np.nan as 'nan'
     return {"cols": df.columns.tolist(), "data": df.values.tolist()}

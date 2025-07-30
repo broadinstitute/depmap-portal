@@ -1,6 +1,6 @@
 import csv
 from collections import defaultdict
-from depmap.compound.models import Compound, CompoundExperiment, CompoundDose
+from depmap.compound.models import Compound, CompoundExperiment
 from depmap.entity.models import EntityAlias
 from depmap.gene.models import Gene
 from depmap.extensions import db
@@ -115,57 +115,3 @@ def get_target_genes(gene_name_of_targets):
         else:
             genes.append(gene)
     return genes
-
-
-def load_repurposing_compound_doses(hdf5_file_with_dose_rows):
-    """
-    Specifically assuming the format of the repurposing dose data
-    Expected format is <broad id>::<dose>::<screen id> or
-                       <broad id>::<dose>::<screen id>::PROS001_PR500
-    e.g. BRD-A57886255-001-01-1::0.15625::HTS002
-    """
-    doses = hdf5_utils.get_row_index(
-        source_dir=".", file_path=hdf5_file_with_dose_rows
-    )  # the function just wants the path split
-    input_list = []
-    for dose in doses:
-        broad_id, dose = dose.split("::")[:2]
-        input_list.append((broad_id, dose))
-
-    load_compound_doses(input_list, "BRD")
-
-
-def load_compound_doses(input_list, xref_type):
-    """
-    :param input_list: list of (xref, dose) tuples
-    :return:
-    """
-    num_missing_experiments = 0
-
-    for xref, dose in input_list:
-        compound_experiment = CompoundExperiment.get_by_xref(
-            xref, xref_type, must=False
-        )
-        if not compound_experiment:
-            log_data_issue(
-                "CompoundDose",
-                "CompoundExperiment for {}:{} not found".format(xref_type, xref),
-            )
-            num_missing_experiments += 1
-            pass
-        else:
-            label = CompoundDose.format_label(compound_experiment.label, dose)
-            db.session.add(
-                CompoundDose(
-                    label=label, compound_experiment=compound_experiment, dose=dose
-                )
-            )
-
-    num_loaded = len(input_list) - num_missing_experiments
-    assert num_loaded > num_missing_experiments
-
-    print(
-        "Loaded {} compound doses, skipped {} due to missing compound experiments".format(
-            num_loaded, num_missing_experiments
-        )
-    )

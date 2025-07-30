@@ -1,13 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
+import type { BreadboxApiResponse } from "@depmap/api";
 import { DataExplorerPlotConfigDimension } from "@depmap/types";
 import {
   convertDimensionToSliceQuery,
   isCompleteDimension,
 } from "../../../utils/misc";
-import {
-  DataExplorerApiResponse,
-  useDataExplorerApi,
-} from "../../../contexts/DataExplorerApiContext";
 
 interface Props {
   dimension: DataExplorerPlotConfigDimension | null;
@@ -19,7 +17,7 @@ interface Props {
 
 type DatasetLookup = Record<
   string,
-  DataExplorerApiResponse["fetchAssociations"]["associated_datasets"][number]
+  BreadboxApiResponse["fetchAssociations"]["associated_datasets"][number]
 >;
 
 function usePrecomputedAssocationData({
@@ -29,13 +27,12 @@ function usePrecomputedAssocationData({
   sortDirection,
   sortColumn,
 }: Props) {
-  const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [associatedDimensions, setAssociatedDimensions] = useState<
-    DataExplorerApiResponse["fetchAssociations"]["associated_dimensions"]
+    BreadboxApiResponse["fetchAssociations"]["associated_dimensions"]
   >([]);
   const [associatedDatasets, setAssociatedDatasets] = useState<
-    DataExplorerApiResponse["fetchAssociations"]["associated_datasets"]
+    BreadboxApiResponse["fetchAssociations"]["associated_datasets"]
   >([]);
   const [datasetLookup, setDatasetLookup] = useState<DatasetLookup>({});
   const [datasetName, setDatasetName] = useState("");
@@ -46,8 +43,6 @@ function usePrecomputedAssocationData({
   const stringifedDimension = JSON.stringify(dimension);
 
   useEffect(() => {
-    setIsLoading(true);
-
     const parsed = JSON.parse(stringifedDimension);
 
     if (!isCompleteDimension(parsed)) {
@@ -55,16 +50,19 @@ function usePrecomputedAssocationData({
       return;
     }
 
-    const sliceQuery = convertDimensionToSliceQuery(parsed);
+    (async () => {
+      setIsLoading(true);
 
-    if (!sliceQuery) {
-      setError(true);
-      return;
-    }
+      try {
+        const sliceQuery = await convertDimensionToSliceQuery(parsed);
 
-    api
-      .fetchAssociations(sliceQuery)
-      .then((rawData) => {
+        if (!sliceQuery) {
+          setIsLoading(false);
+          setError(true);
+          return;
+        }
+
+        const rawData = await cached(breadboxAPI).fetchAssociations(sliceQuery);
         const lookup: DatasetLookup = {};
 
         rawData.associated_datasets.forEach((datasetInfo) => {
@@ -76,14 +74,15 @@ function usePrecomputedAssocationData({
         setDatasetLookup(lookup);
         setDatasetName(rawData.dataset_name);
         setDimensionLabel(rawData.dimension_label);
-        setIsLoading(false);
         setError(false);
-      })
-      .catch((e) => {
+      } catch (e) {
         window.console.error(e);
         setError(true);
-      });
-  }, [api, stringifedDimension]);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [stringifedDimension]);
 
   const sortedFilteredAssociatedDimensions = useMemo(() => {
     return associatedDimensions

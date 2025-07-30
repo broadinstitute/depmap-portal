@@ -44,7 +44,6 @@ from depmap.antibody.models import Antibody
 from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.compound.models import (
     CompoundDoseReplicate,
-    CompoundDose,
     CompoundExperiment,
     Compound,
     DoseResponseCurve,
@@ -265,21 +264,6 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
 
 
-class CompoundDoseFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = CompoundDose
-
-        # Use the not-so-global scoped_session
-        # Warning: DO NOT USE common.Session()!
-        sqlalchemy_session = _db.session
-
-    type = "compound_dose"
-    label = factory.Sequence(lambda number: "BRD:{} dose".format(number))
-
-    compound_experiment = factory.LazyAttribute(lambda o: CompoundExperimentFactory())
-    dose = factory.Sequence(lambda number: number)
-
-
 class CompoundDoseReplicateFactory(SQLAlchemyModelFactory):
     class Meta:
         model = CompoundDoseReplicate
@@ -311,6 +295,7 @@ class DoseResponseCurveFactory(SQLAlchemyModelFactory):
     slope = 0
     upper_asymptote = 0
     lower_asymptote = 0
+    drc_dataset_label = "GDSC1"
 
 
 class GeneFactory(SQLAlchemyModelFactory):
@@ -687,17 +672,13 @@ class DependencyDatasetFactory(DatasetFactory):
             lambda: "gene",
             {
                 DependencyDataset.DependencyEnum.GDSC1_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.GDSC1_IC50: "compound_experiment",
                 DependencyDataset.DependencyEnum.GDSC2_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.GDSC2_IC50: "compound_experiment",
                 DependencyDataset.DependencyEnum.CTRP_AUC: "compound_experiment",
                 DependencyDataset.DependencyEnum.Rep_all_single_pt: "compound_experiment",
                 DependencyDataset.DependencyEnum.Repurposing_secondary_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.Repurposing_secondary_dose: "compound_dose",
                 DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate: "compound_dose_replicate",
                 DependencyDataset.DependencyEnum.CTRP_dose_replicate: "compound_dose_replicate",
                 DependencyDataset.DependencyEnum.Prism_oncology_AUC: "compound_experiment",
-                DependencyDataset.DependencyEnum.Prism_oncology_IC50: "compound_experiment",
                 DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate: "compound_dose_replicate",
             },
         )[o.name]

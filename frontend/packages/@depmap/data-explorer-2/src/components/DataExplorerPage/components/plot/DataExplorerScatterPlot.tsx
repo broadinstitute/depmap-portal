@@ -1,12 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { enabledFeatures, isElara } from "@depmap/globals";
+import { enabledFeatures } from "@depmap/globals";
 import {
   DataExplorerContext,
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import SpinnerOverlay from "./SpinnerOverlay";
@@ -58,7 +58,6 @@ function DataExplorerScatterPlot({
   onClickVisualizeSelected,
   plotConfig,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [selectedLabels, setSelectedLabels] = useState<Set<string> | null>(
     null
@@ -409,14 +408,13 @@ function DataExplorerScatterPlot({
                 setSelectedLabels(null);
               }}
               onClickSetSelectionFromContext={
-                // TODO: Add support for this in Elara.
-                isElara
-                  ? undefined
+                // FIXME
+                isBreadboxOnlyMode
+                  ? () => {
+                      window.alert("Not currently supported with Breadbox!");
+                    }
                   : async () => {
-                      const labels = await promptForSelectionFromContext(
-                        api,
-                        data!
-                      );
+                      const labels = await promptForSelectionFromContext(data!);
 
                       if (labels === null) {
                         return;

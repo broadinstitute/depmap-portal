@@ -271,13 +271,6 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
       : [];
     columns.sort((a, b) => parseFloat(a.key) - parseFloat(b.key));
     const table = this.state.doseResponseTable;
-    if (table && "ic50" in table[0]) {
-      columns.unshift({
-        key: "ic50",
-        type: "continuous",
-        displayName: "IC50",
-      });
-    }
     columns.unshift({
       key: "auc",
       type: "continuous",

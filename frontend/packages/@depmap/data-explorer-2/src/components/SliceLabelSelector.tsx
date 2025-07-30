@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import PlotConfigSelect from "./PlotConfigSelect";
-import { useDeprecatedDataExplorerApi } from "../contexts/DeprecatedDataExplorerApiContext";
+import { deprecatedDataExplorerAPI } from "../services/deprecatedDataExplorerAPI";
 import { urlLibEncode } from "../utils/misc";
+import PlotConfigSelect from "./PlotConfigSelect";
 
 interface Props {
   value: string | null;
@@ -20,7 +20,6 @@ function SliceLabelSelector({
   isClearable,
   menuPortalTarget,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [error, setError] = useState(false);
   const [options, setOptions] = useState<Array<{
     label: string;
@@ -33,7 +32,10 @@ function SliceLabelSelector({
       setError(false);
 
       try {
-        const data = await api.fetchDimensionLabelsOfDataset(null, dataset_id);
+        const data = await deprecatedDataExplorerAPI.fetchDimensionLabelsOfDataset(
+          null,
+          dataset_id
+        );
         const opts = data.labels.map((label) => ({ label, value: label }));
         setOptions(opts);
       } catch (e) {
@@ -41,7 +43,7 @@ function SliceLabelSelector({
         setError(true);
       }
     })();
-  }, [api, dataset_id]);
+  }, [dataset_id]);
 
   const isLoading = options === null && !error;
   let placeholder = `Choose ${sliceTypeLabel}…`;

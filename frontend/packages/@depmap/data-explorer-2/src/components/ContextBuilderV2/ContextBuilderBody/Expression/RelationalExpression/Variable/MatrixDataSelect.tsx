@@ -36,9 +36,9 @@ function MatrixDataSelect({ varName }: Props) {
       onChange={async (nextDimension) => {
         const dimensionType = await getDimensionTypeAsync();
 
-        const identifier = nextDimension?.context
-          ? (nextDimension.context.expr as { "==": [unknown, string] })["=="][1]
-          : undefined;
+        const expr = nextDimension?.context?.expr;
+        type EqExpr = { "==": [unknown, string] };
+        const identifier = expr ? (expr as EqExpr)["=="][1] : undefined;
 
         const identifier_type =
           dimensionType.axis === "sample" ? "feature_id" : "sample_id";

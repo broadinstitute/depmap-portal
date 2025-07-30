@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { pluralize } from "../../../../utils/misc";
 import { Expr } from "../../utils/expressionUtils";
 import useDimensionType from "../../hooks/useDimensionType";
-import useNumMatches from "../../hooks/useNumMatches";
+import useMatches from "../../hooks/useMatches";
 
 interface Props {
   expr: Expr;
   className?: string;
   showNumCandidates?: boolean;
+  isGroupTotal?: boolean;
 }
 
 const LoadingAnimation = () => {
@@ -28,11 +29,10 @@ function NumberOfMatches({
   expr,
   className = "",
   showNumCandidates = false,
+  isGroupTotal = false,
 }: Props) {
   const { dimensionType } = useDimensionType();
-  const { numMatches, numCandidates, isLoading, hasError } = useNumMatches(
-    expr
-  );
+  const { numMatches, numCandidates, isLoading, hasError } = useMatches(expr);
 
   if (hasError) {
     return (
@@ -50,6 +50,7 @@ function NumberOfMatches({
     return (
       <div className={className}>
         {isLoading ? <LoadingAnimation /> : numMatches?.toLocaleString()}{" "}
+        {isGroupTotal ? "grouped " : ""}
         {numMatches === 1 ? "match" : "matches"}
       </div>
     );
