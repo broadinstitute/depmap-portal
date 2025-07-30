@@ -28,5 +28,3 @@ In other words, you as a user have some flexibility to use whichever identifiers
 * `dataset_id` (string): The dataset in which you are querying data
 * `identifier` (string): the ID or label of the entity you are querying for
 * `identifier_type` (string enum): one of ["feature_id", "feature_label", "sample_id", "sample_label", "column"] 
-
-**Context Query**: Uses Slice Queries to define variables which can then be evaluated with simple boolean expressions (examples below). 
