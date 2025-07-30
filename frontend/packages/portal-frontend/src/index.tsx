@@ -15,11 +15,7 @@ import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
 
-import {
-  DataExplorerContext,
-  DataExplorerContextV2,
-  SliceQuery,
-} from "@depmap/types";
+import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
