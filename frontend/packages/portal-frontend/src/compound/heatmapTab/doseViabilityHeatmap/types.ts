@@ -1,7 +1,7 @@
 type PRCid = string;
 type ModelID = string;
 type CompoundName = string;
-export type Viability = number | null;
+type Viability = number | null;
 type CellLineName = string;
 type DoseWithUnits = `${number} uM`;
 type DoseWithoutUnits = number;
