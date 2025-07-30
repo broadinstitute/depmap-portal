@@ -28,8 +28,12 @@ interface HeatmapPlotSectionProps {
   doseMax: number | null;
   doseUnits: string;
   selectedModelIds: Set<string>;
-  handleSetSelectedPlotModels: (models: Set<string>) => void;
+  handleSetSelectedPlotModels: (
+    selections: Set<string>,
+    shiftKey: boolean
+  ) => void;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
+  handleClearSelection: () => void;
   displayNameModelIdMap: Map<string, string>;
   visibleZIndexes: number[];
 }
@@ -43,6 +47,7 @@ function HeatmapPlotSection({
   selectedModelIds,
   handleSetSelectedPlotModels,
   handleSetPlotElement,
+  handleClearSelection,
   plotElement,
   displayNameModelIdMap,
   visibleZIndexes,
@@ -98,7 +103,8 @@ function HeatmapPlotSection({
     stringId?: string;
   }) => {
     if (selection.stringId) {
-      handleSetSelectedPlotModels(new Set([selection.stringId]));
+      // start and end are equal because we are only selecting a single column in the plot.
+      handleSetSelectedPlotModels(new Set([selection.stringId]), false);
     }
   };
 
@@ -107,18 +113,15 @@ function HeatmapPlotSection({
     end: number,
     shiftKey: boolean
   ) => {
-    let next: Set<string>;
-    if (shiftKey) {
-      next = new Set(selectedModelIds);
-    } else {
-      next = new Set();
-    }
+    // Get a set of data from the click or click and drag column selection
+    // ignoring any columns that are masked due to filter on dose.
+    const newlySelected = new Set<string>();
     for (let i = start; i <= end; i += 1) {
       if (maskedHeatmapData && maskedHeatmapData.modelIds[i]) {
-        next.add(maskedHeatmapData.modelIds[i]!);
+        newlySelected.add(maskedHeatmapData.modelIds[i]!);
       }
     }
-    handleSetSelectedPlotModels(next);
+    handleSetSelectedPlotModels(newlySelected, shiftKey);
   };
 
   // HACK: so that Plotly will resize the plot when the user switches to this tab.
@@ -180,7 +183,7 @@ function HeatmapPlotSection({
               legendTitle={PLOT_UNITS_LABEL}
               hovertemplate="%{customdata}<extra></extra>"
               selectedColumns={selectedColumns}
-              onClearSelection={() => handleSetSelectedPlotModels(new Set())}
+              onClearSelection={() => handleClearSelection()}
               onSelectColumnRange={handleSelectColumnRange}
             />
           </div>

@@ -117,10 +117,8 @@ function useDoseCurvesSelectionHandlers(
 
   return {
     selectedModelIds,
-    setselectedModelIds: setSelectedModelIds,
     selectedTableRows,
     selectedLabels,
-    setSelectedTableRows,
     handleClickCurve,
     handleChangeSelection,
     handleClickSaveSelectionAsContext,
