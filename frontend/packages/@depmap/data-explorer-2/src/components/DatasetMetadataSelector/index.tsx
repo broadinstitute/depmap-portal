@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import renderConditionally from "../../utils/render-conditionally";
+import { isBreadboxOnlyMode } from "../../isBreadboxOnlyMode";
 import { deprecatedDataExplorerAPI } from "../../services/deprecatedDataExplorerAPI";
 import type { DeprecatedDataExplorerApiResponse } from "../../services/deprecatedDataExplorerAPI";
 import PlotConfigSelect from "../PlotConfigSelect";
@@ -37,14 +37,16 @@ function DatasetMetadataSelector({
 
   useEffect(() => {
     (async () => {
-      setIsLoading(true);
+      if (!isBreadboxOnlyMode) {
+        setIsLoading(true);
 
-      const slices = await deprecatedDataExplorerAPI.fetchMetadataSlices(
-        slice_type
-      );
-      setMetadataSlices(slices);
+        const slices = await deprecatedDataExplorerAPI.fetchMetadataSlices(
+          slice_type
+        );
+        setMetadataSlices(slices);
 
-      setIsLoading(false);
+        setIsLoading(false);
+      }
     })();
   }, [slice_type]);
 
@@ -99,4 +101,4 @@ function DatasetMetadataSelector({
   );
 }
 
-export default renderConditionally(DatasetMetadataSelector);
+export default DatasetMetadataSelector;
