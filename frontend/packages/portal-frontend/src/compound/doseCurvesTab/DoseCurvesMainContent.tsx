@@ -176,6 +176,7 @@ function DoseCurvesMainContent({
           Each cell line is represented as a line, with doses on the x axis and
           viability on the y axis. Hover over plot points for tooltip
           information. Click on items to select from the plot or table.
+          Shift-click to select multiple items from the plot.
         </p>
       </div>
       {error ? (
