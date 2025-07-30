@@ -21,27 +21,39 @@ from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 log = logging.getLogger(__name__)
 
 
-# compound_exp_and_dataset is a weird pre-existing hack for finding the compound experiment. Pass it in here as a param to avoid adding too many
-# independent hacks.
+# For the Enriched Lineages tile only, check if the legacy dataset exists with this specific compound experiment.
+# This is necessary because we only have enriched lineage data for Prism_oncology_AUC and Rep_all_single_pt.
 def does_legacy_dataset_exist_with_compound_experiment(
     dataset_name: str,
     compound_exp_and_dataset: List[Tuple[CompoundExperiment, DependencyDataset]],
 ):
     dataset = DependencyDataset.get_dataset_by_name(dataset_name)
 
-    # Find the dataset we are looking for in the list of comound experiment and dataset tuples
-    compound_exp_dataset = next(
-        filter(lambda item: item[1] == dataset, compound_exp_and_dataset), None,
-    )
-    if compound_exp_dataset is None:
+    # Find the dataset we are looking for in the list of comound experiment and dataset tuples.
+    # This is necessary becayse only a subset of possible (compound_experiment, dataset) tuples are
+    # relevant to the Enriched Lineages tile. This is because Enriched Lineages data was originally
+    # computed for Context Explorer, which only cares about at most Prism_oncology_AUC and Rep_all_single_pt
+    matching_compound_experiment_dataset_pair = None
+    for item in compound_exp_and_dataset:
+        if item[1] == dataset:
+            matching_compound_experiment_dataset_pair = item
+            break  #  Exit the loop once the first match is found
+
+    # It is possible that this compound only has compound experiments in datasets that do not have enriched lineage
+    # data. If that is the case, return False so that we don't show this tile.
+    if matching_compound_experiment_dataset_pair is None:
         return False
 
+    # Check that the dataset exists in either the Breadbox or the legacy db. Sometimes datasets aren't available in all environments.
     dataset_exists = data_access.dataset_exists(dataset_name)
     if not dataset_exists:
         return dataset_exists
 
+    matching_compound_experiment = matching_compound_experiment_dataset_pair[0]
+
+    # Check that the compound experiment is a valid row in this particular dataset
     compound_exp_is_in_dataset = data_access.valid_row(
-        dataset_name, row_name=compound_exp_dataset[0].label,
+        dataset_name, row_name=matching_compound_experiment.label,
     )
 
     return compound_exp_is_in_dataset
