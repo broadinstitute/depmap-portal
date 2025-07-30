@@ -201,6 +201,52 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     return {};
   }, [correlationAnalysisData, doseColors]);
 
+  let content;
+
+  if (isLoading) {
+    content = (
+      <div style={{ display: "grid", placeItems: "center", height: "500px" }}>
+        <PlotSpinner />
+      </div>
+    );
+  } else if (hasError) {
+    content = (
+      <div
+        style={{
+          display: "grid",
+          placeItems: "center",
+          height: "500px",
+          color: "red",
+        }}
+      >
+        Failed to load correlation data.
+      </div>
+    );
+  } else {
+    content = (
+      <CorrelationsPlots
+        correlatedDatasetsToShow={
+          selectedCorrelatedDatasets.length
+            ? selectedCorrelatedDatasets
+            : Object.keys(volcanoDataForCorrelatedDataset)
+        }
+        dosesToFilter={selectedDoses}
+        doseColors={doseColors}
+        volcanoDataForCorrelatedDatasets={volcanoDataForCorrelatedDataset}
+        correlatedDatasetSelectedLabels={allSelectedLabels}
+        forwardSelectedLabels={(
+          correlatedDataset: string,
+          newSelectedLabels: string[]
+        ) => {
+          setAllSelectedLabels({
+            ...allSelectedLabels,
+            [correlatedDataset]: newSelectedLabels,
+          });
+        }}
+      />
+    );
+  }
+
   return (
     <div
       style={{
@@ -241,35 +287,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           tooltip information.
         </p>
         <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
-
-        {isLoading ? (
-          <div
-            style={{ display: "grid", placeItems: "center", height: "500px" }}
-          >
-            <PlotSpinner />
-          </div>
-        ) : (
-          <CorrelationsPlots
-            correlatedDatasetsToShow={
-              selectedCorrelatedDatasets.length
-                ? selectedCorrelatedDatasets
-                : Object.keys(volcanoDataForCorrelatedDataset)
-            }
-            dosesToFilter={selectedDoses}
-            doseColors={doseColors}
-            volcanoDataForCorrelatedDatasets={volcanoDataForCorrelatedDataset}
-            correlatedDatasetSelectedLabels={allSelectedLabels}
-            forwardSelectedLabels={(
-              correlatedDataset: string,
-              newSelectedLabels: string[]
-            ) => {
-              setAllSelectedLabels({
-                ...allSelectedLabels,
-                [correlatedDataset]: newSelectedLabels,
-              });
-            }}
-          />
-        )}
+        {content}
       </div>
 
       <div style={{ gridArea: "c" }}>
