@@ -103,8 +103,10 @@ function HeatmapPlotSection({
     stringId?: string;
   }) => {
     if (selection.stringId) {
-      // start and end are equal because we are only selecting a single column in the plot.
-      handleSetSelectedPlotModels(new Set([selection.stringId]), false);
+      // The shiftKey parameter is false because you cannot hold down the shift key and search to add
+      // to your selection.
+      const shiftKey = false;
+      handleSetSelectedPlotModels(new Set([selection.stringId]), shiftKey);
     }
   };
 
