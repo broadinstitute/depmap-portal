@@ -2,6 +2,10 @@
 _In the terminology definitions below, we reference the example of one of DepMap’s CRISPR gene dependency datasets. This dataset is a matrix of continuous numeric values. Each row in the dataset represents a DepMap model (cell line), and each column represents a gene. Each value in the matrix contains a “dependency score” describing the effect of the CRISPR knockout of a given gene in the given cell line._
 
 **Datasets**: The concept of a dataset in Breadbox represents a single file of data which may be used interactively in the portal. Most of the datasets in breadbox map onto a downloadable file in the DepMap Portal. 
+* **Tabular Dataset**: A dataset which generally stores metadata for a given dimension type. Each table of metadata must have at least an “ID” column and a “label” column. Examples of labels would be gene names (for the “gene” entity), or cell line names (for the “depmap_model” entity).
+* For example, the “depmap_model” dimension type has a table of metadata. This metadata includes things like the “depmap_id” (a stable identifier of cell lines in the depmap project), “label” (which is a human readable cell line name), “OncotreeLineage”, “OncotreePrimaryDisease”, etc.
+* **Matrix Dataset**: A dataset which contains a matrix of continuous numeric values. This matrix is indexed by two “dimension types”. The column index is typically referred to as the “feature type” and the row index is referred to as the “sample type”. 
+* **Dataset Given ID**: (also known as dataset.name in the legacy portal codebase) is a human-readable label which refers to a dataset. This is distinct from dataset ID's which are opaque UUIDs. The given IDs are used for datasets which get updated over time, but are always expected to represent the latest version of some "data". Each version will get a distinct dataset_id, but the given_id will always allow the latest version to be retrieved.
 
 **Identifier type**: Breadbox is able to use multiple types of identifiers - commonly referred to as "IDs" (aka "given IDs") and "labels".
 * **Given IDs**: A commonly used identifier which is stable over time and sometimes shared with users. For example, this might include depmap model ids (aka the "ACH ID"), gene entrez ids, etc. . These are sometimes also called "feature ids" or "sample ids" depending on which axis they are being used to index.
@@ -19,11 +23,6 @@ In other words, you as a user have some flexibility to use whichever identifiers
 
 **Data type**: In the context of DepMap, the general category of what the dataset is describing (the type of experiments that generated the data)
 * Examples: CRISPR, Drug Screen (for datasets like Oncref, GDSC1, GDSC2, CTD^2), Expression, etc. 
-
-**Tabular Dataset**: A dataset which generally stores metadata for a given dimension type. Each table of metadata must have at least an “ID” column and a “label” column. Examples of labels would be gene names (for the “gene” entity), or cell line names (for the “depmap_model” entity).
-* For example, the “depmap_model” dimension type has a table of metadata. This metadata includes things like the “depmap_id” (a stable identifier of cell lines in the depmap project), “label” (which is a human readable cell line name), “OncotreeLineage”, “OncotreePrimaryDisease”, etc.
-
-**Matrix Dataset**: A dataset which contains a matrix of continuous numeric values. This matrix is indexed by two “dimension types”. The column index is typically referred to as the “feature type” and the row index is referred to as the “sample type”. 
 
 **Slice Query**: A slice query is a JSON object which includes a few key pieces of information
 * `dataset_id` (string): The dataset in which you are querying data
