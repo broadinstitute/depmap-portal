@@ -8,27 +8,26 @@ _In the terminology definitions below, we reference the example of one of DepMap
 * **Labels**: also a unique identifier, but much more human readable (ex. names like SOX10, KRAS, BRAF for genes, names like AFATINIB for drugs, names like MHHCALL2 for cell lines). These are sometimes also called "feature labels" or "sample labels" depending on which axis they are being used to index.
 In other words, you as a user have some flexibility to use whichever identifiers you have on-hand. If you know the gene name, but not the entrez ID, then you can just give breadbox the gene name (even though it's not really a long-term stable identifier)
 
-Dimension type: A type of entity which is represented in DepMap data (ex. model, gene, compound, etc. ). Each dimension type has its own metadata and can be used to index matrix datasets.
-In our example above, the matrix dataset is indexed by both “gene” and “depmap_model” dimension types. Each of these dimension types has its own metadata which can be joined and used alongside the matrix values. 
-For the “depmap_model” dimension type, we store metadata in a separate table including columns like “OncrotreeLineage”, “OncotreePrimaryDisease”, “CellLineDisplayName”
-For the gene dimension type (for example Sox10), we would store metadata like “symbol”, “full name”, “location”, “alias”, 
+**Dimension type**: A type of entity which is represented in DepMap data (ex. model, gene, compound, etc. ). Each dimension type has its own metadata and can be used to index matrix datasets.
+* In our example above, the matrix dataset is indexed by both “gene” and “depmap_model” dimension types. Each of these dimension types has its own metadata which can be joined and used alongside the matrix values. 
+* For the “depmap_model” dimension type, we store metadata in a separate table including columns like “OncrotreeLineage”, “OncotreePrimaryDisease”, “CellLineDisplayName”
+* For the gene dimension type (for example Sox10), we would store metadata like “symbol”, “full name”, “location”, “alias”, 
 
-Dimension/Slice: A single row or column of data from a dataset.
-For example in a matrix dataset, this could be the gene dependencies for a single depmap model, or for a single gene
-For a tabular dataset, this could be a column of metadata (ex. a column describing the lineages of all depmap models). 
-We use the terms “dimension” and “slice” largely interchangeably 
+**Dimension/Slice**: A single row or column of data from a dataset. We use the terms “dimension” and “slice” largely interchangeably 
+* For example in a matrix dataset, this could be the gene dependencies for a single depmap model, or for a single gene
+* For a tabular dataset, this could be a column of metadata (ex. a column describing the lineages of all depmap models). 
 
-Data type: In the context of DepMap, the general category of what the dataset is describing (the type of experiments that generated the data)
-examples: CRISPR, Drug Screen (for datasets like Oncref, GDSC1, GDSC2, CTD^2), Expression, etc. 
+**Data type**: In the context of DepMap, the general category of what the dataset is describing (the type of experiments that generated the data)
+* Examples: CRISPR, Drug Screen (for datasets like Oncref, GDSC1, GDSC2, CTD^2), Expression, etc. 
 
-Tabular Dataset: A dataset which generally stores metadata for a given dimension type. Each table of metadata must have at least an “ID” column and a “label” column. For the purposes of this project, we should use the human-readable “label” column as the primary identifier of these entities. However, it can sometimes also be helpful to query by “ID”, especially when querying for models/cell lines. Examples of labels would be gene names (for the “gene” entity), or cell line names (for the “depmap_model” entity).
-For example, the “depmap_model” dimension type has a table of metadata. This metadata includes things like the “depmap_id” (a stable identifier of cell lines in the depmap project), “label” (which is a human readable cell line name), “OncotreeLineage”, “OncotreePrimaryDisease”, etc.
+**Tabular Dataset**: A dataset which generally stores metadata for a given dimension type. Each table of metadata must have at least an “ID” column and a “label” column. Examples of labels would be gene names (for the “gene” entity), or cell line names (for the “depmap_model” entity).
+* For example, the “depmap_model” dimension type has a table of metadata. This metadata includes things like the “depmap_id” (a stable identifier of cell lines in the depmap project), “label” (which is a human readable cell line name), “OncotreeLineage”, “OncotreePrimaryDisease”, etc.
 
-Matrix Dataset: A dataset which contains a matrix of continuous numeric values. This matrix is indexed by two “dimension types”. The column index is typically referred to as the “feature type” and the row index is referred to as the “sample type”. 
+**Matrix Dataset**: A dataset which contains a matrix of continuous numeric values. This matrix is indexed by two “dimension types”. The column index is typically referred to as the “feature type” and the row index is referred to as the “sample type”. 
 
-Slice Query: A slice query is a JSON object which includes a few key pieces of information
-dataset_id (string): The dataset in which you are querying data
-identifier (string): the ID or label of the entity you are querying for
-identifier_type (string enum): one of ["feature_id", "feature_label", "sample_id", "sample_label", "column"] 
+**Slice Query**: A slice query is a JSON object which includes a few key pieces of information
+* `dataset_id` (string): The dataset in which you are querying data
+* `identifier` (string): the ID or label of the entity you are querying for
+* `identifier_type` (string enum): one of ["feature_id", "feature_label", "sample_id", "sample_label", "column"] 
 
-Context Query: Uses Slice Queries to define variables which can then be evaluated with simple boolean expressions (examples below). 
+**Context Query**: Uses Slice Queries to define variables which can then be evaluated with simple boolean expressions (examples below). 
