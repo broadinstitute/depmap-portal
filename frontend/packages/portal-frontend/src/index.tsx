@@ -2,11 +2,7 @@ import "src/public-path";
 
 import React from "react";
 import ReactDOM from "react-dom";
-import {
-  legacyPortalAPI,
-  LegacyPortalApiResponse,
-  breadboxAPI,
-} from "@depmap/api";
+import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 
@@ -18,7 +14,7 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
-import { DataExplorerContext, SliceQuery } from "@depmap/types";
+import { DataExplorerContext } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";

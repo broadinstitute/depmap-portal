@@ -8,22 +8,8 @@ import CorrelationFilters from "./CorrelationFilters";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import styles from "../styles/CorrelationAnalysis.scss";
 import useCorrelationAnalysisData from "../hooks/useCorrelationAnalysisData";
+import { VolcanoDataForCorrelatedDataset } from "../models/CorrelationPlot";
 
-type VolcanoData = {
-  [doseCategory: string]: {
-    x: number[];
-    y: number[];
-    label: string[];
-    text: string[];
-    isSignificant: boolean[];
-    name: string;
-    color?: string;
-  };
-};
-
-type VolcanoDataForCorrelatedDataset = {
-  [featureDataset: string]: VolcanoData;
-};
 interface CorrelationAnalysisProps {
   compound: string;
 }

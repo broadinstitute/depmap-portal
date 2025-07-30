@@ -3,6 +3,10 @@ import CorrelationsPlot from "./CorrelationPlot";
 import DoseLegend from "./DoseLegend";
 import { VolcanoPlotData } from "../models/VolcanoPlot";
 import styles from "../styles/CorrelationAnalysis.scss";
+import {
+  DoseCategoryVolcanoData,
+  VolcanoDataForCorrelatedDataset,
+} from "../models/CorrelationPlot";
 
 interface CorrelationsPlotsProps {
   correlatedDatasetsToShow: string[];
@@ -27,9 +31,9 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
   } = props;
 
   const filteredDosesForCorrelatedDatasetVolcanoData = React.useCallback(
-    (correlatedDatasetVolcanoData: { [key: string]: VolcanoPlotData }) => {
+    (correlatedDatasetVolcanoData: DoseCategoryVolcanoData) => {
       if (dosesToFilter.length) {
-        const subset: { [key: string]: VolcanoPlotData } = {};
+        const subset: DoseCategoryVolcanoData = {};
         dosesToFilter.forEach((dose) => {
           subset[dose] = correlatedDatasetVolcanoData[dose];
         });
@@ -73,11 +77,13 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
               </div>
               <CorrelationsPlot
                 correlatedDatasetName={correlatedDataset}
-                data={Object.values(
-                  filteredDosesForCorrelatedDatasetVolcanoData(
-                    volcanoDataForCorrelatedDatasets[correlatedDataset]
-                  )
-                )}
+                data={
+                  Object.values(
+                    filteredDosesForCorrelatedDatasetVolcanoData(
+                      volcanoDataForCorrelatedDatasets[correlatedDataset]
+                    )
+                  ) as VolcanoPlotData[]
+                }
                 selectedFeatures={
                   correlatedDataset in correlatedDatasetSelectedLabels
                     ? correlatedDatasetSelectedLabels[correlatedDataset]

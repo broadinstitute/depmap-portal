@@ -156,7 +156,7 @@ function useCorrelationAnalysisData(
     correlatedDatasets,
     doseColors,
     isLoading,
-    error: hasError,
+    hasError,
   };
 }
 
