@@ -153,8 +153,10 @@ function HeatmapTabMainContent({
         <h3>Viability Heatmap</h3>
         <p>
           Each cell line is organized by column, divided by dose. Hover over
-          plot points for tooltip information. Click on items to select from the
-          plot or table.
+          plot points for tooltip information. Click on columns to select from
+          the plot or table. Shift-click to select multiple columns. To
+          deselect, shift-click on a selected column, or shift-click and drag on
+          a series of selected columns.
         </p>
       </div>
       {error ? (
@@ -173,6 +175,7 @@ function HeatmapTabMainContent({
                 doseUnits={doseUnits}
                 selectedModelIds={selectedModelIds}
                 handleSetSelectedPlotModels={handleSetSelectedPlotModels}
+                handleClearSelection={handleClearSelection}
                 handleSetPlotElement={setPlotElement}
                 displayNameModelIdMap={displayNameModelIdMap}
                 visibleZIndexes={visibleZIndexes}

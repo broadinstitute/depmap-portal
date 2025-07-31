@@ -4,6 +4,7 @@ import os
 import tempfile
 from typing import Any, List, Optional
 import zipfile
+from depmap.compound import legacy_utils
 import requests
 import urllib.parse
 
@@ -103,6 +104,13 @@ def view_compound(name):
     # If there are no no valid dataset options, hide the heatmap tab and tile
     show_heatmap_tab = len(heatmap_dataset_options) > 0
 
+    # TODO: Update when context explorer moves to using compounds instead of compound experiments
+    show_enriched_lineages = legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
+        DependencyEnum.Prism_oncology_AUC.value, compound_experiment_and_datasets
+    ) or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
+        DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
+    )
+
     return render_template(
         "compounds/index.html",
         name=name,
@@ -117,7 +125,11 @@ def view_compound(name):
             "shared-portal-files", "Tools/Predictability_methodology.pdf"
         ),
         has_datasets=has_datasets,
-        order=get_order(has_predictability, has_heatmap=show_heatmap_tab),
+        order=get_order(
+            has_predictability,
+            has_heatmap=show_heatmap_tab,
+            show_enriched_lineages=show_enriched_lineages,
+        ),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         # If len(dose_curve_options_new) is 0, hide the tab in the index.html
         dose_curve_options_new=dose_curve_options_new,
@@ -126,6 +138,7 @@ def view_compound(name):
         celfie=celfie if has_celfie else None,
         compound_units=compound.units,
         show_heatmap_tab=show_heatmap_tab,
+        show_enriched_lineages=show_enriched_lineages,
     )
 
 
