@@ -20,6 +20,10 @@
                             {% if show_heatmap_tab %}
                                 {{ cards.placeholder_card(tile_name+"_placeholder", height) }}
                             {% endif %}
+                        {%  elif tile_name == "selectivity" %}
+                            {% if show_enriched_lineages %}
+                                {{ cards.placeholder_card(tile_name+"_placeholder", height) }}
+                            {% endif %}
                         {%  elif tile_name == "description" and about %}
                             {{ cards.placeholder_card(tile_name+"_placeholder", height) }}                                                     
                         {% else %}

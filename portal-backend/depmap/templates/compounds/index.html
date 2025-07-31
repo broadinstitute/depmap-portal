@@ -10,8 +10,9 @@ endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
 show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
 show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
-show_heatmap_tab = show_heatmap_tab %} {% set show_celfie_tab = has_celfie %} {%
-set show_aliases = compound_aliases|length > 0 %} {% block content %}
+show_heatmap_tab = show_heatmap_tab %} {% set show_enriched_lineages =
+show_enriched_lineages %} {% set show_celfie_tab = has_celfie %} {% set
+show_aliases = compound_aliases|length > 0 %} {% block content %}
 <br />
 <div class="header">
   <div>
