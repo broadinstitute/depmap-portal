@@ -1,5 +1,5 @@
 import { get_operator, get_values } from "json-logic-js";
-import { DataExplorerApiResponse } from "../../../contexts/DataExplorerApiContext";
+import { DataExplorerApiResponse } from "../../../services/dataExplorerAPI";
 
 export const MAX_CONDITIONS = 10;
 

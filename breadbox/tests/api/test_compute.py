@@ -669,8 +669,8 @@ def test_run_custom_analysis_no_variance_vector(
         data=_make_data_with_no_variance_for_feature_0(),
     )
 
-    assert isclose(df["PValue"][0], 0.3739821983262783)
-    assert isclose(df["PValue"][1], 0.5877560648491652)
+    assert isclose(float(df["PValue"].iloc[0]), 0.3739821983262783)
+    assert isclose(float(df["PValue"].iloc[1]), 0.5877560648491652)
     assert not "Gene A Label" in df["label"].values
     assert "Gene B Label" in df["label"].values
     assert "Gene C Label" in df["label"].values

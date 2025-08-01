@@ -6,6 +6,7 @@ Create Date: 2024-06-18 16:41:08.789762
 
 """
 from alembic import op
+from sqlalchemy import text
 import sqlalchemy as sa
 
 
@@ -18,7 +19,7 @@ depends_on = None
 
 def upgrade():
     # Turn off pragma FK bc previously running into an issue where running this migration script without that statement was causing TabularCell and DimensionSearchIndex tables records to be deleted. This is somehow related to the fact those tables don't have a direct FK relationship with the Dataset tables
-    op.execute("PRAGMA foreign_keys = OFF")
+    op.execute(text("PRAGMA foreign_keys = OFF"))
 
     with op.batch_alter_table("dataset_reference", schema=None) as batch_op:
         batch_op.add_column(sa.Column("group_id", sa.String(), nullable=True))

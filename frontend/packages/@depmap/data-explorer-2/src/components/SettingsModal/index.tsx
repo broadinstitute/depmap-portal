@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import stableStringify from "json-stable-stringify";
 import { Button, Modal } from "react-bootstrap";
+import { enabledFeatures } from "@depmap/globals";
 import type { Settings } from "../../contexts/DataExplorerSettingsContext";
 import { isValidNumber, updateColor, updateStyle } from "./utils";
 import ColorSelector from "./ColorSelector";
@@ -267,6 +268,31 @@ function SettingsModal({
             </Button>
           </div>
         </section>
+        {enabledFeatures.data_explorer_2_experimental_settings && (
+          <section>
+            <h2>
+              Experimental <i className="fa fa-flask" />
+            </h2>
+            <label className={styles.checkboxLabel}>
+              <input
+                id="use-breadbox-backend"
+                type="checkbox"
+                checked={settings.useBreadboxBackend}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const { checked } = e.target;
+                  setSettings((prev) => ({
+                    ...prev,
+                    useBreadboxBackend: checked,
+                  }));
+                }}
+              />
+              <span>
+                Enable “Breadbox-only” mode (all data will be loaded directly
+                from Breadbox using only Breadbox APIs)
+              </span>
+            </label>
+          </section>
+        )}
       </Modal.Body>
       <Modal.Footer>
         <Button onClick={onHide}>Cancel</Button>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import { DimensionType } from "@depmap/types";
-import { useDataExplorerApi } from "../../contexts/DataExplorerApiContext";
 
 export default function useLabel(
   label:
@@ -9,14 +9,13 @@ export default function useLabel(
     | undefined,
   context_type: string
 ) {
-  const api = useDataExplorerApi();
   const [dimensionType, setDimensionType] = useState<DimensionType | null>(
     null
   );
 
   useEffect(() => {
-    api
-      .fetchDimensionTypes()
+    cached(breadboxAPI)
+      .getDimensionTypes()
       .then((types) => {
         const typeInfo = types.find((t) => t.name === context_type);
 
@@ -32,7 +31,7 @@ export default function useLabel(
         const errorMsg = "Failed to fetch dimension types from Breadbox";
         throw new Error(errorMsg);
       });
-  }, [api, context_type]);
+  }, [context_type]);
 
   if (typeof label === "function") {
     return dimensionType ? label(dimensionType) : "...";

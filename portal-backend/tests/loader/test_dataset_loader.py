@@ -170,8 +170,8 @@ def test_load_and_access_viability(empty_db_mock_downloads):
         "sample_data/compound/ctd2_dose_replicate_perturbations.csv",
         "sample_data/compound/ctd2_dose_replicate_cell_lines.csv",
         "sample_data/compound/ctd2_dose_replicate.hdf5",
-        DependencyDataset.DependencyEnum.Repurposing_secondary_dose,
-        DATASET_METADATA[DependencyDataset.DependencyEnum.Repurposing_secondary_dose],
+        DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
+        DATASET_METADATA[DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate],
         "placeholder taiga id",
         PUBLIC_ACCESS_GROUP,
     )

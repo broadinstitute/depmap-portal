@@ -3,13 +3,11 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { CompoundDoseCurveData, DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { TableFormattedData } from "src/compound/types";
 
 function useDoseCurvesSelectionHandlers(
   doseCurveData: CompoundDoseCurveData | null,
   tableData: TableFormattedData | null,
-  deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
   handleShowUnselectedLinesOnSelectionsCleared: () => void
 ) {
   const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(
@@ -105,14 +103,11 @@ function useDoseCurvesSelectionHandlers(
     const allLabels = new Set(
       doseCurveData?.curve_params.map((curveParam) => curveParam.id!)
     );
-    const labels = await compoundPagePromptForSelectionFromContext(
-      deApi,
-      allLabels
-    );
+    const labels = await compoundPagePromptForSelectionFromContext(allLabels);
     if (labels === null) return;
     setSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [doseCurveData, deApi]);
+  }, [doseCurveData]);
 
   const handleClearSelection = useCallback(() => {
     setSelectedModelIds(new Set([]));
@@ -120,32 +115,15 @@ function useDoseCurvesSelectionHandlers(
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
 
-  const sortedTableData: TableFormattedData = useMemo(() => {
-    if (!tableData) return [];
-    if (selectedTableRows.size === 0) return tableData;
-    // Selected rows at the top, in order of selection, then the rest in original order
-    const selectedIds = Array.from(selectedTableRows);
-    const selected = selectedIds
-      .map((id) => tableData.find((row) => row.modelId === id))
-      .filter((row): row is NonNullable<typeof row> => Boolean(row));
-    const unselected = tableData.filter(
-      (row) => !selectedTableRows.has(row.modelId)
-    );
-    return [...selected, ...unselected];
-  }, [selectedTableRows, tableData]);
-
   return {
     selectedModelIds,
-    setselectedModelIds: setSelectedModelIds,
     selectedTableRows,
     selectedLabels,
-    setSelectedTableRows,
     handleClickCurve,
     handleChangeSelection,
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    sortedTableData,
   };
 }
 

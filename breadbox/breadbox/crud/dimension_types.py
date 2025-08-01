@@ -1,7 +1,7 @@
 from typing import Dict, List, Literal, Optional, Type, Union
 from uuid import uuid4
 
-from sqlalchemy import and_
+from sqlalchemy import and_, inspect
 
 import pandas as pd
 import numpy as np
@@ -237,7 +237,9 @@ def update_dataset_dimensions_with_dimension_type(
     if dimension_type.axis == "feature":  # TODO: add label field to DatasetSample too..
         for i in range(0, len(updated_dimension_labels), 10000):  # arbitrary chunk size
             chunk = i + 10000
-            db.bulk_update_mappings(DatasetFeature, updated_dimension_labels[i:chunk])
+            db.bulk_update_mappings(
+                inspect(DatasetFeature), updated_dimension_labels[i:chunk]
+            )
     db.flush()
 
 
@@ -254,11 +256,16 @@ def get_dimension_type_labels_by_id(
     """
     For a given dimension, get all IDs and labels that exist in the metadata.
     """
-    return get_dimension_type_metadata_col(db, dimension_type_name, col_name="label", limit=limit)
+    return get_dimension_type_metadata_col(
+        db, dimension_type_name, col_name="label", limit=limit
+    )
 
 
 def get_dimension_type_metadata_col(
-    db: SessionWithUser, dimension_type_name: str, col_name: str, limit: Optional[int] = None,
+    db: SessionWithUser,
+    dimension_type_name: str,
+    col_name: str,
+    limit: Optional[int] = None,
 ) -> dict[str, str]:
     assert isinstance(col_name, str)
 

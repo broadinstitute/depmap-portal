@@ -1,9 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { DataExplorerDatasetDescriptor } from "@depmap/types";
-import {
-  DeprecatedDataExplorerApiResponse,
-  useDeprecatedDataExplorerApi,
-} from "../../contexts/DeprecatedDataExplorerApiContext";
+import { dataExplorerAPI } from "../../services/dataExplorerAPI";
+import { deprecatedDataExplorerAPI } from "../../services/deprecatedDataExplorerAPI";
+import type { DeprecatedDataExplorerApiResponse } from "../../services/deprecatedDataExplorerAPI";
 
 type MetadataSlices = DeprecatedDataExplorerApiResponse["fetchMetadataSlices"];
 
@@ -24,7 +23,6 @@ export const ContextBuilderContextProvider = ({
   dimension_type: string | undefined;
   children: React.ReactNode;
 }) => {
-  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(true);
   const [metadataSlices, setMetadataSlices] = useState<MetadataSlices>({});
   const [datasets, setDatasets] = useState<
@@ -36,17 +34,19 @@ export const ContextBuilderContextProvider = ({
       if (dimension_type) {
         setIsLoading(true);
 
-        const slices = await api.fetchMetadataSlices(dimension_type);
+        const slices = await deprecatedDataExplorerAPI.fetchMetadataSlices(
+          dimension_type
+        );
         setMetadataSlices(slices);
 
-        const datasetsByIndexType = await api.fetchDatasetsByIndexType();
+        const datasetsByIndexType = await dataExplorerAPI.fetchDatasetsByIndexType();
         const fetchedDatasets = datasetsByIndexType?.[dimension_type] || [];
         setDatasets(fetchedDatasets);
 
         setIsLoading(false);
       }
     })();
-  }, [api, dimension_type]);
+  }, [dimension_type]);
 
   return (
     <ContextBuilderContext.Provider

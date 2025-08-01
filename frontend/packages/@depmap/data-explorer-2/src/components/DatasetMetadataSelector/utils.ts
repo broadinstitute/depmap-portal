@@ -1,4 +1,4 @@
-import { DeprecatedDataExplorerApiResponse } from "../../contexts/DeprecatedDataExplorerApiContext";
+import type { DeprecatedDataExplorerApiResponse } from "../../services/deprecatedDataExplorerAPI";
 
 type MetadataSlices = DeprecatedDataExplorerApiResponse["fetchMetadataSlices"];
 

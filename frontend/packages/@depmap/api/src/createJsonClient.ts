@@ -23,7 +23,7 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
   try {
     response = await fetch(url, {
-      credentials: process.env.NODE_ENV === "development" ? "omit" : "include",
+      credentials: "include",
       ...options,
       headers,
     });
@@ -72,7 +72,8 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
 const makeGetJson = (urlPrefix: string) => <T>(
   url: string,
-  queryParameters?: Record<string, unknown>
+  queryParameters?: Record<string, unknown>,
+  options?: RequestInit
 ): Promise<T> => {
   const getJson = () => {
     let fullUrl =
@@ -87,7 +88,7 @@ const makeGetJson = (urlPrefix: string) => <T>(
       fullUrl += "?" + qs.stringify(queryParameters, { arrayFormat: "repeat" });
     }
 
-    return request<T>(fullUrl, { method: "GET" });
+    return request<T>(fullUrl, { method: "GET", ...options });
   };
 
   if (!useCache) {

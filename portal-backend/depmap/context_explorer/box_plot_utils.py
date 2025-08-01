@@ -551,8 +551,8 @@ def get_compound_experiment_and_dataset_name_from_compound(compound: Compound):
     compound_experiment_and_datasets = [
         x
         for x in compound_experiment_and_datasets
-        if not x[1].is_ic50 and not x[1].is_dose_replicate
-    ]  # filter for non ic50 or dose replicate datasets"
+        if not x[1].is_dose_replicate
+    ]  # filter for non dose replicate datasets"
     best_ce_and_d = temp_get_compound_experiment_dataset(
         compound_experiment_and_datasets
     )

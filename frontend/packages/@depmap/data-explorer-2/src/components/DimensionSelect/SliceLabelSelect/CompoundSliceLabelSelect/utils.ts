@@ -1,4 +1,4 @@
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
+import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 
 const REGEX = /(.*) ((?<!-)\(.*)/;
 const getCaptureGroup = (s: string, n: number) => (REGEX.exec(s) || [])[n];
@@ -24,19 +24,18 @@ export const extractCompoundNames = (labels: string[]) => {
   return [...new Set(names)].sort();
 };
 
-export const fetchCompoundDatasets = async (
-  api: ReturnType<typeof useDeprecatedDataExplorerApi>,
-  compoundName: string
-) => {
-  const datasets = await api.fetchDatasetsMatchingContextIncludingEntities({
-    context_type: "compound_experiment",
-    expr: {
-      "==": [
-        { var: "slice/compound_experiment/compound_name/label" },
-        compoundName,
-      ],
-    },
-  });
+export const fetchCompoundDatasets = async (compoundName: string) => {
+  const datasets = await deprecatedDataExplorerAPI.fetchDatasetsMatchingContextIncludingEntities(
+    {
+      context_type: "compound_experiment",
+      expr: {
+        "==": [
+          { var: "slice/compound_experiment/compound_name/label" },
+          compoundName,
+        ],
+      },
+    }
+  );
 
   return datasets.sort(
     (a: { dataset_label: string }, b: { dataset_label: string }) => {

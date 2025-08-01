@@ -34,6 +34,7 @@ from breadbox_client.api.groups import get_groups as get_groups_client
 from breadbox_client.api.types import add_dimension_type as add_dimension_type_client
 from breadbox_client.api.types import get_dimension_type as get_dimension_type_client
 from breadbox_client.api.types import get_dimension_types as get_dimension_types_client
+from breadbox_client.api.types import get_dimension_type_identifiers as get_dimension_type_identifiers_client
 from breadbox_client.api.types import get_feature_types as get_feature_types_client
 from breadbox_client.api.types import get_sample_types as get_sample_types_client
 from breadbox_client.api.types import remove_dimension_type as remove_dimension_type_client
@@ -42,7 +43,6 @@ from breadbox_client.api.temp import get_associations as get_associations_client
 from breadbox_client.api.temp import add_associations as add_associations_client
 from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
 from breadbox_client.api.temp import evaluate_context as evaluate_context_client
-#
 
 from breadbox_client.models import (
     AccessType,
@@ -63,6 +63,8 @@ from breadbox_client.models import (
     ContextMatchResponse,
     DatasetMetadata,
     DataType,
+    DimensionIdentifiers, 
+    DimensionType,
     FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
@@ -72,7 +74,6 @@ from breadbox_client.models import (
     GroupOut,
     MatrixDatasetParams,
     MatrixDatasetParamsDatasetMetadataType0,
-    MatrixDatasetParamsFormat,
     MatrixDatasetResponse,
     MatrixDimensionsInfo,
     SampleTypeOut,
@@ -81,14 +82,11 @@ from breadbox_client.models import (
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
     TableDatasetParamsDatasetMetadataType0,
-    TableDatasetParamsFormat,
     TabularDatasetResponse,
     TabularDimensionsInfo,
     UpdateDimensionType,
     UploadFileResponse,
     ValueType,
-    MatrixDatasetUpdateParamsFormat,
-    TabularDatasetUpdateParamsFormat,
     MatrixDatasetParamsDataFileFormat,
 )
 
@@ -319,7 +317,7 @@ class BBClient:
             data_type=data_type,
             dataset_md5=uploaded_file.md5,
             file_ids=uploaded_file.file_ids,
-            format_=TableDatasetParamsFormat.TABULAR,
+            format_="tabular",
             group_id=group_id,
             index_type=index_type,
             name=name,
@@ -343,7 +341,7 @@ class BBClient:
         name: str,
         units: str,
         data_type: str,
-        data_df: pd.DataFrame,
+        data_df: Optional[pd.DataFrame],
         feature_type: Optional[str],
         sample_type: str,
         is_transient: bool = False,
@@ -358,18 +356,31 @@ class BBClient:
         timeout=None,
         log_status=lambda msg: None,
             description:Optional[str] = None,
+            data_parquet : Optional[str] = None,
     ) -> AddDatasetResponse:
         log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
+        if data_parquet is not None:
+            assert data_df is None, "Cannot have both data_parquet and data_df not None"
+            upload_parquet = True
+
         if upload_parquet:
-            with tempfile.NamedTemporaryFile() as tmp:
-                log_status(f"writing parquet")
-                data_df.to_parquet(tmp.name, index=False)
+            if data_parquet is None:
+                assert data_df is not None
+                with tempfile.NamedTemporaryFile() as tmp:
+                    log_status(f"writing parquet")
+                    data_df.to_parquet(tmp.name, index=False)
+                    log_status(f"uploading parquet")
+                    uploaded_file = self.upload_file(tmp)
+            else:
                 log_status(f"uploading parquet")
-                uploaded_file = self.upload_file(tmp)
+                with open(data_parquet, "rb") as f:
+                    uploaded_file = self.upload_file(f)
+
             data_file_format=MatrixDatasetParamsDataFileFormat.PARQUET
         else:
+            assert data_df is not None, "If not using parquet, you must provide a dataframe"
             log_status("Writing CSV")
             buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
             log_status(f"Uploading CSV")
@@ -381,7 +392,7 @@ class BBClient:
             data_type=data_type,
             dataset_md5=uploaded_file.md5,
             file_ids=uploaded_file.file_ids,
-            format_=MatrixDatasetParamsFormat.MATRIX,
+            format_="matrix",
             group_id=group_id,
             sample_type=sample_type,
             units=units,
@@ -421,10 +432,10 @@ class BBClient:
 
         dataset = self.get_dataset(dataset_id)
         if isinstance(dataset, MatrixDatasetResponse):
-            param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_=MatrixDatasetUpdateParamsFormat.MATRIX, **kwargs)
+            param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_="matrix", **kwargs)
         else:
             assert isinstance(dataset, TabularDatasetResponse)
-            param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_=TabularDatasetUpdateParamsFormat.TABULAR, **kwargs)
+            param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_="tabular", **kwargs)
 
         metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not None else UNSET
         params = param_factory(
@@ -472,16 +483,20 @@ class BBClient:
         breadbox_response = update_dimension_type_client.sync_detailed(name=name, client=self.client, body=params)
         return self._parse_client_response(breadbox_response)
 
-    def get_dimension_types(self):
+    def get_dimension_types(self) -> list[DimensionType]:
         breadbox_response = get_dimension_types_client.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def get_dimension_type(self, name: str):
+    def get_dimension_type(self, name: str) -> DimensionType:
         breadbox_response = get_dimension_type_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
     
     def delete_dimension_type(self, name: str):
         breadbox_response = remove_dimension_type_client.sync_detailed(name=name, client=self.client)
+        return self._parse_client_response(breadbox_response)
+    
+    def get_dimension_type_identifiers(self, name: str) -> List[DimensionIdentifiers]:
+        breadbox_response = get_dimension_type_identifiers_client.sync_detailed(name=name, client=self.client)
         return self._parse_client_response(breadbox_response)
     
 

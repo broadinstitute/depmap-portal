@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useDeprecatedDataExplorerApi } from "../../../../contexts/DeprecatedDataExplorerApiContext";
+import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import CompoundSearcher from "./CompoundSearcher";
 import { extractCompoundNames, fetchCompoundDatasets } from "./utils";
 
@@ -20,7 +20,6 @@ function CompoundNameSelect({
   isColorSelector,
   dataset_id,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
@@ -32,8 +31,13 @@ function CompoundNameSelect({
 
       try {
         const { labels } = await (isColorSelector && dataset_id
-          ? api.fetchDimensionLabelsOfDataset("compound_experiment", dataset_id)
-          : api.fetchDimensionLabels("compound_experiment"));
+          ? deprecatedDataExplorerAPI.fetchDimensionLabelsOfDataset(
+              "compound_experiment",
+              dataset_id
+            )
+          : deprecatedDataExplorerAPI.fetchDimensionLabels(
+              "compound_experiment"
+            ));
 
         const nextOptions = extractCompoundNames(labels).map((name) => ({
           label: name,
@@ -47,7 +51,7 @@ function CompoundNameSelect({
 
       setIsLoading(false);
     })();
-  }, [api, dataset_id, isColorSelector]);
+  }, [dataset_id, isColorSelector]);
 
   const handleChange = async (nextValue: string | null) => {
     if (nextValue === null) {
@@ -57,7 +61,7 @@ function CompoundNameSelect({
 
     setIsLoading(true);
 
-    const allDatasets = await fetchCompoundDatasets(api, nextValue);
+    const allDatasets = await fetchCompoundDatasets(nextValue);
 
     const datasets = isColorSelector
       ? allDatasets.filter((d) => d.dataset_id === dataset_id)

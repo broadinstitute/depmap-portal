@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from "react";
 import cx from "classnames";
 import { get_values } from "json-logic-js";
-import { DeprecatedDataExplorerApiResponse } from "../../contexts/DeprecatedDataExplorerApiContext";
+import type { DeprecatedDataExplorerApiResponse } from "../../services/deprecatedDataExplorerAPI";
 import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
 import AnyAllSelect from "./AnyAllSelect";
 import { Expr, getOperator } from "./contextBuilderUtils";

@@ -3,8 +3,7 @@ from typing import Dict
 from depmap.enums import DependencyEnum
 
 from flask import current_app
-from depmap.dataset.models import DependencyDataset
-from depmap.compound.models import CompoundExperiment, CompoundDose
+from depmap.compound.models import CompoundExperiment
 from loader.matrix_loader import create_matrix_object, create_transposed_hdf5
 from loader.dataset_loader.utils import add_dependency_dataset
 
@@ -14,7 +13,7 @@ def load_single_input_file_dependency_dataset(
 ):
     """
     This is used for loading things in the config that are in the dep_datasets list
-    These include CRISPR and RNAi datasets with gene entities, and AUC and IC50 datasets with compound experiment entities
+    These include CRISPR and RNAi datasets with gene entities, and AUC datasets with compound experiment entities
     This is NOT used for loading e.g. compound dose replicate datasets, even though they have a DependencyDataset enum
     """
     if "matrix_file_name_root" in dataset_metadata:
@@ -36,23 +35,9 @@ def load_single_input_file_dependency_dataset(
         #            compounds.
         return CompoundExperiment.get_by_xref(xref, xref_type, must=False)
 
-    def compound_dose_lookup(x):
-        """
-        Expected format is <broad id>::<dose>::<screen id> or
-                           <broad id>::<dose>::<screen id>::PROS001_PR500
-        e.g. BRD-A57886255-001-01-1::0.15625::HTS002
-        """
-        broad_id, dose = x.split("::")[:2]
-        return CompoundDose.get_by_compound_experiment_and_dose(
-            broad_id, "BRD", dose, must=False
-        )
-
     if DependencyEnum.is_compound_experiment_enum(dataset_enum):
         entity_lookup = compound_experiment_lookup
         entity_type = "compound_experiment"
-    elif DependencyDataset.is_dose_enum(dataset_enum):
-        entity_lookup = compound_dose_lookup
-        entity_type = "compound_dose"
     else:
         entity_lookup = None
         entity_type = "gene"

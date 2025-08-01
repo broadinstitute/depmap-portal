@@ -1,13 +1,11 @@
-import React, { useEffect, useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import HeatmapTabMainContent from "./HeatmapTabMainContent";
 import FiltersPanel from "./FiltersPanel";
 import { DRCDatasetOptions } from "@depmap/types";
-import { DeprecatedDataExplorerApiProvider } from "@depmap/data-explorer-2";
-import { evaluateLegacyContext } from "src/data-explorer-2/deprecated-api";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../CompoundDoseViability.scss";
-import { DoseTableDataProvider } from "../hooks/DoseTableDataContext";
+import { DoseViabilityDataProvider } from "../hooks/DoseViabilityDataContext";
 
 interface HeatmapTabProps {
   datasetOptions: DRCDatasetOptions[];
@@ -22,25 +20,20 @@ function HeatmapTab({
   compoundName,
   compoundId,
 }: HeatmapTabProps) {
-  const [
-    selectedDataset,
-    setSelectedDataset,
-  ] = useState<DRCDatasetOptions | null>(null);
+  const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
+    datasetOptions[0]
+  );
   const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
     value: string;
     label: string;
-  } | null>(null);
-
-  // NOTE: temporarily disabling insensitive lines filter until "insensitive" is better defined
-  // const [showInsensitiveLines, setShowInsensitiveLines] =
-  //   useState<boolean>(true);
+  }>({
+    value: datasetOptions[0].viability_dataset_given_id,
+    label: datasetOptions[0].display_name,
+  });
   const [showUnselectedLines, setShowUnselectedLines] = useState<boolean>(true);
-
-  useEffect(() => {
-    if (datasetOptions) {
-      setSelectedDataset(datasetOptions[0]);
-    }
-  }, [datasetOptions]);
+  const [selectedDoses, setSelectedDoses] = useState<
+    { value: number; label: string }[]
+  >([]);
 
   const handleSelectDataset = useCallback(
     (selection: { value: string; label: string } | null) => {
@@ -48,19 +41,15 @@ function HeatmapTab({
         setSelectedDatasetOption(selection);
         const selectedCompoundDataset = datasetOptions.filter(
           (option: DRCDatasetOptions) =>
-            option.viability_dataset_id === selection.value
+            option.viability_dataset_given_id === selection.value
         )[0];
         setSelectedDataset(selectedCompoundDataset);
-        // setShowInsensitiveLines(true);
         setShowUnselectedLines(true);
+        setSelectedDoses([]);
       }
     },
     [datasetOptions]
   );
-
-  const [selectedDoses, setSelectedDoses] = useState<
-    { value: number; label: string }[]
-  >([]);
 
   const handleFilterByDose = useCallback(
     (selections: Array<{ value: number; label: string }> | null) => {
@@ -70,42 +59,37 @@ function HeatmapTab({
   );
 
   return (
-    <DeprecatedDataExplorerApiProvider
-      evaluateLegacyContext={evaluateLegacyContext}
+    <DoseViabilityDataProvider
+      dataset={selectedDataset}
+      compoundId={compoundId}
     >
-      <DoseTableDataProvider dataset={selectedDataset} compoundId={compoundId}>
-        <div className={styles.doseCurvesTabGrid}>
-          <div className={styles.doseCurvesTabFilters}>
-            <FiltersPanel
-              handleSelectDataset={handleSelectDataset}
-              datasetOptions={datasetOptions}
-              selectedDatasetOption={
-                selectedDatasetOption || {
-                  value: datasetOptions[0].viability_dataset_id,
-                  label: datasetOptions[0].display_name,
-                }
-              }
-              handleFilterByDose={handleFilterByDose}
-              showUnselectedLines={showUnselectedLines}
-              handleToggleShowUnselectedLines={(nextValue: boolean) =>
-                setShowUnselectedLines(nextValue)
-              }
-            />
-          </div>
-          <div className={styles.doseCurvesTabMain}>
-            <HeatmapTabMainContent
-              showUnselectedLines={showUnselectedLines}
-              doseUnits={doseUnits}
-              compoundName={compoundName}
-              selectedDoses={new Set(selectedDoses.map((d) => d.value))}
-              handleShowUnselectedLinesOnSelectionsCleared={() => {
-                setShowUnselectedLines(true);
-              }}
-            />
-          </div>
+      <div className={styles.doseCurvesTabGrid}>
+        <div className={styles.doseCurvesTabFilters}>
+          <FiltersPanel
+            handleSelectDataset={handleSelectDataset}
+            datasetOptions={datasetOptions}
+            selectedDatasetOption={selectedDatasetOption}
+            handleFilterByDose={handleFilterByDose}
+            selectedDose={selectedDoses}
+            showUnselectedLines={showUnselectedLines}
+            handleToggleShowUnselectedLines={(nextValue: boolean) =>
+              setShowUnselectedLines(nextValue)
+            }
+          />
         </div>
-      </DoseTableDataProvider>
-    </DeprecatedDataExplorerApiProvider>
+        <div className={styles.doseCurvesTabMain}>
+          <HeatmapTabMainContent
+            showUnselectedLines={showUnselectedLines}
+            doseUnits={doseUnits}
+            compoundName={compoundName}
+            selectedDoses={new Set(selectedDoses.map((d) => d.value))}
+            handleShowUnselectedLinesOnSelectionsCleared={() => {
+              setShowUnselectedLines(true);
+            }}
+          />
+        </div>
+      </div>
+    </DoseViabilityDataProvider>
   );
 }
 

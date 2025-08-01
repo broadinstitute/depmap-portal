@@ -56,15 +56,6 @@ add-if-missing {
 add-if-missing {
   "type": "download_from_taiga",	          
   "target_type": "dep-matrix",
-  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-ic50-matrix",
-  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
-  "label": "GDSC1_IC50",
-  "format": "hdf5"
-}
-
-add-if-missing {
-  "type": "download_from_taiga",	          
-  "target_type": "dep-matrix",
   "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc1drug-auc-matrix",
   "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
   "label": "GDSC1_AUC",
@@ -102,13 +93,3 @@ add-if-missing {
   "label": "GDSC2_AUC",
   "format": "hdf5"
 }
-
-add-if-missing {
-  "type": "download_from_taiga",	          
-  "target_type": "dep-matrix",
-  "dataset_id": "{{ config.nonquarterly_dataset_id }}/gdsc2drug-ic50-matrix",
-  "orig_dataset_id": "gdsc-drug-set-export-658c.5/SANGER_DOSE_RESPONSE",
-  "label": "GDSC2_IC50",
-  "format": "hdf5"
-}
-

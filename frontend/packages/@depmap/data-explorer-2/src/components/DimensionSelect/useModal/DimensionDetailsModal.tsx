@@ -6,10 +6,8 @@ import {
   DataExplorerContext,
   DataExplorerPlotConfigDimension,
 } from "@depmap/types";
-import {
-  DeprecatedDataExplorerApiResponse,
-  useDeprecatedDataExplorerApi,
-} from "../../../contexts/DeprecatedDataExplorerApiContext";
+import { deprecatedDataExplorerAPI } from "../../../services/deprecatedDataExplorerAPI";
+import type { DeprecatedDataExplorerApiResponse } from "../../../services/deprecatedDataExplorerAPI";
 import { Mode, State } from "../useDimensionStateManager/types";
 import ModalDimensionSelect from "./ModalDimensionSelect";
 import DatasetDetails from "./DatasetDetails";
@@ -32,7 +30,6 @@ function DimensionDetailsModal({
   onCancel,
   initialState,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [dimension, setDimension] = useState(initialState.dimension);
 
@@ -48,7 +45,7 @@ function DimensionDetailsModal({
         setIsLoading(true);
 
         try {
-          const fetchedDetails = await api.fetchDatasetDetails(
+          const fetchedDetails = await deprecatedDataExplorerAPI.fetchDatasetDetails(
             dimension.dataset_id as string
           );
           setDetails(fetchedDetails);
@@ -59,7 +56,7 @@ function DimensionDetailsModal({
         }
       })();
     }
-  }, [api, dimension]);
+  }, [dimension]);
 
   return (
     <Modal show bsSize="large" onHide={onCancel}>

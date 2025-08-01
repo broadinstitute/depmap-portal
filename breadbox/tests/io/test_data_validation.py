@@ -1,5 +1,6 @@
+from typing import List, Optional
 import pandas as pd
-
+from breadbox.schemas.dataframe_wrapper import PandasDataFrameWrapper
 from breadbox.io.data_validation import (
     verify_unique_rows_and_cols,
     read_and_validate_matrix_df,
@@ -13,34 +14,38 @@ from breadbox.io.data_validation import (
 import pytest
 
 
+def verify_unique_rows_and_cols_df(df: pd.DataFrame):
+    return verify_unique_rows_and_cols(PandasDataFrameWrapper(df))
+
+
 def test_verify_unique_rows_and_cols():
     # duplicate row index failure
     with pytest.raises(FileValidationError) as ex:
-        verify_unique_rows_and_cols(
-            pd.DataFrame(0, columns=["C1", "C2"], index=["A", "B", "A"])
+        verify_unique_rows_and_cols_df(
+            pd.DataFrame(0, columns=["C1", "C2"], index=["A", "B", "A"])  # type: ignore
         )
     assert "Encountered duplicate row indices (Sample IDs): A" == str(ex.value.detail)
 
     # duplicate col failure
     with pytest.raises(FileValidationError) as ex:
-        verify_unique_rows_and_cols(
-            pd.DataFrame(0, columns=["C1", "C2", "C1"], index=["A", "B", "C"])
+        verify_unique_rows_and_cols_df(
+            pd.DataFrame(0, columns=["C1", "C2", "C1"], index=["A", "B", "C"])  # type: ignore
         )
     assert "Encountered duplicate column names (Feature IDs): C1" == str(
         ex.value.detail
     )
 
     # no problems
-    verify_unique_rows_and_cols(
-        pd.DataFrame(0, columns=["C1", "C2", "C3"], index=["A", "B", "C"])
+    verify_unique_rows_and_cols_df(
+        pd.DataFrame(0, columns=["C1", "C2", "C3"], index=["A", "B", "C"])  # type: ignore
     )
 
     # now check a long error to make sure it shortens it
     # make 20 duplicated columns
     with pytest.raises(FileValidationError) as ex:
         columns = [f"C{i}" for i in range(20)]
-        verify_unique_rows_and_cols(
-            pd.DataFrame(0, columns=columns + columns, index=["A", "B", "C"])
+        verify_unique_rows_and_cols_df(
+            pd.DataFrame(0, columns=columns + columns, index=["A", "B", "C"])  # type: ignore
         )
     assert (
         "Encountered duplicate column names (Feature IDs): C0, C1, C2, C3, C4, ..., C15, C16, C17, C18, C19"
@@ -60,13 +65,24 @@ def _to_csv(tmpdir, df, index=True):
     return filename
 
 
-def test_read_and_validate_matrix_df(tmpdir):
+def read_and_validate_matrix_df_helper(
+    file_path: str,
+    value_type: ValueType,
+    allowed_values: Optional[List[str]],
+    data_file_format: str,
+):
+    return read_and_validate_matrix_df(
+        file_path, value_type, allowed_values, data_file_format
+    ).get_df()
+
+
+def test_read_and_validate_matrix_df_helper(tmpdir):
     def to_csv(*args, **kwargs):
         return _to_csv(tmpdir, *args, **kwargs)
 
     # parse this matrix as categorical
-    df = read_and_validate_matrix_df(
-        to_csv(pd.DataFrame("3", columns=["C1", "C2"], index=["A", "B"])),
+    df = read_and_validate_matrix_df_helper(
+        to_csv(pd.DataFrame("3", columns=["C1", "C2"], index=["A", "B"])),  # type: ignore
         ValueType.categorical,
         ["2", "3"],
         "csv",
@@ -78,8 +94,8 @@ def test_read_and_validate_matrix_df(tmpdir):
     assert df["C1"].to_list() == [1, 1]
 
     # parse this matrix as floats
-    df = read_and_validate_matrix_df(
-        to_csv(pd.DataFrame("0", columns=["C1", "C2"], index=["A", "B"])),
+    df = read_and_validate_matrix_df_helper(
+        to_csv(pd.DataFrame("0", columns=["C1", "C2"], index=["A", "B"])),  # type: ignore
         ValueType.continuous,
         None,
         "csv",
@@ -88,8 +104,8 @@ def test_read_and_validate_matrix_df(tmpdir):
     assert df["C1"].to_list() == [0.0, 0.0]
 
     # make sure the index and columns are read as strings even if they're numeric values
-    df = read_and_validate_matrix_df(
-        to_csv(pd.DataFrame("0", columns=["10", "11"], index=["0", "1"])),
+    df = read_and_validate_matrix_df_helper(
+        to_csv(pd.DataFrame("0", columns=["10", "11"], index=["0", "1"])),  # type: ignore
         ValueType.continuous,
         None,
         "csv",
@@ -105,7 +121,7 @@ def test_validate_tabular_df_schema(tmpdir):
     # fewer edge cases with tables. Just exercise columns with numbers to see if
     # anything weird happens
     df = _validate_tabular_df_schema(
-        to_csv(pd.DataFrame("0", columns=["13", "10", "11"], index=[1]), index=False),
+        to_csv(pd.DataFrame("0", columns=["13", "10", "11"], index=[1]), index=False),  # type: ignore[arg-type]
         {
             "10": ColumnMetadata(col_type=AnnotationType.text),
             "13": ColumnMetadata(col_type=AnnotationType.text),
@@ -123,7 +139,7 @@ def test_validate_tabular_df_schema(tmpdir):
     # didn't test parsing str lists, so do that here
     df = _validate_tabular_df_schema(
         to_csv(
-            pd.DataFrame([["0", json.dumps(["1", "2"])]], columns=["ID", "list"]),
+            pd.DataFrame([["0", json.dumps(["1", "2"])]], columns=["ID", "list"]),  # type: ignore[arg-type]
             index=False,
         ),
         {
@@ -151,7 +167,7 @@ def test_validate_tabular_df_schema(tmpdir):
                     "col6": [1, 0, 1],
                     "col7": [True, False, True],
                 },
-                columns=["ID", "col1", "col2", "col3", "col4", "col5", "col6", "col7"],
+                columns=["ID", "col1", "col2", "col3", "col4", "col5", "col6", "col7"],  # type: ignore[arg-type]
             ),
             index=False,
         ),
@@ -204,7 +220,7 @@ def test_incorrect_typing_tabular_df_schema(tmpdir):
             to_csv(
                 pd.DataFrame(
                     {"ID": ["id1", "id2", "id3"], "col1": ["val1", "val2", "val3"]},
-                    columns=["ID", "col1"],
+                    columns=["ID", "col1"],  # type: ignore[arg-type]
                 ),
                 index=False,
             ),

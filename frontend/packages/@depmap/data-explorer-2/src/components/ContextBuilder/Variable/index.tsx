@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { capitalize, getDimensionTypeLabel } from "../../../utils/misc";
-import { DeprecatedDataExplorerApiResponse } from "../../../contexts/DeprecatedDataExplorerApiContext";
+import type { DeprecatedDataExplorerApiResponse } from "../../../services/deprecatedDataExplorerAPI";
 import SliceLabelSelector from "../../SliceLabelSelector";
 import { ContextBuilderReducerAction } from "../contextBuilderReducer";
 import { getValueType, makePartialSliceId } from "../contextBuilderUtils";
