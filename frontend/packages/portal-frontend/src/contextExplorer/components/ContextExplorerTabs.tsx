@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   TabsWithHistory,
   TabList,
@@ -91,11 +91,29 @@ const ContextExplorerTabs = ({
     };
   });
 
+  // Creat a tabIndexToIdMap to properly index tabs with history
+  const tabIndexToIdMap = useMemo(() => {
+    const map = new Map<number, TabTypes>();
+    const allowedTabTypes = Object.values(TabTypes).filter(
+      (tabTypeStr) =>
+        tabTypeStr !== String(TabTypes.DrugSensitivityOncRef) ||
+        enabledFeatures.context_explorer_prerelease_datasets
+    );
+
+    allowedTabTypes.forEach((tabType, index) => {
+      map.set(index, tabType);
+    });
+
+    return map;
+  }, []);
+
   return (
     <TabsWithHistory
       className={styles.Tabs}
-      onChange={(index) => handleSetSelectedTab(index)}
-      onSetInitialIndex={(index) => handleSetSelectedTab(index)}
+      onChange={(index) => handleSetSelectedTab(tabIndexToIdMap.get(index)!)}
+      onSetInitialIndex={(index) =>
+        handleSetSelectedTab(tabIndexToIdMap.get(index)!)
+      }
       isManual
       isLazy
     >
