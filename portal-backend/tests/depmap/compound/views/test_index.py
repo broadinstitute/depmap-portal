@@ -11,7 +11,7 @@ from depmap.dataset.models import DependencyDataset
 from depmap.compound.models import Compound, DRCCompoundDataset, drc_compound_datasets
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
-    format_heatmap_options_new_tab_if_available,
+    get_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -509,7 +509,7 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
 
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
-        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        result = get_heatmap_options_new_tab_if_available(CompoundFactory().label)
         assert len(result) == 1
         assert result[0] == DRCCompoundDataset(
             display_name="PRISM OncRef",
@@ -566,5 +566,5 @@ def test_format_dose_curve_options_new_tab_if_available_false(app):
 def test_format_heatmap_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        result = get_heatmap_options_new_tab_if_available(CompoundFactory().label)
         assert result == []

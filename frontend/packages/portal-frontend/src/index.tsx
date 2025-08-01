@@ -6,7 +6,7 @@ import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 
-import { getQueryParams } from "@depmap/utils";
+import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
@@ -298,7 +298,7 @@ export function initDoseCurvesTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseCurvesTab
-        datasetOptions={datasetOptions}
+        datasetOptions={sortByNumberOrNull(datasetOptions, "priority", "asc")}
         doseUnits={units}
         compoundName={name}
         compoundId={compoundId}
@@ -318,7 +318,7 @@ export function initHeatmapTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <HeatmapTab
-        datasetOptions={datasetOptions}
+        datasetOptions={sortByNumberOrNull(datasetOptions, "priority", "asc")}
         doseUnits={units}
         compoundName={name}
         compoundId={compoundId}

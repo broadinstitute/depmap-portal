@@ -5,6 +5,7 @@ import tempfile
 from typing import Any, List, Optional
 import zipfile
 from depmap.compound import legacy_utils
+from depmap.compound.utils import get_compound_dataset_with_name_and_priority
 import requests
 import urllib.parse
 
@@ -28,6 +29,7 @@ from depmap.compound.models import (
     Compound,
     CompoundDoseReplicate,
     CompoundExperiment,
+    DRCCompoundDatasetWithNamesAndPriority,
     DoseResponseCurve,
     drc_compound_datasets,
 )
@@ -97,7 +99,7 @@ def view_compound(name):
     dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
         compound_label=compound.label
     )
-    heatmap_dataset_options = format_heatmap_options_new_tab_if_available(
+    heatmap_dataset_options = get_heatmap_options_new_tab_if_available(
         compound_label=compound.label
     )
 
@@ -246,12 +248,17 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
                         "ENABLED_FEATURES"
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
-                    valid_options.append(drc_dataset)
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset
+                    )
+                    valid_options.append(complete_option)
 
     return valid_options
 
 
-def format_heatmap_options_new_tab_if_available(compound_label: str):
+def get_heatmap_options_new_tab_if_available(
+    compound_label: str,
+) -> List[DRCCompoundDatasetWithNamesAndPriority]:
     show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
 
     valid_options = []
@@ -269,7 +276,10 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
                         "ENABLED_FEATURES"
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
-                    valid_options.append(drc_dataset)
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset
+                    )
+                    valid_options.append(complete_option)
 
     return valid_options
 

@@ -1,6 +1,7 @@
 import dataclasses
+from depmap import data_access
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
-from depmap.compound.views.index import format_heatmap_options_new_tab_if_available
+from depmap.compound.views.index import get_heatmap_options_new_tab_if_available
 from flask_restplus import Namespace, Resource
 from flask import request
 
@@ -28,9 +29,15 @@ class PrioritizedDataset(Resource):
     def get(self):
         compound_label = request.args.get("compound_label")
 
-        dataset_options = format_heatmap_options_new_tab_if_available(
+        dataset_options = get_heatmap_options_new_tab_if_available(
             compound_label=compound_label
         )
-        prioritized_dataset = dataset_options[0]
 
-        return dataclasses.asdict(prioritized_dataset)
+        # Expect at least (or only?) 1 dataset to be priority 1
+        prioritized_dataset = [
+            option.priority for option in dataset_options if option.priority == 1
+        ]
+
+        assert len(prioritized_dataset) > 0
+
+        return dataclasses.asdict(prioritized_dataset[0])

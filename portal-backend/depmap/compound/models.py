@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import sqlalchemy
 from sqlalchemy import and_, func
 from depmap.database import (
@@ -26,6 +26,13 @@ class DRCCompoundDataset:
     replicate_dataset: str
     auc_dataset_given_id: str
     display_name: str
+
+
+@dataclass
+class DRCCompoundDatasetWithNamesAndPriority(DRCCompoundDataset):
+    priority: Union[int, None]
+    auc_dataset_display_name: str
+    viability_dataset_display_name: str
 
 
 drc_compound_datasets = [
