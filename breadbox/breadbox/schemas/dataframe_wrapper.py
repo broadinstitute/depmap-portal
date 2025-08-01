@@ -33,9 +33,9 @@ class ParquetDataFrameWrapper:
 
     def get_index_names(self) -> List[str]:
         index_col = self.schema.names[0]
-        index_names = pd.read_parquet(
-            self.parquet_path, columns=[index_col], engine="fastparquet"
-        )[index_col].to_list()
+        index_names = pd.read_parquet(self.parquet_path, columns=[index_col])[
+            index_col
+        ].to_list()
         return index_names
 
     def get_column_names(self) -> List[str]:
@@ -46,7 +46,7 @@ class ParquetDataFrameWrapper:
         # NOTE: It appears that pd.read_parquet() by default uses pyarrow. However, for some reason
         #  when reading a file with 20k columns, the memory usage balloons
         # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
-        return pd.read_parquet(self.parquet_path, columns=columns, engine="fastparquet")
+        return pd.read_parquet(self.parquet_path, columns=columns)
 
     def is_sparse(self) -> bool:
         # For now, we bypass checking sparsity for Parquet files to reduce complexity.
@@ -57,10 +57,9 @@ class ParquetDataFrameWrapper:
             raise Exception(
                 "Parquet file has too many columns to read into memory at once."
             )
-        return pd.read_parquet(self.parquet_path, engine="fastparquet")
+        return pd.read_parquet(self.parquet_path)
 
     def is_numeric_cols(self) -> bool:
-
         for i, field in enumerate(self.schema):
             arrow_type = field.type
 
