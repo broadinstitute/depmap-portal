@@ -9,6 +9,8 @@ from breadbox.io.hdf5_utils import write_hdf5_file
 import pytest
 import h5py
 
+from breadbox.utils.progress_tracker import ProgressTracker
+
 
 @pytest.fixture
 def test_dataframe(row_length: int = 500, col_length: int = 11000):
@@ -61,7 +63,11 @@ def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
 
     # override batch size to force multiple batches
     write_hdf5_file(
-        path=str(output_h5), df_wrapper=wrapper, dtype="float", batch_size=1000
+        path=str(output_h5),
+        df_wrapper=wrapper,
+        dtype="float",
+        batch_size=1000,
+        progress=ProgressTracker(),
     )
 
     # Verify output
@@ -102,7 +108,11 @@ def test_write_parquet_nulls_to_hdf5(tmpdir):
 
     # override batch size to force multiple batches
     write_hdf5_file(
-        path=str(output_h5), df_wrapper=wrapper, dtype="float", batch_size=1000
+        path=str(output_h5),
+        df_wrapper=wrapper,
+        dtype="float",
+        batch_size=1000,
+        progress=ProgressTracker(),
     )
 
     # Verify output

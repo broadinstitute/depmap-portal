@@ -1,5 +1,6 @@
 from typing import List, Optional, Literal
 
+from breadbox.utils.progress_tracker import ProgressTracker
 from breadbox.schemas.custom_http_exception import FileValidationError
 from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
 import h5py
@@ -31,6 +32,7 @@ def write_hdf5_file(
     path: str,
     df_wrapper: DataFrameWrapper,
     dtype: Literal["float", "str"],
+    progress: ProgressTracker,
     batch_size: int = 5000,  # Adjust batch size as needed
 ):
     f = h5py.File(path, mode="w")
@@ -79,7 +81,11 @@ def write_hdf5_file(
                 dtype=h5py.string_dtype() if dtype == "str" else np.float64,
             )
 
+            progress.update_message("transforming columns")
+            progress.update_process_max_value(len(cols))
             for i in range(0, len(cols), batch_size):
+                progress.update_progress(i)
+
                 # Find the correct column slice to write
                 end_col = i + batch_size
 
@@ -102,8 +108,11 @@ def write_hdf5_file(
                         f"Failed to update {i}:{end_col} of hdf5 file {path} with {values}"
                     ) from e
 
+        progress.update_process_max_value(None)
+        progress.update_message("Creating indexes in database")
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
         create_index_dataset(f, "samples", pd.Index(df_wrapper.get_index_names()))
+        progress.update_message("Complete")
     finally:
         f.close()
 

@@ -34,6 +34,7 @@ from ..io.data_validation import (
 from .celery import app, LogErrorsTask
 import celery
 from ..config import get_settings
+from ..utils.progress_tracker import ProgressTracker
 
 
 @app.task(base=LogErrorsTask, bind=True)
@@ -46,7 +47,7 @@ def run_dataset_upload(
         else:
             params: DatasetParams = TableDatasetParams(**dataset_params)
 
-        upload_dataset_response = dataset_upload(db, params, user)
+        upload_dataset_response = dataset_upload(db, params, user, ProgressTracker())
 
         # because celery is going to want to serialize the response,
         # convert it to a json dict before returning it
@@ -55,8 +56,12 @@ def run_dataset_upload(
 
 
 def dataset_upload(
-    db: SessionWithUser, dataset_params: DatasetParams, user: str,
+    db: SessionWithUser,
+    dataset_params: DatasetParams,
+    user: str,
+    progress: ProgressTracker,
 ):
+    progress.update_message("started processing of uploaded file")
     settings = get_settings()
 
     # NOTE: We make this check in the dataset_crud.add_dataset function too, because we
@@ -80,6 +85,8 @@ def dataset_upload(
         settings.compute_results_location,
     )
 
+    progress.update_message("reassembled uploaded file")
+
     dataset_id = str(uuid4())
 
     unknown_ids = []
@@ -91,6 +98,8 @@ def dataset_upload(
             else None
         )
         sample_type = _get_dimension_type(db, dataset_params.sample_type, "sample")
+
+        progress.update_message("starting validation")
 
         df_wrapper = read_and_validate_matrix_df(
             file_path,
@@ -154,11 +163,14 @@ def dataset_upload(
             dataset_params.version,
             dataset_params.description,
         )
+
+        progress.update_message("saving final version of dataset")
         save_dataset_file(
             dataset_id,
             df_wrapper,
             dataset_params.value_type,
             settings.filestore_location,
+            progress,
         )
 
     else:
