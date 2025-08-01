@@ -29,13 +29,12 @@ class DataFrameWrapper(Protocol):
 class ParquetDataFrameWrapper:
     def __init__(self, parquet_path: str):
         self.parquet_path = parquet_path
-        self.schema = pq.read_schema(parquet_path)
+        self.file = pq.ParquetFile(parquet_path)
+        self.schema = self.file.schema_arrow
 
     def get_index_names(self) -> List[str]:
         index_col = self.schema.names[0]
-        index_names = pd.read_parquet(
-            self.parquet_path, columns=[index_col], engine="fastparquet"
-        )[index_col].to_list()
+        index_names = self.file.read(columns=[index_col]).column(index_col).to_pylist()
         return index_names
 
     def get_column_names(self) -> List[str]:
@@ -46,7 +45,7 @@ class ParquetDataFrameWrapper:
         # NOTE: It appears that pd.read_parquet() by default uses pyarrow. However, for some reason
         #  when reading a file with 20k columns, the memory usage balloons
         # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
-        return pd.read_parquet(self.parquet_path, columns=columns, engine="fastparquet")
+        return self.file.read(columns=columns).to_pandas()
 
     def is_sparse(self) -> bool:
         # For now, we bypass checking sparsity for Parquet files to reduce complexity.
@@ -57,10 +56,9 @@ class ParquetDataFrameWrapper:
             raise Exception(
                 "Parquet file has too many columns to read into memory at once."
             )
-        return pd.read_parquet(self.parquet_path, engine="fastparquet")
+        return self.file.read().to_pandas()
 
     def is_numeric_cols(self) -> bool:
-
         for i, field in enumerate(self.schema):
             arrow_type = field.type
 
