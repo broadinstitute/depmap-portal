@@ -8,6 +8,19 @@ import { breadboxAPI, legacyPortalAPI, cached } from "@depmap/api";
 import { TableFormattedData } from "../types";
 import { fetchMetadata } from "../fetchDataHelpers";
 
+function getKeysByValue<T extends Record<string, any>>(
+  obj: T,
+  value: any
+): (keyof T)[] {
+  const keys: (keyof T)[] = [];
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === value) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
 function buildTableData(
   viabilityAtDose: any,
   dosefMetadata: any,
@@ -130,13 +143,22 @@ export default function useDoseViabilityData(
       try {
         const bbapi = breadboxAPI;
 
-        const datasetFeatures = await cached(bbapi).getDatasetFeatures(
-          dataset.viability_dataset_given_id
+        // Get the compound dose viability features by fetching the compound dose metadata. Will
+        // be like {CompoundID: "viability_feature_id": "compound_id"}
+        const doseCompoundMetadata = await fetchMetadata<{
+          CompoundID: Record<string, string>;
+        }>("compound_dose", null, ["CompoundID"], bbapi);
+
+        // All of the viability features relevant to this particular compound will be the list of keys
+        // with a value equal to this compoundId.
+        const viabilityFeatureIds = getKeysByValue(
+          doseCompoundMetadata.CompoundID,
+          compoundId
         );
-        const featureLabels = datasetFeatures.map((df) => df.label);
-        const viabilityFeatureLabels = featureLabels.filter((label) =>
-          label.startsWith(compoundId)
-        );
+
+        if (viabilityFeatureIds.length === 0) {
+          throw new Error("No viability data found.");
+        }
 
         const [
           viabilityAtDose,
@@ -149,19 +171,14 @@ export default function useDoseViabilityData(
           cached(bbapi).getMatrixDatasetData(
             dataset.viability_dataset_given_id,
             {
-              features: viabilityFeatureLabels,
-              feature_identifier: "label",
+              features: viabilityFeatureIds,
+              feature_identifier: "id",
             }
           ),
           fetchMetadata<{
             Dose: Record<string, number>;
             DoseUnit: Record<string, string>;
-          }>(
-            "compound_dose",
-            viabilityFeatureLabels,
-            ["Dose", "DoseUnit"],
-            bbapi
-          ),
+          }>("compound_dose", viabilityFeatureIds, ["Dose", "DoseUnit"], bbapi),
           // For getting model id --> cell line name
           fetchMetadata<{ CellLineName: Record<string, string> }>(
             "depmap_model",
