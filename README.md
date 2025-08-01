@@ -5,18 +5,19 @@ cancer dependencies and answer scientific questions about DepMap data.
 
 ## Quickstart
 
-[R](https://www.r-project.org/), install gfortran from
-https://github.com/fxcoudert/gfortran-for-macOS/releases for your version of OS.
-[conda](https://docs.conda.io/en/latest/miniconda.html),
-[Redis](https://redis.io/) (which can be installed by
-`brew install redis` if not already installed),
-[node.js](https://nodejs.org/en/).
-You may also need to
-`brew install pcre2` and `brew install gcc` and `brew install yarn`.
+The DepMap Portal codebase is a monorepo conisting of at least a few important modules:
+* **Breadbox**: a service for storing and retrieving data displayed on the DepMap portal. 
+    * Breadbox uses a more updated data model and stores most of the data displayed in visualizations on the portal. 
+    * More breadbox documentation [here](breadbox/README.md)
+    * Documentation about our data model and terminology can be found [here](breadbox/docs/terminology.md)
+* **"legacy" portal backend**: a service with a transient database (rebuilt each deployment)
+    * This API also serves information about all of our downloads to the frontend
+    * More portal backend documentation [here](portal-backend/README.md)
+* **Frontend**: The portal's mostly-React frontend
+    * More documentation [here](frontend/README.md)
+* **Pipeline**: The portal's preprocessing pipeline
+    * More documentation [here](pipeline/README.md)
 
-If you are doing development on the "DepMap portal" web app, see the readme in [portal-backend](portal-backend).
-
-If you are doing development on a preprocessing job, see the readme in [pipeline](pipeline).
 
 ## Deployments
 
