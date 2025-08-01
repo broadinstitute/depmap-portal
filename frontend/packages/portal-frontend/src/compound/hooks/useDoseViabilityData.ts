@@ -152,7 +152,7 @@ export default function useDoseViabilityData(
         // All of the viability features relevant to this particular compound will be the list of keys
         // with a value equal to this compoundId.
         const viabilityFeatureIds = getKeysByValue(
-          doseCompoundMetadata["CompoundID"],
+          doseCompoundMetadata.CompoundID,
           compoundId
         );
 
