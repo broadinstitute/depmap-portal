@@ -20,7 +20,8 @@ export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
     (async () => {
       setIsLoading(true);
       const prioritizedDataset = await legacyPortalAPI.getPrioritizedDataset(
-        compoundName
+        compoundName,
+        compoundId
       );
       setDataset(prioritizedDataset);
       setIsLoading(false);
@@ -29,7 +30,11 @@ export const HeatmapTileContainer: React.FC<HeatmapTileContainerProps> = ({
 
   return (
     <DoseViabilityDataProvider dataset={dataset} compoundId={compoundId}>
-      <HeatmapTile compoundName={compoundName} isLoadingDataset={isLoading} />
+      <HeatmapTile
+        compoundName={compoundName}
+        displayName={dataset?.display_name || ""}
+        isLoadingDataset={isLoading}
+      />
     </DoseViabilityDataProvider>
   );
 };

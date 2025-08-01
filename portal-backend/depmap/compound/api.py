@@ -28,16 +28,20 @@ class DoseCurveData(Resource):
 class PrioritizedDataset(Resource):
     def get(self):
         compound_label = request.args.get("compound_label")
+        compound_id = request.args.get("compound_id")
 
         dataset_options = get_heatmap_options_new_tab_if_available(
-            compound_label=compound_label
+            compound_label=compound_label, compound_id=compound_id
         )
 
-        # Expect at least (or only?) 1 dataset to be priority 1
-        prioritized_dataset = [
-            option.priority for option in dataset_options if option.priority == 1
-        ]
+        # Find the dataset with the lowest priority. Priority can be None, and the lowest priority won't necessarily
+        # have a priority of 1, because this compound might not exist in the dataset with priority 1. dataset_options
+        # will only have the options for which this compound exists.
+        sorted_data = sorted(
+            dataset_options,
+            key=lambda dataset: dataset.priority
+            if dataset.priority is not None
+            else float("inf"),
+        )
 
-        assert len(prioritized_dataset) > 0
-
-        return dataclasses.asdict(prioritized_dataset[0])
+        return dataclasses.asdict(sorted_data[0])

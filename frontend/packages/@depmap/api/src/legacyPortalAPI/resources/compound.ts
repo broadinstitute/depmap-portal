@@ -39,10 +39,12 @@ export function getCompoundDoseCurveData(
 }
 
 export function getPrioritizedDataset(
-  compoundLabel: string
+  compoundLabel: string,
+  compoundId: string
 ): Promise<DRCDatasetOptions> {
   const params = {
     compound_label: compoundLabel,
+    compound_id: compoundId,
   };
 
   return getJson<DRCDatasetOptions>(
