@@ -69,12 +69,5 @@ const correlationAnalysisDataPromise = () => {
 };
 
 export function Story() {
-  return (
-    <CorrelationAnalysis
-      compound="imatinib"
-      getCorrelationData={correlationAnalysisDataPromise}
-      getFeatureTypes={featureTypesPromise}
-      getCompoundDatasets={compoundDatasetsPromise}
-    />
-  );
+  return <CorrelationAnalysis compound="imatinib" />;
 }

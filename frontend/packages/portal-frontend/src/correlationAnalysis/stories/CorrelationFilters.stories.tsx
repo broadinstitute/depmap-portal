@@ -36,7 +36,7 @@ export function CorrelationFiltersStory() {
         getDatasets={featureTypesPromise}
         onChangeDataset={(val) => console.log(val)}
         getFeatureTypes={featureTypesPromise}
-        onChangeFeatureTypes={(val) => console.log(val)}
+        onChangeCorrelatedDatasets={(val) => console.log(val)}
         doses={["dose1", "dose2", "dose3"]}
         onChangeDoses={(val) => console.log(val)}
       />
