@@ -113,6 +113,8 @@ class GeneTeaSearchTerm(BaseModel):
 
 
 class FeatureSummary(BaseModel):
+    dataset_id: str
+    given_id: str
     feature_label: str
     feature_type: str
     dim_type: str

@@ -133,36 +133,25 @@ const ModelPerformancePanel = ({
           activeKey={activeFeatureIndex}
         >
           {modelPerformanceInfo.feature_summaries &&
-            Object.keys(modelPerformanceInfo.feature_summaries).map(
-              (feature, featureIndex) => (
+            modelPerformanceInfo.feature_summaries.map(
+              (feature_summary, featureIndex) => (
                 <Panel
                   eventKey={featureIndex}
-                  key={`${modelPerformanceInfo.feature_summaries[feature].feature_label}${modelName}${screenType}`}
+                  key={`${feature_summary.dataset_id}-${feature_summary.given_id}`}
                 >
                   <Panel.Heading>
                     <Panel.Title toggle>
                       <div>
                         <FeatureCollapsiblePanelHeader
-                          feature={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .feature_label
-                          }
+                          givenId={feature_summary.given_id}
+                          datasetId={feature_summary.dataset_id}
+                          feature={feature_summary.feature_label}
                           relativeImportance={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .feature_importance
+                            feature_summary.feature_importance
                           }
-                          correlation={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .pearson
-                          }
-                          featureTypeLabel={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .feature_type
-                          }
-                          relatedType={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .related_type
-                          }
+                          correlation={feature_summary.pearson}
+                          featureTypeLabel={feature_summary.feature_type}
+                          relatedType={feature_summary.related_type}
                           isOpen={activeFeatureIndex === featureIndex}
                         />
                       </div>
@@ -170,18 +159,14 @@ const ModelPerformancePanel = ({
                   </Panel.Heading>
                   <Panel.Body collapsible>
                     <div>
-                      {modelPerformanceInfo.feature_summaries[feature] && (
+                      {feature_summary && (
                         <FeatureCollapsiblePanel
+                          givenId={feature_summary.given_id}
+                          datasetId={feature_summary.dataset_id}
                           modelName={modelName}
-                          feature={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .feature_label
-                          }
-                          featureNameType={feature}
-                          dimType={
-                            modelPerformanceInfo.feature_summaries[feature]
-                              .dim_type
-                          }
+                          feature={feature_summary.feature_label}
+                          featureNameType={feature_summary.feature_type}
+                          dimType={feature_summary.dim_type}
                           geneSymbol={entityLabel}
                           panelIndex={featureIndex}
                           screenType={screenType}

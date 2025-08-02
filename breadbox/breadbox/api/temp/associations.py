@@ -10,8 +10,14 @@ from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.db.session import SessionWithUser
 from breadbox.api.uploads import construct_file_from_ids
-from breadbox.schemas.associations import Associations
-from breadbox.schemas.associations import AssociationTable, AssociationsIn
+from breadbox.schemas.associations import (
+    Associations,
+    AssociationTable,
+    AssociationsIn,
+    ComputeAssociationsParams,
+    LongAssociationsTable,
+)
+
 from typing import List
 from breadbox.service import associations as associations_service
 from breadbox.crud import associations as associations_crud
@@ -20,6 +26,27 @@ from breadbox.db.util import transaction
 from typing import cast, Literal
 
 from .router import router
+
+
+@router.post(
+    "/associations/compute",
+    operation_id="compute_associations_for_slice",
+    response_model=LongAssociationsTable,
+    response_model_exclude_none=False,
+)
+def compute_associations_for_slice(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    params: Annotated[
+        ComputeAssociationsParams,
+        Body(
+            description="The dataset for which each feature will be correlated with the slice"
+        ),
+    ],
+):
+    return associations_service.compute_associations(
+        db, settings.filestore_location, params.dataset_id, slice_query
+    )
 
 
 @router.post(

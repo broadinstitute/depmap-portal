@@ -11,6 +11,8 @@ import { RelatedType } from "@depmap/types/src/predictability";
 import { legacyPortalAPI } from "@depmap/api";
 
 interface FeatureSinglePanelHeaderProps {
+  datasetId: string;
+  givenId: string;
   feature: string;
   relativeImportance: number;
   correlation: number;
@@ -159,6 +161,8 @@ interface FeatureCollapsiblePanelProps {
   panelIndex: number;
   isOpen: boolean;
   screenType: string;
+  givenId: string;
+  datasetId: string;
 }
 
 // We don't have TCGA data loaded at this time, so don't show this plot yet.
@@ -173,6 +177,8 @@ const FeatureCollapsiblePanels = ({
   panelIndex,
   isOpen,
   screenType,
+  datasetId,
+  givenId,
 }: FeatureCollapsiblePanelProps) => {
   return (
     <div
@@ -228,7 +234,10 @@ const FeatureCollapsiblePanels = ({
                 />
               </div>
               <div className={styles.featureGraph3}>
-                <PredictabilityWaterfallPlot />
+                <PredictabilityWaterfallPlot
+                  datasetId={datasetId}
+                  givenId={givenId}
+                />
               </div>{" "}
             </>
           )}

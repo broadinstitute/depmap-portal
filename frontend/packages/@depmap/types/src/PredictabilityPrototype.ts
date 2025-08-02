@@ -104,6 +104,8 @@ export interface GeneTeaSearchTerm {
 // Child types for PredictabilityData
 
 export type FeatureSummary = {
+  dataset_id: string;
+  given_id: string;
   feature_label: string;
   feature_type: string;
   dim_type: string;

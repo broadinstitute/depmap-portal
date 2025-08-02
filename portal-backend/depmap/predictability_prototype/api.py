@@ -9,7 +9,7 @@ from depmap.predictability_prototype.utils import (
     get_feature_gene_effect_plot_data,
     get_gene_effect_df,
     top_features_overall,
-    get_top_feature_headers,
+    get_top_feature_summaries,
     MODEL_SEQUENCE,
     SCREEN_TYPES,
 )
@@ -47,15 +47,17 @@ class Predictions(
         # Overview data
         try:
             logger.warning(f"get predictions start")
-            matrix_datasets = data_access.get_all_matrix_datasets()
-            datasets_by_taiga_id = get_all_datasets(matrix_datasets)
+            dataset_id_by_taiga_id = {
+                x.taiga_id: x.id for x in data_access.get_all_matrix_datasets()
+            }
+            logger.warning(f"created taiga_id -> dataset_id mapping")
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
                 logger.warning(f"fetching {screen_type}")
-                dataset = DependencyDataset.get_dataset_by_data_type_priority(
-                    screen_type
-                )
+                # dataset = DependencyDataset.get_dataset_by_data_type_priority(
+                #     screen_type
+                # )
 
                 logger.warning(f"fetching {screen_type} gene effect")
 
@@ -74,24 +76,26 @@ class Predictions(
                 model_performance_info = {}
                 for i, model in enumerate(MODEL_SEQUENCE):
                     logger.warning(f"model {model}")
-                    feature_header_info = get_top_feature_headers(
-                        entity_id=entity_id, model=model, screen_type=screen_type
+                    feature_summaries = get_top_feature_summaries(
+                        dataset_id_by_taiga_id=dataset_id_by_taiga_id,
+                        entity_id=entity_id,
+                        model=model,
+                        screen_type=screen_type,
                     )
                     # this data structure is a little convoluted. Can we simplify?
                     # maybe we should fetch all the data and then restructure it?
                     r = agg_scores["accuracies"]["accuracy"][i]
                     model_performance_info[model] = ModelPerformanceInfo(
-                        r=r,
-                        feature_summaries=feature_header_info,
+                        r=r, feature_summaries=feature_summaries,
                     )
-                    logger.warning(f"feature_header_info={feature_header_info}")
+                    logger.warning(f"feature_summaries={feature_summaries}")
 
                 # Convert gene_tea_symbols to proper GeneTeaSearchTerm objects
                 gene_tea_search_terms = [
                     GeneTeaSearchTerm(
                         name=item["name"],
                         feature_type_label=item["feature_type_label"],
-                        importance_rank=item["importance_rank"]
+                        importance_rank=item["importance_rank"],
                     )
                     for item in gene_tea_symbols
                 ]
@@ -108,7 +112,9 @@ class Predictions(
             result = PredictabilityData(data=PredData(__root__=data_by_screen_type))
         except Exception as e:
             logger.exception("Exception occurred")
-            result = PredictabilityData(data=PredData(__root__={}), error_message=str(e))
+            result = PredictabilityData(
+                data=PredData(__root__={}), error_message=str(e)
+            )
 
         return result.dict()
 

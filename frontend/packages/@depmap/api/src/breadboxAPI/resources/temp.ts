@@ -1,6 +1,18 @@
 import { DataExplorerContextV2, SliceQuery } from "@depmap/types";
 import { postJson } from "../client";
 
+interface ComputeAssociationsParams {
+  dataset_id: string;
+  slice_query: SliceQuery;
+}
+
+export function computeAssociations(params: ComputeAssociationsParams) {
+  return postJson<{ label: string[]; given_id: string[]; cor: number[] }>(
+    "/temp/associations/compute",
+    params
+  );
+}
+
 export function fetchAssociations(sliceQuery: SliceQuery) {
   return postJson<{
     dataset_name: string;

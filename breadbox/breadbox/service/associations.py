@@ -1,20 +1,32 @@
 import os
 import numpy as np
+import pandas as pd
 
 from breadbox.db.session import SessionWithUser
 from depmap_compute.slice import SliceQuery
-from breadbox.schemas.associations import Associations, Association, DatasetSummary
+
+from breadbox.models.dataset import MatrixDataset
+from breadbox.schemas.associations import (
+    Associations,
+    Association,
+    DatasetSummary,
+    LongAssociationsTable,
+)
 from breadbox.crud import associations as associations_crud
 from breadbox.crud import dataset as dataset_crud
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
+    DatasetNotAMatrix,
 )
+from breadbox.schemas.dataset import MatrixDimensionsInfo
 from breadbox.service import slice as slice_service
 import logging
 from breadbox.crud.dimension_types import get_dimension_type_labels_by_id
 
 import packed_cor_tables
+
+from breadbox.service.dataset import get_subsetted_matrix_dataset_df
 
 log = logging.getLogger(__name__)
 
@@ -111,4 +123,59 @@ def get_associations(
         dimension_label=resolved_slice.label,
         associated_datasets=datasets,
         associated_dimensions=associated_dimensions,
+    )
+
+
+def cor_series_with_df(series: pd.Series, dataset_df: pd.DataFrame) -> pd.Series:
+    other_df = pd.DataFrame({col_name: series for col_name in dataset_df.columns})
+    correlations = dataset_df.corrwith(other_df)
+    return correlations
+
+
+def compute_associations(
+    db: SessionWithUser,
+    filestore_location: str,
+    dataset_id: str,
+    slice_query: SliceQuery,
+):
+
+    dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Could not find dataset {dataset_id}")
+
+    if not isinstance(dataset, MatrixDataset):
+        raise DatasetNotAMatrix(f"{dataset.id} is not a MatrixDataset")
+
+    resolved_slice = slice_service.resolve_slice_to_components(db, slice_query)
+    resolved_slice_dataset = resolved_slice.dataset
+
+    if not isinstance(resolved_slice_dataset, MatrixDataset):
+        raise DatasetNotAMatrix(f"{resolved_slice_dataset.id} is not a MatrixDataset")
+
+    dataset_df = get_subsetted_matrix_dataset_df(
+        db,
+        db.user,
+        dataset,
+        MatrixDimensionsInfo(),  # fetch everything
+        filestore_location,
+    )
+
+    slice_df = get_subsetted_matrix_dataset_df(
+        db,
+        db.user,
+        resolved_slice_dataset,
+        MatrixDimensionsInfo(
+            features=[resolved_slice.given_id], feature_identifier="id"
+        ),
+        filestore_location,
+    )
+
+    correlations = cor_series_with_df(slice_df.loc[0], dataset_df)
+    # TODO: Look up real labels
+    label_column = correlations.index
+
+    return LongAssociationsTable(
+        label=label_column.to_list(),
+        given_id=correlations.index.to_list(),
+        cor=correlations.to_list(),
     )

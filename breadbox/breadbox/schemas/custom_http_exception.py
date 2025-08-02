@@ -51,6 +51,11 @@ class ResourceNotFoundError(UserError):
         super().__init__(msg, error_code=404)
 
 
+class DatasetNotAMatrix(UserError):
+    def __init__(self, msg):
+        super().__init__(msg, error_code=404)
+
+
 class FileValidationError(UserError):
     def __init__(self, msg):
         super().__init__(msg)

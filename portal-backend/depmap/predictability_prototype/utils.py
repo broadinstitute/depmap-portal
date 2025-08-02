@@ -37,14 +37,6 @@ def get_dataset_by_model_name_and_screen_type_and_entity_id(
     )
 
 
-def get_all_datasets(matrix_datasets):
-    all_predictability_datasets = {}
-    for dataset in matrix_datasets:
-        all_predictability_datasets[dataset.taiga_id] = dataset
-
-    return all_predictability_datasets
-
-
 @functools.cache
 def get_gene_effect_df(dataset):
     dataset_name = dataset.name.name
@@ -350,17 +342,25 @@ def get_feature_slice_and_dataset_id(
     return slice.dropna(), feature_dataset_id
 
 
-def get_top_feature_headers(entity_id: int, model: str, screen_type: str) -> List[FeatureSummary]:
+def get_top_feature_summaries(
+    dataset_id_by_taiga_id: Dict[str, str],
+    entity_id: int,
+    model: str,
+    screen_type: str,
+    top_n_features=50,
+) -> List[FeatureSummary]:
     summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
     summaries = sorted(summaries, key=lambda x: x.rank)
 
     top_features_metadata = []
-    for feature_info in summaries[:10]:
+    for feature_info in summaries[:top_n_features]:
         feature_name = feature_info.feature_name
+        given_id = feature_info.given_id
         dim_type = feature_info.dim_type
         feature_label = feature_info.feature_label
+        dataset_id = dataset_id_by_taiga_id[feature_info.taiga_id]
 
         feature_importance = feature_info.importance
         pearson = feature_info.pearson
@@ -373,6 +373,8 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str) -> Lis
             feature_label=feature_label,
             feature_type=feature_name.split("_")[-1],
             dim_type=dim_type,  # For data explorer button
+            dataset_id=dataset_id,
+            given_id=given_id,
             feature_importance=feature_importance,
             related_type=related_type,
             pearson=pearson,
