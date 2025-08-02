@@ -9,6 +9,7 @@ from depmap.predictability_prototype.models import (
     PrototypePredictiveFeature,
     PrototypePredictiveFeatureResult,
 )
+from depmap.predictability_prototype.schemas import FeatureSummary
 from depmap_compute import analysis_tasks_interface
 from depmap.enums import DependencyEnum
 import pandas as pd
@@ -349,13 +350,13 @@ def get_feature_slice_and_dataset_id(
     return slice.dropna(), feature_dataset_id
 
 
-def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
+def get_top_feature_headers(entity_id: int, model: str, screen_type: str) -> List[FeatureSummary]:
     summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model, entity_id=entity_id, screen_type=screen_type
     )
     summaries = sorted(summaries, key=lambda x: x.rank)
 
-    top_features_metadata = {}
+    top_features_metadata = []
     for feature_info in summaries[:10]:
         feature_name = feature_info.feature_name
         dim_type = feature_info.dim_type
@@ -368,14 +369,15 @@ def get_top_feature_headers(entity_id: int, model: str, screen_type: str):
         assert feature_obj is not None
         related_type = feature_obj.get_relation_to_entity(entity_id=entity_id)
 
-        top_features_metadata[feature_name] = {
-            "feature_label": feature_label,
-            "feature_importance": feature_importance,
-            "feature_type": feature_name.split("_")[-1],
-            "dim_type": dim_type,  # For data explorer button
-            "pearson": pearson,
-            "related_type": related_type,
-        }
+        feature_summary = FeatureSummary(
+            feature_label=feature_label,
+            feature_type=feature_name.split("_")[-1],
+            dim_type=dim_type,  # For data explorer button
+            feature_importance=feature_importance,
+            related_type=related_type,
+            pearson=pearson,
+        )
+        top_features_metadata.append(feature_summary)
 
     return top_features_metadata
 
