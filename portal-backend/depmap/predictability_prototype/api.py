@@ -7,7 +7,6 @@ from depmap.predictability_prototype.utils import (
     get_feature_boxplot_data,
     get_feature_corr_plot,
     get_feature_gene_effect_plot_data,
-    get_feature_waterfall_plot,
     get_gene_effect_df,
     top_features_overall,
     get_top_feature_headers,
@@ -159,36 +158,6 @@ class RelatedCorrelations(
             entity_id=entity_id,
             gene_symbol=entity_label,
             feature_name_type=feature_name_type,
-            matrix_datasets=matrix_datasets,
-        )
-
-        return plot
-
-
-@namespace.route("/feature/waterfall")
-class Waterfall(
-    Resource
-):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
-    def get(self):
-        # Note: docstrings to restplus methods end up in the swagger documentation.
-        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
-        """
-        test
-        """
-        entity_label = request.args.get("entity_label")
-        feature_name_type = request.args.get("identifier")
-        model = request.args.get("model")
-        screen_type = request.args.get("screen_type")
-
-        entity_id = Gene.get_by_label(entity_label).entity_id
-        matrix_datasets = data_access.get_all_matrix_datasets()
-
-        plot = get_feature_waterfall_plot(
-            screen_type=screen_type,
-            model=model,
-            entity_id=entity_id,
-            feature_name_type=feature_name_type,
-            entity_label=entity_label,
             matrix_datasets=matrix_datasets,
         )
 

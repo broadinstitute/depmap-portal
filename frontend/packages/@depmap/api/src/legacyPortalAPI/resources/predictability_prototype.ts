@@ -32,20 +32,6 @@ export function getRelatedFeatureCorrData(
   );
 }
 
-export function getWaterfallData(
-  entityLabel: string,
-  identifier: string,
-  model: string,
-  screenType: string
-) {
-  return getJson<any>(`/api/predictability_prototype/feature/waterfall`, {
-    entity_label: entityLabel,
-    identifier,
-    model,
-    screen_type: screenType,
-  });
-}
-
 export function getPredictabilityBoxOrBarPlotData(
   identifier: string,
   entityLabel: string,

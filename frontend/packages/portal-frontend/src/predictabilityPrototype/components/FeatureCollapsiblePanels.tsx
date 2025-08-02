@@ -228,15 +228,7 @@ const FeatureCollapsiblePanels = ({
                 />
               </div>
               <div className={styles.featureGraph3}>
-                <PredictabilityWaterfallPlot
-                  modelName={modelName}
-                  geneSymbol={geneSymbol}
-                  featureNameType={featureNameType}
-                  feature={feature}
-                  panelIndex={panelIndex}
-                  screenType={screenType}
-                  getWaterfallPlotData={legacyPortalAPI.getWaterfallData}
-                />
+                <PredictabilityWaterfallPlot />
               </div>{" "}
             </>
           )}

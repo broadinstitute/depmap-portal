@@ -1,89 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useState } from "react";
 // import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import { RelatedFeaturePlot } from "@depmap/types";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 
-interface PredictabilityWaterfallPlotProps {
-  modelName: string;
-  geneSymbol: string;
-  featureNameType: string;
-  feature: string;
-  panelIndex: number;
-  screenType: string;
-  getWaterfallPlotData: (
-    entityLabel: string,
-    identifier: string,
-    model: string,
-    screenType: string
-  ) => Promise<RelatedFeaturePlot>;
-}
+// interface PredictabilityWaterfallPlotProps {
+// }
 
-const PredictabilityWaterfallPlot = ({
-  modelName,
-  geneSymbol,
-  featureNameType,
-  feature,
-  panelIndex,
-  screenType,
-  getWaterfallPlotData,
-}: PredictabilityWaterfallPlotProps) => {
+const waterfallPlotData: RelatedFeaturePlot = {
+  x: [0, 1],
+  x_index: ["0", "1"],
+  y: [0.1, 1.1],
+  y_index: ["0", "1"],
+  x_label: "xaxis",
+  y_label: "yaxis",
+};
+
+const PredictabilityWaterfallPlot = () => {
   const [
     waterfallPlotElement,
     setWaterfallPlotElement,
   ] = useState<ExtendedPlotType | null>(null);
 
-  const [
-    waterfallPlotData,
-    setWaterfallPlotData,
-  ] = useState<RelatedFeaturePlot | null>(null);
-
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-
-  const latestPromise = useRef<Promise<RelatedFeaturePlot>>();
-
-  useEffect(() => {
-    setWaterfallPlotData(null);
-    setWaterfallPlotElement(null);
-    setIsLoading(true);
-    const promise = getWaterfallPlotData(
-      geneSymbol,
-      featureNameType,
-      modelName,
-      screenType
-    );
-
-    latestPromise.current = promise;
-    promise
-      .then((result: any) => {
-        if (promise === latestPromise.current) {
-          setWaterfallPlotData(result);
-          setIsLoading(false);
-        }
-      })
-      .catch((e) => {
-        if (promise === latestPromise.current) {
-          window.console.error(e);
-          setIsError(true);
-        }
-      });
-
-    return () => {
-      setWaterfallPlotData(null);
-      setWaterfallPlotElement(null);
-    };
-  }, [
-    featureNameType,
-    geneSymbol,
-    getWaterfallPlotData,
-    modelName,
-    screenType,
-  ]);
-
-  // TODO: If isError add error message to UI
-  console.log(isError);
+  const isLoading = false;
 
   const waterfallPlotFormattedData: any = useMemo(() => {
     if (waterfallPlotData) {
@@ -107,14 +47,13 @@ const PredictabilityWaterfallPlot = ({
       yLabel: "",
       hoverText: "",
     };
-  }, [waterfallPlotData, isLoading]);
+  }, [isLoading]);
 
   return (
     <>
       {!waterfallPlotElement && <PlotSpinner height={"100%"} />}
       {!isLoading && (
         <ScatterPlot
-          key={feature + "waterfall" + panelIndex}
           margin={{ t: 80, l: 80, r: 80 }}
           data={waterfallPlotFormattedData}
           colorVariable={[]}

@@ -62,19 +62,6 @@ export type FeatureInfoSummary = {
   pearson: number;
 };
 
-export type FeatureSummary = {
-  feature_label: string;
-  feature_type: string;
-  dim_type: string;
-  feature_importance: number;
-  related_type: RelatedType | null;
-  pearson: number;
-};
-
-export type FeatureSummaries = {
-  [key: string]: FeatureSummary;
-};
-
 export type RelatedFeaturePlot = {
   x: number[];
   x_index?: string[];
@@ -108,16 +95,27 @@ export type AggScoresData = {
   y_axis_label: string;
 };
 
-export type ModelPerformanceInfo = {
-  r: number;
-  feature_summaries: FeatureSummaries;
-};
-
 export interface GeneTeaSearchTerm {
   name: string;
   feature_type_label: string;
   importance_rank: number;
 }
+
+// Child types for PredictabilityData
+
+export type FeatureSummary = {
+  feature_label: string;
+  feature_type: string;
+  dim_type: string;
+  feature_importance: number;
+  related_type: RelatedType | null;
+  pearson: number;
+};
+
+export type ModelPerformanceInfo = {
+  r: number;
+  feature_summaries: FeatureSummary[];
+};
 
 export interface PredData {
   [screen_type: string]: {
@@ -136,7 +134,7 @@ export interface PredictabilityData {
   error_message?: string;
 }
 
-export interface PredictabilityBoxOrBarPlot {
-  data: number[] | { fraction_0: number; fraction_1: number };
-  is_binary: boolean;
-}
+// export interface PredictabilityBoxOrBarPlot {
+//   data: number[] | { fraction_0: number; fraction_1: number };
+//   is_binary: boolean;
+// }

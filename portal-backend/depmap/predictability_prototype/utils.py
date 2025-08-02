@@ -677,50 +677,6 @@ def get_related_features_scatter(
     }
 
 
-def get_other_dep_waterfall_plot(
-    feature_label,
-    feature_type,
-    feature_slice_values,
-    feature_slice_index,
-    screen_type: str,
-    entity_label: str,
-):
-    gene_df = data_access.get_subsetted_df_by_labels(
-        _get_gene_dataset_id(screen_type), None, feature_slice_index
-    )
-
-    gene_df = gene_df.dropna()
-
-    feature_series = pd.Series(data=feature_slice_values, index=feature_slice_index)
-
-    def progress_callback(percentage):
-        return
-
-    # NOTE: added join="other", feature_series.to_frame(), and axis=0 to fix pyright, but I don't remember what this was doing,
-    # and I don't have local data to easily double check. If this is involved in an error, might
-    # need a different join.
-    gene_df, feature_series = gene_df.align(
-        feature_series.to_frame(), join="outer", axis=0
-    )
-
-    (scores, _, _, _) = analysis_tasks_interface.prep_and_run_py_pearson(
-        feature_series.values, gene_df.values, progress_callback
-    )
-
-    scores = list(scores)
-    scores.sort()
-    rank = list(range(len(scores)))
-    y_label = "Gene Effect R<br>with %s %s" % (feature_label, feature_type)
-
-    return {
-        "x": rank,
-        "y": scores,
-        "y_index": gene_df.index.tolist(),
-        "x_label": "Rank",
-        "y_label": y_label,
-    }
-
-
 def get_feature_corr_plot(
     model,
     gene_symbol,
@@ -753,35 +709,3 @@ def get_feature_corr_plot(
         )
 
     return rel_features_scatter_plot
-
-
-def get_feature_waterfall_plot(
-    model,
-    entity_id,
-    feature_name_type,
-    screen_type: str,
-    entity_label: str,
-    matrix_datasets: list,
-):
-    top_features = get_top_features(
-        screen_type=screen_type,
-        entity_id=entity_id,
-        model=model,
-        matrix_datasets=matrix_datasets,
-    )
-    full_feature_info = top_features["metadata"][feature_name_type]
-
-    feature_dataset_id = full_feature_info["feature_dataset_id"]
-
-    waterfall_plot = None
-    if data_access.is_continuous(feature_dataset_id):
-        waterfall_plot = get_other_dep_waterfall_plot(
-            feature_label=full_feature_info["feature_label"],
-            feature_type=full_feature_info["feature_type"],
-            feature_slice_values=full_feature_info["feature_actuals_values"],
-            feature_slice_index=full_feature_info["feature_actuals_value_labels"],
-            screen_type=screen_type,
-            entity_label=entity_label,
-        )
-
-    return waterfall_plot
