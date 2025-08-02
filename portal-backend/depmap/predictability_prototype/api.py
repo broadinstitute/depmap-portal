@@ -13,6 +13,14 @@ from depmap.predictability_prototype.utils import (
     MODEL_SEQUENCE,
     SCREEN_TYPES,
 )
+from depmap.predictability_prototype.schemas import (
+    PredictabilityData,
+    PredData,
+    ScreenTypeData,
+    OverviewData,
+    ModelPerformanceInfo,
+    GeneTeaSearchTerm,
+)
 from depmap.data_access import interface as data_access
 
 from flask_restplus import Namespace, Resource
@@ -28,7 +36,7 @@ namespace = Namespace("predictability_prototype", description="")
 class Predictions(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
-    def get(self):
+    def get(self) -> PredictabilityData:
         # Note: docstrings to restplus methods end up in the swagger documentation.
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
         """
@@ -72,28 +80,36 @@ class Predictions(
                     # this data structure is a little convoluted. Can we simplify?
                     # maybe we should fetch all the data and then restructure it?
                     r = agg_scores["accuracies"]["accuracy"][i]
-                    model_performance_info[model] = {
-                        "r": r,
-                        "feature_summaries": feature_header_info,
-                    }
+                    model_performance_info[model] = ModelPerformanceInfo(
+                        r=r,
+                        feature_summaries=feature_header_info,
+                    )
                     logger.warning(f"feature_header_info={feature_header_info}")
 
-                data_by_screen_type[screen_type] = {
-                    "overview": {
-                        "aggregated_scores": agg_scores,  # used by "Aggregate Scores Across All Models" figure
-                        "top_features": top_features,  # used by "Top features overall" figure
-                        "gene_tea_symbols": list(
-                            gene_tea_symbols
-                        ),  # used by GeneTEA results tab
-                    },
-                    "model_performance_info": model_performance_info,  # used by model performance section
-                }
+                # Convert gene_tea_symbols to proper GeneTeaSearchTerm objects
+                gene_tea_search_terms = [
+                    GeneTeaSearchTerm(
+                        name=item["name"],
+                        feature_type_label=item["feature_type_label"],
+                        importance_rank=item["importance_rank"]
+                    )
+                    for item in gene_tea_symbols
+                ]
+
+                data_by_screen_type[screen_type] = ScreenTypeData(
+                    overview=OverviewData(
+                        aggregated_scores=agg_scores,  # used by "Aggregate Scores Across All Models" figure
+                        top_features=top_features,  # used by "Top features overall" figure
+                        gene_tea_symbols=gene_tea_search_terms,  # used by GeneTEA results tab
+                    ),
+                    model_performance_info=model_performance_info,  # used by model performance section
+                )
 
         except Exception as e:
             logger.exception("Exception occurred")
-            return {"error_message": str(e)}
+            return PredictabilityData(data=PredData(__root__={}), error_message=str(e))
 
-        return {"data": data_by_screen_type}
+        return PredictabilityData(data=PredData(__root__=data_by_screen_type))
 
 
 @namespace.route("/model_performance")
