@@ -36,7 +36,7 @@ namespace = Namespace("predictability_prototype", description="")
 class Predictions(
     Resource
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
-    def get(self) -> PredictabilityData:
+    def get(self):
         # Note: docstrings to restplus methods end up in the swagger documentation.
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
         """
@@ -105,11 +105,12 @@ class Predictions(
                     model_performance_info=model_performance_info,  # used by model performance section
                 )
 
+            result = PredictabilityData(data=PredData(__root__=data_by_screen_type))
         except Exception as e:
             logger.exception("Exception occurred")
-            return PredictabilityData(data=PredData(__root__={}), error_message=str(e))
+            result = PredictabilityData(data=PredData(__root__={}), error_message=str(e))
 
-        return PredictabilityData(data=PredData(__root__=data_by_screen_type))
+        return result.dict()
 
 
 @namespace.route("/model_performance")
