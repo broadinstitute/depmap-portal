@@ -14,6 +14,7 @@ import ModelPerformancePanel from "./ModelPerformancePanel";
 import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
 import PlotlyLoader from "../../plot/components/PlotlyLoader";
 import { legacyPortalAPI } from "@depmap/api";
+import { PredictabilityWaterfallPlotChild } from "./PredictabilityWaterfallPlot";
 
 const AggScoresTile = React.lazy(
   () => import("src/predictabilityPrototype/components/AggScoresTile")
@@ -122,6 +123,19 @@ const PredictabilityPrototypeTab = ({
             <CardRowContainer>
               <CardRow>
                 <CardRowItem>
+                  <PredictabilityWaterfallPlotChild
+                    waterfallPlotData={{
+                      x: [0, 1],
+                      y: [0, 1],
+                      xLabel: "xaxis",
+                      yLabel: "yaxis",
+                      hoverText: ["a", "b"],
+                    }}
+                  />
+                </CardRowItem>
+              </CardRow>
+              <CardRow>
+                <CardRowItem>
                   <AggScoresTile
                     plotTitle={`${entityLabel}`}
                     crisprData={
@@ -222,6 +236,16 @@ const PredictabilityPrototypeTab = ({
                             getModelPerformanceData={
                               legacyPortalAPI.getModelPerformanceData
                             }
+                            actualsDatasetId={
+                              data[ScreenType.CRISPR].model_performance_info[
+                                modelName
+                              ].actuals_dataset_id
+                            }
+                            actualsGivenId={
+                              data[ScreenType.CRISPR].model_performance_info[
+                                modelName
+                              ].actuals_given_id
+                            }
                           />
                         </Panel.Body>
                       </Panel>
@@ -277,6 +301,16 @@ const PredictabilityPrototypeTab = ({
                             }
                             getModelPerformanceData={
                               legacyPortalAPI.getModelPerformanceData
+                            }
+                            actualsDatasetId={
+                              data[ScreenType.RNAI].model_performance_info[
+                                modelName
+                              ].actuals_dataset_id
+                            }
+                            actualsGivenId={
+                              data[ScreenType.RNAI].model_performance_info[
+                                modelName
+                              ].actuals_given_id
                             }
                           />
                         </Panel.Body>

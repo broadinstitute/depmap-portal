@@ -21,11 +21,18 @@ from breadbox.schemas.associations import (
 from typing import List
 from breadbox.service import associations as associations_service
 from breadbox.crud import associations as associations_crud
+from breadbox.crud import dataset as dataset_crud
 import uuid
 from breadbox.db.util import transaction
 from typing import cast, Literal
 
 from .router import router
+from ...models.dataset import MatrixDataset
+from ...schemas.custom_http_exception import ResourceNotFoundError, DatasetNotAMatrix
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 @router.post(
@@ -44,8 +51,26 @@ def compute_associations_for_slice(
         ),
     ],
 ):
-    return associations_service.compute_associations(
-        db, settings.filestore_location, params.dataset_id, slice_query
+
+    dataset = dataset_crud.get_dataset(db, db.user, params.dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Could not find dataset {params.dataset_id}")
+
+    if not isinstance(dataset, MatrixDataset):
+        raise DatasetNotAMatrix(f"{dataset.id} is not a MatrixDataset")
+
+    log.warning("Starting calc")
+    correlations = associations_service.compute_associations(
+        db, settings.filestore_location, dataset, params.slice_query
+    )
+    log.warning("Calc finished")
+
+    correlations.sort_values("cor", inplace=True)
+
+    return LongAssociationsTable(
+        label=correlations["label"].to_list(),
+        given_id=correlations["given_id"].to_list(),
+        cor=correlations["cor"].to_list(),
     )
 
 

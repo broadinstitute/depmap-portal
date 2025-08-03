@@ -127,6 +127,14 @@ class ModelPerformanceInfo(BaseModel):
     r: float
     feature_summaries: List[FeatureSummary]
 
+    # the feature with the values we're trying to predict
+    actuals_given_id: str
+    actuals_dataset_id: str
+
+    # the predictions from the model
+    predictions_dataset_id: str
+    predictions_given_id: str
+
 
 class OverviewData(BaseModel):
     aggregated_scores: AggScoresData

@@ -1,9 +1,9 @@
 from depmap.gene.models import Gene
+from depmap.predictability_prototype.models import PrototypePredictiveModel
 from depmap.predictability_prototype.utils import (
     feature_correlation_map_calc,
     generate_aggregate_scores_across_all_models,
     generate_model_predictions,
-    get_all_datasets,
     get_feature_boxplot_data,
     get_feature_corr_plot,
     get_feature_gene_effect_plot_data,
@@ -32,6 +32,21 @@ logger = logging.getLogger(__name__)
 namespace = Namespace("predictability_prototype", description="")
 
 
+def get_taiga_to_bb_dataset_id():
+    mapping = {}
+
+    for dataset in data_access.get_all_matrix_datasets():
+        if dataset.taiga_id is None:
+            continue
+        dataset_id = dataset.id
+        if dataset_id.startswith("breadbox/"):
+            dataset_id = dataset_id[len("breadbox/") :]
+
+        mapping[dataset.taiga_id] = dataset_id
+
+    return mapping
+
+
 @namespace.route("/predictions")
 class Predictions(
     Resource
@@ -47,13 +62,17 @@ class Predictions(
         # Overview data
         try:
             logger.warning(f"get predictions start")
-            dataset_id_by_taiga_id = {
-                x.taiga_id: x.id for x in data_access.get_all_matrix_datasets()
-            }
+            dataset_id_by_taiga_id = get_taiga_to_bb_dataset_id()
             logger.warning(f"created taiga_id -> dataset_id mapping")
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
+                (
+                    actuals_dataset_id,
+                    actuals_given_id,
+                    predictions_dataset_id,
+                ) = translate_to_bb_ids_hack(screen_type, gene_symbol)
+
                 logger.warning(f"fetching {screen_type}")
                 # dataset = DependencyDataset.get_dataset_by_data_type_priority(
                 #     screen_type
@@ -75,6 +94,10 @@ class Predictions(
 
                 model_performance_info = {}
                 for i, model in enumerate(MODEL_SEQUENCE):
+                    predictions_dataset_id = get_prediction_dataset_id_hack(
+                        model, screen_type, entity_id, dataset_id_by_taiga_id
+                    )
+
                     logger.warning(f"model {model}")
                     feature_summaries = get_top_feature_summaries(
                         dataset_id_by_taiga_id=dataset_id_by_taiga_id,
@@ -86,7 +109,12 @@ class Predictions(
                     # maybe we should fetch all the data and then restructure it?
                     r = agg_scores["accuracies"]["accuracy"][i]
                     model_performance_info[model] = ModelPerformanceInfo(
-                        r=r, feature_summaries=feature_summaries,
+                        r=r,
+                        feature_summaries=feature_summaries,
+                        actuals_given_id=actuals_given_id,
+                        actuals_dataset_id=actuals_dataset_id,
+                        predictions_dataset_id=predictions_dataset_id,
+                        predictions_given_id=actuals_given_id,  # the feature is the same in both datasets
                     )
                     logger.warning(f"feature_summaries={feature_summaries}")
 
@@ -117,6 +145,28 @@ class Predictions(
             )
 
         return result.dict()
+
+
+def translate_to_bb_ids_hack(screen_type: str, model_name: str, entity_label: str):
+    # TODO: remove the need for this function
+    # ideally we should be able to move to using breadbox IDs at this point, and start including those in these
+    # endpoints instead of relying on gene symbols and screen names. The code below are making some assumptions
+    # which may not be true in the future
+    given_id = str(Gene.get_by_label(entity_label).entrez_id)
+    dataset = DependencyDataset.get_dataset_by_data_type_priority(screen_type)
+
+    return str(dataset.name.value), given_id
+
+
+def get_prediction_dataset_id_hack(
+    model_name, screen_type, entity_id, dataset_id_by_taiga_id: dict[str, str]
+):
+    # find the prediction dataset
+
+    predictive_model = PrototypePredictiveModel.get_by_model_name_and_screen_type_and_entity_id(
+        model_name=model_name, screen_type=screen_type, entity_id=entity_id
+    )
+    return dataset_id_by_taiga_id[predictive_model.predictions_dataset_taiga_id]
 
 
 @namespace.route("/model_performance")

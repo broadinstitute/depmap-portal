@@ -20,6 +20,12 @@ export interface ModelPerformancePlotsProps {
     model: string,
     screenType: string
   ) => Promise<PredictiveModelData>;
+
+  predictionDatasetId: string;
+  predictionGivenId: string;
+
+  actualsDatasetId: string;
+  actualsGivenId: string;
 }
 
 const ModelPerformancePlots = ({
@@ -27,7 +33,13 @@ const ModelPerformancePlots = ({
   entityLabel,
   screenType,
   getModelPerformanceData,
+  actualsGivenId,
+  actualsDatasetId,
+  predictionDatasetId,
+  predictionGivenId,
 }: ModelPerformancePlotsProps) => {
+  console.log("actuals", actualsGivenId, actualsDatasetId);
+  console.log("predictions", predictionGivenId, predictionDatasetId);
   const [
     predictiveModelData,
     setPredictiveModelData,

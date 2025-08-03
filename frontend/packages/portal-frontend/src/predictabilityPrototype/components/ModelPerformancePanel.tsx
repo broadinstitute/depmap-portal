@@ -21,6 +21,8 @@ interface ModelPerformancePanelProps {
     screenType: string
   ) => Promise<PredictiveModelData>;
   isOpen: boolean;
+  actualsDatasetId: string;
+  actualsGivenId: string;
 }
 
 const getRelationshipDescription = (featureType: string) => {
@@ -86,6 +88,8 @@ const ModelPerformancePanel = ({
   screenType,
   getModelPerformanceData,
   isOpen,
+  actualsDatasetId,
+  actualsGivenId,
 }: ModelPerformancePanelProps) => {
   const [activeFeatureIndex, setActiveFeatureIndex] = useState<number | null>(
     null
@@ -103,6 +107,8 @@ const ModelPerformancePanel = ({
           entityLabel={entityLabel}
           screenType={screenType}
           getModelPerformanceData={getModelPerformanceData}
+          actualsDatasetId={actualsDatasetId}
+          actualsGivenId={actualsGivenId}
         />
       )}
       <div
@@ -143,8 +149,8 @@ const ModelPerformancePanel = ({
                     <Panel.Title toggle>
                       <div>
                         <FeatureCollapsiblePanelHeader
-                          givenId={feature_summary.given_id}
-                          datasetId={feature_summary.dataset_id}
+                          // givenId={feature_summary.given_id}
+                          // datasetId={feature_summary.dataset_id}
                           feature={feature_summary.feature_label}
                           relativeImportance={
                             feature_summary.feature_importance
@@ -161,6 +167,7 @@ const ModelPerformancePanel = ({
                     <div>
                       {feature_summary && (
                         <FeatureCollapsiblePanel
+                          actualsDatasetId={actualsDatasetId}
                           givenId={feature_summary.given_id}
                           datasetId={feature_summary.dataset_id}
                           modelName={modelName}

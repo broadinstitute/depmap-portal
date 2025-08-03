@@ -4,10 +4,11 @@ import json
 from typing import Any, List, Optional, Union
 
 import pandas as pd
+from sqlalchemy.testing.plugin.plugin_base import logging
 
 from ..schemas.dataframe_wrapper import DataFrameWrapper
 from ..models.dataset import Dataset, MatrixDataset, ValueType
-from .hdf5_utils import write_hdf5_file, read_hdf5_file
+from .hdf5_utils import write_hdf5_file, read_hdf5_file, get_hdf5_file_matrix_size
 
 DATA_FILE: str = "data.hdf5"
 
@@ -56,6 +57,54 @@ def get_slice(
     df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
 
     return df
+
+
+MAX_MEMORY_PER_CHUNK = 1024 * 1024 * 300  # 50 MB
+# MAX_MEMORY_PER_CHUNK = 1024 * 1024 * 50  # 50 MB
+
+
+def _chunk(values, per_chunk_size):
+    for i in range(0, len(values), per_chunk_size):
+        yield values[i : i + per_chunk_size]
+
+
+import numpy as np
+import logging
+
+log = logging.getLogger(__name__)
+import time
+
+
+def read_chunked_feature_data(
+    dataset: MatrixDataset, filestore_location: str, max_columns: Optional[int] = None
+):
+    """
+    Returns a generator which yields subsets of the dataset's features until all column in the datase has been returned.
+    This method exists for situations where we want to process the data from an
+    entire matrix, but loading the entire matrix upfront might consume too much memory. Instead it reads out a chunk
+    of columns at a time and yields the chunk.
+    """
+
+    hdf5_path = get_file_location(dataset, filestore_location)
+    shape = get_hdf5_file_matrix_size(hdf5_path)
+    time_spent_reading = 0.0
+
+    # approx bytes per column for 8 byte doubles
+    column_size_in_bytes = shape[0] * 8
+    columns_per_chunk = max(1, MAX_MEMORY_PER_CHUNK // column_size_in_bytes)
+    if max_columns is not None:
+        columns_per_chunk = min(columns_per_chunk, max_columns)
+
+    for feature_indexes in _chunk(np.arange(shape[1]), columns_per_chunk):
+        start = time.time()
+        log.warning("starting read")
+        df = read_hdf5_file(hdf5_path, feature_indexes=feature_indexes,)
+        log.warning("completed read")
+        time_spent_reading += time.time() - start
+
+        df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
+        yield df
+    log.warning(f"{time_spent_reading} seconds spent reading")
 
 
 def get_feature_slice(

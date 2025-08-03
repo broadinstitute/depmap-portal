@@ -1,3 +1,4 @@
+from depmap_compute.slice import SliceQuery
 from pydantic import BaseModel
 from typing import List, Optional
 

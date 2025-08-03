@@ -117,6 +117,8 @@ export type FeatureSummary = {
 export type ModelPerformanceInfo = {
   r: number;
   feature_summaries: FeatureSummary[];
+  actuals_dataset_id: string;
+  actuals_given_id: string;
 };
 
 export interface PredData {

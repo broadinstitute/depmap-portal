@@ -20,7 +20,7 @@ from breadbox.io.upload_utils import create_upload_file
 from breadbox.schemas.group import GroupIn
 import csv
 import numpy as np
-from factory.base import Factory
+import factory
 from breadbox import config
 from breadbox.config import Settings as realSettings
 from breadbox.schemas.types import AnnotationTypeMap, IdMapping, AnnotationType
@@ -36,7 +36,7 @@ import hashlib
 _unique_name_counter = 0
 
 
-class SettingsFactory(Factory):
+class SettingsFactory(factory.Factory):
     class Meta:
         model = config.Settings
 
@@ -271,15 +271,32 @@ def sample_type_with_metadata(
     settings: config.Settings,
     name="New Sample Type",
     id_column="depmap_id",
-    metadata_file=_CallIfOmitted(tabular_csv_data_file),
+    metadata_file=None,
+    metadata_df=None,
     taiga_id="test_taiga.1",
     annotation_type_mapping=None,
     id_mapping=None,
     properties_to_index=None,
     user=_CallIfOmitted(lambda settings: settings.admin_users[0]),
 ):
+
+    if metadata_df is not None:
+        assert metadata_file is None
+        metadata_file_obj = BytesIO(metadata_df.to_csv(index=False).encode("utf8"))
+        assert metadata_file_obj.tell() == 0
+
+        if annotation_type_mapping is None:
+            annotation_type_mapping = AnnotationTypeMap(
+                annotation_type_mapping={
+                    col: AnnotationType.text for col in metadata_df.columns
+                }
+            )
+    else:
+        assert metadata_file is not None
+        metadata_file_obj = metadata_file
+
     metadata_upload_file = create_upload_file(
-        filename="sample_metadata_file", file=metadata_file, content_type="text/csv"
+        filename="sample_metadata_file", file=metadata_file_obj, content_type="text/csv"
     )
     r = types_api.add_sample_type(
         db=db,

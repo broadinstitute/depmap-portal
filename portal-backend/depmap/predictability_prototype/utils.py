@@ -342,6 +342,23 @@ def get_feature_slice_and_dataset_id(
     return slice.dropna(), feature_dataset_id
 
 
+def fuzzy_match_taiga_id(dataset_id_by_taiga_id, taiga_id):
+    dataset_id = dataset_id_by_taiga_id.get(taiga_id)
+    if dataset_id is None:
+        taiga_id_by_filename = {
+            name.split("/")[-1]: name
+            for name in dataset_id_by_taiga_id.keys()
+            if name is not None
+        }
+        other_taiga_id = taiga_id_by_filename.get(taiga_id.split("/")[-1])
+        if other_taiga_id is None:
+            raise Exception(f"Could not find {taiga_id}")
+
+        print(f"Had to use hack to map {taiga_id} -> {other_taiga_id}")
+        dataset_id = dataset_id_by_taiga_id[other_taiga_id]
+    return dataset_id
+
+
 def get_top_feature_summaries(
     dataset_id_by_taiga_id: Dict[str, str],
     entity_id: int,
@@ -360,7 +377,16 @@ def get_top_feature_summaries(
         given_id = feature_info.given_id
         dim_type = feature_info.dim_type
         feature_label = feature_info.feature_label
-        dataset_id = dataset_id_by_taiga_id[feature_info.taiga_id]
+        try:
+            dataset_id = fuzzy_match_taiga_id(
+                dataset_id_by_taiga_id, feature_info.taiga_id
+            )
+        except KeyError:
+            raise Exception(
+                f"Could not find {feature_info.taiga_id} among {sorted([x for x in dataset_id_by_taiga_id.keys() if x is not None])}"
+            )
+
+        # TODO: Ids don't work with BB. Dataset name DependencyEnum.Chronos_Combined -> Chronos_Combined (actual), and breadbox/65fcbe36-8ccb-4579-aac3-8b78e2d73bbc -> 65fcbe36-8ccb-4579-aac3-8b78e2d73bbc
 
         feature_importance = feature_info.importance
         pearson = feature_info.pearson
