@@ -231,54 +231,6 @@ def get_density(x: Any, y: Any):
     return density
 
 
-def generate_model_predictions(
-    gene_symbol: str,
-    screen_type: str,
-    model: str,
-    actuals: pd.DataFrame,
-    entity_id: int,
-    matrix_datasets: list,
-):
-    dataset = get_dataset_by_model_name_and_screen_type_and_entity_id(
-        model_name=model,
-        screen_type=screen_type,
-        entity_id=entity_id,
-        matrix_datasets=matrix_datasets,
-    )
-
-    gene_predictions = data_access.get_row_of_values(
-        dataset_id=dataset.id, feature=gene_symbol
-    )
-    gene_actuals = get_column_by_gene(actuals, gene_symbol)
-
-    model_ids = gene_actuals.dropna().index.tolist()
-    prediction_model_ids = gene_predictions.dropna().index.tolist()
-    # Finding this intersection is temporary due to the sample predictability
-    # data using 23q4 data, but working with a copy of the 24q2 database.
-    allowed_model_ids = list(set(model_ids) & set(prediction_model_ids))
-
-    gene_predictions = gene_predictions.dropna().loc[allowed_model_ids]
-    gene_actuals = gene_actuals.dropna().loc[allowed_model_ids]
-
-    data = pd.DataFrame(dict(predictions=gene_predictions, actuals=gene_actuals))
-    density = get_density(gene_predictions, gene_actuals)
-    model_id_to_display_name_map = data_access.get_dataset_sample_labels_by_id(
-        dataset.id
-    )
-
-    return {
-        "model_pred_data": data.to_dict("list"),
-        "predictions_dataset_id": dataset.id,
-        "index_labels": [
-            model_id_to_display_name_map[model_id] for model_id in data.index.tolist()
-        ],
-        "x_label": "actuals",
-        "y_label": "predictions",
-        "density": list(density),
-        "model": model,
-    }
-
-
 def get_dataset_id_from_taiga_id(
     model: str, screen_type: str, feature_name: str, matrix_datasets: list
 ):

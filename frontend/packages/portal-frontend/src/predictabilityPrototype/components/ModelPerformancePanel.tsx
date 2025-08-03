@@ -109,6 +109,8 @@ const ModelPerformancePanel = ({
           getModelPerformanceData={getModelPerformanceData}
           actualsDatasetId={actualsDatasetId}
           actualsGivenId={actualsGivenId}
+          predictionDatasetId="tempinvalid"
+          predictionGivenId="tempinvalid"
         />
       )}
       <div

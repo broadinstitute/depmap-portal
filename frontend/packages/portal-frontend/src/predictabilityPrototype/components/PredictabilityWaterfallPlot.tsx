@@ -1,24 +1,13 @@
-import React, { useEffect, useState } from "react";
-// import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
-// import {
-// PredictiveModelData,
-// RelatedFeaturePlot,
-// SliceQuery,
-// } from "@depmap/types";
+import React, { useCallback } from "react";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
-// import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import PlotSpinner from "src/plot/components/PlotSpinner";
 import { breadboxAPI, cached } from "@depmap/api";
+import { AsyncPlot } from "./AsyncPlot";
 
 interface PredictabilityWaterfallPlotProps {
   givenId: string;
   datasetId: string;
   actualsDatasetId: string;
 }
-
-const Loading = () => {
-  return <PlotSpinner height={"100%"} />;
-};
 
 export const PredictabilityWaterfallPlotChild = ({
   waterfallPlotData,
@@ -52,65 +41,40 @@ const PredictabilityWaterfallPlot = ({
   datasetId,
   actualsDatasetId,
 }: PredictabilityWaterfallPlotProps) => {
-  // const [
-  //   waterfallPlotElement,
-  //   setWaterfallPlotElement,
-  // ] = useState<ExtendedPlotType | null>(null);
+  const loader = useCallback(async () => {
+    const correlations = await cached(breadboxAPI).computeAssociations({
+      dataset_id: actualsDatasetId,
+      slice_query: {
+        dataset_id: datasetId,
+        identifier_type: "feature_id",
+        identifier: givenId,
+      },
+    });
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [
-    waterfallPlotData,
-    setWaterfallPlotData,
-  ] = useState<WaterfallPlotData | null>(null);
-
-  useEffect(() => {
-    // fix this -- if error, keeps retrying
-    if (!isLoading && waterfallPlotData == null) {
-      setIsLoading(true);
-
-      cached(breadboxAPI)
-        .computeAssociations({
-          dataset_id: actualsDatasetId,
-          slice_query: {
-            dataset_id: datasetId,
-            identifier_type: "feature_id",
-            identifier: givenId,
-          },
-        })
-        .then((correlations) => {
-          const rank: number[] = Array.from(
-            { length: correlations.cor.length },
-            (_, i: number) => i
-          );
-          setWaterfallPlotData({
-            x: rank,
-            y: correlations.cor,
-            hoverText: correlations.label,
-            xLabel: "rank",
-            yLabel: "correlation",
-          });
-          setIsLoading(false);
-        })
-        .catch((err: any) => {
-          console.log(err);
-          setError(`${err}`);
-          setIsLoading(false);
-        });
-    }
-  }, [waterfallPlotData, isLoading, givenId, actualsDatasetId, datasetId]);
-
-  if (waterfallPlotData != null) {
-    return (
-      <PredictabilityWaterfallPlotChild waterfallPlotData={waterfallPlotData} />
+    const rank: number[] = Array.from(
+      { length: correlations.cor.length },
+      (_, i: number) => i
     );
-  }
 
-  if (error != null) {
-    return <div>Error: {error}</div>;
-  }
+    return {
+      waterfallPlotData: {
+        x: rank,
+        y: correlations.cor,
+        hoverText: correlations.label,
+        xLabel: "rank",
+        yLabel: "correlation",
+      },
+    };
 
-  return <Loading />;
+    // });
+  }, [actualsDatasetId, givenId, datasetId]);
+
+  return (
+    <AsyncPlot
+      loader={loader}
+      childComponent={PredictabilityWaterfallPlotChild}
+    />
+  );
 };
 
 interface WaterfallPlotData {

@@ -1,13 +1,11 @@
 from depmap.gene.models import Gene
-from depmap.predictability_prototype.models import PrototypePredictiveModel
+from .hacks import get_prediction_dataset_id_hack, translate_to_bb_ids_hack
 from depmap.predictability_prototype.utils import (
     feature_correlation_map_calc,
     generate_aggregate_scores_across_all_models,
-    generate_model_predictions,
     get_feature_boxplot_data,
     get_feature_corr_plot,
     get_feature_gene_effect_plot_data,
-    get_gene_effect_df,
     top_features_overall,
     get_top_feature_summaries,
     MODEL_SEQUENCE,
@@ -20,12 +18,12 @@ from depmap.predictability_prototype.schemas import (
     OverviewData,
     ModelPerformanceInfo,
     GeneTeaSearchTerm,
+    PredictiveModelData,
 )
 from depmap.data_access import interface as data_access
 
 from flask_restplus import Namespace, Resource
 from flask import request
-from depmap.dataset.models import DependencyDataset
 import logging
 
 logger = logging.getLogger(__name__)
@@ -147,28 +145,6 @@ class Predictions(
         return result.dict()
 
 
-def translate_to_bb_ids_hack(screen_type: str, model_name: str, entity_label: str):
-    # TODO: remove the need for this function
-    # ideally we should be able to move to using breadbox IDs at this point, and start including those in these
-    # endpoints instead of relying on gene symbols and screen names. The code below are making some assumptions
-    # which may not be true in the future
-    given_id = str(Gene.get_by_label(entity_label).entrez_id)
-    dataset = DependencyDataset.get_dataset_by_data_type_priority(screen_type)
-
-    return str(dataset.name.value), given_id
-
-
-def get_prediction_dataset_id_hack(
-    model_name, screen_type, entity_id, dataset_id_by_taiga_id: dict[str, str]
-):
-    # find the prediction dataset
-
-    predictive_model = PrototypePredictiveModel.get_by_model_name_and_screen_type_and_entity_id(
-        model_name=model_name, screen_type=screen_type, entity_id=entity_id
-    )
-    return dataset_id_by_taiga_id[predictive_model.predictions_dataset_taiga_id]
-
-
 @namespace.route("/model_performance")
 class ModelPerformance(
     Resource
@@ -184,18 +160,7 @@ class ModelPerformance(
         screen_type = request.args.get("screen_type")
 
         entity_id = Gene.get_by_label(entity_label).entity_id
-        dataset = DependencyDataset.get_dataset_by_data_type_priority(screen_type)
-        gene_effect_df = get_gene_effect_df(dataset)
         matrix_datasets = data_access.get_all_matrix_datasets()
-
-        model_predictions = generate_model_predictions(
-            gene_symbol=entity_label,
-            screen_type=screen_type,
-            model=model,
-            actuals=gene_effect_df,
-            entity_id=entity_id,
-            matrix_datasets=matrix_datasets,
-        )
 
         corr = feature_correlation_map_calc(
             model,
@@ -204,7 +169,7 @@ class ModelPerformance(
             matrix_datasets=matrix_datasets,
         )
 
-        return {"model_predictions": model_predictions, "corr": corr["corr"]}
+        return PredictiveModelData(coor=corr["corr"]).dict()
 
 
 @namespace.route("/feature/related_correlations")

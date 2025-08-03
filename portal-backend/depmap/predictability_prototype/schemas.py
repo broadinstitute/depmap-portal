@@ -28,16 +28,6 @@ class ModelPredictionsGraphDataInner(BaseModel):
     actuals: List[float]
 
 
-class ModelPredictionsGraphData(BaseModel):
-    model_pred_data: ModelPredictionsGraphDataInner
-    predictions_dataset_id: str
-    index_labels: List[str]
-    x_label: str
-    y_label: str
-    model: str
-    density: Any
-
-
 class CorrData(BaseModel):
     corr_heatmap_vals: List[List[float]]
     row_labels: List[str]
@@ -90,7 +80,6 @@ class FeatureWaterfallPlots(BaseModel):
 
 
 class PredictiveModelData(BaseModel):
-    model_predictions: ModelPredictionsGraphData
     corr: CorrData
 
 
