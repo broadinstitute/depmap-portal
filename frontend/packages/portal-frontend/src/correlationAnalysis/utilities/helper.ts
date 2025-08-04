@@ -45,8 +45,8 @@ export function transformAndGroupByDataset(
         feature: item.other_dimension_label,
         dose: compoundDoseToDose.get(compoundDoseLabel),
         featureDataset: datasetLookup[item.other_dataset_id],
-        correlation: item.correlation, //parseFloat(item.correlation.toFixed(2)),
-        log10qvalue: item.log10qvalue, //parseFloat(item.log10qvalue.toFixed(2)),
+        correlation: item.correlation,
+        log10qvalue: item.log10qvalue,
         rank: index + 1,
       }));
 
