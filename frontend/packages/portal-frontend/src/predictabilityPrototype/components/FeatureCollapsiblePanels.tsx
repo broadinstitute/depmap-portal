@@ -3,9 +3,9 @@ import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.s
 import StyledMeter from "src/common/components/StyledMeter";
 import { toStaticUrl } from "@depmap/globals";
 import PredictabilityWaterfallPlot from "./PredictabilityWaterfallPlot";
-import RelatedFeaturesCorrPlot from "./RelatedFeaturesCorrPlot";
 import PredictabilityBoxOrBarPlot from "./PredictabilityBoxOrBarPlot";
 import FeatureVsGeneEffectPlot from "./FeatureVsGeneEffectPlot";
+import { DatasetCorrelationActualsVsFeature } from "./DatasetCorrelationActualsVsFeature";
 import { SCREEN_TYPE_COLORS } from "../models/types";
 import { RelatedType } from "@depmap/types/src/predictability";
 import { legacyPortalAPI } from "@depmap/api";
@@ -227,16 +227,11 @@ const FeatureCollapsiblePanels = ({
                 </div>
               )}
               <div className={styles.featureGraph2}>
-                <RelatedFeaturesCorrPlot
-                  modelName={modelName}
-                  geneSymbol={geneSymbol}
-                  featureNameType={featureNameType}
-                  feature={feature}
-                  panelIndex={panelIndex}
-                  screenType={screenType}
-                  getRelatedFeaturesCorrPlotData={
-                    legacyPortalAPI.getRelatedFeatureCorrData
-                  }
+                <DatasetCorrelationActualsVsFeature
+                  featureDatasetId={datasetId}
+                  featureGivenId={givenId}
+                  actualsGivenId={actualsGivenId}
+                  actualsDatasetId={actualsDatasetId}
                 />
               </div>
               <div className={styles.featureGraph3}>
