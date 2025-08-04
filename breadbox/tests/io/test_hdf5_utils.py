@@ -133,13 +133,10 @@ def create_mock_hdf5(path, num_samples, num_features):
 
 
 def test_large_read_raises_exception(monkeypatch, tmpdir):
-    # Simulate a smaller threshold by monkeypatching the validator
-    def mock_validate_read_size(features_length, samples_length):
-        if features_length * samples_length > 1000:  # Lower threshold to trigger easily
-            raise Exception("Mocked memory exhaustion")
-
+    # Simulate a smaller threshold by monkeypatching
     monkeypatch.setattr(
-        "breadbox.io.hdf5_utils._validate_read_size", mock_validate_read_size
+        "breadbox.io.hdf5_utils.MAX_HDF5_READ_IN_BYTES",
+        1000,  # Lower threshold to trigger easily
     )
 
     path = tmpdir.join("test.hdf5")
@@ -147,5 +144,7 @@ def test_large_read_raises_exception(monkeypatch, tmpdir):
         path, num_samples=100, num_features=100
     )  # 100*100 = 10000 > 1000 -> triggers mock
 
-    with pytest.raises(Exception, match="Mocked memory exhaustion"):
+    with pytest.raises(
+        Exception, match="Reading too many columns and rows into memory at once!"
+    ):
         read_hdf5_file(path)
