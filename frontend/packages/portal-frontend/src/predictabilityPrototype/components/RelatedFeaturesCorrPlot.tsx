@@ -30,6 +30,15 @@ const RelatedFeaturesCorrPlot = ({
   screenType,
   getRelatedFeaturesCorrPlotData,
 }: RelatedFeaturesCorrPlotProps) => {
+  console.log("RelatedFeaturesCorrPlot", {
+    modelName,
+    geneSymbol,
+    featureNameType,
+    feature,
+    panelIndex,
+    screenType,
+    getRelatedFeaturesCorrPlotData,
+  });
   const [
     relatedFeaturesPlotElement,
     setRelatedFeaturesPlotElement,

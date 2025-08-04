@@ -12,19 +12,6 @@ export type TopFeaturesBarData = {
   y_axis_label: string;
 };
 
-export type ModelPredictionsGraphData = {
-  model_pred_data: {
-    predictions: number[];
-    actuals: number[];
-  };
-  predictions_dataset_id: string;
-  index_labels: string[];
-  x_label: string;
-  y_label: string;
-  model: string;
-  density: any;
-};
-
 export type CorrData = {
   corr_heatmap_vals: number[][];
   row_labels: string[];
@@ -81,7 +68,6 @@ export type FeatureWaterfallPlots = {
 };
 
 export type PredictiveModelData = {
-  model_predictions: ModelPredictionsGraphData;
   corr: CorrData;
 };
 
@@ -119,6 +105,8 @@ export type ModelPerformanceInfo = {
   feature_summaries: FeatureSummary[];
   actuals_dataset_id: string;
   actuals_given_id: string;
+  predictions_dataset_id: string;
+  predictions_given_id: string;
 };
 
 export interface PredData {

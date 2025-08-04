@@ -13,7 +13,7 @@ export function AsyncPlot<T>({ loader, childComponent }: AsyncPlotProps<T>) {
 
   useEffect(() => {
     // fix this -- if error, keeps retrying
-    if (!isLoading && childProps == null) {
+    if (!isLoading && childProps == null && error == null) {
       setIsLoading(true);
       loader()
         .then((newChildProps) => {
@@ -26,14 +26,14 @@ export function AsyncPlot<T>({ loader, childComponent }: AsyncPlotProps<T>) {
           setIsLoading(false);
         });
     }
-  }, [loader, isLoading, childProps]);
+  }, [loader, isLoading, childProps, error]);
 
   if (childProps) {
     return childComponent(childProps);
   }
 
   if (error) {
-    return <div>Error: error</div>;
+    return <div>Error: {error}</div>;
   }
 
   return <PlotSpinner height={"100%"} />;

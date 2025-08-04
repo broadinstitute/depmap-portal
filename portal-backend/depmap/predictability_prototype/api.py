@@ -57,6 +57,8 @@ class Predictions(
         """
         gene_symbol = request.args.get("gene_symbol")
 
+        assert gene_symbol is not None, "Needs gene_symbol"
+
         # Overview data
         try:
             logger.warning(f"get predictions start")
@@ -65,11 +67,9 @@ class Predictions(
 
             data_by_screen_type = {}
             for screen_type in SCREEN_TYPES:
-                (
-                    actuals_dataset_id,
-                    actuals_given_id,
-                    predictions_dataset_id,
-                ) = translate_to_bb_ids_hack(screen_type, gene_symbol)
+                (actuals_dataset_id, actuals_given_id,) = translate_to_bb_ids_hack(
+                    screen_type, gene_symbol
+                )
 
                 logger.warning(f"fetching {screen_type}")
                 # dataset = DependencyDataset.get_dataset_by_data_type_priority(
@@ -169,7 +169,7 @@ class ModelPerformance(
             matrix_datasets=matrix_datasets,
         )
 
-        return PredictiveModelData(coor=corr["corr"]).dict()
+        return PredictiveModelData(corr=corr["corr"]).dict()
 
 
 @namespace.route("/feature/related_correlations")
@@ -183,7 +183,7 @@ class RelatedCorrelations(
         test
         """
         entity_label = request.args.get("entity_label")
-        feature_name_type = request.args.get("identifier")
+        identifier = request.args.get("identifier")
         model = request.args.get("model")
         screen_type = request.args.get("screen_type")
 
@@ -195,7 +195,7 @@ class RelatedCorrelations(
             model=model,
             entity_id=entity_id,
             gene_symbol=entity_label,
-            feature_name_type=feature_name_type,
+            identifier=identifier,
             matrix_datasets=matrix_datasets,
         )
 

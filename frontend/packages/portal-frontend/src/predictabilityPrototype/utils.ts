@@ -1,15 +1,13 @@
 export function getDataExplorerUrl(
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  featureDatasetId: string,
+  datasetId: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  featureLabel: string | null,
+  featureId: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  featureType: string,
+  datasetId2?: string,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  geneLabel: string,
+  featureId2?: string
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  screenType: string
-  // cellLines: string[] // TODO: Take this out completely, we don't need a cell lines list anywhere
 ): string {
   console.log(
     "getDataExplorerUrl is not implemented. Returning stub value. See git history to find old implementation"

@@ -65,44 +65,6 @@ const TopFeaturesOverallTile = ({
       : [];
   }, [topFeaturesData]);
 
-  const customLegend = (
-    <div className={styles.legendContainer}>
-      <div className={styles.legendTitle}>
-        <h5>FEATURE SET</h5>
-      </div>
-      <div className={styles.bottomLegend}>
-        <div>
-          <div className={styles.legendItem}>
-            <div className={styles.cellContextBox} />
-            <div className={styles.legendLabel}>Cell Context</div>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.confoundersBox} />
-            <div className={styles.legendLabel}>Confounders</div>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.driverEventsBox} />
-            <div className={styles.legendLabel}>Driver Events</div>
-          </div>
-        </div>
-        <div>
-          <div className={styles.legendItem}>
-            <div className={styles.geneticDerangementBox} />
-            <div className={styles.legendLabel}>Genetic Derangement</div>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.dnaBox} />
-            <div className={styles.legendLabel}>DNA</div>
-          </div>
-          <div className={styles.legendItem}>
-            <div className={styles.rnaSeqBox} />
-            <div className={styles.legendLabel}>RNASeq</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div style={{ height: "350px" }}>
       <p
@@ -141,7 +103,6 @@ const TopFeaturesOverallTile = ({
                 pad: 8,
               }}
               customColors={customColors}
-              customLegend={customLegend}
               onLoad={(element: ExtendedPlotType | null) => {
                 if (element) {
                   setTopFeaturesPlotElement(element);

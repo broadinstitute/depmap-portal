@@ -363,7 +363,11 @@ def get_top_feature_summaries(
 
 
 def get_top_features(
-    entity_id: int, model: str, screen_type: str, matrix_datasets: list
+    entity_id: int,
+    model: str,
+    screen_type: str,
+    matrix_datasets: list,
+    top_n_features=10,
 ):
     summaries = PrototypePredictiveModel.get_predictive_model_feature_summaries(
         model_name=model, entity_id=entity_id, screen_type=screen_type
@@ -373,7 +377,7 @@ def get_top_features(
     top_features = {}
     top_features_metadata = {}
 
-    for feature_info in summaries[:10]:
+    for feature_info in summaries[:top_n_features]:
         feature_name = feature_info.feature_name
         feature_given_id = feature_info.given_id
         dim_type = feature_info.dim_type
@@ -660,12 +664,7 @@ def get_related_features_scatter(
 
 
 def get_feature_corr_plot(
-    model,
-    gene_symbol,
-    entity_id,
-    feature_name_type,
-    screen_type: str,
-    matrix_datasets: list,
+    model, gene_symbol, entity_id, identifier, screen_type: str, matrix_datasets: list,
 ):
     top_features = get_top_features(
         screen_type=screen_type,
@@ -673,7 +672,7 @@ def get_feature_corr_plot(
         model=model,
         matrix_datasets=matrix_datasets,
     )
-    full_feature_info = top_features["metadata"][feature_name_type]
+    full_feature_info = top_features["metadata"][identifier]
 
     feature_dataset_id = full_feature_info["feature_dataset_id"]
 

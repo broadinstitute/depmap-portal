@@ -14,7 +14,6 @@ import ModelPerformancePanel from "./ModelPerformancePanel";
 import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
 import PlotlyLoader from "../../plot/components/PlotlyLoader";
 import { legacyPortalAPI } from "@depmap/api";
-import { PredictabilityWaterfallPlotChild } from "./PredictabilityWaterfallPlot";
 
 interface ScreenTypeModelPerformanceSectionProps {
   screenType: ScreenType;
@@ -34,7 +33,7 @@ const ScreenTypeModelPerformanceSection = ({
   onModelAccordionClick,
 }: ScreenTypeModelPerformanceSectionProps) => {
   const modelPerformanceInfo = data[screenType].model_performance_info;
-  
+
   if (!modelPerformanceInfo) {
     return null;
   }
@@ -45,55 +44,51 @@ const ScreenTypeModelPerformanceSection = ({
         {screenType === ScreenType.CRISPR ? "CRISPR" : "RNAi"}
       </h2>
       {Object.keys(modelPerformanceInfo).map(
-        (modelName: string, modelIndex: number) => (
-          <PanelGroup
-            accordion
-            id="accordion-model"
-            onSelect={(index) => onModelAccordionClick(index, screenType)}
-            activeKey={activeModelIndex}
-            key={`${modelName}-accordion-model-${modelIndex}`}
-          >
-            <Panel eventKey={modelIndex} key={modelName}>
-              <Panel.Heading>
-                <Panel.Title toggle>
-                  <div>
-                    <CollapsiblePanelHeader
-                      title={`Model: ${modelName}`}
-                      modelCorrelation={modelPerformanceInfo[modelName].r}
-                      screenType={screenType}
-                      isOpen={activeModelIndex === modelIndex}
-                    />
-                  </div>
-                </Panel.Title>
-              </Panel.Heading>
-              <Panel.Body collapsible>
-                <ModelPerformancePanel
-                  isOpen={activeModelIndex === modelIndex}
-                  modelName={modelName}
-                  entityLabel={entityLabel}
-                  entityType={entityType}
-                  screenType={screenType}
-                  modelPerformanceInfo={modelPerformanceInfo[modelName]}
-                  getModelPerformanceData={
-                    legacyPortalAPI.getModelPerformanceData
-                  }
-                  actualsDatasetId={
-                    modelPerformanceInfo[modelName].actuals_dataset_id
-                  }
-                  actualsGivenId={
-                    modelPerformanceInfo[modelName].actuals_given_id
-                  }
-                  predictionDatasetId={
-                    modelPerformanceInfo[modelName].prediction_dataset_id
-                  }
-                  predictionGivenId={
-                    modelPerformanceInfo[modelName].prediction_given_id
-                  }
-                />
-              </Panel.Body>
-            </Panel>
-          </PanelGroup>
-        )
+        (modelName: string, modelIndex: number) => {
+          const mpi = modelPerformanceInfo[modelName];
+          console.log("mpi", mpi);
+          return (
+            <PanelGroup
+              accordion
+              id="accordion-model"
+              onSelect={(index) => onModelAccordionClick(index, screenType)}
+              activeKey={activeModelIndex}
+              key={`${modelName}-accordion-model-${modelIndex}`}
+            >
+              <Panel eventKey={modelIndex} key={modelName}>
+                <Panel.Heading>
+                  <Panel.Title toggle>
+                    <div>
+                      <CollapsiblePanelHeader
+                        title={`Model: ${modelName}`}
+                        modelCorrelation={mpi.r}
+                        screenType={screenType}
+                        isOpen={activeModelIndex === modelIndex}
+                      />
+                    </div>
+                  </Panel.Title>
+                </Panel.Heading>
+                <Panel.Body collapsible>
+                  <ModelPerformancePanel
+                    isOpen={activeModelIndex === modelIndex}
+                    modelName={modelName}
+                    entityLabel={entityLabel}
+                    entityType={entityType}
+                    screenType={screenType}
+                    modelPerformanceInfo={mpi}
+                    getModelPerformanceData={
+                      legacyPortalAPI.getModelPerformanceData
+                    }
+                    actualsDatasetId={mpi.actuals_dataset_id}
+                    actualsGivenId={mpi.actuals_given_id}
+                    predictionDatasetId={mpi.predictions_dataset_id}
+                    predictionGivenId={mpi.predictions_given_id}
+                  />
+                </Panel.Body>
+              </Panel>
+            </PanelGroup>
+          );
+        }
       )}
     </>
   );
@@ -204,19 +199,6 @@ const PredictabilityPrototypeTab = ({
             }}
           >
             <CardRowContainer>
-              <CardRow>
-                <CardRowItem>
-                  <PredictabilityWaterfallPlotChild
-                    waterfallPlotData={{
-                      x: [0, 1],
-                      y: [0, 1],
-                      xLabel: "xaxis",
-                      yLabel: "yaxis",
-                      hoverText: ["a", "b"],
-                    }}
-                  />
-                </CardRowItem>
-              </CardRow>
               <CardRow>
                 <CardRowItem>
                   <AggScoresTile

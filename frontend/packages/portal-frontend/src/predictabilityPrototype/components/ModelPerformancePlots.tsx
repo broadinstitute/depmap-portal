@@ -1,15 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback } from "react";
 import ScatterPlot from "src/contextExplorer/components/contextAnalysis/ScatterPlot";
-import PlotSpinner from "src/plot/components/PlotSpinner";
 import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
 import { DENSITY_COLOR_SCALE } from "../models/types";
 import { PredictiveModelData } from "@depmap/types";
 import { Button } from "react-bootstrap";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDataExplorerUrl } from "../utils";
 import PrototypeCorrelationHeatmap from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeCorrelationHeatmap";
-// eslint-disable-next-line import/no-named-default
-import { default as DataExplorerExtendedPlotType } from "@depmap/data-explorer-2/src/components/DataExplorerPage/ExtendedPlotType";
+import { AsyncPlot } from "./AsyncPlot";
+import { breadboxAPI, cached } from "@depmap/api";
 
 export interface ModelPerformancePlotsProps {
   modelName: string;
@@ -28,6 +26,122 @@ export interface ModelPerformancePlotsProps {
   actualsGivenId: string;
 }
 
+interface CorrelationHeatmapProps {
+  data: any;
+  xLabels: string[];
+  yLabels: string[];
+}
+
+function CorrelationHeatmap({
+  data,
+  xLabels,
+  yLabels,
+}: CorrelationHeatmapProps) {
+  return (
+    <>
+      <h3 style={{ marginLeft: "15px", marginTop: "15px" }}>
+        Top Feature Correlation Map
+      </h3>
+
+      <PrototypeCorrelationHeatmap
+        data={data}
+        xLabels={xLabels!}
+        yLabels={yLabels!}
+        zLabel=""
+        xKey="x"
+        yKey="y"
+        zKey="z"
+        height={350}
+        // onLoad={setCellContextCorrPlotElement}
+        palette={undefined}
+        margin={{ t: 30, l: 120, r: 30, b: 106 }}
+        doTruncateTickLabels={false}
+        distinguish1Label={undefined}
+        distinguish2Label={undefined}
+      />
+    </>
+  );
+}
+
+interface ActualsVsPredictionsPlotProps {
+  data: any;
+  xLabel: string;
+  yLabel: string;
+  predictionDatasetId: string;
+  predictionGivenId: string;
+  actualsDatasetId: string;
+  actualsGivenId: string;
+}
+
+function ActualsVsPredictionsPlot({
+  data,
+  xLabel,
+  yLabel,
+  predictionDatasetId,
+  predictionGivenId,
+  actualsGivenId,
+  actualsDatasetId,
+}: ActualsVsPredictionsPlotProps) {
+  return (
+    <>
+      <h3 style={{ marginLeft: "15px", marginTop: "15px", maxWidth: "200px" }}>
+        Model Predictions
+      </h3>
+      <div>
+        <ScatterPlot
+          key={"cell-context-scatter-plot"}
+          margin={{ t: 60, l: 62, r: 120 }}
+          // density={predictiveModelData?.model_predictions.density}
+          data={data}
+          height={337}
+          xKey="x"
+          yKey="y"
+          colorVariable={[]}
+          continuousColorKey="contColorData"
+          customContinuousColorScale={DENSITY_COLOR_SCALE}
+          hoverTextKey="hoverText"
+          xLabel={xLabel}
+          yLabel={yLabel}
+          // onLoad={(element: ExtendedPlotType | null) => {
+          //   if (element) {
+          //     setModelPredPlotElement(element);
+          //   }
+          // }}
+          autosize
+          showYEqualXLine
+        />
+      </div>
+      <div className={styles.deButtonContainer}>
+        <Button
+          className={styles.deButton}
+          href={getDataExplorerUrl(
+            predictionDatasetId,
+            predictionGivenId,
+            actualsGivenId,
+            actualsDatasetId
+          )}
+          target="_blank"
+          disabled={false}
+        >
+          Open Plot in Data Explorer
+        </Button>
+      </div>
+    </>
+  );
+}
+
+const formatZVals = (zs: number[], i: number) =>
+  zs
+    .map((val) => val)
+    .map((val, j) => {
+      if (val !== null) {
+        return val;
+      }
+
+      return i === j ? 1 : 0;
+    })
+    .reverse();
+
 const ModelPerformancePlots = ({
   modelName,
   entityLabel,
@@ -40,219 +154,112 @@ const ModelPerformancePlots = ({
 }: ModelPerformancePlotsProps) => {
   console.log("actuals", actualsGivenId, actualsDatasetId);
   console.log("predictions", predictionGivenId, predictionDatasetId);
-  const [
-    predictiveModelData,
-    setPredictiveModelData,
-  ] = useState<PredictiveModelData | null>(null);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const loadScatterPlotData = useCallback(async () => {
+    //    console.log("loadScatterPlotData", )
 
-  const latestPromise = useRef<Promise<PredictiveModelData>>();
+    const xPromise = cached(breadboxAPI).getMatrixDatasetData(
+      actualsDatasetId,
+      { feature_identifier: "id", features: [actualsGivenId] }
+    );
+    const yPromise = cached(breadboxAPI).getMatrixDatasetData(
+      predictionDatasetId,
+      {
+        feature_identifier: "id",
+        features: [predictionGivenId],
+      }
+    );
+    const [xSeries, ySeries] = await Promise.all([xPromise, yPromise]);
+    const x: number[] = [];
+    const y: number[] = [];
+    const ids: string[] = [];
 
-  const [
-    cellContextCorrPlotElement,
-    setCellContextCorrPlotElement,
-  ] = useState<DataExplorerExtendedPlotType | null>(null);
+    // these two requests got a single feature each, so just get that one feature's values
+    const xSeries0 = xSeries[actualsGivenId];
+    const ySeries0 = ySeries[predictionGivenId];
 
-  const [
-    modelPredPlotElement,
-    setModelPredPlotElement,
-  ] = useState<ExtendedPlotType | null>(null);
+    console.log("loadScatterPlotData xSeries", xSeries);
 
-  useEffect(() => {
-    setPredictiveModelData(null);
-    setCellContextCorrPlotElement(null);
-    setModelPredPlotElement(null);
-    setIsLoading(true);
-    const promise = getModelPerformanceData(modelName, entityLabel, screenType);
+    for (const key of Object.keys(xSeries0)) {
+      if (ySeries0[key]) {
+        x.push(xSeries0[key] as number);
+        y.push(ySeries0[key] as number);
+        ids.push(key);
+      }
+    }
+    console.log("loadScatterPlotData x", x);
+    console.log("loadScatterPlotData y", y);
 
-    latestPromise.current = promise;
-    promise
-      .then((result: any) => {
-        if (promise === latestPromise.current) {
-          setPredictiveModelData(result);
-          setIsLoading(false);
-        }
-      })
-      .catch((e) => {
-        if (promise === latestPromise.current) {
-          window.console.error(e);
-          setIsError(true);
-        }
-      });
+    return {
+      actualsGivenId,
+      actualsDatasetId,
+      predictionDatasetId,
+      predictionGivenId,
+      xLabel: "Actual",
+      yLabel: "Prediction",
 
-    return () => {
-      setPredictiveModelData(null);
-      setCellContextCorrPlotElement(null);
-      setModelPredPlotElement(null);
-      setIsLoading(false);
-      setIsError(false);
+      data: {
+        x,
+        y,
+        hoverinfo: "text",
+        hoverText: ids,
+        // hoverText: x.map(
+        //   (label, index) =>
+        //     `${label}<br> Actual: ${predictiveModelData.model_predictions.model_pred_data.actuals[
+        //       index
+        //     ].toFixed(
+        //       3
+        //     )}<br> Prediction: ${predictiveModelData.model_predictions.model_pred_data.predictions[
+        //       index
+        //     ].toFixed(3)}`
+        // ),
+      },
     };
-  }, [entityLabel, modelName, getModelPerformanceData, screenType]);
-  console.log(isError);
-  console.log(isLoading);
+  }, [
+    actualsDatasetId,
+    predictionDatasetId,
+    actualsGivenId,
+    predictionGivenId,
+  ]);
 
-  const formatZVals = (zs: number[], i: number) =>
-    zs
-      .map((val) => val)
-      .map((val, j) => {
-        if (val !== null) {
-          return val;
-        }
-
-        return i === j ? 1 : 0;
-      })
+  const loadCorrelationHeatmapData = useCallback(async () => {
+    const modelPerformanceData = await getModelPerformanceData(
+      modelName,
+      entityLabel,
+      screenType
+    );
+    const data = {
+      x: [],
+      y: modelPerformanceData.corr.row_labels,
+      z: modelPerformanceData.corr.corr_heatmap_vals.map(formatZVals),
+    };
+    const xLabels = modelPerformanceData.corr.row_labels
+      .map((label: string) => label)
+      .slice()
       .reverse();
 
-  const formattedModelPredData: any = useMemo(() => {
-    if (predictiveModelData) {
-      return {
-        x: predictiveModelData.model_predictions.model_pred_data.actuals,
-        y: predictiveModelData.model_predictions.model_pred_data.predictions,
-        xLabel: predictiveModelData.model_predictions.x_label,
-        yLabel: predictiveModelData.model_predictions.y_label,
-        hoverinfo: "text",
-        hoverText: predictiveModelData.model_predictions.index_labels.map(
-          (label, index) =>
-            `${label}<br> Actual: ${predictiveModelData.model_predictions.model_pred_data.actuals[
-              index
-            ].toFixed(
-              3
-            )}<br> Prediction: ${predictiveModelData.model_predictions.model_pred_data.predictions[
-              index
-            ].toFixed(3)}`
-        ),
-      };
-    }
+    const yLabels = modelPerformanceData.corr.row_labels.map(
+      (label: string) => label
+    );
 
-    if (/* isLoading && */ !predictiveModelData) {
-      return null;
-    }
-    return {
-      x: [],
-      y: [],
-      xLabel: "",
-      yLabel: "",
-      hoverText: "",
-    };
-  }, [predictiveModelData /* , isLoading */]);
-
-  const memoizedData = useMemo(
-    () =>
-      predictiveModelData?.corr /* && !isLoading */
-        ? {
-            x: [],
-            y: predictiveModelData?.corr.row_labels,
-            z: predictiveModelData?.corr.corr_heatmap_vals.map(formatZVals),
-          }
-        : null,
-    [predictiveModelData?.corr /* , isLoading */]
-  );
-
-  const memoizedXLabels = useMemo(
-    () =>
-      predictiveModelData?.corr /* && !isLoading */
-        ? predictiveModelData?.corr.row_labels
-            .map((label: string) => label)
-            .slice()
-            .reverse()
-        : null,
-    [predictiveModelData?.corr /* , isLoading */]
-  );
-
-  const memoizedYLabels = useMemo(
-    () =>
-      predictiveModelData?.corr /* && !isLoading */
-        ? predictiveModelData?.corr.row_labels.map((label: string) => label)
-        : null,
-    [predictiveModelData?.corr /* , isLoading */]
-  );
+    return { data, xLabels, yLabels };
+  }, [modelName, entityLabel, screenType, getModelPerformanceData]);
 
   return (
     <div className={styles.modelPerformancePlots}>
       <div className={styles.scatter}>
         {" "}
-        {predictiveModelData && (
-          <h3
-            style={{ marginLeft: "15px", marginTop: "15px", maxWidth: "200px" }}
-          >
-            Model Predictions
-          </h3>
-        )}
-        {!modelPredPlotElement && <PlotSpinner height="100%" />}
-        {predictiveModelData /* && !isLoading */ && (
-          <div>
-            <ScatterPlot
-              key={"cell-context-scatter-plot"}
-              margin={{ t: 60, l: 62, r: 120 }}
-              density={predictiveModelData?.model_predictions.density}
-              data={formattedModelPredData}
-              height={337}
-              xKey="x"
-              yKey="y"
-              colorVariable={[]}
-              continuousColorKey="contColorData"
-              customContinuousColorScale={DENSITY_COLOR_SCALE}
-              hoverTextKey="hoverText"
-              xLabel={formattedModelPredData?.xLabel}
-              yLabel={formattedModelPredData?.yLabel}
-              onLoad={(element: ExtendedPlotType | null) => {
-                if (element) {
-                  setModelPredPlotElement(element);
-                }
-              }}
-              autosize
-              showYEqualXLine
-            />
-          </div>
-        )}
-        {predictiveModelData /* && !isLoading */ && (
-          <div className={styles.deButtonContainer}>
-            <Button
-              className={styles.deButton}
-              href={getDataExplorerUrl(
-                predictiveModelData.model_predictions.predictions_dataset_id,
-                null,
-                "gene",
-                entityLabel,
-                screenType
-              )}
-              target="_blank"
-              disabled={false}
-            >
-              Open Plot in Data Explorer
-            </Button>
-          </div>
-        )}
+        <AsyncPlot
+          loader={loadScatterPlotData}
+          childComponent={ActualsVsPredictionsPlot}
+        />
       </div>
       <div className={styles.heatmap}>
         {" "}
-        {!cellContextCorrPlotElement && <PlotSpinner height="100%" />}
-        {predictiveModelData?.corr /* && !isLoading */ && (
-          <>
-            <h3 style={{ marginLeft: "15px", marginTop: "15px" }}>
-              Top Feature Correlation Map
-            </h3>
-
-            <PrototypeCorrelationHeatmap
-              data={memoizedData as any}
-              xLabels={memoizedXLabels!}
-              yLabels={memoizedYLabels!}
-              zLabel=""
-              xKey="x"
-              yKey="y"
-              zKey="z"
-              height={350}
-              onLoad={setCellContextCorrPlotElement}
-              palette={undefined}
-              margin={{ t: 30, l: 120, r: 30, b: 106 }}
-              doTruncateTickLabels={false}
-              distinguish1Label={undefined}
-              distinguish2Label={undefined}
-            />
-          </>
-        )}
+        <AsyncPlot
+          loader={loadCorrelationHeatmapData}
+          childComponent={CorrelationHeatmap}
+        />
       </div>
     </div>
   );

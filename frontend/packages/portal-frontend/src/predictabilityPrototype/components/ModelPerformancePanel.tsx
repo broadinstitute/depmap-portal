@@ -23,6 +23,8 @@ interface ModelPerformancePanelProps {
   isOpen: boolean;
   actualsDatasetId: string;
   actualsGivenId: string;
+  predictionDatasetId: string;
+  predictionGivenId: string;
 }
 
 const getRelationshipDescription = (featureType: string) => {
@@ -90,6 +92,8 @@ const ModelPerformancePanel = ({
   isOpen,
   actualsDatasetId,
   actualsGivenId,
+  predictionDatasetId,
+  predictionGivenId,
 }: ModelPerformancePanelProps) => {
   const [activeFeatureIndex, setActiveFeatureIndex] = useState<number | null>(
     null
@@ -109,8 +113,8 @@ const ModelPerformancePanel = ({
           getModelPerformanceData={getModelPerformanceData}
           actualsDatasetId={actualsDatasetId}
           actualsGivenId={actualsGivenId}
-          predictionDatasetId="tempinvalid"
-          predictionGivenId="tempinvalid"
+          predictionDatasetId={predictionDatasetId}
+          predictionGivenId={predictionGivenId}
         />
       )}
       <div
@@ -172,6 +176,7 @@ const ModelPerformancePanel = ({
                           actualsDatasetId={actualsDatasetId}
                           givenId={feature_summary.given_id}
                           datasetId={feature_summary.dataset_id}
+                          actualsGivenId={actualsGivenId}
                           modelName={modelName}
                           feature={feature_summary.feature_label}
                           featureNameType={feature_summary.feature_type}

@@ -33,7 +33,7 @@ def get_value_labels_temp_hack(gene_series, value_labels, values):
     return filtered_values, filtered_value_labels
 
 
-def translate_to_bb_ids_hack(screen_type: str, model_name: str, entity_label: str):
+def translate_to_bb_ids_hack(screen_type: str, entity_label: str):
     # TODO: remove the need for this function
     # ideally we should be able to move to using breadbox IDs at this point, and start including those in these
     # endpoints instead of relying on gene symbols and screen names. The code below are making some assumptions

@@ -24,6 +24,10 @@ interface FeatureVsGeneEffectPlotProps {
     model: string,
     screenType: string
   ) => Promise<FeatureVsGeneEffectPlotData>;
+  actualsDatasetId: string;
+  actualsGivenId: string;
+  featureDatasetId: string;
+  featureGivenId: string;
 }
 
 const FeatureVsGeneEffectPlot = ({
@@ -35,6 +39,10 @@ const FeatureVsGeneEffectPlot = ({
   panelIndex,
   screenType,
   getFeatureVsGeneEffectData,
+  actualsDatasetId,
+  actualsGivenId,
+  featureDatasetId,
+  featureGivenId,
 }: FeatureVsGeneEffectPlotProps) => {
   const [
     featureVsGeneEffectPlotElement,
@@ -153,11 +161,10 @@ const FeatureVsGeneEffectPlot = ({
           <Button
             className={styles.deButton}
             href={getDataExplorerUrl(
-              featureVsGeneEffectData.feature_dataset_id,
-              feature,
-              dimType,
-              geneSymbol,
-              screenType
+              actualsDatasetId,
+              actualsGivenId,
+              featureDatasetId,
+              featureGivenId
             )}
             target="_blank"
             disabled={!formattedPlotData && isLoading}

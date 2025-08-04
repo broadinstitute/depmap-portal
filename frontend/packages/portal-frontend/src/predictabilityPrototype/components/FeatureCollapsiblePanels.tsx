@@ -162,6 +162,7 @@ interface FeatureCollapsiblePanelProps {
   givenId: string;
   datasetId: string;
   actualsDatasetId: string;
+  actualsGivenId: string;
 }
 
 // We don't have TCGA data loaded at this time, so don't show this plot yet.
@@ -177,6 +178,7 @@ const FeatureCollapsiblePanels = ({
   isOpen,
   screenType,
   actualsDatasetId,
+  actualsGivenId,
   datasetId,
   givenId,
 }: FeatureCollapsiblePanelProps) => {
@@ -202,6 +204,10 @@ const FeatureCollapsiblePanels = ({
                   getFeatureVsGeneEffectData={
                     legacyPortalAPI.getPredictabilityFeatureGeneEffectData
                   }
+                  actualsDatasetId={actualsDatasetId}
+                  actualsGivenId={actualsGivenId}
+                  featureDatasetId={datasetId}
+                  featureGivenId={givenId}
                 />
               </div>
               {showTumorModelComparison && (
