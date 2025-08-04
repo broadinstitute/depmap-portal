@@ -3,7 +3,7 @@
 The DepMap website enables scientists to perform analyses to identify
 cancer dependencies and answer scientific questions about DepMap data.
 
-## Quickstart
+## Organization
 
 The DepMap Portal codebase is a monorepo conisting of at least a few important modules:
 * **Breadbox**: a service for storing and retrieving data displayed on the DepMap portal. 
@@ -18,6 +18,13 @@ The DepMap Portal codebase is a monorepo conisting of at least a few important m
 * **Pipeline**: The portal's preprocessing pipeline
     * More documentation [here](pipeline/README.md)
 
+## Quickstart
+
+There are a few tools that may be helpful to install before getting started in this codebase:
+- [Redis](https://redis.io/): `brew install redis`
+- [yarn](https://classic.yarnpkg.com/en/): `brew install yarn`
+- [poetry](https://python-poetry.org/): `pipx install poetry`
+- [node.js](https://nodejs.org/en/): `brew install node` 
 
 ## Deployments
 
