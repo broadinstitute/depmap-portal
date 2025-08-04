@@ -1,4 +1,5 @@
 import os
+from cProfile import label
 from typing import List, Union
 
 import numpy as np
@@ -189,6 +190,10 @@ def compute_associations(
     """ Computes correlation between all features in `other_dataset` with the profile specified by `profile_slice_query` """
     resolved_slice = slice_service.resolve_slice_to_components(db, profile_slice_query)
 
+    log.warning("here")
+    print(
+        f"Calling get_dataset_feature_by_given_id(dataset_id={resolved_slice.dataset.id}, feature_given_id={resolved_slice.given_id}"
+    )
     feature = dataset_crud.get_dataset_feature_by_given_id(
         db=db,
         dataset_id=resolved_slice.dataset.id,
@@ -208,10 +213,12 @@ def compute_associations(
     results: List[pd.Series] = []
     time_spent_in_cor = 0.0
 
-    start = time.time()
-    label_by_id = dimension_types_crud.get_dimension_type_labels_by_id(
-        db, other_dataset.feature_type_name
+    log.warning(
+        f"other_dataset={other_dataset.id} feature_type={other_dataset.feature_type_name}"
     )
+    start = time.time()
+    # Isn't there a better way to get this? I don't actually need the "index" column: just given_id and label.
+    # I think we should have a method for this.
     given_id_index_mapping = pd.DataFrame(
         db.query(DatasetFeature)
         .filter(DatasetFeature.dataset_id == other_dataset.id)
@@ -219,9 +226,18 @@ def compute_associations(
         .all(),
         columns=["given_id", "index"],
     )
-    given_id_index_mapping["label"] = [
-        label_by_id.get(x) for x in given_id_index_mapping["given_id"]
-    ]
+
+    if other_dataset.feature_type_name is None:
+        # this special case again: not having a feature_type_name means given_id == label. Should this go into get_dimension_type_labels_by_id?
+        given_id_index_mapping["label"] = given_id_index_mapping["given_id"]
+    else:
+        label_by_id = dimension_types_crud.get_dimension_type_labels_by_id(
+            db, other_dataset.feature_type_name
+        )
+        given_id_index_mapping["label"] = [
+            label_by_id.get(x) for x in given_id_index_mapping["given_id"]
+        ]
+
     given_id_index_mapping.index = given_id_index_mapping["index"]
     log.warning(f"time fetching labels {time.time() - start}")
     print(given_id_index_mapping)
@@ -230,16 +246,17 @@ def compute_associations(
         log.warning("starting corr")
         start = time.time()
         cor_series = _corr_with(reference_profile, other_profiles)
+        # cor_series's index is given_id from other_profiles
         time_spent_in_cor += time.time() - start
         log.warning("ending corr")
         assert len(cor_series) == len(other_profiles.columns)
         results.append(cor_series)
+
     log.warning(f"{time_spent_in_cor} seconds in corr")
     concatted_result = pd.concat(results)
-    concatted_result.index = concatted_result.index.astype("int64")
     log.warning(f"{time.time() - beginning} seconds for whole call")
     left = pd.DataFrame(concatted_result, columns=["cor"], index=concatted_result.index)
     with_ids = pd.merge(
-        left, given_id_index_mapping, left_index=True, right_index=True, how="inner"
+        left, given_id_index_mapping, left_index=True, right_on="given_id", how="inner"
     )
-    return with_ids
+    return with_ids[~pd.isna(with_ids["cor"])]
