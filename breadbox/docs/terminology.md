@@ -10,10 +10,8 @@ There are 2 types of datasets:
    * For example, the “depmap_model” dimension type has a table of metadata. This metadata includes things like the “depmap_id” (a stable identifier of cell lines in the depmap project), “label” (which is a human readable cell line name), “OncotreeLineage”, “OncotreePrimaryDisease”, etc.
 2. **Matrix Dataset**: A dataset which contains a matrix of continuous numeric values. This matrix is indexed by two “dimension types”. The column index is typically referred to as the “feature type” and the row index is referred to as the “sample type”. 
 
-**Identifier type**: Breadbox is able to use multiple types of identifiers - commonly referred to as "IDs" (aka "given IDs") and "labels".
-* **Given IDs**: A commonly used identifier which is stable over time and sometimes shared with users. For example, this might include depmap model ids (aka the "ACH ID"), gene entrez ids, etc. . These are sometimes also called "feature ids" or "sample ids" depending on which axis they are being used to index.
-* **Labels**: also a unique identifier, but much more human readable (ex. names like SOX10, KRAS, BRAF for genes, names like AFATINIB for drugs, names like MHHCALL2 for cell lines). These are sometimes also called "feature labels" or "sample labels" depending on which axis they are being used to index.
-In other words, you as a user have some flexibility to use whichever identifiers you have on-hand. If you know the gene name, but not the entrez ID, then you can just give breadbox the gene name (even though it's not really a long-term stable identifier)
+**Data type**: In the context of DepMap, the general category of what the dataset is describing (the type of experiments that generated the data)
+* Examples: CRISPR, Drug Screen (for datasets like Oncref, GDSC1, GDSC2, CTD^2), Expression, etc. 
 
 **Dimension type**: A type of entity which is represented in DepMap data (ex. model, gene, compound, etc. ). Each dimension type has its own metadata and can be used to index matrix datasets.
 * In our example above, the matrix dataset is indexed by both “gene” and “depmap_model” dimension types. Each of these dimension types has its own metadata which can be joined and used alongside the matrix values. 
@@ -24,10 +22,12 @@ In other words, you as a user have some flexibility to use whichever identifiers
 * For example in a matrix dataset, this could be the gene dependencies for a single depmap model, or for a single gene
 * For a tabular dataset, this could be a column of metadata (ex. a column describing the lineages of all depmap models). 
 
-**Data type**: In the context of DepMap, the general category of what the dataset is describing (the type of experiments that generated the data)
-* Examples: CRISPR, Drug Screen (for datasets like Oncref, GDSC1, GDSC2, CTD^2), Expression, etc. 
+**Identifier type**: Breadbox is able to use multiple types of identifiers - commonly referred to as "IDs" (aka "given IDs") and "labels".
+* **Given IDs**: A commonly used identifier which is stable over time and sometimes shared with users. For example, this might include depmap model ids (aka the "ACH ID"), gene entrez ids, etc. . These are sometimes also called "feature ids" or "sample ids" depending on which axis they are being used to index.
+* **Labels**: also a unique identifier, but much more human readable (ex. names like SOX10, KRAS, BRAF for genes, names like AFATINIB for drugs, names like MHHCALL2 for cell lines). These are sometimes also called "feature labels" or "sample labels" depending on which axis they are being used to index.
+In other words, you as a user have some flexibility to use whichever identifiers you have on-hand. If you know the gene name, but not the entrez ID, then you can just give breadbox the gene name (even though it's not really a long-term stable identifier)
 
 **Slice Query**: A slice query is a JSON object which includes a few key pieces of information
-* `dataset_id` (string): The dataset in which you are querying data
+* `dataset_id` (string): Specifies the dataset in which you are querying data. This can be either a UUID or dataset given id.
 * `identifier` (string): the ID or label of the entity you are querying for
 * `identifier_type` (string enum): one of ["feature_id", "feature_label", "sample_id", "sample_label", "column"] 
