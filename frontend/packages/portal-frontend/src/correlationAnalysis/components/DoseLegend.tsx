@@ -1,4 +1,5 @@
 import * as React from "react";
+import styles from "../styles/CorrelationAnalysis.scss";
 
 interface DoseLegendProps {
   doseColors: { hex: string | undefined; dose: string }[];
@@ -7,14 +8,7 @@ interface DoseLegendProps {
 export default function DoseLegend(props: DoseLegendProps) {
   const { doseColors } = props;
   return (
-    <div
-      style={{
-        border: "1px solid #d9d9d9",
-        padding: "10px",
-        maxWidth: "max-content",
-        maxHeight: "max-content",
-      }}
-    >
+    <div className={styles.doseLegendContainer}>
       <header>Dose</header>
       {doseColors.map((doseColor, idx) => (
         <div key={idx} style={{ display: "flex" }}>

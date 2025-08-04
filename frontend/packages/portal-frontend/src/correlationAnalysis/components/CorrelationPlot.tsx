@@ -4,67 +4,58 @@ import { VolcanoPlotData, VolcanoPlotPoint } from "../models/VolcanoPlot";
 import { formatVolcanoTrace } from "../utilities/volcanoPlotUtils";
 
 interface CorrelationsPlotProps {
-  featureType: string;
+  correlatedDatasetName: string;
   data: VolcanoPlotData[];
   selectedFeatures: string[];
-  hasOtherSelectedFeatureTypeFeatures: boolean;
+  hasOtherSelectedCorrelatedDatasetFeatures: boolean;
   forwardPlotSelectedFeatures: (
-    featureType: string,
+    correlatedDataset: string,
     newSelectedLabels: string[]
   ) => void;
 }
 
 export default function CorrelationsPlot(props: CorrelationsPlotProps) {
   const {
-    featureType,
+    correlatedDatasetName,
     data,
     selectedFeatures,
-    hasOtherSelectedFeatureTypeFeatures,
+    hasOtherSelectedCorrelatedDatasetFeatures,
     forwardPlotSelectedFeatures,
   } = props;
 
   const onPointClick = useCallback(
     (point: VolcanoPlotPoint, keyModifier: boolean) => {
       const selectedLabel = point.text;
+      // NOTE: valid key modifiers are ctrlKey/metaKey/shiftKey
       if (keyModifier) {
         if (selectedFeatures.includes(selectedLabel)) {
           // deselect point if point is already selected
           forwardPlotSelectedFeatures(
-            featureType,
+            correlatedDatasetName,
             selectedFeatures.filter((label) => label !== selectedLabel)
           );
         } else {
           // add point to be among selected
-          forwardPlotSelectedFeatures(featureType, [
+          forwardPlotSelectedFeatures(correlatedDatasetName, [
             ...selectedFeatures,
             selectedLabel,
           ]);
         }
       } else {
         // only select one label at a time if key modifier not used
-        forwardPlotSelectedFeatures(featureType, [selectedLabel]);
+        forwardPlotSelectedFeatures(correlatedDatasetName, [selectedLabel]);
       }
     },
-    [selectedFeatures, featureType, forwardPlotSelectedFeatures]
+    [selectedFeatures, correlatedDatasetName, forwardPlotSelectedFeatures]
   );
 
   return (
-    <div>
-      <p>{selectedFeatures}</p>
-      <header
-        style={{
-          textAlign: "center",
-          fontSize: "18px",
-          backgroundColor: "#eee",
-        }}
-      >
-        {featureType}
-      </header>
+    <div style={{ maxWidth: "100%" }}>
       <VolcanoPlot
         volcanoTrace={formatVolcanoTrace(
           data,
           selectedFeatures,
-          hasOtherSelectedFeatureTypeFeatures
+          hasOtherSelectedCorrelatedDatasetFeatures
         )}
         onPointClick={onPointClick}
       />

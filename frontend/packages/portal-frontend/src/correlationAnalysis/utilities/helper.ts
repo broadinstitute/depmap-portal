@@ -1,3 +1,5 @@
+import { SortedCorrelations } from "../models/CorrelationPlot";
+
 export function transformAndGroupByDataset(
   associationsData: {
     correlation: number;
@@ -10,7 +12,16 @@ export function transformAndGroupByDataset(
   datasetLookup: Record<string, string>,
   compoundDoseToDose: Map<string, string>
 ) {
-  const grouped: Map<string, any[]> = new Map();
+  const grouped: Map<
+    string,
+    {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[]
+  > = new Map();
 
   // Step 1: Group items by other_dataset_id
   associationsData.forEach((item) => {
@@ -20,7 +31,7 @@ export function transformAndGroupByDataset(
   });
 
   // Step 2: For each group, sort by correlation and assign rank
-  const result: Record<string, any[]> = {};
+  const result: Record<string, SortedCorrelations[]> = {};
 
   // eslint-disable-next-line no-restricted-syntax
   for (const [datasetId, items] of grouped.entries()) {
@@ -34,8 +45,8 @@ export function transformAndGroupByDataset(
         feature: item.other_dimension_label,
         dose: compoundDoseToDose.get(compoundDoseLabel),
         featureDataset: datasetLookup[item.other_dataset_id],
-        correlation: parseFloat(item.correlation.toFixed(2)),
-        log10qvalue: parseFloat(item.log10qvalue.toFixed(2)),
+        correlation: item.correlation,
+        log10qvalue: item.log10qvalue,
         rank: index + 1,
       }));
 
@@ -45,7 +56,9 @@ export function transformAndGroupByDataset(
   return result;
 }
 
-export function getAllCorrelates(data: Record<string, Record<string, any[]>>) {
+export function getAllCorrelates(
+  data: Record<string, Record<string, SortedCorrelations[]>>
+) {
   return Object.values(data)
     .flatMap((inner) => Object.values(inner))
     .flat();

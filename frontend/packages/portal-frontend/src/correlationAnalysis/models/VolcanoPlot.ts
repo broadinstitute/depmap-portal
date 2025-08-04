@@ -2,7 +2,8 @@ export type VolcanoPlotData = {
   x: Array<number>;
   y: Array<number>;
   label: Array<string>;
-  color?: string | Array<string>;
+  text: Array<string>;
+  color: string;
   name: string;
 };
 
