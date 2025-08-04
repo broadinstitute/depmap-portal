@@ -1,3 +1,13 @@
+rule publish_hgnc_gene_table:
+    inputs:
+        hgnc_gene_table={"type": "hgnc_gene_table"},
+        release_taiga_id={"type": "release_taiga_id"},
+        update_taiga_script=fileref('upload_to_taiga.py')
+    outputs:{"type": "release_hgnc_gene_table_published"}
+
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Updated HGNC gene table for release'  'Gene' {{inputs.hgnc_gene_table.filename}} 'csv_table'"
+
+
 rule publish_cngene_log2:
     inputs:
         cngene_log2={"type": "cngene_log2"},

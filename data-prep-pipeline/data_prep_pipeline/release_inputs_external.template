@@ -43,7 +43,7 @@ add-if-missing {
 # HGNC Gene Table
 add-if-missing {
   "type": "hgnc_gene_table",
-  "dataset_id": "hgnc-gene-table-e250.3/hgnc_complete_set"
+  "dataset_id": "hgnc-gene-table-e250.4/hgnc_complete_set"
 }
 
 # Driver Events
@@ -111,3 +111,23 @@ add-if-missing {
     "dataset_id": "subtypetree-919e.9/lineage_tree_genetic_subtype_whitelist",
 }
 
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRGeneEffect"),
+  "label": "Chronos_Combined",
+  "rows": "cell-lines",
+  "confounders_label": "crispr-confounders",
+}
+
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRGeneDependency"),
+  "label": "Chronos_Combined",
+  "rows": "cell-lines"
+}
+
+add-if-missing {
+  "type": "crispr-inferred-common-essentials",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRInferredCommonEssentials")
+  "label": "Chronos_Combined"
+}
