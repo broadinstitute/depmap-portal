@@ -13,3 +13,14 @@ export type DoseCategoryVolcanoData = {
 export type VolcanoDataForCorrelatedDataset = {
   [featureDataset: string]: DoseCategoryVolcanoData;
 };
+
+export interface SortedCorrelations {
+  id: string;
+  feature: string;
+  dose: string | undefined;
+  featureDataset: string;
+  correlation: number;
+  log10qvalue: number;
+  rank: number;
+  [key: string]: any; // in case other keys added
+}

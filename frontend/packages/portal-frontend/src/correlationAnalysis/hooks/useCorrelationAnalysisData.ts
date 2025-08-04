@@ -3,9 +3,9 @@ import { useEffect, useState } from "react";
 import {
   createDoseRangeColorScale,
   transformAndGroupByDataset,
-  SortedCorrelations,
   getAllCorrelates,
 } from "../utilities/helper";
+import { SortedCorrelations } from "../models/CorrelationPlot";
 
 function useCorrelationAnalysisData(
   selectedDataset: string,
@@ -148,7 +148,6 @@ function useCorrelationAnalysisData(
         setIsLoading(false);
       }
     })();
-    // Only run this effect once when the component mounts
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [featureLabel, selectedDataset]);
   return {

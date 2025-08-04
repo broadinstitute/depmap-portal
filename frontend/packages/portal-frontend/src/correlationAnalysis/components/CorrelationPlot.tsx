@@ -26,6 +26,7 @@ export default function CorrelationsPlot(props: CorrelationsPlotProps) {
   const onPointClick = useCallback(
     (point: VolcanoPlotPoint, keyModifier: boolean) => {
       const selectedLabel = point.text;
+      // NOTE: valid key modifiers are ctrlKey/metaKey/shiftKey
       if (keyModifier) {
         if (selectedFeatures.includes(selectedLabel)) {
           // deselect point if point is already selected
