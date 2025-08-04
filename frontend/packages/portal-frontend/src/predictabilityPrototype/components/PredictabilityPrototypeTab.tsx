@@ -246,6 +246,16 @@ const PredictabilityPrototypeTab = ({
                                 modelName
                               ].actuals_given_id
                             }
+                            predictionDatasetId={
+                              data[ScreenType.CRISPR].model_performance_info[
+                                modelName
+                              ].prediction_dataset_id
+                            }
+                            predictionGivenId={
+                              data[ScreenType.CRISPR].model_performance_info[
+                                modelName
+                              ].prediction_given_id
+                            }
                           />
                         </Panel.Body>
                       </Panel>
