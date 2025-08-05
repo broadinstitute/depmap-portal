@@ -26,8 +26,6 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
 
     const config: Partial<Config> = {
       responsive: true,
-      // hides hover widget toolbar
-      displayModeBar: false,
     };
 
     Plotly.react(plot, volcanoTrace, layout, config);
