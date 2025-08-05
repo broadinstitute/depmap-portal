@@ -48,8 +48,7 @@ export function sortByNumberOrNull<T>(
     // Both are numbers, perform numeric comparison
     if (order === "asc") {
       return (valA as number) - (valB as number);
-    } else {
-      return (valB as number) - (valA as number);
     }
+    return (valB as number) - (valA as number);
   });
 }
