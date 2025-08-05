@@ -120,3 +120,8 @@ add-if-missing {
     "type": "omics_inferred_molecular_subtype",
     "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsInferredMolecularSubtypes")
 }
+
+# Dummy artifact for filter portal compounds
+add-if-missing {
+    "type": "stub-artifact"
+}
