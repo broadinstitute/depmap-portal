@@ -41,7 +41,7 @@ export function transformAndGroupByDataset(
       .sort((a, b) => b.correlation - a.correlation)
       .map((item, index: number) => ({
         ...item,
-        id: `${compoundDoseLabel}-${item.other_dimension_label}`, // compound dose and correlated feature pair should be unique
+        id: `${item.other_dataset_id}-${item.other_dimension_label}-${compoundDoseLabel}`, // correlated dataset, correlated feature and given feature dose should be unique
         feature: item.other_dimension_label,
         dose: compoundDoseToDose.get(compoundDoseLabel),
         featureDataset: datasetLookup[item.other_dataset_id],
