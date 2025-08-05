@@ -105,6 +105,8 @@ def write_hdf5_file(
 
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
         create_index_dataset(f, "samples", pd.Index(df_wrapper.get_index_names()))
+    except Exception as e:
+        raise FileValidationError("Failed to save dataset to hdf5 file!") from e
     finally:
         f.close()
 
