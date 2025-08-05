@@ -665,12 +665,18 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
 def test_format_dose_curve_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        compound = CompoundFactory()
+        result = format_dose_curve_options_new_tab_if_available(
+            compound.label, compound.compound_id
+        )
         assert result == []
 
 
 def test_format_heatmap_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = get_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        compound = CompoundFactory()
+        result = get_heatmap_options_new_tab_if_available(
+            compound.label, compound.compound_id
+        )
         assert result == []
