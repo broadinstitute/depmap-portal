@@ -39,8 +39,8 @@ class PrioritizedDataset(Resource):
         # will only have the options for which this compound exists.
         sorted_data = sorted(
             dataset_options,
-            key=lambda dataset: dataset.priority
-            if dataset.priority is not None
+            key=lambda dataset: dataset.auc_dataset_priority
+            if dataset.auc_dataset_priority is not None
             else float("inf"),
         )
 

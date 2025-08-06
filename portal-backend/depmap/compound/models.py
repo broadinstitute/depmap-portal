@@ -33,7 +33,7 @@ class DRCCompoundDataset:
 
 @dataclass
 class DRCCompoundDatasetWithNamesAndPriority(DRCCompoundDataset):
-    priority: Union[int, None]
+    auc_dataset_priority: Union[int, None]
     auc_dataset_display_name: str
     viability_dataset_display_name: str
 

@@ -46,7 +46,7 @@ expected_oncref_dataset_w_priority = DRCCompoundDatasetWithNamesAndPriority(
     replicate_dataset="Prism_oncology_dose_replicate",
     auc_dataset_given_id="Prism_oncology_AUC_collapsed",
     display_name="PRISM OncRef",
-    priority=1,
+    auc_dataset_priority=1,
     auc_dataset_display_name="PRISM OncRef",
     viability_dataset_display_name="PRISM OncRef",
 )
@@ -654,7 +654,7 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
                 replicate_dataset=dataset.replicate_dataset,
                 auc_dataset_given_id=dataset.auc_dataset_given_id,
                 display_name=dataset.display_name,
-                priority=1,
+                auc_dataset_priority=1,
                 auc_dataset_display_name="dataset_label",
                 viability_dataset_display_name="dataset_label",
             )

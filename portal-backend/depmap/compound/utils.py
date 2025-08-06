@@ -21,7 +21,7 @@ def get_compound_dataset_with_name_and_priority(drc_dataset: DRCCompoundDataset)
         replicate_dataset=drc_dataset.replicate_dataset,
         auc_dataset_given_id=drc_dataset.auc_dataset_given_id,
         display_name=drc_dataset.display_name,
-        priority=priority,
+        auc_dataset_priority=priority,
         auc_dataset_display_name=auc_dataset_display_name,
         viability_dataset_display_name=viability_dataset_display_name,
     )

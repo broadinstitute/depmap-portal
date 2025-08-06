@@ -298,7 +298,11 @@ export function initDoseCurvesTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseCurvesTab
-        datasetOptions={sortByNumberOrNull(datasetOptions, "priority", "asc")}
+        datasetOptions={sortByNumberOrNull(
+          datasetOptions,
+          "auc_dataset_priority",
+          "asc"
+        )}
         doseUnits={units}
         compoundName={name}
         compoundId={compoundId}
@@ -318,7 +322,11 @@ export function initHeatmapTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <HeatmapTab
-        datasetOptions={sortByNumberOrNull(datasetOptions, "priority", "asc")}
+        datasetOptions={sortByNumberOrNull(
+          datasetOptions,
+          "auc_dataset_priority",
+          "asc"
+        )}
         doseUnits={units}
         compoundName={name}
         compoundId={compoundId}
