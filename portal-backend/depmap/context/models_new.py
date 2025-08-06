@@ -307,7 +307,7 @@ class SubtypeContext(Model):
     ) -> Dict[str, str]:
         subtype_codes_to_filter_out_set = set(subtype_codes_to_filter_out)
         all_sig_models_set = set(all_sig_models)
-        contexts_new = (
+        depmap_model_contexts = (
             db.session.query(depmap_model_context_association)
             .filter(
                 (
@@ -336,16 +336,16 @@ class SubtypeContext(Model):
             .all()
         )
 
-        if len(contexts_new) == 0:
+        if len(depmap_model_contexts) == 0:
             return {}
 
-        contexts_new_model_ids = [c[0] for c in contexts_new]
+        model_ids = [c[0] for c in depmap_model_contexts]
 
-        if len(contexts_new_model_ids) == 0:
+        if len(model_ids) == 0:
             return {}
 
         display_name_series = DepmapModel.get_cell_line_display_names(
-            model_ids=list(set(contexts_new_model_ids))
+            model_ids=list(set(model_ids))
         )
 
         return display_name_series.to_dict()
@@ -361,10 +361,27 @@ class SubtypeContext(Model):
         # have a signficant leaf node. Hence, the filter: SubtypeNode.level_0.notin_(subtype_codes_to_filter_out).
         # For example, if a Myeloid subtype is selected, and Lymph is signficant, we should not
         # get any "other heme" contexts from this query.
-        contexts = (
-            db.session.query(SubtypeContext)
-            .filter(SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out))
-            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+        subtype_codes_to_filter_out_set = set(subtype_codes_to_filter_out)
+        all_sig_models_set = set(all_sig_models)
+        depmap_model_contexts = (
+            db.session.query(depmap_model_context_association)
+            .filter(
+                (
+                    depmap_model_context_association.c.subtype_code.notin_(
+                        subtype_codes_to_filter_out_set
+                    )
+                )
+                & (
+                    depmap_model_context_association.c.model_id.notin_(
+                        all_sig_models_set
+                    )
+                )
+            )
+            .join(
+                SubtypeNode,
+                SubtypeNode.subtype_code
+                == depmap_model_context_association.c.subtype_code,
+            )
             .filter(
                 and_(
                     or_(
@@ -376,22 +393,17 @@ class SubtypeContext(Model):
             .all()
         )
 
-        if len(contexts) == 0:
+        if len(depmap_model_contexts) == 0:
             return {}
 
-        model_ids = [
-            cell_line.model_id
-            for context in contexts
-            for cell_line in context.depmap_model
-            if cell_line.model_id not in all_sig_models
-        ]
+        model_ids = [c[0] for c in depmap_model_contexts]
 
         if len(model_ids) == 0:
             return {}
+
         display_name_series = DepmapModel.get_cell_line_display_names(
             model_ids=list(set(model_ids))
         )
-
         return display_name_series.to_dict()
 
     @staticmethod
