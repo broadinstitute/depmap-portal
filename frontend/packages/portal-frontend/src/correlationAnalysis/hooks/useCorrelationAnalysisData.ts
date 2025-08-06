@@ -139,7 +139,7 @@ function useCorrelationAnalysisData(
           // filter out correlated dataset features that match the given featureLabel/compound within the same given dataset (a.k.a features correlated with itself)
           const correlatesDataWithoutSelf = correlatesData.filter(
             (cor) =>
-              cor.feature != featureLabel && cor.featureDataset != aucDataset
+              cor.feature !== featureLabel && cor.featureDataset !== aucDataset
           );
           setCorrelationAnalysisData(correlatesDataWithoutSelf);
         } else {
