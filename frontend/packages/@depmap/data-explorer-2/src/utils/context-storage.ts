@@ -164,6 +164,10 @@ export async function fetchContext(
   const body = await response.json();
   const context = JSON.parse(body.value);
 
+  if (!context) {
+    throw new Error(`Cound not fetch context from unknown hash "${hash}".`);
+  }
+
   if (!cache) {
     fallbackInMemoryCache[hash] = context;
   }

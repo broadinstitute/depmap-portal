@@ -20,6 +20,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
     setFetchedPlotConfig,
   ] = useState<DataExplorerPlotConfig | null>(null);
   const [hadError, setHadError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -77,6 +78,12 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
       } catch (e) {
         setHadError(true);
         window.console.error(e);
+
+        if (e && typeof e === "object" && "message" in e) {
+          setErrorMessage(e.message as string);
+        } else {
+          setErrorMessage("");
+        }
       }
     })();
   }, [plotConfig, fetchedPlotConfig]);
@@ -107,5 +114,5 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
     })();
   }, [plotConfig, fetchedPlotConfig]);
 
-  return { data, linreg_by_group, fetchedPlotConfig, hadError };
+  return { data, linreg_by_group, fetchedPlotConfig, hadError, errorMessage };
 }
