@@ -30,6 +30,17 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
     forwardSelectedLabels,
   } = props;
 
+  // HACK: so that Plotly will resize the plot when the user switches to this tab.
+  // Without this hack, if the plot loads while this tab is inactive, Plotly does not
+  // properly calculate plot size, and this can cause the plot to drastically overflow its bounds.
+  const [key, setKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const handler = () => setKey((k) => k + 1);
+    window.addEventListener("changeTab:corr_analysis", handler);
+    return () => window.removeEventListener("changeTab:corr_analysis", handler);
+  }, []);
+
   const filteredDosesForCorrelatedDatasetVolcanoData = React.useCallback(
     (correlatedDatasetVolcanoData: DoseCategoryVolcanoData) => {
       if (dosesToFilter.length) {
@@ -55,7 +66,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
   };
 
   return (
-    <div className={styles.plotContent}>
+    <div className={styles.plotContent} key={key}>
       <div className={styles.plotContainer}>
         {correlatedDatasetsToShow.map((correlatedDataset) => {
           return (
