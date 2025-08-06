@@ -13,7 +13,7 @@ from depmap.database import (
 import enum
 import pandas as pd
 from typing import Type
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, select
 from depmap.entity.models import Entity
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
 
@@ -305,10 +305,27 @@ class SubtypeContext(Model):
         tree_type: str,
         all_sig_models: List[str],
     ) -> Dict[str, str]:
-        contexts = (
-            db.session.query(SubtypeContext)
-            .filter(SubtypeContext.subtype_code.notin_(subtype_codes_to_filter_out))
-            .join(SubtypeNode, SubtypeNode.subtype_code == SubtypeContext.subtype_code)
+        subtype_codes_to_filter_out_set = set(subtype_codes_to_filter_out)
+        all_sig_models_set = set(all_sig_models)
+        contexts_new = (
+            db.session.query(depmap_model_context_association)
+            .filter(
+                (
+                    depmap_model_context_association.c.subtype_code.notin_(
+                        subtype_codes_to_filter_out_set
+                    )
+                )
+                & (
+                    depmap_model_context_association.c.model_id.notin_(
+                        all_sig_models_set
+                    )
+                )
+            )
+            .join(
+                SubtypeNode,
+                SubtypeNode.subtype_code
+                == depmap_model_context_association.c.subtype_code,
+            )
             .filter(
                 and_(
                     SubtypeNode.level_0 != "MYELOID",
@@ -319,20 +336,16 @@ class SubtypeContext(Model):
             .all()
         )
 
-        if len(contexts) == 0:
+        if len(contexts_new) == 0:
             return {}
 
-        model_ids = [
-            cell_line.model_id
-            for context in contexts
-            for cell_line in context.depmap_model
-            if cell_line.model_id not in all_sig_models
-        ]
+        contexts_new_model_ids = [c[0] for c in contexts_new]
 
-        if len(model_ids) == 0:
+        if len(contexts_new_model_ids) == 0:
             return {}
+
         display_name_series = DepmapModel.get_cell_line_display_names(
-            model_ids=list(set(model_ids))
+            model_ids=list(set(contexts_new_model_ids))
         )
 
         return display_name_series.to_dict()
