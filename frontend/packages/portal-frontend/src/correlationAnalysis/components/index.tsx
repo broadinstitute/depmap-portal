@@ -181,10 +181,10 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                     `<b>${label}</b><br>` +
                     `<b>Dose (uM)</b>: ${curRecord["dose"]}<br>` +
                     `<b>Correlation:</b> ${curRecord["correlation"].toFixed(
-                      2
+                      4
                     )}<br>` +
                     `<b>-log10(q value):</b> ${curRecord["log10qvalue"].toFixed(
-                      2
+                      4
                     )}<br>`;
                   (acc[key][doseCategory][prop] as string[]).push(text);
                   acc[key][doseCategory]["label"].push(label);
