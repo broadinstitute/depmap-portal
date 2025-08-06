@@ -1,4 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
+import { isContextAll } from "../../utils/context";
 import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
 import {
   correlationMatrix,
@@ -61,9 +62,13 @@ async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
 
   const idsInDataset = new Set(dsIdentifiers.map(({ id }) => id));
   const overlappingIds = ids.filter((id) => idsInDataset.has(id));
-  const contextCount = overlappingIds.length;
+  const contextCount = overlappingIds.length.toLocaleString();
 
   const entities = await fetchEntitiesLabel(dimension.slice_type);
+
+  if (isContextAll(context)) {
+    return `${aggregation} ${units} of all ${contextCount} ${entities}`;
+  }
 
   return `${aggregation} ${units} of ${contextCount} ${context.name} ${entities}`;
 }
