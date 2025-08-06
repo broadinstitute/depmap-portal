@@ -13,7 +13,7 @@ from depmap.database import (
 import enum
 import pandas as pd
 from typing import Type
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, or_
 from depmap.entity.models import Entity
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
 
