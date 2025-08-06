@@ -19,6 +19,9 @@ import re
 from dataclasses import dataclass
 
 
+# AUC, Viability, and Replicate datasets are grouped here since all 3
+# datasets are typically required for "Dose Response Curve Compound Dataset"
+# visualizations: (e.g. the Heatmap Tab, the new Dose Curves tab).
 @dataclass
 class DRCCompoundDataset:
     drc_dataset_label: str
