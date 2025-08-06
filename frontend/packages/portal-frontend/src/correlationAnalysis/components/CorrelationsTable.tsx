@@ -1,8 +1,9 @@
 import WideTable from "@depmap/wide-table";
 import React from "react";
+import { SortedCorrelations } from "../models/CorrelationPlot";
 
 interface CorrelationsTableProps {
-  data: any[];
+  data: SortedCorrelations[];
   selectedRows: Set<string>;
   onChangeSelections: (selections: any[]) => void;
   compound: string;
