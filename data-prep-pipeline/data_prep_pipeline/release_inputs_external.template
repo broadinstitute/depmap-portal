@@ -128,6 +128,6 @@ add-if-missing {
 
 add-if-missing {
   "type": "crispr-inferred-common-essentials",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRInferredCommonEssentials")
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "CRISPRInferredCommonEssentials"),
   "label": "Chronos_Combined"
 }
