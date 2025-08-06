@@ -158,6 +158,12 @@ export function ColorByTypeSelector({
           otherTabularDatasets,
         } = await fetchMetadataAndOtherTabularDatasets(slice_type, [
           "categorical",
+          // TODO: In the future we should only support "categorical" and
+          // remove "text" here. But most datasets are not tagged that way
+          // which can make it appear we are missing metadata. For now, we'lll
+          // include "text" even though that may include some columns that have
+          // too many disinct values to color by.
+          "text",
         ]);
 
         setHasMetadataDataset(Boolean(metadataDataset));

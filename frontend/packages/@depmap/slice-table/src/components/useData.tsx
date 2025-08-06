@@ -152,7 +152,15 @@ function buildSlicesToFetch(
     identifier: "label",
   };
 
-  return [labelSlice, ...userSlices];
+  const nonLabelSlices = userSlices.filter((s) => {
+    if (s.identifier_type !== "column") {
+      return true;
+    }
+
+    return s.identifier !== "label";
+  });
+
+  return [labelSlice, ...nonLabelSlices];
 }
 
 /**
@@ -304,7 +312,7 @@ function transformToTableData(
   // Step 1: Create unique column keys and collect all row IDs
   const columnKeys = slices.map(createUniqueColumnKey);
   const allRowIds = new Set<string>();
-  const columnData: Record<string, (number | string | null)[]> = {};
+  const columnData: Record<string, Record<string, string | number | null>> = {};
 
   // Process each data response and collect row IDs
   dataResponses.forEach((response, index) => {
@@ -328,19 +336,19 @@ function transformToTableData(
     }
 
     const uniqueKey = columnKeys[index];
-    columnData[uniqueKey] = Object.values(keyedValues);
+    columnData[uniqueKey] = keyedValues;
     Object.keys(keyedValues).forEach((id) => allRowIds.add(id));
   });
 
   // Step 2: Build data rows
-  let data = Array.from(allRowIds).map((rowId, index) => {
+  let data = Array.from(allRowIds).map((rowId) => {
     const row: Record<string, string | number | undefined> = { id: rowId };
 
     columnKeys.forEach((columnKey) => {
       // Use `undefined` instead of `null` for missing values because it
       // works better with table sorting (react-table columns have a
       // `sortUndefined: "last"` option but no equivalent for nulls).
-      row[columnKey] = columnData[columnKey]?.[index] ?? undefined;
+      row[columnKey] = columnData[columnKey]?.[rowId] ?? undefined;
     });
 
     return row;

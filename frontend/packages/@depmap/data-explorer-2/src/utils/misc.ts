@@ -101,6 +101,8 @@ export const urlLibEncode = (s: string) => {
 
 export const isSampleType = (
   dimensionTypeName: string | null | undefined,
+  // FIXME: this second arg is optional to support some legacy code. Once we
+  // move all data to Breadbox, this should become required.
   dimensionTypes?: DimensionType[]
 ) => {
   if (!dimensionTypeName) {
@@ -118,12 +120,12 @@ export const isSampleType = (
   }
 
   return [
-    "depmap_model",
-    "screen",
-    "Screen metadata",
-    "model_condition",
     "anchor_experiment",
     "anchor_experiment_v2",
+    "depmap_model",
+    "ModelCondition",
+    "Screen metadata",
+    "tumor",
   ].includes(dimensionTypeName);
 };
 

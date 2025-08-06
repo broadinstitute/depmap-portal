@@ -3,9 +3,11 @@ import {
   ContextBuilderModal,
   ContextBuilderV2,
   isBreadboxOnlyMode,
+  PlotlyLoaderProvider,
   saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
+import PlotlyLoader from "src/plot/components/PlotlyLoader";
 
 const ContextBuilder = isBreadboxOnlyMode
   ? (ContextBuilderV2 as any)
@@ -65,13 +67,15 @@ function StandaloneContextEditor({
   };
 
   return (
-    <ContextBuilder
-      show
-      context={context}
-      isExistingContext={Boolean(hash)}
-      onClickSave={onClickSave}
-      onHide={onHide}
-    />
+    <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+      <ContextBuilder
+        show
+        context={context}
+        isExistingContext={Boolean(hash)}
+        onClickSave={onClickSave}
+        onHide={onHide}
+      />
+    </PlotlyLoaderProvider>
   );
 }
 
