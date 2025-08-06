@@ -112,7 +112,13 @@ class Dataset(Base, UUIDMixin, GroupMixin):
     data_type: Mapped[str] = mapped_column(
         String, ForeignKey(DataType.data_type), nullable=False
     )
+
     is_transient: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # only meaningful for datasets where is_transient==True. Indicates when a transient dataset
+    # should be deleted.
+    expiry: Mapped[Optional[DateTime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     priority: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
