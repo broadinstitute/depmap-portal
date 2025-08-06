@@ -13,11 +13,13 @@ import { useDoseViabilityDataContext } from "src/compound/hooks/DoseViabilityDat
 
 interface HeatmapTileProps {
   compoundName: string;
+  displayName: string;
   isLoadingDataset: boolean;
 }
 
 export const HeatmapTile: React.FC<HeatmapTileProps> = ({
   compoundName,
+  displayName,
   isLoadingDataset,
 }) => {
   const {
@@ -75,9 +77,11 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
           )}
         </h2>
         <div className="card_padding">
-          <div className={styles.subHeader}>
-            {compoundName} sensitivity distributed per dose
-          </div>
+          {tableFormattedData && (
+            <div className={styles.subHeader}>
+              {compoundName} ({displayName}) sensitivity distributed per dose
+            </div>
+          )}
           {(isLoading || isLoadingDataset) && !error && <PlotSpinner />}
           {!isLoading && !error && sortedHeatmapFormattedData && (
             <div className={styles.heatmapWithTriangle}>

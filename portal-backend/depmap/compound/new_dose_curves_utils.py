@@ -143,7 +143,7 @@ def _get_curve_params_for_model_ids(
 # CompoundDoseReplicates. As result, here we:
 # 1. Look at each Compound Experiment, are there valid CompoundDoseReplicates?
 # 2. As soon as we find valid replicates, ignore any subsequent CompoundExperiments.
-def _get_compound_dose_replicates(
+def get_compound_dose_replicates(
     compound_id: str, drc_dataset_label: str, replicate_dataset_name: str
 ):
     ces = CompoundExperiment.get_corresponding_compound_experiment_using_drc_dataset_label(
@@ -184,7 +184,7 @@ def get_dose_response_curves_per_model(
     """
     Setup retrieval of dose response curves and replicate points for a compound and dataset.
     """
-    compound_dose_replicates = _get_compound_dose_replicates(
+    compound_dose_replicates = get_compound_dose_replicates(
         compound_id=compound_id,
         drc_dataset_label=drc_dataset_label,
         replicate_dataset_name=replicate_dataset_name,

@@ -1,3 +1,4 @@
+from depmap.compound import new_dose_curves_utils, utils
 from depmap.data_access import breadbox_dao
 from depmap.interactive import interactive_utils
 from depmap.settings.settings import TestConfig
@@ -8,10 +9,15 @@ from json import loads as json_loads
 
 from depmap import data_access
 from depmap.dataset.models import DependencyDataset
-from depmap.compound.models import Compound, DRCCompoundDataset, drc_compound_datasets
+from depmap.compound.models import (
+    Compound,
+    DRCCompoundDataset,
+    DRCCompoundDatasetWithNamesAndPriority,
+    drc_compound_datasets,
+)
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
-    format_heatmap_options_new_tab_if_available,
+    get_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -34,6 +40,17 @@ from tests.factories import (
 from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 
+expected_oncref_dataset_w_priority = DRCCompoundDatasetWithNamesAndPriority(
+    drc_dataset_label="Prism_oncology_per_curve",
+    viability_dataset_given_id="Prism_oncology_viability",
+    replicate_dataset="Prism_oncology_dose_replicate",
+    auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+    display_name="PRISM OncRef",
+    auc_dataset_priority=1,
+    auc_dataset_display_name="PRISM OncRef",
+    viability_dataset_display_name="PRISM OncRef",
+)
+
 
 def test_render_view_compound(populated_db, monkeypatch):
     with populated_db.app.test_client() as c:
@@ -47,9 +64,29 @@ def test_render_view_compound(populated_db, monkeypatch):
         def mock_is_breadbox_id(dataset_id):
             return True
 
+        def mock_get_compound_dose_replicates(
+            compound_id, drc_dataset_label, replicate_dataset_name
+        ):
+            return ["mock_replicate_1"]
+
+        def mock_get_dataset_label(dataset):
+            return "PRISM OncRef"
+
+        def mock_get_dataset_priority(dataset):
+            return 1
+
         monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
         monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
         monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+        monkeypatch.setattr(
+            new_dose_curves_utils,
+            "get_compound_dose_replicates",
+            mock_get_compound_dose_replicates,
+        )
+        monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
+        monkeypatch.setattr(
+            data_access, "get_dataset_priority", mock_get_dataset_priority
+        )
 
         for compound in Compound.query.all():
             r = c.get(url_for("compound.view_compound", name=compound.label))
@@ -459,7 +496,7 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
 
 
 def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
-    app, monkeypatch
+    app, monkeypatch, empty_db_mock_downloads
 ):
     with app.app_context():
 
@@ -472,23 +509,40 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         def mock_is_breadbox_id(dataset_id):
             return True
 
+        def mock_get_compound_dose_replicates(
+            compound_id, drc_dataset_label, replicate_dataset_name
+        ):
+            return ["mock_replicate_1"]
+
+        def mock_get_dataset_label(dataset):
+            return "PRISM OncRef"
+
+        def mock_get_dataset_priority(dataset):
+            return 1
+
         monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
         monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
         monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+        monkeypatch.setattr(
+            new_dose_curves_utils,
+            "get_compound_dose_replicates",
+            mock_get_compound_dose_replicates,
+        )
+        monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
+        monkeypatch.setattr(
+            data_access, "get_dataset_priority", mock_get_dataset_priority
+        )
 
-        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        compound = CompoundFactory()
+        result = format_dose_curve_options_new_tab_if_available(
+            compound.label, compound.compound_id
+        )
         assert isinstance(result, list)
 
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
         assert len(result) == 1
-        assert result[0] == DRCCompoundDataset(
-            display_name="PRISM OncRef",
-            viability_dataset_given_id="Prism_oncology_viability",
-            replicate_dataset="Prism_oncology_dose_replicate",
-            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-            drc_dataset_label="Prism_oncology_per_curve",
-        )
+        assert result[0] == expected_oncref_dataset_w_priority
 
 
 def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
@@ -503,21 +557,38 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         def mock_is_breadbox_id(dataset_id):
             return True
 
+        def mock_get_compound_dose_replicates(
+            compound_id, drc_dataset_label, replicate_dataset_name
+        ):
+            return ["mock_replicate_1"]
+
+        def mock_get_dataset_label(dataset):
+            return "PRISM OncRef"
+
+        def mock_get_dataset_priority(dataset):
+            return 1
+
         monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
         monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
         monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+        monkeypatch.setattr(
+            new_dose_curves_utils,
+            "get_compound_dose_replicates",
+            mock_get_compound_dose_replicates,
+        )
+        monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
+        monkeypatch.setattr(
+            data_access, "get_dataset_priority", mock_get_dataset_priority
+        )
 
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
-        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
-        assert len(result) == 1
-        assert result[0] == DRCCompoundDataset(
-            display_name="PRISM OncRef",
-            viability_dataset_given_id="Prism_oncology_viability",
-            replicate_dataset="Prism_oncology_dose_replicate",
-            auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-            drc_dataset_label="Prism_oncology_per_curve",
+        compound = CompoundFactory()
+        result = get_heatmap_options_new_tab_if_available(
+            compound.label, compound.compound_id
         )
+        assert len(result) == 1
+        assert result[0] == expected_oncref_dataset_w_priority
 
 
 def config(request):
@@ -547,24 +618,65 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
         def mock_is_breadbox_id(dataset_id):
             return True
 
+        def mock_get_compound_dose_replicates(
+            compound_id, drc_dataset_label, replicate_dataset_name
+        ):
+            return ["mock_replicate_1"]
+
+        def mock_get_dataset_label(dataset):
+            return "dataset_label"
+
+        def mock_get_dataset_priority(dataset):
+            return 1
+
         monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
         monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
         monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+        monkeypatch.setattr(
+            new_dose_curves_utils,
+            "get_compound_dose_replicates",
+            mock_get_compound_dose_replicates,
+        )
+        monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
+        monkeypatch.setattr(
+            data_access, "get_dataset_priority", mock_get_dataset_priority
+        )
 
-        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        compound = CompoundFactory()
+        result = format_dose_curve_options_new_tab_if_available(
+            compound.label, compound.compound_id
+        )
         assert isinstance(result, list)
-        assert result == drc_compound_datasets
+        assert result == [
+            DRCCompoundDatasetWithNamesAndPriority(
+                drc_dataset_label=dataset.drc_dataset_label,
+                viability_dataset_given_id=dataset.viability_dataset_given_id,
+                replicate_dataset=dataset.replicate_dataset,
+                auc_dataset_given_id=dataset.auc_dataset_given_id,
+                display_name=dataset.display_name,
+                auc_dataset_priority=1,
+                auc_dataset_display_name="dataset_label",
+                viability_dataset_display_name="dataset_label",
+            )
+            for dataset in drc_compound_datasets
+        ]
 
 
 def test_format_dose_curve_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_dose_curve_options_new_tab_if_available(CompoundFactory().label)
+        compound = CompoundFactory()
+        result = format_dose_curve_options_new_tab_if_available(
+            compound.label, compound.compound_id
+        )
         assert result == []
 
 
 def test_format_heatmap_options_new_tab_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
-        result = format_heatmap_options_new_tab_if_available(CompoundFactory().label)
+        compound = CompoundFactory()
+        result = get_heatmap_options_new_tab_if_available(
+            compound.label, compound.compound_id
+        )
         assert result == []
