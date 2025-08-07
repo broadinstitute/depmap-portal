@@ -190,14 +190,6 @@ active_tab_set = False %}
     id="corr_analysis"
   >
     <div id="correlations-analysis-tab-content"></div>
-    <script>
-      $(function () { // document ready for middle-of-html js
-          DepMap.initCorrelationAnalysisTab(
-              "correlations-analysis-tab-content",
-          {{name | tojson}},
-      );
-      });
-    </script>
     {% set active_tab_set = True %}
   </div>
 </div>
@@ -269,6 +261,12 @@ active_tab_set = False %}
           "compound",
           {{ predictability_custom_downloads_link | tojson }},
           {{ predictability_methodology_link | tojson }}
+        );
+      }
+      else if (target === "#corr_analysis") {
+        DepMap.initCorrelationAnalysisTab(
+          "correlations-analysis-tab-content",
+          {{name | tojson}},
         );
       }
       loadedTabs[target] = true;
