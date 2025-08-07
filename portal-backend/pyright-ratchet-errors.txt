@@ -350,7 +350,6 @@ subset_ssgsea.py: error: Import "hdf5_utils" could not be resolved (reportMissin
 subset_translocations.py: error: Argument of type "Literal['4']" cannot be assigned to parameter "version" of type "DatasetVersion | None" in function "get"
 taiga_id_loader.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 taiga_id_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-task_utils.py: error: Argument of type "FileStorage" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
 task_utils.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 task_utils.py: error: Argument of type "Literal['MAX_UPLOAD_SIZE']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 task_utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -465,7 +464,6 @@ test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "l
 test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "sample_col_ids" of type "list[str] | None" in function "get_subsetted_df_by_labels"
 test_tasks.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 test_tasks.py: error: Argument missing for parameter "self" (reportCallIssue)
-test_tasks.py: error: Argument missing for parameter "single_column" (reportCallIssue)
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"
@@ -504,7 +502,6 @@ utils.py: error: No overloads for "quote" match the provided arguments (reportCa
 utils.py: error: Second argument to "isinstance" must be a class or tuple of classes
 views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
-views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "get" is not a known member of "None" (reportOptionalMemberAccess)
@@ -553,7 +550,6 @@ views.py: error: Argument of type "str | Any" cannot be assigned to parameter "_
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
 views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "_VT@dict" in function "__setitem__"
 views.py: error: Cannot access member "any" for type "List[Gene]"
-views.py: error: Cannot access member "apply" for type "function"
 views.py: error: Cannot access member "delay" for type "function"
 views.py: error: Cannot access member "genes" for type "set[Unknown]"
 views.py: error: Cannot access member "get" for type "list[str]"

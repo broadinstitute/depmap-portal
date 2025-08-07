@@ -36,17 +36,12 @@ def get_current_result_dir():
     return result_dir
 
 
-def write_url_to_local_file(url: str):
+def write_url_to_local_file(url: str, local_filename: str):
     response = requests.get(url, stream=True)
-    return write_fileobj_to_local_file(response.raw)
+    write_fileobj_to_local_file(response.raw, local_filename)
 
 
-def write_fileobj_to_local_file(fileobj: typing.IO):
-    # create a temp directory to hold uploaded file
-    result_dir = os.path.join(get_current_result_dir(), str(uuid.uuid4()))
-    os.makedirs(result_dir)
-
-    local_filename = os.path.join(result_dir, "uploaded.csv")
+def write_fileobj_to_local_file(fileobj: typing.IO, local_filename: str):
     max_upload_size = current_app.config["MAX_UPLOAD_SIZE"]
     bytes_written = 0
 
@@ -59,8 +54,6 @@ def write_fileobj_to_local_file(fileobj: typing.IO):
             if bytes_written > max_upload_size:
                 raise FileTooLarge(bytes_written, max_upload_size)
             fd.write(buffer)
-
-    return local_filename
 
 
 def write_upload_to_local_file(upload_file: FileStorage):

@@ -1,3 +1,4 @@
+import tempfile
 from functools import reduce
 import logging
 from decimal import Decimal
@@ -10,7 +11,6 @@ import pandas as pd
 from flask import (
     Blueprint,
     abort,
-    current_app,
     jsonify,
     redirect,
     render_template,
@@ -27,12 +27,11 @@ from depmap.correlation.models import CorrelatedDataset
 from depmap.correlation.utils import get_all_correlations
 from depmap.dataset.models import Dataset, Mutation
 from depmap.enums import BiomarkerEnum
-from depmap.extensions import csrf_protect
+from depmap.extensions import csrf_protect, breadbox
 from depmap.interactive import common_utils
 from depmap import data_access
 from depmap.interactive.config.categories import CategoryConfig
 from depmap.interactive.models import FeatureGroup, LinRegInfo, PlotFeatures
-from depmap.user_uploads.tasks import upload_transient_csv
 from depmap.user_uploads.utils.task_utils import (
     write_upload_to_local_file,
     write_url_to_local_file,
@@ -730,55 +729,6 @@ def get_associations_csv():
     )
 
 
-@blueprint.route("/api/dataset/add-csv-one-row", methods=["POST"])
-@csrf_protect.exempt
-def add_custom_csv_one_row_dataset():
-    """
-    Add a custom csv in the format
-        cell line, value
-        cell line, value
-        cell line, value
-    With no header, and where cell lines are rows
-    Saves it as a custom dataset with a fixed row name as follows
-    Returns a response that includes the slice id for that one row
-    This is a horrible, long, and ugly function. Josephine just got tired to dealing with this
-    There is potential for reuse (the try catch stuff, invalid fields) with upload_transient_csv
-    """
-    datafile = request.files.get("uploadFile")
-
-    row_name = "custom data"
-
-    csv_path = write_upload_to_local_file(datafile)
-    result = upload_transient_csv.apply(args=[row_name, "", "row", csv_path, True])
-
-    response = format_task_status(result)
-    if response["state"] == TaskState.SUCCESS.value:
-        response["sliceId"] = InteractiveTree.get_id_from_dataset_feature(
-            response["result"]["datasetId"], row_name
-        )
-
-    return jsonify(response)
-
-
-@blueprint.route("/api/dataset/add-csv", methods=["POST"])
-@csrf_protect.exempt
-def add_custom_csv_dataset():
-    display_name = request.form.get("displayName")
-    units = request.form.get("units")
-    transposed = request.form.get("transposed").lower() == "true"
-    use_data_explorer_2 = (
-        request.form.get("useDataExplorer2", "false").lower() == "true"
-    )
-    datafile = request.files.get("uploadFile")
-    csv_path = write_upload_to_local_file(datafile)
-    result = upload_transient_csv.apply(
-        args=[display_name, units, transposed, csv_path, False, use_data_explorer_2]
-    )
-    response = format_task_status(result)
-
-    return jsonify(response)
-
-
 # Do not delete: this is used in the PRISM portal to link to Data Explorer.
 # As a result, you won't find any references to this inside the depmap-portal repo, only in the PRISM portal.
 @blueprint.route("/from-csv-url")
@@ -788,7 +738,9 @@ def download_csv_and_view_interactive():
     display_name = request.args["display_name"]
     units = request.args["units"]
     file_url = request.args["url"]
-    use_de2 = request.args.get("de2", "T") == "T"
+    expiry_in_seconds = int(
+        request.args.get("expiry_in_seconds", str(60 * 60 * 24))
+    )  # default to 24 hrs
 
     url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
 
@@ -800,21 +752,39 @@ def download_csv_and_view_interactive():
         )
         abort(400)
 
-    try:
-        csv_path = write_url_to_local_file(file_url)
-    except Exception as e:
-        log.exception("Got exception in get_data_file_dict_from_url")
-        abort(400)
+    from breadbox_facade import BBClient
 
-    result = upload_transient_csv.apply(
-        args=[display_name, units, True, csv_path, False, use_de2]
-    )
+    with tempfile.NamedTemporaryFile(suffix=".csv") as csv_file:
+        try:
+            write_url_to_local_file(file_url, csv_file.name)
+            data_df = pd.read_csv(csv_file.name, index_col=0)
+        except Exception:
+            # if we can't get the csv file, or parse the file, this is probably a problem with the url
+            # so call this a 400
+            log.exception("Got exception in write_url_to_local_file")
+            abort(400)
 
-    if result.state == TaskState.SUCCESS.value:
-        return redirect(result.result["forwardingUrl"])
+        # if the rest fails, it's possibly our issue, so let it be a 500
+        response = breadbox.client.add_matrix_dataset(
+            name=display_name,
+            units=units,
+            data_type="Custom",
+            data_df=data_df,
+            feature_type=None,
+            sample_type="depmap_model",
+            is_transient=True,
+            group_id=BBClient.TRANSIENT_GROUP_ID,
+            expiry_in_seconds=expiry_in_seconds,
+        )
+        dataset_id = response.id
 
-    log.error(
-        "called upload_transient_csv.apply() but wasn't successful. Result was: %s",
-        result,
-    )
-    abort(500)
+        forwarding_url = url_for(
+            "data_explorer_2.view_data_explorer_2",
+            # Data Explorer 2 links require an xFeature (it does not support linking to a partially defined plot)
+            xFeature=list(data_df.columns)[0],
+            yFeature=list(data_df.columns)[0],
+            xDataset=dataset_id,
+            yDataset=dataset_id,
+        )
+
+        return redirect(forwarding_url)
