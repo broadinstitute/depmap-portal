@@ -616,10 +616,10 @@ def get_data_to_show_if_no_contexts_significant(
     )
 
     grouped_other_box_plot_data = get_box_plot_data_for_other_category(
-        all_sig_context_codes=[],
+        all_sig_context_codes=set(),
         entity_full_row_of_values=entity_full_row_of_values,
         tree_type=tree_type,
-        all_sig_models=[],
+        all_sig_models=set(),
     )
     heme_box_plot_data = grouped_other_box_plot_data.heme
 
