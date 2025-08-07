@@ -8,7 +8,10 @@ import CorrelationFilters from "./CorrelationFilters";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import styles from "../styles/CorrelationAnalysis.scss";
 import useCorrelationAnalysisData from "../hooks/useCorrelationAnalysisData";
-import { VolcanoDataForCorrelatedDataset } from "../models/CorrelationPlot";
+import {
+  SortedCorrelations,
+  VolcanoDataForCorrelatedDataset,
+} from "../models/CorrelationPlot";
 
 interface CorrelationAnalysisProps {
   compound: string;
@@ -43,7 +46,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const [
     filteredTableCorrelationAnalysisData,
     setFilteredTableCorrelationAnalysisData,
-  ] = React.useState<any[]>([]);
+  ] = React.useState<SortedCorrelations[]>([]);
 
   const {
     correlationAnalysisData,
@@ -178,10 +181,10 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                     `<b>${label}</b><br>` +
                     `<b>Dose (uM)</b>: ${curRecord["dose"]}<br>` +
                     `<b>Correlation:</b> ${curRecord["correlation"].toFixed(
-                      2
+                      4
                     )}<br>` +
                     `<b>-log10(q value):</b> ${curRecord["log10qvalue"].toFixed(
-                      2
+                      4
                     )}<br>`;
                   (acc[key][doseCategory][prop] as string[]).push(text);
                   acc[key][doseCategory]["label"].push(label);
@@ -324,9 +327,9 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                 (data) => data.id === unselectedId
               );
               if (correlatedDatasetFeatureToRemove) {
-                const feature = correlatedDatasetFeatureToRemove["Feature"];
+                const feature = correlatedDatasetFeatureToRemove.feature;
                 const correlatedDataset =
-                  correlatedDatasetFeatureToRemove["Feature Type"];
+                  correlatedDatasetFeatureToRemove.featureDataset;
                 setAllSelectedLabels({
                   ...allSelectedLabels,
                   [correlatedDataset]: allSelectedLabels[
@@ -346,8 +349,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
               );
               if (correlatedDatasetFeatureToAdd) {
                 const featureCorrelatedDataset =
-                  correlatedDatasetFeatureToAdd["featureDataset"];
-                const feature = correlatedDatasetFeatureToAdd["feature"];
+                  correlatedDatasetFeatureToAdd.featureDataset;
+                const feature = correlatedDatasetFeatureToAdd.feature;
                 const newSelectedLabels =
                   featureCorrelatedDataset in allSelectedLabels
                     ? [...allSelectedLabels[featureCorrelatedDataset]].concat(

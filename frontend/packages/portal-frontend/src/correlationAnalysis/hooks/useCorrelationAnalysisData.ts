@@ -7,6 +7,7 @@ import {
 } from "../utilities/helper";
 import { SortedCorrelations } from "../models/CorrelationPlot";
 
+// we separate this out into a hook. In the future, we may want to reuse this hook for correlation analysis in gene page
 function useCorrelationAnalysisData(
   selectedDataset: string,
   featureLabel: string,
@@ -133,8 +134,14 @@ function useCorrelationAnalysisData(
             );
           });
           setCorrelatedDatasets(Object.keys(featureDatasetDoseCorrelates));
-          const tabledata = getAllCorrelates(featureDatasetDoseCorrelates);
-          setCorrelationAnalysisData(tabledata);
+          const correlatesData = getAllCorrelates(featureDatasetDoseCorrelates);
+
+          // filter out correlated dataset features that match the given featureLabel/compound within the same given dataset (a.k.a features correlated with itself)
+          const correlatesDataWithoutSelf = correlatesData.filter(
+            (cor) =>
+              cor.feature !== featureLabel && cor.featureDataset !== aucDataset
+          );
+          setCorrelationAnalysisData(correlatesDataWithoutSelf);
         } else {
           console.error(
             "Compound dimension type does not have a metadata dataset ID."
