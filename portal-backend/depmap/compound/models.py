@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import sqlalchemy
 from sqlalchemy import and_, func
 from depmap.database import (
@@ -19,6 +19,9 @@ import re
 from dataclasses import dataclass
 
 
+# AUC, Viability, and Replicate datasets are grouped here since all 3
+# datasets are typically required for "Dose Response Curve Compound Dataset"
+# visualizations: (e.g. the Heatmap Tab, the new Dose Curves tab).
 @dataclass
 class DRCCompoundDataset:
     drc_dataset_label: str
@@ -26,6 +29,13 @@ class DRCCompoundDataset:
     replicate_dataset: str
     auc_dataset_given_id: str
     display_name: str
+
+
+@dataclass
+class DRCCompoundDatasetWithNamesAndPriority(DRCCompoundDataset):
+    auc_dataset_priority: Union[int, None]
+    auc_dataset_display_name: str
+    viability_dataset_display_name: str
 
 
 drc_compound_datasets = [

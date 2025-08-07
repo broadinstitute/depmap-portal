@@ -5,6 +5,10 @@ import tempfile
 from typing import Any, List, Optional
 import zipfile
 from depmap.compound import legacy_utils
+from depmap.compound.utils import (
+    get_compound_dataset_with_name_and_priority,
+    dataset_exists_with_compound_in_auc_and_rep_datasets,
+)
 import requests
 import urllib.parse
 
@@ -28,6 +32,7 @@ from depmap.compound.models import (
     Compound,
     CompoundDoseReplicate,
     CompoundExperiment,
+    DRCCompoundDatasetWithNamesAndPriority,
     DoseResponseCurve,
     drc_compound_datasets,
 )
@@ -95,10 +100,10 @@ def view_compound(name):
         )
 
     dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
-        compound_label=compound.label
+        compound_label=compound.label, compound_id=compound.compound_id
     )
-    heatmap_dataset_options = format_heatmap_options_new_tab_if_available(
-        compound_label=compound.label
+    heatmap_dataset_options = get_heatmap_options_new_tab_if_available(
+        compound_label=compound.label, compound_id=compound.compound_id
     )
 
     # If there are no no valid dataset options, hide the heatmap tab and tile
@@ -223,7 +228,9 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab_if_available(compound_label: str):
+def format_dose_curve_options_new_tab_if_available(
+    compound_label: str, compound_id: str
+):
     """
     Used for jinja rendering of the dose curve tab
     """
@@ -234,10 +241,10 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
     valid_options = []
     if show_new_dose_curves_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.dataset_exists(
-                drc_dataset.auc_dataset_given_id
-            ) and data_access.valid_row(
-                drc_dataset.auc_dataset_given_id, compound_label
+            if dataset_exists_with_compound_in_auc_and_rep_datasets(
+                drc_dataset=drc_dataset,
+                compound_label=compound_label,
+                compound_id=compound_id,
             ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
                 if (
@@ -246,21 +253,27 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
                         "ENABLED_FEATURES"
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
-                    valid_options.append(drc_dataset)
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset
+                    )
+                    valid_options.append(complete_option)
 
     return valid_options
 
 
-def format_heatmap_options_new_tab_if_available(compound_label: str):
+def get_heatmap_options_new_tab_if_available(
+    compound_label: str, compound_id: str
+) -> List[DRCCompoundDatasetWithNamesAndPriority]:
     show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
 
     valid_options = []
     if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.dataset_exists(
-                drc_dataset.auc_dataset_given_id
-            ) and data_access.valid_row(
-                drc_dataset.auc_dataset_given_id, compound_label
+            # TODO: Theoretically, we could let the Heatmap load without the dose curve params, but this would involve some frontend changes.
+            if dataset_exists_with_compound_in_auc_and_rep_datasets(
+                drc_dataset=drc_dataset,
+                compound_label=compound_label,
+                compound_id=compound_id,
             ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
                 if (
@@ -269,7 +282,10 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
                         "ENABLED_FEATURES"
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
-                    valid_options.append(drc_dataset)
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset
+                    )
+                    valid_options.append(complete_option)
 
     return valid_options
 

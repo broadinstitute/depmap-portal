@@ -5,7 +5,7 @@ from breadbox.schemas.dataframe_wrapper import (
     ParquetDataFrameWrapper,
     PandasDataFrameWrapper,
 )
-from breadbox.io.hdf5_utils import write_hdf5_file
+from breadbox.io.hdf5_utils import write_hdf5_file, read_hdf5_file
 import pytest
 import h5py
 
@@ -118,3 +118,33 @@ def test_write_parquet_nulls_to_hdf5(tmpdir):
         expeted_columns = wrapper.get_column_names()
         columns: h5py.Dataset = f["features"][:]
         assert len(columns) == len(expeted_columns)
+
+
+def create_mock_hdf5(path, num_samples, num_features):
+    with h5py.File(path, "w") as f:
+        data = np.random.rand(num_samples, num_features)
+        f.create_dataset("data", data=data)
+        f.create_dataset(
+            "features", data=[f"f{i}".encode("utf8") for i in range(num_features)]
+        )
+        f.create_dataset(
+            "samples", data=[f"s{i}".encode("utf8") for i in range(num_samples)]
+        )
+
+
+def test_large_read_raises_exception(monkeypatch, tmpdir):
+    # Simulate a smaller threshold by monkeypatching
+    monkeypatch.setattr(
+        "breadbox.io.hdf5_utils.MAX_HDF5_READ_IN_BYTES",
+        1000,  # Lower threshold to trigger easily
+    )
+
+    path = tmpdir.join("test.hdf5")
+    create_mock_hdf5(
+        path, num_samples=100, num_features=100
+    )  # 100*100 = 10000 > 1000 -> triggers mock
+
+    with pytest.raises(
+        Exception, match="Reading too many columns and rows into memory at once!"
+    ):
+        read_hdf5_file(path)

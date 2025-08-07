@@ -15,6 +15,7 @@ from pyarrow.parquet import ParquetFile
 # string. The metadata is not used for checking equality.
 # See https://docs.h5py.org/en/3.2.1/strings.html
 STR_DTYPE = h5py.string_dtype()
+MAX_HDF5_READ_IN_BYTES = 1024 * 1024 * 1024
 
 
 def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
@@ -104,6 +105,8 @@ def write_hdf5_file(
 
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
         create_index_dataset(f, "samples", pd.Index(df_wrapper.get_index_names()))
+    except Exception as e:
+        raise FileValidationError("Failed to save dataset to hdf5 file!") from e
     finally:
         f.close()
 
@@ -124,20 +127,25 @@ def read_hdf5_file(
 ):
     """Return subsetted df based on provided feature and sample indexes. If either feature or sample indexes is None then return all features or samples"""
     with h5py.File(path, mode="r") as f:
+        row_len, col_len = f["data"].shape  # type: ignore
         if feature_indexes is not None and sample_indexes is not None:
+            _validate_read_size(len(feature_indexes), len(sample_indexes))
             # Not an optimized way of subsetting data but probably fine
             data = f["data"][sample_indexes, :][:, feature_indexes]
             feature_ids = f["features"][feature_indexes]
             sample_ids = f["samples"][sample_indexes]
         elif feature_indexes is not None:
+            _validate_read_size(len(feature_indexes), row_len)
             data = f["data"][:, feature_indexes]
             feature_ids = f["features"][feature_indexes]
             sample_ids = f["samples"]
         elif sample_indexes is not None:
+            _validate_read_size(col_len, len(sample_indexes))
             data = f["data"][sample_indexes]
             feature_ids = f["features"]
             sample_ids = f["samples"][sample_indexes]
         else:
+            _validate_read_size(col_len, row_len)
             data = f["data"]
             feature_ids = f["features"]
             sample_ids = f["samples"]
@@ -153,3 +161,12 @@ def read_hdf5_file(
         if not keep_nans:
             df = df.replace({np.nan: None})
     return df
+
+
+def _validate_read_size(features_length: int, samples_length: int):
+    """
+    Raise a 500 error if estimated size of reading columns and rows exceed 1GB indicating possible memory exhaustion. 
+    TODO: We will need to handle reading large data
+    """
+    if features_length * samples_length * 8 > MAX_HDF5_READ_IN_BYTES:
+        raise Exception("Reading too many columns and rows into memory at once!")
