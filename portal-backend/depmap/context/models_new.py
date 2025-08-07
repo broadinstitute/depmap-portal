@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from operator import and_
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 from depmap.database import (
     Column,
     ForeignKey,
@@ -16,6 +17,12 @@ from typing import Type
 from sqlalchemy import and_, or_
 from depmap.entity.models import Entity
 from depmap.cell_line.models_new import DepmapModel, depmap_model_context_association
+
+
+@dataclass
+class OtherModelDisplayNames:
+    heme: Dict[str, str]
+    solid: Dict[str, str]
 
 
 class TreeType(enum.Enum):
@@ -300,55 +307,68 @@ class SubtypeContext(Model):
         return node_models, all_model_ids
 
     @staticmethod
-    def get_model_ids_for_other_solid_contexts(
-        subtype_codes_to_filter_out: List[str],
-        tree_type: str,
-        all_sig_models: List[str],
-    ) -> Dict[str, str]:
-        subtype_codes_to_filter_out_set = set(subtype_codes_to_filter_out)
-        all_sig_models_set = set(all_sig_models)
-        depmap_model_contexts = (
+    def get_model_ids_for_other_heme_and_other_solid_contexts(
+        subtype_codes_to_filter_out: Set[str], tree_type: str, all_sig_models: Set[str],
+    ) -> OtherModelDisplayNames:
+        HEME_filter_exp = and_(
+            or_(SubtypeNode.level_0 == "MYELOID", SubtypeNode.level_0 == "LYMPH"),
+            SubtypeNode.tree_type == tree_type,
+        )
+
+        SOLID_filter_exp = and_(
+            SubtypeNode.level_0 != "MYELOID",
+            SubtypeNode.level_0 != "LYMPH",
+            SubtypeNode.tree_type == tree_type,
+        )
+
+        # We are looking for insignificant models only, so filter out significant subtype codes and models
+        depmap_model_context_query = (
             db.session.query(depmap_model_context_association)
             .filter(
                 (
                     depmap_model_context_association.c.subtype_code.notin_(
-                        subtype_codes_to_filter_out_set
+                        subtype_codes_to_filter_out
                     )
                 )
-                & (
-                    depmap_model_context_association.c.model_id.notin_(
-                        all_sig_models_set
-                    )
-                )
+                & (depmap_model_context_association.c.model_id.notin_(all_sig_models))
             )
             .join(
                 SubtypeNode,
                 SubtypeNode.subtype_code
                 == depmap_model_context_association.c.subtype_code,
             )
-            .filter(
-                and_(
-                    SubtypeNode.level_0 != "MYELOID",
-                    SubtypeNode.level_0 != "LYMPH",
-                    SubtypeNode.tree_type == tree_type,
+        )
+
+        other_heme_model_contexts = depmap_model_context_query.filter(
+            HEME_filter_exp
+        ).all()
+        other_solid_model_contexts = depmap_model_context_query.filter(
+            SOLID_filter_exp
+        ).all()
+
+        heme_display_name_series = {}
+        if len(other_heme_model_contexts) != 0:
+            heme_model_ids = [c[0] for c in other_heme_model_contexts]
+
+            if len(heme_model_ids) > 0:
+                heme_display_names = DepmapModel.get_cell_line_display_names(
+                    model_ids=list(set(heme_model_ids))
                 )
-            )
-            .all()
+                heme_display_name_series = heme_display_names.to_dict()
+
+        solid_display_name_series = {}
+        if len(other_solid_model_contexts) != 0:
+            solid_model_ids = [c[0] for c in other_solid_model_contexts]
+
+            if len(solid_model_ids) > 0:
+                solid_display_names = DepmapModel.get_cell_line_display_names(
+                    model_ids=list(set(solid_model_ids))
+                )
+                solid_display_name_series = solid_display_names.to_dict()
+
+        return OtherModelDisplayNames(
+            heme=heme_display_name_series, solid=solid_display_name_series
         )
-
-        if len(depmap_model_contexts) == 0:
-            return {}
-
-        model_ids = [c[0] for c in depmap_model_contexts]
-
-        if len(model_ids) == 0:
-            return {}
-
-        display_name_series = DepmapModel.get_cell_line_display_names(
-            model_ids=list(set(model_ids))
-        )
-
-        return display_name_series.to_dict()
 
     @staticmethod
     def get_model_ids_for_other_heme_contexts(
