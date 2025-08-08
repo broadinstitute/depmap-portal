@@ -284,12 +284,6 @@ class CompoundExperiment(Entity):
         xref_type, xref = parts[0], parts[1]
         return CompoundExperiment.get_by_xref(xref, xref_type, must=must)
 
-    @staticmethod
-    def get_first_with_compound_xref_type(compound_id, xref_type):
-        return CompoundExperiment.query.filter_by(
-            compound_id=compound_id, xref_type=xref_type
-        ).first()
-
     @classmethod
     def get_all_for_compound_label(
         cls, compound_label: str, must=True
