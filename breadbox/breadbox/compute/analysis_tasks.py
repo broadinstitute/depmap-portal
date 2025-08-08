@@ -190,7 +190,7 @@ def get_features_info_and_dataset(
     user: str,
     dataset_id: str,
     feature_filter_labels: Optional[List[str]] = None,
-    use_feature_ids=False,
+    use_feature_ids=False, # As opposed to slice IDs with feature labels
 ) -> Tuple[List[Feature], List[int], Dataset]:
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
@@ -292,7 +292,6 @@ def run_custom_analysis(
     self,
     user: str,
     analysis_type: str,  # pearson, association, or two_class
-    query_node_id: Optional[str],  # Query feature spec used by elara (deprecated)
     query_feature_id: Optional[
         str
     ],  # Query feature spec used by the portal (feature given id)
@@ -317,7 +316,7 @@ def run_custom_analysis(
     with db_context(user) as db:
 
         # All features and feature_indices for the dataset we're searching in
-        use_feature_ids = query_node_id is None
+        use_feature_ids=True
         features, feature_indices, dataset = get_features_info_and_dataset(
             db, user, dataset_id, use_feature_ids=use_feature_ids
         )
@@ -337,17 +336,8 @@ def run_custom_analysis(
             analysis_type == models.AnalysisType.pearson
             or analysis_type == models.AnalysisType.association
         ):
-            if query_node_id:
-                # This is the node for the feature of the vector we're querying
-                dataset_feature_id = query_node_id
-                feature_dataset = dataset_crud.get_dataset(db, user, dataset_feature_id)
-                if feature_dataset is None:
-                    raise ResourceNotFoundError("Query dataset not found")
-                query_series = get_feature_data_slice_values(
-                    db, user, dataset_feature_id, feature_dataset, filestore_location
-                )
-            elif query_feature_id and query_dataset_id:
-                # The given query Id should be the id of the feature itself
+            if query_feature_id and query_dataset_id:
+                # The query_feature_id is a given ID
                 feature = dataset_crud.get_dataset_feature_by_given_id(
                     db, query_dataset_id, query_feature_id
                 )
@@ -387,7 +377,6 @@ def run_custom_analysis(
             datasetId=dataset_id,
             query=dict(
                 analysisType=analysis_type,
-                queryId=query_node_id,
                 queryFeatureId=query_feature_id,
                 queryDatasetId=query_dataset_id,
                 queryValues=filtered_query_values_list,

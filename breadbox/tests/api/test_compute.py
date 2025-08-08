@@ -254,7 +254,6 @@ def _run_custom_analysis_test_wrapper(
 
     compute._validate_parameters(
         analysis_type=analysis_type,
-        query_node_id=None,
         query_feature_id=query_feature_id,
         query_dataset_id=query_dataset_id,
         query_values=query_values,
@@ -266,7 +265,6 @@ def _run_custom_analysis_test_wrapper(
     result = run_custom_analysis(
         user=settings.default_user,
         analysis_type=analysis_type.name,
-        query_node_id=None,
         query_feature_id=query_feature_id,
         query_dataset_id=query_dataset_id,
         filestore_location=settings.filestore_location,
@@ -354,9 +352,14 @@ def test_run_custom_analysis_pearson_with_feature_ids_and_query_values(
     tmpdir, minimal_db: SessionWithUser, settings, monkeypatch
 ):
     """
-    The legacy portal makes custom analysis requests to breadbox with a slightly different format.
-    1. It uses feature ids instead of node ids (with the flag use_feature_ids=True)
-    2. It sometimes passes in pre-loaded query values instead of using the query_node_id parameter
+    Not all data exists in breadbox (yet)! And as a result, we sometimes need a subset of the custom 
+    analysis data to be loaded from the portal-backend and the other subset to be loaded in breadbox. 
+    This tests the case where the feature/"query vector" data is loaded in the portal-backend and the 
+    dataset data is loaded from breadbox. Since the "dataset data" is often large, we perform the analysis in 
+    breadbox in this case. 
+
+    Once the Custom Analysis frontend has been updated to read exclusively from breadbox, we could probably
+    drop support for this functionality.  
     """
 
     @contextmanager
@@ -395,7 +398,6 @@ def test_run_custom_analysis_pearson_with_feature_ids_and_query_values(
     result = run_custom_analysis(
         user=settings.default_user,
         analysis_type=AnalysisType.pearson.name,
-        query_node_id=None,
         query_feature_id=None,
         query_dataset_id=None,
         filestore_location=settings.filestore_location,
@@ -748,7 +750,6 @@ def test_no_overlap(
         "queryCellLines": [],
         "analysisType": "association",
         "datasetId": dataset_id,
-        "queryId": None,
         "queryFeatureId": "A",
         "queryDatasetId": dataset2.id,
         "vectorVariableType": "dependent",
