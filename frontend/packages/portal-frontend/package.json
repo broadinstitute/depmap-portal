@@ -29,6 +29,7 @@
     "@depmap/plotly-wrapper": "1.0.0",
     "@depmap/slice-table": "1.0.0",
     "@depmap/types": "1.0.0",
+    "@depmap/stable-identifiers": "1.0.0",
     "@depmap/user-upload": "1.0.0",
     "@depmap/utils": "1.0.0",
     "@depmap/wide-table": "1.0.0",

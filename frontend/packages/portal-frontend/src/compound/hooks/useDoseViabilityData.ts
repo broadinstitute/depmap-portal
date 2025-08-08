@@ -7,6 +7,10 @@ import {
 import { breadboxAPI, legacyPortalAPI, cached } from "@depmap/api";
 import { TableFormattedData } from "../types";
 import { fetchMetadata } from "../fetchDataHelpers";
+import {
+  CompoundDimensionTypes,
+  getDimTypeFromGivenID,
+} from "@depmap/stable-identifiers";
 
 function getKeysByValue<T extends Record<string, any>>(
   obj: T,
@@ -147,7 +151,12 @@ export default function useDoseViabilityData(
         // be like {CompoundID: "viability_feature_id": "compound_id"}
         const doseCompoundMetadata = await fetchMetadata<{
           CompoundID: Record<string, string>;
-        }>("compound_dose", null, ["CompoundID"], bbapi);
+        }>(
+          getDimTypeFromGivenID(dataset.viability_dataset_given_id),
+          null,
+          ["CompoundID"],
+          bbapi
+        );
 
         // All of the viability features relevant to this particular compound will be the list of keys
         // with a value equal to this compoundId.
@@ -178,7 +187,12 @@ export default function useDoseViabilityData(
           fetchMetadata<{
             Dose: Record<string, number>;
             DoseUnit: Record<string, string>;
-          }>("compound_dose", viabilityFeatureIds, ["Dose", "DoseUnit"], bbapi),
+          }>(
+            CompoundDimensionTypes.compound_dose,
+            viabilityFeatureIds,
+            ["Dose", "DoseUnit"],
+            bbapi
+          ),
           // For getting model id --> cell line name
           fetchMetadata<{ CellLineName: Record<string, string> }>(
             "depmap_model",
