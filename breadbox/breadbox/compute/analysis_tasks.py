@@ -337,7 +337,7 @@ def run_custom_analysis(
             or analysis_type == models.AnalysisType.association
         ):
             if query_feature_id and query_dataset_id:
-                # The given query Id should be the id of the feature itself
+                # The query_feature_id is a given ID
                 feature = dataset_crud.get_dataset_feature_by_given_id(
                     db, query_dataset_id, query_feature_id
                 )

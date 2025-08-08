@@ -352,9 +352,14 @@ def test_run_custom_analysis_pearson_with_feature_ids_and_query_values(
     tmpdir, minimal_db: SessionWithUser, settings, monkeypatch
 ):
     """
-    The legacy portal makes custom analysis requests to breadbox with a slightly different format.
-    Instead of using the uery_feature_id + query_dataset_id params, it sometimes passes in 
-    pre-loaded query values. 
+    Not all data exists in breadbox (yet)! And as a result, we sometimes need a subset of the custom 
+    analysis data to be loaded from the portal-backend and the other subset to be loaded in breadbox. 
+    This tests the case where the feature/"query vector" data is loaded in the portal-backend and the 
+    dataset data is loaded from breadbox. Since the "dataset data" is often large, we perform the analysis in 
+    breadbox in this case. 
+
+    Once the Custom Analysis frontend has been updated to read exclusively from breadbox, we could probably
+    drop support for this functionality.  
     """
 
     @contextmanager
