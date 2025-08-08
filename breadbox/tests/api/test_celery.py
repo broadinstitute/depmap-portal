@@ -167,7 +167,6 @@ def test_compute_univariate_associations(
         "queryValues": ["in"] * num_in + ["out"] * num_out if useQueryValues else None,
         "analysisType": analysisType,
         "datasetId": dataset_id,
-        "queryId": None,
         "queryFeatureId": query_feature_id if useQueryId else None,
         "queryDatasetId": query_dataset_id if useQueryId else None,
         "vectorVariableType": (
@@ -320,7 +319,6 @@ def test_compute_univariate_associations_intersection_with_minimum_points(
         "queryValues": None,
         "analysisType": "association",
         "datasetId": dataset_id,
-        "queryId": None,
         "queryFeatureId": query_feature_id,
         "queryDatasetId": query_dataset_id,
         "vectorVariableType": "dependent",

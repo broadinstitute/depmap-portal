@@ -11,21 +11,15 @@ class ComputeParams(BaseModel):
         str, Field(description="The given ID or UUID of the dataset to search for association")
     ]
 
-    # Either queryId (node id) or queryFeatureId and queryDatasetId are required
-    # queryId is a deprecated query type which is only used by Elara
-    # TODO: remove this
-    queryId: Optional[str] = None # REMOVE
-
-    # TODO: check if this is used? It's different from the portal backend
+    # Specify these two if using a feature defined in breadbox
     queryFeatureId: Annotated[
         Optional[str], Field(description="")
     ] = None
     queryDatasetId: Optional[str] = None
 
+    # Specify this if using a feature not defined in breadbox
     queryCellLines: Optional[List[str]] = None # Alternatively, could take slice Query
-    queryValues: Optional[List[Any]] = (
-        None  # The query may be specified with either the QueryId or QueryValues
-    )
+    queryValues: Optional[List[Any]] = None
     # TODO: rename this to "association_var_independence", add better typing
     vectorVariableType: Optional[str] = None # Either "dependent" or "independent". Only relevant for Association and two-class
 
