@@ -9,7 +9,7 @@ from fastapi import Body
 from breadbox.schemas.custom_http_exception import UserError
 from .group import Group
 import enum
-
+from datetime import datetime
 
 
 # NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params.
@@ -106,6 +106,12 @@ class SharedDatasetParams(BaseModel):
             description="Transient datasets can be deleted - should only be set to true for non-public short-term-use datasets like custom analysis results.",
         ),
     ] = False
+    expiry_in_seconds: Annotated[
+        Optional[int],
+        Field(
+            description="The number of seconds before this dataset is expired (only applies to transient datasets)"
+        ),
+    ] = None
     dataset_metadata: Annotated[
         Optional[Dict[str, Any]],
         Body(
@@ -286,6 +292,7 @@ class SharedDatasetFields(BaseModel):
     priority: Annotated[Optional[int], Field(default=None, gt=0,)]
     taiga_id: Annotated[Optional[str], Field(default=None,)]
     is_transient: Annotated[bool, Field(default=False,)]
+    expiry: Annotated[Optional[datetime], Field(default=None,)]
     dataset_metadata: Annotated[
         Optional[Dict[str, Any]], Field()
     ]  # NOTE: Same as Dict[str, Any] =  Field(None,)
