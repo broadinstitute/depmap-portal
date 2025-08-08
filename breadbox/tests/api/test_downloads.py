@@ -58,7 +58,7 @@ def test_get_processed_df(minimal_db, settings):
     # Query as the default user
     user = settings.default_user
     minimal_db.reset_user(user)
-    feature_labels, feature_indices, dataset = get_features_info_and_dataset(
+    _, feature_indices, dataset = get_features_info_and_dataset(
         db=minimal_db,
         user=user,
         dataset_id=created_dataset.id,

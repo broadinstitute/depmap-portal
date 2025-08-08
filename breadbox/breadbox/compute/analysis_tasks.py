@@ -190,7 +190,6 @@ def get_features_info_and_dataset(
     user: str,
     dataset_id: str,
     feature_filter_labels: Optional[List[str]] = None,
-    use_feature_ids=False, # As opposed to slice IDs with feature labels
 ) -> Tuple[List[Feature], List[int], Dataset]:
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
@@ -198,46 +197,29 @@ def get_features_info_and_dataset(
     dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
 
     result_features: List[Feature] = []
-    dataset_feature_ids: List[str] = []
-    datasets: List[Dataset] = []
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db, user, dataset
     )
     feature_indices = []
 
     for dataset_feat in dataset_features:
-        dataset = dataset_crud.get_dataset(db, user, dataset_feat.dataset_id)
-        if dataset is None and dataset_feat.dataset is not None:
-            raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-        dataset = dataset_feat.dataset
-        assert dataset.sample_type_name == "depmap_model"
-
         # Custom downloads has an option to filter by feature labels. This filtering takes place
         # here if the feature_filter_labels list is not None.
-
         label = feature_labels_by_id.get(dataset_feat.given_id)
         has_label = label is not None
         has_filter = feature_filter_labels is not None
         if has_label and (
             (has_filter and label in feature_filter_labels) or (not has_filter)
         ):
-            if use_feature_ids:
-                # Feature.slice_id is converted to a string so that it can be used as
-                # vectorId in the custom analysis table.
-                slice_id = _format_breadbox_shim_slice_id(
-                    dataset_feat.dataset_id, dataset_feat.given_id
-                )
-            else:
-                slice_id = str(dataset_feat.id)
+            # Feature.slice_id is converted to a string so that it can be used as
+            # vectorId in the custom analysis table.
+            slice_id = _format_breadbox_shim_slice_id(
+                dataset_feat.dataset_id, dataset_feat.given_id
+            )
             result_feature = Feature(label=label, slice_id=slice_id)
             result_features.append(result_feature)
-            dataset_feature_ids.append(dataset_feat.id)
             assert dataset_feat.index is not None, index_error_msg(dataset_feat)
             feature_indices.append(dataset_feat.index)
-            datasets.append(dataset)
-
-    # All features should come from the same dataset
-    assert len(set(datasets)) <= 1
 
     # HDF5 indexing requires that when slicing out by index, the indices are sorted. I personally
     # would prefer to handle this inside of our code for reading from HDF5 so we don't have to worry
@@ -316,9 +298,8 @@ def run_custom_analysis(
     with db_context(user) as db:
 
         # All features and feature_indices for the dataset we're searching in
-        use_feature_ids=True
         features, feature_indices, dataset = get_features_info_and_dataset(
-            db, user, dataset_id, use_feature_ids=use_feature_ids
+            db, user, dataset_id
         )
         if not isinstance(dataset, MatrixDataset):
             raise UserError(
@@ -402,7 +383,7 @@ def run_custom_analysis(
             parameters=parameters,
             result_dir=results_dir,
             create_cell_line_group=wrapped_create_cell_line_group,
-            use_feature_ids=use_feature_ids,
+            use_feature_ids=True,
         )
 
         return result
