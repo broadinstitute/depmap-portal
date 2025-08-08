@@ -64,6 +64,13 @@ def compute_univariate_associations(
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
+    """
+    Custom analysis offers three different analysis types: "pearson", "association", and "two_class". 
+    In all 3 types, the caller must specify both: a dataset and a vector of data (which we refer to as the "query vector").
+    The query vector can be specified _either_ by providing the data (queryCellLines + queryValues) or by 
+    specifying identifiers for retrieving the data within breadbox (queryFeatureId + queryDatasetId).
+    For two class comparisons, the queryValues are the strings "in" and "out".
+    """
     utils.check_celery()
 
     resultsDirPrefix = settings.compute_results_location
