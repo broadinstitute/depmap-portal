@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Annotated, Any, List, Literal, Union
+from typing import Optional, Annotated, Any, Literal
 
 
 class ComputeParams(BaseModel):
