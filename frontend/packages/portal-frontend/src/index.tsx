@@ -28,6 +28,7 @@ import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
+import { CorrelatedDependenciesProvider } from "./compound/hooks/CorrelationsContext";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -42,6 +43,14 @@ const CorrelatedDependenciesTile = React.lazy(
     import(
       /* webpackChunkName: "CorrelatedDependenciesTile" */
       "src/compound/components/tiles/CorrelatedDependenciesTile"
+    )
+);
+
+const RelatedCompoundsTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "RelatedCompoundsTile" */
+      "src/compound/components/tiles/RelatedCompoundsTile"
     )
 );
 
@@ -269,6 +278,23 @@ export function initStructureAndDetailTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <StructureAndDetailTile compoundId={compoundId} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initRelatedCompoundsTile(
+  elementId: string,
+  entityLabel: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelatedDependenciesProvider
+        datasetId={"Prism_oncology_AUC_collapsed"}
+        compoundLabel={entityLabel}
+      >
+        <RelatedCompoundsTile entityLabel={entityLabel} />
+      </CorrelatedDependenciesProvider>
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
