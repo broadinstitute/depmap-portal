@@ -6,7 +6,10 @@ from typing import Any, Dict, Optional
 from celery import current_app as current_celery_app
 import celery
 from celery.result import AsyncResult
-from breadbox.schemas.custom_http_exception import FileValidationError
+from breadbox.schemas.custom_http_exception import (
+    FileValidationError,
+    LargeDatasetReadError,
+)
 from ..compute.celery import app
 from fastapi import HTTPException
 from typing import Any, Optional
@@ -116,16 +119,18 @@ def format_task_status(task):
             # this is a specific, expected error that we check for
             # return error message for the front to display
             message = str(task.result.detail)
+        elif isinstance(task.result, FileValidationError):
+            message = str(task.result)
+        elif isinstance(task.result, LargeDatasetReadError):
+            message = str(task.result.detail)
         elif isinstance(task.result, HTTPException):
             message = {
                 "status_code": str(task.result.status_code),
                 "detail": str(task.result.status_code),
             }
-        elif isinstance(task.result, FileValidationError):
-            message = str(task.result)
         else:
-            # This is an unexpected error thrown while the task was running. 
-            # At this point, the error has already been logged in the celery error reporter 
+            # This is an unexpected error thrown while the task was running.
+            # At this point, the error has already been logged in the celery error reporter
             # and should be visible in the GCS Error Groups.
             message = "Encountered an unexpected error. Please try again later."
     elif task.state == TaskState.PENDING.name:

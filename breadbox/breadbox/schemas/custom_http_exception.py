@@ -1,3 +1,5 @@
+from typing import Any, Dict
+from typing_extensions import Annotated, Doc
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from pydantic_settings import SettingsConfigDict
@@ -69,3 +71,11 @@ class ComputeLinearFitError(UserError):
 class CeleryConnectionError(HTTPException):
     def __init__(self, msg, error_code=503):
         super().__init__(error_code, msg)
+
+
+class LargeDatasetReadError(HTTPException):
+    def __init__(self, features_length, samples_length):
+        super().__init__(
+            status_code=507,
+            detail=f"This requires fetching data for {samples_length} samples and {features_length} features which is too large to be processed at once. This is not supported at this time.",
+        )
