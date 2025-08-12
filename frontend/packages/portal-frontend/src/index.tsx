@@ -287,14 +287,18 @@ export function initRelatedCompoundsTile(
   elementId: string,
   entityLabel: string
 ) {
+  const datasetToDataTypeMap = {
+    Chronos_Combined: "CRISPR",
+    RNAi_merged: "RNAi",
+  };
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelatedDependenciesProvider
-        datasetId={"Prism_oncology_AUC_collapsed"}
-        compoundLabel={entityLabel}
-      >
-        <RelatedCompoundsTile entityLabel={entityLabel} />
-      </CorrelatedDependenciesProvider>
+      <RelatedCompoundsTile
+        entityLabel={entityLabel}
+        datasetId="Prism_oncology_AUC_collapsed"
+        datasetToDataTypeMap={datasetToDataTypeMap}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

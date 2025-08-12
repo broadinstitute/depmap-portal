@@ -1,6 +1,7 @@
 import React from "react";
 import { CorrelationBar } from "./CorrelationBar";
 import useRelatedCompoundsData from "src/compound/hooks/useRelatedCompoundsData";
+
 // Reusable style for truncation + tooltip
 const ellipsisStyle: React.CSSProperties = {
   maxWidth: "30%",
@@ -11,21 +12,26 @@ const ellipsisStyle: React.CSSProperties = {
 
 interface RelatedCompoundsTileProps {
   entityLabel: string;
+  datasetId: string;
+  datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi">;
 }
 
-const RelatedCompoundsTile = ({ entityLabel }: RelatedCompoundsTileProps) => {
-  const datasetName = "OncRef Dataset"; // This would typically come from props or context
-
+const RelatedCompoundsTile = ({
+  entityLabel,
+  datasetId,
+  datasetToDataTypeMap,
+}: RelatedCompoundsTileProps) => {
   const urlPrefix = window.location.origin;
+
   const {
+    datasetName,
     targetCorrelationData,
     topGeneTargets,
     topCompoundCorrelates,
-    dataTypeToDatasetMap,
     isLoading,
     error,
-  } = useRelatedCompoundsData("Prism_oncology_AUC_collapsed", entityLabel);
-  const dataTypes = Object.keys(dataTypeToDatasetMap);
+  } = useRelatedCompoundsData(datasetId, entityLabel, datasetToDataTypeMap);
+  const dataTypes = Object.values(datasetToDataTypeMap);
 
   return (
     topGeneTargets.length > 0 &&
@@ -107,7 +113,7 @@ const RelatedCompoundsTile = ({ entityLabel }: RelatedCompoundsTileProps) => {
                               targetCorrelationData[compound][dataType][target]
                                 ? targetCorrelationData[compound][dataType][
                                     target
-                                  ].toFixed(3)
+                                  ].toFixed(2)
                                 : null
                             }
                           />
