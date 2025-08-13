@@ -1,5 +1,5 @@
 import shutil
-from taigapy import create_taiga_client_v3
+import taigapy
 import pandas as pd
 import os
 import argparse
@@ -18,7 +18,7 @@ def main():
     dataset_id = args.dataset_id
     perturbations_dataset_id = args.perturbations_dataset_id
 
-    tc = create_taiga_client_v3()
+    tc = taigapy.TaigaClient()
 
     def download_to_path(taiga_id, dest):
         cached = tc.download_to_cache(taiga_id)
