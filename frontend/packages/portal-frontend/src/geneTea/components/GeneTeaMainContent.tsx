@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 // import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { cached, legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import styles from "../styles/GeneTea.scss";
+import GeneTeaTable from "./GeneTeaTable";
 // import PlotSelections from "./PlotSelections";
 // import PlotSection from "./PlotSection";
 
@@ -13,6 +14,9 @@ interface GeneTeaMainContentProps {
   doGroupTerms: boolean;
   doClusterGenes: boolean;
   doClusterTerms: boolean;
+  handleSetInvalidGenes: (
+    selections: React.SetStateAction<Set<string>>
+  ) => void;
 }
 
 type GeneTeaEnrichedTerms = LegacyPortalApiResponse["fetchGeneTeaEnrichmentExperimental"];
@@ -22,10 +26,16 @@ function GeneTeaMainContent({
   doGroupTerms,
   doClusterGenes,
   doClusterTerms,
+  handleSetInvalidGenes,
 }: GeneTeaMainContentProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<GeneTeaEnrichedTerms | null>(null);
   const [error, setError] = useState(false);
+
+  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
+    new Set()
+  );
+
   useEffect(() => {
     if (
       searchTerms &&
@@ -39,19 +49,84 @@ function GeneTeaMainContent({
         try {
           const fetchedData = await cached(
             legacyPortalAPI
-          ).fetchGeneTeaEnrichmentExperimental([...searchTerms], null);
+          ).fetchGeneTeaEnrichmentExperimental(
+            [...searchTerms],
+            null,
+            doGroupTerms,
+            doClusterGenes,
+            doClusterTerms
+          );
           setData(fetchedData);
         } catch (e) {
+          setData(null);
+          console.log("error");
           setError(true);
           window.console.error(e);
         } finally {
           setIsLoading(false);
         }
       })();
+    } else {
+      setData(null);
+      setIsLoading(false);
     }
   }, [searchTerms]);
   console.log("search terms", searchTerms);
   console.log("data", data);
+
+  const tableColumns = useMemo(
+    () => [
+      { accessor: "term", Header: "Term", maxWidth: 120, minWidth: 80 },
+      {
+        accessor: "termGroup",
+        Header: "Term Group",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      {
+        accessor: "fdr",
+        Header: "FDR",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      {
+        accessor: "effectSize",
+        Header: "Effect Size",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      {
+        accessor: "matchingGenesInList",
+        Header: "Matching Genes in List",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      {
+        accessor: "nMatchingGenesInList",
+        Header: "n Matching Query",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      {
+        accessor: "nMatchingGenesOverall",
+        Header: "n Matching Overall",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+      {
+        accessor: "synonyms",
+        Header: "Synonyms",
+        maxWidth: 120,
+        minWidth: 80,
+      },
+    ],
+    []
+  );
+
+  const columnOrdering = useMemo(
+    () => tableColumns.map((col) => col.accessor),
+    [tableColumns]
+  );
 
   return (
     <div className={styles.mainContentContainer}>
@@ -105,16 +180,27 @@ function GeneTeaMainContent({
         <p>Terms selected in the plot will appear checked in this table. </p>
       </div>
       <div>
-        {/* <GeneTeaTable
+        <GeneTeaTable
           error={error}
           isLoading={isLoading}
-          tableData={tableFormattedData ?? []}
+          tableData={data?.term.map((term, index) => {
+            return {
+              term: term,
+              termGroup: data.termGroup[index],
+              synonyms: data.synonyms[index],
+              matchingGenesInList: data.matchingGenesInList[index].join(" "),
+              nMatchingGenesOverall: data.nMatchingGenesOverall[index],
+              nMatchingGenesInList: data.nMatchingGenesInList[index],
+              fdr: data.fdr[index].toFixed(3),
+              effectSize: data.effectSize[index].toFixed(3),
+            };
+          })}
           tableColumns={tableColumns}
           columnOrdering={columnOrdering}
-          defaultCols={defaultCols}
+          defaultCols={tableColumns.map((col) => col.accessor)}
           selectedTableRows={selectedTableRows}
-          handleChangeSelection={handleChangeTableSelection}
-        /> */}
+          handleChangeSelection={() => {}}
+        />
       </div>
     </div>
   );

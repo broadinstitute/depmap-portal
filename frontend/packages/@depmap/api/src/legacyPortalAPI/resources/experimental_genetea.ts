@@ -17,14 +17,22 @@ const toCorsProxyUrl = (geneTeaUrl: string, params: object) => {
 
 export async function fetchGeneTeaEnrichmentExperimental(
   genes: string[],
-  limit: number | null
+  limit: number | null,
+  doGroupTerms: boolean,
+  doClusterGenes: boolean,
+  doClusterTerms: boolean
 ): Promise<{
   term: string[];
+  termGroup: string[];
+  effectSize: number[];
   synonyms: string[][];
   coincident: string[][];
   fdr: number[];
-  matchingGenes: string[][];
-  total: number;
+  matchingGenesInList: string[][];
+  nMatchingGenesInList: number[];
+  nMatchingGenesOverall: number[];
+  totalEnrichedTerms: number;
+  totalTermGroups: number;
 }> {
   if (!enabledFeatures.gene_tea) {
     throw new Error("GeneTea is not supported in this environment!");
@@ -34,15 +42,18 @@ export async function fetchGeneTeaEnrichmentExperimental(
 
   const params = {
     gene_list: genes,
+    group_terms: doGroupTerms,
+    cluster: doClusterGenes,
     remove_overlapping: "true",
     n: limit || -1,
-    model: "v2",
+    model: "GeneTEA",
   };
 
   interface RawResponse {
     // TODO: Give the user feedback when some genes are invalid.
     invalid_genes: string[];
     total_n_enriched_terms: number;
+    total_n_term_groups: number;
     enriched_terms: {
       Term: string[];
       // semicolon separated strings
@@ -52,6 +63,10 @@ export async function fetchGeneTeaEnrichmentExperimental(
       FDR: number[];
       // Gene lists are just space-separated strings like "ADSL CAD UMPS"
       "Matching Genes in List": string[];
+      "n Matching Genes in List": number[];
+      "n Matching Genes Overall": number[];
+      "Term Group": string[];
+      "Effect Size": number[];
     };
   }
 
@@ -69,11 +84,16 @@ export async function fetchGeneTeaEnrichmentExperimental(
   if (body.enriched_terms === null) {
     return {
       term: [],
+      termGroup: [],
+      effectSize: [],
       synonyms: [],
       coincident: [],
       fdr: [],
-      matchingGenes: [],
-      total: 0,
+      matchingGenesInList: [],
+      nMatchingGenesInList: [],
+      nMatchingGenesOverall: [],
+      totalEnrichedTerms: 0,
+      totalTermGroups: 0,
     };
   }
 
@@ -82,12 +102,17 @@ export async function fetchGeneTeaEnrichmentExperimental(
   return {
     term: et.Term,
     fdr: et.FDR,
-    total: body.total_n_enriched_terms,
+    totalEnrichedTerms: body.total_n_enriched_terms,
+    totalTermGroups: body.total_n_term_groups,
     synonyms: et.Synonyms.map((list) => list?.split(";") || []),
     coincident: et["Coincident Terms"].map((list) => list?.split(";") || []),
-    matchingGenes: et["Matching Genes in List"].map((geneList) => {
+    matchingGenesInList: et["Matching Genes in List"].map((geneList) => {
       return geneList.split(" ");
     }),
+    nMatchingGenesInList: et["n Matching Genes in List"],
+    nMatchingGenesOverall: et["n Matching Genes Overall"],
+    termGroup: et["Term Group"],
+    effectSize: et["Effect Size"],
   };
 }
 
@@ -104,8 +129,8 @@ export async function fetchGeneTeaTermContextExperimental(
   const params = {
     term,
     gene_list: genes,
-    model: "v2",
     html: true,
+    model: "GeneTEA",
   };
 
   type RawResponse =

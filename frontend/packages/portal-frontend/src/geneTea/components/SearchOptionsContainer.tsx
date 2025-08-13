@@ -3,9 +3,18 @@ import React, { useState } from "react";
 import Select from "react-select";
 import styles from "../styles/GeneTea.scss";
 
-const MultiSelectTextarea = () => {
+interface Props {
+  handleSetGeneSymbolSelections: (
+    selections: React.SetStateAction<Set<string>>
+  ) => void;
+  allSelections: Set<string>;
+}
+
+const MultiSelectTextarea = ({
+  handleSetGeneSymbolSelections,
+  allSelections,
+}: Props) => {
   const [inputValue, setInputValue] = useState("");
-  const [chips, setChips] = useState<string[]>([]);
 
   const handleInputChange = (e: any) => {
     setInputValue(e.target.value);
@@ -17,13 +26,18 @@ const MultiSelectTextarea = () => {
       const newItems = inputValue
         .split(/[, ]+/)
         .filter((item) => item.trim() !== "");
-      setChips((prevChips) => [...new Set([...prevChips, ...newItems])]); // Add only unique items
+      handleSetGeneSymbolSelections(
+        (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
+      ); // Add only unique items
       setInputValue(""); // Clear input
     }
   };
 
   const handleRemoveChip = (chipToRemove: string) => {
-    setChips((prevChips) => prevChips.filter((chip) => chip !== chipToRemove));
+    handleSetGeneSymbolSelections(
+      (prevChips) =>
+        new Set([...prevChips].filter((chip) => chip !== chipToRemove))
+    );
   };
 
   return (
@@ -44,7 +58,7 @@ const MultiSelectTextarea = () => {
             backgroundColor: "white",
           }}
         >
-          {chips.map((chip, index) => (
+          {[...allSelections].map((chip, index) => (
             <span
               key={index}
               style={{
@@ -75,7 +89,7 @@ const MultiSelectTextarea = () => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder={
-            chips.length === 0
+            allSelections.size === 0
               ? "Enter items, separated by commas or spaces, then press Enter"
               : undefined
           }
@@ -96,17 +110,30 @@ interface SearchOptionsContainerProps {
   handleToggleGroupTerms: (nextValue: boolean) => void;
   handleToggleClusterGenes: (nextValue: boolean) => void;
   handleToggleClusterTerms: (nextValue: boolean) => void;
+  handleSetGeneSymbolSelections: (
+    selections: React.SetStateAction<Set<string>>
+  ) => void;
+  allSelections: Set<string>;
+  validSelections: Set<string>;
+  invalidSelections: Set<string>;
 }
 
 function SearchOptionsContainer({
   handleToggleGroupTerms,
   handleToggleClusterGenes,
   handleToggleClusterTerms,
+  handleSetGeneSymbolSelections,
+  allSelections,
+  validSelections,
+  invalidSelections,
 }: SearchOptionsContainerProps) {
   return (
     <div className={styles.SearchOptionsContainer}>
       <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
-      <MultiSelectTextarea />
+      <MultiSelectTextarea
+        handleSetGeneSymbolSelections={handleSetGeneSymbolSelections}
+        allSelections={allSelections}
+      />
       <hr className={styles.SearchOptionsContainerHr} />
       <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
         Filter by TEMP
