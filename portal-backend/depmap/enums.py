@@ -140,6 +140,7 @@ class CompoundTileEnum(enum.Enum):
     celfie = "celfie"
     heatmap = "heatmap"
     correlated_dependencies = "correlated_dependencies"
+    related_compounds = "related_compounds"
 
 
 class DataTypeEnum(enum.Enum):

@@ -132,6 +132,7 @@ def get_order(
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
         CompoundTileEnum.correlated_dependencies.value: tile_large,  # TBD: Actually we want to group with CompoundTileEnum.correlations
+        CompoundTileEnum.related_compounds.value: tile_medium,
     }
 
     if has_heatmap:

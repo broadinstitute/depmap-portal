@@ -1,6 +1,6 @@
 import React from "react";
 import StyledMeter from "src/common/components/StyledMeter";
-import styles from "../../styles/correlated_dependencies_tile.scss";
+import styles from "../../styles/CorrelationTile.scss";
 
 interface DependencyMeterProps {
   correlation: number;

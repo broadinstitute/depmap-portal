@@ -19,3 +19,14 @@
   place-items: center;
   height: 50px;
 }
+
+// Style for truncating names
+.ellipsisStyle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tileDatasetTitle {
+  font-size: 16px;
+}

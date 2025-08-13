@@ -45,6 +45,14 @@ const CorrelatedDependenciesTile = React.lazy(
     )
 );
 
+const RelatedCompoundsTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "RelatedCompoundsTile" */
+      "src/compound/components/tiles/RelatedCompoundsTile"
+    )
+);
+
 const DoseResponseTab = React.lazy(
   () =>
     import(
@@ -269,6 +277,27 @@ export function initStructureAndDetailTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <StructureAndDetailTile compoundId={compoundId} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initRelatedCompoundsTile(
+  elementId: string,
+  entityLabel: string
+) {
+  const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
+    Chronos_Combined: "CRISPR",
+    RNAi_merged: "RNAi",
+  };
+
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <RelatedCompoundsTile
+        entityLabel={entityLabel}
+        datasetId="Prism_oncology_AUC_collapsed"
+        datasetToDataTypeMap={datasetToDataTypeMap}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
