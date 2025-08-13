@@ -1,10 +1,11 @@
 import re
-from taigapy import create_taiga_client_v3
 import pandas as pd
 import argparse
 import json
 from google.cloud import storage
 
+from taigapy import create_taiga_client_v3
+from omics_preprocessing_utils import preprocess_omics_dataframe
 
 def get_ctd_summary(tc, ctd2_drug_taiga_id, Model):
     print("getting ctd summary...")
@@ -198,6 +199,7 @@ def get_ms_sanger_summary(tc, ms_sanger_taiga_id, Model):
 def get_omics_summary(tc, omics_taiga_id):
     print("getting omics_summary...")
     OmicsProfiles = tc.get(omics_taiga_id)
+    OmicsProfiles = preprocess_omics_dataframe(OmicsProfiles, omics_taiga_id)
     # if the case is wrong on Datatype, fix it (the new capitalization was introduced 25Q2)
     OmicsProfiles.rename(columns={"DataType": "Datatype"}, inplace=True)
 
