@@ -41,7 +41,7 @@ def generate_fusion_matrix(
     """Transform a DataFrame containing gene fusion information into a one-hot encoded DataFrame."""
 
     df["fusion_name"] = [
-        make_fusion_name(rec["LeftGene"], rec["RightGene"], symbol_by_ensembl)
+        make_fusion_name(rec["Gene1"], rec["Gene2"], symbol_by_ensembl)
         for rec in df.to_records()
     ]
     df["one"] = 1

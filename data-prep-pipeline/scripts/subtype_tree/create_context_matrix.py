@@ -160,7 +160,10 @@ def construct_matrix(model_tree, subtype_tree, genetic_subtypes):
 
         # create a one-hot encoded series object for this context
         st_ctx = pd.Series(index=model_tree.ModelID, name=ctx_code, data=0)
-        st_ctx.loc[st_models] = 1
+        # st_ctx.loc[st_models] = 1
+        
+        # Filter to existing index before assignment
+        st_ctx.loc[st_ctx.index.intersection(st_models)] = 1
 
         # save the series to the list of columns
         ctx_cols.append(st_ctx)

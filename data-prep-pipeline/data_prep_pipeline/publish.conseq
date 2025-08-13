@@ -1,11 +1,11 @@
 rule publish_hgnc_gene_table:
     inputs:
-        hgnc_gene_table={"type": "hgnc_gene_table"},
+        hgnc_gene_table={"type": "gene"},
         release_taiga_id={"type": "release_taiga_id"},
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "release_hgnc_gene_table_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Updated HGNC gene table for release'  'Gene' {{inputs.hgnc_gene_table.filename}} 'csv_table'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Updated HGNC gene table for release from data-prep-pipeline'  'Gene' {{inputs.hgnc_gene_table.filename}} 'csv_table'"
 
 
 rule publish_cngene_log2:
@@ -15,7 +15,7 @@ rule publish_cngene_log2:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "release_cngene_log2_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Updated cngene log2 data for release'  'PortalOmicsCNGeneLog2' {{inputs.cngene_log2.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Updated cngene log2 data for release from data-prep-pipeline'  'PortalOmicsCNGeneLog2' {{inputs.cngene_log2.filename}} 'csv_matrix'"
 
 
 rule publish_filtered_portal_compounds:
@@ -25,7 +25,7 @@ rule publish_filtered_portal_compounds:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "release_filtered_portal_compounds_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Filtered portal compounds data for release' 'PortalCompounds' {{inputs.filtered_portal_compounds.filename}} 'csv_table'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Filtered portal compounds data for release from data-prep-pipeline' 'PortalCompounds' {{inputs.filtered_portal_compounds.filename}} 'csv_table'"
 
 
 rule publish_subtype_tree:
@@ -35,7 +35,7 @@ rule publish_subtype_tree:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "release_subtype_tree_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeTree for release'  'SubtypeTree' {{inputs.subtype_tree.filename}} 'csv_table'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeTree for release from data-prep-pipeline'  'SubtypeTree' {{inputs.subtype_tree.filename}} 'csv_table'"
 
 
 rule publish_context_matrix:
@@ -45,54 +45,54 @@ rule publish_context_matrix:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "release_context_matrix_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeMatrix for release'  'SubtypeMatrix' {{inputs.context_matrix.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeMatrix for release from data-prep-pipeline'  'SubtypeMatrix' {{inputs.context_matrix.filename}} 'csv_matrix'"
 
 
 # rule publish_driver_events:
 #     inputs:
 #         driver_events_data={"type": "predictability_driver_events"},
-#         predictability_taiga_id={"type": "predictability_taiga_id"},
+#         release_taiga_id={"type": "release_taiga_id"},
 #         update_taiga_script=fileref('upload_to_taiga.py')
 #     outputs:{"type": "predictability_driver_events_published"}
 
-#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated driver events data for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated driver events data for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
 
 
 # rule publish_genetic_derangement:
 #     inputs:
 #         genetic_derangement_data={"type": "predictability_genetic_derangement"},
-#         predictability_taiga_id={"type": "predictability_taiga_id"},
+#         release_taiga_id={"type": "release_taiga_id"},
 #         update_taiga_script=fileref('upload_to_taiga.py')
 #     outputs:{"type": "predictability_genetic_derangement_published"}
 
-#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated genetic derangement data for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated genetic derangement data for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
 
 
 # rule publish_fusion:
 #     inputs:
 #         fusion_data={"type": "predictability_fusion"},
-#         predictability_taiga_id={"type": "predictability_taiga_id"},
+#         release_taiga_id={"type": "release_taiga_id"},
 #         update_taiga_script=fileref('upload_to_taiga.py')
 #     outputs:{"type": "predictability_fusion_published"}
 
-#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated fusion data for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated fusion data for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
 
 
 # rule publish_lineage:
 #     inputs:
 #         lineage_data={"type": "predictability_lineage"},
-#         predictability_taiga_id={"type": "predictability_taiga_id"},
+#         release_taiga_id={"type": "release_taiga_id"},
 #         update_taiga_script=fileref('upload_to_taiga.py')
 #     outputs:{"type": "predictability_lineage_published"}
 
-#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated lineage data for predictability'  'PredictabilityLineageTransformed' {{inputs.lineage_data.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated lineage data for predictability'  'PredictabilityLineageTransformed' {{inputs.lineage_data.filename}} 'csv_matrix'"
 
 
 # rule publish_crispr_confounders:
 #     inputs:
 #         crispr_confounders_data={"type": "predictability_crispr_confounders"},
-#         predictability_taiga_id={"type": "predictability_taiga_id"},
+#         release_taiga_id={"type": "release_taiga_id"},
 #         update_taiga_script=fileref('upload_to_taiga.py')
 #     outputs:{"type": "predictability_crispr_confounders_published"}
 
-#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.predictability_taiga_id.dataset_id}} 'Generated CRISPR confounders data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated CRISPR confounders data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
