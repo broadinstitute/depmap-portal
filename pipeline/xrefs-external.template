@@ -75,7 +75,7 @@ add-if-missing {
 # biomarker-matrix
 add-if-missing {
   'type': 'raw-expr-matrix',
-  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionProteinCodingGenesTPMLogp1"),
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
   'category' : 'expression',
 }
 
@@ -130,7 +130,7 @@ add-if-missing {
     'type': 'dataset-display-name',
     'display_name': 'Expression {{ config.RELEASE_LABEL }}',
     'label': 'expression',
-    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionProteinCodingGenesTPMLogp1"),
+    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
 }
 
 add-if-missing {
