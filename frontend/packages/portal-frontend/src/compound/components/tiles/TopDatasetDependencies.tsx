@@ -25,13 +25,15 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
   const urlPrefix = window.location.origin;
   return (
     <div>
-      <h3 style={{ fontSize: "16px" }}>{dataType}</h3>
-      <table style={{ width: "100%" }}>
+      <h3 className={styles.tileDatasetTitle}>{dataType}</h3>
+      <table style={{ width: "100%", tableLayout: "fixed" }}>
         <thead>
           <tr>
-            <th />
-            <th>{featureType === "gene" ? "Gene" : "Compound"}</th>
-            <th>Correlation</th>
+            <th style={{ width: "15%" }} />
+            <th style={{ width: "45%" }}>
+              {featureType === "gene" ? "Gene" : "Compound"}
+            </th>
+            <th style={{ width: "40%" }}>Correlation</th>
           </tr>
         </thead>
         <tbody>
@@ -58,9 +60,11 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                     <p style={{ paddingLeft: "12px" }} />
                   )}
                   <a
+                    className={styles.ellipsisStyle}
                     href={`${urlPrefix}/${featureType}/${datasetCor.other_dimension_label}`}
                     target="_blank"
                     rel="noopener noreferrer"
+                    title={datasetCor.other_dimension_label}
                   >
                     {datasetCor.other_dimension_label}
                   </a>
