@@ -28,7 +28,6 @@ import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
-import { CorrelatedDependenciesProvider } from "./compound/hooks/CorrelationsContext";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -287,7 +286,7 @@ export function initRelatedCompoundsTile(
   elementId: string,
   entityLabel: string
 ) {
-  const datasetToDataTypeMap = {
+  const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
     Chronos_Combined: "CRISPR",
     RNAi_merged: "RNAi",
   };
