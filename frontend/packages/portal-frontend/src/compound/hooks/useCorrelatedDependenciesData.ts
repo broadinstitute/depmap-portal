@@ -1,4 +1,4 @@
-import { breadboxAPI } from "@depmap/api";
+import { breadboxAPI, cached } from "@depmap/api";
 import { DatasetAssociations } from "@depmap/types/src/Dataset";
 import { useEffect, useState } from "react";
 
@@ -6,7 +6,7 @@ function useCorrelatedDependenciesData(
   datasetId: string,
   compoundLabel: string
 ) {
-  const bapi = breadboxAPI;
+  const bapi = cached(breadboxAPI);
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,7 +15,7 @@ function useCorrelatedDependenciesData(
     setCorrelationData,
   ] = useState<DatasetAssociations | null>(null);
   const [geneTargets, setGeneTargets] = useState<string[]>([]);
-  // TBD: I think we actually want to use "CRISPRGeneDependency" instead of Chronos_Combined
+
   const dataTypeToDatasetMap: Record<string, string> = {
     CRISPR: "Chronos_Combined",
     RNAi: "RNAi_merged",
