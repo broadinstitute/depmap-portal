@@ -9,6 +9,9 @@ import json
 from typing import List
 import re
 
+from omics_preprocessing_utils import preprocess_omics_dataframe
+
+
 @dataclass
 class Thresholds:
     batch_size: int
@@ -122,37 +125,6 @@ def _get_paren_values(feature_names: str) -> List[str]:
     return [_lookup(x) for x in feature_names]
 
 
-def preprocess_omics_dataframe(df, dataset_id):
-    print(f"Preprocessing {dataset_id}...")
-    print("Filtering to default entries per model...")
-    filtered_df = df[df["IsDefaultEntryForModel"] == "Yes"].copy()
-    
-    assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
-    
-    print("Dropping some metadata columns...")
-    cols_to_drop = [
-        "SequencingID",
-        "ModelConditionID", 
-        "IsDefaultEntryForModel",
-        "IsDefaultEntryForMC",
-    ]
-    existing_cols_to_drop = [c for c in cols_to_drop if c in filtered_df.columns]
-    if existing_cols_to_drop:
-        filtered_df = filtered_df.drop(columns=existing_cols_to_drop)
-
-    count_all_na_columns = filtered_df.isna().all().sum()
-    print(f"Number of columns with ALL NA values: {count_all_na_columns}")
-    
-    if count_all_na_columns > 0:
-        print(f"Data shape before dropping: {filtered_df.shape}")
-        print("Dropping columns with all NaN values...")
-        filtered_df = filtered_df.dropna(axis=1, how="all")
-        print(f"Data shape after dropping: {filtered_df.shape}")
-    
-    print(f"Finished preprocessing {dataset_id}")
-    return filtered_df
-
-
 def read_parameters(filename):
     tc = taigapy.create_taiga_client_v3()
 
@@ -173,11 +145,9 @@ def read_parameters(filename):
     if "ModelID" in b_mat.columns:
         b_mat = b_mat.set_index("ModelID")
         b_mat.index.name = None
-    
-    if "OmicsExpressionTPMLogp1HumanProteinCodingGenes" in parameters["b_taiga_id"].split('/')[1]:
-        # convert mat to log2
-        b_mat = np.log2(b_mat+1)
-
+        
+    # convert mat to log2
+    b_mat = np.log2(b_mat+1)
     b_mat = map_to_given_ids(b_mat, _subset_params("b_", parameters))
 
     return (
