@@ -3,6 +3,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import { cached, legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import styles from "../styles/GeneTea.scss";
 import GeneTeaTable from "./GeneTeaTable";
+import PlotSelections from "./PlotSelections";
+import PlotSection from "./PlotSection";
+import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 // import PlotSelections from "./PlotSelections";
 // import PlotSection from "./PlotSection";
 
@@ -36,6 +39,8 @@ function GeneTeaMainContent({
     new Set()
   );
 
+  const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
+
   useEffect(() => {
     if (
       searchTerms &&
@@ -57,9 +62,9 @@ function GeneTeaMainContent({
             doClusterTerms
           );
           setData(fetchedData);
+          setSelectedTableRows(new Set(fetchedData.allEnrichedTerms.term));
         } catch (e) {
           setData(null);
-          console.log("error");
           setError(true);
           window.console.error(e);
         } finally {
@@ -71,8 +76,6 @@ function GeneTeaMainContent({
       setIsLoading(false);
     }
   }, [searchTerms]);
-  console.log("search terms", searchTerms);
-  console.log("data", data);
 
   const tableColumns = useMemo(
     () => [
@@ -97,7 +100,7 @@ function GeneTeaMainContent({
       },
       {
         accessor: "matchingGenesInList",
-        Header: "Matching Genes in List",
+        Header: "Matching Query",
         maxWidth: 120,
         minWidth: 80,
       },
@@ -128,48 +131,65 @@ function GeneTeaMainContent({
     [tableColumns]
   );
 
+  const heatmapData = useMemo(() => {
+    if (data) {
+      const x = data.termToEntity.gene;
+      const y = data.termToEntity.term;
+      const zVals = data.termToEntity.fraction.map((val) =>
+        val === 0 ? null : val
+      );
+      return {
+        x,
+        y,
+        z: zVals,
+      };
+    } else {
+      return {
+        x: [],
+        y: [],
+        z: [],
+      };
+    }
+  }, [data]);
+
+  const barChartData = useMemo(
+    () =>
+      data
+        ? { x: data.enrichedTerms.negLogFDR, y: data.enrichedTerms.term }
+        : { x: [], y: [] },
+    []
+  );
+
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
         <h3>Top Tea Terms</h3>
       </div>
-      {false ? (
+      {!isLoading && error ? (
         <div className={styles.errorMessage}>Error loading plot data.</div>
       ) : (
         <>
           <div className={styles.mainContentGrid}>
             <div className={styles.plotArea}>
-              {/* <PlotSection
+              <PlotSection
                 isLoading={isLoading}
-                compoundName={compoundName}
                 plotElement={plotElement}
-                heatmapFormattedData={heatmapFormattedData}
-                doseMin={doseMin}
-                doseMax={doseMax}
-                doseUnits={doseUnits}
-                selectedModelIds={selectedModelIds}
-                handleSetSelectedPlotModels={handleSetSelectedPlotModels}
-                handleClearSelection={handleClearSelection}
+                heatmapFormattedData={heatmapData}
+                barChartData={barChartData}
+                // selectedGeneSymbols={searchTerms}
+                // handleSetSelectedPlotModels={() => {}}
+                handleClearSelection={() => {}}
                 handleSetPlotElement={setPlotElement}
-                displayNameModelIdMap={displayNameModelIdMap}
-                visibleZIndexes={visibleZIndexes}
-                showUnselectedLines={showUnselectedLines}
-              /> */}
+              />
             </div>
             <div className={styles.selectionsArea}>
-              {/* <PlotSelections
-                selectedIds={selectedModelIds}
-                selectedLabels={new Set(selectedLabels)}
-                onClickSaveSelectionAsContext={
-                  handleClickSaveSelectionAsContext
-                }
-                onClickClearSelection={handleClearSelection}
-                onClickSetSelectionFromContext={
-                  heatmapFormattedData
-                    ? handleSetSelectionFromContext
-                    : undefined
-                }
-              /> */}
+              <PlotSelections
+                selectedIds={new Set(searchTerms)}
+                selectedLabels={new Set(searchTerms)}
+                onClickSaveSelectionAsContext={() => {}}
+                onClickClearSelection={() => {}}
+                onClickSetSelectionFromContext={undefined}
+              />
             </div>
           </div>{" "}
         </>
@@ -183,23 +203,28 @@ function GeneTeaMainContent({
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
-          tableData={data?.term.map((term, index) => {
+          tableData={data?.allEnrichedTerms.term.map((term, index) => {
             return {
               term: term,
-              termGroup: data.termGroup[index],
-              synonyms: data.synonyms[index],
-              matchingGenesInList: data.matchingGenesInList[index].join(" "),
-              nMatchingGenesOverall: data.nMatchingGenesOverall[index],
-              nMatchingGenesInList: data.nMatchingGenesInList[index],
-              fdr: data.fdr[index].toFixed(3),
-              effectSize: data.effectSize[index].toFixed(3),
+              termGroup: data.allEnrichedTerms.termGroup[index],
+              synonyms: data.allEnrichedTerms.synonyms[index],
+              matchingGenesInList:
+                data.allEnrichedTerms.matchingGenesInList[index],
+              nMatchingGenesOverall:
+                data.allEnrichedTerms.nMatchingGenesOverall[index],
+              nMatchingGenesInList:
+                data.allEnrichedTerms.nMatchingGenesInList[index],
+              fdr: data.allEnrichedTerms.fdr[index].toFixed(3),
+              effectSize: data.allEnrichedTerms.effectSize[index].toFixed(3),
             };
           })}
           tableColumns={tableColumns}
           columnOrdering={columnOrdering}
           defaultCols={tableColumns.map((col) => col.accessor)}
           selectedTableRows={selectedTableRows}
-          handleChangeSelection={() => {}}
+          handleChangeSelection={(selections: string[]) =>
+            setSelectedTableRows(new Set(selections))
+          }
         />
       </div>
     </div>

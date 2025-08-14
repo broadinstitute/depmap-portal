@@ -1,5 +1,5 @@
 import styles from "../styles/GeneTea.scss";
-import React, { useCallback, useMemo } from "react";
+import React from "react";
 import WideTable from "@depmap/wide-table";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 
@@ -29,7 +29,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
     tableContent = (
       <div className={styles.errorMessage}>Error loading table data.</div>
     );
-  } else if (isLoading || !tableData) {
+  } else if (isLoading) {
     tableContent = (
       <div className={styles.tableSpinnerContainer}>
         <PlotSpinner />
@@ -41,7 +41,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
         <WideTable
           idProp="term"
           rowHeight={28}
-          data={tableData}
+          data={tableData || []}
           fixedHeight={500}
           columns={tableColumns}
           columnOrdering={columnOrdering}

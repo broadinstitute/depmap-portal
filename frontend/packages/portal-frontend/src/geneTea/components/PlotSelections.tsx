@@ -62,7 +62,7 @@ function PlotSelections({
               ids={selectedIds ? Array.from(selectedIds) : []}
               labels={selectedLabels ? Array.from(selectedLabels) : []}
               maxHeight={maxHeightOfList}
-              index_type={"depmap_model"}
+              index_type={"gene"}
               slice_type={"random fill in val"}
               plot_type={"random fill in val"}
             />
