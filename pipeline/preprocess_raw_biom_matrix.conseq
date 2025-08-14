@@ -78,8 +78,7 @@ rule process_maf_file:
         {
             "type": "mutation-maf-file", 
             "filename": {"$filename": "maf.csv"}, 
-            "orig_dataset_id": "{{inputs.in.dataset_id}}",
-            "category": "{{inputs.in.category}}"
+            "orig_dataset_id": "{{inputs.in.dataset_id}}"
         }
     run "python3" with """
         from taigapy import create_taiga_client_v3
