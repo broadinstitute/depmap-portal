@@ -74,6 +74,7 @@ rule process_celligner_inputs:
         ped_pdx_expr = {"type": "celligner-preprocess", "category": "expression", "label": "Ped_PDX"},
         ped_pdx_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "Ped_PDX"},
         taiga_token={"type": "config-file", "name": "taiga-token"},
+        omics_utils=fileref('../scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py'),
         celligner_script = fileref("scripts/run_celligner.py")
     outputs:
         {
