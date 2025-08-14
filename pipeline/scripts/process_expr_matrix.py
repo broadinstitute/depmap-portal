@@ -15,6 +15,7 @@ tc = create_taiga_client_v3()
 mat = tc.get(dataset_id)
 mat = preprocess_omics_dataframe(mat, dataset_id)
 
+# Set ModelID as index
 if "ModelID" in mat.columns:
     mat = mat.set_index("ModelID")
     mat.index.name = None

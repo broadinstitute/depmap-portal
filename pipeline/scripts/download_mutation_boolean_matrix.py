@@ -20,6 +20,11 @@ if __name__ == "__main__":
 
     mutations = tc.get(args.mutations_dataset_id)
     mutations = preprocess_omics_dataframe(mutations, args.mutations_dataset_id)
+    # Set ModelID as index
+    if "ModelID" in mutations.columns:
+        mutations = mutations.set_index("ModelID")
+        mutations.index.name = None
+
     mutations = mutations.astype(int)
     # Drop columns that are not in the HGNC dataset (because we don't have a label)
     # print(mutations)

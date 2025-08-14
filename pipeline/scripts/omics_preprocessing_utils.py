@@ -7,7 +7,7 @@ def preprocess_omics_dataframe(df, dataset_id):
     4. Set ModelID as index
     5. Drop columns with all NaN values
     """
-    
+
     # Check if this dataframe needs preprocessing (has the required columns)
     if "IsDefaultEntryForModel" not in df.columns:
         print(f"No IsDefaultEntryForModel column found in {dataset_id}, skipping preprocessing")
@@ -17,7 +17,10 @@ def preprocess_omics_dataframe(df, dataset_id):
     print("Filtering to default entries per model...")
     filtered_df = df[df["IsDefaultEntryForModel"] == "Yes"].copy()
     
-    assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
+    if "OmicsFusionFiltered" in dataset_id or "OmicsProfiles" in dataset_id or "OmicsSomaticMutations" in dataset_id:
+        print(f"Warning: {dataset_id} has multiple entries per ModelID")
+    else:
+        assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
     
     print("Dropping some metadata columns...")
     cols_to_drop = [

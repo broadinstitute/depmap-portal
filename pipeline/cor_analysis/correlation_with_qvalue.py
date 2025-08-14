@@ -9,6 +9,8 @@ import json
 from typing import List
 import re
 
+from omics_preprocessing_utils import preprocess_omics_dataframe
+
 
 @dataclass
 class Thresholds:
@@ -139,6 +141,13 @@ def read_parameters(filename):
     a_mat = tc.get(parameters["a_taiga_id"])
     a_mat = map_to_given_ids(a_mat, _subset_params("a_", parameters))
     b_mat = tc.get(parameters["b_taiga_id"])
+    b_mat = preprocess_omics_dataframe(b_mat, parameters["b_taiga_id"])
+    if "ModelID" in b_mat.columns:
+        b_mat = b_mat.set_index("ModelID")
+        b_mat.index.name = None
+        
+    # convert mat to log2
+    b_mat = np.log2(b_mat+1)
     b_mat = map_to_given_ids(b_mat, _subset_params("b_", parameters))
 
     return (
