@@ -18,7 +18,9 @@ mat = preprocess_omics_dataframe(mat, dataset_id)
 if "ModelID" in mat.columns:
     mat = mat.set_index("ModelID")
     mat.index.name = None
-    
+
+# convert mat to log2
+mat = np.log2(mat+1)
 maxval = np.nanmax(mat.values)  # Find the maximum value in the matrix, ignoring NaNs
 print(f"Maxval: {maxval}")
 
