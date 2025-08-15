@@ -93,11 +93,11 @@ def _write_distances(distance_csv_file):
     ]
     db.session.bulk_save_objects(tumor_index_objects)
 
-    profile_index_objects = [
-        CellignerDistanceColIndex(profile_id=profile, index=i)
-        for i, profile in enumerate(df.columns)
+    model_cond_id_index_objects = [
+        CellignerDistanceColIndex(model_condition_id=model_cond, index=i)
+        for i, model_cond in enumerate(df.columns)
     ]
-    db.session.bulk_save_objects(profile_index_objects)
+    db.session.bulk_save_objects(model_cond_id_index_objects)
 
 
 def load_celligner_sample_data():
