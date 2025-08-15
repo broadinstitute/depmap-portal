@@ -16,8 +16,14 @@ def preprocess_omics_dataframe(df, dataset_id):
     print(f"Preprocessing {dataset_id}...")
     print("Filtering to default entries per model...")
     filtered_df = df[df["IsDefaultEntryForModel"] == "Yes"].copy()
-    
-    assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
+
+    if "OmicsFusionFiltered" in dataset_id or "OmicsProfiles" in dataset_id or "OmicsSomaticMutations" in dataset_id:
+        print(f"Warning: {dataset_id} has multiple entries per ModelID")
+    else:
+        assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
+        print("Setting ModelID as index...")
+        filtered_df = filtered_df.set_index("ModelID")
+        filtered_df.index.name = None
     
     print("Dropping some metadata columns...")
     cols_to_drop = [
@@ -29,10 +35,6 @@ def preprocess_omics_dataframe(df, dataset_id):
     existing_cols_to_drop = [c for c in cols_to_drop if c in filtered_df.columns]
     if existing_cols_to_drop:
         filtered_df = filtered_df.drop(columns=existing_cols_to_drop)
-    
-    # print("Setting ModelID as index...")
-    # filtered_df = filtered_df.set_index("ModelID")
-    # filtered_df.index.name = None
 
     count_all_na_columns = filtered_df.isna().all().sum()
     print(f"Number of columns with ALL NA values: {count_all_na_columns}")

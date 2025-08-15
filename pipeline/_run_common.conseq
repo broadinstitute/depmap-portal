@@ -18,9 +18,9 @@ include "context_explorer/get_context_analysis.conseq"
 include "context_explorer/get_subtype_tree.conseq"
 include "context_explorer/get_subtype_context_matrix.conseq"
 include "data_page/get_all_data_availability.conseq"
-include "celligner/celligner.conseq"
+# include "celligner/celligner.conseq"
 include "make_compound_summary_table.conseq"
-include "cor_analysis/cor_analysis.conseq"
+# include "cor_analysis/cor_analysis.conseq"
 
 # all of the run_xxx.conseq files define publish_dest as INVALID because
 # this variable is overriden when run from jenkins. If the valid is still 
