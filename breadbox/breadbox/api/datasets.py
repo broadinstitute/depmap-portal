@@ -25,7 +25,7 @@ from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
 )
-from ..schemas.custom_http_exception import UserError
+from ..schemas.custom_http_exception import UserError, DatasetNotFoundError
 
 from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
@@ -584,7 +584,7 @@ def delete_dataset(
     """
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
-        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
 
     if not dataset_crud.user_has_access_to_group(
         dataset.group, user, write_access=True
