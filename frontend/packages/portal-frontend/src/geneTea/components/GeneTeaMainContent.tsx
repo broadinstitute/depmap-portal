@@ -49,7 +49,6 @@ function GeneTeaMainContent({
     ) {
       setIsLoading(true);
       setError(false);
-
       (async () => {
         try {
           const fetchedData = await cached(
@@ -62,7 +61,9 @@ function GeneTeaMainContent({
             doClusterTerms
           );
           setData(fetchedData);
-          setSelectedTableRows(new Set(fetchedData.allEnrichedTerms.term));
+          if (fetchedData.allEnrichedTerms) {
+            setSelectedTableRows(new Set(fetchedData.allEnrichedTerms.term));
+          }
         } catch (e) {
           setData(null);
           setError(true);
@@ -132,12 +133,10 @@ function GeneTeaMainContent({
   );
 
   const heatmapData = useMemo(() => {
-    if (data) {
+    if (data && data.termToEntity) {
       const x = data.termToEntity.gene;
       const y = data.termToEntity.term;
-      const zVals = data.termToEntity.fraction.map((val) =>
-        val === 0 ? null : val
-      );
+      const zVals = data.termToEntity.fraction;
       return {
         x,
         y,
@@ -154,12 +153,22 @@ function GeneTeaMainContent({
 
   const barChartData = useMemo(
     () =>
-      data
+      data && data.enrichedTerms
         ? { x: data.enrichedTerms.negLogFDR, y: data.enrichedTerms.termGroup }
         : { x: [], y: [] },
     [data]
   );
-  console.log(barChartData);
+
+  const heatmapXAxisLabel = useMemo(() => {
+    if (data && data.termToEntity) {
+      // Get a
+      return `Matching Genes in List n=(${
+        new Set(data.termToEntity.gene).size
+      })`;
+    }
+
+    return "";
+  }, [data]);
 
   return (
     <div className={styles.mainContentContainer}>
@@ -181,6 +190,7 @@ function GeneTeaMainContent({
                 // handleSetSelectedPlotModels={() => {}}
                 handleClearSelection={() => {}}
                 handleSetPlotElement={setPlotElement}
+                heatmapXAxisLabel={heatmapXAxisLabel}
               />
             </div>
             <div className={styles.selectionsArea}>
@@ -201,32 +211,35 @@ function GeneTeaMainContent({
         <p>Terms selected in the plot will appear checked in this table. </p>
       </div>
       <div>
-        <GeneTeaTable
-          error={error}
-          isLoading={isLoading}
-          tableData={data?.allEnrichedTerms.term.map((term, index) => {
-            return {
-              term: term,
-              termGroup: data.allEnrichedTerms.termGroup[index],
-              synonyms: data.allEnrichedTerms.synonyms[index],
-              matchingGenesInList:
-                data.allEnrichedTerms.matchingGenesInList[index],
-              nMatchingGenesOverall:
-                data.allEnrichedTerms.nMatchingGenesOverall[index],
-              nMatchingGenesInList:
-                data.allEnrichedTerms.nMatchingGenesInList[index],
-              fdr: data.allEnrichedTerms.fdr[index].toFixed(3),
-              effectSize: data.allEnrichedTerms.effectSize[index].toFixed(3),
-            };
-          })}
-          tableColumns={tableColumns}
-          columnOrdering={columnOrdering}
-          defaultCols={tableColumns.map((col) => col.accessor)}
-          selectedTableRows={selectedTableRows}
-          handleChangeSelection={(selections: string[]) =>
-            setSelectedTableRows(new Set(selections))
-          }
-        />
+        {data && data.allEnrichedTerms && (
+          <GeneTeaTable
+            error={error}
+            isLoading={isLoading}
+            tableData={data.allEnrichedTerms.term.map((term, index) => {
+              return {
+                term: term,
+                termGroup: data.allEnrichedTerms!.termGroup[index],
+                synonyms: data.allEnrichedTerms!.synonyms[index],
+                matchingGenesInList: data.allEnrichedTerms!.matchingGenesInList[
+                  index
+                ],
+                nMatchingGenesOverall: data.allEnrichedTerms!
+                  .nMatchingGenesOverall[index],
+                nMatchingGenesInList: data.allEnrichedTerms!
+                  .nMatchingGenesInList[index],
+                fdr: data.allEnrichedTerms!.fdr[index].toFixed(3),
+                effectSize: data.allEnrichedTerms!.effectSize[index].toFixed(3),
+              };
+            })}
+            tableColumns={tableColumns}
+            columnOrdering={columnOrdering}
+            defaultCols={tableColumns.map((col) => col.accessor)}
+            selectedTableRows={selectedTableRows}
+            handleChangeSelection={(selections: string[]) =>
+              setSelectedTableRows(new Set(selections))
+            }
+          />
+        )}
       </div>
     </div>
   );

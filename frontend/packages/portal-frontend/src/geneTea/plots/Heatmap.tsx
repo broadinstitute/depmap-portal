@@ -5,6 +5,7 @@ import type {
   Layout,
   PlotData,
   PlotlyHTMLElement,
+  ColorScale,
 } from "plotly.js";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
@@ -15,7 +16,21 @@ import {
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
 
+const viridisRColorscale = [
+  ["0", "#D3D3D3"],
+  ["0.001", "rgb(253, 231, 37)"],
+  ["0.111", "rgb(180, 222, 44)"],
+  ["0.222", "rgb(109, 205, 89)"],
+  ["0.333", "rgb(53, 183, 121)"],
+  ["0.444", "rgb(31, 158, 137)"],
+  ["0.556", "rgb(38, 130, 142)"],
+  ["0.667", "rgb(49, 104, 142)"],
+  ["0.778", "rgb(62, 74, 137)"],
+  ["0.889", "rgb(72, 40, 120)"],
+  ["1.0", "rgb(68, 1, 84)"],
+];
 interface Props {
+  heatmapXAxisTitle: string;
   heatmapData: HeatmapFormattedData;
   barChartData: BarChartFormattedData;
   xAxisTitle: string;
@@ -40,6 +55,7 @@ type PlotElement = HTMLDivElement &
   };
 
 function HeatmapBarChart({
+  heatmapXAxisTitle,
   heatmapData,
   barChartData,
   xAxisTitle,
@@ -87,7 +103,7 @@ function HeatmapBarChart({
     const plotlyHeatmapData: PlotlyData = {
       type: "heatmap",
       ...heatmapData,
-      colorscale: "YlOrRd",
+      colorscale: viridisRColorscale as ColorScale,
       zmin: 0,
       zmax: 1,
       xaxis: "x",
@@ -97,7 +113,7 @@ function HeatmapBarChart({
       ygap: 5,
 
       colorbar: {
-        x: -0.009,
+        x: -0.2,
         y: -0.3,
         len: 0.2,
         ypad: 0,
@@ -106,8 +122,8 @@ function HeatmapBarChart({
         ...({
           orientation: "h",
           title: {
-            text: legendTitle,
-            side: "bottom",
+            text: "Fraction Matching",
+            side: "top",
           },
         } as object),
       },
@@ -119,17 +135,21 @@ function HeatmapBarChart({
       xaxis: "x2",
       yaxis: "y2",
       orientation: "h",
+      marker: {
+        color: "#777b7e",
+      },
     };
 
     const layout: Partial<Layout> = {
       height: 500,
-      margin: { t: 50, l: 240, r: 0, b: 0 },
+      margin: { t: 50, l: 240, r: 0, b: 50 },
       hovermode: "closest",
       hoverlabel: { namelength: -1 },
       dragmode: false,
-      xaxis: { domain: [0, 0.7] },
+      xaxis: { domain: [0, 0.7], title: heatmapXAxisTitle, showgrid: false },
+      yaxis: { showgrid: false },
       yaxis2: { anchor: "x2", visible: false },
-      xaxis2: { domain: [0.8, 1], title: "log FDR" },
+      xaxis2: { domain: [0.73, 1], title: "-log FDR" },
 
       // We use `shapes` to draw the hovered and selected columns
       shapes: [

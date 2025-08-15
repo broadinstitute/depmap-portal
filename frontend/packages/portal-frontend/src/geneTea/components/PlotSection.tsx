@@ -16,12 +16,14 @@ interface PlotSectionProps {
   isLoading: boolean;
   plotElement: ExtendedPlotType | null;
   heatmapFormattedData: HeatmapFormattedData | null;
+  heatmapXAxisLabel: string;
   barChartData: BarChartFormattedData | null;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
   handleClearSelection: () => void;
 }
 
 function PlotSection({
+  heatmapXAxisLabel,
   isLoading,
   heatmapFormattedData,
   barChartData,
@@ -29,6 +31,7 @@ function PlotSection({
   handleClearSelection,
   plotElement,
 }: PlotSectionProps) {
+  console.log(isLoading);
   return (
     <div className={styles.PlotSection}>
       <div className={styles.sectionHeader}>
@@ -51,7 +54,7 @@ function PlotSection({
         )}
       </div>
       <div className={styles.plotArea}>
-        {(!plotElement || isLoading) && (
+        {isLoading && (
           <div className={styles.plotSpinnerContainer}>
             <PlotSpinner height="100%" />
           </div>
@@ -62,7 +65,8 @@ function PlotSection({
               heatmapData={heatmapFormattedData}
               barChartData={barChartData}
               // onLoad={handleSetPlotElement}
-              xAxisTitle="Cell Lines"
+              heatmapXAxisTitle={heatmapXAxisLabel}
+              xAxisTitle=""
               yAxisTitle={``}
               legendTitle={""}
               hovertemplate="%{customdata}<extra></extra>"

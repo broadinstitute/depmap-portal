@@ -40,6 +40,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
 
   interface RawResponse {
     // TODO: Give the user feedback when some genes are invalid.
+    valid_genes: string[];
     invalid_genes: string[];
     total_n_enriched_terms: number;
     total_n_term_groups: number;
@@ -110,23 +111,23 @@ export async function fetchGeneTeaEnrichmentExperimental(
         )
       : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
-  // // `enriched_terms` can be null when there are no relevant terms. We'll
-  // // return a wrapper object to distinguish this from some kind of error.
-  // if (body.plotting_payload.all_enriched_terms === null) {
-  //   return {
-  //     term: [],
-  //     termGroup: [],
-  //     effectSize: [],
-  //     synonyms: [],
-  //     coincident: [],
-  //     fdr: [],
-  //     matchingGenesInList: [],
-  //     nMatchingGenesInList: [],
-  //     nMatchingGenesOverall: [],
-  //     totalEnrichedTerms: 0,
-  //     totalTermGroups: 0,
-  //   };
-  // }
+  // `enriched_terms` can be null when there are no relevant terms. We'll
+  // return a wrapper object to distinguish this from some kind of error.
+  if (body.enriched_terms === null) {
+    return {
+      groupby: "",
+      validGenes: [],
+      invalidGenes: [],
+      enrichedTerms: null,
+      totalNEnrichedTerms: 0,
+      totalNTermGroups: 0,
+      termCluster: null,
+      geneCluster: null,
+      termToEntity: null,
+      frequentTerms: null,
+      allEnrichedTerms: null,
+    };
+  }
 
   const plottingPayload = body.plotting_payload;
   const allEt = plottingPayload.all_enriched_terms;
@@ -205,6 +206,8 @@ export async function fetchGeneTeaEnrichmentExperimental(
   };
 
   return {
+    validGenes: body.valid_genes,
+    invalidGenes: body.invalid_genes,
     totalNEnrichedTerms: body.total_n_enriched_terms,
     totalNTermGroups: body.total_n_term_groups,
     groupby: plottingPayload.groupby,

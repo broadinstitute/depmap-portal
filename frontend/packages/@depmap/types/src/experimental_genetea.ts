@@ -68,13 +68,15 @@ export interface EnrichedTerms extends AllEnrichedTerms {
 }
 
 export interface GeneTeaEnrichedTerms {
+  validGenes: string[];
+  invalidGenes: string[];
   totalNEnrichedTerms: number;
   totalNTermGroups: number;
   groupby: string;
-  enrichedTerms: EnrichedTerms;
-  termCluster: TermCluster;
-  geneCluster: GeneCluster;
-  termToEntity: TermToEntity;
-  frequentTerms: FrequentTerms;
-  allEnrichedTerms: AllEnrichedTerms;
+  enrichedTerms: EnrichedTerms | null;
+  termCluster: TermCluster | null;
+  geneCluster: GeneCluster | null;
+  termToEntity: TermToEntity | null;
+  frequentTerms: FrequentTerms | null;
+  allEnrichedTerms: AllEnrichedTerms | null;
 }
