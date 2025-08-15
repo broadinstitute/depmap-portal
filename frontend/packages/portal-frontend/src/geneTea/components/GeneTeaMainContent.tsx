@@ -9,6 +9,7 @@ import useData from "../hooks/useData";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
+import promptForSelectionFromContext from "./promptForSelectionFromContext";
 
 interface GeneTeaMainContentProps {
   searchTerms: Set<string>;
@@ -24,6 +25,7 @@ interface GeneTeaMainContentProps {
     selections: React.SetStateAction<Set<string>>
   ) => void;
   handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void;
+  handleSetSelectionFromContext: () => Promise<void>;
 }
 
 function GeneTeaMainContent({
@@ -36,6 +38,7 @@ function GeneTeaMainContent({
   handleSetGeneSymbolSelections,
   handleSetInvalidGenes,
   handleSetValidGenes,
+  handleSetSelectionFromContext,
 }: GeneTeaMainContentProps) {
   const {
     isLoading,
@@ -66,13 +69,15 @@ function GeneTeaMainContent({
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
-    const labels = [...validGenes];
-    const context = {
-      name: defaultContextName(validGenes.size),
-      context_type: "gene",
-      expr: { in: [{ var: "entity_label" }, labels] },
-    };
-    saveNewContext(context as DataExplorerContext);
+    if (validGenes.size > 0) {
+      const labels = [...validGenes];
+      const context = {
+        name: defaultContextName(validGenes.size),
+        context_type: "gene",
+        expr: { in: [{ var: "entity_label" }, labels] },
+      };
+      saveNewContext(context as DataExplorerContext);
+    }
   }, [validGenes]);
 
   return (
@@ -110,7 +115,7 @@ function GeneTeaMainContent({
                   handleSetValidGenes(new Set([]));
                   handleSetGeneSymbolSelections(new Set([]));
                 }}
-                onClickSetSelectionFromContext={undefined}
+                onClickSetSelectionFromContext={handleSetSelectionFromContext}
               />
             </div>
           </div>{" "}

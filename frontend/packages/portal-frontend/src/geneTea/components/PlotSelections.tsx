@@ -28,7 +28,7 @@ function PlotSelections({
       <div className={geneTeaStyles.headerDiv}>Plot Selections</div>
       <div className={geneTeaStyles.mainContent}>
         <div className={styles.plotInstructions}>
-          <div>Select cell lines to populate list</div>
+          <div>Select genes to populate list</div>
           {onClickClearSelection && selectedLabels && selectedLabels.size > 0 && (
             <div>
               <button
