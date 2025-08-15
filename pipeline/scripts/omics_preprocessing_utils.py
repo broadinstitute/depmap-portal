@@ -17,7 +17,8 @@ def preprocess_omics_dataframe(df, dataset_id):
     print("Filtering to default entries per model...")
     filtered_df = df[df["IsDefaultEntryForModel"] == "Yes"].copy()
 
-    if "OmicsFusionFiltered" in dataset_id or "OmicsProfiles" in dataset_id or "OmicsSomaticMutations" in dataset_id:
+    dataset_name = dataset_id.split("/")[-1]
+    if dataset_name in ["OmicsFusionFiltered", "OmicsProfiles", "OmicsSomaticMutations"]:
         print(f"Warning: {dataset_id} has multiple entries per ModelID")
     else:
         assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
