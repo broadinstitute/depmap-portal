@@ -7,7 +7,10 @@ import pandas as pd
 import numpy as np
 
 from breadbox.db.session import SessionWithUser
-from breadbox.schemas.custom_http_exception import ResourceNotFoundError
+from breadbox.schemas.custom_http_exception import (
+    ResourceNotFoundError,
+    DimensionTypeNotFoundError,
+)
 from breadbox.schemas.dataset import TabularDatasetIn
 from breadbox.models.dataset import (
     AnnotationType,
@@ -277,7 +280,7 @@ def get_dimension_type_metadata_col(
     dimension_type = get_dimension_type(db=db, name=dimension_type_name)
 
     if dimension_type is None:
-        raise ResourceNotFoundError(
+        raise DimensionTypeNotFoundError(
             f"Dimension type '{dimension_type_name}' not found. "
         )
     if dimension_type.dataset_id is None:

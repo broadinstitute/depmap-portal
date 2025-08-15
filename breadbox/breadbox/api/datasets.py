@@ -330,17 +330,11 @@ def get_matrix_dataset_data(
         raise UserError(
             "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
         )
-    try:
-        df = dataset_service.get_subsetted_matrix_dataset_df(
-            db,
-            user,
-            dataset,
-            matrix_dimensions_info,
-            settings.filestore_location,
-            strict,
-        )
-    except UserError as e:
-        raise e
+
+    df = dataset_service.get_subsetted_matrix_dataset_df(
+        db, user, dataset, matrix_dimensions_info, settings.filestore_location, strict,
+    )
+
     return Response(df.to_json(), media_type="application/json")
 
 
