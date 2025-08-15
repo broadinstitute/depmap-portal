@@ -2345,7 +2345,7 @@ class TestPost:
                 "sample_identifier": "id",
             },
         )
-        assert response.status_code == 400
+        assert response.status_code == 404
         assert response.json()["detail"]
 
         # same for a missing sample
@@ -2389,7 +2389,7 @@ class TestPost:
             },
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 404
         assert response.json()["detail"]
 
     def test_get_matrix_dataset_data_by_labels(
@@ -2482,12 +2482,9 @@ class TestPost:
                 "sample_identifier": "label",
             },
         )
-        assert response.status_code == 400
+        assert response.status_code == 404
         # Features checked first then
-        assert (
-            response.json()["detail"]
-            == "1 missing features: ['INVALID_FEATURE'] and 1 missing samples: ['INVALID_SAMPLE']"
-        )
+        assert response.json()["detail"]["error_type"] == "FEATURE_NOT_FOUND"
 
     def test_get_aggregated_matrix_dataset_data(
         self,

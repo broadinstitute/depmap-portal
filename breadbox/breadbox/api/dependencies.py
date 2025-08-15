@@ -6,6 +6,7 @@ from fastapi import Depends, HTTPException, Request
 from ..crud import dataset as dataset_crud
 from breadbox.db.session import SessionLocalWithUser, SessionWithUser
 from breadbox.config import get_settings
+from breadbox.schemas.custom_http_exception import DatasetNotFoundError
 import os
 
 
@@ -60,5 +61,6 @@ def get_dataset(
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
 
     if dataset is None:
-        raise HTTPException(404, detail=f"Dataset '{dataset_id}' not found")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
+
     return dataset
