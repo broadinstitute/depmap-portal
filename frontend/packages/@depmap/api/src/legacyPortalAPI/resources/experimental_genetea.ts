@@ -72,13 +72,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
         Cluster: number[];
         Order: number[];
       };
-      term_to_entity: {
-        Term: string[];
-        Gene: string[];
-        Count: number[];
-        "n Terms": number[];
-        Fraction: number[];
-      };
+      term_to_entity: any; // TODO update this type
       frequent_terms: {
         Term: string[];
         "Matching Genes in List": string[];
@@ -185,7 +179,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
   };
 
   const termToEntity = {
-    term: plottingPayload.term_to_entity.Term,
+    term: plottingPayload.term_to_entity["Term Group"],
     gene: plottingPayload.term_to_entity.Gene,
     count: plottingPayload.term_to_entity.Count,
     nTerms: plottingPayload.term_to_entity["n Terms"],

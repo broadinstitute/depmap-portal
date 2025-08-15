@@ -155,10 +155,11 @@ function GeneTeaMainContent({
   const barChartData = useMemo(
     () =>
       data
-        ? { x: data.enrichedTerms.negLogFDR, y: data.enrichedTerms.term }
+        ? { x: data.enrichedTerms.negLogFDR, y: data.enrichedTerms.termGroup }
         : { x: [], y: [] },
-    []
+    [data]
   );
+  console.log(barChartData);
 
   return (
     <div className={styles.mainContentContainer}>

@@ -84,69 +84,52 @@ function HeatmapBarChart({
     const plot = ref.current as PlotElement;
     const deltaRange = selectedRange[1] - selectedRange[0];
 
-    const plotlyData: PlotlyData[] = [
-      {
-        type: "heatmap",
-        ...heatmapData,
-        colorscale: "YlOrRd",
-        xaxis: "x",
-        yaxis: "y",
-        zmin,
-        zmax,
-        hovertemplate,
-        // We only want there to be gaps between cells once the user has
-        // zoomed in a little. When the plot is fulled zoomed out, it should
-        // look like a smooth gradient with no gaps.
-        // While we could set a threshold where gaps suddenly appear, that
-        // would be a litt jarring. Instead we'll use some fancy math to
-        // gradually increase the gap size as a function of the zoom level.
-        xgap: 3 * (1 - deltaRange / heatmapData.x.length) ** 2,
-        ygap: 1 * (1 - deltaRange / heatmapData.x.length) ** 2,
+    const plotlyHeatmapData: PlotlyData = {
+      type: "heatmap",
+      ...heatmapData,
+      colorscale: "YlOrRd",
+      zmin: 0,
+      zmax: 1,
+      xaxis: "x",
+      yaxis: "y",
+      hovertemplate,
+      xgap: 5,
+      ygap: 5,
 
-        colorbar: {
-          x: -0.009,
-          y: -0.3,
-          len: 0.2,
-          ypad: 0,
-          xanchor: "left",
-          // These features are undocumented and won't type check properly.
-          ...({
-            orientation: "h",
-            title: {
-              text: legendTitle,
-              side: "bottom",
-            },
-          } as object),
-        },
+      colorbar: {
+        x: -0.009,
+        y: -0.3,
+        len: 0.2,
+        ypad: 0,
+        xanchor: "left",
+        // These features are undocumented and won't type check properly.
+        ...({
+          orientation: "h",
+          title: {
+            text: legendTitle,
+            side: "bottom",
+          },
+        } as object),
       },
-    ];
+    };
+
+    const plotlyBarChartData: PlotlyData = {
+      ...barChartData,
+      type: "bar",
+      xaxis: "x2",
+      yaxis: "y2",
+      orientation: "h",
+    };
 
     const layout: Partial<Layout> = {
       height: 500,
-      margin: { t: 50, l: 40, r: 0, b: 0 },
+      margin: { t: 50, l: 240, r: 0, b: 0 },
       hovermode: "closest",
       hoverlabel: { namelength: -1 },
       dragmode: false,
-
-      xaxis: {
-        side: "top",
-        tickvals: xAxisTickLabels.map((label, i) =>
-          label ? heatmapData.x[i] : ""
-        ),
-        ticktext: xAxisTickLabels,
-        title: xAxisTitle,
-        range: selectedRange,
-      },
-
-      yaxis: {
-        type: "category",
-        automargin: true,
-        autorange: true,
-        title: {
-          text: yAxisTitle,
-          standoff: 15,
-        },
-      },
+      xaxis: { domain: [0, 0.7] },
+      yaxis2: { anchor: "x2", visible: false },
+      xaxis2: { domain: [0.8, 1], title: "log FDR" },
 
       // We use `shapes` to draw the hovered and selected columns
       shapes: [
@@ -167,7 +150,7 @@ function HeatmapBarChart({
       displayModeBar: false,
     };
 
-    Plotly.react(plot, plotlyData, layout, config);
+    Plotly.react(plot, [plotlyHeatmapData, plotlyBarChartData], layout, config);
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: object) => void][] = [];
