@@ -66,12 +66,14 @@ class CellignerDistanceColIndex(Model):
     __tablename__ = "celligner_distance_col_index"
     col_index_id = Column(Integer, primary_key=True, autoincrement=True)
     index = Column(Integer, nullable=False)
-    profile_id = Column(String, nullable=False)
+    model_condition_id = Column(String, nullable=False)
 
     @staticmethod
-    def get_by_profile_id(profile_id: str) -> Optional["CellignerDistanceColIndex"]:
+    def get_by_model_condition_id(
+        model_condition_id: str,
+    ) -> Optional["CellignerDistanceColIndex"]:
         q = db.session.query(CellignerDistanceColIndex).filter(
-            CellignerDistanceColIndex.profile_id == profile_id
+            CellignerDistanceColIndex.model_condition_id == model_condition_id
         )
         return q.one()
 

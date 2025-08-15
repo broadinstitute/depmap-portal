@@ -93,11 +93,11 @@ def _write_distances(distance_csv_file):
     ]
     db.session.bulk_save_objects(tumor_index_objects)
 
-    profile_index_objects = [
-        CellignerDistanceColIndex(profile_id=profile, index=i)
-        for i, profile in enumerate(df.columns)
+    model_cond_id_index_objects = [
+        CellignerDistanceColIndex(model_condition_id=model_cond, index=i)
+        for i, model_cond in enumerate(df.columns)
     ]
-    db.session.bulk_save_objects(profile_index_objects)
+    db.session.bulk_save_objects(model_cond_id_index_objects)
 
 
 def load_celligner_sample_data():
@@ -114,13 +114,14 @@ def load_celligner_data(celligner_filename, distances_filename):
         columns={
             "PrimaryOrMetastasis": "primaryMet",
             "GrowthPattern": "growthPattern",
-            "index": "profileId",
-            "ModelConditionID": "modelConditionId",
+            # NOTE: this might have to change to sync with the output changes to run_celligner. Either this will be correct, or
+            # there will be a different column for modelConditionID titled something else while functionally serving as the index.
+            "index": "modelConditionId",
             "ModelID": "sampleId",
         }
     )
 
-    celligner_data["sampleId"].fillna(celligner_data["profileId"], inplace=True)
+    celligner_data["sampleId"].fillna(celligner_data["modelConditionId"], inplace=True)
 
     celligner_data["type"] = celligner_data["type"].replace(
         {
@@ -136,9 +137,8 @@ def load_celligner_data(celligner_filename, distances_filename):
 
     schema = pa.DataFrameSchema(
         columns={
-            "profileId": pa.Column(str),
+            "modelConditionId": pa.Column(str),
             "sampleId": pa.Column(str),
-            "modelConditionId": pa.Column(str, nullable=True),
             "umap1": pa.Column("float64"),
             "umap2": pa.Column("float64"),
             "lineage": pa.Column(str, nullable=True),

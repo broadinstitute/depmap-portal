@@ -212,7 +212,6 @@ export function getGroupByColorPalette(
 
 function formatHoverTexts(alignments: Alignments): Array<string> {
   const {
-    profileId,
     modelConditionId,
     sampleId,
     displayName,
@@ -224,10 +223,9 @@ function formatHoverTexts(alignments: Alignments): Array<string> {
     growthPattern,
     cluster,
   } = alignments;
-  return profileId.map((id, i: number) =>
+  return modelConditionId.map((id, i: number) =>
     [
-      `Profile ID: ${profileId[i]}`,
-      `Model Condition ID: ${modelConditionId[i] || "N/A"}`,
+      `Model Condition ID: ${modelConditionId[i]}`,
       `${
         type[i] === CellignerSampleType.DEPMAP_MODEL ? "Depmap ID" : "Sample ID"
       }: ${sampleId[i]}`,

@@ -44,7 +44,6 @@ alignments.type.forEach((t, i) => {
   ) {
     tumors.push({
       displayName: alignments.displayName[i],
-      profileId: alignments.profileId[i],
       modelConditionId: alignments.modelConditionId[i],
       sampleId: alignments.sampleId[i],
       type: alignments.type[i] as CellignerTumorTypes,
@@ -58,7 +57,6 @@ alignments.type.forEach((t, i) => {
   } else {
     cellLines.push({
       displayName: alignments.displayName[i],
-      profileId: alignments.profileId[i],
       modelConditionId: alignments.modelConditionId[i],
       sampleId: alignments.sampleId[i],
       type: alignments.type[i] as CellignerModelTypes,
