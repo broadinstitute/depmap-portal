@@ -37,10 +37,13 @@ function GeneTea() {
       <div className={styles.geneTeaMain}>
         <GeneTeaMainContent
           searchTerms={geneSymbolSelections}
+          validGenes={validGeneSymbols}
+          invalidGenes={inValidGeneSymbols}
           doGroupTerms={doGroupTerms}
           doClusterGenes={doClusterGenes}
           doClusterTerms={doClusterTerms}
           handleSetInvalidGenes={setInValidGeneSymbols}
+          handleSetValidGenes={setValidGeneSymbols}
         />
       </div>
     </div>

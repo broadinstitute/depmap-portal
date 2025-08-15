@@ -1,119 +1,106 @@
-import { useEffect, useState } from "react";
-import { HeatmapFormattedData } from "../types";
+import { cached, legacyPortalAPI } from "@depmap/api";
+import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
+import { useEffect, useMemo, useState } from "react";
 
-function useData() {
-  const [
-    heatmapFormattedData,
-    setHeatmapFormattedData,
-  ] = useState<HeatmapFormattedData | null>(null);
+// TODO: picked these numbers at random. Figure out what they should actually be.
+const MIN_SELECTION = 3;
+const MAX_SELECTION = 300; // TODO: The API will error at a certain number. Make sure this doesn't exceed that number.
 
+function useData(
+  searchTerms: Set<string>,
+  doGroupTerms: boolean,
+  doClusterGenes: boolean,
+  doClusterTerms: boolean,
+  handleSetInvalidGenes: (
+    selections: React.SetStateAction<Set<string>>
+  ) => void,
+  handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void
+) {
   const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState<GeneTeaEnrichedTerms | null>(null);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
-    (async () => {
+    if (
+      searchTerms &&
+      searchTerms.size >= MIN_SELECTION &&
+      searchTerms.size <= MAX_SELECTION
+    ) {
       setIsLoading(true);
+      setError(false);
+      (async () => {
+        try {
+          const fetchedData = await cached(
+            legacyPortalAPI
+          ).fetchGeneTeaEnrichmentExperimental(
+            [...searchTerms],
+            null,
+            doGroupTerms,
+            doClusterGenes,
+            doClusterTerms
+          );
+          setData(fetchedData);
+          handleSetInvalidGenes(new Set(fetchedData.invalidGenes));
+          handleSetValidGenes(new Set(fetchedData.validGenes));
+        } catch (e) {
+          setData(null);
+          setError(true);
+          window.console.error(e);
+        } finally {
+          setIsLoading(false);
+        }
+      })();
+    } else {
+      setData(null);
+      setIsLoading(false);
+    }
+  }, [searchTerms]);
 
-      try {
-        const flatData: {
-          geneSymbol: number;
-          termOrTermGroup: string;
-          fractionMatching: number;
-        }[] = [];
-        const tableLookup: Record<string, Record<string, number>> = {};
+  const heatmapData = useMemo(() => {
+    if (data && data.termToEntity) {
+      const x = data.termToEntity.gene;
+      const y = data.termToEntity.term;
+      const zVals = data.termToEntity.fraction;
+      return {
+        x,
+        y,
+        z: zVals,
+      };
+    } else {
+      return {
+        x: [],
+        y: [],
+        z: [],
+      };
+    }
+  }, [data]);
 
-        Object.entries(viabilityAtDose).forEach(([label, modelValues]) => {
-          Object.entries(modelValues).forEach(([model, viability]) => {
-            if (viability !== null) {
-              const dose = oncrefMetadata.Dose[label];
-              const unit = oncrefMetadata.DoseUnit[label];
-              flatData.push({ model, dose, viability });
+  const barChartData = useMemo(
+    () =>
+      data && data.enrichedTerms
+        ? { x: data.enrichedTerms.negLogFDR, y: data.enrichedTerms.termGroup }
+        : { x: [], y: [] },
+    [data]
+  );
 
-              tableLookup[model] = tableLookup[model] || {};
-              tableLookup[model][`${dose} ${unit}`] = viability;
-            }
-          });
-        });
+  const heatmapXAxisLabel = useMemo(() => {
+    if (data && data.termToEntity) {
+      // Get a
+      return `Matching Genes in List n=(${
+        new Set(data.termToEntity.gene).size
+      })`;
+    }
 
-        const meanViabilityByModel: Record<string, number> = {};
-        const tableData: TableFormattedData = [];
-
-        Object.entries(tableLookup).forEach(([depmapId, doseMap]) => {
-          tableData.push({
-            "Cell Line": modelMetadata.CellLineName[depmapId],
-            depmapId,
-            ...doseMap,
-          });
-
-          const values = Object.values(doseMap);
-          meanViabilityByModel[depmapId] =
-            values.reduce((sum, val) => sum + val, 0) / values.length;
-        });
-
-        const uniqueModels = [...new Set(flatData.map((d) => d.model))];
-        const uniqueDoses = [...new Set(flatData.map((d) => d.dose))].sort(
-          (a, b) => a - b
-        );
-
-        const sortedModels = uniqueModels.sort(
-          (a, b) => meanViabilityByModel[a] - meanViabilityByModel[b]
-        );
-
-        const zMatrix = Array.from({ length: uniqueDoses.length }, () =>
-          Array(sortedModels.length).fill(null)
-        ) as (number | null)[][];
-
-        const modelIndex = Object.fromEntries(
-          sortedModels.map((m, i) => [m, i])
-        );
-        const doseIndex = Object.fromEntries(uniqueDoses.map((d, i) => [d, i]));
-
-        flatData.forEach(({ dose, model, viability }) => {
-          const row = doseIndex[dose];
-          const col = modelIndex[model];
-          zMatrix[row][col] = viability;
-        });
-
-        setTableFormattedData(tableData);
-
-        setDoseColumnNames(
-          Object.keys(tableData[0] || {})
-            .filter((key) => key !== "Cell Line" && key !== "depmapId")
-            .sort((a, b) => parseFloat(a) - parseFloat(b))
-        );
-
-        const seen = new Set<string>();
-
-        const cellLineNames = sortedModels.map((id) => {
-          let name = modelMetadata.CellLineName[id];
-
-          if (seen.has(name)) {
-            window.console.warn(`Warning: duplicate cell line name "${name}"!`);
-            name += ` (${id})`;
-          }
-
-          seen.add(name);
-          return name;
-        });
-
-        setHeatmapFormattedData({
-          modelIds: sortedModels,
-          x: cellLineNames,
-          y: uniqueDoses,
-          z: zMatrix,
-        });
-
-        setIsLoading(false);
-      } catch (e) {
-        window.console.error(e);
-      }
-    })();
-  }, [compoundName]);
+    return "";
+  }, [data]);
 
   return {
     isLoading,
-    heatmapFormattedData,
-    doseColumnNames,
-    tableFormattedData,
+    error,
+    rawData: data,
+    heatmapData,
+    barChartData,
+    heatmapXAxisLabel,
   };
 }
 

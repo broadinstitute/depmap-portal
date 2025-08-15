@@ -2,6 +2,7 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React, { useState } from "react";
 import Select from "react-select";
 import styles from "../styles/GeneTea.scss";
+import { Button, Tab, Tabs } from "react-bootstrap";
 
 interface Props {
   handleSetGeneSymbolSelections: (
@@ -41,67 +42,95 @@ const MultiSelectTextarea = ({
   };
 
   return (
-    <div style={{ backgroundColor: "white" }}>
-      <div
-        style={{
-          position: "relative",
-          border: "1px solid #ccc",
-          borderRadius: "4px",
-          padding: "5px",
-        }}
-      >
+    <div>
+      <div style={{ backgroundColor: "white" }}>
         <div
           style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "5px",
-            backgroundColor: "white",
+            position: "relative",
+            border: "1px solid #ccc",
+            borderRadius: "4px",
+            padding: "5px",
           }}
         >
-          {[...allSelections].map((chip, index) => (
-            <span
-              key={index}
-              style={{
-                background: "#e0e0e0",
-                padding: "3px 8px",
-                borderRadius: "15px",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              {chip}
-              <button
-                onClick={() => handleRemoveChip(chip)}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "5px",
+              backgroundColor: "white",
+            }}
+          >
+            {[...allSelections].map((chip, index) => (
+              <span
+                key={index}
                 style={{
-                  marginLeft: "5px",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
+                  background: "#e0e0e0",
+                  padding: "3px 8px",
+                  borderRadius: "15px",
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
-                x
-              </button>
-            </span>
-          ))}
+                {chip}
+                <button
+                  onClick={() => handleRemoveChip(chip)}
+                  style={{
+                    marginLeft: "5px",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  x
+                </button>
+              </span>
+            ))}
+          </div>
+          <textarea
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              allSelections.size === 0
+                ? "Enter items, separated by commas or spaces, then press Enter"
+                : undefined
+            }
+            rows={15}
+            style={{
+              width: "100%",
+              border: "none",
+              outline: "none",
+              resize: "vertical",
+            }}
+          />
         </div>
-        <textarea
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            allSelections.size === 0
-              ? "Enter items, separated by commas or spaces, then press Enter"
-              : undefined
-          }
-          rows={15}
-          style={{
-            width: "100%",
-            border: "none",
-            outline: "none",
-            resize: "vertical",
-          }}
-        />
       </div>
+      <Button
+        className={styles.selectGenesButton}
+        onClick={() => {
+          const newItems = inputValue
+            .split(/[, ]+/)
+            .filter((item) => item.trim() !== "");
+          handleSetGeneSymbolSelections(
+            (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
+          ); // Add only unique items
+          setInputValue(""); // Clear input
+        }}
+      >
+        Select
+      </Button>
+      <Button
+        className={styles.selectGenesButton}
+        onClick={() => {
+          const newItems = inputValue
+            .split(/[, ]+/)
+            .filter((item) => item.trim() !== "");
+          handleSetGeneSymbolSelections(() => new Set()); // Add only unique items
+          setInputValue(""); // Clear input
+        }}
+      >
+        Clear
+      </Button>
     </div>
   );
 };
@@ -129,43 +158,54 @@ function SearchOptionsContainer({
 }: SearchOptionsContainerProps) {
   return (
     <div className={styles.SearchOptionsContainer}>
-      <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
-      <MultiSelectTextarea
-        handleSetGeneSymbolSelections={handleSetGeneSymbolSelections}
-        allSelections={allSelections}
-      />
-      <hr className={styles.SearchOptionsContainerHr} />
-      <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
-        Filter by TEMP
-      </h4>
-      <Select
-        defaultValue={{ label: "temp0", value: "temp0" }}
-        isDisabled={false}
-        isMulti
-        options={[
-          { label: "temp0", value: "temp0" },
-          { label: "temp1", value: "temp1" },
-        ]}
-        onChange={(value: any) => {
-          if (value) {
-            console.log("changed to ", value);
-          }
-        }}
-        id="gene-tea-filter-by-TEMP"
-      />
-      <hr className={styles.SearchOptionsContainerHr} />
-      <h4 className={styles.sectionTitle}>TEMP LABEL View Options</h4>
-      <div className={styles.toggleRow}>
-        <div className={styles.toggleLabel}>TEMP TOGGLE</div>
-        <ToggleSwitch
-          value={true}
-          onChange={(val) => console.log("CHANGED", val)}
-          options={[
-            { label: "ON", value: true },
-            { label: "OFF", value: false },
-          ]}
-        />
-      </div>
+      <Tabs className={styles.Tabs} id={"gene-tea-filter-tabs"}>
+        <Tab eventKey={"List"} title={"List"} className={styles.Tab}>
+          <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
+          <MultiSelectTextarea
+            handleSetGeneSymbolSelections={handleSetGeneSymbolSelections}
+            allSelections={allSelections}
+          />
+          <hr className={styles.SearchOptionsContainerHr} />
+          <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
+            Filter by TEMP
+          </h4>
+          <Select
+            defaultValue={{ label: "temp0", value: "temp0" }}
+            isDisabled={false}
+            isMulti
+            options={[
+              { label: "temp0", value: "temp0" },
+              { label: "temp1", value: "temp1" },
+            ]}
+            onChange={(value: any) => {
+              if (value) {
+                console.log("changed to ", value);
+              }
+            }}
+            id="gene-tea-filter-by-TEMP"
+          />
+          <hr className={styles.SearchOptionsContainerHr} />
+          <h4 className={styles.sectionTitle}>TEMP LABEL View Options</h4>
+          <div className={styles.toggleRow}>
+            <div className={styles.toggleLabel}>TEMP TOGGLE</div>
+            <ToggleSwitch
+              value={true}
+              onChange={(val) => console.log("CHANGED", val)}
+              options={[
+                { label: "ON", value: true },
+                { label: "OFF", value: false },
+              ]}
+            />
+          </div>
+        </Tab>
+        <Tab
+          eventKey={"Continuous"}
+          title={"Continuous (Alpha"}
+          className={styles.Tab}
+        >
+          <h2>Coming soon!</h2>
+        </Tab>
+      </Tabs>
     </div>
   );
 }
