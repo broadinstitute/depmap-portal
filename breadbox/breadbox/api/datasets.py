@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
@@ -102,16 +102,13 @@ def get_datasets(
     "/features/{dataset_id}", operation_id="get_dataset_features",
 )
 def get_dataset_features(
-    dataset_id: str,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
 ):
     """
     Get information about each feature belonging to a given dataset.
     """
-    dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if dataset is None:
-        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -123,18 +120,15 @@ def get_dataset_features(
     "/samples/{dataset_id}", operation_id="get_dataset_samples",
 )
 def get_dataset_samples(
-    dataset_id: str,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
 ):
     """
     Get information about each sample belonging to a given dataset.
     For example, if the samples are depmap models, then this should
     return depmap_ids as ids and cell line names as labels.
     """
-    dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if dataset is None:
-        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -303,9 +297,6 @@ def add_dataset(
 def get_dataset(dataset: DatasetModel = Depends(get_dataset_dep)):
     """Get metadata for a dataset, if it exists and is available to the user."""
     return dataset
-
-
-from typing import Annotated
 
 
 @router.post(
