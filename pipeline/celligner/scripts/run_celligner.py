@@ -19,7 +19,6 @@ import pickle as pkl
 import os
 from sklearn.decomposition import PCA
 import warnings
-from omics_preprocessing_utils import preprocess_omics_dataframe
 
 tc = create_taiga_client_v3()
 
@@ -555,24 +554,13 @@ def process_data(inputs, extra=True):
 
     print(f"loading DepMap data ({depmap_expr_id})...")
     depmap_data = tc.get(depmap_expr_id)
-    depmap_data = preprocess_omics_dataframe(depmap_data, depmap_expr_id)
-    
+    print(depmap_data)
     # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
     # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
 
-    # depmap_data.index = depmap_data["ProfileID"]
+    depmap_data.index = depmap_data["ProfileID"]
 
-    # depmap_data.drop(columns=["ProfileID", "is_default_entry", "ModelID"], inplace=True)
-    if "ModelID" in depmap_data.columns:
-        depmap_data = depmap_data.set_index("ModelID")
-        depmap_data.index.name = None
-    depmap_data = np.log2(depmap_data+1)
-    maxval = np.nanmax(depmap_data.values)
-    print(f"Maxval: {maxval}")
-    if maxval > 10000:
-        raise ValueError(
-            f"The max value was {maxval} which seems large. Verify that the matrix has been log transformed"
-        )
+    depmap_data.drop(columns=["ProfileID", "is_default_entry", "ModelID"], inplace=True)
 
     warnings.warn("loading anns")
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])

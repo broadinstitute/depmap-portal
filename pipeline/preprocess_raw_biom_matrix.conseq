@@ -60,9 +60,6 @@ rule transpose_biomarker:
         tc = create_taiga_client_v3()
         data = tc.get("{{inputs.in.dataset_id}}")
         data = preprocess_omics_dataframe(data, "{{inputs.in.dataset_id}}")
-        if "ModelID" in data.columns:
-            data = data.set_index("ModelID")
-            data.index.name = None
         transposed_data = data.transpose()
         write_hdf5(transposed_data, "{{inputs.in.category}}.hdf5")
     """
