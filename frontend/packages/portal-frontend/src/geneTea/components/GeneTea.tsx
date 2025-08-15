@@ -29,6 +29,8 @@ function GeneTea() {
           handleToggleClusterGenes={setDoClusterGenes}
           handleToggleClusterTerms={setDoClusterTerms}
           handleSetGeneSymbolSelections={setGeneSymbolSelections}
+          handleSetInvalidGenes={setInValidGeneSymbols}
+          handleSetValidGenes={setValidGeneSymbols}
           allSelections={geneSymbolSelections}
           validSelections={validGeneSymbols}
           invalidSelections={inValidGeneSymbols}
@@ -42,6 +44,7 @@ function GeneTea() {
           doGroupTerms={doGroupTerms}
           doClusterGenes={doClusterGenes}
           doClusterTerms={doClusterTerms}
+          handleSetGeneSymbolSelections={setGeneSymbolSelections}
           handleSetInvalidGenes={setInValidGeneSymbols}
           handleSetValidGenes={setValidGeneSymbols}
         />

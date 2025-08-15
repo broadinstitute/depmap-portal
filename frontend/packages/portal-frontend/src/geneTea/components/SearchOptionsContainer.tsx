@@ -8,11 +8,17 @@ interface Props {
   handleSetGeneSymbolSelections: (
     selections: React.SetStateAction<Set<string>>
   ) => void;
+  handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void;
+  handleSetInvalidGenes: (
+    selections: React.SetStateAction<Set<string>>
+  ) => void;
   allSelections: Set<string>;
 }
 
 const MultiSelectTextarea = ({
   handleSetGeneSymbolSelections,
+  handleSetValidGenes,
+  handleSetInvalidGenes,
   allSelections,
 }: Props) => {
   const [inputValue, setInputValue] = useState("");
@@ -125,7 +131,9 @@ const MultiSelectTextarea = ({
           const newItems = inputValue
             .split(/[, ]+/)
             .filter((item) => item.trim() !== "");
-          handleSetGeneSymbolSelections(() => new Set()); // Add only unique items
+          handleSetGeneSymbolSelections(() => new Set());
+          handleSetValidGenes(() => new Set());
+          handleSetInvalidGenes(() => new Set());
           setInputValue(""); // Clear input
         }}
       >
@@ -142,6 +150,10 @@ interface SearchOptionsContainerProps {
   handleSetGeneSymbolSelections: (
     selections: React.SetStateAction<Set<string>>
   ) => void;
+  handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void;
+  handleSetInvalidGenes: (
+    selections: React.SetStateAction<Set<string>>
+  ) => void;
   allSelections: Set<string>;
   validSelections: Set<string>;
   invalidSelections: Set<string>;
@@ -152,6 +164,8 @@ function SearchOptionsContainer({
   handleToggleClusterGenes,
   handleToggleClusterTerms,
   handleSetGeneSymbolSelections,
+  handleSetValidGenes,
+  handleSetInvalidGenes,
   allSelections,
   validSelections,
   invalidSelections,
@@ -163,6 +177,8 @@ function SearchOptionsContainer({
           <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
           <MultiSelectTextarea
             handleSetGeneSymbolSelections={handleSetGeneSymbolSelections}
+            handleSetValidGenes={handleSetValidGenes}
+            handleSetInvalidGenes={handleSetInvalidGenes}
             allSelections={allSelections}
           />
           <hr className={styles.SearchOptionsContainerHr} />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import styles from "../styles/GeneTea.scss";
 import GeneTeaTable from "./GeneTeaTable";
 import PlotSelections from "./PlotSelections";
@@ -6,18 +6,24 @@ import PlotSection from "./PlotSection";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { tableColumns } from "../utils";
 import useData from "../hooks/useData";
+import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
+import { DataExplorerContext } from "@depmap/types";
+import { saveNewContext } from "src";
 
 interface GeneTeaMainContentProps {
   searchTerms: Set<string>;
+  validGenes: Set<string>;
+  invalidGenes: Set<string>;
   doGroupTerms: boolean;
   doClusterGenes: boolean;
   doClusterTerms: boolean;
+  handleSetGeneSymbolSelections: (
+    selections: React.SetStateAction<Set<string>>
+  ) => void;
   handleSetInvalidGenes: (
     selections: React.SetStateAction<Set<string>>
   ) => void;
   handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void;
-  validGenes: Set<string>;
-  invalidGenes: Set<string>;
 }
 
 function GeneTeaMainContent({
@@ -27,6 +33,7 @@ function GeneTeaMainContent({
   doGroupTerms,
   doClusterGenes,
   doClusterTerms,
+  handleSetGeneSymbolSelections,
   handleSetInvalidGenes,
   handleSetValidGenes,
 }: GeneTeaMainContentProps) {
@@ -58,6 +65,16 @@ function GeneTeaMainContent({
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
+  const handleClickSaveSelectionAsContext = useCallback(() => {
+    const labels = [...validGenes];
+    const context = {
+      name: defaultContextName(validGenes.size),
+      context_type: "gene",
+      expr: { in: [{ var: "entity_label" }, labels] },
+    };
+    saveNewContext(context as DataExplorerContext);
+  }, [validGenes]);
+
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
@@ -85,8 +102,14 @@ function GeneTeaMainContent({
               <PlotSelections
                 selectedIds={new Set(validGenes)}
                 selectedLabels={new Set(validGenes)}
-                onClickSaveSelectionAsContext={() => {}}
-                onClickClearSelection={() => {}}
+                onClickSaveSelectionAsContext={
+                  handleClickSaveSelectionAsContext
+                }
+                onClickClearSelection={() => {
+                  handleSetInvalidGenes(new Set([]));
+                  handleSetValidGenes(new Set([]));
+                  handleSetGeneSymbolSelections(new Set([]));
+                }}
                 onClickSetSelectionFromContext={undefined}
               />
             </div>
