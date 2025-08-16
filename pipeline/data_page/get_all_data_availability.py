@@ -5,7 +5,7 @@ import json
 from google.cloud import storage
 
 from taigapy import create_taiga_client_v3
-from omics_preprocessing_utils import preprocess_omics_dataframe
+from ..scripts.omics_preprocessing_utils import preprocess_omics_dataframe
 
 def get_ctd_summary(tc, ctd2_drug_taiga_id, Model):
     print("getting ctd summary...")
