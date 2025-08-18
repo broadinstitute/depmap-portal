@@ -7,7 +7,7 @@ import type {
   PlotlyHTMLElement,
   ColorScale,
 } from "plotly.js";
-import PlotlyLoader from "src/plot/components/PlotlyLoader";
+import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
 import customizeDragLayer from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/customizeDragLayer";
 import { generateTickLabels } from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/utils";
@@ -45,16 +45,6 @@ interface Props {
   zmin?: number;
   zmax?: number;
 }
-
-type PlotlyType = typeof import("plotly.js");
-
-type PlotElement = HTMLDivElement &
-  PlotlyHTMLElement & {
-    data: PlotData[];
-    layout: Layout;
-    config: Config;
-    removeListener: (eventName: string, callback: (e: object) => void) => void;
-  };
 
 function HeatmapBarChart({
   heatmapXAxisTitle,
@@ -106,7 +96,7 @@ function HeatmapBarChart({
   }, [heatmapData.x, pixelDistanceBetweenColumns]);
 
   useEffect(() => {
-    const plot = ref.current as PlotElement;
+    const plot = ref.current as ExtendedPlotType;
     const deltaRange = selectedRange[1] - selectedRange[0];
 
     const plotlyHeatmapData: PlotlyData = {
@@ -215,6 +205,38 @@ function HeatmapBarChart({
     on("plotly_hover", (e: any) => {
       setHoveredColumns([e.points[0].pointIndex[1]]);
     });
+
+    // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility
+    plot.downloadImage = (options) => {
+      const { filename, width, format } = options;
+      if (!plot || !plot.data || !plot.layout) return;
+      Plotly.toImage(plot, { format, width, height: options.height })
+        .then((dataUrl) => {
+          const a = document.createElement("a");
+          a.href = dataUrl;
+          a.download = filename + "." + format;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        })
+        .catch(() => {
+          if (format === "svg") {
+            const svgNode = plot.querySelector("svg");
+            if (!svgNode) return;
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgNode);
+            const blob = new Blob([svgString], { type: "image/svg+xml" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename + ".svg";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+          }
+        });
+    };
 
     return () => {
       listeners.forEach(([eventName, callback]) =>

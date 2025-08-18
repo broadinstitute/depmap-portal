@@ -10,7 +10,7 @@ import {
   BarChartFormattedData,
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
-import Heatmap from "../plots/Heatmap";
+import HeatmapBarChart from "../plots/HeatmapBarChart";
 
 interface PlotSectionProps {
   isLoading: boolean;
@@ -39,10 +39,10 @@ function PlotSection({
             plot={plotElement}
             enabledTools={[PlotToolOptions.Search, PlotToolOptions.Download]}
             searchOptions={null}
-            searchPlaceholder="Search for a cell line"
+            searchPlaceholder="Search for a gene"
             onSearch={() => {}}
             downloadImageOptions={{
-              filename: `genetea-heatmap`,
+              filename: `genetea-heatmap-bar-plot`,
               width: 800,
               height: 600,
             }}
@@ -60,7 +60,7 @@ function PlotSection({
         )}
         {heatmapFormattedData && barChartData && !isLoading && (
           <div className={styles.heatmapContainer}>
-            <Heatmap
+            <HeatmapBarChart
               heatmapData={heatmapFormattedData}
               barChartData={barChartData}
               onLoad={handleSetPlotElement}
