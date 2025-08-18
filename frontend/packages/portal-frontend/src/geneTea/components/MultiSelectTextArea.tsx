@@ -41,6 +41,7 @@ const MultiSelectTextarea: React.FC = () => {
 
   return (
     <div className={styles.multiSelectTextareaContainer}>
+      <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
       <div className={styles.multiSelectTextareaBorder}>
         <div className={styles.chipList}>
           {[...geneSymbolSelections].map((chip, index) => {

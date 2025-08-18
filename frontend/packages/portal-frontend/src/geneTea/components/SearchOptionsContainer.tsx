@@ -1,6 +1,4 @@
-import { ToggleSwitch } from "@depmap/common-components";
 import React, { useContext } from "react";
-import Select from "react-select";
 import styles from "../styles/GeneTea.scss";
 import { Tab, Tabs } from "react-bootstrap";
 import MultiSelectTextarea from "./MultiSelectTextArea";
@@ -18,9 +16,7 @@ function SearchOptionsContainer() {
     <div className={styles.SearchOptionsContainer}>
       <Tabs className={styles.Tabs} id={"gene-tea-filter-tabs"}>
         <Tab eventKey={"List"} title={"List"} className={styles.Tab}>
-          <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
           <MultiSelectTextarea />
-          <hr className={styles.SearchOptionsContainerHr} />
           <SectionStack>
             <StackableSection title="Plot Options" minHeight={132}>
               <PlotOptionsPanel />
