@@ -1,3 +1,12 @@
+.mainContentHeaderTitle,
+.mainContentTableHeaderTitle {
+  font-family: "Lato", "Arial", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  font-style: bold;
+  line-height: 100%;
+}
+
 .mainContentContainer {
   margin-left: 10px;
   margin-right: 60px;
@@ -101,8 +110,8 @@
 
 .geneTeaGrid {
   display: grid;
-  grid-template-columns: 1fr 6fr;
-  grid-template-areas: "filters main main main main main main";
+  grid-template-columns: 1fr 4fr;
+  grid-template-areas: "filters main main main main";
   gap: 2rem;
   min-height: 100vh;
 

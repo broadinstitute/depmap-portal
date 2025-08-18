@@ -83,7 +83,7 @@ function GeneTeaMainContent({
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
-        <h3>Top Tea Terms</h3>
+        <h3 className={styles.mainContentHeaderTitle}>Top Tea Terms</h3>
       </div>
       {!isLoading && error ? (
         <div className={styles.errorMessage}>Error loading plot data.</div>
@@ -96,8 +96,6 @@ function GeneTeaMainContent({
                 plotElement={plotElement}
                 heatmapFormattedData={heatmapData}
                 barChartData={barChartData}
-                // selectedGeneSymbols={searchTerms}
-                // handleSetSelectedPlotModels={() => {}}
                 handleClearSelection={() => {}}
                 handleSetPlotElement={setPlotElement}
                 heatmapXAxisLabel={heatmapXAxisLabel}
@@ -123,7 +121,9 @@ function GeneTeaMainContent({
       )}
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentTableHeader}>
-        <h3>Enrichment Term Table</h3>
+        <h3 className={styles.mainContentTableHeaderTitle}>
+          Enrichment Term Table
+        </h3>
         <p>Terms selected in the plot will appear checked in this table. </p>
       </div>
       <div>

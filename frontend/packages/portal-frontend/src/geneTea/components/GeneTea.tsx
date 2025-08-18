@@ -90,6 +90,9 @@ function GeneTea() {
           allSelections={geneSymbolSelections}
           validSelections={validGeneSymbols}
           invalidSelections={inValidGeneSymbols}
+          doClusterTerms={doClusterTerms}
+          doClusterGenes={doClusterGenes}
+          doGroupTerms={doGroupTerms}
         />
       </div>
       <div className={styles.geneTeaMain}>

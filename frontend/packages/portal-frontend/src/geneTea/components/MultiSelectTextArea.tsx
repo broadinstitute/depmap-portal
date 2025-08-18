@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
-import styles from "./MultiSelectTextArea.scss";
+import styles from "../styles/MultiSelectTextArea.scss";
 
 interface Props {
   handleSetGeneSymbolSelections: (

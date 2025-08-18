@@ -1,9 +1,14 @@
 import { ToggleSwitch } from "@depmap/common-components";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import Select from "react-select";
 import styles from "../styles/GeneTea.scss";
 import { Button, Tab, Tabs } from "react-bootstrap";
 import MultiSelectTextarea from "./MultiSelectTextArea";
+import SectionStack, {
+  SectionStackContext,
+  StackableSection,
+} from "./collapsibleOptions/SectionStack";
+import PlotOptionsPanel from "./PlotOptionsPanel";
 
 interface SearchOptionsContainerProps {
   handleToggleGroupTerms: (nextValue: boolean) => void;
@@ -19,6 +24,9 @@ interface SearchOptionsContainerProps {
   allSelections: Set<string>;
   validSelections: Set<string>;
   invalidSelections: Set<string>;
+  doClusterTerms: boolean;
+  doClusterGenes: boolean;
+  doGroupTerms: boolean;
 }
 
 function SearchOptionsContainer({
@@ -31,7 +39,12 @@ function SearchOptionsContainer({
   allSelections,
   validSelections,
   invalidSelections,
+  doClusterTerms,
+  doClusterGenes,
+  doGroupTerms,
 }: SearchOptionsContainerProps) {
+  const { sectionHeights } = useContext(SectionStackContext);
+
   return (
     <div className={styles.SearchOptionsContainer}>
       <Tabs className={styles.Tabs} id={"gene-tea-filter-tabs"}>
@@ -46,6 +59,28 @@ function SearchOptionsContainer({
             invalidSelections={invalidSelections}
           />
           <hr className={styles.SearchOptionsContainerHr} />
+          <SectionStack>
+            <StackableSection title="Plot Options" minHeight={132}>
+              <PlotOptionsPanel
+                clusterTerms={doClusterTerms}
+                clusterGenes={doClusterGenes}
+                groupTerms={doGroupTerms}
+                handleToggleClusterTerms={handleToggleClusterTerms}
+                handleToggleClusterGenes={handleToggleClusterGenes}
+                handleToggleGroupTerms={handleToggleGroupTerms}
+              />
+            </StackableSection>
+            <StackableSection title="Term Options" minHeight={132}>
+              <PlotOptionsPanel
+                clusterTerms={doClusterTerms}
+                clusterGenes={doClusterGenes}
+                groupTerms={doGroupTerms}
+                handleToggleClusterTerms={handleToggleClusterTerms}
+                handleToggleClusterGenes={handleToggleClusterGenes}
+                handleToggleGroupTerms={handleToggleGroupTerms}
+              />
+            </StackableSection>
+          </SectionStack>
           <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
             Filter by TEMP
           </h4>

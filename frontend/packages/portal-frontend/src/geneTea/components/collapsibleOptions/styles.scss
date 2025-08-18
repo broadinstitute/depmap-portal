@@ -1,0 +1,58 @@
+.Section {
+  width: 100%;
+  border: none;
+
+  .sectionContent {
+    padding: 16px;
+    overflow: hidden;
+    width: 100%;
+  }
+}
+
+.SectionStack {
+  width: 100%;
+  max-width: 100%;
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+
+  .Section {
+    width: 100%;
+  }
+}
+
+.sectionTitle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  margin: 0;
+  color: #222;
+  background-color: #fff;
+  font-family: "Lato", "Arial", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  font-style: bold;
+  line-height: 100%;
+  cursor: pointer;
+  border-top: 2px solid #4479b2;
+  border-bottom: 0.5px solid #888888;
+  border-left: none;
+  border-right: none;
+
+  &.sectionTitleClosed {
+    border-bottom: 2px solid #4479b2;
+  }
+  &.sectionTitleOpen {
+    border-bottom: 0.5px solid #888888;
+  }
+
+  button {
+    line-height: 10px;
+    background-color: transparent;
+    border: none;
+    font-size: 20px;
+    font-weight: 700;
+    color: #4479b2;
+    cursor: pointer;
+  }
+}
