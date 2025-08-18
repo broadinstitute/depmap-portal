@@ -7,6 +7,7 @@ import SearchOptionsContainer from "./SearchOptionsContainer";
 import promptForSelectionFromContext from "./promptForSelectionFromContext";
 import { useEffect } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
+import { SortOption } from "../types";
 
 async function fetchMetadata<T>(
   typeName: string,
@@ -36,6 +37,7 @@ function GeneTea() {
   const [doGroupTerms, setDoGroupTerms] = useState<boolean>(true);
   const [doClusterGenes, setDoClusterGenes] = useState<boolean>(true);
   const [doClusterTerms, setDoClusterTerms] = useState<boolean>(true);
+  const [sortBy, setSortBy] = useState<SortOption>("Significance");
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
     new Set([])
@@ -87,12 +89,14 @@ function GeneTea() {
           handleSetGeneSymbolSelections={setGeneSymbolSelections}
           handleSetInvalidGenes={setInValidGeneSymbols}
           handleSetValidGenes={setValidGeneSymbols}
+          handleSetSortBy={setSortBy}
           allSelections={geneSymbolSelections}
           validSelections={validGeneSymbols}
           invalidSelections={inValidGeneSymbols}
           doClusterTerms={doClusterTerms}
           doClusterGenes={doClusterGenes}
           doGroupTerms={doGroupTerms}
+          sortBy={sortBy}
         />
       </div>
       <div className={styles.geneTeaMain}>

@@ -44,7 +44,7 @@ const PlotOptionsPanel: React.FC<PlotOptionsPanelProps> = ({
   }, [checkScrollBar]);
 
   return (
-    <div ref={ref}>
+    <div ref={ref} style={{ backgroundColor: "#ffffff" }}>
       <p style={{ fontWeight: 600, marginBottom: 18 }}>
         Use toggles to group and cluster.
       </p>

@@ -1,5 +1,5 @@
 import { ToggleSwitch } from "@depmap/common-components";
-import React, { useContext, useState } from "react";
+import React, { useContext } from "react";
 import Select from "react-select";
 import styles from "../styles/GeneTea.scss";
 import { Button, Tab, Tabs } from "react-bootstrap";
@@ -9,6 +9,8 @@ import SectionStack, {
   StackableSection,
 } from "./collapsibleOptions/SectionStack";
 import PlotOptionsPanel from "./PlotOptionsPanel";
+import TermOptionsPanel from "./TermOptionsPanel";
+import { SortOption } from "../types";
 
 interface SearchOptionsContainerProps {
   handleToggleGroupTerms: (nextValue: boolean) => void;
@@ -21,12 +23,14 @@ interface SearchOptionsContainerProps {
   handleSetInvalidGenes: (
     selections: React.SetStateAction<Set<string>>
   ) => void;
+  handleSetSortBy: (sortBy: SortOption) => void;
   allSelections: Set<string>;
   validSelections: Set<string>;
   invalidSelections: Set<string>;
   doClusterTerms: boolean;
   doClusterGenes: boolean;
   doGroupTerms: boolean;
+  sortBy: SortOption;
 }
 
 function SearchOptionsContainer({
@@ -36,12 +40,14 @@ function SearchOptionsContainer({
   handleSetGeneSymbolSelections,
   handleSetValidGenes,
   handleSetInvalidGenes,
+  handleSetSortBy,
   allSelections,
   validSelections,
   invalidSelections,
   doClusterTerms,
   doClusterGenes,
   doGroupTerms,
+  sortBy,
 }: SearchOptionsContainerProps) {
   const { sectionHeights } = useContext(SectionStackContext);
 
@@ -71,13 +77,9 @@ function SearchOptionsContainer({
               />
             </StackableSection>
             <StackableSection title="Term Options" minHeight={132}>
-              <PlotOptionsPanel
-                clusterTerms={doClusterTerms}
-                clusterGenes={doClusterGenes}
-                groupTerms={doGroupTerms}
-                handleToggleClusterTerms={handleToggleClusterTerms}
-                handleToggleClusterGenes={handleToggleClusterGenes}
-                handleToggleGroupTerms={handleToggleGroupTerms}
+              <TermOptionsPanel
+                handleSetSortBy={handleSetSortBy}
+                sortBy={sortBy}
               />
             </StackableSection>
           </SectionStack>
