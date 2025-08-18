@@ -3,6 +3,7 @@ import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
+  ErrorTypeError,
   LinRegInfo,
 } from "@depmap/types";
 
@@ -80,7 +81,16 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         window.console.error(e);
 
         if (e && typeof e === "object" && "message" in e) {
-          setErrorMessage(e.message as string);
+          // Distinguish Error from ErrorTypeError
+          if (e instanceof ErrorTypeError) {
+            if (e.name === "LARGE_DATASET_READ") {
+              setErrorMessage(
+                "Dataset is too large to plot! We will work to support this soon."
+              );
+            }
+          } else {
+            setErrorMessage(e.message as string);
+          }
         } else {
           setErrorMessage("");
         }
