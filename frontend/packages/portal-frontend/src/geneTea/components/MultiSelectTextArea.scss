@@ -1,0 +1,98 @@
+.multiSelectTextareaContainer {
+  background-color: #fff;
+
+  .multiSelectTextareaBorder {
+    position: relative;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+    background-color: #fff;
+
+    .chipList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      background-color: #fff;
+
+      .chip {
+        background: #e0e0e0;
+        padding: 3px 8px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+
+        .chipRemoveButton {
+          margin-left: 5px;
+          background: none;
+          border: none;
+          cursor: pointer;
+        }
+      }
+    }
+
+    .multiSelectTextarea {
+      min-height: 80px;
+      max-height: 200px;
+      width: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+  }
+
+  .buttonRow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding-top: 10px;
+    background-color: rgba(123, 140, 178, 0.1);
+
+    .selectGenesButton {
+      width: 91px;
+      height: 30px;
+      color: #ffffff;
+      background-color: #4479b2;
+      border: 1px solid #4479b2;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      font-family: "Lato", "Arial", sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      font-style: normal;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .selectGenesButton:hover {
+      background-color: #2864a5;
+      border-color: #2864a5;
+    }
+
+    .clearInputButton {
+      width: 91px;
+      height: 30px;
+      color: #4479b2;
+      background-color: #ffffff;
+      border: 1px solid #4479b2;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      margin-left: 10px;
+      font-family: "Lato", "Arial", sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      font-style: normal;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .clearInputButton:hover {
+      background-color: #e6f0fa;
+    }
+  }
+}
