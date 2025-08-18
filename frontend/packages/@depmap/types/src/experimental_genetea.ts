@@ -12,12 +12,12 @@ export interface GeneTeaTableRow {
 type GeneSymbol = string;
 type FractionMatching = number | null;
 type TermOrTermGroup = string;
-type MatchesNumber = number;
 
 export interface HeatmapFormattedData {
   x: GeneSymbol[];
   y: TermOrTermGroup[];
   z: FractionMatching[];
+  customdata: string[]; // For hover text
 }
 
 export interface BarChartFormattedData {

@@ -61,16 +61,24 @@ function useData(
       const x = data.termToEntity.gene;
       const y = data.termToEntity.term;
       const zVals = data.termToEntity.fraction;
+      const customdata = x.map(
+        (gene, index) =>
+          `<b>Gene: </b>${gene}<br><b>Term: </b>${
+            y[index]
+          }<br><b>Matches: </b>${data.termToEntity!.nTerms[index]}`
+      );
       return {
         x,
         y,
         z: zVals,
+        customdata,
       };
     } else {
       return {
         x: [],
         y: [],
         z: [],
+        customdata: [],
       };
     }
   }, [data]);
