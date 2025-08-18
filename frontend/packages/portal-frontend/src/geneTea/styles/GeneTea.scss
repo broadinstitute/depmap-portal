@@ -1,4 +1,6 @@
-mainContentContainer {
+// Dose Curves and Heatmap
+
+.mainContentContainer {
   margin-left: 10px;
   margin-right: 60px;
   padding-bottom: 60px;
@@ -40,7 +42,7 @@ mainContentContainer {
     margin-top: 30px;
   }
 
-  .mainContentTableHeader {
+  .mainContentCellLines {
     margin-top: 20px;
     margin-bottom: 20px;
 
@@ -227,22 +229,4 @@ mainContentContainer {
   padding-left: 3px;
   font-weight: 300;
   font-size: 10px;
-}
-
-.selectGenesButton {
-  color: #ffffff;
-  background-color: #4479b2;
-  border-color: #4479b2;
-  border-radius: 4px;
-  margin-right: 120px;
-  margin-bottom: 10px;
-}
-
-.selectGenesButton:hover {
-  color: #ffffff;
-  background-color: #2864a5;
-  border-color: #2864a5;
-  border-radius: 4px;
-  margin-right: 120px;
-  margin-bottom: 10px;
 }
