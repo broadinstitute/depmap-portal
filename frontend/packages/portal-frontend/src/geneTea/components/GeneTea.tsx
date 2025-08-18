@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
+import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
+import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../styles/GeneTea.scss";
@@ -102,13 +104,55 @@ function GeneTea() {
         handleSetSelectionFromContext,
       }}
     >
-      <div className={styles.geneTeaGrid}>
-        <div className={styles.geneTeaFilters}>
-          <SearchOptionsContainer />
-        </div>
-        <div className={styles.geneTeaMain}>
-          <GeneTeaMainContent />
-        </div>
+      <div className={styles.page}>
+        <header className={styles.header}>
+          <h1>
+            <span>Tea Party</span>
+          </h1>
+          <p>
+            GeneTEA (Gene-Term Enrichment Analysis) is a model that takes in
+            free-text gene descriptions and incorporates several natural
+            language processing methods to learn a sparse gene-by-term
+            embedding, which can be treated as a de novo gene set database.
+          </p>
+        </header>
+        <main className={styles.main}>
+          <div className={styles.geneTeaTabLayout}>
+            <div className={styles.geneTeaFilters}>
+              <SearchOptionsContainer />
+            </div>
+            <div className={styles.geneTeaTabsWrapper}>
+              <TabsWithHistory
+                className={styles.Tabs}
+                onChange={() => {
+                  /* add something later */
+                }}
+                onSetInitialIndex={() => {
+                  /* add something later */
+                }}
+                isManual
+                isLazy
+              >
+                <TabList className={styles.TabList}>
+                  <Tab id="top-tea-terms" className={styles.Tab}>
+                    Top Tea Terms
+                  </Tab>
+                  <Tab id="all-matching-terms" className={styles.Tab}>
+                    All Matching Terms
+                  </Tab>
+                </TabList>
+                <TabPanels className={styles.TabPanels}>
+                  <TabPanel className={styles.TabPanel}>
+                    <GeneTeaMainContent tab="top-tea-terms" />
+                  </TabPanel>
+                  <TabPanel className={styles.TabPanel}>
+                    <GeneTeaMainContent tab="all-matching-terms" />
+                  </TabPanel>
+                </TabPanels>
+              </TabsWithHistory>
+            </div>
+          </div>
+        </main>
       </div>
     </GeneTeaContext.Provider>
   );

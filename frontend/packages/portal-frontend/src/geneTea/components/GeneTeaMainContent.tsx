@@ -11,7 +11,11 @@ import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 
-function GeneTeaMainContent() {
+interface GeneTeaMainContentProps {
+  tab: "top-tea-terms" | "all-matching-terms";
+}
+
+function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   const {
     geneSymbolSelections,
     validGeneSymbols,
@@ -34,6 +38,7 @@ function GeneTeaMainContent() {
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
+
     setInValidGeneSymbols,
     setValidGeneSymbols
   );
@@ -62,6 +67,7 @@ function GeneTeaMainContent() {
     }
   }, [validGeneSymbols]);
 
+  // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
@@ -70,7 +76,7 @@ function GeneTeaMainContent() {
       {!isLoading && error ? (
         <div className={styles.errorMessage}>Error loading plot data.</div>
       ) : (
-        <>
+        <div>
           <div className={styles.mainContentGrid}>
             <div className={styles.plotArea}>
               <PlotSection
@@ -97,15 +103,15 @@ function GeneTeaMainContent() {
                 }}
               />
             </div>
-          </div>{" "}
-        </>
+          </div>
+        </div>
       )}
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentTableHeader}>
         <h3 className={styles.mainContentTableHeaderTitle}>
           Enrichment Term Table
         </h3>
-        <p>Terms selected in the plot will appear checked in this table. </p>
+        <p>Terms selected in the plot will appear checked in this table.</p>
       </div>
       <div>
         {rawData && rawData.allEnrichedTerms && (
