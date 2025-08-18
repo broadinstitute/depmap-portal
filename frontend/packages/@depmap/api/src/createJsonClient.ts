@@ -1,4 +1,9 @@
 import qs from "qs";
+import {
+  instanceOfBreadboxCustomException,
+  instanceOfErrorDetail,
+  ErrorTypeBase,
+} from "@depmap/types/src/ErrorDetail";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -41,16 +46,21 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
     // Check if response is JSON before trying to parse
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      try {
-        const json = await response.json();
+      const json = await response.json();
+      if (
+        instanceOfBreadboxCustomException(json) &&
+        instanceOfErrorDetail(json.detail)
+      ) {
+        throw new ErrorTypeBase({
+          name: json.detail.error_type,
+          message: json.detail.message,
+        });
+      } else {
         const message =
           typeof json === "object" && json !== null
             ? JSON.stringify(json)
             : `Request failed with status ${response.status}`;
         throw new Error(message);
-      } catch (parseErr) {
-        // If JSON parsing fails, fall back to status message
-        throw new Error(`Request failed with status ${response.status}`);
       }
     } else {
       // Non-JSON error response (like HTML 404 page)
