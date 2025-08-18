@@ -3,13 +3,13 @@ import { Button } from "react-bootstrap";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
 import geneTeaStyles from "../styles/GeneTea.scss";
+import { useGeneTeaContext } from "../context/GeneTeaContext";
 
 interface PlotSelectionsProps {
   selectedIds: Set<string> | null;
   selectedLabels: Set<string> | null;
   onClickSaveSelectionAsContext: () => void;
   onClickClearSelection?: () => void;
-  onClickSetSelectionFromContext?: () => void;
 }
 
 function PlotSelections({
@@ -17,8 +17,11 @@ function PlotSelections({
   selectedLabels,
   onClickSaveSelectionAsContext,
   onClickClearSelection = undefined,
-  onClickSetSelectionFromContext = undefined,
 }: PlotSelectionsProps) {
+  const {
+    handleSetSelectionFromContext: onClickSetSelectionFromContext,
+  } = useGeneTeaContext();
+
   const listRef = useRef<HTMLDivElement | null>(null);
 
   const maxHeightOfList = 400;

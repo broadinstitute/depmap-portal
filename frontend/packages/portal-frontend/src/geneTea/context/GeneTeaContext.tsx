@@ -18,6 +18,7 @@ export interface GeneTeaContextType {
   setInValidGeneSymbols: React.Dispatch<React.SetStateAction<Set<string>>>;
   allAvailableGenes: Set<string>;
   setAllAvailableGenes: React.Dispatch<React.SetStateAction<Set<string>>>;
+  handleSetSelectionFromContext: () => Promise<void>;
 }
 
 export const GeneTeaContext = createContext<GeneTeaContextType | undefined>(

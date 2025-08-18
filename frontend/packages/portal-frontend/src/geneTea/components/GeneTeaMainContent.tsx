@@ -9,16 +9,9 @@ import useData from "../hooks/useData";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
-import promptForSelectionFromContext from "./promptForSelectionFromContext";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 
-interface GeneTeaMainContentProps {
-  handleSetSelectionFromContext: () => Promise<void>;
-}
-
-function GeneTeaMainContent({
-  handleSetSelectionFromContext,
-}: GeneTeaMainContentProps) {
+function GeneTeaMainContent() {
   const {
     geneSymbolSelections,
     validGeneSymbols,
@@ -102,7 +95,6 @@ function GeneTeaMainContent({
                   setValidGeneSymbols(new Set([]));
                   setGeneSymbolSelections(new Set([]));
                 }}
-                onClickSetSelectionFromContext={handleSetSelectionFromContext}
               />
             </div>
           </div>{" "}

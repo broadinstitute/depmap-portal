@@ -29,37 +29,6 @@ function SearchOptionsContainer() {
               <TermOptionsPanel />
             </StackableSection>
           </SectionStack>
-          <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
-            Filter by TEMP
-          </h4>
-          <Select
-            defaultValue={{ label: "temp0", value: "temp0" }}
-            isDisabled={false}
-            isMulti
-            options={[
-              { label: "temp0", value: "temp0" },
-              { label: "temp1", value: "temp1" },
-            ]}
-            onChange={(value: any) => {
-              if (value) {
-                console.log("changed to ", value);
-              }
-            }}
-            id="gene-tea-filter-by-TEMP"
-          />
-          <hr className={styles.SearchOptionsContainerHr} />
-          <h4 className={styles.sectionTitle}>TEMP LABEL View Options</h4>
-          <div className={styles.toggleRow}>
-            <div className={styles.toggleLabel}>TEMP TOGGLE</div>
-            <ToggleSwitch
-              value={true}
-              onChange={(val) => console.log("CHANGED", val)}
-              options={[
-                { label: "ON", value: true },
-                { label: "OFF", value: false },
-              ]}
-            />
-          </div>
         </Tab>
         <Tab
           eventKey={"Continuous"}

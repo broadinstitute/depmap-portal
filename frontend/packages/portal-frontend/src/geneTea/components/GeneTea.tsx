@@ -99,6 +99,7 @@ function GeneTea() {
         setInValidGeneSymbols,
         allAvailableGenes,
         setAllAvailableGenes,
+        handleSetSelectionFromContext,
       }}
     >
       <div className={styles.geneTeaGrid}>
@@ -106,9 +107,7 @@ function GeneTea() {
           <SearchOptionsContainer />
         </div>
         <div className={styles.geneTeaMain}>
-          <GeneTeaMainContent
-            handleSetSelectionFromContext={handleSetSelectionFromContext}
-          />
+          <GeneTeaMainContent />
         </div>
       </div>
     </GeneTeaContext.Provider>
