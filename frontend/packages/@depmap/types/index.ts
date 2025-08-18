@@ -83,7 +83,7 @@ export type {
   PredictabilityTable,
 } from "./src/predictability";
 
-export type { ErrorTypeBase } from "./src/ErrorDetail";
+export type { ErrorTypeBase } from "@depmap/types/src/BreadboxErrorType";
 
 export type * from "./src/data-explorer-2";
 export type * from "./src/interactive";
@@ -97,5 +97,5 @@ export type { SliceQuery } from "./src/SliceQuery";
 export {
   instanceOfBreadboxCustomException,
   instanceOfErrorDetail,
-} from "./src/ErrorDetail";
+} from "@depmap/types/src/BreadboxErrorType";
 export { isValidSliceQuery, areSliceQueriesEqual } from "./src/SliceQuery";
