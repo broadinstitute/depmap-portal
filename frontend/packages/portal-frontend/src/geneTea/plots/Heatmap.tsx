@@ -15,6 +15,7 @@ import {
   BarChartFormattedData,
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
+import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 const viridisRColorscale = [
   ["0", "#D3D3D3"],
@@ -37,6 +38,7 @@ interface Props {
   yAxisTitle: string;
   legendTitle: string;
   onClearSelection: () => void;
+  onLoad: (plot: ExtendedPlotType) => void;
   hovertemplate?: string | string[];
   // Optionally set a min/max for the color scale. If left undefined, these
   // will default to the min and max of values contained in `data.z`
@@ -62,13 +64,20 @@ function HeatmapBarChart({
   yAxisTitle,
   legendTitle,
   onClearSelection,
+  onLoad,
   hovertemplate = undefined,
   zmin = undefined,
   zmax = undefined,
   Plotly,
 }: Props & { Plotly: PlotlyType }) {
-  const ref = useRef<PlotElement>(null);
+  const ref = useRef<ExtendedPlotType>(null);
   usePlotResizer(Plotly, ref);
+
+  useEffect(() => {
+    if (onLoad && ref.current) {
+      onLoad(ref.current);
+    }
+  }, [onLoad]);
 
   const initialRange: [number, number] = useMemo(() => {
     return [0, heatmapData.x.length - 1];

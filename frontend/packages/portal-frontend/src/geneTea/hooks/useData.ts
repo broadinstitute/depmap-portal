@@ -43,7 +43,6 @@ function useData(
           handleSetInvalidGenes(new Set(fetchedData.invalidGenes));
           handleSetValidGenes(new Set(fetchedData.validGenes));
         } catch (e) {
-          // setData(null);
           setError(true);
           window.console.error(e);
         } finally {

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import PlotControls, {
   PlotToolOptions,
 } from "src/plot/components/PlotControls";
@@ -31,7 +31,6 @@ function PlotSection({
   handleClearSelection,
   plotElement,
 }: PlotSectionProps) {
-  console.log(isLoading);
   return (
     <div className={styles.PlotSection}>
       <div className={styles.sectionHeader}>
@@ -64,7 +63,7 @@ function PlotSection({
             <Heatmap
               heatmapData={heatmapFormattedData}
               barChartData={barChartData}
-              // onLoad={handleSetPlotElement}
+              onLoad={handleSetPlotElement}
               heatmapXAxisTitle={heatmapXAxisLabel}
               xAxisTitle=""
               yAxisTitle={``}
