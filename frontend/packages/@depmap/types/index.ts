@@ -11,6 +11,7 @@ export {
 export { TopFeatureValue } from "./src/constellation";
 export { DataPageDataType, DataPageDataTypeCategory } from "./src/data_page";
 export { ModelType, ScreenType } from "./src/predictability";
+export { ErrorTypeError } from "./src/BreadboxErrorType";
 
 export type { default as FeatureType } from "./src/FeatureType";
 export type { default as SampleType } from "./src/SampleType";
@@ -83,8 +84,6 @@ export type {
   PredictabilityTable,
 } from "./src/predictability";
 
-export type { ErrorTypeBase } from "@depmap/types/src/BreadboxErrorType";
-
 export type * from "./src/data-explorer-2";
 export type * from "./src/interactive";
 export type * from "./src/cell-line";
@@ -97,5 +96,5 @@ export type { SliceQuery } from "./src/SliceQuery";
 export {
   instanceOfBreadboxCustomException,
   instanceOfErrorDetail,
-} from "@depmap/types/src/BreadboxErrorType";
+} from "./src/BreadboxErrorType";
 export { isValidSliceQuery, areSliceQueriesEqual } from "./src/SliceQuery";

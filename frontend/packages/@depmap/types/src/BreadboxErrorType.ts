@@ -27,7 +27,7 @@ export function instanceOfErrorDetail(object: any): object is ErrorDetail {
 }
 
 /* Custom Error class with error type */
-export class ErrorTypeBase extends Error {
+export class ErrorTypeError extends Error {
   name: ErrorType;
 
   message: string;

@@ -2,8 +2,8 @@ import qs from "qs";
 import {
   instanceOfBreadboxCustomException,
   instanceOfErrorDetail,
-  ErrorTypeBase,
-} from "@depmap/types/src/ErrorDetail";
+  ErrorTypeError,
+} from "@depmap/types/src/BreadboxErrorType";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -51,7 +51,7 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
         instanceOfBreadboxCustomException(json) &&
         instanceOfErrorDetail(json.detail)
       ) {
-        throw new ErrorTypeBase({
+        throw new ErrorTypeError({
           name: json.detail.error_type,
           message: json.detail.message,
         });
