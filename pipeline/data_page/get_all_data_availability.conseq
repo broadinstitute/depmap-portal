@@ -8,7 +8,6 @@ rule get_all_data_availability:
         rnai_broad_only={"type": "raw-dep-matrix", "label": "RNAi_Ach"},
         crispr_screen_sequence_map={"type": "crispr-screen-sequence-map"},
         script=fileref("get_all_data_availability.py"),
-        omics_utils=fileref("../scripts/omics_preprocessing_utils.py", copy_to='omics_preprocessing_utils.py'),
     outputs:
         {"type": "all-data-avail", "filename": { "$filename": "all-data-avail.csv"} }
     run "python3" with """
