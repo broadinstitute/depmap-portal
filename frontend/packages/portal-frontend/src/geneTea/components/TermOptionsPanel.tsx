@@ -6,20 +6,13 @@ import React, {
   useState,
 } from "react";
 import { SectionStackContext } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/SectionStack";
-import { SortOption } from "../types";
+import { useGeneTeaContext } from "../context/GeneTeaContext";
 
-interface TermOptionsPanelProps {
-  sortBy: SortOption;
-  handleSetSortBy: (sortBy: SortOption) => void;
-}
-
-const TermOptionsPanel: React.FC<TermOptionsPanelProps> = ({
-  sortBy,
-  handleSetSortBy,
-}) => {
+const TermOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
   const [hasScrollBar, setHasScrollBar] = useState(false);
   const { sectionHeights } = useContext(SectionStackContext);
+  const { sortBy, setSortBy } = useGeneTeaContext();
 
   const checkScrollBar = useCallback(() => {
     if (ref.current) {
@@ -47,7 +40,7 @@ const TermOptionsPanel: React.FC<TermOptionsPanelProps> = ({
             name="sortBy"
             value="Effect Size"
             checked={sortBy === "Effect Size"}
-            onChange={() => handleSetSortBy("Effect Size")}
+            onChange={() => setSortBy("Effect Size")}
           />
           Effect Size &gt; FDR
         </label>
@@ -57,7 +50,7 @@ const TermOptionsPanel: React.FC<TermOptionsPanelProps> = ({
             name="sortBy"
             value="Significance"
             checked={sortBy === "Significance"}
-            onChange={() => handleSetSortBy("Significance")}
+            onChange={() => setSortBy("Significance")}
           />
           FDR &gt; Effect Size
         </label>

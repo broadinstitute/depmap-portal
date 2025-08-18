@@ -1,28 +1,18 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
+import { useGeneTeaContext } from "../context/GeneTeaContext";
 
-interface Props {
-  handleSetGeneSymbolSelections: (
-    selections: React.SetStateAction<Set<string>>
-  ) => void;
-  handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void;
-  handleSetInvalidGenes: (
-    selections: React.SetStateAction<Set<string>>
-  ) => void;
-  allSelections: Set<string>;
-  validSelections: Set<string>;
-  invalidSelections: Set<string>;
-}
+const MultiSelectTextarea: React.FC = () => {
+  const {
+    geneSymbolSelections,
+    setGeneSymbolSelections,
+    validGeneSymbols,
+    setValidGeneSymbols,
+    inValidGeneSymbols,
+    setInValidGeneSymbols,
+  } = useGeneTeaContext();
 
-const MultiSelectTextarea: React.FC<Props> = ({
-  handleSetGeneSymbolSelections,
-  handleSetValidGenes,
-  handleSetInvalidGenes,
-  allSelections,
-  validSelections,
-  invalidSelections,
-}: Props) => {
   const [inputValue, setInputValue] = useState("");
 
   const handleInputChange = (e: any) => {
@@ -35,7 +25,7 @@ const MultiSelectTextarea: React.FC<Props> = ({
       const newItems = inputValue
         .split(/[, ]+/)
         .filter((item) => item.trim() !== "");
-      handleSetGeneSymbolSelections(
+      setGeneSymbolSelections(
         (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
       ); // Add only unique items
       setInputValue(""); // Clear input
@@ -43,7 +33,7 @@ const MultiSelectTextarea: React.FC<Props> = ({
   };
 
   const handleRemoveChip = (chipToRemove: string) => {
-    handleSetGeneSymbolSelections(
+    setGeneSymbolSelections(
       (prevChips) =>
         new Set([...prevChips].filter((chip) => chip !== chipToRemove))
     );
@@ -53,11 +43,11 @@ const MultiSelectTextarea: React.FC<Props> = ({
     <div className={styles.multiSelectTextareaContainer}>
       <div className={styles.multiSelectTextareaBorder}>
         <div className={styles.chipList}>
-          {[...allSelections].map((chip, index) => {
+          {[...geneSymbolSelections].map((chip, index) => {
             let chipClass = styles.chip;
-            if (invalidSelections && invalidSelections.has(chip)) {
+            if (inValidGeneSymbols && inValidGeneSymbols.has(chip)) {
               chipClass += " " + styles.chipInvalid;
-            } else if (validSelections && validSelections.has(chip)) {
+            } else if (validGeneSymbols && validGeneSymbols.has(chip)) {
               chipClass += " " + styles.chipValid;
             }
             return (
@@ -79,14 +69,14 @@ const MultiSelectTextarea: React.FC<Props> = ({
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder={
-            allSelections.size === 0
+            geneSymbolSelections.size === 0
               ? "Enter items, separated by commas or spaces, then press Enter"
               : undefined
           }
           rows={10}
         />
       </div>
-      {invalidSelections.size > 0 && (
+      {inValidGeneSymbols.size > 0 && (
         <div className={styles.invalidGenesLegend}>
           <span className={styles.invalidGenesSwatch} />
           <span>= invalid genes</span>
@@ -100,7 +90,7 @@ const MultiSelectTextarea: React.FC<Props> = ({
             const newItems = inputValue
               .split(/[, ]+/)
               .filter((item) => item.trim() !== "");
-            handleSetGeneSymbolSelections(
+            setGeneSymbolSelections(
               (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
             ); // Add only unique items
             setInputValue(""); // Clear input
@@ -112,9 +102,9 @@ const MultiSelectTextarea: React.FC<Props> = ({
           className={styles.clearInputButton}
           disabled={inputValue.length === 0}
           onClick={() => {
-            handleSetGeneSymbolSelections(() => new Set());
-            handleSetValidGenes(() => new Set());
-            handleSetInvalidGenes(() => new Set());
+            setGeneSymbolSelections(() => new Set());
+            setValidGeneSymbols(() => new Set());
+            setInValidGeneSymbols(() => new Set());
             setInputValue(""); // Clear input
           }}
         >

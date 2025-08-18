@@ -10,36 +10,25 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import promptForSelectionFromContext from "./promptForSelectionFromContext";
+import { useGeneTeaContext } from "../context/GeneTeaContext";
 
 interface GeneTeaMainContentProps {
-  searchTerms: Set<string>;
-  validGenes: Set<string>;
-  invalidGenes: Set<string>;
-  doGroupTerms: boolean;
-  doClusterGenes: boolean;
-  doClusterTerms: boolean;
-  handleSetGeneSymbolSelections: (
-    selections: React.SetStateAction<Set<string>>
-  ) => void;
-  handleSetInvalidGenes: (
-    selections: React.SetStateAction<Set<string>>
-  ) => void;
-  handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void;
   handleSetSelectionFromContext: () => Promise<void>;
 }
 
 function GeneTeaMainContent({
-  searchTerms,
-  validGenes,
-  invalidGenes,
-  doGroupTerms,
-  doClusterGenes,
-  doClusterTerms,
-  handleSetGeneSymbolSelections,
-  handleSetInvalidGenes,
-  handleSetValidGenes,
   handleSetSelectionFromContext,
 }: GeneTeaMainContentProps) {
+  const {
+    geneSymbolSelections,
+    validGeneSymbols,
+    doGroupTerms,
+    doClusterGenes,
+    doClusterTerms,
+    setGeneSymbolSelections,
+    setValidGeneSymbols,
+    setInValidGeneSymbols,
+  } = useGeneTeaContext();
   const {
     isLoading,
     error,
@@ -48,12 +37,12 @@ function GeneTeaMainContent({
     barChartData,
     heatmapXAxisLabel,
   } = useData(
-    searchTerms,
+    geneSymbolSelections,
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
-    handleSetInvalidGenes,
-    handleSetValidGenes
+    setInValidGeneSymbols,
+    setValidGeneSymbols
   );
 
   const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
@@ -69,16 +58,16 @@ function GeneTeaMainContent({
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
-    if (validGenes.size > 0) {
-      const labels = [...validGenes];
+    if (validGeneSymbols.size > 0) {
+      const labels = [...validGeneSymbols];
       const context = {
-        name: defaultContextName(validGenes.size),
+        name: defaultContextName(validGeneSymbols.size),
         context_type: "gene",
         expr: { in: [{ var: "entity_label" }, labels] },
       };
       saveNewContext(context as DataExplorerContext);
     }
-  }, [validGenes]);
+  }, [validGeneSymbols]);
 
   return (
     <div className={styles.mainContentContainer}>
@@ -103,15 +92,15 @@ function GeneTeaMainContent({
             </div>
             <div className={styles.selectionsArea}>
               <PlotSelections
-                selectedIds={new Set(validGenes)}
-                selectedLabels={new Set(validGenes)}
+                selectedIds={new Set(validGeneSymbols)}
+                selectedLabels={new Set(validGeneSymbols)}
                 onClickSaveSelectionAsContext={
                   handleClickSaveSelectionAsContext
                 }
                 onClickClearSelection={() => {
-                  handleSetInvalidGenes(new Set([]));
-                  handleSetValidGenes(new Set([]));
-                  handleSetGeneSymbolSelections(new Set([]));
+                  setInValidGeneSymbols(new Set([]));
+                  setValidGeneSymbols(new Set([]));
+                  setGeneSymbolSelections(new Set([]));
                 }}
                 onClickSetSelectionFromContext={handleSetSelectionFromContext}
               />

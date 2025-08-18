@@ -7,27 +7,21 @@ import React, {
 } from "react";
 import ToggleSwitch from "@depmap/common-components/src/components/ToggleSwitch";
 import { SectionStackContext } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/SectionStack";
+import { useGeneTeaContext } from "../context/GeneTeaContext";
 
-interface PlotOptionsPanelProps {
-  clusterTerms: boolean;
-  clusterGenes: boolean;
-  groupTerms: boolean;
-  handleToggleClusterTerms: (checked: boolean) => void;
-  handleToggleClusterGenes: (checked: boolean) => void;
-  handleToggleGroupTerms: (checked: boolean) => void;
-}
-
-const PlotOptionsPanel: React.FC<PlotOptionsPanelProps> = ({
-  clusterTerms,
-  clusterGenes,
-  groupTerms,
-  handleToggleClusterTerms,
-  handleToggleClusterGenes,
-  handleToggleGroupTerms,
-}) => {
+const PlotOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
   const [hasScrollBar, setHasScrollBar] = useState(false);
   const { sectionHeights } = useContext(SectionStackContext);
+
+  const {
+    doClusterTerms,
+    setDoClusterTerms,
+    doClusterGenes,
+    setDoClusterGenes,
+    doGroupTerms,
+    setDoGroupTerms,
+  } = useGeneTeaContext();
 
   const checkScrollBar = useCallback(() => {
     if (ref.current) {
@@ -50,8 +44,8 @@ const PlotOptionsPanel: React.FC<PlotOptionsPanelProps> = ({
       </p>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
         <ToggleSwitch
-          value={clusterTerms}
-          onChange={handleToggleClusterTerms}
+          value={doClusterTerms}
+          onChange={setDoClusterTerms}
           options={[
             { label: "", value: true },
             { label: "", value: false },
@@ -61,8 +55,8 @@ const PlotOptionsPanel: React.FC<PlotOptionsPanelProps> = ({
       </div>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
         <ToggleSwitch
-          value={clusterGenes}
-          onChange={handleToggleClusterGenes}
+          value={doClusterGenes}
+          onChange={setDoClusterGenes}
           options={[
             { label: "", value: true },
             { label: "", value: false },
@@ -72,8 +66,8 @@ const PlotOptionsPanel: React.FC<PlotOptionsPanelProps> = ({
       </div>
       <div style={{ display: "flex", alignItems: "center" }}>
         <ToggleSwitch
-          value={groupTerms}
-          onChange={handleToggleGroupTerms}
+          value={doGroupTerms}
+          onChange={setDoGroupTerms}
           options={[
             { label: "", value: true },
             { label: "", value: false },

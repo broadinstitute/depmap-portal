@@ -2,7 +2,7 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React, { useContext } from "react";
 import Select from "react-select";
 import styles from "../styles/GeneTea.scss";
-import { Button, Tab, Tabs } from "react-bootstrap";
+import { Tab, Tabs } from "react-bootstrap";
 import MultiSelectTextarea from "./MultiSelectTextArea";
 import SectionStack, {
   SectionStackContext,
@@ -10,45 +10,8 @@ import SectionStack, {
 } from "./collapsibleOptions/SectionStack";
 import PlotOptionsPanel from "./PlotOptionsPanel";
 import TermOptionsPanel from "./TermOptionsPanel";
-import { SortOption } from "../types";
 
-interface SearchOptionsContainerProps {
-  handleToggleGroupTerms: (nextValue: boolean) => void;
-  handleToggleClusterGenes: (nextValue: boolean) => void;
-  handleToggleClusterTerms: (nextValue: boolean) => void;
-  handleSetGeneSymbolSelections: (
-    selections: React.SetStateAction<Set<string>>
-  ) => void;
-  handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void;
-  handleSetInvalidGenes: (
-    selections: React.SetStateAction<Set<string>>
-  ) => void;
-  handleSetSortBy: (sortBy: SortOption) => void;
-  allSelections: Set<string>;
-  validSelections: Set<string>;
-  invalidSelections: Set<string>;
-  doClusterTerms: boolean;
-  doClusterGenes: boolean;
-  doGroupTerms: boolean;
-  sortBy: SortOption;
-}
-
-function SearchOptionsContainer({
-  handleToggleGroupTerms,
-  handleToggleClusterGenes,
-  handleToggleClusterTerms,
-  handleSetGeneSymbolSelections,
-  handleSetValidGenes,
-  handleSetInvalidGenes,
-  handleSetSortBy,
-  allSelections,
-  validSelections,
-  invalidSelections,
-  doClusterTerms,
-  doClusterGenes,
-  doGroupTerms,
-  sortBy,
-}: SearchOptionsContainerProps) {
+function SearchOptionsContainer() {
   const { sectionHeights } = useContext(SectionStackContext);
 
   return (
@@ -56,31 +19,14 @@ function SearchOptionsContainer({
       <Tabs className={styles.Tabs} id={"gene-tea-filter-tabs"}>
         <Tab eventKey={"List"} title={"List"} className={styles.Tab}>
           <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
-          <MultiSelectTextarea
-            handleSetGeneSymbolSelections={handleSetGeneSymbolSelections}
-            handleSetValidGenes={handleSetValidGenes}
-            handleSetInvalidGenes={handleSetInvalidGenes}
-            allSelections={allSelections}
-            validSelections={validSelections}
-            invalidSelections={invalidSelections}
-          />
+          <MultiSelectTextarea />
           <hr className={styles.SearchOptionsContainerHr} />
           <SectionStack>
             <StackableSection title="Plot Options" minHeight={132}>
-              <PlotOptionsPanel
-                clusterTerms={doClusterTerms}
-                clusterGenes={doClusterGenes}
-                groupTerms={doGroupTerms}
-                handleToggleClusterTerms={handleToggleClusterTerms}
-                handleToggleClusterGenes={handleToggleClusterGenes}
-                handleToggleGroupTerms={handleToggleGroupTerms}
-              />
+              <PlotOptionsPanel />
             </StackableSection>
             <StackableSection title="Term Options" minHeight={132}>
-              <TermOptionsPanel
-                handleSetSortBy={handleSetSortBy}
-                sortBy={sortBy}
-              />
+              <TermOptionsPanel />
             </StackableSection>
           </SectionStack>
           <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
@@ -117,7 +63,7 @@ function SearchOptionsContainer({
         </Tab>
         <Tab
           eventKey={"Continuous"}
-          title={"Continuous (Alpha"}
+          title={"Continuous (Alpha)"}
           className={styles.Tab}
         >
           <h2>Coming soon!</h2>

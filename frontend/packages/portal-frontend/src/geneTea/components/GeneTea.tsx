@@ -4,6 +4,7 @@ import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../styles/GeneTea.scss";
 import SearchOptionsContainer from "./SearchOptionsContainer";
+import { GeneTeaContext } from "../context/GeneTeaContext";
 import promptForSelectionFromContext from "./promptForSelectionFromContext";
 import { useEffect } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
@@ -80,40 +81,37 @@ function GeneTea() {
   }, [allAvailableGenes]);
 
   return (
-    <div className={styles.geneTeaGrid}>
-      <div className={styles.geneTeaFilters}>
-        <SearchOptionsContainer
-          handleToggleGroupTerms={setDoGroupTerms}
-          handleToggleClusterGenes={setDoClusterGenes}
-          handleToggleClusterTerms={setDoClusterTerms}
-          handleSetGeneSymbolSelections={setGeneSymbolSelections}
-          handleSetInvalidGenes={setInValidGeneSymbols}
-          handleSetValidGenes={setValidGeneSymbols}
-          handleSetSortBy={setSortBy}
-          allSelections={geneSymbolSelections}
-          validSelections={validGeneSymbols}
-          invalidSelections={inValidGeneSymbols}
-          doClusterTerms={doClusterTerms}
-          doClusterGenes={doClusterGenes}
-          doGroupTerms={doGroupTerms}
-          sortBy={sortBy}
-        />
+    <GeneTeaContext.Provider
+      value={{
+        doGroupTerms,
+        setDoGroupTerms,
+        doClusterGenes,
+        setDoClusterGenes,
+        doClusterTerms,
+        setDoClusterTerms,
+        sortBy,
+        setSortBy,
+        geneSymbolSelections,
+        setGeneSymbolSelections,
+        validGeneSymbols,
+        setValidGeneSymbols,
+        inValidGeneSymbols,
+        setInValidGeneSymbols,
+        allAvailableGenes,
+        setAllAvailableGenes,
+      }}
+    >
+      <div className={styles.geneTeaGrid}>
+        <div className={styles.geneTeaFilters}>
+          <SearchOptionsContainer />
+        </div>
+        <div className={styles.geneTeaMain}>
+          <GeneTeaMainContent
+            handleSetSelectionFromContext={handleSetSelectionFromContext}
+          />
+        </div>
       </div>
-      <div className={styles.geneTeaMain}>
-        <GeneTeaMainContent
-          searchTerms={geneSymbolSelections}
-          validGenes={validGeneSymbols}
-          invalidGenes={inValidGeneSymbols}
-          doGroupTerms={doGroupTerms}
-          doClusterGenes={doClusterGenes}
-          doClusterTerms={doClusterTerms}
-          handleSetGeneSymbolSelections={setGeneSymbolSelections}
-          handleSetInvalidGenes={setInValidGeneSymbols}
-          handleSetValidGenes={setValidGeneSymbols}
-          handleSetSelectionFromContext={handleSetSelectionFromContext}
-        />
-      </div>
-    </div>
+    </GeneTeaContext.Provider>
   );
 }
 
