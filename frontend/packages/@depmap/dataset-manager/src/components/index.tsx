@@ -8,7 +8,7 @@ import {
   DimensionTypeUpdateArgs,
   DimensionTypeWithCounts,
   Group,
-  instanceOfErrorDetail,
+  instanceOfBreadboxCustomException,
   TabularDataset,
 } from "@depmap/types";
 
@@ -451,7 +451,7 @@ export default function Datasets() {
       })
       .catch((e) => {
         console.error(e);
-        if (instanceOfErrorDetail(e)) {
+        if (instanceOfBreadboxCustomException(e)) {
           setDatasetDeleteError(e.detail);
         }
       });
@@ -479,7 +479,7 @@ export default function Datasets() {
           })
           .catch((e) => {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
+            if (instanceOfBreadboxCustomException(e)) {
               setDimTypeDeleteError(e.detail);
             }
           });

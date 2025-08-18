@@ -83,6 +83,8 @@ export type {
   PredictabilityTable,
 } from "./src/predictability";
 
+export type { ErrorTypeBase } from "./src/ErrorDetail";
+
 export type * from "./src/data-explorer-2";
 export type * from "./src/interactive";
 export type * from "./src/cell-line";
@@ -92,5 +94,8 @@ export type { UploadFileResponse } from "./src/UploadFileResponse";
 export type { SliceQuery } from "./src/SliceQuery";
 
 // predicates (these are functions, not types, but they help to narrow types)
-export { instanceOfErrorDetail } from "./src/ErrorDetail";
+export {
+  instanceOfBreadboxCustomException,
+  instanceOfErrorDetail,
+} from "./src/ErrorDetail";
 export { isValidSliceQuery, areSliceQueriesEqual } from "./src/SliceQuery";

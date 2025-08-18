@@ -6,7 +6,7 @@ import {
   Dataset,
   DatasetUpdateArgs,
   Group,
-  instanceOfErrorDetail,
+  instanceOfBreadboxCustomException,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
 import { RegistryFieldsType, RJSFSchema, UiSchema } from "@rjsf/utils";
@@ -139,7 +139,7 @@ export default function DatasetForm(props: DatasetEditFormProps) {
             setSubmissionMsg("SUCCESS!");
           } catch (e) {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
+            if (instanceOfBreadboxCustomException(e)) {
               setSubmissionMsg(e.detail);
               setHasError(true);
             }

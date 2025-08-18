@@ -5,7 +5,7 @@ import {
   FeatureTypeUpdateArgs,
   SampleType,
   SampleTypeUpdateArgs,
-  instanceOfErrorDetail,
+  instanceOfBreadboxCustomException,
 } from "@depmap/types";
 
 import { FormModal, Spinner } from "@depmap/common-components";
@@ -100,7 +100,7 @@ export default function TypesPage(props: TypesPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setTypeSubmissionError(e.detail);
       }
     }
@@ -161,7 +161,7 @@ export default function TypesPage(props: TypesPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setTypeSubmissionError(e.detail);
       }
     }

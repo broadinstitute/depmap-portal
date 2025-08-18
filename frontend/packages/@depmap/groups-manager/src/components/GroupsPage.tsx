@@ -3,7 +3,7 @@ import {
   Group,
   GroupEntry,
   AccessType,
-  instanceOfErrorDetail,
+  instanceOfBreadboxCustomException,
   GroupArgs,
   GroupEntryArgs,
   GroupTableData,
@@ -112,7 +112,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       setAddGroupError(null);
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setAddGroupError(e.detail);
       }
     }
@@ -126,7 +126,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setAddGroupError(e.detail);
       }
     }
@@ -168,7 +168,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
           addGroupEntryError: e.detail,
@@ -237,7 +237,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
           updateGroupEntryError: e.detail,
