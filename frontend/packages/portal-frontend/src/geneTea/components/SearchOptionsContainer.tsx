@@ -42,6 +42,8 @@ function SearchOptionsContainer({
             handleSetValidGenes={handleSetValidGenes}
             handleSetInvalidGenes={handleSetInvalidGenes}
             allSelections={allSelections}
+            validSelections={validSelections}
+            invalidSelections={invalidSelections}
           />
           <hr className={styles.SearchOptionsContainerHr} />
           <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>

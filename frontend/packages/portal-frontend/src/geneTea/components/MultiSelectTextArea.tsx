@@ -11,6 +11,8 @@ interface Props {
     selections: React.SetStateAction<Set<string>>
   ) => void;
   allSelections: Set<string>;
+  validSelections: Set<string>;
+  invalidSelections: Set<string>;
 }
 
 const MultiSelectTextarea: React.FC<Props> = ({
@@ -18,6 +20,8 @@ const MultiSelectTextarea: React.FC<Props> = ({
   handleSetValidGenes,
   handleSetInvalidGenes,
   allSelections,
+  validSelections,
+  invalidSelections,
 }: Props) => {
   const [inputValue, setInputValue] = useState("");
 
@@ -49,17 +53,25 @@ const MultiSelectTextarea: React.FC<Props> = ({
     <div className={styles.multiSelectTextareaContainer}>
       <div className={styles.multiSelectTextareaBorder}>
         <div className={styles.chipList}>
-          {[...allSelections].map((chip, index) => (
-            <span className={styles.chip} key={index}>
-              {chip}
-              <button
-                className={styles.chipRemoveButton}
-                onClick={() => handleRemoveChip(chip)}
-              >
-                x
-              </button>
-            </span>
-          ))}
+          {[...allSelections].map((chip, index) => {
+            let chipClass = styles.chip;
+            if (invalidSelections && invalidSelections.has(chip)) {
+              chipClass += " " + styles.chipInvalid;
+            } else if (validSelections && validSelections.has(chip)) {
+              chipClass += " " + styles.chipValid;
+            }
+            return (
+              <span className={chipClass} key={index}>
+                {chip}
+                <button
+                  className={styles.chipRemoveButton}
+                  onClick={() => handleRemoveChip(chip)}
+                >
+                  x
+                </button>
+              </span>
+            );
+          })}
         </div>
         <textarea
           className={styles.multiSelectTextarea}
@@ -74,6 +86,12 @@ const MultiSelectTextarea: React.FC<Props> = ({
           rows={10}
         />
       </div>
+      {invalidSelections.size > 0 && (
+        <div className={styles.invalidGenesLegend}>
+          <span className={styles.invalidGenesSwatch} />
+          <span>= invalid genes</span>
+        </div>
+      )}
       <div className={styles.buttonRow}>
         <Button
           className={styles.selectGenesButton}

@@ -1,6 +1,22 @@
 .multiSelectTextareaContainer {
   background-color: #fff;
 
+  .invalidGenesLegend {
+    padding: 10px 0 0 0;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    background-color: rgba(123, 140, 178, 0.1);
+  }
+  .invalidGenesSwatch {
+    width: 18px;
+    height: 18px;
+    background: #f8bcbc;
+    display: inline-block;
+    margin-right: 8px;
+    border-radius: 3px;
+  }
+
   .multiSelectTextareaBorder {
     position: relative;
     border: 1px solid #ccc;
@@ -20,6 +36,15 @@
         border-radius: 15px;
         display: flex;
         align-items: center;
+
+        &.chipValid {
+          background: #b6e7b0 !important;
+          color: #1a4d1a !important;
+        }
+        &.chipInvalid {
+          background: #f8bcbc !important;
+          color: #a10000 !important;
+        }
 
         .chipRemoveButton {
           margin-left: 5px;
