@@ -47,8 +47,8 @@ const PlotOptionsPanel: React.FC = () => {
           value={doClusterTerms}
           onChange={setDoClusterTerms}
           options={[
-            { label: "", value: true },
             { label: "", value: false },
+            { label: "", value: true },
           ]}
         />
         <span style={{ marginLeft: 12 }}>Use term clustering.</span>
@@ -58,8 +58,8 @@ const PlotOptionsPanel: React.FC = () => {
           value={doClusterGenes}
           onChange={setDoClusterGenes}
           options={[
-            { label: "", value: true },
             { label: "", value: false },
+            { label: "", value: true },
           ]}
         />
         <span style={{ marginLeft: 12 }}>Use gene clustering.</span>
@@ -69,8 +69,8 @@ const PlotOptionsPanel: React.FC = () => {
           value={doGroupTerms}
           onChange={setDoGroupTerms}
           options={[
-            { label: "", value: true },
             { label: "", value: false },
+            { label: "", value: true },
           ]}
         />
         <span style={{ marginLeft: 12 }}>Group terms when possible.</span>

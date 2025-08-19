@@ -19,9 +19,7 @@ const toCorsProxyUrl = (geneTeaUrl: string, params: object) => {
 export async function fetchGeneTeaEnrichmentExperimental(
   genes: string[],
   limit: number | null,
-  doGroupTerms: boolean,
-  doClusterGenes: boolean,
-  doClusterTerms: boolean
+  doGroupTerms: boolean
 ): Promise<GeneTeaEnrichedTerms> {
   if (!enabledFeatures.gene_tea) {
     throw new Error("GeneTea is not supported in this environment!");
@@ -32,8 +30,6 @@ export async function fetchGeneTeaEnrichmentExperimental(
   const params = {
     gene_list: genes,
     group_terms: doGroupTerms,
-    cluster: doClusterGenes,
-    remove_overlapping: "true",
     include_plotting_payload: "true",
     n: limit || -1,
   };
@@ -62,9 +58,10 @@ export async function fetchGeneTeaEnrichmentExperimental(
       "Clipped Matching Genes in List": string[];
     };
     plotting_payload: {
-      groupby: string;
+      groupby: "Term" | "Term Group";
       term_cluster: {
-        Term: string[];
+        Term: string[] | null[];
+        "Term Group": string[] | null[];
         Cluster: number[];
         Order: number[];
       };
@@ -115,7 +112,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
   // return a wrapper object to distinguish this from some kind of error.
   if (body.enriched_terms === null) {
     return {
-      groupby: "",
+      groupby: "Term",
       validGenes: [],
       invalidGenes: [],
       enrichedTerms: null,
@@ -167,8 +164,12 @@ export async function fetchGeneTeaEnrichmentExperimental(
     totalInfo: et["Total Info"],
   };
 
+  const termClusterTermOrGroup = doGroupTerms
+    ? plottingPayload.term_cluster["Term Group"]
+    : plottingPayload.term_cluster["Term"];
+
   const termCluster = {
-    term: plottingPayload.term_cluster.Term,
+    termOrTermGroup: termClusterTermOrGroup as string[],
     cluster: plottingPayload.term_cluster.Cluster,
     order: plottingPayload.term_cluster.Order,
   };
@@ -180,7 +181,9 @@ export async function fetchGeneTeaEnrichmentExperimental(
   };
 
   const termToEntity = {
-    term: plottingPayload.term_to_entity["Term Group"],
+    termOrTermGroup: doGroupTerms
+      ? (plottingPayload.term_to_entity["Term Group"] as string[])
+      : (plottingPayload.term_to_entity["Term"] as string[]),
     gene: plottingPayload.term_to_entity.Gene,
     count: plottingPayload.term_to_entity.Count,
     nTerms: plottingPayload.term_to_entity["n Terms"],

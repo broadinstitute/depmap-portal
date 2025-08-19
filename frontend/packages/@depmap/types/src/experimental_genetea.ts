@@ -26,7 +26,7 @@ export interface BarChartFormattedData {
 }
 
 export interface TermCluster {
-  term: string[];
+  termOrTermGroup: string[];
   cluster: number[];
   order: number[];
 }
@@ -38,7 +38,7 @@ export interface GeneCluster {
 }
 
 export interface TermToEntity {
-  term: string[];
+  termOrTermGroup: string[];
   gene: string[];
   count: number[];
   nTerms: number[];
@@ -72,7 +72,7 @@ export interface GeneTeaEnrichedTerms {
   invalidGenes: string[];
   totalNEnrichedTerms: number;
   totalNTermGroups: number;
-  groupby: string;
+  groupby: "Term" | "Term Group";
   enrichedTerms: EnrichedTerms | null;
   termCluster: TermCluster | null;
   geneCluster: GeneCluster | null;

@@ -26,6 +26,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     setValidGeneSymbols,
     setInValidGeneSymbols,
   } = useGeneTeaContext();
+
   const {
     isLoading,
     error,
@@ -38,7 +39,6 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
-
     setInValidGeneSymbols,
     setValidGeneSymbols
   );
