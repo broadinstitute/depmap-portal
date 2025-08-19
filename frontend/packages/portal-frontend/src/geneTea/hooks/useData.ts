@@ -166,22 +166,28 @@ function useData(
     }
   }, [data, xOrder, yOrder, zOrder]);
 
-  const barChartData = useMemo(
-    () =>
-      data && data.enrichedTerms
-        ? {
-            x: data.enrichedTerms.negLogFDR,
-            y: doGroupTerms
-              ? data.enrichedTerms.termGroup
-              : data.enrichedTerms.term,
-          }
-        : { x: [], y: [] },
-    [data]
-  );
+  const barChartData = useMemo(() => {
+    if (data && data.enrichedTerms && heatmapData && heatmapData.y.length > 0) {
+      // Use the unique values from heatmapData.y, preserving order
+      const yOrdered = Array.from(new Set(heatmapData.y));
+      // Map yOrdered to their corresponding negLogFDR values
+      const ySource = doGroupTerms
+        ? data.enrichedTerms.termGroup
+        : data.enrichedTerms.term;
+      const xSource = data.enrichedTerms.negLogFDR;
+      // Build a lookup from y value to negLogFDR
+      const yToX = Object.fromEntries(ySource.map((y, i) => [y, xSource[i]]));
+      return {
+        x: yOrdered.map((yVal) => yToX[yVal] ?? 0),
+        y: yOrdered,
+      };
+    } else {
+      return { x: [], y: [] };
+    }
+  }, [data, heatmapData, doGroupTerms]);
 
   const heatmapXAxisLabel = useMemo(() => {
     if (data && data.termToEntity) {
-      // Get a
       return `Matching Genes in List n=(${
         new Set(data.termToEntity.gene).size
       })`;
