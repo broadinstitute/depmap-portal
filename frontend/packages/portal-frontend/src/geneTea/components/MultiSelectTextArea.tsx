@@ -101,7 +101,7 @@ const MultiSelectTextarea: React.FC = () => {
         </Button>
         <Button
           className={styles.clearInputButton}
-          disabled={inputValue.length === 0}
+          disabled={inputValue.length === 0 && geneSymbolSelections.size === 0}
           onClick={() => {
             setGeneSymbolSelections(() => new Set());
             setValidGeneSymbols(() => new Set());
