@@ -22,6 +22,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
+    sortBy,
     setGeneSymbolSelections,
     setValidGeneSymbols,
     setInValidGeneSymbols,
@@ -39,6 +40,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
+    sortBy,
     setInValidGeneSymbols,
     setValidGeneSymbols
   );

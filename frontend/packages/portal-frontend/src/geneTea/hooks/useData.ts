@@ -1,6 +1,7 @@
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 import { useEffect, useMemo, useState } from "react";
+import { SortOption } from "../types";
 
 // TODO: picked these numbers at random. Figure out what they should actually be.
 const MIN_SELECTION = 3;
@@ -11,6 +12,7 @@ function useData(
   doGroupTerms: boolean,
   doClusterGenes: boolean,
   doClusterTerms: boolean,
+  sortBy: SortOption,
   handleSetInvalidGenes: (
     selections: React.SetStateAction<Set<string>>
   ) => void,
@@ -30,12 +32,14 @@ function useData(
       setError(false);
       (async () => {
         try {
+          console.log("sortBy", sortBy);
           const fetchedData = await cached(
             legacyPortalAPI
           ).fetchGeneTeaEnrichmentExperimental(
             [...searchTerms],
             null,
-            doGroupTerms
+            doGroupTerms,
+            sortBy
           );
           setData(fetchedData);
           handleSetInvalidGenes(new Set(fetchedData.invalidGenes));
@@ -51,7 +55,7 @@ function useData(
       setData(null);
       setIsLoading(false);
     }
-  }, [searchTerms, doGroupTerms, doClusterGenes, doClusterTerms]);
+  }, [searchTerms, doGroupTerms, doClusterGenes, doClusterTerms, sortBy]);
 
   const xOrder = useMemo(() => {
     if (data && data.geneCluster) {
