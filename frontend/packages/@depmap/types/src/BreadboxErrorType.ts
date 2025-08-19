@@ -19,11 +19,16 @@ interface BreadboxCustomException {
 export function instanceOfBreadboxCustomException(
   object: any
 ): object is BreadboxCustomException {
-  return "detail" in object;
+  return typeof object === "object" && object !== null && "detail" in object;
 }
 
 export function instanceOfErrorDetail(object: any): object is ErrorDetail {
-  return "error_type" in object && "message" in object;
+  return (
+    typeof object === "object" &&
+    object !== null &&
+    "error_type" in object &&
+    "message" in object
+  );
 }
 
 /* Custom Error class with error type */
