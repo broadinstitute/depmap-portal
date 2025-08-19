@@ -106,6 +106,8 @@ export default function TypesPage(props: TypesPageProps) {
         } else {
           setTypeSubmissionError(e.detail.message);
         }
+      } else {
+        setTypeSubmissionError("An unknown error occurred!");
       }
     }
     // In case of 400/500 error
@@ -171,6 +173,8 @@ export default function TypesPage(props: TypesPageProps) {
         } else {
           setTypeSubmissionError(e.detail.message);
         }
+      } else {
+        setTypeSubmissionError("An unknown error occurred!");
       }
     }
     // In case of 400/500 error

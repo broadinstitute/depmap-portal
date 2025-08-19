@@ -457,6 +457,8 @@ export default function Datasets() {
           } else {
             setDatasetDeleteError(e.detail.message);
           }
+        } else {
+          setDatasetDeleteError("An unknown error occurred!");
         }
       });
 
@@ -489,6 +491,8 @@ export default function Datasets() {
               } else {
                 setDimTypeDeleteError(e.detail.message);
               }
+            } else {
+              setDimTypeDeleteError("An unknown error occurred!");
             }
           });
       }

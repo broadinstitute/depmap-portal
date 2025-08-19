@@ -118,6 +118,8 @@ export default function GroupsPage(props: GroupsPageProps) {
         } else {
           setAddGroupError(e.detail.message);
         }
+      } else {
+        setAddGroupError("An unknown error occurred!");
       }
     }
   };
@@ -136,6 +138,8 @@ export default function GroupsPage(props: GroupsPageProps) {
         } else {
           setAddGroupError(e.detail.message);
         }
+      } else {
+        setAddGroupError("An unknown error occurred!");
       }
     }
   };
@@ -181,6 +185,11 @@ export default function GroupsPage(props: GroupsPageProps) {
           ...groupEntryErrors,
           addGroupEntryError:
             typeof e.detail === "string" ? e.detail : e.detail.message,
+        });
+      } else {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          addGroupEntryError: "An unknown error occurred!",
         });
       }
     }
@@ -251,6 +260,11 @@ export default function GroupsPage(props: GroupsPageProps) {
           ...groupEntryErrors,
           updateGroupEntryError:
             typeof e.detail === "string" ? e.detail : e.detail.message,
+        });
+      } else {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          updateGroupEntryError: "An unknown error occurred!",
         });
       }
     }
