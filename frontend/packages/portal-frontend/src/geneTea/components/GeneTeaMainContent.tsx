@@ -23,6 +23,11 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     doClusterGenes,
     doClusterTerms,
     sortBy,
+    maxTopTerms,
+    maxFDR,
+    maxMatchingOverall,
+    minMatchingQuery,
+    effectSizeThreshold,
     setGeneSymbolSelections,
     setValidGeneSymbols,
     setInValidGeneSymbols,
@@ -41,6 +46,11 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     doClusterGenes,
     doClusterTerms,
     sortBy,
+    maxFDR,
+    maxTopTerms,
+    maxMatchingOverall,
+    minMatchingQuery,
+    effectSizeThreshold,
     setInValidGeneSymbols,
     setValidGeneSymbols
   );

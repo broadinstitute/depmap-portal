@@ -13,6 +13,11 @@ function useData(
   doClusterGenes: boolean,
   doClusterTerms: boolean,
   sortBy: SortOption,
+  maxFDR: number,
+  maxTopTerms: number | null,
+  maxMatchingOverall: number | null,
+  minMatchingQuery: number,
+  effectSizeThreshold: number, // TODO - not doing this anymore? It is not an option in the GeneTEA API
   handleSetInvalidGenes: (
     selections: React.SetStateAction<Set<string>>
   ) => void,
@@ -32,14 +37,19 @@ function useData(
       setError(false);
       (async () => {
         try {
-          console.log("sortBy", sortBy);
+          console.log(maxTopTerms);
+          console.log(effectSizeThreshold);
           const fetchedData = await cached(
             legacyPortalAPI
           ).fetchGeneTeaEnrichmentExperimental(
             [...searchTerms],
-            null,
             doGroupTerms,
-            sortBy
+            sortBy,
+            maxFDR,
+            maxTopTerms,
+            maxMatchingOverall,
+            minMatchingQuery
+            // effectSizeThreshold
           );
           setData(fetchedData);
           handleSetInvalidGenes(new Set(fetchedData.invalidGenes));
@@ -55,7 +65,17 @@ function useData(
       setData(null);
       setIsLoading(false);
     }
-  }, [searchTerms, doGroupTerms, doClusterGenes, doClusterTerms, sortBy]);
+  }, [
+    searchTerms,
+    doGroupTerms,
+    doClusterGenes,
+    doClusterTerms,
+    sortBy,
+    maxFDR,
+    maxTopTerms,
+    maxMatchingOverall,
+    minMatchingQuery,
+  ]);
 
   const xOrder = useMemo(() => {
     if (data && data.geneCluster) {

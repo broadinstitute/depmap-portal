@@ -2,6 +2,16 @@ import React, { createContext, useContext } from "react";
 import { SortOption } from "../types";
 
 export interface GeneTeaContextType {
+  effectSizeThreshold: number;
+  setEffectSizeThreshold: React.Dispatch<React.SetStateAction<number>>;
+  minMatchingQuery: number;
+  setMinMatchingQuery: React.Dispatch<React.SetStateAction<number>>;
+  maxMatchingOverall: number | null;
+  setMaxMatchingOverall: React.Dispatch<React.SetStateAction<number | null>>;
+  maxTopTerms: number | null;
+  setMaxTopTerms: React.Dispatch<React.SetStateAction<number | null>>;
+  maxFDR: number;
+  setMaxFDR: React.Dispatch<React.SetStateAction<number>>;
   doGroupTerms: boolean;
   setDoGroupTerms: (v: boolean) => void;
   doClusterGenes: boolean;

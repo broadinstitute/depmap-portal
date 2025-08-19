@@ -18,9 +18,13 @@ const toCorsProxyUrl = (geneTeaUrl: string, params: object) => {
 
 export async function fetchGeneTeaEnrichmentExperimental(
   genes: string[],
-  limit: number | null,
   doGroupTerms: boolean,
-  sortBy: "Significance" | "Effect Size"
+  sortBy: "Significance" | "Effect Size",
+  maxFDR: number,
+  maxTopTerms: number | null,
+  maxMatchingOverall: number | null,
+  minMatchingQuery: number
+  // effectSizeThreshold: number,
 ): Promise<GeneTeaEnrichedTerms> {
   if (!enabledFeatures.gene_tea) {
     throw new Error("GeneTea is not supported in this environment!");
@@ -33,8 +37,12 @@ export async function fetchGeneTeaEnrichmentExperimental(
     group_terms: doGroupTerms,
     include_plotting_payload: "true",
     sort_by: sortBy,
-    n: limit || -1,
+    max_fdr: maxFDR,
+    min_genes: minMatchingQuery || -1,
+    max_n_genes: maxMatchingOverall,
+    n: maxTopTerms || -1,
   };
+  console.log(params);
 
   interface RawResponse {
     // TODO: Give the user feedback when some genes are invalid.

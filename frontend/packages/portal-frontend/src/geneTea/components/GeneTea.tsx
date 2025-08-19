@@ -55,6 +55,13 @@ function GeneTea() {
   const [allAvailableGenes, setAllAvailableGenes] = useState<Set<string>>(
     new Set([])
   );
+  const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(0.1);
+  const [minMatchingQuery, setMinMatchingQuery] = useState<number>(2);
+  const [maxMatchingOverall, setMaxMatchingOverall] = useState<number | null>(
+    5357
+  );
+  const [maxTopTerms, setMaxTopTerms] = useState<number | null>(10);
+  const [maxFDR, setMaxFDR] = useState<number>(0.05);
 
   useEffect(() => {
     (async () => {
@@ -85,6 +92,16 @@ function GeneTea() {
   return (
     <GeneTeaContext.Provider
       value={{
+        effectSizeThreshold,
+        setEffectSizeThreshold,
+        minMatchingQuery,
+        setMinMatchingQuery,
+        maxMatchingOverall,
+        setMaxMatchingOverall,
+        maxTopTerms,
+        setMaxTopTerms,
+        maxFDR,
+        setMaxFDR,
         doGroupTerms,
         setDoGroupTerms,
         doClusterGenes,

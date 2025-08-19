@@ -5,14 +5,59 @@ import React, {
   useRef,
   useState,
 } from "react";
+import styles from "../styles/MultiSelectTextArea.scss";
+import { Button } from "react-bootstrap";
+
+import NumberInput from "./NumberInput";
 import { SectionStackContext } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/SectionStack";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { SortOption } from "../types";
+
+const DEFAULTS = {
+  sortBy: "Effect Size",
+  maxTopTerms: 10,
+  maxFDR: 0.05,
+  effectSizeThreshold: 0.1,
+  minMatchingQuery: 2,
+  maxMatchingOverall: 5373,
+};
 
 const TermOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
   const [hasScrollBar, setHasScrollBar] = useState(false);
   const { sectionHeights } = useContext(SectionStackContext);
-  const { sortBy, setSortBy } = useGeneTeaContext();
+  const {
+    sortBy,
+    setSortBy,
+    maxTopTerms,
+    setMaxTopTerms,
+    maxFDR,
+    setMaxFDR,
+    effectSizeThreshold,
+    setEffectSizeThreshold,
+    minMatchingQuery,
+    setMinMatchingQuery,
+    maxMatchingOverall,
+    setMaxMatchingOverall,
+  } = useGeneTeaContext();
+
+  // Local state for staged changes
+  const [localSortBy, setLocalSortBy] = useState<string>(sortBy);
+  const [localMaxTopTerms, setLocalMaxTopTerms] = useState<number>(
+    maxTopTerms ?? DEFAULTS.maxTopTerms
+  );
+  const [localMaxFDR, setLocalMaxFDR] = useState<number>(maxFDR);
+  const [
+    localEffectSizeThreshold,
+    setLocalEffectSizeThreshold,
+  ] = useState<number>(effectSizeThreshold);
+  const [localMinMatchingQuery, setLocalMinMatchingQuery] = useState<number>(
+    minMatchingQuery
+  );
+  const [
+    localMaxMatchingOverall,
+    setLocalMaxMatchingOverall,
+  ] = useState<number>(maxMatchingOverall || DEFAULTS.maxMatchingOverall);
 
   const checkScrollBar = useCallback(() => {
     if (ref.current) {
@@ -39,8 +84,8 @@ const TermOptionsPanel: React.FC = () => {
             type="radio"
             name="sortBy"
             value="Effect Size"
-            checked={sortBy === "Effect Size"}
-            onChange={() => setSortBy("Effect Size")}
+            checked={localSortBy === "Effect Size"}
+            onChange={() => setLocalSortBy("Effect Size")}
           />
           Effect Size &gt; FDR
         </label>
@@ -49,11 +94,99 @@ const TermOptionsPanel: React.FC = () => {
             type="radio"
             name="sortBy"
             value="Significance"
-            checked={sortBy === "Significance"}
-            onChange={() => setSortBy("Significance")}
+            checked={localSortBy === "Significance"}
+            onChange={() => setLocalSortBy("Significance")}
           />
           FDR &gt; Effect Size
         </label>
+        <NumberInput
+          name="maxTopTerms"
+          label="Max. Top Terms"
+          min={3}
+          step={1}
+          value={localMaxTopTerms}
+          setValue={setLocalMaxTopTerms}
+          defaultValue={DEFAULTS.maxTopTerms}
+        />
+        <NumberInput
+          name="maxFDR"
+          label="FDR Threshold"
+          // min={0}
+          value={localMaxFDR}
+          setValue={setLocalMaxFDR}
+          defaultValue={DEFAULTS.maxFDR}
+          step={0.01}
+        />
+        <NumberInput
+          name="effectSizeThreshold"
+          label="Effect Size Threshold"
+          // min={0}
+          value={localEffectSizeThreshold}
+          setValue={setLocalEffectSizeThreshold}
+          defaultValue={DEFAULTS.effectSizeThreshold}
+          step={0.01}
+        />
+        <NumberInput
+          name="minMatchingQuery"
+          label="Min. Matching Query"
+          min={0}
+          value={localMinMatchingQuery}
+          setValue={setLocalMinMatchingQuery}
+          defaultValue={DEFAULTS.minMatchingQuery}
+          step={1}
+        />
+        <NumberInput
+          name="maxMatchingOverall"
+          label="Max. Matching Overall"
+          min={0}
+          value={localMaxMatchingOverall}
+          setValue={setLocalMaxMatchingOverall}
+          defaultValue={DEFAULTS.maxMatchingOverall}
+          step={1}
+        />
+        <div
+          className={styles.buttonRow}
+          style={{
+            marginTop: 8,
+            paddingTop: 0,
+            paddingBottom: 0,
+            background: "none",
+          }}
+        >
+          <Button
+            className={styles.selectGenesButton}
+            onClick={() => {
+              setSortBy(localSortBy as any);
+              setMaxTopTerms(localMaxTopTerms);
+              setMaxFDR(localMaxFDR);
+              setMaxMatchingOverall(localMaxMatchingOverall);
+              setMinMatchingQuery(localMinMatchingQuery);
+              setEffectSizeThreshold(localEffectSizeThreshold);
+            }}
+            style={{ marginBottom: 0 }}
+          >
+            Apply
+          </Button>
+          <Button
+            className={styles.clearInputButton}
+            onClick={() => {
+              setLocalSortBy(DEFAULTS.sortBy);
+              setLocalMaxTopTerms(DEFAULTS.maxTopTerms);
+              setLocalMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
+              setLocalMinMatchingQuery(DEFAULTS.minMatchingQuery);
+              setLocalEffectSizeThreshold(DEFAULTS.effectSizeThreshold);
+              setSortBy(DEFAULTS.sortBy as SortOption);
+              setMaxTopTerms(DEFAULTS.maxTopTerms);
+              setMaxFDR(DEFAULTS.maxFDR);
+              setMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
+              setMinMatchingQuery(DEFAULTS.minMatchingQuery);
+              setEffectSizeThreshold(DEFAULTS.effectSizeThreshold);
+            }}
+            style={{ marginBottom: 0 }}
+          >
+            Reset
+          </Button>
+        </div>
       </div>
     </div>
   );

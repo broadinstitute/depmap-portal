@@ -75,59 +75,59 @@
       overflow-y: auto;
     }
   }
+}
 
-  .buttonRow {
+.buttonRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding-top: 15px;
+  padding-bottom: 35px;
+  background-color: rgba(123, 140, 178, 0.1);
+
+  .selectGenesButton {
+    width: 91px;
+    height: 30px;
+    color: #ffffff;
+    background-color: #4479b2;
+    border: 1px solid #4479b2;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    font-family: "Lato", "Arial", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    font-style: normal;
     display: flex;
-    flex-direction: row;
     align-items: center;
-    padding-top: 15px;
-    padding-bottom: 35px;
-    background-color: rgba(123, 140, 178, 0.1);
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+  }
 
-    .selectGenesButton {
-      width: 91px;
-      height: 30px;
-      color: #ffffff;
-      background-color: #4479b2;
-      border: 1px solid #4479b2;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      font-family: "Lato", "Arial", sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      font-style: normal;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, color 0.2s;
-    }
+  .selectGenesButton:hover {
+    background-color: #2864a5;
+    border-color: #2864a5;
+  }
 
-    .selectGenesButton:hover {
-      background-color: #2864a5;
-      border-color: #2864a5;
-    }
+  .clearInputButton {
+    width: 91px;
+    height: 30px;
+    color: #4479b2;
+    background-color: #ffffff;
+    border: 1px solid #4479b2;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    margin-left: 10px;
+    font-family: "Lato", "Arial", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    font-style: normal;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s, color 0.2s;
+  }
 
-    .clearInputButton {
-      width: 91px;
-      height: 30px;
-      color: #4479b2;
-      background-color: #ffffff;
-      border: 1px solid #4479b2;
-      border-radius: 4px;
-      margin-bottom: 10px;
-      margin-left: 10px;
-      font-family: "Lato", "Arial", sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      font-style: normal;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.2s, color 0.2s;
-    }
-
-    .clearInputButton:hover {
-      background-color: #e6f0fa;
-    }
+  .clearInputButton:hover {
+    background-color: #e6f0fa;
   }
 }
