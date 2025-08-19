@@ -277,20 +277,14 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
     context_nocode.loc[:, ["lineage", "subtype"]] = codes_for_codeless
     context_df = pd.concat([context_nocode, context_w_oncocode])
     context_df["type"] = "DepMap Model"
-    context_df = prof_map.merge(
-        context_df,
-        how="left",
-        left_on="ModelID",
-        right_on="ModelID",
-        suffixes=(None, "_y"),
-    )
+
     context_df = context_df.merge(
         model_condition,
         how="left",
-        left_on=["ModelConditionID", "ModelID"],
-        right_on=["ModelConditionID", "ModelID"],
+        left_on=["ModelID"],
+        right_on=["ModelID"],
         suffixes=(None, "_y"),
-    ).set_index("ProfileID")
+    ).set_index("ModelConditionID")
     # warnings.warn(context_df.head().to_string())
     context_df = context_df.loc[
         expr_df.index,
@@ -301,7 +295,6 @@ def process_depmap_ipts(expr_df, context_df, prof_map, model_condition):
             "subtype",
             "type",
             "FormulationID",
-            "ModelConditionID",
             "ModelID",
         ],
     ].drop_duplicates()
@@ -517,7 +510,6 @@ def run_celligner(bg, contrast, extra_data=None):
             "type",
             "PrimaryOrMetastasis",
             "GrowthPattern",
-            "ModelConditionID",
             "ModelID",
         ]
     ]
@@ -557,10 +549,11 @@ def process_data(inputs, extra=True):
     print(depmap_data)
     # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
     # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
+    
+    depmap_data = depmap_data[depmap_data.IsDefaultEntryForMC == 'Yes']
+    depmap_data.index = depmap_data["ModelConditionID"]
 
-    depmap_data.index = depmap_data["ProfileID"]
-
-    depmap_data.drop(columns=["ProfileID", "is_default_entry", "ModelID"], inplace=True)
+    depmap_data.drop(columns=["SequencingID", "IsDefaultEntryForModel", "ModelID"], inplace=True)
 
     warnings.warn("loading anns")
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
