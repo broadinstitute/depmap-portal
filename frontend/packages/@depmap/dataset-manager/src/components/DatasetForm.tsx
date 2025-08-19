@@ -171,7 +171,8 @@ export default function DatasetForm(props: DatasetFormProps) {
         id: "",
         state: "FAILURE",
         percentComplete: undefined,
-        message: res.detail,
+        message:
+          typeof res.detail === "string" ? res.detail : res.detail.message,
         result: null,
       });
     } else {

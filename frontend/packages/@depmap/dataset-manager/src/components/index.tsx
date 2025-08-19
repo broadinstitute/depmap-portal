@@ -452,7 +452,11 @@ export default function Datasets() {
       .catch((e) => {
         console.error(e);
         if (instanceOfBreadboxCustomException(e)) {
-          setDatasetDeleteError(e.detail);
+          if (typeof e.detail === "string") {
+            setDatasetDeleteError(e.detail);
+          } else {
+            setDatasetDeleteError(e.detail.message);
+          }
         }
       });
 
@@ -480,7 +484,11 @@ export default function Datasets() {
           .catch((e) => {
             console.error(e);
             if (instanceOfBreadboxCustomException(e)) {
-              setDimTypeDeleteError(e.detail);
+              if (typeof e.detail === "string") {
+                setDimTypeDeleteError(e.detail);
+              } else {
+                setDimTypeDeleteError(e.detail.message);
+              }
             }
           });
       }

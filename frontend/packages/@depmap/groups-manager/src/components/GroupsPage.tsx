@@ -113,7 +113,11 @@ export default function GroupsPage(props: GroupsPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfBreadboxCustomException(e)) {
-        setAddGroupError(e.detail);
+        if (typeof e.detail === "string") {
+          setAddGroupError(e.detail);
+        } else {
+          setAddGroupError(e.detail.message);
+        }
       }
     }
   };
@@ -127,7 +131,11 @@ export default function GroupsPage(props: GroupsPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfBreadboxCustomException(e)) {
-        setAddGroupError(e.detail);
+        if (typeof e.detail === "string") {
+          setAddGroupError(e.detail);
+        } else {
+          setAddGroupError(e.detail.message);
+        }
       }
     }
   };
@@ -171,7 +179,8 @@ export default function GroupsPage(props: GroupsPageProps) {
       if (instanceOfBreadboxCustomException(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          addGroupEntryError: e.detail,
+          addGroupEntryError:
+            typeof e.detail === "string" ? e.detail : e.detail.message,
         });
       }
     }
@@ -240,7 +249,8 @@ export default function GroupsPage(props: GroupsPageProps) {
       if (instanceOfBreadboxCustomException(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          updateGroupEntryError: e.detail,
+          updateGroupEntryError:
+            typeof e.detail === "string" ? e.detail : e.detail.message,
         });
       }
     }

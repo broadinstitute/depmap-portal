@@ -101,7 +101,11 @@ export default function TypesPage(props: TypesPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfBreadboxCustomException(e)) {
-        setTypeSubmissionError(e.detail);
+        if (typeof e.detail === "string") {
+          setTypeSubmissionError(e.detail);
+        } else {
+          setTypeSubmissionError(e.detail.message);
+        }
       }
     }
     // In case of 400/500 error
@@ -162,7 +166,11 @@ export default function TypesPage(props: TypesPageProps) {
     } catch (e) {
       console.error(e);
       if (instanceOfBreadboxCustomException(e)) {
-        setTypeSubmissionError(e.detail);
+        if (typeof e.detail === "string") {
+          setTypeSubmissionError(e.detail);
+        } else {
+          setTypeSubmissionError(e.detail.message);
+        }
       }
     }
     // In case of 400/500 error

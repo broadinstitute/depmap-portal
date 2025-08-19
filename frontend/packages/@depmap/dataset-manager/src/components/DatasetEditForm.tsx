@@ -140,7 +140,11 @@ export default function DatasetForm(props: DatasetEditFormProps) {
           } catch (e) {
             console.error(e);
             if (instanceOfBreadboxCustomException(e)) {
-              setSubmissionMsg(e.detail);
+              if (typeof e.detail === "string") {
+                setSubmissionMsg(e.detail);
+              } else {
+                setSubmissionMsg(e.detail.message);
+              }
               setHasError(true);
             }
           }
