@@ -84,9 +84,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
           // Distinguish Error from ErrorTypeError
           if (e instanceof ErrorTypeError) {
             if (e.name === "LARGE_DATASET_READ") {
-              setErrorMessage(
-                "This operation cannot be completed because the region requested from the dataset is too large."
-              );
+              setErrorMessage(e.message);
             }
           } else {
             setErrorMessage(e.message as string);
