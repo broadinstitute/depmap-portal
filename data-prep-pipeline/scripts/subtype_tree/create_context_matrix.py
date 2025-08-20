@@ -12,19 +12,14 @@ def load_data(model_taiga_id, molecular_subtypes_taiga_id, subtype_tree_path):
 
     ## Load the models table
     models = (
-        tc.get(model_taiga_id)
-        .loc[
+        tc.get(model_taiga_id).loc[
             :,
             [
                 "ModelID",
                 "OncotreeCode",
                 "DepmapModelType",
-                "OncotreeLineage",
-                "OncotreePrimaryDisease",
-                "OncotreeSubtype",
             ],
         ]
-        .dropna(subset=["OncotreeLineage", "OncotreeSubtype"])
     )
 
     ## Load the subtype tree
@@ -36,12 +31,18 @@ def load_data(model_taiga_id, molecular_subtypes_taiga_id, subtype_tree_path):
     genetic_subtypes = tc.get(molecular_subtypes_taiga_id).set_index("ModelID")
 
     ## construct the Model-Tree
+    ## Outer join so it includes all models (even those with an annotated type
+    ## that is not part of the tree)
+    ## But then drop rows where ModelID is NA - which are subtypes with no models
     model_tree = models.loc[:, ["ModelID", "OncotreeCode", "DepmapModelType"]].merge(
-        subtype_tree
-    )
+        subtype_tree, how='outer'
+    ).dropna(subset=['ModelID'])
+
+    #make sure that model_tree contains all model ID's in the genetic subtypes matrix
+    #this has caused indexing errors in the past when this is not true
+    assert set(genetic_subtypes.index).issubset(model_tree.ModelID)
 
     return model_tree, subtype_tree, genetic_subtypes
-
 
 def get_context_models(subtype_node, subtype_tree, genetic_subtypes, model_tree):
     """
@@ -160,10 +161,7 @@ def construct_matrix(model_tree, subtype_tree, genetic_subtypes):
 
         # create a one-hot encoded series object for this context
         st_ctx = pd.Series(index=model_tree.ModelID, name=ctx_code, data=0)
-        # st_ctx.loc[st_models] = 1
-        
-        # Filter to existing index before assignment
-        st_ctx.loc[st_ctx.index.intersection(st_models)] = 1
+        st_ctx.loc[st_models] = 1
 
         # save the series to the list of columns
         ctx_cols.append(st_ctx)
