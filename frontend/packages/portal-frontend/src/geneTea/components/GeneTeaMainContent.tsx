@@ -16,6 +16,7 @@ interface GeneTeaMainContentProps {
 }
 
 function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
+  // NOTE: this is tempoary during development.
   if (tab === "all-matching-terms") {
     return (
       <div style={{ padding: "25px" }}>
@@ -23,6 +24,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
       </div>
     );
   }
+
   const {
     geneSymbolSelections,
     validGeneSymbols,
