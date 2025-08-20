@@ -3,7 +3,7 @@ import {
   Group,
   GroupEntry,
   AccessType,
-  instanceOfErrorDetail,
+  instanceOfBreadboxCustomException,
   GroupArgs,
   GroupEntryArgs,
   GroupTableData,
@@ -112,8 +112,14 @@ export default function GroupsPage(props: GroupsPageProps) {
       setAddGroupError(null);
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setAddGroupError(e.detail);
+      if (instanceOfBreadboxCustomException(e)) {
+        if (typeof e.detail === "string") {
+          setAddGroupError(e.detail);
+        } else {
+          setAddGroupError(e.detail.message);
+        }
+      } else {
+        setAddGroupError("An unknown error occurred!");
       }
     }
   };
@@ -126,8 +132,14 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setAddGroupError(e.detail);
+      if (instanceOfBreadboxCustomException(e)) {
+        if (typeof e.detail === "string") {
+          setAddGroupError(e.detail);
+        } else {
+          setAddGroupError(e.detail.message);
+        }
+      } else {
+        setAddGroupError("An unknown error occurred!");
       }
     }
   };
@@ -168,10 +180,16 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          addGroupEntryError: e.detail,
+          addGroupEntryError:
+            typeof e.detail === "string" ? e.detail : e.detail.message,
+        });
+      } else {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          addGroupEntryError: "An unknown error occurred!",
         });
       }
     }
@@ -237,10 +255,16 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (instanceOfBreadboxCustomException(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          updateGroupEntryError: e.detail,
+          updateGroupEntryError:
+            typeof e.detail === "string" ? e.detail : e.detail.message,
+        });
+      } else {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          updateGroupEntryError: "An unknown error occurred!",
         });
       }
     }
