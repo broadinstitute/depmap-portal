@@ -91,10 +91,8 @@ export type * from "./src/compounds";
 
 export type { UploadFileResponse } from "./src/UploadFileResponse";
 export type { SliceQuery } from "./src/SliceQuery";
+export type { ErrorDetail } from "./src/BreadboxErrorType";
 
 // predicates (these are functions, not types, but they help to narrow types)
-export {
-  instanceOfBreadboxCustomException,
-  instanceOfErrorDetail,
-} from "./src/BreadboxErrorType";
+export { instanceOfErrorDetail } from "./src/BreadboxErrorType";
 export { isValidSliceQuery, areSliceQueriesEqual } from "./src/SliceQuery";

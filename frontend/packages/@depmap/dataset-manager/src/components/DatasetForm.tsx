@@ -16,7 +16,7 @@ import {
   SampleDimensionType,
   FeatureDimensionType,
   Dataset,
-  instanceOfBreadboxCustomException,
+  instanceOfErrorDetail,
 } from "@depmap/types";
 import ChunkedFileUploader from "./ChunkedFileUploader";
 import { CeleryTask } from "@depmap/compute";
@@ -165,14 +165,13 @@ export default function DatasetForm(props: DatasetFormProps) {
     const isCeleryTask = (x: any): x is CeleryTask => x.state !== undefined;
     if (isCeleryTask(res)) {
       setCompletedTask(res);
-    } else if (instanceOfBreadboxCustomException(res)) {
+    } else if (instanceOfErrorDetail(res)) {
       // can occur when error happens before task passed to celery (ex: 'units' missing in 'continuous' col_type)
       setCompletedTask({
         id: "",
         state: "FAILURE",
         percentComplete: undefined,
-        message:
-          typeof res.detail === "string" ? res.detail : res.detail.message,
+        message: typeof res.message,
         result: null,
       });
     } else {

@@ -3,7 +3,7 @@ import {
   Group,
   GroupEntry,
   AccessType,
-  instanceOfBreadboxCustomException,
+  instanceOfErrorDetail,
   GroupArgs,
   GroupEntryArgs,
   GroupTableData,
@@ -112,12 +112,8 @@ export default function GroupsPage(props: GroupsPageProps) {
       setAddGroupError(null);
     } catch (e) {
       console.error(e);
-      if (instanceOfBreadboxCustomException(e)) {
-        if (typeof e.detail === "string") {
-          setAddGroupError(e.detail);
-        } else {
-          setAddGroupError(e.detail.message);
-        }
+      if (instanceOfErrorDetail(e)) {
+        setAddGroupError(e.message);
       } else {
         setAddGroupError("An unknown error occurred!");
       }
@@ -132,12 +128,8 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfBreadboxCustomException(e)) {
-        if (typeof e.detail === "string") {
-          setAddGroupError(e.detail);
-        } else {
-          setAddGroupError(e.detail.message);
-        }
+      if (instanceOfErrorDetail(e)) {
+        setAddGroupError(e.message);
       } else {
         setAddGroupError("An unknown error occurred!");
       }
@@ -180,11 +172,10 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfBreadboxCustomException(e)) {
+      if (instanceOfErrorDetail(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          addGroupEntryError:
-            typeof e.detail === "string" ? e.detail : e.detail.message,
+          addGroupEntryError: e.message,
         });
       } else {
         setGroupEntryErrors({
@@ -255,11 +246,10 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfBreadboxCustomException(e)) {
+      if (instanceOfErrorDetail(e)) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          updateGroupEntryError:
-            typeof e.detail === "string" ? e.detail : e.detail.message,
+          updateGroupEntryError: e.message,
         });
       } else {
         setGroupEntryErrors({

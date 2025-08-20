@@ -1,9 +1,9 @@
 import qs from "qs";
 import {
-  instanceOfBreadboxCustomException,
-  instanceOfErrorDetail,
+  ErrorDetail,
   ErrorTypeError,
-} from "@depmap/types/src/BreadboxErrorType";
+  instanceOfErrorDetail,
+} from "@depmap/types";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -15,6 +15,16 @@ export const cacheOn = () => {
 export const cacheOff = () => {
   useCache = false;
 };
+
+interface BreadboxCustomException {
+  detail: string | ErrorDetail; // also string type for backwards compatibility.
+}
+
+function instanceOfBreadboxCustomException(
+  object: any
+): object is BreadboxCustomException {
+  return typeof object === "object" && object !== null && "detail" in object;
+}
 
 async function request<T>(url: string, options: RequestInit): Promise<T> {
   let response: Response;
@@ -43,14 +53,18 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
       const json = await response.json();
-      if (
-        instanceOfBreadboxCustomException(json) &&
-        instanceOfErrorDetail(json.detail)
-      ) {
-        throw new ErrorTypeError({
-          errorType: json.detail.error_type,
-          message: json.detail.message,
-        });
+      if (instanceOfBreadboxCustomException(json)) {
+        throw new ErrorTypeError(
+          instanceOfErrorDetail(json.detail)
+            ? {
+                errorType: json.detail.error_type,
+                message: json.detail.message,
+              }
+            : {
+                errorType: "UNSPECIFIED_LEGACY_ERROR",
+                message: json.detail as string,
+              }
+        );
       } else {
         const message =
           typeof json === "object" && json !== null
