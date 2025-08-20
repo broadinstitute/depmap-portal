@@ -5,7 +5,7 @@ import {
   FeatureTypeUpdateArgs,
   SampleType,
   SampleTypeUpdateArgs,
-  instanceOfErrorDetail,
+  instanceOfBreadboxCustomException,
 } from "@depmap/types";
 
 import { FormModal, Spinner } from "@depmap/common-components";
@@ -100,8 +100,14 @@ export default function TypesPage(props: TypesPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setTypeSubmissionError(e.detail);
+      if (instanceOfBreadboxCustomException(e)) {
+        if (typeof e.detail === "string") {
+          setTypeSubmissionError(e.detail);
+        } else {
+          setTypeSubmissionError(e.detail.message);
+        }
+      } else {
+        setTypeSubmissionError("An unknown error occurred!");
       }
     }
     // In case of 400/500 error
@@ -161,8 +167,14 @@ export default function TypesPage(props: TypesPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setTypeSubmissionError(e.detail);
+      if (instanceOfBreadboxCustomException(e)) {
+        if (typeof e.detail === "string") {
+          setTypeSubmissionError(e.detail);
+        } else {
+          setTypeSubmissionError(e.detail.message);
+        }
+      } else {
+        setTypeSubmissionError("An unknown error occurred!");
       }
     }
     // In case of 400/500 error

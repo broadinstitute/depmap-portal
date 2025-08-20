@@ -1,4 +1,9 @@
 import qs from "qs";
+import {
+  instanceOfBreadboxCustomException,
+  instanceOfErrorDetail,
+  ErrorTypeError,
+} from "@depmap/types/src/BreadboxErrorType";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -34,24 +39,27 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
   // Handle 404 and other non-JSON responses gracefully
   if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error(`Endpoint not found: ${url}`);
-    }
-
     // Check if response is JSON before trying to parse
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      try {
-        const json = await response.json();
+      const json = await response.json();
+      if (
+        instanceOfBreadboxCustomException(json) &&
+        instanceOfErrorDetail(json.detail)
+      ) {
+        throw new ErrorTypeError({
+          errorType: json.detail.error_type,
+          message: json.detail.message,
+        });
+      } else {
         const message =
           typeof json === "object" && json !== null
             ? JSON.stringify(json)
             : `Request failed with status ${response.status}`;
         throw new Error(message);
-      } catch (parseErr) {
-        // If JSON parsing fails, fall back to status message
-        throw new Error(`Request failed with status ${response.status}`);
       }
+    } else if (response.status === 404) {
+      throw new Error(`Endpoint not found: ${url}`);
     } else {
       // Non-JSON error response (like HTML 404 page)
       throw new Error(`Request failed with status ${response.status}`);

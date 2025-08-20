@@ -8,7 +8,7 @@ import {
   DimensionTypeUpdateArgs,
   DimensionTypeWithCounts,
   Group,
-  instanceOfErrorDetail,
+  instanceOfBreadboxCustomException,
   TabularDataset,
 } from "@depmap/types";
 
@@ -451,8 +451,14 @@ export default function Datasets() {
       })
       .catch((e) => {
         console.error(e);
-        if (instanceOfErrorDetail(e)) {
-          setDatasetDeleteError(e.detail);
+        if (instanceOfBreadboxCustomException(e)) {
+          if (typeof e.detail === "string") {
+            setDatasetDeleteError(e.detail);
+          } else {
+            setDatasetDeleteError(e.detail.message);
+          }
+        } else {
+          setDatasetDeleteError("An unknown error occurred!");
         }
       });
 
@@ -479,8 +485,14 @@ export default function Datasets() {
           })
           .catch((e) => {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
-              setDimTypeDeleteError(e.detail);
+            if (instanceOfBreadboxCustomException(e)) {
+              if (typeof e.detail === "string") {
+                setDimTypeDeleteError(e.detail);
+              } else {
+                setDimTypeDeleteError(e.detail.message);
+              }
+            } else {
+              setDimTypeDeleteError("An unknown error occurred!");
             }
           });
       }
