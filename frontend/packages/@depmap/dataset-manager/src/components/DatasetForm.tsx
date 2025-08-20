@@ -165,7 +165,7 @@ export default function DatasetForm(props: DatasetFormProps) {
     const isCeleryTask = (x: any): x is CeleryTask => x.state !== undefined;
     if (isCeleryTask(res)) {
       setCompletedTask(res);
-    } else if (e instanceof ErrorTypeError) {
+    } else if (res instanceof ErrorTypeError) {
       // can occur when error happens before task passed to celery (ex: 'units' missing in 'continuous' col_type)
       setCompletedTask({
         id: "",

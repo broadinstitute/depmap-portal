@@ -22,7 +22,7 @@ function instanceOfBreadboxCustomException(
   return typeof object === "object" && object !== null && "detail" in object;
 }
 
-export function instanceOfErrorDetail(object: any): object is ErrorDetail {
+function instanceOfErrorDetail(object: any): object is ErrorDetail {
   return (
     typeof object === "object" &&
     object !== null &&
