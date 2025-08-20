@@ -58,6 +58,8 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
             : `Request failed with status ${response.status}`;
         throw new Error(message);
       }
+    } else if (response.status === 404) {
+      throw new Error(`Endpoint not found: ${url}`);
     } else {
       // Non-JSON error response (like HTML 404 page)
       throw new Error(`Request failed with status ${response.status}`);
