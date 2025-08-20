@@ -48,7 +48,7 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
         instanceOfErrorDetail(json.detail)
       ) {
         throw new ErrorTypeError({
-          name: json.detail.error_type,
+          errorType: json.detail.error_type,
           message: json.detail.message,
         });
       } else {

@@ -33,21 +33,26 @@ export function instanceOfErrorDetail(object: any): object is ErrorDetail {
 
 /* Custom Error class with error type */
 export class ErrorTypeError extends Error {
-  name: ErrorType;
+  name: string;
+
+  errorType: ErrorType;
 
   cause?: any;
 
   constructor({
-    name,
+    errorType,
     message,
     cause,
   }: {
-    name: ErrorType;
+    errorType: ErrorType;
     message: string;
     cause?: any;
   }) {
-    super(message);
-    this.name = name;
+    const fullMessage = `${errorType}: ${message}`;
+    super(fullMessage);
+    this.name = this.constructor.name;
+    this.errorType = errorType;
+    this.message = message;
     this.cause = cause;
   }
 }

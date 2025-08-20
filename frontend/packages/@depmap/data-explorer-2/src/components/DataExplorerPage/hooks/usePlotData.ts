@@ -82,7 +82,7 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
 
         // Distinguish Error from ErrorTypeError
         if (e instanceof ErrorTypeError) {
-          if (e.name === "LARGE_DATASET_READ") {
+          if (e.errorType === "LARGE_DATASET_READ") {
             // we happen to want to keep the default message but here we name it explicitly for visibility and maybe change it in the future
             setErrorMessage(e.message);
           } else {
