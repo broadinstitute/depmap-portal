@@ -55,13 +55,12 @@ const GeneCharacterizationPanel = ({
 
   // After a tile loads, we run a regex to find all the <script> tags within
   // it and evaluate them.
-  const evaluateAllScripts = async (html: string) => {
+  const evaluateAllScripts = (html: string) => {
     // An `elementId` variable needs to be in scope even though it appears to
     // be unused. It's actually used interally by the scripts when they're
     // eval'd below.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // Inside AsyncTile's data fetching logic
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
+    let elementId;
 
     const scriptsRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gm;
     let match;
