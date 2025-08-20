@@ -16,6 +16,13 @@ interface GeneTeaMainContentProps {
 }
 
 function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
+  if (tab === "all-matching-terms") {
+    return (
+      <div style={{ padding: "25px" }}>
+        <h2>Coming soon!</h2>
+      </div>
+    );
+  }
   const {
     geneSymbolSelections,
     validGeneSymbols,

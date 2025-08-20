@@ -111,7 +111,7 @@ const TermOptionsPanel: React.FC = () => {
         <NumberInput
           name="maxFDR"
           label="FDR Threshold"
-          // min={0}
+          min={0}
           value={localMaxFDR}
           setValue={setLocalMaxFDR}
           defaultValue={DEFAULTS.maxFDR}
@@ -120,7 +120,7 @@ const TermOptionsPanel: React.FC = () => {
         <NumberInput
           name="effectSizeThreshold"
           label="Effect Size Threshold"
-          // min={0}
+          min={0}
           value={localEffectSizeThreshold}
           setValue={setLocalEffectSizeThreshold}
           defaultValue={DEFAULTS.effectSizeThreshold}
