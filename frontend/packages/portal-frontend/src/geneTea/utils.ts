@@ -43,3 +43,20 @@ export const tableColumns = [
     minWidth: 80,
   },
 ];
+
+export function groupStringsByCondition(
+  strings: string[],
+  condition: (str: string) => boolean
+): [string[], string[]] {
+  return strings.reduce(
+    (lists: [string[], string[]], currentString: string) => {
+      if (condition(currentString)) {
+        lists[0].push(currentString); // Add to the first list if condition is true
+      } else {
+        lists[1].push(currentString); // Add to the second list if condition is false
+      }
+      return lists;
+    },
+    [[], []] // Initialize with two empty string arrays
+  );
+}

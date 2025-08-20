@@ -2,6 +2,7 @@ import { cached, legacyPortalAPI } from "@depmap/api";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 import { useEffect, useMemo, useState } from "react";
 import { SortOption } from "../types";
+import { groupStringsByCondition } from "../utils";
 
 // TODO: picked these numbers at random. Figure out what they should actually be.
 const MIN_SELECTION = 3;
@@ -39,10 +40,26 @@ function useData(
         try {
           console.log(maxTopTerms);
           console.log(effectSizeThreshold);
+
+          // HACK: GeneTEA returns an error if any searchTerm is less
+          // than 2 characters long. Instead of erroring completely,
+          // we want to treat these search terms the same as any other invalid
+          //  term (i.e. ["SOX10", "KRAS", "NRAS", "NOT_A_GENE"] will still
+          // return a response with invalid_genes = ["NOT_A_GENE"], so ["SOX10", "KRAS", "NRAS", "A"]
+          // will still return a response with invalid_genes = ["A"]). Separate
+          // our definitely invalid less than 2 characters out from the possiblyValidTerms
+          // before sending a request to GeneTEA.
+          const [
+            definitelyInvalidTerms,
+            possiblyValidTerms,
+          ] = groupStringsByCondition(
+            Array.from(searchTerms),
+            (term) => term.length < 2
+          );
           const fetchedData = await cached(
             legacyPortalAPI
           ).fetchGeneTeaEnrichmentExperimental(
-            [...searchTerms],
+            possiblyValidTerms,
             doGroupTerms,
             sortBy,
             maxFDR,
@@ -52,7 +69,14 @@ function useData(
             // effectSizeThreshold
           );
           setData(fetchedData);
-          handleSetInvalidGenes(new Set(fetchedData.invalidGenes));
+
+          // See HACK comment above for an explanation of why we do this.
+          const invalidGenes = [
+            ...definitelyInvalidTerms,
+            ...fetchedData.invalidGenes,
+          ];
+
+          handleSetInvalidGenes(new Set(invalidGenes));
           handleSetValidGenes(new Set(fetchedData.validGenes));
         } catch (e) {
           setError(true);
