@@ -39,18 +39,29 @@ const GeneCharacterizationPanel = ({
     })();
   }, [symbol]);
 
+  useEffect(() => {
+    const handler = () =>
+      document.querySelectorAll(".js-plotly-plot").forEach((el) => {
+        window.Plotly?.Plots?.resize(el as HTMLElement);
+      });
+    window.addEventListener("changeTab:characterization", handler);
+    return () =>
+      window.removeEventListener("changeTab:characterization", handler);
+  }, []);
+
   if (!characterizations) {
     return <div>Loading...</div>;
   }
 
   // After a tile loads, we run a regex to find all the <script> tags within
   // it and evaluate them.
-  const evaluateAllScripts = (html: string) => {
+  const evaluateAllScripts = async (html: string) => {
     // An `elementId` variable needs to be in scope even though it appears to
     // be unused. It's actually used interally by the scripts when they're
     // eval'd below.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    let elementId;
+    // Inside AsyncTile's data fetching logic
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // 2 second delay
 
     const scriptsRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gm;
     let match;
@@ -70,6 +81,11 @@ const GeneCharacterizationPanel = ({
       lazyBehavior="keepMounted"
       queryParamName="characterization"
       orientation="vertical"
+      onChange={() => {
+        document.querySelectorAll(".js-plotly-plot").forEach((el) => {
+          window.Plotly?.Plots?.resize(el as HTMLElement);
+        });
+      }}
     >
       <TabList className={styles.TabList}>
         {characterizations.map((c: any) => (
