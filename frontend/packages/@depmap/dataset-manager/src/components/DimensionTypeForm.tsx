@@ -7,7 +7,7 @@ import { RJSFSchema, UiSchema } from "@rjsf/utils";
 import { updateDimensionTypeSchema } from "../models/updateDimensionTypeSchema";
 import {
   DimensionTypeWithCounts,
-  instanceOfBreadboxCustomException,
+  ErrorTypeError,
   TabularDataset,
 } from "@depmap/types";
 import { submitButtonIsDisabled } from "../../utils/disableSubmitButton";
@@ -119,8 +119,8 @@ export default function DimensionTypeForm(props: DimensionTypeFormProps) {
     } catch (e: any) {
       console.log(e);
       setHasError(true);
-      if (instanceOfBreadboxCustomException(e)) {
-        setSubmissionMsg(e.detail as string);
+      if (e instanceof ErrorTypeError) {
+        setSubmissionMsg(e.message);
       } else {
         setSubmissionMsg("An unknown error occurred!");
       }

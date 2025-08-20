@@ -5,8 +5,8 @@ import { useState, useEffect } from "react";
 import {
   Dataset,
   DatasetUpdateArgs,
+  ErrorTypeError,
   Group,
-  instanceOfBreadboxCustomException,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
 import { RegistryFieldsType, RJSFSchema, UiSchema } from "@rjsf/utils";
@@ -140,14 +140,8 @@ export default function DatasetForm(props: DatasetEditFormProps) {
           } catch (e) {
             console.error(e);
             setHasError(true);
-            // new bbapi seems to throw a new error class so unlikely to hit if statement. If statement is kept for backwards compatibility for old functionality
-            // TODO: Will need to define error type
-            if (instanceOfBreadboxCustomException(e)) {
-              if (typeof e.detail === "string") {
-                setSubmissionMsg(e.detail);
-              } else {
-                setSubmissionMsg(e.detail.message);
-              }
+            if (e instanceof ErrorTypeError) {
+              setSubmissionMsg(e.message);
             } else {
               setSubmissionMsg("An unknown error occurred!");
             }
