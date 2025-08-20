@@ -35,8 +35,6 @@ export function instanceOfErrorDetail(object: any): object is ErrorDetail {
 export class ErrorTypeError extends Error {
   name: ErrorType;
 
-  message: string;
-
   cause?: any;
 
   constructor({
@@ -48,9 +46,8 @@ export class ErrorTypeError extends Error {
     message: string;
     cause?: any;
   }) {
-    super();
+    super(message);
     this.name = name;
-    this.message = message;
     this.cause = cause;
   }
 }
