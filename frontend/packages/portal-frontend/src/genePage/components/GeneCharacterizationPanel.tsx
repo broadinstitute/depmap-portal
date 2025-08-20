@@ -80,6 +80,8 @@ const GeneCharacterizationPanel = ({
       lazyBehavior="keepMounted"
       queryParamName="characterization"
       orientation="vertical"
+      // HACK: Use the onChange event to resize plots that may have been improperly
+      // sized if the window size change while the plots were loaded on a hidden tab.
       onChange={() => {
         document.querySelectorAll(".js-plotly-plot").forEach((el) => {
           window.Plotly?.Plots?.resize(el as HTMLElement);
