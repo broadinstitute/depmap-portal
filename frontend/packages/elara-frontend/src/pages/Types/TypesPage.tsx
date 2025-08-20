@@ -5,7 +5,7 @@ import {
   FeatureTypeUpdateArgs,
   SampleType,
   SampleTypeUpdateArgs,
-  instanceOfErrorDetail,
+  ErrorTypeError,
 } from "@depmap/types";
 
 import { FormModal, Spinner } from "@depmap/common-components";
@@ -100,7 +100,7 @@ export default function TypesPage(props: TypesPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setTypeSubmissionError(e.message);
       } else {
         setTypeSubmissionError("An unknown error occurred!");
@@ -163,7 +163,7 @@ export default function TypesPage(props: TypesPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setTypeSubmissionError(e.message);
       } else {
         setTypeSubmissionError("An unknown error occurred!");

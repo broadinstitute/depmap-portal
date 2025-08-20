@@ -3,7 +3,7 @@ import {
   Group,
   GroupEntry,
   AccessType,
-  instanceOfErrorDetail,
+  ErrorTypeError,
   GroupArgs,
   GroupEntryArgs,
   GroupTableData,
@@ -112,7 +112,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       setAddGroupError(null);
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setAddGroupError(e.message);
       } else {
         setAddGroupError("An unknown error occurred!");
@@ -128,7 +128,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setAddGroupError(e.message);
       } else {
         setAddGroupError("An unknown error occurred!");
@@ -172,7 +172,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setGroupEntryErrors({
           ...groupEntryErrors,
           addGroupEntryError: e.message,
@@ -246,7 +246,7 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setGroupEntryErrors({
           ...groupEntryErrors,
           updateGroupEntryError: e.message,

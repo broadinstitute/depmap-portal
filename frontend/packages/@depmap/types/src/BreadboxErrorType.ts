@@ -12,15 +12,6 @@ export interface ErrorDetail {
   message: string;
 }
 
-export function instanceOfErrorDetail(object: any): object is ErrorDetail {
-  return (
-    typeof object === "object" &&
-    object !== null &&
-    "error_type" in object &&
-    "message" in object
-  );
-}
-
 /* Custom Error class with error type */
 export class ErrorTypeError extends Error {
   name: string;

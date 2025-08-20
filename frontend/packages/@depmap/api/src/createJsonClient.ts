@@ -1,9 +1,5 @@
 import qs from "qs";
-import {
-  ErrorDetail,
-  ErrorTypeError,
-  instanceOfErrorDetail,
-} from "@depmap/types";
+import { ErrorDetail, ErrorTypeError } from "@depmap/types";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -24,6 +20,15 @@ function instanceOfBreadboxCustomException(
   object: any
 ): object is BreadboxCustomException {
   return typeof object === "object" && object !== null && "detail" in object;
+}
+
+export function instanceOfErrorDetail(object: any): object is ErrorDetail {
+  return (
+    typeof object === "object" &&
+    object !== null &&
+    "error_type" in object &&
+    "message" in object
+  );
 }
 
 async function request<T>(url: string, options: RequestInit): Promise<T> {
@@ -62,7 +67,7 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
               }
             : {
                 errorType: "UNSPECIFIED_LEGACY_ERROR",
-                message: json.detail as string,
+                message: json.detail,
               }
         );
       } else {

@@ -8,7 +8,7 @@ import {
   DimensionTypeUpdateArgs,
   DimensionTypeWithCounts,
   Group,
-  instanceOfErrorDetail,
+  ErrorTypeError,
   TabularDataset,
 } from "@depmap/types";
 
@@ -451,7 +451,7 @@ export default function Datasets() {
       })
       .catch((e) => {
         console.error(e);
-        if (instanceOfErrorDetail(e)) {
+        if (e instanceof ErrorTypeError) {
           setDatasetDeleteError(e.message);
         } else {
           setDatasetDeleteError("An unknown error occurred!");
@@ -481,7 +481,7 @@ export default function Datasets() {
           })
           .catch((e) => {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
+            if (e instanceof ErrorTypeError) {
               setDimTypeDeleteError(e.message);
             } else {
               setDimTypeDeleteError("An unknown error occurred!");
