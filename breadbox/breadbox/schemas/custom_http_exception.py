@@ -1,8 +1,9 @@
-from typing import Any, Dict
+from typing import Optional
 from typing_extensions import Annotated, Doc
 from fastapi import HTTPException, status
 from pydantic import BaseModel
 from pydantic_settings import SettingsConfigDict
+import enum
 
 
 class HTTPError(BaseModel):
@@ -73,9 +74,54 @@ class CeleryConnectionError(HTTPException):
         super().__init__(error_code, msg)
 
 
-class LargeDatasetReadError(HTTPException):
+# TODO: Ideally we would create ErrorTypes for the other custom exceptions defined above but for now reduce scope
+
+# NOTE: Error type enums shared with frontend
+class ErrorType(enum.Enum):
+    DATASET_NOT_FOUND = "DATASET_NOT_FOUND"
+    FEATURE_NOT_FOUND = "FEATURE_NOT_FOUND"
+    SAMPLE_NOT_FOUND = "SAMPLE_NOT_FOUND"
+    DIMENSION_TYPE_NOT_FOUND = "DIMENSION_TYPE_NOT_FOUND"
+    LARGE_DATASET_READ = "LARGE_DATASET_READ"
+
+
+class ErrorTypeDetail(BaseModel):
+    message: str
+    error_type: ErrorType
+
+
+class BaseErrorTypeException(HTTPException):
+    def __init__(self, status_code: int, message: str, error_type: ErrorType):
+        detail = ErrorTypeDetail(message=message, error_type=error_type).model_dump(
+            mode="json"
+        )
+        super().__init__(status_code=status_code, detail=detail)
+
+
+class DatasetNotFoundError(BaseErrorTypeException):
+    def __init__(self, msg):
+        super().__init__(404, msg, ErrorType.DATASET_NOT_FOUND)
+
+
+class DimensionTypeNotFoundError(BaseErrorTypeException):
+    def __init__(self, msg):
+        super().__init__(404, msg, ErrorType.DIMENSION_TYPE_NOT_FOUND)
+
+
+class FeatureNotFoundError(BaseErrorTypeException):
+    def __init__(self, msg):
+        super().__init__(404, msg, ErrorType.FEATURE_NOT_FOUND)
+
+
+class SampleNotFoundError(BaseErrorTypeException):
+    def __init__(self, msg):
+        super().__init__(404, msg, ErrorType.SAMPLE_NOT_FOUND)
+
+
+class LargeDatasetReadError(BaseErrorTypeException):
     def __init__(self, features_length, samples_length):
+        msg = f"This requires fetching data for {samples_length} samples and {features_length} features which is too large to be processed at once. This is not supported at this time."
+
         super().__init__(
-            status_code=507,
-            detail=f"This requires fetching data for {samples_length} samples and {features_length} features which is too large to be processed at once. This is not supported at this time.",
+            status_code=507, message=msg, error_type=ErrorType.LARGE_DATASET_READ
         )

@@ -122,7 +122,7 @@ def format_task_status(task):
         elif isinstance(task.result, FileValidationError):
             message = str(task.result)
         elif isinstance(task.result, LargeDatasetReadError):
-            message = str(task.result.detail)
+            message = str(task.result.detail["message"])  # type: ignore
         elif isinstance(task.result, HTTPException):
             message = {
                 "status_code": str(task.result.status_code),
