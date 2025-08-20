@@ -39,10 +39,6 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
   // Handle 404 and other non-JSON responses gracefully
   if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error(`Endpoint not found: ${url}`);
-    }
-
     // Check if response is JSON before trying to parse
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
