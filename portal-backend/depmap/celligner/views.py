@@ -50,7 +50,6 @@ def _flatten_subtype_lists(grp):
 
 def _format_alignments(alignment: pd.DataFrame):
     return {
-        "profileId": alignment["profileId"].values.tolist(),
         "modelConditionId": alignment["modelConditionId"].values.tolist(),
         # sampleId could be a model or a tumor id
         "sampleId": alignment["sampleId"].values.tolist(),
@@ -75,7 +74,6 @@ def view_celligner():
     celligner_alignment = pd.read_csv(
         path,
         dtype={
-            "profileId": str,
             "modelConditionId": str,
             "sampleId": str,
             "displayName": str,
@@ -115,14 +113,14 @@ def view_celligner():
 
 @blueprint.route("/distance_cell_line_to_tumors")
 def celligner_distance_cell_line_to_tumors():
-    profile_id = request.args.get("profileId")
+    model_condition_id = request.args.get("modelConditionId")
     k_neighbors = int(request.args["kNeighbors"])
 
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     path = os.path.join(source_dir, DIR, ALIGNMENT_FILE)
     celligner_alignment = pd.read_csv(path)
 
-    col_index = CellignerDistanceColIndex.get_by_profile_id(profile_id)
+    col_index = CellignerDistanceColIndex.get_by_model_condition_id(model_condition_id)
 
     col = np.array(
         hdf5_utils.get_col_of_values(
@@ -132,7 +130,7 @@ def celligner_distance_cell_line_to_tumors():
     top_k_indexes = np.argsort(col)[:k_neighbors].tolist()
     top_k_row_indexes = CellignerDistanceRowIndex.get_by_indexes(top_k_indexes)
     top_k_lineages = celligner_alignment[
-        celligner_alignment["profileId"].isin(
+        celligner_alignment["modelConditionId"].isin(
             [row_index.tumor_sample_id for row_index in top_k_row_indexes]
         )
     ].lineage

@@ -12,7 +12,7 @@ export function getCellignerDistancesToTumors(
 }
 
 export function getCellignerDistancesToCellLine(
-  profileId: string,
+  modelConditionId: string,
   kNeighbors: number
 ) {
   return getJson<{
@@ -20,7 +20,7 @@ export function getCellignerDistancesToCellLine(
     most_common_lineage: string;
     color_indexes: Array<number>;
   }>(`/celligner/distance_cell_line_to_tumors`, {
-    profileId,
+    modelConditionId,
     kNeighbors,
   });
 }
