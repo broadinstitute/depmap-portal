@@ -40,10 +40,7 @@ const GeneCharacterizationPanel = ({
   }, [symbol]);
 
   useEffect(() => {
-    const handler = () =>
-      document.querySelectorAll(".js-plotly-plot").forEach((el) => {
-        window.Plotly?.Plots?.resize(el as HTMLElement);
-      });
+    const handler = () => window.dispatchEvent(new Event("resize"));
     window.addEventListener("changeTab:characterization", handler);
     return () =>
       window.removeEventListener("changeTab:characterization", handler);
@@ -82,11 +79,7 @@ const GeneCharacterizationPanel = ({
       orientation="vertical"
       // HACK: Use the onChange event to resize plots that may have been improperly
       // sized if the window size change while the plots were loaded on a hidden tab.
-      onChange={() => {
-        document.querySelectorAll(".js-plotly-plot").forEach((el) => {
-          window.Plotly?.Plots?.resize(el as HTMLElement);
-        });
-      }}
+      onChange={() => window.dispatchEvent(new Event("resize"))}
     >
       <TabList className={styles.TabList}>
         {characterizations.map((c: any) => (
