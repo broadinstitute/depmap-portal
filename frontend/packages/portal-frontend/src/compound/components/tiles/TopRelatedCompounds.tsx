@@ -24,17 +24,19 @@ export const TopRelatedCompounds = ({
     <div>
       <h3 className={styles.tileDatasetTitle}>{datasetName}</h3>
       <table style={{ width: "100%", tableLayout: "fixed" }}>
-        {" "}
         {/* use fixed layout so column widths are based on width/maxWidth, not content size */}
         <thead>
           <tr>
             {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-            <th rowSpan={2} style={{ textAlign: "left", padding: "8px" }} />
+            <th
+              rowSpan={2}
+              style={{ textAlign: "left", padding: "8px", width: "25%" }}
+            />
             {dataTypes.map((dataType) => (
               <th
                 key={dataType}
                 colSpan={topGeneTargets.length}
-                style={{ textAlign: "center", padding: "8px" }}
+                className={styles.columnStyle}
               >
                 {dataType}
               </th>
@@ -45,12 +47,7 @@ export const TopRelatedCompounds = ({
               topGeneTargets.map((target) => (
                 <th
                   key={`${dataType}-${target}`}
-                  className={styles.ellipsisStyle}
-                  style={{
-                    textAlign: "center",
-                    padding: "8px",
-                    maxWidth: "30%",
-                  }}
+                  className={`${styles.ellipsisStyle} ${styles.columnStyle}`}
                   title={target} // Tooltip for full name
                 >
                   {target}
@@ -63,20 +60,20 @@ export const TopRelatedCompounds = ({
           {topCompoundCorrelates.map((compound) => (
             <tr key={compound}>
               <td
-                className={styles.ellipsisStyle} // hover for full name
-                style={{
-                  padding: "4px",
-                  maxWidth: "30%",
-                }}
-                title={compound}
+                className={`${styles.ellipsisStyle} ${styles.cellStyle}`}
+                title={compound} // hover for full name
               >
-                <a
-                  href={`${urlPrefix}/compound/${compound}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {compound === entityLabel ? <b>{compound}</b> : compound}
-                </a>
+                {compound === entityLabel ? (
+                  <b>{compound}</b>
+                ) : (
+                  <a
+                    href={`${urlPrefix}/compound/${compound}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {compound}
+                  </a>
+                )}
               </td>
               {dataTypes.flatMap((dataType) =>
                 topGeneTargets.map((target) => (
