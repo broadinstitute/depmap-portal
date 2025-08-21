@@ -35,7 +35,6 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     handleSetValidGeneSymbols,
     handleSetInValidGeneSymbols,
     handleSetSelectedTableRows,
-    handleClearSelectedTableRows,
   } = useGeneTeaContext();
 
   const plotSelections = useMemo(
@@ -153,7 +152,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
         <p>Terms selected in the plot will appear checked in this table.</p>
       </div>
       <div>
-        {rawData && rawData.allEnrichedTerms && (
+        {rawData && rawData.allEnrichedTerms && rawData.enrichedTerms && (
           <GeneTeaTable
             error={error}
             isLoading={isLoading}
@@ -180,7 +179,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
             selectedTableRows={
               selectedTableRows.size > 0
                 ? selectedTableRows
-                : new Set(rawData.allEnrichedTerms.term)
+                : new Set(rawData.enrichedTerms?.term)
             }
             handleChangeSelection={(selections: string[]) =>
               handleSetSelectedTableRows(new Set(selections))

@@ -24,6 +24,10 @@
     display: inline-block;
     margin-right: 8px;
     border-radius: 3px;
+
+    box-sizing: border-box;
+    overflow-y: scroll;
+    resize: vertical;
   }
 
   .multiSelectTextareaBorder {
@@ -65,14 +69,10 @@
     }
 
     .multiSelectTextarea {
-      min-height: 80px;
-      max-height: 200px;
       width: 100%;
       border: none;
       outline: none;
       resize: none;
-      box-sizing: border-box;
-      overflow-y: auto;
     }
   }
 }

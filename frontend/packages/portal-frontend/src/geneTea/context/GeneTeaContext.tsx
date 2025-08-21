@@ -16,7 +16,7 @@ export interface GeneTeaContextType {
   maxMatchingOverall: number | null;
   handleSetMaxMatchingOverall: (v: any) => void;
   maxTopTerms: number | null;
-  handleSetMaxTopTerms: (v: number | null) => void;
+  handleSetMaxTopTerms: (v: any) => void;
   maxFDR: number;
   handleSetMaxFDR: (v: number) => void;
   doGroupTerms: boolean;
@@ -183,8 +183,19 @@ export function GeneTeaContextProvider({
 
   const [maxTopTerms, setMaxTopTerms] = useState<number | null>(10);
   const handleSetMaxTopTerms = useCallback(
-    (v: number | null) => setMaxTopTerms(v),
-    []
+    (v: any) => {
+      setMaxTopTerms((prevVal: number | null) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
+
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTableRows();
+        }
+        return nextState;
+      });
+    },
+    [handleClearSelectedTableRows]
   );
 
   const [maxFDR, setMaxFDR] = useState<number>(0.05);

@@ -74,7 +74,7 @@ const MultiSelectTextarea: React.FC = () => {
               ? "Enter items, separated by commas or spaces, then press Enter"
               : undefined
           }
-          rows={10}
+          rows={5}
         />
       </div>
       {inValidGeneSymbols.size > 0 && (
