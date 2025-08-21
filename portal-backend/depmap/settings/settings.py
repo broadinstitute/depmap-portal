@@ -201,6 +201,10 @@ class FeatureFlags:
     def data_explorer_2_experimental_settings(self):
         return self.is_skyros()
 
+    @property
+    def show_compound_correlations(self):
+        return self.is_skyros()
+
 
 def make_log_config(log_dir):
     return {

@@ -114,7 +114,10 @@ def format_dep_dist_caption(
 
 
 def get_order(
-    has_predictability: bool, has_heatmap: bool, show_enriched_lineages: bool
+    has_predictability: bool,
+    has_heatmap: bool,
+    show_enriched_lineages: bool,
+    show_compound_correlations: bool,
 ):
     # hardcoded approximate heights of the different cards.  These values are used for sorting cards into columns such that column heights are as close as they can be
     tile_large = 650
@@ -131,9 +134,12 @@ def get_order(
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
-        CompoundTileEnum.correlated_dependencies.value: tile_large,  # TBD: Actually we want to group with CompoundTileEnum.correlations
-        CompoundTileEnum.related_compounds.value: tile_medium,
     }
+    if show_compound_correlations:
+        anywhere_cards[
+            CompoundTileEnum.correlated_dependencies.value
+        ] = tile_large  # TBD: Actually we want to group with CompoundTileEnum.correlations
+        anywhere_cards[CompoundTileEnum.related_compounds.value] = tile_medium
 
     if has_heatmap:
         anywhere_cards[CompoundTileEnum.heatmap.value] = tile_medium

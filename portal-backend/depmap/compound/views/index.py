@@ -115,6 +115,9 @@ def view_compound(name):
     ) or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
         DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
     )
+    show_compound_correlations = current_app.config[
+        "ENABLED_FEATURES"
+    ].show_compound_correlations
 
     return render_template(
         "compounds/index.html",
@@ -134,6 +137,7 @@ def view_compound(name):
             has_predictability,
             has_heatmap=show_heatmap_tab,
             show_enriched_lineages=show_enriched_lineages,
+            show_compound_correlations=show_compound_correlations,
         ),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         # If len(dose_curve_options_new) is 0, hide the tab in the index.html
@@ -144,6 +148,7 @@ def view_compound(name):
         compound_units=compound.units,
         show_heatmap_tab=show_heatmap_tab,
         show_enriched_lineages=show_enriched_lineages,
+        show_compound_correlations=show_compound_correlations,
     )
 
 
