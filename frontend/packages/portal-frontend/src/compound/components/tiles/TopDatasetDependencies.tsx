@@ -4,6 +4,7 @@ import { DependencyMeter } from "./DependencyMeter";
 import { toStaticUrl } from "@depmap/globals";
 import styles from "../../styles/CorrelationTile.scss";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
+import { Tooltip } from "@depmap/common-components";
 
 interface TopDatasetDependencyProps {
   featureId: string;
@@ -49,6 +50,7 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                     Plot
                   </a>
                 </td>
+
                 <td className={styles.targetIconContainer}>
                   {geneTargets.includes(datasetCor.other_dimension_label) ? (
                     <img
@@ -59,16 +61,22 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                   ) : (
                     <p style={{ paddingLeft: "12px" }} />
                   )}
-                  <a
-                    className={styles.ellipsisStyle}
-                    href={`${urlPrefix}/${featureType}/${datasetCor.other_dimension_label}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    title={datasetCor.other_dimension_label}
+                  <Tooltip
+                    id="correlated-gene-tooltip"
+                    content={datasetCor.other_dimension_label}
+                    placement="top"
                   >
-                    {datasetCor.other_dimension_label}
-                  </a>
+                    <a
+                      className={styles.ellipsisStyle}
+                      href={`${urlPrefix}/${featureType}/${datasetCor.other_dimension_label}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {datasetCor.other_dimension_label}
+                    </a>
+                  </Tooltip>
                 </td>
+
                 <td>
                   <td style={{ paddingRight: "3rem" }}>
                     {datasetCor.correlation.toFixed(2)}
