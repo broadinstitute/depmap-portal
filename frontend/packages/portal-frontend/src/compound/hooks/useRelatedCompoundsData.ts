@@ -13,6 +13,13 @@ interface TargetCorrelatedCompound {
   other_dimension_label: string;
 }
 
+interface TopCompoundTargetsCorrelates {
+  [compoundName: string]: {
+    CRISPR: { [targetName: string]: number };
+    RNAi: { [targetName: string]: number };
+  };
+}
+
 function getTopCorrelatedData(
   allCorrelatedCompounds: TargetCorrelatedCompound[],
   datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi">
@@ -26,12 +33,7 @@ function getTopCorrelatedData(
 
   // filter all correlates by those in topTargets and topCompound
   const filteredTopCorrelates = [];
-  const topCorrelates: {
-    [compoundName: string]: {
-      CRISPR: { [targetName: string]: number };
-      RNAi: { [targetName: string]: number };
-    };
-  } = {};
+  const topCorrelates: TopCompoundTargetsCorrelates = {};
   for (let i = 0; i < allCorrelatedCompounds.length; i++) {
     const correlatedCompound = allCorrelatedCompounds[i];
 
@@ -79,9 +81,10 @@ function useRelatedCompoundsData(
   const [hasError, setHasError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [datasetName, setDatasetName] = useState<string>("");
-  const [targetCorrelationData, setTargetCorrelationData] = useState<
-    any | null
-  >(null);
+  const [
+    targetCorrelationData,
+    setTargetCorrelationData,
+  ] = useState<TopCompoundTargetsCorrelates | null>(null);
   const [topGeneTargets, setTopGeneTargets] = useState<string[]>([]);
   const [topCompoundCorrelates, setTopCompoundCorrelates] = useState<string[]>(
     []

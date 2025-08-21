@@ -25,6 +25,15 @@ const RelatedCompoundsTile = ({
   } = useRelatedCompoundsData(datasetId, entityLabel, datasetToDataTypeMap);
   const dataTypes = Object.values(datasetToDataTypeMap);
 
+  // If there is no data, don't show tile
+  if (
+    (!targetCorrelationData ||
+      Object.keys(targetCorrelationData).length === 0) &&
+    !isLoading
+  ) {
+    return null;
+  }
+
   return (
     <article className="card_wrapper">
       <div className="card_border container_fluid">
