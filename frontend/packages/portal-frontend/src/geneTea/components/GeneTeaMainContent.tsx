@@ -1,10 +1,10 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "../styles/GeneTea.scss";
 import GeneTeaTable from "./GeneTeaTable";
 import PlotSelections from "./PlotSelections";
 import PlotSection from "./PlotSection";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { tableColumns } from "../utils";
+import { groupStringsByCondition, tableColumns } from "../utils";
 import useData from "../hooks/useData";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { DataExplorerContext } from "@depmap/types";
@@ -17,13 +17,6 @@ interface GeneTeaMainContentProps {
 
 function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   // NOTE: this is tempoary during development.
-  if (tab === "all-matching-terms") {
-    return (
-      <div style={{ padding: "25px" }}>
-        <h2>Coming soon!</h2>
-      </div>
-    );
-  }
 
   const {
     geneSymbolSelections,
@@ -37,10 +30,36 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     maxMatchingOverall,
     minMatchingQuery,
     effectSizeThreshold,
-    setGeneSymbolSelections,
-    setValidGeneSymbols,
-    setInValidGeneSymbols,
+    selectedTableRows,
+    handleSetGeneSymbolSelections,
+    handleSetValidGeneSymbols,
+    handleSetInValidGeneSymbols,
+    handleSetSelectedTableRows,
+    handleClearSelectedTableRows,
   } = useGeneTeaContext();
+
+  const plotSelections = useMemo(
+    () => (selectedTableRows.size > 0 ? selectedTableRows : new Set([])),
+    [selectedTableRows]
+  );
+  console.log(plotSelections);
+
+  // HACK: GeneTEA returns an error if any searchTerm is less
+  // than 2 characters long. Instead of erroring completely,
+  // we want to treat these search terms the same as any other invalid
+  //  term (i.e. ["SOX10", "KRAS", "NRAS", "NOT_A_GENE"] will still
+  // return a response with invalid_genes = ["NOT_A_GENE"], so ["SOX10", "KRAS", "NRAS", "A"]
+  // will still return a response with invalid_genes = ["A"]). Separate
+  // our definitely invalid less than 2 characters out from the possiblyValidTerms
+  // before sending a request to GeneTEA.
+  const [specialCaseInvalidGenes, possiblyValidGenes] = useMemo(
+    () =>
+      groupStringsByCondition(
+        Array.from(geneSymbolSelections),
+        (term) => term.length < 2
+      ),
+    [geneSymbolSelections]
+  );
 
   const {
     isLoading,
@@ -50,7 +69,9 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     barChartData,
     heatmapXAxisLabel,
   } = useData(
-    geneSymbolSelections,
+    plotSelections,
+    specialCaseInvalidGenes,
+    possiblyValidGenes,
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
@@ -60,19 +81,9 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     maxMatchingOverall,
     minMatchingQuery,
     effectSizeThreshold,
-    setInValidGeneSymbols,
-    setValidGeneSymbols
+    handleSetInValidGeneSymbols,
+    handleSetValidGeneSymbols
   );
-
-  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
-    new Set()
-  );
-
-  useEffect(() => {
-    if (rawData && rawData.allEnrichedTerms) {
-      setSelectedTableRows(new Set(rawData.allEnrichedTerms.term));
-    }
-  }, [rawData]);
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
@@ -88,6 +99,13 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     }
   }, [validGeneSymbols]);
 
+  if (tab === "all-matching-terms") {
+    return (
+      <div style={{ padding: "25px" }}>
+        <h2>Coming soon!</h2>
+      </div>
+    );
+  }
   // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>
@@ -118,9 +136,9 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
                   handleClickSaveSelectionAsContext
                 }
                 onClickClearSelection={() => {
-                  setInValidGeneSymbols(new Set([]));
-                  setValidGeneSymbols(new Set([]));
-                  setGeneSymbolSelections(new Set([]));
+                  handleSetInValidGeneSymbols(new Set([]));
+                  handleSetValidGeneSymbols(new Set([]));
+                  handleSetGeneSymbolSelections(new Set([]));
                 }}
               />
             </div>
@@ -159,9 +177,13 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
             tableColumns={tableColumns}
             columnOrdering={tableColumns.map((col) => col.accessor)}
             defaultCols={tableColumns.map((col) => col.accessor)}
-            selectedTableRows={selectedTableRows}
+            selectedTableRows={
+              selectedTableRows.size > 0
+                ? selectedTableRows
+                : new Set(rawData.allEnrichedTerms.term)
+            }
             handleChangeSelection={(selections: string[]) =>
-              setSelectedTableRows(new Set(selections))
+              handleSetSelectedTableRows(new Set(selections))
             }
           />
         )}

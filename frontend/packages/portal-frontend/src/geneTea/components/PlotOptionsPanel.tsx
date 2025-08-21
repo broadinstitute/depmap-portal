@@ -16,11 +16,11 @@ const PlotOptionsPanel: React.FC = () => {
 
   const {
     doClusterTerms,
-    setDoClusterTerms,
+    handleSetDoClusterTerms,
     doClusterGenes,
-    setDoClusterGenes,
+    handleSetDoClusterGenes,
     doGroupTerms,
-    setDoGroupTerms,
+    handleSetDoGroupTerms,
   } = useGeneTeaContext();
 
   const checkScrollBar = useCallback(() => {
@@ -45,7 +45,7 @@ const PlotOptionsPanel: React.FC = () => {
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
         <ToggleSwitch
           value={doClusterTerms}
-          onChange={setDoClusterTerms}
+          onChange={handleSetDoClusterTerms}
           options={[
             { label: "", value: false },
             { label: "", value: true },
@@ -56,7 +56,7 @@ const PlotOptionsPanel: React.FC = () => {
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
         <ToggleSwitch
           value={doClusterGenes}
-          onChange={setDoClusterGenes}
+          onChange={handleSetDoClusterGenes}
           options={[
             { label: "", value: false },
             { label: "", value: true },
@@ -67,7 +67,7 @@ const PlotOptionsPanel: React.FC = () => {
       <div style={{ display: "flex", alignItems: "center" }}>
         <ToggleSwitch
           value={doGroupTerms}
-          onChange={setDoGroupTerms}
+          onChange={handleSetDoGroupTerms}
           options={[
             { label: "", value: false },
             { label: "", value: true },

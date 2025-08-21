@@ -9,7 +9,9 @@ const MIN_SELECTION = 3;
 const MAX_SELECTION = 300; // TODO: The API will error at a certain number. Make sure this doesn't exceed that number.
 
 function useData(
-  searchTerms: Set<string>,
+  plotSelections: Set<string>,
+  specialCaseInvalidGenes: Set<string>,
+  possiblyValidGenes: Set<string>,
   doGroupTerms: boolean,
   doClusterGenes: boolean,
   doClusterTerms: boolean,
@@ -19,10 +21,8 @@ function useData(
   maxMatchingOverall: number | null,
   minMatchingQuery: number,
   effectSizeThreshold: number, // TODO - not doing this anymore? It is not an option in the GeneTEA API
-  handleSetInvalidGenes: (
-    selections: React.SetStateAction<Set<string>>
-  ) => void,
-  handleSetValidGenes: (selections: React.SetStateAction<Set<string>>) => void
+  handleSetInValidGeneSymbols: (v: Set<string>) => void,
+  handleSetValidGeneSymbols: (v: any) => void
 ) {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<GeneTeaEnrichedTerms | null>(null);
@@ -30,36 +30,18 @@ function useData(
 
   useEffect(() => {
     if (
-      searchTerms &&
-      searchTerms.size >= MIN_SELECTION &&
-      searchTerms.size <= MAX_SELECTION
+      possiblyValidGenes &&
+      possiblyValidGenes.size >= MIN_SELECTION &&
+      possiblyValidGenes.size <= MAX_SELECTION
     ) {
       setIsLoading(true);
-      setError(false);
       (async () => {
         try {
-          console.log(maxTopTerms);
-          console.log(effectSizeThreshold);
-
-          // HACK: GeneTEA returns an error if any searchTerm is less
-          // than 2 characters long. Instead of erroring completely,
-          // we want to treat these search terms the same as any other invalid
-          //  term (i.e. ["SOX10", "KRAS", "NRAS", "NOT_A_GENE"] will still
-          // return a response with invalid_genes = ["NOT_A_GENE"], so ["SOX10", "KRAS", "NRAS", "A"]
-          // will still return a response with invalid_genes = ["A"]). Separate
-          // our definitely invalid less than 2 characters out from the possiblyValidTerms
-          // before sending a request to GeneTEA.
-          const [
-            definitelyInvalidTerms,
-            possiblyValidTerms,
-          ] = groupStringsByCondition(
-            Array.from(searchTerms),
-            (term) => term.length < 2
-          );
           const fetchedData = await cached(
             legacyPortalAPI
           ).fetchGeneTeaEnrichmentExperimental(
-            possiblyValidTerms,
+            Array.from(plotSelections),
+            Array.from(possiblyValidGenes),
             doGroupTerms,
             sortBy,
             maxFDR,
@@ -72,12 +54,12 @@ function useData(
 
           // See HACK comment above for an explanation of why we do this.
           const invalidGenes = [
-            ...definitelyInvalidTerms,
+            ...specialCaseInvalidGenes,
             ...fetchedData.invalidGenes,
           ];
 
-          handleSetInvalidGenes(new Set(invalidGenes));
-          handleSetValidGenes(new Set(fetchedData.validGenes));
+          handleSetInValidGeneSymbols(new Set(invalidGenes));
+          handleSetValidGeneSymbols(new Set(fetchedData.validGenes));
         } catch (e) {
           setError(true);
           window.console.error(e);
@@ -90,7 +72,8 @@ function useData(
       setIsLoading(false);
     }
   }, [
-    searchTerms,
+    plotSelections,
+    possiblyValidGenes,
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
@@ -99,6 +82,10 @@ function useData(
     maxTopTerms,
     maxMatchingOverall,
     minMatchingQuery,
+    effectSizeThreshold,
+    handleSetInValidGeneSymbols,
+    handleSetValidGeneSymbols,
+    specialCaseInvalidGenes,
   ]);
 
   const xOrder = useMemo(() => {
@@ -110,10 +97,12 @@ function useData(
           .sort((a, b) => a.order - b.order)
           .map((item) => item.gene);
       }
-      return [...searchTerms].filter((gene) => data.validGenes.includes(gene));
+      return [...possiblyValidGenes].filter((gene) =>
+        data.validGenes.includes(gene)
+      );
     }
     return null;
-  }, [data]);
+  }, [data, doClusterGenes, possiblyValidGenes]);
 
   const yOrder = useMemo(() => {
     if (data && data.termCluster && data.enrichedTerms) {
@@ -136,7 +125,7 @@ function useData(
       return [...uniqueOrderByVals].reverse();
     }
     return null;
-  }, [data]);
+  }, [data, doClusterTerms]);
 
   // zOrder: values of data.termToEntity.fraction ordered by xOrder and yOrder
   const zOrder = useMemo(() => {
@@ -204,14 +193,13 @@ function useData(
         z: zVals,
         customdata,
       };
-    } else {
-      return {
-        x: [],
-        y: [],
-        z: [],
-        customdata: [],
-      };
     }
+    return {
+      x: [],
+      y: [],
+      z: [],
+      customdata: [],
+    };
   }, [data, xOrder, yOrder, zOrder]);
 
   const barChartData = useMemo(() => {
@@ -229,9 +217,8 @@ function useData(
         x: yOrdered.map((yVal) => yToX[yVal] ?? 0),
         y: yOrdered,
       };
-    } else {
-      return { x: [], y: [] };
     }
+    return { x: [], y: [] };
   }, [data, heatmapData, doGroupTerms]);
 
   const heatmapXAxisLabel = useMemo(() => {
@@ -247,6 +234,7 @@ function useData(
   return {
     isLoading,
     error,
+    specialCaseInvalidGenes,
     rawData: data,
     heatmapData,
     barChartData,

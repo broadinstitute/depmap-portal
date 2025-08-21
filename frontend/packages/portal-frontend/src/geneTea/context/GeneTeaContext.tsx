@@ -1,39 +1,246 @@
-import React, { createContext, useContext } from "react";
+import React, {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 import { SortOption } from "../types";
+import promptForSelectionFromContext from "../components/promptForSelectionFromContext";
 
 export interface GeneTeaContextType {
   effectSizeThreshold: number;
-  setEffectSizeThreshold: React.Dispatch<React.SetStateAction<number>>;
+  handleSetEffectSizeThreshold: (v: any) => void;
   minMatchingQuery: number;
-  setMinMatchingQuery: React.Dispatch<React.SetStateAction<number>>;
+  handleSetMinMatchingQuery: (v: any) => void;
   maxMatchingOverall: number | null;
-  setMaxMatchingOverall: React.Dispatch<React.SetStateAction<number | null>>;
+  handleSetMaxMatchingOverall: (v: any) => void;
   maxTopTerms: number | null;
-  setMaxTopTerms: React.Dispatch<React.SetStateAction<number | null>>;
+  handleSetMaxTopTerms: (v: number | null) => void;
   maxFDR: number;
-  setMaxFDR: React.Dispatch<React.SetStateAction<number>>;
+  handleSetMaxFDR: (v: number) => void;
   doGroupTerms: boolean;
-  setDoGroupTerms: (v: boolean) => void;
+  handleSetDoGroupTerms: (v: boolean) => void;
   doClusterGenes: boolean;
-  setDoClusterGenes: (v: boolean) => void;
+  handleSetDoClusterGenes: (v: boolean) => void;
   doClusterTerms: boolean;
-  setDoClusterTerms: (v: boolean) => void;
+  handleSetDoClusterTerms: (v: boolean) => void;
   sortBy: SortOption;
-  setSortBy: (v: SortOption) => void;
+  handleSetSortBy: (v: SortOption) => void;
+  selectedTableRows: Set<string>;
+  handleSetSelectedTableRows: (v: Set<string>) => void;
   geneSymbolSelections: Set<string>;
-  setGeneSymbolSelections: React.Dispatch<React.SetStateAction<Set<string>>>;
+  handleSetGeneSymbolSelections: (v: any) => void;
   validGeneSymbols: Set<string>;
-  setValidGeneSymbols: React.Dispatch<React.SetStateAction<Set<string>>>;
+  handleSetValidGeneSymbols: (v: Set<string>) => void;
   inValidGeneSymbols: Set<string>;
-  setInValidGeneSymbols: React.Dispatch<React.SetStateAction<Set<string>>>;
+  handleSetInValidGeneSymbols: (v: Set<string>) => void;
   allAvailableGenes: Set<string>;
-  setAllAvailableGenes: React.Dispatch<React.SetStateAction<Set<string>>>;
+  handleSetAllAvailableGenes: (v: Set<string>) => void;
   handleSetSelectionFromContext: () => Promise<void>;
+  handleClearSelectedTableRows: () => void;
 }
 
 export const GeneTeaContext = createContext<GeneTeaContextType | undefined>(
   undefined
 );
+
+interface GeneTeaContextProviderProps {
+  children: ReactNode;
+}
+
+export function GeneTeaContextProvider({
+  children,
+}: GeneTeaContextProviderProps) {
+  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
+    new Set()
+  );
+  const handleSetSelectedTableRows = useCallback(
+    (v: Set<string>) => setSelectedTableRows(v),
+    []
+  );
+  const handleClearSelectedTableRows = useCallback(
+    () => setSelectedTableRows(new Set([])),
+    []
+  );
+
+  const [doGroupTerms, setDoGroupTerms] = useState<boolean>(true);
+  const handleSetDoGroupTerms = useCallback(
+    (v: boolean) => setDoGroupTerms(v),
+    []
+  );
+
+  const [doClusterGenes, setDoClusterGenes] = useState<boolean>(true);
+  const handleSetDoClusterGenes = useCallback(
+    (v: boolean) => setDoClusterGenes(v),
+    []
+  );
+
+  const [doClusterTerms, setDoClusterTerms] = useState<boolean>(true);
+  const handleSetDoClusterTerms = useCallback(
+    (v: boolean) => setDoClusterTerms(v),
+    []
+  );
+
+  const [sortBy, setSortBy] = useState<SortOption>("Significance");
+  const handleSetSortBy = useCallback((v: SortOption) => setSortBy(v), []);
+
+  const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
+    new Set([])
+  );
+  const handleSetGeneSymbolSelections = useCallback(
+    (v: any) => {
+      setGeneSymbolSelections((prevVal: Set<string>) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
+
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTableRows();
+        }
+        return nextState;
+      });
+    },
+    [handleClearSelectedTableRows]
+  );
+
+  const [validGeneSymbols, setValidGeneSymbols] = useState<Set<string>>(
+    new Set([])
+  );
+  const handleSetValidGeneSymbols = useCallback(
+    (v: Set<string>) => setValidGeneSymbols(v),
+    []
+  );
+
+  const [inValidGeneSymbols, setInValidGeneSymbols] = useState<Set<string>>(
+    new Set([])
+  );
+  const handleSetInValidGeneSymbols = useCallback(
+    (v: Set<string>) => setInValidGeneSymbols(v),
+    []
+  );
+
+  const [allAvailableGenes, setAllAvailableGenes] = useState<Set<string>>(
+    new Set([])
+  );
+  const handleSetAllAvailableGenes = useCallback(
+    (v: Set<string>) => setAllAvailableGenes(v),
+    []
+  );
+
+  const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(0.1);
+  const handleSetEffectSizeThreshold = useCallback(
+    (v: any) => {
+      setEffectSizeThreshold((prevVal: number) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
+
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTableRows();
+        }
+        return nextState;
+      });
+    },
+    [handleClearSelectedTableRows]
+  );
+
+  const [minMatchingQuery, setMinMatchingQuery] = useState<number>(2);
+  const handleSetMinMatchingQuery = useCallback(
+    (v: any) => {
+      setMinMatchingQuery((prevVal: number) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
+
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTableRows();
+        }
+        return nextState;
+      });
+    },
+    [handleClearSelectedTableRows]
+  );
+
+  const [maxMatchingOverall, setMaxMatchingOverall] = useState<number | null>(
+    5357
+  );
+  const handleSetMaxMatchingOverall = useCallback(
+    (v: any) => {
+      setMaxMatchingOverall((prevVal: number | null) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
+
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTableRows();
+        }
+        return nextState;
+      });
+    },
+    [handleClearSelectedTableRows]
+  );
+
+  const [maxTopTerms, setMaxTopTerms] = useState<number | null>(10);
+  const handleSetMaxTopTerms = useCallback(
+    (v: number | null) => setMaxTopTerms(v),
+    []
+  );
+
+  const [maxFDR, setMaxFDR] = useState<number>(0.05);
+  const handleSetMaxFDR = useCallback((v: number) => setMaxFDR(v), []);
+
+  const handleSetSelectionFromContext = useCallback(async () => {
+    const labels = await promptForSelectionFromContext(
+      allAvailableGenes,
+      "gene"
+    );
+    if (labels === null) {
+      return;
+    }
+
+    setGeneSymbolSelections(labels);
+  }, [allAvailableGenes]);
+
+  return (
+    <GeneTeaContext.Provider
+      value={{
+        effectSizeThreshold,
+        handleSetEffectSizeThreshold,
+        minMatchingQuery,
+        handleSetMinMatchingQuery,
+        maxMatchingOverall,
+        handleSetMaxMatchingOverall,
+        maxTopTerms,
+        handleSetMaxTopTerms,
+        maxFDR,
+        handleSetMaxFDR,
+        doGroupTerms,
+        handleSetDoGroupTerms,
+        doClusterGenes,
+        handleSetDoClusterGenes,
+        doClusterTerms,
+        handleSetDoClusterTerms,
+        sortBy,
+        handleSetSortBy,
+        selectedTableRows,
+        handleSetSelectedTableRows,
+        geneSymbolSelections,
+        handleSetGeneSymbolSelections,
+        validGeneSymbols,
+        handleSetValidGeneSymbols,
+        inValidGeneSymbols,
+        handleSetInValidGeneSymbols,
+        allAvailableGenes,
+        handleSetAllAvailableGenes,
+        handleSetSelectionFromContext,
+        handleClearSelectedTableRows,
+      }}
+    >
+      {children}
+    </GeneTeaContext.Provider>
+  );
+}
 
 export function useGeneTeaContext() {
   const ctx = useContext(GeneTeaContext);

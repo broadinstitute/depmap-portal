@@ -6,11 +6,11 @@ import { useGeneTeaContext } from "../context/GeneTeaContext";
 const MultiSelectTextarea: React.FC = () => {
   const {
     geneSymbolSelections,
-    setGeneSymbolSelections,
+    handleSetGeneSymbolSelections,
     validGeneSymbols,
-    setValidGeneSymbols,
+    handleSetValidGeneSymbols,
     inValidGeneSymbols,
-    setInValidGeneSymbols,
+    handleSetInValidGeneSymbols,
   } = useGeneTeaContext();
 
   const [inputValue, setInputValue] = useState("");
@@ -25,7 +25,7 @@ const MultiSelectTextarea: React.FC = () => {
       const newItems = inputValue
         .split(/[, ]+/)
         .filter((item) => item.trim() !== "");
-      setGeneSymbolSelections(
+      handleSetGeneSymbolSelections(
         (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
       ); // Add only unique items
       setInputValue(""); // Clear input
@@ -33,8 +33,8 @@ const MultiSelectTextarea: React.FC = () => {
   };
 
   const handleRemoveChip = (chipToRemove: string) => {
-    setGeneSymbolSelections(
-      (prevChips) =>
+    handleSetGeneSymbolSelections(
+      (prevChips: Set<string>) =>
         new Set([...prevChips].filter((chip) => chip !== chipToRemove))
     );
   };
@@ -91,7 +91,7 @@ const MultiSelectTextarea: React.FC = () => {
             const newItems = inputValue
               .split(/[, ]+/)
               .filter((item) => item.trim() !== "");
-            setGeneSymbolSelections(
+            handleSetGeneSymbolSelections(
               (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
             ); // Add only unique items
             setInputValue(""); // Clear input
@@ -103,9 +103,9 @@ const MultiSelectTextarea: React.FC = () => {
           className={styles.clearInputButton}
           disabled={inputValue.length === 0 && geneSymbolSelections.size === 0}
           onClick={() => {
-            setGeneSymbolSelections(() => new Set());
-            setValidGeneSymbols(() => new Set());
-            setInValidGeneSymbols(() => new Set());
+            handleSetGeneSymbolSelections(() => new Set<string>([]));
+            handleSetValidGeneSymbols(new Set());
+            handleSetInValidGeneSymbols(new Set());
             setInputValue(""); // Clear input
           }}
         >

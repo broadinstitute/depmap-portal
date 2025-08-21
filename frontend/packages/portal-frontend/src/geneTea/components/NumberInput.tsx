@@ -1,4 +1,5 @@
 import React from "react";
+import styles from "../styles/NumberInput.scss";
 
 interface NumberInputProps {
   name: string;
@@ -23,18 +24,8 @@ const NumberInput: React.FC<NumberInputProps> = ({
   width = "50%",
   defaultValue = min,
 }) => (
-  <div
-    style={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start",
-      gap: 4,
-    }}
-  >
-    <label
-      htmlFor={name}
-      style={{ fontWeight: 400, marginBottom: 0, paddingLeft: 0 }}
-    >
+  <div className={styles.NumberInput}>
+    <label htmlFor={name} className={styles.inputLabel}>
       {label}
     </label>
     <input

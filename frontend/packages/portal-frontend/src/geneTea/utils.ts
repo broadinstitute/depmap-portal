@@ -1,3 +1,5 @@
+import { breadboxAPI, cached } from "@depmap/api";
+
 export const tableColumns = [
   { accessor: "term", Header: "Term", maxWidth: 120, minWidth: 80 },
   {
@@ -47,16 +49,42 @@ export const tableColumns = [
 export function groupStringsByCondition(
   strings: string[],
   condition: (str: string) => boolean
-): [string[], string[]] {
+): [Set<string>, Set<string>] {
   return strings.reduce(
-    (lists: [string[], string[]], currentString: string) => {
+    (lists: [Set<string>, Set<string>], currentString: string) => {
       if (condition(currentString)) {
-        lists[0].push(currentString); // Add to the first list if condition is true
+        lists[0].add(currentString); // Add to the first set if condition is true
       } else {
-        lists[1].push(currentString); // Add to the second list if condition is false
+        lists[1].add(currentString); // Add to the second set if condition is false
       }
       return lists;
     },
-    [[], []] // Initialize with two empty string arrays
+    [new Set([]), new Set([])] // Initialize with two empty string sets
   );
+}
+
+// TODO: move this and the fetchMetadata used by Dose Curves
+// and the Heatmap into a shared frontend module!!!
+export async function fetchMetadata<T>(
+  typeName: string,
+  indices: string[] | null,
+  columns: string[] | null,
+  bbapi: typeof breadboxAPI,
+  identifier: "label" | "id" = "id"
+) {
+  const dimType = await cached(bbapi).getDimensionType(typeName);
+  if (!dimType?.metadata_dataset_id) {
+    throw new Error(`No metadata for ${typeName}`);
+  }
+
+  let args;
+  if (indices && indices.length > 0) {
+    args = { indices, identifier, columns };
+  } else {
+    args = { indices: null, identifier: null, columns };
+  }
+  return cached(bbapi).getTabularDatasetData(
+    dimType.metadata_dataset_id,
+    args
+  ) as Promise<T>;
 }

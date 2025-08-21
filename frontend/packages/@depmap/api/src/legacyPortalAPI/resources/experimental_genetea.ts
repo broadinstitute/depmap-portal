@@ -17,6 +17,7 @@ const toCorsProxyUrl = (geneTeaUrl: string, params: object) => {
 };
 
 export async function fetchGeneTeaEnrichmentExperimental(
+  plotSelections: string[] | null,
   genes: string[],
   doGroupTerms: boolean,
   sortBy: "Significance" | "Effect Size",
@@ -32,7 +33,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
 
   const geneTeaUrl = "genetea-api/enriched-terms-v2";
 
-  const params = {
+  let params: any = {
     gene_list: genes,
     group_terms: doGroupTerms,
     include_plotting_payload: "true",
@@ -40,8 +41,12 @@ export async function fetchGeneTeaEnrichmentExperimental(
     max_fdr: maxFDR,
     min_genes: minMatchingQuery || -1,
     max_n_genes: maxMatchingOverall,
-    n: maxTopTerms || -1,
+    n: plotSelections?.length === 0 ? maxTopTerms || -1 : -1,
   };
+
+  if (plotSelections) {
+    params = { ...params, plot_selections: plotSelections };
+  }
   console.log(params);
 
   interface RawResponse {

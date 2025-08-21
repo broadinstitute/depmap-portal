@@ -28,17 +28,17 @@ const TermOptionsPanel: React.FC = () => {
   const { sectionHeights } = useContext(SectionStackContext);
   const {
     sortBy,
-    setSortBy,
+    handleSetSortBy,
     maxTopTerms,
-    setMaxTopTerms,
+    handleSetMaxTopTerms,
     maxFDR,
-    setMaxFDR,
+    handleSetMaxFDR,
     effectSizeThreshold,
-    setEffectSizeThreshold,
+    handleSetEffectSizeThreshold,
     minMatchingQuery,
-    setMinMatchingQuery,
+    handleSetMinMatchingQuery,
     maxMatchingOverall,
-    setMaxMatchingOverall,
+    handleSetMaxMatchingOverall,
   } = useGeneTeaContext();
 
   // Local state for staged changes
@@ -156,12 +156,12 @@ const TermOptionsPanel: React.FC = () => {
           <Button
             className={styles.selectGenesButton}
             onClick={() => {
-              setSortBy(localSortBy as any);
-              setMaxTopTerms(localMaxTopTerms);
-              setMaxFDR(localMaxFDR);
-              setMaxMatchingOverall(localMaxMatchingOverall);
-              setMinMatchingQuery(localMinMatchingQuery);
-              setEffectSizeThreshold(localEffectSizeThreshold);
+              handleSetSortBy(localSortBy as any);
+              handleSetMaxTopTerms(localMaxTopTerms);
+              handleSetMaxFDR(localMaxFDR);
+              handleSetMaxMatchingOverall(localMaxMatchingOverall);
+              handleSetMinMatchingQuery(localMinMatchingQuery);
+              handleSetEffectSizeThreshold(localEffectSizeThreshold);
             }}
             style={{ marginBottom: 0 }}
           >
@@ -175,12 +175,12 @@ const TermOptionsPanel: React.FC = () => {
               setLocalMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
               setLocalMinMatchingQuery(DEFAULTS.minMatchingQuery);
               setLocalEffectSizeThreshold(DEFAULTS.effectSizeThreshold);
-              setSortBy(DEFAULTS.sortBy as SortOption);
-              setMaxTopTerms(DEFAULTS.maxTopTerms);
-              setMaxFDR(DEFAULTS.maxFDR);
-              setMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
-              setMinMatchingQuery(DEFAULTS.minMatchingQuery);
-              setEffectSizeThreshold(DEFAULTS.effectSizeThreshold);
+              handleSetSortBy(DEFAULTS.sortBy as SortOption);
+              handleSetMaxTopTerms(DEFAULTS.maxTopTerms);
+              handleSetMaxFDR(DEFAULTS.maxFDR);
+              handleSetMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
+              handleSetMinMatchingQuery(DEFAULTS.minMatchingQuery);
+              handleSetEffectSizeThreshold(DEFAULTS.effectSizeThreshold);
             }}
             style={{ marginBottom: 0 }}
           >

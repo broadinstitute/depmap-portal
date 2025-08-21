@@ -255,6 +255,8 @@ function HeatmapBarChart({
     zmin,
     zmax,
     xAxisTickLabels,
+    barChartData,
+    heatmapXAxisTitle,
     Plotly,
   ]);
 
