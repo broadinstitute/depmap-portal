@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "../../styles/correlated_dependencies_tile.scss";
+import styles from "../../styles/CorrelationTile.scss";
 import { TopDatasetDependencies } from "./TopDatasetDependencies";
 import useCorrelatedDependenciesData from "../../hooks/useCorrelatedDependenciesData";
 import PlotSpinner from "src/plot/components/PlotSpinner";
