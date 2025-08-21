@@ -2,7 +2,7 @@
 import React from "react";
 import { DependencyMeter } from "./DependencyMeter";
 import { toStaticUrl } from "@depmap/globals";
-import styles from "../../styles/correlated_dependencies_tile.scss";
+import styles from "../../styles/CorrelationTile.scss";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 
 interface TopDatasetDependencyProps {

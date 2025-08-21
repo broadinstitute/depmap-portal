@@ -25,6 +25,10 @@ export function getDatasets(
   return getJson<Dataset[]>("/datasets/", params);
 }
 
+export function getDataset(datasetId: string) {
+  return getJson<Dataset>(`/datasets/${datasetId}`);
+}
+
 export function deleteDataset(id: string) {
   // TODO: Figure out return type.
   return deleteJson<unknown>("/datasets/", id);
