@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import styles from "../styles/GeneTea.scss";
 import GeneTeaTable from "./GeneTeaTable";
 import PlotSelections from "./PlotSelections";
@@ -6,9 +6,6 @@ import PlotSection from "./PlotSection";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { groupStringsByCondition, tableColumns } from "../utils";
 import useData from "../hooks/useData";
-import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import { DataExplorerContext } from "@depmap/types";
-import { saveNewContext } from "src";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 
 interface GeneTeaMainContentProps {
@@ -20,7 +17,6 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
 
   const {
     geneSymbolSelections,
-    validGeneSymbols,
     doGroupTerms,
     doClusterGenes,
     doClusterTerms,
@@ -31,17 +27,18 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     minMatchingQuery,
     effectSizeThreshold,
     selectedTableRows,
-    handleSetGeneSymbolSelections,
+    selectedPlotGenes,
     handleSetValidGeneSymbols,
     handleSetInValidGeneSymbols,
     handleSetSelectedTableRows,
+    handleClickSavePlotSelectionAsContext,
+    handleClearPlotSelection,
   } = useGeneTeaContext();
 
   const plotSelections = useMemo(
     () => (selectedTableRows.size > 0 ? selectedTableRows : new Set([])),
     [selectedTableRows]
   );
-  console.log(plotSelections);
 
   // HACK: GeneTEA returns an error if any searchTerm is less
   // than 2 characters long. Instead of erroring completely,
@@ -86,18 +83,6 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
-  const handleClickSaveSelectionAsContext = useCallback(() => {
-    if (validGeneSymbols.size > 0) {
-      const labels = [...validGeneSymbols];
-      const context = {
-        name: defaultContextName(validGeneSymbols.size),
-        context_type: "gene",
-        expr: { in: [{ var: "entity_label" }, labels] },
-      };
-      saveNewContext(context as DataExplorerContext);
-    }
-  }, [validGeneSymbols]);
-
   if (tab === "all-matching-terms") {
     return (
       <div style={{ padding: "25px" }}>
@@ -122,23 +107,18 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
                 plotElement={plotElement}
                 heatmapFormattedData={heatmapData}
                 barChartData={barChartData}
-                handleClearSelection={() => {}}
                 handleSetPlotElement={setPlotElement}
                 heatmapXAxisLabel={heatmapXAxisLabel}
               />
             </div>
             <div className={styles.selectionsArea}>
               <PlotSelections
-                selectedIds={new Set(validGeneSymbols)}
-                selectedLabels={new Set(validGeneSymbols)}
+                selectedIds={new Set(selectedPlotGenes)}
+                selectedLabels={new Set(selectedPlotGenes)}
                 onClickSaveSelectionAsContext={
-                  handleClickSaveSelectionAsContext
+                  handleClickSavePlotSelectionAsContext
                 }
-                onClickClearSelection={() => {
-                  handleSetInValidGeneSymbols(new Set([]));
-                  handleSetValidGeneSymbols(new Set([]));
-                  handleSetGeneSymbolSelections(new Set([]));
-                }}
+                onClickClearSelection={handleClearPlotSelection}
               />
             </div>
           </div>

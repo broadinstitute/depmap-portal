@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import PlotControls, {
   PlotToolOptions,
 } from "src/plot/components/PlotControls";
@@ -11,6 +11,11 @@ import {
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
 import HeatmapBarChart from "../plots/HeatmapBarChart";
+import { saveNewContext } from "src";
+import { DataExplorerContext } from "@depmap/types";
+import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
+import { getSelectedColumns } from "../utils";
+import { useGeneTeaContext } from "../context/GeneTeaContext";
 
 interface PlotSectionProps {
   isLoading: boolean;
@@ -19,7 +24,6 @@ interface PlotSectionProps {
   heatmapXAxisLabel: string;
   barChartData: BarChartFormattedData | null;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
-  handleClearSelection: () => void;
 }
 
 function PlotSection({
@@ -28,25 +32,85 @@ function PlotSection({
   heatmapFormattedData,
   barChartData,
   handleSetPlotElement,
-  handleClearSelection,
   plotElement,
 }: PlotSectionProps) {
+  const {
+    validGeneSymbols,
+    selectedPlotGenes,
+    handleSetPlotSelectedGenes,
+    handleClickSavePlotSelectionAsContext,
+    handleClearPlotSelection,
+  } = useGeneTeaContext();
+
+  const handleSelectColumnRange = (
+    start: number,
+    end: number,
+    shiftKey: boolean
+  ) => {
+    const newlySelected = new Set<string>();
+    for (let i = start; i <= end; i += 1) {
+      if (heatmapFormattedData && heatmapFormattedData.x[i]) {
+        newlySelected.add(heatmapFormattedData.x[i]!);
+      }
+    }
+    handleSetPlotSelectedGenes(newlySelected, shiftKey);
+  };
+
+  const selectedColumns = useMemo(
+    () =>
+      heatmapFormattedData
+        ? getSelectedColumns(heatmapFormattedData, selectedPlotGenes)
+        : new Set([]),
+    [selectedPlotGenes, heatmapFormattedData]
+  );
+
+  const handleSearch = (selection: {
+    label: string;
+    value: number;
+    stringId?: string;
+  }) => {
+    if (selection.stringId) {
+      // The shiftKey parameter is false because you cannot hold down the shift key and search to add
+      // to your selection.
+      const shiftKey = false;
+      handleSetPlotSelectedGenes(new Set([selection.stringId]), shiftKey);
+    }
+  };
+
+  console.log("selectedColumns", selectedColumns);
+
   return (
     <div className={styles.PlotSection}>
       <div className={styles.sectionHeader}>
         {plotElement && (
           <PlotControls
             plot={plotElement}
-            enabledTools={[PlotToolOptions.Search, PlotToolOptions.Download]}
-            searchOptions={null}
+            enabledTools={[
+              PlotToolOptions.ZoomToSelection,
+              PlotToolOptions.MakeContext,
+              PlotToolOptions.Download,
+              PlotToolOptions.Search,
+            ]}
+            onSearch={handleSearch}
+            searchOptions={[...validGeneSymbols].map(
+              (gene: string, index: number) => {
+                const option = {
+                  label: gene,
+                  value: index,
+                  stringId: gene,
+                };
+                return option;
+              }
+            )}
             searchPlaceholder="Search for a gene"
-            onSearch={() => {}}
             downloadImageOptions={{
               filename: `genetea-heatmap-bar-plot`,
               width: 800,
               height: 600,
             }}
             onDownload={() => {}}
+            onMakeContext={handleClickSavePlotSelectionAsContext}
+            zoomToSelectedSelections={selectedColumns}
             altContainerStyle={{ backgroundColor: "#7B8CB2" }}
             hideCSVDownload
           />
@@ -61,15 +125,16 @@ function PlotSection({
         {heatmapFormattedData && barChartData && !isLoading && (
           <div className={styles.heatmapContainer}>
             <HeatmapBarChart
+              barChartXAxisTitle="-log10(FDR)"
               heatmapData={heatmapFormattedData}
               barChartData={barChartData}
               onLoad={handleSetPlotElement}
               heatmapXAxisTitle={heatmapXAxisLabel}
-              xAxisTitle=""
-              yAxisTitle={``}
               legendTitle={""}
               hovertemplate="%{customdata}<extra></extra>"
-              onClearSelection={() => handleClearSelection()}
+              onClearSelection={() => handleClearPlotSelection()}
+              onSelectColumnRange={handleSelectColumnRange}
+              selectedColumns={selectedColumns}
             />
           </div>
         )}

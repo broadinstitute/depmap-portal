@@ -10,12 +10,13 @@ import type {
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
 import customizeDragLayer from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/customizeDragLayer";
-import { generateTickLabels } from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/utils";
 import {
   BarChartFormattedData,
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import { getDefaultLayout, getTabletScreenSizeLayout } from "./layouts";
+import { generateTickLabels } from "../utils";
 
 const viridisRColorscale = [
   ["0", "#D3D3D3"],
@@ -33,10 +34,11 @@ const viridisRColorscale = [
 interface Props {
   heatmapXAxisTitle: string;
   heatmapData: HeatmapFormattedData;
+  barChartXAxisTitle: string;
   barChartData: BarChartFormattedData;
-  xAxisTitle: string;
-  yAxisTitle: string;
   legendTitle: string;
+  selectedColumns: Set<number>;
+  onSelectColumnRange: (start: number, end: number, shiftKey: boolean) => void;
   onClearSelection: () => void;
   onLoad: (plot: ExtendedPlotType) => void;
   hovertemplate?: string | string[];
@@ -49,10 +51,11 @@ interface Props {
 function HeatmapBarChart({
   heatmapXAxisTitle,
   heatmapData,
+  barChartXAxisTitle,
   barChartData,
-  xAxisTitle,
-  yAxisTitle,
   legendTitle,
+  selectedColumns,
+  onSelectColumnRange,
   onClearSelection,
   onLoad,
   hovertemplate = undefined,
@@ -77,27 +80,26 @@ function HeatmapBarChart({
   const [containerWidth, setContainerWidth] = useState(0);
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
 
-  const pixelDistanceBetweenColumns = useMemo(() => {
-    if (ref.current) {
-      const dataToPiixels = (ref.current as any)._fullLayout.xaxis.l2p;
-      return dataToPiixels(1) - dataToPiixels(0);
-    }
-
-    return 0;
-    // eslint-disable-next-line
-  }, [selectedRange]);
-
-  const xAxisTickLabels = useMemo(() => {
-    return generateTickLabels(
-      heatmapData.x.map(String),
-      new Set([0, 1, 2, 3]),
-      pixelDistanceBetweenColumns
-    );
-  }, [heatmapData.x, pixelDistanceBetweenColumns]);
+  const xAxisTickLabels = generateTickLabels(
+    [...new Set(heatmapData.x)].map((val) => {
+      const str = String(val);
+      return str.length > 8 ? str.slice(0, 8) + "..." : str;
+    }),
+    selectedColumns
+  );
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-    const deltaRange = selectedRange[1] - selectedRange[0];
+    let range: [number, number] = [0, [...new Set(heatmapData.x)].length - 1];
+    if (
+      plot &&
+      plot.layout &&
+      plot.layout.xaxis &&
+      Array.isArray(plot.layout.xaxis.range) &&
+      plot.layout.xaxis.range.length === 2
+    ) {
+      range = plot.layout.xaxis.range as [number, number];
+    }
 
     const plotlyHeatmapData: PlotlyData = {
       type: "heatmap",
@@ -108,21 +110,22 @@ function HeatmapBarChart({
       xaxis: "x",
       yaxis: "y",
       hovertemplate,
-      xgap: 5,
-      ygap: 5,
+      xgap: 0.35,
+      ygap: 0.35,
 
       colorbar: {
-        x: -0.2,
-        y: -0.3,
-        len: 0.2,
+        x: -0.25,
+        y: -0.45,
+        len: 0.25,
+        thickness: 10,
         ypad: 0,
         xanchor: "left",
         // These features are undocumented and won't type check properly.
         ...({
           orientation: "h",
           title: {
-            text: "Fraction Matching",
-            side: "top",
+            text: "Fraction Mapping",
+            side: "bottom",
           },
         } as object),
       },
@@ -139,37 +142,28 @@ function HeatmapBarChart({
       },
     };
 
-    const layout: Partial<Layout> = {
-      height: 500,
-      margin: { t: 50, l: 240, r: 0, b: 50 },
-      hovermode: "closest",
-      hoverlabel: { namelength: -1 },
-      dragmode: false,
-      xaxis: { domain: [0, 0.7], title: heatmapXAxisTitle, showgrid: false },
-      yaxis: { showgrid: false },
-      yaxis2: { anchor: "x2", visible: false },
-      xaxis2: { domain: [0.73, 1], title: "-log FDR" },
+    const layout: Partial<Layout> =
+      window.innerWidth < 1200
+        ? getTabletScreenSizeLayout(
+            heatmapData,
+            heatmapXAxisTitle,
+            barChartXAxisTitle,
+            xAxisTickLabels,
+            new Set(hoveredColumns),
+            selectedColumns,
+            range
+          )
+        : getDefaultLayout(
+            heatmapData,
+            heatmapXAxisTitle,
+            barChartXAxisTitle,
+            xAxisTickLabels,
+            new Set(hoveredColumns),
+            selectedColumns,
+            range
+          );
 
-      // We use `shapes` to draw the hovered and selected columns
-      shapes: [
-        // Fill
-        [...new Set([...hoveredColumns])].map((colIndex) => ({
-          type: "rect" as const,
-          x0: colIndex - 0.5,
-          x1: colIndex + 0.5,
-          y0: -0.5,
-          y1: heatmapData.y.length - 0.5,
-          line: { width: 0 },
-          fillcolor: "rgba(0, 0, 0, 0.15)",
-        })),
-      ].flat(),
-    };
-
-    const config: Partial<Config> = {
-      displayModeBar: false,
-    };
-
-    Plotly.react(plot, [plotlyHeatmapData, plotlyBarChartData], layout, config);
+    Plotly.react(plot, [plotlyHeatmapData, plotlyBarChartData], layout);
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: object) => void][] = [];
@@ -180,6 +174,30 @@ function HeatmapBarChart({
         callback as Parameters<PlotlyHTMLElement["on"]>[1]
       );
       listeners.push([eventName, callback]);
+    };
+
+    const getButton = (attr: string, val: string) =>
+      plot.querySelector(
+        `.modebar-btn[data-attr="${attr}"][data-val="${val}"]`
+      ) as HTMLAnchorElement;
+
+    const zoom = (val: "in" | "out" | "reset") => {
+      getButton("zoom", val).click();
+
+      // This redraw fixes a very strange bug where setting the drag mode to
+      // select (or lasso) with a filter also applied causes all of the points
+      // to disappear.
+      Plotly.redraw(plot);
+    };
+
+    plot.zoomIn = () => setTimeout(zoom, 0, "in");
+    plot.zoomOut = () => setTimeout(zoom, 0, "out");
+
+    plot.resetZoom = () => {
+      const nextLayout = { ...plot.layout };
+      (plot.layout.shapes as any) = undefined;
+      zoom("reset");
+      Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
 
     on("plotly_afterplot", () => {
@@ -196,7 +214,7 @@ function HeatmapBarChart({
           setHoveredColumns(range);
         },
         onSelectColumnRange: (start, end, shiftKey) => {
-          () => {};
+          onSelectColumnRange(start, end, shiftKey);
         },
         onClearSelection,
       });
@@ -205,6 +223,36 @@ function HeatmapBarChart({
     on("plotly_hover", (e: any) => {
       setHoveredColumns([e.points[0].pointIndex[1]]);
     });
+
+    // https://github.com/plotly/plotly.js/blob/55dda47/src/lib/prepare_regl.js
+    on("plotly_webglcontextlost", () => {
+      // Fixes a bug where points disappear after the browser has been left
+      // idle for some time.
+      Plotly.redraw(plot);
+    });
+
+    // Used for PlotControls.tsx to zoom to the highest resolution possible
+    // the keeps all selected columns in the visible window.
+    plot.zoomToSelection = (selections: Set<number>) => {
+      if (!plot) return;
+
+      if (selections.size > 0 && plot && plot.layout && plot.layout.xaxis) {
+        const minSelected = Math.min(...selections);
+        const maxSelected = Math.max(...selections);
+
+        // Use Plotly.react to update the range and force a re-render
+        Plotly.relayout(plot, {
+          "xaxis.autorange": false,
+          "xaxis.range": [
+            Math.max(0, minSelected - 1),
+            Math.min([...new Set(heatmapData.x)].length - 1, maxSelected + 1),
+          ],
+        });
+      }
+    };
+
+    // Event listener for window resize
+    // window.addEventListener("resize", updateLayoutOnScreenSizeChange);
 
     // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility
     plot.downloadImage = (options) => {
@@ -245,8 +293,7 @@ function HeatmapBarChart({
     };
   }, [
     heatmapData,
-    xAxisTitle,
-    yAxisTitle,
+
     legendTitle,
     selectedRange,
     hoveredColumns,

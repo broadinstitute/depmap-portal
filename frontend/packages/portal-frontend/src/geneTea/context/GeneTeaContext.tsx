@@ -7,6 +7,9 @@ import React, {
 } from "react";
 import { SortOption } from "../types";
 import promptForSelectionFromContext from "../components/promptForSelectionFromContext";
+import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
+import { saveNewContext } from "src";
+import { DataExplorerContext } from "@depmap/types";
 
 export interface GeneTeaContextType {
   effectSizeThreshold: number;
@@ -39,6 +42,13 @@ export interface GeneTeaContextType {
   handleSetAllAvailableGenes: (v: Set<string>) => void;
   handleSetSelectionFromContext: () => Promise<void>;
   handleClearSelectedTableRows: () => void;
+  selectedPlotGenes: Set<string>;
+  handleSetPlotSelectedGenes: (
+    selections: Set<string>,
+    shiftKey: boolean
+  ) => void;
+  handleClickSavePlotSelectionAsContext: () => void;
+  handleClearPlotSelection: () => void;
 }
 
 export const GeneTeaContext = createContext<GeneTeaContextType | undefined>(
@@ -213,6 +223,46 @@ export function GeneTeaContextProvider({
     setGeneSymbolSelections(labels);
   }, [allAvailableGenes]);
 
+  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
+    new Set([])
+  );
+
+  const handleSetPlotSelectedGenes = useCallback(
+    (selections: Set<string>, shiftKey: boolean) => {
+      setSelectedPlotGenes((prev) => {
+        const next: Set<string> = shiftKey ? new Set(prev) : new Set();
+
+        selections.forEach((id) => {
+          if (next.has(id)) {
+            next.delete(id);
+          } else {
+            next.add(id);
+          }
+        });
+
+        return next;
+      });
+    },
+    [selectedPlotGenes]
+  );
+
+  const handleClickSavePlotSelectionAsContext = useCallback(() => {
+    if (selectedPlotGenes.size > 0) {
+      const labels = [...selectedPlotGenes];
+      const context = {
+        name: defaultContextName(selectedPlotGenes.size),
+        context_type: "gene",
+        expr: { in: [{ var: "entity_label" }, labels] },
+      };
+      saveNewContext(context as DataExplorerContext);
+    }
+  }, [selectedPlotGenes]);
+
+  const handleClearPlotSelection = useCallback(
+    () => setSelectedPlotGenes(new Set([])),
+    [selectedTableRows]
+  );
+
   return (
     <GeneTeaContext.Provider
       value={{
@@ -246,6 +296,10 @@ export function GeneTeaContextProvider({
         handleSetAllAvailableGenes,
         handleSetSelectionFromContext,
         handleClearSelectedTableRows,
+        selectedPlotGenes,
+        handleSetPlotSelectedGenes,
+        handleClickSavePlotSelectionAsContext,
+        handleClearPlotSelection,
       }}
     >
       {children}

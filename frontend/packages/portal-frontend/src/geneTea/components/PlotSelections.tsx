@@ -24,7 +24,7 @@ function PlotSelections({
 
   const listRef = useRef<HTMLDivElement | null>(null);
 
-  const maxHeightOfList = 400;
+  const maxHeightOfList = 368;
 
   return (
     <div className={geneTeaStyles.PlotSelections}>

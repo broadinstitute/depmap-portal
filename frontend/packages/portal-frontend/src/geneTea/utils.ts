@@ -1,4 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
+import { HeatmapFormattedData } from "@depmap/types/src/experimental_genetea";
 
 export const tableColumns = [
   { accessor: "term", Header: "Term", maxWidth: 120, minWidth: 80 },
@@ -87,4 +88,65 @@ export async function fetchMetadata<T>(
     dimType.metadata_dataset_id,
     args
   ) as Promise<T>;
+}
+
+export function generateTickLabels(
+  columnNames: string[],
+  selectedColumnIndices: Set<number>
+): string[] {
+  // Initialize output array with empty strings
+  const tickvals: string[] = new Array(columnNames.length).fill("");
+
+  if (selectedColumnIndices.size === 0) {
+    return tickvals;
+  }
+
+  // Convert Set to sorted array for easier processing
+  const sortedIndices = Array.from(selectedColumnIndices).sort((a, b) => a - b);
+
+  // Find contiguous subsets
+  const contiguousSubsets: number[][] = [];
+  let currentSubset: number[] = [sortedIndices[0]];
+
+  for (let i = 1; i < sortedIndices.length; i++) {
+    if (sortedIndices[i] === sortedIndices[i - 1] + 1) {
+      // Contiguous - add to current subset
+      currentSubset.push(sortedIndices[i]);
+    } else {
+      // Not contiguous - start new subset
+      contiguousSubsets.push(currentSubset);
+      currentSubset = [sortedIndices[i]];
+    }
+  }
+  // Don't forget the last subset
+  contiguousSubsets.push(currentSubset);
+
+  // For each subset, find middle index and place subset size there
+  contiguousSubsets.forEach((subset) => {
+    if (subset.length === 1) {
+      subset.forEach((j) => {
+        tickvals[j] = columnNames[j];
+      });
+    } else {
+      const middleIndex = Math.floor((subset.length - 1) / 2);
+      const actualColumnIndex = subset[middleIndex];
+      tickvals[actualColumnIndex] = `(${subset.length.toString()})`;
+    }
+  });
+
+  return tickvals;
+}
+
+export function getSelectedColumns(
+  heatmapData: HeatmapFormattedData,
+  selectedGenes: Set<string>
+) {
+  const uniqueXs = new Set(heatmapData.x);
+  const out = new Set<number>();
+  [...uniqueXs].forEach((x: string, index: number) => {
+    if (x !== null && selectedGenes.has(x)) {
+      out.add(index);
+    }
+  });
+  return out;
 }

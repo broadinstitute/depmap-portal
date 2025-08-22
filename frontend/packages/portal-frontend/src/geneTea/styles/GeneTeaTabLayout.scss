@@ -1,8 +1,14 @@
 .geneTeaTabLayout {
   display: grid;
-  grid-template-columns: 2fr 7fr;
-  grid-template-areas: "filters filters main main main main main main main";
+  grid-template-columns: 2fr 10fr;
+  grid-template-areas: "filters filters main main main main main main main main main main";
   min-height: 100vh;
+
+  @media (max-width: 1200px) {
+    grid-template-areas: "filters main";
+    grid-template-columns: 1fr 10fr;
+    grid-template-rows: auto auto;
+  }
 
   .geneTeaFilters {
     background-color: rgba(123, 140, 178, 0.1);
@@ -47,8 +53,8 @@
 
   .mainContentGrid {
     display: grid;
-    grid-template-columns: 3fr 1fr;
-    grid-template-areas: "plot plot plot selections";
+    grid-template-columns: 9fr 1fr;
+    grid-template-areas: "plot plot plot plot plot plot plot plot plot selections";
     gap: 1rem;
 
     .plotArea {
@@ -59,7 +65,7 @@
       grid-area: "selections";
     }
 
-    @media (max-width: 950px) {
+    @media (max-width: 1200px) {
       grid-template-areas:
         "selections"
         "plot";
