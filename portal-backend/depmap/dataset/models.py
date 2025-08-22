@@ -823,16 +823,12 @@ class Fusion(Model):
     gene_2 = relationship("Gene", foreign_keys="Fusion.gene_2_id", uselist=False)
 
     # New columns based on the updated schema
-    profile_id = Column(String, nullable=False)
     total_reads_supporting_fusion = Column(Integer, nullable=False)
     total_fusion_coverage = Column(Integer, nullable=False)
     ffpm = Column(Float, nullable=False)
     split_reads_1 = Column(Integer, nullable=False)
     split_reads_2 = Column(Integer, nullable=False)
     discordant_mates = Column(Integer, nullable=False)
-    strand1 = Column(String, nullable=False)
-    strand2 = Column(String, nullable=False)
-    reading_frame = Column(String, nullable=False)
 
     @classmethod
     def has_gene(cls, gene_id):
