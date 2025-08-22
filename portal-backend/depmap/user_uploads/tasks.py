@@ -33,12 +33,8 @@ from depmap.interactive.nonstandard.models import (
 from depmap.utilities import hdf5_utils
 from depmap.utilities.hashing_utils import hash_df
 from depmap.utilities.exception import UserError
-from depmap.user_uploads.utils import (
-    get_task,
-)
-from depmap.access_control import (
-    PUBLIC_ACCESS_GROUP,
-)
+from depmap.user_uploads.utils import get_task
+from depmap.access_control import PUBLIC_ACCESS_GROUP
 
 
 def update_state(
@@ -55,74 +51,6 @@ def update_state(
         meta["message"] = message
 
     task.update_state(state=state, meta=meta)
-
-
-# Split out from task because we also use it in the loader
-def _upload_transient_csv(
-    task: celery.Task,
-    label: str,
-    units: str,
-    is_transpose: bool,
-    csv_path: str,
-    single_column: bool,
-    use_data_explorer_2: bool,
-):
-    update_state(task, state="PROGRESS")
-    validate_common_metadata(label, units)
-    # update state to checking file...
-    df = validate_csv_format(csv_path, single_column)
-
-    dataset_uuid = str(uuid.uuid4())
-    config = format_config(label, units, is_transpose)
-    cell_line_name_type = get_cell_line_name_type(df, is_transpose)
-
-    # update state to validating cell lines...
-    warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
-        df, dataset_uuid, cell_line_name_type, config, PUBLIC_ACCESS_GROUP
-    )
-    add_transient_config(dataset_uuid, config)
-    node_id = "custom_dataset/{}".format(dataset_uuid)
-
-    if use_data_explorer_2:
-        return {
-            "datasetId": dataset_uuid,
-            "warnings": warnings,
-            "forwardingUrl": url_for(
-                "data_explorer_2.view_data_explorer_2",
-                # Data Explorer 2 links require an xFeature (it does not
-                # support linking to a partially defined plot)
-                xFeature=list(df.columns)[0],
-                yFeature=list(df.columns)[0],
-                xDataset=dataset_uuid,
-                yDataset=dataset_uuid,
-            ),
-        }
-
-    return {
-        "datasetId": dataset_uuid,
-        "warnings": warnings,
-        "forwardingUrl": url_for(
-            "interactive.view_interactive",
-            x=node_id,
-            y=node_id,
-            defaultCustomAnalysisToX=True,
-        ),
-    }
-
-
-@app.task(bind=True)
-def upload_transient_csv(
-    self: celery.Task,
-    label: str,
-    units: str,
-    is_transpose: bool,
-    csv_path: str,
-    single_column: bool,
-    use_data_explorer_2: bool = False,
-):
-    return _upload_transient_csv(
-        self, label, units, is_transpose, csv_path, single_column, use_data_explorer_2
-    )
 
 
 def validate_common_metadata(label, units):
