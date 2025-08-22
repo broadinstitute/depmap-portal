@@ -1,6 +1,7 @@
 import React from "react";
 import styles from "../../styles/CorrelationTile.scss";
 import { CorrelationBar } from "./CorrelationBar";
+import { Tooltip } from "@depmap/common-components";
 
 interface TopRelatedCompoundsProps {
   entityLabel: string;
@@ -45,13 +46,18 @@ export const TopRelatedCompounds = ({
           <tr>
             {dataTypes.flatMap((dataType) =>
               topGeneTargets.map((target) => (
-                <th
+                <Tooltip
                   key={`${dataType}-${target}`}
-                  className={`${styles.ellipsisStyle} ${styles.columnStyle}`}
-                  title={target} // Tooltip for full name
+                  id="top-gene-targets-tooltip"
+                  content={target}
+                  placement="top"
                 >
-                  {target}
-                </th>
+                  <th
+                    className={`${styles.ellipsisStyle} ${styles.columnStyle}`}
+                  >
+                    {target}
+                  </th>
+                </Tooltip>
               ))
             )}
           </tr>
@@ -59,22 +65,26 @@ export const TopRelatedCompounds = ({
         <tbody>
           {topCompoundCorrelates.map((compound) => (
             <tr key={compound}>
-              <td
-                className={`${styles.ellipsisStyle} ${styles.cellStyle}`}
-                title={compound} // hover for full name
+              <Tooltip
+                id="compound-name-tooltip"
+                content={compound}
+                placement="top"
               >
-                {compound === entityLabel ? (
-                  <b>{compound}</b>
-                ) : (
-                  <a
-                    href={`${urlPrefix}/compound/${compound}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {compound}
-                  </a>
-                )}
-              </td>
+                <td className={`${styles.ellipsisStyle} ${styles.cellStyle}`}>
+                  {compound === entityLabel ? (
+                    <b>{compound}</b>
+                  ) : (
+                    <a
+                      href={`${urlPrefix}/compound/${compound}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {compound}
+                    </a>
+                  )}
+                </td>
+              </Tooltip>
+
               {dataTypes.flatMap((dataType) =>
                 topGeneTargets.map((target) => (
                   <td
