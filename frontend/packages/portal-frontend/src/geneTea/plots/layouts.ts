@@ -156,6 +156,7 @@ export const getTabletScreenSizeLayout = (
       tickfont: { size: 10 },
       visible: true,
       fixedrange: true,
+      ticks: "",
     },
     xaxis2: {
       domain: [0, 1],

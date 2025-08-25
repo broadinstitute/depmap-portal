@@ -94,7 +94,9 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
-        <h3 className={styles.mainContentHeaderTitle}>Top Tea Terms</h3>
+        <h3 className={styles.mainContentHeaderTitle}>
+          Top {maxTopTerms} Tea Terms
+        </h3>
       </div>
       {!isLoading && error ? (
         <div className={styles.errorMessage}>Error loading plot data.</div>
