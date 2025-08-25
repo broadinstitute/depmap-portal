@@ -56,6 +56,7 @@ def evaluate_context(
                 matching_labels.append(label)
     except LookupError as e:
         # This happens when the request is malformed
+        # TODO: Should this be returning a FEATURE_NOT_FOUND or SAMPLE_NOT_FOUND error instead?
         raise UserError(f"Encountered lookup error: {e}")
 
     return ContextMatchResponse(

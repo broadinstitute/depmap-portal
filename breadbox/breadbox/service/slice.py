@@ -9,6 +9,7 @@ from breadbox.schemas.dataset import TabularDimensionsInfo
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
+    DatasetNotFoundError,
 )
 from breadbox.io.filestore_crud import (
     get_feature_slice,
@@ -90,7 +91,7 @@ def get_slice_data(
     dataset_id = slice_query.dataset_id
     dataset = dataset_crud.get_dataset(db=db, user=db.user, dataset_id=dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
 
     if slice_query.identifier_type == "column":
         if not dataset.format == "tabular_dataset":

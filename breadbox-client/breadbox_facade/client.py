@@ -580,9 +580,9 @@ class BBClient:
         self,
         analysis_type: str,
         dataset_id: str,
-        query_feature_id: str,
-        query_dataset_id: str,
-        vector_variable_type: str,
+        query_feature_id: Optional[str],
+        query_dataset_id: Optional[str],
+        vector_variable_type: Optional[str],
         query_cell_lines: Optional[list[str]],
         query_values: Optional[list[Any]],
     ) -> ComputeResponse:

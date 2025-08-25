@@ -4,11 +4,16 @@ from typing import Any, Optional
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import dimension_types as types_crud
 from breadbox.db.session import SessionWithUser
-from breadbox.schemas.custom_http_exception import ResourceNotFoundError
+from breadbox.schemas.custom_http_exception import (
+    ResourceNotFoundError,
+    DatasetNotFoundError,
+    SampleNotFoundError,
+    FeatureNotFoundError,
+)
 from breadbox.models.dataset import (
     DatasetFeature,
     DatasetSample,
-    Dataset, 
+    Dataset,
     MatrixDataset,
     TabularDataset,
     DimensionType,
@@ -51,11 +56,13 @@ def get_matrix_dataset_feature_labels_by_id(
     If there are no labels in the metadata or there is no metadata, then just return the feature names.
     """
     if dataset.feature_type_name is not None:
-        dimension_type = types_crud.get_dimension_type(db=db, name=dataset.feature_type_name)
+        dimension_type = types_crud.get_dimension_type(
+            db=db, name=dataset.feature_type_name
+        )
         metadata_labels_by_given_id = dataset_crud.get_metadata_used_in_matrix_dataset(
-            db=db, 
-            dimension_type=dimension_type, 
-            matrix_dataset=dataset, 
+            db=db,
+            dimension_type=dimension_type,
+            matrix_dataset=dataset,
             dimension_subtype_cls=DatasetFeature,
             metadata_col_name="label",
         )
@@ -63,7 +70,9 @@ def get_matrix_dataset_feature_labels_by_id(
             return metadata_labels_by_given_id
 
     # If there are no labels or there is no feature type, return the given IDs
-    feature_given_ids = dataset_crud.get_matrix_dataset_given_ids(db, dataset, axis="feature")
+    feature_given_ids = dataset_crud.get_matrix_dataset_given_ids(
+        db, dataset, axis="feature"
+    )
     return {given_id: given_id for given_id in feature_given_ids}
 
 
@@ -74,19 +83,21 @@ def get_matrix_dataset_sample_labels_by_id(
     Try loading sample labels from metadata.
     If there are no labels in the metadata or there is no metadata, then just return the sample names.
     """
-    
+
     dimension_type = types_crud.get_dimension_type(db=db, name=dataset.sample_type_name)
     metadata_labels_by_given_id = dataset_crud.get_metadata_used_in_matrix_dataset(
-        db=db, 
-        dimension_type=dimension_type, 
-        matrix_dataset=dataset, 
+        db=db,
+        dimension_type=dimension_type,
+        matrix_dataset=dataset,
         dimension_subtype_cls=DatasetSample,
         metadata_col_name="label",
     )
     if metadata_labels_by_given_id:
         return metadata_labels_by_given_id
     else:
-        sample_given_ids = dataset_crud.get_matrix_dataset_given_ids(db=db, dataset=dataset, axis="sample")
+        sample_given_ids = dataset_crud.get_matrix_dataset_given_ids(
+            db=db, dataset=dataset, axis="sample"
+        )
         return {given_id: given_id for given_id in sample_given_ids}
 
 
@@ -163,14 +174,14 @@ def get_dataset_feature_by_label(
 
     dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert isinstance(dataset, MatrixDataset)
 
     labels_by_given_id = get_matrix_dataset_feature_labels_by_id(db, db.user, dataset)
     given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
     feature_given_id = given_ids_by_label.get(feature_label)
     if feature_given_id is None:
-        raise ResourceNotFoundError(
+        raise FeatureNotFoundError(
             f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
         )
 
@@ -186,14 +197,14 @@ def get_dataset_sample_by_label(
 
     dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert isinstance(dataset, MatrixDataset)
 
     labels_by_given_id = get_matrix_dataset_sample_labels_by_id(db, db.user, dataset)
     given_ids_by_label = {label: id for id, label in labels_by_given_id.items()}
     sample_given_id = given_ids_by_label.get(sample_label)
     if sample_given_id is None:
-        raise ResourceNotFoundError(
+        raise SampleNotFoundError(
             f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
         )
 
