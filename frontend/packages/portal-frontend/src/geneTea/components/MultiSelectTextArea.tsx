@@ -11,6 +11,8 @@ const MultiSelectTextarea: React.FC = () => {
     handleSetValidGeneSymbols,
     inValidGeneSymbols,
     handleSetInValidGeneSymbols,
+    handleClearPlotSelection,
+    handleClearSelectedTableRows,
   } = useGeneTeaContext();
 
   const [inputValue, setInputValue] = useState("");
@@ -106,6 +108,8 @@ const MultiSelectTextarea: React.FC = () => {
             handleSetGeneSymbolSelections(() => new Set<string>([]));
             handleSetValidGeneSymbols(new Set());
             handleSetInValidGeneSymbols(new Set());
+            handleClearPlotSelection();
+            handleClearSelectedTableRows();
             setInputValue(""); // Clear input
           }}
         >
