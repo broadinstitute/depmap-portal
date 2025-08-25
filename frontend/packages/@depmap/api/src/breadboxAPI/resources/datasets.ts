@@ -127,7 +127,6 @@ export function getMatrixDatasetSamples(dataset_id: string) {
 export function getDimensionData(sliceQuery: SliceQuery) {
   return postJson<{
     ids: string[];
-    labels: string[];
     values: string[];
   }>("/datasets/dimension/data/", sliceQuery);
 }
