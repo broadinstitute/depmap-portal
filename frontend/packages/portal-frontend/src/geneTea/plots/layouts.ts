@@ -14,29 +14,30 @@ export const getDefaultLayout = (
     autosize: true,
     // grid: { rows: 1, columns: 2, pattern: "independent" },
     height: 600,
-    margin: { t: 50, b: 50 },
+    margin: { t: 90, b: 50 },
     hovermode: "closest",
     hoverlabel: { namelength: -1 },
     dragmode: false,
     title: {
       text: "", // TODO add later
     },
+
     xaxis: {
+      automargin: true,
       domain: [0, 0.7],
 
       showgrid: false,
       title: {
         text: heatmapXAxisTitle,
-        standoff: 5,
       },
       side: "top",
 
       // ticklabelposition: 'outside bottom',
       ticktext: heatmapXAxisTickLabels,
       tickmode: "array",
+      tickangle: -45,
       tickfont: { size: 10 },
 
-      automargin: true,
       rangeslider: {
         thickness: 0.05,
         visible: true,
@@ -50,7 +51,6 @@ export const getDefaultLayout = (
       fixedrange: true,
       tickfont: { size: 10 },
       automargin: true,
-      // autorange: true,
     },
     yaxis2: {
       anchor: "x2",
@@ -117,7 +117,7 @@ export const getTabletScreenSizeLayout = (
     autosize: true,
     grid: { rows: 2, columns: 1, pattern: "independent" },
     // height: 650,
-    margin: { t: 10, b: 100 },
+    margin: { t: 50, b: 100 },
     hovermode: "closest",
     hoverlabel: { namelength: -1 },
     dragmode: false,
@@ -126,7 +126,6 @@ export const getTabletScreenSizeLayout = (
       domain: [0, 1],
       automargin: true,
       title: {
-        //standoff: 7,
         text: heatmapXAxisTitle,
 
         font: {
@@ -162,7 +161,6 @@ export const getTabletScreenSizeLayout = (
       domain: [0, 1],
       fixedrange: true,
       title: {
-        standoff: 7,
         text: barcChartXAxisTitle,
 
         font: {

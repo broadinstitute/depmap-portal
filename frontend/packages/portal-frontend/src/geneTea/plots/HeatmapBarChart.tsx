@@ -247,6 +247,10 @@ function HeatmapBarChart({
             Math.max(0, minSelected - 1),
             Math.min([...new Set(heatmapData.x)].length - 1, maxSelected + 1),
           ],
+          ...({
+            "xaxis2.fixedrange": true,
+            "yaxis2.fixedrange": true,
+          } as object),
         });
       }
     };
