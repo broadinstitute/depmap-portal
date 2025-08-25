@@ -30,7 +30,6 @@ export async function fetchGeneTeaEnrichment(
     gene_list: genes,
     remove_overlapping: "true",
     n: limit || -1,
-    model: "v2",
   };
 
   interface RawResponse {
@@ -98,7 +97,6 @@ export async function fetchGeneTeaTermContext(
   const params = {
     term,
     gene_list: genes,
-    model: "v2",
     html: true,
   };
 
