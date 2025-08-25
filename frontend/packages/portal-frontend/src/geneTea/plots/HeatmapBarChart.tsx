@@ -1,9 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
-  Config,
   Data as PlotlyData,
   Layout,
-  PlotData,
   PlotlyHTMLElement,
   ColorScale,
 } from "plotly.js";
@@ -17,6 +15,7 @@ import {
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDefaultLayout, getTabletScreenSizeLayout } from "./layouts";
 import { generateTickLabels } from "../utils";
+import styles from "./HeatmapBarChart.scss";
 
 const viridisRColorscale = [
   ["0", "#D3D3D3"],
@@ -311,7 +310,7 @@ function HeatmapBarChart({
     Plotly,
   ]);
 
-  return <div ref={ref} />;
+  return <div className={styles.HeatmapBarChart} ref={ref} />;
 }
 
 export default function LazyHeatmapBarChart({

@@ -33,6 +33,9 @@ export const getDefaultLayout = (
       side: "top",
 
       // ticklabelposition: 'outside bottom',
+      tickvals: heatmapXAxisTickLabels.map((label, i) =>
+        label ? data.x[i] : ""
+      ),
       ticktext: heatmapXAxisTickLabels,
       tickmode: "array",
       tickangle: -45,
