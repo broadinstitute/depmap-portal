@@ -31,8 +31,7 @@ function getTopCorrelatedData(
   // Get top 10 overall compounds across all datasets
   const topCompounds: Set<string> = new Set();
 
-  // filter all correlates by those in topTargets and topCompound
-  const filteredTopCorrelates = [];
+  // filter all sorted correlations by those that would be in topTargets and topCompound
   const topCorrelates: TopCompoundTargetsCorrelates = {};
   for (let i = 0; i < allCorrelatedCompounds.length; i++) {
     const correlatedCompound = allCorrelatedCompounds[i];
@@ -46,15 +45,19 @@ function getTopCorrelatedData(
 
     const correlatedCompoundName = correlatedCompound.other_dimension_label;
     if (topCompounds.size < 10) {
-      if (!topCompounds.has(correlatedCompoundName)) {
+      // for this correlate, add its correlated compound to topCompounds list if it isn't there and if correlated gene target is in topTargets list
+      if (
+        !topCompounds.has(correlatedCompoundName) &&
+        topTargets.has(correlatedCompoundGeneTarget)
+      ) {
         topCompounds.add(correlatedCompoundName);
       }
     }
+    // for this correlate, if it is in topCompounds and topTargets, add it to its respective gene target's dataset data type
     if (
       topCompounds.has(correlatedCompoundName) &&
       topTargets.has(correlatedCompoundGeneTarget)
     ) {
-      filteredTopCorrelates.push(correlatedCompound);
       const dataTypeKey = datasetToDataTypeMap[correlatedCompound.dataset];
 
       if (!(correlatedCompoundName in topCorrelates)) {
