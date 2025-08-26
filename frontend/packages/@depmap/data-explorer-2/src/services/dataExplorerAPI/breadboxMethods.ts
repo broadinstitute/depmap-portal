@@ -121,8 +121,19 @@ export async function fetchPlotDimensions(
 
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
 
-  function fetchRawDimension(key: string) {
+  async function fetchRawDimension(key: string) {
     const { context, dataset_id, slice_type } = dimensions[key];
+
+    // FIXME: Remove this when we convert everything to use IDs.
+    const idToLabelMapping = await (() => {
+      return fetchDatasetIdentifiers(
+        index_type,
+        dataset_id
+      ).then((identifiers) =>
+        Object.fromEntries(identifiers.map(({ id, label }) => [id, label]))
+      );
+    })();
+
     const identifier = (context.expr as VarEqualityExpression)[
       "=="
     ][1] as string;
@@ -133,16 +144,16 @@ export async function fetchPlotDimensions(
 
     return cached(breadboxAPI)
       .getDimensionData({ dataset_id, identifier, identifier_type })
-      .then(({ ids, labels, values }) => {
+      .then(({ ids, values }) => {
         const indexed_values: Record<
           string,
           string | string[] | number | null
         > = {};
 
-        // TODO: Change this to use ids instead of labels.
-        for (let i = 0; i < labels.length; i++) {
-          const label = labels[i];
+        for (let i = 0; i < ids.length; i++) {
           const id = ids[i];
+          // TODO: Change this to use ids instead of labels.
+          const label = idToLabelMapping[id];
           uniqueLabels.add(label);
 
           if (index_type === "depmap_model") {
@@ -261,17 +272,27 @@ export async function fetchPlotDimensions(
         );
       }
 
-      const indexProp = index_type === "depmap_model" ? "ids" : "labels";
+      // FIXME: Remove this when we convert everything to use IDs.
+      const idToLabelMapping = await (() => {
+        return cached(breadboxAPI)
+          .getDimensionTypeIdentifiers(index_type)
+          .then((identifiers) =>
+            Object.fromEntries(identifiers.map(({ id, label }) => [id, label]))
+          );
+      })();
+
       const uniqueValues = new Set<string>();
 
       for (let i = 0; i < data.values.length; i += 1) {
-        const label = data[indexProp][i];
-        const value = data.values[i];
+        const id = data.ids[i];
+        const indexKey =
+          index_type === "depmap_model" ? id : idToLabelMapping[id];
+        const indexedValue = data.values[i];
 
-        indexed_values[label] = value;
+        indexed_values[indexKey] = indexedValue;
 
-        if (value) {
-          uniqueValues.add(value);
+        if (indexedValue) {
+          uniqueValues.add(indexedValue);
         }
       }
 
