@@ -19,6 +19,7 @@ import {
   SliceQuery,
 } from "@depmap/types";
 import { fetchDatasetIdentifiers } from "./identifiers";
+import { getDimensionDataWithoutLabels } from "./helpers";
 
 type VarEqualityExpression = { "==": [{ var: string }, string | number] };
 
@@ -142,34 +143,36 @@ export async function fetchPlotDimensions(
       ? "sample_id"
       : "feature_id";
 
-    return cached(breadboxAPI)
-      .getDimensionData({ dataset_id, identifier, identifier_type })
-      .then(({ ids, values }) => {
-        const indexed_values: Record<
-          string,
-          string | string[] | number | null
-        > = {};
+    return getDimensionDataWithoutLabels({
+      dataset_id,
+      identifier,
+      identifier_type,
+    }).then(({ ids, values }) => {
+      const indexed_values: Record<
+        string,
+        string | string[] | number | null
+      > = {};
 
-        for (let i = 0; i < ids.length; i++) {
-          const id = ids[i];
-          // TODO: Change this to use ids instead of labels.
-          const label = idToLabelMapping[id];
-          uniqueLabels.add(label);
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+        // TODO: Change this to use ids instead of labels.
+        const label = idToLabelMapping[id];
+        uniqueLabels.add(label);
 
-          if (index_type === "depmap_model") {
-            indexed_values[id] = values[i];
-            cellLineIdMapping[label] = id;
-          } else {
-            indexed_values[label] = values[i];
-          }
+        if (index_type === "depmap_model") {
+          indexed_values[id] = values[i];
+          cellLineIdMapping[label] = id;
+        } else {
+          indexed_values[label] = values[i];
         }
+      }
 
-        return {
-          property: "dimensions",
-          indexed_values,
-          key,
-        };
-      });
+      return {
+        property: "dimensions",
+        indexed_values,
+        key,
+      };
+    });
   }
 
   async function fetchAggregatedDimension(key: string) {
@@ -260,17 +263,7 @@ export async function fetchPlotDimensions(
       const indexed_values: Record<string, string | null> = {};
 
       const sliceQuery = metadata![key] as SliceQuery;
-      const data = await cached(breadboxAPI).getDimensionData(sliceQuery);
-
-      if (!("values" in data)) {
-        window.console.error({
-          sliceQuery: metadata![key],
-          response: data,
-        });
-        throw new Error(
-          "Bad response from /datasets/dimension/data/. Contains no `values!`"
-        );
-      }
+      const data = await getDimensionDataWithoutLabels(sliceQuery);
 
       // FIXME: Remove this when we convert everything to use IDs.
       const idToLabelMapping = await (() => {
