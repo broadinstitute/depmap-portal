@@ -68,6 +68,12 @@ const MultiSelectTextarea: React.FC = () => {
         </div>
         <textarea
           className={styles.multiSelectTextarea}
+          style={{
+            border: "none",
+            resize: "none",
+            width: "100%",
+            height: "100%",
+          }}
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
@@ -79,10 +85,16 @@ const MultiSelectTextarea: React.FC = () => {
           rows={5}
         />
       </div>
+      {validGeneSymbols.size > 0 && (
+        <div className={styles.validGenesLegend}>
+          <span className={styles.validGenesSwatch} />
+          <span>= valid genes ({validGeneSymbols.size})</span>
+        </div>
+      )}
       {inValidGeneSymbols.size > 0 && (
         <div className={styles.invalidGenesLegend}>
           <span className={styles.invalidGenesSwatch} />
-          <span>= invalid genes</span>
+          <span>= invalid genes ({inValidGeneSymbols.size})</span>
         </div>
       )}
       <div className={styles.buttonRow}>

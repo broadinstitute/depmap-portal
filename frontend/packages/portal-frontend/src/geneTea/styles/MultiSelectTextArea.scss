@@ -24,10 +24,21 @@
     display: inline-block;
     margin-right: 8px;
     border-radius: 3px;
-
-    box-sizing: border-box;
-    overflow-y: scroll;
-    resize: vertical;
+  }
+  .validGenesLegend {
+    padding: 10px 0 0 0;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    background-color: rgba(123, 140, 178, 0.1);
+  }
+  .validGenesSwatch {
+    width: 18px;
+    height: 18px;
+    background: #b6e7b0;
+    display: inline-block;
+    margin-right: 8px;
+    border-radius: 3px;
   }
 
   .multiSelectTextareaBorder {
@@ -36,6 +47,10 @@
     border-radius: 4px;
     padding: 5px;
     background-color: #fff;
+    height: 220px;
+    overflow-y: auto;
+    flex-wrap: wrap;
+    align-items: flex-start;
 
     .chipList {
       display: flex;
@@ -66,13 +81,6 @@
           cursor: pointer;
         }
       }
-    }
-
-    .multiSelectTextarea {
-      width: 100%;
-      border: none;
-      outline: none;
-      resize: none;
     }
   }
 }
@@ -130,4 +138,8 @@
   .clearInputButton:hover {
     background-color: #e6f0fa;
   }
+}
+
+textarea:focus {
+  outline: none;
 }

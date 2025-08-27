@@ -1,13 +1,14 @@
 import React, { useContext } from "react";
 import styles from "../styles/GeneTea.scss";
 import { Tab, Tabs } from "react-bootstrap";
-import MultiSelectTextarea from "./MultiSelectTextArea";
+import MultiSelectTextarea from "./MultiSelectTextExperimental";
 import SectionStack, {
   SectionStackContext,
   StackableSection,
 } from "./collapsibleOptions/SectionStack";
 import PlotOptionsPanel from "./PlotOptionsPanel";
 import TermOptionsPanel from "./TermOptionsPanel";
+import MultiSelectTextArea from "./MultiSelectTextArea";
 
 function SearchOptionsContainer() {
   const { sectionHeights } = useContext(SectionStackContext);
@@ -16,7 +17,7 @@ function SearchOptionsContainer() {
     <div className={styles.SearchOptionsContainer}>
       <Tabs className={styles.Tabs} id={"gene-tea-filter-tabs"}>
         <Tab eventKey={"List"} title={"List"} className={styles.Tab}>
-          <MultiSelectTextarea />
+          <MultiSelectTextArea />
           <SectionStack>
             <StackableSection title="Plot Options" minHeight={132}>
               <PlotOptionsPanel />
