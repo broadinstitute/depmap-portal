@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
@@ -41,6 +41,18 @@ const MultiSelectTextarea: React.FC = () => {
     );
   };
 
+  const targetRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    // Scroll to the element once the component mounts or the `items` change.
+    if (targetRef.current) {
+      targetRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [inputValue]); // Re-run the effect if the items array changes.
+
   return (
     <div className={styles.multiSelectTextareaContainer}>
       <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
@@ -67,12 +79,14 @@ const MultiSelectTextarea: React.FC = () => {
           })}
         </div>
         <textarea
+          ref={targetRef}
           className={styles.multiSelectTextarea}
           style={{
             border: "none",
             resize: "none",
             width: "100%",
             height: "100%",
+            scrollMargin: 80,
           }}
           value={inputValue}
           onChange={handleInputChange}
