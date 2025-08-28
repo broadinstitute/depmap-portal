@@ -71,7 +71,6 @@ def compute_univariate_associations(
     specifying identifiers for retrieving the data within breadbox (queryFeatureId + queryDatasetId).
     For two class comparisons, the queryValues are the strings "in" and "out".
     """
-    utils.check_celery()
 
     resultsDirPrefix = settings.compute_results_location
     dataset_id = computeParams.datasetId
@@ -120,6 +119,4 @@ def compute_univariate_associations(
 
 @router.get("/test_task", operation_id="test_task")
 def test_task(message):
-    utils.check_celery()
-
     utils.cast_celery_task(analysis_tasks.test_task).delay(message)
