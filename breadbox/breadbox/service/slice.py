@@ -9,6 +9,7 @@ from breadbox.schemas.dataset import TabularDimensionsInfo
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
+    DatasetNotFoundError,
 )
 from breadbox.io.filestore_crud import (
     get_feature_slice,
@@ -16,6 +17,7 @@ from breadbox.io.filestore_crud import (
 )
 from breadbox.service import metadata as metadata_service
 from breadbox.service import dataset as dataset_service
+from breadbox.utils.asserts import index_error_msg
 
 from depmap_compute.slice import SliceQuery
 
@@ -89,7 +91,7 @@ def get_slice_data(
     dataset_id = slice_query.dataset_id
     dataset = dataset_crud.get_dataset(db=db, user=db.user, dataset_id=dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
 
     if slice_query.identifier_type == "column":
         if not dataset.format == "tabular_dataset":
@@ -116,24 +118,28 @@ def get_slice_data(
         feature = dataset_crud.get_dataset_feature_by_given_id(
             db, dataset_id, feature_given_id=slice_query.identifier
         )
+        assert feature.index is not None, index_error_msg(feature)
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "feature_label":
         feature = metadata_service.get_dataset_feature_by_label(
             db, dataset_id, feature_label=slice_query.identifier,
         )
+        assert feature.index is not None, index_error_msg(feature)
         slice_data = get_feature_slice(dataset, [feature.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_id":
         sample = dataset_crud.get_dataset_sample_by_given_id(
             db, dataset_id, sample_given_id=slice_query.identifier
         )
+        assert sample.index is not None, index_error_msg(sample)
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     elif slice_query.identifier_type == "sample_label":
         sample = metadata_service.get_dataset_sample_by_label(
             db, dataset_id, sample_label=slice_query.identifier
         )
+        assert sample.index is not None, index_error_msg(sample)
         slice_data = get_sample_slice(dataset, [sample.index], filestore_location)
 
     else:

@@ -5,8 +5,9 @@ from uuid import UUID, uuid4
 import warnings
 
 import pandas as pd
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, func, or_, select, true
 from sqlalchemy.sql import distinct
+from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
 
 from breadbox.db.session import SessionWithUser
@@ -21,6 +22,9 @@ from ..schemas.custom_http_exception import (
     DatasetAccessError,
     ResourceNotFoundError,
     UserError,
+    DatasetNotFoundError,
+    FeatureNotFoundError,
+    SampleNotFoundError,
 )
 from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import (
@@ -60,7 +64,7 @@ def get_dataset_filter_clauses(db, user):
     groups = get_groups_with_visible_contents(db, user)  # TODO: update
     group_ids = [group.id for group in groups]
 
-    filter_clauses = [Dataset.group_id.in_(group_ids)]  # pyright: ignore
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
 
@@ -95,7 +99,7 @@ def get_datasets(
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
-    filter_clauses = [Dataset.group_id.in_(group_ids)]  # pyright: ignore
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
 
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
@@ -160,7 +164,7 @@ def get_datasets(
     if data_type is not None:
         filter_clauses.append(Dataset.data_type == data_type)
 
-    datasets = db.query(dataset_poly).filter(and_(True, *filter_clauses)).all()
+    datasets = db.query(dataset_poly).filter(and_(true(), *filter_clauses)).all()
     return datasets
 
 
@@ -416,7 +420,7 @@ def get_dataset_dimension_search_index_entries(
                 id=dimension_given_id,
                 referenced_by=referenced_by,
                 matching_properties=[
-                    {"property": row["property"], "value": row["value"],}
+                    {"property": str(row["property"]), "value": str(row["value"]),}
                     for _, row in group.iterrows()
                     if row["value"] is not None
                 ],
@@ -559,7 +563,7 @@ def _get_indexes_by_given_id(
     db: SessionWithUser,
     user: str,
     dataset: Dataset,
-    axis: Union[DatasetFeature, DatasetSample],
+    axis: Type[Union[DatasetFeature, DatasetSample]],
     given_ids: List[str],
 ) -> Tuple[List[int], List[str]]:
     assert_user_has_access_to_dataset(dataset, user)
@@ -569,18 +573,18 @@ def _get_indexes_by_given_id(
 
     results = (
         db.query(axis)
-        .filter(
-            and_(
-                axis.dataset_id == dataset.id,
-                axis.given_id.in_(given_ids),  # pyright: ignore
-            )
-        )
+        .filter(and_(axis.dataset_id == dataset.id, axis.given_id.in_(given_ids),))
         .with_entities(axis.given_id, axis.index)
         .order_by(axis.index)
         .all()
     )
 
-    given_id_to_index = dict(results)
+    # Convert SQLAlchemy Row objects to a dict, filtering out None indices
+    given_id_to_index = {}
+    for row in results:
+        given_id, index = row
+        if index is not None:
+            given_id_to_index[given_id] = index
 
     return (
         list(given_id_to_index.values()),
@@ -715,7 +719,7 @@ def get_dataset_feature_by_given_id(
 ) -> DatasetFeature:
     dataset = get_dataset(db, db.user, dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert_user_has_access_to_dataset(dataset, db.user)
     assert isinstance(dataset, MatrixDataset)
 
@@ -729,7 +733,7 @@ def get_dataset_feature_by_given_id(
     )
 
     if feature is None:
-        raise ResourceNotFoundError(
+        raise FeatureNotFoundError(
             f"Feature given ID '{feature_given_id}' not found in dataset '{dataset_id}'."
         )
     return feature
@@ -740,7 +744,7 @@ def get_dataset_sample_by_given_id(
 ) -> DatasetSample:
     dataset = get_dataset(db, db.user, dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert_user_has_access_to_dataset(dataset, db.user)
     assert isinstance(dataset, MatrixDataset)
 
@@ -754,7 +758,7 @@ def get_dataset_sample_by_given_id(
     )
 
     if sample is None:
-        raise ResourceNotFoundError(
+        raise SampleNotFoundError(
             f"Sample given ID '{sample_given_id}' not found in dataset '{dataset_id}'."
         )
     return sample
@@ -774,7 +778,7 @@ def get_subset_of_tabular_data_as_df(
     query = (
         db.query(TabularColumn)
         .join(TabularCell)
-        .filter(and_(True, *filter_statements))
+        .filter(and_(true(), *filter_statements))
         .with_entities(
             TabularCell.value, TabularCell.dimension_given_id, TabularColumn.given_id,
         )
@@ -789,7 +793,12 @@ def get_subset_of_tabular_data_as_df(
     if pivot_df.empty:
         return pivot_df
 
-    return pivot_df["value"]
+    result = pivot_df["value"]
+    assert isinstance(
+        result, pd.DataFrame
+    ), "Expected pd.DataFrame type from pivot operation"
+
+    return result
 
 
 def get_unique_dimension_ids_from_datasets(
@@ -854,10 +863,8 @@ def get_metadata_used_in_matrix_dataset(
     # Using a subquery makes this MUCH faster than two separate queries would be
     # because it reduces the number of rows that need to be fetched and constructed
     # into python objects (which is usually by far the slowest part of SQLAlchemy queries).
-    given_id_subquery = (
-        db.query(dimension_subtype_cls.given_id)
-        .filter(dimension_subtype_cls.dataset_id == matrix_dataset_id)
-        .subquery()
+    given_id_subquery = select(dimension_subtype_cls.given_id).where(
+        dimension_subtype_cls.dataset_id == matrix_dataset_id
     )
     metadata_vals_by_id = (
         db.query(TabularColumn)

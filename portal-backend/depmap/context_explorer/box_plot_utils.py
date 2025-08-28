@@ -1,15 +1,17 @@
-import dataclasses
 from functools import partial
 from operator import contains
 import re
-from typing import Any, Dict, List, Literal, Optional
+from typing import Dict, List, Literal, Optional, Set
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound
 from depmap.context_explorer.models import (
     BoxCardData,
     ContextAnalysis,
     EnrichedLineagesTileData,
+    GroupedOtherBoxPlotData,
 )
+import dataclasses
 from depmap.dataset.models import DependencyDataset
 from depmap.gene.models import Gene
 from depmap.tile.views import get_dependency_dataset_for_entity
@@ -41,6 +43,35 @@ def _get_node_entity_data(
         entity_label=entity_label,
         entity_full_row_of_values=entity_full_row_of_values,
         entity_overview_page_label=entity_overview_page_label,
+    )
+
+
+def _get_box_data(
+    entity_full_row_of_values,
+    model_id_display_names: Dict[str, str],
+    category: Literal["heme", "solid"],
+) -> BoxData:
+    if model_id_display_names == {}:
+        return BoxData(
+            label="Other Heme" if category == "heme" else "Other Solid",
+            data=[],
+            cell_line_display_names=[],
+        )
+
+    model_ids = list(model_id_display_names.keys())
+    values = entity_full_row_of_values[entity_full_row_of_values.index.isin(model_ids)]
+
+    values.dropna(inplace=True)
+
+    display_names_series = DepmapModel.get_cell_line_display_names(model_ids=model_ids)
+    display_names_dict = display_names_series.to_dict()
+
+    context_values_index_by_display_name = values.rename(index=display_names_dict)
+
+    return BoxData(
+        label="Other Heme" if category == "heme" else "Other Solid",
+        data=context_values_index_by_display_name.tolist(),
+        cell_line_display_names=context_values_index_by_display_name.index.tolist(),
     )
 
 
@@ -163,52 +194,31 @@ def get_box_plot_card_data(
 
 
 def get_box_plot_data_for_other_category(
-    category: Literal["heme", "solid"],
-    all_sig_context_codes: List[str],
+    all_sig_context_codes: Set[str],
     entity_full_row_of_values,
     tree_type: str,
-    all_sig_models: List[str],
-) -> BoxData:
-    heme_model_id_series = (
-        SubtypeContext.get_model_ids_for_other_heme_contexts(
-            subtype_codes_to_filter_out=all_sig_context_codes,
-            tree_type=tree_type,
-            all_sig_models=all_sig_models,
-        )
-        if category == "heme"
-        else SubtypeContext.get_model_ids_for_other_solid_contexts(
-            subtype_codes_to_filter_out=all_sig_context_codes,
-            tree_type=tree_type,
-            all_sig_models=all_sig_models,
-        )
+    all_sig_models: Set[str],
+) -> GroupedOtherBoxPlotData:
+    heme_solid_model_ids = SubtypeContext.get_model_ids_for_other_heme_and_other_solid_contexts(
+        subtype_codes_to_filter_out=all_sig_context_codes,
+        tree_type=tree_type,
+        all_sig_models=all_sig_models,
     )
 
-    if heme_model_id_series == {}:
-        return BoxData(
-            label="Other Heme" if category == "heme" else "Other Solid",
-            data=[],
-            cell_line_display_names=[],
-        )
-
-    heme_model_ids = list(heme_model_id_series.keys())
-    heme_values = entity_full_row_of_values[
-        entity_full_row_of_values.index.isin(heme_model_ids)
-    ]
-
-    heme_values.dropna(inplace=True)
-
-    display_names_series = DepmapModel.get_cell_line_display_names(
-        model_ids=heme_model_ids
+    heme_model_ids = heme_solid_model_ids.heme
+    solid_model_ids = heme_solid_model_ids.solid
+    heme_box_data = _get_box_data(
+        entity_full_row_of_values=entity_full_row_of_values,
+        model_id_display_names=heme_model_ids,
+        category="heme",
     )
-    display_names_dict = display_names_series.to_dict()
-
-    context_values_index_by_display_name = heme_values.rename(index=display_names_dict)
-
-    return BoxData(
-        label="Other Heme" if category == "heme" else "Other Solid",
-        data=context_values_index_by_display_name.tolist(),
-        cell_line_display_names=context_values_index_by_display_name.index.tolist(),
+    solid_box_data = _get_box_data(
+        entity_full_row_of_values=entity_full_row_of_values,
+        model_id_display_names=solid_model_ids,
+        category="solid",
     )
+
+    return GroupedOtherBoxPlotData(heme=heme_box_data, solid=solid_box_data)
 
 
 def get_box_plot_data_for_context(
@@ -428,20 +438,11 @@ def get_context_plot_box_data(
                 if other_sig_data is not None:
                     other_box_plot_data.append(other_sig_data)
 
-    heme_box_plot_data = get_box_plot_data_for_other_category(
-        category="heme",
-        all_sig_context_codes=ordered_sig_context_codes,
+    solid_and_heme_box_data = get_box_plot_data_for_other_category(
+        all_sig_context_codes=set(ordered_sig_context_codes),
         entity_full_row_of_values=entity_full_row_of_values,
         tree_type=tree_type,
-        all_sig_models=all_sig_models,
-    )
-
-    solid_box_plot_data = get_box_plot_data_for_other_category(
-        category="solid",
-        all_sig_context_codes=ordered_sig_context_codes,
-        entity_full_row_of_values=entity_full_row_of_values,
-        tree_type=tree_type,
-        all_sig_models=all_sig_models,
+        all_sig_models=set(all_sig_models),
     )
 
     significant_selection = (
@@ -455,15 +456,19 @@ def get_context_plot_box_data(
         else selected_sig_box_plot_card_data.insignificant
     )
 
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
+
     return ContextPlotBoxData(
         significant_selection=significant_selection,
         insignificant_selection=insignificant_selection,
         other_cards=other_box_plot_data,
-        insignificant_heme_data=heme_box_plot_data,
-        insignificant_solid_data=solid_box_plot_data,
+        insignificant_heme_data=solid_and_heme_box_data.heme,
+        insignificant_solid_data=solid_and_heme_box_data.solid,
         drug_dotted_line=drug_dotted_line,
         entity_label=node_entity_data.entity_label,
         entity_overview_page_label=node_entity_data.entity_overview_page_label,
+        dataset_units=dataset_units,
     )
 
 
@@ -501,6 +506,9 @@ def get_organized_contexts(
             key=lambda x: level_0_sort_order.index(x.level_0_code),
         )
 
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
+
     ordered_box_plot_data = ContextPlotBoxData(
         significant_selection=context_box_plot_data.significant_selection,
         insignificant_selection=context_box_plot_data.insignificant_selection,
@@ -510,6 +518,7 @@ def get_organized_contexts(
         drug_dotted_line=context_box_plot_data.drug_dotted_line,
         entity_label=context_box_plot_data.entity_label,
         entity_overview_page_label=context_box_plot_data.entity_overview_page_label,
+        dataset_units=dataset_units,
     )
 
     return ordered_box_plot_data
@@ -540,10 +549,8 @@ def get_compound_experiment_and_dataset_name_from_compound(compound: Compound):
         compound.entity_id
     )
     compound_experiment_and_datasets = [
-        x
-        for x in compound_experiment_and_datasets
-        if not x[1].is_ic50 and not x[1].is_dose_replicate
-    ]  # filter for non ic50 or dose replicate datasets"
+        x for x in compound_experiment_and_datasets if not x[1].is_dose_replicate
+    ]  # filter for non dose replicate datasets"
     best_ce_and_d = temp_get_compound_experiment_dataset(
         compound_experiment_and_datasets
     )
@@ -607,21 +614,19 @@ def get_data_to_show_if_no_contexts_significant(
     drug_dotted_line = (
         entity_full_row_of_values.mean() if entity_type == "compound" else None
     )
-    heme_box_plot_data = get_box_plot_data_for_other_category(
-        category="heme",
-        all_sig_context_codes=[],
-        entity_full_row_of_values=entity_full_row_of_values,
-        tree_type=tree_type,
-        all_sig_models=[],
-    )
 
-    solid_box_plot_data = get_box_plot_data_for_other_category(
-        category="solid",
-        all_sig_context_codes=[],
+    grouped_other_box_plot_data = get_box_plot_data_for_other_category(
+        all_sig_context_codes=set(),
         entity_full_row_of_values=entity_full_row_of_values,
         tree_type=tree_type,
-        all_sig_models=[],
+        all_sig_models=set(),
     )
+    heme_box_plot_data = grouped_other_box_plot_data.heme
+
+    solid_box_plot_data = grouped_other_box_plot_data.solid
+
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    assert dataset_units is not None
 
     ordered_box_plot_data = ContextPlotBoxData(
         significant_selection=[],
@@ -632,6 +637,7 @@ def get_data_to_show_if_no_contexts_significant(
         drug_dotted_line=drug_dotted_line,
         entity_label=entity_label,
         entity_overview_page_label=entity_overview_page_label,
+        dataset_units=dataset_units,
     )
 
     tile_data = EnrichedLineagesTileData(

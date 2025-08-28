@@ -445,7 +445,7 @@ def create_molecular_subtype_tree(genetic_subtypes):
 
     # determine how many subtypes are associated with each gene
     gene_st = pd.DataFrame(
-        [re.split(" |-", i, maxsplit=1) for i in genetic_subtypes.columns],
+        [re.split(" |-|_", i, maxsplit=1) for i in genetic_subtypes.columns],
         columns=["gene", "subtype"],
     ).assign(full_st=genetic_subtypes.columns)
     gene_st["n_gene"] = gene_st.groupby("gene").transform("size")

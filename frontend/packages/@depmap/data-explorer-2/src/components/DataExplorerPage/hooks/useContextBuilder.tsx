@@ -1,10 +1,10 @@
 import React, { useRef, useState } from "react";
-import { isElara } from "@depmap/globals";
 import {
   DataExplorerContext,
   DataExplorerPlotConfig,
   ContextPath,
 } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
 import {
   negateContext,
   saveContextToLocalStorageAndPersist,
@@ -14,7 +14,7 @@ import ContextBuilderV2 from "../../ContextBuilderV2";
 import { plotToQueryString, plotsAreEquivalentWhenSerialized } from "../utils";
 import { isCompletePlot } from "../validation";
 
-const ContextBuilder = isElara
+const ContextBuilder = isBreadboxOnlyMode
   ? (ContextBuilderV2 as any)
   : ContextBuilderModal;
 

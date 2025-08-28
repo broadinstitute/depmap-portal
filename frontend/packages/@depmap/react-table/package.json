@@ -1,0 +1,18 @@
+{
+  "name": "@depmap/react-table",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo 'no tests to run'"
+  },
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.13.10",
+    "classnames": "^2.3.1"
+  },
+  "peerDependencies": {
+    "react": "^16.9.35",
+    "react-dom": "^16.9.8"
+  }
+}

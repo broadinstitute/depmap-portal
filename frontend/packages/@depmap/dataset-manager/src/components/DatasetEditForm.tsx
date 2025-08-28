@@ -5,8 +5,8 @@ import { useState, useEffect } from "react";
 import {
   Dataset,
   DatasetUpdateArgs,
+  ErrorTypeError,
   Group,
-  instanceOfErrorDetail,
   InvalidPrioritiesByDataType,
 } from "@depmap/types";
 import { RegistryFieldsType, RJSFSchema, UiSchema } from "@rjsf/utils";
@@ -139,9 +139,11 @@ export default function DatasetForm(props: DatasetEditFormProps) {
             setSubmissionMsg("SUCCESS!");
           } catch (e) {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
-              setSubmissionMsg(e.detail);
-              setHasError(true);
+            setHasError(true);
+            if (e instanceof ErrorTypeError) {
+              setSubmissionMsg(e.message);
+            } else {
+              setSubmissionMsg("An unknown error occurred!");
             }
           }
         }}

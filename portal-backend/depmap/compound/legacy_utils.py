@@ -1,10 +1,11 @@
 import collections
 import logging
+from depmap import data_access
 import pandas as pd
 import re
 import sqlalchemy as sa
 from sqlalchemy import nullslast, case  # type: ignore
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from depmap.interactive import interactive_utils
 from depmap.database import db
@@ -19,7 +20,48 @@ from depmap.partials.matrix.models import Matrix, RowMatrixIndex
 
 log = logging.getLogger(__name__)
 
-def _get_deduplicated_experiment_compound_mapping(dataset_id: str) -> list[tuple[CompoundExperiment, Compound]]:
+
+# For the Enriched Lineages tile only, check if the legacy dataset exists with this specific compound experiment.
+# This is necessary because we only have enriched lineage data for Prism_oncology_AUC and Rep_all_single_pt.
+def does_legacy_dataset_exist_with_compound_experiment(
+    dataset_name: str,
+    compound_exp_and_dataset: List[Tuple[CompoundExperiment, DependencyDataset]],
+):
+    dataset = DependencyDataset.get_dataset_by_name(dataset_name)
+
+    # Find the dataset we are looking for in the list of comound experiment and dataset tuples.
+    # This is necessary becayse only a subset of possible (compound_experiment, dataset) tuples are
+    # relevant to the Enriched Lineages tile. This is because Enriched Lineages data was originally
+    # computed for Context Explorer, which only cares about at most Prism_oncology_AUC and Rep_all_single_pt
+    matching_compound_experiment_dataset_pair = None
+    for item in compound_exp_and_dataset:
+        if item[1] == dataset:
+            matching_compound_experiment_dataset_pair = item
+            break  #  Exit the loop once the first match is found
+
+    # It is possible that this compound only has compound experiments in datasets that do not have enriched lineage
+    # data. If that is the case, return False so that we don't show this tile.
+    if matching_compound_experiment_dataset_pair is None:
+        return False
+
+    # Check that the dataset exists in either the Breadbox or the legacy db. Sometimes datasets aren't available in all environments.
+    dataset_exists = data_access.dataset_exists(dataset_name)
+    if not dataset_exists:
+        return dataset_exists
+
+    matching_compound_experiment = matching_compound_experiment_dataset_pair[0]
+
+    # Check that the compound experiment is a valid row in this particular dataset
+    compound_exp_is_in_dataset = data_access.valid_row(
+        dataset_name, row_name=matching_compound_experiment.label,
+    )
+
+    return compound_exp_is_in_dataset
+
+
+def _get_deduplicated_experiment_compound_mapping(
+    dataset_id: str,
+) -> list[tuple[CompoundExperiment, Compound]]:
     """ 
     Returns a 1-1 mapping between CompoundExperiments and Compounds within the given dataset. 
     All compound experiments not in the mapping should be dropped. 
@@ -54,7 +96,9 @@ def _get_deduplicated_experiment_compound_mapping(dataset_id: str) -> list[tuple
 
 def get_compound_labels_by_experiment_label(dataset_id: str) -> dict[str, str]:
     result = {}
-    experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(dataset_id)
+    experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(
+        dataset_id
+    )
     for experiment, compound in experiment_compound_pairs:
         result[experiment.label] = compound.label
     return result
@@ -63,19 +107,25 @@ def get_compound_labels_by_experiment_label(dataset_id: str) -> dict[str, str]:
 def get_compound_ids_by_experiment_id(dataset_id: str) -> dict[int, int]:
     """Get a mapping between compound entity IDs and experiment entity IDs (not given IDs)."""
     result = {}
-    experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(dataset_id)
+    experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(
+        dataset_id
+    )
     for experiment, compound in experiment_compound_pairs:
         result[experiment.entity_id] = compound.compound_id
     return result
 
 
-def get_experiment_label_for_compound_label(dataset_id: str, compoound_label: str) -> Optional[str]:
+def get_experiment_label_for_compound_label(
+    dataset_id: str, compoound_label: str
+) -> Optional[str]:
     """
     For a given compound label, find the compound experiment that's used to index the underlying dataset.
     This should only be called for datasets where the feature_type is "compound_experiment".
     This can be used to generate backwards compatible links to DE2. 
     """
-    for exp_label, c_label in get_compound_labels_by_experiment_label(dataset_id).items():
+    for exp_label, c_label in get_compound_labels_by_experiment_label(
+        dataset_id
+    ).items():
         if c_label == compoound_label:
             return exp_label
     return None
@@ -87,17 +137,23 @@ def get_subsetted_df_by_compound_labels(dataset_id: str) -> pd.DataFrame:
     except that for compound datasets, the result will be indexed by compound (to match breadbox).
     """
     feature_type = interactive_utils.get_entity_type(dataset_id)
-    assert feature_type == "compound_experiment", f"Dataset '{dataset_id}' is indexed by '{feature_type}', cannot be re-indexed by compound label"
+    assert (
+        feature_type == "compound_experiment"
+    ), f"Dataset '{dataset_id}' is indexed by '{feature_type}', cannot be re-indexed by compound label"
     compound_labels_by_experiment = get_compound_labels_by_experiment_label(dataset_id)
-    compound_experiment_df = interactive_utils.get_subsetted_df_by_labels(dataset_id, None, None)
-    compound_df = compound_experiment_df.loc[list(compound_labels_by_experiment.keys()),:].rename(index=compound_labels_by_experiment)
+    compound_experiment_df = interactive_utils.get_subsetted_df_by_labels(
+        dataset_id, None, None
+    )
+    compound_df = compound_experiment_df.loc[
+        list(compound_labels_by_experiment.keys()), :
+    ].rename(index=compound_labels_by_experiment)
     return compound_df
 
 
 def get_compound_experiment_priority_sorted_datasets(compound_id: str) -> list[str]:
     """Get a list of dataset ids in priority order for the given compound ID (the given ID, not the entity ID)"""
     # Get a list of dataset IDs with an initial priority order sorting
-    datasets =  (
+    datasets = (
         db.session.query(CompoundExperiment, DependencyDataset)
         .join(
             Matrix, DependencyDataset.matrix_id == Matrix.matrix_id

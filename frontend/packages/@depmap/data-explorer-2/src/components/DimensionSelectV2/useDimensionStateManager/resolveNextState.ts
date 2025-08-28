@@ -1,5 +1,4 @@
 import { DataExplorerAggregation } from "@depmap/types";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
 import { contextsMatch } from "../../../utils/context";
 import { Changes, State } from "./types";
 import {
@@ -12,7 +11,6 @@ import {
 import computeOptions from "./computeOptions";
 
 async function resolveNextState(
-  api: ReturnType<typeof useDataExplorerApi>,
   index_type: string | null,
   prev: State,
   changes: Changes
@@ -57,7 +55,7 @@ async function resolveNextState(
       context = undefined;
       units = null;
     } else if (!slice_type) {
-      slice_type = await inferSliceType(api, index_type, dataType);
+      slice_type = await inferSliceType(index_type, dataType);
     }
   }
 
@@ -69,7 +67,7 @@ async function resolveNextState(
     }
 
     if (slice_type && !dataType) {
-      dataType = await inferDataType(api, index_type, slice_type);
+      dataType = await inferDataType(index_type, slice_type);
     }
   }
 
@@ -78,7 +76,7 @@ async function resolveNextState(
     dataset_id = undefined;
 
     if (dataType && slice_type) {
-      dataset_id = await inferDatasetId(api, index_type, slice_type, dataType);
+      dataset_id = await inferDatasetId(index_type, slice_type, dataType);
     }
   }
 
@@ -113,7 +111,7 @@ async function resolveNextState(
       const {
         inferredSliceType,
         inferredDataType,
-      } = await inferTypesFromDatasetId(api, index_type, dataset_id);
+      } = await inferTypesFromDatasetId(index_type, dataset_id);
 
       slice_type = inferredSliceType;
       dataType = inferredDataType;
@@ -147,7 +145,6 @@ async function resolveNextState(
   ) {
     // FIXME: This should take into account `context` as well.
     dataset_id = await findHighestPriorityDataset(
-      api,
       index_type,
       dataType as string,
       slice_type as string
@@ -155,10 +152,9 @@ async function resolveNextState(
 
     if (!dataset_id) {
       dataset_id = await inferDatasetId(
-        api,
         index_type,
-        dataType,
-        slice_type as string
+        slice_type as string,
+        dataType
       );
     }
   }
@@ -170,7 +166,7 @@ async function resolveNextState(
     axis_type !== pd.axis_type ||
     aggregation !== pd.aggregation;
 
-  const options = await computeOptions(api, index_type, dataType, {
+  const options = await computeOptions(index_type, dataType, {
     ...prev.dimension,
     axis_type,
     context,
@@ -192,6 +188,30 @@ async function resolveNextState(
   if (!dataset_id && options.dataVersionOptions.length === 1) {
     dataset_id = options.dataVersionOptions[0].value;
     dirty = true;
+  }
+
+  if (!prev.dimension.slice_type && slice_type && !dataType) {
+    const enabledOpts = options.dataTypeOptions.filter((o) => !o.isDisabled);
+    if (enabledOpts.length === 1) {
+      dataType = enabledOpts[0].value;
+      dirty = true;
+    }
+  }
+
+  if (!prev.dataType && dataType && !slice_type) {
+    const enabledOpts = options.sliceTypeOptions.filter((o) => !o.isDisabled);
+    if (enabledOpts.length === 1) {
+      slice_type = enabledOpts[0].value;
+      dirty = true;
+    }
+  }
+
+  if (!prev.dimension.context && context && !dataset_id) {
+    const enabledOpts = options.dataVersionOptions.filter((o) => !o.isDisabled);
+    if (enabledOpts.length === 1) {
+      dataset_id = enabledOpts[0].value;
+      dirty = true;
+    }
   }
 
   return {

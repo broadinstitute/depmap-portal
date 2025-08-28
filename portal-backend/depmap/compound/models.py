@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 import sqlalchemy
 from sqlalchemy import and_, func
 from depmap.database import (
@@ -19,14 +19,23 @@ import re
 from dataclasses import dataclass
 
 
+# AUC, Viability, and Replicate datasets are grouped here since all 3
+# datasets are typically required for "Dose Response Curve Compound Dataset"
+# visualizations: (e.g. the Heatmap Tab, the new Dose Curves tab).
 @dataclass
 class DRCCompoundDataset:
     drc_dataset_label: str
     viability_dataset_given_id: str
     replicate_dataset: str
     auc_dataset_given_id: str
-    ic50_dataset_given_id: Optional[str]
     display_name: str
+
+
+@dataclass
+class DRCCompoundDatasetWithNamesAndPriority(DRCCompoundDataset):
+    auc_dataset_priority: Union[int, None]
+    auc_dataset_display_name: str
+    viability_dataset_display_name: str
 
 
 drc_compound_datasets = [
@@ -35,41 +44,36 @@ drc_compound_datasets = [
         viability_dataset_given_id="Prism_oncology_viability",
         replicate_dataset="Prism_oncology_dose_replicate",
         auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-        ic50_dataset_given_id="Prism_oncology_ic50",
         display_name="PRISM OncRef",
     ),
-    # DRCCompoundDataset(
-    #     drc_dataset_label="GDSC2",
-    #     viability_dataset_given_id="GDSC2_Viability",
-    #     replicate_dataset="GDSC2_dose_replicate",
-    #     auc_dataset_given_id="GDSC2_AUC",
-    #     ic50_dataset_given_id="GDSC2_IC50",
-    #     display_name="GDSC2",
-    # ),
-    # DRCCompoundDataset(
-    #     drc_dataset_label="GDSC1",
-    #     viability_dataset_given_id="GDSC1_Viability",
-    #     replicate_dataset="GDSC1_dose_replicate",
-    #     auc_dataset_given_id="GDSC1_AUC",
-    #     ic50_dataset_given_id="GDSC1_IC50",
-    #     display_name="GDSC1",
-    # ),
-    # DRCCompoundDataset(
-    #     drc_dataset_label="ctd2_per_curve",
-    #     viability_dataset_given_id="CTRP_Viability",
-    #     replicate_dataset="CTRP_dose_replicate",
-    #     auc_dataset_given_id="CTRP_AUC",
-    #     ic50_dataset_given_id=None,
-    #     display_name="CTD^2",
-    # ),
-    # DRCCompoundDataset(
-    #     drc_dataset_label="repurposing_per_curve",
-    #     viability_dataset_given_id="REPURPOSING_Viability",
-    #     replicate_dataset="Repurposing_secondary_dose_replicate",
-    #     auc_dataset_given_id="Repurposing_secondary_AUC",
-    #     ic50_dataset_given_id=None,
-    #     display_name="PRISM Drug Repurposing",
-    # ),
+    DRCCompoundDataset(
+        drc_dataset_label="GDSC2",
+        viability_dataset_given_id="GDSC2_Viability",
+        replicate_dataset="GDSC2_dose_replicate",
+        auc_dataset_given_id="GDSC2_AUC_collapsed",
+        display_name="GDSC2",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="GDSC1",
+        viability_dataset_given_id="GDSC1_Viability",
+        replicate_dataset="GDSC1_dose_replicate",
+        auc_dataset_given_id="GDSC1_AUC_collapsed",
+        display_name="GDSC1",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="ctd2_per_curve",
+        viability_dataset_given_id="CTRP_Viability",
+        replicate_dataset="CTRP_dose_replicate",
+        auc_dataset_given_id="CTRP_AUC_collapsed",
+        display_name="CTD^2",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="repurposing_per_curve",
+        viability_dataset_given_id="REPURPOSING_Viability",
+        replicate_dataset="Repurposing_secondary_dose_replicate",
+        auc_dataset_given_id="REPURPOSING_AUC_collapsed",
+        display_name="PRISM Drug Repurposing",
+    ),
 ]
 
 gene_compound_target_association = db.Table(
@@ -120,6 +124,19 @@ class Compound(Entity):
         if len(xref_parts) < 2:
             return broad_xref
         return xref_parts[0] + "-" + xref_parts[1]
+
+    @staticmethod
+    def get_by_compound_id(compound_id: str, must=True) -> "Compound":
+        """
+        Return the Compound instance for a given compound_id (string, e.g. 'DPC-000001').
+        Returns None if not found.
+        """
+        q = Compound.query.filter(Compound.compound_id == compound_id)
+
+        if must:
+            return q.one()
+        else:
+            return q.one_or_none()
 
     @staticmethod
     def get_by_label(label, must=True) -> "Compound":
@@ -267,12 +284,6 @@ class CompoundExperiment(Entity):
         xref_type, xref = parts[0], parts[1]
         return CompoundExperiment.get_by_xref(xref, xref_type, must=must)
 
-    @staticmethod
-    def get_first_with_compound_xref_type(compound_id, xref_type):
-        return CompoundExperiment.query.filter_by(
-            compound_id=compound_id, xref_type=xref_type
-        ).first()
-
     @classmethod
     def get_all_for_compound_label(
         cls, compound_label: str, must=True
@@ -306,89 +317,6 @@ class CompoundExperiment(Entity):
         )
         results = query.all()
         return results
-
-
-class CompoundDose(Entity):
-    """
-    Represents a compound at a particular dose. Any replicates are collapsed into this one representation.
-
-    We are not relating the CompoundDose and CompoundDoseReplicate entities, instead choosing to double load the dose column. This is because we have thus far not needed this relation, instead just relating the datasets
-    """
-
-    __tablename__ = "compound_dose"
-    entity_id = Column(Integer, ForeignKey("entity.entity_id"), primary_key=True)
-
-    # this is the normalized compound
-    compound_experiment_id = Column(
-        Integer,
-        ForeignKey("compound_experiment.entity_id"),
-        nullable=False,
-        index=True,
-    )
-    compound_experiment = relationship(
-        "CompoundExperiment",
-        foreign_keys="CompoundDose.compound_experiment_id",
-        uselist=False,
-    )
-
-    dose = Column(Float, nullable=False)
-
-    __mapper_args__ = {"polymorphic_identity": "compound_dose"}
-
-    @staticmethod
-    def format_label(compound_experiment_label, dose):
-        """
-        Static because used by the loader
-        """
-        return "{} {}".format(
-            compound_experiment_label, CompoundDose._format_label_suffix(dose)
-        )
-
-    @property
-    def label_without_compound_name(self):
-        return CompoundDose._format_label_suffix(self.dose)
-
-    @staticmethod
-    def _format_label_suffix(dose):
-        """
-        Written so that format_label and label_without_experiment can share this
-        """
-        return "{}μM".format(dose)
-
-    @staticmethod
-    def get_all_with_compound_experiment_id(cpd_exp_id) -> List["CompoundDose"]:
-        q = CompoundDose.query.filter_by(compound_experiment_id=cpd_exp_id)
-        return q.all()
-
-    @classmethod
-    def get_all_for_compound_label(
-        cls, compound_label: str, must=True
-    ) -> List["CompoundDose"]:
-        compound_experiments = CompoundExperiment.get_all_for_compound_label(
-            compound_label, must
-        )
-        return [
-            entity
-            for compound_experiment in compound_experiments
-            for entity in cls.get_all_with_compound_experiment_id(
-                compound_experiment.entity_id
-            )
-        ]
-
-    @staticmethod
-    def get_by_compound_experiment_and_dose(xref, xref_type, dose, must=False):
-        q = CompoundDose.query.join(
-            CompoundExperiment,
-            CompoundExperiment.entity_id == CompoundDose.compound_experiment_id,
-        ).filter(
-            CompoundExperiment.xref == xref,
-            CompoundExperiment.xref_type == xref_type,
-            CompoundDose.dose == dose,
-        )
-        if must:
-            return q.one()
-        else:
-            return q.one_or_none()
 
 
 class CompoundDoseReplicate(Entity):

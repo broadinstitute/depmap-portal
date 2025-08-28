@@ -2,6 +2,8 @@
 
 Breadbox is a persistent service for storing and retrieving data for the [DepMap portal](https://github.com/broadinstitute/depmap-portal). It aims to simplify and consolidate formats across datasets that are uploaded by CDS during portal database re-builds, by users transiently, and by users for private groups. It consists of a persistent database to store the datasets and an API for uploading and fetching from the dataset.
 
+See the [docs](docs/) folder for more documentation on the breadbox data model and terminology. 
+
 ## Setup
 
 1.  Install pyenv & poetry
@@ -12,7 +14,6 @@ Breadbox is a persistent service for storing and retrieving data for the [DepMap
 2.  Run the setup tool
 
         ./install_prereqs.sh
-
 
 ## Running the app
 

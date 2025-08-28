@@ -3,13 +3,11 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { HeatmapFormattedData, TableFormattedData } from "../../types";
 
 function useHeatmapSelectionHandlers(
   plotData: HeatmapFormattedData | null,
   tableData: TableFormattedData | null,
-  deApi: ReturnType<typeof useDeprecatedDataExplorerApi>,
   handleShowUnselectedLinesOnSelectionsCleared: () => void
 ) {
   const [selectedModelIds, setPlotSelectedModelIds] = useState<Set<string>>(
@@ -49,18 +47,31 @@ function useHeatmapSelectionHandlers(
     [plotData, selectedModelIds]
   );
 
-  const handleSetSelectedPlotModels = (models: Set<string>) => {
-    setPlotSelectedModelIds((prev) => {
-      const next = new Set(prev);
-      models.forEach((id) => next.add(id));
-      setSelectedTableRows((tablePrev) => {
-        const tableNext = new Set(tablePrev);
-        models.forEach((id) => tableNext.add(id));
-        return tableNext;
+  const handleSetSelectedPlotModels = useCallback(
+    (selections: Set<string>, shiftKey: boolean) => {
+      setPlotSelectedModelIds((prev) => {
+        // NOTE: if people don't like shift click just always set next to new Set(prev)
+        const next: Set<string> = shiftKey ? new Set(prev) : new Set();
+
+        selections.forEach((id) => {
+          if (next.has(id)) {
+            next.delete(id);
+          } else {
+            next.add(id);
+          }
+        });
+
+        setSelectedTableRows(() => {
+          const tableNext = new Set(next);
+          next.forEach((id) => tableNext.add(id));
+          return tableNext;
+        });
+
+        return next;
       });
-      return next;
-    });
-  };
+    },
+    [setPlotSelectedModelIds, setSelectedTableRows]
+  );
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
     const labels = [...selectedModelIds];
@@ -97,42 +108,19 @@ function useHeatmapSelectionHandlers(
   const handleSetSelectionFromContext = useCallback(async () => {
     const allModelIds = Array.from(displayNameModelIdMap.keys());
     const allLabels = new Set(allModelIds);
-    const labels = await compoundPagePromptForSelectionFromContext(
-      deApi,
-      allLabels
-    );
+    const labels = await compoundPagePromptForSelectionFromContext(allLabels);
     if (labels === null) {
       return;
     }
     setPlotSelectedModelIds(labels);
     setSelectedTableRows(labels);
-  }, [deApi, displayNameModelIdMap]);
+  }, [displayNameModelIdMap]);
 
   const handleClearSelection = useCallback(() => {
     setPlotSelectedModelIds(new Set([]));
     setSelectedTableRows(new Set([]));
     handleShowUnselectedLinesOnSelectionsCleared();
   }, [handleShowUnselectedLinesOnSelectionsCleared]);
-
-  const sortedTableData: TableFormattedData = useMemo(() => {
-    if (!tableData) {
-      return [];
-    }
-
-    if (selectedTableRows.size === 0) {
-      return tableData;
-    }
-
-    // Selected rows at the top, in order of selection, then the rest in original order
-    const selectedIds = Array.from(selectedTableRows);
-    const selected = selectedIds
-      .map((id) => tableData.find((row) => row.modelId === id))
-      .filter((row): row is NonNullable<typeof row> => Boolean(row));
-    const unselected = tableData.filter(
-      (row) => !selectedTableRows.has(row.modelId)
-    );
-    return [...selected, ...unselected];
-  }, [selectedTableRows, tableData]);
 
   return {
     selectedModelIds,
@@ -144,7 +132,6 @@ function useHeatmapSelectionHandlers(
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    sortedTableData,
   };
 }
 

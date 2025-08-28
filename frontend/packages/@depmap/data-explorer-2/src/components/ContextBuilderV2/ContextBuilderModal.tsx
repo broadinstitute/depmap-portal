@@ -30,6 +30,7 @@ function ContextBuilderModal({
       onChangeContext={onClickSave}
     >
       <Modal
+        id="context-builder-modal"
         className={styles.ContextBuilder}
         backdrop={backdrop}
         show={show}

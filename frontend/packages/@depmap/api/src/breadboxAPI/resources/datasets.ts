@@ -8,11 +8,11 @@ import {
   DatasetValueType,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
+  SliceQuery,
   TabularDatasetDataArgs,
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
 import { getJson, postJson, deleteJson, postMultipart } from "../client";
-import { MatrixDatasetDataArgs } from "@depmap/types/src/Dataset";
 
 export function getDatasets(
   params?: Partial<{
@@ -37,27 +37,65 @@ export function updateDataset(
   return postJson<Dataset>(`/datasets/${datasetId}`, datasetUpdateArgs);
 }
 
+export function getMatrixDatasetData(
+  datasetId: string,
+  args: {
+    sample_identifier?: "id" | "label";
+    feature_identifier?: "id" | "label";
+    samples?: string[] | null;
+    features?: string[] | null;
+    aggregate?: {
+      aggregate_by: "features" | "samples";
+      aggregation: "mean" | "median" | "25%tile" | "75%tile";
+    };
+  }
+) {
+  if (!args.sample_identifier && !args.feature_identifier) {
+    throw new Error(
+      "Must supply at least a `sample_identifier` or `feature_identifier`"
+    );
+  }
+
+  const finalArgs: typeof args = { ...args };
+
+  // WORKAROUND: `aggregate` is silently ignored if you don't
+  // defined both dimensions (merely passing `null` is enough).
+  if (args.aggregate) {
+    if (!args.samples) {
+      finalArgs.samples = null;
+    }
+
+    if (!args.features) {
+      finalArgs.features = null;
+    }
+  }
+
+  return postJson<{ [key: string]: Record<string, any> }>(
+    `/datasets/matrix/${datasetId}`,
+    finalArgs
+  );
+}
+
 export function getTabularDatasetData(
   datasetId: string,
   args: TabularDatasetDataArgs
 ) {
   const url = `/datasets/tabular/${datasetId}`;
-  return postJson<{ [key: string]: Record<string, any> }>(url, args);
+  return postJson<{
+    [key: string]: Record<string, any>;
+  }>(url, args);
+}
+
+export function getDatasetSamples(datasetId: string) {
+  return getJson<{ id: string; label: string }[]>(
+    `/datasets/samples/${datasetId}`
+  );
 }
 
 export function getDatasetFeatures(datasetId: string) {
   return getJson<{ id: string; label: string }[]>(
     `/datasets/features/${datasetId}`
   );
-}
-
-export function getMatrixDatasetFeaturesData(
-  datasetId: string,
-  args: MatrixDatasetDataArgs
-): Promise<{ [key: string]: Record<string, any> }> {
-  const url = `/datasets/matrix/${datasetId}`;
-
-  return postJson<{ [key: string]: Record<string, any> }>(url, args);
 }
 
 export function searchDimensions({
@@ -82,8 +120,16 @@ export function getMatrixDatasetFeatures(dataset_id: string) {
 
 export function getMatrixDatasetSamples(dataset_id: string) {
   return getJson<{ id: string; label: string }[]>(
-    `/datasets/features/${dataset_id}`
+    `/datasets/samples/${dataset_id}`
   );
+}
+
+export function getDimensionData(sliceQuery: SliceQuery) {
+  return postJson<{
+    ids: string[];
+    labels: string[];
+    values: string[];
+  }>("/datasets/dimension/data/", sliceQuery);
 }
 
 const assertCsvSingleColumnNoHeader = (

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { AnnotationType, SliceQuery, TabularDataset } from "@depmap/types";
-import { useDataExplorerApi } from "../../../../contexts/DataExplorerApiContext";
 import renderConditionally from "../../../../utils/render-conditionally";
 import { fetchMetadataAndOtherTabularDatasets } from "../../../../utils/api-helpers";
 import PlotConfigSelect from "../../../PlotConfigSelect";
@@ -12,7 +11,6 @@ interface Props {
 }
 
 function TabularDatasetSelect({ slice_type, value, onChange }: Props) {
-  const api = useDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [tabularDatasets, setTabularDatasets] = useState<TabularDataset[]>([]);
   const [datasetId, setDatasetId] = useState<string | null>(
@@ -28,7 +26,6 @@ function TabularDatasetSelect({ slice_type, value, onChange }: Props) {
       const {
         otherTabularDatasets,
       } = await fetchMetadataAndOtherTabularDatasets(
-        api,
         slice_type,
         acceptedColTypes
       );
@@ -36,11 +33,13 @@ function TabularDatasetSelect({ slice_type, value, onChange }: Props) {
       setTabularDatasets(otherTabularDatasets);
       setIsLoading(false);
     })();
-  }, [api, slice_type]);
+  }, [slice_type]);
 
   const dataset =
     tabularDatasets && datasetId
-      ? tabularDatasets.find((d) => d.id === datasetId)
+      ? tabularDatasets.find(
+          (d) => d.given_id === datasetId || d.id === datasetId
+        )
       : null;
 
   const columnOptions = dataset

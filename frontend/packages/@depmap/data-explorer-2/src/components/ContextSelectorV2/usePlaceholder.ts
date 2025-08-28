@@ -1,19 +1,18 @@
 import { useEffect, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import { DimensionType } from "@depmap/types";
-import { useDataExplorerApi } from "../../contexts/DataExplorerApiContext";
 
 export default function usePlaceholder(
   context_type: string,
   isLoading: boolean
 ) {
-  const api = useDataExplorerApi();
   const [dimensionType, setDimensionType] = useState<DimensionType | null>(
     null
   );
 
   useEffect(() => {
-    api
-      .fetchDimensionTypes()
+    cached(breadboxAPI)
+      .getDimensionTypes()
       .then((types) => {
         const typeInfo = types.find((t) => t.name === context_type);
 
@@ -29,7 +28,7 @@ export default function usePlaceholder(
         const errorMsg = "Failed to fetch dimension types from Breadbox";
         throw new Error(errorMsg);
       });
-  }, [api, context_type]);
+  }, [context_type]);
 
   if (isLoading) {
     return "";

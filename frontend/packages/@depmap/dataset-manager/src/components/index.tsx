@@ -8,7 +8,7 @@ import {
   DimensionTypeUpdateArgs,
   DimensionTypeWithCounts,
   Group,
-  instanceOfErrorDetail,
+  ErrorTypeError,
   TabularDataset,
 } from "@depmap/types";
 
@@ -451,8 +451,10 @@ export default function Datasets() {
       })
       .catch((e) => {
         console.error(e);
-        if (instanceOfErrorDetail(e)) {
-          setDatasetDeleteError(e.detail);
+        if (e instanceof ErrorTypeError) {
+          setDatasetDeleteError(e.message);
+        } else {
+          setDatasetDeleteError("An unknown error occurred!");
         }
       });
 
@@ -479,8 +481,10 @@ export default function Datasets() {
           })
           .catch((e) => {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
-              setDimTypeDeleteError(e.detail);
+            if (e instanceof ErrorTypeError) {
+              setDimTypeDeleteError(e.message);
+            } else {
+              setDimTypeDeleteError("An unknown error occurred!");
             }
           });
       }
@@ -578,7 +582,9 @@ export default function Datasets() {
                 // If only one dataset is selected, assign that as the dataset to edit
                 if (selections.length === 1) {
                   const selectedDataset = datasets.find(
-                    (dataset) => dataset.id === selections[0]
+                    (dataset) =>
+                      dataset.id === selections[0] ||
+                      dataset.given_id === selections[0]
                   );
                   setDatasetToEdit(selectedDataset || null);
                 }

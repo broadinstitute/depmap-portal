@@ -28,8 +28,12 @@ interface HeatmapPlotSectionProps {
   doseMax: number | null;
   doseUnits: string;
   selectedModelIds: Set<string>;
-  handleSetSelectedPlotModels: (models: Set<string>) => void;
+  handleSetSelectedPlotModels: (
+    selections: Set<string>,
+    shiftKey: boolean
+  ) => void;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
+  handleClearSelection: () => void;
   displayNameModelIdMap: Map<string, string>;
   visibleZIndexes: number[];
 }
@@ -43,6 +47,7 @@ function HeatmapPlotSection({
   selectedModelIds,
   handleSetSelectedPlotModels,
   handleSetPlotElement,
+  handleClearSelection,
   plotElement,
   displayNameModelIdMap,
   visibleZIndexes,
@@ -98,7 +103,10 @@ function HeatmapPlotSection({
     stringId?: string;
   }) => {
     if (selection.stringId) {
-      handleSetSelectedPlotModels(new Set([selection.stringId]));
+      // The shiftKey parameter is false because you cannot hold down the shift key and search to add
+      // to your selection.
+      const shiftKey = false;
+      handleSetSelectedPlotModels(new Set([selection.stringId]), shiftKey);
     }
   };
 
@@ -107,22 +115,30 @@ function HeatmapPlotSection({
     end: number,
     shiftKey: boolean
   ) => {
-    let next: Set<string>;
-    if (shiftKey) {
-      next = new Set(selectedModelIds);
-    } else {
-      next = new Set();
-    }
+    // Get a set of data from the click or click and drag column selection
+    // ignoring any columns that are masked due to filter on dose.
+    const newlySelected = new Set<string>();
     for (let i = start; i <= end; i += 1) {
       if (maskedHeatmapData && maskedHeatmapData.modelIds[i]) {
-        next.add(maskedHeatmapData.modelIds[i]!);
+        newlySelected.add(maskedHeatmapData.modelIds[i]!);
       }
     }
-    handleSetSelectedPlotModels(next);
+    handleSetSelectedPlotModels(newlySelected, shiftKey);
   };
 
+  // HACK: so that Plotly will resize the plot when the user switches to this tab.
+  // Without this hack, if the plot loads while this tab is inactive, Plotly does not
+  // properly calculate plot size, and this can cause the plot to drastically overflow its bounds.
+  const [key, setKey] = React.useState(0);
+
+  React.useEffect(() => {
+    const handler = () => setKey((k) => k + 1);
+    window.addEventListener("changeTab:heatmap", handler);
+    return () => window.removeEventListener("changeTab:heatmap", handler);
+  }, []);
+
   return (
-    <div className={styles.PlotSection}>
+    <div className={styles.PlotSection} key={key}>
       <div className={styles.sectionHeader}>
         {plotElement && (
           <PlotControls
@@ -169,7 +185,7 @@ function HeatmapPlotSection({
               legendTitle={PLOT_UNITS_LABEL}
               hovertemplate="%{customdata}<extra></extra>"
               selectedColumns={selectedColumns}
-              onClearSelection={() => handleSetSelectedPlotModels(new Set())}
+              onClearSelection={() => handleClearSelection()}
               onSelectColumnRange={handleSelectColumnRange}
             />
           </div>

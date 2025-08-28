@@ -251,7 +251,11 @@ export default function LazyBoxPlot({
                             {code}
                           </span>
                         ) : (
-                          <a href={getNewContextUrl(code, urlPrefix, tab)}>
+                          <a
+                            href={getNewContextUrl(code, urlPrefix, tab)}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
                             {code}
                           </a>
                         )}

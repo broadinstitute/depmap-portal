@@ -25,7 +25,6 @@
     "@depmap/downloads": "1.0.0",
     "@depmap/groups-manager": "1.0.0",
     "@depmap/long-table": "1.0.0",
-    "@depmap/statistics": "1.0.0",
     "@depmap/types": "1.0.0",
     "@depmap/user-upload": "1.0.0",
     "@depmap/utils": "1.0.0",

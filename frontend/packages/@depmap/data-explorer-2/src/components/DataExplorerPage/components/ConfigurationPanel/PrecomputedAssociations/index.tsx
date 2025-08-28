@@ -1,13 +1,13 @@
 import React, { useCallback, useRef, useState } from "react";
-import { isElara } from "@depmap/globals";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../../../../../isBreadboxOnlyMode";
 import renderConditionally from "../../../../../utils/render-conditionally";
 import { PlotConfigReducerAction } from "../../../reducers/plotConfigReducer";
 import Section from "../../Section";
 import PrecomputedAssociations from "./PrecomputedAssociations";
 import LegacyPrecomputedAssociations from "./LegacyPrecomputedAssociations";
 
-const Associations = isElara
+const Associations = isBreadboxOnlyMode
   ? PrecomputedAssociations
   : LegacyPrecomputedAssociations;
 
@@ -33,7 +33,7 @@ function PrecomputedAssociationsSection({ plot, dispatch }: Props) {
           dataset_id,
           slice_label,
           slice_type,
-          given_id: isElara ? given_id : undefined,
+          given_id: isBreadboxOnlyMode ? given_id : undefined,
         },
       });
     },

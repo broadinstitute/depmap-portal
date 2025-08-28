@@ -10,8 +10,9 @@ endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
 show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
 show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
-show_heatmap_tab = show_heatmap_tab %} {% set show_celfie_tab = has_celfie %} {%
-set show_aliases = compound_aliases|length > 0 %} {% block content %}
+show_heatmap_tab = show_heatmap_tab %} {% set show_enriched_lineages =
+show_enriched_lineages %} {% set show_celfie_tab = has_celfie %} {% set
+show_aliases = compound_aliases|length > 0 %} {% block content %}
 <br />
 <div class="header">
   <div>
@@ -28,7 +29,7 @@ set show_aliases = compound_aliases|length > 0 %} {% block content %}
 {% if is_mobile %} {% include 'compounds/executive.html' %} {% else %} {% set
 active_tab_set = False %}
 <ul class="nav nav-tabs" role="tablist">
-  {% if has_datasets or about %}
+  {% if has_datasets %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a href="#overview" aria-controls="overview" role="tab" data-toggle="tab"
       >Overview</a
@@ -98,7 +99,7 @@ active_tab_set = False %}
 {% set active_tab_set = False %}
 <!-- Tab panes -->
 <div class="tab-content">
-  {% if has_datasets or about %}
+  {% if has_datasets %}
   <div
     role="tabpanel"
     class="tab-pane {% if not active_tab_set %}active{% endif %}"
@@ -175,7 +176,7 @@ active_tab_set = False %}
   </div>
   {% endif %}
 </div>
-{% endif %} {% if not has_datasets and not about and not show_sensitivity_tab %}
+{% endif %} {% if not has_datasets and not show_sensitivity_tab %}
 <p style="padding: 15px 0">No data was found on this compound.</p>
 {% endif %} {% endblock %} {% block js %}
 <script>
@@ -232,7 +233,7 @@ active_tab_set = False %}
           "heatmap-tab-content",
           {{ name | tojson }},
           {{ compound_id | tojson }},
-          {{ dose_curve_options_new | tojson }},
+          {{ heatmap_dataset_options | tojson }},
           "{{ compound_units }}"
         );
       } else if (target === "#predictability") {

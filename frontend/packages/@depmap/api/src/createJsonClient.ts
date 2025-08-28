@@ -1,4 +1,5 @@
 import qs from "qs";
+import { ErrorDetail, ErrorTypeError } from "@depmap/types";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -10,6 +11,25 @@ export const cacheOn = () => {
 export const cacheOff = () => {
   useCache = false;
 };
+
+interface BreadboxCustomException {
+  detail: string | ErrorDetail; // also string type for backwards compatibility.
+}
+
+function instanceOfBreadboxCustomException(
+  object: any
+): object is BreadboxCustomException {
+  return typeof object === "object" && object !== null && "detail" in object;
+}
+
+function instanceOfErrorDetail(object: any): object is ErrorDetail {
+  return (
+    typeof object === "object" &&
+    object !== null &&
+    "error_type" in object &&
+    "message" in object
+  );
+}
 
 async function request<T>(url: string, options: RequestInit): Promise<T> {
   let response: Response;
@@ -34,24 +54,31 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
   // Handle 404 and other non-JSON responses gracefully
   if (!response.ok) {
-    if (response.status === 404) {
-      throw new Error(`Endpoint not found: ${url}`);
-    }
-
     // Check if response is JSON before trying to parse
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
-      try {
-        const json = await response.json();
+      const json = await response.json();
+      if (instanceOfBreadboxCustomException(json)) {
+        throw new ErrorTypeError(
+          instanceOfErrorDetail(json.detail)
+            ? {
+                errorType: json.detail.error_type,
+                message: json.detail.message,
+              }
+            : {
+                errorType: "UNSPECIFIED_LEGACY_ERROR",
+                message: json.detail,
+              }
+        );
+      } else {
         const message =
           typeof json === "object" && json !== null
             ? JSON.stringify(json)
             : `Request failed with status ${response.status}`;
         throw new Error(message);
-      } catch (parseErr) {
-        // If JSON parsing fails, fall back to status message
-        throw new Error(`Request failed with status ${response.status}`);
       }
+    } else if (response.status === 404) {
+      throw new Error(`Endpoint not found: ${url}`);
     } else {
       // Non-JSON error response (like HTML 404 page)
       throw new Error(`Request failed with status ${response.status}`);
@@ -72,16 +99,20 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
 
 const makeGetJson = (urlPrefix: string) => <T>(
   url: string,
-  queryParameters?: Record<string, unknown>
+  queryParameters?: Record<string, unknown>,
+  options?: RequestInit
 ): Promise<T> => {
   const getJson = () => {
     let fullUrl = `${urlPrefix}${url}`;
 
-    if (queryParameters && Object.keys(queryParameters).length > 0) {
+    if (
+      queryParameters &&
+      Object.values(queryParameters).some((val) => val !== undefined)
+    ) {
       fullUrl += "?" + qs.stringify(queryParameters, { arrayFormat: "repeat" });
     }
 
-    return request<T>(fullUrl, { method: "GET" });
+    return request<T>(fullUrl, { method: "GET", ...options });
   };
 
   if (!useCache) {

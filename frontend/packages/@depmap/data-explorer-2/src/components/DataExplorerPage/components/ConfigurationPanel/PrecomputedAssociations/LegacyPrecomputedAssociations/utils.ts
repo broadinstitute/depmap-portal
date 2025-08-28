@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
-import {
+import { deprecatedDataExplorerAPI } from "../../../../../../services/deprecatedDataExplorerAPI";
+import type { DeprecatedDataExplorerApiResponse } from "../../../../../../services/deprecatedDataExplorerAPI";
+import type {
   DataExplorerContext,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import {
-  DeprecatedDataExplorerApiResponse,
-  useDeprecatedDataExplorerApi,
-} from "../../../../../../contexts/DeprecatedDataExplorerApiContext";
 
 export type Associations = DeprecatedDataExplorerApiResponse["fetchLegacyAssociations"];
 export const sliceToDataset = (slice_id: string) => {
@@ -29,7 +27,6 @@ const labelFromContext = (context: DataExplorerContext | undefined) => {
 };
 
 export function useAssociationsData(plot: PartialDataExplorerPlotConfig) {
-  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [associations, setAssociations] = useState<Associations | null>(null);
 
@@ -47,11 +44,13 @@ export function useAssociationsData(plot: PartialDataExplorerPlotConfig) {
   useEffect(() => {
     setIsLoading(true);
 
-    api.fetchLegacyAssociations(xDatasetId, xEntityLabel).then((data) => {
-      setAssociations(data);
-      setIsLoading(false);
-    });
-  }, [api, xDatasetId, xEntityLabel]);
+    deprecatedDataExplorerAPI
+      .fetchLegacyAssociations(xDatasetId, xEntityLabel)
+      .then((data) => {
+        setAssociations(data);
+        setIsLoading(false);
+      });
+  }, [xDatasetId, xEntityLabel]);
 
   return {
     xDatasetId,

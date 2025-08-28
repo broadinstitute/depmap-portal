@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useState } from "react";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import useHeatmapSelectionHandlers from "./hooks/useHeatmapSelectionHandlers";
 import DoseViabilityTable from "../DoseViabilityTable";
-import { useDeprecatedDataExplorerApi } from "@depmap/data-explorer-2";
 import { legacyPortalAPI } from "@depmap/api";
 import styles from "../CompoundDoseViability.scss";
 import useHeatmapData from "./hooks/useHeatmapData";
 import HeatmapPlotSection from "./HeatmapPlotSection";
 import CompoundPlotSelections from "../CompoundPlotSelections";
-import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
+import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
+import { hiddenDoseViabilityCols, staticDoseViabilityCols } from "../utils";
+import { TableFormattedData } from "../types";
 
 interface HeatmapTabMainContentProps {
   compoundName: string;
@@ -25,13 +26,12 @@ function HeatmapTabMainContent({
   selectedDoses = new Set(),
   compoundName,
 }: HeatmapTabMainContentProps) {
-  const api = useDeprecatedDataExplorerApi();
   const {
     tableFormattedData,
     doseColumnNames,
     error,
     isLoading,
-  } = useDoseTableDataContext();
+  } = useDoseViabilityDataContext();
 
   const { heatmapFormattedData, doseMin, doseMax } = useHeatmapData(
     tableFormattedData,
@@ -57,11 +57,9 @@ function HeatmapTabMainContent({
     handleClickSaveSelectionAsContext,
     handleSetSelectionFromContext,
     handleClearSelection,
-    sortedTableData,
   } = useHeatmapSelectionHandlers(
     heatmapFormattedData,
     tableFormattedData,
-    api,
     handleShowUnselectedLinesOnSelectionsCleared
   );
 
@@ -77,7 +75,7 @@ function HeatmapTabMainContent({
   }, [heatmapFormattedData, selectedDoses]);
 
   const doseViabilityTableColumns = useMemo(() => {
-    const staticColumns = ["cellLine", "modelId", "auc"];
+    const staticColumns = staticDoseViabilityCols.map((col) => col.accessor);
     const columns = [
       {
         accessor: "cellLine",
@@ -108,24 +106,20 @@ function HeatmapTabMainContent({
           );
         },
       },
-      {
-        accessor: "modelId",
-        Header: "Model ID",
-        maxWidth: 120,
-        minWidth: 80,
-      },
-      {
-        accessor: "auc",
-        Header: "AUC",
-        maxWidth: 120,
-        minWidth: 80,
-      },
+      ...staticDoseViabilityCols,
       // Add dynamic dose columns
-      ...(sortedTableData && sortedTableData.length > 0
+      ...(tableFormattedData && tableFormattedData.length > 0
         ? Array.from(
-            new Set(sortedTableData.flatMap((row) => Object.keys(row)))
+            new Set(
+              (tableFormattedData as TableFormattedData).flatMap((row) =>
+                Object.keys(row)
+              )
+            )
           )
-            .filter((colName) => !staticColumns.includes(colName))
+            .filter(
+              (colName) =>
+                !staticColumns.includes(colName) && colName !== "cellLine"
+            )
             .map((colName) => ({
               accessor: colName,
               Header: colName,
@@ -135,7 +129,7 @@ function HeatmapTabMainContent({
         : []),
     ];
     return columns;
-  }, [cellLineUrlRoot, sortedTableData]);
+  }, [cellLineUrlRoot, tableFormattedData]);
 
   // Make sure "Cell Line" and "AUC" always come first, followed by the dose
   // columns in order of smallest to largest dose.
@@ -147,7 +141,10 @@ function HeatmapTabMainContent({
   const defaultCols = useMemo(() => {
     return doseViabilityTableColumns
       .map((col) => col.accessor)
-      .filter((accessor) => accessor !== "modelId");
+      .filter(
+        (accessor) =>
+          !hiddenDoseViabilityCols.map((a) => a.accessor).includes(accessor)
+      );
   }, [doseViabilityTableColumns]);
 
   return (
@@ -156,42 +153,53 @@ function HeatmapTabMainContent({
         <h3>Viability Heatmap</h3>
         <p>
           Each cell line is organized by column, divided by dose. Hover over
-          plot points for tooltip information. Click on items to select from the
-          plot or table.
+          plot points for tooltip information. Click on columns to select from
+          the plot or table. Shift-click to select multiple columns. To
+          deselect, shift-click on a selected column, or shift-click and drag on
+          a series of selected columns.
         </p>
       </div>
-      <div className={styles.mainContentGrid}>
+      {error ? (
+        <div className={styles.errorMessage}>Error loading heatmap data.</div>
+      ) : (
         <>
-          <div className={styles.plotArea}>
-            <HeatmapPlotSection
-              isLoading={isLoading}
-              compoundName={compoundName}
-              plotElement={plotElement}
-              heatmapFormattedData={heatmapFormattedData}
-              doseMin={doseMin}
-              doseMax={doseMax}
-              doseUnits={doseUnits}
-              selectedModelIds={selectedModelIds}
-              handleSetSelectedPlotModels={handleSetSelectedPlotModels}
-              handleSetPlotElement={setPlotElement}
-              displayNameModelIdMap={displayNameModelIdMap}
-              visibleZIndexes={visibleZIndexes}
-              showUnselectedLines={showUnselectedLines}
-            />
-          </div>
-          <div className={styles.selectionsArea}>
-            <CompoundPlotSelections
-              selectedIds={selectedModelIds}
-              selectedLabels={new Set(selectedLabels)}
-              onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
-              onClickClearSelection={handleClearSelection}
-              onClickSetSelectionFromContext={
-                heatmapFormattedData ? handleSetSelectionFromContext : undefined
-              }
-            />
-          </div>
+          <div className={styles.mainContentGrid}>
+            <div className={styles.plotArea}>
+              <HeatmapPlotSection
+                isLoading={isLoading}
+                compoundName={compoundName}
+                plotElement={plotElement}
+                heatmapFormattedData={heatmapFormattedData}
+                doseMin={doseMin}
+                doseMax={doseMax}
+                doseUnits={doseUnits}
+                selectedModelIds={selectedModelIds}
+                handleSetSelectedPlotModels={handleSetSelectedPlotModels}
+                handleClearSelection={handleClearSelection}
+                handleSetPlotElement={setPlotElement}
+                displayNameModelIdMap={displayNameModelIdMap}
+                visibleZIndexes={visibleZIndexes}
+                showUnselectedLines={showUnselectedLines}
+              />
+            </div>
+            <div className={styles.selectionsArea}>
+              <CompoundPlotSelections
+                selectedIds={selectedModelIds}
+                selectedLabels={new Set(selectedLabels)}
+                onClickSaveSelectionAsContext={
+                  handleClickSaveSelectionAsContext
+                }
+                onClickClearSelection={handleClearSelection}
+                onClickSetSelectionFromContext={
+                  heatmapFormattedData
+                    ? handleSetSelectionFromContext
+                    : undefined
+                }
+              />
+            </div>
+          </div>{" "}
         </>
-      </div>
+      )}
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentCellLines}>
         <h3>Cell Lines</h3>
@@ -206,7 +214,7 @@ function HeatmapTabMainContent({
         <DoseViabilityTable
           error={error}
           isLoading={isLoading}
-          sortedTableData={sortedTableData ?? []}
+          tableData={tableFormattedData ?? []}
           doseCurveTableColumns={doseViabilityTableColumns}
           columnOrdering={columnOrdering}
           defaultCols={defaultCols}

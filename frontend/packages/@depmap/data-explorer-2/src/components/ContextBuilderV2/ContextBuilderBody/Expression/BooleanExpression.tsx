@@ -26,6 +26,11 @@ function BooleanExpression({
     <div className={styles.BooleanExpression}>
       <AnyAllToggle value={op} path={path} />
       <div className={styles.boolSubexpressions}>
+        {subexpressions.length === 0 && (
+          <div className={styles.zeroConditionsWarning}>
+            Please add at least one rule.
+          </div>
+        )}
         {subexpressions.map((subExpr, i) => (
           <div
             className={cx(styles.boolSubexpr, {
@@ -48,6 +53,7 @@ function BooleanExpression({
           <NumberOfMatches
             className={styles.subexpressionMatches}
             expr={expr}
+            isGroupTotal
           />
         </div>
       )}

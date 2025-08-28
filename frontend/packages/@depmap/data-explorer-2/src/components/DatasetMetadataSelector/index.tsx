@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import {
-  DeprecatedDataExplorerApiResponse,
-  useDeprecatedDataExplorerApi,
-} from "../../contexts/DeprecatedDataExplorerApiContext";
+import { isBreadboxOnlyMode } from "../../isBreadboxOnlyMode";
+import { deprecatedDataExplorerAPI } from "../../services/deprecatedDataExplorerAPI";
+import type { DeprecatedDataExplorerApiResponse } from "../../services/deprecatedDataExplorerAPI";
 import PlotConfigSelect from "../PlotConfigSelect";
 import SliceLabelSelector from "../SliceLabelSelector";
 import BinaryColorsHelpTip from "./BinaryColorsHelpTip";
@@ -31,7 +30,6 @@ function DatasetMetadataSelector({
   value,
   onChange,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [isLoading, setIsLoading] = useState(false);
   const [metadataSlices, setMetadataSlices] = useState<
     DeprecatedDataExplorerApiResponse["fetchMetadataSlices"]
@@ -39,14 +37,18 @@ function DatasetMetadataSelector({
 
   useEffect(() => {
     (async () => {
-      setIsLoading(true);
+      if (!isBreadboxOnlyMode) {
+        setIsLoading(true);
 
-      const slices = await api.fetchMetadataSlices(slice_type);
-      setMetadataSlices(slices);
+        const slices = await deprecatedDataExplorerAPI.fetchMetadataSlices(
+          slice_type
+        );
+        setMetadataSlices(slices);
 
-      setIsLoading(false);
+        setIsLoading(false);
+      }
     })();
-  }, [api, slice_type]);
+  }, [slice_type]);
 
   const hasDynamicLabel = containsPartialSlice(metadataSlices, value);
 

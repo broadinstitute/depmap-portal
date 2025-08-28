@@ -11,6 +11,10 @@
   flex-grow: 1;
   min-height: 40px;
   background-color: #ededed;
+
+  main[data-breadbox-only="true"] & {
+    background-color: #7b8cb2;
+  }
 }
 
 .buttonGroup {

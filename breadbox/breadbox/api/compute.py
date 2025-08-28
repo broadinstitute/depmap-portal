@@ -32,27 +32,22 @@ def _get_vector_is_dependent(
 
 def _validate_parameters(
     analysis_type: str,
-    query_node_id: Optional[str],
     query_feature_id: Optional[str],
     query_dataset_id: Optional[str],
     query_values: Optional[List[str]],
     depmap_model_ids: Optional[List[str]],
 ):
-    if query_node_id and query_feature_id and query_dataset_id:
-        raise UserError(
-            f"Query feature must be specified through either node id or feature id + dataset id, not both."
-        )
-    has_query_id = query_node_id or (query_feature_id and query_dataset_id)
+    has_query_identifiers = query_feature_id and query_dataset_id
     if (
         analysis_type == models.AnalysisType.pearson
         or analysis_type == models.AnalysisType.association
     ):
         # Values can be specified with either the query_id or query_values
-        assert (has_query_id and not query_values) or (
-            query_values and not has_query_id
+        assert (has_query_identifiers and not query_values) or (
+            query_values and not has_query_identifiers
         )
     elif analysis_type == models.AnalysisType.two_class:
-        assert not has_query_id
+        assert not has_query_identifiers
         assert depmap_model_ids
         assert query_values
     else:
@@ -69,6 +64,14 @@ def compute_univariate_associations(
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
+    """
+    Custom analysis offers three different analysis types: "pearson", "association", and "two_class". 
+    In all 3 types, the caller must specify both: a dataset and a vector of data (which we refer to as the "query vector").
+    The query vector can be specified _either_ by providing the data (queryCellLines + queryValues) or by 
+    specifying identifiers for retrieving the data within breadbox (queryFeatureId + queryDatasetId).
+    For two class comparisons, the queryValues are the strings "in" and "out".
+    """
+
     resultsDirPrefix = settings.compute_results_location
     dataset_id = computeParams.datasetId
     vector_variable_type = computeParams.vectorVariableType
@@ -83,7 +86,6 @@ def compute_univariate_associations(
     assert dataset_id is not None
     _validate_parameters(
         analysis_type=analysis_type,
-        query_node_id=computeParams.queryId,
         query_feature_id=computeParams.queryFeatureId,
         query_dataset_id=computeParams.queryDatasetId,
         query_values=query_values,
@@ -100,7 +102,6 @@ def compute_univariate_associations(
         result = utils.cast_celery_task(analysis_tasks.run_custom_analysis).delay(
             user=user,
             analysis_type=analysis_type,
-            query_node_id=computeParams.queryId,
             query_feature_id=computeParams.queryFeatureId,
             query_dataset_id=computeParams.queryDatasetId,
             filestore_location=settings.filestore_location,

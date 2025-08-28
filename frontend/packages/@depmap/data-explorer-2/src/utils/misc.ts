@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import {
   DataExplorerPlotConfigDimension,
+  DataExplorerPlotConfigDimensionV2,
   DimensionType,
   PartialDataExplorerPlotConfigDimension,
   SliceQuery,
 } from "@depmap/types";
-import { useDataExplorerApi } from "../contexts/DataExplorerApiContext";
+import { isV2Context } from "./context";
 
 export function getDimensionTypeLabel(dimension_type: string) {
   if (!dimension_type) {
@@ -99,6 +101,8 @@ export const urlLibEncode = (s: string) => {
 
 export const isSampleType = (
   dimensionTypeName: string | null | undefined,
+  // FIXME: this second arg is optional to support some legacy code. Once we
+  // move all data to Breadbox, this should become required.
   dimensionTypes?: DimensionType[]
 ) => {
   if (!dimensionTypeName) {
@@ -116,12 +120,12 @@ export const isSampleType = (
   }
 
   return [
-    "depmap_model",
-    "screen",
-    "Screen metadata",
-    "model_condition",
     "anchor_experiment",
     "anchor_experiment_v2",
+    "depmap_model",
+    "ModelCondition",
+    "Screen metadata",
+    "tumor",
   ].includes(dimensionTypeName);
 };
 
@@ -153,9 +157,11 @@ export function convertDimensionToSliceId(
   ].join("/");
 }
 
-export function convertDimensionToSliceQuery(
-  dimension: Partial<DataExplorerPlotConfigDimension>
-): SliceQuery | null {
+export async function convertDimensionToSliceQuery(
+  dimension: Partial<
+    DataExplorerPlotConfigDimension | DataExplorerPlotConfigDimensionV2
+  >
+): Promise<SliceQuery | null> {
   if (!isCompleteDimension(dimension)) {
     return null;
   }
@@ -164,39 +170,55 @@ export function convertDimensionToSliceQuery(
     throw new Error("Cannot convert a context to a slice ID!");
   }
 
-  if (isSampleType(dimension.slice_type)) {
+  if (!isV2Context(dimension.context) && isSampleType(dimension.slice_type)) {
     throw new Error(
       "Cannot convert a sample to a slice ID! Only features are supported."
     );
   }
 
-  const identifier = (dimension.context.expr as any)["=="][1];
+  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
+  const dimType = dimensionTypes.find((t) => t.name === dimension.slice_type);
+
+  if (!dimType) {
+    throw new Error(`Unrecognized dimension type "${dimension.slice_type}"!`);
+  }
+
+  const expr = dimension.context.expr as { "==": [unknown, string] };
+
+  if (!expr || typeof expr !== "object" || !("==" in expr)) {
+    throw new Error("Malformed context expression.");
+  }
+
+  const identifier = expr["=="][1];
+  const identifier_type =
+    dimType.axis === "feature" ? "feature_id" : "sample_id";
 
   return {
     identifier,
-    identifier_type: "feature_id",
+    identifier_type,
     dataset_id: dimension.dataset_id,
   };
 }
 
 export const useDimensionType = (dimensionTypeName: string | null) => {
-  const api = useDataExplorerApi();
   const [dimensionType, setDimensionType] = useState<DimensionType | null>(
     null
   );
   const [isDimensionTypeLoading, setIsDimensionTypeLoading] = useState(true);
 
   useEffect(() => {
-    api.fetchDimensionTypes().then((types) => {
-      const dt = types.find((t) => t.name === dimensionTypeName);
+    cached(breadboxAPI)
+      .getDimensionTypes()
+      .then((types) => {
+        const dt = types.find((t) => t.name === dimensionTypeName);
 
-      if (dt) {
-        setDimensionType(dt);
-      }
+        if (dt) {
+          setDimensionType(dt);
+        }
 
-      setIsDimensionTypeLoading(false);
-    });
-  }, [api, dimensionTypeName]);
+        setIsDimensionTypeLoading(false);
+      });
+  }, [dimensionTypeName]);
 
   return { dimensionType, isDimensionTypeLoading };
 };

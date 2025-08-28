@@ -182,7 +182,10 @@ function CurvesChart({
       margin,
     };
 
-    const config: Partial<Plotly.Config> = { responsive: true };
+    const config: Partial<Plotly.Config> = {
+      responsive: true,
+      displayModeBar: false,
+    };
 
     Plotly.newPlot(plot, curveTraces, layout, config);
 

@@ -2,7 +2,7 @@ import { ToggleSwitch } from "@depmap/common-components";
 import React from "react";
 import Select from "react-select";
 import { DRCDatasetOptions } from "@depmap/types";
-import { useDoseTableDataContext } from "../hooks/useDoseTableDataContext";
+import { useDoseViabilityDataContext } from "../hooks/useDoseViabilityDataContext";
 import styles from "../CompoundDoseViability.scss";
 
 interface FiltersPanelProps {
@@ -16,6 +16,7 @@ interface FiltersPanelProps {
   handleFilterByDose: (
     selections: Array<{ value: number; label: string }> | null
   ) => void;
+  selectedDose: any;
   // Toggle Switches
   showUnselectedLines: boolean;
   handleToggleShowUnselectedLines: (nextValue: boolean) => void;
@@ -32,18 +33,19 @@ function FiltersPanel({
   selectedDatasetOption,
   // Dose
   handleFilterByDose,
+  selectedDose,
   // Toggle Switches
   // showInsensitiveLines,
   showUnselectedLines,
   // handleToggleShowInsensitiveLines,
   handleToggleShowUnselectedLines,
 }: FiltersPanelProps) {
-  const { doseColumnNames } = useDoseTableDataContext();
+  const { doseColumnNames } = useDoseViabilityDataContext();
 
   const datasetSelectOptions = datasetOptions.map(
     (compoundDataset: DRCDatasetOptions) => {
       return {
-        value: compoundDataset.viability_dataset_id,
+        value: compoundDataset.viability_dataset_given_id,
         label: compoundDataset.display_name,
       };
     }
@@ -57,7 +59,6 @@ function FiltersPanel({
   return (
     <div className={styles.FiltersPanel}>
       <h4 className={styles.sectionTitle}>Dataset</h4>
-      <h6>More dataset options coming soon!</h6>
       <Select
         defaultValue={datasetSelectOptions[0]}
         value={selectedDatasetOption}
@@ -76,6 +77,7 @@ function FiltersPanel({
       </h4>
       <Select
         options={doseSelectOptions}
+        value={selectedDose}
         isMulti
         isDisabled={!doseColumnNames}
         onChange={(values: any) => {

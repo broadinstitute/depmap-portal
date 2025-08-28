@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button, Modal, Radio } from "react-bootstrap";
-import { useDeprecatedDataExplorerApi } from "../../contexts/DeprecatedDataExplorerApiContext";
+import { deprecatedDataExplorerAPI } from "../../services/deprecatedDataExplorerAPI";
 import ContextNameForm from "../ContextBuilder/ContextNameForm";
 import { fetchContext } from "../../utils/context-storage";
 import { getDimensionTypeLabel, pluralize } from "../../utils/misc";
@@ -20,7 +20,6 @@ function DownloadContextModal({
   contextHash,
   onHide,
 }: Props) {
-  const api = useDeprecatedDataExplorerApi();
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
   const [filename, setFilename] = useState(contextName);
   const [format, setFormat] = useState<"list" | "csv">("list");
@@ -35,9 +34,9 @@ function DownloadContextModal({
         throw new Error("V2 contexts not supported!");
       }
 
-      return api.evaluateLegacyContext(context);
+      return deprecatedDataExplorerAPI.evaluateLegacyContext(context);
     });
-  }, [api, contextHash]);
+  }, [contextHash]);
 
   const handleClickDownload = () => {
     if (!filename) {
@@ -51,7 +50,7 @@ function DownloadContextModal({
           throw new Error("V2 contexts not supported!");
         }
 
-        return api.evaluateLegacyContext(context);
+        return deprecatedDataExplorerAPI.evaluateLegacyContext(context);
       })
       .then(async (contextLabels) => {
         let labels = contextLabels;
@@ -65,9 +64,13 @@ function DownloadContextModal({
           }
 
           const sliceId = "slice/cell_line_display_name/all/label";
-          labels = await api.fetchMetadataColumn(sliceId).then((column) => {
-            return labels.map((depmap_id) => column.indexed_values[depmap_id]);
-          });
+          labels = await deprecatedDataExplorerAPI
+            .fetchMetadataColumn(sliceId)
+            .then((column) => {
+              return labels.map(
+                (depmap_id) => column.indexed_values[depmap_id]
+              );
+            });
         }
 
         const link = document.createElement("a");

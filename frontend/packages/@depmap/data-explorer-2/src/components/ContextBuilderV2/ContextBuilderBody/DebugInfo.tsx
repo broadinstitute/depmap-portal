@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
 import jsonBeautify from "json-beautify";
-import { useDataExplorerApi } from "../../../contexts/DataExplorerApiContext";
-import { isCompleteExpression } from "../../../utils/misc";
 import { isValidSliceQuery } from "@depmap/types";
+import { isCompleteExpression } from "../../../utils/misc";
+import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 import styles from "../../../styles/ContextBuilderV2.scss";
 
 const SHOW_DEBUG_INFO = false;
 
 const DebugInfo = () => {
-  const api = useDataExplorerApi();
   const { mainExpr, vars } = useContextBuilderState();
   const [varDomains, setVarDomains] = useState<object>({});
 
@@ -21,7 +20,7 @@ const DebugInfo = () => {
         const variable = vars[varName];
 
         return isValidSliceQuery(variable)
-          ? api.fetchVariableDomain(variable)
+          ? dataExplorerAPI.fetchVariableDomain(variable)
           : null;
       })
     ).then((domains) => {
@@ -33,7 +32,7 @@ const DebugInfo = () => {
 
       setVarDomains(keyedDomains);
     });
-  }, [api, vars]);
+  }, [vars]);
 
   return (
     <div className={styles.DebugInfo}>

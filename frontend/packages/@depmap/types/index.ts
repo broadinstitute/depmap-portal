@@ -11,6 +11,7 @@ export {
 export { TopFeatureValue } from "./src/constellation";
 export { DataPageDataType, DataPageDataTypeCategory } from "./src/data_page";
 export { ModelType, ScreenType } from "./src/predictability";
+export { ErrorTypeError } from "./src/BreadboxErrorType";
 
 export type { default as FeatureType } from "./src/FeatureType";
 export type { default as SampleType } from "./src/SampleType";
@@ -90,7 +91,7 @@ export type * from "./src/compounds";
 
 export type { UploadFileResponse } from "./src/UploadFileResponse";
 export type { SliceQuery } from "./src/SliceQuery";
+export type { ErrorDetail } from "./src/BreadboxErrorType";
 
 // predicates (these are functions, not types, but they help to narrow types)
-export { instanceOfErrorDetail } from "./src/ErrorDetail";
-export { isValidSliceQuery } from "./src/SliceQuery";
+export { isValidSliceQuery, areSliceQueriesEqual } from "./src/SliceQuery";

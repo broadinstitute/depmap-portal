@@ -31,7 +31,7 @@ export function sortHeatmapByViability(
   });
   const sortedIndices = means
     .map((mean, idx) => ({ mean, idx }))
-    .sort((a, b) => a.mean - b.mean)
+    .sort((a, b) => b.mean - a.mean)
     .map((obj) => obj.idx);
   return {
     ...heatmapFormattedData,

@@ -5,8 +5,10 @@ export { default as TagSelect } from "./src/components/TagSelect";
 export { default as ToggleSwitch } from "./src/components/ToggleSwitch";
 export { default as getConfirmation } from "./src/utils/getConfirmation";
 export { default as promptForValue } from "./src/utils/promptForValue";
+export { default as showInfoModal } from "./src/utils/showInfoModal";
 export { default as WordBreaker } from "./src/components/WordBreaker";
 export { default as Highlighter } from "./src/components/Highlighter";
+export { default as ExternalLink } from "./src/components/ExternalLink";
 export {
   default as Accordion,
   OpenCloseSymbol,

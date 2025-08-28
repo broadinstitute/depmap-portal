@@ -1,14 +1,13 @@
 import { AnnotationType, TabularDataset } from "@depmap/types";
-import { useDataExplorerApi } from "../contexts/DataExplorerApiContext";
+import { breadboxAPI, cached } from "@depmap/api";
 
 export async function fetchMetadataAndOtherTabularDatasets(
-  api: ReturnType<typeof useDataExplorerApi>,
   dimension_type: string,
   acceptedColTypes?: (keyof typeof AnnotationType)[]
 ) {
   const [types, datasets] = await Promise.all([
-    api.fetchDimensionTypes(),
-    api.fetchDatasets(),
+    cached(breadboxAPI).getDimensionTypes(),
+    cached(breadboxAPI).getDatasets(),
   ]);
 
   const dimType = types.find((t) => t.name === dimension_type);

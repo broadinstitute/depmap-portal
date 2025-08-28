@@ -1,23 +1,8 @@
 import stableStringify from "json-stable-stringify";
-import { isElara } from "@depmap/globals";
+import { getUrlPrefix, isElara } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 import getContextHash from "./get-context-hash";
-
-function fetchUrlPrefix() {
-  // HACK: Detect when Elara is being served behind Depmap portal proxy
-  if (window.location.pathname.includes("/breadbox/elara")) {
-    return window.location.pathname.replace(/\/elara\/.*$/, "");
-  }
-
-  const element = document.getElementById("webpack-config");
-
-  if (element) {
-    const webpackConfig = JSON.parse(element!.textContent as string);
-    return webpackConfig.rootUrl;
-  }
-
-  return "/";
-}
 
 // *****************************************************************************
 // * Context cache                                                             *
@@ -47,13 +32,17 @@ const fallbackInMemoryCache: Record<
 // storing and retrieving content. This allows contexts to be sharable. Links
 // to Data Explorer plots contain hashes that reference this shared storage.
 // https://en.wikipedia.org/wiki/Content-addressable_storage
-// In the legacy Portal, these are persisted to an S3 bucket. Elara uses
-// Breadbox which implements the same set of endpoints but stores them in its
-// database instead.
+// In the legacy Portal, these are persisted to an S3 bucket. Breadbox
+// implements the same set of endpoints but stores them in its database
+// instead.
 const getCasUrl = () => {
-  const prefix = fetchUrlPrefix().replace(/^\/$/, "");
+  if (!isBreadboxOnlyMode) {
+    return `${getUrlPrefix()}/cas`;
+  }
 
-  return isElara ? `${prefix}/temp/cas` : `${prefix}/cas`;
+  return isElara
+    ? `${getUrlPrefix()}/temp/cas`
+    : `${getUrlPrefix()}/breadbox/temp/cas`;
 };
 
 const getContextUrl = (hash: string) => {
@@ -94,10 +83,10 @@ export async function persistContext(
     fallbackInMemoryCache[hash] = context;
   }
 
-  const url = isElara ? getCasUrl() : `${getCasUrl()}/`;
+  const url = isBreadboxOnlyMode ? getCasUrl() : `${getCasUrl()}/`;
   const options = {
     method: "POST",
-    headers: isElara
+    headers: isBreadboxOnlyMode
       ? {
           Accept: "application/json",
           "Content-Type": "application/json",
@@ -106,7 +95,7 @@ export async function persistContext(
           Accept: "*/*",
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         },
-    body: isElara
+    body: isBreadboxOnlyMode
       ? JSON.stringify({ value: json })
       : new URLSearchParams({ value: json }),
   };
@@ -174,6 +163,10 @@ export async function fetchContext(
 
   const body = await response.json();
   const context = JSON.parse(body.value);
+
+  if (!context) {
+    throw new Error(`Cound not fetch context from unknown hash "${hash}".`);
+  }
 
   if (!cache) {
     fallbackInMemoryCache[hash] = context;
