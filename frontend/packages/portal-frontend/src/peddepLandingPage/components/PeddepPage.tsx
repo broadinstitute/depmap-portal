@@ -6,7 +6,7 @@ import SubGroupsPlot from "./SubgroupsPlot";
 import PediatricContextExamples from "./PediatricContextExamples";
 
 export default function PeddepPage() {
-  const imagePath = toStaticUrl("img/peddep_landing_page/peddepwave.png");
+  const imagePath = toStaticUrl("img/peddep_landing_page/peddep_wave.png");
 
   const umapImage = (
     <img
