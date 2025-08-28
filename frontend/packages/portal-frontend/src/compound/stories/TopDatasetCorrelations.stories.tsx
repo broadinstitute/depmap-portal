@@ -1,6 +1,6 @@
 import React from "react";
 
-import { TopDatasetDependencies } from "../components/tiles/TopDatasetDependencies";
+import { TopDatasetDependencies } from "../tiles/CorrelatedDependenciesTile/TopDatasetDependencies";
 
 export default {
   title: "Components/Compounds/TopDatasetCorrelations",

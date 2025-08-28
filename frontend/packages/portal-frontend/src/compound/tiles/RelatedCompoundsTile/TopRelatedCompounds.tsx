@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "../../styles/CorrelationTile.scss";
-import { CorrelationBar } from "./CorrelationBar";
+import { CorrelationBar } from "../CorrelationBar";
 import { Tooltip } from "@depmap/common-components";
 
 interface TopRelatedCompoundsProps {
