@@ -74,7 +74,7 @@ export default function PediatricContextExamples() {
         </div>
         <div className={styles.cardImg}>
           <img
-            src={toStaticUrl("img/peddep_landing_page/pediatric_context.png")}
+            src={toStaticUrl("img/peddep_landing_page/peddep_context.png")}
             alt="Discover targets"
           />
           <div>

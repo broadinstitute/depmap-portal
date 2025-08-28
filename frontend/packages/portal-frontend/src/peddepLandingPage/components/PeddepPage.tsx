@@ -6,7 +6,7 @@ import SubGroupsPlot from "./SubgroupsPlot";
 import PediatricContextExamples from "./PediatricContextExamples";
 
 export default function PeddepPage() {
-  const imagePath = toStaticUrl("img/peddep_landing_page/pedepwave.png");
+  const imagePath = toStaticUrl("img/peddep_landing_page/peddepwave.png");
 
   const umapImage = (
     <img
@@ -20,7 +20,10 @@ export default function PeddepPage() {
     <div className={styles.PeddepPage}>
       <div
         className={`${styles.PeddepPageContainer} ${styles.highlightBackground}`}
-        style={{ backgroundImage: `url(${imagePath})` }}
+        style={{
+          backgroundImage: `url(${imagePath})`,
+          backgroundColor: "rgba(243, 242, 253, 0.8)",
+        }}
       >
         <div className={styles.highlight}>
           <div className={styles.highlightText}>
