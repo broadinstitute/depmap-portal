@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "../../styles/CorrelationTile.scss";
-import { TopDatasetDependencies } from "../../components/tiles/TopDatasetDependencies";
+import { TopDatasetDependencies } from "./TopDatasetDependencies";
 import useCorrelatedDependenciesData from "../../hooks/useCorrelatedDependenciesData";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
