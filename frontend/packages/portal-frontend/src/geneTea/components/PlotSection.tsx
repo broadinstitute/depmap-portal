@@ -77,8 +77,6 @@ function PlotSection({
     }
   };
 
-  console.log("selectedColumns", selectedColumns);
-
   return (
     <div className={styles.PlotSection}>
       <div className={styles.sectionHeader}>

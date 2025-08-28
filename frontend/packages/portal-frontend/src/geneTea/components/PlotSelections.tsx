@@ -4,6 +4,7 @@ import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styl
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
 import geneTeaStyles from "../styles/GeneTea.scss";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
+import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface PlotSelectionsProps {
   selectedIds: Set<string> | null;
@@ -20,6 +21,7 @@ function PlotSelections({
 }: PlotSelectionsProps) {
   const {
     handleSetSelectionFromContext: onClickSetSelectionFromContext,
+    geneSymbolSelections,
   } = useGeneTeaContext();
 
   const listRef = useRef<HTMLDivElement | null>(null);

@@ -96,7 +96,7 @@ export function GeneTeaContextProvider({
   const handleSetSortBy = useCallback((v: SortOption) => setSortBy(v), []);
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
-    new Set([])
+    new Set(["CAD", "UMPS", "ADSL", "DHODH"])
   );
   const handleSetGeneSymbolSelections = useCallback(
     (v: any) => {
