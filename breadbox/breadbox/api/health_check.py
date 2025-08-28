@@ -17,7 +17,7 @@ def basic_check():
 
 @router.get("/ok", operation_id="ok")
 def ok():
-    task = site_check_task.is_ok.delay()
+    task = site_check_task.is_ok.delay()  # pyright: ignore
     task.wait(timeout=60, interval=0.5)
 
     return format_task_status(task)
