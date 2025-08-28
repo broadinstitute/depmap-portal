@@ -92,7 +92,7 @@ export function GeneTeaContextProvider({
     []
   );
 
-  const [sortBy, setSortBy] = useState<SortOption>("Significance");
+  const [sortBy, setSortBy] = useState<SortOption>("Effect Size");
   const handleSetSortBy = useCallback((v: SortOption) => setSortBy(v), []);
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(

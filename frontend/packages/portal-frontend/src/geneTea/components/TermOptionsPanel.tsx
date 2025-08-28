@@ -52,7 +52,7 @@ const TermOptionsPanel: React.FC = () => {
     setLocalEffectSizeThreshold,
   ] = useState<number>(effectSizeThreshold);
   const [localMinMatchingQuery, setLocalMinMatchingQuery] = useState<number>(
-    minMatchingQuery
+    minMatchingQuery || DEFAULTS.minMatchingQuery
   );
   const [
     localMaxMatchingOverall,
@@ -117,6 +117,7 @@ const TermOptionsPanel: React.FC = () => {
           defaultValue={DEFAULTS.maxFDR}
           step={0.01}
         />
+        {/* TODO: Fix. Temporarily hiding. I don't think the api supports this filter yet.
         <NumberInput
           name="effectSizeThreshold"
           label="Effect Size Threshold"
@@ -125,7 +126,7 @@ const TermOptionsPanel: React.FC = () => {
           setValue={setLocalEffectSizeThreshold}
           defaultValue={DEFAULTS.effectSizeThreshold}
           step={0.01}
-        />
+        /> */}
         <NumberInput
           name="minMatchingQuery"
           label="Min. Matching Query"
@@ -171,6 +172,7 @@ const TermOptionsPanel: React.FC = () => {
             className={styles.clearInputButton}
             onClick={() => {
               setLocalSortBy(DEFAULTS.sortBy);
+              setLocalMaxFDR(DEFAULTS.maxFDR);
               setLocalMaxTopTerms(DEFAULTS.maxTopTerms);
               setLocalMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
               setLocalMinMatchingQuery(DEFAULTS.minMatchingQuery);

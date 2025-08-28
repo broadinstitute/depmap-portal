@@ -149,9 +149,9 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
                   .nMatchingGenesOverall[index],
                 nMatchingGenesInList: rawData.allEnrichedTerms!
                   .nMatchingGenesInList[index],
-                fdr: rawData.allEnrichedTerms!.fdr[index].toFixed(3),
+                fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(5),
                 effectSize: rawData.allEnrichedTerms!.effectSize[index].toFixed(
-                  3
+                  4
                 ),
               };
             })}

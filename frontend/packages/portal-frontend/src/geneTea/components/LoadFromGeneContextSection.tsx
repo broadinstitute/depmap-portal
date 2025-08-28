@@ -76,12 +76,6 @@ const LoadFromGeneContextSection: React.FC = () => {
     });
 
     const selectionLength = contextLabels.size - notFound;
-
-    if (selectionLength === 0) {
-      console.log("OK");
-    } else {
-      console.log(`Select ${numberedEntities(selectionLength)}`);
-    }
   };
 
   return (
