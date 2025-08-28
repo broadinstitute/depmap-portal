@@ -14,14 +14,12 @@ export default function PediatricContextExamples() {
           <div>
             <h5>
               <a href="https://depmap.org/portal/data_explorer_2/?xDataset=Chronos_Combined&yDataset=Chronos_Combined&xContext=%7B%22name%22%3A%22SMARCB1%22%2C%22context_type%22%3A%22depmap_model%22%2C%22expr%22%3A%7B%22%3D%3D%22%3A%5B%7B%22var%22%3A%22slice%2Fmutations_prioritized%2FSMARCB1%2Flabel%22%7D%2C%22Damaging%22%5D%7D%7D&yContext=%7B%22name%22%3A%22Not%20SMARCB1%22%2C%22context_type%22%3A%22depmap_model%22%2C%22expr%22%3A%7B%22!%22%3A%7B%22%3D%3D%22%3A%5B%7B%22var%22%3A%22slice%2Fmutations_prioritized%2FSMARCB1%2Flabel%22%7D%2C%22Damaging%22%5D%7D%7D%7D&color_property=slice%2Fgene_selectivity%2Fall%2Flabel">
-                Explore DCAF5 dependency in SMARCB1 deficient pediatric Rhabdoid
-                cancers
+                DCAF5 dependency predicted by SMARCB1 deficiency in pediatric
+                Rhabdoid cancers
               </a>
             </h5>
             <h6>
-              View a preloaded example in Data Explorer based on pediatric
-              Rhabdoid cancer using PedDep Data. Read more about this dependency
-              in{" "}
+              Read more about this dependency in{" "}
               <a href="https://pubmed.ncbi.nlm.nih.gov/38538798/">
                 Radko-Juettner, S et al
               </a>
@@ -37,14 +35,12 @@ export default function PediatricContextExamples() {
           />
           <div>
             <h5>
-              <a href="https://depmap.org/portal/data_explorer_2/?xDataset=Chronos_Combined&xFeature=TRIM8&yDataset=expression&yFeature=TRIM8&color1=%7B%22context_type%22%3A%22depmap_model%22%2C%22expr%22%3A%7B%22%3D%3D%22%3A%5B%7B%22var%22%3A%22slice%2Flineage%2F3%2Flabel%22%7D%2C%22Ewing%20Sarcoma%22%5D%7D%2C%22name%22%3A%22Ewing%20Sarcoma%22%7D">
-                Look at the lineage context for TRIM8 in pediatric Ewings
-                Sarcomas
+              <a href="https://depmap.org/portal/data_explorer_2/?p=eJylUU1rwzAM_SvD50Iou4xAT2WHHQpjy20Mo8RqJvBHsLU2IfS_T86WpCu7zYc4eu_l6UkZFXmDveahQ1Uqg52DTrtg0KqN6mzglfKJeNBbI4Qhl8vgkypH1eeHAYaErMmIeP8Rgw9J74OryWP-BHpKs1eEs06WGhR8umeiRZ8xaNuILbA0EPBIMbGgTfCMPedmHlyWVy9Ph4eVuXHBvotZvNup8m1UJ5BKoec8hYVaJrxsfizeL3Kyjw1R14Po5gholqRHsoxxmngSbr_ffrW-WeCfESa_wspeoMXivliyPJ7Jt3evEJvgQDJt5jknIi2MECdKVFv8V4JrpXbIkH9h8YyGgCM1h4xXYroGrOInXufq0IiJkt19AcuqykA">
+                A lineage context for TRIM8 in pediatric Ewings Sarcomas
               </a>
             </h5>
             <h6>
-              View a preloaded example in Data Explorer based on pediatric Ewing
-              Sarcoma using PedDep Data. Read more about this dependency in{" "}
+              Read more about this context in{" "}
               <a href="https://pubmed.ncbi.nlm.nih.gov/34329586/">
                 Seong, BKA et al
               </a>
@@ -58,14 +54,12 @@ export default function PediatricContextExamples() {
           />
           <div>
             <h5>
-              <a href="https://depmap.org/portal/data_explorer_2/?xDataset=expression&xFeature=NXT1&yDataset=expression&yFeature=NXT2&color1=%7B%22context_type%22%3A%22depmap_model%22%2C%22expr%22%3A%7B%22and%22%3A%5B%7B%22%3D%3D%22%3A%5B%7B%22var%22%3A%22slice%2Flineage%2F2%2Flabel%22%7D%2C%22Neuroblastoma%22%5D%7D%2C%7B%22%3E%22%3A%5B%7B%22var%22%3A%22slice%2Fcopy_number_relative%2FMYCN%2Flabel%22%7D%2C2%5D%7D%5D%7D%2C%22name%22%3A%22Neuroblastoma%22%7D">
+              <a href="https://depmap.org/portal/data_explorer_2/?p=eJy1kcFqwzAMht_F50JJDzsEehhhx46ulK5jDKPGSqLhOMZ222Ql7z65XcI2ellhF2NJv-Tvt07C6ibI0FkUqfA5hIBOTAQZhe2QVmhrsLJuFGquKarReGqMF-lJtPGAlvygdnCUXlOOLIWydFhCYDFXCnI-cDZvTMA2xMav69BbooltBuoYPW7XCUfYWhe187lIX0_iABwJNIFCJzXsmKmfXLRvPd8UBPAYJKko4170EZYHnal-PMXy7l_5Z3_gn93A30ca3Ti5Yx8jLqrRQUGaN3re1IE87TRewf614KvA54HT70pZY4BIO12iIgiO8kXMr3nodDS2dntkY-OnWFQ8RAzgSXyoAl9xqVquSG6ypNi_H9uVfnrpPoqyu7NUZlTdL5KMtpBJv3nePMzjL1-sirQA7bHv-0-8hvdD">
                 NXT1 as a selective dependency in MYCN-amplified Neuroblastoma
               </a>
             </h5>
             <h6>
-              View a preloaded example in Data Explorer based on pediatric
-              neuroblastoma using PedDep Data. Read more about this dependency
-              in{" "}
+              Read more about this dependency in{" "}
               <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8419012/">
                 Malone, CF et al
               </a>
@@ -79,12 +73,11 @@ export default function PediatricContextExamples() {
           />
           <div>
             <h5>
-              <a href="https://depmap.org/portal/celligner/">
-                Save a pediatric context and discover how cell lines compare to
-                tumors
+              <a href="https://depmap.org/portal/context_explorer/?tab=overview&context=BALL">
+                Explore pediatric lineage contexts and subtypes of interest
               </a>
             </h5>
-            <h6>Create and explore pediatric lineages using Celligner</h6>
+            <h6>Explorer pediatric lineage contexts using Context Explorer</h6>
           </div>
         </div>
       </div>

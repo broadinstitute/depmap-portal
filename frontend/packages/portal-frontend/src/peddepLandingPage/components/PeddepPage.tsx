@@ -47,33 +47,41 @@ export default function PeddepPage() {
           </div>
         </div>
       </div>
-      <hr />
       <div className={styles.PeddepPageContainer}>
         <div style={{ display: "grid" }}>
           <h2>Our Goals and Focus</h2>
           <h4>
-            The PedDep Accelerator is leading a multi-pronged effort against
-            this problem focusing both on expanding and extending known
-            successful approaches as well as investing in exploratory science
+            The PedDep Accelerator is spearheading a comprehensive initiative to
+            advance our understanding of the biological basis of pediatric
+            cancers through two complementary strategies: scaling proven
+            interventions while simultaneously investing in exploratory science
             with transformative potential.
+          </h4>
+          <h4>
+            By bringing in new and important pediatric models, as well as
+            generating new models, the PedDep Accelerator has made progress in
+            expanding the representation of pediatric cancer models for the
+            research community.
           </h4>
           <div className={styles.plotContainer}>
             <SubGroupsPlot />
           </div>
         </div>
       </div>
-      <hr />
-      <div className={styles.PeddepPageContainer}>
+      <div
+        className={styles.PeddepPageContainer}
+        style={{ backgroundColor: "rgba(243, 242, 253, 0.8)" }}
+      >
         <div style={{ display: "grid" }}>
-          <h2>A Pediatric Context</h2>
+          <h2>Navigate the portal with a pediatric context</h2>
           <h4>
-            Navigate the portal with a pediatric context. We&apos;ve built this
-            context to include models that represent pediatric tumor types.
+            Explore notable dependencies from PedDep Accelerator investigators
+            and across the DepMap portal using the new pediatric subtype model
+            context
           </h4>
           <PediatricContextExamples />
         </div>
       </div>
-      <hr />
       <div className={styles.PeddepPageContainer}>
         <div className={styles.aboutPeddep}>
           <h2>The First Generation Pediatric Dependency Map</h2>
