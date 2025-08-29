@@ -71,16 +71,6 @@ def test_plot_dimensions_1d_model_index(app, empty_db_mock_downloads):
 
         # check the cell line indices
         assert response["index_labels"] == ["ACH-0", "ACH-1"]
-        assert len(response["index_aliases"]) == 1
-        assert response["index_aliases"][0]["label"] == "Cell Line Name"
-        assert (
-            response["index_aliases"][0]["slice_id"]
-            == "slice/cell_line_display_name/all/label"
-        )
-        assert response["index_aliases"][0]["values"] == [
-            cell_line0.cell_line_display_name,
-            cell_line1.cell_line_display_name,
-        ]
 
         # Check that the single dimension (x) has expected values
         assert set(response["dimensions"].keys()) == set(["x"])
@@ -148,7 +138,6 @@ def test_plot_dimensions_1d_gene_index(app, empty_db_mock_downloads):
 
         # check the gene indices
         assert response["index_labels"] == [gene0.label, gene1.label]
-        assert len(response["index_aliases"]) == 0  # genes don't need aliases
 
         # Check that the single dimension (x) has expected values
         assert set(response["dimensions"].keys()) == set(["x"])
@@ -253,7 +242,6 @@ def test_plot_dimensions_3d(app, empty_db_mock_downloads):
 
         # check the gene indices
         assert response["index_labels"] == [gene0.label, gene1.label]
-        assert len(response["index_aliases"]) == 0  # genes don't need aliases
 
         # Check that each dimension has expected values
         assert set(response["dimensions"].keys()) == set(["x", "y", "color"])

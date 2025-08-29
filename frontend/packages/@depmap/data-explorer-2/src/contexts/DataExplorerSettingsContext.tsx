@@ -145,6 +145,20 @@ export const DataExplorerSettingsProvider = ({
             if (
               updatedSettings.useBreadboxBackend !== settings.useBreadboxBackend
             ) {
+              const url = new URL(window.location.href);
+
+              url.searchParams.set(
+                "bb",
+                settings.useBreadboxBackend ? "1" : "0"
+              );
+              window.history.pushState({}, "", url);
+
+              url.searchParams.set(
+                "bb",
+                settings.useBreadboxBackend ? "0" : "1"
+              );
+              window.history.replaceState({}, "", url);
+
               window.location.reload();
             }
           }}

@@ -144,6 +144,15 @@ export async function fetchContext(
     }
   }
 
+  if (response && response.status > 299) {
+    window.console.warn(
+      `Context with hash "${hash}" was cached with status code ${response.status}!`
+    );
+
+    // Clear out this useless response because it's effectively a cache miss
+    response = undefined;
+  }
+
   // handle cache miss
   if (!response) {
     response = await fetch(request.clone());

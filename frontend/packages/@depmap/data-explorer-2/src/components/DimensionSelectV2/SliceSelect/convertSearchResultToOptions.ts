@@ -73,7 +73,7 @@ async function convertSearchResultToOptions(
       fetchDimensionTypeDisplayName(slice_type),
       fetchDatasetName(dataset_id),
     ]).catch((e) => {
-      window.console.log(e);
+      window.console.error(e);
     });
   })();
 

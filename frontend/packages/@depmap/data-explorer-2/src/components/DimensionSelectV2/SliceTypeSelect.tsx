@@ -15,6 +15,7 @@ interface Props {
   index_type: string | null;
   axis_type: "raw_slice" | "aggregated_slice";
   aggregation: string | null;
+  isUnknownDataset: boolean;
   options: { label: string; value: string; isDisabled: boolean }[];
   value: string | null;
   onChange: (nextSliceType: string | null) => void;
@@ -50,6 +51,7 @@ function SliceTypeSelect({
   isLoading,
   index_type,
   axis_type,
+  isUnknownDataset,
   aggregation,
   options,
   value,
@@ -57,9 +59,15 @@ function SliceTypeSelect({
 }: Props) {
   const label = useLabel(index_type, axis_type, aggregation);
 
-  const placeholder = isLoading
+  let placeholder = isLoading
     ? "Loading…"
     : `Select ${isSampleType(index_type) ? "feature" : "sample"} type…`;
+
+  if (isUnknownDataset) {
+    placeholder = `(Unknown ${
+      isSampleType(index_type) ? "feature" : "sample"
+    } type)`;
+  }
 
   const sliceTypeLabel = value ? capitalize(getDimensionTypeLabel(value)) : "";
 

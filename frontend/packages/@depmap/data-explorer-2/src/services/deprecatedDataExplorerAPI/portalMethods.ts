@@ -1,22 +1,12 @@
 import qs from "qs";
 import { ComputeResponseResult } from "@depmap/compute";
+import { getUrlPrefix } from "@depmap/globals";
 import {
   DataExplorerAnonymousContext,
   DataExplorerContext,
 } from "@depmap/types";
 
-function fetchUrlPrefix() {
-  const element = document.getElementById("webpack-config");
-
-  if (element) {
-    const webpackConfig = JSON.parse(element!.textContent as string);
-    return webpackConfig.rootUrl;
-  }
-
-  return "/";
-}
-
-const urlPrefix = `${fetchUrlPrefix().replace(/^\/$/, "")}/data_explorer_2`;
+const urlPrefix = `${getUrlPrefix().replace(/^\/$/, "")}/data_explorer_2`;
 const fetchJsonCache: Record<string, Promise<unknown> | null> = {};
 
 const fetchJson = async <T>(
@@ -239,11 +229,7 @@ export function fetchDimensionLabelsToDatasetsMapping(
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
   dimension_labels: Record<DimensionLabel, DatasetIndex[]>;
-  aliases: {
-    label: string;
-    slice_id: string;
-    values: string[];
-  }[];
+  aliases: string[] | null;
 }> {
   const query = qs.stringify({ dimension_type });
 

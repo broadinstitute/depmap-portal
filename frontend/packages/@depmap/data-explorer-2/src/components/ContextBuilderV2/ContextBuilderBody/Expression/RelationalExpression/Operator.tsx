@@ -32,7 +32,7 @@ function Operator({ expr, path, varName, value_type, isLoading }: Props) {
           return operatorsByValueType[value_type].has(key);
         })
       )
-    : [];
+    : opLabels;
 
   return (
     <PlotConfigSelect

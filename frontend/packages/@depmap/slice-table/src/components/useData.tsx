@@ -108,8 +108,9 @@ async function extractColumnRenames(
   }
 }
 
-const isLinkable = (dimension_type: string) =>
-  !isElara && ["depmap_model", "gene", "compound_v2"].includes(dimension_type);
+const isLinkable = (dimension_type?: string | null) =>
+  !isElara &&
+  ["depmap_model", "gene", "compound_v2"].includes(dimension_type || "");
 
 function toDetailPageLink(id: string, label: string, dimension_type: string) {
   let href = "";
@@ -152,15 +153,16 @@ function buildSlicesToFetch(
     identifier: "label",
   };
 
-  const nonLabelSlices = userSlices.filter((s) => {
+  // We always add an `id` and `label` column so filter out any redundancies.
+  const novelSlices = userSlices.filter((s) => {
     if (s.identifier_type !== "column") {
       return true;
     }
 
-    return s.identifier !== "label";
+    return s.identifier !== "label" && s.identifier !== indexType.id_column;
   });
 
-  return [labelSlice, ...nonLabelSlices];
+  return [labelSlice, ...novelSlices];
 }
 
 /**
@@ -436,6 +438,11 @@ function transformToTableData(
         ? dataset.value_type
         : dataset.columns_metadata[slice.identifier].col_type;
 
+    const references =
+      dataset.format === "tabular_dataset"
+        ? dataset.columns_metadata[slice.identifier].references
+        : null;
+
     return {
       size: columnKey === "label" ? ID_AND_LABEL_COLUMN_SIZE : undefined,
       id: columnKey,
@@ -463,6 +470,22 @@ function transformToTableData(
           )}
         </div>
       ),
+      // Add a custom cell renderer if we can turn the value into a hyperlink.
+      ...(isLinkable(references) && {
+        cell: ({
+          getValue,
+          row,
+        }: {
+          getValue: () => unknown;
+          row: { original: Record<string, unknown> };
+        }) => {
+          return toDetailPageLink(
+            getValue() as string,
+            row.original.label as string,
+            references as string
+          );
+        },
+      }),
     };
   });
 

@@ -6,12 +6,6 @@ import { getDimensionTypeLabel } from "../../../utils/misc";
 import { SearchDimenionsResponse } from "@depmap/types";
 import styles from "../../../styles/DimensionSelect.scss";
 
-export type Aliases = {
-  label: string;
-  slice_id: string;
-  values: string[];
-}[];
-
 interface Option {
   value: string;
   label: string;
@@ -66,7 +60,7 @@ async function fetchSliceLabelsAndAliases(
   if (!slice_type) {
     return {
       sliceLabels: [],
-      aliases: [],
+      aliases: null,
       disabledReasons: {},
     };
   }
@@ -80,7 +74,7 @@ async function fetchSliceLabelsAndAliases(
   if (labels.length === 0) {
     return {
       sliceLabels: [],
-      aliases: [],
+      aliases: null,
       disabledReasons: reasons,
     };
   }
@@ -131,7 +125,7 @@ export function useSliceLabels(
 ) {
   const [error, setError] = useState(false);
   const [sliceLabels, setSliceLabels] = useState<string[] | null>(null);
-  const [aliases, setAliases] = useState<Aliases | null>(null);
+  const [aliases, setAliases] = useState<string[] | null>(null);
   const [disabledReasons, setDisabledReasons] = useState<
     Record<string, string>
   >({});
@@ -317,7 +311,7 @@ export function toDemapModelOptions(
   searchResults: SearchDimenionsResponse,
   inputValue: string | null,
   sliceLabels: string[],
-  aliases: Aliases | null,
+  aliases: string[] | null,
   disabledReasons: Record<string, string>
 ) {
   const tokens = tokenize(inputValue);
@@ -326,38 +320,37 @@ export function toDemapModelOptions(
 
   if (aliases && aliases.length > 0) {
     sliceLabels.forEach((label, i) => {
-      const alias = aliases![0].values[i];
+      const alias = aliases[i];
       nameToId[alias] = label;
       idToName[label] = alias;
     });
   }
 
-  const aliasOptions =
-    aliases && aliases.length > 0
-      ? aliases![0].values
-          .filter((cellLineName) => {
-            return (
-              // If the user hasn't typed anything yet, present the full list
-              // (to support the ability to browse samples/features which is
-              // most useful when then the list is fairly short).
-              tokens.length === 0 ||
-              // Otherwise try to match all tokens.
-              tokens.every((token) =>
-                cellLineName?.toLowerCase().includes(token.toLowerCase())
-              )
-            );
-          })
-          .map((cellLineName) => {
-            return {
-              label: cellLineName,
-              value: nameToId[cellLineName],
-              nonLabelProperties: [],
-              isDisabled: Boolean(disabledReasons[nameToId[cellLineName]]),
-              disabledReason: disabledReasons[nameToId[cellLineName]],
-            };
-          })
-          .sort((a, b) => (a.label < b.label ? -1 : 1))
-      : [];
+  const aliasOptions = !aliases
+    ? []
+    : aliases
+        .filter((cellLineName) => {
+          return (
+            // If the user hasn't typed anything yet, present the full list
+            // (to support the ability to browse samples/features which is
+            // most useful when then the list is fairly short).
+            tokens.length === 0 ||
+            // Otherwise try to match all tokens.
+            tokens.every((token) =>
+              cellLineName?.toLowerCase().includes(token.toLowerCase())
+            )
+          );
+        })
+        .map((cellLineName) => {
+          return {
+            label: cellLineName,
+            value: nameToId[cellLineName],
+            nonLabelProperties: [],
+            isDisabled: Boolean(disabledReasons[nameToId[cellLineName]]),
+            disabledReason: disabledReasons[nameToId[cellLineName]],
+          };
+        })
+        .sort((a, b) => (a.label < b.label ? -1 : 1));
 
   const labelAndSearchIndexOptions = toReactSelectOptions(
     searchResults,

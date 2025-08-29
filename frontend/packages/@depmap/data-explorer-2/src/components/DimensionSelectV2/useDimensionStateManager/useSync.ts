@@ -55,9 +55,16 @@ export default function useSync({
       const dataType =
         value?.dataset_id === prev.dimension.dataset_id ? prev.dataType : null;
 
+      // Also force `isUnknownDataset` to be re-initialized when dataset_id changes
+      const isUnknownDataset =
+        value?.dataset_id === prev.dimension.dataset_id
+          ? prev.isUnknownDataset
+          : false;
+
       return {
         ...prev,
         dataType,
+        isUnknownDataset,
         dimension: {
           ...value,
           axis_type,

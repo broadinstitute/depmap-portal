@@ -158,3 +158,20 @@ export const makeCompatibleExpression = (
 
   return { [nextOp]: [variable, nextValue] };
 };
+
+export function flattenExpr(expr: Expr) {
+  if (!isBoolean(expr)) {
+    return expr;
+  }
+
+  if ("and" in expr && expr.and.length === 1) {
+    return expr.and[0];
+  }
+
+  if ("or" in expr && expr.or.length === 1) {
+    return expr.or[0];
+  }
+
+  // Can't flatten because there's more than one alternative so return as-is.
+  return expr;
+}
