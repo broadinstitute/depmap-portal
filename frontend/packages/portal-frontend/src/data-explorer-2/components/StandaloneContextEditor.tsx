@@ -30,7 +30,7 @@ interface Props {
   onHide: () => void;
 
   // Only called on save.
-  onSave?: (context: DataExplorerContext, hash: string) => void;
+  onSave?: (context: any, hash: string) => void;
 }
 
 function StandaloneContextEditor({

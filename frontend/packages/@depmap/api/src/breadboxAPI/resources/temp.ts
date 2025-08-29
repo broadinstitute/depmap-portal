@@ -50,6 +50,7 @@ export async function evaluateContext(
       }
     // WORKAROUND: Errors result in a code 200 like regular responses.
     // We'll look for detail property to detect them.
+    // FIXME: Is this still true? I think you get 400s now.
     | { detail: string }
   >("/temp/context", contextToEval);
 

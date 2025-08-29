@@ -19,10 +19,7 @@ import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import {
-  initializeDevContexts,
-  isBreadboxOnlyMode,
-} from "@depmap/data-explorer-2";
+import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
@@ -175,18 +172,48 @@ export function editContext(
   );
 }
 
+export function repairContext(
+  context: DataExplorerContextV2
+): Promise<DataExplorerContextV2 | null> {
+  const container = document.getElementById("cell_line_selector_modal");
+
+  const unmount = () => {
+    ReactDOM.unmountComponentAtNode(container as HTMLElement);
+  };
+
+  unmount();
+
+  let resolve: (repairedContext: DataExplorerContextV2 | null) => void;
+
+  const promise = new Promise<DataExplorerContextV2 | null>((origResolve) => {
+    resolve = origResolve;
+  });
+
+  ReactDOM.render(
+    <React.Suspense fallback={null}>
+      <StandaloneContextEditor
+        context={context}
+        hash={null}
+        onSave={(nextContext: DataExplorerContextV2) => {
+          resolve(nextContext);
+        }}
+        onHide={() => {
+          resolve(null);
+          unmount();
+        }}
+      />
+    </React.Suspense>,
+    container
+  );
+
+  return promise;
+}
+
 export function saveNewContext(
-  context: DataExplorerContext,
+  context: DataExplorerContext | DataExplorerContextV2,
   onHide?: () => void,
   onSave?: (context: DataExplorerContext, hash: string) => void
 ) {
-  if (isBreadboxOnlyMode) {
-    // FIXME: We need to convert the context and
-    // make  sure it opens in ContextBuilderV2.
-    window.alert("Error: context is in legacy format.");
-    return;
-  }
-
   const container = document.getElementById("modal-container");
   const unmount = () =>
     ReactDOM.unmountComponentAtNode(container as HTMLElement);

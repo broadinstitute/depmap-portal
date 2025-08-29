@@ -35,7 +35,8 @@ const DebugInfo = () => {
   }, [vars]);
 
   return (
-    <div className={styles.DebugInfo}>
+    <details className={styles.DebugInfo}>
+      <summary>Debug info</summary>
       <h5>expr</h5>
       <pre
         style={{
@@ -53,10 +54,10 @@ const DebugInfo = () => {
         <code>{jsonBeautify(vars, null!, 2, 80)}</code>
       </pre>
       <h5>var domains</h5>
-      <pre>
+      <pre className={styles.debugVarDomains}>
         <code>{jsonBeautify(varDomains, null!, 2, 80)}</code>
       </pre>
-    </div>
+    </details>
   );
 };
 

@@ -40,32 +40,21 @@ function PlotSelections({
       : Infinity;
 
   const [ids, labels] = useMemo(() => {
-    const indexLabels = data?.index_labels || [];
-    const modelLabels = data?.index_aliases?.[0]?.values || [];
-    const mapping = new Map(
-      indexLabels.map((label, i) => [label, modelLabels[i]])
-    );
+    if (!data) {
+      return [[], []];
+    }
+    const indexLabels: string[] = [];
+    const displayLabels: string[] = [];
 
-    const outIds: string[] = [];
-    const outLabels: string[] = [];
-
-    for (let i = 0; i < indexLabels.length; i += 1) {
-      const label = indexLabels[i];
-
-      if (selectedLabels?.has(label)) {
-        const alias = mapping.get(label);
-
-        if (alias) {
-          outIds.push(label);
-          outLabels.push(alias);
-        } else {
-          outLabels.push(label);
-        }
+    for (let i = 0; i < data.index_labels.length; i += 1) {
+      if (selectedLabels?.has(data.index_labels[i])) {
+        indexLabels.push(data.index_labels[i]);
+        displayLabels.push((data.index_display_labels || data.index_labels)[i]);
       }
     }
 
-    return [outIds, outLabels];
-  }, [data?.index_aliases, data?.index_labels, selectedLabels]);
+    return [indexLabels, displayLabels];
+  }, [data, selectedLabels]);
 
   const handleCopy = useCallback(() => {
     const w = window.open("");

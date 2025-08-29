@@ -108,13 +108,17 @@ export function PointsSelector({
     <div className={styles.PointsSelector}>
       <PlotConfigSelect
         label={
-          // TODO: Write different help content for correlation_heatmap
-          <span>
-            Points
-            {plot_type !== "correlation_heatmap" && (
+          plot_type === "correlation_heatmap" ? (
+            <span>
+              Indexed by
+              {/* TODO: write help text describing how to selet this */}
+            </span>
+          ) : (
+            <span>
+              Points
               <HelpTip id="points-help" />
-            )}
-          </span>
+            </span>
+          )
         }
         inlineLabel
         placeholder="Select points…"

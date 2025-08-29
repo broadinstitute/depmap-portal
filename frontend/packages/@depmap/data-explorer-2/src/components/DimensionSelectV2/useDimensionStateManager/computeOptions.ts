@@ -1,6 +1,10 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
-import { isSampleType, pluralize } from "../../../utils/misc";
+import {
+  isSampleType,
+  pluralize,
+  sortDimensionTypes,
+} from "../../../utils/misc";
 import { State } from "./types";
 import { fetchDatasetsByIndexType } from "./utils";
 
@@ -42,17 +46,48 @@ async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
     throw new Error("Malformed context expression");
   }
 
+  const [variable, idOrLabel] = expr["=="];
+  const varName = variable.var;
+
+  const property = (() => {
+    if (varName === "given_id") {
+      return "id";
+    }
+
+    if (varName === "entity_label") {
+      return "label";
+    }
+
+    if (varName in (dimension.context.vars || {})) {
+      const { identifier } = dimension.context.vars[varName];
+
+      if (["id", "label"].includes(identifier)) {
+        return identifier;
+      }
+    }
+
+    throw new Error("Unsupported format");
+  })();
+
   if (axis === "sample") {
-    return cached(breadboxAPI).getDatasets({
-      sample_id: expr["=="][1],
-      sample_type: dimension.context.dimension_type,
-    });
+    try {
+      return await cached(breadboxAPI).getDatasets({
+        [property]: idOrLabel,
+        sample_type: dimension.context.dimension_type,
+      });
+    } catch (e) {
+      return [];
+    }
   }
 
-  return cached(breadboxAPI).getDatasets({
-    feature_id: expr["=="][1],
-    feature_type: dimension.context.dimension_type,
-  });
+  try {
+    return await cached(breadboxAPI).getDatasets({
+      [property]: idOrLabel,
+      feature_type: dimension.context.dimension_type,
+    });
+  } catch (e) {
+    return [];
+  }
 }
 
 async function fetchContextCompatibleDatasetIds(dimension: State["dimension"]) {
@@ -99,11 +134,18 @@ async function computeDataTypeOptions(
     compareCaseInsensitive
   );
 
-  const sliceDisplayName =
+  let sliceDisplayName =
     dimensionTypes.find((dt) => dt.name === dimension.slice_type)
-      ?.display_name ||
-    dimension.slice_type ||
-    "(unknown type)";
+      ?.display_name || dimension.slice_type;
+
+  if (!sliceDisplayName) {
+    const indexAxis = dimensionTypes.find((dt) => dt.name === index_type)?.axis;
+    if (indexAxis) {
+      sliceDisplayName = indexAxis === "sample" ? "feature" : "sample";
+    } else {
+      sliceDisplayName = "feature or sample";
+    }
+  }
 
   return dataTypes
     .map((dataType) => {
@@ -141,7 +183,9 @@ async function computeDataTypeOptions(
         if (dimension.axis_type === "aggregated_slice") {
           disabledReason = [
             `The context “${dimensionLabel}”`,
-            `has no ${pluralize(sliceDisplayName)} associated with this type`,
+            `has no ${pluralize(
+              sliceDisplayName as string
+            )} associated with this type`,
           ].join(" ");
         } else {
           disabledReason = [
@@ -223,7 +267,8 @@ async function computeSliceTypeOptions(
       return -1;
     }
 
-    return compareCaseInsensitive(a.label, b.label);
+    const [sorted] = sortDimensionTypes([a.value, b.value]);
+    return sorted === a.value ? -1 : 1;
   });
 }
 
@@ -247,6 +292,20 @@ async function computeDataVersionOptions(
   //          "This version is only compatible with the measure",
   //          `“${dataset.units}”`,
   //        ].join(" ");
+
+  let defaultDataset: typeof datasets[number] | null = null;
+
+  for (const d of datasets) {
+    if (
+      d.data_type === selectedDataType &&
+      d.priority !== null &&
+      (!defaultDataset ||
+        defaultDataset.priority === null ||
+        defaultDataset.priority < d.priority)
+    ) {
+      defaultDataset = d;
+    }
+  }
 
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
@@ -294,7 +353,7 @@ async function computeDataVersionOptions(
         value: dataset.id,
         isDisabled,
         disabledReason,
-        isDefault: false,
+        isDefault: dataset === defaultDataset,
       };
     })
     .sort(compareDisabledLast);

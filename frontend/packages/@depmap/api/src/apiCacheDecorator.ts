@@ -31,6 +31,20 @@ const wrappedAPIs = new Map<AnyApi, AnyApi>();
 // becomes
 // `const datasets = await cached(breadboxAPI).getDatasets();`
 export const cached = <T extends AnyApi>(api: T): T => {
+  // Edge case: if someone calls cached(cached(api)) don't wrap it again.
+  for (const [unwrapped, wrapped] of wrappedAPIs.entries()) {
+    if (api === wrapped) {
+      const name =
+        unwrapped === legacyPortalAPI ? "legacyPortalAPI" : "breadboxAPI";
+
+      window.console.warn(
+        `cached() called on an already-cached version of ${name}!`
+      );
+
+      return api;
+    }
+  }
+
   // We store the wrapped objects in a Map so we don't create new wrappers each
   // time `cached` is called. That way you can use a method as a prop without
   // needing to wrap it with `useCallback`.
