@@ -6,6 +6,7 @@ from google.cloud import storage
 
 from taigapy import create_taiga_client_v3
 
+
 def get_ctd_summary(tc, ctd2_drug_taiga_id, Model):
     print("getting ctd summary...")
     # CTD
@@ -66,29 +67,37 @@ def preprocess_omics_dataframe(df, dataset_id):
     4. Set ModelID as index
     5. Drop columns with all NaN values
     """
-    
+
     # Check if this dataframe needs preprocessing (has the required columns)
     if "IsDefaultEntryForModel" not in df.columns:
-        print(f"No IsDefaultEntryForModel column found in {dataset_id}, skipping preprocessing")
+        print(
+            f"No IsDefaultEntryForModel column found in {dataset_id}, skipping preprocessing"
+        )
         return df
-    
+
     print(f"Preprocessing {dataset_id}...")
     print("Filtering to default entries per model...")
     filtered_df = df[df["IsDefaultEntryForModel"] == "Yes"].copy()
 
     dataset_name = dataset_id.split("/")[-1]
-    if dataset_name in ["OmicsFusionFiltered", "OmicsProfiles", "OmicsSomaticMutations"]:
+    if dataset_name in [
+        "OmicsFusionFiltered",
+        "OmicsProfiles",
+        "OmicsSomaticMutations",
+    ]:
         print(f"Warning: {dataset_id} has multiple entries per ModelID")
     else:
-        assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
+        assert (
+            not filtered_df["ModelID"].duplicated().any()
+        ), f"Duplicate ModelID after filtering in {dataset_id}"
         print("Setting ModelID as index...")
         filtered_df = filtered_df.set_index("ModelID")
         filtered_df.index.name = None
-    
+
     print("Dropping some metadata columns...")
     cols_to_drop = [
         "SequencingID",
-        "ModelConditionID", 
+        "ModelConditionID",
         "IsDefaultEntryForModel",
         "IsDefaultEntryForMC",
     ]
@@ -98,13 +107,13 @@ def preprocess_omics_dataframe(df, dataset_id):
 
     count_all_na_columns = filtered_df.isna().all().sum()
     print(f"Number of columns with ALL NA values: {count_all_na_columns}")
-    
+
     if count_all_na_columns > 0:
         print(f"Data shape before dropping: {filtered_df.shape}")
         print("Dropping columns with all NaN values...")
         filtered_df = filtered_df.dropna(axis=1, how="all")
         print(f"Data shape after dropping: {filtered_df.shape}")
-    
+
     print(f"Finished preprocessing {dataset_id}")
     return filtered_df
 
@@ -413,39 +422,23 @@ def get_paralogs_summary(tc, depmap_paralogs_taiga_id):
     return paralogs_summary
 
 
-def get_long_reads_summary(gcloud_storage_client, depmap_long_reads_gcloud_loc):
+def get_long_reads_summary(tc, taiga_ids):
     """
     Get a summary of the long reads data available for each cell line.
 
-    Args:
-        gcloud_storage_client (storage.Client): gcloud storage client
-        depmap_long_reads_gcloud_loc (dict): gcloud location of the long reads data
-
     Returns:
-        pd.DataFrame: Indexed by ACHID or ModelID, with a column of True values that will be filterd against the Model table in future
+        pd.DataFrame: Indexed by ModelID, with a column of True values that will be filterd against the Model table in future
     """
 
     print("getting long_reads_summary...")
 
-    bucket_name = depmap_long_reads_gcloud_loc["bucket_name"]
-    prefix = depmap_long_reads_gcloud_loc["prefix"]
-    file_names = depmap_long_reads_gcloud_loc["file_names"].replace(" ", "").split(",")
-
-    # We have at least one file to process
-    assert len(file_names) > 0, "No file names provided in gcloud location"
-
-    bucket = gcloud_storage_client.bucket(bucket_name)
     unique_model_ids = set()
 
-    for file_name in file_names:
-        blob_name = f"{prefix}/{file_name}"
-        print(f"blob_name: {blob_name}")
-        blob = bucket.blob(blob_name)
-        content = blob.download_as_string()
-        df = pd.read_csv(pd.io.common.BytesIO(content), usecols=[0])
-        # Currently, the column name is "ACHID". Could be changed in the future to "ModelID" or something else?
-        assert "ACHID" in df.columns, f"Column 'ACHID' not found in file {file_name}"
-        unique_model_ids.update(df["ACHID"].unique())
+    for taiga_id in taiga_ids:
+        df = tc.get(taiga_id)
+
+        assert "ModelID" in df.columns, f"Column 'ModelID' not found in file {taiga_id}"
+        unique_model_ids.update(df["ModelID"].unique())
 
     assert len(unique_model_ids) > 0, "No model IDs found in the provided files"
     print(f"Length of unique_model_ids: {len(unique_model_ids)}")
@@ -467,13 +460,12 @@ def get_taiga_id(possible_id, id_key="dataset_id"):
     return [] if len(possible_id) == 0 else [possible_id[0][id_key]]
 
 
-def get_gcloud_loc(possible_id):
-    if len(possible_id) == 0:
-        return None
-    bucket_name = possible_id[0]["bucket_name"]
-    prefix = possible_id[0]["prefix"]
-    file_names = possible_id[0]["file_names"]
-    return {"bucket_name": bucket_name, "prefix": prefix, "file_names": file_names}
+def get_taiga_ids(possible_ids, id_key="dataset_id"):
+    return (
+        []
+        if len(possible_ids) == 0
+        else [possible_id[id_key] for possible_id in possible_ids]
+    )
 
 
 def main(
@@ -502,11 +494,7 @@ def main(
     crispr_screen_sequence_map_taiga_id = get_taiga_id(
         taiga_ids["crispr_screen_sequence_map"]
     )
-
-    # gcloud locations
-    depmap_long_reads_gcloud_loc = get_gcloud_loc(
-        taiga_ids["depmap_long_reads_gcloud_loc"]
-    )
+    depmap_long_reads_taiga_ids = get_taiga_ids(taiga_ids["depmap_long_reads_datasets"])
 
     tc = create_taiga_client_v3()
     gcloud_storage_client = storage.Client()
@@ -608,12 +596,13 @@ def main(
     )
     assert omics_summary.index.is_unique
 
-    # Long Reads
+    #################
+    ### Long Reads ###
+    #################
     long_reads_summary = None
-    if depmap_long_reads_gcloud_loc is not None:
+    if len(depmap_long_reads_taiga_ids) > 0:
         long_reads_summary = get_long_reads_summary(
-            gcloud_storage_client=gcloud_storage_client,
-            depmap_long_reads_gcloud_loc=depmap_long_reads_gcloud_loc,
+            tc=tc, taiga_ids=depmap_long_reads_taiga_ids
         )
         assert long_reads_summary.index.is_unique
 
