@@ -210,15 +210,21 @@ function useData(
       const ySource = doGroupTerms
         ? data.enrichedTerms.termGroup
         : data.enrichedTerms.term;
+
       const xSource = data.enrichedTerms.negLogFDR;
       // Build a lookup from y value to negLogFDR
       const yToX = Object.fromEntries(ySource.map((y, i) => [y, xSource[i]]));
+      console.log("ySource", ySource);
+      console.log("xSource", xSource);
+      console.log(yOrdered);
+
       return {
         x: yOrdered.map((yVal) => yToX[yVal] ?? 0),
         y: yOrdered,
+        customdata: [],
       };
     }
-    return { x: [], y: [] };
+    return { x: [], y: [], customdata: [] };
   }, [data, heatmapData, doGroupTerms]);
 
   const heatmapXAxisLabel = useMemo(() => {

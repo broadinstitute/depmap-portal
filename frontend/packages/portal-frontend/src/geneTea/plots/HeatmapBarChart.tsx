@@ -89,7 +89,10 @@ function HeatmapBarChart({
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-    let range: [number, number] = [0, [...new Set(heatmapData.x)].length - 1];
+    let range: [number, number] = [
+      0 - 0.5,
+      [...new Set(heatmapData.x)].length - 0.5,
+    ];
     if (
       plot &&
       plot.layout &&
