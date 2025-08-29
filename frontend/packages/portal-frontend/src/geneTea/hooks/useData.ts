@@ -178,9 +178,14 @@ function useData(
       const pairs = yOrderArr.flatMap((term) =>
         xOrderArr.map((gene) => [gene, term] as [string, string])
       );
-      const x = pairs.map(([gene]) => gene);
-      const y = pairs.map(([, term]) => term);
-      const customdata = pairs.map(([gene, term]) => {
+      const filteredPairs = pairs.filter(([gene]) =>
+        termToEntity.gene.includes(gene)
+      );
+
+      const x = filteredPairs.map(([gene]) => gene);
+      const y = filteredPairs.map(([, term]) => term);
+
+      const customdata = filteredPairs.map(([gene, term]) => {
         const idx = lookup.get(`${gene}|${term}`);
         return idx !== undefined
           ? `<b>Gene: </b>${gene}<br><b>Term: </b>${term}<br><b>Matches: </b>${termToEntity.nTerms[idx]}`

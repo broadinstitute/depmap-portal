@@ -90,16 +90,16 @@ function PlotSection({
               PlotToolOptions.Search,
             ]}
             onSearch={handleSearch}
-            searchOptions={[...validGeneSymbols].map(
-              (gene: string, index: number) => {
+            searchOptions={
+              heatmapFormattedData?.x.map((gene: string, index: number) => {
                 const option = {
                   label: gene,
                   value: index,
                   stringId: gene,
                 };
                 return option;
-              }
-            )}
+              }) || null
+            }
             searchPlaceholder="Search for a gene"
             downloadImageOptions={{
               filename: `genetea-heatmap-bar-plot`,
