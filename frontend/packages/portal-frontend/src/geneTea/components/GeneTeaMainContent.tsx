@@ -13,8 +13,6 @@ interface GeneTeaMainContentProps {
 }
 
 function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
-  // NOTE: this is tempoary during development.
-
   const {
     geneSymbolSelections,
     doGroupTerms,
@@ -142,7 +140,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
               return {
                 term: term,
                 termGroup: rawData.allEnrichedTerms!.termGroup[index],
-                synonyms: rawData.allEnrichedTerms!.synonyms[index],
+                synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
                 matchingGenesInList: rawData.allEnrichedTerms!
                   .matchingGenesInList[index],
                 nMatchingGenesOverall: rawData.allEnrichedTerms!
