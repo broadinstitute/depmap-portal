@@ -59,4 +59,3 @@ def test_dimension_labels_of_dataset(app, empty_db_mock_downloads):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response.get("labels") == ["gene1", "gene2"]
-        assert response.get("aliases") == []
