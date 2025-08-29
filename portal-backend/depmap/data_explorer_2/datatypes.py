@@ -10,15 +10,6 @@ blocked_dimension_types = set(
     ]
 )
 
-entity_aliases = {
-    "depmap_model": [
-        {
-            "label": "Cell Line Name",
-            "slice_id": "slice/cell_line_display_name/all/label",
-        }
-    ],
-}
-
 _hardcoded_metadata_slices = {
     "depmap_model": {
         "slice/cell_line_display_name/all/label": {

@@ -38,6 +38,12 @@ class BoxData:
 
 
 @dataclass
+class GroupedOtherBoxPlotData:
+    heme: BoxData
+    solid: BoxData
+
+
+@dataclass
 class BoxCardData:
     significant: List[BoxData]
     insignificant: BoxData

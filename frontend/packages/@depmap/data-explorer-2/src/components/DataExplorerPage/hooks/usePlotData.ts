@@ -3,6 +3,7 @@ import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
+  ErrorTypeError,
   LinRegInfo,
 } from "@depmap/types";
 
@@ -79,7 +80,15 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         setHadError(true);
         window.console.error(e);
 
-        if (e && typeof e === "object" && "message" in e) {
+        // Distinguish Error from ErrorTypeError
+        if (e instanceof ErrorTypeError) {
+          if (e.errorType === "LARGE_DATASET_READ") {
+            // we happen to want to keep the default message but here we name it explicitly for visibility and maybe change it in the future
+            setErrorMessage(e.message);
+          } else {
+            setErrorMessage(e.message);
+          }
+        } else if (e instanceof Error) {
           setErrorMessage(e.message as string);
         } else {
           setErrorMessage("");

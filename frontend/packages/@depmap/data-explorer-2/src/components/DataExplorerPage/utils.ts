@@ -26,6 +26,7 @@ import {
 } from "../../utils/context";
 import { fetchContext, persistContext } from "../../utils/context-storage";
 import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
+import { convertContextV1toV2 } from "../../utils/context-converter";
 import {
   hasSomeShorthandParams,
   omitShorthandParams,
@@ -429,23 +430,23 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
               };
             };
 
-        if ("hash" in dimension.context) {
-          const context = await fetchContext(dimension.context.hash);
+        let context =
+          "hash" in dimension.context
+            ? await fetchContext(dimension.context.hash)
+            : dimension.context;
 
-          if (isV2Context(context)) {
-            // FIXME: Is this true? can we get rid of this check?
-            // throw new Error("V2 contexts not supported!");
-          }
+        if (isBreadboxOnlyMode && !isV2Context(context)) {
+          const { convertedContext } = await convertContextV1toV2(context);
+          context = convertedContext;
+        }
 
-          nextDimensions[dimensionKey] = {
-            ...dimension,
-            context: dimension.context.negated
+        nextDimensions[dimensionKey] = {
+          ...dimension,
+          context:
+            "negated" in dimension.context && dimension.context.negated
               ? negateContext(context as DataExplorerContext)
               : context,
-          };
-        } else {
-          nextDimensions[dimensionKey] = dimension;
-        }
+        };
       }
     )
   );
@@ -462,15 +463,18 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
               negated: boolean;
             };
 
-        if ("hash" in filter) {
-          const context = await fetchContext(filter.hash);
+        let context =
+          "hash" in filter ? await fetchContext(filter.hash) : filter;
 
-          nextFilters[filterKey] = filter.negated
+        if (isBreadboxOnlyMode && !isV2Context(context)) {
+          const { convertedContext } = await convertContextV1toV2(context);
+          context = convertedContext;
+        }
+
+        nextFilters[filterKey] =
+          "negated" in filter && filter.negated
             ? negateContext(context as DataExplorerContext)
             : context;
-        } else {
-          nextFilters[filterKey] = filter;
-        }
       })
     );
   }
@@ -654,6 +658,13 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
 
   plot = replaceLegacyPropertyNames(plot);
   plot = await replaceHashesWithContexts(plot);
+
+  if (isBreadboxOnlyMode && plot?.dimensions) {
+    for (const dimKey of Object.keys(plot.dimensions)) {
+      const d = plot.dimensions[dimKey as DimensionKey]!;
+      d.dataset_id = d.dataset_id.replace("breadbox/", "");
+    }
+  }
 
   return (plot || DEFAULT_EMPTY_PLOT) as DataExplorerPlotConfig;
 }

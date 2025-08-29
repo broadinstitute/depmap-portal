@@ -244,10 +244,10 @@ export function formatDataForScatterPlot(
       const aliases: string[] = [];
       const colorInfo = [];
 
-      if (data?.index_aliases) {
-        data.index_aliases.forEach((alias) => {
-          aliases.push(`<b>${alias.values[i]}</b>`);
-        });
+      // FIXME: We shouldn't have a special case for models.
+      // We should just show both id and label.
+      if (data.index_type === "depmap_model") {
+        aliases.push(`<b>${data.index_display_labels[i]}</b>`);
       }
 
       if (c1Values && c1Values[i] && color_by === "aggregated_slice") {
@@ -294,10 +294,10 @@ export function formatDataForScatterPlot(
     annotationText: data.index_labels.map((label: string, i: number) => {
       const aliases: string[] = [];
 
-      if (data?.index_aliases) {
-        data.index_aliases.forEach((alias) => {
-          aliases.push(`<b>${alias.values[i]}</b>`);
-        });
+      // FIXME: We shouldn't have a special case for models.
+      // We should just show both id and label.
+      if (data.index_type === "depmap_model") {
+        aliases.push(`<b>${data.index_display_labels[i]}</b>`);
       }
 
       const formattedLabel =

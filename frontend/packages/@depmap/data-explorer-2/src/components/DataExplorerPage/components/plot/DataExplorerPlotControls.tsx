@@ -35,18 +35,16 @@ function DataExplorerPlotControls({
       value: `index_labels:${index}`,
     }));
 
-    (data.index_aliases || []).forEach(
-      (alias: { slice_id: string; values: string[] }) => {
-        const aliasOptions = alias.values
-          .map((label: string, index: number) => ({
-            label,
-            value: `${alias.slice_id}:${index}`,
-          }))
-          .sort((a, b) => (a.label < b.label ? -1 : 1));
+    if (data.index_type === "depmap_model") {
+      const cellLineNameOptions = data.index_display_labels.map(
+        (label: string, index: number) => ({
+          label,
+          value: `index_display_labels:${index}`,
+        })
+      );
 
-        options = [...aliasOptions, ...options];
-      }
-    );
+      options = [...cellLineNameOptions, ...options];
+    }
 
     return options.filter((option) => {
       const index = Number(option.value.split(":")[1]);

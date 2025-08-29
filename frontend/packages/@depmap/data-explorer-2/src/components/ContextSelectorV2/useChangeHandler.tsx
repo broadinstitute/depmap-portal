@@ -1,12 +1,15 @@
-import { useMemo } from "react";
+import React, { useMemo } from "react";
+import { getConfirmation, showInfoModal } from "@depmap/common-components";
 import { DepMap } from "@depmap/globals";
-import { DataExplorerContextV2 } from "@depmap/types";
+import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import { fetchContext } from "../../utils/context-storage";
 import {
   isNegatedContext,
   isV2Context,
   negateContext,
+  saveContextToLocalStorageAndPersist,
 } from "../../utils/context";
+import { convertContextV1toV2 } from "../../utils/context-converter";
 
 type OnChange = (
   context: DataExplorerContextV2 | null,
@@ -43,22 +46,74 @@ const handleDefaultCase = async (
 ) => {
   const negate = contextHash.startsWith("not_");
   const hashToFetch = contextHash.replace("not_", "");
-  let persistedHash;
-  let context: DataExplorerContextV2;
 
   if (isLegacyList) {
     // TODO: Implement this. The "legacy lists" referred to here go back to the
     // old Cell Line Selector. There's probably not many (if any) of those
     // still hanging around.
     throw new Error("Selection of legacy lists is not yet supported");
-  } else {
-    const fetchedContext = await fetchContext(hashToFetch);
+  }
 
-    if (!isV2Context(fetchedContext)) {
-      throw new Error("V1 contexts not supported!");
+  let fetchedContext: DataExplorerContext | DataExplorerContextV2;
+
+  try {
+    fetchedContext = await fetchContext(hashToFetch);
+  } catch (e) {
+    showInfoModal({
+      title: "Error loading context",
+      content: "Unable to load context. It may have not been saved properly.",
+    });
+
+    return;
+  }
+
+  let context: DataExplorerContextV2;
+  let persistedHash;
+
+  if (isV2Context(fetchedContext)) {
+    context = fetchedContext;
+  } else {
+    const { success, convertedContext } = await convertContextV1toV2(
+      fetchedContext
+    );
+
+    if (success) {
+      context = convertedContext;
+    } else {
+      const confirmed = await getConfirmation({
+        title: "Error reading context",
+        message: (
+          <div>
+            <p>
+              There was a problem reading the context. Some of the rules may be
+              referencing legacy datasets or features that are no longer
+              available.
+            </p>
+            <p>Do you want to open the Context Manager to edit it?</p>
+          </div>
+        ),
+        yesText: "Yes, let‘s try to fix it",
+        noText: "Cancel",
+        yesButtonBsStyle: "primary",
+      });
+
+      if (!confirmed) {
+        return;
+      }
+
+      const repaired = await DepMap.repairContext(convertedContext);
+
+      if (!repaired) {
+        return;
+      }
+
+      context = repaired;
     }
 
-    context = fetchedContext;
+    persistedHash = await saveContextToLocalStorageAndPersist(
+      context,
+      contextHash
+    );
   }
 
   if (negate && context) {

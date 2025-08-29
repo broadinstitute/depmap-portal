@@ -26,25 +26,41 @@ export default function useClickHandlers(
     path: ContextPath | null
   ) => void
 ) {
-  const handleClickSaveSelectionAsContext = (
+  const handleClickSaveSelectionAsContext = async (
     context_type: string,
     selectedLabels: Set<string>
   ) => {
     const labels = [...selectedLabels];
 
-    const context = isBreadboxOnlyMode
-      ? {
-          name: defaultContextName(selectedLabels.size),
-          dimension_type: context_type,
-          expr: { in: [{ var: "given_id" }, labels] },
-        }
-      : {
-          name: defaultContextName(selectedLabels.size),
-          context_type,
-          expr: { in: [{ var: "entity_label" }, labels] },
-        };
+    if (isBreadboxOnlyMode) {
+      const identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
+        context_type
+      );
+      const labelToIdMap = Object.fromEntries(
+        identifiers.map(({ label, id }) => [label, id])
+      );
+      const ids =
+        plot.index_type === "depmap_model"
+          ? labels
+          : labels.map((label) => labelToIdMap[label]);
 
-    onClickSaveAsContext(context as DataExplorerContext, null);
+      const context = {
+        name: defaultContextName(selectedLabels.size),
+        dimension_type: context_type,
+        expr: { in: [{ var: "given_id" }, ids] },
+        vars: {},
+      };
+
+      onClickSaveAsContext((context as unknown) as DataExplorerContext, null);
+    } else {
+      const context = {
+        name: defaultContextName(selectedLabels.size),
+        context_type,
+        expr: { in: [{ var: "entity_label" }, labels] },
+      };
+
+      onClickSaveAsContext(context, null);
+    }
   };
 
   const handleClickVisualizeSelected = useCallback(

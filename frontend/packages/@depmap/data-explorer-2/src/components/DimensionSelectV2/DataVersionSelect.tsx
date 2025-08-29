@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import cx from "classnames";
 import { breadboxAPI, cached } from "@depmap/api";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
@@ -41,19 +41,32 @@ function DataVersionSelect({
     null
   );
 
-  let optionsToShow = groupedOptions || options;
-
-  if (isUnknownDataset) {
-    optionsToShow = [
-      {
+  const optionsToShow = useMemo(() => {
+    if (isUnknownDataset) {
+      const pseudoOption = {
         value,
-        label: "⚠️ unknown version",
+        label: `⚠️ unknown version “${value}”`,
         isDisabled: true,
         isDefault: false,
-        disabledReason: `Unknown data version with id ${value}.`,
-      } as Props["options"][number],
-    ];
-  }
+        disabledReason: (
+          <div>
+            The data version “{value}” may have been renamed or removed.
+          </div>
+        ),
+      } as Props["options"][number];
+
+      if (groupedOptions) {
+        return [
+          { label: "Unknown data type", options: [pseudoOption] },
+          ...groupedOptions,
+        ];
+      }
+
+      return [pseudoOption, ...options];
+    }
+
+    return groupedOptions || options;
+  }, [isUnknownDataset, groupedOptions, options, value]);
 
   useEffect(() => {
     if (!shouldGroupByDataType) {
@@ -84,6 +97,16 @@ function DataVersionSelect({
     })();
   }, [options, shouldGroupByDataType]);
 
+  let displayValue = value;
+
+  if (isLoading) {
+    displayValue = null;
+  }
+
+  if (isUnknownDataset && optionsToShow?.[0]) {
+    displayValue = (optionsToShow as any)?.[0]?.options?.[0];
+  }
+
   return (
     <PlotConfigSelect
       data-version-select
@@ -92,7 +115,7 @@ function DataVersionSelect({
       show={show}
       enable={options.length > 1 && !isLoading}
       isLoading={isLoading}
-      value={isLoading ? null : value}
+      value={displayValue}
       options={optionsToShow}
       onChange={onChange}
       label={

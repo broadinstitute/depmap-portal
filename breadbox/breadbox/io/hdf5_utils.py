@@ -1,6 +1,9 @@
 from typing import List, Optional, Literal
 
-from breadbox.schemas.custom_http_exception import FileValidationError
+from breadbox.schemas.custom_http_exception import (
+    FileValidationError,
+    LargeDatasetReadError,
+)
 from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
 import h5py
 import numpy as np
@@ -169,4 +172,4 @@ def _validate_read_size(features_length: int, samples_length: int):
     TODO: We will need to handle reading large data
     """
     if features_length * samples_length * 8 > MAX_HDF5_READ_IN_BYTES:
-        raise Exception("Reading too many columns and rows into memory at once!")
+        raise LargeDatasetReadError(features_length, samples_length)

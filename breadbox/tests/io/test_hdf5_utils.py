@@ -5,6 +5,7 @@ from breadbox.schemas.dataframe_wrapper import (
     ParquetDataFrameWrapper,
     PandasDataFrameWrapper,
 )
+from breadbox.schemas.custom_http_exception import LargeDatasetReadError
 from breadbox.io.hdf5_utils import write_hdf5_file, read_hdf5_file
 import pytest
 import h5py
@@ -144,7 +145,5 @@ def test_large_read_raises_exception(monkeypatch, tmpdir):
         path, num_samples=100, num_features=100
     )  # 100*100 = 10000 > 1000 -> triggers mock
 
-    with pytest.raises(
-        Exception, match="Reading too many columns and rows into memory at once!"
-    ):
+    with pytest.raises(LargeDatasetReadError):
         read_hdf5_file(path)
