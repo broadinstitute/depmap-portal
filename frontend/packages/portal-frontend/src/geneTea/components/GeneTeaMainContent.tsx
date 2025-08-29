@@ -81,6 +81,50 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
+  // Get the table data and prefferedTableDataForDownload. Combined in this useMemo so we don't
+  // have to iterate through allEnrichedTerms twice. The only difference is that the tableData is
+  // rounded, while the prefferedTableDataForDownload is NOT rounded.
+  const roundedAndUnroundedTableData = useMemo(() => {
+    // TODO give these a real type
+    const roundedData: any = [];
+    const unroundedData: any = [];
+    if (rawData?.allEnrichedTerms) {
+      rawData.allEnrichedTerms.term.forEach((term, index) => {
+        roundedData.push({
+          term: term,
+          termGroup: rawData.allEnrichedTerms!.termGroup[index],
+          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
+          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
+            index
+          ],
+          nMatchingGenesOverall: rawData.allEnrichedTerms!
+            .nMatchingGenesOverall[index],
+          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
+            index
+          ],
+          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(5),
+          effectSize: rawData.allEnrichedTerms!.effectSize[index].toFixed(4),
+        });
+        unroundedData.push({
+          term: term,
+          termGroup: rawData.allEnrichedTerms!.termGroup[index],
+          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
+          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
+            index
+          ],
+          nMatchingGenesOverall: rawData.allEnrichedTerms!
+            .nMatchingGenesOverall[index],
+          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
+            index
+          ],
+          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(),
+          effectSize: rawData.allEnrichedTerms!.effectSize[index],
+        });
+      });
+    }
+    return { roundedData, unroundedData };
+  }, [rawData]);
+
   if (tab === "all-matching-terms") {
     return (
       <div style={{ padding: "25px" }}>
@@ -136,23 +180,10 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
           <GeneTeaTable
             error={error}
             isLoading={isLoading}
-            tableData={rawData.allEnrichedTerms.term.map((term, index) => {
-              return {
-                term: term,
-                termGroup: rawData.allEnrichedTerms!.termGroup[index],
-                synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
-                matchingGenesInList: rawData.allEnrichedTerms!
-                  .matchingGenesInList[index],
-                nMatchingGenesOverall: rawData.allEnrichedTerms!
-                  .nMatchingGenesOverall[index],
-                nMatchingGenesInList: rawData.allEnrichedTerms!
-                  .nMatchingGenesInList[index],
-                fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(5),
-                effectSize: rawData.allEnrichedTerms!.effectSize[index].toFixed(
-                  4
-                ),
-              };
-            })}
+            tableData={roundedAndUnroundedTableData.roundedData}
+            prefferedTableDataForDownload={
+              roundedAndUnroundedTableData.unroundedData
+            }
             tableColumns={tableColumns}
             columnOrdering={tableColumns.map((col) => col.accessor)}
             defaultCols={tableColumns.map((col) => col.accessor)}

@@ -7,6 +7,7 @@ interface GeneTeaTableProps {
   error: boolean;
   isLoading: boolean;
   tableData: any;
+  prefferedTableDataForDownload: any;
   tableColumns: any[];
   columnOrdering: string[];
   defaultCols: string[];
@@ -18,6 +19,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
   error,
   isLoading,
   tableData,
+  prefferedTableDataForDownload,
   tableColumns,
   columnOrdering,
   defaultCols,
@@ -42,6 +44,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
           idProp="term"
           rowHeight={28}
           data={tableData || []}
+          prefferedTableDataForDownload={prefferedTableDataForDownload || []}
           fixedHeight={500}
           columns={tableColumns}
           columnOrdering={columnOrdering}
