@@ -1,5 +1,5 @@
 import React from "react";
-import { DependencyMeter } from "../components/tiles/DependencyMeter";
+import { DependencyMeter } from "../tiles/CorrelatedDependenciesTile/DependencyMeter";
 
 export default {
   title: "Components/Compounds/DependencyMeter",
