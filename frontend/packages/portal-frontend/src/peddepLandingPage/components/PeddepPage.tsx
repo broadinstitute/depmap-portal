@@ -22,6 +22,7 @@ export default function PeddepPage() {
         className={`${styles.PeddepPageContainer} ${styles.highlightBackground}`}
         style={{
           backgroundImage: `url(${imagePath})`,
+          backgroundSize: "contain",
           backgroundColor: "rgba(243, 242, 253, 0.8)",
         }}
       >
