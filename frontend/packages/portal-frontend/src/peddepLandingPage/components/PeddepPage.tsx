@@ -73,7 +73,7 @@ export default function PeddepPage() {
         className={styles.PeddepPageContainer}
         style={{ backgroundColor: "rgba(243, 242, 253, 0.8)" }}
       >
-        <div style={{ display: "grid" }}>
+        <div>
           <h2>Navigate the portal with a pediatric context</h2>
           <h4>
             Explore notable dependencies from PedDep Accelerator investigators
