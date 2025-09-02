@@ -140,7 +140,6 @@
 }
 
 .aboutPeddep {
-  display: grid;
   padding-bottom: 50px;
   a {
     color: #8658ab;
@@ -153,9 +152,26 @@
   }
 
   .aboutPeddepColumns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2%;
+    @media screen and (min-width: 1024px) {
+      display: grid;
+      grid-template-columns: 3fr 2fr;
+      gap: 2%;
+    }
+  }
+  .aboutImage {
+    @media screen and (min-width: 1024px) {
+      img {
+        float: right;
+      }
+    }
+    @media screen and (max-width: 1023px) {
+      display: grid;
+      place-items: center;
+
+      img {
+        padding-top: 10px;
+      }
+    }
   }
 
   h4 {
