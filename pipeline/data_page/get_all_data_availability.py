@@ -464,7 +464,7 @@ def get_taiga_ids(possible_ids, id_key="dataset_id"):
     return (
         []
         if len(possible_ids) == 0
-        else [possible_id[id_key] for possible_id in possible_ids]
+        else [possible_id.get(id_key) for possible_id in possible_ids]
     )
 
 
@@ -494,11 +494,11 @@ def main(
     crispr_screen_sequence_map_taiga_id = get_taiga_id(
         taiga_ids["crispr_screen_sequence_map"]
     )
-    depmap_long_reads_taiga_ids = get_taiga_ids(taiga_ids["depmap_long_reads_datasets"])
+    depmap_long_reads_taiga_ids = get_taiga_ids(
+        taiga_ids.get("depmap_long_reads_datasets", [])
+    )
 
     tc = create_taiga_client_v3()
-    gcloud_storage_client = storage.Client()
-
     Model = tc.get(f"{depmap_data_taiga_id[0]}/Model")
     assert Model is not None
 
