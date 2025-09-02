@@ -8,14 +8,6 @@ import PediatricContextExamples from "./PediatricContextExamples";
 export default function PeddepPage() {
   const imagePath = toStaticUrl("img/peddep_landing_page/peddep_wave.png");
 
-  const umapImage = (
-    <img
-      style={{ float: "right" }}
-      src={toStaticUrl("img/peddep_landing_page/umap.png")}
-      alt="Diagram of UMAP"
-    />
-  );
-
   return (
     <div className={styles.PeddepPage}>
       <div
@@ -121,7 +113,12 @@ export default function PeddepPage() {
                 .
               </h4>
             </div>
-            <div>{umapImage}</div>
+            <div className={styles.aboutImage}>
+              <img
+                src={toStaticUrl("img/peddep_landing_page/umap.png")}
+                alt="Diagram of UMAP"
+              />
+            </div>
           </div>
         </div>
       </div>
