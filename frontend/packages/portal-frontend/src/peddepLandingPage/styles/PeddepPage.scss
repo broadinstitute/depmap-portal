@@ -196,11 +196,6 @@
   }
 
   .cardImg {
-    display: flex;
-
-    flex-direction: column;
-    align-items: center;
-
     img {
       width: 100%;
       aspect-ratio: 3 / 3; /* Ensures uniform height */
