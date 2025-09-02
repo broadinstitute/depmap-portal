@@ -8,14 +8,6 @@ import PediatricContextExamples from "./PediatricContextExamples";
 export default function PeddepPage() {
   const imagePath = toStaticUrl("img/peddep_landing_page/peddep_wave.png");
 
-  const umapImage = (
-    <img
-      style={{ float: "right" }}
-      src={toStaticUrl("img/peddep_landing_page/umap.png")}
-      alt="Diagram of UMAP"
-    />
-  );
-
   return (
     <div className={styles.PeddepPage}>
       <div
@@ -73,7 +65,7 @@ export default function PeddepPage() {
         className={styles.PeddepPageContainer}
         style={{ backgroundColor: "rgba(243, 242, 253, 0.8)" }}
       >
-        <div style={{ display: "grid" }}>
+        <div>
           <h2>Navigate the portal with a pediatric context</h2>
           <h4>
             Explore notable dependencies from PedDep Accelerator investigators
@@ -121,7 +113,12 @@ export default function PeddepPage() {
                 .
               </h4>
             </div>
-            <div>{umapImage}</div>
+            <div className={styles.aboutImage}>
+              <img
+                src={toStaticUrl("img/peddep_landing_page/umap.png")}
+                alt="Diagram of UMAP"
+              />
+            </div>
           </div>
         </div>
       </div>
