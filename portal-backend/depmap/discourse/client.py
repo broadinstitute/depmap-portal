@@ -23,7 +23,7 @@ class DiscourseClient:
     def __create_session(self, api_key: str):
         session = requests.Session()
         session.headers.update({"Api-Key": api_key, "Api-Username": "system"})
-        retry = Retry(total=5, backoff_factor=2, status_forcelist=[429, 500])
+        retry = Retry(total=5, backoff_factor=3, status_forcelist=[429, 500])
         adapter = HTTPAdapter(max_retries=retry)
         session.mount("https://", adapter)
         return session
