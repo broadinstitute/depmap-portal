@@ -208,29 +208,50 @@ function useData(
   }, [data, xOrder, yOrder, zOrder]);
 
   const barChartData = useMemo(() => {
-    if (data && data.enrichedTerms && heatmapData && heatmapData.y.length > 0) {
-      // Use the unique values from heatmapData.y, preserving order
-      const yOrdered = Array.from(new Set(heatmapData.y));
-      // Map yOrdered to their corresponding negLogFDR values
+    if (data && data.enrichedTerms) {
+      const xSource = data.enrichedTerms.negLogFDR;
       const ySource = doGroupTerms
         ? data.enrichedTerms.termGroup
         : data.enrichedTerms.term;
 
-      const xSource = data.enrichedTerms.negLogFDR;
-      // Build a lookup from y value to negLogFDR
-      const yToX = Object.fromEntries(ySource.map((y, i) => [y, xSource[i]]));
-      console.log("ySource", ySource);
-      console.log("xSource", xSource);
-      console.log(yOrdered);
+      // Look at the Heatmap y-axis order. If the y-ais is term groups, this array
+      // could be fewer in number compared to ySource.
+      const orderedY = Array.from(new Set(heatmapData.y));
+
+      // If we are displaying term groups rather than term, ySource values for the bar chart is not equal to
+      // y of the heatmap, but both sets of y values must be ordered to match the same y-axis.
+      // Concretely, ySource might have y-values: ["Term Group B", "Term Group B", "Term Group A"]
+      // Which if ordering by term maps to: ["Term1 from Group B", "Term 2 from Group B", "Term 1 from Group A"]
+      // while the heatmap (here we called this orderedY) has values: ["Term Group A", "Term Group B"].
+      //
+      // The Heatmap defines the order. So sortedYSource becomes: ["Term Group A", "Term Group B", "Term Group B"]
+      // sortedXSource becomes: ["Value for Term1 in Group A", "Value for Term 1 in Group B", "Value for Term 2 in Group B"].
+      //
+      // This lets us use a y-axis that is term groups while plotting a stacked bar chart of term data for each group.
+      const combinedXY = [...ySource].map((item, index) => ({
+        yVal: item,
+        xVal: xSource[index],
+        sortKey: orderedY.indexOf(item),
+      }));
+      const sortedCombinedXY = [...combinedXY].sort(
+        (a, b) => a.sortKey - b.sortKey
+      );
+
+      const sortedYSource = doGroupTerms
+        ? sortedCombinedXY.map((val) => val.yVal)
+        : orderedY;
+
+      const sortedXSource = doGroupTerms
+        ? sortedCombinedXY.map((val) => val.xVal)
+        : xSource;
 
       return {
-        x: yOrdered.map((yVal) => yToX[yVal] ?? 0),
-        y: yOrdered,
-        customdata: [],
+        x: sortedXSource,
+        y: sortedYSource,
       };
     }
-    return { x: [], y: [], customdata: [] };
-  }, [data, heatmapData, doGroupTerms]);
+    return { x: [], y: [] };
+  }, [data]);
 
   const heatmapXAxisLabel = useMemo(() => {
     if (data && data.termToEntity) {
