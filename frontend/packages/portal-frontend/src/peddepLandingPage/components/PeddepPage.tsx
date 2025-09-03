@@ -96,7 +96,7 @@ export default function PeddepPage() {
               </h4>
               <h4>
                 <a
-                  href="https://depmap.org/peddep/"
+                  href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8049517/"
                   target="_blank"
                   rel="noreferrer"
                 >
