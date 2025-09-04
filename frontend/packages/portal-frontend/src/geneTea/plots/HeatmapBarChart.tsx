@@ -167,6 +167,10 @@ function HeatmapBarChart({
       orientation: "h",
       marker: {
         color: "#777b7e",
+        line: {
+          color: "white",
+          width: 1, // Set the line width for the divider
+        },
       },
     };
 
