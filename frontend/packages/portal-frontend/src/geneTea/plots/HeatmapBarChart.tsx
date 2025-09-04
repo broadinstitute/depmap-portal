@@ -291,9 +291,6 @@ function HeatmapBarChart({
       }
     };
 
-    // Event listener for window resize
-    // window.addEventListener("resize", updateLayoutOnScreenSizeChange);
-
     // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility
     plot.downloadImage = (options) => {
       const { filename, width, format } = options;

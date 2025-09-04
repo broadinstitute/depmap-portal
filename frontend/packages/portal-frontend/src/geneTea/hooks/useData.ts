@@ -69,6 +69,8 @@ function useData(
       })();
     } else {
       setData(null);
+      handleSetInValidGeneSymbols(new Set([]));
+      handleSetValidGeneSymbols(new Set([]));
       setIsLoading(false);
     }
   }, [
