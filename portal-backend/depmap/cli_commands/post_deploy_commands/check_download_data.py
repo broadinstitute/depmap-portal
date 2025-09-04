@@ -2,13 +2,13 @@ from enum import Enum
 from json import dumps as json_dumps
 import click
 import collections
-from depmap.taiga_id.utils import get_taiga_client, check_taiga_datafile_valid
+from depmap.taiga_id.utils import check_taiga_datafile_valid
 from depmap.utilities.iter_utils import pairwise_with_repeat
 from flask import current_app, url_for
 from flask.cli import with_appcontext
-from depmap.download.models import BucketUrl, RetractedUrl, FileType
-from depmap.download.views import view_all, get_all_downloads
-from depmap.dataset.models import Dataset, TabularDataset
+from depmap.download.models import BucketUrl, DownloadRelease
+from depmap.download.views import get_all_downloads
+from depmap.dataset.models import Dataset
 from depmap.access_control import all_records_visible
 from depmap.settings.download_settings import get_download_list
 
@@ -59,34 +59,6 @@ def check_download_data():
         _check_download_data(downloads)
 
 
-from collections import Counter
-
-
-def _find_unexpected_duplicate_urls(urls):
-    # the following urls are allowed to be duplicated, due to two releases overlapping some files
-    whitelist = {
-        "https://ndownloader.figshare.com/files/25494356",
-        "https://ndownloader.figshare.com/files/25494407",
-        "https://ndownloader.figshare.com/files/25494389",
-        "https://ndownloader.figshare.com/files/25494410",
-        "https://ndownloader.figshare.com/files/25494434",
-        "https://ndownloader.figshare.com/files/25494350",
-        "https://ndownloader.figshare.com/files/25494419",
-        "https://ndownloader.figshare.com/files/25494443",
-        "https://ndownloader.figshare.com/files/25494368",
-        "https://ndownloader.figshare.com/files/25494437",
-        "https://ndownloader.figshare.com/files/27676623",
-        "https://ndownloader.figshare.com/files/27676611",
-        "https://ndownloader.figshare.com/files/27676626",
-    }
-    count_per_url = Counter(urls)
-    result = set()
-    for url, count in count_per_url.items():
-        if count > 1 and url not in whitelist:
-            result.add(url)
-    return result
-
-
 # a white list of historical taiga IDs which were deprecated in the past.
 # rather than worry about these right now, we ignore these so that the
 # check which validates taiga IDs can only worry about _new_ problems.
@@ -115,11 +87,11 @@ datasets_to_skip_file_check = [
 ]
 
 
-def _check_download_data(downloads):
+def _check_download_data(downloads: list[DownloadRelease]):
     """
     Used in the deploy-data repo, not in this project
     Separated from the cli command for testing
-    It takes while every time we make a change to push, run tests, build the docker image, run the deploy check
+    It takes a while every time we make a change to push, run tests, build the docker image, run the deploy check
     So we run everything and gather all the errors, then report everything instead of failing quickly
     :param dataset_err_msg_name_and_taiga_id: List of (name, taiga id) tuples. The name is only used to print error messages, and not to look up anything
     """
@@ -223,14 +195,6 @@ def _check_download_data(downloads):
 
     # having logged duplicate ids, just collapse them
     taiga_ids = set(taiga_ids)
-
-    # verify no duplicate urls. this is important in case we e.g. accidentally
-    # paste the same figshare link twice.
-    unexpected_dups = _find_unexpected_duplicate_urls(urls)
-    if len(unexpected_dups) != 0:
-        issues.append(
-            DownloadIssueType.duplicate_url, str(unexpected_dups),
-        )
 
     # Every dataset in the portal has a download item in hand curated config
     datasets_by_taiga_id = collections.defaultdict(lambda: set())
