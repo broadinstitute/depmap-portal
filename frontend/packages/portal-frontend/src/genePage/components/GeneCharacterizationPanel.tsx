@@ -39,6 +39,13 @@ const GeneCharacterizationPanel = ({
     })();
   }, [symbol]);
 
+  useEffect(() => {
+    const handler = () => window.dispatchEvent(new Event("resize"));
+    window.addEventListener("changeTab:characterization", handler);
+    return () =>
+      window.removeEventListener("changeTab:characterization", handler);
+  }, []);
+
   if (!characterizations) {
     return <div>Loading...</div>;
   }
@@ -70,6 +77,9 @@ const GeneCharacterizationPanel = ({
       lazyBehavior="keepMounted"
       queryParamName="characterization"
       orientation="vertical"
+      // HACK: Use the onChange event to resize plots that may have been improperly
+      // sized if the window size change while the plots were loaded on a hidden tab.
+      onChange={() => window.dispatchEvent(new Event("resize"))}
     >
       <TabList className={styles.TabList}>
         {characterizations.map((c: any) => (

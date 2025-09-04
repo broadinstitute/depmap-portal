@@ -8,7 +8,7 @@ const MapSection = () => {
   const mapImage = (
     <img
       style={{ maxWidth: "700px", width: "100%" }}
-      src={toStaticUrl("img/data_page/Mapping2.png")}
+      src={toStaticUrl("img/data_page/mapping_guide_v2.png")}
       alt="Diagram of how to map data"
     />
   );
@@ -48,11 +48,20 @@ const MapSection = () => {
               performed in the same basal Model. To see which screens are
               combined in these files, refer to CRISPRSceenMap.csv.
             </div>
-
             <div className={styles.colParagraph}>
-              All Omics data files with the suffix &quot;Profile.csv&quot; are
-              indexed by Profile ID (PR-xxxxxx). Mappings from Profile IDs to
-              Model ID (ACH-xxxxxx) can be found in OmicsProfiles.csv.
+              Each omics data file contains the following ID columns: ModelID,
+              ModelConditionID, IsDefaultEntryModel, and IsDefaultEntryMC. Each
+              model and model condition have a representative sequencing output,
+              identified by the flags &quot;IsDefaultEntryForModel&quot; and
+              &quot;IsDefaultEntryForMC&quot;. SequencingID (CDS-) is an
+              internal identifier, which is available to use if needed.
+            </div>
+            <div className={styles.colParagraph}>
+              To identify which sequencing output represents each Model, filter
+              the file by &quot;IsDefaultEntryForModel == Yes&quot;; To identify
+              which sequencing output represents each ModelCondition, filter by
+              &quot;IsDefaultEntryForMC == Yes&quot;. For a complete set of
+              omics metadata and ID mappings, please refer to OmicsProfiles.csv.
             </div>
           </div>
           <div className={styles.imageContainer}>{mapImage}</div>

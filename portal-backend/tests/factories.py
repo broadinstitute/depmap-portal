@@ -767,16 +767,12 @@ class FusionFactory(SQLAlchemyModelFactory):
     cell_line = factory.SubFactory(CellLineFactory)
 
     fusion_name = "test_fusion_name"
-    profile_id = "test_profile_id"
     total_reads_supporting_fusion = 100
     total_fusion_coverage = 200
     ffpm = 0.5
     split_reads_1 = 50
     split_reads_2 = 60
     discordant_mates = 10
-    strand1 = "+"
-    strand2 = "-"
-    reading_frame = "in-frame"
 
 
 class TranslocationFactory(SQLAlchemyModelFactory):

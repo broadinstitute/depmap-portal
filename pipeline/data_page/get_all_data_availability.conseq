@@ -4,7 +4,7 @@
 # won't manifest. Then, use the type field on each artifact to map it to the name the script is expecting
 rule get_all_data_availability:
     inputs:
-        artifacts=all {"type" ~ "depmap_data_taiga_id|depmap_oncref_taiga_id|rna_merged_version_taiga_id|rnai_drive_taiga_id|repurposing_matrix_taiga_id|ctd2-drug-taiga-id|gdsc_drug_taiga_id|raw-rppa-matrix|proteomics-raw|sanger_methylation_taiga_id|biomarker-correctly-transposed|ccle_mirna_taiga_id|ataq_seq_taiga_id|olink_taiga_id|sanger-proteomics|depmap_paralogs_taiga_id|depmap_long_reads_gcloud_loc"},
+        artifacts=all {"type" ~ "depmap_data_taiga_id|depmap_oncref_taiga_id|rna_merged_version_taiga_id|rnai_drive_taiga_id|repurposing_matrix_taiga_id|ctd2-drug-taiga-id|gdsc_drug_taiga_id|raw-rppa-matrix|proteomics-raw|sanger_methylation_taiga_id|biomarker-correctly-transposed|ccle_mirna_taiga_id|ataq_seq_taiga_id|olink_taiga_id|sanger-proteomics|depmap_paralogs_taiga_id|depmap_long_reads_dataset"},
         rnai_broad_only={"type": "raw-dep-matrix", "label": "RNAi_Ach"},
         crispr_screen_sequence_map={"type": "crispr-screen-sequence-map"},
         script=fileref("get_all_data_availability.py"),
@@ -13,7 +13,9 @@ rule get_all_data_availability:
     run "python3" with """
         import json
     
-        artifacts = {{ inputs.artifacts }}
+        all_artifacts = {{ inputs.artifacts }}
+        regular_artifacts = [d for d in all_artifacts if d.get("type") != "depmap_long_reads_dataset"]
+        depmap_long_reads_artifacts = [d for d in all_artifacts if d.get("type") == "depmap_long_reads_dataset"]
 
         # transformed will be our newly constructed dict of name -> artifact
         transformed = {
@@ -22,8 +24,11 @@ rule get_all_data_availability:
             "crispr_screen_sequence_map": [ {{ inputs.crispr_screen_sequence_map }} ],
         }
 
-        by_type = { artifact['type'] : artifact for artifact in artifacts }
-        assert len(by_type) == len(artifacts), "Some type was duplicated?"
+        if depmap_long_reads_artifacts:
+            transformed["depmap_long_reads_datasets"] = depmap_long_reads_artifacts
+
+        by_type = { artifact['type'] : artifact for artifact in regular_artifacts }
+        assert len(by_type) == len(regular_artifacts), "Some type was duplicated?"
 
         # now unpack those inputs into ids the script was using
         for dest_name, type_name in [
@@ -42,8 +47,7 @@ rule get_all_data_availability:
                 ('ataq_seq_taiga_id', 'ataq_seq_taiga_id'), 
                 ('olink_taiga_id', 'olink_taiga_id'), 
                 ('sanger_proteomics_taiga_id', 'sanger-proteomics'), 
-                ('depmap_paralogs_taiga_id', 'depmap_paralogs_taiga_id'),
-                ('depmap_long_reads_gcloud_loc', 'depmap_long_reads_gcloud_loc')
+                ('depmap_paralogs_taiga_id', 'depmap_paralogs_taiga_id')
             ]:
             artifact = by_type.get(type_name)
             transformed[dest_name] = [ artifact ] if artifact is not None else []
