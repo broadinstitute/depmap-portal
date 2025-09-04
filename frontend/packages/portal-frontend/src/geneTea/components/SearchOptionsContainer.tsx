@@ -34,13 +34,13 @@ function SearchOptionsContainer() {
             </StackableSection>
           </SectionStack>
         </Tab>
-        <Tab
+        {/* <Tab
           eventKey={"Continuous"}
           title={"Continuous (Alpha)"}
           className={styles.Tab}
         >
           <h2>Coming soon!</h2>
-        </Tab>
+        </Tab> */}
       </Tabs>
     </div>
   );
