@@ -83,7 +83,8 @@ export async function fetchMetadata<T>(
 
 export function generateTickLabels(
   columnNames: string[],
-  selectedColumnIndices: Set<number>
+  selectedColumnIndices: Set<number>,
+  showFullXAxisTickLabels: boolean
 ): string[] {
   // Initialize output array with empty strings
   const tickvals: string[] = new Array(columnNames.length).fill("");
@@ -114,7 +115,7 @@ export function generateTickLabels(
 
   // For each subset, find middle index and place subset size there
   contiguousSubsets.forEach((subset) => {
-    if (subset.length === 1) {
+    if (subset.length === 1 || showFullXAxisTickLabels) {
       subset.forEach((j) => {
         tickvals[j] = columnNames[j];
       });

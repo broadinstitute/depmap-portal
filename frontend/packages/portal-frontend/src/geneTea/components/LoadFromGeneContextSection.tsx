@@ -74,8 +74,6 @@ const LoadFromGeneContextSection: React.FC = () => {
       notFound,
       hiddenByFilters: 0,
     });
-
-    const selectionLength = contextLabels.size - notFound;
   };
 
   return (

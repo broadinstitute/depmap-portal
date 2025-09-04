@@ -4,6 +4,7 @@ import type {
   Layout,
   PlotlyHTMLElement,
   ColorScale,
+  Datum,
 } from "plotly.js";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
@@ -16,6 +17,7 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDefaultLayout, getTabletScreenSizeLayout } from "./layouts";
 import { generateTickLabels } from "../utils";
 import styles from "./HeatmapBarChart.scss";
+import { useCallback } from "react";
 
 const viridisRColorscale = [
   ["0", "#D3D3D3"],
@@ -79,13 +81,37 @@ function HeatmapBarChart({
   const [containerWidth, setContainerWidth] = useState(0);
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
 
-  const xAxisTickLabels = generateTickLabels(
-    [...new Set(heatmapData.x)].map((val) => {
-      const str = String(val);
-      return str.length > 8 ? str.slice(0, 8) + "..." : str;
-    }),
-    selectedColumns
-  );
+  const [
+    showFullXAxisTickLabels,
+    setShowFullAxisTickLabels,
+  ] = useState<boolean>(false);
+
+  const getShowXAxisTickLabels = useCallback(() => {
+    if (ref.current) {
+      const dataToPiixels = (ref.current as any)._fullLayout.xaxis.l2p;
+
+      const test = dataToPiixels(1) - dataToPiixels(0);
+
+      if (test < 20) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    return false;
+    // eslint-disable-next-line
+  }, [selectedRange, selectedColumns]);
+
+  const xAxisTickLabels = useMemo(() => {
+    const showTickLabels = getShowXAxisTickLabels();
+    setShowFullAxisTickLabels(showTickLabels);
+    return generateTickLabels(
+      heatmapData.x.map(String),
+      selectedColumns,
+      showTickLabels
+    );
+  }, [heatmapData.x, selectedColumns, showFullXAxisTickLabels]);
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
@@ -185,7 +211,8 @@ function HeatmapBarChart({
 
     const zoom = (val: "in" | "out" | "reset") => {
       getButton("zoom", val).click();
-
+      const showTickLabels = getShowXAxisTickLabels();
+      setShowFullAxisTickLabels(showTickLabels);
       // This redraw fixes a very strange bug where setting the drag mode to
       // select (or lasso) with a filter also applied causes all of the points
       // to disappear.
@@ -241,19 +268,26 @@ function HeatmapBarChart({
       if (selections.size > 0 && plot && plot.layout && plot.layout.xaxis) {
         const minSelected = Math.min(...selections);
         const maxSelected = Math.max(...selections);
+        const minRange = Math.max(0, minSelected - 0.5);
+        const maxRange = Math.min(
+          [...new Set(heatmapData.x)].length - 0.5,
+          maxSelected + 0.5
+        );
+        const newRange = [minRange, maxRange];
+        setSelectedRange(newRange as [number, number]);
 
         // Use Plotly.react to update the range and force a re-render
         Plotly.relayout(plot, {
           "xaxis.autorange": false,
-          "xaxis.range": [
-            Math.max(0, minSelected - 1),
-            Math.min([...new Set(heatmapData.x)].length - 1, maxSelected + 1),
-          ],
+          "xaxis.range": newRange as [Datum, Datum],
           ...({
             "xaxis2.fixedrange": true,
             "yaxis2.fixedrange": true,
           } as object),
         });
+
+        const showTickLabels = getShowXAxisTickLabels();
+        setShowFullAxisTickLabels(showTickLabels);
       }
     };
 
