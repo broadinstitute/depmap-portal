@@ -34,7 +34,7 @@ function SearchOptionsContainer() {
             </StackableSection>
           </SectionStack>
         </Tab>
-        {/* <Tab
+        {/* NOTE: Temporarily commented out until this feature is fully specced out<Tab
           eventKey={"Continuous"}
           title={"Continuous (Alpha)"}
           className={styles.Tab}

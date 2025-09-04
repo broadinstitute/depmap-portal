@@ -18,12 +18,18 @@ const MultiSelectTextarea: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
 
   const handleInputChange = (e: any) => {
+    if (e.keyCode === "Enter") {
+      e.preventDefault(); // Prevent newline in textarea
+      return;
+    }
+
     setInputValue(e.target.value);
   };
 
   const handleKeyDown = (e: any) => {
     if (e.key === "Enter" && inputValue.trim() !== "") {
       e.preventDefault(); // Prevent newline in textarea
+      console.log(inputValue);
       const newItems = inputValue
         .split(/[, ]+/)
         .filter((item) => item.trim() !== "");
@@ -31,6 +37,8 @@ const MultiSelectTextarea: React.FC = () => {
         (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
       ); // Add only unique items
       setInputValue(""); // Clear input
+    } else if (e.key === "Enter" && inputValue.trim() === "") {
+      e.preventDefault();
     }
   };
 
@@ -101,7 +109,7 @@ const MultiSelectTextarea: React.FC = () => {
               ? "Enter items, separated by commas or spaces, then press Enter"
               : undefined
           }
-          rows={5}
+          rows={2}
         />
       </div>
       {validGeneSymbols.size > 0 && (
