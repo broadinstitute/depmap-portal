@@ -11,6 +11,8 @@ const MultiSelectTextarea: React.FC = () => {
     handleSetValidGeneSymbols,
     inValidGeneSymbols,
     handleSetInValidGeneSymbols,
+    selectedPlotGenes,
+    handleSetPlotSelectedGenes,
     handleClearPlotSelection,
     handleClearSelectedTableRows,
   } = useGeneTeaContext();
@@ -18,11 +20,6 @@ const MultiSelectTextarea: React.FC = () => {
   const [inputValue, setInputValue] = useState("");
 
   const handleInputChange = (e: any) => {
-    if (e.keyCode === "Enter") {
-      e.preventDefault(); // Prevent newline in textarea
-      return;
-    }
-
     setInputValue(e.target.value);
   };
 
@@ -43,10 +40,20 @@ const MultiSelectTextarea: React.FC = () => {
   };
 
   const handleRemoveChip = (chipToRemove: string) => {
-    handleSetGeneSymbolSelections(
-      (prevChips: Set<string>) =>
-        new Set([...prevChips].filter((chip) => chip !== chipToRemove))
-    );
+    handleSetGeneSymbolSelections((prevChips: Set<string>) => {
+      const newGeneSymbolSelections = new Set(
+        [...prevChips].filter((chip) => chip !== chipToRemove)
+      );
+      return newGeneSymbolSelections;
+    });
+
+    // Update Plot Selections panel in case a selected plot gene is no longer valid.
+    if (selectedPlotGenes.has(chipToRemove)) {
+      const newSelections = [...selectedPlotGenes].filter(
+        (geneSymbol) => geneSymbol !== chipToRemove
+      );
+      handleSetPlotSelectedGenes(new Set(newSelections), false);
+    }
   };
 
   const targetRef = useRef<HTMLTextAreaElement | null>(null);
