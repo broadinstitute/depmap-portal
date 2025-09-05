@@ -31,6 +31,8 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     handleSetSelectedTableRows,
     handleClickSavePlotSelectionAsContext,
     handleClearPlotSelection,
+    handleSetIsLoading,
+    isLoading,
   } = useGeneTeaContext();
 
   const plotSelections = useMemo(
@@ -56,7 +58,6 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   );
 
   const {
-    isLoading,
     error,
     rawData,
     heatmapData,
@@ -76,7 +77,8 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     minMatchingQuery,
     effectSizeThreshold,
     handleSetInValidGeneSymbols,
-    handleSetValidGeneSymbols
+    handleSetValidGeneSymbols,
+    handleSetIsLoading
   );
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);

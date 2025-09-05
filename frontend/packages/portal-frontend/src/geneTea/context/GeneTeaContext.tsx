@@ -49,6 +49,8 @@ export interface GeneTeaContextType {
   ) => void;
   handleClickSavePlotSelectionAsContext: () => void;
   handleClearPlotSelection: () => void;
+  isLoading: boolean;
+  handleSetIsLoading: (v: boolean) => void;
 }
 
 export const GeneTeaContext = createContext<GeneTeaContextType | undefined>(
@@ -62,6 +64,9 @@ interface GeneTeaContextProviderProps {
 export function GeneTeaContextProvider({
   children,
 }: GeneTeaContextProviderProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const handleSetIsLoading = useCallback((v: boolean) => setIsLoading(v), []);
+
   const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
     new Set()
   );
@@ -300,6 +305,8 @@ export function GeneTeaContextProvider({
         handleSetPlotSelectedGenes,
         handleClickSavePlotSelectionAsContext,
         handleClearPlotSelection,
+        isLoading,
+        handleSetIsLoading,
       }}
     >
       {children}

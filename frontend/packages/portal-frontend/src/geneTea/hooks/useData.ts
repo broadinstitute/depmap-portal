@@ -22,9 +22,9 @@ function useData(
   minMatchingQuery: number,
   effectSizeThreshold: number, // TODO - not doing this anymore? It is not an option in the GeneTEA API
   handleSetInValidGeneSymbols: (v: Set<string>) => void,
-  handleSetValidGeneSymbols: (v: any) => void
+  handleSetValidGeneSymbols: (v: any) => void,
+  handleSetIsLoading: (v: boolean) => void
 ) {
-  const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<GeneTeaEnrichedTerms | null>(null);
   const [error, setError] = useState(false);
 
@@ -34,7 +34,7 @@ function useData(
       possiblyValidGenes.size >= MIN_SELECTION &&
       possiblyValidGenes.size <= MAX_SELECTION
     ) {
-      setIsLoading(true);
+      handleSetIsLoading(true);
       (async () => {
         try {
           const fetchedData = await cached(
@@ -64,14 +64,14 @@ function useData(
           setError(true);
           window.console.error(e);
         } finally {
-          setIsLoading(false);
+          handleSetIsLoading(false);
         }
       })();
     } else {
       setData(null);
       handleSetInValidGeneSymbols(new Set([]));
       handleSetValidGeneSymbols(new Set([]));
-      setIsLoading(false);
+      handleSetIsLoading(false);
     }
   }, [
     plotSelections,
@@ -266,7 +266,6 @@ function useData(
   }, [data]);
 
   return {
-    isLoading,
     error,
     specialCaseInvalidGenes,
     rawData: data,
