@@ -159,6 +159,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
             </div>
             <div className={styles.selectionsArea}>
               <PlotSelections
+                isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
                 selectedIds={new Set(selectedPlotGenes)}
                 selectedLabels={new Set(selectedPlotGenes)}
                 onClickSaveSelectionAsContext={

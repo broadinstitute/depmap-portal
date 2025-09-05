@@ -7,6 +7,7 @@ import { useGeneTeaContext } from "../context/GeneTeaContext";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface PlotSelectionsProps {
+  isPlotDataVisible: boolean;
   selectedIds: Set<string> | null;
   selectedLabels: Set<string> | null;
   onClickSaveSelectionAsContext: () => void;
@@ -14,6 +15,7 @@ interface PlotSelectionsProps {
 }
 
 function PlotSelections({
+  isPlotDataVisible,
   selectedIds,
   selectedLabels,
   onClickSaveSelectionAsContext,
@@ -48,7 +50,8 @@ function PlotSelections({
           )}
           {onClickSetSelectionFromContext &&
             selectedLabels &&
-            selectedLabels.size === 0 && (
+            selectedLabels.size === 0 &&
+            isPlotDataVisible && (
               <div>
                 or{" "}
                 <button
