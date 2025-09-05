@@ -1,6 +1,6 @@
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SortOption } from "../types";
 import { groupStringsByCondition } from "../utils";
 
@@ -28,6 +28,8 @@ function useData(
   const [data, setData] = useState<GeneTeaEnrichedTerms | null>(null);
   const [error, setError] = useState(false);
 
+  const latestPromise = useRef<Promise<GeneTeaEnrichedTerms> | null>(null);
+
   useEffect(() => {
     if (
       possiblyValidGenes &&
@@ -35,38 +37,48 @@ function useData(
       possiblyValidGenes.size <= MAX_SELECTION
     ) {
       handleSetIsLoading(true);
-      (async () => {
-        try {
-          const fetchedData = await cached(
-            legacyPortalAPI
-          ).fetchGeneTeaEnrichmentExperimental(
-            Array.from(plotSelections),
-            Array.from(possiblyValidGenes),
-            doGroupTerms,
-            sortBy,
-            maxFDR,
-            maxTopTerms,
-            maxMatchingOverall,
-            minMatchingQuery
-            // effectSizeThreshold
-          );
-          setData(fetchedData);
 
-          // See HACK comment above for an explanation of why we do this.
-          const invalidGenes = [
-            ...specialCaseInvalidGenes,
-            ...fetchedData.invalidGenes,
-          ];
+      const promise = cached(
+        legacyPortalAPI
+      ).fetchGeneTeaEnrichmentExperimental(
+        Array.from(plotSelections),
+        Array.from(possiblyValidGenes),
+        doGroupTerms,
+        sortBy,
+        maxFDR,
+        maxTopTerms,
+        maxMatchingOverall,
+        minMatchingQuery
+        // effectSizeThreshold
+      );
 
-          handleSetInValidGeneSymbols(new Set(invalidGenes));
-          handleSetValidGeneSymbols(new Set(fetchedData.validGenes));
-        } catch (e) {
-          setError(true);
-          window.console.error(e);
-        } finally {
-          handleSetIsLoading(false);
-        }
-      })();
+      latestPromise.current = promise;
+      promise
+        .then((fetchedData) => {
+          if (promise === latestPromise.current) {
+            setData(fetchedData);
+            // See HACK comment above for an explanation of why we do this.
+            const invalidGenes = [
+              ...specialCaseInvalidGenes,
+              ...fetchedData.invalidGenes,
+            ];
+
+            handleSetInValidGeneSymbols(new Set(invalidGenes));
+            handleSetValidGeneSymbols(new Set(fetchedData.validGenes));
+          }
+        })
+        .catch((e) => {
+          if (promise === latestPromise.current) {
+            window.console.error(e);
+            setError(true);
+            handleSetIsLoading(false);
+          }
+        })
+        .finally(() => {
+          if (promise === latestPromise.current) {
+            handleSetIsLoading(false);
+          }
+        });
     } else {
       setData(null);
       handleSetInValidGeneSymbols(new Set([]));

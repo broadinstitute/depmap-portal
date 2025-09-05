@@ -135,7 +135,7 @@ const MultiSelectTextarea: React.FC = () => {
       <div className={styles.buttonRow}>
         <Button
           className={styles.selectGenesButton}
-          disabled={isLoading || inputValue.length === 0}
+          disabled={inputValue.length === 0}
           onClick={() => {
             const newItems = inputValue
               .split(/[, ]+/)
@@ -150,10 +150,7 @@ const MultiSelectTextarea: React.FC = () => {
         </Button>
         <Button
           className={styles.clearInputButton}
-          disabled={
-            isLoading ||
-            (inputValue.length === 0 && geneSymbolSelections.size === 0)
-          }
+          disabled={inputValue.length === 0 && geneSymbolSelections.size === 0}
           onClick={() => {
             handleSetGeneSymbolSelections(() => new Set<string>([]));
             handleSetValidGeneSymbols(new Set());
