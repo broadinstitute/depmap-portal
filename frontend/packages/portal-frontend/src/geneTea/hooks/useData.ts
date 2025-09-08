@@ -222,7 +222,7 @@ function useData(
   }, [data, xOrder, yOrder, zOrder]);
 
   const barChartData = useMemo(() => {
-    if (data && data.enrichedTerms) {
+    if (data && data.enrichedTerms && data.termToEntity) {
       const xSource = data.enrichedTerms.negLogFDR;
       const ySource = doGroupTerms
         ? data.enrichedTerms.termGroup
@@ -246,25 +246,91 @@ function useData(
         yVal: item,
         xVal: xSource[index],
         sortKey: orderedY.indexOf(item),
+        origIndex: index,
       }));
       const sortedCombinedXY = [...combinedXY].sort(
         (a, b) => a.sortKey - b.sortKey
       );
 
       const sortedYSource = doGroupTerms
-        ? sortedCombinedXY.map((val) => val.yVal)
-        : orderedY;
+        ? sortedCombinedXY.map((val, i) => {
+            return { val: val.yVal, origIndex: val.origIndex };
+          })
+        : orderedY.map((val, i) => {
+            return { val, origIndex: i };
+          });
+
+      console.log("sortedYSource", sortedYSource);
+      const calculateStackedXValues = (
+        xValues: number[],
+        yValues: string[]
+      ): number[] => {
+        if (xValues.length !== yValues.length) {
+          throw new Error("xValues and yValues must be of the same length.");
+        }
+
+        const combinedData: any = xValues.map((x, index) => ({
+          x,
+          y: yValues[index],
+        }));
+
+        // 1. Group data by y-value
+        const groupedData = combinedData.reduce((acc: any, current: any) => {
+          (acc[current.y] = acc[current.y] || []).push(current.x);
+          return acc;
+        }, {} as Record<string, number[]>);
+
+        const newXValues: number[] = [];
+
+        // 2. Process each group to sort and calculate new x-values
+        for (const y in groupedData) {
+          const valuesForY = groupedData[y];
+
+          // Sort the x-values for the current y-group from smallest to largest
+          valuesForY.sort((a: any, b: any) => a - b);
+
+          let previousX = 0;
+
+          // 3. Iterate to calculate new values
+          for (const x of valuesForY) {
+            const newX = x - previousX;
+            newXValues.push(newX);
+            previousX = x; // Store the original x as the 'previously added x' for the next iteration
+          }
+        }
+
+        return newXValues;
+      };
 
       const sortedXSource = doGroupTerms
         ? sortedCombinedXY.map((val) => val.xVal)
         : xSource;
 
+      const customdata = sortedYSource.map((termOrTermGroup, i) => {
+        const term = doGroupTerms
+          ? data.enrichedTerms!.term[termOrTermGroup.origIndex]
+          : termOrTermGroup.val;
+        return term !== undefined
+          ? `<b>Term: </b>${term}<br>-log10(FDR): </b>${sortedXSource[
+              i
+            ].toFixed(4)}`
+          : "";
+      });
+
+      const sortedYSourceVals = sortedYSource.map((val) => val.val);
+
+      const transformX = calculateStackedXValues(
+        sortedXSource,
+        sortedYSourceVals
+      );
+
       return {
-        x: sortedXSource,
-        y: sortedYSource,
+        x: transformX,
+        y: sortedYSourceVals,
+        customdata: customdata,
       };
     }
-    return { x: [], y: [] };
+    return { x: [], y: [], customdata: [] };
   }, [data]);
 
   const heatmapXAxisLabel = useMemo(() => {

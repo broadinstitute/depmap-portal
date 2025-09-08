@@ -106,7 +106,7 @@ export const getDefaultLayout = (
   };
 };
 
-// window.innerWidth < 1200
+// window.innerWidth < 1250
 export const getTabletScreenSizeLayout = (
   data: any,
   heatmapXAxisTitle: string,
@@ -142,7 +142,7 @@ export const getTabletScreenSizeLayout = (
       ticks: "",
       rangeslider: {
         thickness: 0.05,
-        visible: true,
+        visible: data.z.length > 0,
         borderwidth: 2,
         range: [0 - 0.5, [...new Set(data.x)].length - 0.5],
       },

@@ -164,6 +164,7 @@ function HeatmapBarChart({
       type: "bar",
       xaxis: "x2",
       yaxis: "y2",
+      hovertemplate,
       orientation: "h",
       marker: {
         color: "#777b7e",
@@ -175,7 +176,7 @@ function HeatmapBarChart({
     };
 
     const layout: Partial<Layout> =
-      window.innerWidth < 1200
+      window.innerWidth < 1250
         ? getTabletScreenSizeLayout(
             heatmapData,
             heatmapXAxisTitle,

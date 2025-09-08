@@ -23,6 +23,7 @@ export interface HeatmapFormattedData {
 export interface BarChartFormattedData {
   x: number[];
   y: TermOrTermGroup[];
+  customdata: string[]; // For hover text
 }
 
 export interface TermCluster {
