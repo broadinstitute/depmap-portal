@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type {
   Data as PlotlyData,
   Layout,
@@ -17,7 +23,6 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDefaultLayout, getTabletScreenSizeLayout } from "./layouts";
 import { generateTickLabels } from "../utils";
 import styles from "./HeatmapBarChart.scss";
-import { useCallback } from "react";
 
 const viridisRColorscale = [
   ["0", "#D3D3D3"],
@@ -78,7 +83,6 @@ function HeatmapBarChart({
   }, [heatmapData]);
 
   const [selectedRange, setSelectedRange] = useState(initialRange);
-  const [containerWidth, setContainerWidth] = useState(0);
   const [hoveredColumns, setHoveredColumns] = useState<number[]>([]);
 
   const [
@@ -90,13 +94,9 @@ function HeatmapBarChart({
     if (ref.current) {
       const dataToPiixels = (ref.current as any)._fullLayout.xaxis.l2p;
 
-      const test = dataToPiixels(1) - dataToPiixels(0);
+      const pixelWidth = dataToPiixels(1) - dataToPiixels(0);
 
-      if (test < 20) {
-        return false;
-      } else {
-        return true;
-      }
+      return pixelWidth > 20;
     }
 
     return false;
@@ -109,9 +109,14 @@ function HeatmapBarChart({
     return generateTickLabels(
       heatmapData.x.map(String),
       selectedColumns,
-      showTickLabels
+      showFullXAxisTickLabels
     );
-  }, [heatmapData.x, selectedColumns, showFullXAxisTickLabels]);
+  }, [
+    heatmapData.x,
+    selectedColumns,
+    getShowXAxisTickLabels,
+    showFullXAxisTickLabels,
+  ]);
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
@@ -235,17 +240,15 @@ function HeatmapBarChart({
     };
 
     on("plotly_afterplot", () => {
-      setContainerWidth(plot.clientWidth);
-
       customizeDragLayer({
         plot,
         onMouseOut: () => setHoveredColumns([]),
         onChangeInProgressSelection: (start, end) => {
-          const range = [];
+          const inProgressRange = [];
           for (let i = start; i <= end; i += 1) {
-            range.push(i);
+            inProgressRange.push(i);
           }
-          setHoveredColumns(range);
+          setHoveredColumns(inProgressRange);
         },
         onSelectColumnRange: (start, end, shiftKey) => {
           onSelectColumnRange(start, end, shiftKey);
@@ -335,7 +338,10 @@ function HeatmapBarChart({
     };
   }, [
     heatmapData,
-
+    barChartXAxisTitle,
+    getShowXAxisTickLabels,
+    onSelectColumnRange,
+    selectedColumns,
     legendTitle,
     selectedRange,
     hoveredColumns,
