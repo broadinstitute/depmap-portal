@@ -22,6 +22,7 @@ const LoadFromGeneContextSection: React.FC = () => {
   useEffect(() => {
     if (geneSymbolSelections.size === 0 && value !== null) {
       setValue(null);
+      setStats(null);
     }
   }, [geneSymbolSelections]);
 
