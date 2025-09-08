@@ -2,7 +2,6 @@ import { cached, legacyPortalAPI } from "@depmap/api";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SortOption } from "../types";
-import { groupStringsByCondition } from "../utils";
 
 // TODO: picked these numbers at random. Figure out what they should actually be.
 const MIN_SELECTION = 3;
@@ -97,6 +96,7 @@ function useData(
     maxMatchingOverall,
     minMatchingQuery,
     effectSizeThreshold,
+    handleSetIsLoading,
     handleSetInValidGeneSymbols,
     handleSetValidGeneSymbols,
     specialCaseInvalidGenes,
@@ -253,7 +253,7 @@ function useData(
       );
 
       const sortedYSource = doGroupTerms
-        ? sortedCombinedXY.map((val, i) => {
+        ? sortedCombinedXY.map((val) => {
             return { val: val.yVal, origIndex: val.origIndex };
           })
         : orderedY.map((val, i) => {
@@ -283,7 +283,7 @@ function useData(
         const newXValues: number[] = [];
 
         // 2. Process each group to sort and calculate new x-values
-        for (const y in groupedData) {
+        Object.keys(groupedData).forEach((y) => {
           const valuesForY = groupedData[y];
 
           // Sort the x-values for the current y-group from smallest to largest
@@ -297,7 +297,7 @@ function useData(
             newXValues.push(newX);
             previousX = x; // Store the original x as the 'previously added x' for the next iteration
           }
-        }
+        });
 
         return newXValues;
       };
@@ -327,11 +327,11 @@ function useData(
       return {
         x: transformX,
         y: sortedYSourceVals,
-        customdata: customdata,
+        customdata,
       };
     }
     return { x: [], y: [], customdata: [] };
-  }, [data]);
+  }, [data, doGroupTerms, heatmapData.y]);
 
   const heatmapXAxisLabel = useMemo(() => {
     if (data && data.termToEntity) {
