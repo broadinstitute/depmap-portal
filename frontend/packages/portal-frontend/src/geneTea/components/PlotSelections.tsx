@@ -4,7 +4,6 @@ import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styl
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
 import geneTeaStyles from "../styles/GeneTea.scss";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
 interface PlotSelectionsProps {
   isPlotDataVisible: boolean;
@@ -21,10 +20,7 @@ function PlotSelections({
   onClickSaveSelectionAsContext,
   onClickClearSelection = undefined,
 }: PlotSelectionsProps) {
-  const {
-    handleSetSelectionFromContext: onClickSetSelectionFromContext,
-    geneSymbolSelections,
-  } = useGeneTeaContext();
+  const { handleSetSelectionFromContext } = useGeneTeaContext();
 
   const listRef = useRef<HTMLDivElement | null>(null);
 
@@ -48,7 +44,7 @@ function PlotSelections({
               </button>
             </div>
           )}
-          {onClickSetSelectionFromContext &&
+          {handleSetSelectionFromContext &&
             selectedLabels &&
             selectedLabels.size === 0 &&
             isPlotDataVisible && (
@@ -57,7 +53,7 @@ function PlotSelections({
                 <button
                   type="button"
                   className={styles.setSelectionButton}
-                  onClick={onClickSetSelectionFromContext}
+                  onClick={handleSetSelectionFromContext}
                 >
                   set selection from a context
                 </button>

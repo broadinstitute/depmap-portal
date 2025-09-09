@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useEffect } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -7,7 +7,6 @@ import "src/common/styles/typeahead_fix.scss";
 import styles from "../styles/GeneTea.scss";
 import SearchOptionsContainer from "./SearchOptionsContainer";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
-import { useEffect } from "react";
 import { breadboxAPI } from "@depmap/api";
 import { fetchMetadata } from "../utils";
 
@@ -25,7 +24,7 @@ function GeneTea() {
 
       handleSetAllAvailableGenes(new Set(Object.values(geneMetadata.label)));
     })();
-  }, []);
+  }, [handleSetAllAvailableGenes]);
 
   return (
     <div className={styles.page}>

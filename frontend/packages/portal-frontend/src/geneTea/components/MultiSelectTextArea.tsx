@@ -15,7 +15,6 @@ const MultiSelectTextarea: React.FC = () => {
     handleSetPlotSelectedGenes,
     handleClearPlotSelection,
     handleClearSelectedTableRows,
-    isLoading,
   } = useGeneTeaContext();
 
   const [inputValue, setInputValue] = useState("");
@@ -90,6 +89,7 @@ const MultiSelectTextarea: React.FC = () => {
               <span className={chipClass} key={index}>
                 {chip}
                 <button
+                  type="button"
                   className={styles.chipRemoveButton}
                   onClick={() => handleRemoveChip(chip)}
                 >

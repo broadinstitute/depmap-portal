@@ -1,15 +1,8 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useRef, useState } from "react";
 import styles from "../styles/MultiSelectTextArea.scss";
 import { Button } from "react-bootstrap";
 
 import NumberInput from "./NumberInput";
-import { SectionStackContext } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/SectionStack";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 import { SortOption } from "../types";
 
@@ -24,8 +17,7 @@ const DEFAULTS = {
 
 const TermOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
-  const [hasScrollBar, setHasScrollBar] = useState(false);
-  const { sectionHeights } = useContext(SectionStackContext);
+
   const {
     sortBy,
     handleSetSortBy,
@@ -58,20 +50,6 @@ const TermOptionsPanel: React.FC = () => {
     localMaxMatchingOverall,
     setLocalMaxMatchingOverall,
   ] = useState<number>(maxMatchingOverall || DEFAULTS.maxMatchingOverall);
-
-  const checkScrollBar = useCallback(() => {
-    if (ref.current) {
-      const stack = ref.current.closest("#section-stack") as Element;
-      setHasScrollBar(stack.scrollHeight > stack.clientHeight);
-    }
-  }, []);
-
-  useEffect(checkScrollBar, [checkScrollBar, sectionHeights]);
-
-  useEffect(() => {
-    window.addEventListener("resize", checkScrollBar);
-    return () => window.removeEventListener("resize", checkScrollBar);
-  }, [checkScrollBar]);
 
   return (
     <div ref={ref} style={{ backgroundColor: "#ffffff" }}>

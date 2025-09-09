@@ -248,7 +248,7 @@ export function GeneTeaContextProvider({
         return next;
       });
     },
-    [selectedPlotGenes]
+    []
   );
 
   const handleClickSavePlotSelectionAsContext = useCallback(() => {
@@ -265,7 +265,7 @@ export function GeneTeaContextProvider({
 
   const handleClearPlotSelection = useCallback(
     () => setSelectedPlotGenes(new Set([])),
-    [selectedTableRows]
+    []
   );
 
   return (
@@ -316,9 +316,10 @@ export function GeneTeaContextProvider({
 
 export function useGeneTeaContext() {
   const ctx = useContext(GeneTeaContext);
-  if (!ctx)
+  if (!ctx) {
     throw new Error(
       "useGeneTeaContext must be used within GeneTeaContext.Provider"
     );
+  }
   return ctx;
 }

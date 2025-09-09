@@ -3,11 +3,8 @@ import { enabledFeatures } from "@depmap/globals";
 import { getJson } from "../client";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 
-/////
-///// ❌ ❌ ❌  WARNING: THIS IS EXPERIMENTAL AND WILL LIKELY CHANGE ❌ ❌ ❌
-///// DO NOT USE THIS FOR ANYTHING OTHER THAN THE NEW GENETEA TEA PARTY PAGE!!!!!
-/////
-/////
+// ❌ ❌ ❌  WARNING: THIS IS EXPERIMENTAL AND WILL LIKELY CHANGE ❌ ❌ ❌
+// DO NOT USE THIS FOR ANYTHING OTHER THAN THE NEW GENETEA TEA PARTY PAGE!!!!!
 
 // Do not use in production! For local development only.
 const toCorsProxyUrl = (geneTeaUrl: string, params: object) => {
@@ -181,7 +178,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
 
   const termClusterTermOrGroup = doGroupTerms
     ? plottingPayload.term_cluster["Term Group"]
-    : plottingPayload.term_cluster["Term"];
+    : plottingPayload.term_cluster.Term;
 
   const termCluster = {
     termOrTermGroup: termClusterTermOrGroup as string[],
@@ -198,7 +195,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
   const termToEntity = {
     termOrTermGroup: doGroupTerms
       ? (plottingPayload.term_to_entity["Term Group"] as string[])
-      : (plottingPayload.term_to_entity["Term"] as string[]),
+      : (plottingPayload.term_to_entity.Term as string[]),
     gene: plottingPayload.term_to_entity.Gene,
     count: plottingPayload.term_to_entity.Count,
     nTerms: plottingPayload.term_to_entity["n Terms"],

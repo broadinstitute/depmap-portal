@@ -93,7 +93,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     if (rawData?.allEnrichedTerms) {
       rawData.allEnrichedTerms.term.forEach((term, index) => {
         roundedData.push({
-          term: term,
+          term,
           termGroup: rawData.allEnrichedTerms!.termGroup[index],
           synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
           matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
@@ -108,7 +108,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
           effectSize: rawData.allEnrichedTerms!.effectSize[index].toFixed(4),
         });
         unroundedData.push({
-          term: term,
+          term,
           termGroup: rawData.allEnrichedTerms!.termGroup[index],
           synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
           matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[

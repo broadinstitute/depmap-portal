@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import PlotControls, {
   PlotToolOptions,
 } from "src/plot/components/PlotControls";
@@ -11,9 +11,6 @@ import {
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
 import HeatmapBarChart from "../plots/HeatmapBarChart";
-import { saveNewContext } from "src";
-import { DataExplorerContext } from "@depmap/types";
-import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { getSelectedColumns } from "../utils";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 
@@ -35,7 +32,6 @@ function PlotSection({
   plotElement,
 }: PlotSectionProps) {
   const {
-    validGeneSymbols,
     selectedPlotGenes,
     handleSetPlotSelectedGenes,
     handleClickSavePlotSelectionAsContext,

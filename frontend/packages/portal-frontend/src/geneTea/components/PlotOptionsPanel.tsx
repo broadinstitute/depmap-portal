@@ -1,18 +1,9 @@
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useRef } from "react";
 import ToggleSwitch from "@depmap/common-components/src/components/ToggleSwitch";
-import { SectionStackContext } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/SectionStack";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 
 const PlotOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
-  const [hasScrollBar, setHasScrollBar] = useState(false);
-  const { sectionHeights } = useContext(SectionStackContext);
 
   const {
     doClusterTerms,
@@ -22,20 +13,6 @@ const PlotOptionsPanel: React.FC = () => {
     doGroupTerms,
     handleSetDoGroupTerms,
   } = useGeneTeaContext();
-
-  const checkScrollBar = useCallback(() => {
-    if (ref.current) {
-      const stack = ref.current.closest("#section-stack") as Element;
-      setHasScrollBar(stack.scrollHeight > stack.clientHeight);
-    }
-  }, []);
-
-  useEffect(checkScrollBar, [checkScrollBar, sectionHeights]);
-
-  useEffect(() => {
-    window.addEventListener("resize", checkScrollBar);
-    return () => window.removeEventListener("resize", checkScrollBar);
-  }, [checkScrollBar]);
 
   return (
     <div ref={ref} style={{ backgroundColor: "#ffffff" }}>

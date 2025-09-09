@@ -17,7 +17,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
   name,
   label,
   min = 0,
-  max,
+  max = undefined,
   step = 1,
   value,
   setValue,
@@ -38,9 +38,9 @@ const NumberInput: React.FC<NumberInputProps> = ({
       value={value}
       style={{ width, textAlign: "left", paddingLeft: 4 }}
       onChange={(e) => {
-        let val = e.target.value;
+        const val = e.target.value;
         if (val === "" || val === null) return;
-        let numVal = Number(val);
+        const numVal = Number(val);
         // If step is integer, floor; otherwise, allow decimals
         const isIntStep = Number.isInteger(step);
         let finalVal = isIntStep ? Math.floor(numVal) : numVal;

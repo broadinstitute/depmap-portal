@@ -36,7 +36,7 @@ function useData(
       possiblyValidGenes.size <= MAX_SELECTION
     ) {
       handleSetIsLoading(true);
-
+      console.log("doGroupTerms", doGroupTerms);
       const promise = cached(
         legacyPortalAPI
       ).fetchGeneTeaEnrichmentExperimental(
@@ -119,9 +119,9 @@ function useData(
   }, [data, doClusterGenes, possiblyValidGenes]);
 
   const yOrder = useMemo(() => {
-    if (data && data.termCluster && data.enrichedTerms) {
-      const termCluster = data.termCluster;
-      if (doClusterTerms) {
+    if (data && data.enrichedTerms) {
+      if (doClusterTerms && data.termCluster) {
+        const termCluster = data.termCluster;
         const order = termCluster.termOrTermGroup
           .map((termOrTermGroup, idx) => ({
             termOrTermGroup,
@@ -131,6 +131,7 @@ function useData(
           .map((item) => item.termOrTermGroup);
         return [...order].reverse();
       }
+
       const orderByVals =
         data.groupby === "Term"
           ? data.enrichedTerms!.term
@@ -222,11 +223,12 @@ function useData(
   }, [data, xOrder, yOrder, zOrder]);
 
   const barChartData = useMemo(() => {
-    if (data && data.enrichedTerms && data.termToEntity) {
+    if (data && data.enrichedTerms) {
       const xSource = data.enrichedTerms.negLogFDR;
-      const ySource = doGroupTerms
-        ? data.enrichedTerms.termGroup
-        : data.enrichedTerms.term;
+      const ySource =
+        data.groupby === "Term Group"
+          ? data.enrichedTerms.termGroup
+          : data.enrichedTerms.term;
 
       // Look at the Heatmap y-axis order. If the y-ais is term groups, this array
       // could be fewer in number compared to ySource.
@@ -252,15 +254,15 @@ function useData(
         (a, b) => a.sortKey - b.sortKey
       );
 
-      const sortedYSource = doGroupTerms
-        ? sortedCombinedXY.map((val) => {
-            return { val: val.yVal, origIndex: val.origIndex };
-          })
-        : orderedY.map((val, i) => {
-            return { val, origIndex: i };
-          });
+      const sortedYSource =
+        data.groupby === "Term Group"
+          ? sortedCombinedXY.map((val) => {
+              return { val: val.yVal, origIndex: val.origIndex };
+            })
+          : orderedY.map((val, i) => {
+              return { val, origIndex: i };
+            });
 
-      console.log("sortedYSource", sortedYSource);
       const calculateStackedXValues = (
         xValues: number[],
         yValues: string[]
@@ -302,14 +304,16 @@ function useData(
         return newXValues;
       };
 
-      const sortedXSource = doGroupTerms
-        ? sortedCombinedXY.map((val) => val.xVal)
-        : xSource;
+      const sortedXSource =
+        data.groupby === "Term Group"
+          ? sortedCombinedXY.map((val) => val.xVal)
+          : xSource;
 
       const customdata = sortedYSource.map((termOrTermGroup, i) => {
-        const term = doGroupTerms
-          ? data.enrichedTerms!.term[termOrTermGroup.origIndex]
-          : termOrTermGroup.val;
+        const term =
+          data.groupby === "Term Group"
+            ? data.enrichedTerms!.term[termOrTermGroup.origIndex]
+            : termOrTermGroup.val;
         return term !== undefined
           ? `<b>Term: </b>${term}<br>-log10(FDR): </b>${sortedXSource[
               i
@@ -331,7 +335,7 @@ function useData(
       };
     }
     return { x: [], y: [], customdata: [] };
-  }, [data, doGroupTerms, heatmapData.y]);
+  }, [data, heatmapData.y]);
 
   const heatmapXAxisLabel = useMemo(() => {
     if (data && data.termToEntity) {

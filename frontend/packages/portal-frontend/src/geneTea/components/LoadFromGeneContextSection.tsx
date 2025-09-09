@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ContextSelector,
   deprecatedDataExplorerAPI,
@@ -8,7 +8,6 @@ import {
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext } from "@depmap/types";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
-import { useEffect } from "react";
 
 const LoadFromGeneContextSection: React.FC = () => {
   const {
@@ -18,13 +17,6 @@ const LoadFromGeneContextSection: React.FC = () => {
     allAvailableGenes,
     geneSymbolSelections,
   } = useGeneTeaContext();
-
-  useEffect(() => {
-    if (geneSymbolSelections.size === 0 && value !== null) {
-      setValue(null);
-      setStats(null);
-    }
-  }, [geneSymbolSelections]);
 
   const indexType = "gene";
 
@@ -76,6 +68,13 @@ const LoadFromGeneContextSection: React.FC = () => {
       hiddenByFilters: 0,
     });
   };
+
+  useEffect(() => {
+    if (geneSymbolSelections.size === 0 && value !== null) {
+      setValue(null);
+      setStats(null);
+    }
+  }, [geneSymbolSelections, value]);
 
   return (
     <div>
