@@ -231,7 +231,7 @@ export default function Datasets() {
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
-            getTaskStatus={legacyPortalAPI.getTaskStatus}
+            getTaskStatus={breadboxAPI.getTaskStatus}
             onSuccess={(dataset: Dataset, showModal: boolean) => {
               const addedDatasets = [...datasets, dataset];
               setDatasets(addedDatasets);
