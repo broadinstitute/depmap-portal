@@ -107,7 +107,7 @@ function AllSelects({
         onChange={onChangeContext}
       />
       <FallbackSliceSelect
-        show={axis_type === "raw_slice" && (!slice_type || isUnknownDataset)}
+        show={axis_type === "raw_slice" && isUnknownDataset}
         index_type={index_type}
         value={context}
       />
