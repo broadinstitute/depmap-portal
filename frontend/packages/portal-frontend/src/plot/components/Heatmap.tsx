@@ -144,7 +144,7 @@ function Heatmap({
     customColorScale,
   ]);
 
-  return <div className={styles} ref={ref} />;
+  return <div className={styles.Heatmap} ref={ref} />;
 }
 
 export default function LazyHeatmap({
