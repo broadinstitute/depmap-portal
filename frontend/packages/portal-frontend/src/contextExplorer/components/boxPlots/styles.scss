@@ -11,3 +11,10 @@
   font-weight: 600;
   color: #333333;
 }
+
+// We use css to hide Plotly's toolbar (instead of configuring it not to have
+// one) so we can still dispatch clicks on its buttons (the only way to trigger
+// a zoom).
+.BoxPlot :global .modebar {
+  display: none;
+}
