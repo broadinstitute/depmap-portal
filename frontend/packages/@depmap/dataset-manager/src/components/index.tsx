@@ -17,7 +17,7 @@ import WideTable from "@depmap/wide-table";
 import Button from "react-bootstrap/lib/Button";
 
 import styles from "../styles/styles.scss";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { breadboxAPI } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
 import { Alert } from "react-bootstrap";
