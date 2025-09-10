@@ -48,9 +48,15 @@
     border-radius: 3px;
   }
 
+  .tooManySymbols {
+    color: #b00020;
+    font-size: 13px;
+    background-color: rgba(123, 140, 178, 0.1);
+  }
+
   .multiSelectTextareaBorder {
     position: relative;
-    border: 1px solid #ccc;
+    // border: 1px solid #ccc;
     border-radius: 4px;
     padding: 5px;
     background-color: #fff;

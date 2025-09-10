@@ -1,7 +1,7 @@
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { SortOption } from "../types";
+import { MAX_GENES_ALLOWED, SortOption } from "../types";
 
 // TODO: picked these numbers at random. Figure out what they should actually be.
 const MIN_SELECTION = 3;
@@ -22,21 +22,38 @@ function useData(
   effectSizeThreshold: number, // TODO - not doing this anymore? It is not an option in the GeneTEA API
   handleSetInValidGeneSymbols: (v: Set<string>) => void,
   handleSetValidGeneSymbols: (v: any) => void,
-  handleSetIsLoading: (v: boolean) => void
+  handleSetIsLoading: (v: boolean) => void,
+  handleSetError: (v: boolean) => void,
+  handleSetErrorMessage: (v: string) => void
 ) {
   const [data, setData] = useState<GeneTeaEnrichedTerms | null>(null);
-  const [error, setError] = useState(false);
 
   const latestPromise = useRef<Promise<GeneTeaEnrichedTerms> | null>(null);
 
   useEffect(() => {
+    const allSymbols = new Set([
+      ...possiblyValidGenes,
+      ...specialCaseInvalidGenes,
+    ]);
+
+    if (allSymbols.size > MAX_GENES_ALLOWED) {
+      handleSetError(true);
+      // TODO: Type the possible error messages.
+      handleSetErrorMessage(
+        `Error: Attempted to select ${allSymbols.size} genes. Gene symbol list cannot exceed 1000 genes.`
+      );
+      return;
+    }
+
+    handleSetError(false);
+
     if (
       possiblyValidGenes &&
       possiblyValidGenes.size >= MIN_SELECTION &&
       possiblyValidGenes.size <= MAX_SELECTION
     ) {
       handleSetIsLoading(true);
-      console.log("doGroupTerms", doGroupTerms);
+
       const promise = cached(
         legacyPortalAPI
       ).fetchGeneTeaEnrichmentExperimental(
@@ -69,7 +86,7 @@ function useData(
         .catch((e) => {
           if (promise === latestPromise.current) {
             window.console.error(e);
-            setError(true);
+            handleSetError(true);
             handleSetIsLoading(false);
           }
         })
@@ -99,6 +116,8 @@ function useData(
     handleSetIsLoading,
     handleSetInValidGeneSymbols,
     handleSetValidGeneSymbols,
+    handleSetErrorMessage,
+    handleSetError,
     specialCaseInvalidGenes,
   ]);
 
@@ -348,7 +367,6 @@ function useData(
   }, [data]);
 
   return {
-    error,
     specialCaseInvalidGenes,
     rawData: data,
     heatmapData,

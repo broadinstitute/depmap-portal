@@ -51,6 +51,10 @@ export interface GeneTeaContextType {
   handleClearPlotSelection: () => void;
   isLoading: boolean;
   handleSetIsLoading: (v: boolean) => void;
+  error: boolean;
+  handleSetError: (v: boolean) => void;
+  errorMessage: string;
+  handleSetErrorMessage: (v: string) => void;
 }
 
 export const GeneTeaContext = createContext<GeneTeaContextType | undefined>(
@@ -64,6 +68,17 @@ interface GeneTeaContextProviderProps {
 export function GeneTeaContextProvider({
   children,
 }: GeneTeaContextProviderProps) {
+  const [error, setError] = useState(false);
+  const handleSetError = useCallback((v: boolean) => setError(v), []);
+
+  const [errorMessage, setErrorMessage] = useState<string>(
+    "There was an error fetching data."
+  );
+  const handleSetErrorMessage = useCallback(
+    (v: string) => setErrorMessage(v),
+    []
+  );
+
   const [isLoading, setIsLoading] = useState(false);
   const handleSetIsLoading = useCallback((v: boolean) => setIsLoading(v), []);
 
@@ -307,6 +322,10 @@ export function GeneTeaContextProvider({
         handleClearPlotSelection,
         isLoading,
         handleSetIsLoading,
+        error,
+        handleSetError,
+        errorMessage,
+        handleSetErrorMessage,
       }}
     >
       {children}

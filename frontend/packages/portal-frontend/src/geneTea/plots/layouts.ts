@@ -12,7 +12,7 @@ export const getDefaultLayout = (
   const yLength = [...new Set(data.y)].length;
   return {
     autosize: true,
-    // grid: { rows: 1, columns: 2, pattern: "independent" },
+    grid: { rows: 1, columns: 2, pattern: "independent" },
     height: 600,
     margin: { t: 90, b: 50 },
     hovermode: "closest",
@@ -32,7 +32,6 @@ export const getDefaultLayout = (
       },
       side: "top",
 
-      // ticklabelposition: 'outside bottom',
       tickvals: heatmapXAxisTickLabels.map((label, i) =>
         label ? data.x[i] : ""
       ),

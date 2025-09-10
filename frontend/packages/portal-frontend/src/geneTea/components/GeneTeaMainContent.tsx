@@ -33,6 +33,9 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     handleClearPlotSelection,
     handleSetIsLoading,
     isLoading,
+    error,
+    handleSetError,
+    handleSetErrorMessage,
   } = useGeneTeaContext();
 
   const plotSelections = useMemo(
@@ -57,13 +60,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     [geneSymbolSelections]
   );
 
-  const {
-    error,
-    rawData,
-    heatmapData,
-    barChartData,
-    heatmapXAxisLabel,
-  } = useData(
+  const { rawData, heatmapData, barChartData, heatmapXAxisLabel } = useData(
     plotSelections,
     specialCaseInvalidGenes,
     possiblyValidGenes,
@@ -78,7 +75,9 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     effectSizeThreshold,
     handleSetInValidGeneSymbols,
     handleSetValidGeneSymbols,
-    handleSetIsLoading
+    handleSetIsLoading,
+    handleSetError,
+    handleSetErrorMessage
   );
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);

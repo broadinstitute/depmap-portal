@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { MAX_GENES_ALLOWED } from "../types";
 
 const MultiSelectTextarea: React.FC = () => {
   const {
@@ -15,6 +16,9 @@ const MultiSelectTextarea: React.FC = () => {
     handleSetPlotSelectedGenes,
     handleClearPlotSelection,
     handleClearSelectedTableRows,
+    handleSetError,
+    error,
+    errorMessage,
   } = useGeneTeaContext();
 
   const [inputValue, setInputValue] = useState("");
@@ -26,7 +30,7 @@ const MultiSelectTextarea: React.FC = () => {
   const handleKeyDown = (e: any) => {
     if (e.key === "Enter" && inputValue.trim() !== "") {
       e.preventDefault(); // Prevent newline in textarea
-      console.log(inputValue);
+
       const newItems = inputValue
         .split(/[, ]+/)
         .filter((item) => item.trim() !== "");
@@ -73,10 +77,18 @@ const MultiSelectTextarea: React.FC = () => {
       <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
       {geneSymbolSelections.size < 3 && (
         <h5 className={styles.sectionSubTitle}>
-          Please enter 3 or more gene symbols.
+          Please enter between 3 and 1000 gene symbols.
         </h5>
       )}
-      <div className={styles.multiSelectTextareaBorder}>
+      <div
+        className={styles.multiSelectTextareaBorder}
+        style={{
+          border:
+            geneSymbolSelections.size > MAX_GENES_ALLOWED
+              ? "2px solid #b00020"
+              : "1px solid #ccc",
+        }}
+      >
         <div className={styles.chipList}>
           {[...geneSymbolSelections].map((chip, index) => {
             let chipClass = styles.chip;
@@ -114,22 +126,30 @@ const MultiSelectTextarea: React.FC = () => {
           onKeyDown={handleKeyDown}
           placeholder={
             geneSymbolSelections.size === 0
-              ? "Enter items, separated by commas or spaces, then press Enter"
+              ? "Enter gene symbols, separated by commas or spaces, then press Enter"
               : undefined
           }
           rows={2}
         />
       </div>
-      {validGeneSymbols.size > 0 && (
-        <div className={styles.validGenesLegend}>
-          <span className={styles.validGenesSwatch} />
-          <span>= valid genes ({validGeneSymbols.size})</span>
-        </div>
-      )}
-      {inValidGeneSymbols.size > 0 && (
-        <div className={styles.invalidGenesLegend}>
-          <span className={styles.invalidGenesSwatch} />
-          <span>= invalid genes ({inValidGeneSymbols.size})</span>
+      {geneSymbolSelections.size <= MAX_GENES_ALLOWED &&
+        validGeneSymbols.size > 0 && (
+          <div className={styles.validGenesLegend}>
+            <span className={styles.validGenesSwatch} />
+            <span>= valid genes ({validGeneSymbols.size})</span>
+          </div>
+        )}
+      {geneSymbolSelections.size <= MAX_GENES_ALLOWED &&
+        inValidGeneSymbols.size > 0 && (
+          <div className={styles.invalidGenesLegend}>
+            <span className={styles.invalidGenesSwatch} />
+            <span>= invalid genes ({inValidGeneSymbols.size})</span>
+          </div>
+        )}
+      {geneSymbolSelections.size > MAX_GENES_ALLOWED && error && (
+        <div className={styles.tooManySymbols}>
+          <span className="glyphicon glyphicon-exclamation-sign" />{" "}
+          {errorMessage}
         </div>
       )}
       <div className={styles.buttonRow}>
@@ -158,6 +178,7 @@ const MultiSelectTextarea: React.FC = () => {
             handleClearPlotSelection();
             handleClearSelectedTableRows();
             setInputValue(""); // Clear input
+            handleSetError(false);
           }}
         >
           Clear

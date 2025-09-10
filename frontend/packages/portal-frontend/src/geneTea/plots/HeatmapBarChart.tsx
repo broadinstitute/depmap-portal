@@ -13,7 +13,6 @@ import type {
   Datum,
 } from "plotly.js";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
-import usePlotResizer from "src/doseViabilityPrototype/hooks/usePlotResizer";
 import customizeDragLayer from "src/doseViabilityPrototype/components/PrototypeBrushableHeatmap/customizeDragLayer";
 import {
   BarChartFormattedData,
@@ -23,6 +22,8 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { getDefaultLayout, getTabletScreenSizeLayout } from "./layouts";
 import { generateTickLabels } from "../utils";
 import styles from "./HeatmapBarChart.scss";
+import usePlotResizer from "./hooks/usePlotResizer";
+import debounce from "lodash.debounce";
 
 const viridisRColorscale = [
   ["0", "#D3D3D3"],
@@ -70,7 +71,32 @@ function HeatmapBarChart({
   Plotly,
 }: Props & { Plotly: PlotlyType }) {
   const ref = useRef<ExtendedPlotType>(null);
-  usePlotResizer(Plotly, ref);
+
+  const updateLayoutOnScreenSizeChange = useCallback(
+    (plot: ExtendedPlotType) => {
+      if (plot && plot.layout) {
+        Plotly.relayout(plot, {
+          grid:
+            window.innerWidth < 1250
+              ? { rows: 2, columns: 1, pattern: "independent" }
+              : { rows: 1, columns: 2, pattern: "independent" },
+          xaxis: {
+            ...plot.layout.xaxis,
+            domain: window.innerWidth < 1250 ? [0, 1] : [0, 0.7],
+          },
+          xaxis2: {
+            ...plot.layout.xaxis2,
+            domain: window.innerWidth < 1250 ? [0, 1] : [0.73, 1],
+          },
+          yaxis2: {
+            ...plot.layout.yaxis2,
+            visible: window.innerWidth < 1250,
+          },
+        });
+      }
+    },
+    [Plotly]
+  );
 
   useEffect(() => {
     if (onLoad && ref.current) {
@@ -179,9 +205,9 @@ function HeatmapBarChart({
         },
       },
     };
-
+    console.log("innerWidth", window.innerWidth);
     const layout: Partial<Layout> =
-      window.innerWidth < 1250
+      window.innerWidth < 1200
         ? getTabletScreenSizeLayout(
             heatmapData,
             heatmapXAxisTitle,
@@ -276,12 +302,12 @@ function HeatmapBarChart({
       if (selections.size > 0 && plot && plot.layout && plot.layout.xaxis) {
         const minSelected = Math.min(...selections);
         const maxSelected = Math.max(...selections);
-        const minRange = Math.max(0, minSelected - 0.5);
+        const minRange = Math.max(0, minSelected);
         const maxRange = Math.min(
-          [...new Set(heatmapData.x)].length - 0.5,
-          maxSelected + 0.5
+          [...new Set(heatmapData.x)].length,
+          maxSelected
         );
-        const newRange = [minRange, maxRange];
+        const newRange = [minRange - 0.5, maxRange + 0.5];
         setSelectedRange(newRange as [number, number]);
 
         // Use Plotly.react to update the range and force a re-render
@@ -298,6 +324,14 @@ function HeatmapBarChart({
         setShowFullAxisTickLabels(showTickLabels);
       }
     };
+
+    window.addEventListener(
+      "resize",
+      debounce(() => {
+        console.log("Resizing");
+        updateLayoutOnScreenSizeChange(plot);
+      }, 250)
+    );
 
     // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility
     plot.downloadImage = (options) => {
