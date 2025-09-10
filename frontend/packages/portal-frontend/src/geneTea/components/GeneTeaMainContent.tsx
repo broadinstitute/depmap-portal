@@ -138,7 +138,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
         <h3 className={styles.mainContentHeaderTitle}>
-          Top {maxTopTerms} Tea Terms
+          Top {maxTopTerms} Tea {doGroupTerms ? "Term Groups" : "Terms"}
         </h3>
       </div>
       {!isLoading && error ? (

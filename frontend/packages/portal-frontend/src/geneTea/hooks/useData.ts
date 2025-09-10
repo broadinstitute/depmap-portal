@@ -5,7 +5,8 @@ import { MAX_GENES_ALLOWED, SortOption } from "../types";
 
 // TODO: picked these numbers at random. Figure out what they should actually be.
 const MIN_SELECTION = 3;
-const MAX_SELECTION = 300; // TODO: The API will error at a certain number. Make sure this doesn't exceed that number.
+// TODO: Only keep MAX_SELECTION or MAX_GENES_ALLOWED since they're the same thing.
+const MAX_SELECTION = MAX_GENES_ALLOWED; // TODO: The API will error at a certain number. Make sure this doesn't exceed that number.
 
 function useData(
   plotSelections: Set<string>,
@@ -73,7 +74,6 @@ function useData(
         .then((fetchedData) => {
           if (promise === latestPromise.current) {
             setData(fetchedData);
-            // See HACK comment above for an explanation of why we do this.
             const invalidGenes = [
               ...specialCaseInvalidGenes,
               ...fetchedData.invalidGenes,
@@ -121,6 +121,8 @@ function useData(
     specialCaseInvalidGenes,
   ]);
 
+  // If doClusterGenes is true, the GeneTEA api will return a specific order in which
+  // we must display the genes (x axis).
   const xOrder = useMemo(() => {
     if (data && data.geneCluster) {
       const geneCluster = data.geneCluster;
@@ -137,6 +139,10 @@ function useData(
     return null;
   }, [data, doClusterGenes, possiblyValidGenes]);
 
+  // Keep track of the yOrder, which will determine whether we're clustering terms, and will then
+  // order the y values by "Term" or "Term Group" depending on the value of data.groupby. data.groupby is
+  // is part of the GeneTEA api response and is either "Term" or "Term Group". The api determines the
+  // groupby value using the param we define called doGroupTerms.
   const yOrder = useMemo(() => {
     if (data && data.enrichedTerms) {
       if (doClusterTerms && data.termCluster) {
@@ -222,7 +228,7 @@ function useData(
       const customdata = filteredPairs.map(([gene, term]) => {
         const idx = lookup.get(`${gene}|${term}`);
         return idx !== undefined
-          ? `<b>Gene: </b>${gene}<br><b>Term: </b>${term}<br><b>Matches: </b>${termToEntity.nTerms[idx]}`
+          ? `<b>Gene: </b>${gene}<br><b>${data.groupby}: </b>${term}<br><b>Matches: </b>${termToEntity.nTerms[idx]}`
           : "";
       });
 
@@ -241,6 +247,9 @@ function useData(
     };
   }, [data, xOrder, yOrder, zOrder]);
 
+  // The barchart is a bit "weird" because it needs to share the y-axis with the Heatmap, but
+  // when the Heatmap y-axis is Term Groups, we want to preserve per-Term data in the bar chart via
+  // bar stacking.
   const barChartData = useMemo(() => {
     if (data && data.enrichedTerms) {
       const xSource = data.enrichedTerms.negLogFDR;
@@ -249,8 +258,7 @@ function useData(
           ? data.enrichedTerms.termGroup
           : data.enrichedTerms.term;
 
-      // Look at the Heatmap y-axis order. If the y-ais is term groups, this array
-      // could be fewer in number compared to ySource.
+      // Make sure the bar chart maintains the same yOrder as defined for the Heatmap above.
       const orderedY = Array.from(new Set(heatmapData.y));
 
       // If we are displaying term groups rather than term, ySource values for the bar chart is not equal to
@@ -273,14 +281,9 @@ function useData(
         (a, b) => a.sortKey - b.sortKey
       );
 
-      const sortedYSource =
-        data.groupby === "Term Group"
-          ? sortedCombinedXY.map((val) => {
-              return { val: val.yVal, origIndex: val.origIndex };
-            })
-          : orderedY.map((val, i) => {
-              return { val, origIndex: i };
-            });
+      const sortedYSource = sortedCombinedXY.map((val) => {
+        return { val: val.yVal, origIndex: val.origIndex };
+      });
 
       const calculateStackedXValues = (
         xValues: number[],
@@ -314,6 +317,9 @@ function useData(
 
           // 3. Iterate to calculate new values
           for (const x of valuesForY) {
+            // Instead of graphing literal x values, we want the stacked sections to be the difference between its own -log10(FDR)
+            // value and the value that was graphed before it such that the total size of the bar is equal to the highest magnitude
+            // -log10(FDR) of this particular Term Group.
             const newX = x - previousX;
             newXValues.push(newX);
             previousX = x; // Store the original x as the 'previously added x' for the next iteration
@@ -333,10 +339,27 @@ function useData(
           data.groupby === "Term Group"
             ? data.enrichedTerms!.term[termOrTermGroup.origIndex]
             : termOrTermGroup.val;
+        const termGroup = data.enrichedTerms!.termGroup[
+          termOrTermGroup.origIndex
+        ];
+        const fdr = data.enrichedTerms!.fdr[termOrTermGroup.origIndex];
+        const effectSize = data.enrichedTerms!.effectSize[
+          termOrTermGroup.origIndex
+        ];
+        const nMatchingGenesOverall = data.enrichedTerms!.nMatchingGenesOverall[
+          termOrTermGroup.origIndex
+        ];
+        const matchingGenesInList = data.enrichedTerms!.matchingGenesInList[
+          termOrTermGroup.origIndex
+        ];
         return term !== undefined
-          ? `<b>Term: </b>${term}<br>-log10(FDR): </b>${sortedXSource[
+          ? `<b>${term}</b><br>${termGroup}<br><br>-log10(FDR):  ${sortedXSource[
               i
-            ].toFixed(4)}`
+            ].toFixed(4)}  <br>FDR:  ${fdr.toExponential(
+              5
+            )}  <br>Effect Size:  ${effectSize.toFixed(
+              4
+            )}  <br>n Matching Genes Overall:  ${nMatchingGenesOverall}`
           : "";
       });
 

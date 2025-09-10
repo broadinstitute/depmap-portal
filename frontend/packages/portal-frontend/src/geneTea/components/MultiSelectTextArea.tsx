@@ -4,6 +4,16 @@ import styles from "../styles/MultiSelectTextArea.scss";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 import { MAX_GENES_ALLOWED } from "../types";
 
+// TODO move to utils
+function removeLineBreaks(text: string): string {
+  // The regular expression /(\r\n|\n|\r)/g matches all occurrences of:
+  // - \r\n (carriage return followed by newline, common on Windows)
+  // - \n (newline, common on Unix/Linux/macOS)
+  // - \r (carriage return, less common but still possible)
+  // The 'g' flag ensures that all occurrences are replaced, not just the first one.
+  return text.replace(/(\r\n|\n|\r)/g, "");
+}
+
 const MultiSelectTextarea: React.FC = () => {
   const {
     geneSymbolSelections,
@@ -31,7 +41,7 @@ const MultiSelectTextarea: React.FC = () => {
     if (e.key === "Enter" && inputValue.trim() !== "") {
       e.preventDefault(); // Prevent newline in textarea
 
-      const newItems = inputValue
+      const newItems = removeLineBreaks(inputValue)
         .split(/[, ]+/)
         .filter((item) => item.trim() !== "");
       handleSetGeneSymbolSelections(
@@ -157,7 +167,7 @@ const MultiSelectTextarea: React.FC = () => {
           className={styles.selectGenesButton}
           disabled={inputValue.length === 0}
           onClick={() => {
-            const newItems = inputValue
+            const newItems = removeLineBreaks(inputValue)
               .split(/[, ]+/)
               .filter((item) => item.trim() !== "");
             handleSetGeneSymbolSelections(

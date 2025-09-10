@@ -19,10 +19,9 @@ import {
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { getDefaultLayout, getTabletScreenSizeLayout } from "./layouts";
+import { getLayout } from "./layouts";
 import { generateTickLabels } from "../utils";
 import styles from "./HeatmapBarChart.scss";
-import usePlotResizer from "./hooks/usePlotResizer";
 import debounce from "lodash.debounce";
 
 const viridisRColorscale = [
@@ -39,6 +38,7 @@ const viridisRColorscale = [
   ["1.0", "rgb(68, 1, 84)"],
 ];
 interface Props {
+  plotTitle: string;
   heatmapXAxisTitle: string;
   heatmapData: HeatmapFormattedData;
   barChartXAxisTitle: string;
@@ -56,6 +56,7 @@ interface Props {
 }
 
 function HeatmapBarChart({
+  plotTitle,
   heatmapXAxisTitle,
   heatmapData,
   barChartXAxisTitle,
@@ -205,27 +206,17 @@ function HeatmapBarChart({
         },
       },
     };
-    console.log("innerWidth", window.innerWidth);
-    const layout: Partial<Layout> =
-      window.innerWidth < 1200
-        ? getTabletScreenSizeLayout(
-            heatmapData,
-            heatmapXAxisTitle,
-            barChartXAxisTitle,
-            xAxisTickLabels,
-            new Set(hoveredColumns),
-            selectedColumns,
-            range
-          )
-        : getDefaultLayout(
-            heatmapData,
-            heatmapXAxisTitle,
-            barChartXAxisTitle,
-            xAxisTickLabels,
-            new Set(hoveredColumns),
-            selectedColumns,
-            range
-          );
+
+    const layout: Partial<Layout> = getLayout(
+      heatmapData,
+      heatmapXAxisTitle,
+      barChartXAxisTitle,
+      xAxisTickLabels,
+      new Set(hoveredColumns),
+      selectedColumns,
+      range,
+      window.innerWidth < 1220
+    );
 
     Plotly.react(plot, [plotlyHeatmapData, plotlyBarChartData], layout);
 
@@ -325,12 +316,14 @@ function HeatmapBarChart({
       }
     };
 
+    // When the window is greater than 1250 in width, the Heatmap and barchart can fit
+    // side-by-side. When the window is smaller than 1250, we need to adjust the grid
+    // property in the Layout trace to display the barchart subplot underneath the Heatmap.
     window.addEventListener(
       "resize",
       debounce(() => {
-        console.log("Resizing");
         updateLayoutOnScreenSizeChange(plot);
-      }, 250)
+      }, 200)
     );
 
     // Add a downloadImage method to the plot for PNG and SVG export using Plotly's toImage utility
@@ -386,10 +379,16 @@ function HeatmapBarChart({
     xAxisTickLabels,
     barChartData,
     heatmapXAxisTitle,
+    updateLayoutOnScreenSizeChange,
     Plotly,
   ]);
 
-  return <div className={styles.HeatmapBarChart} ref={ref} />;
+  return (
+    <>
+      <h3 style={{ textAlign: "center" }}>{plotTitle}</h3>
+      <div className={styles.HeatmapBarChart} ref={ref} />
+    </>
+  );
 }
 
 export default function LazyHeatmapBarChart({

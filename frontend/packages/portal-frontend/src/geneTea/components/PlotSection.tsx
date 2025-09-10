@@ -36,6 +36,8 @@ function PlotSection({
     handleSetPlotSelectedGenes,
     handleClickSavePlotSelectionAsContext,
     handleClearPlotSelection,
+    maxTopTerms,
+    doGroupTerms,
   } = useGeneTeaContext();
 
   const handleSelectColumnRange = (
@@ -119,6 +121,9 @@ function PlotSection({
         {heatmapFormattedData && barChartData && !isLoading && (
           <div className={styles.heatmapContainer}>
             <HeatmapBarChart
+              plotTitle={`Top ${maxTopTerms} Enriched ${
+                doGroupTerms ? "Term Groups" : "Terms"
+              } from GeneTEA`}
               barChartXAxisTitle="-log10(FDR)"
               heatmapData={heatmapFormattedData}
               barChartData={barChartData}
