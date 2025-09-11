@@ -1,6 +1,7 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { AnnotationType, DataExplorerContextVariable } from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
+import { getDimensionDataWithoutLabels } from "./helpers";
 
 export async function fetchVariableDomain(
   variable: DataExplorerContextVariable
@@ -42,20 +43,10 @@ export async function fetchVariableDomain(
   };
 
   try {
-    data = await cached(breadboxAPI).getDimensionData(sliceQuery);
+    data = await getDimensionDataWithoutLabels(sliceQuery);
   } catch {
     window.console.error({ sliceQuery });
     throw new Error("Error fetching data from slice query");
-  }
-
-  if (!("values" in data)) {
-    window.console.error({
-      sliceQuery,
-      response: data,
-    });
-    throw new Error(
-      "Bad response from /datasets/dimension/data/. Contains no `values!`"
-    );
   }
 
   if (value_type === "text" || value_type === "categorical") {
@@ -70,15 +61,24 @@ export async function fetchVariableDomain(
   }
 
   if (value_type === "continuous") {
-    const numberValues = data.values.filter(
-      (val) => typeof val === "number"
-    ) as number[];
+    let min = Infinity;
+    let max = -Infinity;
 
-    return Promise.resolve({
-      min: Math.min(...numberValues),
-      max: Math.max(...numberValues),
-      value_type,
-    });
+    for (let i = 0; i < data.values.length; i += 1) {
+      const value = data.values[i];
+
+      if (typeof value === "number") {
+        if (value < min) {
+          min = value;
+        }
+
+        if (value > max) {
+          max = value;
+        }
+      }
+    }
+
+    return Promise.resolve({ min, max, value_type });
   }
 
   throw new Error(`Unsupported value_type "${value_type}".`);

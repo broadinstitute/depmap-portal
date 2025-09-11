@@ -9,6 +9,7 @@ interface ConfirmationOptions {
   noText?: string | null;
   message: React.ReactNode;
   showModalBackdrop?: boolean | null;
+  yesButtonBsStyle?: string | null | undefined;
 }
 
 const launchModal = (
@@ -53,7 +54,7 @@ const launchModal = (
           {options.noText || "No"}
         </Button>
         <Button
-          bsStyle="danger"
+          bsStyle={options.yesButtonBsStyle || "danger"}
           onClick={() => {
             resolve(true);
             unmount();

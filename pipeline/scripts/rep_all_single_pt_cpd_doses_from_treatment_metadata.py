@@ -1,7 +1,7 @@
 import argparse
-from taigapy import TaigaClient
+from taigapy import create_taiga_client_v3
 
-tc = TaigaClient()
+tc = create_taiga_client_v3()
 
 
 def main():

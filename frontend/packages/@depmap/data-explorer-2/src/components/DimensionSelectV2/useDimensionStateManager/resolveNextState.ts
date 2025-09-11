@@ -74,6 +74,7 @@ async function resolveNextState(
   if (dataType !== prev.dataType || slice_type !== pd.slice_type) {
     units = null;
     dataset_id = undefined;
+    isUnknownDataset = false;
 
     if (dataType && slice_type) {
       dataset_id = await inferDatasetId(index_type, slice_type, dataType);
@@ -126,6 +127,7 @@ async function resolveNextState(
       prev.dataVersionOptions.filter((o) => !o.isDisabled).length > 1
     ) {
       dataset_id = undefined;
+      isUnknownDataset = false;
     }
   }
 
@@ -157,6 +159,8 @@ async function resolveNextState(
         dataType
       );
     }
+
+    isUnknownDataset = false;
   }
 
   let dirty =

@@ -119,10 +119,7 @@ function SliceLabelSelect({
 
     if (
       aliases &&
-      aliases.length > 0 &&
-      new Set<string | null>(aliases[0].values).has(
-        sliceLabelFromContext(value)
-      )
+      new Set<string | null>(aliases).has(sliceLabelFromContext(value))
     ) {
       return null;
     }

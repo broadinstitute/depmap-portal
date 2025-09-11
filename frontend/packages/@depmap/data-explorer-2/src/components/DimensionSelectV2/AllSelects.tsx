@@ -7,6 +7,7 @@ import UnitsSelect from "./UnitsSelect";
 import SliceTypeSelect from "./SliceTypeSelect";
 import AxisTypeToggle from "./AxisTypeToggle";
 import SliceSelect from "./SliceSelect";
+import FallbackSliceSelect from "./FallbackSliceSelect";
 import DataVersionSelect from "./DataVersionSelect";
 import AggregationSelect from "./AggregationSelect";
 import useDimensionStateManager from "./useDimensionStateManager";
@@ -75,7 +76,7 @@ function AllSelects({
         options={dataTypeOptions}
         onChange={onChangeDataType}
         isLoading={isLoading}
-        hasError={noMatchingContexts}
+        hasError={noMatchingContexts && !isUnknownDataset}
         isUnknownDataset={isUnknownDataset}
       />
       <SliceTypeSelect
@@ -86,6 +87,7 @@ function AllSelects({
         options={sliceTypeOptions}
         onChange={onChangeSliceType}
         isLoading={isLoading}
+        isUnknownDataset={isUnknownDataset}
       />
       <AxisTypeToggle
         show={Boolean(slice_type && (mode as any) === "entity-or-context")}
@@ -94,13 +96,20 @@ function AllSelects({
         onChange={onChangeAxisType}
       />
       <SliceSelect
-        show={Boolean(slice_type) && axis_type === "raw_slice"}
+        show={
+          axis_type === "raw_slice" && Boolean(slice_type) && !isUnknownDataset
+        }
         index_type={index_type}
         dataType={dataType}
         slice_type={slice_type as string}
         dataset_id={dataset_id || null}
         value={context || null}
         onChange={onChangeContext}
+      />
+      <FallbackSliceSelect
+        show={axis_type === "raw_slice" && isUnknownDataset}
+        index_type={index_type}
+        value={context}
       />
       <ContextSelector
         enable

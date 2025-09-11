@@ -2,6 +2,7 @@ import { Margin } from "plotly.js";
 import React, { useEffect, useRef } from "react";
 import ExtendedPlotType from "../models/ExtendedPlotType";
 import PlotlyLoader, { PlotlyType } from "./PlotlyLoader";
+import styles from "../styles/Heatmap.scss";
 
 export interface HeatmapProps {
   dataTypeLabels: string[];
@@ -143,7 +144,7 @@ function Heatmap({
     customColorScale,
   ]);
 
-  return <div ref={ref} />;
+  return <div className={styles.Heatmap} ref={ref} />;
 }
 
 export default function LazyHeatmap({

@@ -1,6 +1,7 @@
 import argparse
 
 from taigapy import create_taiga_client_v3
+from omics_preprocessing_utils import preprocess_omics_dataframe
 
 
 if __name__ == "__main__":
@@ -18,6 +19,7 @@ if __name__ == "__main__":
     # hgnc = hgnc.set_index("symbol")
 
     mutations = tc.get(args.mutations_dataset_id)
+    mutations = preprocess_omics_dataframe(mutations, args.mutations_dataset_id)
     mutations = mutations.astype(int)
     # Drop columns that are not in the HGNC dataset (because we don't have a label)
     # print(mutations)

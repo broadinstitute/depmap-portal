@@ -12,7 +12,7 @@ def test_celligner_distance_cell_line_to_tumors(app, empty_db_with_celligner):
     with app.test_client() as c:
         r = c.get(
             url_for("celligner.celligner_distance_cell_line_to_tumors"),
-            query_string={"profileId": "PR-QmkJ5E", "kNeighbors": 5},
+            query_string={"modelConditionId": "PR-QmkJ5E", "kNeighbors": 5},
         )
         assert r.status_code == 200, r.status_code
         data = r.json

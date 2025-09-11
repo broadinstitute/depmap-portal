@@ -22,12 +22,11 @@ const applyFilter = (
 
 export default function plotToLookupTable(data: DataExplorerPlotResponse) {
   const indexColumn = getDimensionTypeLabel(data.index_type);
-  const cellLineDisplayNames = data.index_aliases?.[0];
 
   let formattedData: FormattedData = { [indexColumn]: data.index_labels };
 
-  if (cellLineDisplayNames) {
-    formattedData[cellLineDisplayNames.label] = cellLineDisplayNames.values;
+  if (data.index_type === "depmap_model") {
+    formattedData["Cell Line Name"] = data.index_display_labels as string[];
   }
 
   Object.values(data.dimensions).forEach((dimension) => {

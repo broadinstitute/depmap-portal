@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import pandas as pd
-from taigapy import create_taiga_client_v3
 import argparse
 import re
 
+from taigapy import create_taiga_client_v3
+from omics_preprocessing_utils import preprocess_omics_dataframe
 
 def extract_id(x):
     m = re.match(r"\S+ \(([^.]+)\.\d+\)", x)
@@ -24,7 +25,7 @@ def main():
 
     tc = create_taiga_client_v3()
     fusions = tc.get(args.fusions_dataset_id)
-
+    fusions = preprocess_omics_dataframe(fusions, args.fusions_dataset_id)
     fusions["fusion_name"] = [
         rec["CanonicalFusionName"] for rec in fusions.to_records()
     ]

@@ -6,6 +6,7 @@ import customizeDragLayer from "./customizeDragLayer";
 import { DO_LOG2_PLOT_DATA } from "src/compound/heatmapTab/heatmapPlotUtils";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import type { PlotlyHTMLElement, Layout, Data as PlotlyData } from "plotly.js";
+import styles from "../../styles/DoseViabilityPrototypePage.scss";
 import usePlotResizer from "../../hooks/usePlotResizer";
 
 export default function InteractiveBrushableHeatmap({
@@ -297,5 +298,5 @@ export default function InteractiveBrushableHeatmap({
     interactiveVersion,
   ]);
 
-  return <div ref={ref} />;
+  return <div className={styles.InteractiveHeatmap} ref={ref} />;
 }

@@ -1,7 +1,7 @@
 import omit from "lodash.omit";
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { DepMap } from "@depmap/globals";
-import { DataExplorerContext } from "@depmap/types";
+import type { DataExplorerContext, StoredContexts } from "@depmap/types";
 import { deprecatedDataExplorerAPI } from "../../services/deprecatedDataExplorerAPI";
 import { fetchContext, persistContext } from "../../utils/context-storage";
 import {
@@ -45,9 +45,6 @@ export const toContextSelectorHash = async (
     isNegatedContext(context) ? negateContext(context) : context
   );
 };
-
-type ContextWithoutExpr = { name: string; context_type: string };
-type StoredContexts = Record<string, ContextWithoutExpr>;
 
 const depmapIDsToDisplayNames = async (lines: ReadonlySet<string>) => {
   const out: string[] = [];

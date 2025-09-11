@@ -24,6 +24,26 @@ function TabularDataSelect({ varName }: Props) {
     );
   });
 
+  const datasetOptions = otherTabularDatasets.map((td) => ({
+    label: td.name,
+    value: td.given_id || td.id,
+  }));
+
+  let isBadDataset = false;
+
+  if (variable?.dataset_id) {
+    isBadDataset = !datasetOptions.some(
+      (opt) => opt.value === variable.dataset_id
+    );
+
+    if (isBadDataset) {
+      datasetOptions.push({
+        label: variable.dataset_id,
+        value: variable.dataset_id,
+      });
+    }
+  }
+
   const columnOptions = dataset
     ? Object.entries(dataset.columns_metadata)
         .filter(([, metadata]) =>
@@ -37,18 +57,32 @@ function TabularDataSelect({ varName }: Props) {
         }))
     : [];
 
+  let isBadColumn = false;
+
+  if (variable?.identifier) {
+    isBadColumn = !columnOptions.some(
+      (opt) => opt.value === variable.identifier
+    );
+
+    if (isBadColumn) {
+      columnOptions.push({
+        label: variable.identifier,
+        value: variable.identifier,
+        col_type: AnnotationType.text,
+      });
+    }
+  }
+
   return (
     <>
       <PlotConfigSelect
         show
         enable={!isLoadingTabularDatasets}
         label="Dataset"
+        hasError={isBadDataset}
         isLoading={isLoadingTabularDatasets}
         value={variable?.dataset_id || null}
-        options={otherTabularDatasets.map((td) => ({
-          label: td.name,
-          value: td.given_id || td.id,
-        }))}
+        options={datasetOptions}
         onChange={(dataset_id) => {
           setVar(varName, {
             dataset_id: dataset_id as string,
@@ -62,6 +96,7 @@ function TabularDataSelect({ varName }: Props) {
       <div className={styles.spacerWidth300} />
       <PlotConfigSelect
         show
+        hasError={isBadColumn}
         enable={Boolean(variable?.dataset_id)}
         label="Column"
         value={variable?.identifier || null}
