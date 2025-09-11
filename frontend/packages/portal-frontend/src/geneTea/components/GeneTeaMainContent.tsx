@@ -177,29 +177,28 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
         </h3>
         <p>Terms selected in the plot will appear checked in this table.</p>
       </div>
-      <div>
-        {rawData && rawData.allEnrichedTerms && rawData.enrichedTerms && (
-          <GeneTeaTable
-            error={error}
-            isLoading={isLoading}
-            tableData={roundedAndUnroundedTableData.roundedData}
-            prefferedTableDataForDownload={
-              roundedAndUnroundedTableData.unroundedData
-            }
-            tableColumns={tableColumns}
-            columnOrdering={tableColumns.map((col) => col.accessor)}
-            defaultCols={tableColumns.map((col) => col.accessor)}
-            selectedTableRows={
-              selectedTableRows.size > 0
-                ? selectedTableRows
-                : new Set(rawData.enrichedTerms?.term)
-            }
-            handleChangeSelection={(selections: string[]) =>
-              handleSetSelectedTableRows(new Set(selections))
-            }
-          />
-        )}
-      </div>
+
+      {rawData && rawData.allEnrichedTerms && rawData.enrichedTerms && (
+        <GeneTeaTable
+          error={error}
+          isLoading={isLoading}
+          tableData={roundedAndUnroundedTableData.roundedData}
+          prefferedTableDataForDownload={
+            roundedAndUnroundedTableData.unroundedData
+          }
+          tableColumns={tableColumns}
+          columnOrdering={tableColumns.map((col) => col.accessor)}
+          defaultCols={tableColumns.map((col) => col.accessor)}
+          selectedTableRows={
+            selectedTableRows.size > 0
+              ? selectedTableRows
+              : new Set(rawData.enrichedTerms?.term)
+          }
+          handleChangeSelection={(selections: string[]) =>
+            handleSetSelectedTableRows(new Set(selections))
+          }
+        />
+      )}
     </div>
   );
 }

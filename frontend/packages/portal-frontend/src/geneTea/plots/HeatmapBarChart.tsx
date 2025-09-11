@@ -23,6 +23,7 @@ import { getLayout } from "./layouts";
 import { generateTickLabels } from "../utils";
 import styles from "./HeatmapBarChart.scss";
 import debounce from "lodash.debounce";
+import usePlotResizer from "src/compound/heatmapTab/doseViabilityHeatmap/hooks/usePlotResizer";
 
 const viridisRColorscale = [
   ["0", "#D3D3D3"],
@@ -72,11 +73,13 @@ function HeatmapBarChart({
   Plotly,
 }: Props & { Plotly: PlotlyType }) {
   const ref = useRef<ExtendedPlotType>(null);
+  usePlotResizer(Plotly, ref);
 
   const updateLayoutOnScreenSizeChange = useCallback(
     (plot: ExtendedPlotType) => {
       if (plot && plot.layout) {
         Plotly.relayout(plot, {
+          ...plot.layout,
           grid:
             window.innerWidth < 1250
               ? { rows: 2, columns: 1, pattern: "independent" }

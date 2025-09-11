@@ -349,9 +349,7 @@ function useData(
         const nMatchingGenesOverall = data.enrichedTerms!.nMatchingGenesOverall[
           termOrTermGroup.origIndex
         ];
-        const matchingGenesInList = data.enrichedTerms!.matchingGenesInList[
-          termOrTermGroup.origIndex
-        ];
+
         return term !== undefined
           ? `<b>${term}</b><br>${termGroup}<br><br>-log10(FDR):  ${sortedXSource[
               i
