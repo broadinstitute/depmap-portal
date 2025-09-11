@@ -30,7 +30,10 @@ function GeneTea() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1>
-          <span>Tea Party</span>
+          Tea Party{" "}
+          <span style={{ fontSize: "14px", color: "#b00020" }}>
+            (Under Development)
+          </span>
         </h1>
         <p>
           GeneTEA (Gene-Term Enrichment Analysis) is a model that takes in
