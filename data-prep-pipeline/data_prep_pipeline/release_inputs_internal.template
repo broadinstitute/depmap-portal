@@ -34,7 +34,6 @@ add-if-missing {
   "dataset_id": "compound-metadata-de37.42/PortalCompounds"
 }
 
-
 # HGNC Gene Table
 add-if-missing {
   "type": "hgnc_gene_table",
@@ -109,6 +108,11 @@ add-if-missing {
 add-if-missing {
     "type": "omics_inferred_molecular_subtype",
     "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsInferredMolecularSubtypes")
+}
+
+# Dummy artifact for filter portal compounds. Read the details in filter_portal_compounds.conseq. 
+add-if-missing {
+    "type": "stub-artifact"
 }
 
 add-if-missing {
