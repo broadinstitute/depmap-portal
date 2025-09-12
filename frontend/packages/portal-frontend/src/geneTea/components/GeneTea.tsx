@@ -9,6 +9,9 @@ import SearchOptionsContainer from "./SearchOptionsContainer";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
 import { breadboxAPI } from "@depmap/api";
 import { fetchMetadata } from "../utils";
+import glossary from "src/geneTea/json/glossary.json";
+import Glossary from "src/common/components/Glossary";
+import { GlossaryItem } from "src/common/components/Glossary/types";
 
 function GeneTea() {
   const { handleSetAllAvailableGenes } = useGeneTeaContext();
@@ -78,6 +81,10 @@ function GeneTea() {
             </TabsWithHistory>
           </div>
         </div>
+        <Glossary
+          data={glossary as GlossaryItem[]}
+          sidePanelButtonText="Help and Information"
+        />
       </main>
     </div>
   );
