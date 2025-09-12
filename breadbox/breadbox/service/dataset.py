@@ -16,7 +16,11 @@ from ..schemas.dataset import (
     ColumnMetadata,
 )
 
-from ..schemas.custom_http_exception import DatasetAccessError, FileValidationError
+from ..schemas.custom_http_exception import (
+    DatasetAccessError,
+    FeatureNotFoundError,
+    SampleNotFoundError,
+)
 from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import MatrixDataset
 from breadbox.crud.group import (
@@ -122,8 +126,10 @@ def get_subsetted_matrix_dataset_df(
         missing_features_msg = f"{num_missing_features} missing features: {missing_features[:20] + ['...'] if num_missing_features >= 20 else missing_features}"
         num_missing_samples = len(missing_samples)
         missing_samples_msg = f"{num_missing_samples} missing samples: {missing_samples[:20] + ['...'] if num_missing_samples >= 20 else missing_samples}"
-        if len(missing_features) > 0 or len(missing_samples) > 0:
-            raise UserError(f"{missing_features_msg} and {missing_samples_msg}")
+        if len(missing_features) > 0:
+            raise FeatureNotFoundError(missing_features_msg)
+        if len(missing_samples) > 0:
+            raise SampleNotFoundError(missing_samples_msg)
 
     # call sort on the indices because hdf5_read requires indices be in ascending order
     if feature_indexes is not None:

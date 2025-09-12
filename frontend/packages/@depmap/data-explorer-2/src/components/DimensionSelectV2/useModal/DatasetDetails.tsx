@@ -2,12 +2,12 @@ import React from "react";
 import { Spinner } from "@depmap/common-components";
 import { DownloadFile, Release } from "@depmap/data-slicer";
 import { FileCard } from "@depmap/downloads";
-import { DataExplorerApiResponse } from "../../../contexts/DataExplorerApiContext";
+import type { DeprecatedDataExplorerApiResponse } from "../../../services/deprecatedDataExplorerAPI";
 import styles from "../../../styles/DimensionSelect.scss";
 
 interface Props {
   isLoading: boolean;
-  details: DataExplorerApiResponse["fetchDatasetDetails"] | null;
+  details: DeprecatedDataExplorerApiResponse["fetchDatasetDetails"] | null;
 }
 
 function DatasetDetails({ isLoading, details }: Props) {

@@ -1,4 +1,4 @@
-from typing import List, Optional, Set, Union
+from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
@@ -25,7 +25,7 @@ from breadbox.compute.dataset_tasks import (
     get_file_dict,
     run_upload_dataset,
 )
-from ..schemas.custom_http_exception import UserError
+from ..schemas.custom_http_exception import UserError, DatasetNotFoundError
 
 from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
@@ -102,16 +102,13 @@ def get_datasets(
     "/features/{dataset_id}", operation_id="get_dataset_features",
 )
 def get_dataset_features(
-    dataset_id: str,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
 ):
     """
     Get information about each feature belonging to a given dataset.
     """
-    dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if dataset is None:
-        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -123,18 +120,15 @@ def get_dataset_features(
     "/samples/{dataset_id}", operation_id="get_dataset_samples",
 )
 def get_dataset_samples(
-    dataset_id: str,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
+    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
 ):
     """
     Get information about each sample belonging to a given dataset.
     For example, if the samples are depmap models, then this should
     return depmap_ids as ids and cell line names as labels.
     """
-    dataset = dataset_crud.get_dataset(db=db, user=user, dataset_id=dataset_id)
-    if dataset is None:
-        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
 
     sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -305,9 +299,6 @@ def get_dataset(dataset: DatasetModel = Depends(get_dataset_dep)):
     return dataset
 
 
-from typing import Annotated
-
-
 @router.post(
     "/matrix/{dataset_id}", operation_id="get_matrix_dataset_data",
 )
@@ -330,17 +321,11 @@ def get_matrix_dataset_data(
         raise UserError(
             "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
         )
-    try:
-        df = dataset_service.get_subsetted_matrix_dataset_df(
-            db,
-            user,
-            dataset,
-            matrix_dimensions_info,
-            settings.filestore_location,
-            strict,
-        )
-    except UserError as e:
-        raise e
+
+    df = dataset_service.get_subsetted_matrix_dataset_df(
+        db, user, dataset, matrix_dimensions_info, settings.filestore_location, strict,
+    )
+
     return Response(df.to_json(), media_type="application/json")
 
 
@@ -599,7 +584,7 @@ def delete_dataset(
     """
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:
-        raise HTTPException(404, f"Dataset '{dataset_id}' not found")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
 
     if not dataset_crud.user_has_access_to_group(
         dataset.group, user, write_access=True

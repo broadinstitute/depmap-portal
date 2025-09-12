@@ -9,13 +9,14 @@ import React, {
   useState,
 } from "react";
 import {
+  DataExplorerContextExpression,
   DataExplorerContextV2,
   DataExplorerContextVariable,
   isValidSliceQuery,
   SliceQuery,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
-import { Expr, isBoolean } from "../utils/expressionUtils";
+import { Expr, isBoolean, flattenExpr } from "../utils/expressionUtils";
 import simplifyVarNames from "../utils/simplifyVarNames";
 import useInitializer from "./useInitializer";
 import expressionReducer, { ExprReducerAction } from "./expressionReducer";
@@ -49,6 +50,8 @@ const ContextBuilderState = createContext({
     React.SetStateAction<SliceQuery[]>
   >,
   uniqueVariableSlices: [] as SliceQuery[],
+  isReadyToSave: false,
+  setIsReadyToSave: (() => {}) as React.Dispatch<React.SetStateAction<boolean>>,
 });
 
 export const useContextBuilderState = () => {
@@ -89,6 +92,7 @@ export const ContextBuilderStateProvider = ({
   const isInitializing = useInitializer(
     mainExpr,
     contextToEdit.dimension_type!,
+    vars,
     setVar,
     dispatch
   );
@@ -120,9 +124,9 @@ export const ContextBuilderStateProvider = ({
     }
 
     const nextContext = simplifyVarNames({
-      name,
+      name: name as string,
       dimension_type: contextToEdit.dimension_type as string,
-      expr: mainExpr,
+      expr: flattenExpr(mainExpr) as DataExplorerContextExpression,
       vars: vars as Record<string, DataExplorerContextVariable>,
     });
 
@@ -185,6 +189,8 @@ export const ContextBuilderStateProvider = ({
     return [...new Set(jsonSlices)].map((s) => JSON.parse(s) as SliceQuery);
   }, [fullySpecifiedVars, vars]);
 
+  const [isReadyToSave, setIsReadyToSave] = useState(false);
+
   return (
     <ContextBuilderState.Provider
       value={{
@@ -205,6 +211,8 @@ export const ContextBuilderStateProvider = ({
         tableOnlySlices,
         setTableOnlySlices,
         uniqueVariableSlices,
+        isReadyToSave,
+        setIsReadyToSave,
         dimension_type: contextToEdit.dimension_type as string,
       }}
     >

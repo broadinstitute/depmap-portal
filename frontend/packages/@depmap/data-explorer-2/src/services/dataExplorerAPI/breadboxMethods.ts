@@ -1,4 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
+import { isContextAll } from "../../utils/context";
 import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
 import {
   correlationMatrix,
@@ -18,8 +19,9 @@ import {
   SliceQuery,
 } from "@depmap/types";
 import { fetchDatasetIdentifiers } from "./identifiers";
+import { getDimensionDataWithoutLabels } from "./helpers";
 
-type VarEqualityExpression = { "==": [{ var: string }, string | number] };
+type VarEqualityExpression = { "==": [{ var: string }, string] };
 
 async function fetchEntitiesLabel(dimensionType: string) {
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
@@ -61,9 +63,13 @@ async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
 
   const idsInDataset = new Set(dsIdentifiers.map(({ id }) => id));
   const overlappingIds = ids.filter((id) => idsInDataset.has(id));
-  const contextCount = overlappingIds.length;
+  const contextCount = overlappingIds.length.toLocaleString();
 
   const entities = await fetchEntitiesLabel(dimension.slice_type);
+
+  if (isContextAll(context)) {
+    return `${aggregation} ${units} of all ${contextCount} ${entities}`;
+  }
 
   return `${aggregation} ${units} of ${contextCount} ${context.name} ${entities}`;
 }
@@ -111,49 +117,70 @@ export async function fetchPlotDimensions(
   // This is just to get things working for now.
   const uniqueLabels = new Set<string>();
 
-  // HACK: For now we'll use this to suppor the legacy index_aliases property.
+  // HACK: For now we'll reverse the relationship of id and label for models.
   const cellLineIdMapping = {} as Record<string, string>;
 
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
 
-  function fetchRawDimension(key: string) {
+  async function fetchRawDimension(key: string) {
     const { context, dataset_id, slice_type } = dimensions[key];
-    const identifier = (context.expr as VarEqualityExpression)[
+
+    // FIXME: Remove this when we convert everything to use IDs.
+    const idToLabelMapping = await (() => {
+      return fetchDatasetIdentifiers(
+        index_type,
+        dataset_id
+      ).then((identifiers) =>
+        Object.fromEntries(identifiers.map(({ id, label }) => [id, label]))
+      );
+    })();
+
+    const [variable, identifier] = (context.expr as VarEqualityExpression)[
       "=="
-    ][1] as string;
+    ];
 
-    const identifier_type = isSampleType(slice_type, dimensionTypes)
-      ? "sample_id"
-      : "feature_id";
+    const identifier_type = (() => {
+      if (variable.var === "entity_label" && slice_type !== "depmap_model") {
+        return isSampleType(slice_type, dimensionTypes)
+          ? "sample_label"
+          : "feature_label";
+      }
 
-    return cached(breadboxAPI)
-      .getDimensionData({ dataset_id, identifier, identifier_type })
-      .then(({ ids, labels, values }) => {
-        const indexed_values: Record<
-          string,
-          string | string[] | number | null
-        > = {};
+      return isSampleType(slice_type, dimensionTypes)
+        ? "sample_id"
+        : "feature_id";
+    })();
 
+    return getDimensionDataWithoutLabels({
+      dataset_id,
+      identifier,
+      identifier_type,
+    }).then(({ ids, values }) => {
+      const indexed_values: Record<
+        string,
+        string | string[] | number | null
+      > = {};
+
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
         // TODO: Change this to use ids instead of labels.
-        for (let i = 0; i < labels.length; i++) {
-          const label = labels[i];
-          const id = ids[i];
-          uniqueLabels.add(label);
+        const label = idToLabelMapping[id];
+        uniqueLabels.add(label);
 
-          if (index_type === "depmap_model") {
-            indexed_values[id] = values[i];
-            cellLineIdMapping[label] = id;
-          } else {
-            indexed_values[label] = values[i];
-          }
+        if (index_type === "depmap_model") {
+          indexed_values[id] = values[i];
+          cellLineIdMapping[label] = id;
+        } else {
+          indexed_values[label] = values[i];
         }
+      }
 
-        return {
-          property: "dimensions",
-          indexed_values,
-          key,
-        };
-      });
+      return {
+        property: "dimensions",
+        indexed_values,
+        key,
+      };
+    });
   }
 
   async function fetchAggregatedDimension(key: string) {
@@ -244,29 +271,29 @@ export async function fetchPlotDimensions(
       const indexed_values: Record<string, string | null> = {};
 
       const sliceQuery = metadata![key] as SliceQuery;
-      const data = await cached(breadboxAPI).getDimensionData(sliceQuery);
+      const data = await getDimensionDataWithoutLabels(sliceQuery);
 
-      if (!("values" in data)) {
-        window.console.error({
-          sliceQuery: metadata![key],
-          response: data,
-        });
-        throw new Error(
-          "Bad response from /datasets/dimension/data/. Contains no `values!`"
-        );
-      }
+      // FIXME: Remove this when we convert everything to use IDs.
+      const idToLabelMapping = await (() => {
+        return cached(breadboxAPI)
+          .getDimensionTypeIdentifiers(index_type)
+          .then((identifiers) =>
+            Object.fromEntries(identifiers.map(({ id, label }) => [id, label]))
+          );
+      })();
 
-      const indexProp = index_type === "depmap_model" ? "ids" : "labels";
       const uniqueValues = new Set<string>();
 
       for (let i = 0; i < data.values.length; i += 1) {
-        const label = data[indexProp][i];
-        const value = data.values[i];
+        const id = data.ids[i];
+        const indexKey =
+          index_type === "depmap_model" ? id : idToLabelMapping[id];
+        const indexedValue = data.values[i];
 
-        indexed_values[label] = value;
+        indexed_values[indexKey] = indexedValue;
 
-        if (value) {
-          uniqueValues.add(value);
+        if (indexedValue) {
+          uniqueValues.add(indexedValue);
         }
       }
 
@@ -288,22 +315,14 @@ export async function fetchPlotDimensions(
       ? [...uniqueLabels].map((label) => cellLineIdMapping[label])
       : [...uniqueLabels];
 
-  const index_aliases =
-    index_type === "depmap_model"
-      ? [
-          {
-            label: "Cell Line Name",
-            slice_id: "slice/cell_line_display_name/all/label",
-            values: [...uniqueLabels],
-          },
-        ]
-      : [];
+  const index_display_labels =
+    index_type === "depmap_model" ? [...uniqueLabels] : index_labels;
 
   return (async () => {
     const out = {
       index_type,
       index_labels,
-      index_aliases,
+      index_display_labels,
       linreg_by_group: [],
       dimensions: {} as Record<string, unknown>,
       filters: {} as Record<string, unknown>,
@@ -688,15 +707,7 @@ export async function fetchCorrelation(
   return {
     index_type,
     index_labels: isModelCorrelation ? ids : xColumns,
-    index_aliases: isModelCorrelation
-      ? [
-          {
-            label: "Cell Line Name",
-            slice_id: "slice/cell_line_display_name/all/label",
-            values: xColumns,
-          },
-        ]
-      : [],
+    index_display_labels: xColumns,
     dimensions: x2 ? { x, x2 } : { x },
     filters: {},
     metadata: {},
@@ -776,7 +787,7 @@ export async function fetchWaterfall(
   };
 
   // FIXME: Instead of coloring the points as one big group, we could split it
-  // into smaller grouper according to how the continuous values get bucketed.
+  // into smaller groups according to how the continuous values get bucketed.
   // The only reason we didn't do that before is because this waterfall
   // implementation used to live on the backend while the buckets were always
   // calculated here on the frontend.
@@ -786,17 +797,6 @@ export async function fetchWaterfall(
       values: sortByReindexedLabels(unsortedData.dimensions.color.values),
     };
   }
-
-  const sortedIndexAliases =
-    index_type === "depmap_model"
-      ? [
-          {
-            label: "Cell Line Name",
-            slice_id: "slice/cell_line_display_name/all/label",
-            values: sortByReindexedLabels(unsortedData.index_aliases[0].values),
-          },
-        ]
-      : [];
 
   const sortedFilters: DataExplorerPlotResponse["filters"] = {};
   const sortedMetadata: DataExplorerPlotResponse["metadata"] = {};
@@ -819,10 +819,15 @@ export async function fetchWaterfall(
     };
   });
 
+  const sortedIndexDisplayLabels = sortByReindexedLabels(
+    unsortedData.index_display_labels
+  );
+
   return {
     index_type,
     index_labels: sortedLabels,
-    index_aliases: sortedIndexAliases,
+    // TODO: Check of it's depmap_model and use the cell line name for this.
+    index_display_labels: sortedIndexDisplayLabels,
     dimensions: sortedDimensions,
     filters: sortedFilters,
     metadata: sortedMetadata,

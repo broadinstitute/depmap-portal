@@ -1,22 +1,15 @@
 import qs from "qs";
+import { cached, breadboxAPI } from "@depmap/api";
 import { ComputeResponseResult } from "@depmap/compute";
+import { getUrlPrefix } from "@depmap/globals";
 import {
   DataExplorerAnonymousContext,
   DataExplorerContext,
+  DataExplorerContextV2,
 } from "@depmap/types";
+import { isV2Context } from "../../utils/context";
 
-function fetchUrlPrefix() {
-  const element = document.getElementById("webpack-config");
-
-  if (element) {
-    const webpackConfig = JSON.parse(element!.textContent as string);
-    return webpackConfig.rootUrl;
-  }
-
-  return "/";
-}
-
-const urlPrefix = `${fetchUrlPrefix().replace(/^\/$/, "")}/data_explorer_2`;
+const urlPrefix = `${getUrlPrefix().replace(/^\/$/, "")}/data_explorer_2`;
 const fetchJsonCache: Record<string, Promise<unknown> | null> = {};
 
 const fetchJson = async <T>(
@@ -158,6 +151,21 @@ export async function fetchLegacyAssociations(
 export async function evaluateLegacyContext(
   context: DataExplorerContext | DataExplorerAnonymousContext
 ): Promise<string[]> {
+  // It's possible that we've been passed a V2 context
+  // because this hacky wrapper is not properly typed:
+  // https://github.com/broadinstitute/depmap-portal/blob/5b38776/frontend/packages/@depmap/data-explorer-2/src/components/ContextSelector/index.tsx#L6-L15
+  // For now we'll detect when this happens and defer to Breadbox.
+  // This is only temporary code anyway and will be removed
+  // when we sunset all the legacy Portal's DE2 endpoints.
+  if (isV2Context(context as any)) {
+    const v2Context = (context as unknown) as DataExplorerContextV2;
+    const result = await cached(breadboxAPI).evaluateContext(v2Context);
+
+    return v2Context.dimension_type === "depmap_model"
+      ? result.ids
+      : result.labels;
+  }
+
   return postJson<string[]>("/context/labels", { context });
 }
 
@@ -239,11 +247,7 @@ export function fetchDimensionLabelsToDatasetsMapping(
   units: Record<string, DatasetIndex[]>;
   data_types: Record<DataType, DatasetIndex[]>;
   dimension_labels: Record<DimensionLabel, DatasetIndex[]>;
-  aliases: {
-    label: string;
-    slice_id: string;
-    values: string[];
-  }[];
+  aliases: string[] | null;
 }> {
   const query = qs.stringify({ dimension_type });
 

@@ -60,7 +60,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--prism_oncology_reference_auc_matrix_taiga_id",
-        help="Taiga ID of the PRISMOncologyReferenceAUCMatrix (optional)",
+        help="Taiga ID of the PRISMOncologyReferenceLog2AUCMatrix (optional)",
         default=None,
     )
     parser.add_argument("output", help="Path to write the output")
