@@ -95,7 +95,7 @@ function Glossary({
                     </dt>
                     {item.multipartDefinition?.map((part: string) => (
                       <div key={part} style={{ marginTop: "15px" }}>
-                        <dd>{replaceSuperscriptTags(part, item.references)}</dd>
+                        <dd>{replaceSuperscriptTags(part)}</dd>
                       </div>
                     ))}
                     <dd

@@ -56,10 +56,7 @@ export default function replaceReferencesWithLinks(
   return parts;
 }
 
-export function replaceSuperscriptTags(
-  definition: string,
-  references?: GlossaryItem["references"]
-): React.ReactNode[] {
+export function replaceSuperscriptTags(definition: string): React.ReactNode[] {
   const superscriptCount = (definition.match(/<sup>/g) || []).length;
   let parts = [definition];
 
@@ -69,14 +66,11 @@ export function replaceSuperscriptTags(
       if (typeof part !== "string") {
         return part;
       }
-
       const lastIndex = i;
       const superIndex = part.indexOf(superscriptStart, lastIndex);
-
       if (superIndex === -1) {
         return part;
       }
-
       return [
         part.slice(0, superIndex),
         <sup key={i}>
@@ -91,11 +85,8 @@ export function replaceSuperscriptTags(
         ),
       ];
     });
-
     parts = [].concat(...(nestedParts as any[]));
   }
 
-  return parts.map((p) =>
-    references ? replaceReferencesWithLinks(p, references) : p
-  );
+  return parts;
 }
