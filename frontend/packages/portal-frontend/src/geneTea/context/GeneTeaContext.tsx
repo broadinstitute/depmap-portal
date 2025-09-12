@@ -253,14 +253,14 @@ export function GeneTeaContextProvider({
 
   const handleSetSelectionFromContext = useCallback(async () => {
     const labels = await promptForSelectionFromContext(
-      allAvailableGenes,
+      validGeneSymbols,
       "gene"
     );
     if (labels === null) {
       return;
     }
 
-    setGeneSymbolSelections(labels);
+    setSelectedPlotGenes(labels);
   }, [allAvailableGenes]);
 
   const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
