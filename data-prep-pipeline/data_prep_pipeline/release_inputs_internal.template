@@ -1,15 +1,9 @@
-# TAIGA_PREPROCESSOR_INCLUDE "../../../depmap-deploy/current-dataset-ids/internal.conseq"
+# SET_TAIGA_PREPROCESSOR release_taiga_id "internal-25q3-b129"
 
 # Destination Taiga ID
 add-if-missing {
  "type": "release_taiga_id", 
  "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
-}
-
-# Destination Taiga ID Test
-add-if-missing {
-  "type": "predictability_taiga_id",
-  "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
 }
 
 # CN gene expression data
@@ -40,15 +34,11 @@ add-if-missing {
   "dataset_id": "compound-metadata-de37.42/PortalCompounds"
 }
 
-add-if-missing {
-  "type": "prism_oncology_reference_auc_matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLog2AUCMatrix") 
-}
 
 # HGNC Gene Table
 add-if-missing {
   "type": "hgnc_gene_table",
-  "dataset_id": "hgnc-gene-table-e250.3/hgnc_complete_set"
+  "dataset_id": "hgnc-gene-table-e250.4/hgnc_complete_set"
 }
 
 # Driver Events
@@ -118,5 +108,34 @@ add-if-missing {
 
 add-if-missing {
     "type": "omics_inferred_molecular_subtype",
-    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsInferredMolecularSubtypes")
+    "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsInferredMolecularSubtypes")
+}
+
+add-if-missing {
+  "type": "prism_oncology_reference_auc_matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "PRISMOncologyReferenceLog2AUCMatrix") 
+}
+
+# Dummy artifact for filter portal compounds
+add-if-missing {
+    "type": "stub-artifact"
+}
+
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRGeneEffect"),
+  "label": "Chronos_Combined",
+  "confounders_label": "crispr-confounders",
+}
+
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRGeneDependency"),
+  "label": "Chronos_Combined",
+}
+
+add-if-missing {
+  "type": "crispr-inferred-common-essentials",
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRInferredCommonEssentials"),
+  "label": "Chronos_Combined"
 }

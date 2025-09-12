@@ -64,16 +64,6 @@ def test_get_waterfall_model_index(app, empty_db_mock_downloads):
         assert response["index_type"] == "depmap_model"
         assert response["metadata"] == {}
         assert response["index_labels"] == ["ACH-1", "ACH-0"]
-        assert len(response["index_aliases"]) == 1
-        assert response["index_aliases"][0]["label"] == "Cell Line Name"
-        assert (
-            response["index_aliases"][0]["slice_id"]
-            == "slice/cell_line_display_name/all/label"
-        )
-        assert response["index_aliases"][0]["values"] == [
-            cell_line1.cell_line_display_name,
-            cell_line0.cell_line_display_name,
-        ]
 
         # NOTE: This behavior is potentially unexpected, but it IS intentional. We've requested 1 "x" dimension,
         # and we get back BOTH an "x" and "y", with the actual values for the dataset returned
@@ -202,7 +192,6 @@ def test_get_waterfall_gene_index(app, empty_db_mock_downloads):
         # check the gene indices
         # The order of the gene index labels must match the sort ascending of the y axis values.
         assert response["index_labels"] == [gene1.label, gene0.label]
-        assert len(response["index_aliases"]) == 0  # genes don't need aliases
 
         # NOTE: This behavior is potentially unexpected, but it IS intentional.
         # We've requested 1 "x" dimension, and we get back BOTH an "x" and "y", with

@@ -36,7 +36,7 @@ add-if-missing {
 
 add-if-missing {
   "type": "prism_oncology_reference_auc_matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceAUCMatrix") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "PRISMOncologyReferenceLog2AUCMatrix") 
 }
 
 # HGNC Gene Table

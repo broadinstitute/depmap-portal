@@ -1,6 +1,6 @@
 import { LocalStorageListStore } from "@depmap/cell-line-selector";
 import { isElara } from "@depmap/globals";
-import {
+import type {
   DataExplorerContext,
   DataExplorerContextV2,
   StoredContexts,
@@ -34,13 +34,6 @@ export const userContextStorageKey = () => {
     return "elara_contexts";
   }
 
-  // FIXME: Eventually all contexts should be stored together. But we don't
-  // have a mechanism for converting between the legacy and modern format yet
-  // so we'll keep them separated for now.
-  if (isBreadboxOnlyMode) {
-    return "breadbox_contexts";
-  }
-
   return "user_contexts";
 };
 
@@ -71,7 +64,11 @@ export function loadContextsFromLocalStorage(context_type: string) {
   const contexts: StoredContexts = json ? JSON.parse(json) : {};
 
   Object.entries(contexts).forEach(([contextHash, context]) => {
-    if (context.context_type === context_type) {
+    // Hide any V2 contexts from the legacy interface. This check can be
+    // removed after we fully migrate to Breadbox.
+    const isCompatible = isBreadboxOnlyMode || context.version !== 2;
+
+    if (context.context_type === context_type && isCompatible) {
       out[contextHash] = context;
     }
   });
@@ -120,6 +117,7 @@ const toStoredContext = (
     context_type: isV2Context(context)
       ? context.dimension_type
       : context.context_type,
+    version: isV2Context(context) ? 2 : 1,
   };
 };
 

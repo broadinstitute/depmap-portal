@@ -8,7 +8,11 @@ from sqlalchemy.testing.plugin.plugin_base import logging
 
 from ..schemas.dataframe_wrapper import DataFrameWrapper
 from ..models.dataset import Dataset, MatrixDataset, ValueType
-from .hdf5_utils import write_hdf5_file, read_hdf5_file, get_hdf5_file_matrix_size
+from .hdf5_utils import write_hdf5_file, read_hdf5_file
+from breadbox.schemas.custom_http_exception import (
+    SampleNotFoundError,
+    FeatureNotFoundError,
+)
 
 DATA_FILE: str = "data.hdf5"
 
@@ -115,7 +119,7 @@ def get_feature_slice(
     The resulting dataframe will be indexed by given IDs with features as columns.
     """
     if len(feature_indexes) == 0:
-        raise ValueError(f"No features match query")
+        raise FeatureNotFoundError(f"No features match query")
 
     df = read_hdf5_file(
         get_file_location(dataset, filestore_location), feature_indexes=feature_indexes,
@@ -133,7 +137,7 @@ def get_sample_slice(
     The resulting dataframe will be indexed by given IDs with samples as rows.
     """
     if len(sample_indexes) == 0:
-        raise ValueError(f"No samples match query")
+        raise SampleNotFoundError(f"No samples match query")
 
     df = read_hdf5_file(
         get_file_location(dataset, filestore_location), sample_indexes=sample_indexes,

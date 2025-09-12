@@ -136,24 +136,12 @@ function DataExplorerCorrelationHeatmap({
 
   const showWarning = data?.dimensions.x?.axis_label === "cannot plot";
 
-  // If there are index_aliases, use these for graphing so that
-  // we can prioritize cell line name over model id.
+  // If there are index_display_labels, use these for graphing
+  // so that we can prioritize cell line name over model id.
   const memoizedXLabels = useMemo(
     () =>
       data && !isLoading
-        ? data.index_labels
-            .map((label: string, i: number) => {
-              if (
-                data?.index_aliases &&
-                data?.index_aliases.length > 0 &&
-                data?.index_aliases[0].values.length > 0
-              ) {
-                return data.index_aliases[0].values[i];
-              }
-              return label;
-            })
-            .slice()
-            .reverse()
+        ? (data.index_display_labels || data.index_labels).slice().reverse()
         : null,
     [data, isLoading]
   );
@@ -161,16 +149,7 @@ function DataExplorerCorrelationHeatmap({
   const memoizedYLabels = useMemo(
     () =>
       data && !isLoading
-        ? data.index_labels.map((label: string, i: number) => {
-            if (
-              data?.index_aliases &&
-              data?.index_aliases.length > 0 &&
-              data?.index_aliases[0].values.length
-            ) {
-              return data.index_aliases[0].values[i];
-            }
-            return label;
-          })
+        ? data.index_display_labels || data.index_labels
         : null,
     [data, isLoading]
   );

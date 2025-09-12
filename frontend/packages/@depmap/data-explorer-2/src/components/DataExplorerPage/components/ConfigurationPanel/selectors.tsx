@@ -108,13 +108,17 @@ export function PointsSelector({
     <div className={styles.PointsSelector}>
       <PlotConfigSelect
         label={
-          // TODO: Write different help content for correlation_heatmap
-          <span>
-            Points
-            {plot_type !== "correlation_heatmap" && (
+          plot_type === "correlation_heatmap" ? (
+            <span>
+              Indexed by
+              {/* TODO: write help text describing how to selet this */}
+            </span>
+          ) : (
+            <span>
+              Points
               <HelpTip id="points-help" />
-            )}
-          </span>
+            </span>
+          )
         }
         inlineLabel
         placeholder="Select points…"
@@ -158,6 +162,12 @@ export function ColorByTypeSelector({
           otherTabularDatasets,
         } = await fetchMetadataAndOtherTabularDatasets(slice_type, [
           "categorical",
+          // TODO: In the future we should only support "categorical" and
+          // remove "text" here. But most datasets are not tagged that way
+          // which can make it appear we are missing metadata. For now, we'lll
+          // include "text" even though that may include some columns that have
+          // too many disinct values to color by.
+          "text",
         ]);
 
         setHasMetadataDataset(Boolean(metadataDataset));

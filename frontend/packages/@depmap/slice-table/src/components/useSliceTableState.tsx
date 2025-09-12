@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Button } from "react-bootstrap";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import type { RowSelectionState } from "@depmap/react-table";
@@ -37,9 +43,17 @@ export function useSliceTableState({
     initialRowSelection || {}
   );
 
+  const prevIndexTypeName = useRef(index_type_name);
+
   useEffect(() => {
-    setSlices(initialSlices || []);
-  }, [index_type_name, initialSlices]);
+    // It is not typical for `index_type_name` to change.
+    // But when it does, it means all our slices are invalid.
+    if (index_type_name !== prevIndexTypeName.current) {
+      setSlices([]);
+    }
+
+    prevIndexTypeName.current = index_type_name;
+  }, [index_type_name]);
 
   // Convert rowSelection to selectedRowIds
   const selectedRowIds = useMemo(() => {

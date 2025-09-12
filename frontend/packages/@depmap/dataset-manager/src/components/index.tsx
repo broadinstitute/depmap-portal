@@ -8,7 +8,7 @@ import {
   DimensionTypeUpdateArgs,
   DimensionTypeWithCounts,
   Group,
-  instanceOfErrorDetail,
+  ErrorTypeError,
   TabularDataset,
 } from "@depmap/types";
 
@@ -17,7 +17,7 @@ import WideTable from "@depmap/wide-table";
 import Button from "react-bootstrap/lib/Button";
 
 import styles from "../styles/styles.scss";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { breadboxAPI } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
 import { Alert } from "react-bootstrap";
@@ -231,7 +231,7 @@ export default function Datasets() {
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
-            getTaskStatus={legacyPortalAPI.getTaskStatus}
+            getTaskStatus={breadboxAPI.getTaskStatus}
             onSuccess={(dataset: Dataset, showModal: boolean) => {
               const addedDatasets = [...datasets, dataset];
               setDatasets(addedDatasets);
@@ -451,8 +451,10 @@ export default function Datasets() {
       })
       .catch((e) => {
         console.error(e);
-        if (instanceOfErrorDetail(e)) {
-          setDatasetDeleteError(e.detail);
+        if (e instanceof ErrorTypeError) {
+          setDatasetDeleteError(e.message);
+        } else {
+          setDatasetDeleteError("An unknown error occurred!");
         }
       });
 
@@ -479,8 +481,10 @@ export default function Datasets() {
           })
           .catch((e) => {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
-              setDimTypeDeleteError(e.detail);
+            if (e instanceof ErrorTypeError) {
+              setDimTypeDeleteError(e.message);
+            } else {
+              setDimTypeDeleteError("An unknown error occurred!");
             }
           });
       }

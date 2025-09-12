@@ -4,13 +4,7 @@ import { DataExplorerPlotResponse } from "@depmap/types";
 const data: DataExplorerPlotResponse = {
   index_type: "depmap_model",
   index_labels: ["ACH-000001", "ACH-000147", "ACH-000535", "ACH-000552"],
-  index_aliases: [
-    {
-      label: "Cell Line Name",
-      slice_id: "slice/cell_line_display_name/all/label",
-      values: ["NIHOVCAR3", "T47D", "BXPC3", "HT29"],
-    },
-  ],
+  index_display_labels: ["NIHOVCAR3", "T47D", "BXPC3", "HT29"],
   dimensions: {
     x: {
       axis_label: "SOX10 Gene Effect (Chronos)",
@@ -30,6 +24,7 @@ const data: DataExplorerPlotResponse = {
     color_property: {
       label: "Lineage",
       slice_id: "slice/lineage/1/label",
+      value_type: "categorical",
       values: ["Ovary/Fallopian Tube", "Breast", "Pancreas", "Bowel"],
     },
   },

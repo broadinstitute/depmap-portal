@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
+import { convertContextV1toV2 } from "../../utils/context-converter";
 import useModalContainer from "./hooks/useModalContainer";
+import LoadingModal from "./LoadingModal";
 import ContextBuilderModal from "./ContextBuilderModal";
 
 interface Props {
@@ -26,21 +28,51 @@ function ContextBuilderV2({
 }: Props) {
   useModalContainer();
 
-  if ("context_type" in context && "expr" in context) {
-    throw new Error("Legacy contexts not yet supported");
+  const [contextToEdit, setContextToEdit] = useState<
+    DataExplorerContextV2 | { dimension_type: string } | null
+  >(null);
+
+  const [isConverting, setIsConverting] = useState(false);
+
+  useEffect(() => {
+    if (!show) {
+      setContextToEdit(null);
+    }
+
+    if (show && context) {
+      if ("dimension_type" in context) {
+        setContextToEdit(context);
+      } else if ("context_type" in context && !("expr" in context)) {
+        setContextToEdit({ dimension_type: context.context_type });
+      } else {
+        (async () => {
+          setIsConverting(true);
+          const { convertedContext } = await convertContextV1toV2(context);
+          setIsConverting(false);
+
+          setContextToEdit(convertedContext);
+        })();
+      }
+    }
+  }, [show, context]);
+
+  if (isConverting) {
+    return (
+      <LoadingModal
+        onHide={onHide}
+        backdrop={backdrop}
+        context={context}
+        isExistingContext={isExistingContext}
+      />
+    );
   }
 
-  const contextToEdit =
-    "dimension_type" in context
-      ? context
-      : {
-          dimension_type: context.context_type,
-        };
+  if (!contextToEdit) {
+    return null;
+  }
 
   return (
     <ContextBuilderModal
-      key={`${show}`}
-      show={show}
       onClickSave={onClickSave}
       onHide={onHide}
       backdrop={backdrop}

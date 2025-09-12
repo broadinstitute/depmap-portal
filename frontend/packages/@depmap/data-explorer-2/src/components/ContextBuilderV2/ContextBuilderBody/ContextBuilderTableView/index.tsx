@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import { Button } from "react-bootstrap";
 import SliceTable from "@depmap/slice-table";
 import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
@@ -16,9 +16,18 @@ function ContextBuilderTableView() {
     tableOnlySlices,
     setTableOnlySlices,
     name,
+    setIsReadyToSave,
   } = useContextBuilderState();
 
   const { isLoading, matchingIds } = useMatches(mainExpr);
+
+  useEffect(() => {
+    if (isLoading) {
+      setIsReadyToSave(false);
+    } else {
+      setIsReadyToSave(matchingIds.length > 0);
+    }
+  }, [isLoading, matchingIds, setIsReadyToSave]);
 
   const viewOnlySlices = useRef<Set<SliceQuery>>(new Set(uniqueVariableSlices));
   const initialSlices = useRef([...viewOnlySlices.current, ...tableOnlySlices]);

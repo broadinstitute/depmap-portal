@@ -10,6 +10,7 @@ interface Props {
   shouldShowValidation: boolean;
   className?: string;
   label?: string;
+  disabled?: boolean;
 }
 
 function ContextNameForm({
@@ -19,6 +20,7 @@ function ContextNameForm({
   shouldShowValidation,
   className = undefined,
   label = "Context name",
+  disabled = false,
 }: Props) {
   let validationState: "success" | "error" | null = null;
 
@@ -48,6 +50,7 @@ function ContextNameForm({
           onChange={(e) => onChange((e.target as HTMLInputElement).value)}
           placeholder="Type a name…"
           autoComplete="off"
+          disabled={disabled}
         />
       </FormGroup>
     </Form>

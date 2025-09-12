@@ -124,16 +124,19 @@ export interface DataExplorerPlotConfig {
 
 export type PartialDataExplorerPlotConfig = PartialDeep<DataExplorerPlotConfig>;
 
-interface IndexAlias {
-  label: string;
-  slice_id: string;
-  values: string[];
-}
-
 export interface DataExplorerPlotResponse {
   index_type: string;
+
+  // Human-readable labels. Legacy code also uses these as makeshift IDs but
+  // that practice is discouraged going forward.
   index_labels: string[];
-  index_aliases: IndexAlias[];
+
+  // Temporary! Eventually we want to be in a situation where index_ids and
+  // index_labels are well defined for all dimension types. We're/ not there
+  // yet. Lots of legacy code wants to use index_labels as makeshift IDs.
+  // These labels are explicitly for display purposes only.
+  index_display_labels: string[];
+
   dimensions: {
     x: DataExplorerPlotResponseDimension;
     y?: DataExplorerPlotResponseDimension;
@@ -181,11 +184,17 @@ export interface DataExplorerDatasetDescriptor {
   units: string;
 }
 
-type ContextWithoutExprOrVars = {
-  name: string;
-  context_type: string;
-  // HACK: This property is never saved in local storage. It's just a temporary
-  // tag that loadContextsFromLocalStorage() creates.
-  isLegacyList?: boolean;
-};
-export type StoredContexts = Record<string, ContextWithoutExprOrVars>;
+export type StoredContexts = Record<
+  string,
+  {
+    name: string;
+    context_type: string;
+
+    // If version isn't present, assume version 1.
+    version?: number;
+
+    // HACK: This property is never saved in local storage. It's just a temporary
+    // tag that loadContextsFromLocalStorage() creates.
+    isLegacyList?: boolean;
+  }
+>;

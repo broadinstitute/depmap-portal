@@ -37,9 +37,13 @@ function VisualizationPanel({
   contactEmail,
   tutorialLink,
 }: Props) {
-  const { data, linreg_by_group, fetchedPlotConfig, hadError } = usePlotData(
-    plotConfig
-  );
+  const {
+    data,
+    linreg_by_group,
+    fetchedPlotConfig,
+    hadError,
+    errorMessage,
+  } = usePlotData(plotConfig);
   const isLoading = plotConfig !== fetchedPlotConfig;
 
   if (hadError) {
@@ -47,6 +51,7 @@ function VisualizationPanel({
       <div className={styles.VisualizationPanel}>
         <DummyPlot
           hadError
+          errorMessage={errorMessage}
           isInitialPageLoad={isInitialPageLoad}
           feedbackUrl={feedbackUrl}
           contactEmail={contactEmail}

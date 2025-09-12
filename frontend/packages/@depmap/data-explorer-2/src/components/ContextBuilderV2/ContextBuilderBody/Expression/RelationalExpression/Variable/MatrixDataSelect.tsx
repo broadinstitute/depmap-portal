@@ -8,9 +8,8 @@ interface Props {
 }
 
 function MatrixDataSelect({ varName }: Props) {
-  const { dimension_type } = useContextBuilderState();
+  const { dimension_type, vars, setVar } = useContextBuilderState();
   const { getDimensionTypeAsync } = useDimensionType();
-  const { vars, setVar } = useContextBuilderState();
   const variable = vars[varName] || null;
 
   return (
@@ -18,21 +17,22 @@ function MatrixDataSelect({ varName }: Props) {
       mode="entity-only"
       removeWrapperDiv
       index_type={dimension_type}
-      value={{
-        axis_type: "raw_slice",
-        aggregation: "first",
-        slice_type: variable?.slice_type,
-        dataset_id: variable?.dataset_id,
-        context:
-          variable?.identifier && variable?.slice_type
-            ? {
-                dimension_type: variable.slice_type,
-                name: variable.label || variable.identifier,
+      value={
+        {
+          axis_type: "raw_slice",
+          aggregation: "first",
+          slice_type: variable?.slice_type || null,
+          dataset_id: variable?.dataset_id || null,
+          context: variable
+            ? ({
+                dimension_type: variable.slice_type || undefined,
+                name: variable.label || variable.identifier || "(unknown)",
                 expr: { "==": [{ var: "given_id" }, variable.identifier] },
                 vars: {},
-              }
+              } as any)
             : undefined,
-      }}
+        } as any
+      }
       onChange={async (nextDimension) => {
         const dimensionType = await getDimensionTypeAsync();
 

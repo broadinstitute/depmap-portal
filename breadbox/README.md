@@ -2,6 +2,8 @@
 
 Breadbox is a persistent service for storing and retrieving data for the [DepMap portal](https://github.com/broadinstitute/depmap-portal). It aims to simplify and consolidate formats across datasets that are uploaded by CDS during portal database re-builds, by users transiently, and by users for private groups. It consists of a persistent database to store the datasets and an API for uploading and fetching from the dataset.
 
+See the [docs](docs/) folder for more documentation on the breadbox data model and terminology.
+
 ## Setup
 
 1.  Install pyenv & poetry
@@ -165,9 +167,9 @@ poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-
 
 ### Models
 
-![ERD](ERD.png "ERD")
+![ERD](docs/ERD.png "ERD")
 
-[Original lucid doc](https://lucid.app/lucidchart/250664b1-46c1-493f-ae5f-16e086a9ce89/edit?viewport_loc=30%2C-632%2C2728%2C1685%2C0_0&invitationId=inv_37ff99d2-d879-4e16-b576-57b689305a9f)
+[Original lucid doc](https://lucid.app/lucidchart/c942645e-f7e7-40e2-bc2b-d1ff09167f2c/edit?invitationId=inv_74ea1e24-69ff-4b4f-9ad0-a8b496dcc3d1&page=0_0#)
 
 ### API Layer Rules
 
