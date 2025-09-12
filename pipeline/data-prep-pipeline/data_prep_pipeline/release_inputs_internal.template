@@ -2,20 +2,20 @@
 
 # Destination Taiga ID
 add-if-missing {
- "type": "release_taiga_id", 
- "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
+ "type": "release_taiga_id",
+ "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id)
 }
 
 # CN gene expression data
 add-if-missing {
   "type": "cngene",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsCNGeneWGS") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGeneWGS") 
 }
 
 # Model
 add-if-missing {
   "type": "model",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "Model") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "Model") 
 }
 
 # Portal Compounds
@@ -34,7 +34,6 @@ add-if-missing {
   "dataset_id": "compound-metadata-de37.42/PortalCompounds"
 }
 
-
 # HGNC Gene Table
 add-if-missing {
   "type": "hgnc_gene_table",
@@ -44,7 +43,7 @@ add-if-missing {
 # Driver Events
 add-if-missing {
   "type": "mutations",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutations") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsSomaticMutations") 
 }
 
 add-if-missing {
@@ -55,18 +54,18 @@ add-if-missing {
 # Fusion
 add-if-missing {
   "type": "fusion",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsFusionFiltered") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsFusionFiltered") 
 }
 
 # CRISPR Confounders
 add-if-missing {
   "type": "achilles_screen_qc_report",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesScreenQCReport") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "AchillesScreenQCReport") 
 }
 
 add-if-missing {
   "type": "crispr_screen_map",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRScreenMap") 
+  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRScreenMap") 
 }
 
 # Legacy Data
