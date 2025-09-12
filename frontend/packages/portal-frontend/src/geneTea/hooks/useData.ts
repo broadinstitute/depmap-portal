@@ -228,7 +228,11 @@ function useData(
       const customdata = filteredPairs.map(([gene, term]) => {
         const idx = lookup.get(`${gene}|${term}`);
         return idx !== undefined
-          ? `<b>Gene: </b>${gene}<br><b>${data.groupby}: </b>${term}<br><b>Matches: </b>${termToEntity.nTerms[idx]}`
+          ? `<b>Gene: </b>${gene}<br><b>${
+              data.groupby
+            }: </b>${term}<br><b>Matches: </b>${
+              termToEntity.fraction[idx] * termToEntity.nTerms[idx]
+            }`
           : "";
       });
 
