@@ -86,6 +86,7 @@ from depmap.dataset_manager.views import blueprint as dataset_manager_blueprint
 from depmap.theme import include_theme_snippet
 from depmap.context_explorer.views import blueprint as context_explorer_blueprint
 from depmap.data_page.views import blueprint as data_page_blueprint
+from depmap.gene_tea.views import blueprint as gene_tea_blueprint
 from flask_hunter_profile.flask_blueprint import (
     flask_hunter_profile as flask_hunter_profile_blueprint,
 )
@@ -337,6 +338,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(data_page_blueprint)
     app.register_blueprint(flask_hunter_profile_blueprint)
     app.register_blueprint(anchor_screen_dashboard_blueprint)
+    app.register_blueprint(gene_tea_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)

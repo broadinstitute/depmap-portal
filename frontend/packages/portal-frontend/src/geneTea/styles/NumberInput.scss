@@ -1,0 +1,12 @@
+.NumberInput {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4;
+
+  .inputLabel {
+    font-weight: 400;
+    margin-bottom: 0;
+    padding-left: 0;
+  }
+}

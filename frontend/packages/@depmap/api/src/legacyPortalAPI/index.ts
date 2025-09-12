@@ -7,6 +7,7 @@ import * as data_page from "./resources/data_page";
 import * as download from "./resources/download";
 import * as entity_summary from "./resources/entity_summary";
 import * as genetea from "./resources/genetea";
+import * as experimental_genetea from "./resources/experimental_genetea";
 import * as interactive from "./resources/interactive";
 import * as tda from "./resources/tda";
 import * as misc from "./resources/misc";
@@ -24,6 +25,7 @@ export const legacyPortalAPI = {
   ...interactive,
   ...tda,
   ...misc,
+  ...experimental_genetea,
 };
 
 type Api = typeof legacyPortalAPI;

@@ -1,0 +1,22 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+  GeneTEA - Tea Party
+{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endblock %}
+
+{% block meta_description %} GeneTEA tool {% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="react-gene-tea"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('geneTea.js') }}"></script>
+{% endblock %}

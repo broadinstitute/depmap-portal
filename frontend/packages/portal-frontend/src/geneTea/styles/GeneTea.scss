@@ -1,0 +1,54 @@
+@import "./Tabs.scss";
+@import "./GeneTeaTabLayout.scss";
+@import "./PlotSection.scss";
+@import "./PlotSelections.scss";
+
+.header {
+  padding-left: 20px;
+  margin-bottom: 18px;
+  margin-top: 30px;
+  max-width: 150ch;
+
+  h1 {
+    color: #333333;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 0 0 9px 0;
+  }
+
+  & > p {
+    font-size: 16px;
+  }
+}
+
+.main {
+  width: 100%;
+}
+
+.errorMessage {
+  padding: 24px;
+  text-align: center;
+  color: #b00020;
+  font-weight: 600;
+}
+
+.tableSpinnerContainer {
+  padding: 24px;
+  text-align: center;
+}
+
+.plotSelectionsContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  button {
+    font-size: 13px;
+
+    :global .glyphicon {
+      position: relative;
+      top: 2px;
+      left: 4px;
+    }
+  }
+}

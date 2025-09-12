@@ -82,9 +82,11 @@ export interface WideTableColumns {
 export interface WideTableProps {
   /**
    * array of objects, all data for the table (will be what ends up downloaded if
-   * allowDownloadFromTableData is set to true and the user clicks "download table")
+   * allowDownloadFromTableData is set to true, prefferedTableDataForDownload is undefined
+   *  and the user clicks "download table")
    */
   data: any[];
+  prefferedTableDataForDownload?: any[]; // If set, use this for the download table instead of "data"
   columns: Array<WideTableColumns & Partial<Column>>; // refer to the react-table docs for structure
   invisibleColumns?: Array<number>;
 
@@ -864,7 +866,8 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
     const dropdownColumnHideShowMenu = this.renderShowHideMenu();
     let downloadButton = null;
     let numberOfRows = null;
-    const dataToDownload = this.props.data;
+    const dataToDownload =
+      this.props.prefferedTableDataForDownload || this.props.data;
     if (this.props.downloadURL) {
       downloadButton = (
         <Button
@@ -906,7 +909,7 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
       );
 
       const getData = () => {
-        return this.props.data;
+        return this.props.prefferedTableDataForDownload || this.props.data;
       };
 
       downloadButton = (
