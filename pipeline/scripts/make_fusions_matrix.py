@@ -6,7 +6,6 @@ import re
 from taigapy import create_taiga_client_v3
 from omics_preprocessing_utils import preprocess_omics_dataframe
 
-
 def extract_id(x):
     m = re.match(r"\S+ \(([^.]+)\.\d+\)", x)
     if m is None:

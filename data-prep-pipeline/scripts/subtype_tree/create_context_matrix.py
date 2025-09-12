@@ -11,9 +11,16 @@ def load_data(model_taiga_id, molecular_subtypes_taiga_id, subtype_tree_path):
     tc = create_taiga_client_v3()
 
     ## Load the models table
-    models = tc.get(model_taiga_id).loc[
-        :, ["ModelID", "OncotreeCode", "DepmapModelType",],
-    ]
+    models = (
+        tc.get(model_taiga_id).loc[
+            :,
+            [
+                "ModelID",
+                "OncotreeCode",
+                "DepmapModelType",
+            ],
+        ]
+    )
 
     ## Load the subtype tree
     # the subtype tree is created using a different script within the data prep pipeline
@@ -27,18 +34,15 @@ def load_data(model_taiga_id, molecular_subtypes_taiga_id, subtype_tree_path):
     ## Outer join so it includes all models (even those with an annotated type
     ## that is not part of the tree)
     ## But then drop rows where ModelID is NA - which are subtypes with no models
-    model_tree = (
-        models.loc[:, ["ModelID", "OncotreeCode", "DepmapModelType"]]
-        .merge(subtype_tree, how="outer")
-        .dropna(subset=["ModelID"])
-    )
+    model_tree = models.loc[:, ["ModelID", "OncotreeCode", "DepmapModelType"]].merge(
+        subtype_tree, how='outer'
+    ).dropna(subset=['ModelID'])
 
-    # make sure that model_tree contains all model ID's in the genetic subtypes matrix
-    # this has caused indexing errors in the past when this is not true
+    #make sure that model_tree contains all model ID's in the genetic subtypes matrix
+    #this has caused indexing errors in the past when this is not true
     assert set(genetic_subtypes.index).issubset(model_tree.ModelID)
 
     return model_tree, subtype_tree, genetic_subtypes
-
 
 def get_context_models(subtype_node, subtype_tree, genetic_subtypes, model_tree):
     """

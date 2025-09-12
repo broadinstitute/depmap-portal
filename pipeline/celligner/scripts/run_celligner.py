@@ -548,20 +548,20 @@ def process_data(inputs, extra=True):
     print(depmap_data)
     # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
     # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
-
-    depmap_data = depmap_data[depmap_data.IsDefaultEntryForMC == "Yes"]
+    
+    depmap_data = depmap_data[depmap_data.IsDefaultEntryForMC == 'Yes']
     depmap_data.index = depmap_data["ModelConditionID"]
 
-    depmap_data.drop(
-        columns=["SequencingID", "IsDefaultEntryForModel", "ModelID"], inplace=True
-    )
+    depmap_data.drop(columns=["SequencingID", "IsDefaultEntryForModel", "ModelID"], inplace=True)
 
     warnings.warn("loading anns")
     depmap_ann = tc.get(inputs["depmap_ann"]["source_dataset_id"])
     warnings.warn("loading model conds")
     depmap_model_cond = tc.get(inputs["depmap_model_cond"]["dataset_id"])
 
-    depmap_out = process_depmap_ipts(depmap_data, depmap_ann, depmap_model_cond)
+    depmap_out = process_depmap_ipts(
+        depmap_data, depmap_ann, depmap_model_cond
+    )
 
     # process tcga data into single input for celligner
     warnings.warn("loading tcga")

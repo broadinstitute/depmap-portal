@@ -9,7 +9,8 @@ screens = ["crispr", "rnai", "oncref"]
 
 
 def generate_daintree_configs(
-    model_config_path: str, input_config_path: str, test_only_first_n: Optional[int]
+    model_config_path: str, input_config_path: str, 
+    test_only_first_n : Optional[int]
 ) -> List[Dict[str, Any]]:
     """
     Generate Daintree input configs for each model and screen
@@ -104,8 +105,8 @@ def generate_daintree_configs(
             # these values were collected by running a small number of models for each configuration
             # We'd like to target each task runs ~15 minutes to minimize loss of work due to preemption
             # while also minimizing the amount of startup work it takes to start each task
-            estimated_seconds_per_model = model_config["EstimatedSecondsPerModel"]
-            models_per_task = int(math.ceil((15 * 60) / estimated_seconds_per_model))
+            estimated_seconds_per_model = model_config['EstimatedSecondsPerModel']
+            models_per_task = int(math.ceil((15 * 60 )/ estimated_seconds_per_model ))
 
             # Generate output filename
             model_and_screen = f"{model_name}{screen}"
@@ -120,14 +121,12 @@ def generate_daintree_configs(
                     "model_name": model_name,
                     "screen_name": screen,
                     "filename": {"$filename": output_filename},
-                    "models_per_task": str(models_per_task),
+                    "models_per_task": str(models_per_task)
                 }
             )
 
     if test_only_first_n is not None:
-        print(
-            f"Warning: --test-only-first-n was specified so only returning the first {test_only_first_n}"
-        )
+        print(f"Warning: --test-only-first-n was specified so only returning the first {test_only_first_n}")
         artifacts = artifacts[:test_only_first_n]
 
     # Write results
@@ -143,6 +142,4 @@ if __name__ == "__main__":
     parser.add_argument("--input_config", type=str, required=True)
     parser.add_argument("--test-only-first-n", type=int)
     args = parser.parse_args()
-    generate_daintree_configs(
-        args.model_config, args.input_config, args.test_only_first_n
-    )
+    generate_daintree_configs(args.model_config, args.input_config, args.test_only_first_n)

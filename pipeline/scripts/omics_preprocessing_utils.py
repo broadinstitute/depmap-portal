@@ -7,37 +7,29 @@ def preprocess_omics_dataframe(df, dataset_id):
     4. Set ModelID as index
     5. Drop columns with all NaN values
     """
-
+    
     # Check if this dataframe needs preprocessing (has the required columns)
     if "IsDefaultEntryForModel" not in df.columns:
-        print(
-            f"No IsDefaultEntryForModel column found in {dataset_id}, skipping preprocessing"
-        )
+        print(f"No IsDefaultEntryForModel column found in {dataset_id}, skipping preprocessing")
         return df
-
+    
     print(f"Preprocessing {dataset_id}...")
     print("Filtering to default entries per model...")
     filtered_df = df[df["IsDefaultEntryForModel"] == "Yes"].copy()
 
     dataset_name = dataset_id.split("/")[-1]
-    if dataset_name in [
-        "OmicsFusionFiltered",
-        "OmicsProfiles",
-        "OmicsSomaticMutations",
-    ]:
+    if dataset_name in ["OmicsFusionFiltered", "OmicsProfiles", "OmicsSomaticMutations"]:
         print(f"Warning: {dataset_id} has multiple entries per ModelID")
     else:
-        assert (
-            not filtered_df["ModelID"].duplicated().any()
-        ), f"Duplicate ModelID after filtering in {dataset_id}"
+        assert not filtered_df["ModelID"].duplicated().any(), f"Duplicate ModelID after filtering in {dataset_id}"
         print("Setting ModelID as index...")
         filtered_df = filtered_df.set_index("ModelID")
         filtered_df.index.name = None
-
+    
     print("Dropping some metadata columns...")
     cols_to_drop = [
         "SequencingID",
-        "ModelConditionID",
+        "ModelConditionID", 
         "IsDefaultEntryForModel",
         "IsDefaultEntryForMC",
     ]
@@ -47,12 +39,12 @@ def preprocess_omics_dataframe(df, dataset_id):
 
     count_all_na_columns = filtered_df.isna().all().sum()
     print(f"Number of columns with ALL NA values: {count_all_na_columns}")
-
+    
     if count_all_na_columns > 0:
         print(f"Data shape before dropping: {filtered_df.shape}")
         print("Dropping columns with all NaN values...")
         filtered_df = filtered_df.dropna(axis=1, how="all")
         print(f"Data shape after dropping: {filtered_df.shape}")
-
+    
     print(f"Finished preprocessing {dataset_id}")
     return filtered_df

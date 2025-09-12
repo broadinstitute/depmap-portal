@@ -24,7 +24,7 @@ Taiga IDs used by all environments should go into `xrefs_common.conseq`. Those d
 
 If you have a task which requires a large amount of memory or CPU, it's best to push it to the cloud. If it's an array job (ie: you want hundreds of jobs to run in parallel) you should have your rule run sparkles to submit the job. Always submit the job with a name that contains a hash of the inputs so that we can gracefully continue if the process is interrupted. (See the predictive pipeline for examples)
 
-If you have individual tasks which should run in the cloud, you can mark then as using the `dsub` executor and specify the memory required and the image to use. For example:
+If you have individual tasks which should run in the cloud, you can mark then as using the `dsub` executor and specify the memory required and the image to use. For example: 
 
 ```
 rule process_celligner_inputs:
@@ -38,3 +38,5 @@ rule process_celligner_inputs:
 ```
 
 Also, note always specify the image SHA so that we can track which version of the image was used.
+
+
