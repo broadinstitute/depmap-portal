@@ -11,9 +11,13 @@ import { GlossaryItem } from "src/common/components/Glossary/types";
 
 interface Props {
   data: GlossaryItem[];
+  sidePanelButtonText?: string;
 }
 
-function Glossary({ data }: Props) {
+function Glossary({
+  data,
+  sidePanelButtonText = "Terms and definitions",
+}: Props) {
   const [selected, setSelected] = useState<{ value: number }[]>([]);
   const [open, setOpen] = useState(false);
   const wasOpen = useRef(false);
@@ -53,7 +57,7 @@ function Glossary({ data }: Props) {
             className={styles.toggleButton}
             onClick={() => setOpen((prev) => !prev)}
           >
-            <span className={styles.buttonText}>Terms and definitions</span>
+            <span className={styles.buttonText}>{sidePanelButtonText}</span>
           </button>
         </div>
         <div className={styles.content}>
@@ -82,13 +86,24 @@ function Glossary({ data }: Props) {
               <dl className={styles.definitions}>
                 {data.map((item, index) => (
                   <div key={item.term} data-term-index={index}>
-                    <dt>{item.term}</dt>
+                    <dt
+                      style={{
+                        marginLeft: item.addLeftMargin ? "18px" : "0px",
+                      }}
+                    >
+                      {item.term}
+                    </dt>
                     {item.multipartDefinition?.map((part: string) => (
                       <div key={part} style={{ marginTop: "15px" }}>
                         <dd>{replaceSuperscriptTags(part)}</dd>
                       </div>
                     ))}
-                    <dd>
+                    <dd
+                      style={{
+                        marginLeft: item.addLeftMargin ? "18px" : "0px",
+                        wordWrap: "break-word",
+                      }}
+                    >
                       {replaceReferencesWithLinks(
                         item.definition,
                         item.references
