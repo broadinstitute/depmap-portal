@@ -105,7 +105,11 @@ function PlotSection({
               height: 600,
             }}
             onDownload={() => {}}
-            onMakeContext={handleClickSavePlotSelectionAsContext}
+            onMakeContext={
+              selectedPlotGenes.size > 0
+                ? handleClickSavePlotSelectionAsContext
+                : undefined
+            }
             zoomToSelectedSelections={selectedColumns}
             altContainerStyle={{ backgroundColor: "#7B8CB2" }}
             hideCSVDownload

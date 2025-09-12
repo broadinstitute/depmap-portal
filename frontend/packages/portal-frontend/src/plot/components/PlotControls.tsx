@@ -100,12 +100,13 @@ function PlotControls({
   searchPlaceholder,
   downloadImageOptions = undefined,
   enabledTools = undefined,
-  onMakeContext = () => {},
+  onMakeContext = undefined,
   onDeselectPoints = () => {},
   altContainerStyle = undefined,
   hideCSVDownload = false,
   zoomToSelectedSelections = undefined,
 }: Props) {
+  console.log("onMakeContext", onMakeContext);
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
 
   useEffect(() => {
@@ -200,7 +201,10 @@ function PlotControls({
               content="Make a context from the current selection"
               placement="top"
             >
-              <Button disabled={!plot} onClick={() => onMakeContext()}>
+              <Button
+                disabled={onMakeContext == undefined}
+                onClick={() => (onMakeContext ? onMakeContext() : {})}
+              >
                 Make Context
               </Button>
             </Tooltip>
