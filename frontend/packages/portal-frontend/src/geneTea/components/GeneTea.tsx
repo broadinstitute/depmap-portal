@@ -84,6 +84,7 @@ function GeneTea() {
         <Glossary
           data={glossary as GlossaryItem[]}
           sidePanelButtonText="Help and Information"
+          customBackgroundColor={"#D0D7E7"}
         />
       </main>
     </div>
