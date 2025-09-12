@@ -1,4 +1,3 @@
-
 import json
 from typing import Union
 from taigapy import create_taiga_client_v3, LocalFormat
@@ -9,14 +8,20 @@ from dataclasses import dataclass
 import argparse
 import tempfile
 
+
 @dataclass
 class DaintreeOutputs:
     features_metadata_csv: str
     ensemble_csv: str
-    predictions_matrix_csv : str
+    predictions_matrix_csv: str
 
 
-def upload_results(runner_config,  outputs: DaintreeOutputs, dest_permaname : str, output_config_file: str):
+def upload_results(
+    runner_config,
+    outputs: DaintreeOutputs,
+    dest_permaname: str,
+    output_config_file: str,
+):
     """
     Upload results to dataset named `dest_permaname` in Taiga and create output config file named `output_config_file`.
     """
@@ -34,33 +39,35 @@ def upload_results(runner_config,  outputs: DaintreeOutputs, dest_permaname : st
 
     predictions_matrix_name = f"Predictions{model_name}{screen_name}"
     predictions_matrix_parquet = f"{predictions_matrix_name}.hdf5"
-    print("outputs.predictions_matrix_csv",outputs.predictions_matrix_csv)
-    
+    print("outputs.predictions_matrix_csv", outputs.predictions_matrix_csv)
+
     convert_csv_to_hdf5(outputs.predictions_matrix_csv, predictions_matrix_parquet)
 
     tc = create_taiga_client_v3()
     # Update the dataset with the transformed data
-    description_of_changes = f"Updated Metadata for Model: {model_name} and Screen: {screen_name}"
+    description_of_changes = (
+        f"Updated Metadata for Model: {model_name} and Screen: {screen_name}"
+    )
     version = tc.update_dataset(
         dest_permaname,
         description_of_changes,
         additions=[
-         UploadedFile(
-            features_metadata_name,
-            local_path=features_metadata_parquqet,
-            format=LocalFormat.PARQUET_TABLE,
-        ),
-         UploadedFile(
-            ensemble_name,
-            local_path=ensemble_parquet,
-            format=LocalFormat.PARQUET_TABLE,
-        ),
-         UploadedFile(
-            predictions_matrix_name,
-            local_path=predictions_matrix_parquet,
-            format=LocalFormat.HDF5_MATRIX,
-        )
-    ],
+            UploadedFile(
+                features_metadata_name,
+                local_path=features_metadata_parquqet,
+                format=LocalFormat.PARQUET_TABLE,
+            ),
+            UploadedFile(
+                ensemble_name,
+                local_path=ensemble_parquet,
+                format=LocalFormat.PARQUET_TABLE,
+            ),
+            UploadedFile(
+                predictions_matrix_name,
+                local_path=predictions_matrix_parquet,
+                format=LocalFormat.HDF5_MATRIX,
+            ),
+        ],
     )
 
     print(
@@ -111,7 +118,9 @@ def create_output_config(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Updates files to Taiga and writes out an output_config_file for the portal's loader")
+    parser = argparse.ArgumentParser(
+        description="Updates files to Taiga and writes out an output_config_file for the portal's loader"
+    )
     parser.add_argument("--runner_config_file")
     parser.add_argument("--features_metadata_csv")
     parser.add_argument("--ensemble_csv")
@@ -124,7 +133,17 @@ def main():
     with open(args.runner_config_file, "rt") as fd:
         runner_config = json.load(fd)
 
-    upload_results(runner_config,  DaintreeOutputs(features_metadata_csv=args.features_metadata_csv, ensemble_csv=args.ensemble_csv, predictions_matrix_csv=args.predictions_matrix_csv), args.dest_permaname, args.output_config_file)
+    upload_results(
+        runner_config,
+        DaintreeOutputs(
+            features_metadata_csv=args.features_metadata_csv,
+            ensemble_csv=args.ensemble_csv,
+            predictions_matrix_csv=args.predictions_matrix_csv,
+        ),
+        args.dest_permaname,
+        args.output_config_file,
+    )
+
 
 if __name__ == "__main__":
     main()
