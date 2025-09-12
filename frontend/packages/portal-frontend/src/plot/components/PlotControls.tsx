@@ -106,7 +106,6 @@ function PlotControls({
   hideCSVDownload = false,
   zoomToSelectedSelections = undefined,
 }: Props) {
-  console.log("onMakeContext", onMakeContext);
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
 
   useEffect(() => {
@@ -202,6 +201,7 @@ function PlotControls({
               placement="top"
             >
               <Button
+                type="button"
                 disabled={onMakeContext == undefined}
                 onClick={() => (onMakeContext ? onMakeContext() : {})}
               >
