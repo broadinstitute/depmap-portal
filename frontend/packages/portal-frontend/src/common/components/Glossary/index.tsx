@@ -12,11 +12,13 @@ import { GlossaryItem } from "src/common/components/Glossary/types";
 interface Props {
   data: GlossaryItem[];
   sidePanelButtonText?: string;
+  customBackgroundColor?: string;
 }
 
 function Glossary({
   data,
   sidePanelButtonText = "Terms and definitions",
+  customBackgroundColor = "#d3d3d3",
 }: Props) {
   const [selected, setSelected] = useState<{ value: number }[]>([]);
   const [open, setOpen] = useState(false);
@@ -57,13 +59,24 @@ function Glossary({
             className={styles.toggleButton}
             onClick={() => setOpen((prev) => !prev)}
           >
-            <span className={styles.buttonText}>{sidePanelButtonText}</span>
+            <span
+              className={styles.buttonText}
+              style={{ backgroundColor: customBackgroundColor }}
+            >
+              {sidePanelButtonText}
+            </span>
           </button>
         </div>
-        <div className={styles.content}>
+        <div
+          className={styles.content}
+          style={{ backgroundColor: customBackgroundColor }}
+        >
           <CSSTransition in={open} timeout={500} unmountOnExit>
             <>
-              <div className={styles.search}>
+              <div
+                className={styles.search}
+                style={{ backgroundColor: customBackgroundColor }}
+              >
                 <Typeahead
                   id="glossary-search"
                   options={searchOptions}
