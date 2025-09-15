@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "data-prep-pipeline"
+version = "0.1.1"
+description = "Scripts for running the data prep pipeline"
+authors = ["Nayeem Aquib <naquib@broadinsitute.org>"]
+packages = [{include = "data_prep_pipeline"}]
+package-mode = false
+
+
+[tool.poetry.dependencies]
+python = "^3.9"
+pandas = "1.5.3"
+click = "^8.1.7"
+numpy = "^1.25.1"
+taigapy = {version = "4.0.0", source = "gcp-artifact-registry"}
+ipykernel = "^6.29.5"
+
+
+[[tool.poetry.source]]
+name = "gcp-artifact-registry"
+url = "https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple"
+priority = "explicit"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+transform_portal_compounds = 'data_prep_pipeline.portal_compounds.transform_portal_compounds:main'
+get_release_model_and_model_condition = 'data_prep_pipeline.get_release_model_and_model_condition_files.get_release_model_and_model_condition:main'
+data_prep = "data_prep_pipeline.data_prep:main"
