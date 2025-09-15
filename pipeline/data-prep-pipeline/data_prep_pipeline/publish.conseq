@@ -28,24 +28,24 @@ rule publish_filtered_portal_compounds:
     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Filtered portal compounds data for release from data-prep-pipeline' 'PortalCompounds' {{inputs.filtered_portal_compounds.filename}} 'csv_table'"
 
 
-rule publish_subtype_tree:
-    inputs:
-        subtype_tree={"type": "subtype_tree"},
-        release_taiga_id={"type": "release_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py')
-    outputs:{"type": "release_subtype_tree_published"}
+# rule publish_subtype_tree:
+#     inputs:
+#         subtype_tree={"type": "subtype_tree"},
+#         release_taiga_id={"type": "release_taiga_id"},
+#         update_taiga_script=fileref('upload_to_taiga.py')
+#     outputs:{"type": "release_subtype_tree_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeTree for release from data-prep-pipeline'  'SubtypeTree' {{inputs.subtype_tree.filename}} 'csv_table'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeTree for release from data-prep-pipeline'  'SubtypeTree' {{inputs.subtype_tree.filename}} 'csv_table'"
 
 
-rule publish_context_matrix:
-    inputs:
-        context_matrix={"type": "context_matrix"},
-        release_taiga_id={"type": "release_taiga_id"},
-        update_taiga_script=fileref('upload_to_taiga.py')
-    outputs:{"type": "release_context_matrix_published"}
+# rule publish_context_matrix:
+#     inputs:
+#         context_matrix={"type": "context_matrix"},
+#         release_taiga_id={"type": "release_taiga_id"},
+#         update_taiga_script=fileref('upload_to_taiga.py')
+#     outputs:{"type": "release_context_matrix_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeMatrix for release from data-prep-pipeline'  'SubtypeMatrix' {{inputs.context_matrix.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Created SubtypeMatrix for release from data-prep-pipeline'  'SubtypeMatrix' {{inputs.context_matrix.filename}} 'csv_matrix'"
 
 
 # rule publish_driver_events:
