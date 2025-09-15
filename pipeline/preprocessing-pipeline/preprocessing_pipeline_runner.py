@@ -156,8 +156,45 @@ class PreprocessingPipelineRunner(PipelineRunner):
         print("command", command)
         return subprocess.run(docker_cmd)
 
+    def track_dataset_usage_from_conseq(self, config):
+        """Track dataset usage from conseq files for preprocessing pipeline."""
+        # Get the release taiga ID from config
+        release_taiga_id = config.get(
+            "release_taiga_id", f'preprocessing-pipeline-{config["env_name"]}'
+        )
+
+        # Look for DO-NOT-EDIT-ME files that contain dataset IDs
+        pipeline_dir = Path("pipeline/preprocessing-pipeline")
+        version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
+
+        for version_file in version_files:
+            try:
+                with open(version_file, "r") as f:
+                    content = f.read()
+                    # Extract dataset IDs from version file
+                    import re
+
+                    # "dataset_id": "some-taiga-id.version/name"
+                    dataset_pattern = r'"dataset_id":\s*"([^"]+)"'
+                    dataset_ids = re.findall(dataset_pattern, content)
+
+                    # Log each unique dataset usage
+                    for dataset_id in set(dataset_ids):
+                        if "/" in dataset_id and "." in dataset_id:
+                            if len(dataset_id.split("/")[0]) > 5:  # Basic validation
+                                self.log_dataset_usage(dataset_id, release_taiga_id)
+                                print(f"Tracked dataset usage: {dataset_id}")
+
+            except Exception as e:
+                print(
+                    f"Warning: Could not track dataset usage from {version_file}: {e}"
+                )
+
     def handle_special_features(self, config):
         """Handle START_WITH functionality for preprocessing pipeline."""
+        # Track dataset usage at the beginning
+        self.track_dataset_usage_from_conseq(config)
+
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
             # Clean out old invocation

@@ -102,7 +102,45 @@ class AnalysisPipelineRunner(PipelineRunner):
         print("command", command)
         return subprocess.run(docker_cmd)
 
+    def track_dataset_usage_from_templates(self, config):
+        """Track dataset usage from template files for analysis pipeline."""
+        # Get the release taiga ID from config
+        release_taiga_id = config.get(
+            "release_taiga_id", f'analysis-pipeline-{config["env_name"]}'
+        )
+
+        # Look for DO-NOT-EDIT-ME files that contain dataset IDs
+        pipeline_dir = Path("pipeline/analysis-pipeline")
+        version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
+
+        for version_file in version_files:
+            try:
+                with open(version_file, "r") as f:
+                    content = f.read()
+                    # Extract dataset IDs from version file
+                    import re
+
+                    # "dataset_id": "some-taiga-id.version/name"
+                    dataset_pattern = r'"dataset_id":\s*"([^"]+)"'
+                    dataset_ids = re.findall(dataset_pattern, content)
+
+                    # Log each unique dataset usage
+                    for dataset_id in set(dataset_ids):
+                        if "/" in dataset_id and "." in dataset_id:
+                            # Basic validation - should look like taiga ID
+                            if len(dataset_id.split("/")[0]) > 5:
+                                self.log_dataset_usage(dataset_id, release_taiga_id)
+                                print(f"Tracked dataset usage: {dataset_id}")
+
+            except Exception as e:
+                print(
+                    f"Warning: Could not track dataset usage from {version_file}: {e}"
+                )
+
     def handle_special_features(self, config):
         """Handle any special features for analysis pipeline."""
-        # Analysis pipeline doesn't have special features like START_WITH
+        # Track dataset usage from template files
+        self.track_dataset_usage_from_templates(config)
+
+        # Analysis pipeline doesn't have other special features like START_WITH
         pass

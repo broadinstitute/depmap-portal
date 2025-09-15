@@ -102,8 +102,44 @@ class DataPrepPipelineRunner(PipelineRunner):
         print("command", command)
         return subprocess.run(docker_cmd)
 
+    def track_dataset_usage(self, config):
+        """Track dataset usage from template files and log to usage tracker."""
+        # Get the release taiga ID from config if available
+        release_taiga_id = config.get(
+            "release_taiga_id", f'data-prep-pipeline-{config["env_name"]}'
+        )
+
+        # Look for DO-NOT-EDIT-ME files that contain dataset IDs
+        pipeline_dir = Path("pipeline/data-prep-pipeline")
+        version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
+
+        for version_file in version_files:
+            try:
+                with open(version_file, "r") as f:
+                    content = f.read()
+                    # Extract dataset IDs from version file
+                    import re
+
+                    # Find patterns like "dataset_id": "some-taiga-id.version/name"
+                    dataset_pattern = r'"dataset_id":\s*"([^"]+)"'
+                    dataset_ids = re.findall(dataset_pattern, content)
+
+                    # Log each dataset usage
+                    for dataset_id in dataset_ids:
+                        if "/" in dataset_id and "." in dataset_id:
+                            self.log_dataset_usage(dataset_id, release_taiga_id)
+                            print(f"Tracked dataset usage: {dataset_id}")
+
+            except Exception as e:
+                print(
+                    f"Warning: Could not track dataset usage from {version_file}: {e}"
+                )
+
     def handle_special_features(self, config):
         """Handle START_WITH functionality for data prep pipeline."""
+        # Track dataset usage at the beginning
+        self.track_dataset_usage(config)
+
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
             # Clean out old invocation
