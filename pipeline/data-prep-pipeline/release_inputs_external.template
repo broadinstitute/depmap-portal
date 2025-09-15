@@ -1,21 +1,21 @@
-# SET_TAIGA_PREPROCESSOR release_taiga_id "public-25q3-b56c"
+# TAIGA_PREPROCESSOR_INCLUDE "../../../depmap-deploy/current-dataset-ids/external.conseq"
 
 # Destination Taiga ID
 add-if-missing {
  "type": "release_taiga_id",
- "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id)
+ "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
 }
 
 # CN gene expression data
 add-if-missing {
   "type": "cngene",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsCNGeneWGS") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsCNGeneWGS") 
 }
 
 # Model
 add-if-missing {
   "type": "model",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "Model") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "Model") 
 }
 
 # Portal Compounds
@@ -43,7 +43,7 @@ add-if-missing {
 # Driver Events
 add-if-missing {
   "type": "mutations",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsSomaticMutations") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutations") 
 }
 
 add-if-missing {
@@ -54,18 +54,18 @@ add-if-missing {
 # Fusion
 add-if-missing {
   "type": "fusion",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsFusionFiltered") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsFusionFiltered") 
 }
 
 # CRISPR Confounders
 add-if-missing {
   "type": "achilles_screen_qc_report",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "AchillesScreenQCReport") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesScreenQCReport") 
 }
 
 add-if-missing {
   "type": "crispr_screen_map",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRScreenMap") 
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRScreenMap") 
 }
 
 # Legacy Data
@@ -107,7 +107,7 @@ add-if-missing {
 
 add-if-missing {
     "type": "omics_inferred_molecular_subtype",
-    "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "OmicsInferredMolecularSubtypes")
+    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsInferredMolecularSubtypes")
 }
 
 # Dummy artifact for filter portal compounds. Read the details in filter_portal_compounds.conseq. 
@@ -117,19 +117,19 @@ add-if-missing {
 
 add-if-missing {
   "type": "raw-dep-matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRGeneEffect"),
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect"),
   "label": "Chronos_Combined",
   "confounders_label": "crispr-confounders",
 }
 
 add-if-missing {
   "type": "raw-dep-prob-matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRGeneDependency"),
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneDependency"),
   "label": "Chronos_Combined",
 }
 
 add-if-missing {
   "type": "crispr-inferred-common-essentials",
-  "dataset_id": PREPROCESS_TAIGA_ID(release_taiga_id, "CRISPRInferredCommonEssentials"),
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRInferredCommonEssentials"),
   "label": "Chronos_Combined"
 }
