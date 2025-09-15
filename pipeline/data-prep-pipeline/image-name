@@ -1,1 +1,1 @@
-DOCKER_IMAGE=us.gcr.io/broad-achilles/data-prep-pipeline-run:v1
+DOCKER_IMAGE=us.gcr.io/broad-achilles/depmap-pipeline-run:ga2-build-21
