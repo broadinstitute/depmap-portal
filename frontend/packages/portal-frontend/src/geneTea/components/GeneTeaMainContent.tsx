@@ -81,7 +81,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   );
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-  console.log("selectedTableRows", selectedTableRows);
+
   // Get the table data and prefferedTableDataForDownload. Combined in this useMemo so we don't
   // have to iterate through allEnrichedTerms twice. The only difference is that the tableData is
   // rounded, while the prefferedTableDataForDownload is NOT rounded.
@@ -133,6 +133,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
       </div>
     );
   }
+
   // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>

@@ -315,12 +315,14 @@ function useData(
           const valuesForY = groupedData[y];
 
           // Sort the x-values for the current y-group from smallest to largest
-          valuesForY.sort((a: any, b: any) => a - b);
+          const sortedValuesForY = [...valuesForY].sort(
+            (a: any, b: any) => a - b
+          );
 
           let previousX = 0;
 
           // 3. Iterate to calculate new values
-          for (const x of valuesForY) {
+          for (const x of sortedValuesForY) {
             // Instead of graphing literal x values, we want the stacked sections to be the difference between its own -log10(FDR)
             // value and the value that was graphed before it such that the total size of the bar is equal to the highest magnitude
             // -log10(FDR) of this particular Term Group.
@@ -333,10 +335,7 @@ function useData(
         return newXValues;
       };
 
-      const sortedXSource =
-        data.groupby === "Term Group"
-          ? sortedCombinedXY.map((val) => val.xVal)
-          : xSource;
+      const sortedXSource = sortedCombinedXY.map((val) => val.xVal);
 
       const customdata = sortedYSource.map((termOrTermGroup, i) => {
         const term =
