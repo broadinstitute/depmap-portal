@@ -1,0 +1,64 @@
+.Tab {
+  color: #333333 !important;
+  font-weight: normal !important;
+  font-size: 16px !important;
+}
+
+.Tab[aria-selected="true"] {
+  font-weight: bold !important;
+  color: #405587 !important;
+  margin-bottom: 1px;
+  background-size: 100% 3px !important;
+  background-image: linear-gradient(#405587, #405587) !important;
+}
+
+.Tab:focus {
+  outline: none;
+}
+
+.pseudoLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  text-decoration: underline;
+  cursor: pointer;
+  padding-left: 3px;
+  padding-right: 3px;
+
+  &:hover,
+  &:focus {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
+
+.Tab:focus-visible {
+  box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.6);
+}
+
+.Tab:disabled {
+  color: #808080;
+  cursor: not-allowed;
+}
+
+.TabList {
+  display: flex;
+  border-bottom: 1px solid #000000;
+
+  .vertical & {
+    flex-direction: column;
+    max-width: 200px;
+    min-width: 200px;
+  }
+}
+
+.geneTeaTabsWrapper .TabPanels {
+  display: block;
+  width: 100%;
+  padding-left: 25px;
+  padding-right: 30px;
+}

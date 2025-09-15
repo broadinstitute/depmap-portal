@@ -270,8 +270,6 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                 hess_driver=r["HessDriver"],
                 hess_signature=r["HessSignature"],
                 revel_score=_to_none(r["RevelScore"]),
-                dida_id=r["DidaID"],
-                dida_name=r["DidaName"],
                 gwas_disease=r["GwasDisease"],
                 gwas_pmid=_to_none(r["GwasPmID"]),
                 oncogenic=r["Oncogenic"],
@@ -281,9 +279,7 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                     r["TumorSuppressorHighImpact"]
                 ),
                 vep_biotype=r["VepBiotype"],
-                lof_gene_name=r["LofGeneName"],
                 gnomade_af=_to_none(r["GnomadeAF"]),
-                lof_gene_id=r["LofGeneId"],
                 vep_swissprot=r["VepSwissprot"],
                 dbsnp_rs_id=r["DbsnpRsID"],
                 polyphen=r["Polyphen"],
@@ -294,9 +290,6 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                 vep_clin_sig=r["VepClinSig"],
                 dp=_to_none(r["DP"]),
                 ensembl_feature_id=r["EnsemblFeatureID"],
-                lof_percent_of_transcripts_affected=_to_none(
-                    r["LofPercentOfTranscriptsAffected"]
-                ),
                 transcript_likely_lof=r["TranscriptLikelyLof"],
                 gtex_gene=r["GtexGene"],
                 brca1_func_score=_to_none(r["Brca1FuncScore"]),
@@ -311,9 +304,6 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                 provean_prediction=r["ProveanPrediction"],
                 nmd=r["NMD"],
                 vep_somatic=r["VepSomatic"],
-                lof_number_of_transcripts_in_gene=_to_none(
-                    r["LofNumberOfTranscriptsInGene"]
-                ),
                 vep_impact=r["VepImpact"],
                 oncogene_high_impact=_to_sql_bool(r["OncogeneHighImpact"]),
                 # New columns 24Q2
@@ -620,16 +610,12 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
                 fusion_name=str(r["CanonicalFusionName"]),
                 gene_1_id=gene_1.entity_id,
                 gene_2_id=gene_2.entity_id,
-                profile_id=str(r["ProfileID"]),
                 total_reads_supporting_fusion=int(r["TotalReadsSupportingFusion"]),
                 total_fusion_coverage=int(r["TotalFusionCoverage"]),
                 ffpm=float(r["FFPM"]),
                 split_reads_1=int(r["SplitReads1"]),
                 split_reads_2=int(r["SplitReads2"]),
                 discordant_mates=int(r["DiscordantMates"]),
-                strand1=str(r["Strand1"]),
-                strand2=str(r["Strand2"]),
-                reading_frame=str(r["ReadingFrame"]),
             )
             yield record
             inserted += 1

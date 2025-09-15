@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { DataExplorerContextVariable } from "@depmap/types";
 import { fetchMetadataAndOtherTabularDatasets } from "../../../utils/api-helpers";
 import type { ExprReducerAction } from "./expressionReducer";
@@ -7,74 +7,100 @@ function useInitializer(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   mainExpr: any,
   dimension_type: string,
+  vars: Record<string, Partial<DataExplorerContextVariable>>,
   setVar: (key: string, value: Partial<DataExplorerContextVariable>) => void,
   dispatch: React.Dispatch<ExprReducerAction>
 ) {
-  // given_id is a special "virtual variable" that will match on IDs of the
-  // given dimension type. That behavior is nice in the Context Evaluator, but
-  // it's not very useful here in the builder. Users need to be able to select
-  // IDs and so we need to know what metadata dataset to fetch those from.
-  // Therefore, when we see a variable with this special name, we convert it to
-  // a proper variable.
-  // NOTE: We're assuming that there will only be one such variable and that
-  // it's at this exact path. While that's currently the only way given_id is
-  // used in the Data Explorer UI code, it's a big assumption to make and could
-  // easily break. A more robust implementation would walk the entire
-  // expression looking for these variables.
-  const shouldConvertGivenIdToMetadataColumn = useRef(
-    mainExpr?.and?.[0]?.in?.[0]?.var === "given_id"
-  );
-
-  const [isInitializing, setIsInitializing] = useState(
-    shouldConvertGivenIdToMetadataColumn.current
-  );
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    if (!shouldConvertGivenIdToMetadataColumn.current) {
-      return;
-    }
-
-    shouldConvertGivenIdToMetadataColumn.current = false;
-
     (async () => {
-      const {
-        metadataDataset,
-        metadataIdColumn,
-      } = await fetchMetadataAndOtherTabularDatasets(dimension_type);
+      const seen = new Set<string>();
+      const varsToCopy: string[][] = [];
+      const varsToCreate: string[] = [];
 
-      if (!metadataDataset) {
-        throw new Error(
-          `Dimension type "${dimension_type}" has no metadata dataset!`
-        );
-      }
+      const nextExpr = JSON.parse(JSON.stringify(mainExpr), (key, value) => {
+        if (key !== "var") {
+          return value;
+        }
 
-      if (!metadataIdColumn) {
-        throw new Error(
-          `Dimension type "${dimension_type}" has no \`id_column\` set!`
-        );
-      }
+        const oldName = value;
+        const newName = crypto.randomUUID();
 
-      const nextVarName = crypto.randomUUID();
-      const ids = mainExpr.and[0].in[1];
+        // If the expression uses the magic variable "given_id",
+        // turn it into a proper variable that can be edited.
+        if (oldName === "given_id") {
+          varsToCreate.push(newName);
+          return newName;
+        }
 
-      dispatch({
-        type: "update-value",
-        payload: {
-          path: ["and", 0],
-          value: { in: [{ var: nextVarName }, ids] },
-        },
+        // Duplicate any variables that appear more than once.
+        // We need to do this so each rule can be edited independently.
+        if (seen.has(oldName)) {
+          varsToCopy.push([oldName, newName]);
+          return newName;
+        }
+
+        seen.add(oldName);
+        return oldName;
       });
 
-      setVar(nextVarName, {
-        source: "metadata_column",
-        dataset_id: metadataDataset.given_id || metadataDataset.id,
-        identifier: metadataIdColumn,
-        identifier_type: "column",
-      });
+      for (const [oldName, newName] of varsToCopy) {
+        setVar(newName, vars[oldName]);
+      }
+
+      if (varsToCreate.length > 0) {
+        const {
+          metadataDataset,
+          metadataIdColumn,
+        } = await fetchMetadataAndOtherTabularDatasets(dimension_type);
+
+        if (!metadataDataset) {
+          throw new Error(
+            `Dimension type "${dimension_type}" has no metadata dataset!`
+          );
+        }
+
+        if (!metadataIdColumn) {
+          throw new Error(
+            `Dimension type "${dimension_type}" has no \`id_column\` set!`
+          );
+        }
+
+        for (const newName of varsToCreate) {
+          setVar(newName, {
+            source: "metadata_column",
+            dataset_id: metadataDataset.given_id || metadataDataset.id,
+            identifier: metadataIdColumn,
+            identifier_type: "column",
+          });
+        }
+      }
+
+      // If a variable lacks a `source` we'll try to infer it.
+      for (const [name, variable] of Object.entries(vars)) {
+        if (
+          !variable.source &&
+          variable.identifier_type === "column" &&
+          variable.dataset_id?.endsWith("_metadata")
+        ) {
+          setVar(name, { ...variable, source: "metadata_column" });
+        }
+      }
+
+      if (varsToCopy.length || varsToCreate.length) {
+        dispatch({
+          type: "update-value",
+          payload: { path: [], value: nextExpr },
+        });
+      }
 
       setIsInitializing(false);
     })();
-  }, [dimension_type, mainExpr, setVar, dispatch]);
+
+    // We only want the initializer code to run once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return isInitializing;
 }

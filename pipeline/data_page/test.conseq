@@ -5,7 +5,7 @@ add-if-missing {
 
 add-if-missing {
     "type": "depmap_oncref_taiga_id",
-    "dataset_id": "prism-oncology-reference-set-23q4-1a7c.11"
+    "dataset_id": "internal-25q3-b129.132"
 }
 
 add-if-missing {
@@ -80,10 +80,14 @@ add-if-missing {
 }
 
 add-if-missing {
-    "type": "depmap_long_reads_gcloud_loc",
-    "bucket_name": "depmap-dmc-downloads",
-    "prefix": "25q1-long-read-data",
-    "file_names": "df_gene_counts_achXgene.csv, df_gene_tpm_achXgene.csv, df_isoform_counts_achXtranscript.csv, df_isoform_tpm_achXtranscript.csv"
+  "type": "raw-dep-matrix",
+  "dataset_id": "demeter2-achilles-5386.13/gene_means_proc",
+  "label": "RNAi_Ach",
+}
+
+add-if-missing {
+  "type": "crispr-screen-sequence-map",
+  "dataset_id": "25q3-no-biogrid-internal-1dc1.1/ScreenSequenceMap",
 }
 
 include "data_page/get_all_data_availability.conseq"

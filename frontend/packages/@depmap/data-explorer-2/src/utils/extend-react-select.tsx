@@ -351,6 +351,7 @@ export default function extendReactSelect(
                   <span className={styles.placeholder}>{placeholder}</span>
                 )
               }
+              menuPosition="fixed"
               menuPortalTarget={menuPortalTarget}
               className={cx(styles.Select, props.className, {
                 [styles.selectError]: hasError,

@@ -11,17 +11,27 @@ type ModalPropsWithOptionalOnHide = Omit<ModalProps, "onHide"> & {
 interface InfoModalOptions {
   title: string;
   content: React.ReactNode;
+  closeButtonText?: string;
   modalProps?: ModalPropsWithOptionalOnHide;
 }
 
-export default function showInfoModal(options: InfoModalOptions) {
+export default function showInfoModal(
+  options: InfoModalOptions
+): Promise<void> {
   const container = document.createElement("div");
   container.id = "confirmation-modal-container";
   document.body.append(container);
 
+  let resolveFn: () => void;
+
+  const promise = new Promise<void>((resolve) => {
+    resolveFn = resolve;
+  });
+
   const unmount = () => {
     ReactDOM.unmountComponentAtNode(container);
     container.remove();
+    resolveFn();
   };
 
   ReactDOM.render(
@@ -41,10 +51,12 @@ export default function showInfoModal(options: InfoModalOptions) {
         <section>{options.content}</section>
       </Modal.Body>
       <Modal.Footer>
-        <Button onClick={unmount}>Close</Button>
+        <Button onClick={unmount}>{options.closeButtonText || "Close"}</Button>
       </Modal.Footer>
     </Modal>,
 
     container
   );
+
+  return promise;
 }

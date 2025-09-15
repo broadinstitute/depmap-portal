@@ -7,7 +7,7 @@ import datetime
 import logging
 import pandas as pd
 
-from taigapy import TaigaClient
+from taigapy import create_taiga_client_v3
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("oncokb_maf_annotator")
@@ -23,7 +23,7 @@ ONCOKB_VERSION_FILENAME = "oncokb_dataset_version.csv"
 REQUEST_TIMEOUT = 120
 
 # TODO: At some point we want to switch over to new Taiga Client V3
-tc = TaigaClient()
+tc = create_taiga_client_v3()
 
 
 def validate_oncokb_token(oncokb_api_bearer_token):

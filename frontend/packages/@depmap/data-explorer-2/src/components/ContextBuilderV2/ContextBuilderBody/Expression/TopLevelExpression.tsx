@@ -11,6 +11,7 @@ import { useContextBuilderState } from "../../state/ContextBuilderState";
 import type { ExpressionComponentType } from "./index";
 import BooleanExpression from "./BooleanExpression";
 import NumberOfMatches from "./NumberOfMatches";
+import useMatches from "../../hooks/useMatches";
 import styles from "../../../../styles/ContextBuilderV2.scss";
 
 interface Props {
@@ -19,11 +20,6 @@ interface Props {
 }
 
 function TopLevelExpression({ expr, Expression }: Props) {
-  const { dispatch, setShowTableView } = useContextBuilderState();
-
-  const op = getOperator(expr);
-  const numConditions = get_values(expr).length;
-
   useEffect(
     () => restoreScrollPosition(expr),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -31,6 +27,25 @@ function TopLevelExpression({ expr, Expression }: Props) {
       /* only do this on mount */
     ]
   );
+
+  const {
+    dispatch,
+    setShowTableView,
+    setIsReadyToSave,
+  } = useContextBuilderState();
+
+  const { isLoading, numMatches } = useMatches(expr);
+
+  useEffect(() => {
+    if (isLoading) {
+      setIsReadyToSave(false);
+    } else {
+      setIsReadyToSave(numMatches !== null && numMatches > 0);
+    }
+  }, [isLoading, numMatches, setIsReadyToSave]);
+
+  const op = getOperator(expr);
+  const numConditions = get_values(expr).length;
 
   return (
     <div className={styles.TopLevelExpression}>

@@ -3,7 +3,7 @@ import {
   Group,
   GroupEntry,
   AccessType,
-  instanceOfErrorDetail,
+  ErrorTypeError,
   GroupArgs,
   GroupEntryArgs,
   GroupTableData,
@@ -112,8 +112,10 @@ export default function GroupsPage(props: GroupsPageProps) {
       setAddGroupError(null);
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setAddGroupError(e.detail);
+      if (e instanceof ErrorTypeError) {
+        setAddGroupError(e.message);
+      } else {
+        setAddGroupError("An unknown error occurred!");
       }
     }
   };
@@ -126,8 +128,10 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
-        setAddGroupError(e.detail);
+      if (e instanceof ErrorTypeError) {
+        setAddGroupError(e.message);
+      } else {
+        setAddGroupError("An unknown error occurred!");
       }
     }
   };
@@ -168,10 +172,15 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          addGroupEntryError: e.detail,
+          addGroupEntryError: e.message,
+        });
+      } else {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          addGroupEntryError: "An unknown error occurred!",
         });
       }
     }
@@ -237,10 +246,15 @@ export default function GroupsPage(props: GroupsPageProps) {
       });
     } catch (e) {
       console.error(e);
-      if (instanceOfErrorDetail(e)) {
+      if (e instanceof ErrorTypeError) {
         setGroupEntryErrors({
           ...groupEntryErrors,
-          updateGroupEntryError: e.detail,
+          updateGroupEntryError: e.message,
+        });
+      } else {
+        setGroupEntryErrors({
+          ...groupEntryErrors,
+          updateGroupEntryError: "An unknown error occurred!",
         });
       }
     }

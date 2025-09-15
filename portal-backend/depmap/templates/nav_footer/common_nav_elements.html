@@ -40,10 +40,13 @@
               <li><a href="{{ url_for('tda.view_tda_summary') }}">Target Discovery</a></li>
             {% endif %}
             {% if config.ENABLED_FEATURES.context_explorer %}
-            <li><a href="{{ url_for('context_explorer.view_context_explorer') }}">Context Explorer <i class="alpha-tag"><b>Alpha</b></i></a></li>
+            <li><a href="{{ url_for('context_explorer.view_context_explorer') }}">Context Explorer</a></li>
           {% endif %}
             {% if config.ENABLED_FEATURES.compound_dashboard_app %}
               <li><a href="{{ url_for('compound_dashboard.view_compound_dashboard') }}">Compound Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
+            {% endif %}
+            {% if false %}
+              <li><a href="{{ url_for('gene_tea.view_gene_tea') }}">Tea Party <i class="alpha-tag"><b>Alpha</b></i></a></li>
             {% endif %}
             {% if config.ENABLED_FEATURES.anchor_screen_dashboard %}
               <li><a href="{{ url_for('anchor_screen_dashboard.view_anchor_screen_dashboard') }}">Anchor Screen Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>

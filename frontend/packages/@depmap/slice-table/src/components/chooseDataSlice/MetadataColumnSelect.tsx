@@ -88,7 +88,7 @@ function MetadataColumnSelect({ value, index_type_name, onChange }: Props) {
             metadata: {
               col_type: string;
               units: string | null;
-              references: string | string[] | null;
+              references: string | null;
             };
           };
 
@@ -108,10 +108,8 @@ function MetadataColumnSelect({ value, index_type_name, onChange }: Props) {
 
           if (metadata.references) {
             nextWarnings.push(
-              [
-                "TODO: Allow mapping this column to referenced type(s): ",
-                JSON.stringify(metadata.references),
-              ].join("")
+              "TODO: Allow mapping this column to referenced type: " +
+                metadata.references
             );
           }
 

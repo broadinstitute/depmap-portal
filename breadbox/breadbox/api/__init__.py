@@ -14,7 +14,7 @@ from .compute import router as compute_router
 from .user import router as user_router
 from .metadata import router as metadata_router
 from .temp import router as temp_router
-from breadbox.health_check.health_check import router as health_check_router
+from .health_check import router as health_check_router
 from breadbox.schemas.custom_http_exception import ERROR_RESPONSES
 
 api_router = APIRouter(responses=ERROR_RESPONSES)  # type: ignore

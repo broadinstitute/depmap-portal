@@ -6,6 +6,7 @@ import PlotlyLoader, {
 } from "../../../plot/components/PlotlyLoader";
 import { BoxPlotInfo } from "src/contextExplorer/models/types";
 import { PlotlyHTMLElement } from "plotly.js";
+import styles from "./styles.scss";
 
 export interface BoxPlotProps {
   boxData: BoxPlotInfo[];
@@ -185,7 +186,7 @@ function BoxPlot({
     onLoad,
   ]);
 
-  return <div ref={ref} />;
+  return <div className={styles.BoxPlot} ref={ref} />;
 }
 
 export default function LazyBoxPlot({
@@ -251,7 +252,11 @@ export default function LazyBoxPlot({
                             {code}
                           </span>
                         ) : (
-                          <a href={getNewContextUrl(code, urlPrefix, tab)}>
+                          <a
+                            href={getNewContextUrl(code, urlPrefix, tab)}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
                             {code}
                           </a>
                         )}

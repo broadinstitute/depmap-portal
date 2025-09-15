@@ -16,10 +16,8 @@ from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
 from depmap.settings.download_settings import get_download_list
-from depmap.data_explorer_2.datatypes import (
-    blocked_dimension_types,
-    entity_aliases,
-)
+from depmap.data_explorer_2.datatypes import blocked_dimension_types
+
 
 log = getLogger(__name__)
 
@@ -394,26 +392,17 @@ def get_file_and_release_from_dataset(dataset: MatrixDataset):
     return None, None
 
 
-def get_aliases_matching_labels(dimension_type, labels):
-    aliases = []
+def get_index_display_labels(dimension_type, labels):
+    if dimension_type != "depmap_model":
+        return labels
 
-    if dimension_type in entity_aliases:
-        for alias in entity_aliases[dimension_type]:
-            values = []
-            values_by_label = slice_to_dict(alias["slice_id"])
+    index_display_labels = []
+    values_by_label = slice_to_dict("slice/cell_line_display_name/all/label")
 
-            for label in labels:
-                values.append(values_by_label.get(label, None))
+    for label in labels:
+        index_display_labels.append(values_by_label.get(label, None))
 
-            aliases.append(
-                {
-                    "label": alias["label"],
-                    "slice_id": alias["slice_id"],
-                    "values": values,
-                }
-            )
-
-    return aliases
+    return index_display_labels
 
 
 def pluralize(dimension_type: str):

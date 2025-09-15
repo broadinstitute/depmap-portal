@@ -17,7 +17,7 @@ const DataStructureSection = ({
   const dataStructureImage = (
     <img
       style={{ maxWidth: "675px", width: "100%" }}
-      src={toStaticUrl("img/data_page/data_structure_final.png")}
+      src={toStaticUrl("img/data_page/data_structure_v2.png")}
       alt="Diagram of DepMap data structure"
     />
   );
@@ -99,19 +99,22 @@ const DataStructureSection = ({
               receives a Screen ID. Each sequencing datatype (e.g. wgs, rna,
               wes, etc.) receives an{" "}
               <span className={styles.profileColor}>Omics Profile</span> ID.
-              Non-release Omics datasets (OLINK, ATAC-Seq) also receive an{" "}
+              Each <span className={styles.profileColor}>Omics Profile</span> ID
+              has one or more Sequencing IDs. Non-release Omics datasets (OLINK,
+              ATAC-Seq) also receive an{" "}
               <span className={styles.profileColor}>Omics Profile</span> ID, but
               are not considered part of the bi-annual DepMap Release Dataset.
             </div>
             <div className={styles.colParagraph}>
-              Although data is generated from{" "}
-              <span className={styles.modelConditionColor}>
-                Model Condition
-              </span>
-              , DepMap Release data are indexed at two principal levels:{" "}
+              CRISPR data are indexed at two principal levels:{" "}
               <span className={styles.modelColor}>Models</span> and{" "}
-              <span className={styles.screenColor}>Screens</span>/
-              <span className={styles.profileColor}>Profiles</span>.
+              <span className={styles.screenColor}>Screens</span>. Omics Data
+              can be indexed by{" "}
+              <span className={styles.profileColor}>SequencingID</span>,{" "}
+              <span className={styles.modelConditionColor}>
+                ModelConditionID
+              </span>
+              , or <span className={styles.modelColor}>ModelID</span>.
             </div>
           </div>
           <div className={styles.imageContainer}>{dataStructureImage}</div>

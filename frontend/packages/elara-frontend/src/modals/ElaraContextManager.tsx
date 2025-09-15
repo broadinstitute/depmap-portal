@@ -1,5 +1,6 @@
 import React from "react";
-import { ContextManager } from "@depmap/data-explorer-2";
+import { ContextManager, PlotlyLoaderProvider } from "@depmap/data-explorer-2";
+import PlotlyLoader from "src/plot/components/PlotlyLoader";
 
 interface Props {
   onHide: () => void;
@@ -11,11 +12,13 @@ function ElaraContextManager({
   initialContextType = undefined,
 }: Props) {
   return (
-    <ContextManager
-      onHide={onHide}
-      initialContextType={initialContextType}
-      showHelpText={false}
-    />
+    <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+      <ContextManager
+        onHide={onHide}
+        initialContextType={initialContextType}
+        showHelpText={false}
+      />
+    </PlotlyLoaderProvider>
   );
 }
 

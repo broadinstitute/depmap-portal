@@ -168,6 +168,7 @@ function polyfillProxy() {
     "launchContextManagerModal",
     "saveNewContext",
     "editContext",
+    "repairContent",
     "initPredictiveTab",
     "initDoseResponseTab",
     "initWideTable",

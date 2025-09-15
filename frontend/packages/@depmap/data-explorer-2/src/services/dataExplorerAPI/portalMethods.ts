@@ -1,4 +1,5 @@
 import omit from "lodash.omit";
+import { getUrlPrefix } from "@depmap/globals";
 import { linregress, pearsonr, spearmanr } from "@depmap/statistics";
 import {
   DataExplorerDatasetDescriptor,
@@ -10,18 +11,7 @@ import {
 } from "@depmap/types";
 import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
 
-function fetchUrlPrefix() {
-  const element = document.getElementById("webpack-config");
-
-  if (element) {
-    const webpackConfig = JSON.parse(element!.textContent as string);
-    return webpackConfig.rootUrl;
-  }
-
-  return "/";
-}
-
-const urlPrefix = `${fetchUrlPrefix().replace(/^\/$/, "")}/data_explorer_2`;
+const urlPrefix = `${getUrlPrefix().replace(/^\/$/, "")}/data_explorer_2`;
 const fetchJsonCache: Record<string, Promise<unknown> | null> = {};
 
 const fetchJson = async <T>(
@@ -202,15 +192,15 @@ export async function fetchPlotDimensions(
     ].filter(Boolean)
   );
 
-  const { index_labels, index_aliases } = responses[0] as {
+  const { index_labels, index_display_labels } = responses[0] as {
     index_labels: string[];
-    index_aliases: DataExplorerPlotResponse["index_aliases"];
+    index_display_labels: string[];
   };
 
   const out = {
     index_type,
     index_labels,
-    index_aliases,
+    index_display_labels,
     linreg_by_group: [],
     dimensions: {} as Record<string, unknown>,
     filters: {} as Record<string, unknown>,

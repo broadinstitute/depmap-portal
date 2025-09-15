@@ -2,6 +2,7 @@ rule process_expr_matrix:
     inputs: in={"type": "raw-expr-matrix"}, 
         script=fileref("scripts/process_expr_matrix.py"),
         hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py'),
+        omics_utils=fileref('scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py'),
         cleanup_script=fileref("scripts/cleanup_hdf5.py"),
         meta={'type': 'cell_line_metadata'}
     outputs: {
@@ -42,7 +43,8 @@ rule transpose_biomarker:
         in={"type": "biomarker-needing-transpose"},
         cleanup_script=fileref("scripts/cleanup_hdf5.py"),
         hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py'),
-        meta={'type': 'cell_line_metadata'}
+        meta={'type': 'cell_line_metadata'},
+        omics_utils=fileref('scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py')
     outputs: {
       "type": "biomarker-matrix",
       "source_dataset_id" : "{{ inputs.in.dataset_id }}",
@@ -53,9 +55,11 @@ rule transpose_biomarker:
         from hdf5_utils import write_hdf5
         from taigapy import create_taiga_client_v3
         import pandas as pd
+        from omics_preprocessing_utils import preprocess_omics_dataframe
 
         tc = create_taiga_client_v3()
         data = tc.get("{{inputs.in.dataset_id}}")
+        data = preprocess_omics_dataframe(data, "{{inputs.in.dataset_id}}")
         transposed_data = data.transpose()
         write_hdf5(transposed_data, "{{inputs.in.category}}.hdf5")
     """
@@ -63,14 +67,24 @@ rule transpose_biomarker:
     run "python3 {{inputs.cleanup_script.filename}} {{inputs.in.category}}.hdf5 {{inputs.in.category}}-c.hdf5 --add-arxspan-to-cols -m {{inputs.meta.filename}}"
 
 rule process_maf_file:
-    inputs: in={"type": "mutation-maf"}, meta={'type': 'cell_line_metadata'}
-    outputs: {"type": "mutation-maf-file", "filename": {"$filename": "maf.csv"}, "orig_dataset_id": "{{inputs.in.dataset_id}}"}
+    inputs: 
+        in={"type": "mutation-maf"}, 
+        meta={'type': 'cell_line_metadata'},
+        omics_utils=fileref('scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py')
+    outputs: 
+        {
+            "type": "mutation-maf-file", 
+            "filename": {"$filename": "maf.csv"}, 
+            "orig_dataset_id": "{{inputs.in.dataset_id}}",
+        }
     run "python3" with """
         from taigapy import create_taiga_client_v3
         import pandas as pd
+        from omics_preprocessing_utils import preprocess_omics_dataframe
 
         tc = create_taiga_client_v3()
         data = tc.get("{{inputs.in.dataset_id}}")
+        data = preprocess_omics_dataframe(data, "{{inputs.in.dataset_id}}")
         data.to_csv("maf.csv", index=False)
     """
 
@@ -79,7 +93,8 @@ rule process_mutations_matrices:
         mutation_bool={"type": "raw-mutations-bool-matrix"},
         hgnc={"type": "hgnc-snapshot"},
         script=fileref("scripts/download_mutation_boolean_matrix.py"),
-        hdf5_script=fileref("scripts/hdf5_utils.py")
+        hdf5_script=fileref("scripts/hdf5_utils.py"),
+        omics_utils=fileref('scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py')
     outputs:
         {
             "type": "biomarker-matrix",
@@ -96,7 +111,8 @@ rule create_fusions_matrix:
                 'category': 'fusions'},
             script=fileref("scripts/make_fusions_matrix.py"),
             hgnc={"type": "hgnc-snapshot"},
-            hdf5_script=fileref("scripts/hdf5_utils.py")
+            hdf5_script=fileref("scripts/hdf5_utils.py"),
+            omics_utils=fileref('scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py')
     outputs: {'type': 'biomarker-matrix', 
                 'category': 'fusions', 
                 'filename': {"$filename": "fusions.hdf5"}, 
