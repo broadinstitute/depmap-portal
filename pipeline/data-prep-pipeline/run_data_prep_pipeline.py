@@ -20,10 +20,18 @@ def get_git_commit_sha():
 def read_docker_image_name():
     """Load Docker image name from image-name file."""
     script_dir = Path(__file__).parent
+
+    # Try current directory first
     image_name_file = script_dir / "image-name"
 
+    # If not found, try one level up
     if not image_name_file.exists():
-        raise FileNotFoundError(f"Could not find {image_name_file}")
+        image_name_file = script_dir.parent / "image-name"
+
+    if not image_name_file.exists():
+        raise FileNotFoundError(
+            f"Could not find image-name file in {script_dir} or {script_dir.parent}"
+        )
 
     # Source the file to get DOCKER_IMAGE variable
     # Since we can't source in Python, we'll parse it manually
@@ -33,7 +41,7 @@ def read_docker_image_name():
             if line.startswith("DOCKER_IMAGE="):
                 return line.split("=", 1)[1].strip("\"'")
 
-    raise ValueError("DOCKER_IMAGE not found in image-name file")
+    raise ValueError(f"DOCKER_IMAGE not found in {image_name_file}")
 
 
 def backup_conseq_logs():
@@ -86,8 +94,14 @@ def check_credentials(creds_dir):
             raise FileNotFoundError(f"Could not find required file: {filepath}")
 
 
-def run_via_container(command, job_name, docker_image, taiga_dir, creds_dir):
+def run_via_container(
+    command, job_name, docker_image, taiga_dir, creds_dir, is_external=False
+):
+    """Run command inside Docker container with proper volume mounts (data prep style)."""
     cwd = os.getcwd()
+
+    # Set working directory
+    work_dir = "/work/pipeline/data-prep-pipeline"
 
     docker_cmd = [
         "docker",
@@ -114,7 +128,7 @@ def run_via_container(command, job_name, docker_image, taiga_dir, creds_dir):
         "GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json",
         # set working directory inside container
         "-w",
-        "/work/pipeline/data-prep-pipeline",
+        work_dir,
         # set the docker container name
         "--name",
         job_name,
@@ -135,6 +149,11 @@ def main():
     )
     parser.add_argument("env_name", help="Name of environment")
     parser.add_argument("job_name", help="Name to use for job")
+    parser.add_argument(
+        "--external",
+        action="store_true",
+        help="Run external pipeline (default is internal)",
+    )
     parser.add_argument(
         "--manually-run-conseq",
         action="store_true",
@@ -166,8 +185,13 @@ def main():
     creds_dir = args.creds_dir
     manually_run_conseq = args.manually_run_conseq
     start_with = args.start_with
+    is_external = args.external
 
-    conseq_file = "data_prep_pipeline/run_internal.conseq"
+    # Set conseq file based on internal vs external
+    if is_external:
+        conseq_file = "data_prep_pipeline/run_external.conseq"
+    else:
+        conseq_file = "data_prep_pipeline/run_internal.conseq"
 
     try:
         # Check credentials exist
@@ -221,6 +245,7 @@ def main():
                 docker_image,
                 taiga_dir,
                 creds_dir,
+                is_external,
             )
 
             # Forget publish rules
@@ -230,6 +255,7 @@ def main():
                 docker_image,
                 taiga_dir,
                 creds_dir,
+                is_external,
             )
 
         if manually_run_conseq:
@@ -240,12 +266,13 @@ def main():
                 docker_image,
                 taiga_dir,
                 creds_dir,
+                is_external,
             )
             run_exit_status = result.returncode
         else:
             # Clean up unused directories from past runs
             result = run_via_container(
-                "conseq gc", job_name, docker_image, taiga_dir, creds_dir,
+                "conseq gc", job_name, docker_image, taiga_dir, creds_dir, is_external,
             )
             assert result.returncode == 0
 
@@ -257,7 +284,12 @@ def main():
             )
 
             result = run_via_container(
-                conseq_run_cmd, job_name, docker_image, taiga_dir, creds_dir,
+                conseq_run_cmd,
+                job_name,
+                docker_image,
+                taiga_dir,
+                creds_dir,
+                is_external,
             )
             run_exit_status = result.returncode
 
