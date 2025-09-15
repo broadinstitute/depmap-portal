@@ -103,7 +103,16 @@ def check_credentials(creds_dir):
 
 def create_override_conseq_file(env_name, publish_dest):
     """Create an overridden conseq file with custom publish_dest."""
-    original_conseq = f"run_{env_name}.conseq"
+    # Map environment names to actual conseq file names
+    env_mapping = {
+        "qa": "iqa",
+        "external": "external",
+        "dqa": "dqa",
+        "internal": "internal",
+    }
+
+    mapped_env = env_mapping.get(env_name, env_name)
+    original_conseq = f"run_{mapped_env}.conseq"
     override_conseq = f"overriden-{original_conseq}"
 
     # Write new publish_dest line
