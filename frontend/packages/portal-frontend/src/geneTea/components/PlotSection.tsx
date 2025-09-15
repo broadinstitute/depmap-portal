@@ -138,6 +138,9 @@ function PlotSection({
               onClearSelection={() => handleClearPlotSelection()}
               onSelectColumnRange={handleSelectColumnRange}
               selectedColumns={selectedColumns}
+              zmax={Math.max(...(heatmapFormattedData.z as number[]))}
+              zmin={Math.min(...(heatmapFormattedData.z as number[]))}
+              doGroupTerms={doGroupTerms}
             />
           </div>
         )}

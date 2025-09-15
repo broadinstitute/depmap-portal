@@ -40,6 +40,7 @@ interface Props {
   onSelectColumnRange: (start: number, end: number, shiftKey: boolean) => void;
   onClearSelection: () => void;
   onLoad: (plot: ExtendedPlotType) => void;
+  doGroupTerms: boolean;
   hovertemplate?: string | string[];
   // Optionally set a min/max for the color scale. If left undefined, these
   // will default to the min and max of values contained in `data.z`
@@ -48,6 +49,7 @@ interface Props {
 }
 
 function HeatmapBarChart({
+  doGroupTerms,
   plotTitle,
   heatmapXAxisTitle,
   heatmapData,
@@ -159,8 +161,8 @@ function HeatmapBarChart({
       type: "heatmap",
       ...heatmapData,
       colorscale: greenScale as ColorScale,
-      zmin: 0,
-      zmax: 1,
+      zmin,
+      zmax,
       xaxis: "x",
       yaxis: "y",
       hovertemplate,
@@ -193,10 +195,12 @@ function HeatmapBarChart({
       hovertemplate,
       orientation: "h",
       marker: {
-        color: "#777b7e",
+        color: doGroupTerms
+          ? barChartData.x.map((_, i) => (i % 2 === 0 ? "#bdbdbd" : "#777b7e"))
+          : "#777b7e",
+
         line: {
-          color: "white",
-          width: 1, // Set the line width for the divider
+          width: 0.2, // Set the line width for the divider
         },
       },
     };
