@@ -240,7 +240,6 @@ def main():
                 docker_image,
                 taiga_dir,
                 creds_dir,
-                is_external,
             )
 
             # Forget publish rules
@@ -250,7 +249,6 @@ def main():
                 docker_image,
                 taiga_dir,
                 creds_dir,
-                is_external,
             )
 
         if manually_run_conseq:
@@ -261,16 +259,34 @@ def main():
                 docker_image,
                 taiga_dir,
                 creds_dir,
-                is_external,
             )
             run_exit_status = result.returncode
         else:
             # Clean up unused directories from past runs
             result = run_via_container(
-                "conseq gc", job_name, docker_image, taiga_dir, creds_dir, is_external,
+                "conseq gc", job_name, docker_image, taiga_dir, creds_dir
             )
             assert result.returncode == 0
 
+            # Kick off new run
+            conseq_run_cmd = (
+                f"conseq run --addlabel commitsha={commit_sha} --no-reattach --maxfail 20 "
+                f"--remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles "
+                f"-D is_dev=False {conseq_file} {' '.join(conseq_args)}"
+            )
+
+            result = run_via_container(
+                conseq_run_cmd, job_name, docker_image, taiga_dir, creds_dir,
+            )
+            run_exit_status = result.returncode
+
+            # Generate export (commented out in original)
+            # run_via_container(f"conseq export {conseq_file} {export_path}", ...)
+
+            # Generate report (commented out in original)
+            # run_via_container("conseq report html", ...)
+
+            # Copy the latest logs
             backup_conseq_logs()
 
         print("Pipeline run complete")
