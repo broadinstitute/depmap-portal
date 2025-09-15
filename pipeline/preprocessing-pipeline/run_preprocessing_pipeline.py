@@ -52,7 +52,7 @@ def read_docker_image_name():
 
 def backup_conseq_logs():
     """Copy all logs to preprocess-logs directory."""
-    state_dir = Path("pipeline/state")
+    state_dir = Path("pipeline/preprocessing-pipeline/state")
     if not state_dir.exists():
         return
 
@@ -80,7 +80,7 @@ def backup_conseq_logs():
             [
                 "rsync",
                 "-a",
-                "pipeline/state",
+                "pipeline/preprocessing-pipeline/state",
                 "preprocess-logs",
                 f"--files-from={temp_file}",
             ],
@@ -116,12 +116,14 @@ def create_override_conseq_file(env_name, publish_dest):
     override_conseq = f"overriden-{original_conseq}"
 
     # Write new publish_dest line
-    with open(f"pipeline/{override_conseq}", "w") as f:
+    with open(f"pipeline/preprocessing-pipeline/{override_conseq}", "w") as f:
         f.write(f'let publish_dest = "{publish_dest}"\n')
 
     # Append original file content except for publish_dest lines
-    with open(f"pipeline/{original_conseq}", "r") as original:
-        with open(f"pipeline/{override_conseq}", "a") as override:
+    with open(f"pipeline/preprocessing-pipeline/{original_conseq}", "r") as original:
+        with open(
+            f"pipeline/preprocessing-pipeline/{override_conseq}", "a"
+        ) as override:
             for line in original:
                 if not line.strip().startswith("let publish_dest"):
                     override.write(line)
@@ -146,7 +148,7 @@ def run_via_container(command, job_name, docker_image, taiga_dir, creds_dir):
         f"{cwd}:/work",
         # set working directory inside container
         "-w",
-        "/work/pipeline",
+        "/work/pipeline/preprocessing-pipeline",
         # mount AWS keys for broad-paquitas
         "-v",
         f"{creds_dir}/broad-paquitas:/aws-keys/broad-paquitas",
@@ -223,7 +225,15 @@ def main():
         conseq_file = create_override_conseq_file(env_name, publish_dest)
         print(f"Created override conseq file: {conseq_file}")
     else:
-        conseq_file = f"run_{env_name}.conseq"
+        # Map environment names to actual conseq file names (same logic as create_override_conseq_file)
+        env_mapping = {
+            "qa": "iqa",
+            "external": "external",
+            "dqa": "dqa",
+            "internal": "internal",
+        }
+        mapped_env = env_mapping.get(env_name, env_name)
+        conseq_file = f"run_{mapped_env}.conseq"
         print("No S3 path override specified")
 
     try:
@@ -256,8 +266,13 @@ def main():
         if start_with:
             print(f"Starting with existing export: {start_with}")
             # Clean out old invocation
-            subprocess.run(["sudo", "chown", "-R", "ubuntu", "pipeline"], check=True)
-            subprocess.run(["rm", "-rf", "pipeline/state"], check=True)
+            subprocess.run(
+                ["sudo", "chown", "-R", "ubuntu", "pipeline/preprocessing-pipeline"],
+                check=True,
+            )
+            subprocess.run(
+                ["rm", "-rf", "pipeline/preprocessing-pipeline/state"], check=True
+            )
 
             # Use gcloud storage cp with temporary service account activation
             with tempfile.TemporaryDirectory() as temp_home:
@@ -283,7 +298,7 @@ def main():
                         "storage",
                         "cp",
                         start_with,
-                        "pipeline/downloaded-export.conseq",
+                        "pipeline/preprocessing-pipeline/downloaded-export.conseq",
                     ],
                     check=True,
                     env=env_with_temp_home,
