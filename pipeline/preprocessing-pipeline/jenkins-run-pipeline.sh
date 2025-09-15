@@ -30,7 +30,7 @@ fi
 
 # set DOCKER_IMAGE from pipeline-run-docker/image-name
 SCRIPT_PATH=`dirname $0`
-source "$SCRIPT_PATH/build-pipeline-docker-images/pipeline-run-docker/image-name"
+source "$SCRIPT_PATH/image-name"
 
 COMMIT_SHA=`git rev-parse HEAD`
 if [ "${COMMIT_SHA}" == "" ]; then
