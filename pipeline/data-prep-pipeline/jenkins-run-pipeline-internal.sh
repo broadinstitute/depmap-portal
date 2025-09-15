@@ -78,7 +78,7 @@ function run_via_container {
       -v "${PIPELINE_RUNNER_CREDS_DIR}/depmap-pipeline-runner.json":/etc/google_default_creds.json \
       -v "${TAIGA_DIR}:/root/.taiga" \
       -e GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json \
-      -w /work/data-prep-pipeline \
+      -w /work/pipeline/data-prep-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
       bash -c "source /aws-keys/broad-paquitas && poetry run $COMMAND"
