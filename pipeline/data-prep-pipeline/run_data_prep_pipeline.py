@@ -137,7 +137,7 @@ def run_via_container(
         # run the command with poetry and AWS credentials sourced
         "bash",
         "-c",
-        f"source /aws-keys/broad-paquitas && poetry run {command}",
+        f"source /aws-keys/broad-paquitas && {command}",
     ]
     print("command", command)
     return subprocess.run(docker_cmd)
