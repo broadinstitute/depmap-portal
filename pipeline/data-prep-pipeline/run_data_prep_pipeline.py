@@ -94,10 +94,7 @@ def check_credentials(creds_dir):
             raise FileNotFoundError(f"Could not find required file: {filepath}")
 
 
-def run_via_container(
-    command, job_name, docker_image, taiga_dir, creds_dir, is_external=False
-):
-    """Run command inside Docker container with proper volume mounts (data prep style)."""
+def run_via_container(command, job_name, docker_image, taiga_dir, creds_dir):
     cwd = os.getcwd()
 
     # Set working directory
@@ -144,9 +141,7 @@ def run_via_container(
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Run data prep pipeline (Jenkins style)"
-    )
+    parser = argparse.ArgumentParser(description="Run data prep pipeline")
     parser.add_argument("env_name", help="Name of environment")
     parser.add_argument("job_name", help="Name to use for job")
     parser.add_argument(
@@ -276,30 +271,6 @@ def main():
             )
             assert result.returncode == 0
 
-            # Kick off new run
-            conseq_run_cmd = (
-                f"conseq run --addlabel commitsha={commit_sha} --no-reattach --maxfail 20 "
-                f"--remove-unknown-artifacts -D sparkles_path=/install/sparkles/bin/sparkles "
-                f"-D is_dev=False {conseq_file} {' '.join(conseq_args)}"
-            )
-
-            result = run_via_container(
-                conseq_run_cmd,
-                job_name,
-                docker_image,
-                taiga_dir,
-                creds_dir,
-                is_external,
-            )
-            run_exit_status = result.returncode
-
-            # Generate export (commented out in original)
-            # run_via_container(f"conseq export {conseq_file} {export_path}", ...)
-
-            # Generate report (commented out in original)
-            # run_via_container("conseq report html", ...)
-
-            # Copy the latest logs
             backup_conseq_logs()
 
         print("Pipeline run complete")
