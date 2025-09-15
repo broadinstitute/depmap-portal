@@ -26,11 +26,17 @@ def get_git_commit_sha():
 def read_docker_image_name():
     """Load Docker image name from image-name file."""
     script_dir = Path(__file__).parent
+    # Try current directory first
     image_name_file = script_dir / "image-name"
 
+    # If not found, try one level up
     if not image_name_file.exists():
-        raise FileNotFoundError(f"Could not find {image_name_file}")
+        image_name_file = script_dir.parent / "image-name"
 
+    if not image_name_file.exists():
+        raise FileNotFoundError(
+            f"Could not find image-name file in {script_dir} or {script_dir.parent}"
+        )
     # Source the file to get DOCKER_IMAGE variable
     # Since we can't source in Python, we'll parse it manually
     with open(image_name_file, "r") as f:
@@ -106,7 +112,7 @@ def run_via_container(
         "run",
         # delete this container upon completion
         "--rm",
-        # Next two lines mount the current working directory as /work and set that as
+        # Mount the current working directory as /work and set that as
         # the current dir on start of the container
         "-v",
         f"{work_root}:/work",
@@ -260,7 +266,13 @@ def main():
         print("Pipeline run complete")
 
         # Fix permissions (docker container writes files as root)
-        subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
+        # This is only needed on Linux systems, not macOS
+        import platform
+
+        if platform.system() == "Linux":
+            subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
+        else:
+            print("Skipping permission fix (not needed on macOS)")
 
         sys.exit(run_exit_status)
 

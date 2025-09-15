@@ -8,6 +8,6 @@ set -ex
 #mkdir -p extern
 #cp ../pipeline/preprocess_taiga_ids.py extern
 
-GOOGLE_APPLICATION_CREDENTIALS=$HOME/.secrets/depmap-pipeline-runner.json exec ./run_pipeline.py \
+GOOGLE_APPLICATION_CREDENTIALS=$HOME/.secrets/depmap-pipeline-runner.json exec ./run_analysis_pipeline.py \
   --publish-dest gs://preprocessing-pipeline-outputs/depmap-pipeline/test-pred/metadata --env internal "$@"
 
