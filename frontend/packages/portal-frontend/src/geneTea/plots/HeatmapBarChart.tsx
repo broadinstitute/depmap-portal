@@ -25,18 +25,9 @@ import styles from "./HeatmapBarChart.scss";
 import debounce from "lodash.debounce";
 import usePlotResizer from "src/compound/heatmapTab/doseViabilityHeatmap/hooks/usePlotResizer";
 
-const viridisRColorscale = [
-  ["0", "#D3D3D3"],
-  ["0.001", "rgb(253, 231, 37)"],
-  ["0.111", "rgb(180, 222, 44)"],
-  ["0.222", "rgb(109, 205, 89)"],
-  ["0.333", "rgb(53, 183, 121)"],
-  ["0.444", "rgb(31, 158, 137)"],
-  ["0.556", "rgb(38, 130, 142)"],
-  ["0.667", "rgb(49, 104, 142)"],
-  ["0.778", "rgb(62, 74, 137)"],
-  ["0.889", "rgb(72, 40, 120)"],
-  ["1.0", "rgb(68, 1, 84)"],
+const greenScale = [
+  [0, "rgb(232, 232, 232)"],
+  [1, "rgb(0, 110, 87)"],
 ];
 interface Props {
   plotTitle: string;
@@ -167,7 +158,7 @@ function HeatmapBarChart({
     const plotlyHeatmapData: PlotlyData = {
       type: "heatmap",
       ...heatmapData,
-      colorscale: viridisRColorscale as ColorScale,
+      colorscale: greenScale as ColorScale,
       zmin: 0,
       zmax: 1,
       xaxis: "x",
