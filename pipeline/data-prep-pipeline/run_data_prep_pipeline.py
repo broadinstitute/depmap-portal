@@ -184,9 +184,9 @@ def main():
 
     # Set conseq file based on internal vs external
     if is_external:
-        conseq_file = "data_prep_pipeline/run_external.conseq"
+        conseq_file = "data_prep_pipeline/run_external_data_prep.conseq"
     else:
-        conseq_file = "data_prep_pipeline/run_internal.conseq"
+        conseq_file = "data_prep_pipeline/run_internal_data_prep.conseq"
 
     try:
         # Check credentials exist
