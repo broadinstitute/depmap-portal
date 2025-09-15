@@ -1,4 +1,4 @@
-# TAIGA_PREPROCESSOR_INCLUDE "../../../depmap-deploy/current-dataset-ids/external.conseq"
+# TAIGA_PREPROCESSOR_INCLUDE "current-dataset-ids/external.conseq"
 
 # Destination Taiga ID
 add-if-missing {
