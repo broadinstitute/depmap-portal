@@ -48,7 +48,11 @@ function PlotSection({
     const newlySelected = new Set<string>();
     for (let i = start; i <= end; i += 1) {
       if (heatmapFormattedData && heatmapFormattedData.x[i]) {
-        newlySelected.add(heatmapFormattedData.x[i]!);
+        const selectableColumnLength = [...new Set(heatmapFormattedData.y)]
+          .length;
+        if (i < selectableColumnLength) {
+          newlySelected.add(heatmapFormattedData.x[i]!);
+        }
       }
     }
     handleSetPlotSelectedGenes(newlySelected, shiftKey);
@@ -86,6 +90,7 @@ function PlotSection({
               PlotToolOptions.MakeContext,
               PlotToolOptions.Download,
               PlotToolOptions.Search,
+              PlotToolOptions.ResetSelection,
             ]}
             onSearch={handleSearch}
             searchOptions={
@@ -105,7 +110,14 @@ function PlotSection({
               height: 600,
             }}
             onDownload={() => {}}
-            onMakeContext={handleClickSavePlotSelectionAsContext}
+            onClearSelection={
+              selectedPlotGenes.size > 0 ? handleClearPlotSelection : undefined
+            }
+            onMakeContext={
+              selectedPlotGenes.size > 0
+                ? handleClickSavePlotSelectionAsContext
+                : undefined
+            }
             zoomToSelectedSelections={selectedColumns}
             altContainerStyle={{ backgroundColor: "#7B8CB2" }}
             hideCSVDownload
@@ -134,6 +146,9 @@ function PlotSection({
               onClearSelection={() => handleClearPlotSelection()}
               onSelectColumnRange={handleSelectColumnRange}
               selectedColumns={selectedColumns}
+              zmax={Math.max(...(heatmapFormattedData.z as number[]))}
+              zmin={Math.min(...(heatmapFormattedData.z as number[]))}
+              doGroupTerms={doGroupTerms}
             />
           </div>
         )}
