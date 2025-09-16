@@ -228,7 +228,11 @@ function useData(
       const customdata = filteredPairs.map(([gene, term]) => {
         const idx = lookup.get(`${gene}|${term}`);
         return idx !== undefined
-          ? `<b>Gene: </b>${gene}<br><b>${data.groupby}: </b>${term}<br><b>Matches: </b>${termToEntity.nTerms[idx]}`
+          ? `<b>Gene: </b>${gene}<br><b>${
+              data.groupby
+            }: </b>${term}<br><b>Matches: </b>${
+              termToEntity.fraction[idx] * termToEntity.nTerms[idx]
+            }`
           : "";
       });
 
@@ -287,8 +291,9 @@ function useData(
 
       const calculateStackedXValues = (
         xValues: number[],
-        yValues: string[]
-      ): number[] => {
+        yValues: string[],
+        sortedTermVals: string[]
+      ): { x: number[]; orderedTerms: string[] } => {
         if (xValues.length !== yValues.length) {
           throw new Error("xValues and yValues must be of the same length.");
         }
@@ -296,64 +301,78 @@ function useData(
         const combinedData: any = xValues.map((x, index) => ({
           x,
           y: yValues[index],
+          term: sortedTermVals[index],
         }));
 
         // 1. Group data by y-value
         const groupedData = combinedData.reduce((acc: any, current: any) => {
-          (acc[current.y] = acc[current.y] || []).push(current.x);
+          (acc[current.y] = acc[current.y] || []).push({
+            x: current.x,
+            term: current.term,
+          });
           return acc;
-        }, {} as Record<string, number[]>);
+        }, {} as Record<string, { x: number[]; term: string[] }>);
 
         const newXValues: number[] = [];
+        let terms: string[] = [];
 
         // 2. Process each group to sort and calculate new x-values
         Object.keys(groupedData).forEach((y) => {
           const valuesForY = groupedData[y];
 
           // Sort the x-values for the current y-group from smallest to largest
-          valuesForY.sort((a: any, b: any) => a - b);
+          const sortedValuesForY = [...valuesForY].sort(
+            (a: any, b: any) => a.x - b.x
+          );
+
+          const currentTerms = sortedValuesForY.map((v) => v.term);
+          terms = terms.concat(currentTerms);
 
           let previousX = 0;
 
           // 3. Iterate to calculate new values
-          for (const x of valuesForY) {
+          for (const x of sortedValuesForY) {
             // Instead of graphing literal x values, we want the stacked sections to be the difference between its own -log10(FDR)
             // value and the value that was graphed before it such that the total size of the bar is equal to the highest magnitude
             // -log10(FDR) of this particular Term Group.
-            const newX = x - previousX;
+            const newX = x.x - previousX;
             newXValues.push(newX);
-            previousX = x; // Store the original x as the 'previously added x' for the next iteration
+            previousX = x.x; // Store the original x as the 'previously added x' for the next iteration
           }
         });
 
-        return newXValues;
+        return { x: newXValues, orderedTerms: terms };
       };
 
-      const sortedXSource =
-        data.groupby === "Term Group"
-          ? sortedCombinedXY.map((val) => val.xVal)
-          : xSource;
+      const sortedXSource = sortedCombinedXY.map((val) => val.xVal);
+      const sortedYSourceVals = sortedYSource.map((val) => val.val);
+      const sortedTermVals = sortedYSource.map(
+        (val) => data.enrichedTerms!.term[val.origIndex]
+      );
 
-      const customdata = sortedYSource.map((termOrTermGroup, i) => {
-        const term =
-          data.groupby === "Term Group"
-            ? data.enrichedTerms!.term[termOrTermGroup.origIndex]
-            : termOrTermGroup.val;
-        const termGroup = data.enrichedTerms!.termGroup[
-          termOrTermGroup.origIndex
-        ];
-        const fdr = data.enrichedTerms!.fdr[termOrTermGroup.origIndex];
-        const effectSize = data.enrichedTerms!.effectSize[
-          termOrTermGroup.origIndex
-        ];
+      const transformX = calculateStackedXValues(
+        sortedXSource,
+        sortedYSourceVals,
+        sortedTermVals
+      );
+
+      const customdata = transformX.orderedTerms.map((currentTerm) => {
+        const enrichedTermsIndex = data.enrichedTerms!.term.indexOf(
+          currentTerm
+        );
+        const term = currentTerm;
+        const termGroup = data.enrichedTerms!.termGroup[enrichedTermsIndex];
+        const fdr = data.enrichedTerms!.fdr[enrichedTermsIndex];
+        const negLogFDR = data.enrichedTerms!.negLogFDR[enrichedTermsIndex];
+        const effectSize = data.enrichedTerms!.effectSize[enrichedTermsIndex];
         const nMatchingGenesOverall = data.enrichedTerms!.nMatchingGenesOverall[
-          termOrTermGroup.origIndex
+          enrichedTermsIndex
         ];
 
         return term !== undefined
-          ? `<b>${term}</b><br>${termGroup}<br><br>-log10(FDR):  ${sortedXSource[
-              i
-            ].toFixed(4)}  <br>FDR:  ${fdr.toExponential(
+          ? `<b>${term}</b><br>${termGroup}<br><br>-log10(FDR):  ${negLogFDR.toFixed(
+              4
+            )}  <br>FDR:  ${fdr.toExponential(
               5
             )}  <br>Effect Size:  ${effectSize.toFixed(
               4
@@ -361,15 +380,8 @@ function useData(
           : "";
       });
 
-      const sortedYSourceVals = sortedYSource.map((val) => val.val);
-
-      const transformX = calculateStackedXValues(
-        sortedXSource,
-        sortedYSourceVals
-      );
-
       return {
-        x: transformX,
+        x: transformX.x,
         y: sortedYSourceVals,
         customdata,
       };
