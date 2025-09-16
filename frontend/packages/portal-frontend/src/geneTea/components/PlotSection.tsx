@@ -45,10 +45,15 @@ function PlotSection({
     end: number,
     shiftKey: boolean
   ) => {
+    console.log(start);
     const newlySelected = new Set<string>();
     for (let i = start; i <= end; i += 1) {
       if (heatmapFormattedData && heatmapFormattedData.x[i]) {
-        newlySelected.add(heatmapFormattedData.x[i]!);
+        const selectableColumnLength = [...new Set(heatmapFormattedData.y)]
+          .length;
+        if (i < selectableColumnLength) {
+          newlySelected.add(heatmapFormattedData.x[i]!);
+        }
       }
     }
     handleSetPlotSelectedGenes(newlySelected, shiftKey);
