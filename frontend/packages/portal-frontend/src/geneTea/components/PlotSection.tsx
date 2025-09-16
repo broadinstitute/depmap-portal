@@ -90,6 +90,7 @@ function PlotSection({
               PlotToolOptions.MakeContext,
               PlotToolOptions.Download,
               PlotToolOptions.Search,
+              PlotToolOptions.ResetSelection,
             ]}
             onSearch={handleSearch}
             searchOptions={
@@ -109,6 +110,9 @@ function PlotSection({
               height: 600,
             }}
             onDownload={() => {}}
+            onClearSelection={
+              selectedPlotGenes.size > 0 ? handleClearPlotSelection : undefined
+            }
             onMakeContext={
               selectedPlotGenes.size > 0
                 ? handleClickSavePlotSelectionAsContext

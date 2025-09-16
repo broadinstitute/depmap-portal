@@ -30,6 +30,7 @@ export enum PlotToolOptions {
   MakeContext,
   UnselectAnnotatedPoints,
   ZoomToSelection,
+  ResetSelection,
 }
 
 interface Props {
@@ -41,6 +42,7 @@ interface Props {
   downloadImageOptions?: DownloadImageOptions;
   enabledTools?: PlotToolOptions[];
   onMakeContext?: () => void;
+  onClearSelection?: () => void;
   onDeselectPoints?: () => void;
   altContainerStyle?: any;
   hideCSVDownload?: boolean;
@@ -101,6 +103,7 @@ function PlotControls({
   downloadImageOptions = undefined,
   enabledTools = undefined,
   onMakeContext = undefined,
+  onClearSelection = undefined,
   onDeselectPoints = () => {},
   altContainerStyle = undefined,
   hideCSVDownload = false,
@@ -144,7 +147,9 @@ function PlotControls({
   const zoomToSelectionEnabled = enabledTools?.includes(
     PlotToolOptions.ZoomToSelection
   ); // A newer, more experimental tool, so only turn on if explicitly included in the enabledTools list.
-
+  const clearSelectionEnabled = enabledTools?.includes(
+    PlotToolOptions.ResetSelection
+  );
   return (
     <div className={styles.PlotControls}>
       <div style={altContainerStyle} className={styles.container}>
@@ -218,6 +223,7 @@ function PlotControls({
             <Button disabled={!plot} onClick={plot?.zoomOut}>
               <span className="glyphicon glyphicon-minus" />
             </Button>
+
             <Button disabled={!plot} onClick={plot?.resetZoom}>
               reset
             </Button>
@@ -243,6 +249,20 @@ function PlotControls({
               reset
             </Button>
           </div>
+        )}
+        {clearSelectionEnabled && (
+          <Tooltip
+            id="clear-selection-tooltip"
+            content="Clear selection"
+            placement="top"
+          >
+            <Button
+              disabled={!plot || !onClearSelection}
+              onClick={onClearSelection ? () => onClearSelection() : undefined}
+            >
+              Clear Selection
+            </Button>
+          </Tooltip>
         )}
         {(annotateEnabled || onlyUnselectAnnotateEnabled) && (
           <div className={styles.buttonGroup}>
