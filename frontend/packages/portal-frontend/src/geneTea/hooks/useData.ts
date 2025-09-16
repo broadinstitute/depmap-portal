@@ -356,7 +356,7 @@ function useData(
         sortedTermVals
       );
 
-      const customdata = transformX.orderedTerms.map((currentTerm, i) => {
+      const customdata = transformX.orderedTerms.map((currentTerm) => {
         const enrichedTermsIndex = data.enrichedTerms!.term.indexOf(
           currentTerm
         );

@@ -374,6 +374,7 @@ function HeatmapBarChart({
     hovertemplate,
     zmin,
     zmax,
+    doGroupTerms,
     xAxisTickLabels,
     barChartData,
     heatmapXAxisTitle,

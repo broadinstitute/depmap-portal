@@ -207,7 +207,7 @@ function PlotControls({
             >
               <Button
                 type="button"
-                disabled={onMakeContext == undefined}
+                disabled={onMakeContext === undefined}
                 onClick={() => (onMakeContext ? onMakeContext() : {})}
               >
                 Make Context

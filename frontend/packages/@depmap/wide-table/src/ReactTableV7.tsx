@@ -309,8 +309,9 @@ const ReactTableV7 = React.forwardRef(
             if (
               minimumAllowedSelections &&
               nextSelections.size === minimumAllowedSelections
-            )
+            ) {
               return nextSelections;
+            }
             nextSelections.delete(idValue);
           } else {
             nextSelections.add(idValue);
@@ -327,7 +328,7 @@ const ReactTableV7 = React.forwardRef(
           return nextSelections;
         });
       },
-      [rows, idProp, onChangeSelections]
+      [rows, idProp, onChangeSelections, minimumAllowedSelections]
     );
 
     const handleClickSingleSelectCheckbox = useCallback(

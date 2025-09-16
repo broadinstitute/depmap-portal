@@ -251,6 +251,9 @@ export function GeneTeaContextProvider({
   );
   const handleSetMaxFDR = useCallback((v: number) => setMaxFDR(v), []);
 
+  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
+    new Set([])
+  );
   const handleSetSelectionFromContext = useCallback(async () => {
     const labels = await promptForSelectionFromContext(
       validGeneSymbols,
@@ -261,11 +264,7 @@ export function GeneTeaContextProvider({
     }
 
     setSelectedPlotGenes(labels);
-  }, [allAvailableGenes]);
-
-  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
-    new Set([])
-  );
+  }, [validGeneSymbols]);
 
   const handleSetPlotSelectedGenes = useCallback(
     (selections: Set<string>, shiftKey: boolean) => {
