@@ -1,5 +1,8 @@
 import { cached, legacyPortalAPI } from "@depmap/api";
-import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
+import {
+  FrequentTerms,
+  GeneTeaEnrichedTerms,
+} from "@depmap/types/src/experimental_genetea";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_GENES_ALLOWED, SortOption } from "../types";
 
@@ -7,6 +10,29 @@ import { MAX_GENES_ALLOWED, SortOption } from "../types";
 const MIN_SELECTION = 3;
 // TODO: Only keep MAX_SELECTION or MAX_GENES_ALLOWED since they're the same thing.
 const MAX_SELECTION = MAX_GENES_ALLOWED; // TODO: The API will error at a certain number. Make sure this doesn't exceed that number.
+
+function filterFrequentTerms(
+  freqTerms: FrequentTerms,
+  predicate: (i: number) => boolean
+): FrequentTerms {
+  const indices = freqTerms.term.map((_, i) => i).filter(predicate);
+
+  return {
+    term: indices.map((i) => freqTerms.term[i]),
+    matchingGenesInList: indices.map((i) => freqTerms.matchingGenesInList[i]),
+    nMatchingGenesOverall: indices.map(
+      (i) => freqTerms.nMatchingGenesOverall[i]
+    ),
+    nMatchingGenesInList: indices.map((i) => freqTerms.nMatchingGenesInList[i]),
+    pVal: indices.map((i) => freqTerms.pVal[i]),
+    fdr: indices.map((i) => freqTerms.fdr[i]),
+    stopword: indices.map((i) => freqTerms.stopword[i]),
+    synonyms: indices.map((i) => freqTerms.synonyms[i]),
+    totalInfo: indices.map((i) => freqTerms.totalInfo[i]),
+    effectSize: indices.map((i) => freqTerms.effectSize[i]),
+    enriched: indices.map((i) => freqTerms.enriched[i]),
+  };
+}
 
 function useData(
   plotSelections: Set<string>,
@@ -399,12 +425,37 @@ function useData(
     return "";
   }, [data]);
 
+  const allTermsScatterPlotData = useMemo(() => {
+    if (data?.frequentTerms) {
+      const freqTerms = data!.frequentTerms;
+      const allEnriched = filterFrequentTerms(
+        freqTerms,
+        (i) => freqTerms.enriched[i] === true
+      );
+      const stopwords = filterFrequentTerms(
+        freqTerms,
+        (i) => freqTerms.enriched[i] !== true && freqTerms.stopword[i] === true
+      );
+      const otherTerms = filterFrequentTerms(
+        freqTerms,
+        (i) => freqTerms.enriched[i] !== true && freqTerms.stopword[i] !== true
+      );
+
+      return {
+        allEnriched,
+        stopwords,
+        otherTerms,
+      };
+    }
+  }, []);
+
   return {
     specialCaseInvalidGenes,
     rawData: data,
     heatmapData,
     barChartData,
     heatmapXAxisLabel,
+    allTermsScatterPlotData,
   };
 }
 

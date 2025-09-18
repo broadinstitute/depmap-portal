@@ -1,18 +1,19 @@
 import React, { useMemo, useState } from "react";
 import styles from "../styles/GeneTea.scss";
-import GeneTeaTable from "./GeneTeaTable";
-import PlotSelections from "./PlotSelections";
-import PlotSection from "./PlotSection";
+import GeneTeaTable from "../GeneTeaTable";
+import PlotSelections from "../PlotSelections";
+import PlotSection from "../PlotSection";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { groupStringsByCondition, tableColumns } from "../utils";
-import useData from "../hooks/useData";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { groupStringsByCondition, tableColumns } from "../../utils";
+import useData from "../../hooks/useData";
+import { useGeneTeaContext } from "../../context/GeneTeaContext";
+import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 
-interface GeneTeaMainContentProps {
-  tab: "top-tea-terms" | "all-matching-terms";
+interface AllMatchingTermsTabProps {
+  rawData: GeneTeaEnrichedTerms | null;
 }
 
-function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
+function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
   const {
     geneSymbolSelections,
     doGroupTerms,
@@ -43,49 +44,6 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     [selectedTableRows]
   );
 
-  // HACK: GeneTEA returns an error if any searchTerm is less
-  // than 2 characters long. Instead of erroring completely,
-  // we want to treat these search terms the same as any other invalid
-  //  term (i.e. ["SOX10", "KRAS", "NRAS", "NOT_A_GENE"] will still
-  // return a response with invalid_genes = ["NOT_A_GENE"], so ["SOX10", "KRAS", "NRAS", "A"]
-  // will still return a response with invalid_genes = ["A"]). Separate
-  // our definitely invalid less than 2 characters out from the possiblyValidTerms
-  // before sending a request to GeneTEA.
-  const [specialCaseInvalidGenes, possiblyValidGenes] = useMemo(
-    () =>
-      groupStringsByCondition(
-        Array.from(geneSymbolSelections),
-        (term) => term.length < 2
-      ),
-    [geneSymbolSelections]
-  );
-
-  const {
-    rawData,
-    heatmapData,
-    barChartData,
-    heatmapXAxisLabel,
-    allTermsScatterPlotData,
-  } = useData(
-    plotSelections,
-    specialCaseInvalidGenes,
-    possiblyValidGenes,
-    doGroupTerms,
-    doClusterGenes,
-    doClusterTerms,
-    sortBy,
-    maxFDR,
-    maxTopTerms,
-    maxMatchingOverall,
-    minMatchingQuery,
-    effectSizeThreshold,
-    handleSetInValidGeneSymbols,
-    handleSetValidGeneSymbols,
-    handleSetIsLoading,
-    handleSetError,
-    handleSetErrorMessage
-  );
-
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
   // Get the table data and prefferedTableDataForDownload. Combined in this useMemo so we don't
@@ -95,52 +53,42 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     // TODO give these a real type
     const roundedData: any = [];
     const unroundedData: any = [];
-    if (rawData?.allEnrichedTerms) {
-      rawData.allEnrichedTerms.term.forEach((term, index) => {
+    if (rawData?.frequentTerms) {
+      rawData.frequentTerms.term.forEach((term, index) => {
         roundedData.push({
           term,
-          termGroup: rawData.allEnrichedTerms!.termGroup[index],
-          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
+          synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
+          matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
             index
           ],
-          nMatchingGenesOverall: rawData.allEnrichedTerms!
-            .nMatchingGenesOverall[index],
-          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
+          nMatchingGenesOverall: rawData.frequentTerms!.nMatchingGenesOverall[
             index
           ],
-          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(5),
-          effectSize: rawData.allEnrichedTerms!.effectSize[index].toFixed(4),
+          nMatchingGenesInList: rawData.frequentTerms!.nMatchingGenesInList[
+            index
+          ],
+          fdr: rawData.frequentTerms!.fdr[index].toExponential(5),
+          effectSize: rawData.frequentTerms!.effectSize[index].toFixed(4),
         });
         unroundedData.push({
           term,
-          termGroup: rawData.allEnrichedTerms!.termGroup[index],
-          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
+          synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
+          matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
             index
           ],
-          nMatchingGenesOverall: rawData.allEnrichedTerms!
-            .nMatchingGenesOverall[index],
-          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
+          nMatchingGenesOverall: rawData.frequentTerms!.nMatchingGenesOverall[
             index
           ],
-          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(),
-          effectSize: rawData.allEnrichedTerms!.effectSize[index],
+          nMatchingGenesInList: rawData.frequentTerms!.nMatchingGenesInList[
+            index
+          ],
+          fdr: rawData.frequentTerms!.fdr[index].toExponential(),
+          effectSize: rawData.frequentTerms!.effectSize[index],
         });
       });
     }
     return { roundedData, unroundedData };
   }, [rawData]);
-
-  if (tab === "all-matching-terms") {
-    return (
-      <div style={{ padding: "25px" }}>
-        <AllMatchingTermsTab
-          allTermsScatterPlotData={allTermsScatterPlotData}
-        />
-      </div>
-    );
-  }
 
   // Default: Top Tea Terms main content
   return (
@@ -166,7 +114,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
               />
             </div>
             <div className={styles.selectionsArea}>
-              <PlotSelections
+              {/* <PlotSelections
                 isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
                 selectedIds={new Set(selectedPlotGenes)}
                 selectedLabels={new Set(selectedPlotGenes)}
@@ -174,7 +122,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
                   handleClickSavePlotSelectionAsContext
                 }
                 onClickClearSelection={handleClearPlotSelection}
-              />
+              /> */}
             </div>
           </div>
         </div>
@@ -187,7 +135,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
         <p>Terms selected in the plot will appear checked in this table.</p>
       </div>
 
-      {rawData && rawData.allEnrichedTerms && rawData.enrichedTerms && (
+      {rawData && rawData.frequentTerms && (
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
@@ -213,4 +161,4 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   );
 }
 
-export default GeneTeaMainContent;
+export default AllMatchingTermsTab;
