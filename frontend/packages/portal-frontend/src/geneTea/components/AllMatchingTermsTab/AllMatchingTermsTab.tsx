@@ -1,13 +1,12 @@
 import React, { useMemo, useState } from "react";
 import styles from "../styles/GeneTea.scss";
 import GeneTeaTable from "../GeneTeaTable";
-import PlotSelections from "../PlotSelections";
-import PlotSection from "../PlotSection";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { groupStringsByCondition, tableColumns } from "../../utils";
 import useData from "../../hooks/useData";
 import { useGeneTeaContext } from "../../context/GeneTeaContext";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
+import PlotSection from "./PlotSection";
 
 interface AllMatchingTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
