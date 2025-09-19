@@ -54,14 +54,19 @@ export class CustomOrCatalogVectorSelect extends React.Component<
   }
 
   renderVectorCatalog = () => {
-    const onChangeDimension = (dimension: any) => {
+    const onChangeDimension = (
+      dimension:
+        | DataExplorerPlotConfigDimension
+        | DataExplorerPlotConfigDimensionV2
+    ) => {
       this.setState({ selectedDimension: dimension });
 
       if (isCompleteDimension(dimension)) {
+        // TODO: Rework Custom Analysis to no longer rely on slice IDs!
         const sliceId = convertDimensionToSliceId(dimension);
 
         const simulatedVectorCatalogSelections = [
-          dimension.slice_type,
+          dimension.slice_type as string,
 
           dimension.slice_type === "gene"
             ? dimension.context.name
@@ -90,7 +95,11 @@ export class CustomOrCatalogVectorSelect extends React.Component<
           value={
             this.state.selectedDimension as DataExplorerPlotConfigDimensionV2
           }
-          onChange={onChangeDimension}
+          onChange={
+            onChangeDimension as (
+              nextValue: Partial<DataExplorerPlotConfigDimensionV2>
+            ) => void
+          }
         />
       );
     }
@@ -101,7 +110,11 @@ export class CustomOrCatalogVectorSelect extends React.Component<
         index_type="depmap_model"
         valueTypes={DimensionSelect.CONTINUOUS_ONLY}
         value={this.state.selectedDimension as DataExplorerPlotConfigDimension}
-        onChange={onChangeDimension}
+        onChange={
+          onChangeDimension as (
+            nextValue: Partial<DataExplorerPlotConfigDimension>
+          ) => void
+        }
       />
     );
   };

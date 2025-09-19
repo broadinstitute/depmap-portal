@@ -275,7 +275,10 @@ export function sliceLabelFromContext(
 
   if (context.expr.or) {
     const i = context.expr.or.length - 1;
-    return context.expr.or[i]["=="][1];
+
+    if (context.expr.or[i]["=="]) {
+      return context.expr.or[i]["=="][1];
+    }
   }
 
   return null;
