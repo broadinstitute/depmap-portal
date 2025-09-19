@@ -4,6 +4,7 @@ import {
   CurvePlotPoints,
   DRCDatasetOptions,
 } from "@depmap/types";
+import { uri } from "../../uriTemplateTag";
 import { getJson } from "../client";
 
 export function getDoseResponsePoints(
@@ -14,11 +15,11 @@ export function getDoseResponsePoints(
   return getJson<{
     curve_params: Array<CurveParams>;
     points: Array<CurvePlotPoints>;
-  }>(`/compound/dosecurve/${datasetName}/${depmapId}/${compoundLabel}`);
+  }>(uri`/compound/dosecurve/${datasetName}/${depmapId}/${compoundLabel}`);
 }
 
 export function getDoseResponseTable(datasetName: string, xrefFull: string) {
-  return getJson<any>(`/compound/dosetable/${datasetName}/${xrefFull}`);
+  return getJson<any>(uri`/compound/dosetable/${datasetName}/${xrefFull}`);
 }
 
 export function getCompoundDoseCurveData(
