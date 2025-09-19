@@ -10,9 +10,10 @@ import {
   BarChartFormattedData,
   HeatmapFormattedData,
 } from "@depmap/types/src/experimental_genetea";
-import HeatmapBarChart from "../plots/HeatmapBarChart";
-import { getSelectedColumns } from "../utils";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
+import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
+import { getSelectedColumns } from "src/geneTea/utils";
+import HeatmapBarChart from "src/geneTea/plots/HeatmapBarChart";
 
 interface PlotSectionProps {
   isLoading: boolean;
@@ -31,14 +32,13 @@ function PlotSection({
   handleSetPlotElement,
   plotElement,
 }: PlotSectionProps) {
+  const { maxTopTerms, doGroupTerms } = useGeneTeaFiltersContext();
   const {
     selectedPlotGenes,
     handleSetPlotSelectedGenes,
     handleClickSavePlotSelectionAsContext,
     handleClearPlotSelection,
-    maxTopTerms,
-    doGroupTerms,
-  } = useGeneTeaContext();
+  } = useTopTermsContext();
 
   const handleSelectColumnRange = (
     start: number,

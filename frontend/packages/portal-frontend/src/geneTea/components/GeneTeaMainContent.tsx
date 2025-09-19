@@ -1,12 +1,19 @@
 import React, { useMemo, useState } from "react";
 import styles from "../styles/GeneTea.scss";
-import GeneTeaTable from "./GeneTeaTable";
-import PlotSelections from "./PlotSelections";
-import PlotSection from "./PlotSection";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { groupStringsByCondition, tableColumns } from "../utils";
 import useData from "../hooks/useData";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
+import {
+  TopTermsContextProvider,
+  useTopTermsContext,
+} from "../context/TopTermsContext";
+import {
+  AllTermsContextProvider,
+  useAllTermsContext,
+} from "../context/AllTermsContext";
+import AllMatchingTermsTab from "./AllMatchingTermsTab/AllMatchingTermsTab";
+import TopTermsTab from "./TopTermsTab/TopTermsTab";
 
 interface GeneTeaMainContentProps {
   tab: "top-tea-terms" | "all-matching-terms";
@@ -24,23 +31,22 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     maxMatchingOverall,
     minMatchingQuery,
     effectSizeThreshold,
-    selectedTableRows,
-    selectedPlotGenes,
     handleSetValidGeneSymbols,
     handleSetInValidGeneSymbols,
-    handleSetSelectedTableRows,
-    handleClickSavePlotSelectionAsContext,
-    handleClearPlotSelection,
     handleSetIsLoading,
     isLoading,
     error,
     handleSetError,
     handleSetErrorMessage,
-  } = useGeneTeaContext();
+    selectedTopTermsTableRows,
+  } = useGeneTeaFiltersContext();
 
-  const plotSelections = useMemo(
-    () => (selectedTableRows.size > 0 ? selectedTableRows : new Set([])),
-    [selectedTableRows]
+  const topTermsPlotSelections = useMemo(
+    () =>
+      selectedTopTermsTableRows.size > 0
+        ? selectedTopTermsTableRows
+        : new Set([]),
+    [selectedTopTermsTableRows]
   );
 
   // HACK: GeneTEA returns an error if any searchTerm is less
@@ -67,7 +73,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     heatmapXAxisLabel,
     allTermsScatterPlotData,
   } = useData(
-    plotSelections,
+    topTermsPlotSelections,
     specialCaseInvalidGenes,
     possiblyValidGenes,
     doGroupTerms,
@@ -134,82 +140,23 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
 
   if (tab === "all-matching-terms") {
     return (
-      <div style={{ padding: "25px" }}>
+      <AllTermsContextProvider>
         <AllMatchingTermsTab
           allTermsScatterPlotData={allTermsScatterPlotData}
         />
-      </div>
+      </AllTermsContextProvider>
     );
   }
 
-  // Default: Top Tea Terms main content
   return (
-    <div className={styles.mainContentContainer}>
-      <div className={styles.mainContentHeader}>
-        <h3 className={styles.mainContentHeaderTitle}>
-          Top {maxTopTerms} Tea {doGroupTerms ? "Term Groups" : "Terms"}
-        </h3>
-      </div>
-      {!isLoading && error ? (
-        <div className={styles.errorMessage}>Error loading plot data.</div>
-      ) : (
-        <div>
-          <div className={styles.mainContentGrid}>
-            <div className={styles.plotArea}>
-              <PlotSection
-                isLoading={isLoading}
-                plotElement={plotElement}
-                heatmapFormattedData={heatmapData}
-                barChartData={barChartData}
-                handleSetPlotElement={setPlotElement}
-                heatmapXAxisLabel={heatmapXAxisLabel}
-              />
-            </div>
-            <div className={styles.selectionsArea}>
-              <PlotSelections
-                isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
-                selectedIds={new Set(selectedPlotGenes)}
-                selectedLabels={new Set(selectedPlotGenes)}
-                onClickSaveSelectionAsContext={
-                  handleClickSavePlotSelectionAsContext
-                }
-                onClickClearSelection={handleClearPlotSelection}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-      <hr className={styles.mainContentHr} />
-      <div className={styles.mainContentTableHeader}>
-        <h3 className={styles.mainContentTableHeaderTitle}>
-          Enrichment Term Table
-        </h3>
-        <p>Terms selected in the plot will appear checked in this table.</p>
-      </div>
-
-      {rawData && rawData.allEnrichedTerms && rawData.enrichedTerms && (
-        <GeneTeaTable
-          error={error}
-          isLoading={isLoading}
-          tableData={roundedAndUnroundedTableData.roundedData}
-          prefferedTableDataForDownload={
-            roundedAndUnroundedTableData.unroundedData
-          }
-          tableColumns={tableColumns}
-          columnOrdering={tableColumns.map((col) => col.accessor)}
-          defaultCols={tableColumns.map((col) => col.accessor)}
-          selectedTableRows={
-            selectedTableRows.size > 0
-              ? selectedTableRows
-              : new Set(rawData.enrichedTerms?.term)
-          }
-          handleChangeSelection={(selections: string[]) => {
-            if (selections.length === 0) return;
-            handleSetSelectedTableRows(new Set(selections));
-          }}
-        />
-      )}
-    </div>
+    <TopTermsContextProvider>
+      <TopTermsTab
+        heatmapData={heatmapData}
+        barChartData={barChartData}
+        heatmapXAxisLabel={heatmapXAxisLabel}
+        rawData={rawData}
+      />
+    </TopTermsContextProvider>
   );
 }
 

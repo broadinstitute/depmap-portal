@@ -21,7 +21,9 @@ export const TERM_OPTIONS_FILTER_DEFAULTS = {
   maxMatchingOverall: 5373,
 };
 
-export interface GeneTeaContextType {
+export interface GeneTeaFiltersContextType {
+  selectedTopTermsTableRows: Set<string>;
+  handleSetSelectedTopTermsTableRows: (v: Set<string>) => void;
   effectSizeThreshold: number;
   handleSetEffectSizeThreshold: (v: any) => void;
   minMatchingQuery: number;
@@ -40,8 +42,6 @@ export interface GeneTeaContextType {
   handleSetDoClusterTerms: (v: boolean) => void;
   sortBy: SortOption;
   handleSetSortBy: (v: SortOption) => void;
-  selectedTableRows: Set<string>;
-  handleSetSelectedTableRows: (v: Set<string>) => void;
   geneSymbolSelections: Set<string>;
   handleSetGeneSymbolSelections: (v: any) => void;
   validGeneSymbols: Set<string>;
@@ -50,15 +50,6 @@ export interface GeneTeaContextType {
   handleSetInValidGeneSymbols: (v: Set<string>) => void;
   allAvailableGenes: Set<string>;
   handleSetAllAvailableGenes: (v: Set<string>) => void;
-  handleSetSelectionFromContext: () => Promise<void>;
-  handleClearSelectedTableRows: () => void;
-  selectedPlotGenes: Set<string>;
-  handleSetPlotSelectedGenes: (
-    selections: Set<string>,
-    shiftKey: boolean
-  ) => void;
-  handleClickSavePlotSelectionAsContext: () => void;
-  handleClearPlotSelection: () => void;
   isLoading: boolean;
   handleSetIsLoading: (v: boolean) => void;
   error: boolean;
@@ -67,17 +58,33 @@ export interface GeneTeaContextType {
   handleSetErrorMessage: (v: string) => void;
 }
 
-export const GeneTeaContext = createContext<GeneTeaContextType | undefined>(
-  undefined
-);
+export const GeneTeaFiltersContext = createContext<
+  GeneTeaFiltersContextType | undefined
+>(undefined);
 
-interface GeneTeaContextProviderProps {
+interface GeneTeaFiltersContextProviderProps {
   children: ReactNode;
 }
 
-export function GeneTeaContextProvider({
+export function GeneTeaFiltersContextProvider({
   children,
-}: GeneTeaContextProviderProps) {
+}: GeneTeaFiltersContextProviderProps) {
+  // This is a little weird, because we DO have a separate context for the TopTerms tab, but the TopTerms selected
+  // table rows needs to be more widely available state and essentially acts like a filter passed
+  // into useData and the GeneTea api request as plot_selections. When selected Top Terms changes, this affects
+  // BOTH tabs.
+  const [selectedTopTermsTableRows, setSelectedTopTermsTableRows] = useState<
+    Set<string>
+  >(new Set());
+  const handleSetSelectedTopTermsTableRows = useCallback(
+    (v: Set<string>) => setSelectedTopTermsTableRows(v),
+    []
+  );
+  const handleClearSelectedTopTermsTableRows = useCallback(
+    () => setSelectedTopTermsTableRows(new Set([])),
+    []
+  );
+
   const [error, setError] = useState(false);
   const handleSetError = useCallback((v: boolean) => setError(v), []);
 
@@ -91,18 +98,6 @@ export function GeneTeaContextProvider({
 
   const [isLoading, setIsLoading] = useState(false);
   const handleSetIsLoading = useCallback((v: boolean) => setIsLoading(v), []);
-
-  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
-    new Set()
-  );
-  const handleSetSelectedTableRows = useCallback(
-    (v: Set<string>) => setSelectedTableRows(v),
-    []
-  );
-  const handleClearSelectedTableRows = useCallback(
-    () => setSelectedTableRows(new Set([])),
-    []
-  );
 
   const [doGroupTerms, setDoGroupTerms] = useState<boolean>(true);
   const handleSetDoGroupTerms = useCallback(
@@ -130,21 +125,18 @@ export function GeneTeaContextProvider({
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
     new Set(["CAD", "UMPS", "ADSL", "DHODH"])
   );
-  const handleSetGeneSymbolSelections = useCallback(
-    (v: any) => {
-      setGeneSymbolSelections((prevVal: Set<string>) => {
-        const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetGeneSymbolSelections = useCallback((v: any) => {
+    setGeneSymbolSelections((prevVal: Set<string>) => {
+      const nextState = typeof v === "function" ? v(prevVal) : v;
+      if (prevVal !== nextState) {
+        // Invalidate the table selections if the user searches on a different list
+        // of gene symbols.
+        handleClearSelectedTopTermsTableRows();
+      }
 
-        if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
-          handleClearSelectedTableRows();
-        }
-        return nextState;
-      });
-    },
-    [handleClearSelectedTableRows]
-  );
+      return nextState;
+    });
+  }, []);
 
   const [validGeneSymbols, setValidGeneSymbols] = useState<Set<string>>(
     new Set([])
@@ -173,138 +165,81 @@ export function GeneTeaContextProvider({
   const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(
     TERM_OPTIONS_FILTER_DEFAULTS.effectSizeThreshold
   );
-  const handleSetEffectSizeThreshold = useCallback(
-    (v: any) => {
-      setEffectSizeThreshold((prevVal: number) => {
-        const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetEffectSizeThreshold = useCallback((v: any) => {
+    setEffectSizeThreshold((prevVal: number) => {
+      const nextState = typeof v === "function" ? v(prevVal) : v;
 
-        if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
-          handleClearSelectedTableRows();
-        }
-        return nextState;
-      });
-    },
-    [handleClearSelectedTableRows]
-  );
+      if (prevVal !== nextState) {
+        // Invalidate the table selections if the user searches on a different list
+        // of gene symbols.
+        handleClearSelectedTopTermsTableRows();
+      }
+
+      return nextState;
+    });
+  }, []);
 
   const [minMatchingQuery, setMinMatchingQuery] = useState<number>(
     TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
   );
-  const handleSetMinMatchingQuery = useCallback(
-    (v: any) => {
-      setMinMatchingQuery((prevVal: number) => {
-        const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetMinMatchingQuery = useCallback((v: any) => {
+    setMinMatchingQuery((prevVal: number) => {
+      const nextState = typeof v === "function" ? v(prevVal) : v;
 
-        if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
-          handleClearSelectedTableRows();
-        }
-        return nextState;
-      });
-    },
-    [handleClearSelectedTableRows]
-  );
+      if (prevVal !== nextState) {
+        // Invalidate the table selections if the user searches on a different list
+        // of gene symbols.
+        handleClearSelectedTopTermsTableRows();
+      }
+
+      return nextState;
+    });
+  }, []);
 
   const [maxMatchingOverall, setMaxMatchingOverall] = useState<number | null>(
     TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
   );
-  const handleSetMaxMatchingOverall = useCallback(
-    (v: any) => {
-      setMaxMatchingOverall((prevVal: number | null) => {
-        const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetMaxMatchingOverall = useCallback((v: any) => {
+    setMaxMatchingOverall((prevVal: number | null) => {
+      const nextState = typeof v === "function" ? v(prevVal) : v;
 
-        if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
-          handleClearSelectedTableRows();
-        }
-        return nextState;
-      });
-    },
-    [handleClearSelectedTableRows]
-  );
+      if (prevVal !== nextState) {
+        // Invalidate the table selections if the user searches on a different list
+        // of gene symbols.
+        handleClearSelectedTopTermsTableRows();
+      }
+
+      return nextState;
+    });
+  }, []);
 
   const [maxTopTerms, setMaxTopTerms] = useState<number | null>(
     TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms
   );
-  const handleSetMaxTopTerms = useCallback(
-    (v: any) => {
-      setMaxTopTerms((prevVal: number | null) => {
-        const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetMaxTopTerms = useCallback((v: any) => {
+    setMaxTopTerms((prevVal: number | null) => {
+      const nextState = typeof v === "function" ? v(prevVal) : v;
 
-        if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
-          handleClearSelectedTableRows();
-        }
-        return nextState;
-      });
-    },
-    [handleClearSelectedTableRows]
-  );
+      if (prevVal !== nextState) {
+        // Invalidate the table selections if the user searches on a different list
+        // of gene symbols.
+        handleClearSelectedTopTermsTableRows();
+      }
+
+      return nextState;
+    });
+  }, []);
 
   const [maxFDR, setMaxFDR] = useState<number>(
     TERM_OPTIONS_FILTER_DEFAULTS.maxFDR
   );
   const handleSetMaxFDR = useCallback((v: number) => setMaxFDR(v), []);
 
-  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
-    new Set([])
-  );
-  const handleSetSelectionFromContext = useCallback(async () => {
-    const labels = await promptForSelectionFromContext(
-      validGeneSymbols,
-      "gene"
-    );
-    if (labels === null) {
-      return;
-    }
-
-    setSelectedPlotGenes(labels);
-  }, [validGeneSymbols]);
-
-  const handleSetPlotSelectedGenes = useCallback(
-    (selections: Set<string>, shiftKey: boolean) => {
-      setSelectedPlotGenes((prev) => {
-        const next: Set<string> = shiftKey ? new Set(prev) : new Set();
-
-        selections.forEach((id) => {
-          if (next.has(id)) {
-            next.delete(id);
-          } else {
-            next.add(id);
-          }
-        });
-
-        return next;
-      });
-    },
-    []
-  );
-
-  const handleClickSavePlotSelectionAsContext = useCallback(() => {
-    if (selectedPlotGenes.size > 0) {
-      const labels = [...selectedPlotGenes];
-      const context = {
-        name: defaultContextName(selectedPlotGenes.size),
-        context_type: "gene",
-        expr: { in: [{ var: "entity_label" }, labels] },
-      };
-      saveNewContext(context as DataExplorerContext);
-    }
-  }, [selectedPlotGenes]);
-
-  const handleClearPlotSelection = useCallback(
-    () => setSelectedPlotGenes(new Set([])),
-    []
-  );
-
   return (
-    <GeneTeaContext.Provider
+    <GeneTeaFiltersContext.Provider
       value={{
+        selectedTopTermsTableRows,
+        handleSetSelectedTopTermsTableRows,
         effectSizeThreshold,
         handleSetEffectSizeThreshold,
         minMatchingQuery,
@@ -323,8 +258,6 @@ export function GeneTeaContextProvider({
         handleSetDoClusterTerms,
         sortBy,
         handleSetSortBy,
-        selectedTableRows,
-        handleSetSelectedTableRows,
         geneSymbolSelections,
         handleSetGeneSymbolSelections,
         validGeneSymbols,
@@ -333,12 +266,6 @@ export function GeneTeaContextProvider({
         handleSetInValidGeneSymbols,
         allAvailableGenes,
         handleSetAllAvailableGenes,
-        handleSetSelectionFromContext,
-        handleClearSelectedTableRows,
-        selectedPlotGenes,
-        handleSetPlotSelectedGenes,
-        handleClickSavePlotSelectionAsContext,
-        handleClearPlotSelection,
         isLoading,
         handleSetIsLoading,
         error,
@@ -348,15 +275,15 @@ export function GeneTeaContextProvider({
       }}
     >
       {children}
-    </GeneTeaContext.Provider>
+    </GeneTeaFiltersContext.Provider>
   );
 }
 
-export function useGeneTeaContext() {
-  const ctx = useContext(GeneTeaContext);
+export function useGeneTeaFiltersContext() {
+  const ctx = useContext(GeneTeaFiltersContext);
   if (!ctx) {
     throw new Error(
-      "useGeneTeaContext must be used within GeneTeaContext.Provider"
+      "useGeneTeaFiltersContext must be used within GeneTeaFiltersContext.Provider"
     );
   }
   return ctx;

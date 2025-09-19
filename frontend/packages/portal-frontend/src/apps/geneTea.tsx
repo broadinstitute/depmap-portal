@@ -5,16 +5,16 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import GeneTea from "src/geneTea/components/GeneTea";
-import { GeneTeaContextProvider } from "src/geneTea/context/GeneTeaContext";
+import { GeneTeaFiltersContextProvider } from "src/geneTea/context/GeneTeaFiltersContext";
 
 const container = document.getElementById("react-gene-tea");
 
 const App = () => {
   return (
     <ErrorBoundary>
-      <GeneTeaContextProvider>
+      <GeneTeaFiltersContextProvider>
         <GeneTea />
-      </GeneTeaContextProvider>
+      </GeneTeaFiltersContextProvider>
     </ErrorBoundary>
   );
 };

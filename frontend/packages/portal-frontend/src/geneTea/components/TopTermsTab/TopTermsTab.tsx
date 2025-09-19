@@ -6,32 +6,38 @@ import { groupStringsByCondition, tableColumns } from "../../utils";
 import useData from "../../hooks/useData";
 import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
-import PlotSection from "./PlotSection";
-import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
 
-interface AllMatchingTermsTabProps {
+import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
+import PlotSection from "./PlotSection";
+import PlotSelections from "./PlotSelections";
+
+interface TopTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
+  heatmapData: {
+    x: string[];
+    y: string[];
+    z: number[];
+    customdata: string[];
+  };
+  barChartData: {
+    x: number[];
+    y: string[];
+    customdata: string[];
+  };
+  heatmapXAxisLabel: string;
 }
 
-function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
+function TopTermsTab({
+  rawData,
+  heatmapData,
+  barChartData,
+  heatmapXAxisLabel,
+}: TopTermsTabProps) {
   const {
-    geneSymbolSelections,
     doGroupTerms,
-    doClusterGenes,
-    doClusterTerms,
-    sortBy,
     maxTopTerms,
-    maxFDR,
-    maxMatchingOverall,
-    minMatchingQuery,
-    effectSizeThreshold,
-    handleSetValidGeneSymbols,
-    handleSetInValidGeneSymbols,
-    handleSetIsLoading,
     isLoading,
     error,
-    handleSetError,
-    handleSetErrorMessage,
   } = useGeneTeaFiltersContext();
 
   const {
@@ -40,7 +46,7 @@ function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
     handleSetSelectedTableRows,
     handleClickSavePlotSelectionAsContext,
     handleClearPlotSelection,
-  } = useAllTermsContext();
+  } = useTopTermsContext();
 
   const plotSelections = useMemo(
     () => (selectedTableRows.size > 0 ? selectedTableRows : new Set([])),
@@ -117,7 +123,7 @@ function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
               />
             </div>
             <div className={styles.selectionsArea}>
-              {/* <PlotSelections
+              <PlotSelections
                 isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
                 selectedIds={new Set(selectedPlotGenes)}
                 selectedLabels={new Set(selectedPlotGenes)}
@@ -125,7 +131,7 @@ function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
                   handleClickSavePlotSelectionAsContext
                 }
                 onClickClearSelection={handleClearPlotSelection}
-              /> */}
+              />
             </div>
           </div>
         </div>
@@ -138,7 +144,7 @@ function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
         <p>Terms selected in the plot will appear checked in this table.</p>
       </div>
 
-      {rawData && rawData.frequentTerms && (
+      {rawData && rawData.allEnrichedTerms && rawData.enrichedTerms && (
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
@@ -164,4 +170,4 @@ function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
   );
 }
 
-export default AllMatchingTermsTab;
+export default TopTermsTab;

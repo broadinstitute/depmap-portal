@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import ToggleSwitch from "@depmap/common-components/src/components/ToggleSwitch";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { useGeneTeaContext } from "../context/GeneTeaFiltersContext";
 import styles from "../styles/GeneTea.scss";
 
 const PlotOptionsPanel: React.FC = () => {

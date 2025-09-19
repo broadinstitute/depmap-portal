@@ -3,7 +3,7 @@ import { Button } from "react-bootstrap";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
 import geneTeaStyles from "../styles/GeneTea.scss";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { useGeneTeaContext } from "../context/GeneTeaFiltersContext";
 
 interface PlotSelectionsProps {
   isPlotDataVisible: boolean;

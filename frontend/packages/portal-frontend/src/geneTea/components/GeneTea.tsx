@@ -6,7 +6,7 @@ import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
 import styles from "../styles/GeneTea.scss";
 import SearchOptionsContainer from "./SearchOptionsContainer";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import { breadboxAPI } from "@depmap/api";
 import { fetchMetadata } from "../utils";
 import glossary from "src/geneTea/json/glossary.json";
@@ -14,7 +14,7 @@ import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
 
 function GeneTea() {
-  const { handleSetAllAvailableGenes } = useGeneTeaContext();
+  const { handleSetAllAvailableGenes } = useGeneTeaFiltersContext();
   useEffect(() => {
     (async () => {
       const geneMetadata = await fetchMetadata<any>(
@@ -72,7 +72,9 @@ function GeneTea() {
               </TabList>
               <TabPanels className={styles.TabPanels}>
                 <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent tab="top-tea-terms" />
+                  <TopTermsContextProvider>
+                    <GeneTeaMainContent tab="top-tea-terms" />
+                  </TopTermsContextProvider>
                 </TabPanel>
                 <TabPanel className={styles.TabPanel}>
                   <GeneTeaMainContent tab="all-matching-terms" />

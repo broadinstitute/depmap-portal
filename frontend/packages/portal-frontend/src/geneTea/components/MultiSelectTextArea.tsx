@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import { MAX_GENES_ALLOWED } from "../types";
 
 // TODO move to utils
@@ -29,7 +29,7 @@ const MultiSelectTextarea: React.FC = () => {
     handleSetError,
     error,
     errorMessage,
-  } = useGeneTeaContext();
+  } = useGeneTeaFiltersContext();
 
   const [inputValue, setInputValue] = useState("");
 

@@ -7,7 +7,7 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "../styles/GeneTea.scss";
 import { FrequentTerms } from "@depmap/types/src/experimental_genetea";
-import { useGeneTeaContext } from "src/geneTea/context/GeneTeaContext";
+import { useGeneTeaContext } from "src/geneTea/context/GeneTeaFiltersContext";
 import AllTermsScatterPlot from "./AllTermsScatterPlot";
 
 interface PlotSectionProps {
