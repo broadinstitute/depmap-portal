@@ -82,7 +82,7 @@ function run_via_container {
       -w /work/analysis-pipeline \
       --name "$JOB_NAME" \
       ${DOCKER_IMAGE} \
-      bash -c "gcloud auth configure-docker us.gcr.io && $COMMAND"
+      bash -c "gcloud auth configure-docker us-central1-docker.pkg.dev && $COMMAND"
 }
 
 # backup logs before running GC

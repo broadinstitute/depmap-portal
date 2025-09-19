@@ -1,1 +1,1 @@
-DOCKER_IMAGE=us.gcr.io/broad-achilles/depmap-pipeline-tda:v10
+DOCKER_IMAGE=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda:v10

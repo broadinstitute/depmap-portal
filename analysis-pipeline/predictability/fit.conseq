@@ -85,7 +85,7 @@ rule run_fit_models:
         "-v", f"/home/ubuntu/.taiga/token:/root/.taiga/token",
         "-v", f"/home/ubuntu/.sparkles-cache/service-keys/broad-achilles.json:/root/.sparkles-cache/service-keys/broad-achilles.json",
         "--entrypoint", "/bin/bash",
-        "us.gcr.io/broad-achilles/daintree:v1",
+        "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/daintree:v1",
         "-c", f"mkdir -p /daintree/daintree_scripts/ && cp -r /daintree_scripts/* /daintree/daintree_scripts/ && /install/depmap-py/bin/python3.9 -u /daintree/daintree_scripts/run_fit_models.py collect-and-fit \
         --input-config /daintree/{local_input_config} \
         --sparkles-config /daintree/sparkles-config \

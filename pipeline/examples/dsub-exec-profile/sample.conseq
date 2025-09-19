@@ -10,7 +10,7 @@ exec-profile dsub-testimg {
       --project broad-achilles \
       --zones "us-central*" \
       --logging {{config.S3_STAGING_URL}}/conseq-log/{JOB} \
-      --image us.gcr.io/broad-achilles/testimg \
+      --image us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/testimg \
       --env AWS_ACCESS_KEY_ID=invalid \
       --env AWS_SECRET_ACCESS_KEY=invalid \
       --min-ram 10 \

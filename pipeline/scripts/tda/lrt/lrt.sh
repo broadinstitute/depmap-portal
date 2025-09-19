@@ -38,9 +38,9 @@ python3 ${pipeline_root}/scripts/compute_hash.py \
 
 job_name=lrt-`cat job-hash.txt`
 
-# There's a long story about why we're using the docker image us.gcr.io/broad-achilles/tda-pipeline:v2
+# There's a long story about why we're using the docker image us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/tda-pipeline:v2
 # This is a very old image with very old versions of the various libraries. We recently built an updated
-# docker image (us.gcr.io/broad-achilles/depmap-pipeline-tda-lrt:v3) which updated these libraries
+# docker image (us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda-lrt:v3) which updated these libraries
 # however, it produces different results from before. Now, in a real sense the results aren't exactly different
 # in a meaningful way, because most of the differences occur for LRT values < 100, but the scale of many of them
 # is drastically different. As a result the distribution of values _looks_ like it has a wildly different scale
@@ -54,8 +54,8 @@ job_name=lrt-`cat job-hash.txt`
 # Anyway, internal discussion concluded that it's known that LRT isn't a stable, and we'd prefer to move
 # away from it. Given that, I don't think it's worth any additional investigation and I'm electing to just
 # continue using the old docker image until the day we can abandon LRT.
-#LRT_DOCKER_IMAGE="us.gcr.io/broad-achilles/depmap-pipeline-tda-lrt:v3"
-LRT_DOCKER_IMAGE=us.gcr.io/broad-achilles/tda-pipeline:v2
+#LRT_DOCKER_IMAGE="us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda-lrt:v3"
+LRT_DOCKER_IMAGE=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/tda-pipeline:v2
 
 #Submit job
 eval "$sparkles_path" \
