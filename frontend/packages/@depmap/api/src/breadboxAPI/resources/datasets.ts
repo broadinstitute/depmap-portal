@@ -12,6 +12,7 @@ import {
   TabularDatasetDataArgs,
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
+import { uri } from "../../uriTemplateTag";
 import { getJson, postJson, deleteJson, postMultipart } from "../client";
 
 export function getDatasets(
@@ -34,7 +35,7 @@ export function updateDataset(
   datasetId: string,
   datasetUpdateArgs: DatasetUpdateArgs
 ) {
-  return postJson<Dataset>(`/datasets/${datasetId}`, datasetUpdateArgs);
+  return postJson<Dataset>(uri`/datasets/${datasetId}`, datasetUpdateArgs);
 }
 
 export function getMatrixDatasetData(
@@ -71,7 +72,7 @@ export function getMatrixDatasetData(
   }
 
   return postJson<{ [key: string]: Record<string, any> }>(
-    `/datasets/matrix/${datasetId}`,
+    uri`/datasets/matrix/${datasetId}`,
     finalArgs
   );
 }
@@ -80,21 +81,20 @@ export function getTabularDatasetData(
   datasetId: string,
   args: TabularDatasetDataArgs
 ) {
-  const url = `/datasets/tabular/${datasetId}`;
   return postJson<{
     [key: string]: Record<string, any>;
-  }>(url, args);
+  }>(uri`/datasets/tabular/${datasetId}`, args);
 }
 
 export function getDatasetSamples(datasetId: string) {
   return getJson<{ id: string; label: string }[]>(
-    `/datasets/samples/${datasetId}`
+    uri`/datasets/samples/${datasetId}`
   );
 }
 
 export function getDatasetFeatures(datasetId: string) {
   return getJson<{ id: string; label: string }[]>(
-    `/datasets/features/${datasetId}`
+    uri`/datasets/features/${datasetId}`
   );
 }
 
