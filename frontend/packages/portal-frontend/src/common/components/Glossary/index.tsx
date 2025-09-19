@@ -11,9 +11,15 @@ import { GlossaryItem } from "src/common/components/Glossary/types";
 
 interface Props {
   data: GlossaryItem[];
+  sidePanelButtonText?: string;
+  customBackgroundColor?: string;
 }
 
-function Glossary({ data }: Props) {
+function Glossary({
+  data,
+  sidePanelButtonText = "Terms and definitions",
+  customBackgroundColor = "#d3d3d3",
+}: Props) {
   const [selected, setSelected] = useState<{ value: number }[]>([]);
   const [open, setOpen] = useState(false);
   const wasOpen = useRef(false);
@@ -53,13 +59,24 @@ function Glossary({ data }: Props) {
             className={styles.toggleButton}
             onClick={() => setOpen((prev) => !prev)}
           >
-            <span className={styles.buttonText}>Terms and definitions</span>
+            <span
+              className={styles.buttonText}
+              style={{ backgroundColor: customBackgroundColor }}
+            >
+              {sidePanelButtonText}
+            </span>
           </button>
         </div>
-        <div className={styles.content}>
+        <div
+          className={styles.content}
+          style={{ backgroundColor: customBackgroundColor }}
+        >
           <CSSTransition in={open} timeout={500} unmountOnExit>
             <>
-              <div className={styles.search}>
+              <div
+                className={styles.search}
+                style={{ backgroundColor: customBackgroundColor }}
+              >
                 <Typeahead
                   id="glossary-search"
                   options={searchOptions}
@@ -82,13 +99,24 @@ function Glossary({ data }: Props) {
               <dl className={styles.definitions}>
                 {data.map((item, index) => (
                   <div key={item.term} data-term-index={index}>
-                    <dt>{item.term}</dt>
+                    <dt
+                      style={{
+                        marginLeft: item.addLeftMargin ? "18px" : "0px",
+                      }}
+                    >
+                      {item.term}
+                    </dt>
                     {item.multipartDefinition?.map((part: string) => (
                       <div key={part} style={{ marginTop: "15px" }}>
                         <dd>{replaceSuperscriptTags(part)}</dd>
                       </div>
                     ))}
-                    <dd>
+                    <dd
+                      style={{
+                        marginLeft: item.addLeftMargin ? "18px" : "0px",
+                        wordWrap: "break-word",
+                      }}
+                    >
                       {replaceReferencesWithLinks(
                         item.definition,
                         item.references

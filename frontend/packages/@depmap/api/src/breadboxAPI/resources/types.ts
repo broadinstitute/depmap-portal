@@ -3,6 +3,7 @@ import {
   DimensionTypeAddArgs,
   DimensionTypeUpdateArgs,
 } from "@depmap/types";
+import { uri } from "../../uriTemplateTag";
 import { getJson, postJson, patchJson, deleteJson } from "../client";
 
 export function getDimensionTypes() {
@@ -10,7 +11,7 @@ export function getDimensionTypes() {
 }
 
 export function getDimensionType(name: string) {
-  return getJson<DimensionType>(`/types/dimensions/${name}`);
+  return getJson<DimensionType>(uri`/types/dimensions/${name}`);
 }
 
 export function postDimensionType(dimTypeArgs: DimensionTypeAddArgs) {
@@ -22,7 +23,7 @@ export function updateDimensionType(
   dimTypeArgs: DimensionTypeUpdateArgs
 ) {
   return patchJson<DimensionType>(
-    `/types/dimensions/${dimTypeName}`,
+    uri`/types/dimensions/${dimTypeName}`,
     dimTypeArgs
   );
 }
@@ -43,7 +44,7 @@ export function getDimensionTypeIdentifiers(
   }
 ) {
   return getJson<Identifiers>(
-    `/types/dimensions/${dimTypeName}/identifiers`,
+    uri`/types/dimensions/${dimTypeName}/identifiers`,
     params
   );
 }

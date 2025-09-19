@@ -82,9 +82,11 @@ export interface WideTableColumns {
 export interface WideTableProps {
   /**
    * array of objects, all data for the table (will be what ends up downloaded if
-   * allowDownloadFromTableData is set to true and the user clicks "download table")
+   * allowDownloadFromTableData is set to true, prefferedTableDataForDownload is undefined
+   *  and the user clicks "download table")
    */
   data: any[];
+  prefferedTableDataForDownload?: any[]; // If set, use this for the download table instead of "data"
   columns: Array<WideTableColumns & Partial<Column>>; // refer to the react-table docs for structure
   invisibleColumns?: Array<number>;
 
@@ -131,6 +133,13 @@ export interface WideTableProps {
    *  selections change. If this is prop is used, `idProp` must also be defined.
    */
   onChangeSelections?: (selections: any[]) => void;
+
+  /**
+   *  Use this to prevent the user from selecting less than some number of selections. This is useful
+   *  if some number of table rows is selected by default and it does not make sense to allow the user
+   *  to reach 0 rows selected. Used in GeneTEA (frontend/packages/portal-frontend/src/geneTea/components/GeneTeaTable.tsx)
+   */
+  minimumAllowedSelections?: number;
 
   /**
    *  This determines what property of each row will be used to track
@@ -864,7 +873,8 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
     const dropdownColumnHideShowMenu = this.renderShowHideMenu();
     let downloadButton = null;
     let numberOfRows = null;
-    const dataToDownload = this.props.data;
+    const dataToDownload =
+      this.props.prefferedTableDataForDownload || this.props.data;
     if (this.props.downloadURL) {
       downloadButton = (
         <Button
@@ -906,7 +916,7 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
       );
 
       const getData = () => {
-        return this.props.data;
+        return this.props.prefferedTableDataForDownload || this.props.data;
       };
 
       downloadButton = (
@@ -1030,6 +1040,7 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
           hideSelectAllCheckbox={this.props.hideSelectAllCheckbox}
           initialSortBy={this.props.sorted}
           fixedHeight={this.props.fixedHeight}
+          minimumAllowedSelections={this.props.minimumAllowedSelections}
         />
       </div>
     );

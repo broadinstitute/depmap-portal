@@ -153,6 +153,8 @@ function PlotConfiguration({
                   />
                 )}
                 <DimensionSelect
+                  // HACK: Only support by DimensionSelectV2
+                  {...{ allowNullFeatureType: true }}
                   className={cx({
                     [styles.dimensionWithGap]: onlyParallelAxisHasAggregation,
                   })}

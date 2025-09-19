@@ -66,14 +66,11 @@ export function replaceSuperscriptTags(definition: string): React.ReactNode[] {
       if (typeof part !== "string") {
         return part;
       }
-
       const lastIndex = i;
       const superIndex = part.indexOf(superscriptStart, lastIndex);
-
       if (superIndex === -1) {
         return part;
       }
-
       return [
         part.slice(0, superIndex),
         <sup key={i}>
@@ -88,7 +85,6 @@ export function replaceSuperscriptTags(definition: string): React.ReactNode[] {
         ),
       ];
     });
-
     parts = [].concat(...(nestedParts as any[]));
   }
 

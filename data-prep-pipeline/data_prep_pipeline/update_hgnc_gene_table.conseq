@@ -1,35 +1,14 @@
 rule update_hgnc_gene_table:
     inputs:
         hgnc_gene_table={"type": "hgnc_gene_table"},
-        release_taiga_id={"type": "release_taiga_id"},
+        crispr_inferred_common_essentials={"type": "crispr-inferred-common-essentials"},
+        crispr_gene_effect={"type": "raw-dep-matrix", "label": "Chronos_Combined"},
+        crispr_gene_dependency={"type": "raw-dep-prob-matrix", "label": "Chronos_Combined"},
+        script=fileref('../scripts/hgnc_gene_table/add_ce_and_selectivity.py'),
     outputs:{
         "type": "gene",
         "filename": {"$filename": "hgnc_gene_table.csv"},
         "orig_dataset_id": "{{inputs.hgnc_gene_table.dataset_id}}"
     }
     
-    run "python3" with """
-        from taigapy import create_taiga_client_v3
-        from taigapy.client_v3 import TaigaReference
-
-        tc = create_taiga_client_v3()
-        print("Getting HGNC gene data...")
-        hgnc_gene_df = tc.get("{{inputs.hgnc_gene_table.dataset_id}}")
-        hgnc_gene_df.to_csv("hgnc_gene_table.csv", index=False)
-
-        release_taiga_id = "{{ inputs.release_taiga_id.dataset_id }}"
-        hgnc_taiga_id = "{{ inputs.hgnc_gene_table.dataset_id }}"
-
-        version = tc.update_dataset(
-            release_taiga_id.split(".")[0],
-            "Updated HGNC gene data for release",
-            additions=[
-                TaigaReference(
-                    name="Gene",
-                    taiga_id=hgnc_taiga_id,
-                    custom_metadata={}
-                )
-            ]
-        )
-        print(f"Updated HGNC gene data for release {version.permaname} {version.version_number}")
-    """
+    run "python3 {{inputs.script.filename}} {{inputs.hgnc_gene_table.dataset_id}} {{inputs.crispr_inferred_common_essentials.dataset_id}} {{inputs.crispr_gene_effect.dataset_id}} {{inputs.crispr_gene_dependency.dataset_id}} hgnc_gene_table.csv"

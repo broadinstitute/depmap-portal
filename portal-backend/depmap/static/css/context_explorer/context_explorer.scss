@@ -34,16 +34,6 @@
   padding: 10px 4px 10px 10px !important;
 }
 
-// This is probably bad/hacky, but the documented way of hiding the Plotly modebar
-// (adding this to the config: {displayModeBar: false}) did not work for some reason
-.react-base-plot-toolbar {
-  display: none;
-}
-
-.modebar-btn {
-  display: none;
-}
-
 .svg-container {
   margin-top: 32px;
 }
