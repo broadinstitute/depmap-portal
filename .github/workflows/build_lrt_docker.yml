@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - "master"
+      - "artifact-registry-migration"
     paths:
       - "pipeline/build-pipeline-docker-images/lrt-docker/**"
       - "pipeline/build-pipeline-docker-images/build.sh"
       - ".github/workflows/build_lrt_docker.yml"
 
 env:
-  DOCKER_REPO: us.gcr.io/broad-achilles/depmap-pipeline-tda-lrt
+  DOCKER_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images
   DOCKER_TAG: ga2-build-${{ github.run_number }}
   DOCKERFILE_DIR: lrt-docker
 
