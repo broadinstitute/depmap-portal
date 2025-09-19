@@ -1,13 +1,11 @@
 import React from "react";
-import { DimensionType } from "@depmap/types";
 import { capitalize } from "../../utils/misc";
-import ContextSelector from "../ContextSelector";
+import ContextSelectorV2 from "../ContextSelectorV2";
 import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";
 import SliceTypeSelect from "./SliceTypeSelect";
 import AxisTypeToggle from "./AxisTypeToggle";
 import SliceSelect from "./SliceSelect";
-import FallbackSliceSelect from "./FallbackSliceSelect";
 import DataVersionSelect from "./DataVersionSelect";
 import AggregationSelect from "./AggregationSelect";
 import useDimensionStateManager from "./useDimensionStateManager";
@@ -83,48 +81,45 @@ function AllSelects({
         index_type={index_type}
         axis_type={axis_type as "raw_slice" | "aggregated_slice"}
         aggregation={aggregation || null}
-        value={slice_type || null}
+        value={slice_type}
         options={sliceTypeOptions}
         onChange={onChangeSliceType}
         isLoading={isLoading}
         isUnknownDataset={isUnknownDataset}
       />
       <AxisTypeToggle
-        show={Boolean(slice_type && (mode as any) === "entity-or-context")}
+        show={
+          mode === "entity-or-context" &&
+          Boolean(slice_type || axis_type === "aggregated_slice")
+        }
         disabled={dataType === "custom"}
         value={axis_type as "raw_slice" | "aggregated_slice"}
         onChange={onChangeAxisType}
       />
       <SliceSelect
-        show={
-          axis_type === "raw_slice" && Boolean(slice_type) && !isUnknownDataset
-        }
+        show={axis_type === "raw_slice"}
         index_type={index_type}
         dataType={dataType}
-        slice_type={slice_type as string}
+        slice_type={slice_type}
         dataset_id={dataset_id || null}
         value={context || null}
         onChange={onChangeContext}
+        isUnknownDataset={isUnknownDataset}
+        isLoading={isLoading}
       />
-      <FallbackSliceSelect
-        show={axis_type === "raw_slice" && isUnknownDataset}
-        index_type={index_type}
-        value={context}
-      />
-      <ContextSelector
+      <ContextSelectorV2
         enable
-        // HACK: only ContextSelectorV2 supports this special function syntax
-        // for `label`.
-        label={
-          ((dimensionType: DimensionType) =>
-            `${truncate(
-              capitalize(dimensionType.display_name)
-            )} Context`) as any
-        }
-        show={axis_type === "aggregated_slice" && slice_type !== undefined}
-        value={(context as any) || null}
-        onChange={onChangeContext as any}
-        context_type={slice_type as string}
+        show={axis_type === "aggregated_slice" && slice_type != null}
+        label={(dimensionType) => {
+          if (!dimensionType) {
+            return "Context";
+          }
+
+          return `${truncate(capitalize(dimensionType.display_name))} Context`;
+        }}
+        value={context || null}
+        onChange={onChangeContext}
+        context_type={slice_type || ""}
         includeAllInOptions={includeAllInContextOptions}
         onClickCreateContext={onClickCreateContext}
         onClickSaveAsContext={onClickSaveAsContext}
@@ -142,10 +137,12 @@ function AllSelects({
         isLoading={isLoading}
       />
       <DataVersionSelect
-        show={removeWrapperDiv || Boolean(dataType || dataset_id)}
+        show
         shouldGroupByDataType={!dataType}
+        shouldGroupBySliceType={Boolean(dataType) && !slice_type}
         isLoading={isLoading}
         isUnknownDataset={isUnknownDataset}
+        index_type={index_type}
         value={dataset_id || null}
         options={dataVersionOptions}
         onChange={onChangeDataVersion}

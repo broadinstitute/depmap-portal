@@ -50,13 +50,19 @@ export async function evaluateContext(
       }
     // WORKAROUND: Errors result in a code 200 like regular responses.
     // We'll look for detail property to detect them.
-    // FIXME: Is this still true? I think you get 400s now.
-    | { detail: string }
+    // FIXME: Figure out why Breadbox doesn't respond with an error! It's
+    // formatted like one.
+    | {
+        detail: {
+          message: string;
+          error_type: string;
+        };
+      }
   >("/temp/context", contextToEval);
 
   if ("detail" in response) {
     window.console.warn("Could not evaluate context", context);
-    throw new Error(response.detail);
+    throw new Error(JSON.stringify(response.detail, null, 2));
   }
 
   return response;

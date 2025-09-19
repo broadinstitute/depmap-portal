@@ -7,6 +7,11 @@ import {
   pluralize,
   useDimensionType,
 } from "../../utils/misc";
+import {
+  State,
+  SLICE_TYPE_NULL,
+  SliceTypeNull,
+} from "./useDimensionStateManager/types";
 import PlotConfigSelect from "../PlotConfigSelect";
 import styles from "../../styles/DimensionSelect.scss";
 
@@ -16,9 +21,9 @@ interface Props {
   axis_type: "raw_slice" | "aggregated_slice";
   aggregation: string | null;
   isUnknownDataset: boolean;
-  options: { label: string; value: string; isDisabled: boolean }[];
-  value: string | null;
-  onChange: (nextSliceType: string | null) => void;
+  options: State["sliceTypeOptions"];
+  value: string | null | undefined;
+  onChange: (nextSliceType: string | SliceTypeNull | undefined) => void;
 }
 
 const useLabel = (
@@ -70,6 +75,16 @@ function SliceTypeSelect({
   }
 
   const sliceTypeLabel = value ? capitalize(getDimensionTypeLabel(value)) : "";
+  let displayValue =
+    value === undefined ? null : ({ value, label: value } as any);
+
+  if (value === null) {
+    displayValue = {
+      value: SLICE_TYPE_NULL,
+      label: SLICE_TYPE_NULL.toString(),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+  }
 
   return (
     <PlotConfigSelect
@@ -79,9 +94,14 @@ function SliceTypeSelect({
       label={label}
       placeholder={placeholder}
       isLoading={isLoading}
-      value={value}
+      value={displayValue}
       options={isLoading ? [{ label: sliceTypeLabel, value }] : options}
-      onChange={onChange}
+      onChangeUsesWrappedValue
+      onChange={(wrapper) => {
+        // HACK: Use `undefined` instead of `null` to clear the select (since
+        // `null` is a valid slice_type0.
+        onChange((wrapper as any)?.value || undefined);
+      }}
       formatOptionLabel={(option: {
         label: string;
         isDisabled: boolean;

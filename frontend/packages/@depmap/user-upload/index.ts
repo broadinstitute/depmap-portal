@@ -3,6 +3,7 @@ export { UploadFormat } from "./src/models/userUploads";
 
 export type {
   DataTypeEnum,
+  SuccessUploadTask,
   UploadTask,
   UploadTaskUserError,
   UserUploadArgs,

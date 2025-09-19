@@ -3,14 +3,19 @@ import { breadboxAPI, cached } from "@depmap/api";
 import { DimensionType } from "@depmap/types";
 
 export default function usePlaceholder(
-  context_type: string,
+  context_type: string | null,
   isLoading: boolean
 ) {
-  const [dimensionType, setDimensionType] = useState<DimensionType | null>(
-    null
-  );
+  const [dimensionType, setDimensionType] = useState<
+    DimensionType | null | undefined
+  >(undefined);
 
   useEffect(() => {
+    if (context_type === null) {
+      setDimensionType(null);
+      return;
+    }
+
     cached(breadboxAPI)
       .getDimensionTypes()
       .then((types) => {
