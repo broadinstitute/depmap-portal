@@ -99,7 +99,7 @@ def get_datasets(
 
 
 @router.get(
-    "/features/{dataset_id}", operation_id="get_dataset_features",
+    "/features/{dataset_id:path}", operation_id="get_dataset_features",
 )
 def get_dataset_features(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
@@ -117,7 +117,7 @@ def get_dataset_features(
 
 
 @router.get(
-    "/samples/{dataset_id}", operation_id="get_dataset_samples",
+    "/samples/{dataset_id:path}", operation_id="get_dataset_samples",
 )
 def get_dataset_samples(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
@@ -289,7 +289,7 @@ def add_dataset(
 
 
 @router.get(
-    "/{dataset_id}",
+    "/{dataset_id:path}",
     operation_id="get_dataset",
     response_model=DatasetResponse,
     response_model_by_alias=False,
@@ -300,7 +300,7 @@ def get_dataset(dataset: DatasetModel = Depends(get_dataset_dep)):
 
 
 @router.post(
-    "/matrix/{dataset_id}", operation_id="get_matrix_dataset_data",
+    "/matrix/{dataset_id:path}", operation_id="get_matrix_dataset_data",
 )
 def get_matrix_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
@@ -330,7 +330,7 @@ def get_matrix_dataset_data(
 
 
 @router.post(
-    "/tabular/{dataset_id}", operation_id="get_tabular_dataset_data",
+    "/tabular/{dataset_id:path}", operation_id="get_tabular_dataset_data",
 )
 def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
@@ -359,7 +359,9 @@ def get_tabular_dataset_data(
     return Response(df.to_json(), media_type="application/json")
 
 
-@router.post("/data/{dataset_id}", operation_id="get_dataset_data", deprecated=True)
+@router.post(
+    "/data/{dataset_id:path}", operation_id="get_dataset_data", deprecated=True
+)
 def get_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
@@ -514,7 +516,7 @@ def get_dimension_data(
 
 
 @router.patch(
-    "/{dataset_id}",
+    "/{dataset_id:path}",
     operation_id="update_dataset",
     response_model=DatasetResponse,
     response_model_by_alias=False,
@@ -570,7 +572,7 @@ def update_dataset(
 
 
 @router.delete(
-    "/{dataset_id}", operation_id="remove_dataset",
+    "/{dataset_id:path}", operation_id="remove_dataset",
 )
 def delete_dataset(
     dataset_id: UUID,
