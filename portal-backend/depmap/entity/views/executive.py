@@ -152,10 +152,7 @@ def format_enrichment_box_for_dataset(
         "Chronos_Combined": "geneDependency",
     }
 
-    # Transform AUC to log2(AUC) for display
     units = dataset.matrix.units
-    if units == "AUC":
-        units = "log2(AUC)"
 
     return {
         "context_explorer_dataset_tab": "overview"
