@@ -212,10 +212,8 @@ def format_dep_dists(compound_experiment_and_datasets):
         color = colors[dataset.name]
 
         svg = format_generic_distribution_plot(values, color)
-        # Transform AUC to log2(AUC) for display
+
         units = dataset.matrix.units
-        if units == "AUC":
-            units = "log2(AUC)"
 
         dep_dists.append(
             {
