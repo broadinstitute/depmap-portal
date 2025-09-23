@@ -15,7 +15,7 @@ on:
       - "artifact-registry-migration"
 
 env:
-  DOCKER_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images
+  DOCKER_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
