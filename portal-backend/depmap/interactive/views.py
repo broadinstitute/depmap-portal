@@ -766,13 +766,10 @@ def add_custom_csv_dataset():
     display_name = request.form.get("displayName")
     units = request.form.get("units")
     transposed = request.form.get("transposed").lower() == "true"
-    use_data_explorer_2 = (
-        request.form.get("useDataExplorer2", "false").lower() == "true"
-    )
     datafile = request.files.get("uploadFile")
     csv_path = write_upload_to_local_file(datafile)
     result = upload_transient_csv.apply(
-        args=[display_name, units, transposed, csv_path, False, use_data_explorer_2]
+        args=[display_name, units, transposed, csv_path, False]
     )
     response = format_task_status(result)
 
@@ -788,7 +785,6 @@ def download_csv_and_view_interactive():
     display_name = request.args["display_name"]
     units = request.args["units"]
     file_url = request.args["url"]
-    use_de2 = request.args.get("de2", "T") == "T"
 
     url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
 
@@ -807,7 +803,7 @@ def download_csv_and_view_interactive():
     #     abort(400)
 
     result = upload_transient_csv.apply(
-        args=[display_name, units, True, file_url, False, use_de2]
+        args=[display_name, units, True, file_url, False]
     )
 
     if result.state == TaskState.SUCCESS.value:
