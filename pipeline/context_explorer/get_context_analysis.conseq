@@ -10,7 +10,7 @@ rule get_context_analysis:
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
 #        repurposing_list_taiga_id=all {"type": "repurposing_list_taiga_id"},
 #        oncref_auc_taiga_id=all {"type":"prism_oncology_reference_auc_matrix"},
-        compound_summaries=all {"type" ~ "compound-summary"}
+        compound_summaries=all {"type" ~ "compound-summary"},
 #       compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
 #       compound_summary_oncref={"type": "compound-summary", "dataset": "Prism_oncology_AUC"},
         tda_table={"type":"tda-table"},
