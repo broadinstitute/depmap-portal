@@ -74,14 +74,19 @@ def _upload_transient_csv(
     if units is None:
         raise UserError("Invalid input: Units cannot be empty")
     
-    # Read and validate data from CSV 
+    # Read and validate data from CSV, 
+    # Ensure the dataframe is in the format Breadbox expects
     df = read_and_validate_csv_shape(csv_path, single_column, is_transpose)
+
+    # In order to support legacy PRISM datasets which may be diplayed in the portal,
+    # we still need to support uploads which are indexed by CCLE Name instead of depmap ID. 
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
-    # TODO: record any/all warnings from breadbox
-    warnings = validate_df_indices(df, is_transpose, cell_line_name_type)
+    warnings = validate_df_indices(df, cell_line_name_type)
+    if cell_line_name_type == CellLineNameType.ccle_name:
+        df = map_ccle_index_to_depmap_id(df)
 
     try:
-        dataset_uuid = data_access.add_matrix_dataset_to_breadbox(
+        dataset_uuid, bb_warnings = data_access.add_matrix_dataset_to_breadbox(
             name=label,
             units=units,
             data_type="User upload",
@@ -90,6 +95,8 @@ def _upload_transient_csv(
             feature_type=None,
             is_transient=True,
         )
+        warnings.extend(bb_warnings)
+
     except BreadboxException as e:
         raise UserError(e)
 
@@ -180,8 +187,31 @@ def convert_to_empty_string_if_nan(x):
         return x
 
 
+def get_matching_cell_line_entities(cell_line_name_type: CellLineNameType, cell_line_names: list[str]) -> list[CellLine]:
+    CellLine.query.filter(
+        getattr(CellLine, cell_line_name_type.db_col_name).in_(cell_line_names)
+    ).all()
+
+    
+# TODO: unit test this, test case where not all exist in mapping
+def map_ccle_index_to_depmap_id(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Update the index to use depmap_ids instead of ccle_names.
+    Drop any rows that don't have matching records in the database
+    (we've already generated warnings about any rows were this is the case).
+    """
+    index_col_name = df.columns[0]
+
+    # Load a mapping between the old index and the new
+    cell_line_names = list(df[index_col_name])
+    cell_lines = get_matching_cell_line_entities(CellLineNameType.ccle_name, cell_line_names)
+    ccle_to_depmap_id_mapping = {cell_line.cell_line_name: cell_line.depmap_id for cell_line in cell_lines}
+    df[index_col_name] = df[index_col_name].map(ccle_to_depmap_id_mapping)
+    return df
+
+
 def validate_df_indices(
-    df, is_transpose, cell_line_name_type: CellLineNameType
+    df: pd.DataFrame, cell_line_name_type: CellLineNameType
 ) -> List[str]:
     """
     Validate that
@@ -190,14 +220,11 @@ def validate_df_indices(
         no duplicates in the non-cell line index
     :return: list of any warnings
     Most of the validations here are redundant now that we are uploading to breadbox.
-    However, I am leaving them in place for now because they have nicely formatted errors to users. 
+    However, I am leaving them in place for now because they handle some of the complexity of
+    validating matrices which are indexed by CCLE names instead of DepMap IDs.
     """
-    if is_transpose:
-        cell_line_names = df.index.tolist()
-        feature_index = df.columns.tolist()
-    else:
-        cell_line_names = df.columns.tolist()
-        feature_index = df.index.tolist()
+    cell_line_names = df[df.columns[0]].tolist()
+    feature_index = df.columns.tolist()
 
     def count_duplicates(l):
         return [(l.count(x), x) for x in l]
@@ -228,9 +255,7 @@ def validate_df_indices(
             )
         )
 
-    cell_lines: List[CellLine] = CellLine.query.filter(
-        getattr(CellLine, cell_line_name_type.db_col_name).in_(cell_line_names)
-    ).all()
+    cell_lines = get_matching_cell_line_entities(cell_line_name_type, cell_line_names)
 
     if len(cell_lines) == 0:
         raise UserError(
