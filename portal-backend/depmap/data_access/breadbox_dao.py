@@ -4,7 +4,6 @@ from typing import Literal, Optional, Union, cast
 from breadbox_client.models import (
     DimensionType,
     MatrixDatasetResponse,
-    MatrixDatasetResponseFormat,
     TabularDatasetResponse,
 )
 from breadbox_client.types import Unset
@@ -45,7 +44,7 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     matrix_datasets = []
     for dataset in _get_breadbox_datasets_with_caching():
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
@@ -69,7 +68,7 @@ def get_filtered_matrix_datasets(
     )
     matrix_datasets = []
     for dataset in datasets:
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
@@ -252,7 +251,12 @@ def add_matrix_dataset(
     """
     Upload the given matrix dataset to breadbox. If successful, return the dataset ID.
     """
-    result = extensions.breadbox.client.add_matrix_dataset(
+    if is_transient:
+        group_id = extensions.breadbox.client.TRANSIENT_GROUP_ID
+    else: 
+        group_id = extensions.breadbox.client.PUBLIC_GROUP_ID
+
+    upload_result = extensions.breadbox.client.add_matrix_dataset(
         name=name,
         units=units,
         data_type=data_type,
@@ -260,7 +264,7 @@ def add_matrix_dataset(
         sample_type=sample_type,
         feature_type=feature_type,
         is_transient=is_transient,
+        group_id=group_id,
     )
-    if result.state != "SUCCESS":
-        raise Exception(f"Unable to upload dataset to breadbox: {result.message}")
-    return result.id
+    assert "datasetId" in upload_result, "Unexpected result format from data upload. Expected `datasetId` field."
+    return upload_result["datasetId"]
