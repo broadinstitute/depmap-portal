@@ -403,9 +403,11 @@ def add_matrix_dataset_to_breadbox(
     sample_type: str,
     feature_type: Optional[str],
     is_transient: bool = False
-) -> str:
+) -> tuple[str, list[str]]:
     """
-    Upload the given matrix dataset to breadbox. If successful, return the dataset ID.
+    Upload the given matrix dataset to breadbox.
+    If successful, return the dataset ID and any warnings.
+    If not successful, raise a BreadboxException.
     """
     return breadbox_dao.add_matrix_dataset(
         name=name,

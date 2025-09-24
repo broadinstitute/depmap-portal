@@ -9,14 +9,12 @@ from breadbox_client.models import (
 from breadbox_client.types import Unset
 from depmap.data_access.response_parsing import (
     is_breadbox_id_format,
-    parse_breadbox_slice_id,
     parse_matrix_dataset_response,
     remove_breadbox_prefix,
 )
 from depmap.data_access.models import MatrixDataset
 from depmap import extensions
 from depmap.partials.matrix.models import CellLineSeries
-from depmap.interactive.config.models import DatasetSortKey, DatasetSortFirstKey
 import flask
 
 
@@ -247,9 +245,11 @@ def add_matrix_dataset(
     sample_type: str,
     feature_type: Optional[str],
     is_transient: bool = False
-) -> str:
+) -> tuple[str, list[str]]:
     """
-    Upload the given matrix dataset to breadbox. If successful, return the dataset ID.
+    Upload the given matrix dataset to breadbox.
+    If successful, return the dataset ID and any warnings.
+    If not successful, raise a BreadboxException.
     """
     if is_transient:
         group_id = extensions.breadbox.client.TRANSIENT_GROUP_ID
@@ -266,9 +266,14 @@ def add_matrix_dataset(
         is_transient=is_transient,
         group_id=group_id,
     )
-    # It's possible that this is an overly-strict assertion
+    # Generate warnings for any IDs which don't have matching metadata
+    warnings = []
     if "unknownIDs" in upload_result:
-        assert len(upload_result["unknownIDs"]) == 0
+        for idset in unknownIDs:
+            missing_ids = idset["IDs"]
+            ref_count = ref_counts[idset["axis"]]
+            missing_percentage = len(missing_ids) / ref_count * 100
+            warnings.append( f"IDs missing from metadata ({int(missing_percentage)}% of all IDs): {idset}")
 
     assert "datasetId" in upload_result, "Unexpected result format from data upload. Expected `datasetId` field."
-    return upload_result["datasetId"]
+    return upload_result["datasetId"], warnings
