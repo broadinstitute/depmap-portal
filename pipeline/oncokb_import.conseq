@@ -1,12 +1,14 @@
 rule oncokb_data_import:
     inputs:
-        maf={"type": "mutation-maf-file"},
+        mutation_maf={"type": "mutation-maf"}, # only used for orig_dataset_id
+        filtered_mutation_maf={"type": "filtered-mutation-maf-file"},
         annotated_csv={"type": "oncokb-annotated"}
 
     outputs:
         {
             "type": "oncokb-csv-output",
             "filename": {"$filename": "oncokb_annotated_full.csv"},
+            "orig_dataset_id": "{{ inputs.mutation_maf.dataset_id }}"
         }
 
     run "python3" with """
@@ -29,7 +31,7 @@ rule oncokb_data_import:
             return x
 
         # fiddle with the formatting to accomodate the fact that we have the string "Unknown" and the IDs are formatted as decimals.
-        release_df_filtered = pd.read_csv("{{ inputs.maf.filename }}")
+        release_df_filtered = pd.read_csv("{{ inputs.filtered_mutation_maf.filename }}")
         release_df_filtered.to_csv("release_df_filtered.csv", index=False)
         release_df_filtered["EntrezGeneID"] = release_df_filtered["EntrezGeneID"].apply(reformat_entrez_id)
         annotated_df = tc.get(id="{{ inputs.annotated_csv.dataset_id }}")
