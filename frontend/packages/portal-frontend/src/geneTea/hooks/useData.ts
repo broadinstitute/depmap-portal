@@ -31,6 +31,7 @@ function filterFrequentTerms(
     totalInfo: indices.map((i) => freqTerms.totalInfo[i]),
     effectSize: indices.map((i) => freqTerms.effectSize[i]),
     enriched: indices.map((i) => freqTerms.enriched[i]),
+    negLogFDR: indices.map((i) => freqTerms.negLogFDR[i]),
   };
 }
 

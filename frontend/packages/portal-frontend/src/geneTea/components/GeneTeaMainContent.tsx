@@ -4,10 +4,7 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { groupStringsByCondition, tableColumns } from "../utils";
 import useData from "../hooks/useData";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
-import {
-  TopTermsContextProvider,
-  useTopTermsContext,
-} from "../context/TopTermsContext";
+import { TopTermsContextProvider } from "../context/TopTermsContext";
 import {
   AllTermsContextProvider,
   useAllTermsContext,
@@ -141,9 +138,10 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   if (tab === "all-matching-terms") {
     return (
       <AllTermsContextProvider>
-        <AllMatchingTermsTab
+        {/* <AllMatchingTermsTab
           allTermsScatterPlotData={allTermsScatterPlotData}
-        />
+        /> */}
+        <></>
       </AllTermsContextProvider>
     );
   }

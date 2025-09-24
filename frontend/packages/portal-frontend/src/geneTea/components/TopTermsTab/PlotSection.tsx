@@ -5,7 +5,7 @@ import PlotControls, {
 } from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import styles from "../styles/GeneTea.scss";
+import styles from "../../styles/GeneTea.scss";
 import {
   BarChartFormattedData,
   HeatmapFormattedData,
@@ -32,10 +32,14 @@ function PlotSection({
   handleSetPlotElement,
   plotElement,
 }: PlotSectionProps) {
-  const { maxTopTerms, doGroupTerms } = useGeneTeaFiltersContext();
   const {
     selectedPlotGenes,
     handleSetPlotSelectedGenes,
+    maxTopTerms,
+    doGroupTerms,
+  } = useGeneTeaFiltersContext();
+
+  const {
     handleClickSavePlotSelectionAsContext,
     handleClearPlotSelection,
   } = useTopTermsContext();

@@ -22,6 +22,12 @@ export const TERM_OPTIONS_FILTER_DEFAULTS = {
 };
 
 export interface GeneTeaFiltersContextType {
+  selectedPlotGenes: Set<string>;
+  handleSetPlotSelectedGenes: (
+    selections: Set<string>,
+    shiftKey: boolean
+  ) => void;
+  handleClearSelectedTopTermsTableRows: () => void;
   selectedTopTermsTableRows: Set<string>;
   handleSetSelectedTopTermsTableRows: (v: Set<string>) => void;
   effectSizeThreshold: number;
@@ -121,6 +127,28 @@ export function GeneTeaFiltersContextProvider({
     TERM_OPTIONS_FILTER_DEFAULTS.sortBy as SortOption
   );
   const handleSetSortBy = useCallback((v: SortOption) => setSortBy(v), []);
+
+  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
+    new Set([])
+  );
+  const handleSetPlotSelectedGenes = useCallback(
+    (selections: Set<string>, shiftKey: boolean) => {
+      setSelectedPlotGenes((prev) => {
+        const next: Set<string> = shiftKey ? new Set(prev) : new Set();
+
+        selections.forEach((id) => {
+          if (next.has(id)) {
+            next.delete(id);
+          } else {
+            next.add(id);
+          }
+        });
+
+        return next;
+      });
+    },
+    []
+  );
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
     new Set(["CAD", "UMPS", "ADSL", "DHODH"])
@@ -238,6 +266,9 @@ export function GeneTeaFiltersContextProvider({
   return (
     <GeneTeaFiltersContext.Provider
       value={{
+        selectedPlotGenes,
+        handleSetPlotSelectedGenes,
+        handleClearSelectedTopTermsTableRows,
         selectedTopTermsTableRows,
         handleSetSelectedTopTermsTableRows,
         effectSizeThreshold,

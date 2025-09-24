@@ -7,7 +7,7 @@ import {
 } from "@depmap/data-explorer-2";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext } from "@depmap/types";
-import { useGeneTeaContext } from "../context/GeneTeaFiltersContext";
+import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 
 const LoadFromGeneContextSection: React.FC = () => {
   const {
@@ -16,7 +16,7 @@ const LoadFromGeneContextSection: React.FC = () => {
     handleSetInValidGeneSymbols,
     allAvailableGenes,
     geneSymbolSelections,
-  } = useGeneTeaContext();
+  } = useGeneTeaFiltersContext();
 
   const indexType = "gene";
 

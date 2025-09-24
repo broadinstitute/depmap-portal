@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import ToggleSwitch from "@depmap/common-components/src/components/ToggleSwitch";
-import { useGeneTeaContext } from "../context/GeneTeaFiltersContext";
+import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import styles from "../styles/GeneTea.scss";
 
 const PlotOptionsPanel: React.FC = () => {
@@ -13,7 +13,7 @@ const PlotOptionsPanel: React.FC = () => {
     handleSetDoClusterGenes,
     doGroupTerms,
     handleSetDoGroupTerms,
-  } = useGeneTeaContext();
+  } = useGeneTeaFiltersContext();
 
   return (
     <div ref={ref} style={{ backgroundColor: "#ffffff" }}>

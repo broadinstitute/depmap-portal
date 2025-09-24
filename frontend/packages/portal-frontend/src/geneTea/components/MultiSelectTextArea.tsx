@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import { MAX_GENES_ALLOWED } from "../types";
+import { useTopTermsContext } from "../context/TopTermsContext";
 
 // TODO move to utils
 function replaceLineBreaksWithSingleSpace(text: string): string {
@@ -16,16 +17,15 @@ function replaceLineBreaksWithSingleSpace(text: string): string {
 
 const MultiSelectTextarea: React.FC = () => {
   const {
+    selectedPlotGenes,
+    handleSetPlotSelectedGenes,
     geneSymbolSelections,
     handleSetGeneSymbolSelections,
     validGeneSymbols,
     handleSetValidGeneSymbols,
     inValidGeneSymbols,
     handleSetInValidGeneSymbols,
-    selectedPlotGenes,
-    handleSetPlotSelectedGenes,
-    handleClearPlotSelection,
-    handleClearSelectedTableRows,
+    handleClearSelectedTopTermsTableRows,
     handleSetError,
     error,
     errorMessage,
@@ -58,6 +58,7 @@ const MultiSelectTextarea: React.FC = () => {
       const newGeneSymbolSelections = new Set(
         [...prevChips].filter((chip) => chip !== chipToRemove)
       );
+
       return newGeneSymbolSelections;
     });
 
@@ -185,8 +186,8 @@ const MultiSelectTextarea: React.FC = () => {
             handleSetGeneSymbolSelections(() => new Set<string>([]));
             handleSetValidGeneSymbols(new Set());
             handleSetInValidGeneSymbols(new Set());
-            handleClearPlotSelection();
-            handleClearSelectedTableRows();
+            handleSetPlotSelectedGenes(new Set(), false);
+            handleClearSelectedTopTermsTableRows();
             setInputValue(""); // Clear input
             handleSetError(false);
           }}

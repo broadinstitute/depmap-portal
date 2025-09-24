@@ -3,11 +3,7 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
-  useEffect,
-  useRef,
-  useState,
 } from "react";
-import { SortOption } from "../types";
 import promptForSelectionFromContext from "../components/promptForSelectionFromContext";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { saveNewContext } from "src";
@@ -15,15 +11,7 @@ import { DataExplorerContext } from "@depmap/types";
 import { useGeneTeaFiltersContext } from "./GeneTeaFiltersContext";
 
 export interface TopTermsContextType {
-  selectedTableRows: Set<string>;
-  handleSetSelectedTableRows: (v: Set<string>) => void;
   handleSetSelectionFromContext: () => Promise<void>;
-  handleClearSelectedTableRows: () => void;
-  selectedPlotGenes: Set<string>;
-  handleSetPlotSelectedGenes: (
-    selections: Set<string>,
-    shiftKey: boolean
-  ) => void;
   handleClickSavePlotSelectionAsContext: () => void;
   handleClearPlotSelection: () => void;
 }
@@ -39,11 +27,12 @@ interface TopTermsContextProviderProps {
 export function TopTermsContextProvider({
   children,
 }: TopTermsContextProviderProps) {
-  const { validGeneSymbols } = useGeneTeaFiltersContext();
+  const {
+    validGeneSymbols,
+    selectedPlotGenes,
+    handleSetPlotSelectedGenes,
+  } = useGeneTeaFiltersContext();
 
-  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
-    new Set([])
-  );
   const handleSetSelectionFromContext = useCallback(async () => {
     const labels = await promptForSelectionFromContext(
       validGeneSymbols,
@@ -53,27 +42,8 @@ export function TopTermsContextProvider({
       return;
     }
 
-    setSelectedPlotGenes(labels);
+    handleSetPlotSelectedGenes(labels, false);
   }, [validGeneSymbols]);
-
-  const handleSetPlotSelectedGenes = useCallback(
-    (selections: Set<string>, shiftKey: boolean) => {
-      setSelectedPlotGenes((prev) => {
-        const next: Set<string> = shiftKey ? new Set(prev) : new Set();
-
-        selections.forEach((id) => {
-          if (next.has(id)) {
-            next.delete(id);
-          } else {
-            next.add(id);
-          }
-        });
-
-        return next;
-      });
-    },
-    []
-  );
 
   const handleClickSavePlotSelectionAsContext = useCallback(() => {
     if (selectedPlotGenes.size > 0) {
@@ -88,19 +58,14 @@ export function TopTermsContextProvider({
   }, [selectedPlotGenes]);
 
   const handleClearPlotSelection = useCallback(
-    () => setSelectedPlotGenes(new Set([])),
+    () => handleSetPlotSelectedGenes(new Set([]), false),
     []
   );
 
   return (
     <TopTermsContext.Provider
       value={{
-        selectedTableRows,
-        handleSetSelectedTableRows,
         handleSetSelectionFromContext,
-        handleClearSelectedTableRows,
-        selectedPlotGenes,
-        handleSetPlotSelectedGenes,
         handleClickSavePlotSelectionAsContext,
         handleClearPlotSelection,
       }}

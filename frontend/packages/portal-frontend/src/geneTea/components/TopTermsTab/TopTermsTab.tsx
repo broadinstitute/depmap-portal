@@ -1,9 +1,8 @@
 import React, { useMemo, useState } from "react";
-import styles from "../styles/GeneTea.scss";
+import styles from "../../styles/GeneTea.scss";
 import GeneTeaTable from "../GeneTeaTable";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { groupStringsByCondition, tableColumns } from "../../utils";
-import useData from "../../hooks/useData";
+import { tableColumns } from "../../utils";
 import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 
@@ -34,6 +33,9 @@ function TopTermsTab({
   heatmapXAxisLabel,
 }: TopTermsTabProps) {
   const {
+    selectedTopTermsTableRows: selectedTableRows,
+    handleSetSelectedTopTermsTableRows: handleSetSelectedTableRows,
+    selectedPlotGenes,
     doGroupTerms,
     maxTopTerms,
     isLoading,
@@ -41,17 +43,9 @@ function TopTermsTab({
   } = useGeneTeaFiltersContext();
 
   const {
-    selectedTableRows,
-    selectedPlotGenes,
-    handleSetSelectedTableRows,
     handleClickSavePlotSelectionAsContext,
     handleClearPlotSelection,
   } = useTopTermsContext();
-
-  const plotSelections = useMemo(
-    () => (selectedTableRows.size > 0 ? selectedTableRows : new Set([])),
-    [selectedTableRows]
-  );
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
@@ -99,6 +93,7 @@ function TopTermsTab({
     return { roundedData, unroundedData };
   }, [rawData]);
 
+  console.log("error tab", error);
   // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>
