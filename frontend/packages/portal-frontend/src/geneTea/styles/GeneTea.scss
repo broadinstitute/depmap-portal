@@ -52,3 +52,22 @@
     }
   }
 }
+
+.toggleSwitch {
+  margin-left: 15px;
+  padding-top: 8px;
+  .label {
+    font-size: 7px;
+  }
+  button {
+    height: 19px;
+    transition: background-color 0.2s;
+  }
+  button[aria-checked="true"],
+  button.active,
+  button:checked {
+    border-width: 2px;
+    border-color: rgba(25, 118, 210, 1);
+    color: #fff;
+  }
+}

@@ -34,7 +34,7 @@ def process_and_generate_driver_events(
     oncokb_annotated = tc.get(oncokb_annotated_taiga_id)
 
     print("Transforming driver events data...")
-    mutations["EntrezGeneID"] = mutations["EntrezGeneID"].apply(reformat_entrez_id)
+    # mutations["EntrezGeneID"] = mutations["EntrezGeneID"].apply(reformat_entrez_id) # Don't need this in 25q3 since the EntrezGeneID is already a string
     oncokb_annotated["ProteinChange"] = oncokb_annotated["ProteinChange"].map(
         "p.{}".format
     )
@@ -80,6 +80,8 @@ def process_and_generate_driver_events(
     driver_events_matrix.set_index("ModelID", inplace=True)
     driver_events_matrix.index.name = None
 
+    all_models = mutations["ModelID"].unique()
+    driver_events_matrix = driver_events_matrix.reindex(all_models, fill_value=False)
     driver_events_matrix = driver_events_matrix.replace({True: 1.0, False: 0.0})
 
     print("Transformed driver events data")

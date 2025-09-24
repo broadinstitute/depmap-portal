@@ -133,6 +133,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
       </div>
     );
   }
+
   // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>
@@ -194,9 +195,10 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
               ? selectedTableRows
               : new Set(rawData.enrichedTerms?.term)
           }
-          handleChangeSelection={(selections: string[]) =>
-            handleSetSelectedTableRows(new Set(selections))
-          }
+          handleChangeSelection={(selections: string[]) => {
+            if (selections.length === 0) return;
+            handleSetSelectedTableRows(new Set(selections));
+          }}
         />
       )}
     </div>

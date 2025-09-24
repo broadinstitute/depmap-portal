@@ -2,7 +2,6 @@ import { DataExplorerAggregation } from "@depmap/types";
 import { contextsMatch } from "../../../utils/context";
 import { Changes, State } from "./types";
 import {
-  findHighestPriorityDataset,
   inferDataType,
   inferDatasetId,
   inferSliceType,
@@ -13,7 +12,8 @@ import computeOptions from "./computeOptions";
 async function resolveNextState(
   index_type: string | null,
   prev: State,
-  changes: Changes
+  changes: Changes,
+  shouldCalcOptions: boolean
 ) {
   const pd = prev.dimension;
   let dataType = prev.dataType;
@@ -55,19 +55,31 @@ async function resolveNextState(
       context = undefined;
       units = null;
     } else if (!slice_type) {
-      slice_type = await inferSliceType(index_type, dataType);
+      const inferred = await inferSliceType(
+        index_type,
+        dataType,
+        dataset_id || null
+      );
+      slice_type = inferred?.valueOf();
     }
   }
 
   if ("slice_type" in changes && slice_type !== changes.slice_type) {
-    slice_type = changes.slice_type || undefined;
+    slice_type =
+      changes.slice_type === undefined
+        ? undefined
+        : changes.slice_type.valueOf();
 
     if (slice_type !== context?.dimension_type) {
       context = undefined;
     }
 
-    if (slice_type && !dataType) {
-      dataType = await inferDataType(index_type, slice_type);
+    if (changes.slice_type && !dataType) {
+      dataType = await inferDataType(
+        index_type,
+        changes.slice_type,
+        dataset_id || null
+      );
     }
   }
 
@@ -77,7 +89,12 @@ async function resolveNextState(
     isUnknownDataset = false;
 
     if (dataType && slice_type) {
-      dataset_id = await inferDatasetId(index_type, slice_type, dataType);
+      dataset_id = await inferDatasetId(
+        index_type,
+        slice_type,
+        dataType,
+        dataset_id || null
+      );
     }
   }
 
@@ -114,8 +131,11 @@ async function resolveNextState(
         inferredDataType,
       } = await inferTypesFromDatasetId(index_type, dataset_id);
 
-      slice_type = inferredSliceType;
+      slice_type = inferredSliceType?.valueOf();
       dataType = inferredDataType;
+    } else if (slice_type === null) {
+      slice_type = undefined;
+      context = undefined;
     }
   }
 
@@ -131,6 +151,22 @@ async function resolveNextState(
     }
   }
 
+  const options = shouldCalcOptions
+    ? await computeOptions(index_type, dataType, prev.allowNullFeatureType, {
+        ...prev.dimension,
+        axis_type,
+        context,
+        dataset_id,
+        slice_type,
+        aggregation,
+      })
+    : {
+        dataVersionOptions: [],
+        dataTypeOptions: [],
+        sliceTypeOptions: [],
+        unitsOptions: [],
+      };
+
   const hasAllRequiredProps = Boolean(dataType && slice_type && context);
 
   const requiredPropChanged =
@@ -145,68 +181,39 @@ async function resolveNextState(
     hasAllRequiredProps &&
     (requiredPropChanged || unitsChanged)
   ) {
-    // FIXME: This should take into account `context` as well.
-    dataset_id = await findHighestPriorityDataset(
-      index_type,
-      dataType as string,
-      slice_type as string
+    const defaultDatasetOption = options.dataVersionOptions.find(
+      (d) => d.isDefault
     );
 
-    if (!dataset_id) {
-      dataset_id = await inferDatasetId(
-        index_type,
-        slice_type as string,
-        dataType
-      );
+    if (defaultDatasetOption) {
+      dataset_id = defaultDatasetOption.value;
+      isUnknownDataset = false;
     }
-
-    isUnknownDataset = false;
   }
-
-  let dirty =
-    slice_type !== pd.slice_type ||
-    dataset_id !== pd.dataset_id ||
-    context !== pd.context ||
-    axis_type !== pd.axis_type ||
-    aggregation !== pd.aggregation;
-
-  const options = await computeOptions(index_type, dataType, {
-    ...prev.dimension,
-    axis_type,
-    context,
-    dataset_id,
-    slice_type,
-    aggregation,
-  });
 
   if (!dataType && options.dataTypeOptions.length === 1) {
     dataType = options.dataTypeOptions[0].value;
-    dirty = true;
   }
 
   if (!slice_type && options.sliceTypeOptions.length === 1) {
-    slice_type = options.sliceTypeOptions[0].value;
-    dirty = true;
+    slice_type = options.sliceTypeOptions[0].value.valueOf();
   }
 
   if (!dataset_id && options.dataVersionOptions.length === 1) {
     dataset_id = options.dataVersionOptions[0].value;
-    dirty = true;
   }
 
   if (!prev.dimension.slice_type && slice_type && !dataType) {
     const enabledOpts = options.dataTypeOptions.filter((o) => !o.isDisabled);
     if (enabledOpts.length === 1) {
       dataType = enabledOpts[0].value;
-      dirty = true;
     }
   }
 
   if (!prev.dataType && dataType && !slice_type) {
     const enabledOpts = options.sliceTypeOptions.filter((o) => !o.isDisabled);
     if (enabledOpts.length === 1) {
-      slice_type = enabledOpts[0].value;
-      dirty = true;
+      slice_type = enabledOpts[0].value.valueOf();
     }
   }
 
@@ -214,9 +221,15 @@ async function resolveNextState(
     const enabledOpts = options.dataVersionOptions.filter((o) => !o.isDisabled);
     if (enabledOpts.length === 1) {
       dataset_id = enabledOpts[0].value;
-      dirty = true;
     }
   }
+
+  const dirty =
+    slice_type !== pd.slice_type ||
+    dataset_id !== pd.dataset_id ||
+    context !== pd.context ||
+    axis_type !== pd.axis_type ||
+    aggregation !== pd.aggregation;
 
   return {
     ...prev,

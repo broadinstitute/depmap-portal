@@ -5,11 +5,12 @@ import {
   DataExplorerPlotConfigDimensionV2,
   DimensionType,
   PartialDataExplorerPlotConfigDimension,
+  PartialDataExplorerPlotConfigDimensionV2,
   SliceQuery,
 } from "@depmap/types";
 import { isV2Context } from "./context";
 
-export function getDimensionTypeLabel(dimension_type: string) {
+export function getDimensionTypeLabel(dimension_type?: string) {
   if (!dimension_type) {
     return "";
   }
@@ -69,17 +70,32 @@ export const isCompleteExpression = (expr: any) => {
 };
 
 export function isCompleteDimension(
-  dimension: PartialDataExplorerPlotConfigDimension | null | undefined
-): dimension is DataExplorerPlotConfigDimension {
+  dimension:
+    | PartialDataExplorerPlotConfigDimension
+    | PartialDataExplorerPlotConfigDimensionV2
+    | null
+    | undefined
+): dimension is
+  | DataExplorerPlotConfigDimension
+  | DataExplorerPlotConfigDimensionV2 {
   if (!dimension) {
     return false;
   }
 
   const { dataset_id, slice_type, axis_type, context, aggregation } = dimension;
 
+  const isNullSliceTypeSupported =
+    context != null &&
+    typeof context === "object" &&
+    "dimension_type" in context;
+
+  const isValidSliceType = isNullSliceTypeSupported
+    ? typeof slice_type === "string" || slice_type === null
+    : Boolean(slice_type);
+
   return Boolean(
     dataset_id &&
-      slice_type &&
+      isValidSliceType &&
       axis_type &&
       aggregation &&
       isCompleteExpression(context?.expr)
@@ -130,7 +146,9 @@ export const isSampleType = (
 };
 
 export function convertDimensionToSliceId(
-  dimension: Partial<DataExplorerPlotConfigDimension>
+  dimension: Partial<
+    DataExplorerPlotConfigDimension | DataExplorerPlotConfigDimensionV2
+  >
 ) {
   if (!isCompleteDimension(dimension)) {
     return null;

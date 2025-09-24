@@ -338,7 +338,6 @@ export default function extendReactSelect(
             onFocus={() => {
               setTimeout(() => {
                 reactSelectRef.current?.focus();
-                reactSelectRef.current?.onMenuOpen?.();
                 setIsTruncated(true);
               }, 0);
             }}
@@ -386,7 +385,7 @@ export default function extendReactSelect(
                   valContainerItem.classList.add(styles.hidden);
 
                   if (editableInputValue) {
-                    reactSelectRef.current.select.onInputChange(
+                    reactSelectRef.current?.select.onInputChange(
                       editableInputValue
                     );
                   }
@@ -447,7 +446,13 @@ export default function extendReactSelect(
                   props.onMenuClose();
                 }
 
-                reactSelectRef.current?.blur();
+                try {
+                  reactSelectRef.current?.blur();
+                } catch (e) {
+                  // HACK: This occasionally throws an error for mysterious
+                  // reasons. We'll just swallow it.
+                }
+
                 const div = document.querySelector("#tooltip-blocker");
 
                 if (div) {
