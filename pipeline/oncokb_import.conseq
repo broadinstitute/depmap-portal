@@ -1,13 +1,12 @@
 rule oncokb_data_import:
     inputs:
-        maf={"type": "mutation-maf"},
+        maf={"type": "mutation-maf-file"},
         annotated_csv={"type": "oncokb-annotated"}
 
     outputs:
         {
             "type": "oncokb-csv-output",
             "filename": {"$filename": "oncokb_annotated_full.csv"},
-            "orig_dataset_id": "{{inputs.maf.dataset_id}}"
         }
 
     run "python3" with """
@@ -29,13 +28,13 @@ rule oncokb_data_import:
         #         x = x[:-2]
         #     return x
 
-        release_df = tc.get(id="{{ inputs.maf.dataset_id }}")
         # fiddle with the formatting to accomodate the fact that we have the string "Unknown" and the IDs are formatted as decimals.
         # release_df["EntrezGeneID"] = release_df["EntrezGeneID"].apply(reformat_entrez_id)
+        release_df_filtered = pd.read_csv("{{ inputs.maf.filename }}")
         annotated_df = tc.get(id="{{ inputs.annotated_csv.dataset_id }}")
         annotated_df["ProteinChange"] = annotated_df["ProteinChange"].map('p.{}'.format)
         annotated_df["EntrezGeneID"] = annotated_df["EntrezGeneID"].astype(str)
-        merged_annotated_df = pd.merge(release_df, annotated_df, on=["EntrezGeneID", "ProteinChange"], how="left")
+        merged_annotated_df = pd.merge(release_df_filtered, annotated_df, on=["EntrezGeneID", "ProteinChange"], how="left")
         merged_annotated_df.to_csv("oncokb_annotated_full.csv", index=False)
 
         # sanity check the columns that got added:
