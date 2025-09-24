@@ -66,7 +66,7 @@ def _upload_transient_csv(
     is_transpose: bool,
     csv_path: str,
     single_column: bool,
-    use_data_explorer_2: bool,
+    use_data_explorer_2: bool, # now ignored, TODO: remove
 ):
     update_state(task, state="PROGRESS")
 
@@ -89,41 +89,28 @@ def _upload_transient_csv(
         is_transient=True,
     )
 
-    # TODO: remove some of this older code below that's no longer needed
+    # TODO: The above should be fine now, just remove some of this older code below that's no longer needed
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
 
     # update state to validating cell lines...
     warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
         df, dataset_uuid, cell_line_name_type, config, PUBLIC_ACCESS_GROUP
     )
-    add_transient_config(dataset_uuid, config)
-    node_id = "custom_dataset/{}".format(dataset_uuid)
-
-    if use_data_explorer_2:
-        return {
-            "datasetId": dataset_uuid,
-            "warnings": warnings,
-            "forwardingUrl": url_for(
-                "data_explorer_2.view_data_explorer_2",
-                # Data Explorer 2 links require an xFeature (it does not
-                # support linking to a partially defined plot)
-                xFeature=list(df.columns)[0],
-                yFeature=list(df.columns)[0],
-                xDataset=dataset_uuid,
-                yDataset=dataset_uuid,
-            ),
-        }
 
     return {
         "datasetId": dataset_uuid,
         "warnings": warnings,
         "forwardingUrl": url_for(
-            "interactive.view_interactive",
-            x=node_id,
-            y=node_id,
-            defaultCustomAnalysisToX=True,
+            "data_explorer_2.view_data_explorer_2",
+            # Data Explorer 2 links require an xFeature (it does not
+            # support linking to a partially defined plot)
+            xFeature=list(df.columns)[0],
+            yFeature=list(df.columns)[0],
+            xDataset=dataset_uuid,
+            yDataset=dataset_uuid,
         ),
     }
+
 
 
 @app.task(bind=True)
@@ -301,6 +288,7 @@ def validate_df_indices(
 
 
 def get_cell_line_name_type(df, is_transpose):
+    # TODO: determine if this is still necessary
     """
     :param df: df where cols are cell lines
     """
@@ -352,9 +340,3 @@ def convert_to_hdf5(df):
         hdf5_utils.df_to_hdf5(df, local_file_path)
 
     return local_file_name
-
-
-def add_transient_config(dataset_uuid, config):
-    # Need to convert data_type to str to be able to serialize
-    config["data_type"] = config["data_type"].name
-    CustomDatasetConfig.add(dataset_uuid, config)
