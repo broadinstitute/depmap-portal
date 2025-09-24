@@ -186,7 +186,7 @@ def convert_to_empty_string_if_nan(x):
 
 
 def get_matching_cell_line_entities(cell_line_name_type: CellLineNameType, cell_line_names: list[str]) -> list[CellLine]:
-    CellLine.query.filter(
+    return CellLine.query.filter(
         getattr(CellLine, cell_line_name_type.db_col_name).in_(cell_line_names)
     ).all()
 
@@ -204,7 +204,11 @@ def map_ccle_index_to_depmap_id(df: pd.DataFrame) -> pd.DataFrame:
     cell_line_names = list(df[index_col_name])
     cell_lines = get_matching_cell_line_entities(CellLineNameType.ccle_name, cell_line_names)
     ccle_to_depmap_id_mapping = {cell_line.cell_line_name: cell_line.depmap_id for cell_line in cell_lines}
+
+    # Overwrite the existing index column with the new values
     df[index_col_name] = df[index_col_name].map(ccle_to_depmap_id_mapping)
+    # Drop any rows which don't exist in the mapping.
+    df = df.dropna(subset=[index_col_name])
     return df
 
 

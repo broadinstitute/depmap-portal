@@ -9,6 +9,7 @@ from depmap.user_uploads.tasks import (
     upload_transient_csv,
     convert_to_hdf5,
     validate_df_indices,
+    map_ccle_index_to_depmap_id,
 )
 from depmap.interactive.config.models import Config
 from depmap.interactive.nonstandard.models import (
@@ -176,6 +177,39 @@ def test_convert_to_hdf5(app):
     assert len(os.listdir(source_dir)) == 1
 
 
+def test_map_ccle_index_to_depmap_id(empty_db_mock_downloads):
+    """
+    Test that a given dataframe is updated to use depmap_ids instead of ccle_names as the index column.
+    """
+    # Note: the "CCLE name" is the "cell_line_name"
+    CellLineFactory(cell_line_name="cell_line_1", depmap_id="ACH-000001")
+    CellLineFactory(cell_line_name="cell_line_2", depmap_id="ACH-000002")
+    CellLineFactory(cell_line_name="cell_line_3", depmap_id="ACH-000003")
+
+    basic_input_df = pd.DataFrame(
+        [
+            {"index": "cell_line_1", "feature_1": 1, "feature_2": 4},
+            {"index": "cell_line_2", "feature_1": 2, "feature_2": 5},
+            {"index": "cell_line_3", "feature_1": 3, "feature_2": 6},
+        ],
+    )
+    output_df = map_ccle_index_to_depmap_id(basic_input_df)
+    assert list(output_df["index"]) == ["ACH-000001", "ACH-000002", "ACH-000003"]
+
+    df_with_row_missing_metadata = pd.DataFrame(
+        [
+            {"index": "cell_line_1", "feature_1": 1, "feature_2": 4},
+            {"index": "cell_line_2", "feature_1": 2, "feature_2": 5},
+            {"index": "cell_line_3", "feature_1": 3, "feature_2": 6},
+            {"index": "cell_line_4", "feature_1": 0, "feature_2": 0},
+        ],
+    )
+    output_df = map_ccle_index_to_depmap_id(df_with_row_missing_metadata)
+    assert list(output_df["index"]) == ["ACH-000001", "ACH-000002", "ACH-000003"]
+
+
+
+# TODO: update this test as well
 def test_validate_df_indices(empty_db_mock_downloads):
     """
     test that
