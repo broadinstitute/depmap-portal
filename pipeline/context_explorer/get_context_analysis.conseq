@@ -23,11 +23,11 @@ rule get_context_analysis:
         compound_tables = {{ inputs.compound_summaries }}
     
         # oncref_table_path is optional, because it should not be there in the public env
-        oncref_table_path = [cmpd for cmpd in compound_tables if cmpd and 'dataset' in cmpd and cmpd.dataset == 'Prism_oncology_AUC']
+        oncref_table_path = [cmpd for cmpd in compound_tables if cmpd and 'dataset' in cmpd and cmpd['dataset'] == 'Prism_oncology_AUC']
         oncref_table_path = oncref_table_path if len(oncref_table_path) > 0 else None
         
         # repurposing_table_path is required in all envs
-        repurposing_table_path = [cmpd for cmpd in compound_tables if cmpd and cmpd.dataset == 'Rep_all_single_pt']
+        repurposing_table_path = [cmpd for cmpd in compound_tables if cmpd and cmpd['dataset'] == 'Rep_all_single_pt']
         assert len(repurposing_table_path) == 1, f"Expected exactly one Rep_all_single_pt compound table, got {len(repurposing_table_path)}"
         
         # transformed will be our newly constructed dict of name -> artifact
