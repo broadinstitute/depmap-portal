@@ -15,22 +15,20 @@ Some decisions about user upload datasets:
 - the feature name for a user uploaded dataset is always "feature"
 """
 
-import uuid
 import os
-from depmap.enums import DataTypeEnum
 import pandas as pd
 from math import isnan
 from typing import Any, List, Dict, Optional
 import celery
 from flask import current_app, url_for
 
+from breadbox_facade import BreadboxException
+
 from depmap import data_access
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
 from depmap.interactive.nonstandard.models import (
-    NonstandardMatrix,
     CellLineNameType,
-    CustomDatasetConfig,
 )
 from depmap.utilities import hdf5_utils
 from depmap.utilities.hashing_utils import hash_df
@@ -76,28 +74,26 @@ def _upload_transient_csv(
     if units is None:
         raise UserError("Invalid input: Units cannot be empty")
     
-    # update state to checking file...
-    df = read_and_validate_csv_shape(csv_path, single_column)
-
-    # TODO: handle is_transpose?
-    dataset_uuid = data_access.add_matrix_dataset_to_breadbox(
-        name=label,
-        units=units,
-        data_type="User upload",
-        data_df=df,
-        sample_type="depmap_model",
-        feature_type=None,
-        is_transient=True,
-    )
-
-    # TODO: The above should be fine now, just remove some of this older code below that's no longer needed
+    # Read and validate data from CSV 
+    df = read_and_validate_csv_shape(csv_path, single_column, is_transpose)
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
-
-    # update state to validating cell lines...
     # TODO: record any/all warnings from breadbox
     warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
         df, dataset_uuid, cell_line_name_type, config, PUBLIC_ACCESS_GROUP
     )
+
+    try:
+        dataset_uuid = data_access.add_matrix_dataset_to_breadbox(
+            name=label,
+            units=units,
+            data_type="User upload",
+            data_df=df,
+            sample_type="depmap_model",
+            feature_type=None,
+            is_transient=True,
+        )
+    except BreadboxException as e:
+        raise UserError(e)
 
     return {
         "datasetId": dataset_uuid,
@@ -130,7 +126,7 @@ def upload_transient_csv(
     )
 
 
-def read_and_validate_csv_shape(csv_path: str, single_column: bool = False):
+def read_and_validate_csv_shape(csv_path: str, single_column: bool = False, is_transpose = True):
     """
     Read the CSV from file. If the CSV is expected to be a single column, 
     validate that is actually the case.
@@ -155,6 +151,10 @@ def read_and_validate_csv_shape(csv_path: str, single_column: bool = False):
 
         df.columns = ["custom data"]
         df.index.name = None
+    elif not is_transpose:
+        # Breadbox uploads are transposed versions of the legacy datasets, so
+        # When is_transpose=False in the portal-backend, we _do_ need to transpose the data for breadbox.
+        df = df.transpose()
 
     try:
         # the df to hdf5 file storage converts it to a float
@@ -275,36 +275,29 @@ def validate_df_indices(
 def get_cell_line_name_type(df, is_transpose):
     # TODO: determine if this is still necessary
     """
+    Support uploads by depmap ID or CCLE Name. 
+    Note, we do not currently support uploads by stripped cell line names.
     :param df: df where cols are cell lines
     """
-    if is_transpose:
-        cols = df.index
-    else:
-        cols = df.columns
+    cell_line_names = df[df.columns[0]]
 
     assert all(
-        [type(col) == str for col in cols]
-    ), "The passed df should have had NaNs in the index filled in. {}".format(cols)
-    nonempty_cols = [col for col in cols if col != ""]
+        [type(name) == str for name in cell_line_names]
+    ), "The passed df should have had NaNs in the index filled in. {}".format(cell_line_names)
+    nonempty_names = [name for name in cell_line_names if name != ""]
 
-    if len(nonempty_cols) == 0:
+    if len(nonempty_names) == 0:
         raise UserError(
             "Invalid input: Cell line dimension ({}) is all empty".format(
                 "rows" if is_transpose else "columns"
             )
         )
 
-    first_col_name = nonempty_cols[0]
-    if first_col_name.startswith("ACH-"):
+    first_cell_line_name = nonempty_names[0]
+    if first_cell_line_name.startswith("ACH-"):
         return CellLineNameType.depmap_id
     else:
         return CellLineNameType.ccle_name
-
-    # we don't yet support stripped cell line names
-    # elif first_col_name.isupper() and '_' in first_col_name:
-    #     return CellLineNameType.ccle_name
-    # else:
-    #     return CellLineNameType.display_name
 
 
 def convert_to_hdf5(df):
