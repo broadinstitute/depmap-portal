@@ -85,7 +85,6 @@ def _upload_transient_csv(
     )
 
     # TODO: remove some of this older code below that's no longer needed
-    config = format_config(label, units, is_transpose)
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
 
     # update state to validating cell lines...
@@ -178,6 +177,9 @@ def validate_csv_format(csv_path: str, single_column: bool = False):
     df.index = [convert_to_empty_string_if_nan(x) for x in df.index]
     df.columns = [convert_to_empty_string_if_nan(x) for x in df.columns]
 
+    # reset the index because breadbox expects the first column to contain the sample IDs
+    df = df.reset_index()
+
     return df
 
 
@@ -188,21 +190,6 @@ def convert_to_empty_string_if_nan(x):
         return ""
     else:
         return x
-
-
-def format_config(label, units, is_transpose, data_type=DataTypeEnum.user_upload.name):
-    """
-    This function is used to format config for uploaded datasets
-    """
-    config = {
-        "label": label,
-        "units": units,
-        "data_type": DataTypeEnum[data_type],
-        "feature_name": "feature",
-        "transpose": is_transpose,
-        "is_standard": False,
-    }
-    return config
 
 
 def validate_cell_lines_and_register_as_nonstandard_matrix(
