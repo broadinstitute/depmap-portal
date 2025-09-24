@@ -266,5 +266,9 @@ def add_matrix_dataset(
         is_transient=is_transient,
         group_id=group_id,
     )
+    # It's possible that this is an overly-strict assertion
+    if "unknownIDs" in upload_result:
+        assert len(upload_result["unknownIDs"]) == 0
+
     assert "datasetId" in upload_result, "Unexpected result format from data upload. Expected `datasetId` field."
     return upload_result["datasetId"]
