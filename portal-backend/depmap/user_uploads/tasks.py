@@ -64,7 +64,6 @@ def _upload_transient_csv(
     is_transpose: bool,
     csv_path: str,
     single_column: bool,
-    use_data_explorer_2: bool, # now ignored, TODO: remove
 ):
     update_state(task, state="PROGRESS")
 
@@ -124,10 +123,9 @@ def upload_transient_csv(
     is_transpose: bool,
     csv_path: str,
     single_column: bool,
-    use_data_explorer_2: bool = False,
 ):
     return _upload_transient_csv(
-        self, label, units, is_transpose, csv_path, single_column, use_data_explorer_2
+        self, label, units, is_transpose, csv_path, single_column
     )
 
 
