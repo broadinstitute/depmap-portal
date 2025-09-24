@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { DataExplorerAggregation, DataExplorerContextV2 } from "@depmap/types";
-import { Changes } from "./types";
+import { Changes, SliceTypeNull } from "./types";
 
 type Update = (changes: Changes) => void;
 
@@ -20,7 +20,7 @@ export default function useCallbacks(update: Update) {
   );
 
   const onChangeSliceType = useCallback(
-    (slice_type: string | null) => {
+    (slice_type: string | SliceTypeNull | undefined) => {
       update({ slice_type });
     },
     [update]

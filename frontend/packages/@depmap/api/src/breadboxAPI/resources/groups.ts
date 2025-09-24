@@ -1,4 +1,5 @@
 import { Group, GroupArgs, GroupEntry, GroupEntryArgs } from "@depmap/types";
+import { uri } from "../../uriTemplateTag";
 import { getJson, postJson, deleteJson } from "../client";
 
 export function getGroups(write_access: boolean = false) {
@@ -18,9 +19,14 @@ export function postGroupEntry(
   groupId: string,
   groupEntryArgs: GroupEntryArgs
 ) {
-  return postJson<GroupEntry>(`/groups/${groupId}/addAccess`, groupEntryArgs);
+  return postJson<GroupEntry>(
+    uri`/groups/${groupId}/addAccess`,
+    groupEntryArgs
+  );
 }
 
 export function deleteGroupEntry(groupEntryId: string) {
-  return deleteJson(`/groups/${groupEntryId}/removeAccess`, { groupEntryId });
+  return deleteJson(uri`/groups/${groupEntryId}/removeAccess`, {
+    groupEntryId,
+  });
 }

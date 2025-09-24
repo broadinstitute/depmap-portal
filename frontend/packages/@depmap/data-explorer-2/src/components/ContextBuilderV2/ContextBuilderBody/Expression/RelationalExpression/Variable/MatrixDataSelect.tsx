@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useMemo } from "react";
+import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
 import DimensionSelectV2 from "../../../../../DimensionSelectV2";
 import useDimensionType from "../../../../hooks/useDimensionType";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
@@ -12,36 +13,56 @@ function MatrixDataSelect({ varName }: Props) {
   const { getDimensionTypeAsync } = useDimensionType();
   const variable = vars[varName] || null;
 
+  const dimension = useMemo(() => {
+    if (!variable) {
+      return null;
+    }
+
+    const exprVarName = ["sample_label", "feature_label"].includes(
+      variable.identifier_type || ""
+    )
+      ? "entity_label"
+      : "given_id";
+
+    return {
+      axis_type: "raw_slice",
+      aggregation: "first",
+      slice_type: variable.slice_type,
+      dataset_id: variable.dataset_id,
+      context: variable.identifier
+        ? {
+            dimension_type: variable.slice_type || null,
+            name: variable.label || variable.identifier,
+            expr: { "==": [{ var: exprVarName }, variable.identifier] },
+            vars: {},
+          }
+        : undefined,
+    } as Partial<DataExplorerPlotConfigDimensionV2>;
+  }, [variable]);
+
   return (
     <DimensionSelectV2
       mode="entity-only"
       removeWrapperDiv
+      allowNullFeatureType
       index_type={dimension_type}
-      value={
-        {
-          axis_type: "raw_slice",
-          aggregation: "first",
-          slice_type: variable?.slice_type || null,
-          dataset_id: variable?.dataset_id || null,
-          context: variable
-            ? ({
-                dimension_type: variable.slice_type || undefined,
-                name: variable.label || variable.identifier || "(unknown)",
-                expr: { "==": [{ var: "given_id" }, variable.identifier] },
-                vars: {},
-              } as any)
-            : undefined,
-        } as any
-      }
+      value={dimension}
       onChange={async (nextDimension) => {
         const dimensionType = await getDimensionTypeAsync();
 
         const expr = nextDimension?.context?.expr;
-        type EqExpr = { "==": [unknown, string] };
+        type EqExpr = { "==": [{ var: string }, string] };
+        const nextVar = expr ? (expr as EqExpr)["=="][0]?.var : undefined;
         const identifier = expr ? (expr as EqExpr)["=="][1] : undefined;
 
-        const identifier_type =
+        let identifier_type: typeof variable["identifier_type"] =
           dimensionType.axis === "sample" ? "feature_id" : "sample_id";
+
+        // For backward compatibility with legacy contexts.
+        if (nextVar === "entity_label") {
+          identifier_type =
+            dimensionType.axis === "sample" ? "feature_label" : "sample_label";
+        }
 
         setVar(varName, {
           dataset_id: nextDimension.dataset_id,

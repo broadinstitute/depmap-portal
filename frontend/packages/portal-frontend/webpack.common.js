@@ -28,6 +28,7 @@ module.exports = {
     peddepPage: "./src/apps/peddepPage.tsx",
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
     doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
+    geneTea: "./src/apps/geneTea.tsx",
   },
 
   plugins: [

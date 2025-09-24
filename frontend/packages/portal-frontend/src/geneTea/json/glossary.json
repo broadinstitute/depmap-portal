@@ -1,0 +1,58 @@
+[
+  {
+    "term": "What is GeneTEA?",
+    "definition": "GeneTEA (Gene-Term Enrichment Analysis) is a model that takes in free-text gene descriptions and incorporates several natural language processing methods to learn a sparse gene-by-term embedding, which can be treated as a de novo gene set database. Overrepresentation analysis is run on this learned embedding to nominate enriched terms for a set of query genes."
+  },
+  {
+    "term": "Where are these descriptions from?",
+    "definition": "To assemble our corpus, we obtained free-text Human gene descriptions from the following sources:"
+  },
+  {
+    "term": "Alliance",
+    "addLeftMargin": true,
+    "definition": "Downloaded Homo sapiens gene descriptions from version 8.0.0 (Accessed 2025-02-21)"
+  },
+  {
+    "term": "CIViC",
+    "addLeftMargin": true,
+    "definition": "Downloaded Features TSV from 01-Feb-2025 Release (Accessed 2025-02-21)"
+  },
+  {
+    "term": "NCBI",
+    "definition": "Obtained RefSeq summaries from [geneSum], as well as names/aliases and gene locations in [geneInfo] (Accessed 2025-02-21)",
+    "addLeftMargin": true,
+    "references": {
+      "geneSum": {
+        "text": "https://ftp.ncbi.nlm.nih.gov/gene/DATA/gene_summary.gz",
+        "url": "https://ftp.ncbi.nlm.nih.gov/gene/DATA/gene_summary.gz"
+      },
+      "geneInfo": {
+        "text": "https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz ",
+        "url": "https://ftp.ncbi.nlm.nih.gov/gene/DATA/GENE_INFO/Mammalia/Homo_sapiens.gene_info.gz "
+      }
+    }
+  },
+  {
+    "term": "UniProt",
+    "addLeftMargin": true,
+    "definition": "Downloaded Function, Domain, Subunit structure, etc. sections for all Reviewed (Swiss-prot) Human proteins (Accessed 2025-02-21) Citation links can be found within the contexts and gene search results."
+  },
+  {
+    "term": "How are enriched terms identified?",
+    "definition": "For a query set of genes, all terms present in descriptions for 2+ genes are identified. The significance is an Benjimini-Hochberg FDR corrected p-value calculated with a hypergeometric test. This test considers the number of appearances of the term in the query genes compared to the overall number of genes in which that term appears. Overlapping terms (ie. those which are substrings of another enriched term) and stopwords (common English words like 'involved' or 'enables') are filtered out, however they can be found in the downloadable frequent terms table."
+  },
+  {
+    "term": "How are synonyms sets identified?",
+    "definition": "Synonym sets denoted with the '~' prefix, are identified by running HDBSCAN on term embeddings obtained from [SapBERT], a large-language model fine-tuned on PubMed. Synonyms are treated as drop in replacements for sub-terms in the set.",
+    "references": {
+      "SapBERT": {
+        "text": "SapBERT",
+        "url": "https://arxiv.org/abs/2010.11784"
+      }
+    }
+  },
+  {
+    "term": "How are the term groups identified?",
+    "definition": "A bipartite graph is created where enriched terms are connected to genes in the query. A projection of the term nodes in this graph captures the overlap between terms, allowing strict subterms to be filtered from the set of enriched terms. Additionally, only edges between subterms and high cosine similarity terms are preserved, these are then weighted by the cosine similarity. Finally, term groups are identified using greedy modularity. Term groups are labeled by the term with the highest query info."
+  }
+]

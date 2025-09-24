@@ -14,10 +14,16 @@ import {
   Alert,
   Row,
 } from "react-bootstrap";
-
+import { breadboxAPI } from "@depmap/api";
+import { toPortalLink } from "@depmap/globals";
 import { ProgressTracker } from "@depmap/common-components";
 import { CeleryTask, ComputeResponse } from "@depmap/compute";
-import { UploadFormat, UserUploadArgs, UploadTask } from "@depmap/user-upload";
+import {
+  SuccessUploadTask,
+  UploadFormat,
+  UserUploadArgs,
+  UploadTask,
+} from "@depmap/user-upload";
 
 import "../styles/UserUploadModal.scss";
 import { DataTypeEnum } from "../models/userUploads";
@@ -32,6 +38,7 @@ type UserUploadModalProps = {
   groups?: Array<{ groupId: number; displayName: string }>;
   dataTypes?: DataTypeEnum[]; // Required for private uploads, but I think this modal is also used for non-private custom uploads
   getTaskStatus: (taskIds: string) => Promise<ComputeResponse>;
+  disableOrientationOptions?: boolean;
 };
 
 const FormattingHelp = (transposed: boolean) => {
@@ -113,6 +120,37 @@ const FormattingHelp = (transposed: boolean) => {
   );
 };
 
+function OpenResultButton({ uploadTask }: { uploadTask: SuccessUploadTask }) {
+  const [forwardingUrl, setForwardingUrl] = useState(
+    uploadTask.result.forwardingUrl
+  );
+
+  useEffect(() => {
+    if (!uploadTask.result.forwardingUrl) {
+      (async () => {
+        const { datasetId } = uploadTask.result;
+        const features = await breadboxAPI.getDatasetFeatures(datasetId);
+        const xFeature = encodeURIComponent(features[0].id);
+
+        // FIXME: What about Elara URLs?
+        const url = toPortalLink(
+          `/data_explorer_2/?xDataset=${datasetId}&xFeature=${xFeature}`
+        );
+        setForwardingUrl(url);
+      })();
+    }
+  }, [uploadTask]);
+
+  if (!forwardingUrl) {
+  }
+
+  return (
+    <Button disabled={!forwardingUrl} bsStyle="primary" href={forwardingUrl}>
+      See your dataset
+    </Button>
+  );
+}
+
 export const UploadForm = (
   uploadFormat: UploadFormat,
   isPrivate: boolean,
@@ -120,7 +158,8 @@ export const UploadForm = (
   groups: Array<{ groupId: number; displayName: string }>,
   dataTypes: DataTypeEnum[],
   taskKickoffFunction: (userUploadArgs: UserUploadArgs) => Promise<UploadTask>,
-  getTaskStatus: (taskIds: string) => Promise<ComputeResponse>
+  getTaskStatus: (taskIds: string) => Promise<ComputeResponse>,
+  disableOrientationOptions: boolean
 ) => {
   // Form inputs
   const [displayName, setDisplayName] = useState("");
@@ -161,7 +200,7 @@ export const UploadForm = (
     displayName,
     units,
     transposed,
-    uploadFile,
+    uploadFile: uploadFile as File,
     taigaId,
     selectedGroup,
     selectedDataType,
@@ -253,30 +292,32 @@ export const UploadForm = (
             Orientation
           </Col>
           <Col sm={9}>
-            <div>
-              <Radio
-                name="radioGroup"
-                checked={transposed}
-                onChange={() => {
-                  setTransposed(true);
-                }}
-                disabled={taskRunning}
-                inline
-              >
-                Cell lines are rows
-              </Radio>
-              <Radio
-                name="radioGroup"
-                checked={!transposed}
-                onChange={() => {
-                  setTransposed(false);
-                }}
-                disabled={taskRunning}
-                inline
-              >
-                Cell lines are columns
-              </Radio>
-            </div>
+            {!disableOrientationOptions && (
+              <div>
+                <Radio
+                  name="radioGroup"
+                  checked={transposed}
+                  onChange={() => {
+                    setTransposed(true);
+                  }}
+                  disabled={taskRunning}
+                  inline
+                >
+                  Cell lines are rows
+                </Radio>
+                <Radio
+                  name="radioGroup"
+                  checked={!transposed}
+                  onChange={() => {
+                    setTransposed(false);
+                  }}
+                  disabled={taskRunning}
+                  inline
+                >
+                  Cell lines are columns
+                </Radio>
+              </div>
+            )}
             <HelpBlock>{FormattingHelp(transposed)}</HelpBlock>
           </Col>
         </FormGroup>
@@ -426,9 +467,7 @@ export const UploadForm = (
 
       <div className="upload-button-container">
         {uploadTask !== undefined && uploadTask.state === "SUCCESS" ? (
-          <Button bsStyle="primary" href={uploadTask.result.forwardingUrl}>
-            See your dataset
-          </Button>
+          <OpenResultButton uploadTask={uploadTask} />
         ) : (
           <Button bsStyle="primary" disabled={taskRunning} onClick={onSubmit}>
             {buttonLabel}
@@ -449,6 +488,7 @@ const UserUploadModal = ({
   groups = [],
   dataTypes = [],
   getTaskStatus,
+  disableOrientationOptions = false,
 }: UserUploadModalProps) => {
   const modalTitle = isTransient
     ? `Plot a ${uploadFormat === UploadFormat.File ? "CSV" : "Taiga"} dataset`
@@ -467,7 +507,8 @@ const UserUploadModal = ({
           groups,
           dataTypes,
           taskKickoffFunction,
-          getTaskStatus
+          getTaskStatus,
+          disableOrientationOptions
         )}
       </Modal.Body>
     </Modal>
