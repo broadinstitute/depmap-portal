@@ -208,3 +208,14 @@ add-if-missing {
     'type': 'harmonized-rppa',
     'dataset_id': 'harmonized-proteomics-datasets-754a.20/harmonized_RPPA_CCLE',
 }
+
+
+add-if-missing {
+  "type": "subtype_tree",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "SubtypeTree"),
+}
+
+add-if-missing {
+  "type": "subtype_context_matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "SubtypeMatrix"),
+}
