@@ -23,6 +23,8 @@ from math import isnan
 from typing import Any, List, Dict, Optional
 import celery
 from flask import current_app, url_for
+
+from depmap import data_access
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
 from depmap.interactive.nonstandard.models import (
@@ -72,7 +74,17 @@ def _upload_transient_csv(
     # update state to checking file...
     df = validate_csv_format(csv_path, single_column)
 
-    dataset_uuid = str(uuid.uuid4())
+    dataset_uuid = data_access.add_matrix_dataset_to_breadbox(
+        name=label,
+        units=units,
+        data_type="User upload",
+        data_df=df,
+        sample_type="depmap_model",
+        feature_type=None,
+        is_transient=True,
+    )
+
+    # TODO: remove some of this older code below that's no longer needed
     config = format_config(label, units, is_transpose)
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
 
