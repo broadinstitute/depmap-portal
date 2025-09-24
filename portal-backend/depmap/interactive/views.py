@@ -788,22 +788,22 @@ def download_csv_and_view_interactive():
 
     url_upload_whitelist = flask.current_app.config["URL_UPLOAD_WHITELIST"]
 
-    # if not any(file_url.startswith(prefix) for prefix in url_upload_whitelist):
-    #     log.warning(
-    #         "Requested download from %s but prefix was not in %s",
-    #         file_url,
-    #         url_upload_whitelist,
-    #     )
-    #     abort(400)
+    if not any(file_url.startswith(prefix) for prefix in url_upload_whitelist):
+        log.warning(
+            "Requested download from %s but prefix was not in %s",
+            file_url,
+            url_upload_whitelist,
+        )
+        abort(400)
 
-    # try:
-    #     csv_path = write_url_to_local_file(file_url)
-    # except Exception as e:
-    #     log.exception("Got exception in get_data_file_dict_from_url")
-    #     abort(400)
+    try:
+        csv_path = write_url_to_local_file(file_url)
+    except Exception as e:
+        log.exception("Got exception in get_data_file_dict_from_url")
+        abort(400)
 
     result = upload_transient_csv.apply(
-        args=[display_name, units, True, file_url, False]
+        args=[display_name, units, True, csv_path, False]
     )
 
     if result.state == TaskState.SUCCESS.value:

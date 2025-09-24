@@ -136,7 +136,7 @@ def read_and_validate_csv_shape(csv_path: str, single_column: bool = False, is_t
     validate that is actually the case.
     """
     assert isinstance(csv_path, str)
-    # assert os.path.exists(csv_path)
+    assert os.path.exists(csv_path)
 
     try:
         df = pd.read_csv(csv_path, header=None if single_column else 0, index_col=0)
