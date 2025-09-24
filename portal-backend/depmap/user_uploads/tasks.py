@@ -135,7 +135,7 @@ def validate_common_metadata(label, units):
 
 def validate_csv_format(csv_path: str, single_column: bool = False):
     assert isinstance(csv_path, str)
-    assert os.path.exists(csv_path)
+    # assert os.path.exists(csv_path)
 
     try:
         df = pd.read_csv(csv_path, header=None if single_column else 0, index_col=0)
