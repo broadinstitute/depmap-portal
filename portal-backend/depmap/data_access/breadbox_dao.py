@@ -269,7 +269,7 @@ def add_matrix_dataset(
     # Generate warnings for any IDs which don't have matching metadata
     warnings = []
     if "unknownIDs" in upload_result:
-        for idset in unknownIDs:
+        for idset in upload_result["unknownIDs"]:
             missing_ids = idset["IDs"]
             ref_count = ref_counts[idset["axis"]]
             missing_percentage = len(missing_ids) / ref_count * 100

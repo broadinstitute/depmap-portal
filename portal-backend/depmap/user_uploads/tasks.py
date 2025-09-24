@@ -85,7 +85,7 @@ def _upload_transient_csv(
         df = map_ccle_index_to_depmap_id(df)
 
     try:
-        dataset_uuid, bb_warnings = data_access.add_matrix_dataset_to_breadbox(
+        bb_dataset_uuid, bb_warnings = data_access.add_matrix_dataset_to_breadbox(
             name=label,
             units=units,
             data_type="User upload",
@@ -94,22 +94,23 @@ def _upload_transient_csv(
             feature_type=None,
             is_transient=True,
         )
+        dataset_id = f"breadbox/{bb_dataset_uuid}"
         warnings.extend(bb_warnings)
 
     except BreadboxException as e:
         raise UserError(e)
 
     return {
-        "datasetId": dataset_uuid,
+        "datasetId": dataset_id,
         "warnings": warnings,
         "forwardingUrl": url_for(
             "data_explorer_2.view_data_explorer_2",
             # Data Explorer 2 links require an xFeature (it does not
             # support linking to a partially defined plot)
-            xFeature=list(df.columns)[0],
-            yFeature=list(df.columns)[0],
-            xDataset=dataset_uuid,
-            yDataset=dataset_uuid,
+            xFeature=list(df.columns)[1],
+            yFeature=list(df.columns)[1],
+            xDataset=dataset_id,
+            yDataset=dataset_id,
         ),
     }
 
