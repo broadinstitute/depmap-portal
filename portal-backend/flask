@@ -7,14 +7,14 @@ source setup_env.sh
 # theme and set of downloadable files, set the variable below. If not set, defaults to the public
 # theme.
 
-#export DEPMAP_THEME=dmc
+export DEPMAP_THEME=skyros
 
 # If you want to run locally using a copy of a production
 # or staging database. Uncomment and set the below accordingly.
 
-#export DEPMAP_ENV=dstaging
-#export CONFIG_PATH=../config/dmc/settings.py
-#export DEPMAP_OVERRIDES=./overrides.py
+# export DEPMAP_ENV=istaging
+# export CONFIG_PATH=../config/skyros/settings.py
+# export DEPMAP_OVERRIDES=./overrides.py
 
 if [[ "$1" == "run" ]] ; then
   shift

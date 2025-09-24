@@ -85,3 +85,18 @@ export interface GeneTeaEnrichedTerms {
   frequentTerms: FrequentTerms | null;
   allEnrichedTerms: AllEnrichedTerms | null;
 }
+
+export interface GeneTeaScatterPlotData {
+  allEnriched: {
+    data: FrequentTerms;
+    customdata: string[];
+  };
+  stopwords: {
+    data: FrequentTerms;
+    customdata: string[];
+  };
+  otherTerms: {
+    data: FrequentTerms;
+    customdata: string[];
+  };
+}

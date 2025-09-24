@@ -8,16 +8,14 @@ import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
 import {
   FrequentTerms,
   GeneTeaEnrichedTerms,
+  GeneTeaScatterPlotData,
 } from "@depmap/types/src/experimental_genetea";
 import PlotSection from "./PlotSection";
 import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
+import PlotSelections from "./PlotSelections";
 
 interface AllMatchingTermsTabProps {
-  data: {
-    allEnriched: FrequentTerms;
-    stopwords: FrequentTerms;
-    otherTerms: FrequentTerms;
-  } | null;
+  data: GeneTeaScatterPlotData | null;
   rawData: GeneTeaEnrichedTerms | null;
 }
 
@@ -124,7 +122,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
             </div>
             <div className={styles.selectionsArea}>
               <PlotSelections
-                isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
+                isPlotDataVisible={!isLoading && data !== null}
                 selectedIds={new Set(selectedPlotGenes)}
                 selectedLabels={new Set(selectedPlotGenes)}
                 onClickSaveSelectionAsContext={

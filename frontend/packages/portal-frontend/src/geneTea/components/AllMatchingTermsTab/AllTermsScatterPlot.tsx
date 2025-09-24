@@ -1,14 +1,10 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import { FrequentTerms } from "@depmap/types/src/experimental_genetea";
+import { GeneTeaScatterPlotData } from "@depmap/types/src/experimental_genetea";
 import React, { useCallback, useMemo } from "react";
 import ScatterPlot from "./ScatterPlot";
 
 interface Props {
-  data: {
-    allEnriched: FrequentTerms;
-    stopwords: FrequentTerms;
-    otherTerms: FrequentTerms;
-  };
+  data: GeneTeaScatterPlotData | null; // TODO simplify this. We only need x (Effect Size) and y (fdr)
   handleClickPoint: (pointIndex: number) => void;
   handleSetSelectedLabels: (labels: Set<string> | null) => void;
   handleSetPlotElement: (element: any) => void;
@@ -30,19 +26,19 @@ function AllTermsScatterPlot({
 
     return {
       stopwords: {
-        x: data.stopwords.effectSize,
-        y: data.stopwords.fdr, // or whatever y value you want from stopwords
+        x: data.stopwords.data.effectSize,
+        y: data.stopwords.data.fdr, // or whatever y value you want from stopwords
         customdata: data.stopwords.customdata, // adjust as needed
       },
       otherTerms: {
-        x: data.otherTerms.effectSize,
-        y: data.otherTerms.fdr, // or whatever y value you want from otherTerms
+        x: data.otherTerms.data.effectSize,
+        y: data.otherTerms.data.fdr, // or whatever y value you want from otherTerms
         customdata: data.otherTerms.customdata,
       },
       selectedTerms: {
-        x: data.selectedTerms.effectSize,
-        y: data.selectedTerms.fdr, // or whatever y value you want from selectedTerms
-        customdata: data.selectedTerms.customdata,
+        x: data.selectedTerms.data.effectSize,
+        y: data.selectedTerms.data.fdr, // or whatever y value you want from selectedTerms
+        customdata: data.selectedTerms.data.customdata,
       },
     };
   }, [data]);

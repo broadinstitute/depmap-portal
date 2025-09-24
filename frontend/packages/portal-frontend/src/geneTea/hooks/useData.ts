@@ -427,8 +427,9 @@ function useData(
   }, [data]);
 
   const allTermsScatterPlotData = useMemo(() => {
-    if (data?.frequentTerms) {
-      const freqTerms = data!.frequentTerms;
+    if (data?.frequentTerms && data?.allEnrichedTerms) {
+      const freqTerms = data.frequentTerms;
+      const allTerms = data.allEnrichedTerms;
       const allEnriched = filterFrequentTerms(
         freqTerms,
         (i) => freqTerms.enriched[i] === true
@@ -442,15 +443,46 @@ function useData(
         (i) => freqTerms.enriched[i] !== true && freqTerms.stopword[i] !== true
       );
 
+      function makeCustomdata(termsObj: FrequentTerms) {
+        return termsObj.term.map((currentTerm) => {
+          const enrichedTermsIndex = allTerms.term.indexOf(currentTerm);
+          const term = currentTerm;
+          const termGroup = allTerms.termGroup[enrichedTermsIndex];
+          const fdr = allTerms.fdr[enrichedTermsIndex];
+          const negLogFDR = allTerms.negLogFDR[enrichedTermsIndex];
+          const effectSize = allTerms.effectSize[enrichedTermsIndex];
+          const nMatchingGenesOverall =
+            allTerms.nMatchingGenesOverall[enrichedTermsIndex];
+
+          return term !== undefined && enrichedTermsIndex !== -1
+            ? `<b>${term}</b><br>${termGroup}<br><br>-log10(FDR):  ${negLogFDR?.toFixed(
+                4
+              )}  <br>FDR:  ${fdr?.toExponential(
+                5
+              )}  <br>Effect Size:  ${effectSize?.toFixed(
+                4
+              )}  <br>n Matching Genes Overall:  ${nMatchingGenesOverall}`
+            : "";
+        });
+      }
+
       return {
-        allEnriched,
-        stopwords,
-        otherTerms,
+        allEnriched: {
+          data: allEnriched,
+          customdata: makeCustomdata(allEnriched),
+        },
+        stopwords: {
+          data: stopwords,
+          customdata: makeCustomdata(stopwords),
+        },
+        otherTerms: {
+          data: otherTerms,
+          customdata: makeCustomdata(otherTerms),
+        },
       };
     }
-
     return null;
-  }, []);
+  }, [data]);
 
   return {
     specialCaseInvalidGenes,

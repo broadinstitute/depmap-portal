@@ -6,18 +6,17 @@ import PlotControls, {
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "../../styles/GeneTea.scss";
-import { FrequentTerms } from "@depmap/types/src/experimental_genetea";
+import {
+  FrequentTerms,
+  GeneTeaScatterPlotData,
+} from "@depmap/types/src/experimental_genetea";
 import AllTermsScatterPlot from "./AllTermsScatterPlot";
 import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
 
 interface PlotSectionProps {
   isLoading: boolean;
   plotElement: ExtendedPlotType | null;
-  data: {
-    allEnriched: FrequentTerms;
-    stopwords: FrequentTerms;
-    otherTerms: FrequentTerms;
-  } | null;
+  data: GeneTeaScatterPlotData | null;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
 }
 
