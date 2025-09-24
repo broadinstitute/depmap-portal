@@ -79,6 +79,7 @@ def _upload_transient_csv(
     # update state to checking file...
     df = read_and_validate_csv_shape(csv_path, single_column)
 
+    # TODO: handle is_transpose?
     dataset_uuid = data_access.add_matrix_dataset_to_breadbox(
         name=label,
         units=units,
@@ -93,6 +94,7 @@ def _upload_transient_csv(
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
 
     # update state to validating cell lines...
+    # TODO: record any/all warnings from breadbox
     warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
         df, dataset_uuid, cell_line_name_type, config, PUBLIC_ACCESS_GROUP
     )
@@ -192,24 +194,7 @@ def validate_cell_lines_and_register_as_nonstandard_matrix(
     """
     is_transpose = config["transpose"]
     warnings = validate_df_indices(df, is_transpose, cell_line_name_type)
-    hdf5_file_name = convert_to_hdf5(df)
 
-    assert (
-        cell_line_name_type != CellLineNameType.display_name
-    )  # we don't support that yet, it's currently user_arxspan_
-    use_arxspan_id = cell_line_name_type == CellLineNameType.depmap_id
-
-    # Not catching AllRowsOrColsSkipped here, because we don't expect it to happen. I suppose it could happen if the csv had no rows
-    # Skipping all cols should be verified in validate df cell lines. And all rows should be accepted
-    # Data access details should be in interactive config (including references to NonstandardMatrix)
-    _, cols_skipped = NonstandardMatrix.read_file_and_add_dataset_index(
-        dataset_id=dataset_uuid,
-        config=config,
-        file_path=hdf5_file_name,
-        entity_class=None,
-        use_arxspan_id=use_arxspan_id,
-        owner_id=owner_id,
-    )
     return warnings
 
 
