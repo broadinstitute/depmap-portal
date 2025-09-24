@@ -59,7 +59,6 @@ def update_state(
     task.update_state(state=state, meta=meta)
 
 
-# Split out from task because we also use it in the loader
 def _upload_transient_csv(
     task: celery.Task,
     label: str,
@@ -70,9 +69,15 @@ def _upload_transient_csv(
     use_data_explorer_2: bool,
 ):
     update_state(task, state="PROGRESS")
-    validate_common_metadata(label, units)
+
+    # Validate parameters
+    if label is None:
+        raise UserError("Invalid input: Display name cannot be empty")
+    if units is None:
+        raise UserError("Invalid input: Units cannot be empty")
+    
     # update state to checking file...
-    df = validate_csv_format(csv_path, single_column)
+    df = read_and_validate_csv_shape(csv_path, single_column)
 
     dataset_uuid = data_access.add_matrix_dataset_to_breadbox(
         name=label,
@@ -136,15 +141,11 @@ def upload_transient_csv(
     )
 
 
-def validate_common_metadata(label, units):
-    if label is None:
-        raise UserError("Invalid input: Display name cannot be empty")
-
-    if units is None:
-        raise UserError("Invalid input: Units cannot be empty")
-
-
-def validate_csv_format(csv_path: str, single_column: bool = False):
+def read_and_validate_csv_shape(csv_path: str, single_column: bool = False):
+    """
+    Read the CSV from file. If the CSV is expected to be a single column, 
+    validate that is actually the case.
+    """
     assert isinstance(csv_path, str)
     # assert os.path.exists(csv_path)
 
