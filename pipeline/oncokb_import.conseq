@@ -7,7 +7,6 @@ rule oncokb_data_import:
         {
             "type": "oncokb-csv-output",
             "filename": {"$filename": "oncokb_annotated_full.csv"},
-            "orig_dataset_id": "{{inputs.maf.dataset_id}}"
         }
 
     run "python3" with """
