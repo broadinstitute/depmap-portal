@@ -22,14 +22,9 @@ rule get_context_analysis:
 
         compound_tables = {{ inputs.compound_summaries }}
         
-        for cmpd in compound_tables:
-            if not isinstance(cmpd, dict) or 'dataset_id' not in cmpd:
-                print(f"Compound table missing dataset_id: {cmpd}")
-        assert all(isinstance(cmpd, dict) and 'dataset_id' in cmpd for cmpd in compound_tables), "All compound_tables must have a dataset_id."
-
-        oncref_table_path = [cmpd for cmpd in compound_tables if cmpd is not None and cmpd.dataset_id == 'Prism_oncology_AUC']
+        oncref_table_path = [cmpd for cmpd in compound_tables if cmpd is not None and cmpd.dataset == 'Prism_oncology_AUC']
         assert len(oncref_table_path) == 1, f"Expected exactly one Prism_oncology_AUC compound table, got {len(oncref_table_path)}"
-        repurposing_table_path = [cmpd for cmpd in compound_tables if cmpd is not None and cmpd.dataset_id == 'Rep_all_single_pt']
+        repurposing_table_path = [cmpd for cmpd in compound_tables if cmpd is not None and cmpd.dataset == 'Rep_all_single_pt']
         assert len(repurposing_table_path) == 1, f"Expected exactly one Rep_all_single_pt compound table, got {len(repurposing_table_path)}"
         
         # transformed will be our newly constructed dict of name -> artifact
