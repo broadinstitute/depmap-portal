@@ -29,7 +29,6 @@ rule oncokb_data_import:
         #         x = x[:-2]
         #     return x
 
-        # release_df = tc.get(id="{{ inputs.maf.dataset_id }}")
         # fiddle with the formatting to accomodate the fact that we have the string "Unknown" and the IDs are formatted as decimals.
         # release_df["EntrezGeneID"] = release_df["EntrezGeneID"].apply(reformat_entrez_id)
         release_df_filtered = pd.read_csv("{{ inputs.maf.filename }}")
