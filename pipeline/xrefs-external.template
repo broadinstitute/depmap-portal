@@ -9,9 +9,17 @@ add-if-missing {
     "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id)
 }
 
+
+# The following 3 artifacts are necessary for the Context Explorer preprocessing
+# scripts to run successfully
 add-if-missing {
   "type": "subtype_tree",
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "SubtypeTree"),
+}
+
+add-if-missing {
+  "type": "omics_profiles",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsProfiles")
 }
 
 add-if-missing {
