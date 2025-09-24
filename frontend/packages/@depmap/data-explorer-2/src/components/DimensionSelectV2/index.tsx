@@ -6,7 +6,7 @@ import useDimensionStateManager from "./useDimensionStateManager";
 import { wrapWithErrorBoundary } from "./ErrorBoundary";
 
 export interface Props {
-  index_type: string;
+  index_type: string | null;
   value: Partial<DataExplorerPlotConfigDimensionV2> | null;
   onChange: (nextValue: Partial<DataExplorerPlotConfigDimensionV2>) => void;
 
@@ -28,14 +28,6 @@ export interface Props {
    * @default undefined (included all value types)
    */
   valueTypes?: Set<"continuous" | "text" | "categorical" | "list_strings">;
-
-  /**
-   * Controls whether datasets that have no feature type will appear as
-   * selectable options.
-   *
-   * @default false
-   */
-  allowNullFeatureType?: boolean;
 
   /** Called when the height of the container <div> changes. Useful for modals
    * where the available height might be confined. */
@@ -63,23 +55,17 @@ function DimensionSelectV2({
   className = undefined,
   mode = "entity-or-context",
   valueTypes = undefined,
-  allowNullFeatureType = false,
   onHeightChange = undefined,
   removeWrapperDiv = false,
   onClickCreateContext = () => {},
   onClickSaveAsContext = () => {},
   includeAllInContextOptions = false,
 }: Props) {
-  if (!index_type) {
-    throw new Error("Unexpected null index_type");
-  }
-
   const state = useDimensionStateManager({
     index_type,
     mode,
     value,
     onChange,
-    allowNullFeatureType,
   });
 
   // FIXME: Add support for the dataset details modal.

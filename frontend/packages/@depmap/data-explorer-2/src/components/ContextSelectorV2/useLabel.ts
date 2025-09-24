@@ -5,20 +5,15 @@ import { DimensionType } from "@depmap/types";
 export default function useLabel(
   label:
     | React.ReactNode
-    | ((dimensionType: DimensionType | null) => string)
+    | ((dimensionType: DimensionType) => string)
     | undefined,
-  context_type: string | null
+  context_type: string
 ) {
-  const [dimensionType, setDimensionType] = useState<
-    DimensionType | null | undefined
-  >(undefined);
+  const [dimensionType, setDimensionType] = useState<DimensionType | null>(
+    null
+  );
 
   useEffect(() => {
-    if (context_type === null) {
-      setDimensionType(null);
-      return;
-    }
-
     cached(breadboxAPI)
       .getDimensionTypes()
       .then((types) => {
@@ -39,7 +34,7 @@ export default function useLabel(
   }, [context_type]);
 
   if (typeof label === "function") {
-    return dimensionType !== undefined ? label(dimensionType) : "...";
+    return dimensionType ? label(dimensionType) : "...";
   }
 
   return label;

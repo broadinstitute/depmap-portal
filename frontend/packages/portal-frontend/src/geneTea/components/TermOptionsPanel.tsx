@@ -3,11 +3,17 @@ import styles from "../styles/MultiSelectTextArea.scss";
 import { Button } from "react-bootstrap";
 
 import NumberInput from "./NumberInput";
-import {
-  TERM_OPTIONS_FILTER_DEFAULTS,
-  useGeneTeaContext,
-} from "../context/GeneTeaContext";
+import { useGeneTeaContext } from "../context/GeneTeaContext";
 import { SortOption } from "../types";
+
+const DEFAULTS = {
+  sortBy: "Effect Size",
+  maxTopTerms: 10,
+  maxFDR: 0.05,
+  effectSizeThreshold: 0.1,
+  minMatchingQuery: 2,
+  maxMatchingOverall: 5373,
+};
 
 const TermOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
@@ -30,7 +36,7 @@ const TermOptionsPanel: React.FC = () => {
   // Local state for staged changes
   const [localSortBy, setLocalSortBy] = useState<string>(sortBy);
   const [localMaxTopTerms, setLocalMaxTopTerms] = useState<number>(
-    maxTopTerms ?? TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms
+    maxTopTerms ?? DEFAULTS.maxTopTerms
   );
   const [localMaxFDR, setLocalMaxFDR] = useState<number>(maxFDR);
   const [
@@ -38,14 +44,12 @@ const TermOptionsPanel: React.FC = () => {
     setLocalEffectSizeThreshold,
   ] = useState<number>(effectSizeThreshold);
   const [localMinMatchingQuery, setLocalMinMatchingQuery] = useState<number>(
-    minMatchingQuery || TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
+    minMatchingQuery || DEFAULTS.minMatchingQuery
   );
   const [
     localMaxMatchingOverall,
     setLocalMaxMatchingOverall,
-  ] = useState<number>(
-    maxMatchingOverall || TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
-  );
+  ] = useState<number>(maxMatchingOverall || DEFAULTS.maxMatchingOverall);
 
   return (
     <div ref={ref} style={{ backgroundColor: "#ffffff" }}>
@@ -81,7 +85,7 @@ const TermOptionsPanel: React.FC = () => {
           step={1}
           value={localMaxTopTerms}
           setValue={setLocalMaxTopTerms}
-          defaultValue={TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms}
+          defaultValue={DEFAULTS.maxTopTerms}
         />
         <NumberInput
           name="maxFDR"
@@ -89,7 +93,7 @@ const TermOptionsPanel: React.FC = () => {
           min={0}
           value={localMaxFDR}
           setValue={setLocalMaxFDR}
-          defaultValue={TERM_OPTIONS_FILTER_DEFAULTS.maxFDR}
+          defaultValue={DEFAULTS.maxFDR}
           step={0.01}
         />
         {/* TODO: Fix. Temporarily hiding. I don't think the api supports this filter yet.
@@ -108,7 +112,7 @@ const TermOptionsPanel: React.FC = () => {
           min={0}
           value={localMinMatchingQuery}
           setValue={setLocalMinMatchingQuery}
-          defaultValue={TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery}
+          defaultValue={DEFAULTS.minMatchingQuery}
           step={1}
         />
         <NumberInput
@@ -117,7 +121,7 @@ const TermOptionsPanel: React.FC = () => {
           min={0}
           value={localMaxMatchingOverall}
           setValue={setLocalMaxMatchingOverall}
-          defaultValue={TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall}
+          defaultValue={DEFAULTS.maxMatchingOverall}
           step={1}
         />
         <div
@@ -146,32 +150,18 @@ const TermOptionsPanel: React.FC = () => {
           <Button
             className={styles.clearInputButton}
             onClick={() => {
-              setLocalSortBy(TERM_OPTIONS_FILTER_DEFAULTS.sortBy);
-              setLocalMaxFDR(TERM_OPTIONS_FILTER_DEFAULTS.maxFDR);
-              setLocalMaxTopTerms(TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms);
-              setLocalMaxMatchingOverall(
-                TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
-              );
-              setLocalMinMatchingQuery(
-                TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
-              );
-              setLocalEffectSizeThreshold(
-                TERM_OPTIONS_FILTER_DEFAULTS.effectSizeThreshold
-              );
-              handleSetSortBy(
-                TERM_OPTIONS_FILTER_DEFAULTS.sortBy as SortOption
-              );
-              handleSetMaxTopTerms(TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms);
-              handleSetMaxFDR(TERM_OPTIONS_FILTER_DEFAULTS.maxFDR);
-              handleSetMaxMatchingOverall(
-                TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
-              );
-              handleSetMinMatchingQuery(
-                TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
-              );
-              handleSetEffectSizeThreshold(
-                TERM_OPTIONS_FILTER_DEFAULTS.effectSizeThreshold
-              );
+              setLocalSortBy(DEFAULTS.sortBy);
+              setLocalMaxFDR(DEFAULTS.maxFDR);
+              setLocalMaxTopTerms(DEFAULTS.maxTopTerms);
+              setLocalMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
+              setLocalMinMatchingQuery(DEFAULTS.minMatchingQuery);
+              setLocalEffectSizeThreshold(DEFAULTS.effectSizeThreshold);
+              handleSetSortBy(DEFAULTS.sortBy as SortOption);
+              handleSetMaxTopTerms(DEFAULTS.maxTopTerms);
+              handleSetMaxFDR(DEFAULTS.maxFDR);
+              handleSetMaxMatchingOverall(DEFAULTS.maxMatchingOverall);
+              handleSetMinMatchingQuery(DEFAULTS.minMatchingQuery);
+              handleSetEffectSizeThreshold(DEFAULTS.effectSizeThreshold);
             }}
             style={{ marginBottom: 0 }}
           >

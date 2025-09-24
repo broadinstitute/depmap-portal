@@ -10,7 +10,7 @@ export type DataExplorerPlotType =
 
 export type DataExplorerContextVariable = SliceQuery & {
   source?: "metadata_column" | "tabular_dataset" | "matrix_dataset";
-  slice_type?: string | null;
+  slice_type?: string;
   label?: string;
 };
 
@@ -63,12 +63,9 @@ export interface DataExplorerPlotConfigDimension {
 export type PartialDataExplorerPlotConfigDimension = PartialDeep<DataExplorerPlotConfigDimension>;
 
 export interface DataExplorerPlotConfigDimensionV2
-  extends Omit<DataExplorerPlotConfigDimension, "slice_type" | "context"> {
-  slice_type: string | null;
+  extends Omit<DataExplorerPlotConfigDimension, "context"> {
   context: DataExplorerContextV2;
 }
-
-export type PartialDataExplorerPlotConfigDimensionV2 = PartialDeep<DataExplorerPlotConfigDimensionV2>;
 
 export type DataExplorerMetadata = Record<
   string,

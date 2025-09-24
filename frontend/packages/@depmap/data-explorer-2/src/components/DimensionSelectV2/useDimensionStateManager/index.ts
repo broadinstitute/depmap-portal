@@ -11,7 +11,6 @@ interface Props {
   index_type: string | null;
   value: Partial<DataExplorerPlotConfigDimensionV2> | null;
   onChange: (nextValue: Partial<DataExplorerPlotConfigDimensionV2>) => void;
-  allowNullFeatureType: boolean;
   initialDataType?: string;
 }
 
@@ -20,19 +19,16 @@ export default function useDimensionStateManager({
   index_type,
   value,
   onChange,
-  allowNullFeatureType,
   initialDataType = "",
 }: Props) {
   const isInitialized = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const prevIndexType = useRef(index_type);
-  const prevContext = useRef(value?.context);
 
   const initialState = useRef({
     ...DEFAULT_STATE,
     dataType: initialDataType || null,
-    allowNullFeatureType,
     dimension: {
       ...value,
 
@@ -58,21 +54,8 @@ export default function useDimensionStateManager({
       setIsLoading(true);
 
       try {
-        const nextState = await resolveNextState(
-          index_type,
-          state,
-          changes,
-          false
-        );
+        const nextState = await resolveNextState(index_type, state, changes);
         setState(nextState);
-
-        const nextStateWithOptions = await resolveNextState(
-          index_type,
-          state,
-          changes,
-          true
-        );
-        setState(nextStateWithOptions);
       } catch (e) {
         window.console.error(e);
       } finally {
@@ -112,10 +95,8 @@ export default function useDimensionStateManager({
     const dataset_id = state.dimension.dataset_id;
 
     if (state.dataType === null && dataset_id !== undefined) {
-      findDataType(index_type, dataset_id).then((dataType) => {
+      findDataType(dataset_id).then((dataType) => {
         if (dataType) {
-          // HACK: We must also update dataset_id or this causes an infinte
-          // loop!
           update({ dataType, dataset_id });
         } else {
           update({ isUnknownDataset: true });
@@ -123,22 +104,11 @@ export default function useDimensionStateManager({
       });
     }
   }, [
-    index_type,
     state.dataType,
     state.dimension.dataset_id,
     state.isUnknownDataset,
     update,
   ]);
-
-  useEffect(() => {
-    // Handles the case where the context is cleared and we need to re-compute
-    // options.
-    if (prevContext.current && !state.dimension.context) {
-      update({ context: undefined });
-    }
-
-    prevContext.current = state.dimension.context;
-  }, [state.dimension.context, update]);
 
   const noMatchingContexts = useMemo(() => {
     return (

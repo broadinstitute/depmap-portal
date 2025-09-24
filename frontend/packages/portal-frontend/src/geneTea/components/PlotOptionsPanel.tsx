@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
 import ToggleSwitch from "@depmap/common-components/src/components/ToggleSwitch";
 import { useGeneTeaContext } from "../context/GeneTeaContext";
-import styles from "../styles/GeneTea.scss";
 
 const PlotOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
@@ -21,46 +20,37 @@ const PlotOptionsPanel: React.FC = () => {
         Use toggles to group and cluster.
       </p>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
-          <span>Use term clustering.</span>
-          <ToggleSwitch
-            className={styles.toggleSwitch}
-            value={doClusterTerms}
-            onChange={handleSetDoClusterTerms}
-            options={[
-              { label: "OFF", value: false },
-              { label: "ON", value: true },
-            ]}
-          />
-        </div>
+        <ToggleSwitch
+          value={doClusterTerms}
+          onChange={handleSetDoClusterTerms}
+          options={[
+            { label: "", value: false },
+            { label: "", value: true },
+          ]}
+        />
+        <span style={{ marginLeft: 12 }}>Use term clustering.</span>
       </div>
       <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
-          <span>Use gene clustering.</span>
-          <ToggleSwitch
-            className={styles.toggleSwitch}
-            value={doClusterGenes}
-            onChange={handleSetDoClusterGenes}
-            options={[
-              { label: "OFF", value: false },
-              { label: "ON", value: true },
-            ]}
-          />
-        </div>
+        <ToggleSwitch
+          value={doClusterGenes}
+          onChange={handleSetDoClusterGenes}
+          options={[
+            { label: "", value: false },
+            { label: "", value: true },
+          ]}
+        />
+        <span style={{ marginLeft: 12 }}>Use gene clustering.</span>
       </div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
-          <span>Group terms when possible.</span>
-          <ToggleSwitch
-            className={styles.toggleSwitch}
-            value={doGroupTerms}
-            onChange={handleSetDoGroupTerms}
-            options={[
-              { label: "OFF", value: false },
-              { label: "ON", value: true },
-            ]}
-          />
-        </div>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <ToggleSwitch
+          value={doGroupTerms}
+          onChange={handleSetDoGroupTerms}
+          options={[
+            { label: "", value: false },
+            { label: "", value: true },
+          ]}
+        />
+        <span style={{ marginLeft: 12 }}>Group terms when possible.</span>
       </div>
     </div>
   );

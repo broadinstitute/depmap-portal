@@ -424,8 +424,8 @@ export const fetchDatasetsByIndexType = memoize(async () => {
       return;
     }
 
-    // This should never happen
-    if (!dataset.sample_type_name) {
+    // TODO: add support for `null` dimension types
+    if (!dataset.sample_type_name || !dataset.feature_type_name) {
       return;
     }
 
@@ -826,6 +826,7 @@ export async function fetchWaterfall(
   return {
     index_type,
     index_labels: sortedLabels,
+    // TODO: Check of it's depmap_model and use the cell line name for this.
     index_display_labels: sortedIndexDisplayLabels,
     dimensions: sortedDimensions,
     filters: sortedFilters,

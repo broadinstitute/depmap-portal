@@ -1,16 +1,16 @@
 import React from "react";
 import { DataExplorerContextV2 } from "@depmap/types";
-import PlotConfigSelect from "../../PlotConfigSelect";
-import { useLabel } from "./hooks";
-import { getIdentifier } from "./utils";
+import PlotConfigSelect from "../PlotConfigSelect";
+import renderConditionally from "../../utils/render-conditionally";
+import { useLabel } from "./SliceSelect/hooks";
+import { getIdentifier } from "./SliceSelect/utils";
 
 interface Props {
   index_type: string | null;
-  value: DataExplorerContextV2 | null;
-  onChange: (context: DataExplorerContextV2 | null) => void;
+  value: DataExplorerContextV2 | undefined;
 }
 
-function FallbackSliceSelect({ index_type, value, onChange }: Props) {
+function FallbackSliceSelect({ index_type, value }: Props) {
   const label = useLabel(index_type);
 
   const displayValue = !value
@@ -23,11 +23,7 @@ function FallbackSliceSelect({ index_type, value, onChange }: Props) {
       enable
       isClearable
       // TODO: Handle when user tries to clear this.
-      onChange={(nextValue: string | null) => {
-        if (nextValue === null) {
-          onChange(null);
-        }
-      }}
+      onChange={() => {}}
       label={label}
       value={displayValue}
       options={displayValue ? [displayValue] : []}
@@ -35,4 +31,4 @@ function FallbackSliceSelect({ index_type, value, onChange }: Props) {
   );
 }
 
-export default FallbackSliceSelect;
+export default renderConditionally(FallbackSliceSelect);

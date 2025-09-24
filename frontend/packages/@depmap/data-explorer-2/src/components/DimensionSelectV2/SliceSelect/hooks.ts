@@ -22,7 +22,7 @@ export const useLabel = (index_type: string | null) => {
 };
 
 export const useDefaultOptions = (
-  slice_type: string, // NOT compatible with SLICE_TYPE_NULL
+  slice_type: string,
   dataType: string | null,
   dataset_id: string | null
 ) => {
@@ -68,7 +68,7 @@ export const useDefaultOptions = (
 };
 
 export const useSearch = (
-  slice_type: string, // NOT compatible with SLICE_TYPE_NULL
+  slice_type: string,
   dataType: string | null,
   dataset_id: string | null
 ) => {
@@ -94,9 +94,7 @@ export const useSearch = (
   );
 };
 
-export const usePlaceholder = (
-  slice_type: string // NOT compatible with SLICE_TYPE_NULL
-) => {
+export const usePlaceholder = (slice_type: string) => {
   const { dimensionType, isDimensionTypeLoading } = useDimensionType(
     slice_type
   );

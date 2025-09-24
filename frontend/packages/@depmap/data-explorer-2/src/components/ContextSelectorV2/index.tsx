@@ -21,7 +21,7 @@ interface Props {
     context: DataExplorerContextV2 | null,
     hash: string | null
   ) => void;
-  label?: React.ReactNode | ((dimensionType: DimensionType | null) => string);
+  label?: React.ReactNode | ((dimensionType: DimensionType) => string);
   swatchColor?: string;
   includeAllInOptions?: boolean;
   hasError?: boolean;

@@ -11,16 +11,6 @@ import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataE
 import { saveNewContext } from "src";
 import { DataExplorerContext } from "@depmap/types";
 
-// TODO organize this file a little better...
-export const TERM_OPTIONS_FILTER_DEFAULTS = {
-  sortBy: "Effect Size",
-  maxTopTerms: 10,
-  maxFDR: 0.05,
-  effectSizeThreshold: 0.1,
-  minMatchingQuery: 2,
-  maxMatchingOverall: 5373,
-};
-
 export interface GeneTeaContextType {
   effectSizeThreshold: number;
   handleSetEffectSizeThreshold: (v: any) => void;
@@ -122,9 +112,7 @@ export function GeneTeaContextProvider({
     []
   );
 
-  const [sortBy, setSortBy] = useState<SortOption>(
-    TERM_OPTIONS_FILTER_DEFAULTS.sortBy as SortOption
-  );
+  const [sortBy, setSortBy] = useState<SortOption>("Effect Size");
   const handleSetSortBy = useCallback((v: SortOption) => setSortBy(v), []);
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
@@ -170,9 +158,7 @@ export function GeneTeaContextProvider({
     []
   );
 
-  const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.effectSizeThreshold
-  );
+  const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(0.1);
   const handleSetEffectSizeThreshold = useCallback(
     (v: any) => {
       setEffectSizeThreshold((prevVal: number) => {
@@ -189,9 +175,7 @@ export function GeneTeaContextProvider({
     [handleClearSelectedTableRows]
   );
 
-  const [minMatchingQuery, setMinMatchingQuery] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
-  );
+  const [minMatchingQuery, setMinMatchingQuery] = useState<number>(2);
   const handleSetMinMatchingQuery = useCallback(
     (v: any) => {
       setMinMatchingQuery((prevVal: number) => {
@@ -209,7 +193,7 @@ export function GeneTeaContextProvider({
   );
 
   const [maxMatchingOverall, setMaxMatchingOverall] = useState<number | null>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
+    5357
   );
   const handleSetMaxMatchingOverall = useCallback(
     (v: any) => {
@@ -227,9 +211,7 @@ export function GeneTeaContextProvider({
     [handleClearSelectedTableRows]
   );
 
-  const [maxTopTerms, setMaxTopTerms] = useState<number | null>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms
-  );
+  const [maxTopTerms, setMaxTopTerms] = useState<number | null>(10);
   const handleSetMaxTopTerms = useCallback(
     (v: any) => {
       setMaxTopTerms((prevVal: number | null) => {
@@ -246,25 +228,24 @@ export function GeneTeaContextProvider({
     [handleClearSelectedTableRows]
   );
 
-  const [maxFDR, setMaxFDR] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxFDR
-  );
+  const [maxFDR, setMaxFDR] = useState<number>(0.05);
   const handleSetMaxFDR = useCallback((v: number) => setMaxFDR(v), []);
 
-  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
-    new Set([])
-  );
   const handleSetSelectionFromContext = useCallback(async () => {
     const labels = await promptForSelectionFromContext(
-      validGeneSymbols,
+      allAvailableGenes,
       "gene"
     );
     if (labels === null) {
       return;
     }
 
-    setSelectedPlotGenes(labels);
-  }, [validGeneSymbols]);
+    setGeneSymbolSelections(labels);
+  }, [allAvailableGenes]);
+
+  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
+    new Set([])
+  );
 
   const handleSetPlotSelectedGenes = useCallback(
     (selections: Set<string>, shiftKey: boolean) => {

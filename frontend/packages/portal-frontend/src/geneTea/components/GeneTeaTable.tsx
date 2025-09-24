@@ -54,7 +54,6 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
           hideSelectAllCheckbox
           allowDownloadFromTableDataWithMenu
           allowDownloadFromTableDataWithMenuFileName="gene-tea-data.csv"
-          minimumAllowedSelections={1}
         />
       </div>
     );

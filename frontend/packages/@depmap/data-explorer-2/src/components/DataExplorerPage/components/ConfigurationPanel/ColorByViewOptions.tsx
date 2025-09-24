@@ -171,8 +171,6 @@ function ColorByViewOptions({
       </div>
       {color_by === "custom" && (
         <DimensionSelect
-          // HACK: Only support by DimensionSelectV2
-          {...{ allowNullFeatureType: true }}
           mode="entity-or-context"
           className={styles.customColorDimension}
           index_type={plot.index_type || null}

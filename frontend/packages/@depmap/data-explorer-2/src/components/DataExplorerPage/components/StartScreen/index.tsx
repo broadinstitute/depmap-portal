@@ -49,7 +49,6 @@ function StartScreen({ tutorialLink }: Props) {
         </>
       )}
       <UserUploadModal
-        disableOrientationOptions={isBreadboxOnlyMode}
         key={`${showCsvUploadModal}`}
         show={showCsvUploadModal}
         onHide={() => setShowCsvUploadModal(false)}
@@ -58,7 +57,12 @@ function StartScreen({ tutorialLink }: Props) {
         isTransient
         taskKickoffFunction={(args) => {
           if (isBreadboxOnlyMode) {
-            return breadboxAPI.postCustomCsv(args);
+            // There is an Asana ticket to fix this.
+            // https://app.asana.com/1/9513920295503/project/1200435587978125/task/1210026345785485
+            // Note that Elara API used to have an implementation of postCustomCsv but it looks
+            // like it takes different arguments that the Legacy Portal version.
+            // https://github.com/broadinstitute/depmap-portal/blob/d9751a1/frontend/packages/elara-frontend/src/api.ts#L563-L575
+            throw new Error("Not implemented in Breadbox!");
           }
 
           return legacyPortalAPI.postCustomCsv({
@@ -67,9 +71,7 @@ function StartScreen({ tutorialLink }: Props) {
           });
         }}
         getTaskStatus={
-          isBreadboxOnlyMode
-            ? breadboxAPI.getTaskStatus
-            : legacyPortalAPI.getTaskStatus
+          isElara ? breadboxAPI.getTaskStatus : legacyPortalAPI.getTaskStatus
         }
       />
     </div>

@@ -27,7 +27,6 @@ interface Props {
   columns: UseTableOptions<object>["columns"];
   data: UseTableOptions<object>["data"];
   selectedLabels: Set<string> | null;
-  minimumAllowedSelections?: number;
   idProp?: string;
   onChangeSelections?: (selections: any[]) => void;
   rowHeight?: number;
@@ -58,7 +57,6 @@ const ReactTableV7 = React.forwardRef(
       idProp,
       onChangeSelections,
       selectedLabels,
-      minimumAllowedSelections = undefined,
       rowHeight = 24,
       getTrProps = undefined,
       singleSelectionMode = false,
@@ -306,12 +304,6 @@ const ReactTableV7 = React.forwardRef(
           const nextSelections = new Set(prevSelections);
 
           if (nextSelections.has(idValue)) {
-            if (
-              minimumAllowedSelections &&
-              nextSelections.size === minimumAllowedSelections
-            ) {
-              return nextSelections;
-            }
             nextSelections.delete(idValue);
           } else {
             nextSelections.add(idValue);
@@ -328,7 +320,7 @@ const ReactTableV7 = React.forwardRef(
           return nextSelections;
         });
       },
-      [rows, idProp, onChangeSelections, minimumAllowedSelections]
+      [rows, idProp, onChangeSelections]
     );
 
     const handleClickSingleSelectCheckbox = useCallback(

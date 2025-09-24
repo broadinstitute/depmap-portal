@@ -9,7 +9,6 @@ export interface LinRegInfo {
 }
 
 export interface AddDatasetOneRowArgs {
-  units?: string;
   uploadFile?: any;
 }
 

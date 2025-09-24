@@ -135,13 +135,6 @@ export interface WideTableProps {
   onChangeSelections?: (selections: any[]) => void;
 
   /**
-   *  Use this to prevent the user from selecting less than some number of selections. This is useful
-   *  if some number of table rows is selected by default and it does not make sense to allow the user
-   *  to reach 0 rows selected. Used in GeneTEA (frontend/packages/portal-frontend/src/geneTea/components/GeneTeaTable.tsx)
-   */
-  minimumAllowedSelections?: number;
-
-  /**
    *  This determines what property of each row will be used to track
    *  selections. Must be defined to if `onChangeSelections` is.
    */
@@ -1040,7 +1033,6 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
           hideSelectAllCheckbox={this.props.hideSelectAllCheckbox}
           initialSortBy={this.props.sorted}
           fixedHeight={this.props.fixedHeight}
-          minimumAllowedSelections={this.props.minimumAllowedSelections}
         />
       </div>
     );

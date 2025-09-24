@@ -12,7 +12,6 @@ import {
   TabularDatasetDataArgs,
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
-import { uri } from "../../uriTemplateTag";
 import { getJson, postJson, deleteJson, postMultipart } from "../client";
 
 export function getDatasets(
@@ -26,10 +25,6 @@ export function getDatasets(
   return getJson<Dataset[]>("/datasets/", params);
 }
 
-export async function getDataset(datasetId: string) {
-  return getJson<Dataset>(uri`/datasets/${datasetId}`);
-}
-
 export function deleteDataset(id: string) {
   // TODO: Figure out return type.
   return deleteJson<unknown>("/datasets/", id);
@@ -39,7 +34,7 @@ export function updateDataset(
   datasetId: string,
   datasetUpdateArgs: DatasetUpdateArgs
 ) {
-  return postJson<Dataset>(uri`/datasets/${datasetId}`, datasetUpdateArgs);
+  return postJson<Dataset>(`/datasets/${datasetId}`, datasetUpdateArgs);
 }
 
 export function getMatrixDatasetData(
@@ -76,7 +71,7 @@ export function getMatrixDatasetData(
   }
 
   return postJson<{ [key: string]: Record<string, any> }>(
-    uri`/datasets/matrix/${datasetId}`,
+    `/datasets/matrix/${datasetId}`,
     finalArgs
   );
 }
@@ -85,20 +80,21 @@ export function getTabularDatasetData(
   datasetId: string,
   args: TabularDatasetDataArgs
 ) {
+  const url = `/datasets/tabular/${datasetId}`;
   return postJson<{
     [key: string]: Record<string, any>;
-  }>(uri`/datasets/tabular/${datasetId}`, args);
+  }>(url, args);
 }
 
 export function getDatasetSamples(datasetId: string) {
   return getJson<{ id: string; label: string }[]>(
-    uri`/datasets/samples/${datasetId}`
+    `/datasets/samples/${datasetId}`
   );
 }
 
 export function getDatasetFeatures(datasetId: string) {
   return getJson<{ id: string; label: string }[]>(
-    uri`/datasets/features/${datasetId}`
+    `/datasets/features/${datasetId}`
   );
 }
 
@@ -114,6 +110,18 @@ export function searchDimensions({
     type_name,
     limit: Number.isFinite(limit) ? limit : 100,
   });
+}
+
+export function getMatrixDatasetFeatures(dataset_id: string) {
+  return getJson<{ id: string; label: string }[]>(
+    `/datasets/features/${dataset_id}`
+  );
+}
+
+export function getMatrixDatasetSamples(dataset_id: string) {
+  return getJson<{ id: string; label: string }[]>(
+    `/datasets/samples/${dataset_id}`
+  );
 }
 
 export function getDimensionData(sliceQuery: SliceQuery) {
@@ -167,34 +175,6 @@ const parseFileToAddHeader = (rawFile: any, headerStr: string) => {
   });
 };
 
-export function postCustomCsv(config: {
-  displayName: string;
-  units: string;
-  transposed: boolean;
-  uploadFile: File;
-}) {
-  const { displayName, units, transposed, uploadFile } = config;
-
-  if (!transposed) {
-    throw new Error(
-      "Uploading CSV with cell lines as columns is not currently supported."
-    );
-  }
-
-  const args = {
-    name: displayName,
-    units,
-    data_type: "user_upload",
-    sample_type: "depmap_model",
-    feature_type: undefined,
-    value_type: DatasetValueType.continuous,
-    data_file: uploadFile,
-    is_transient: true,
-  };
-
-  return postMultipart<UploadTask>("/datasets/", args);
-}
-
 export function postCustomCsvOneRow(
   config: AddDatasetOneRowArgs
 ): Promise<UploadTask> {
@@ -211,9 +191,8 @@ export function postCustomCsvOneRow(
       const finalConfig: Readonly<AddCustDatasetArgs> = {
         name,
         units: "float",
-        data_type: "user_upload",
+        feature_type: "generic",
         sample_type: "depmap_model",
-        feature_type: null,
         value_type: DatasetValueType.continuous,
         data_file: finalUploadFile,
         is_transient: true,

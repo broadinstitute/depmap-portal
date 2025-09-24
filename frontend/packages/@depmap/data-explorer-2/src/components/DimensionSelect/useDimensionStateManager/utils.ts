@@ -173,7 +173,7 @@ export function computeOptions(
         datasets,
         sliceLabelMap,
         contextLabels,
-        dataType,
+        dataType, // <---
         selectedSliceType,
         selectedAxisType,
         selectedContext

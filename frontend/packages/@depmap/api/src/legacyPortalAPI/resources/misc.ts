@@ -9,7 +9,6 @@ import {
   ScreenType,
   GenePredictiveModelResults,
 } from "@depmap/types";
-import { uri } from "../../uriTemplateTag";
 import { getJson, postJson } from "../client";
 
 export function getFeedbackUrl() {
@@ -17,7 +16,7 @@ export function getFeedbackUrl() {
 }
 
 export function getTaskStatus(id: string) {
-  return getJson<CeleryTask>(uri`/api/task/${id}`);
+  return getJson<CeleryTask>(`/api/task/${id}`);
 }
 
 export function getCellLineSelectorLines() {
@@ -48,7 +47,7 @@ export function getCompoundDashboardSummaryTable(datasetId: string) {
     Target: string[];
     Synonyms: string[];
     TargetOrMechanism: string[];
-  }>(uri`/compound_dashboard/summary_table/${datasetId}`);
+  }>(`/compound_dashboard/summary_table/${datasetId}`);
 }
 
 export function getPredictiveTableGene(entityId: number) {
@@ -87,7 +86,7 @@ type GeneCharacterizationData = {
 
 export function getGeneCharacterizationData(geneSymbol: string) {
   return getJson<GeneCharacterizationData>(
-    uri`/gene/gene_characterization_data/${geneSymbol}`
+    `/gene/gene_characterization_data/${geneSymbol}`
   );
 }
 

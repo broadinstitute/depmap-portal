@@ -1,16 +1,15 @@
 import { CellLineDataMatrix, OncogenicAlteration } from "@depmap/types";
-import { uri } from "../../uriTemplateTag";
 import { getJson } from "../client";
 
 export function getCellLineCompoundSensitivityData(depmapId: string) {
   return getJson<CellLineDataMatrix>(
-    uri`/cell_line/compound_sensitivity/${depmapId}`
+    `/cell_line/compound_sensitivity/${depmapId}`
   );
 }
 
 export function getCellLineDatasets(depmapId: string) {
   return getJson<{ [key: string]: any[] }>(
-    uri`/cell_line/datasets/${depmapId}`
+    `/cell_line/datasets/${depmapId}`
   ).then(
     (datasetTypeDatasets: {
       [key: string]: { display_name: string; download_url: string }[];
@@ -28,7 +27,7 @@ export function getCellLineDatasets(depmapId: string) {
 }
 
 export function getCellLineDescriptionTileData(modelId: string) {
-  return getJson<any>(uri`/cell_line/description_tile/${modelId}`);
+  return getJson<any>(`/cell_line/description_tile/${modelId}`);
 }
 
 export function getCellLinePrefDepData(
@@ -36,7 +35,7 @@ export function getCellLinePrefDepData(
   depmapId: string
 ) {
   return getJson<CellLineDataMatrix>(
-    uri`/cell_line/prefdep/${data_type}/${depmapId}`
+    `/cell_line/prefdep/${data_type}/${depmapId}`
   );
 }
 
@@ -44,5 +43,5 @@ export function getOncogenicAlterations(depmapId: string) {
   return getJson<{
     onco_alterations: Array<OncogenicAlteration>;
     oncokb_dataset_version: string;
-  }>(uri`/cell_line/oncogenic_alterations/${depmapId}`);
+  }>(`/cell_line/oncogenic_alterations/${depmapId}`);
 }

@@ -1,21 +1,28 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import VanillaAsycSelect from "react-select/async";
+import { WindowedMenuList } from "react-windowed-select";
 import { DataExplorerContextV2 } from "@depmap/types";
+import extendReactSelect from "../../../utils/extend-react-select";
 import renderConditionally from "../../../utils/render-conditionally";
-import {} from "../useDimensionStateManager/types";
-import FallbackSliceSelect from "./FallbackSliceSelect";
-import DatasetSpecificSliceSelect from "./DatasetSpecificSliceSelect";
-import SearchIndexAwareSliceSelect from "./SearchIndexAwareSliceSelect";
+import {
+  useDefaultOptions,
+  useLabel,
+  usePlaceholder,
+  useSearch,
+} from "./hooks";
+import { getIdentifier, toOutputValue } from "./utils";
+import formatOptionLabel from "./formatOptionLabel";
+
+const AsyncSelect = extendReactSelect(VanillaAsycSelect);
 
 interface Props {
   index_type: string | null;
-  slice_type: string | null | undefined;
+  slice_type: string;
   dataset_id: string | null;
   value: DataExplorerContextV2 | null;
   onChange: (context: DataExplorerContextV2 | null) => void;
   dataType: string | null;
   //  units: string | null;
-  isUnknownDataset: boolean;
-  isLoading: boolean;
   swatchColor?: string;
 }
 
@@ -26,44 +33,50 @@ function SliceSelect({
   dataset_id,
   value,
   onChange,
-  isUnknownDataset,
-  isLoading,
   swatchColor = undefined,
 }: Props) {
-  if (slice_type === undefined) {
-    return null;
-  }
+  const searchQuery = useRef("");
 
-  if (isUnknownDataset) {
-    return (
-      <FallbackSliceSelect
-        index_type={index_type}
-        value={value}
-        onChange={onChange}
-      />
-    );
-  }
+  useEffect(() => {
+    searchQuery.current = "";
+  }, [slice_type, dataType, dataset_id]);
 
-  if (slice_type === null) {
-    return (
-      <DatasetSpecificSliceSelect
-        dataset_id={dataset_id}
-        value={value}
-        onChange={onChange}
-      />
-    );
-  }
+  const displayValue = !value
+    ? null
+    : { value: getIdentifier(value) as string, label: value.name };
+
+  const loadOptions = useSearch(slice_type, dataType, dataset_id);
+
+  const { defaultOptions, isLoadingDefaultOptions } = useDefaultOptions(
+    slice_type,
+    dataType,
+    dataset_id
+  );
+
+  const label = useLabel(index_type);
+  const placeholder = usePlaceholder(slice_type);
 
   return (
-    <SearchIndexAwareSliceSelect
-      index_type={index_type}
-      dataType={dataType}
-      slice_type={slice_type}
-      dataset_id={dataset_id}
-      value={value}
-      onChange={onChange}
-      isLoading={isLoading}
+    <AsyncSelect
+      label={!swatchColor ? label : null}
+      value={displayValue}
+      // hasError={Boolean(notFound || error)}
+      onChange={(option) => onChange(toOutputValue(slice_type, option))}
+      menuWidth={310}
+      placeholder={/* notFound || */ placeholder}
+      isLoading={isLoadingDefaultOptions}
+      loadOptions={loadOptions}
+      defaultOptions={defaultOptions}
+      formatOptionLabel={formatOptionLabel}
+      components={{ MenuList: WindowedMenuList }}
+      // cacheOptions={`${slice_type}-${dataType}-${units}-${dataset_id}`}
       swatchColor={swatchColor}
+      isClearable
+      isEditable
+      editableInputValue={searchQuery.current}
+      onEditInputValue={(editedText) => {
+        searchQuery.current = editedText;
+      }}
     />
   );
 }

@@ -1,19 +1,14 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { SearchDimenionsResponse } from "@depmap/types";
-import { SliceTypeNull } from "../useDimensionStateManager/types";
 import {
   fetchDimensionIdentifiers,
   fetchDatasetIdentifiers,
 } from "../api-helpers";
 
 async function fetchDataTypeCompatibleIds(
-  slice_type: string | SliceTypeNull,
+  slice_type: string,
   dataType: string | null
 ) {
-  if (typeof slice_type !== "string") {
-    return new Set<string>();
-  }
-
   const ids = await fetchDimensionIdentifiers(
     slice_type,
     dataType || undefined
@@ -23,7 +18,7 @@ async function fetchDataTypeCompatibleIds(
 }
 
 async function fetchDataVersionCompatibleIds(
-  slice_type: string | SliceTypeNull,
+  slice_type: string,
   dataset_id: string | null
 ) {
   if (!dataset_id) {
@@ -67,7 +62,7 @@ const chainLength = (str: string) => str.split(".").length;
 async function convertSearchResultToOptions(
   tokens: string[],
   result: SearchDimenionsResponse,
-  slice_type: string, // NOT compatible with SLICE_TYPE_NULL
+  slice_type: string,
   dataType: string | null,
   dataset_id: string | null
 ) {

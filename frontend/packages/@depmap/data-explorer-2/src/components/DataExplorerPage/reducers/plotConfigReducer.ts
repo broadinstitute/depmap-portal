@@ -192,14 +192,10 @@ function plotConfigReducer(
           "metadata",
         ]);
 
-        // No support for custom data (there's no such thing as a "custom
+        // No support for custom data yet (there's no such thing as a "custom
         // context").
-        if (dx.slice_type === "custom" || dx.slice_type === null) {
-          nextPlot.dimensions!.x = omit(dx, [
-            "slice_type",
-            "context",
-            "dataset_id",
-          ]);
+        if (dx.slice_type === "custom") {
+          nextPlot.dimensions!.x = omit(dx, "slice_type");
         }
       } else if (plot.dimensions?.color) {
         nextPlot.dimensions!.color = plot.dimensions.color;

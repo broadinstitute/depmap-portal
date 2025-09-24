@@ -61,7 +61,7 @@ export type UserUploadArgs = {
   units: string;
   transposed: boolean;
 
-  uploadFile: File;
+  uploadFile?: File;
   taigaId?: string;
 
   /* Access group for private datasets */

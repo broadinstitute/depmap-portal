@@ -49,9 +49,9 @@ export async function convertContextV1toV2(
   }
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
-  const hasValidDimensionType =
-    context.context_type === "custom" ||
-    dimTypes.some((dt) => dt.name === context.context_type);
+  const hasValidDimensionType = dimTypes.some(
+    (dt) => dt.name === context.context_type
+  );
 
   if (!hasValidDimensionType) {
     showInfoModal({
@@ -143,30 +143,16 @@ export async function convertContextV1toV2(
 
   const convertedContext = {
     name: context.name,
-    dimension_type:
-      context.context_type === "custom" ? null : context.context_type,
+    dimension_type: context.context_type,
     // The expression remains unchanged. What used to be recongized as slice
     // IDs now act as variable names (i.e. keys into the `vars` object).
     expr: context.expr,
     vars,
-  } as DataExplorerContextV2;
-
-  // FIXME: For now we'll call this a success, even though such a context won't
-  // work if you try to evaluate it. It can function as the `context` in a
-  // DataExplorerPlotConfigDimension (meaning the DimensionSelect component can
-  // interpret it).
-  if (context.context_type === "custom") {
-    return { success: true, convertedContext };
-  }
+  };
 
   try {
-    const result = await cached(breadboxAPI).evaluateContext(convertedContext);
-    // We'll consider it a failure if the context produces no results. That's
-    // probably indicative of a problem (even though the API request itself
-    // succeeded).
-    const success = result.ids.length > 0;
-
-    return { success, convertedContext };
+    await cached(breadboxAPI).evaluateContext(convertedContext);
+    return { success: true, convertedContext };
   } catch {
     return {
       success: false,

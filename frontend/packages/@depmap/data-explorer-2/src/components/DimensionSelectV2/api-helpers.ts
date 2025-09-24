@@ -1,5 +1,4 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { SliceTypeNull } from "./useDimensionStateManager/types";
 
 export async function fetchDimensionIdentifiers(
   dimensionTypeName: string,
@@ -18,29 +17,17 @@ export async function fetchDimensionIdentifiers(
 }
 
 export async function fetchDatasetIdentifiers(
-  dimensionTypeName: string | SliceTypeNull,
+  dimensionTypeName: string,
   dataset_id: string
 ) {
-  let isFeature = true;
+  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
+  const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
 
-  if (typeof dimensionTypeName === "string") {
-    const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
-    const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
-
-    if (!dimType) {
-      throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
-    }
-
-    isFeature = dimType.axis === "feature";
+  if (!dimType) {
+    throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
   }
 
-  const result = isFeature
-    ? await cached(breadboxAPI).getDatasetFeatures(dataset_id)
-    : await cached(breadboxAPI).getDatasetSamples(dataset_id);
-
-  if ("detail" in result) {
-    throw new Error(JSON.stringify(result.detail));
-  }
-
-  return result;
+  return dimType.axis === "feature"
+    ? cached(breadboxAPI).getMatrixDatasetFeatures(dataset_id)
+    : cached(breadboxAPI).getMatrixDatasetSamples(dataset_id);
 }
