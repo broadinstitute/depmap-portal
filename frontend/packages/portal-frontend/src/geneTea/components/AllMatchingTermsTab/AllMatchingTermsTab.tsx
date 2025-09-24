@@ -5,15 +5,23 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { groupStringsByCondition, tableColumns } from "../../utils";
 import useData from "../../hooks/useData";
 import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
-import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
+import {
+  FrequentTerms,
+  GeneTeaEnrichedTerms,
+} from "@depmap/types/src/experimental_genetea";
 import PlotSection from "./PlotSection";
 import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
 
 interface AllMatchingTermsTabProps {
+  data: {
+    allEnriched: FrequentTerms;
+    stopwords: FrequentTerms;
+    otherTerms: FrequentTerms;
+  } | null;
   rawData: GeneTeaEnrichedTerms | null;
 }
 
-function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
+function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
   const {
     geneSymbolSelections,
     doGroupTerms,
@@ -110,14 +118,12 @@ function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
               <PlotSection
                 isLoading={isLoading}
                 plotElement={plotElement}
-                heatmapFormattedData={heatmapData}
-                barChartData={barChartData}
+                data={data}
                 handleSetPlotElement={setPlotElement}
-                heatmapXAxisLabel={heatmapXAxisLabel}
               />
             </div>
             <div className={styles.selectionsArea}>
-              {/* <PlotSelections
+              <PlotSelections
                 isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
                 selectedIds={new Set(selectedPlotGenes)}
                 selectedLabels={new Set(selectedPlotGenes)}
@@ -125,7 +131,7 @@ function AllMatchingTermsTab({ rawData }: AllMatchingTermsTabProps) {
                   handleClickSavePlotSelectionAsContext
                 }
                 onClickClearSelection={handleClearPlotSelection}
-              /> */}
+              />
             </div>
           </div>
         </div>

@@ -5,10 +5,10 @@ import PlotControls, {
 } from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import styles from "../styles/GeneTea.scss";
+import styles from "../../styles/GeneTea.scss";
 import { FrequentTerms } from "@depmap/types/src/experimental_genetea";
-import { useGeneTeaContext } from "src/geneTea/context/GeneTeaFiltersContext";
 import AllTermsScatterPlot from "./AllTermsScatterPlot";
+import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
 
 interface PlotSectionProps {
   isLoading: boolean;
@@ -17,7 +17,7 @@ interface PlotSectionProps {
     allEnriched: FrequentTerms;
     stopwords: FrequentTerms;
     otherTerms: FrequentTerms;
-  };
+  } | null;
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
 }
 
@@ -27,7 +27,7 @@ function PlotSection({
   handleSetPlotElement,
   plotElement,
 }: PlotSectionProps) {
-  const { maxTopTerms, doGroupTerms } = useGeneTeaContext();
+  const { maxTopTerms, doGroupTerms } = useGeneTeaFiltersContext();
 
   return (
     <div className={styles.PlotSection}>

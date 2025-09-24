@@ -93,7 +93,6 @@ function TopTermsTab({
     return { roundedData, unroundedData };
   }, [rawData]);
 
-  console.log("error tab", error);
   // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>

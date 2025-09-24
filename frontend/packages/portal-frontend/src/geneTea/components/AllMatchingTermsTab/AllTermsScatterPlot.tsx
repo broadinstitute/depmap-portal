@@ -25,30 +25,27 @@ function AllTermsScatterPlot({
   colorScale,
   showYEqualXLine,
 }: Props) {
-  //   const scatterPlotData = useMemo(() => {
-  //     // x is Effect Size
-  //     // Y is negLogFDR
+  const plotData = useMemo(() => {
+    if (!data) return null;
 
-  //     // return {
-  //     // stopwords: {
-  //     //   x: data.stopwords.effectSize,
-  //     //   y: data.stopwords.,
-  //     //   customdata: any;
-  //     // };
-  //     // otherTerms: {
-  //     //   x: number[];
-  //     //   y: number;
-  //     //   customdata: any;
-  //     // };
-  //     // selectedTerms: {
-  //     //   x: number[];
-  //     //   y: number;
-  //     //   customdata: any;
-  //     // };
-  //   // };
-  //   }
-
-  //   }, []);
+    return {
+      stopwords: {
+        x: data.stopwords.effectSize,
+        y: data.stopwords.fdr, // or whatever y value you want from stopwords
+        customdata: data.stopwords.customdata, // adjust as needed
+      },
+      otherTerms: {
+        x: data.otherTerms.effectSize,
+        y: data.otherTerms.fdr, // or whatever y value you want from otherTerms
+        customdata: data.otherTerms.customdata,
+      },
+      selectedTerms: {
+        x: data.selectedTerms.effectSize,
+        y: data.selectedTerms.fdr, // or whatever y value you want from selectedTerms
+        customdata: data.selectedTerms.customdata,
+      },
+    };
+  }, [data]);
 
   return (
     <div>

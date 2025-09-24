@@ -448,6 +448,8 @@ function useData(
         otherTerms,
       };
     }
+
+    return null;
   }, []);
 
   return {

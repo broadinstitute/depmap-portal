@@ -138,10 +138,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   if (tab === "all-matching-terms") {
     return (
       <AllTermsContextProvider>
-        {/* <AllMatchingTermsTab
-          allTermsScatterPlotData={allTermsScatterPlotData}
-        /> */}
-        <></>
+        <AllMatchingTermsTab data={allTermsScatterPlotData} rawData={rawData} />
       </AllTermsContextProvider>
     );
   }
