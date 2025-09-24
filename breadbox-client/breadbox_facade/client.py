@@ -357,7 +357,7 @@ class BBClient:
         log_status=lambda msg: None,
             description:Optional[str] = None,
             data_parquet : Optional[str] = None,
-    ) -> AddDatasetResponse:
+    ) -> dict[str, Any]:
         log_status(f"add_matrix_dataset start")
         metadata = MatrixDatasetParamsDatasetMetadataType0.from_dict(dataset_metadata) if dataset_metadata else None
 
