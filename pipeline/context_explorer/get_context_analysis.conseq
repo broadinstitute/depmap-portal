@@ -28,9 +28,9 @@ rule get_context_analysis:
         # transformed will be our newly constructed dict of name -> artifact
         transformed = {
             # handle the ones that couldn't uniquely be identified by type specially
-            "repurposing_table_path": [{{ inputs.compound_summary_repurposing }}],
+            "repurposing_table_path": [repurposing_table_path],
             "oncref_table_path": [oncref_table_path],
-            "gene_effect_taiga_id": [ repurposing_table_path ],
+            "gene_effect_taiga_id": [ {{ inputs.gene_effect_taiga_id }} ],
             "gene_dependency_taiga_id": [ {{ inputs.gene_dependency_taiga_id }} ],
             "tda_table": [ {{ inputs.tda_table }} ],
             "script": {{ inputs.script }}            
