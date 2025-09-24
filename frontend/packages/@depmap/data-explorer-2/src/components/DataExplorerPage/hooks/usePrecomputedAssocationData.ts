@@ -1,14 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import type { BreadboxApiResponse } from "@depmap/api";
-import { DataExplorerPlotConfigDimension } from "@depmap/types";
+import {
+  DataExplorerPlotConfigDimension,
+  DataExplorerPlotConfigDimensionV2,
+} from "@depmap/types";
 import {
   convertDimensionToSliceQuery,
   isCompleteDimension,
 } from "../../../utils/misc";
 
 interface Props {
-  dimension: DataExplorerPlotConfigDimension | null;
+  dimension:
+    | DataExplorerPlotConfigDimension
+    | DataExplorerPlotConfigDimensionV2
+    | null;
   hiddenDatasets: Set<string>;
   sortByAbsoluteValue: boolean;
   sortDirection: "desc" | "asc";

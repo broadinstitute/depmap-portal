@@ -87,7 +87,8 @@ export interface DatasetUpdateArgs {
 export interface AddCustDatasetArgs {
   name: string;
   units: string;
-  feature_type: string;
+  data_type: string;
+  feature_type: string | null;
   sample_type: string;
   value_type: DatasetValueType;
   data_file: any;

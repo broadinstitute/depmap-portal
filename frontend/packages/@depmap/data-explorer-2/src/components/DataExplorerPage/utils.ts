@@ -10,6 +10,7 @@ import {
   DataExplorerFilters,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
+  DataExplorerPlotConfigDimensionV2,
   DimensionKey,
   FilterKey,
   isValidSliceQuery,
@@ -27,6 +28,7 @@ import {
 import { fetchContext, persistContext } from "../../utils/context-storage";
 import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
 import { convertContextV1toV2 } from "../../utils/context-converter";
+import { sliceIdToSliceQuery } from "../../utils/slice-id";
 import {
   hasSomeShorthandParams,
   omitShorthandParams,
@@ -662,7 +664,37 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
   if (isBreadboxOnlyMode && plot?.dimensions) {
     for (const dimKey of Object.keys(plot.dimensions)) {
       const d = plot.dimensions[dimKey as DimensionKey]!;
+      // Strip any "/breadbox" prefixes from dataset IDs.
       d.dataset_id = d.dataset_id.replace("breadbox/", "");
+
+      // "custom" was never a real dimension type -- just a sentinel
+      // value we had been using. We use `null` for that now.
+      if (d.slice_type === "custom") {
+        ((d as unknown) as DataExplorerPlotConfigDimensionV2).slice_type = null;
+      }
+    }
+  }
+
+  // Convert any `metadata` values from slice IDs to SliceQuery objects.
+  if (isBreadboxOnlyMode && plot?.metadata) {
+    for (const key of Object.keys(plot.metadata)) {
+      const value = plot.metadata[key];
+
+      if ("slice_id" in value) {
+        const nextValue = sliceIdToSliceQuery(
+          value.slice_id,
+          "categorical",
+          plot.index_type
+        );
+
+        plot.metadata[key] = nextValue;
+
+        if (key === "color_property" && nextValue) {
+          plot.color_by = nextValue.dataset_id.endsWith("_metadata")
+            ? "metadata_column"
+            : "tabular_dataset";
+        }
+      }
     }
   }
 

@@ -199,7 +199,7 @@ function PrototypeCorrelationHeatmap({
     ];
 
     // Add some undocumented features (unfortunately these won't type check)
-    // See /Users/rcreasi/ref/plotly.js/src/traces/heatmap/attributes.js
+    // See https://github.com/plotly/plotly.js/blob/041c8dc1/src/traces/heatmap/attributes.js#L80-L115
     plotlyData = plotlyData.map((trace) => ({
       ...trace,
       hoverongaps: false,
