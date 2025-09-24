@@ -78,9 +78,7 @@ def _upload_transient_csv(
     df = read_and_validate_csv_shape(csv_path, single_column, is_transpose)
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
     # TODO: record any/all warnings from breadbox
-    warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
-        df, dataset_uuid, cell_line_name_type, config, PUBLIC_ACCESS_GROUP
-    )
+    warnings = validate_df_indices(df, is_transpose, cell_line_name_type)
 
     try:
         dataset_uuid = data_access.add_matrix_dataset_to_breadbox(
@@ -182,22 +180,6 @@ def convert_to_empty_string_if_nan(x):
         return x
 
 
-def validate_cell_lines_and_register_as_nonstandard_matrix(
-    df: pd.DataFrame,
-    dataset_uuid: str,
-    cell_line_name_type: CellLineNameType,
-    config: Dict,
-    owner_id: int,
-):
-    """
-    aka, do common stuff in the second half
-    """
-    is_transpose = config["transpose"]
-    warnings = validate_df_indices(df, is_transpose, cell_line_name_type)
-
-    return warnings
-
-
 def validate_df_indices(
     df, is_transpose, cell_line_name_type: CellLineNameType
 ) -> List[str]:
@@ -207,6 +189,8 @@ def validate_df_indices(
         no duplicate cell lines
         no duplicates in the non-cell line index
     :return: list of any warnings
+    Most of the validations here are redundant now that we are uploading to breadbox.
+    However, I am leaving them in place for now because they have nicely formatted errors to users. 
     """
     if is_transpose:
         cell_line_names = df.index.tolist()
