@@ -7,9 +7,9 @@ from dataclasses import dataclass, asdict
 from depmap import data_access
 from depmap.user_uploads.tasks import (
     upload_transient_csv,
-    convert_to_hdf5,
     validate_df_indices,
     map_ccle_index_to_depmap_id,
+    read_and_validate_csv_shape,
 )
 from depmap.interactive.config.models import Config
 from depmap.interactive.nonstandard.models import (
@@ -45,136 +45,32 @@ class TransientTaigaArgs(TransientArgs):
         return asdict(self)
 
 
-def test_upload_transient_csv(empty_db_mock_downloads, mock_celery_task_update_state):
-    is_transpose = True
-    label = "test label"
-    units = "test units"
-    expected_config = {
-        "transpose": True,
-        "feature_name": "feature",
-        "units": units,
-        "data_type": "user_upload",
-        "label": label,
-        "is_standard": False,
-        "is_custom": True,
-        "is_continuous": True,
-        "is_discoverable": False,
-    }  # no taiga_id key
-
+def test_read_and_validate_csv_shape(empty_db_mock_downloads):
+    """
+    Test that the read_and_validate_csv_shape returns a 
+    dataframe in the format breadbox expects.
+    """
     file_path = UserUploadFixture().file_path
-    verify_first_add(
-        empty_db_mock_downloads,
-        lambda: upload_transient_csv(label, units, is_transpose, file_path, False),
-        expected_config,
+
+    # Test the case where data does not need to be re-oriented
+    output_df1 = read_and_validate_csv_shape(
+        csv_path=file_path,
+        single_column=False,
+        is_transpose=True,
     )
 
-    # same file, again
-    verify_duplicate_add(
-        lambda: upload_transient_csv(label, units, is_transpose, file_path, False),
-        expected_config,
+    assert output_df1["index"].tolist() == ["ACH-000425"]
+    assert output_df1["wing speed"].tolist() == [10.0]
+    assert output_df1["weight"].tolist() == [2.0]
+
+    # Test the case where data does need to be re-oriented
+    output_df2 = read_and_validate_csv_shape(
+        csv_path=file_path,
+        single_column=False,
+        is_transpose=False,
     )
-
-# fixme add tests for the warnings, and other failure modes
-
-
-def verify_first_add(
-    empty_db_mock_downloads, upload_function, expected_config,
-):
-    """
-    Called by taiga and csv test functions
-    Test that
-        file was pulled and added to NONSTANDARD_DATA_DIR
-        NonstandardMatrix, and row and col indices added
-        CustomDatasetConfig added, and config is as expected
-        config was added to InteractiveConfig
-    """
-    fixture = UserUploadFixture()
-    CellLineFactory(
-        depmap_id=fixture.cell_line
-    )  # the only cell line in the canary dataset
-    empty_db_mock_downloads.session.flush()
-    cache_dir = empty_db_mock_downloads.app.config["NONSTANDARD_DATA_DIR"]
-    # start with nothing
-    assert len(os.listdir(cache_dir)) == 0
-    assert NonstandardMatrix.query.count() == 0
-    assert CustomDatasetConfig.query.count() == 0
-
-    # add first dataset
-    result = upload_function()
-    uuid = result["datasetId"]
-
-    assert len(os.listdir(cache_dir)) == 1
-
-    assert NonstandardMatrix.query.count() == 1
-    assert os.path.exists(
-        os.path.join(cache_dir, NonstandardMatrix.query.first().file_path)
-    )
-    assert CustomDatasetConfig.query.count() == 1
-    assert CustomDatasetConfig.get(uuid) == expected_config
-
-    interactive_config = InteractiveConfigFakeMutationsDownload()
-    config = interactive_config.get(uuid)
-    assert config == Config(**expected_config)
-
-    # this also verifies that the transpose setting is consistent
-    assert data_access.get_row_of_values(uuid, fixture.row_name).equals(
-        fixture.expected_row_of_values.astype(dtype="float32")
-    )
-
-
-def verify_duplicate_add(upload_function, expected_config):
-    """
-    Test add same dataset again
-    """
-    result = upload_function()
-    uuid_2 = result["datasetId"]
-
-    # this does not test that file is not re-pulled
-    # for custom taiga, not re-saving a file is handled by taigapy
-    # for custom csv, not re-saving is tested in test_convert_and_move_file
-
-    # but should have new NonstandardMatrix, CustomDatasetConfig, and entry in interactive config
-    assert NonstandardMatrix.query.count() == 2
-    assert CustomDatasetConfig.query.count() == 2
-    assert CustomDatasetConfig.get(uuid_2) == expected_config
-
-    interactive_config = InteractiveConfigFakeMutationsDownload()
-    config = interactive_config.get(uuid_2)
-    assert config == Config(**expected_config)
-
-
-def test_convert_to_hdf5(app):
-    # no file there initially
-    source_dir = app.config["NONSTANDARD_DATA_DIR"]
-    assert len(os.listdir(source_dir)) == 0
-
-    # create two dfs with the same contents
-    # test that even if they are different pandas objects, return the same file name
-    df1 = pd.DataFrame([1.2, 3.4], ["row1", "row2"], ["col"])
-    df2 = pd.DataFrame([1.2, 3.4], ["row1", "row2"], ["col"])
-
-    # file add
-    file_name_1 = convert_to_hdf5(df1)
-    assert (
-        file_name_1
-        == "3bb557bd6647873d976cb9b748ccd642954b82aa4ee4cd686818f8749e60104a.hdf5"
-    )
-    # check that file exists
-    assert len(os.listdir(source_dir)) == 1
-    assert os.path.exists(os.path.join(source_dir, file_name_1))
-
-    # check that is valid hdf5 file
-    # this implicitly also tests open_hdf5_file
-    with open_hdf5_file(source_dir, file_name_1) as f:
-        assert len(list(f["data"][:, 0])) == 2
-        assert len(list(f["data"][1, :])) == 1
-        assert len(list(f["dim_0"])) == 2
-        assert len(list(f["dim_1"])) == 1
-
-    # test that running again with a df with the same contents doesnt add another file
-    file_name_2 = convert_to_hdf5(df2)
-    assert file_name_2 == file_name_1
-    assert len(os.listdir(source_dir)) == 1
+    assert output_df2["index"].tolist() == ["wing speed", "weight"]
+    assert output_df2["ACH-000425"].tolist() == [10.0, 2.0]
 
 
 def test_map_ccle_index_to_depmap_id(empty_db_mock_downloads):

@@ -191,7 +191,6 @@ def get_matching_cell_line_entities(cell_line_name_type: CellLineNameType, cell_
     ).all()
 
     
-# TODO: unit test this, test case where not all exist in mapping
 def map_ccle_index_to_depmap_id(df: pd.DataFrame) -> pd.DataFrame:
     """
     Update the index to use depmap_ids instead of ccle_names.
@@ -284,7 +283,6 @@ def validate_df_indices(
 
 
 def get_cell_line_name_type(df, is_transpose):
-    # TODO: determine if this is still necessary
     """
     Support uploads by depmap ID or CCLE Name. 
     Note, we do not currently support uploads by stripped cell line names.
@@ -310,22 +308,3 @@ def get_cell_line_name_type(df, is_transpose):
     else:
         return CellLineNameType.ccle_name
 
-
-def convert_to_hdf5(df):
-    """
-    :return: name of hdf5 in the nonstandard data dir directory, NOT the full path
-    """
-    source_dir = current_app.config["NONSTANDARD_DATA_DIR"]
-    hash = hash_df(df)
-    local_file_name = "{}.hdf5".format(hash)
-    local_file_path = os.path.join(source_dir, local_file_name)
-
-    if not os.path.exists(local_file_path):
-        # If MatrixConversionException is thrown from this, it is not an expected error
-        # we currently don't expect that a valid dataframe
-        # we expect that every dataframe that has gone through the validation checks that we put in place (e.g. conversion to float)
-        #   should be able to be converted to a hdf5
-        # thus if there is indeed an error in running this, we let it be thrown as a hard error, so that we get stackdriver notified
-        hdf5_utils.df_to_hdf5(df, local_file_path)
-
-    return local_file_name
