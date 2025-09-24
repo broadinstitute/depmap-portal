@@ -238,3 +238,29 @@ def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
     )
 
     return None if dataset_id is Unset else cast(Union[str, None], dataset_id)
+
+
+def add_matrix_dataset(
+    name: str,
+    units: str,
+    data_type: str,
+    data_df: pd.DataFrame,
+    sample_type: str,
+    feature_type: Optional[str],
+    is_transient: bool = False
+) -> str:
+    """
+    Upload the given matrix dataset to breadbox. If successful, return the dataset ID.
+    """
+    result = extensions.breadbox.client.add_matrix_dataset(
+        name=name,
+        units=units,
+        data_type=data_type,
+        data_df=data_df,
+        sample_type=sample_type,
+        feature_type=feature_type,
+        is_transient=is_transient,
+    )
+    if result.state != "SUCCESS":
+        raise Exception(f"Unable to upload dataset to breadbox: {result.message}")
+    return result.id
