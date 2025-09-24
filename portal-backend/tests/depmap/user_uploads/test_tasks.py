@@ -228,14 +228,13 @@ def test_validate_df_indices(empty_db_mock_downloads):
     # duplicate cell line names
     duplicate_cell_line_df = pd.DataFrame(
         [
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_1", "feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_2", "feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_2", "feature_1": 1, "feature_2": 2},
         ],
-        index=["cell_line_1", "cell_line_2", "cell_line_2"],
     )
     with pytest.raises(UserError) as e:
-        validate_df_indices(duplicate_cell_line_df, True, CellLineNameType.ccle_name)
+        validate_df_indices(duplicate_cell_line_df, CellLineNameType.ccle_name)
         assert (
             str(e.value)
             == "Cell lines must be unique. Duplicate cell lines found: 2 of cell_line_2"
@@ -244,17 +243,16 @@ def test_validate_df_indices(empty_db_mock_downloads):
     # duplicate in non-cell line index
     duplicate_feature_df = pd.DataFrame(
         [
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_1", "feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_2", "feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_3", "feature_1": 1, "feature_2": 2},
         ],
-        index=["cell_line_1", "cell_line_2", "cell_line_3"],
     )
     duplicate_feature_df = duplicate_feature_df.rename(
         columns={"feature_2": "feature_1"}
     )
     with pytest.raises(UserError) as e:
-        validate_df_indices(duplicate_feature_df, True, CellLineNameType.ccle_name)
+        validate_df_indices(duplicate_feature_df, CellLineNameType.ccle_name)
         assert (
             str(e.value)
             == "Indices must be unique. Duplicates found: 2 of duplicate_feature"
@@ -263,14 +261,13 @@ def test_validate_df_indices(empty_db_mock_downloads):
     # no cell lines matched
     no_matching_cell_lines_df = pd.DataFrame(
         [
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
+            {"index": "does_not_exist_1", "feature_1": 1, "feature_2": 2},
+            {"index": "does_not_exist_2", "feature_1": 1, "feature_2": 2},
+            {"index": "does_not_exist_3", "feature_1": 1, "feature_2": 2},
         ],
-        index=["does_not_exist_1", "does_not_exist_2", "does_not_exist_3"],
     )
     with pytest.raises(UserError) as e:
-        validate_df_indices(no_matching_cell_lines_df, True, CellLineNameType.ccle_name)
+        validate_df_indices(no_matching_cell_lines_df, CellLineNameType.ccle_name)
         assert (
             str(e.value)
             == "No matching cell lines found: does_not_exist_1, does_not_exist_2, does_not_exist_3"
@@ -279,29 +276,28 @@ def test_validate_df_indices(empty_db_mock_downloads):
     # returns a list of any warnings of cell lines not matching
     one_not_matching_df = pd.DataFrame(
         [
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
-            {"feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_1", "feature_1": 1, "feature_2": 2},
+            {"index": "cell_line_2", "feature_1": 1, "feature_2": 2},
+            {"index": "does_not_exist_3", "feature_1": 1, "feature_2": 2},
         ],
         index=["cell_line_1", "cell_line_2", "does_not_exist_3"],
     )
     warnings = validate_df_indices(
-        one_not_matching_df, True, CellLineNameType.ccle_name
-    )
+        one_not_matching_df, CellLineNameType.ccle_name
+    ) # errors here
     assert warnings == [
         "2 out of 3 cell lines matched. Could not match: does_not_exist_3."
     ]
 
     # can handle either transpose, also no warnings, and depmap id name type
-    transpose_false_no_warnings_df = pd.DataFrame(
+    no_warnings_df = pd.DataFrame(
         [
-            {"cell_line_1": 1, "cell_line_2": 2},
-            {"cell_line_1": 1, "cell_line_2": 2},
-            {"cell_line_1": 1, "cell_line_2": 2},
+            {"index": "ACH-000001", "feature_1": 1, "feature_2": 2},
+            {"index": "ACH-000002", "feature_1": 1, "feature_2": 2},
+            {"index": "ACH-000003", "feature_1": 1, "feature_2": 2},
         ],
-        index=["ACH-000001", "ACH-000002", "ACH-000003"],
     )
     warnings = validate_df_indices(
-        transpose_false_no_warnings_df, False, CellLineNameType.ccle_name
+        no_warnings_df, CellLineNameType.depmap_id
     )
     assert warnings == []

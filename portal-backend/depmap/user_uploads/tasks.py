@@ -225,7 +225,7 @@ def validate_df_indices(
     However, I am leaving them in place for now because they handle some of the complexity of
     validating matrices which are indexed by CCLE names instead of DepMap IDs.
     """
-    cell_line_names = df[df.columns[0]].tolist()
+    cell_line_names = list(df[df.columns[0]])
     feature_index = df.columns.tolist()
 
     def count_duplicates(l):
