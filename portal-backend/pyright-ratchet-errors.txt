@@ -357,7 +357,6 @@ task_utils.py: error: No overloads for "__getitem__" match the provided argument
 tasks.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas" (reportArgumentType)
 tasks.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-tasks.py: error: Argument of type "Literal['NONSTANDARD_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
 tasks.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 tda_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
@@ -463,11 +462,7 @@ test_predictability_loader.py: error: "name" is not a known member of "None" (re
 test_predictability_loader.py: error: Argument of type "Literal[DependencyEnum.Chronos_Combined]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "depmap_model_ids" of type "List[str]" in function "_run_custom_analysis"
 test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "sample_col_ids" of type "list[str] | None" in function "get_subsetted_df_by_labels"
-test_tasks.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 test_tasks.py: error: Argument missing for parameter "self" (reportCallIssue)
-test_tasks.py: error: Argument missing for parameter "single_column" (reportCallIssue)
-test_tasks.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
-test_tasks.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_trees.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_utils.py: error: "__get_taiga_id_to_download_url" is unknown import symbol (reportAttributeAccessIssue)

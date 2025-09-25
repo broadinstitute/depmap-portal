@@ -271,9 +271,7 @@ def add_matrix_dataset(
     if "unknownIDs" in upload_result:
         for idset in upload_result["unknownIDs"]:
             missing_ids = idset["IDs"]
-            ref_count = ref_counts[idset["axis"]]
-            missing_percentage = len(missing_ids) / ref_count * 100
-            warnings.append( f"IDs missing from metadata ({int(missing_percentage)}% of all IDs): {idset}")
+            warnings.append( f"{len(missing_ids)} IDs in uploaded data are missing from our metadata: {idset}")
 
     assert "datasetId" in upload_result, "Unexpected result format from data upload. Expected `datasetId` field."
     return upload_result["datasetId"], warnings

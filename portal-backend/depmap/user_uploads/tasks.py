@@ -198,7 +198,7 @@ def map_ccle_index_to_depmap_id(df: pd.DataFrame) -> pd.DataFrame:
     Drop any rows that don't have matching records in the database
     (we've already generated warnings about any rows were this is the case).
     """
-    index_col_name = df.columns[0]
+    index_col_name: str = df.columns[0] # pyright: ignore
 
     # Load a mapping between the old index and the new
     cell_line_names = list(df[index_col_name])
