@@ -395,6 +395,31 @@ def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
     return breadbox_dao.get_metadata_dataset_id(dimension_type_name)
 
 
+def add_matrix_dataset_to_breadbox(
+    name: str,
+    units: str,
+    data_type: str,
+    data_df: pd.DataFrame,
+    sample_type: str,
+    feature_type: Optional[str],
+    is_transient: bool = False
+) -> tuple[str, list[str]]:
+    """
+    Upload the given matrix dataset to breadbox.
+    If successful, return the dataset ID and any warnings.
+    If not successful, raise a BreadboxException.
+    """
+    return breadbox_dao.add_matrix_dataset(
+        name=name,
+        units=units,
+        data_type=data_type,
+        data_df=data_df,
+        sample_type=sample_type,
+        feature_type=feature_type,
+        is_transient=is_transient,
+    )
+
+
 ######################################################################
 # METHODS BELOW NEED UPDATED CONTRACTS TO BE SUPPORTABLE BY BREADBOX #
 ######################################################################
