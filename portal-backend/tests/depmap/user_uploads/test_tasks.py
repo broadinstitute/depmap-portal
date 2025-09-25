@@ -104,8 +104,6 @@ def test_map_ccle_index_to_depmap_id(empty_db_mock_downloads):
     assert list(output_df["index"]) == ["ACH-000001", "ACH-000002", "ACH-000003"]
 
 
-
-# TODO: update this test as well
 def test_validate_df_indices(empty_db_mock_downloads):
     """
     test that
