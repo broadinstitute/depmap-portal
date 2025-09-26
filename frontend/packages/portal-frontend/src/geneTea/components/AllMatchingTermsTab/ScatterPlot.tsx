@@ -1,5 +1,5 @@
 /* eslint-disable react/require-default-props */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import type {
   Config,
   Data as PlotlyData,
@@ -7,29 +7,29 @@ import type {
   PlotlyHTMLElement,
   PlotMouseEvent,
 } from "plotly.js";
-import { colorPalette } from "depmap-shared";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import type ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "src/plot/styles/ScatterPlot.scss";
 
-type Data = Record<string, any[]>;
-
 interface Props {
   data: {
     stopwords: {
+      indexLabels: string[];
       x: number[];
-      y: number;
-      customdata: any;
+      y: number[];
+      customdata: string[];
     };
     otherTerms: {
+      indexLabels: string[];
       x: number[];
-      y: number;
-      customdata: any;
+      y: number[];
+      customdata: string[];
     };
     selectedTerms: {
+      indexLabels: string[];
       x: number[];
-      y: number;
-      customdata: any;
+      y: number[];
+      customdata: string[];
     };
   };
 
@@ -38,16 +38,7 @@ interface Props {
   // Height can be defined in pixels or set to "auto."  In auto mode, it will
   // attempt to fill the height of the viewport.
   height: number | "auto";
-  // If defined, the corresponding key from `data` will used to generate hover
-  // text.
-  hoverTextKey?: string | undefined | null;
-  // Allows you to specify which key of `data` should be used to label annotations.
-  // If this is not defined, it will try to use `hoverTextKey` instead. If that's
-  // not defined, it will use (x, y) values to annotate points.
-  annotationKey?: string | undefined | null;
-  highlightPoint?: number | undefined | null;
-  onClickPoint?: (pointIndex: number) => void;
-  pointVisibility?: boolean[] | undefined | null;
+  onClickPoint?: (selections: Set<string>, shiftKey: boolean) => void;
   onLoad?: (plot: ExtendedPlotType) => void;
 }
 
@@ -63,10 +54,6 @@ function ScatterPlot({
   xLabel,
   yLabel,
   height,
-  hoverTextKey = null,
-  annotationKey = null,
-  highlightPoint = null,
-  pointVisibility = null,
   onClickPoint = () => {},
   onLoad = () => {},
   Plotly,
@@ -83,13 +70,6 @@ function ScatterPlot({
     yaxis: undefined,
   });
 
-  // We store the indexes of all the points the user has labeled as well any
-  // changes made to their arrowhead positions.
-  const [annotations, setAnnotations] = useState<number[]>([]);
-  const annotationTails = useRef<Record<string, { ax: number; ay: number }>>(
-    {}
-  );
-
   // On mount, we call the `onLoad` callback with a reference to the DOM node
   // (which is extended with convenience functions).
   useEffect(() => {
@@ -105,67 +85,63 @@ function ScatterPlot({
       xaxis: undefined,
       yaxis: undefined,
     };
-  }, [xKey, yKey, xLabel, yLabel, data]);
+  }, [xLabel, yLabel, data]);
 
   // All other updates are handled by this one big effect.
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
 
     const type: any = "scattergl";
-    const x = data[xKey];
-    const y = data[yKey];
-    const text = hoverTextKey ? data[hoverTextKey] : null;
-    const visible = pointVisibility ?? x.map(() => true);
 
-    const annotationText =
-      (annotationKey && data[annotationKey]) ||
-      text ||
-      x.map((_, i) => `${x[i]?.toFixed(2)}, ${y[i]?.toFixed(2)}`);
+    // TODO move this out of the ScatterPlot component so that this component can take any
+    // list of PlotlyData with colors and titles defined per trace as a prop.
+    const stopwordsData: PlotlyData = {
+      type,
+      name: "stopwords",
+      mode: "markers",
+      x: data.stopwords.x,
+      y: data.stopwords.y as any,
+      hovertemplate: "%{customdata}<extra></extra>",
+      marker: {
+        color: "rgb(156, 168, 166)",
+      },
+    };
 
-    const hp =
-      highlightPoint !== null && visible[highlightPoint]
-        ? highlightPoint
-        : null;
+    const otherTermsData: PlotlyData = {
+      type,
+      name: "Other Terms",
+      mode: "markers",
+      x: data.otherTerms.x,
+      y: data.otherTerms.y as any,
+      hovertemplate: "%{customdata}<extra></extra>",
+      marker: {
+        color: "rgb(225, 190, 106)",
+      },
+    };
+
+    const selectedTermsData: PlotlyData = {
+      type,
+      name: "Selected Terms",
+      mode: "markers",
+      x: data.selectedTerms.x,
+      y: data.selectedTerms.y as any,
+      hovertemplate: "%{customdata}<extra></extra>",
+      marker: {
+        color: "red",
+      },
+    };
 
     const plotlyData: PlotlyData[] = [
-      {
-        type,
-        name: "",
-        mode: "markers",
-        // HACK: We hide points by setting their x coordinate to null. This
-        // technique is more performant than using a filter transform.
-        x: x.map((xValue, i) =>
-          visible[i] && i !== highlightPoint ? xValue : null
-        ),
-        y,
-        text,
-        marker: {
-          color: colorPalette.interesting_color,
-          line: { color: "#fff", width: 0.4 },
-        },
-      },
-      // We use a seecond trace to render a single highlighted point. This
-      // ensures it's rendered on top.
-      {
-        type,
-        name: "",
-        mode: "markers",
-        x: hp !== null ? [x[hp]] : [],
-        y: hp !== null ? [y[hp]] : [],
-        text: hp !== null && text ? [text[hp]] : [],
-        marker: { color: colorPalette.selected_color, size: 16 },
-      },
+      stopwordsData,
+      otherTermsData,
+      selectedTermsData,
     ];
 
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,
       margin: { t: 30, l: 80, r: 30 },
       hovermode: "closest",
-
-      // We hide the legend because the traces don't have names and the second
-      // one is only use to render a single highlighted point. Labeling them
-      // would only cause confusion.
-      showlegend: false,
+      showlegend: true,
 
       // Restore or initialize axes. We set `autorange` to true on the first render
       // so that Plotly can calculate the extents of the plot for us.
@@ -182,30 +158,6 @@ function ScatterPlot({
 
       // Preserve the existing dragmode if present.
       dragmode: plot?.layout?.dragmode || "zoom",
-
-      annotations: annotations
-        .filter(
-          // Filter out any annotations associated with missing data. This can
-          // happen if the x or y column has changed since the annotations were
-          // created.
-          (pointIndex) =>
-            typeof x[pointIndex] === "number" &&
-            typeof y[pointIndex] === "number"
-        )
-        .map((pointIndex) => ({
-          x: x[pointIndex],
-          y: y[pointIndex],
-          text: annotationText[pointIndex],
-          visible: visible[pointIndex],
-          xref: "x",
-          yref: "y",
-          arrowhead: 0,
-          standoff: 4,
-          pointIndex,
-          // Restore any annotation arrowhead positions the user may have edited.
-          ax: annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ax,
-          ay: annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ay,
-        })),
     };
 
     const config: Partial<Config> = {
@@ -263,39 +215,24 @@ function ScatterPlot({
         xaxis: { ...plot.layout.xaxis, autorange: false },
         yaxis: { ...plot.layout.yaxis, autorange: false },
       };
-
-      plot.layout.annotations.forEach((annotation) => {
-        const { ax, ay } = annotation;
-        const { pointIndex } = annotation as any;
-
-        if (ax && ay) {
-          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = { ax, ay };
-        }
-      });
     });
 
     on("plotly_click", (e: PlotMouseEvent) => {
-      const { curveNumber, pointIndex } = e.points[0];
+      const { pointIndex, curveNumber } = e.points[0];
+      const anyModifier = e.event.shiftKey;
 
-      // Curve #1 is the special trace that only has one highlighted point.
-      // `pointIndex` will always be 0 in that case which isn't useful (it
-      // doesn't correlate with the supplied `data`).
-      const index = curveNumber === 1 ? highlightPoint : pointIndex;
-
-      if (index == null) {
-        return;
+      let indexLabel;
+      if (curveNumber === 0) {
+        indexLabel = data.stopwords.indexLabels[pointIndex];
+      } else if (curveNumber === 1) {
+        indexLabel = data.otherTerms.indexLabels[pointIndex];
+      } else if (curveNumber === 2) {
+        indexLabel = data.selectedTerms.indexLabels[pointIndex];
       }
 
-      if (!e.event.shiftKey) {
-        onClickPoint(index);
-      } else {
-        setAnnotations((prev) => {
-          const existing = prev.find((a) => a === index);
-
-          return existing
-            ? prev.filter((a) => a !== existing)
-            : prev.concat(index);
-        });
+      // TODO update this to handle shift click multi select
+      if (onClickPoint && indexLabel !== undefined) {
+        onClickPoint(new Set([indexLabel]), anyModifier);
       }
     });
 
@@ -328,62 +265,12 @@ function ScatterPlot({
     plot.resetZoom = () => setTimeout(zoom, 0, "reset");
     plot.downloadImage = (options) => Plotly.downloadImage(plot, options);
 
-    plot.annotateSelected = () => {
-      let points = plot.data[0].selectedpoints as number[];
-
-      if (points) {
-        if (points.length > 500) {
-          window.console.warn("Too many points! Limiting selection to 500.");
-          points = points.slice(0, 500);
-        }
-
-        setAnnotations((xs) => Array.from(new Set(xs.concat(points))));
-      }
-    };
-
-    plot.removeAnnotations = () => {
-      setAnnotations([]);
-    };
-
-    plot.isPointInView = (pointIndex: number) => {
-      const px = x[pointIndex] as number;
-      const py = y[pointIndex] as number;
-      const xrange = plot.layout.xaxis.range as [number, number];
-      const yrange = plot.layout.yaxis.range as [number, number];
-
-      return (
-        px >= xrange[0] && px <= xrange[1] && py >= yrange[0] && py <= yrange[1]
-      );
-    };
-
-    plot.xValueMissing = (pointIndex: number) => {
-      return typeof data[xKey][pointIndex] !== "number";
-    };
-
-    plot.yValueMissing = (pointIndex: number) => {
-      return typeof data[yKey][pointIndex] !== "number";
-    };
-
     return () => {
       listeners.forEach(([eventName, callback]) =>
         plot.removeListener(eventName, callback)
       );
     };
-  }, [
-    data,
-    xKey,
-    yKey,
-    xLabel,
-    yLabel,
-    height,
-    hoverTextKey,
-    annotationKey,
-    highlightPoint,
-    onClickPoint,
-    annotations,
-    pointVisibility,
-    Plotly,
-  ]);
+  }, [data, xLabel, yLabel, height, onClickPoint, Plotly]);
 
   return <div className={styles.ScatterPlot} ref={ref} />;
 }

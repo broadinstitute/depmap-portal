@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import styles from "../styles/GeneTea.scss";
+import styles from "../../styles/GeneTea.scss";
 import GeneTeaTable from "../GeneTeaTable";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import { groupStringsByCondition, tableColumns } from "../../utils";
@@ -40,18 +40,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
     handleSetErrorMessage,
   } = useGeneTeaFiltersContext();
 
-  const {
-    selectedTableRows,
-    selectedPlotGenes,
-    handleSetSelectedTableRows,
-    handleClickSavePlotSelectionAsContext,
-    handleClearPlotSelection,
-  } = useAllTermsContext();
-
-  const plotSelections = useMemo(
-    () => (selectedTableRows.size > 0 ? selectedTableRows : new Set([])),
-    [selectedTableRows]
-  );
+  const {} = useAllTermsContext();
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
@@ -123,12 +112,10 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
             <div className={styles.selectionsArea}>
               <PlotSelections
                 isPlotDataVisible={!isLoading && data !== null}
-                selectedIds={new Set(selectedPlotGenes)}
-                selectedLabels={new Set(selectedPlotGenes)}
-                onClickSaveSelectionAsContext={
-                  handleClickSavePlotSelectionAsContext
-                }
-                onClickClearSelection={handleClearPlotSelection}
+                selectedIds={new Set([])}
+                selectedLabels={new Set([])}
+                onClickSaveSelectionAsContext={() => {}}
+                onClickClearSelection={() => {}}
               />
             </div>
           </div>
@@ -142,7 +129,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         <p>Terms selected in the plot will appear checked in this table.</p>
       </div>
 
-      {rawData && rawData.frequentTerms && (
+      {/* {rawData && rawData.frequentTerms && (
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
@@ -163,7 +150,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
             handleSetSelectedTableRows(new Set(selections));
           }}
         />
-      )}
+      )} */}
     </div>
   );
 }

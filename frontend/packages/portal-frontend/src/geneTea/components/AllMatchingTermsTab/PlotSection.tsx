@@ -63,7 +63,10 @@ function PlotSection({
         )}
         {data && !isLoading && (
           <div className={styles.heatmapContainer}>
-            <AllTermsScatterPlot data={data} />
+            <AllTermsScatterPlot
+              data={data}
+              handleSetPlotElement={handleSetPlotElement}
+            />
           </div>
         )}
       </div>

@@ -3,29 +3,16 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
-  useEffect,
-  useRef,
   useState,
 } from "react";
-import { SortOption } from "../types";
-import promptForSelectionFromContext from "../components/promptForSelectionFromContext";
-import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import { saveNewContext } from "src";
-import { DataExplorerContext } from "@depmap/types";
-import { useGeneTeaFiltersContext } from "./GeneTeaFiltersContext";
 
 export interface AllTermsContextType {
-  selectedTableRows: Set<string>;
-  handleSetSelectedTableRows: (v: Set<string>) => void;
-  handleSetSelectionFromContext: () => Promise<void>;
-  handleClearSelectedTableRows: () => void;
-  selectedPlotGenes: Set<string>;
-  handleSetPlotSelectedGenes: (
+  selectedPlotOrTableTerms: Set<string>;
+  handleClearPlotAndTableSelection: () => void;
+  handleSetPlotOrTableSelectedTerms: (
     selections: Set<string>,
     shiftKey: boolean
   ) => void;
-  handleClickSavePlotSelectionAsContext: () => void;
-  handleClearPlotSelection: () => void;
 }
 
 export const AllTermsContext = createContext<AllTermsContextType | undefined>(
@@ -39,55 +26,13 @@ interface AllTermsContextProviderProps {
 export function AllTermsContextProvider({
   children,
 }: AllTermsContextProviderProps) {
-  const { geneSymbolSelections, validGeneSymbols } = useGeneTeaFiltersContext();
+  const [selectedPlotOrTableTerms, setSelectedPlotOrTableTerms] = useState<
+    Set<string>
+  >(new Set([]));
 
-  const [selectedTableRows, setSelectedTableRows] = useState<Set<string>>(
-    new Set()
-  );
-  const handleSetSelectedTableRows = useCallback(
-    (v: Set<string>) => setSelectedTableRows(v),
-    []
-  );
-  const handleClearSelectedTableRows = useCallback(
-    () => setSelectedTableRows(new Set([])),
-    []
-  );
-
-  const prevGeneSymbolSelections = useRef<Set<string>>(new Set());
-
-  useEffect(() => {
-    const prev = prevGeneSymbolSelections.current;
-    const curr = geneSymbolSelections;
-
-    const setsAreEqual =
-      prev.size === curr.size && [...prev].every((val) => curr.has(val));
-
-    if (!setsAreEqual) {
-      handleClearSelectedTableRows();
-    }
-
-    // Update ref for next comparison
-    prevGeneSymbolSelections.current = new Set(curr);
-  }, [geneSymbolSelections]);
-
-  const [selectedPlotGenes, setSelectedPlotGenes] = useState<Set<string>>(
-    new Set([])
-  );
-  const handleSetSelectionFromContext = useCallback(async () => {
-    const labels = await promptForSelectionFromContext(
-      validGeneSymbols,
-      "gene"
-    );
-    if (labels === null) {
-      return;
-    }
-
-    setSelectedPlotGenes(labels);
-  }, [validGeneSymbols]);
-
-  const handleSetPlotSelectedGenes = useCallback(
+  const handleSetPlotOrTableSelectedTerms = useCallback(
     (selections: Set<string>, shiftKey: boolean) => {
-      setSelectedPlotGenes((prev) => {
+      setSelectedPlotOrTableTerms((prev) => {
         const next: Set<string> = shiftKey ? new Set(prev) : new Set();
 
         selections.forEach((id) => {
@@ -104,34 +49,17 @@ export function AllTermsContextProvider({
     []
   );
 
-  const handleClickSavePlotSelectionAsContext = useCallback(() => {
-    if (selectedPlotGenes.size > 0) {
-      const labels = [...selectedPlotGenes];
-      const context = {
-        name: defaultContextName(selectedPlotGenes.size),
-        context_type: "gene",
-        expr: { in: [{ var: "entity_label" }, labels] },
-      };
-      saveNewContext(context as DataExplorerContext);
-    }
-  }, [selectedPlotGenes]);
-
-  const handleClearPlotSelection = useCallback(
-    () => setSelectedPlotGenes(new Set([])),
+  const handleClearPlotAndTableSelection = useCallback(
+    () => setSelectedPlotOrTableTerms(new Set([])),
     []
   );
 
   return (
     <AllTermsContext.Provider
       value={{
-        selectedTableRows,
-        handleSetSelectedTableRows,
-        handleSetSelectionFromContext,
-        handleClearSelectedTableRows,
-        selectedPlotGenes,
-        handleSetPlotSelectedGenes,
-        handleClickSavePlotSelectionAsContext,
-        handleClearPlotSelection,
+        selectedPlotOrTableTerms,
+        handleSetPlotOrTableSelectedTerms,
+        handleClearPlotAndTableSelection,
       }}
     >
       {children}

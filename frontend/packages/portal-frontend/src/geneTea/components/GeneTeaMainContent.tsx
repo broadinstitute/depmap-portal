@@ -5,10 +5,7 @@ import { groupStringsByCondition, tableColumns } from "../utils";
 import useData from "../hooks/useData";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import { TopTermsContextProvider } from "../context/TopTermsContext";
-import {
-  AllTermsContextProvider,
-  useAllTermsContext,
-} from "../context/AllTermsContext";
+import { AllTermsContextProvider } from "../context/AllTermsContext";
 import AllMatchingTermsTab from "./AllMatchingTermsTab/AllMatchingTermsTab";
 import TopTermsTab from "./TopTermsTab/TopTermsTab";
 
@@ -144,14 +141,12 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   }
 
   return (
-    <TopTermsContextProvider>
-      <TopTermsTab
-        heatmapData={heatmapData}
-        barChartData={barChartData}
-        heatmapXAxisLabel={heatmapXAxisLabel}
-        rawData={rawData}
-      />
-    </TopTermsContextProvider>
+    <TopTermsTab
+      heatmapData={heatmapData}
+      barChartData={barChartData}
+      heatmapXAxisLabel={heatmapXAxisLabel}
+      rawData={rawData}
+    />
   );
 }
 

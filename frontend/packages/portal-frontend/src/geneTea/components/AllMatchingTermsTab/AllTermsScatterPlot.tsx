@@ -1,44 +1,59 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { GeneTeaScatterPlotData } from "@depmap/types/src/experimental_genetea";
-import React, { useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import ScatterPlot from "./ScatterPlot";
+import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
+import { useEffect } from "react";
 
 interface Props {
   data: GeneTeaScatterPlotData | null; // TODO simplify this. We only need x (Effect Size) and y (fdr)
-  handleClickPoint: (pointIndex: number) => void;
-  handleSetSelectedLabels: (labels: Set<string> | null) => void;
   handleSetPlotElement: (element: any) => void;
-  selectedPlotLabels: Set<string> | null;
-  colorScale: string[][] | undefined;
-  showYEqualXLine: boolean;
 }
-function AllTermsScatterPlot({
-  data,
-  handleClickPoint,
-  handleSetSelectedLabels,
-  handleSetPlotElement,
-  selectedPlotLabels,
-  colorScale,
-  showYEqualXLine,
-}: Props) {
+function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
+  const { handleSetPlotOrTableSelectedTerms } = useAllTermsContext();
+
   const plotData = useMemo(() => {
-    if (!data) return null;
+    if (!data) {
+      return {
+        stopwords: {
+          indexLabels: [],
+          x: [],
+          y: [], // or whatever y value you want from stopwords
+          customdata: [], // adjust as needed
+        },
+        otherTerms: {
+          indexLabels: [],
+          x: [],
+          y: [], // or whatever y value you want from otherTerms
+          customdata: [],
+        },
+        selectedTerms: {
+          indexLabels: [],
+          x: [],
+          y: [], // or whatever y value you want from selectedTerms
+          customdata: [],
+        },
+      };
+    }
 
     return {
       stopwords: {
+        indexLabels: data.stopwords.data.term,
         x: data.stopwords.data.effectSize,
         y: data.stopwords.data.fdr, // or whatever y value you want from stopwords
         customdata: data.stopwords.customdata, // adjust as needed
       },
       otherTerms: {
+        indexLabels: data.otherTerms.data.term,
         x: data.otherTerms.data.effectSize,
         y: data.otherTerms.data.fdr, // or whatever y value you want from otherTerms
         customdata: data.otherTerms.customdata,
       },
       selectedTerms: {
-        x: data.selectedTerms.data.effectSize,
-        y: data.selectedTerms.data.fdr, // or whatever y value you want from selectedTerms
-        customdata: data.selectedTerms.data.customdata,
+        indexLabels: data.allEnriched.data.term,
+        x: data.allEnriched.data.effectSize,
+        y: data.allEnriched.data.fdr, // or whatever y value you want from selectedTerms
+        customdata: data.allEnriched.customdata,
       },
     };
   }, [data]);
@@ -46,18 +61,12 @@ function AllTermsScatterPlot({
   return (
     <div>
       <ScatterPlot
-        data={data}
-        colorVariable={[]}
+        data={plotData}
         height={387}
-        xKey="x"
-        yKey="y"
-        continuousColorKey="contColorData"
-        hoverTextKey="hoverText"
-        xLabel={""}
-        yLabel={""}
+        xLabel={"Effect Size"}
+        yLabel={"-log10(FDR)"}
         onLoad={handleSetPlotElement}
-        onClickPoint={handleClickPoint}
-        customContinuousColorScale={colorScale}
+        onClickPoint={handleSetPlotOrTableSelectedTerms}
       />
     </div>
   );

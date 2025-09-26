@@ -62,14 +62,20 @@ export function TopTermsContextProvider({
     []
   );
 
+  const contextValue = React.useMemo(
+    () => ({
+      handleSetSelectionFromContext,
+      handleClickSavePlotSelectionAsContext,
+      handleClearPlotSelection,
+    }),
+    [
+      handleSetSelectionFromContext,
+      handleClickSavePlotSelectionAsContext,
+      handleClearPlotSelection,
+    ]
+  );
   return (
-    <TopTermsContext.Provider
-      value={{
-        handleSetSelectionFromContext,
-        handleClickSavePlotSelectionAsContext,
-        handleClearPlotSelection,
-      }}
-    >
+    <TopTermsContext.Provider value={contextValue}>
       {children}
     </TopTermsContext.Provider>
   );

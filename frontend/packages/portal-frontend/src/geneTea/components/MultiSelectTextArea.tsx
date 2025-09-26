@@ -3,7 +3,6 @@ import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import { MAX_GENES_ALLOWED } from "../types";
-import { useTopTermsContext } from "../context/TopTermsContext";
 
 // TODO move to utils
 function replaceLineBreaksWithSingleSpace(text: string): string {
@@ -183,7 +182,7 @@ const MultiSelectTextarea: React.FC = () => {
           className={styles.clearInputButton}
           disabled={inputValue.length === 0 && geneSymbolSelections.size === 0}
           onClick={() => {
-            handleSetGeneSymbolSelections(() => new Set<string>([]));
+            handleSetGeneSymbolSelections(() => new Set());
             handleSetValidGeneSymbols(new Set());
             handleSetInValidGeneSymbols(new Set());
             handleSetPlotSelectedGenes(new Set(), false);
