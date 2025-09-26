@@ -19,17 +19,12 @@ interface AllMatchingTermsTabProps {
 }
 
 function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
-  const {
-    selectedTopTermsTableRows: selectedTableRows,
-    handleSetSelectedTopTermsTableRows: handleSetSelectedTableRows,
-    selectedPlotGenes,
-    doGroupTerms,
-    maxTopTerms,
-    isLoading,
-    error,
-  } = useGeneTeaFiltersContext();
+  const { isLoading, error } = useGeneTeaFiltersContext();
 
-  const {} = useAllTermsContext();
+  const {
+    selectedPlotOrTableTerms,
+    handleSetPlotOrTableSelectedTerms,
+  } = useAllTermsContext();
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
 
@@ -81,9 +76,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
   return (
     <div className={styles.mainContentContainer}>
       <div className={styles.mainContentHeader}>
-        <h3 className={styles.mainContentHeaderTitle}>
-          Top {maxTopTerms} Tea {doGroupTerms ? "Term Groups" : "Terms"}
-        </h3>
+        <h3 className={styles.mainContentHeaderTitle}>All Matching Terms</h3>
       </div>
       {!isLoading && error ? (
         <div className={styles.errorMessage}>Error loading plot data.</div>
@@ -129,13 +122,13 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
           columnOrdering={tableColumns.map((col) => col.accessor)}
           defaultCols={tableColumns.map((col) => col.accessor)}
           selectedTableRows={
-            selectedTableRows.size > 0
-              ? selectedTableRows
-              : new Set(rawData.enrichedTerms?.term)
+            selectedPlotOrTableTerms.size > 0
+              ? selectedPlotOrTableTerms
+              : new Set(rawData.allEnrichedTerms?.term)
           }
           handleChangeSelection={(selections: string[]) => {
             if (selections.length === 0) return;
-            handleSetSelectedTableRows(new Set(selections));
+            handleSetPlotOrTableSelectedTerms(new Set(selections), false);
           }}
         />
       )}

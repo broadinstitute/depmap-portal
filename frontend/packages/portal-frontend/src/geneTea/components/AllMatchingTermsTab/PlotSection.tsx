@@ -39,7 +39,7 @@ function PlotSection({
             ]}
             onSearch={() => {}}
             searchOptions={null}
-            searchPlaceholder="Search for a gene"
+            searchPlaceholder=""
             downloadImageOptions={{
               filename: `genetea-all-terms-plot`,
               width: 1000,

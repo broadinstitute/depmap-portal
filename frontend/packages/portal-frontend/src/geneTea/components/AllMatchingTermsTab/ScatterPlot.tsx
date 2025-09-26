@@ -31,6 +31,12 @@ interface Props {
       y: number[];
       customdata: string[];
     };
+    enrichedTerms: {
+      indexLabels: string[];
+      x: number[];
+      y: number[];
+      customdata: string[];
+    };
   };
 
   xLabel: string;
@@ -121,6 +127,19 @@ function ScatterPlot({
       },
     };
 
+    const enrichedTermsData: PlotlyData = {
+      type,
+      name: "Enriched Terms",
+      mode: "markers",
+      x: data.enrichedTerms.x,
+      y: data.enrichedTerms.y as any,
+      customdata: data.enrichedTerms.customdata,
+      hovertemplate: "%{customdata}<extra></extra>",
+      marker: {
+        color: "green",
+      },
+    };
+
     const selectedTermsData: PlotlyData = {
       type,
       name: "Selected Terms",
@@ -138,6 +157,7 @@ function ScatterPlot({
       stopwordsData,
       otherTermsData,
       selectedTermsData,
+      enrichedTermsData,
     ];
 
     const layout: Partial<Layout> = {
