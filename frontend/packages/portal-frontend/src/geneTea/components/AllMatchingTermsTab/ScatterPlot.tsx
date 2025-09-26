@@ -101,6 +101,7 @@ function ScatterPlot({
       mode: "markers",
       x: data.stopwords.x,
       y: data.stopwords.y as any,
+      customdata: data.stopwords.customdata,
       hovertemplate: "%{customdata}<extra></extra>",
       marker: {
         color: "rgb(156, 168, 166)",
@@ -113,6 +114,7 @@ function ScatterPlot({
       mode: "markers",
       x: data.otherTerms.x,
       y: data.otherTerms.y as any,
+      customdata: data.otherTerms.customdata,
       hovertemplate: "%{customdata}<extra></extra>",
       marker: {
         color: "rgb(225, 190, 106)",
@@ -125,6 +127,7 @@ function ScatterPlot({
       mode: "markers",
       x: data.selectedTerms.x,
       y: data.selectedTerms.y as any,
+      customdata: data.selectedTerms.customdata,
       hovertemplate: "%{customdata}<extra></extra>",
       marker: {
         color: "red",

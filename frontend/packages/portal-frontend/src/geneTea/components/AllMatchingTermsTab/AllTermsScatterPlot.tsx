@@ -40,19 +40,19 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
       stopwords: {
         indexLabels: data.stopwords.data.term,
         x: data.stopwords.data.effectSize,
-        y: data.stopwords.data.fdr, // or whatever y value you want from stopwords
+        y: data.stopwords.data.negLogFDR, // or whatever y value you want from stopwords
         customdata: data.stopwords.customdata, // adjust as needed
       },
       otherTerms: {
         indexLabels: data.otherTerms.data.term,
         x: data.otherTerms.data.effectSize,
-        y: data.otherTerms.data.fdr, // or whatever y value you want from otherTerms
+        y: data.otherTerms.data.negLogFDR, // or whatever y value you want from otherTerms
         customdata: data.otherTerms.customdata,
       },
       selectedTerms: {
         indexLabels: data.allEnriched.data.term,
         x: data.allEnriched.data.effectSize,
-        y: data.allEnriched.data.fdr, // or whatever y value you want from selectedTerms
+        y: data.allEnriched.data.negLogFDR, // or whatever y value you want from selectedTerms
         customdata: data.allEnriched.customdata,
       },
     };

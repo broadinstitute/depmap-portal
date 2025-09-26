@@ -26,8 +26,6 @@ function PlotSection({
   handleSetPlotElement,
   plotElement,
 }: PlotSectionProps) {
-  const { maxTopTerms, doGroupTerms } = useGeneTeaFiltersContext();
-
   return (
     <div className={styles.PlotSection}>
       <div className={styles.sectionHeader}>
@@ -37,9 +35,7 @@ function PlotSection({
             enabledTools={[
               PlotToolOptions.Zoom,
               PlotToolOptions.Pan,
-              PlotToolOptions.Annotate,
               PlotToolOptions.Download,
-              PlotToolOptions.Search,
             ]}
             onSearch={() => {}}
             searchOptions={null}

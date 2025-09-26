@@ -56,37 +56,35 @@ function TopTermsTab({
     // TODO give these a real type
     const roundedData: any = [];
     const unroundedData: any = [];
-    if (rawData?.frequentTerms) {
-      rawData.frequentTerms.term.forEach((term, index) => {
+    if (rawData?.allEnrichedTerms) {
+      rawData.allEnrichedTerms.term.forEach((term, index) => {
         roundedData.push({
           term,
-          synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
+          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
+          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
             index
           ],
-          nMatchingGenesOverall: rawData.frequentTerms!.nMatchingGenesOverall[
+          nMatchingGenesOverall: rawData.allEnrichedTerms!
+            .nMatchingGenesOverall[index],
+          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
             index
           ],
-          nMatchingGenesInList: rawData.frequentTerms!.nMatchingGenesInList[
-            index
-          ],
-          fdr: rawData.frequentTerms!.fdr[index].toExponential(5),
-          effectSize: rawData.frequentTerms!.effectSize[index].toFixed(4),
+          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(5),
+          effectSize: rawData.allEnrichedTerms!.effectSize[index].toFixed(4),
         });
         unroundedData.push({
           term,
-          synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
+          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
+          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
             index
           ],
-          nMatchingGenesOverall: rawData.frequentTerms!.nMatchingGenesOverall[
+          nMatchingGenesOverall: rawData.allEnrichedTerms!
+            .nMatchingGenesOverall[index],
+          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
             index
           ],
-          nMatchingGenesInList: rawData.frequentTerms!.nMatchingGenesInList[
-            index
-          ],
-          fdr: rawData.frequentTerms!.fdr[index].toExponential(),
-          effectSize: rawData.frequentTerms!.effectSize[index],
+          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(),
+          effectSize: rawData.allEnrichedTerms!.effectSize[index],
         });
       });
     }
@@ -142,6 +140,7 @@ function TopTermsTab({
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
+          height={800}
           tableData={roundedAndUnroundedTableData.roundedData}
           prefferedTableDataForDownload={
             roundedAndUnroundedTableData.unroundedData

@@ -6,6 +6,7 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 interface GeneTeaTableProps {
   error: boolean;
   isLoading: boolean;
+  height: number;
   tableData: any;
   prefferedTableDataForDownload: any;
   tableColumns: any[];
@@ -18,6 +19,7 @@ interface GeneTeaTableProps {
 const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
   error,
   isLoading,
+  height,
   tableData,
   prefferedTableDataForDownload,
   tableColumns,
@@ -45,7 +47,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
           rowHeight={28}
           data={tableData || []}
           prefferedTableDataForDownload={prefferedTableDataForDownload || []}
-          fixedHeight={500}
+          fixedHeight={height}
           columns={tableColumns}
           columnOrdering={columnOrdering}
           defaultColumnsToShow={defaultCols}

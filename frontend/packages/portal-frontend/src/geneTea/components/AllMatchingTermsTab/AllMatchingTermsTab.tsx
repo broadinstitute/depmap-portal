@@ -6,7 +6,6 @@ import { groupStringsByCondition, tableColumns } from "../../utils";
 import useData from "../../hooks/useData";
 import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
 import {
-  FrequentTerms,
   GeneTeaEnrichedTerms,
   GeneTeaScatterPlotData,
 } from "@depmap/types/src/experimental_genetea";
@@ -21,23 +20,13 @@ interface AllMatchingTermsTabProps {
 
 function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
   const {
-    geneSymbolSelections,
+    selectedTopTermsTableRows: selectedTableRows,
+    handleSetSelectedTopTermsTableRows: handleSetSelectedTableRows,
+    selectedPlotGenes,
     doGroupTerms,
-    doClusterGenes,
-    doClusterTerms,
-    sortBy,
     maxTopTerms,
-    maxFDR,
-    maxMatchingOverall,
-    minMatchingQuery,
-    effectSizeThreshold,
-    handleSetValidGeneSymbols,
-    handleSetInValidGeneSymbols,
-    handleSetIsLoading,
     isLoading,
     error,
-    handleSetError,
-    handleSetErrorMessage,
   } = useGeneTeaFiltersContext();
 
   const {} = useAllTermsContext();
@@ -109,7 +98,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
                 handleSetPlotElement={setPlotElement}
               />
             </div>
-            <div className={styles.selectionsArea}>
+            {/* <div className={styles.selectionsArea}>
               <PlotSelections
                 isPlotDataVisible={!isLoading && data !== null}
                 selectedIds={new Set([])}
@@ -117,22 +106,21 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
                 onClickSaveSelectionAsContext={() => {}}
                 onClickClearSelection={() => {}}
               />
-            </div>
+            </div> */}
           </div>
         </div>
       )}
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentTableHeader}>
-        <h3 className={styles.mainContentTableHeaderTitle}>
-          Enrichment Term Table
-        </h3>
-        <p>Terms selected in the plot will appear checked in this table.</p>
+        <h3 className={styles.mainContentTableHeaderTitle}>All Terms Table</h3>
+        {/* <p>Terms selected in the plot will appear checked in this table.</p> */}
       </div>
 
-      {/* {rawData && rawData.frequentTerms && (
+      {rawData && rawData.frequentTerms && (
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
+          height={800}
           tableData={roundedAndUnroundedTableData.roundedData}
           prefferedTableDataForDownload={
             roundedAndUnroundedTableData.unroundedData
@@ -150,7 +138,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
             handleSetSelectedTableRows(new Set(selections));
           }}
         />
-      )} */}
+      )}
     </div>
   );
 }

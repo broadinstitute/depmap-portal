@@ -467,24 +467,31 @@ function useData(
 
       function makeCustomdata(termsObj: FrequentTerms) {
         return termsObj.term.map((currentTerm) => {
-          const enrichedTermsIndex = allTerms.term.indexOf(currentTerm);
+          const freqTermsIndex = freqTerms.term.indexOf(currentTerm);
           const term = currentTerm;
-          const termGroup = allTerms.termGroup[enrichedTermsIndex];
-          const fdr = allTerms.fdr[enrichedTermsIndex];
-          const negLogFDR = allTerms.negLogFDR[enrichedTermsIndex];
-          const effectSize = allTerms.effectSize[enrichedTermsIndex];
-          const nMatchingGenesOverall =
-            allTerms.nMatchingGenesOverall[enrichedTermsIndex];
+          const termGroup =
+            freqTermsIndex < allTerms.termGroup.length
+              ? allTerms.termGroup[freqTermsIndex]
+              : null;
 
-          return term !== undefined && enrichedTermsIndex !== -1
-            ? `<b>${term}</b><br>${termGroup}<br><br>-log10(FDR):  ${negLogFDR?.toFixed(
-                4
-              )}  <br>FDR:  ${fdr?.toExponential(
-                5
-              )}  <br>Effect Size:  ${effectSize?.toFixed(
-                4
-              )}  <br>n Matching Genes Overall:  ${nMatchingGenesOverall}`
-            : "";
+          const fdr = freqTerms.fdr[freqTermsIndex];
+          const negLogFDR = freqTerms.negLogFDR[freqTermsIndex];
+          const effectSize = freqTerms.effectSize[freqTermsIndex];
+          const nMatchingGenesOverall =
+            freqTerms.nMatchingGenesOverall[freqTermsIndex];
+
+          let hover = `<b>${term}</b>`;
+          if (termGroup !== null && termGroup !== "") {
+            hover += `<br>${termGroup}`;
+          }
+          hover += `<br><br>-log10(FDR):  ${negLogFDR?.toFixed(
+            4
+          )}  <br>FDR:  ${fdr?.toExponential(
+            5
+          )}  <br>Effect Size:  ${effectSize?.toFixed(
+            4
+          )}  <br>n Matching Genes Overall:  ${nMatchingGenesOverall}`;
+          return hover;
         });
       }
 
