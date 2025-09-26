@@ -82,17 +82,20 @@ function PlotSection({
 
   const handleSelectColumnRange = useCallback(
     (start: number, end: number, shiftKey: boolean) => {
+      if (!heatmapFormattedData) return;
+      const selectableColumnLength = [...new Set(heatmapFormattedData.x)]
+        .length;
       const newlySelected = new Set<string>();
       for (let i = start; i <= end; i += 1) {
-        if (heatmapFormattedData && heatmapFormattedData.x[i]) {
-          const selectableColumnLength = [...new Set(heatmapFormattedData.y)]
-            .length;
-          if (i < selectableColumnLength) {
-            newlySelected.add(heatmapFormattedData.x[i]!);
-          }
+        if (i < selectableColumnLength && heatmapFormattedData.x[i]) {
+          newlySelected.add(heatmapFormattedData.x[i]!);
         }
       }
-      handleSetPlotSelectedGenes(newlySelected, shiftKey);
+      // Only update selection if at least one valid gene is selected
+      if (newlySelected.size > 0) {
+        handleSetPlotSelectedGenes(newlySelected, shiftKey);
+      }
+      // Otherwise, do nothing (do not clear selection)
     },
     [heatmapFormattedData, handleSetPlotSelectedGenes]
   );
