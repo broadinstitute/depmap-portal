@@ -228,8 +228,6 @@ function useData(
         yOrder && Array.isArray(yOrder) && yOrder.length > 0
           ? yOrder
           : data.termToEntity.termOrTermGroup;
-      const zVals =
-        zOrder && zOrder.length > 0 ? zOrder : data.termToEntity.fraction;
       const termToEntity = data.termToEntity;
 
       // Build a lookup map from (gene, term) to index
@@ -241,32 +239,56 @@ function useData(
         );
       }
 
-      // Build flat x and y arrays matching zVals order, and customdata using the lookup
-      const pairs = yOrderArr.flatMap((term) =>
-        xOrderArr.map((gene) => [gene, term] as [string, string])
-      );
-      const filteredPairs = pairs.filter(([gene]) =>
-        termToEntity.gene.includes(gene)
+      // Determine which genes (columns) have at least one nonzero value
+      const geneHasNonzero = new Map<string, boolean>();
+      for (const gene of xOrderArr) {
+        let hasNonzero = false;
+        for (const term of yOrderArr) {
+          const idx = lookup.get(`${gene}|${term}`);
+          if (idx !== undefined && termToEntity.fraction[idx] !== 0) {
+            hasNonzero = true;
+            break;
+          }
+        }
+        geneHasNonzero.set(gene, hasNonzero);
+      }
+
+      // Filter xOrderArr to only genes with at least one nonzero value
+      const filteredXOrderArr = xOrderArr.filter((gene) =>
+        geneHasNonzero.get(gene)
       );
 
-      const x = filteredPairs.map(([gene]) => gene);
-      const y = filteredPairs.map(([, term]) => term);
+      // Build arrays ordered by filteredXOrderArr and yOrderArr
+      const x: string[] = [];
+      const y: string[] = [];
+      const z: number[] = [];
+      const customdata: string[] = [];
 
-      const customdata = filteredPairs.map(([gene, term]) => {
-        const idx = lookup.get(`${gene}|${term}`);
-        return idx !== undefined
-          ? `<b>Gene: </b>${gene}<br><b>${
-              data.groupby
-            }: </b>${term}<br><b>Matches: </b>${
-              termToEntity.fraction[idx] * termToEntity.nTerms[idx]
-            }`
-          : "";
-      });
+      for (const term of yOrderArr) {
+        for (const gene of filteredXOrderArr) {
+          x.push(gene);
+          y.push(term);
+          const idx = lookup.get(`${gene}|${term}`);
+          if (idx !== undefined) {
+            z.push(termToEntity.fraction[idx]);
+            customdata.push(
+              `<b>Gene: </b>${gene}<br><b>${
+                data.groupby
+              }: </b>${term}<br><b>Matches: </b>${
+                termToEntity.fraction[idx] * termToEntity.nTerms[idx]
+              }`
+            );
+          } else {
+            z.push(0);
+            customdata.push("");
+          }
+        }
+      }
 
       return {
         x,
         y,
-        z: zVals,
+        z,
         customdata,
       };
     }
