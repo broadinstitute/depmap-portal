@@ -225,7 +225,7 @@ class ReleaseTerms(Enum):
             "ccle": """CCLE publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("ccle", path="terms_and_conditions")
             ),
-            "depmap": """DepMap publishes it's data under <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">CC Attribution 4.0 license</a>""",
+            "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(url_for("public.terms")),
             "ctd2": """The CTD^2 releases data in accordance with their <a target="_blank" href="https://ocg.cancer.gov/programs/ctd2/using-ctd2-data">data release policy</a>""",
             "dmc": """Data for the Dependency Map Consortium is made available under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("public.terms")
