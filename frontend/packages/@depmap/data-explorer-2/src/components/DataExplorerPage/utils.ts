@@ -29,6 +29,7 @@ import { fetchContext, persistContext } from "../../utils/context-storage";
 import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
 import { convertContextV1toV2 } from "../../utils/context-converter";
 import { sliceIdToSliceQuery } from "../../utils/slice-id";
+import wellKnownDatasets from "../../constants/wellKnownDatasets";
 import {
   hasSomeShorthandParams,
   omitShorthandParams,
@@ -395,6 +396,10 @@ function normalizePlot(plot: DataExplorerPlotConfig) {
     if (color_by && rest.dimensions?.color) {
       if (isCompleteDimension(rest.dimensions.color)) {
         normalized.color_by = color_by;
+
+        if (sort_by) {
+          normalized.sort_by = sort_by;
+        }
       } else {
         normalized.dimensions = omit(rest.dimensions, "color");
       }
@@ -690,9 +695,35 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
         plot.metadata[key] = nextValue;
 
         if (key === "color_property" && nextValue) {
-          plot.color_by = nextValue.dataset_id.endsWith("_metadata")
-            ? "metadata_column"
-            : "tabular_dataset";
+          // In some rare cases, what used to be considered a color property
+          // (was stored as custom slice) is now a "custom" color option (now
+          // stored in a matrix).
+          if (nextValue.identifier_type !== "column") {
+            const slice_type =
+              nextValue.dataset_id === wellKnownDatasets.mutations_prioritized
+                ? "gene"
+                : null;
+
+            plot.color_by = "custom";
+            plot.dimensions.color = ({
+              axis_type: "raw_slice",
+              slice_type,
+              aggregation: "first",
+              dataset_id: nextValue.dataset_id,
+              context: {
+                name: nextValue.identifier,
+                dimension_type: slice_type,
+                expr: { "==": [{ var: "given_id" }, nextValue.identifier] },
+                vars: {},
+              },
+            } as unknown) as DataExplorerPlotConfigDimension;
+            delete plot.metadata[key];
+          } else {
+            plot.color_by = nextValue.dataset_id.endsWith("_metadata")
+              ? "metadata_column"
+              : // TODO: Add support for coloring by an arbitrary table!
+                "tabular_dataset";
+          }
         }
       }
     }

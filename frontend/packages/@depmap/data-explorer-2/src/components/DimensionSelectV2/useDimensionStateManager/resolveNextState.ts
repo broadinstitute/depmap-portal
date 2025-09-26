@@ -152,14 +152,20 @@ async function resolveNextState(
   }
 
   const options = shouldCalcOptions
-    ? await computeOptions(index_type, dataType, prev.allowNullFeatureType, {
-        ...prev.dimension,
-        axis_type,
-        context,
-        dataset_id,
-        slice_type,
-        aggregation,
-      })
+    ? await computeOptions(
+        index_type,
+        dataType,
+        prev.allowNullFeatureType,
+        prev.valueTypes,
+        {
+          ...prev.dimension,
+          axis_type,
+          context,
+          dataset_id,
+          slice_type,
+          aggregation,
+        }
+      )
     : {
         dataVersionOptions: [],
         dataTypeOptions: [],

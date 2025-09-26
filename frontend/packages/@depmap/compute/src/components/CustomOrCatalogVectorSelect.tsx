@@ -91,7 +91,6 @@ export class CustomOrCatalogVectorSelect extends React.Component<
         <DimensionSelectV2
           mode="entity-only"
           index_type="depmap_model"
-          valueTypes={DimensionSelectV2.CONTINUOUS_ONLY}
           value={
             this.state.selectedDimension as DataExplorerPlotConfigDimensionV2
           }
@@ -108,7 +107,6 @@ export class CustomOrCatalogVectorSelect extends React.Component<
       <DimensionSelect
         mode="entity-only"
         index_type="depmap_model"
-        valueTypes={DimensionSelect.CONTINUOUS_ONLY}
         value={this.state.selectedDimension as DataExplorerPlotConfigDimension}
         onChange={
           onChangeDimension as (

@@ -15,6 +15,7 @@ import {
   calcVisibility,
   categoryToDisplayName,
   continuousValuesToLegendKeySeries,
+  findCategoricalSlice,
   formatDataForWaterfall,
   getColorMap,
   getLegendKeysWithNoData,
@@ -170,14 +171,14 @@ function DataExplorerWaterfallPlot({
   );
 
   const sortedLegendKeys = useMemo(() => {
-    const catData = data?.metadata?.color_property;
+    const catData = findCategoricalSlice(data);
 
     if (!catData || !data?.dimensions?.y) {
       return undefined;
     }
 
     return sortLegendKeysWaterfall(data, catData, plotConfig.sort_by);
-  }, [data, plotConfig]);
+  }, [data, plotConfig.sort_by]);
 
   const formattedData: {
     annotationText: string[];
@@ -248,8 +249,7 @@ function DataExplorerWaterfallPlot({
         const name = categoryToDisplayName(
           key as LegendKey,
           data as DataExplorerPlotResponse,
-          continuousBins,
-          plotConfig.color_by || null
+          continuousBins
         );
         const formattedName =
           typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
@@ -265,7 +265,7 @@ function DataExplorerWaterfallPlot({
       title,
       items,
     };
-  }, [colorMap, data, continuousBins, hiddenLegendValues, plotConfig.color_by]);
+  }, [colorMap, data, continuousBins, hiddenLegendValues]);
 
   const pointVisibility = useMemo(
     () => calcVisibility(data, hiddenLegendValues, continuousBins),
@@ -331,7 +331,6 @@ function DataExplorerWaterfallPlot({
               data={data}
               colorMap={colorMap}
               sortedLegendKeys={sortedLegendKeys}
-              color_by={plotConfig.color_by}
               continuousBins={continuousBins}
               hiddenLegendValues={hiddenLegendValues}
               legendKeysWithNoData={legendKeysWithNoData}

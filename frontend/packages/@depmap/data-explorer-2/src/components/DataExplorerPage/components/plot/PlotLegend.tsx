@@ -1,8 +1,5 @@
 import React, { useContext } from "react";
-import {
-  DataExplorerPlotConfig,
-  DataExplorerPlotResponse,
-} from "@depmap/types";
+import { DataExplorerPlotResponse } from "@depmap/types";
 import { SectionStackContext } from "../SectionStack";
 import HelpTip from "../HelpTip";
 import LegendLabel from "./LegendLabel";
@@ -19,7 +16,6 @@ function LegendLabels({
   hiddenLegendValues,
   legendKeysWithNoData,
   onClickLegendItem,
-  color_by,
   handleClickShowAll,
   handleClickHideAll,
 }: any) {
@@ -29,7 +25,7 @@ function LegendLabels({
     sortedLegendKeys || Reflect.ownKeys(colorMap || {})
   ).filter(
     (category: any) =>
-      color_by === "custom" ||
+      data?.dimensions?.color ||
       !legendKeysWithNoData ||
       !legendKeysWithNoData.has(category)
   );
@@ -68,7 +64,6 @@ function LegendLabels({
               data={data}
               continuousBins={continuousBins}
               category={category}
-              color_by={color_by}
             />
           </button>
         </div>
@@ -112,7 +107,6 @@ interface Props {
     item: string | symbol,
     catColorMap: Record<string, string>
   ) => void;
-  color_by: DataExplorerPlotConfig["color_by"];
   handleClickShowAll: () => void;
   handleClickHideAll: (catColorMap: Record<string, string>) => void;
 }
@@ -125,7 +119,6 @@ function PlotLegend({
   hiddenLegendValues,
   legendKeysWithNoData,
   onClickLegendItem,
-  color_by,
   handleClickShowAll,
   handleClickHideAll,
 }: Props) {
@@ -144,7 +137,6 @@ function PlotLegend({
         hiddenLegendValues={hiddenLegendValues}
         legendKeysWithNoData={legendKeysWithNoData}
         onClickLegendItem={onClickLegendItem}
-        color_by={color_by}
         handleClickShowAll={handleClickShowAll}
         handleClickHideAll={handleClickHideAll}
       />

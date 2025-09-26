@@ -12,6 +12,7 @@ interface Props {
   value: Partial<DataExplorerPlotConfigDimensionV2> | null;
   onChange: (nextValue: Partial<DataExplorerPlotConfigDimensionV2>) => void;
   allowNullFeatureType: boolean;
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
   initialDataType?: string;
 }
 
@@ -21,6 +22,7 @@ export default function useDimensionStateManager({
   value,
   onChange,
   allowNullFeatureType,
+  valueTypes,
   initialDataType = "",
 }: Props) {
   const isInitialized = useRef(false);
@@ -33,6 +35,7 @@ export default function useDimensionStateManager({
     ...DEFAULT_STATE,
     dataType: initialDataType || null,
     allowNullFeatureType,
+    valueTypes,
     dimension: {
       ...value,
 
