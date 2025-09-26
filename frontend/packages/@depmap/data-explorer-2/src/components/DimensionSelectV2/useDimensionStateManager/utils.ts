@@ -12,6 +12,7 @@ interface DataExplorerDatasetDescriptor {
   slice_type: string | SliceTypeNull;
   slice_type_display_name: string;
   units: string;
+  value_type: string;
 }
 
 const privateDatasets: Map<string, Dataset> = new Map();
@@ -60,11 +61,6 @@ export async function fetchDatasetsByIndexType(
       return;
     }
 
-    // TODO: add support for other value types
-    if (dataset.value_type !== "continuous") {
-      return;
-    }
-
     const {
       data_type,
       id,
@@ -74,6 +70,7 @@ export async function fetchDatasetsByIndexType(
       units,
       sample_type_name,
       feature_type_name,
+      value_type,
     } =
       // FIXME: The MatrixDataset definition has yet to be updated (because
       // that will have many knock-on effects) but Breadbox allows datasets
@@ -89,6 +86,7 @@ export async function fetchDatasetsByIndexType(
       name,
       priority,
       units,
+      value_type: value_type as string,
     };
 
     if (index_type === sample_type_name) {

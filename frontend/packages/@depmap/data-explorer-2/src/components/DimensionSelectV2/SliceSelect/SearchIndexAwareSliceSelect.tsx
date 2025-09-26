@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import VanillaAsycSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
 import { DataExplorerContextV2 } from "@depmap/types";
@@ -54,6 +54,32 @@ function SearchIndexAwareSliceSelect({
     dataset_id
   );
 
+  const invalidValue = useMemo(() => {
+    if (!dataset_id || !value || isLoadingDefaultOptions) {
+      return false;
+    }
+
+    const identifier = getIdentifier(value) as string;
+
+    for (let i = 0; i < defaultOptions.length; i += 1) {
+      const opt = defaultOptions[i] as {
+        label: string;
+        value: string;
+        isDisabled: boolean;
+      };
+
+      if (identifier === opt.value || identifier === opt.label) {
+        if (opt.isDisabled) {
+          searchQuery.current = opt.label;
+        }
+
+        return opt.isDisabled;
+      }
+    }
+
+    return true;
+  }, [dataset_id, value, isLoadingDefaultOptions, defaultOptions]);
+
   const label = useLabel(index_type);
   const placeholder = usePlaceholder(slice_type);
 
@@ -61,20 +87,21 @@ function SearchIndexAwareSliceSelect({
     <AsyncSelect
       label={!swatchColor ? label : null}
       value={displayValue}
-      // hasError={Boolean(notFound || error)}
+      hasError={invalidValue}
       onChange={(option) =>
         onChange(
           toOutputValue(slice_type, option) as DataExplorerContextV2 | null
         )
       }
       menuWidth={310}
-      placeholder={/* notFound || */ placeholder}
+      placeholder={placeholder}
       isLoading={isLoading || isLoadingDefaultOptions}
       loadOptions={loadOptions}
       defaultOptions={defaultOptions}
       formatOptionLabel={formatOptionLabel}
       components={{ MenuList: WindowedMenuList }}
       // cacheOptions={`${slice_type}-${dataType}-${units}-${dataset_id}`}
+      cacheOptions={`${slice_type}-${dataType}-${dataset_id}`}
       swatchColor={swatchColor}
       isClearable
       isEditable

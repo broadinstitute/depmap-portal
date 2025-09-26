@@ -45,6 +45,9 @@ function MatrixDataSelect({ varName }: Props) {
       mode="entity-only"
       removeWrapperDiv
       allowNullFeatureType
+      allowTextValueType
+      allowCategoricalValueType
+      allowListStringsValueType
       index_type={dimension_type}
       value={dimension}
       onChange={async (nextDimension) => {

@@ -30,7 +30,7 @@ function RelationalExpression({ expr, path, isLastOfList }: Props) {
   const prevDomain = useRef<typeof domain | null>(null);
 
   useEffect(() => {
-    if (prevDomain.current) {
+    if (prevDomain.current || !right) {
       const nextExpr = makeCompatibleExpression(expr, domain);
 
       if (expr !== nextExpr) {

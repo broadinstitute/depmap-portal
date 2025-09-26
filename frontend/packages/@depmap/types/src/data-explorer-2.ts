@@ -81,6 +81,7 @@ export interface DataExplorerPlotResponseDimension {
   dataset_label: string;
   slice_type: string;
   values: number[];
+  value_type: "continuous" | "text" | "categorical" | "list_strings";
 }
 
 export type ColorByValue =

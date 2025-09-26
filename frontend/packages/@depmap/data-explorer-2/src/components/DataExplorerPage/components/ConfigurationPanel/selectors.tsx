@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Checkbox } from "react-bootstrap";
+import { breadboxAPI, cached } from "@depmap/api";
+import {
+  ColorByValue,
+  DataExplorerDatasetDescriptor,
+  DataExplorerPlotConfig,
+  DataExplorerPlotConfigDimension,
+} from "@depmap/types";
 import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
 import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
@@ -12,11 +19,8 @@ import {
 import renderConditionally from "../../../../utils/render-conditionally";
 import { fetchMetadataAndOtherTabularDatasets } from "../../../../utils/api-helpers";
 import PlotConfigSelect from "../../../PlotConfigSelect";
-import {
-  ColorByValue,
-  DataExplorerDatasetDescriptor,
-  DataExplorerPlotConfig,
-} from "@depmap/types";
+import DimensionSelectV1 from "../../../DimensionSelect";
+import DimensionSelectV2 from "../../../DimensionSelectV2";
 import HelpTip from "../HelpTip";
 import styles from "../../styles/ConfigurationPanel.scss";
 
@@ -289,6 +293,89 @@ export function SortBySelector({
         onChange(nextValue as DataExplorerPlotConfig["sort_by"])
       }
     />
+  );
+}
+
+const DimensionSelect = isBreadboxOnlyMode
+  ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
+  : DimensionSelectV1;
+
+export function ColorByDimensionSelect({
+  plot_type,
+  index_type,
+  value,
+  onChange,
+  onClickCreateContext,
+  onClickSaveAsContext,
+  sortByValue,
+  onChangeSortBy,
+}: {
+  plot_type: string;
+  index_type: string | null;
+  value: Partial<DataExplorerPlotConfigDimension> | null;
+  onChange: (nextValue: Partial<DataExplorerPlotConfigDimension>) => void;
+  onClickCreateContext: () => void;
+  onClickSaveAsContext: () => void;
+  sortByValue: string;
+  onChangeSortBy: (nextValue: DataExplorerPlotConfig["sort_by"]) => void;
+}) {
+  const [showSortBy, setShowSortBy] = useState(false);
+
+  useEffect(() => {
+    if (
+      isBreadboxOnlyMode &&
+      ["density_1d", "waterfall"].includes(plot_type) &&
+      value?.dataset_id
+    ) {
+      cached(breadboxAPI)
+        .getDataset(value.dataset_id)
+        .then((d) => {
+          setShowSortBy(
+            d.format === "matrix_dataset" && d.value_type !== "continuous"
+          );
+        });
+    } else {
+      setShowSortBy(false);
+    }
+  }, [plot_type, value]);
+
+  const v2Props = isBreadboxOnlyMode
+    ? {
+        allowNullFeatureType: true,
+        allowCategoricalValueType: true,
+      }
+    : {};
+
+  return (
+    <>
+      <DimensionSelect
+        {...v2Props}
+        className={styles.customColorDimension}
+        index_type={index_type || null}
+        value={value}
+        onChange={onChange}
+        onClickCreateContext={onClickCreateContext}
+        onClickSaveAsContext={onClickSaveAsContext}
+        mode="entity-or-context"
+        includeAllInContextOptions={false}
+        onHeightChange={(el) => {
+          el.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
+        }}
+      />
+      {showSortBy && (
+        <div className={styles.customColorSortBy}>
+          <SortBySelector
+            show
+            enable
+            value={sortByValue}
+            onChange={onChangeSortBy}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
