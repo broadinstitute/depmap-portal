@@ -1,11 +1,7 @@
-import React, { useMemo, useState } from "react";
-import styles from "../styles/GeneTea.scss";
-import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { groupStringsByCondition, tableColumns } from "../utils";
+import React, { useMemo } from "react";
+import { groupStringsByCondition } from "../utils";
 import useData from "../hooks/useData";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
-import { TopTermsContextProvider } from "../context/TopTermsContext";
-import { AllTermsContextProvider } from "../context/AllTermsContext";
 import AllMatchingTermsTab from "./AllMatchingTermsTab/AllMatchingTermsTab";
 import TopTermsTab from "./TopTermsTab/TopTermsTab";
 

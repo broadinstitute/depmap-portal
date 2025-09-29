@@ -1,17 +1,13 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useMemo } from "react";
+import React from "react";
 import PlotControls, {
   PlotToolOptions,
 } from "src/plot/components/PlotControls";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import styles from "../../styles/GeneTea.scss";
-import {
-  FrequentTerms,
-  GeneTeaScatterPlotData,
-} from "@depmap/types/src/experimental_genetea";
+import { GeneTeaScatterPlotData } from "@depmap/types/src/experimental_genetea";
 import AllTermsScatterPlot from "./AllTermsScatterPlot";
-import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
 
 interface PlotSectionProps {
   isLoading: boolean;

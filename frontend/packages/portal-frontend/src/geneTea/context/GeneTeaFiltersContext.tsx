@@ -6,10 +6,6 @@ import React, {
   useState,
 } from "react";
 import { SortOption } from "../types";
-import promptForSelectionFromContext from "../components/promptForSelectionFromContext";
-import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import { saveNewContext } from "src";
-import { DataExplorerContext } from "@depmap/types";
 
 // TODO organize this file a little better...
 export const TERM_OPTIONS_FILTER_DEFAULTS = {
@@ -153,18 +149,21 @@ export function GeneTeaFiltersContextProvider({
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
     new Set(["CAD", "UMPS", "ADSL", "DHODH"])
   );
-  const handleSetGeneSymbolSelections = useCallback((v: any) => {
-    setGeneSymbolSelections((prevVal: Set<string>) => {
-      const nextState = typeof v === "function" ? v(prevVal) : v;
-      if (prevVal !== nextState) {
-        // Invalidate the table selections if the user searches on a different list
-        // of gene symbols.
-        handleClearSelectedTopTermsTableRows();
-      }
+  const handleSetGeneSymbolSelections = useCallback(
+    (v: any) => {
+      setGeneSymbolSelections((prevVal: Set<string>) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTopTermsTableRows();
+        }
 
-      return nextState;
-    });
-  }, []);
+        return nextState;
+      });
+    },
+    [handleClearSelectedTopTermsTableRows]
+  );
 
   const [validGeneSymbols, setValidGeneSymbols] = useState<Set<string>>(
     new Set([])
@@ -193,70 +192,82 @@ export function GeneTeaFiltersContextProvider({
   const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(
     TERM_OPTIONS_FILTER_DEFAULTS.effectSizeThreshold
   );
-  const handleSetEffectSizeThreshold = useCallback((v: any) => {
-    setEffectSizeThreshold((prevVal: number) => {
-      const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetEffectSizeThreshold = useCallback(
+    (v: any) => {
+      setEffectSizeThreshold((prevVal: number) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
 
-      if (prevVal !== nextState) {
-        // Invalidate the table selections if the user searches on a different list
-        // of gene symbols.
-        handleClearSelectedTopTermsTableRows();
-      }
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTopTermsTableRows();
+        }
 
-      return nextState;
-    });
-  }, []);
+        return nextState;
+      });
+    },
+    [handleClearSelectedTopTermsTableRows]
+  );
 
   const [minMatchingQuery, setMinMatchingQuery] = useState<number>(
     TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
   );
-  const handleSetMinMatchingQuery = useCallback((v: any) => {
-    setMinMatchingQuery((prevVal: number) => {
-      const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetMinMatchingQuery = useCallback(
+    (v: any) => {
+      setMinMatchingQuery((prevVal: number) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
 
-      if (prevVal !== nextState) {
-        // Invalidate the table selections if the user searches on a different list
-        // of gene symbols.
-        handleClearSelectedTopTermsTableRows();
-      }
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTopTermsTableRows();
+        }
 
-      return nextState;
-    });
-  }, []);
+        return nextState;
+      });
+    },
+    [handleClearSelectedTopTermsTableRows]
+  );
 
   const [maxMatchingOverall, setMaxMatchingOverall] = useState<number | null>(
     TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
   );
-  const handleSetMaxMatchingOverall = useCallback((v: any) => {
-    setMaxMatchingOverall((prevVal: number | null) => {
-      const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetMaxMatchingOverall = useCallback(
+    (v: any) => {
+      setMaxMatchingOverall((prevVal: number | null) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
 
-      if (prevVal !== nextState) {
-        // Invalidate the table selections if the user searches on a different list
-        // of gene symbols.
-        handleClearSelectedTopTermsTableRows();
-      }
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTopTermsTableRows();
+        }
 
-      return nextState;
-    });
-  }, []);
+        return nextState;
+      });
+    },
+    [handleClearSelectedTopTermsTableRows]
+  );
 
   const [maxTopTerms, setMaxTopTerms] = useState<number | null>(
     TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms
   );
-  const handleSetMaxTopTerms = useCallback((v: any) => {
-    setMaxTopTerms((prevVal: number | null) => {
-      const nextState = typeof v === "function" ? v(prevVal) : v;
+  const handleSetMaxTopTerms = useCallback(
+    (v: any) => {
+      setMaxTopTerms((prevVal: number | null) => {
+        const nextState = typeof v === "function" ? v(prevVal) : v;
 
-      if (prevVal !== nextState) {
-        // Invalidate the table selections if the user searches on a different list
-        // of gene symbols.
-        handleClearSelectedTopTermsTableRows();
-      }
+        if (prevVal !== nextState) {
+          // Invalidate the table selections if the user searches on a different list
+          // of gene symbols.
+          handleClearSelectedTopTermsTableRows();
+        }
 
-      return nextState;
-    });
-  }, []);
+        return nextState;
+      });
+    },
+    [handleClearSelectedTopTermsTableRows]
+  );
 
   const [maxFDR, setMaxFDR] = useState<number>(
     TERM_OPTIONS_FILTER_DEFAULTS.maxFDR

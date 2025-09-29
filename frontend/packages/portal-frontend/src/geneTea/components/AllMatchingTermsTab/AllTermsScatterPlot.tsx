@@ -124,18 +124,6 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
       data.allEnriched.customdata
     );
 
-    // Remove duplicates, keep first occurrence
-    const seen = new Set<string>();
-    const allPlottedTerms = [
-      ...data.stopwords.data.term,
-      ...data.otherTerms.data.term,
-      ...data.allEnriched.data.term,
-    ].filter((term) => {
-      if (seen.has(term)) return false;
-      seen.add(term);
-      return true;
-    });
-
     // Partition logic: track original group for each term
     const stopwordsSet = new Set(data.stopwords.data.term);
     const otherTermsSet = new Set(data.otherTerms.data.term);
@@ -170,7 +158,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
     }
 
     // Selected terms: any selected term from any group
-    const selectedTerms = buildGroup(
+    const selectedPlotTerms = buildGroup(
       [...stopwordsSet, ...otherTermsSet, ...allEnrichedSet],
       { ...stopwordsLookup, ...otherTermsLookup, ...allEnrichedLookup },
       (t) => selectedPlotOrTableTerms.has(t)
@@ -200,7 +188,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
     return {
       stopwords,
       otherTerms,
-      selectedTerms,
+      selectedTerms: selectedPlotTerms,
       enrichedTerms,
     };
   }, [data, selectedPlotOrTableTerms]);
@@ -213,7 +201,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
         xLabel={"Effect Size"}
         yLabel={"-log10(FDR)"}
         onLoad={handleSetPlotElement}
-        onClickPoint={(selectedTerm: string) => setSelectedTerm(selectedTerm)}
+        onClickPoint={(term: string) => setSelectedTerm(term)}
       />
 
       <GeneTeaContextModal

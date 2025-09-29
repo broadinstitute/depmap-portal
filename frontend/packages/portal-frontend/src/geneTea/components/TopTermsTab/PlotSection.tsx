@@ -49,7 +49,7 @@ function PlotSection({
   const zmax = useMemo(() => {
     if (!heatmapFormattedData) return undefined;
     const arr = (heatmapFormattedData.z as number[]).filter(
-      (v) => typeof v === "number" && !isNaN(v)
+      (v) => typeof v === "number" && !Number.isNaN(v)
     );
     if (arr.length === 0) return undefined;
     const max = arr.reduce((a, b) => Math.max(a, b), -Infinity);
@@ -59,7 +59,7 @@ function PlotSection({
   const zmin = useMemo(() => {
     if (!heatmapFormattedData) return undefined;
     const arr = (heatmapFormattedData.z as number[]).filter(
-      (v) => typeof v === "number" && !isNaN(v)
+      (v) => typeof v === "number" && !Number.isNaN(v)
     );
     if (arr.length === 0) return undefined;
     const min = arr.reduce((a, b) => Math.min(a, b), Infinity);
@@ -95,21 +95,20 @@ function PlotSection({
       if (newlySelected.size > 0) {
         handleSetPlotSelectedGenes(newlySelected, shiftKey);
       }
-      // Otherwise, do nothing (do not clear selection)
+      // Otherwise, do nothing
     },
     [heatmapFormattedData, handleSetPlotSelectedGenes]
   );
 
-  // Memoize selectedColumns as a sorted Set for stable reference
   const selectedColumns = useMemo(() => {
     if (!heatmapFormattedData) return new Set<number>();
     const selected = getSelectedColumns(
       heatmapFormattedData,
       selectedPlotGenes
     );
-    // Convert Set to sorted array, then back to Set for stable reference
+
     return new Set(Array.from(selected).sort());
-  }, [selectedPlotGenes, heatmapFormattedData]);
+  }, [selectedPlotGenes, heatmapFormattedData, getSelectedColumns]);
 
   const handleSearch = useCallback(
     (selection: { label: string; value: number; stringId?: string }) => {

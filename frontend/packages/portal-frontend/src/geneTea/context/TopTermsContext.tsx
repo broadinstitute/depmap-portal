@@ -43,7 +43,7 @@ export function TopTermsContextProvider({
     }
 
     handleSetPlotSelectedGenes(labels, false);
-  }, [validGeneSymbols]);
+  }, [validGeneSymbols, handleSetPlotSelectedGenes]);
 
   const handleClickSavePlotSelectionAsContext = useCallback(() => {
     if (selectedPlotGenes.size > 0) {
@@ -59,7 +59,7 @@ export function TopTermsContextProvider({
 
   const handleClearPlotSelection = useCallback(
     () => handleSetPlotSelectedGenes(new Set([]), false),
-    []
+    [handleSetPlotSelectedGenes]
   );
 
   const contextValue = React.useMemo(

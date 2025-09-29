@@ -48,7 +48,7 @@ interface Props {
   // Height can be defined in pixels or set to "auto."  In auto mode, it will
   // attempt to fill the height of the viewport.
   height: number | "auto";
-  onClickPoint?: (selectedTerm: string, matchingGenes: string[]) => void;
+  onClickPoint?: (term: string, matchingGenes?: string[]) => void;
   onLoad?: (plot: ExtendedPlotType) => void;
 }
 

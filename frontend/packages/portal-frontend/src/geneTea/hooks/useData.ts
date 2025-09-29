@@ -194,30 +194,6 @@ function useData(
     return null;
   }, [data, doClusterTerms]);
 
-  // zOrder: values of data.termToEntity.fraction ordered by xOrder and yOrder
-  const zOrder = useMemo(() => {
-    if (data && data.termToEntity) {
-      const termToEntity = data.termToEntity;
-      const x =
-        xOrder && Array.isArray(xOrder) && xOrder.length > 0
-          ? xOrder
-          : termToEntity.gene;
-      const y =
-        yOrder && Array.isArray(yOrder) && yOrder.length > 0
-          ? yOrder
-          : termToEntity.termOrTermGroup;
-      return y.flatMap((term) =>
-        x.map((gene) => {
-          const idx = termToEntity.gene.findIndex(
-            (g, i) => g === gene && termToEntity.termOrTermGroup[i] === term
-          );
-          return idx !== -1 ? termToEntity.fraction[idx] : 0;
-        })
-      );
-    }
-    return [];
-  }, [data, xOrder, yOrder]);
-
   const heatmapData = useMemo(() => {
     if (data && data.termToEntity) {
       const xOrderArr =
@@ -298,7 +274,7 @@ function useData(
       z: [],
       customdata: [],
     };
-  }, [data, xOrder, yOrder, zOrder]);
+  }, [data, xOrder, yOrder]);
 
   // The barchart is a bit "weird" because it needs to share the y-axis with the Heatmap, but
   // when the Heatmap y-axis is Term Groups, we want to preserve per-Term data in the bar chart via
@@ -465,7 +441,7 @@ function useData(
         (i) => freqTerms.enriched[i] !== true && freqTerms.stopword[i] !== true
       );
 
-      function makeCustomdata(termsObj: FrequentTerms) {
+      const makeCustomdata = (termsObj: FrequentTerms) => {
         return termsObj.term.map((currentTerm) => {
           const freqTermsIndex = freqTerms.term.indexOf(currentTerm);
           const term = currentTerm;
@@ -493,7 +469,7 @@ function useData(
           )}  <br>n Matching Genes Overall:  ${nMatchingGenesOverall}`;
           return hover;
         });
-      }
+      };
 
       return {
         allEnriched: {

@@ -12,7 +12,6 @@ import { fetchMetadata } from "../utils";
 import glossary from "src/geneTea/json/glossary.json";
 import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
-import { TopTermsContextProvider } from "../context/TopTermsContext";
 
 function GeneTea() {
   const { handleSetAllAvailableGenes } = useGeneTeaFiltersContext();
