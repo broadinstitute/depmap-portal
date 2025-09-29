@@ -38,7 +38,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
     max_fdr: maxFDR,
     min_genes: minMatchingQuery || -1,
     max_n_genes: maxMatchingOverall,
-    n: plotSelections?.length === 0 ? maxTopTerms || -1 : -1,
+    n: plotSelections?.length === 0 ? maxTopTerms || undefined : undefined,
   };
 
   if (plotSelections) {
@@ -94,6 +94,8 @@ export async function fetchGeneTeaEnrichmentExperimental(
         Synonyms: (string | null)[];
         "Total Info": number[];
         "Effect Size": number[];
+        Enriched: boolean[];
+        "-log10 FDR": number[];
       };
       all_enriched_terms: {
         Term: string[];
@@ -107,6 +109,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
         "Total Info": number[];
         "Effect Size": number[];
         "Term Group": string[];
+        "-log10 FDR": number[];
       };
     };
   }
@@ -173,7 +176,8 @@ export async function fetchGeneTeaEnrichmentExperimental(
     effectSize: allEt["Effect Size"],
     pVal: allEt["p-val"],
     stopword: allEt.Stopword,
-    totalInfo: et["Total Info"],
+    totalInfo: allEt["Total Info"],
+    negLogFDR: allEt["-log10 FDR"],
   };
 
   const termClusterTermOrGroup = doGroupTerms
@@ -218,6 +222,8 @@ export async function fetchGeneTeaEnrichmentExperimental(
     ),
     totalInfo: plottingPayload.frequent_terms["Total Info"],
     effectSize: plottingPayload.frequent_terms["Effect Size"],
+    enriched: plottingPayload.frequent_terms.Enriched,
+    negLogFDR: plottingPayload.frequent_terms["-log10 FDR"],
   };
 
   return {

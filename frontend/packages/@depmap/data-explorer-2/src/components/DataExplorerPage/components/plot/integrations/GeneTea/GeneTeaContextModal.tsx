@@ -13,6 +13,7 @@ interface Props {
   coincident: string[];
   matchingGenes: string[];
   onClose: () => void;
+  showViewInGenePartyButton?: boolean;
 }
 
 function GeneTeaContextModal({
@@ -21,6 +22,7 @@ function GeneTeaContextModal({
   coincident,
   matchingGenes,
   onClose,
+  showViewInGenePartyButton = false,
 }: Props) {
   const [show, setShow] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,13 +127,15 @@ function GeneTeaContextModal({
       </Modal.Body>
       <Modal.Footer>
         <Button onClick={onClose}>Close</Button>
-        <Button
-          bsStyle="info"
-          target="_blank"
-          href={`../../genetea/?genes=${matchingGenes.join("+")}`}
-        >
-          View in TEAparty
-        </Button>
+        {showViewInGenePartyButton && (
+          <Button
+            bsStyle="info"
+            target="_blank"
+            href={`../../genetea/?genes=${matchingGenes.join("+")}`}
+          >
+            View in TEAparty
+          </Button>
+        )}
         <Button bsStyle="primary" onClick={handleClickCreateContext}>
           Save as Gene Context
         </Button>

@@ -1,5 +1,8 @@
 import { cached, legacyPortalAPI } from "@depmap/api";
-import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
+import {
+  FrequentTerms,
+  GeneTeaEnrichedTerms,
+} from "@depmap/types/src/experimental_genetea";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_GENES_ALLOWED, SortOption } from "../types";
 
@@ -7,6 +10,30 @@ import { MAX_GENES_ALLOWED, SortOption } from "../types";
 const MIN_SELECTION = 3;
 // TODO: Only keep MAX_SELECTION or MAX_GENES_ALLOWED since they're the same thing.
 const MAX_SELECTION = MAX_GENES_ALLOWED; // TODO: The API will error at a certain number. Make sure this doesn't exceed that number.
+
+function filterFrequentTerms(
+  freqTerms: FrequentTerms,
+  predicate: (i: number) => boolean
+): FrequentTerms {
+  const indices = freqTerms.term.map((_, i) => i).filter(predicate);
+
+  return {
+    term: indices.map((i) => freqTerms.term[i]),
+    matchingGenesInList: indices.map((i) => freqTerms.matchingGenesInList[i]),
+    nMatchingGenesOverall: indices.map(
+      (i) => freqTerms.nMatchingGenesOverall[i]
+    ),
+    nMatchingGenesInList: indices.map((i) => freqTerms.nMatchingGenesInList[i]),
+    pVal: indices.map((i) => freqTerms.pVal[i]),
+    fdr: indices.map((i) => freqTerms.fdr[i]),
+    stopword: indices.map((i) => freqTerms.stopword[i]),
+    synonyms: indices.map((i) => freqTerms.synonyms[i]),
+    totalInfo: indices.map((i) => freqTerms.totalInfo[i]),
+    effectSize: indices.map((i) => freqTerms.effectSize[i]),
+    enriched: indices.map((i) => freqTerms.enriched[i]),
+    negLogFDR: indices.map((i) => freqTerms.negLogFDR[i]),
+  };
+}
 
 function useData(
   plotSelections: Set<string>,
@@ -167,30 +194,6 @@ function useData(
     return null;
   }, [data, doClusterTerms]);
 
-  // zOrder: values of data.termToEntity.fraction ordered by xOrder and yOrder
-  const zOrder = useMemo(() => {
-    if (data && data.termToEntity) {
-      const termToEntity = data.termToEntity;
-      const x =
-        xOrder && Array.isArray(xOrder) && xOrder.length > 0
-          ? xOrder
-          : termToEntity.gene;
-      const y =
-        yOrder && Array.isArray(yOrder) && yOrder.length > 0
-          ? yOrder
-          : termToEntity.termOrTermGroup;
-      return y.flatMap((term) =>
-        x.map((gene) => {
-          const idx = termToEntity.gene.findIndex(
-            (g, i) => g === gene && termToEntity.termOrTermGroup[i] === term
-          );
-          return idx !== -1 ? termToEntity.fraction[idx] : 0;
-        })
-      );
-    }
-    return [];
-  }, [data, xOrder, yOrder]);
-
   const heatmapData = useMemo(() => {
     if (data && data.termToEntity) {
       const xOrderArr =
@@ -201,8 +204,6 @@ function useData(
         yOrder && Array.isArray(yOrder) && yOrder.length > 0
           ? yOrder
           : data.termToEntity.termOrTermGroup;
-      const zVals =
-        zOrder && zOrder.length > 0 ? zOrder : data.termToEntity.fraction;
       const termToEntity = data.termToEntity;
 
       // Build a lookup map from (gene, term) to index
@@ -214,32 +215,56 @@ function useData(
         );
       }
 
-      // Build flat x and y arrays matching zVals order, and customdata using the lookup
-      const pairs = yOrderArr.flatMap((term) =>
-        xOrderArr.map((gene) => [gene, term] as [string, string])
-      );
-      const filteredPairs = pairs.filter(([gene]) =>
-        termToEntity.gene.includes(gene)
+      // Determine which genes (columns) have at least one nonzero value
+      const geneHasNonzero = new Map<string, boolean>();
+      for (const gene of xOrderArr) {
+        let hasNonzero = false;
+        for (const term of yOrderArr) {
+          const idx = lookup.get(`${gene}|${term}`);
+          if (idx !== undefined && termToEntity.fraction[idx] !== 0) {
+            hasNonzero = true;
+            break;
+          }
+        }
+        geneHasNonzero.set(gene, hasNonzero);
+      }
+
+      // Filter xOrderArr to only genes with at least one nonzero value
+      const filteredXOrderArr = xOrderArr.filter((gene) =>
+        geneHasNonzero.get(gene)
       );
 
-      const x = filteredPairs.map(([gene]) => gene);
-      const y = filteredPairs.map(([, term]) => term);
+      // Build arrays ordered by filteredXOrderArr and yOrderArr
+      const x: string[] = [];
+      const y: string[] = [];
+      const z: number[] = [];
+      const customdata: string[] = [];
 
-      const customdata = filteredPairs.map(([gene, term]) => {
-        const idx = lookup.get(`${gene}|${term}`);
-        return idx !== undefined
-          ? `<b>Gene: </b>${gene}<br><b>${
-              data.groupby
-            }: </b>${term}<br><b>Matches: </b>${
-              termToEntity.fraction[idx] * termToEntity.nTerms[idx]
-            }`
-          : "";
-      });
+      for (const term of yOrderArr) {
+        for (const gene of filteredXOrderArr) {
+          x.push(gene);
+          y.push(term);
+          const idx = lookup.get(`${gene}|${term}`);
+          if (idx !== undefined) {
+            z.push(termToEntity.fraction[idx]);
+            customdata.push(
+              `<b>Gene: </b>${gene}<br><b>${
+                data.groupby
+              }: </b>${term}<br><b>Matches: </b>${
+                termToEntity.fraction[idx] * termToEntity.nTerms[idx]
+              }`
+            );
+          } else {
+            z.push(0);
+            customdata.push("");
+          }
+        }
+      }
 
       return {
         x,
         y,
-        z: zVals,
+        z,
         customdata,
       };
     }
@@ -249,7 +274,7 @@ function useData(
       z: [],
       customdata: [],
     };
-  }, [data, xOrder, yOrder, zOrder]);
+  }, [data, xOrder, yOrder]);
 
   // The barchart is a bit "weird" because it needs to share the y-axis with the Heatmap, but
   // when the Heatmap y-axis is Term Groups, we want to preserve per-Term data in the bar chart via
@@ -399,12 +424,78 @@ function useData(
     return "";
   }, [data]);
 
+  const allTermsScatterPlotData = useMemo(() => {
+    if (data?.frequentTerms && data?.allEnrichedTerms) {
+      const freqTerms = data.frequentTerms;
+      const allTerms = data.allEnrichedTerms;
+      const allEnriched = filterFrequentTerms(
+        freqTerms,
+        (i) => freqTerms.enriched[i] === true
+      );
+      const stopwords = filterFrequentTerms(
+        freqTerms,
+        (i) => freqTerms.enriched[i] !== true && freqTerms.stopword[i] === true
+      );
+      const otherTerms = filterFrequentTerms(
+        freqTerms,
+        (i) => freqTerms.enriched[i] !== true && freqTerms.stopword[i] !== true
+      );
+
+      const makeCustomdata = (termsObj: FrequentTerms) => {
+        return termsObj.term.map((currentTerm) => {
+          const freqTermsIndex = freqTerms.term.indexOf(currentTerm);
+          const term = currentTerm;
+          const termGroup =
+            freqTermsIndex < allTerms.termGroup.length
+              ? allTerms.termGroup[freqTermsIndex]
+              : null;
+
+          const fdr = freqTerms.fdr[freqTermsIndex];
+          const negLogFDR = freqTerms.negLogFDR[freqTermsIndex];
+          const effectSize = freqTerms.effectSize[freqTermsIndex];
+          const nMatchingGenesOverall =
+            freqTerms.nMatchingGenesOverall[freqTermsIndex];
+
+          let hover = `<b>${term}</b>`;
+          if (termGroup !== null && termGroup !== "") {
+            hover += `<br>${termGroup}`;
+          }
+          hover += `<br><br>-log10(FDR):  ${negLogFDR?.toFixed(
+            4
+          )}  <br>FDR:  ${fdr?.toExponential(
+            5
+          )}  <br>Effect Size:  ${effectSize?.toFixed(
+            4
+          )}  <br>n Matching Genes Overall:  ${nMatchingGenesOverall}`;
+          return hover;
+        });
+      };
+
+      return {
+        allEnriched: {
+          data: allEnriched,
+          customdata: makeCustomdata(allEnriched),
+        },
+        stopwords: {
+          data: stopwords,
+          customdata: makeCustomdata(stopwords),
+        },
+        otherTerms: {
+          data: otherTerms,
+          customdata: makeCustomdata(otherTerms),
+        },
+      };
+    }
+    return null;
+  }, [data]);
+
   return {
     specialCaseInvalidGenes,
     rawData: data,
     heatmapData,
     barChartData,
     heatmapXAxisLabel,
+    allTermsScatterPlotData,
   };
 }
 
