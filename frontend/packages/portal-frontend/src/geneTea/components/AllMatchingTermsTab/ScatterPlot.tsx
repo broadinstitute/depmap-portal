@@ -18,24 +18,28 @@ interface Props {
       x: number[];
       y: number[];
       customdata: string[];
+      matchingGenes: string[];
     };
     otherTerms: {
       indexLabels: string[];
       x: number[];
       y: number[];
       customdata: string[];
+      matchingGenes: string[];
     };
     selectedTerms: {
       indexLabels: string[];
       x: number[];
       y: number[];
       customdata: string[];
+      matchingGenes: string[];
     };
     enrichedTerms: {
       indexLabels: string[];
       x: number[];
       y: number[];
       customdata: string[];
+      matchingGenes: string[];
     };
   };
 
@@ -44,7 +48,7 @@ interface Props {
   // Height can be defined in pixels or set to "auto."  In auto mode, it will
   // attempt to fill the height of the viewport.
   height: number | "auto";
-  onClickPoint?: (selectedTerm: string) => void;
+  onClickPoint?: (selectedTerm: string, matchingGenes: string[]) => void;
   onLoad?: (plot: ExtendedPlotType) => void;
 }
 
@@ -242,20 +246,26 @@ function ScatterPlot({
 
     on("plotly_click", (e: PlotMouseEvent) => {
       const { pointIndex, curveNumber } = e.points[0];
-      const anyModifier = e.event.shiftKey;
 
       let indexLabel;
+      let matchingGenes;
       if (curveNumber === 0) {
         indexLabel = data.stopwords.indexLabels[pointIndex];
+        matchingGenes = data.stopwords.matchingGenes[pointIndex];
       } else if (curveNumber === 1) {
         indexLabel = data.otherTerms.indexLabels[pointIndex];
+        matchingGenes = data.otherTerms.matchingGenes[pointIndex];
       } else if (curveNumber === 2) {
         indexLabel = data.selectedTerms.indexLabels[pointIndex];
+        matchingGenes = data.selectedTerms.matchingGenes[pointIndex];
       }
 
       // TODO update this to handle shift click multi select
       if (onClickPoint && indexLabel !== undefined) {
-        onClickPoint(indexLabel);
+        onClickPoint(
+          indexLabel,
+          matchingGenes ? matchingGenes?.split(" ") : []
+        );
       }
     });
 

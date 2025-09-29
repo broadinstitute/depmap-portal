@@ -78,6 +78,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
           indexLabels: [],
           x: [],
           y: [],
+          matchingGenes: [],
           customdata: [],
         },
       };
@@ -154,6 +155,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
         x: [] as number[],
         y: [] as number[],
         customdata: [] as any[],
+        matchingGenes: [] as string[],
       };
       for (const t of terms) {
         if (filter(t)) {
@@ -161,6 +163,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
           out.x.push(lookup[t].effectSize);
           out.y.push(lookup[t].negLogFDR);
           out.customdata.push(lookup[t].customdata);
+          out.matchingGenes.push(lookup[t].customdata);
         }
       }
       return out;
@@ -201,6 +204,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
       enrichedTerms,
     };
   }, [data, selectedPlotOrTableTerms]);
+
   return (
     <div>
       <ScatterPlot
