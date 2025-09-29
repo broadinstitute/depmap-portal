@@ -1,5 +1,4 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { HeatmapFormattedData } from "@depmap/types/src/experimental_genetea";
 
 export const tableColumns = [
   { accessor: "term", Header: "Term", minWidth: 100 },
