@@ -46,7 +46,7 @@ export interface TermToEntity {
   fraction: number[];
 }
 
-export interface FrequentTerms {
+export interface Terms {
   term: string[];
   matchingGenesInList: string[];
   nMatchingGenesOverall: number[];
@@ -57,14 +57,18 @@ export interface FrequentTerms {
   synonyms: string[][];
   totalInfo: number[];
   effectSize: number[];
+  negLogFDR: number[];
 }
 
-export interface AllEnrichedTerms extends FrequentTerms {
+export interface FrequentTerms extends Terms {
+  enriched: boolean[];
+}
+
+export interface AllEnrichedTerms extends Terms {
   termGroup: string[];
 }
 
 export interface EnrichedTerms extends AllEnrichedTerms {
-  negLogFDR: number[];
   clippedTerm: string[];
 }
 
@@ -80,4 +84,19 @@ export interface GeneTeaEnrichedTerms {
   termToEntity: TermToEntity | null;
   frequentTerms: FrequentTerms | null;
   allEnrichedTerms: AllEnrichedTerms | null;
+}
+
+export interface GeneTeaScatterPlotData {
+  allEnriched: {
+    data: FrequentTerms;
+    customdata: string[];
+  };
+  stopwords: {
+    data: FrequentTerms;
+    customdata: string[];
+  };
+  otherTerms: {
+    data: FrequentTerms;
+    customdata: string[];
+  };
 }

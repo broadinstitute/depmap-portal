@@ -1,5 +1,4 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { HeatmapFormattedData } from "@depmap/types/src/experimental_genetea";
 
 export const tableColumns = [
   { accessor: "term", Header: "Term", minWidth: 100 },
@@ -127,18 +126,4 @@ export function generateTickLabels(
   });
 
   return tickvals;
-}
-
-export function getSelectedColumns(
-  heatmapData: HeatmapFormattedData,
-  selectedGenes: Set<string>
-) {
-  const uniqueXs = new Set(heatmapData.x);
-  const out = new Set<number>();
-  [...uniqueXs].forEach((x: string, index: number) => {
-    if (x !== null && selectedGenes.has(x)) {
-      out.add(index);
-    }
-  });
-  return out;
 }

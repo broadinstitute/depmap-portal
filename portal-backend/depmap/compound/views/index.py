@@ -465,8 +465,10 @@ def get_auc_data(dataset_name, compound_experiment):
         auc_data = auc_matrix.get_cell_line_values_and_depmap_ids(
             compound_experiment.entity_id
         )
+        auc_log_or_auc_col = auc_dataset.matrix.units
+
         auc_data = pd.DataFrame.from_dict(
-            auc_data.to_dict(), orient="index", columns=["auc"]
+            auc_data.to_dict(), orient="index", columns=[auc_log_or_auc_col]
         )
         auc_data.index.name = "depmap_id"
         return auc_data

@@ -173,6 +173,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": "cannot plot",
+            "value_type": "continuous",
             "values": [],
             "context_size": len(row_labels),
             "slice_type": slice_type,
@@ -192,6 +193,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": "context produced no matches",
+            "value_type": "continuous",
             "values": [],
             "context_size": 0,
             "slice_type": slice_type,
@@ -285,6 +287,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": axis_label,
+            "value_type": "continuous",
             "values": values,
             "slice_type": slice_type,
         }

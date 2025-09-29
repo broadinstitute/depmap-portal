@@ -152,6 +152,8 @@ def format_enrichment_box_for_dataset(
         "Chronos_Combined": "geneDependency",
     }
 
+    units = dataset.matrix.units
+
     return {
         "context_explorer_dataset_tab": "overview"
         if dataset.name.name not in temp_mapping.keys()
@@ -161,7 +163,7 @@ def format_enrichment_box_for_dataset(
         else enriched_contexts.index.tolist()[0],
         "svg": svg,
         "labels": enriched_text_labels,
-        "units": dataset.matrix.units,
+        "units": units,
         "color": color,
         "title_color": color if title_color_override is None else title_color_override,
     }
@@ -397,7 +399,7 @@ def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]
             color = color_palette.rep_all_single_pt_color
         elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_AUC:
             dataset_type = "prism_onc_ref"
-            label = "PRISM OncRef AUC"
+            label = "PRISM OncRef log2(AUC)"
             color = color_palette.prism_oncology_color
         else:
             # TODO: Figure out how to not hardcode above code
