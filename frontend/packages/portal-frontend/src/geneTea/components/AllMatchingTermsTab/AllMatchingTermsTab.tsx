@@ -29,7 +29,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
     if (selectedPlotOrTableTerms.size > 0) {
       return selectedPlotOrTableTerms;
     }
-    return new Set(rawData?.allEnrichedTerms?.term);
+    return new Set(rawData?.enrichedTerms?.term);
   }, [selectedPlotOrTableTerms, rawData]);
 
   // Get the table data and prefferedTableDataForDownload. Combined in this useMemo so we don't
