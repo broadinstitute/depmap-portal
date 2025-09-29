@@ -434,11 +434,11 @@ function useData(
       );
       const stopwords = filterFrequentTerms(
         freqTerms,
-        (i) => freqTerms.enriched[i] !== false && freqTerms.stopword[i] === true
+        (i) => freqTerms.enriched[i] == false && freqTerms.stopword[i] === true
       );
       const otherTerms = filterFrequentTerms(
         freqTerms,
-        (i) => freqTerms.enriched[i] !== false && freqTerms.stopword[i] !== true
+        (i) => freqTerms.enriched[i] == false && freqTerms.stopword[i] !== true
       );
 
       const makeCustomdata = (termsObj: FrequentTerms) => {
