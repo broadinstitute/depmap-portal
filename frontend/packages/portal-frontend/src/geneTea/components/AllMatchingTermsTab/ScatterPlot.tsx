@@ -44,7 +44,7 @@ interface Props {
   // Height can be defined in pixels or set to "auto."  In auto mode, it will
   // attempt to fill the height of the viewport.
   height: number | "auto";
-  onClickPoint?: (selections: Set<string>, shiftKey: boolean) => void;
+  onClickPoint?: (selectedTerm: string) => void;
   onLoad?: (plot: ExtendedPlotType) => void;
 }
 
@@ -255,7 +255,7 @@ function ScatterPlot({
 
       // TODO update this to handle shift click multi select
       if (onClickPoint && indexLabel !== undefined) {
-        onClickPoint(new Set([indexLabel]), anyModifier);
+        onClickPoint(indexLabel);
       }
     });
 

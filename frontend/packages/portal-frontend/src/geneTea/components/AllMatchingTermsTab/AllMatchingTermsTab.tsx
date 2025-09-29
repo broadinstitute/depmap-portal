@@ -2,8 +2,7 @@ import React, { useMemo, useState } from "react";
 import styles from "../../styles/GeneTea.scss";
 import GeneTeaTable from "../GeneTeaTable";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { groupStringsByCondition, tableColumns } from "../../utils";
-import useData from "../../hooks/useData";
+import { tableColumns } from "../../utils";
 import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
 import {
   GeneTeaEnrichedTerms,
@@ -11,7 +10,6 @@ import {
 } from "@depmap/types/src/experimental_genetea";
 import PlotSection from "./PlotSection";
 import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
-import PlotSelections from "./PlotSelections";
 
 interface AllMatchingTermsTabProps {
   data: GeneTeaScatterPlotData | null;
@@ -20,13 +18,19 @@ interface AllMatchingTermsTabProps {
 
 function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
   const { isLoading, error } = useGeneTeaFiltersContext();
-
   const {
     selectedPlotOrTableTerms,
     handleSetPlotOrTableSelectedTerms,
   } = useAllTermsContext();
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
+
+  const selectedTableRows = useMemo(() => {
+    if (selectedPlotOrTableTerms.size > 0) {
+      return selectedPlotOrTableTerms;
+    }
+    return new Set(rawData?.allEnrichedTerms?.term);
+  }, [selectedPlotOrTableTerms, rawData]);
 
   // Get the table data and prefferedTableDataForDownload. Combined in this useMemo so we don't
   // have to iterate through allEnrichedTerms twice. The only difference is that the tableData is
@@ -121,11 +125,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
           tableColumns={tableColumns}
           columnOrdering={tableColumns.map((col) => col.accessor)}
           defaultCols={tableColumns.map((col) => col.accessor)}
-          selectedTableRows={
-            selectedPlotOrTableTerms.size > 0
-              ? selectedPlotOrTableTerms
-              : new Set(rawData.allEnrichedTerms?.term)
-          }
+          selectedTableRows={selectedTableRows}
           handleChangeSelection={(selections: string[]) => {
             if (selections.length === 0) return;
             handleSetPlotOrTableSelectedTerms(new Set(selections), false);

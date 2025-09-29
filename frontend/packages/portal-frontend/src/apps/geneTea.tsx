@@ -7,6 +7,7 @@ import "src/common/styles/typeahead_fix.scss";
 import GeneTea from "src/geneTea/components/GeneTea";
 import { GeneTeaFiltersContextProvider } from "src/geneTea/context/GeneTeaFiltersContext";
 import { TopTermsContextProvider } from "src/geneTea/context/TopTermsContext";
+import { AllTermsContextProvider } from "src/geneTea/context/AllTermsContext";
 
 const container = document.getElementById("react-gene-tea");
 
@@ -15,7 +16,9 @@ const App = () => {
     <ErrorBoundary>
       <GeneTeaFiltersContextProvider>
         <TopTermsContextProvider>
-          <GeneTea />
+          <AllTermsContextProvider>
+            <GeneTea />
+          </AllTermsContextProvider>
         </TopTermsContextProvider>
       </GeneTeaFiltersContextProvider>
     </ErrorBoundary>

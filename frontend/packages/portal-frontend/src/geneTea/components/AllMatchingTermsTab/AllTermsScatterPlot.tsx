@@ -1,27 +1,52 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { GeneTeaScatterPlotData } from "@depmap/types/src/experimental_genetea";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import ScatterPlot from "./ScatterPlot";
 import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
-import { useEffect } from "react";
+import GeneTeaContextModal from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaContextModal";
+import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
 
 interface Props {
   data: GeneTeaScatterPlotData | null; // TODO simplify this. We only need x (Effect Size) and y (fdr)
   handleSetPlotElement: (element: any) => void;
 }
 function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
-  const {
-    selectedPlotOrTableTerms,
-    handleSetPlotOrTableSelectedTerms,
-  } = useAllTermsContext();
+  const { validGeneSymbols } = useGeneTeaFiltersContext();
+  const { selectedPlotOrTableTerms } = useAllTermsContext();
+
+  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
 
   const plotData = useMemo(() => {
     if (!data) {
       return {
-        stopwords: { indexLabels: [], x: [], y: [], customdata: [] },
-        otherTerms: { indexLabels: [], x: [], y: [], customdata: [] },
-        selectedTerms: { indexLabels: [], x: [], y: [], customdata: [] },
-        enrichedTerms: { indexLabels: [], x: [], y: [], customdata: [] },
+        stopwords: {
+          indexLabels: [],
+          x: [],
+          y: [],
+          matchingGenes: [],
+          customdata: [],
+        },
+        otherTerms: {
+          indexLabels: [],
+          x: [],
+          y: [],
+          matchingGenes: [],
+          customdata: [],
+        },
+        selectedTerms: {
+          indexLabels: [],
+          x: [],
+          y: [],
+          matchingGenes: [],
+          customdata: [],
+        },
+        enrichedTerms: {
+          indexLabels: [],
+          x: [],
+          y: [],
+          matchingGenes: [],
+          customdata: [],
+        },
       };
     }
 
@@ -32,18 +57,21 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
           indexLabels: data.stopwords.data.term,
           x: data.stopwords.data.effectSize,
           y: data.stopwords.data.negLogFDR,
+          matchingGenes: data.stopwords.data.matchingGenesInList,
           customdata: data.stopwords.customdata,
         },
         otherTerms: {
           indexLabels: data.otherTerms.data.term,
           x: data.otherTerms.data.effectSize,
           y: data.otherTerms.data.negLogFDR,
+          matchingGenes: data.otherTerms.data.matchingGenesInList,
           customdata: data.otherTerms.customdata,
         },
         selectedTerms: {
           indexLabels: data.allEnriched.data.term,
           x: data.allEnriched.data.effectSize,
           y: data.allEnriched.data.negLogFDR,
+          matchingGenes: data.allEnriched.data.matchingGenesInList,
           customdata: data.allEnriched.customdata,
         },
         enrichedTerms: {
@@ -181,7 +209,16 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
         xLabel={"Effect Size"}
         yLabel={"-log10(FDR)"}
         onLoad={handleSetPlotElement}
-        onClickPoint={handleSetPlotOrTableSelectedTerms}
+        onClickPoint={(selectedTerm: string) => setSelectedTerm(selectedTerm)}
+      />
+
+      <GeneTeaContextModal
+        show={Boolean(selectedTerm)}
+        term={selectedTerm || ""}
+        synonyms={[]}
+        coincident={[]}
+        matchingGenes={Array.from(validGeneSymbols)}
+        onClose={() => setSelectedTerm(null)}
       />
     </div>
   );

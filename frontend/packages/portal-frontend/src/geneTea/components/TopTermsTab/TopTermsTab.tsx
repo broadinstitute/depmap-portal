@@ -60,6 +60,7 @@ function TopTermsTab({
       rawData.allEnrichedTerms.term.forEach((term, index) => {
         roundedData.push({
           term,
+          termGroup: rawData.allEnrichedTerms!.termGroup[index],
           synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
           matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
             index
@@ -74,6 +75,7 @@ function TopTermsTab({
         });
         unroundedData.push({
           term,
+          termGroup: rawData.allEnrichedTerms!.termGroup[index],
           synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
           matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
             index

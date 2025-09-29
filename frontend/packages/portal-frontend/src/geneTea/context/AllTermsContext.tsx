@@ -3,8 +3,10 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
+import { useGeneTeaFiltersContext } from "./GeneTeaFiltersContext";
 
 export interface AllTermsContextType {
   selectedPlotOrTableTerms: Set<string>;
@@ -26,9 +28,16 @@ interface AllTermsContextProviderProps {
 export function AllTermsContextProvider({
   children,
 }: AllTermsContextProviderProps) {
+  const { geneSymbolSelections } = useGeneTeaFiltersContext();
+
   const [selectedPlotOrTableTerms, setSelectedPlotOrTableTerms] = useState<
     Set<string>
   >(new Set([]));
+
+  // Clear selection when geneSymbolSelections changes
+  useEffect(() => {
+    setSelectedPlotOrTableTerms(new Set([]));
+  }, [geneSymbolSelections]);
 
   const handleSetPlotOrTableSelectedTerms = useCallback(
     (selections: Set<string>, shiftKey: boolean) => {
