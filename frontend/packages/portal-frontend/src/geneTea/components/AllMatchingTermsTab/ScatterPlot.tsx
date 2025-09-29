@@ -115,7 +115,12 @@ function ScatterPlot({
       customdata: data.stopwords.customdata,
       hovertemplate: "%{customdata}<extra></extra>",
       marker: {
-        color: "rgb(156, 168, 166)",
+        color: "rgba(156, 168, 166, 0.8)",
+        size: 10,
+        line: {
+          color: "rgba(77, 72, 72, 1)", // Black color for the outline
+          width: 1, // 1px width for the outline
+        },
       },
     };
 
@@ -128,7 +133,12 @@ function ScatterPlot({
       customdata: data.otherTerms.customdata,
       hovertemplate: "%{customdata}<extra></extra>",
       marker: {
-        color: "rgb(225, 190, 106)",
+        color: "rgba(225, 190, 106, 0.6)",
+        size: 10,
+        line: {
+          color: "rgba(77, 72, 72, 1)", // Black color for the outline
+          width: 1, // 1px width for the outline
+        },
       },
     };
 
@@ -141,7 +151,12 @@ function ScatterPlot({
       customdata: data.enrichedTerms.customdata,
       hovertemplate: "%{customdata}<extra></extra>",
       marker: {
-        color: "green",
+        color: "#00ff2ffc",
+        size: 10,
+        line: {
+          color: "rgba(77, 72, 72, 1)", // Black color for the outline
+          width: 1, // 1px width for the outline
+        },
       },
     };
 
@@ -154,7 +169,12 @@ function ScatterPlot({
       customdata: data.selectedTerms.customdata,
       hovertemplate: "%{customdata}<extra></extra>",
       marker: {
-        color: "red",
+        color: "rgba(255, 0, 0, 0.9)",
+        size: 10,
+        line: {
+          color: "rgba(77, 72, 72, 1)", // Black color for the outline
+          width: 1, // 1px width for the outline
+        },
       },
     };
 

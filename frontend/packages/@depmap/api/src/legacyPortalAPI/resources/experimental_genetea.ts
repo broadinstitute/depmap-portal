@@ -38,7 +38,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
     max_fdr: maxFDR,
     min_genes: minMatchingQuery || -1,
     max_n_genes: maxMatchingOverall,
-    n: plotSelections?.length === 0 ? maxTopTerms || -1 : -1,
+    n: plotSelections?.length === 0 ? maxTopTerms || undefined : undefined,
   };
 
   if (plotSelections) {

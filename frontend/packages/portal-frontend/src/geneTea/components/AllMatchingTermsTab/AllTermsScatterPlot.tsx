@@ -4,14 +4,12 @@ import React, { useMemo, useState } from "react";
 import ScatterPlot from "./ScatterPlot";
 import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
 import GeneTeaContextModal from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaContextModal";
-import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
 
 interface Props {
   data: GeneTeaScatterPlotData | null; // TODO simplify this. We only need x (Effect Size) and y (fdr)
   handleSetPlotElement: (element: any) => void;
 }
 function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
-  const { validGeneSymbols } = useGeneTeaFiltersContext();
   const { selectedPlotOrTableTerms } = useAllTermsContext();
 
   const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
@@ -209,7 +207,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
         term={selectedTerm || ""}
         synonyms={[]}
         coincident={[]}
-        matchingGenes={Array.from(validGeneSymbols)}
+        matchingGenes={[]}
         onClose={() => setSelectedTerm(null)}
       />
     </div>
