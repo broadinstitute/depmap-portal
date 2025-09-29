@@ -73,11 +73,11 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
           customdata: data.allEnriched.customdata,
         },
         enrichedTerms: {
-          indexLabels: data.allEnriched.data.term,
-          x: data.allEnriched.data.effectSize,
-          y: data.allEnriched.data.negLogFDR,
-          matchingGenes: data.allEnriched.data.matchingGenesInList,
-          customdata: data.allEnriched.customdata,
+          indexLabels: [],
+          x: [],
+          y: [],
+          matchingGenes: [],
+          customdata: [],
         },
       };
     }
