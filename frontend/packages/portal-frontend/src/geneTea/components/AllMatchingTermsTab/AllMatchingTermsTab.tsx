@@ -95,15 +95,6 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
                 handleSetPlotElement={setPlotElement}
               />
             </div>
-            {/* <div className={styles.selectionsArea}>
-              <PlotSelections
-                isPlotDataVisible={!isLoading && data !== null}
-                selectedIds={new Set([])}
-                selectedLabels={new Set([])}
-                onClickSaveSelectionAsContext={() => {}}
-                onClickClearSelection={() => {}}
-              />
-            </div> */}
           </div>
         </div>
       )}

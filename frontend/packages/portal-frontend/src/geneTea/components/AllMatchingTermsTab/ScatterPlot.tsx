@@ -105,9 +105,10 @@ function ScatterPlot({
 
     // TODO move this out of the ScatterPlot component so that this component can take any
     // list of PlotlyData with colors and titles defined per trace as a prop.
+
     const stopwordsData: PlotlyData = {
       type,
-      name: "stopwords",
+      name: `Stopwords n=(${data.stopwords.x.length})`,
       mode: "markers",
       x: data.stopwords.x,
       y: data.stopwords.y as any,
@@ -120,7 +121,7 @@ function ScatterPlot({
 
     const otherTermsData: PlotlyData = {
       type,
-      name: "Other Terms",
+      name: `Other Terms n=(${data.otherTerms.x.length})`,
       mode: "markers",
       x: data.otherTerms.x,
       y: data.otherTerms.y as any,
@@ -133,7 +134,7 @@ function ScatterPlot({
 
     const enrichedTermsData: PlotlyData = {
       type,
-      name: "Enriched Terms",
+      name: `Enriched Terms n=(${data.enrichedTerms.x.length})`,
       mode: "markers",
       x: data.enrichedTerms.x,
       y: data.enrichedTerms.y as any,
@@ -146,7 +147,7 @@ function ScatterPlot({
 
     const selectedTermsData: PlotlyData = {
       type,
-      name: "Selected Terms",
+      name: `Selected Terms n=(${data.selectedTerms.x.length})`,
       mode: "markers",
       x: data.selectedTerms.x,
       y: data.selectedTerms.y as any,
