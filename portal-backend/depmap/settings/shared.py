@@ -338,8 +338,8 @@ DATASET_METADATA: Dict[
         global_priority=17,
     ),
     DependencyEnum.Prism_oncology_AUC: DepDatasetMeta(
-        display_name="PRISM OncRef AUC",  # display name overridden by dataset display name artifact
-        units="AUC",
+        display_name="PRISM OncRef log2 AUC",  # display name overridden by dataset display name artifact
+        units="log2(AUC)",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
         priority=1,

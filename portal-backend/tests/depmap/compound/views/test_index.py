@@ -391,7 +391,7 @@ def test_dose_table(empty_db_mock_downloads, app):
                 "0-000000010000000": 10,  # 0-000000010000000 is rounded to precision of 2 significant digits on the frontend side of things
                 "0-200000000000000": 20,
                 "cell_line_display_name": cell_line_display_name,
-                "auc": 0.5,
+                "units": 0.5,
             }
         }
 
