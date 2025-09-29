@@ -2,8 +2,8 @@ import React, { useRef } from "react";
 import { Button } from "react-bootstrap";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
 import LabelsVirtualList from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/PlotSelections/LabelsVirtualList";
-import geneTeaStyles from "../styles/GeneTea.scss";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import geneTeaStyles from "../../styles/GeneTea.scss";
+import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 
 interface PlotSelectionsProps {
   isPlotDataVisible: boolean;
@@ -20,7 +20,7 @@ function PlotSelections({
   onClickSaveSelectionAsContext,
   onClickClearSelection = undefined,
 }: PlotSelectionsProps) {
-  const { handleSetSelectionFromContext } = useGeneTeaContext();
+  const { handleSetSelectionFromContext } = useTopTermsContext();
 
   const listRef = useRef<HTMLDivElement | null>(null);
 

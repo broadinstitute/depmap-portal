@@ -5,8 +5,8 @@ import { Button } from "react-bootstrap";
 import NumberInput from "./NumberInput";
 import {
   TERM_OPTIONS_FILTER_DEFAULTS,
-  useGeneTeaContext,
-} from "../context/GeneTeaContext";
+  useGeneTeaFiltersContext,
+} from "../context/GeneTeaFiltersContext";
 import { SortOption } from "../types";
 
 const TermOptionsPanel: React.FC = () => {
@@ -25,7 +25,7 @@ const TermOptionsPanel: React.FC = () => {
     handleSetMinMatchingQuery,
     maxMatchingOverall,
     handleSetMaxMatchingOverall,
-  } = useGeneTeaContext();
+  } = useGeneTeaFiltersContext();
 
   // Local state for staged changes
   const [localSortBy, setLocalSortBy] = useState<string>(sortBy);

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
-import { useGeneTeaContext } from "../context/GeneTeaContext";
+import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import { MAX_GENES_ALLOWED } from "../types";
 
 // TODO move to utils
@@ -16,20 +16,19 @@ function replaceLineBreaksWithSingleSpace(text: string): string {
 
 const MultiSelectTextarea: React.FC = () => {
   const {
+    selectedPlotGenes,
+    handleSetPlotSelectedGenes,
     geneSymbolSelections,
     handleSetGeneSymbolSelections,
     validGeneSymbols,
     handleSetValidGeneSymbols,
     inValidGeneSymbols,
     handleSetInValidGeneSymbols,
-    selectedPlotGenes,
-    handleSetPlotSelectedGenes,
-    handleClearPlotSelection,
-    handleClearSelectedTableRows,
+    handleClearSelectedTopTermsTableRows,
     handleSetError,
     error,
     errorMessage,
-  } = useGeneTeaContext();
+  } = useGeneTeaFiltersContext();
 
   const [inputValue, setInputValue] = useState("");
 
@@ -58,6 +57,7 @@ const MultiSelectTextarea: React.FC = () => {
       const newGeneSymbolSelections = new Set(
         [...prevChips].filter((chip) => chip !== chipToRemove)
       );
+
       return newGeneSymbolSelections;
     });
 
@@ -182,11 +182,11 @@ const MultiSelectTextarea: React.FC = () => {
           className={styles.clearInputButton}
           disabled={inputValue.length === 0 && geneSymbolSelections.size === 0}
           onClick={() => {
-            handleSetGeneSymbolSelections(() => new Set<string>([]));
+            handleSetGeneSymbolSelections(() => new Set());
             handleSetValidGeneSymbols(new Set());
             handleSetInValidGeneSymbols(new Set());
-            handleClearPlotSelection();
-            handleClearSelectedTableRows();
+            handleSetPlotSelectedGenes(new Set(), false);
+            handleClearSelectedTopTermsTableRows();
             setInputValue(""); // Clear input
             handleSetError(false);
           }}
