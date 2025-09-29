@@ -34,20 +34,16 @@ class DependencyEnum(DatasetEnum):
     # Drug datasets
     GDSC1_AUC = "GDSC1_AUC"
     GDSC2_AUC = "GDSC2_AUC"
-    GDSC1_IC50 = "GDSC1_IC50"
-    GDSC2_IC50 = "GDSC2_IC50"
     CTRP_AUC = "CTRP_AUC"
     Repurposing_secondary_AUC = "Repurposing_secondary_AUC"
 
     CTRP_dose_replicate = "CTRP_dose_replicate"
     GDSC1_dose_replicate = "GDSC1_dose_replicate"
     GDSC2_dose_replicate = "GDSC2_dose_replicate"
-    Repurposing_secondary_dose = "Repurposing_secondary_dose"
     Repurposing_secondary_dose_replicate = "Repurposing_secondary_dose_replicate"
     Rep1M = "Rep1M"
     Rep_all_single_pt = "Rep_all_single_pt"
     Prism_oncology_AUC = "Prism_oncology_AUC"
-    Prism_oncology_IC50 = "Prism_oncology_IC50"
     Prism_oncology_dose_replicate = "Prism_oncology_dose_replicate"
 
     @staticmethod
@@ -62,15 +58,12 @@ class DependencyEnum(DatasetEnum):
         # TODO: Unhardcode
         return dataset_enum in {
             DependencyEnum.GDSC1_AUC,
-            DependencyEnum.GDSC1_IC50,
             DependencyEnum.GDSC2_AUC,
-            DependencyEnum.GDSC2_IC50,
             DependencyEnum.CTRP_AUC,
             DependencyEnum.Repurposing_secondary_AUC,
             DependencyEnum.Rep1M,
             DependencyEnum.Rep_all_single_pt,
             DependencyEnum.Prism_oncology_AUC,
-            DependencyEnum.Prism_oncology_IC50,
         }
 
 
