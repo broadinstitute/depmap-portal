@@ -38,13 +38,6 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
           matchingGenes: [],
           customdata: [],
         },
-        allEnrichedTerms: {
-          indexLabels: [],
-          x: [],
-          y: [],
-          matchingGenes: [],
-          customdata: [],
-        },
         enrichedTerms: {
           indexLabels: [],
           x: [],
