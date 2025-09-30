@@ -45,16 +45,11 @@ function TabularDataSelect({ varName }: Props) {
   }
 
   const columnOptions = dataset
-    ? Object.entries(dataset.columns_metadata)
-        .filter(([, metadata]) =>
-          // TODO: add support for type "list_strings"
-          ["text", "categorical"].includes(metadata.col_type)
-        )
-        .map(([column, metadata]) => ({
-          label: column,
-          value: column,
-          col_type: metadata.col_type,
-        }))
+    ? Object.entries(dataset.columns_metadata).map(([column, metadata]) => ({
+        label: column,
+        value: column,
+        col_type: metadata.col_type,
+      }))
     : [];
 
   let isBadColumn = false;
@@ -103,14 +98,10 @@ function TabularDataSelect({ varName }: Props) {
         options={columnOptions}
         onChangeUsesWrappedValue
         onChange={(wrappedValue) => {
-          const { value, col_type } = (wrappedValue as unknown) as {
+          const { value } = (wrappedValue as unknown) as {
             value: string;
             col_type: AnnotationType;
           };
-
-          if (col_type !== "text" && col_type !== "categorical") {
-            window.console.warn(`Warning: unsupported col_type "${col_type}"`);
-          }
 
           setVar(varName, {
             dataset_id: variable.dataset_id,
