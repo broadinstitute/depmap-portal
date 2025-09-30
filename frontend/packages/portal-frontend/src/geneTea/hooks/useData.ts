@@ -428,10 +428,12 @@ function useData(
     if (data?.frequentTerms && data?.allEnrichedTerms) {
       const freqTerms = data.frequentTerms;
       const allTerms = data.allEnrichedTerms;
+
       const allEnriched = filterFrequentTerms(
         freqTerms,
         (i) => freqTerms.enriched[i] === true
       );
+
       const stopwords = filterFrequentTerms(
         freqTerms,
         (i) => freqTerms.enriched[i] === false && freqTerms.stopword[i] === true
