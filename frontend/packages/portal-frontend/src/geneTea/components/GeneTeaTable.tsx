@@ -57,6 +57,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
           allowDownloadFromTableDataWithMenu
           allowDownloadFromTableDataWithMenuFileName="gene-tea-data.csv"
           minimumAllowedSelections={1}
+          useAllSelectionsInOnChangeHandler
         />
       </div>
     );

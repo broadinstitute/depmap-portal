@@ -133,6 +133,9 @@ export interface WideTableProps {
    *  selections change. If this is prop is used, `idProp` must also be defined.
    */
   onChangeSelections?: (selections: any[]) => void;
+  // Added for GeneTea so that the onChangeSelections handler will still consider "invisible"
+  // selections when the user is filtering to find their term/row of interest.
+  useAllSelectionsInOnChangeHandler?: boolean;
 
   /**
    *  Use this to prevent the user from selecting less than some number of selections. This is useful
@@ -1041,6 +1044,9 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
           initialSortBy={this.props.sorted}
           fixedHeight={this.props.fixedHeight}
           minimumAllowedSelections={this.props.minimumAllowedSelections}
+          useAllSelectionsVisibleAndInvisible={
+            this.props.useAllSelectionsInOnChangeHandler
+          }
         />
       </div>
     );

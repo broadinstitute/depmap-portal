@@ -29,6 +29,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
     if (selectedPlotOrTableTerms.size > 0) {
       return selectedPlotOrTableTerms;
     }
+
     return new Set(rawData?.enrichedTerms?.term);
   }, [selectedPlotOrTableTerms, rawData]);
 
@@ -92,6 +93,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
                 isLoading={isLoading}
                 plotElement={plotElement}
                 data={data}
+                enrichedTerms={rawData?.enrichedTerms?.term || []}
                 handleSetPlotElement={setPlotElement}
               />
             </div>

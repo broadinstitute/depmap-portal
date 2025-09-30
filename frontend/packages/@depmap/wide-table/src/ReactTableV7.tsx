@@ -27,6 +27,7 @@ interface Props {
   columns: UseTableOptions<object>["columns"];
   data: UseTableOptions<object>["data"];
   selectedLabels: Set<string> | null;
+  useAllSelectionsVisibleAndInvisible?: boolean;
   minimumAllowedSelections?: number;
   idProp?: string;
   onChangeSelections?: (selections: any[]) => void;
@@ -43,8 +44,13 @@ let wasSelectionPropsWarningShown = false;
 function toVisibleSelections(
   selections: Set<any>,
   rows: Record<string, any>[],
-  idProp: string
+  idProp: string,
+  useAllSelectionsVisibleAndInvisible?: boolean
 ) {
+  if (useAllSelectionsVisibleAndInvisible) {
+    return Array.from(selections);
+  }
+
   return rows
     .map((row: Record<string, any>) => row.original[idProp])
     .filter((id) => selections.has(id));
@@ -59,6 +65,7 @@ const ReactTableV7 = React.forwardRef(
       onChangeSelections,
       selectedLabels,
       minimumAllowedSelections = undefined,
+      useAllSelectionsVisibleAndInvisible = false,
       rowHeight = 24,
       getTrProps = undefined,
       singleSelectionMode = false,
@@ -105,7 +112,8 @@ const ReactTableV7 = React.forwardRef(
                   const visibleSelections = toVisibleSelections(
                     selections,
                     filteredRows,
-                    idProp as string
+                    idProp as string,
+                    useAllSelectionsVisibleAndInvisible
                   );
 
                   onChangeSelections(visibleSelections);
@@ -115,7 +123,12 @@ const ReactTableV7 = React.forwardRef(
           );
         },
       }),
-      [idProp, selections, onChangeSelections]
+      [
+        idProp,
+        selections,
+        onChangeSelections,
+        useAllSelectionsVisibleAndInvisible,
+      ]
     );
 
     const modifiedColumns = useMemo(() => {
@@ -291,14 +304,25 @@ const ReactTableV7 = React.forwardRef(
         setTimeout(() => {
           if (idProp && onChangeSelections) {
             onChangeSelections(
-              toVisibleSelections(nextSelections, rows, idProp as string)
+              toVisibleSelections(
+                nextSelections,
+                rows,
+                idProp as string,
+                useAllSelectionsVisibleAndInvisible
+              )
             );
           }
         }, 0);
 
         return nextSelections;
       });
-    }, [rows, idProp, isEveryRowChecked, onChangeSelections]);
+    }, [
+      rows,
+      idProp,
+      isEveryRowChecked,
+      onChangeSelections,
+      useAllSelectionsVisibleAndInvisible,
+    ]);
 
     const handleClickCheckbox = useCallback(
       (idValue: string) => {
@@ -320,7 +344,12 @@ const ReactTableV7 = React.forwardRef(
           setTimeout(() => {
             if (idProp && onChangeSelections) {
               onChangeSelections(
-                toVisibleSelections(nextSelections, rows, idProp)
+                toVisibleSelections(
+                  nextSelections,
+                  rows,
+                  idProp,
+                  useAllSelectionsVisibleAndInvisible
+                )
               );
             }
           }, 0);
@@ -328,7 +357,13 @@ const ReactTableV7 = React.forwardRef(
           return nextSelections;
         });
       },
-      [rows, idProp, onChangeSelections, minimumAllowedSelections]
+      [
+        rows,
+        idProp,
+        onChangeSelections,
+        minimumAllowedSelections,
+        useAllSelectionsVisibleAndInvisible,
+      ]
     );
 
     const handleClickSingleSelectCheckbox = useCallback(
@@ -346,7 +381,12 @@ const ReactTableV7 = React.forwardRef(
           setTimeout(() => {
             if (idProp && onChangeSelections) {
               onChangeSelections(
-                toVisibleSelections(nextSelections, rows, idProp)
+                toVisibleSelections(
+                  nextSelections,
+                  rows,
+                  idProp,
+                  useAllSelectionsVisibleAndInvisible
+                )
               );
             }
           }, 0);
@@ -354,7 +394,7 @@ const ReactTableV7 = React.forwardRef(
           return nextSelections;
         });
       },
-      [rows, idProp, onChangeSelections]
+      [rows, idProp, onChangeSelections, useAllSelectionsVisibleAndInvisible]
     );
 
     return (

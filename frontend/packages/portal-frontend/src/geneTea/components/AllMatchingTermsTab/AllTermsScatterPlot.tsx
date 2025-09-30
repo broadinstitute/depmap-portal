@@ -8,11 +8,19 @@ import GeneTeaContextModal from "@depmap/data-explorer-2/src/components/DataExpl
 interface Props {
   data: GeneTeaScatterPlotData | null; // TODO simplify this. We only need x (Effect Size) and y (fdr)
   handleSetPlotElement: (element: any) => void;
+  enrichedTermsForInitialSelection: string[];
 }
-function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
+function AllTermsScatterPlot({
+  data,
+  enrichedTermsForInitialSelection,
+  handleSetPlotElement,
+}: Props) {
   const { selectedPlotOrTableTerms } = useAllTermsContext();
 
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<{
+    matchingGenes: string[];
+    term: string;
+  } | null>(null);
 
   const plotData = useMemo(() => {
     if (!data) {
@@ -66,18 +74,63 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
           customdata: data.otherTerms.customdata,
         },
         selectedTerms: {
-          indexLabels: data.allEnriched.data.term,
-          x: data.allEnriched.data.effectSize,
-          y: data.allEnriched.data.negLogFDR,
-          matchingGenes: data.allEnriched.data.matchingGenesInList,
-          customdata: data.allEnriched.customdata,
+          indexLabels: data.allEnriched.data.term.filter((term) =>
+            enrichedTermsForInitialSelection.includes(term)
+          ),
+          x: data.allEnriched.data.effectSize.filter((_, index) =>
+            enrichedTermsForInitialSelection.includes(
+              data.allEnriched.data.term[index]
+            )
+          ),
+          y: data.allEnriched.data.negLogFDR.filter((_, index) =>
+            enrichedTermsForInitialSelection.includes(
+              data.allEnriched.data.term[index]
+            )
+          ),
+          matchingGenes: data.allEnriched.data.matchingGenesInList.filter(
+            (_, index) =>
+              enrichedTermsForInitialSelection.includes(
+                data.allEnriched.data.term[index]
+              )
+          ),
+          customdata: data.allEnriched.customdata.filter((_, index) =>
+            enrichedTermsForInitialSelection.includes(
+              data.allEnriched.data.term[index]
+            )
+          ),
         },
+
         enrichedTerms: {
-          indexLabels: data.allEnriched.data.term,
-          x: data.allEnriched.data.effectSize,
-          y: data.allEnriched.data.negLogFDR,
-          matchingGenes: data.allEnriched.data.matchingGenesInList,
-          customdata: data.allEnriched.customdata,
+          indexLabels: data.allEnriched.data.term.filter(
+            (_, index) =>
+              !enrichedTermsForInitialSelection.includes(
+                data.allEnriched.data.term[index]
+              )
+          ),
+          x: data.allEnriched.data.effectSize.filter(
+            (_, index) =>
+              !enrichedTermsForInitialSelection.includes(
+                data.allEnriched.data.term[index]
+              )
+          ),
+          y: data.allEnriched.data.negLogFDR.filter(
+            (_, index) =>
+              !enrichedTermsForInitialSelection.includes(
+                data.allEnriched.data.term[index]
+              )
+          ),
+          matchingGenes: data.allEnriched.data.matchingGenesInList.filter(
+            (_, index) =>
+              !enrichedTermsForInitialSelection.includes(
+                data.allEnriched.data.term[index]
+              )
+          ),
+          customdata: data.allEnriched.customdata.filter(
+            (_, index) =>
+              !enrichedTermsForInitialSelection.includes(
+                data.allEnriched.data.term[index]
+              )
+          ),
         },
       };
     }
@@ -189,7 +242,7 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
       selectedTerms: selectedPlotTerms,
       enrichedTerms,
     };
-  }, [data, selectedPlotOrTableTerms]);
+  }, [data, selectedPlotOrTableTerms, enrichedTermsForInitialSelection]);
 
   return (
     <div>
@@ -199,15 +252,17 @@ function AllTermsScatterPlot({ data, handleSetPlotElement }: Props) {
         xLabel={"Effect Size"}
         yLabel={"-log10(FDR)"}
         onLoad={handleSetPlotElement}
-        onClickPoint={(term: string) => setSelectedTerm(term)}
+        onClickPoint={(term: string, matchingGenes?: string[]) =>
+          setSelectedTerm({ matchingGenes: matchingGenes || [], term })
+        }
       />
 
       <GeneTeaContextModal
         show={Boolean(selectedTerm)}
-        term={selectedTerm || ""}
+        term={selectedTerm?.term || ""}
         synonyms={[]}
         coincident={[]}
-        matchingGenes={[]}
+        matchingGenes={selectedTerm?.matchingGenes || []}
         onClose={() => setSelectedTerm(null)}
       />
     </div>
