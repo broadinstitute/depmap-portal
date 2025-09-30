@@ -13,12 +13,14 @@ interface PlotSectionProps {
   isLoading: boolean;
   plotElement: ExtendedPlotType | null;
   data: GeneTeaScatterPlotData | null;
+  enrichedTerms: string[];
   handleSetPlotElement: (element: ExtendedPlotType | null) => void;
 }
 
 function PlotSection({
   isLoading,
   data,
+  enrichedTerms,
   handleSetPlotElement,
   plotElement,
 }: PlotSectionProps) {
@@ -57,6 +59,7 @@ function PlotSection({
           <div className={styles.heatmapContainer}>
             <AllTermsScatterPlot
               data={data}
+              enrichedTermsForInitialSelection={enrichedTerms}
               handleSetPlotElement={handleSetPlotElement}
             />
           </div>
