@@ -140,17 +140,24 @@ function AllTermsScatterPlot({
       terms: string[],
       effectSize: number[],
       negLogFDR: number[],
-      customdata: any[]
+      customdata: any[],
+      matchingGenes: any
     ) {
       const out: Record<
         string,
-        { effectSize: number; negLogFDR: number; customdata: any }
+        {
+          effectSize: number;
+          negLogFDR: number;
+          customdata: any;
+          matchingGenes: any;
+        }
       > = {};
       for (let i = 0; i < terms.length; ++i) {
         out[terms[i]] = {
           effectSize: effectSize[i],
           negLogFDR: negLogFDR[i],
           customdata: customdata[i],
+          matchingGenes: matchingGenes[i],
         };
       }
       return out;
@@ -160,19 +167,23 @@ function AllTermsScatterPlot({
       data.stopwords.data.term,
       data.stopwords.data.effectSize,
       data.stopwords.data.negLogFDR,
-      data.stopwords.customdata
+      data.stopwords.customdata,
+      data.stopwords.data.matchingGenesInList
     );
     const otherTermsLookup = buildLookup(
       data.otherTerms.data.term,
       data.otherTerms.data.effectSize,
       data.otherTerms.data.negLogFDR,
-      data.otherTerms.customdata
+      data.otherTerms.customdata,
+      data.otherTerms.data.matchingGenesInList
     );
+
     const allEnrichedLookup = buildLookup(
       data.allEnriched.data.term,
       data.allEnriched.data.effectSize,
       data.allEnriched.data.negLogFDR,
-      data.allEnriched.customdata
+      data.allEnriched.customdata,
+      data.allEnriched.data.matchingGenesInList
     );
 
     // Partition logic: track original group for each term
@@ -185,7 +196,12 @@ function AllTermsScatterPlot({
       terms: string[],
       lookup: Record<
         string,
-        { effectSize: number; negLogFDR: number; customdata: any }
+        {
+          effectSize: number;
+          negLogFDR: number;
+          customdata: any;
+          matchingGenes: any;
+        }
       >,
       filter: (t: string) => boolean
     ) {
@@ -202,7 +218,7 @@ function AllTermsScatterPlot({
           out.x.push(lookup[t].effectSize);
           out.y.push(lookup[t].negLogFDR);
           out.customdata.push(lookup[t].customdata);
-          out.matchingGenes.push(lookup[t].customdata);
+          out.matchingGenes.push(lookup[t].matchingGenes);
         }
       }
       return out;
