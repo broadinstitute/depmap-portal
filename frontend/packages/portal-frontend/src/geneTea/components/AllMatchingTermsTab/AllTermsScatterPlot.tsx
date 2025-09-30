@@ -17,7 +17,10 @@ function AllTermsScatterPlot({
 }: Props) {
   const { selectedPlotOrTableTerms } = useAllTermsContext();
 
-  const [selectedTerm, setSelectedTerm] = useState<string | null>(null);
+  const [selectedTerm, setSelectedTerm] = useState<{
+    matchingGenes: string[];
+    term: string;
+  } | null>(null);
 
   const plotData = useMemo(() => {
     if (!data) {
@@ -249,15 +252,17 @@ function AllTermsScatterPlot({
         xLabel={"Effect Size"}
         yLabel={"-log10(FDR)"}
         onLoad={handleSetPlotElement}
-        onClickPoint={(term: string) => setSelectedTerm(term)}
+        onClickPoint={(term: string, matchingGenes?: string[]) =>
+          setSelectedTerm({ matchingGenes: matchingGenes || [], term })
+        }
       />
 
       <GeneTeaContextModal
         show={Boolean(selectedTerm)}
-        term={selectedTerm || ""}
+        term={selectedTerm?.term || ""}
         synonyms={[]}
         coincident={[]}
-        matchingGenes={[]}
+        matchingGenes={selectedTerm?.matchingGenes || []}
         onClose={() => setSelectedTerm(null)}
       />
     </div>
