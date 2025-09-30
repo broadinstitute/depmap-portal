@@ -279,6 +279,9 @@ function ScatterPlot({
       } else if (curveNumber === 2) {
         indexLabel = data.selectedTerms.indexLabels[pointIndex];
         matchingGenes = data.selectedTerms.matchingGenes[pointIndex];
+      } else if (curveNumber === 3) {
+        indexLabel = data.enrichedTerms.indexLabels[pointIndex];
+        matchingGenes = data.enrichedTerms.matchingGenes[pointIndex];
       }
 
       // TODO update this to handle shift click multi select
