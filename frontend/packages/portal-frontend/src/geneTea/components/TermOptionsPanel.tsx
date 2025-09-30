@@ -76,8 +76,8 @@ const TermOptionsPanel: React.FC = () => {
         <NumberInput
           name="maxTopTerms"
           label="Max. Top Terms/Term Groups"
-          min={3}
-          max={1000}
+          min={1}
+          max={25}
           step={1}
           value={localMaxTopTerms}
           setValue={setLocalMaxTopTerms}
