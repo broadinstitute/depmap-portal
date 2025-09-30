@@ -122,18 +122,32 @@ function PlotSection({
     [handleSetPlotSelectedGenes]
   );
 
-  const searchOpts = useMemo(
-    () =>
-      heatmapFormattedData?.x.map((gene: string, index: number) => {
-        const option = {
-          label: gene,
-          value: index,
-          stringId: gene,
-        };
-        return option;
-      }) || null,
-    [heatmapFormattedData]
-  );
+  const searchOpts = useMemo(() => {
+    if (!heatmapFormattedData || heatmapFormattedData.x.length === 0) {
+      return null;
+    }
+
+    const optionList: {
+      label: string;
+      value: number;
+      stringId: string;
+    }[] = [];
+    const seenGenes: string[] = [];
+
+    heatmapFormattedData?.x.forEach((gene: string, index: number) => {
+      const option = {
+        label: gene,
+        value: index,
+        stringId: gene,
+      };
+      if (!seenGenes.includes(gene)) {
+        optionList.push(option);
+        seenGenes.push(gene);
+      }
+    });
+
+    return optionList;
+  }, [heatmapFormattedData]);
 
   return (
     <div className={styles.PlotSection}>
@@ -149,7 +163,7 @@ function PlotSection({
               PlotToolOptions.ResetSelection,
             ]}
             onSearch={handleSearch}
-            searchOptions={searchOpts}
+            searchOptions={searchOpts || []}
             searchPlaceholder="Search for a gene"
             downloadImageOptions={{
               filename: `genetea-heatmap-bar-plot`,
