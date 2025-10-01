@@ -56,6 +56,7 @@ export async function convertContextV1toV2(
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const hasValidDimensionType =
+    context.context_type === null ||
     context.context_type === "custom" ||
     dimTypes.some((dt) => dt.name === context.context_type);
 
@@ -177,7 +178,7 @@ export async function convertContextV1toV2(
   // work if you try to evaluate it. It can function as the `context` in a
   // DataExplorerPlotConfigDimension (meaning the DimensionSelect component can
   // interpret it).
-  if (context.context_type === "custom") {
+  if (context.context_type === "custom" || context.context_type === null) {
     return { success: true, convertedContext };
   }
 

@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import qs from "qs";
 import omit from "lodash.omit";
 import { Button } from "react-bootstrap";
+import { breadboxAPI, cached } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
 import { ComputeResponseResult, CustomAnalysisResult } from "@depmap/compute";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import {
   DataExplorerPlotConfigDimension,
@@ -59,13 +61,26 @@ function AnalysisResult({ plot, dispatch }: Props) {
       setStatus("loading");
 
       try {
-        const analysisResult = await deprecatedDataExplorerAPI.fetchAnalysisResult(
-          taskId
-        );
+        let analysisResult: ComputeResponseResult | null;
+
+        if (isBreadboxOnlyMode) {
+          const task = await cached(breadboxAPI).getTaskStatus(taskId);
+          analysisResult = task.result;
+        } else {
+          analysisResult = await deprecatedDataExplorerAPI.fetchAnalysisResult(
+            taskId
+          );
+        }
 
         setResult(analysisResult);
-        // IMPORTANT! Keep this as `entityType`
-        setSliceType(analysisResult?.entityType || "custom");
+
+        let nextSliceType: string | null = analysisResult?.entityType || null;
+
+        if (!nextSliceType && !isBreadboxOnlyMode) {
+          nextSliceType = "custom";
+        }
+
+        setSliceType(nextSliceType);
         setStatus("loaded");
       } catch (e) {
         setStatus("error");
@@ -151,7 +166,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
                 }
 
                 const dataset_id = decodeURIComponent(
-                  result.data[0].vectorId.replace(/slice\/([^/]+)\/.*/, "$1")
+                  result.data[0].vectorId.split("/")?.[1]
                 );
 
                 const context = {

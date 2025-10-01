@@ -84,14 +84,8 @@ export function isCompleteDimension(
 
   const { dataset_id, slice_type, axis_type, context, aggregation } = dimension;
 
-  const isNullSliceTypeSupported =
-    context != null &&
-    typeof context === "object" &&
-    "dimension_type" in context;
-
-  const isValidSliceType = isNullSliceTypeSupported
-    ? typeof slice_type === "string" || slice_type === null
-    : Boolean(slice_type);
+  const isValidSliceType =
+    typeof slice_type === "string" || slice_type === null;
 
   return Boolean(
     dataset_id &&
@@ -197,7 +191,7 @@ export async function convertDimensionToSliceQuery(
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimension.slice_type);
 
-  if (!dimType) {
+  if (dimension.slice_type !== null && !dimType) {
     throw new Error(`Unrecognized dimension type "${dimension.slice_type}"!`);
   }
 
@@ -209,7 +203,7 @@ export async function convertDimensionToSliceQuery(
 
   const identifier = expr["=="][1];
   const identifier_type =
-    dimType.axis === "feature" ? "feature_id" : "sample_id";
+    dimType?.axis === "sample" ? "sample_id" : "feature_id";
 
   return {
     identifier,

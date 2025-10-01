@@ -86,6 +86,7 @@ function MatrixDataSelect({ defaultValue, index_type_name, onChange }: Props) {
   return (
     <DimensionSelectV2
       mode="entity-only"
+      allowNullFeatureType
       index_type={index_type_name}
       value={valueAsDimension}
       onChange={async (dimension) => {
