@@ -1,12 +1,14 @@
 import taigapy
 import argparse
 from taigapy.format_utils import write_hdf5
+import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("label")
 parser.add_argument("dataset_id")
 parser.add_argument("conditions_dataset_id")
 parser.add_argument("sample_id_prefix")
+parser.add_argument("source_units")
 parser.add_argument("output_filename")
 args = parser.parse_args()
 
@@ -15,6 +17,7 @@ dataset_id = args.dataset_id
 conditions_dataset_id = args.conditions_dataset_id
 sample_id_prefix = args.sample_id_prefix
 output_filename = args.output_filename
+source_units = args.source_units
 
 tc = taigapy.create_taiga_client_v3()
 
@@ -81,5 +84,11 @@ else:
 
 data_df.columns = [fixup_sample_id(x) for x in data_df.columns]
 data_df = data_df.transpose()
+
+if source_units == "log2(AUC)":
+    # this rule should always generate an HDF5 with AUC units. If the source was log'd, invert the log to get back the AUC value
+    data_df = data_df.apply(lambda x: np.pow(2, x))
+else:
+    assert source_units == "AUC"
 
 write_hdf5(data_df, output_filename)

@@ -102,7 +102,7 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             dataset_str_to_name_mapping[dependency_dataset]
         ).value
         dataset = DependencyDataset.get_dataset_by_name(dataset_name)
-        assert dataset is not None
+        assert dataset is not None, f"Could not find {dataset_name}"
 
         analysis = dict(
             # TODO: Eventually subtype_code should come from the context cache

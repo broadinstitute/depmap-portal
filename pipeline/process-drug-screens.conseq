@@ -11,7 +11,7 @@ rule process_drug_screen_auc_matrix:
       "filename": {"$filename": "{{ inputs.download.label }}.hdf5"},
       "confounders_label": "{{ inputs.download.confounders_label }}"
      }
-   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} {{ inputs.download.label }}.hdf5"
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} '{{inputs.download.source_units | default('AUC')}}' {{ inputs.download.label }}.hdf5"
 
 
 rule process_drug_screen_drc:
