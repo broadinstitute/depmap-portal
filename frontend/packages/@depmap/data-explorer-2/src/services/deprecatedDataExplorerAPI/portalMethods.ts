@@ -223,11 +223,6 @@ export function fetchDimensionLabelsOfDataset(
   dataset_id: string
 ): Promise<{
   labels: string[];
-  aliases: {
-    label: string;
-    slice_id: string;
-    values: string[];
-  }[];
 }> {
   const query = qs.stringify({ dimension_type, dataset_id });
 
