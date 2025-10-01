@@ -1,15 +1,21 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { groupStringsByCondition } from "../utils";
 import useData from "../hooks/useData";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import AllMatchingTermsTab from "./AllMatchingTermsTab/AllMatchingTermsTab";
 import TopTermsTab from "./TopTermsTab/TopTermsTab";
+import NullTermsModal from "./NullTermsModal";
+import { setQueryStringWithoutPageReload } from "@depmap/utils";
 
 interface GeneTeaMainContentProps {
   tab: "top-tea-terms" | "all-matching-terms";
+  handleEnableTopTermsTab: (doEnable: boolean) => void;
 }
 
-function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
+function GeneTeaMainContent({
+  tab,
+  handleEnableTopTermsTab,
+}: GeneTeaMainContentProps) {
   const {
     geneSymbolSelections,
     doGroupTerms,
@@ -80,19 +86,36 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     handleSetErrorMessage
   );
 
-  if (tab === "all-matching-terms") {
-    return (
-      <AllMatchingTermsTab data={allTermsScatterPlotData} rawData={rawData} />
-    );
-  }
+  const [showNoTermsFoundModal, setShowNoTermsFound] = useState<boolean>(
+    rawData?.enrichedTerms === null
+  );
+
+  const handleDisableTopTermsTabAndSelectAllTerms = useCallback(() => {
+    setShowNoTermsFound(false); // Close modal
+    setQueryStringWithoutPageReload("tab", "all-matching-terms"); // Force selection of All Terms tab
+    handleEnableTopTermsTab(false);
+  }, []);
 
   return (
-    <TopTermsTab
-      heatmapData={heatmapData}
-      barChartData={barChartData}
-      heatmapXAxisLabel={heatmapXAxisLabel}
-      rawData={rawData}
-    />
+    <>
+      {tab === "all-matching-terms" ? (
+        <AllMatchingTermsTab data={allTermsScatterPlotData} rawData={rawData} />
+      ) : (
+        <>
+          <TopTermsTab
+            heatmapData={heatmapData}
+            barChartData={barChartData}
+            heatmapXAxisLabel={heatmapXAxisLabel}
+            rawData={rawData}
+          />
+          <NullTermsModal
+            geneSymbolList={Array.from(geneSymbolSelections)}
+            show={showNoTermsFoundModal}
+            onClose={handleDisableTopTermsTabAndSelectAllTerms}
+          />
+        </>
+      )}
+    </>
   );
 }
 

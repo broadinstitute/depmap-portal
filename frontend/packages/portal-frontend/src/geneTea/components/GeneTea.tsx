@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -12,8 +12,11 @@ import { fetchMetadata } from "../utils";
 import glossary from "src/geneTea/json/glossary.json";
 import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
+import { useCallback } from "react";
 
 function GeneTea() {
+  const [enabledTopTermsTab, setEnableTopTermsTab] = useState<boolean>(true);
+
   const { handleSetAllAvailableGenes } = useGeneTeaFiltersContext();
   useEffect(() => {
     (async () => {
@@ -28,6 +31,10 @@ function GeneTea() {
       handleSetAllAvailableGenes(new Set(Object.values(geneMetadata.label)));
     })();
   }, [handleSetAllAvailableGenes]);
+
+  const handleDisableOrEnableTopTermsTab = useCallback((doEnable: boolean) => {
+    setEnableTopTermsTab(doEnable);
+  }, []);
 
   return (
     <div className={styles.page}>
@@ -72,10 +79,16 @@ function GeneTea() {
               </TabList>
               <TabPanels className={styles.TabPanels}>
                 <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent tab="top-tea-terms" />
+                  <GeneTeaMainContent
+                    tab="top-tea-terms"
+                    handleEnableTopTermsTab={handleDisableOrEnableTopTermsTab}
+                  />
                 </TabPanel>
                 <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent tab="all-matching-terms" />
+                  <GeneTeaMainContent
+                    tab="all-matching-terms"
+                    handleEnableTopTermsTab={handleDisableOrEnableTopTermsTab}
+                  />
                 </TabPanel>
               </TabPanels>
             </TabsWithHistory>
