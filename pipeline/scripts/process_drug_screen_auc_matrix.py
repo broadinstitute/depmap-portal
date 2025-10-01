@@ -87,7 +87,7 @@ data_df = data_df.transpose()
 
 if source_units == "log2(AUC)":
     # this rule should always generate an HDF5 with AUC units. If the source was log'd, invert the log to get back the AUC value
-    data_df = data_df.apply(lambda x: np.pow(2, x))
+    data_df = data_df.apply(lambda x: 2 ** x)
 else:
     assert source_units == "AUC"
 
