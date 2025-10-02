@@ -1,7 +1,6 @@
 import React from "react";
 import { Button, Modal } from "react-bootstrap";
 import styles from "../styles/GeneTea.scss";
-import renderConditionally from "@depmap/data-explorer-2/src/utils/render-conditionally";
 
 interface Props {
   geneSymbolList: string[];
@@ -10,13 +9,16 @@ interface Props {
 }
 
 function NullTermsModal({ onClose, show, geneSymbolList }: Props) {
-  console.log(geneSymbolList);
   return (
-    <Modal show={show} bsSize="large" onHide={onClose}>
+    <Modal show={show} bsSize="small" onHide={onClose}>
       <Modal.Header closeButton>
         <Modal.Title>No Enriched Terms Found</Modal.Title>
       </Modal.Header>
-      <Modal.Body className={styles.GeneTeaModal} />
+      <Modal.Body className={styles.GeneTeaModal} height={"50px"}>
+        There were no enriched terms found for this gene list:{" "}
+        {geneSymbolList.join(", ")}. Explore All Matching Terms, or try a new
+        gene list.
+      </Modal.Body>
       <Modal.Footer>
         <Button onClick={onClose}>Close</Button>
       </Modal.Footer>
@@ -24,4 +26,4 @@ function NullTermsModal({ onClose, show, geneSymbolList }: Props) {
   );
 }
 
-export default renderConditionally(NullTermsModal);
+export default NullTermsModal;

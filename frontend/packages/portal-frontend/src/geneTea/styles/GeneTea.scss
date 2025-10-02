@@ -71,3 +71,9 @@
     color: #fff;
   }
 }
+
+.GeneTeaModal {
+  @media screen and (min-height: 510px) {
+    height: 100px;
+  }
+}

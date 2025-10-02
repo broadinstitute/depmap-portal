@@ -142,23 +142,26 @@ function ScatterPlot({
       },
     };
 
-    const enrichedTermsData: PlotlyData = {
-      type,
-      name: `Enriched Terms n=(${data.enrichedTerms.x.length})`,
-      mode: "markers",
-      x: data.enrichedTerms.x,
-      y: data.enrichedTerms.y as any,
-      customdata: data.enrichedTerms.customdata,
-      hovertemplate: "%{customdata}<extra></extra>",
-      marker: {
-        color: "#00ff2ffc",
-        size: 10,
-        line: {
-          color: "rgba(77, 72, 72, 1)", // Black color for the outline
-          width: 1, // 1px width for the outline
-        },
-      },
-    };
+    const enrichedTermsData: PlotlyData | undefined =
+      data.enrichedTerms === null
+        ? undefined
+        : {
+            type,
+            name: `Enriched Terms n=(${data.enrichedTerms.x.length})`,
+            mode: "markers",
+            x: data.enrichedTerms.x,
+            y: data.enrichedTerms.y as any,
+            customdata: data.enrichedTerms.customdata,
+            hovertemplate: "%{customdata}<extra></extra>",
+            marker: {
+              color: "#00ff2ffc",
+              size: 10,
+              line: {
+                color: "rgba(77, 72, 72, 1)", // Black color for the outline
+                width: 1, // 1px width for the outline
+              },
+            },
+          };
 
     const selectedTermsData: PlotlyData = {
       type,
@@ -182,8 +185,11 @@ function ScatterPlot({
       stopwordsData,
       otherTermsData,
       selectedTermsData,
-      enrichedTermsData,
     ];
+
+    if (enrichedTermsData) {
+      plotlyData.push(enrichedTermsData);
+    }
 
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,

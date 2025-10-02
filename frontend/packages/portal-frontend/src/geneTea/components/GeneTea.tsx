@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -12,7 +12,6 @@ import { fetchMetadata } from "../utils";
 import glossary from "src/geneTea/json/glossary.json";
 import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
-import { useCallback } from "react";
 
 function GeneTea() {
   const [enabledTopTermsTab, setEnableTopTermsTab] = useState<boolean>(true);
@@ -70,7 +69,11 @@ function GeneTea() {
               isLazy
             >
               <TabList className={styles.TabList}>
-                <Tab id="top-tea-terms" className={styles.Tab}>
+                <Tab
+                  id="top-tea-terms"
+                  className={styles.Tab}
+                  disabled={!enabledTopTermsTab}
+                >
                   Top Tea Terms
                 </Tab>
                 <Tab id="all-matching-terms" className={styles.Tab}>

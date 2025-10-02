@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { groupStringsByCondition } from "../utils";
 import useData from "../hooks/useData";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
@@ -86,15 +86,24 @@ function GeneTeaMainContent({
     handleSetErrorMessage
   );
 
-  const [showNoTermsFoundModal, setShowNoTermsFound] = useState<boolean>(
-    rawData?.enrichedTerms === null
-  );
+  const [showNoTermsFoundModal, setShowNoTermsFound] = useState<boolean>(false);
 
   const handleDisableTopTermsTabAndSelectAllTerms = useCallback(() => {
-    setShowNoTermsFound(false); // Close modal
     setQueryStringWithoutPageReload("tab", "all-matching-terms"); // Force selection of All Terms tab
     handleEnableTopTermsTab(false);
-  }, []);
+  }, [handleEnableTopTermsTab]);
+
+  useEffect(() => {
+    if (rawData?.enrichedTerms === null) {
+      setShowNoTermsFound(true);
+    } else {
+      handleEnableTopTermsTab(true);
+    }
+  }, [
+    rawData?.enrichedTerms,
+    handleEnableTopTermsTab,
+    handleDisableTopTermsTabAndSelectAllTerms,
+  ]);
 
   return (
     <>
@@ -108,13 +117,16 @@ function GeneTeaMainContent({
             heatmapXAxisLabel={heatmapXAxisLabel}
             rawData={rawData}
           />
-          <NullTermsModal
-            geneSymbolList={Array.from(geneSymbolSelections)}
-            show={showNoTermsFoundModal}
-            onClose={handleDisableTopTermsTabAndSelectAllTerms}
-          />
         </>
       )}
+      <NullTermsModal
+        geneSymbolList={Array.from(geneSymbolSelections)}
+        show={showNoTermsFoundModal}
+        onClose={() => {
+          handleDisableTopTermsTabAndSelectAllTerms();
+          setShowNoTermsFound(false);
+        }}
+      />
     </>
   );
 }

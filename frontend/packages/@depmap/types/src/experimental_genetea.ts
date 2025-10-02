@@ -90,7 +90,7 @@ export interface GeneTeaScatterPlotData {
   allEnriched: {
     data: FrequentTerms;
     customdata: string[];
-  };
+  } | null;
   stopwords: {
     data: FrequentTerms;
     customdata: string[];
