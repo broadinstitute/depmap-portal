@@ -170,11 +170,14 @@ export async function fetchGeneTeaEnrichmentExperimental(
         }
       : null;
 
+  // TODO reorganize so this disabling is not necessary!!!
+  /* eslint-disable no-nested-ternary */
   const termClusterTermOrGroup = !plottingPayload.term_cluster
     ? null
     : doGroupTerms
     ? plottingPayload.term_cluster["Term Group"]
     : plottingPayload.term_cluster.Term;
+  /* eslint-enable no-nested-ternary */
 
   const termCluster = !plottingPayload.term_cluster
     ? null

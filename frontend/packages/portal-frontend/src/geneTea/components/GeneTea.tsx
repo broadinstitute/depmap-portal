@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -14,8 +14,6 @@ import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
 
 function GeneTea() {
-  const [enabledTopTermsTab, setEnableTopTermsTab] = useState<boolean>(true);
-
   const { handleSetAllAvailableGenes } = useGeneTeaFiltersContext();
   useEffect(() => {
     (async () => {
@@ -30,10 +28,6 @@ function GeneTea() {
       handleSetAllAvailableGenes(new Set(Object.values(geneMetadata.label)));
     })();
   }, [handleSetAllAvailableGenes]);
-
-  const handleDisableOrEnableTopTermsTab = useCallback((doEnable: boolean) => {
-    setEnableTopTermsTab(doEnable);
-  }, []);
 
   return (
     <div className={styles.page}>
@@ -57,23 +51,9 @@ function GeneTea() {
             <SearchOptionsContainer />
           </div>
           <div className={styles.geneTeaTabsWrapper}>
-            <TabsWithHistory
-              className={styles.Tabs}
-              onChange={() => {
-                /* add something later */
-              }}
-              onSetInitialIndex={() => {
-                /* add something later */
-              }}
-              isManual
-              isLazy
-            >
+            <TabsWithHistory className={styles.Tabs} isManual isLazy>
               <TabList className={styles.TabList}>
-                <Tab
-                  id="top-tea-terms"
-                  className={styles.Tab}
-                  disabled={!enabledTopTermsTab}
-                >
+                <Tab id="top-tea-terms" className={styles.Tab}>
                   Top Tea Terms
                 </Tab>
                 <Tab id="all-matching-terms" className={styles.Tab}>
@@ -82,16 +62,10 @@ function GeneTea() {
               </TabList>
               <TabPanels className={styles.TabPanels}>
                 <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent
-                    tab="top-tea-terms"
-                    handleEnableTopTermsTab={handleDisableOrEnableTopTermsTab}
-                  />
+                  <GeneTeaMainContent tab="top-tea-terms" />
                 </TabPanel>
                 <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent
-                    tab="all-matching-terms"
-                    handleEnableTopTermsTab={handleDisableOrEnableTopTermsTab}
-                  />
+                  <GeneTeaMainContent tab="all-matching-terms" />
                 </TabPanel>
               </TabPanels>
             </TabsWithHistory>

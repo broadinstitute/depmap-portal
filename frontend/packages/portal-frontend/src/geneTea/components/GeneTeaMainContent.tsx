@@ -1,21 +1,15 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo } from "react";
 import { groupStringsByCondition } from "../utils";
 import useData from "../hooks/useData";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import AllMatchingTermsTab from "./AllMatchingTermsTab/AllMatchingTermsTab";
 import TopTermsTab from "./TopTermsTab/TopTermsTab";
-import NullTermsModal from "./NullTermsModal";
-import { setQueryStringWithoutPageReload } from "@depmap/utils";
 
 interface GeneTeaMainContentProps {
   tab: "top-tea-terms" | "all-matching-terms";
-  handleEnableTopTermsTab: (doEnable: boolean) => void;
 }
 
-function GeneTeaMainContent({
-  tab,
-  handleEnableTopTermsTab,
-}: GeneTeaMainContentProps) {
+function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
   const {
     geneSymbolSelections,
     doGroupTerms,
@@ -86,47 +80,32 @@ function GeneTeaMainContent({
     handleSetErrorMessage
   );
 
-  const [showNoTermsFoundModal, setShowNoTermsFound] = useState<boolean>(false);
-
-  const handleDisableTopTermsTabAndSelectAllTerms = useCallback(() => {
-    setQueryStringWithoutPageReload("tab", "all-matching-terms"); // Force selection of All Terms tab
-    handleEnableTopTermsTab(false);
-  }, [handleEnableTopTermsTab]);
-
-  useEffect(() => {
-    if (rawData?.enrichedTerms === null) {
-      setShowNoTermsFound(true);
-    } else {
-      handleEnableTopTermsTab(true);
-    }
-  }, [
-    rawData?.enrichedTerms,
-    handleEnableTopTermsTab,
-    handleDisableTopTermsTabAndSelectAllTerms,
-  ]);
-
   return (
     <>
       {tab === "all-matching-terms" ? (
         <AllMatchingTermsTab data={allTermsScatterPlotData} rawData={rawData} />
       ) : (
         <>
-          <TopTermsTab
-            heatmapData={heatmapData}
-            barChartData={barChartData}
-            heatmapXAxisLabel={heatmapXAxisLabel}
-            rawData={rawData}
-          />
+          {rawData?.enrichedTerms === null ? (
+            <div>
+              <h2>No Enriched Terms Found</h2>
+              <h4>
+                {" "}
+                There were no enriched terms found for this gene list:{" "}
+                {Array.from(geneSymbolSelections).join(", ")}. Explore All
+                Matching Terms, or try a new gene list.
+              </h4>
+            </div>
+          ) : (
+            <TopTermsTab
+              heatmapData={heatmapData}
+              barChartData={barChartData}
+              heatmapXAxisLabel={heatmapXAxisLabel}
+              rawData={rawData}
+            />
+          )}
         </>
       )}
-      <NullTermsModal
-        geneSymbolList={Array.from(geneSymbolSelections)}
-        show={showNoTermsFoundModal}
-        onClose={() => {
-          handleDisableTopTermsTabAndSelectAllTerms();
-          setShowNoTermsFound(false);
-        }}
-      />
     </>
   );
 }
