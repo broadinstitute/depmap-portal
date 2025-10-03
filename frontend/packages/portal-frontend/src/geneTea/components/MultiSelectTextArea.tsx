@@ -29,6 +29,7 @@ const MultiSelectTextarea: React.FC = () => {
     handleSetError,
     error,
     errorMessage,
+    isLoading,
   } = useGeneTeaFiltersContext();
 
   const [inputValue, setInputValue] = useState("");
@@ -121,6 +122,7 @@ const MultiSelectTextarea: React.FC = () => {
                 {chip}
                 <button
                   type="button"
+                  disabled={isLoading}
                   className={styles.chipRemoveButton}
                   onClick={() => handleRemoveChip(chip)}
                 >
@@ -189,7 +191,10 @@ const MultiSelectTextarea: React.FC = () => {
         </Button>
         <Button
           className={styles.clearInputButton}
-          disabled={inputValue.length === 0 && geneSymbolSelections.size === 0}
+          disabled={
+            (inputValue.length === 0 && geneSymbolSelections.size === 0) ||
+            isLoading
+          }
           onClick={() => {
             handleSetGeneSymbolSelections(() => new Set());
             handleSetValidGeneSymbols(new Set());
