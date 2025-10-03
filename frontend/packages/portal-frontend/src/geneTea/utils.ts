@@ -1,38 +1,55 @@
 import { breadboxAPI, cached } from "@depmap/api";
 
 export const tableColumns = [
-  { accessor: "term", Header: "Term", minWidth: 100 },
+  {
+    accessor: "term",
+    Header: "Term",
+    helperText:
+      "The '~' prefix indicates a synonym set, with sub-terms defined in the ‘Synonyms’ column.",
+    minWidth: 100,
+  },
   {
     accessor: "termGroup",
     Header: "Term Group",
+    helperText:
+      "The '++' suffix indicates the term is a member of a group. All terms in a group share the same value in this column.",
     minWidth: 180,
   },
   {
     accessor: "fdr",
     Header: "FDR",
+    helperText:
+      "False discovery rate value, from Benjamini-Hochberg correction of hypergeometric test p-values.",
     minWidth: 80,
   },
   {
     accessor: "effectSize",
     Header: "Effect Size",
+    helperText:
+      "Sum of tf-idf across query genes. This measures the total information encoded by this term for the query, and approximates its specificity.",
     minWidth: 80,
   },
   {
     accessor: "matchingGenesInList",
     Header: "Matching Query",
+    helperText: "Genes in query whose descriptions contain the term.",
     minWidth: 100,
   },
   {
     accessor: "nMatchingGenesInList",
     Header: "n Matching Query",
+    helperText: "Number of genes in query whose descriptions contain the term.",
   },
   {
     accessor: "nMatchingGenesOverall",
     Header: "n Matching Overall",
+    helperText:
+      "Number of genes in background whose descriptions contain the term. This defines how common a term is.",
   },
   {
     accessor: "synonyms",
     Header: "Synonyms",
+    helperText: "Semicolon-separated list of terms making up a synonym set.",
     minWidth: 200,
   },
 ];
