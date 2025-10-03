@@ -8,12 +8,26 @@ import PlotOptionsPanel from "./PlotOptionsPanel";
 import TermOptionsPanel from "./TermOptionsPanel";
 import MultiSelectTextArea from "./MultiSelectTextArea";
 import LoadFromGeneContextSection from "./LoadFromGeneContextSection";
+import { Tooltip } from "@depmap/common-components";
+import PurpleHelpIcon from "./PurpleHelpIcon";
 
 function SearchOptionsContainer() {
   return (
     <div className={styles.SearchOptionsContainer}>
       <Tabs className={styles.Tabs} id={"gene-tea-filter-tabs"}>
-        <Tab eventKey={"List"} title={"List"} className={styles.Tab}>
+        <Tab
+          eventKey={"List"}
+          title={
+            <Tooltip
+              id="list-tab-tooltip"
+              content={"Query GeneTEA with a list of genes"}
+              placement="top"
+            >
+              <div>List</div>
+            </Tooltip>
+          }
+          className={styles.Tab}
+        >
           <MultiSelectTextArea />
           <div
             style={{
@@ -22,7 +36,15 @@ function SearchOptionsContainer() {
               marginBottom: "25px",
             }}
           >
-            <h4 className={styles.sectionTitle}>Load Gene Context</h4>
+            <h4 className={styles.sectionTitle}>
+              Load Gene Context{" "}
+              <span>
+                <PurpleHelpIcon
+                  tooltipText="Select a gene context to test for enrichment."
+                  popoverId="load-gene-context-help"
+                />
+              </span>
+            </h4>
             <LoadFromGeneContextSection />
           </div>
           <SectionStack>

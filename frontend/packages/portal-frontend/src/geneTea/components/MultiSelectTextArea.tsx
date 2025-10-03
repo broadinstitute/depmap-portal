@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import styles from "../styles/MultiSelectTextArea.scss";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 import { MAX_GENES_ALLOWED } from "../types";
+import PurpleHelpIcon from "./PurpleHelpIcon";
 
 // TODO move to utils
 function replaceLineBreaksWithSingleSpace(text: string): string {
@@ -84,7 +85,15 @@ const MultiSelectTextarea: React.FC = () => {
 
   return (
     <div className={styles.multiSelectTextareaContainer}>
-      <h4 className={styles.sectionTitle}>Enter Gene Symbols</h4>
+      <h4 className={styles.sectionTitle}>
+        Enter Gene Symbols{" "}
+        <span>
+          <PurpleHelpIcon
+            tooltipText="Type or paste a set of 2-1000 gene symbols to test for enrichment."
+            popoverId="enter-gene-symbol-help"
+          />
+        </span>
+      </h4>
       {geneSymbolSelections.size < 3 && (
         <h5 className={styles.sectionSubTitle}>
           Please enter between 3 and 1000 gene symbols.
