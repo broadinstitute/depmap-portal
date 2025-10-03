@@ -122,6 +122,7 @@ const MultiSelectTextarea: React.FC = () => {
                 {chip}
                 <button
                   type="button"
+                  disabled={isLoading}
                   className={styles.chipRemoveButton}
                   onClick={() => handleRemoveChip(chip)}
                 >
