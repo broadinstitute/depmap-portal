@@ -1,7 +1,7 @@
 .geneTeaTabLayout {
   display: grid;
-  grid-template-columns: 2fr 10fr;
-  grid-template-areas: "filters filters main main main main main main main main main main";
+  grid-template-columns: 1fr 10fr;
+  grid-template-areas: "filters main main main main main main main main main main";
   min-height: 100vh;
 
   @media (max-width: 1200px) {

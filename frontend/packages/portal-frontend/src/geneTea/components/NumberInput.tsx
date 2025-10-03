@@ -1,9 +1,11 @@
 import React from "react";
 import styles from "../styles/NumberInput.scss";
+import PurpleHelpIcon from "./PurpleHelpIcon";
 
 interface NumberInputProps {
   name: string;
   label: string;
+  purpleHelpIcon?: React.ReactNode;
   min?: number;
   max?: number;
   step?: number;
@@ -16,6 +18,7 @@ interface NumberInputProps {
 const NumberInput: React.FC<NumberInputProps> = ({
   name,
   label,
+  purpleHelpIcon = undefined,
   min = 0,
   max = undefined,
   step = 1,
@@ -26,7 +29,7 @@ const NumberInput: React.FC<NumberInputProps> = ({
 }) => (
   <div className={styles.NumberInput}>
     <label htmlFor={name} className={styles.inputLabel}>
-      {label}
+      {label} {purpleHelpIcon && <span>{purpleHelpIcon}</span>}
     </label>
     <input
       id={name}
