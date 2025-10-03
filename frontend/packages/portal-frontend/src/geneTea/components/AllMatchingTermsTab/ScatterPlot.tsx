@@ -108,7 +108,7 @@ function ScatterPlot({
 
     const stopwordsData: PlotlyData = {
       type,
-      name: `Stopwords n=(${data.stopwords.x.length})`,
+      name: `Stopwords (n=${data.stopwords.x.length})`,
       mode: "markers",
       x: data.stopwords.x,
       y: data.stopwords.y as any,
@@ -126,7 +126,7 @@ function ScatterPlot({
 
     const otherTermsData: PlotlyData = {
       type,
-      name: `Other Terms n=(${data.otherTerms.x.length})`,
+      name: `Other Terms (n=${data.otherTerms.x.length})`,
       mode: "markers",
       x: data.otherTerms.x,
       y: data.otherTerms.y as any,
@@ -147,7 +147,7 @@ function ScatterPlot({
         ? undefined
         : {
             type,
-            name: `Enriched Terms n=(${data.enrichedTerms.x.length})`,
+            name: `Enriched Terms (n=${data.enrichedTerms.x.length})`,
             mode: "markers",
             x: data.enrichedTerms.x,
             y: data.enrichedTerms.y as any,
@@ -165,7 +165,7 @@ function ScatterPlot({
 
     const selectedTermsData: PlotlyData = {
       type,
-      name: `Selected Terms n=(${data.selectedTerms.x.length})`,
+      name: `Selected Terms (n=${data.selectedTerms.x.length})`,
       mode: "markers",
       x: data.selectedTerms.x,
       y: data.selectedTerms.y as any,
