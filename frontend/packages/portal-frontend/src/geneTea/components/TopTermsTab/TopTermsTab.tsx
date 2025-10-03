@@ -9,6 +9,7 @@ import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 import PlotSection from "./PlotSection";
 import PlotSelections from "./PlotSelections";
+import PurpleHelpIcon from "../PurpleHelpIcon";
 
 interface TopTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
@@ -100,6 +101,20 @@ function TopTermsTab({
         <h3 className={styles.mainContentHeaderTitle}>
           Top {maxTopTerms} Tea {doGroupTerms ? "Term Groups" : "Terms"}
         </h3>
+        <div className={styles.mainContentSubtitle}>
+          The plot below shows the top enriched terms identified by GeneTEA. The
+          heatmap indicates which terms appear in a given query gene’s
+          description, while the barplot shows the FDR-corrected significance
+          values.{" "}
+          <PurpleHelpIcon
+            tooltipText="Interaction with the heatmap will offer more information about
+          selected genes, while interaction with the barplot offers the
+          opportunity to refer to the relevant text excerpts for a given term.
+          To see the enrichment results across all terms matching the query,
+          navigate to the ‘All Matching Terms’ tab above."
+            popoverId="top-terms-subtitle-help"
+          />
+        </div>
       </div>
       {!isLoading && error ? (
         <div className={styles.errorMessage}>Error loading plot data.</div>
