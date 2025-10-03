@@ -1,6 +1,5 @@
 import React from "react";
 import styles from "../styles/NumberInput.scss";
-import PurpleHelpIcon from "./PurpleHelpIcon";
 
 interface NumberInputProps {
   name: string;
