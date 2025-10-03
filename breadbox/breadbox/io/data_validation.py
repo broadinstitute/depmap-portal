@@ -11,7 +11,9 @@ import pandera as pa
 from pandera.errors import SchemaError, SchemaErrorReason
 from fastapi import UploadFile
 from sqlalchemy import and_, or_
+import logging
 
+log = logging.getLogger(__name__)
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
@@ -25,6 +27,7 @@ from breadbox.schemas.dataframe_wrapper import (
     DataFrameWrapper,
     PandasDataFrameWrapper,
     ParquetDataFrameWrapper,
+    HDF5DataFrameWrapper,
 )
 from breadbox.io.filestore_crud import save_dataset_file
 from breadbox.schemas.custom_http_exception import (
@@ -220,24 +223,26 @@ def _validate_data_value_type(
         return dfw
 
 
-def _read_parquet(file) -> ParquetDataFrameWrapper:
-    parquet_wrapper = ParquetDataFrameWrapper(file)
-    cols = parquet_wrapper.get_column_names()
+def _check_for_unique_col_row_names(dfw):
+    cols = dfw.get_column_names()
     if len(cols) != len(set(cols)):
-        raise FileValidationError(
-            f"Make sure all column names in the parquet file are unique."
-        )
-    indices = parquet_wrapper.get_index_names()
+        raise FileValidationError(f"Make sure all column names in the file are unique.")
+    indices = dfw.get_index_names()
     if len(indices) != len(set(indices)):
         raise FileValidationError(
-            f"Make sure all index names (col 0) in the parquet file are unique."
+            f"Make sure all index names (col 0) in the file are unique."
         )
-    # the first column will be treated as the index. Make sure it's of type string
-    index_col = parquet_wrapper.schema.names[0]
-    if not pyarrow.types.is_string(parquet_wrapper.schema.field(index_col).type):
-        raise FileValidationError(
-            f"Make sure the first column in the parquet file is the index and is of type string."
-        )
+
+
+def _read_hdf5(file) -> HDF5DataFrameWrapper:
+    dfw = HDF5DataFrameWrapper(file)
+    _check_for_unique_col_row_names(dfw)
+    return dfw
+
+
+def _read_parquet(file) -> ParquetDataFrameWrapper:
+    parquet_wrapper = ParquetDataFrameWrapper(file)
+    _check_for_unique_col_row_names(parquet_wrapper)
     return parquet_wrapper
 
 
@@ -457,6 +462,8 @@ def validate_and_upload_dataset_files(
         unchecked_dfw = _read_csv(data_file.file, value_type)
     elif data_file_format == "parquet":
         unchecked_dfw = _read_parquet(data_file.file)
+    elif data_file_format == "hdf5":
+        unchecked_dfw = _read_hdf5(data_file.file)
     else:
         raise FileValidationError(
             f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'

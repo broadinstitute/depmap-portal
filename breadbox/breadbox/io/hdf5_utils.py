@@ -4,7 +4,6 @@ from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     LargeDatasetReadError,
 )
-from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
 import h5py
 import numpy as np
 import pandas as pd
@@ -70,8 +69,6 @@ def write_hdf5_file(
                     data=df.values,
                 )
         else:
-            assert isinstance(df_wrapper, ParquetDataFrameWrapper)
-            # For ParquetDataFrameWrapper
             # NOTE: Our number of columns are usually much larger than rows so we batch by columns to avoid memory issues
             # TODO: If hdf5 file size becomes an issue, we can consider using compression or chunking
             cols = df_wrapper.get_column_names()
