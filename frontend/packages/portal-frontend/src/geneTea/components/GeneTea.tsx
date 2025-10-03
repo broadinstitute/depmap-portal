@@ -51,17 +51,7 @@ function GeneTea() {
             <SearchOptionsContainer />
           </div>
           <div className={styles.geneTeaTabsWrapper}>
-            <TabsWithHistory
-              className={styles.Tabs}
-              onChange={() => {
-                /* add something later */
-              }}
-              onSetInitialIndex={() => {
-                /* add something later */
-              }}
-              isManual
-              isLazy
-            >
+            <TabsWithHistory className={styles.Tabs} isManual isLazy>
               <TabList className={styles.TabList}>
                 <Tab id="top-tea-terms" className={styles.Tab}>
                   Top Tea Terms
