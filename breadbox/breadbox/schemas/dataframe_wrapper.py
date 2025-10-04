@@ -51,12 +51,16 @@ class HDF5DataFrameWrapper(DataFrameWrapper):
 
     def get_index_names(self) -> List[str]:
         if self.dim_0 is None:
-            self.dim_0 = [x.decode("utf8") for x in self.file["dim_0"]]
+            self.dim_0 = [
+                x.decode("utf8") for x in self.file["dim_0"]
+            ]  # pyright: ignore
         return self.dim_0
 
     def get_column_names(self) -> List[str]:
         if self.dim_1 is None:
-            self.dim_1 = [x.decode("utf8") for x in self.file["dim_1"]]
+            self.dim_1 = [
+                x.decode("utf8") for x in self.file["dim_1"]
+            ]  # pyright: ignore
         return self.dim_1
 
     def _get_column_names_to_index(self):
@@ -86,14 +90,16 @@ class HDF5DataFrameWrapper(DataFrameWrapper):
         # read the columns from the hdf5 file
         matrix = self.file["data"][
             :, [src_index for src_index, _, _ in column_src_index_with_dest_index]
-        ]
+        ]  # pyright: ignore
 
         # now copy them into a map that we'll use to construct the dataframe
         df_columns = {}
         for _, matrix_index, column_name in column_src_index_with_dest_index:
-            df_columns[column_name] = matrix[:, matrix_index]
+            df_columns[column_name] = matrix[:, matrix_index]  # pyright: ignore
 
-        return pd.DataFrame(df_columns, columns=columns, index=self.get_index_names())
+        return pd.DataFrame(
+            df_columns, columns=columns, index=self.get_index_names()
+        )  # pyright: ignore
 
     def is_sparse(self) -> bool:
         # For now, we bypass checking sparsity for hdf5 files to keep things simple
