@@ -55,7 +55,7 @@ def write_hdf5_file(
                     ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
                 )
                 # only insert nonnull values into hdf5 at given positions
-                for row_idx, col_idx in df_wrapper.nonnull_indices:
+                for row_idx, col_idx in df_wrapper.get_nonnull_indices():
                     dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
             else:
                 if dtype == "str":
