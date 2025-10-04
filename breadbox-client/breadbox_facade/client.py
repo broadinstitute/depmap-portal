@@ -367,20 +367,17 @@ class BBClient:
         if data_file_name is not None:
             assert data_file_format is not None, "If data_filename is specified, then also specify data_file_format"
             assert data_df is None, "Cannot have both data_filename and data_df not None"
-        else:
-            assert data_df is not None, "If data_filename is not specified, data_df must be"
-            assert data_file_format is None, "if data_filename is not specified, data_file_format must also be provided"
-
-        if data_file_name is not None:
             # okay, we're uploading a file
             with open(data_file_name, "rb") as f:
                 uploaded_file = self.upload_file(f)
         else:
+            assert data_df is not None, "If data_filename is not specified, data_df must be"
+            assert data_file_format is None, "if data_filename is not specified, data_file_format must also be provided"
             log_status("Writing CSV")
             buffer = io.BytesIO(data_df.to_csv(index=False).encode("utf8"))
             log_status(f"Uploading CSV")
             uploaded_file = self.upload_file(file_handle=buffer)
-            data_file_format=MatrixDatasetParamsDataFileFormat.CSV
+            data_file_format="csv"
 
         params = MatrixDatasetParams(
             name=name,
@@ -399,7 +396,9 @@ class BBClient:
             priority=priority if priority else UNSET,
             taiga_id=taiga_id if taiga_id else UNSET,
             given_id=given_id if given_id else UNSET,
-            data_file_format={"csv": MatrixDatasetParamsDataFileFormat.CSV, "parquet": MatrixDatasetParamsDataFileFormat.PARQUET, "hdf5": MatrixDatasetParamsDataFileFormat.HDF5}[data_file_format],
+            data_file_format=({"csv": MatrixDatasetParamsDataFileFormat.CSV, 
+            "parquet": MatrixDatasetParamsDataFileFormat.PARQUET, 
+            "hdf5": MatrixDatasetParamsDataFileFormat.HDF5}[str(data_file_format)]),
             description=description
         )
         log_status(f"calling add_dataset_uploads_client.sync_detailed")
