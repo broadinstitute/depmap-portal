@@ -39,7 +39,9 @@ class DataFrameWrapper(Protocol):
 class HDF5DataFrameWrapper(DataFrameWrapper):
     def __init__(self, filename: str):
         self.filename = filename
-        self.file = h5py.File(filename, "r")
+        self.file: Any = h5py.File(
+            filename, "r"
+        )  # the type hints on h5py appear to not understand that a Dataset is indexable, so disable typing for this field
         # cached mapping from name to index
         self.dim_0 = None
         self.dim_1 = None
@@ -51,16 +53,12 @@ class HDF5DataFrameWrapper(DataFrameWrapper):
 
     def get_index_names(self) -> List[str]:
         if self.dim_0 is None:
-            self.dim_0 = [
-                x.decode("utf8") for x in self.file["dim_0"]
-            ]  # pyright: ignore
+            self.dim_0 = [x.decode("utf8") for x in self.file["dim_0"]]
         return self.dim_0
 
     def get_column_names(self) -> List[str]:
         if self.dim_1 is None:
-            self.dim_1 = [
-                x.decode("utf8") for x in self.file["dim_1"]
-            ]  # pyright: ignore
+            self.dim_1 = [x.decode("utf8") for x in self.file["dim_1"]]
         return self.dim_1
 
     def _get_column_names_to_index(self):
@@ -90,16 +88,17 @@ class HDF5DataFrameWrapper(DataFrameWrapper):
         # read the columns from the hdf5 file
         matrix = self.file["data"][
             :, [src_index for src_index, _, _ in column_src_index_with_dest_index]
-        ]  # pyright: ignore
+        ]
 
         # now copy them into a map that we'll use to construct the dataframe
         df_columns = {}
         for _, matrix_index, column_name in column_src_index_with_dest_index:
-            df_columns[column_name] = matrix[:, matrix_index]  # pyright: ignore
+            df_columns[column_name] = matrix[:, matrix_index]
 
+        # typechecked does not like columns and index due to bug in pandas https://github.com/pandas-dev/pandas/issues/56995
         return pd.DataFrame(
-            df_columns, columns=columns, index=self.get_index_names()
-        )  # pyright: ignore
+            df_columns, columns=columns, index=self.get_index_names()  # pyright: ignore
+        )
 
     def is_sparse(self) -> bool:
         # For now, we bypass checking sparsity for hdf5 files to keep things simple
