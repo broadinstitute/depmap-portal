@@ -563,7 +563,8 @@ def read_and_validate_matrix_df(
 
     if data_file_format == "parquet":
         df_wrapper = _read_parquet(file_path)
-
+    elif data_file_format == "hdf5":
+        df_wrapper = _read_hdf5(file_path)
     elif data_file_format == "csv":
         with open(file_path, "rb") as fd:
             df_wrapper = _read_csv(fd, value_type)
