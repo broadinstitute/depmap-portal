@@ -108,7 +108,7 @@ function ScatterPlot({
 
     const stopwordsData: PlotlyData = {
       type,
-      name: `Stopwords n=(${data.stopwords.x.length})`,
+      name: `Stopwords (n=${data.stopwords.x.length})`,
       mode: "markers",
       x: data.stopwords.x,
       y: data.stopwords.y as any,
@@ -126,7 +126,7 @@ function ScatterPlot({
 
     const otherTermsData: PlotlyData = {
       type,
-      name: `Other Terms n=(${data.otherTerms.x.length})`,
+      name: `Other Terms (n=${data.otherTerms.x.length})`,
       mode: "markers",
       x: data.otherTerms.x,
       y: data.otherTerms.y as any,
@@ -142,27 +142,30 @@ function ScatterPlot({
       },
     };
 
-    const enrichedTermsData: PlotlyData = {
-      type,
-      name: `Enriched Terms n=(${data.enrichedTerms.x.length})`,
-      mode: "markers",
-      x: data.enrichedTerms.x,
-      y: data.enrichedTerms.y as any,
-      customdata: data.enrichedTerms.customdata,
-      hovertemplate: "%{customdata}<extra></extra>",
-      marker: {
-        color: "#00ff2ffc",
-        size: 10,
-        line: {
-          color: "rgba(77, 72, 72, 1)", // Black color for the outline
-          width: 1, // 1px width for the outline
-        },
-      },
-    };
+    const enrichedTermsData: PlotlyData | undefined =
+      data.enrichedTerms === null
+        ? undefined
+        : {
+            type,
+            name: `Enriched Terms (n=${data.enrichedTerms.x.length})`,
+            mode: "markers",
+            x: data.enrichedTerms.x,
+            y: data.enrichedTerms.y as any,
+            customdata: data.enrichedTerms.customdata,
+            hovertemplate: "%{customdata}<extra></extra>",
+            marker: {
+              color: "#00ff2ffc",
+              size: 10,
+              line: {
+                color: "rgba(77, 72, 72, 1)", // Black color for the outline
+                width: 1, // 1px width for the outline
+              },
+            },
+          };
 
     const selectedTermsData: PlotlyData = {
       type,
-      name: `Selected Terms n=(${data.selectedTerms.x.length})`,
+      name: `Selected Terms (n=${data.selectedTerms.x.length})`,
       mode: "markers",
       x: data.selectedTerms.x,
       y: data.selectedTerms.y as any,
@@ -182,8 +185,11 @@ function ScatterPlot({
       stopwordsData,
       otherTermsData,
       selectedTermsData,
-      enrichedTermsData,
     ];
+
+    if (enrichedTermsData) {
+      plotlyData.push(enrichedTermsData);
+    }
 
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,
@@ -279,6 +285,9 @@ function ScatterPlot({
       } else if (curveNumber === 2) {
         indexLabel = data.selectedTerms.indexLabels[pointIndex];
         matchingGenes = data.selectedTerms.matchingGenes[pointIndex];
+      } else if (curveNumber === 3) {
+        indexLabel = data.enrichedTerms.indexLabels[pointIndex];
+        matchingGenes = data.enrichedTerms.matchingGenes[pointIndex];
       }
 
       // TODO update this to handle shift click multi select

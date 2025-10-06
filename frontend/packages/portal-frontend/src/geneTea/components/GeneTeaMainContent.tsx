@@ -80,19 +80,33 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     handleSetErrorMessage
   );
 
-  if (tab === "all-matching-terms") {
-    return (
-      <AllMatchingTermsTab data={allTermsScatterPlotData} rawData={rawData} />
-    );
-  }
-
   return (
-    <TopTermsTab
-      heatmapData={heatmapData}
-      barChartData={barChartData}
-      heatmapXAxisLabel={heatmapXAxisLabel}
-      rawData={rawData}
-    />
+    <>
+      {tab === "all-matching-terms" ? (
+        <AllMatchingTermsTab data={allTermsScatterPlotData} rawData={rawData} />
+      ) : (
+        <>
+          {rawData?.enrichedTerms === null ? (
+            <div>
+              <h2>No Enriched Terms Found</h2>
+              <h4>
+                {" "}
+                There were no enriched terms found for this gene list:{" "}
+                {Array.from(geneSymbolSelections).join(", ")}. Explore All
+                Matching Terms, or try a new gene list.
+              </h4>
+            </div>
+          ) : (
+            <TopTermsTab
+              heatmapData={heatmapData}
+              barChartData={barChartData}
+              heatmapXAxisLabel={heatmapXAxisLabel}
+              rawData={rawData}
+            />
+          )}
+        </>
+      )}
+    </>
   );
 }
 

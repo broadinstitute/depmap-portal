@@ -80,14 +80,10 @@ async function fetchValueType(dimension?: DataExplorerPlotConfigDimension) {
     return "continuous";
   }
 
-  const datasets = await cached(breadboxAPI).getDatasets();
-
-  const dataset = datasets.find((d) => {
-    return d.id === dimension.dataset_id || d.given_id === dimension.dataset_id;
-  });
+  const dataset = await cached(breadboxAPI).getDataset(dimension.dataset_id);
 
   if (!dataset) {
-    throw new Error(`Uknown dataset "${dimension.dataset_id}"`);
+    throw new Error(`Unknown dataset "${dimension.dataset_id}"`);
   }
 
   if (dataset.format !== "matrix_dataset") {

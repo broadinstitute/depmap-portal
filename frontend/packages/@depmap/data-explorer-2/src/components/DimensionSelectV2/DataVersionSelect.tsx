@@ -93,7 +93,11 @@ function DataVersionSelect({
       return [pseudoOption, ...options];
     }
 
-    return groupedOptions || options;
+    if (groupedOptions && groupedOptions.length > 0) {
+      return groupedOptions;
+    }
+
+    return options;
   }, [isUnknownDataset, groupedOptions, options, value]);
 
   useEffect(() => {

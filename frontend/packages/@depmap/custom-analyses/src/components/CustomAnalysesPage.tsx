@@ -130,6 +130,7 @@ export default class CustomAnalysesPage extends React.Component<
       const target = event.target as HTMLInputElement;
       this.setState({
         analysisType: target.value as AnalysisType,
+        customAnalysisResults: undefined,
       });
     };
 

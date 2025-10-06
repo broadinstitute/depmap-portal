@@ -425,20 +425,22 @@ function useData(
   }, [data]);
 
   const allTermsScatterPlotData = useMemo(() => {
-    if (data?.frequentTerms && data?.allEnrichedTerms) {
+    if (data?.frequentTerms) {
       const freqTerms = data.frequentTerms;
-      const allTerms = data.allEnrichedTerms;
+      const allTerms = data.allEnrichedTerms || null;
+
       const allEnriched = filterFrequentTerms(
         freqTerms,
         (i) => freqTerms.enriched[i] === true
       );
+
       const stopwords = filterFrequentTerms(
         freqTerms,
-        (i) => freqTerms.enriched[i] !== false && freqTerms.stopword[i] === true
+        (i) => freqTerms.enriched[i] === false && freqTerms.stopword[i] === true
       );
       const otherTerms = filterFrequentTerms(
         freqTerms,
-        (i) => freqTerms.enriched[i] !== false && freqTerms.stopword[i] !== true
+        (i) => freqTerms.enriched[i] === false && freqTerms.stopword[i] !== true
       );
 
       const makeCustomdata = (termsObj: FrequentTerms) => {
@@ -446,7 +448,7 @@ function useData(
           const freqTermsIndex = freqTerms.term.indexOf(currentTerm);
           const term = currentTerm;
           const termGroup =
-            freqTermsIndex < allTerms.termGroup.length
+            allTerms !== null && freqTermsIndex < allTerms.termGroup.length
               ? allTerms.termGroup[freqTermsIndex]
               : null;
 

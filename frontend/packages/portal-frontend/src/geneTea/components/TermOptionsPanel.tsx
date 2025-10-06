@@ -8,6 +8,7 @@ import {
   useGeneTeaFiltersContext,
 } from "../context/GeneTeaFiltersContext";
 import { SortOption } from "../types";
+import PurpleHelpIcon from "./PurpleHelpIcon";
 
 const TermOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
@@ -50,7 +51,14 @@ const TermOptionsPanel: React.FC = () => {
   return (
     <div ref={ref} style={{ backgroundColor: "#ffffff" }}>
       <p style={{ fontWeight: 600, marginBottom: 12 }}>
-        Sort order for selecting top terms
+        Sort order for selecting top terms{" "}
+        <span>
+          {" "}
+          <PurpleHelpIcon
+            tooltipText="Select whether effect size or significance is used to rank terms."
+            popoverId="sort-order-help"
+          />
+        </span>
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -75,9 +83,15 @@ const TermOptionsPanel: React.FC = () => {
         </label>
         <NumberInput
           name="maxTopTerms"
-          label="Max. Top Terms/Term Groups"
-          min={3}
-          max={1000}
+          label="Max. n Terms/Term Groups"
+          purpleHelpIcon={
+            <PurpleHelpIcon
+              tooltipText="Limits the maximum number of terms or term groups in the y-axis of the plot."
+              popoverId="maxTopTerms-help"
+            />
+          }
+          min={1}
+          max={25}
           step={1}
           value={localMaxTopTerms}
           setValue={setLocalMaxTopTerms}
@@ -86,6 +100,12 @@ const TermOptionsPanel: React.FC = () => {
         <NumberInput
           name="maxFDR"
           label="FDR Threshold"
+          purpleHelpIcon={
+            <PurpleHelpIcon
+              tooltipText="Select the maximum FDR value used to call a term significantly enriched in the query."
+              popoverId="maxFDR-help"
+            />
+          }
           min={0}
           value={localMaxFDR}
           setValue={setLocalMaxFDR}
@@ -104,7 +124,13 @@ const TermOptionsPanel: React.FC = () => {
         /> */}
         <NumberInput
           name="minMatchingQuery"
-          label="Min. Matching Query"
+          label="Min. n Matching Query"
+          purpleHelpIcon={
+            <PurpleHelpIcon
+              tooltipText="Select the minimum number of genes in the query that a term must match in order to be considered."
+              popoverId="minMatchingQuery-help"
+            />
+          }
           min={0}
           value={localMinMatchingQuery}
           setValue={setLocalMinMatchingQuery}
@@ -113,7 +139,13 @@ const TermOptionsPanel: React.FC = () => {
         />
         <NumberInput
           name="maxMatchingOverall"
-          label="Max. Matching Overall"
+          label="Max. n Matching Overall"
+          purpleHelpIcon={
+            <PurpleHelpIcon
+              tooltipText="Select the maximum number of genes in the background a term can match and still be considered.  This controls the appearance of common terms."
+              popoverId="maxMatchingOverall-help"
+            />
+          }
           min={0}
           value={localMaxMatchingOverall}
           setValue={setLocalMaxMatchingOverall}

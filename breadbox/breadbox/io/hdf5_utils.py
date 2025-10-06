@@ -4,7 +4,6 @@ from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     LargeDatasetReadError,
 )
-from breadbox.schemas.dataframe_wrapper import ParquetDataFrameWrapper
 import h5py
 import numpy as np
 import pandas as pd
@@ -56,7 +55,7 @@ def write_hdf5_file(
                     ),  # Arbitrarily set size since it at least appears to yield smaller storage size than autochunking
                 )
                 # only insert nonnull values into hdf5 at given positions
-                for row_idx, col_idx in df_wrapper.nonnull_indices:
+                for row_idx, col_idx in df_wrapper.get_nonnull_indices():
                     dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
             else:
                 if dtype == "str":
@@ -70,8 +69,6 @@ def write_hdf5_file(
                     data=df.values,
                 )
         else:
-            assert isinstance(df_wrapper, ParquetDataFrameWrapper)
-            # For ParquetDataFrameWrapper
             # NOTE: Our number of columns are usually much larger than rows so we batch by columns to avoid memory issues
             # TODO: If hdf5 file size becomes an issue, we can consider using compression or chunking
             cols = df_wrapper.get_column_names()

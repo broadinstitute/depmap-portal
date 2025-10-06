@@ -210,6 +210,11 @@ active_tab_set = False %}
       {% endfor %}
     {% endfor %}
   };
+
+  // There are no tabs in mobile, so we need to just always init the Overview tab tiles.
+  if (isMobile) {
+    DepMap.initOverviewTab();
+  }
 </script>
 <script>
    // This is the only place we still use jquery-stickytabs. It should be

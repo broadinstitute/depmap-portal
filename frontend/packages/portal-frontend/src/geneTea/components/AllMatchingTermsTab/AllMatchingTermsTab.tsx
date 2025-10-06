@@ -29,8 +29,23 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
     if (selectedPlotOrTableTerms.size > 0) {
       return selectedPlotOrTableTerms;
     }
+
     return new Set(rawData?.enrichedTerms?.term);
   }, [selectedPlotOrTableTerms, rawData]);
+
+  const termToTermGroupMap = useMemo(() => {
+    const lookup = new Map<string, string>();
+    if (rawData?.allEnrichedTerms) {
+      for (let i = 0; i < rawData?.allEnrichedTerms?.term.length; ++i) {
+        lookup.set(
+          rawData?.allEnrichedTerms?.term[i],
+          rawData?.allEnrichedTerms?.termGroup[i]
+        );
+      }
+    }
+
+    return lookup;
+  }, [rawData?.allEnrichedTerms]);
 
   // Get the table data and prefferedTableDataForDownload. Combined in this useMemo so we don't
   // have to iterate through allEnrichedTerms twice. The only difference is that the tableData is
@@ -43,6 +58,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
       rawData.frequentTerms.term.forEach((term, index) => {
         roundedData.push({
           term,
+          termGroup: termToTermGroupMap.get(term),
           synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
           matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
             index
@@ -58,6 +74,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         });
         unroundedData.push({
           term,
+          termGroup: termToTermGroupMap.get(term),
           synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
           matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
             index
@@ -74,7 +91,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
       });
     }
     return { roundedData, unroundedData };
-  }, [rawData]);
+  }, [rawData, termToTermGroupMap]);
 
   // Default: Top Tea Terms main content
   return (
@@ -92,6 +109,7 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
                 isLoading={isLoading}
                 plotElement={plotElement}
                 data={data}
+                enrichedTerms={rawData?.enrichedTerms?.term || []}
                 handleSetPlotElement={setPlotElement}
               />
             </div>
@@ -101,7 +119,6 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
       <hr className={styles.mainContentHr} />
       <div className={styles.mainContentTableHeader}>
         <h3 className={styles.mainContentTableHeaderTitle}>All Terms Table</h3>
-        {/* <p>Terms selected in the plot will appear checked in this table.</p> */}
       </div>
 
       {rawData && rawData.frequentTerms && (
