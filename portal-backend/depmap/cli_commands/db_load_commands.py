@@ -1558,6 +1558,7 @@ def _sync_metadata_to_breadbox():
         dim_type = dim_type_by_name.get(dimension_type.type_name)
         if dim_type is not None:
             metadata_dataset_id = dim_type.metadata_dataset_id
+            assert isinstance(metadata_dataset_id, str)
             metadata_dataset = breadbox.client.get_dataset(metadata_dataset_id)
             breadbox_taiga_id = metadata_dataset.taiga_id
 

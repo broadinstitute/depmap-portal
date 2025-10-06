@@ -4,8 +4,8 @@ from typing import Literal, Optional, Union, cast
 from breadbox_client.models import (
     DimensionType,
     MatrixDatasetResponse,
-    MatrixDatasetResponseFormat,
     TabularDatasetResponse,
+    ValueType,
 )
 from breadbox_client.types import Unset
 from depmap.data_access.response_parsing import (
@@ -45,8 +45,10 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     matrix_datasets = []
     for dataset in _get_breadbox_datasets_with_caching():
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
+            if dataset.value_type != ValueType.CONTINUOUS:
+                continue
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
     return matrix_datasets
@@ -69,8 +71,10 @@ def get_filtered_matrix_datasets(
     )
     matrix_datasets = []
     for dataset in datasets:
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
+            if dataset.value_type != ValueType.CONTINUOUS:
+                continue
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
     return matrix_datasets
