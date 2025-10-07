@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useReducer, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
 import {
   DEFAULT_EMPTY_PLOT,
@@ -37,16 +43,15 @@ function DataExplorer2MainContent({
     logInitialPlot(initialPlot);
   }, [initialPlot]);
 
+  const reactKey = useRef(0);
+
   const [isInitialPageLoad, setIsInitialPageLoad] = useState(
     initialPlot === DEFAULT_EMPTY_PLOT
   );
   const [plot, dispatchPlotAction] = useReducer(plotConfigReducer, initialPlot);
 
-  const setPlot = (
-    nextPlot:
-      | DataExplorerPlotConfig
-      | ((config: DataExplorerPlotConfig) => void)
-  ) => dispatchPlotAction({ type: "set_plot", payload: nextPlot });
+  const setPlot = (nextPlot: DataExplorerPlotConfig) =>
+    dispatchPlotAction({ type: "set_plot", payload: nextPlot });
 
   const dispatchPlotActionAndUpdateHistory = useCallback(
     async (action: PlotConfigReducerAction) => {
@@ -69,6 +74,11 @@ function DataExplorer2MainContent({
 
   useEffect(() => {
     const onClickExample = (e: Event) => {
+      // WORKAROUND: The DimensionSelectV2 has some very hacky internal state
+      // that gets confused when you go from an uninitialized plot to a valid
+      // plot like this. We'll work around this by forcing it to re-mount.
+      reactKey.current++;
+
       dispatchPlotActionAndUpdateHistory({
         type: "set_plot",
         payload: (e as CustomEvent).detail,
@@ -105,7 +115,7 @@ function DataExplorer2MainContent({
     ContextBuilder,
     onClickSaveAsContext,
     onClickCreateContext,
-  } = useContextBuilder(plot, setPlot);
+  } = useContextBuilder(plot as DataExplorerPlotConfig, setPlot);
 
   const {
     handleClickSaveSelectionAsContext,
@@ -114,7 +124,11 @@ function DataExplorer2MainContent({
     handleClickShowDensityFallback,
     handleClickCopyAxisConfig,
     handleClickSwapAxisConfigs,
-  } = useClickHandlers(plot, setPlot, onClickSaveAsContext);
+  } = useClickHandlers(
+    plot as DataExplorerPlotConfig,
+    setPlot,
+    onClickSaveAsContext
+  );
 
   return (
     <>
@@ -123,6 +137,7 @@ function DataExplorer2MainContent({
         data-breadbox-only={isBreadboxOnlyMode}
       >
         <ConfigurationPanel
+          key={reactKey.current}
           plot={plot}
           dispatch={dispatchPlotActionAndUpdateHistory}
           onClickSaveAsContext={onClickSaveAsContext}

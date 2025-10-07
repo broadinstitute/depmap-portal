@@ -443,7 +443,7 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
             : dimension.context;
 
         if (isBreadboxOnlyMode && !isV2Context(context)) {
-          const { convertedContext } = await convertContextV1toV2(context);
+          const convertedContext = await convertContextV1toV2(context);
           context = convertedContext;
         }
 
@@ -474,7 +474,7 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
           "hash" in filter ? await fetchContext(filter.hash) : filter;
 
         if (isBreadboxOnlyMode && !isV2Context(context)) {
-          const { convertedContext } = await convertContextV1toV2(context);
+          const convertedContext = await convertContextV1toV2(context);
           context = convertedContext;
         }
 
@@ -625,48 +625,76 @@ const replaceLegacyPropertyNames = (plot: DataExplorerPlotConfig | null) => {
   return plot;
 };
 
-export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig> {
-  const params = qs.parse(window.location.search.substr(1));
-  let plot: DataExplorerPlotConfig | null = null;
-
-  // First we try to parse simplified params like xDataset, xFeature, yContext,
-  // etc. This is the human-readable format that is intended to mimic Data
-  // Explorer 1. We assume this style of URL will not include any of the params
-  // below (which are typical of auto-generated URLs) but those params can
-  // override any values parsed here.
-  if (hasSomeShorthandParams(params)) {
-    const datasets = await dataExplorerAPI.fetchDatasetsByIndexType();
-    plot = parseShorthandParams(params, datasets);
+async function convertAllLegacyContexts(plot: DataExplorerPlotConfig | null) {
+  if (!plot) {
+    return null;
   }
 
-  // Old format
-  if (params.plot) {
-    const decoded = Base64.decode(params.plot as string);
-    plot = JSON.parse(decoded);
+  const nextDimensions: any = {};
+  let nextFilters: any = null;
+
+  if (plot.dimensions) {
+    await Promise.all(
+      (Object.keys(plot.dimensions) as DimensionKey[]).map(
+        async (dimensionKey) => {
+          const dimension = plot.dimensions[dimensionKey];
+          let context = dimension!.context;
+
+          if (isBreadboxOnlyMode && !isV2Context(context)) {
+            const convertedContext = await convertContextV1toV2(context);
+            context = (convertedContext as unknown) as DataExplorerContext;
+          }
+
+          nextDimensions[dimensionKey] = { ...dimension, context };
+        }
+      )
+    );
   }
 
-  // New compressed format
-  if (params.p) {
-    plot = decompress(params.p as string) as DataExplorerPlotConfig;
+  if (plot.filters) {
+    nextFilters = {};
+
+    await Promise.all(
+      (Object.keys(plot.filters) as FilterKey[]).map(async (filterKey) => {
+        const filter = plot.filters![filterKey];
+        let context = filter!;
+
+        if (isBreadboxOnlyMode && !isV2Context(context)) {
+          const convertedContext = await convertContextV1toV2(context);
+          context = convertedContext;
+        }
+
+        nextFilters[filterKey] = context;
+      })
+    );
   }
 
-  // `plot.dimensions` used to be an array but now it's an object.
-  // Just in case there are any old bookmarks hanging around,
-  // we'll parse the array and transform it into an object.
-  if (plot && Array.isArray(plot.dimensions)) {
-    const [x, y] = plot.dimensions;
+  return {
+    ...plot,
+    dimensions: nextDimensions,
+    ...(nextFilters ? { filters: nextFilters } : {}),
+  };
+}
 
-    plot.dimensions = {
-      ...(x && { x }),
-      ...(y && { y }),
-      // no `color` dimension because this format predates that
-    };
+export async function makePlotConfigBreadboxModeCompatible(
+  legacyPlot: DataExplorerPlotConfig
+) {
+  if (!isBreadboxOnlyMode) {
+    window.console.log(
+      [
+        "`makePlotConfigBreadboxModeCompatible` called without Breadbox mode",
+        "enabled! This was probably done in error. Ignoring and retaining",
+        "legacy format.",
+      ].join(" ")
+    );
+
+    return legacyPlot;
   }
 
-  plot = replaceLegacyPropertyNames(plot);
-  plot = await replaceHashesWithContexts(plot);
+  let plot = JSON.parse(JSON.stringify(legacyPlot));
+  plot = await convertAllLegacyContexts(plot);
 
-  if (isBreadboxOnlyMode && plot?.dimensions) {
+  if (plot?.dimensions) {
     for (const dimKey of Object.keys(plot.dimensions)) {
       const d = plot.dimensions[dimKey as DimensionKey]!;
       // Strip any "/breadbox" prefixes from dataset IDs.
@@ -681,7 +709,7 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
   }
 
   // Convert any `metadata` values from slice IDs to SliceQuery objects.
-  if (isBreadboxOnlyMode && plot?.metadata) {
+  if (plot?.metadata) {
     for (const key of Object.keys(plot.metadata)) {
       const value = plot.metadata[key];
 
@@ -727,6 +755,54 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
         }
       }
     }
+  }
+
+  return plot;
+}
+
+export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig> {
+  const params = qs.parse(window.location.search.substr(1));
+  let plot: DataExplorerPlotConfig | null = null;
+
+  // First we try to parse simplified params like xDataset, xFeature, yContext,
+  // etc. This is the human-readable format that is intended to mimic Data
+  // Explorer 1. We assume this style of URL will not include any of the params
+  // below (which are typical of auto-generated URLs) but those params can
+  // override any values parsed here.
+  if (hasSomeShorthandParams(params)) {
+    const datasets = await dataExplorerAPI.fetchDatasetsByIndexType();
+    plot = parseShorthandParams(params, datasets);
+  }
+
+  // Old format
+  if (params.plot) {
+    const decoded = Base64.decode(params.plot as string);
+    plot = JSON.parse(decoded);
+  }
+
+  // New compressed format
+  if (params.p) {
+    plot = decompress(params.p as string) as DataExplorerPlotConfig;
+  }
+
+  // `plot.dimensions` used to be an array but now it's an object.
+  // Just in case there are any old bookmarks hanging around,
+  // we'll parse the array and transform it into an object.
+  if (plot && Array.isArray(plot.dimensions)) {
+    const [x, y] = plot.dimensions;
+
+    plot.dimensions = {
+      ...(x && { x }),
+      ...(y && { y }),
+      // no `color` dimension because this format predates that
+    };
+  }
+
+  plot = replaceLegacyPropertyNames(plot);
+  plot = await replaceHashesWithContexts(plot);
+
+  if (plot && isBreadboxOnlyMode) {
+    plot = await makePlotConfigBreadboxModeCompatible(plot);
   }
 
   return (plot || DEFAULT_EMPTY_PLOT) as DataExplorerPlotConfig;

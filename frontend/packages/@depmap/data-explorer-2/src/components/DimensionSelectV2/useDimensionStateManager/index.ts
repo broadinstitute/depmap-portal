@@ -31,7 +31,7 @@ export default function useDimensionStateManager({
   const prevIndexType = useRef(index_type);
   const prevContext = useRef(value?.context);
 
-  const initialState = useRef({
+  const [state, setState] = useState<State>({
     ...DEFAULT_STATE,
     dataType: initialDataType || null,
     allowNullFeatureType,
@@ -50,8 +50,6 @@ export default function useDimensionStateManager({
         (mode === "context-only" ? undefined : ("first" as const)),
     },
   });
-
-  const [state, setState] = useState<State>(initialState.current);
 
   // Keeps `value` and `state.dimension` in sync.
   useSync({ value, onChange, state, setState, mode });

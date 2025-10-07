@@ -8,6 +8,7 @@ export default function useGlobalEvents(
   onChange: (context: DataExplorerContextV2 | null, hash: string | null) => void
 ) {
   const [reactKey, setReactKey] = useState(1);
+  const [evalFailed, setEvalFailed] = useState(false);
   const forceRefresh = useCallback(() => setReactKey((k) => k + 1), []);
 
   useEffect(() => {
@@ -43,5 +44,23 @@ export default function useGlobalEvents(
     };
   }, [value, hashOfSelectedValue, onChange]);
 
-  return { reactKey };
+  useEffect(() => {
+    setEvalFailed(false);
+
+    const onEvalFailed = async (e: Event) => {
+      const badValue = (e as CustomEvent).detail;
+
+      if (value === badValue) {
+        setEvalFailed(true);
+      }
+    };
+
+    window.addEventListener("dx2_context_eval_failed", onEvalFailed);
+
+    return () => {
+      window.removeEventListener("dx2_context_eval_failed", onEvalFailed);
+    };
+  }, [value]);
+
+  return { evalFailed, reactKey };
 }
