@@ -141,10 +141,10 @@ const PredictabilityPrototypeTab = ({
 
       const predictabilityData = await legacyPortalAPI
         .getPredictabilityPrototypeData(entityLabel)
-        .catch((e) => {
+        .catch((e: Error) => {
           window.console.error(e);
           setIsError(true);
-          setError(e);
+          setError(e.message);
         });
 
       if (

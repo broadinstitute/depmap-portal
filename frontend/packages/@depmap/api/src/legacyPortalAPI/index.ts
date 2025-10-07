@@ -27,6 +27,7 @@ export const legacyPortalAPI = {
   ...tda,
   ...misc,
   ...experimental_genetea,
+  ...predictability_prototype,
 };
 
 type Api = typeof legacyPortalAPI;
