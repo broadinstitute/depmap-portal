@@ -1,5 +1,13 @@
-import React, { useEffect, useState } from "react";
-import { AnnotationType, SliceQuery, TabularDataset } from "@depmap/types";
+import React, { useCallback, useEffect, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
+import { getConfirmation } from "@depmap/common-components";
+import { DepMap } from "@depmap/globals";
+import {
+  AnnotationType,
+  DataExplorerContextV2,
+  SliceQuery,
+  TabularDataset,
+} from "@depmap/types";
 import renderConditionally from "../../../../utils/render-conditionally";
 import { fetchMetadataAndOtherTabularDatasets } from "../../../../utils/api-helpers";
 import PlotConfigSelect from "../../../PlotConfigSelect";
@@ -8,9 +16,15 @@ interface Props {
   slice_type: string;
   value: SliceQuery | null;
   onChange: (nextValue: SliceQuery | null) => void;
+  onConvertToColorContext: (context: DataExplorerContextV2) => void;
 }
 
-function MetadataColumnSelect({ slice_type, value, onChange }: Props) {
+function MetadataColumnSelect({
+  slice_type,
+  value,
+  onChange,
+  onConvertToColorContext,
+}: Props) {
   const [isLoading, setIsLoading] = useState(false);
 
   const [metadataDataset, setMetadataDataset] = useState<
@@ -21,11 +35,6 @@ function MetadataColumnSelect({ slice_type, value, onChange }: Props) {
     (async () => {
       const acceptedColTypes = [
         "categorical" as AnnotationType,
-        // TODO: In the future we should only support "categorical" and
-        // remove "text" here. But most datasets are not tagged that way
-        // which can make it appear we are missing metadata. For now, we'lll
-        // include "text" even though that may include some columns that have
-        // too many disinct values to color by.
         "text" as AnnotationType,
       ];
 
@@ -57,6 +66,59 @@ function MetadataColumnSelect({ slice_type, value, onChange }: Props) {
     })
   );
 
+  const checkPlottable = useCallback(
+    async (slice: SliceQuery) => {
+      const wrapper = await cached(breadboxAPI).getTabularDatasetData(
+        slice.dataset_id,
+        {
+          columns: [slice.identifier],
+        }
+      );
+      const indexedData = wrapper[slice.identifier];
+      const numDistinct = new Set(Object.values(indexedData)).size;
+
+      if (numDistinct <= 100) {
+        return;
+      }
+
+      const confirmed = await getConfirmation({
+        title: "Too many categorical colors",
+        message: (
+          <div>
+            <p>
+              This annotation has too many distinct values. It can’t be used to
+              color the plot because it would be impossible to assign a unique
+              color to each one.
+            </p>
+            <p>
+              Do you want to use it to create a context to color by instead?
+            </p>
+          </div>
+        ),
+        yesText: "Create context",
+        noText: "Cancel",
+        yesButtonBsStyle: "primary",
+      });
+
+      if (!confirmed) {
+        onChange(null);
+        return;
+      }
+
+      DepMap.saveNewContext(
+        {
+          name: `${slice.identifier} list`,
+          dimension_type: slice_type,
+          expr: { in: [{ var: "0" }, []] },
+          vars: { 0: { ...slice, source: "metadata_column" } },
+        },
+        null,
+        onConvertToColorContext
+      );
+    },
+    [slice_type, onChange, onConvertToColorContext]
+  );
+
   return (
     <PlotConfigSelect
       show
@@ -67,15 +129,20 @@ function MetadataColumnSelect({ slice_type, value, onChange }: Props) {
       value={value?.identifier || null}
       options={options}
       onChange={(identifier) => {
-        onChange(
+        const nextValue =
           identifier && metadataDataset
             ? {
                 dataset_id: metadataDataset.id,
-                identifier_type: "column",
+                identifier_type: "column" as const,
                 identifier,
               }
-            : null
-        );
+            : null;
+
+        onChange(nextValue);
+
+        if (nextValue) {
+          checkPlottable(nextValue);
+        }
       }}
     />
   );

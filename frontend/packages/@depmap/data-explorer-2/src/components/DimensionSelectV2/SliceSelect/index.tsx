@@ -30,10 +30,6 @@ function SliceSelect({
   isLoading,
   swatchColor = undefined,
 }: Props) {
-  if (slice_type === undefined) {
-    return null;
-  }
-
   if (isUnknownDataset) {
     return (
       <FallbackSliceSelect
@@ -42,6 +38,10 @@ function SliceSelect({
         onChange={onChange}
       />
     );
+  }
+
+  if (slice_type === undefined) {
+    return null;
   }
 
   if (slice_type === null) {

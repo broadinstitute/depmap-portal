@@ -19,6 +19,12 @@ export async function getDimensionDataWithoutLabels(slice: SliceQuery) {
 
     const indexedData = wrapper[slice.identifier];
 
+    if (!indexedData) {
+      throw new Error(
+        `Column "${slice.identifier}" not found in dataset "${slice.dataset_id}".`
+      );
+    }
+
     return {
       ids: Object.keys(indexedData),
       values: Object.values(indexedData),

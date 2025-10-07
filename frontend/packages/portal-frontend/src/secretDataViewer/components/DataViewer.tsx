@@ -6,7 +6,10 @@ import {
   plotConfigReducer,
   PlotConfigReducerAction,
 } from "@depmap/data-explorer-2";
-import { PartialDataExplorerPlotConfig } from "@depmap/types";
+import {
+  DataExplorerPlotConfigDimension,
+  PartialDataExplorerPlotConfig,
+} from "@depmap/types";
 import Config from "src/secretDataViewer/components/Config";
 import Stats from "src/secretDataViewer/components/Stats";
 import styles from "src/secretDataViewer/styles/DataViewer.scss";
@@ -61,7 +64,7 @@ function DataViewer() {
 
     dispatchAndLog({
       type: "set_plot",
-      payload: nextPlot,
+      payload: (nextPlot as unknown) as PartialDataExplorerPlotConfig,
     });
   };
 
@@ -87,11 +90,14 @@ function DataViewer() {
           </>
         )}
         <Config plot={plot} dispatch={dispatchAndLog} />
-        {SHOW_DEV_CONTROLS && isCompleteDimension(plot.dimensions.x) && (
+        {SHOW_DEV_CONTROLS && isCompleteDimension(plot.dimensions!.x) && (
           <div className={styles.complete}>complete dimension 👍</div>
         )}
       </div>
-      <Stats index_type={plot.index_type} dimension={plot.dimensions.x} />
+      <Stats
+        index_type={plot.index_type as string}
+        dimension={plot.dimensions!.x as DataExplorerPlotConfigDimension}
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import omit from "lodash.omit";
 import {
   DataExplorerContext,
+  DataExplorerContextExpression,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotType,
@@ -11,7 +12,7 @@ import {
 } from "@depmap/types";
 
 export type PlotConfigReducerAction =
-  | { type: "set_plot"; payload: object | ((p: object) => object) }
+  | { type: "set_plot"; payload: PartialDataExplorerPlotConfig }
   | { type: "select_plot_type"; payload: DataExplorerPlotType }
   | { type: "select_index_type"; payload: string }
   | {
@@ -53,7 +54,17 @@ export type PlotConfigReducerAction =
         // given_id is required.
         given_id?: string;
       };
-    };
+    }
+  // Use this to dispatch multiple actions as if
+  // they were a single logical action. Example:
+  //   dispatch({
+  //     type: "batch",
+  //     payload: [
+  //       { type: "select_color_by", payload: "aggregated_slice" },
+  //       { type: "select_filter", payload: { key: "color1", filter } },
+  //     ],
+  //   });
+  | { type: "batch"; payload: PlotConfigReducerAction[] };
 
 const DEFAULT_SORT = "alphabetical";
 
@@ -101,7 +112,7 @@ const normalize = (plot: PartialDataExplorerPlotConfig) => {
 function plotConfigReducer(
   plot: PartialDataExplorerPlotConfig,
   action: PlotConfigReducerAction
-) {
+): PartialDataExplorerPlotConfig {
   switch (action.type) {
     // HACK: "set_plot" is used in cases where we want to completely replace
     // the plot with something known to be valid. Some examples include:
@@ -113,9 +124,7 @@ function plotConfigReducer(
     // It seems we could use a "select_context" action for that last one,
     // though 🤔
     case "set_plot":
-      return typeof action.payload === "function"
-        ? action.payload(plot)
-        : action.payload;
+      return action.payload as PartialDataExplorerPlotConfig;
 
     case "select_plot_type": {
       const nextPlotType = action.payload;
@@ -423,11 +432,22 @@ function plotConfigReducer(
               [given_id ? "dimension_type" : "context_type"]: slice_type,
               expr: given_id
                 ? { "==": [{ var: "given_id" }, given_id] }
-                : { "==": [{ var: "entity_label" }, slice_label] },
+                : ({
+                    "==": [{ var: "entity_label" }, slice_label],
+                  } as DataExplorerContextExpression),
             },
           },
         },
       };
+    }
+
+    case "batch": {
+      const thisReducer = plotConfigReducer as (
+        p: PartialDataExplorerPlotConfig,
+        a: PlotConfigReducerAction
+      ) => PartialDataExplorerPlotConfig;
+
+      return action.payload.reduce(thisReducer, plot);
     }
 
     default:
