@@ -30,9 +30,8 @@ export async function getDataset(datasetId: string) {
   return getJson<Dataset>(uri`/datasets/${datasetId}`);
 }
 
-export function deleteDataset(id: string) {
-  // TODO: Figure out return type.
-  return deleteJson<unknown>("/datasets/", id);
+export function deleteDataset(datasetId: string) {
+  return deleteJson<{ message: string }>(uri`/datasets/${datasetId}`);
 }
 
 export function updateDataset(

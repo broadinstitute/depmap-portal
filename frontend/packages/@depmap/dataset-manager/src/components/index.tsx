@@ -12,7 +12,12 @@ import {
   TabularDataset,
 } from "@depmap/types";
 
-import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
+import {
+  FormModal,
+  getConfirmation,
+  Spinner,
+  ToggleSwitch,
+} from "@depmap/common-components";
 import WideTable from "@depmap/wide-table";
 import Button from "react-bootstrap/lib/Button";
 
@@ -431,6 +436,33 @@ export default function Datasets() {
   const deleteDatasetButtonAction = async () => {
     setIsDeletingDataset(true);
     setDatasetDeleteError(null);
+
+    const names = [...selectedDatasetIds].map(
+      (id) => datasets.find((d) => d.id === id)?.name || id
+    );
+
+    const confirmed = await getConfirmation({
+      yesText: `Delete ${names.length === 1 ? "dataset" : "datasets"}`,
+      noText: "Cancel",
+      message:
+        names.length === 1 ? (
+          <div>Are you sure want to delete the dataset “{names[0]}”?</div>
+        ) : (
+          <div>
+            <p>Are you sure you want to delete the following datasets?</p>
+            <ul>
+              {names.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
+          </div>
+        ),
+    });
+
+    if (!confirmed) {
+      setIsDeletingDataset(false);
+      return;
+    }
 
     await Promise.all(
       Array.from(selectedDatasetIds).map((dataset_id) => {
