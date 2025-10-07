@@ -112,7 +112,6 @@ function DummyPlot({
           <PlotLegend
             data={null}
             continuousBins={null}
-            color_by={undefined}
             hiddenLegendValues={hiddenLegendValues}
             onClickLegendItem={onClickLegendItem}
             colorMap={{}}

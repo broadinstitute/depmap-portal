@@ -1,42 +1,4 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { HeatmapFormattedData } from "@depmap/types/src/experimental_genetea";
-
-export const tableColumns = [
-  { accessor: "term", Header: "Term", minWidth: 100 },
-  {
-    accessor: "termGroup",
-    Header: "Term Group",
-    minWidth: 180,
-  },
-  {
-    accessor: "fdr",
-    Header: "FDR",
-    minWidth: 80,
-  },
-  {
-    accessor: "effectSize",
-    Header: "Effect Size",
-    minWidth: 80,
-  },
-  {
-    accessor: "matchingGenesInList",
-    Header: "Matching Query",
-    minWidth: 100,
-  },
-  {
-    accessor: "nMatchingGenesInList",
-    Header: "n Matching Query",
-  },
-  {
-    accessor: "nMatchingGenesOverall",
-    Header: "n Matching Overall",
-  },
-  {
-    accessor: "synonyms",
-    Header: "Synonyms",
-    minWidth: 200,
-  },
-];
 
 export function groupStringsByCondition(
   strings: string[],
@@ -127,18 +89,4 @@ export function generateTickLabels(
   });
 
   return tickvals;
-}
-
-export function getSelectedColumns(
-  heatmapData: HeatmapFormattedData,
-  selectedGenes: Set<string>
-) {
-  const uniqueXs = new Set(heatmapData.x);
-  const out = new Set<number>();
-  [...uniqueXs].forEach((x: string, index: number) => {
-    if (x !== null && selectedGenes.has(x)) {
-      out.add(index);
-    }
-  });
-  return out;
 }

@@ -43,7 +43,7 @@ rule publish_rrbs_metadata:
     publish: "{{config.publish_dest}}/rrbs-metadata.json"
 
 rule publish_maf_file:
-    inputs: in={"type": "mutation-maf-file"}
+    inputs: in={"type": "filtered-mutation-maf-file"}
     publish: "{{config.publish_dest}}/mutations-maf.json"
 
 rule publish_oncokb_annotated_maf_file:

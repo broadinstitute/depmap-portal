@@ -38,7 +38,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
     max_fdr: maxFDR,
     min_genes: minMatchingQuery || -1,
     max_n_genes: maxMatchingOverall,
-    n: plotSelections?.length === 0 ? maxTopTerms || -1 : -1,
+    n: plotSelections?.length === 0 ? maxTopTerms || undefined : undefined,
   };
 
   if (plotSelections) {
@@ -94,6 +94,8 @@ export async function fetchGeneTeaEnrichmentExperimental(
         Synonyms: (string | null)[];
         "Total Info": number[];
         "Effect Size": number[];
+        Enriched: boolean[];
+        "-log10 FDR": number[];
       };
       all_enriched_terms: {
         Term: string[];
@@ -107,6 +109,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
         "Total Info": number[];
         "Effect Size": number[];
         "Term Group": string[];
+        "-log10 FDR": number[];
       };
     };
   }
@@ -120,87 +123,89 @@ export async function fetchGeneTeaEnrichmentExperimental(
         )
       : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
 
-  // `enriched_terms` can be null when there are no relevant terms. We'll
-  // return a wrapper object to distinguish this from some kind of error.
-  if (body.enriched_terms === null) {
-    return {
-      groupby: "Term",
-      validGenes: [],
-      invalidGenes: [],
-      enrichedTerms: null,
-      totalNEnrichedTerms: 0,
-      totalNTermGroups: 0,
-      termCluster: null,
-      geneCluster: null,
-      termToEntity: null,
-      frequentTerms: null,
-      allEnrichedTerms: null,
-    };
-  }
-
   const plottingPayload = body.plotting_payload;
   const allEt = plottingPayload.all_enriched_terms;
   const et = body.enriched_terms;
-  const enrichedTerms = {
-    term: et.Term,
-    fdr: et.FDR,
-    totalEnrichedTerms: body.total_n_enriched_terms,
-    totalTermGroups: body.total_n_term_groups,
-    synonyms: et.Synonyms.map((list) => list?.split(";") || []),
-    matchingGenesInList: et["Matching Genes in List"],
-    nMatchingGenesInList: et["n Matching Genes in List"],
-    nMatchingGenesOverall: et["n Matching Genes Overall"],
-    termGroup: et["Term Group"],
-    effectSize: et["Effect Size"],
-    pVal: et["p-val"],
-    stopword: et.Stopword,
-    totalInfo: et["Total Info"],
-    negLogFDR: et["-log10 FDR"],
-    clippedTerm: et["Clipped Term"],
-    clippedSynonyms: et["Clipped Synonyms"].map(
-      (list) => list?.split(";") || []
-    ),
-    clippedMatchingGenesInList: et["Clipped Matching Genes in List"],
-  };
-  const allEnrichedTerms = {
-    term: allEt.Term,
-    fdr: allEt.FDR,
-    synonyms: allEt.Synonyms.map((list) => list?.split(";") || []),
-    matchingGenesInList: allEt["Matching Genes in List"],
-    nMatchingGenesInList: allEt["n Matching Genes in List"],
-    nMatchingGenesOverall: allEt["n Matching Genes Overall"],
-    termGroup: allEt["Term Group"],
-    effectSize: allEt["Effect Size"],
-    pVal: allEt["p-val"],
-    stopword: allEt.Stopword,
-    totalInfo: et["Total Info"],
-  };
 
-  const termClusterTermOrGroup = doGroupTerms
+  const enrichedTerms =
+    et !== null
+      ? {
+          term: et.Term,
+          fdr: et.FDR,
+          totalEnrichedTerms: body.total_n_enriched_terms,
+          totalTermGroups: body.total_n_term_groups,
+          synonyms: et.Synonyms.map((list) => list?.split(";") || []),
+          matchingGenesInList: et["Matching Genes in List"],
+          nMatchingGenesInList: et["n Matching Genes in List"],
+          nMatchingGenesOverall: et["n Matching Genes Overall"],
+          termGroup: et["Term Group"],
+          effectSize: et["Effect Size"],
+          pVal: et["p-val"],
+          stopword: et.Stopword,
+          totalInfo: et["Total Info"],
+          negLogFDR: et["-log10 FDR"],
+          clippedTerm: et["Clipped Term"],
+          clippedSynonyms: et["Clipped Synonyms"].map(
+            (list) => list?.split(";") || []
+          ),
+          clippedMatchingGenesInList: et["Clipped Matching Genes in List"],
+        }
+      : null;
+
+  const allEnrichedTerms =
+    allEt !== null
+      ? {
+          term: allEt.Term,
+          fdr: allEt.FDR,
+          synonyms: allEt.Synonyms.map((list) => list?.split(";") || []),
+          matchingGenesInList: allEt["Matching Genes in List"],
+          nMatchingGenesInList: allEt["n Matching Genes in List"],
+          nMatchingGenesOverall: allEt["n Matching Genes Overall"],
+          termGroup: allEt["Term Group"],
+          effectSize: allEt["Effect Size"],
+          pVal: allEt["p-val"],
+          stopword: allEt.Stopword,
+          totalInfo: allEt["Total Info"],
+          negLogFDR: allEt["-log10 FDR"],
+        }
+      : null;
+
+  // TODO reorganize so this disabling is not necessary!!!
+  /* eslint-disable no-nested-ternary */
+  const termClusterTermOrGroup = !plottingPayload.term_cluster
+    ? null
+    : doGroupTerms
     ? plottingPayload.term_cluster["Term Group"]
     : plottingPayload.term_cluster.Term;
+  /* eslint-enable no-nested-ternary */
 
-  const termCluster = {
-    termOrTermGroup: termClusterTermOrGroup as string[],
-    cluster: plottingPayload.term_cluster.Cluster,
-    order: plottingPayload.term_cluster.Order,
-  };
+  const termCluster = !plottingPayload.term_cluster
+    ? null
+    : {
+        termOrTermGroup: termClusterTermOrGroup as string[],
+        cluster: plottingPayload.term_cluster.Cluster,
+        order: plottingPayload.term_cluster.Order,
+      };
 
-  const geneCluster = {
-    gene: plottingPayload.gene_cluster.Gene,
-    cluster: plottingPayload.gene_cluster.Cluster,
-    order: plottingPayload.gene_cluster.Order,
-  };
+  const geneCluster = !plottingPayload.gene_cluster
+    ? null
+    : {
+        gene: plottingPayload.gene_cluster.Gene,
+        cluster: plottingPayload.gene_cluster.Cluster,
+        order: plottingPayload.gene_cluster.Order,
+      };
 
-  const termToEntity = {
-    termOrTermGroup: doGroupTerms
-      ? (plottingPayload.term_to_entity["Term Group"] as string[])
-      : (plottingPayload.term_to_entity.Term as string[]),
-    gene: plottingPayload.term_to_entity.Gene,
-    count: plottingPayload.term_to_entity.Count,
-    nTerms: plottingPayload.term_to_entity["n Terms"],
-    fraction: plottingPayload.term_to_entity.Fraction,
-  };
+  const termToEntity = !plottingPayload.term_to_entity
+    ? null
+    : {
+        termOrTermGroup: doGroupTerms
+          ? (plottingPayload.term_to_entity["Term Group"] as string[])
+          : (plottingPayload.term_to_entity.Term as string[]),
+        gene: plottingPayload.term_to_entity.Gene,
+        count: plottingPayload.term_to_entity.Count,
+        nTerms: plottingPayload.term_to_entity["n Terms"],
+        fraction: plottingPayload.term_to_entity.Fraction,
+      };
 
   const frequentTerms = {
     term: plottingPayload.frequent_terms.Term,
@@ -218,6 +223,8 @@ export async function fetchGeneTeaEnrichmentExperimental(
     ),
     totalInfo: plottingPayload.frequent_terms["Total Info"],
     effectSize: plottingPayload.frequent_terms["Effect Size"],
+    enriched: plottingPayload.frequent_terms.Enriched,
+    negLogFDR: plottingPayload.frequent_terms["-log10 FDR"],
   };
 
   return {

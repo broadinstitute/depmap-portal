@@ -347,6 +347,7 @@ async function computeDataVersionOptions(
   index_type: string | null,
   selectedDataType: string | null,
   allowNullFeatureType: boolean,
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
   dimension: State["dimension"]
 ) {
   const [
@@ -383,12 +384,28 @@ async function computeDataVersionOptions(
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
     .filter((d) => allowNullFeatureType || d.slice_type !== SLICE_TYPE_NULL)
+    .filter((d) =>
+      valueTypes.has(
+        d.value_type as typeof valueTypes extends Set<infer U> ? U : never
+      )
+    )
     .sort((a, b) => compareCaseInsensitive(a.name, b.name))
     .map((dataset) => {
       let isDisabled = false;
       let disabledReason = "";
 
       const typeDisplayName = dataset.slice_type_display_name;
+
+      if (
+        dimension.axis_type === "aggregated_slice" &&
+        dataset.value_type !== "continuous"
+      ) {
+        isDisabled = true;
+        disabledReason = [
+          "You can't aggregate over this dataset because ",
+          "its values are not numerical.",
+        ].join("");
+      }
 
       if (
         dimension.dataset_id &&
@@ -469,6 +486,7 @@ export default async function computeOptions(
   index_type: string | null,
   selectedDataType: string | null,
   allowNullFeatureType: boolean,
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
   dimension: State["dimension"]
 ) {
   const [
@@ -482,6 +500,7 @@ export default async function computeOptions(
       index_type,
       selectedDataType,
       allowNullFeatureType,
+      valueTypes,
       dimension
     ),
   ]);

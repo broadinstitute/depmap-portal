@@ -6,7 +6,13 @@ import {
   DataExplorerContextV2,
   DataExplorerContextVariable,
 } from "@depmap/types";
+import wellKnownDatasets from "../constants/wellKnownDatasets";
 import { sliceIdToSliceQuery } from "./slice-id";
+
+const CATEGORICAL_MATRICES = new Set([
+  wellKnownDatasets.mutations_prioritized,
+  wellKnownDatasets.mutation_protein_change,
+]);
 
 // Returns a Promise of { success, convertedContext }.
 //
@@ -50,6 +56,7 @@ export async function convertContextV1toV2(
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const hasValidDimensionType =
+    context.context_type === null ||
     context.context_type === "custom" ||
     dimTypes.some((dt) => dt.name === context.context_type);
 
@@ -64,7 +71,10 @@ export async function convertContextV1toV2(
   }
 
   // Extract the variables from the expression.
-  const varTypes: Record<string, "continuous" | "categorical"> = {};
+  const varTypes: Record<
+    string,
+    "continuous" | "categorical" | "list_strings"
+  > = {};
 
   JSON.parse(JSON.stringify(context.expr), (_, value) => {
     if (Array.isArray(value)) {
@@ -72,8 +82,15 @@ export async function convertContextV1toV2(
       const varValue = value[1];
 
       if (varName) {
-        varTypes[varName] =
-          typeof varValue === "number" ? "continuous" : "categorical";
+        varTypes[varName] = (() => {
+          // Assume all arrays are lists of strings (we don't support other
+          // list types).
+          if (Array.isArray(varValue)) {
+            return "list_strings";
+          }
+
+          return typeof varValue === "number" ? "continuous" : "categorical";
+        })();
       }
     }
 
@@ -101,7 +118,10 @@ export async function convertContextV1toV2(
 
       let source: DataExplorerContextVariable["source"] = "matrix_dataset";
 
-      if (varTypes[varName] === "categorical") {
+      if (
+        varTypes[varName] === "categorical" &&
+        !CATEGORICAL_MATRICES.has(sliceQuery.dataset_id)
+      ) {
         source = sliceQuery.dataset_id.endsWith("_metadata")
           ? "metadata_column"
           : "tabular_dataset";
@@ -109,7 +129,10 @@ export async function convertContextV1toV2(
 
       vars[varName] = { ...sliceQuery, source };
 
-      if (varTypes[varName] === "continuous") {
+      if (
+        varTypes[varName] === "continuous" ||
+        varTypes[varName] === "list_strings"
+      ) {
         vars[varName].label = sliceQuery.identifier;
       }
     }
@@ -155,7 +178,7 @@ export async function convertContextV1toV2(
   // work if you try to evaluate it. It can function as the `context` in a
   // DataExplorerPlotConfigDimension (meaning the DimensionSelect component can
   // interpret it).
-  if (context.context_type === "custom") {
+  if (context.context_type === "custom" || context.context_type === null) {
     return { success: true, convertedContext };
   }
 

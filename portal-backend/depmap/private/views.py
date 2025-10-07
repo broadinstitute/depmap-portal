@@ -31,6 +31,9 @@ def portal_file_private_url(bucket_name, filename):
     # Get the blob object
     blob = bucket.get_blob(filename)
     if blob is None:
+        log.warning(
+            f"Could not find file in cloud storage: gs://{bucket_name}/{filename}"
+        )
         abort(404)
     else:
         # Reload the blob to ensure metadata is up-to-date

@@ -111,4 +111,5 @@ def test_add_dataset_with_dataset_metadata():
 
     response = client.get_dataset(dataset_id)
     assert response.id == dataset_id
+    assert response.dataset_metadata is not None
     assert response.dataset_metadata.to_dict() == {"some": "value"}

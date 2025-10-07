@@ -13,12 +13,16 @@ interface Props {
   data: GlossaryItem[];
   sidePanelButtonText?: string;
   customBackgroundColor?: string;
+  customTabBackgroundColor?: string;
+  customTabTextColor?: string;
 }
 
 function Glossary({
   data,
   sidePanelButtonText = "Terms and definitions",
   customBackgroundColor = "#d3d3d3",
+  customTabBackgroundColor = "#d3d3d3",
+  customTabTextColor = "#333333",
 }: Props) {
   const [selected, setSelected] = useState<{ value: number }[]>([]);
   const [open, setOpen] = useState(false);
@@ -61,7 +65,10 @@ function Glossary({
           >
             <span
               className={styles.buttonText}
-              style={{ backgroundColor: customBackgroundColor }}
+              style={{
+                backgroundColor: customTabBackgroundColor,
+                color: customTabTextColor,
+              }}
             >
               {sidePanelButtonText}
             </span>

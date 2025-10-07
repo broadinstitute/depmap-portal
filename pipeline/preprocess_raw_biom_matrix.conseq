@@ -73,7 +73,7 @@ rule process_maf_file:
         omics_utils=fileref('scripts/omics_preprocessing_utils.py', copy_to='omics_preprocessing_utils.py')
     outputs: 
         {
-            "type": "mutation-maf-file", 
+            "type": "filtered-mutation-maf-file", 
             "filename": {"$filename": "maf.csv"}, 
             "orig_dataset_id": "{{inputs.in.dataset_id}}",
         }

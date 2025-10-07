@@ -56,6 +56,7 @@ function useMatches(expr: Expr) {
       })();
     } else {
       setNumMatches(null);
+      setHasError(false);
     }
   }, [expr, dimension_type, fullySpecifiedVars, vars]);
 

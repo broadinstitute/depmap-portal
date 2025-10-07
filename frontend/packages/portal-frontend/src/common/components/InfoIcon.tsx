@@ -2,7 +2,7 @@ import * as React from "react";
 import { OverlayTrigger, Popover } from "react-bootstrap";
 import { toStaticUrl } from "@depmap/globals";
 
-type TriggerType = "click" | "hover" | "focus";
+export type TriggerType = "click" | "hover" | "focus";
 
 interface Props {
   popoverContent: React.ReactNode;

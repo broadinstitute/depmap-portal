@@ -100,6 +100,7 @@ def compute_dimension(
         "dataset_label": dataset.label,
         "axis_label": axis_label,
         "slice_type": dimension["slice_type"],
+        "value_type": "continuous",
         "indexed_values": indexed_values,
     }
 
@@ -203,6 +204,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         "dataset_label": "",
         "axis_label": "Rank" if categorical_colors is None else "",
         "slice_type": primary_dimension["slice_type"],
+        "value_type": "continuous",
         "values": list(range(0, len(index_labels))),
     }
 
@@ -211,6 +213,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         "dataset_label": primary_dimension["dataset_label"],
         "axis_label": primary_dimension["axis_label"],
         "slice_type": primary_dimension["slice_type"],
+        "value_type": "continuous",
         "values": [indexed_values.get(label, None) for label in index_labels],
     }
 
@@ -221,6 +224,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
             "dataset_label": color_dimension["dataset_label"],
             "axis_label": color_dimension["axis_label"],
             "slice_type": color_dimension["slice_type"],
+            "value_type": "continuous",
             "values": [
                 color_dimension["indexed_values"].get(label, None)
                 for label in index_labels

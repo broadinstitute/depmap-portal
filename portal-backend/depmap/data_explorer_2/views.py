@@ -173,6 +173,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": "cannot plot",
+            "value_type": "continuous",
             "values": [],
             "context_size": len(row_labels),
             "slice_type": slice_type,
@@ -192,6 +193,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": "context produced no matches",
+            "value_type": "continuous",
             "values": [],
             "context_size": 0,
             "slice_type": slice_type,
@@ -285,6 +287,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": axis_label,
+            "value_type": "continuous",
             "values": values,
             "slice_type": slice_type,
         }
@@ -342,13 +345,27 @@ def datasets_by_index_type():
     return make_gzipped_json_response(output)
 
 
-# FIXME: Rename this to something like /types/dimensions/{name}/labels
 @blueprint.route("/dimension_labels")
 def dimension_labels():
     dimension_type = request.args.get("dimension_type")
     labels = get_dimension_labels_across_datasets(dimension_type)
+    aliases = []
 
-    return make_gzipped_json_response({"labels": labels})
+    if dimension_type == "depmap_model":
+        label = "Cell Line Name"
+        slice_id = "slice/cell_line_display_name/all/label"
+
+        values = []
+        values_by_label = slice_to_dict(slice_id)
+
+        for label in labels:
+            values.append(values_by_label.get(label, None))
+
+        aliases.append(
+            {"label": label, "slice_id": slice_id, "values": values,}
+        )
+
+    return make_gzipped_json_response({"labels": labels, "aliases": aliases})
 
 
 @blueprint.route("/dimension_labels_to_datasets_mapping")

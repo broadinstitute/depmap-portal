@@ -92,9 +92,9 @@ function AllSelects({
           mode === "entity-or-context" &&
           Boolean(slice_type || axis_type === "aggregated_slice")
         }
-        disabled={dataType === "custom"}
         value={axis_type as "raw_slice" | "aggregated_slice"}
         onChange={onChangeAxisType}
+        dataset_id={dataset_id}
       />
       <SliceSelect
         show={axis_type === "raw_slice"}

@@ -44,6 +44,11 @@ export async function fetchVariableDomain(
 
   try {
     data = await getDimensionDataWithoutLabels(sliceQuery);
+
+    if (data.values.length === 0) {
+      window.console.error({ sliceQuery });
+      throw new Error("Slice query returned empty data!");
+    }
   } catch {
     window.console.error({ sliceQuery });
     throw new Error("Error fetching data from slice query");
@@ -79,6 +84,23 @@ export async function fetchVariableDomain(
     }
 
     return Promise.resolve({ min, max, value_type });
+  }
+
+  if (value_type === "list_strings") {
+    const stringValues = new Set<string>();
+
+    for (let i = 0; i < data.values.length; i += 1) {
+      const value = data.values[i];
+
+      if (Array.isArray(value)) {
+        value.forEach((s) => stringValues.add(s));
+      }
+    }
+
+    return Promise.resolve({
+      unique_values: [...stringValues].sort(compareCaseInsensitive),
+      value_type,
+    });
   }
 
   throw new Error(`Unsupported value_type "${value_type}".`);

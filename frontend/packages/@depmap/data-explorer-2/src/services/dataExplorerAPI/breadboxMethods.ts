@@ -14,6 +14,7 @@ import {
   DataExplorerMetadata,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
+  DataExplorerPlotResponseDimension,
   FilterKey,
   MatrixDataset,
   SliceQuery,
@@ -72,6 +73,26 @@ async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
   }
 
   return `${aggregation} ${units} of ${contextCount} ${context.name} ${entities}`;
+}
+
+async function fetchValueType(dimension?: DataExplorerPlotConfigDimension) {
+  if (!dimension || !isCompleteDimension(dimension)) {
+    return "continuous";
+  }
+
+  const dataset = await cached(breadboxAPI).getDataset(dimension.dataset_id);
+
+  if (!dataset) {
+    throw new Error(`Unknown dataset "${dimension.dataset_id}"`);
+  }
+
+  if (dataset.format !== "matrix_dataset") {
+    throw new Error(
+      "Dataset is not a matrix! This is not supported for plot dimensions."
+    );
+  }
+
+  return dataset.value_type;
 }
 
 async function fetchDatasetLabel(dataset_id?: string) {
@@ -324,7 +345,7 @@ export async function fetchPlotDimensions(
       index_labels,
       index_display_labels,
       linreg_by_group: [],
-      dimensions: {} as Record<string, unknown>,
+      dimensions: {} as DataExplorerPlotResponse["dimensions"],
       filters: {} as Record<string, unknown>,
       metadata: {} as Record<string, unknown>,
     };
@@ -334,6 +355,12 @@ export async function fetchPlotDimensions(
       y: await fetchAxisLabel(dimensions?.y),
       color: await fetchAxisLabel(dimensions?.color),
     } as Record<string, string>;
+
+    const valueTypes = {
+      x: await fetchValueType(dimensions?.x),
+      y: await fetchValueType(dimensions?.y),
+      color: await fetchValueType(dimensions?.color),
+    } as Record<string, DataExplorerPlotResponseDimension["value_type"]>;
 
     const datasetLabels = {
       x: dimensions.x ? await fetchDatasetLabel(dimensions.x.dataset_id) : null,
@@ -353,14 +380,15 @@ export async function fetchPlotDimensions(
       };
 
       if (property === "dimensions") {
-        out.dimensions[key] = {
+        out.dimensions[key as keyof DataExplorerPlotResponse["dimensions"]] = {
           slice_type: dimensions[key].slice_type,
           dataset_id: dimensions[key].dataset_id,
           axis_label: axisLabels[key],
-          dataset_label: datasetLabels[key],
+          dataset_label: datasetLabels[key] as string,
+          value_type: valueTypes[key],
           values: out.index_labels.map((label) => {
             return indexed_values[label] ?? null;
-          }),
+          }) as number[],
         };
       }
 
@@ -494,6 +522,14 @@ export const fetchLinearRegression = memoize(
       categories = data.metadata.color_property.values;
     }
 
+    if (
+      ["categorical", "text"].includes(
+        data.dimensions?.color?.value_type as string
+      )
+    ) {
+      categories = data.dimensions.color!.values;
+    }
+
     if (data.filters?.color1 || data.filters?.color2) {
       const name1 = data.filters?.color1?.name || null;
       const name2 = data.filters?.color2?.name || null;
@@ -594,6 +630,7 @@ const correlateDimension = memoize(
         ({
           slice_type,
           values: [],
+          value_type: "continuous",
           dataset_label,
           context_size: labels.length,
           axis_label:
@@ -667,6 +704,10 @@ const correlateDimension = memoize(
       slice_type,
       axis_label,
       dataset_label,
+      // We assume `value_type` is "continuous" because it wouldn't make sense
+      // to compute a correlation otherwise.
+      // TODO: Add validation for this.
+      value_type: "continuous" as const,
       // HACK: The correlation heatmap is a special case and breaks the
       // standard dimension type. `matrix` is of type number[][] but we'll
       // cast it to number[] just to keep the types simple. Caution must be
@@ -727,7 +768,12 @@ export async function fetchWaterfall(
     metadata
   );
 
-  const categoricalValues = unsortedData.metadata?.color_property?.values;
+  let categoricalValues = unsortedData.metadata?.color_property?.values;
+
+  // FIXME: Should we make this easier to work with?
+  if (unsortedData.dimensions.color?.value_type === "categorical") {
+    categoricalValues = unsortedData.dimensions.color.values;
+  }
 
   const sortedLabels = unsortedData.index_labels
     .map(
@@ -772,14 +818,20 @@ export async function fetchWaterfall(
   };
 
   const sortedDimensions: DataExplorerPlotResponse["dimensions"] = {
+    // HACK: This ouput "x" dimension does not match the input "x" dimension.
+    // Rather, it is a special "rank" dimension that's derived from it.
     x: {
       axis_label: categoricalValues ? "" : "Rank",
       dataset_label: "",
       dataset_id: dimensions.x.dataset_id,
       slice_type: dimensions.x.slice_type,
+      value_type: "continuous",
       values: Array.from({ length: sortedLabels.length }, (_, i) => i),
     },
 
+    // HACK: We remap the "x" dimension from the plot config onto the y axis.
+    // This is for consistency with the density plot, which has a single "x"
+    // dimension.
     y: {
       ...unsortedData.dimensions.x,
       values: sortByReindexedLabels(unsortedData.dimensions.x.values),

@@ -1,8 +1,9 @@
 import { SliceQuery } from "@depmap/types";
+import wellKnownDatasets from "../constants/wellKnownDatasets";
 
 export function sliceIdToSliceQuery(
   slice_id: string,
-  value_type: "categorical" | "continuous",
+  value_type: "categorical" | "continuous" | "list_strings",
   dimension_type: string
 ): SliceQuery {
   const [prefix, dataset_id, identifier, labelType] = slice_id
@@ -103,11 +104,23 @@ export function sliceIdToSliceQuery(
         identifier: "GrowthPattern",
       };
 
+    case "mutations_prioritized":
+      return {
+        dataset_id: wellKnownDatasets.mutations_prioritized,
+        identifier,
+        identifier_type: "feature_label",
+      };
+
+    case "mutation_protein_change_by_gene":
+      return {
+        dataset_id: wellKnownDatasets.mutation_protein_change,
+        identifier,
+        identifier_type: "feature_label",
+      };
+
     // TODO: Spport these special cases
-    // case "mutations_prioritized":
     // case "msi-0584.6/msi":
     // case "prism-pools-4441.2/coded_prism_pools":
-    // case "mutation_protein_change_by_gene":
     // case "gene_essentiality":
     // case "gene_selectivity":
     // case "compound_experiment":

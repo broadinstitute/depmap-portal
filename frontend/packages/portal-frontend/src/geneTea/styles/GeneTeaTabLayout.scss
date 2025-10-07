@@ -1,7 +1,7 @@
 .geneTeaTabLayout {
   display: grid;
-  grid-template-columns: 2fr 10fr;
-  grid-template-areas: "filters filters main main main main main main main main main main";
+  grid-template-columns: 1fr 10fr;
+  grid-template-areas: "filters main main main main main main main main main main";
   min-height: 100vh;
 
   @media (max-width: 1200px) {
@@ -22,6 +22,11 @@
     margin-top: 30px;
     border-top: 1px solid black;
   }
+  .mainContentSubtitle {
+    margin-bottom: 15px;
+    max-width: 90ch;
+    font-size: 16px;
+  }
 
   .geneTeaTabLayout {
     .mainContentContainer {
@@ -34,7 +39,6 @@
       .mainContentHeader {
         margin-top: 20px;
         margin-bottom: 20px;
-
         .mainContentHeaderTitle,
         .mainContentTableHeaderTitle {
           font-family: "Lato", "Arial", sans-serif;

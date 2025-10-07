@@ -58,12 +58,19 @@ function DataSourceSelect({ expr, path }: Props) {
         // Create a var reference if one doesn't exist.
         if (!nextVarName) {
           nextVarName = crypto.randomUUID();
-
-          dispatch({
-            type: "update-value",
-            payload: { path, value: { var: nextVarName } },
-          });
         }
+
+        // Also reset the operator to a neutral value.
+        const nextOp = "==";
+        const outerExpr = { [nextOp]: [{ var: nextVarName }, null] };
+
+        dispatch({
+          type: "update-value",
+          payload: {
+            path: path.slice(0, -2),
+            value: outerExpr,
+          },
+        });
 
         // Update the var reference.
         setVar(nextVarName, {
