@@ -97,7 +97,7 @@ const MultiSelectTextarea: React.FC = () => {
       </h4>
       {geneSymbolSelections.size < 3 && (
         <h5 className={styles.sectionSubTitle}>
-          Please enter between 3 and 1000 gene symbols.
+          Please enter between 2 and 1000 gene symbols.
         </h5>
       )}
       <div

@@ -121,7 +121,7 @@ function TopTermsTab({
           values.{" "}
           <PurpleHelpIcon
             tooltipText="Interaction with the heatmap will offer more information about
-          selected genes, while interaction with the barplot offers the
+          selected genes, while interaction with the table offers the
           opportunity to refer to the relevant text excerpts for a given term.
           To see the enrichment results across all terms matching the query,
           navigate to the ‘All Matching Terms’ tab above."
