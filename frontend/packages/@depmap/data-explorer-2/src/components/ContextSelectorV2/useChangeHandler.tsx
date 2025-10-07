@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import { getConfirmation, showInfoModal } from "@depmap/common-components";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
@@ -28,7 +29,7 @@ const handleCaseAll = (context_type: string, onChange: OnChange) => {
   );
 };
 
-const handleCaseEdit = (
+export const handleCaseEdit = (
   value: DataExplorerContextV2 | null,
   hashOfSelectedValue: string | null
 ) => {
@@ -73,9 +74,17 @@ const handleDefaultCase = async (
   if (isV2Context(fetchedContext)) {
     context = fetchedContext;
   } else {
-    const { success, convertedContext } = await convertContextV1toV2(
-      fetchedContext
-    );
+    const convertedContext = await convertContextV1toV2(fetchedContext);
+    let success = false;
+
+    try {
+      const result = await cached(breadboxAPI).evaluateContext(
+        convertedContext
+      );
+      success = result.ids.length > 0;
+    } catch (e) {
+      success = false;
+    }
 
     if (success) {
       context = convertedContext;

@@ -1,5 +1,7 @@
 import React, { useRef } from "react";
 import { DataExplorerPlotConfig } from "@depmap/types";
+import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
+import { makePlotConfigBreadboxModeCompatible } from "../../utils";
 import styles from "../../styles/DataExplorer2.scss";
 
 interface Props {
@@ -12,15 +14,17 @@ interface Props {
 function StartScreenExample({ imgSrc, title, description, plot }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
 
-  const handleClick = () => {
+  const handleClick = async () => {
     const el = ref.current!.closest("#dx2_start_screen");
     window.history.replaceState({ startScreenScrollTop: el!.scrollTop }, "");
 
-    window.dispatchEvent(
-      new CustomEvent("dx2_example_clicked", {
-        detail: plot,
-      })
-    );
+    let detail = plot;
+
+    if (isBreadboxOnlyMode) {
+      detail = await makePlotConfigBreadboxModeCompatible(plot);
+    }
+
+    window.dispatchEvent(new CustomEvent("dx2_example_clicked", { detail }));
   };
 
   return (

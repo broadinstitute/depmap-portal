@@ -138,6 +138,21 @@ function ColorByViewOptions({
             payload: sliceQuery,
           });
         }}
+        onConvertToColorContext={(context) => {
+          dispatch({
+            type: "batch",
+            payload: [
+              { type: "select_color_by", payload: "aggregated_slice" },
+              {
+                type: "select_filter",
+                payload: {
+                  key: "color1" as FilterKey,
+                  filter: (context as unknown) as DataExplorerContext,
+                },
+              },
+            ],
+          });
+        }}
       />
       <TabularDatasetSelect
         show={color_by === "tabular_dataset"}

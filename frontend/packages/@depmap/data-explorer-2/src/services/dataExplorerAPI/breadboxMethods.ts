@@ -217,9 +217,20 @@ export async function fetchPlotDimensions(
       ? "samples"
       : "features";
 
-    const { ids } = await cached(breadboxAPI).evaluateContext(
-      (context as unknown) as DataExplorerContextV2
-    );
+    let ids: string[] = [];
+
+    try {
+      const result = await cached(breadboxAPI).evaluateContext(
+        (context as unknown) as DataExplorerContextV2
+      );
+
+      ids = result.ids;
+    } catch (e) {
+      window.dispatchEvent(
+        new CustomEvent("dx2_context_eval_failed", { detail: context })
+      );
+      throw e;
+    }
 
     const index_indentifiers = await fetchDatasetIdentifiers(
       index_type,
@@ -449,6 +460,11 @@ export const fetchDatasetsByIndexType = memoize(async () => {
 
     // TODO: add support for other value types
     if (dataset.value_type !== "continuous") {
+      return;
+    }
+
+    // Only supported by DimensionSelectV2.
+    if (!dataset.feature_type_name) {
       return;
     }
 

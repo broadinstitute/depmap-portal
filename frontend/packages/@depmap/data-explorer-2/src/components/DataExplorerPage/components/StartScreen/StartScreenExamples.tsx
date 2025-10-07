@@ -1,7 +1,6 @@
 import React from "react";
 import { DepMap, toStaticUrl } from "@depmap/globals";
 import { DataExplorerPlotConfig } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import StartScreenExample from "./StartScreenExample";
 import examples from "./examples.json";
 import styles from "../../styles/DataExplorer2.scss";
@@ -27,10 +26,6 @@ const handleClickSuspensionGrowthPattern = () => {
 };
 
 function StartScreenExamples() {
-  if (isBreadboxOnlyMode) {
-    <h2>⚠️ TODO: fix examples</h2>;
-  }
-
   return (
     <div className={styles.StartScreenExamples}>
       <StartScreenExample

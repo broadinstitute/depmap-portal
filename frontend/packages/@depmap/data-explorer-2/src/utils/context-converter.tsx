@@ -25,10 +25,7 @@ const CATEGORICAL_MATRICES = new Set([
 // that did not cause an error.
 export async function convertContextV1toV2(
   context: DataExplorerContext
-): Promise<{
-  success: boolean;
-  convertedContext: DataExplorerContextV2;
-}> {
+): Promise<DataExplorerContextV2> {
   if ("dimension_type" in context) {
     throw new Error("Already a V2 context!");
   }
@@ -38,13 +35,10 @@ export async function convertContextV1toV2(
   // https://jsonlogic.com/#always-and-never
   if (typeof context.expr !== "object" && context.expr !== null) {
     return {
-      success: true,
-      convertedContext: {
-        name: context.name,
-        dimension_type: context.context_type,
-        expr: context.expr,
-        vars: {},
-      },
+      name: context.name,
+      dimension_type: context.context_type,
+      expr: context.expr,
+      vars: {},
     };
   }
 
@@ -164,7 +158,7 @@ export async function convertContextV1toV2(
     }
   }
 
-  const convertedContext = {
+  return {
     name: context.name,
     dimension_type:
       context.context_type === "custom" ? null : context.context_type,
@@ -173,27 +167,4 @@ export async function convertContextV1toV2(
     expr: context.expr,
     vars,
   } as DataExplorerContextV2;
-
-  // FIXME: For now we'll call this a success, even though such a context won't
-  // work if you try to evaluate it. It can function as the `context` in a
-  // DataExplorerPlotConfigDimension (meaning the DimensionSelect component can
-  // interpret it).
-  if (context.context_type === "custom" || context.context_type === null) {
-    return { success: true, convertedContext };
-  }
-
-  try {
-    const result = await cached(breadboxAPI).evaluateContext(convertedContext);
-    // We'll consider it a failure if the context produces no results. That's
-    // probably indicative of a problem (even though the API request itself
-    // succeeded).
-    const success = result.ids.length > 0;
-
-    return { success, convertedContext };
-  } catch {
-    return {
-      success: false,
-      convertedContext,
-    };
-  }
 }
