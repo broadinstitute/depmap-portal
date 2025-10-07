@@ -30,13 +30,30 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
     term: string;
   } | null>(null);
 
+  const renderFilterPlaceholder = ({
+    column: { filterValue, setFilter },
+  }: any) => {
+    return (
+      <input
+        type="text"
+        placeholder={`Search...`}
+        value={filterValue || ""}
+        onChange={(event) => setFilter(event.target.value || undefined)}
+        style={{ width: "90%", fontSize: "12px" }}
+      />
+    );
+  };
+
   const tableColumns = [
     {
       accessor: "term",
       Header: "Term",
-      helperText:
+      tooltipText:
         "The '~' prefix indicates a synonym set, with sub-terms defined in the ‘Synonyms’ column.",
-      minWidth: 800,
+      minWidth: 150,
+      width: 280,
+      maxWidth: 500,
+      customFilter: renderFilterPlaceholder,
       Cell: (row: any) => (
         <>
           {termToMatchingGenesMap ? (
@@ -62,51 +79,78 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
     {
       accessor: "termGroup",
       Header: "Term Group",
-      helperText:
+      tooltipText:
         "The '++' suffix indicates the term is a member of a group. All terms in a group share the same value in this column.",
-      minWidth: 800,
+      minWidth: 150,
+      width: 1500,
+      maxWidth: 2000,
+      customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "fdr",
       Header: "FDR",
-      helperText:
+      tooltipText:
         "False discovery rate value, from Benjamini-Hochberg correction of hypergeometric test p-values.",
-      minWidth: 800,
+      minWidth: 80,
+      width: 80,
+      maxWidth: 80,
+      customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "effectSize",
+      id: "effectSize",
       Header: "Effect Size",
-      helperText:
+      tooltipText:
         "Sum of tf-idf across query genes. This measures the total information encoded by this term for the query, and approximates its specificity.",
-      minWidth: 800,
+      minWidth: 90,
+      width: 90,
+      maxWidth: 90,
+      customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "matchingGenesInList",
+      id: "matchingGenesInList",
       Header: "Matching Query",
-      helperText: "Genes in query whose descriptions contain the term.",
-      minWidth: 800,
+      tooltipText: "Genes in query whose descriptions contain the term.",
+      minWidth: 180,
+      width: 500,
+      maxWidth: 1000,
+      customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "nMatchingGenesInList",
+      id: "nMatchingGenesInList",
       Header: "n Matching Query",
-      helperText:
+      tooltipText:
         "Number of genes in query whose descriptions contain the term.",
-      minWidth: 800,
+      minWidth: 120,
+      width: 120,
+      maxWidth: 120,
+      customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "nMatchingGenesOverall",
+      id: "nMatchingGenesOverall",
       Header: "n Matching Overall",
-      helperText:
+      tooltipText:
         "Number of genes in background whose descriptions contain the term. This defines how common a term is.",
-      minWidth: 800,
+      minWidth: 130,
+      width: 130,
+      maxWidth: 130,
+      customFilter: renderFilterPlaceholder,
     },
     {
       accessor: "synonyms",
+      id: "synonyms",
       Header: "Synonyms",
-      helperText: "Semicolon-separated list of terms making up a synonym set.",
-      minWidth: 200,
+      tooltipText: "Semicolon-separated list of terms making up a synonym set.",
+      minWidth: 180,
+      width: 1000,
+      maxWidth: 1000,
+      customFilter: renderFilterPlaceholder,
     },
   ];
+
   let tableContent;
   if (error) {
     tableContent = (
@@ -120,33 +164,35 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
     );
   } else {
     tableContent = (
-      <div>
-        <WideTable
-          idProp="term"
-          rowHeight={28}
-          data={tableData || []}
-          prefferedTableDataForDownload={prefferedTableDataForDownload || []}
-          fixedHeight={height}
-          columns={tableColumns}
-          columnOrdering={tableColumns.map((col) => col.accessor)}
-          defaultColumnsToShow={tableColumns.map((col) => col.accessor)}
-          selectedTableLabels={selectedTableRows}
-          onChangeSelections={handleChangeSelection}
-          hideSelectAllCheckbox
-          allowDownloadFromTableDataWithMenu
-          allowDownloadFromTableDataWithMenuFileName="gene-tea-data.csv"
-          minimumAllowedSelections={1}
-          useAllSelectionsInOnChangeHandler
-        />{" "}
-        <GeneTeaContextModal
-          show={Boolean(selectedTerm)}
-          term={selectedTerm?.term || ""}
-          synonyms={[]}
-          coincident={[]}
-          matchingGenes={selectedTerm?.matchingGenes || []}
-          onClose={() => setSelectedTerm(null)}
-        />
-      </div>
+      <section style={{ overflow: "auto", maxWidth: "99%" }}>
+        <div>
+          <WideTable
+            idProp="term"
+            rowHeight={32}
+            fixedHeight={500}
+            data={tableData || []}
+            prefferedTableDataForDownload={prefferedTableDataForDownload || []}
+            columns={tableColumns}
+            columnOrdering={tableColumns.map((col) => col.accessor)}
+            defaultColumnsToShow={tableColumns.map((col) => col.accessor)}
+            selectedTableLabels={selectedTableRows}
+            onChangeSelections={handleChangeSelection}
+            hideSelectAllCheckbox
+            allowDownloadFromTableDataWithMenu
+            allowDownloadFromTableDataWithMenuFileName="gene-tea-data.csv"
+            minimumAllowedSelections={1}
+            useAllSelectionsInOnChangeHandler
+          />{" "}
+          <GeneTeaContextModal
+            show={Boolean(selectedTerm)}
+            term={selectedTerm?.term || ""}
+            synonyms={[]}
+            coincident={[]}
+            matchingGenes={selectedTerm?.matchingGenes || []}
+            onClose={() => setSelectedTerm(null)}
+          />
+        </div>
+      </section>
     );
   }
   return <>{tableContent}</>;

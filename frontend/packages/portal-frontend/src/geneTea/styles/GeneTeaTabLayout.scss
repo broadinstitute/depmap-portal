@@ -6,7 +6,7 @@
 
   @media (max-width: 1200px) {
     grid-template-areas: "filters main";
-    grid-template-columns: 1fr 10fr;
+    grid-template-columns: 1fr 12fr;
     grid-template-rows: auto auto;
   }
 
@@ -30,12 +30,7 @@
 
   .geneTeaTabLayout {
     .mainContentContainer {
-      grid-area: main;
-      margin-left: 0;
-      width: 100%;
-      margin-right: 0;
-      padding-bottom: 16px;
-
+      max-width: 95%;
       .mainContentHeader {
         margin-top: 20px;
         margin-bottom: 20px;
@@ -59,7 +54,6 @@
     display: grid;
     grid-template-columns: 9fr 1fr;
     grid-template-areas: "plot plot plot plot plot plot plot plot plot selections";
-    gap: 1rem;
 
     .plotArea {
       grid-area: "plot";
@@ -67,6 +61,9 @@
 
     .selectionsArea {
       grid-area: "selections";
+      @media (max-width: 1250px) {
+        margin-top: 20px;
+      }
     }
 
     @media (max-width: 1250px) {
@@ -75,6 +72,16 @@
         "plot";
       grid-template-columns: 1fr;
       grid-template-rows: auto auto;
+    }
+  }
+
+  .mainContentGridAllMatchingTerms {
+    display: grid;
+    grid-template-columns: 10fr;
+    grid-template-areas: "plot plot plot plot plot plot plot plot plot plot";
+
+    .plotAreaAllMatchingTerms {
+      grid-area: "plot";
     }
   }
 
