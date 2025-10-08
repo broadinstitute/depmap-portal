@@ -19,6 +19,8 @@ from depmap.predictability_prototype.schemas import (
     ModelPerformanceInfo,
     GeneTeaSearchTerm,
     PredictiveModelData,
+    AggScoresData,
+    TopFeaturesBarData,
 )
 from depmap.data_access import interface as data_access
 
@@ -128,8 +130,12 @@ class Predictions(
 
                 data_by_screen_type[screen_type] = ScreenTypeData(
                     overview=OverviewData(
-                        aggregated_scores=agg_scores,  # used by "Aggregate Scores Across All Models" figure
-                        top_features=top_features,  # used by "Top features overall" figure
+                        aggregated_scores=AggScoresData(
+                            **agg_scores
+                        ),  # used by "Aggregate Scores Across All Models" figure
+                        top_features=TopFeaturesBarData(
+                            **top_features
+                        ),  # used by "Top features overall" figure
                         gene_tea_symbols=gene_tea_search_terms,  # used by GeneTEA results tab
                     ),
                     model_performance_info=model_performance_info,  # used by model performance section

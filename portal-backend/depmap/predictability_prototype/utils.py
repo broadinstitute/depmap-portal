@@ -9,7 +9,7 @@ from depmap.predictability_prototype.models import (
     PrototypePredictiveFeature,
     PrototypePredictiveFeatureResult,
 )
-from depmap.predictability_prototype.schemas import FeatureSummary
+from depmap.predictability_prototype.schemas import FeatureSummary, RelatedType
 from depmap_compute import analysis_tasks_interface
 from depmap.enums import DependencyEnum
 import pandas as pd
@@ -345,7 +345,10 @@ def get_top_feature_summaries(
 
         feature_obj = PrototypePredictiveFeature.get_by_feature_name(feature_name)
         assert feature_obj is not None
-        related_type = feature_obj.get_relation_to_entity(entity_id=entity_id)
+        related_type_str = feature_obj.get_relation_to_entity(entity_id=entity_id)
+        related_type = (
+            RelatedType(related_type_str) if related_type_str is not None else None
+        )
 
         feature_summary = FeatureSummary(
             feature_label=feature_label,
