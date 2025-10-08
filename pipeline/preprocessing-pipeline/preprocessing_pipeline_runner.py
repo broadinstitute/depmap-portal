@@ -13,6 +13,21 @@ from base_pipeline_runner import PipelineRunner
 class PreprocessingPipelineRunner(PipelineRunner):
     """Pipeline runner for preprocessing pipeline."""
 
+    def map_environment_name(self, env_name):
+        """Map environment names to actual conseq file names."""
+        env_mapping = {
+            "qa": "iqa",
+            "external": "external",
+            "dqa": "dqa",
+            "internal": "internal",
+        }
+
+        return (
+            "iqa"
+            if env_name.startswith("test-")
+            else env_mapping.get(env_name, env_name)
+        )
+
     def create_argument_parser(self):
         """Create argument parser for preprocessing pipeline."""
         parser = argparse.ArgumentParser(
@@ -74,15 +89,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def create_override_conseq_file(self, env_name, publish_dest):
         """Create an overridden conseq file with custom publish_dest."""
-        # Map environment names to actual conseq file names
-        env_mapping = {
-            "qa": "iqa",
-            "external": "external",
-            "dqa": "dqa",
-            "internal": "internal",
-        }
-
-        mapped_env = env_mapping.get(env_name, env_name)
+        mapped_env = self.map_environment_name(env_name)
         original_conseq = f"run_{mapped_env}.conseq"
         override_conseq = f"overriden-{original_conseq}"
 
@@ -111,14 +118,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
             print(f"Created override conseq file: {conseq_file}")
             return conseq_file
         else:
-            # Map environment names to actual conseq file names
-            env_mapping = {
-                "qa": "iqa",
-                "external": "external",
-                "dqa": "dqa",
-                "internal": "internal",
-            }
-            mapped_env = env_mapping.get(config["env_name"], config["env_name"])
+            mapped_env = self.map_environment_name(config["env_name"])
             print("No S3 path override specified")
             return f"run_{mapped_env}.conseq"
 
