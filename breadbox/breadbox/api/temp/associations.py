@@ -65,12 +65,12 @@ def compute_associations_for_slice(
     )
     log.warning("Calc finished")
 
-    correlations.sort_values("cor", inplace=True)
+    correlations.sort_values("cor", inplace=True)  # type: ignore
 
     return LongAssociationsTable(
-        label=correlations["label"].to_list(),
-        given_id=correlations["given_id"].to_list(),
-        cor=correlations["cor"].to_list(),
+        label=correlations["label"].to_list(),  # type: ignore
+        given_id=correlations["given_id"].to_list(),  # type: ignore
+        cor=correlations["cor"].to_list(),  # type: ignore
     )
 
 

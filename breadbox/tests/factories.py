@@ -36,7 +36,7 @@ import hashlib
 _unique_name_counter = 0
 
 
-class SettingsFactory(factory.Factory):
+class SettingsFactory(factory.Factory):  # type: ignore[misc]
     class Meta:
         model = config.Settings
 

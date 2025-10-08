@@ -41,10 +41,10 @@ def translate_to_bb_ids_hack(screen_type: str, entity_label: str):
     given_id = str(Gene.get_by_label(entity_label).entrez_id)
     dataset = DependencyDataset.get_dataset_by_data_type_priority(screen_type)
 
-    if dataset.name is None:
+    if dataset.name is None:  # type: ignore
         raise ValueError(f"Dataset name is None for screen_type: {screen_type}")
 
-    return str(dataset.name.value), given_id
+    return str(dataset.name.value), given_id  # type: ignore
 
 
 def get_prediction_dataset_id_hack(

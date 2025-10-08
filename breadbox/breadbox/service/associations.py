@@ -185,7 +185,7 @@ def compute_associations(
     filestore_location: str,
     other_dataset: MatrixDataset,
     profile_slice_query: SliceQuery,
-):
+) -> pd.Series:
     beginning = time.time()
     """ Computes correlation between all features in `other_dataset` with the profile specified by `profile_slice_query` """
     resolved_slice = slice_service.resolve_slice_to_components(db, profile_slice_query)
@@ -206,6 +206,9 @@ def compute_associations(
         )
 
     # Read data from the HDF5 file
+    if feature.index is None:
+        raise ValueError(f"Feature {feature.given_id} has no index")
+
     reference_profile = get_feature_slice(
         resolved_slice.dataset, [feature.index], filestore_location
     )
@@ -219,12 +222,15 @@ def compute_associations(
     start = time.time()
     # Isn't there a better way to get this? I don't actually need the "index" column: just given_id and label.
     # I think we should have a method for this.
-    given_id_index_mapping = pd.DataFrame(
+    query_results = list(
         db.query(DatasetFeature)
         .filter(DatasetFeature.dataset_id == other_dataset.id)
         .with_entities(DatasetFeature.given_id, DatasetFeature.index)
-        .all(),
-        columns=["given_id", "index"],
+        .all()
+    )
+    given_id_index_mapping = pd.DataFrame(
+        query_results,
+        columns=pd.Index(["given_id", "index"]),  # type: ignore[arg-type]
     )
 
     if other_dataset.feature_type_name is None:
@@ -238,7 +244,7 @@ def compute_associations(
             label_by_id.get(x) for x in given_id_index_mapping["given_id"]
         ]
 
-    given_id_index_mapping.index = given_id_index_mapping["index"]
+    given_id_index_mapping = given_id_index_mapping.set_index("index")
     log.warning(f"time fetching labels {time.time() - start}")
     print(given_id_index_mapping)
 
@@ -255,8 +261,10 @@ def compute_associations(
     log.warning(f"{time_spent_in_cor} seconds in corr")
     concatted_result = pd.concat(results)
     log.warning(f"{time.time() - beginning} seconds for whole call")
-    left = pd.DataFrame(concatted_result, columns=["cor"], index=concatted_result.index)
+    left = pd.DataFrame({"cor": concatted_result}, index=concatted_result.index)
     with_ids = pd.merge(
         left, given_id_index_mapping, left_index=True, right_on="given_id", how="inner"
     )
-    return with_ids[~pd.isna(with_ids["cor"])]
+    mask = ~pd.isna(with_ids["cor"])  # boolean Series
+    filtered = with_ids.loc[mask]
+    return filtered.set_index("given_id")["cor"]

@@ -4,11 +4,10 @@ import json
 from typing import Any, List, Optional, Union
 
 import pandas as pd
-from sqlalchemy.testing.plugin.plugin_base import logging
 
 from ..schemas.dataframe_wrapper import DataFrameWrapper
 from ..models.dataset import Dataset, MatrixDataset, ValueType
-from .hdf5_utils import write_hdf5_file, read_hdf5_file
+from .hdf5_utils import write_hdf5_file, read_hdf5_file, get_hdf5_file_matrix_size
 from breadbox.schemas.custom_http_exception import (
     SampleNotFoundError,
     FeatureNotFoundError,
