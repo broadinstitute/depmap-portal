@@ -390,7 +390,7 @@ function HeatmapBarChart({
 
   return (
     <>
-      <h3 style={{ textAlign: "center" }}>{plotTitle}</h3>
+      {ref.current && <h3 style={{ textAlign: "center" }}>{plotTitle}</h3>}
       <div className={styles.HeatmapBarChart} ref={ref} />
     </>
   );
