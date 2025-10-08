@@ -206,6 +206,7 @@ function PrototypeDensity1D({
     const yaxis = axes.current.yaxis;
 
     if (xaxis) {
+      xaxis.tickfont = { size: xAxisFontSize };
       xaxis.title = {
         ...(xaxis.title as object),
         font: { size: xAxisFontSize },
@@ -441,6 +442,7 @@ function PrototypeDensity1D({
         exponentformat: "e",
         type: "linear",
         autorange: true,
+        tickfont: { size: xAxisFontSize },
       },
 
       yaxis: {

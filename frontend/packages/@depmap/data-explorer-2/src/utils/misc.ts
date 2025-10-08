@@ -5,11 +5,12 @@ import {
   DataExplorerPlotConfigDimensionV2,
   DimensionType,
   PartialDataExplorerPlotConfigDimension,
+  PartialDataExplorerPlotConfigDimensionV2,
   SliceQuery,
 } from "@depmap/types";
 import { isV2Context } from "./context";
 
-export function getDimensionTypeLabel(dimension_type: string) {
+export function getDimensionTypeLabel(dimension_type?: string) {
   if (!dimension_type) {
     return "";
   }
@@ -69,17 +70,26 @@ export const isCompleteExpression = (expr: any) => {
 };
 
 export function isCompleteDimension(
-  dimension: PartialDataExplorerPlotConfigDimension | null | undefined
-): dimension is DataExplorerPlotConfigDimension {
+  dimension:
+    | PartialDataExplorerPlotConfigDimension
+    | PartialDataExplorerPlotConfigDimensionV2
+    | null
+    | undefined
+): dimension is
+  | DataExplorerPlotConfigDimension
+  | DataExplorerPlotConfigDimensionV2 {
   if (!dimension) {
     return false;
   }
 
   const { dataset_id, slice_type, axis_type, context, aggregation } = dimension;
 
+  const isValidSliceType =
+    typeof slice_type === "string" || slice_type === null;
+
   return Boolean(
     dataset_id &&
-      slice_type &&
+      isValidSliceType &&
       axis_type &&
       aggregation &&
       isCompleteExpression(context?.expr)
@@ -101,6 +111,8 @@ export const urlLibEncode = (s: string) => {
 
 export const isSampleType = (
   dimensionTypeName: string | null | undefined,
+  // FIXME: this second arg is optional to support some legacy code. Once we
+  // move all data to Breadbox, this should become required.
   dimensionTypes?: DimensionType[]
 ) => {
   if (!dimensionTypeName) {
@@ -118,17 +130,19 @@ export const isSampleType = (
   }
 
   return [
-    "depmap_model",
-    "screen",
-    "Screen metadata",
-    "model_condition",
     "anchor_experiment",
     "anchor_experiment_v2",
+    "depmap_model",
+    "ModelCondition",
+    "Screen metadata",
+    "tumor",
   ].includes(dimensionTypeName);
 };
 
 export function convertDimensionToSliceId(
-  dimension: Partial<DataExplorerPlotConfigDimension>
+  dimension: Partial<
+    DataExplorerPlotConfigDimension | DataExplorerPlotConfigDimensionV2
+  >
 ) {
   if (!isCompleteDimension(dimension)) {
     return null;
@@ -177,7 +191,7 @@ export async function convertDimensionToSliceQuery(
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimension.slice_type);
 
-  if (!dimType) {
+  if (dimension.slice_type !== null && !dimType) {
     throw new Error(`Unrecognized dimension type "${dimension.slice_type}"!`);
   }
 
@@ -189,7 +203,7 @@ export async function convertDimensionToSliceQuery(
 
   const identifier = expr["=="][1];
   const identifier_type =
-    dimType.axis === "feature" ? "feature_id" : "sample_id";
+    dimType?.axis === "sample" ? "sample_id" : "feature_id";
 
   return {
     identifier,

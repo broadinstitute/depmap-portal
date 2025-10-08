@@ -145,6 +145,15 @@ export const TabsWithHistory = ({
       });
 
       window.history.pushState({}, "", `?${queryString}`);
+
+      // Only dispatch the event for the tab being shown. Plotly improperly
+      // sized the Enriched Lineages Tile box plots if the plots attempted to load
+      // while the overview tab was hidden. This dispatches an event so that the box
+      // plots will resize on selection of the tab via incrementing the state of the components key.
+      // Note: A similar technique is used for the Compound Page tabs here: portal-backend/depmap/static/js/sticky/stickyTabs.js
+      window.dispatchEvent(
+        new CustomEvent(`changeTab:${tabIndexMap.current[nextIndex]}`)
+      );
     },
     [setIndex, onChange, queryParamName]
   );

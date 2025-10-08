@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
 import AllSelects from "./AllSelects";
 import useDimensionStateManager from "./useDimensionStateManager";
@@ -6,7 +6,7 @@ import useDimensionStateManager from "./useDimensionStateManager";
 import { wrapWithErrorBoundary } from "./ErrorBoundary";
 
 export interface Props {
-  index_type: string | null;
+  index_type: string;
   value: Partial<DataExplorerPlotConfigDimensionV2> | null;
   onChange: (nextValue: Partial<DataExplorerPlotConfigDimensionV2>) => void;
 
@@ -22,12 +22,36 @@ export interface Props {
   mode?: "entity-only" | "context-only" | "entity-or-context";
 
   /**
-   * If defined, filters the available dataset options to only ones that match
-   * the specified value types.
+   * Controls whether datasets whose value_type is "text" are displayed
+   * as options.
    *
-   * @default undefined (included all value types)
+   * @default false
    */
-  valueTypes?: Set<"continuous" | "text" | "categorical" | "list_strings">;
+  allowTextValueType?: boolean;
+
+  /**
+   * Controls whether datasets whose value_type is "categorical" are displayed
+   * as options.
+   *
+   * @default false
+   */
+  allowCategoricalValueType?: boolean;
+
+  /**
+   * Controls whether datasets whose value_type is "list_strings" are displayed
+   * as options.
+   *
+   * @default false
+   */
+  allowListStringsValueType?: boolean;
+
+  /**
+   * Controls whether datasets that have no feature type will appear as
+   * selectable options.
+   *
+   * @default false
+   */
+  allowNullFeatureType?: boolean;
 
   /** Called when the height of the container <div> changes. Useful for modals
    * where the available height might be confined. */
@@ -54,18 +78,51 @@ function DimensionSelectV2({
   onChange,
   className = undefined,
   mode = "entity-or-context",
-  valueTypes = undefined,
+  allowTextValueType = false,
+  allowCategoricalValueType = false,
+  allowListStringsValueType = false,
+  allowNullFeatureType = false,
   onHeightChange = undefined,
   removeWrapperDiv = false,
   onClickCreateContext = () => {},
   onClickSaveAsContext = () => {},
   includeAllInContextOptions = false,
 }: Props) {
+  if (!index_type) {
+    throw new Error("Unexpected null index_type");
+  }
+
+  const valueTypes = useMemo(() => {
+    const allowedValueTypes = new Set<
+      "continuous" | "text" | "categorical" | "list_strings"
+    >(["continuous"]);
+
+    if (allowTextValueType) {
+      allowedValueTypes.add("text");
+    }
+
+    if (allowCategoricalValueType) {
+      allowedValueTypes.add("categorical");
+    }
+
+    if (allowListStringsValueType) {
+      allowedValueTypes.add("list_strings");
+    }
+
+    return allowedValueTypes;
+  }, [
+    allowTextValueType,
+    allowCategoricalValueType,
+    allowListStringsValueType,
+  ]);
+
   const state = useDimensionStateManager({
     index_type,
     mode,
     value,
     onChange,
+    valueTypes,
+    allowNullFeatureType,
   });
 
   // FIXME: Add support for the dataset details modal.
@@ -76,12 +133,6 @@ function DimensionSelectV2({
   //   state,
   //   onChange,
   // });
-
-  if (valueTypes && valueTypes !== DimensionSelectV2.CONTINUOUS_ONLY) {
-    window.console.warn(
-      "The `valueTypes` prop is not yet implemented and wil be ignored."
-    );
-  }
 
   return (
     <AllSelects
@@ -100,9 +151,6 @@ function DimensionSelectV2({
   );
 }
 
-// Common sets of value types.
-DimensionSelectV2.CONTINUOUS_ONLY = new Set(["continuous"]);
-
 export default wrapWithErrorBoundary(
   DimensionSelectV2
-) as typeof DimensionSelectV2 & { CONTINUOUS_ONLY: Props["valueTypes"] };
+) as typeof DimensionSelectV2;

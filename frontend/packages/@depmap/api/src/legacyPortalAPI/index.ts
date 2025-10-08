@@ -40,7 +40,21 @@ type Api = typeof legacyPortalAPI;
       // @ts-expect-error 2556
       return await originalFn(...args);
     } catch (error) {
-      window.console.warn(callSiteError.stack);
+      const lines = callSiteError.stack?.split("\n") || [];
+      let stack = "";
+
+      const occurrences = lines
+        .map((line, i) => (line.includes(name) ? i : -1))
+        .filter((i) => i !== -1);
+
+      if (occurrences.length < 2) {
+        stack = callSiteError.stack || "";
+      } else {
+        const idx = occurrences[1] + 1;
+        stack = [lines[0], ...lines.slice(idx)].join("\n");
+      }
+
+      window.console.warn(stack);
       throw error;
     }
   };

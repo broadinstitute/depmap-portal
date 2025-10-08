@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import PlotConfigSelect from "../../../../../PlotConfigSelect";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 
@@ -12,9 +12,32 @@ interface Props {
 function StringConstant({ expr, path, domain, isLoading }: Props) {
   const { dispatch, shouldShowValidation } = useContextBuilderState();
 
-  const hasError = shouldShowValidation && expr === null;
-  const options =
-    domain?.unique_values.map((value) => ({ value, label: value })) || [];
+  const { options, isValidExpr } = useMemo(() => {
+    if (!domain) {
+      return { options: [], isValidExpr: true };
+    }
+
+    const opts: { label: string; value: string }[] = [];
+    let valid = false;
+
+    for (let i = 0; i < domain.unique_values.length; i += 1) {
+      const value = domain.unique_values[i];
+      opts.push({ value, label: value });
+
+      if (expr === value) {
+        valid = true;
+      }
+    }
+
+    if (expr && !valid) {
+      opts.unshift({ label: expr, value: expr });
+    }
+
+    return { options: opts, isValidExpr: valid };
+  }, [expr, domain]);
+
+  const hasError =
+    (shouldShowValidation && expr === null) || (expr !== null && !isValidExpr);
 
   return (
     <PlotConfigSelect

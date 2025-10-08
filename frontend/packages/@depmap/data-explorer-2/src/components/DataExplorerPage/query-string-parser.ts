@@ -270,11 +270,11 @@ const inferIndexType = (
   const dataset_id = partialPlot.dimensions?.x?.dataset_id;
   const slice_type = partialPlot.dimensions?.x?.slice_type;
 
-  if (!dataset_id || !slice_type) {
+  if (!dataset_id || slice_type === undefined) {
     return null;
   }
 
-  if (slice_type === "custom") {
+  if (slice_type === "custom" || slice_type === null) {
     return "depmap_model";
   }
 

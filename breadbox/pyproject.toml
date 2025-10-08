@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox"
-version = "3.37.0"
+version = "4.1.0"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
@@ -37,6 +37,7 @@ packed-cor-tables = {version = "^0.2.0", source = "public-python"}
 orjson = "^3.10.16"
 pypatch-and-run = {version = "^0.3.1", source = "public-python"}
 python-multipart = "^0.0.20" # fastapi 0.115.12 needs this
+psutil = "^7.1.0"
 
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}
@@ -61,7 +62,7 @@ name = "cz_customize"   # Must use name 'cz_customize' in order to enable custom
 tag_format = "breadbox-$version"
 version_scheme = "pep440"
 version_provider = "poetry"
-version = "3.37.0"
+version = "4.1.0"
 version_files = [
     'pyproject.toml:version',
     '../breadbox-client/pyproject.toml:version',

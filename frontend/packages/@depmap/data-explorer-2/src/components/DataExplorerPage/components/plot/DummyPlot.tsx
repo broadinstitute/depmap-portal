@@ -14,14 +14,17 @@ interface Props {
   contactEmail: string;
   tutorialLink: string;
   hadError?: boolean;
+  errorMessage?: string;
 }
 
 function ErrorState({
   feedbackUrl,
   contactEmail,
+  errorMessage,
 }: {
   feedbackUrl: string | null;
   contactEmail: string;
+  errorMessage: string;
 }) {
   return (
     <div className={styles.plotEmptyState}>
@@ -40,6 +43,7 @@ function ErrorState({
           <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
         </p>
       )}
+      {errorMessage && <details>{errorMessage}</details>}
     </div>
   );
 }
@@ -77,6 +81,7 @@ function DummyPlot({
   contactEmail,
   tutorialLink,
   hadError = false,
+  errorMessage = "",
 }: Props) {
   const { hiddenLegendValues, onClickLegendItem } = useLegendState({
     plot_type: "scatter",
@@ -94,7 +99,11 @@ function DummyPlot({
           {isInitialPageLoad && <StartScreen tutorialLink={tutorialLink} />}
           {!isInitialPageLoad && !hadError && <EmptyScatter />}
           {!isInitialPageLoad && hadError && (
-            <ErrorState feedbackUrl={feedbackUrl} contactEmail={contactEmail} />
+            <ErrorState
+              feedbackUrl={feedbackUrl}
+              contactEmail={contactEmail}
+              errorMessage={errorMessage}
+            />
           )}
         </div>
       </div>
@@ -103,7 +112,6 @@ function DummyPlot({
           <PlotLegend
             data={null}
             continuousBins={null}
-            color_by={undefined}
             hiddenLegendValues={hiddenLegendValues}
             onClickLegendItem={onClickLegendItem}
             colorMap={{}}

@@ -47,18 +47,31 @@ function useHeatmapSelectionHandlers(
     [plotData, selectedModelIds]
   );
 
-  const handleSetSelectedPlotModels = (models: Set<string>) => {
-    setPlotSelectedModelIds((prev) => {
-      const next = new Set(prev);
-      models.forEach((id) => next.add(id));
-      setSelectedTableRows((tablePrev) => {
-        const tableNext = new Set(tablePrev);
-        models.forEach((id) => tableNext.add(id));
-        return tableNext;
+  const handleSetSelectedPlotModels = useCallback(
+    (selections: Set<string>, shiftKey: boolean) => {
+      setPlotSelectedModelIds((prev) => {
+        // NOTE: if people don't like shift click just always set next to new Set(prev)
+        const next: Set<string> = shiftKey ? new Set(prev) : new Set();
+
+        selections.forEach((id) => {
+          if (next.has(id)) {
+            next.delete(id);
+          } else {
+            next.add(id);
+          }
+        });
+
+        setSelectedTableRows(() => {
+          const tableNext = new Set(next);
+          next.forEach((id) => tableNext.add(id));
+          return tableNext;
+        });
+
+        return next;
       });
-      return next;
-    });
-  };
+    },
+    [setPlotSelectedModelIds, setSelectedTableRows]
+  );
 
   const handleClickSaveSelectionAsContext = useCallback(() => {
     const labels = [...selectedModelIds];

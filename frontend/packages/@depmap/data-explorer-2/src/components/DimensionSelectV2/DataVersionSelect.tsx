@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import cx from "classnames";
-import { breadboxAPI, cached } from "@depmap/api";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
 import PlotConfigSelect from "../PlotConfigSelect";
+import { fetchDatasetsByIndexType } from "./useDimensionStateManager/utils";
+import { State } from "./useDimensionStateManager/types";
 import styles from "../../styles/DimensionSelect.scss";
 
 interface Props {
@@ -10,14 +11,11 @@ interface Props {
   isLoading: boolean;
   isUnknownDataset: boolean;
   shouldGroupByDataType: boolean;
-  options: {
-    label: string;
-    value: string;
-    isDisabled: boolean;
-    isDefault: boolean;
-  }[];
+  shouldGroupBySliceType: boolean;
   value: string | null;
+  options: State["dataVersionOptions"];
   onChange: (dataset_id: string | null) => void;
+  index_type: string | null;
   showDefaultHint: boolean;
   showNoDefaultHint: boolean;
   onClickShowModal?: () => void;
@@ -25,14 +23,44 @@ interface Props {
 
 type GroupedOptions = { label: string; options: Props["options"] }[];
 
+// The select component gets confused if a regular dataset ID is used where a
+// given_id would be preferred. This function will convert the former to the
+// latter.
+const useValueAsGivenIdWherePossible = (
+  value: string | null,
+  index_type: string | null
+) => {
+  const [compatValue, setCompatValue] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCompatValue(null);
+
+    if (value && index_type) {
+      fetchDatasetsByIndexType(index_type, value).then((datasets) => {
+        const dataset = datasets.find(
+          (d) => d.id === value || d.given_id === value
+        );
+
+        if (dataset) {
+          setCompatValue(dataset.given_id || dataset.id);
+        }
+      });
+    }
+  }, [value, index_type]);
+
+  return value === null ? null : compatValue;
+};
+
 function DataVersionSelect({
   show,
   isLoading,
   isUnknownDataset,
   shouldGroupByDataType,
+  shouldGroupBySliceType,
   value,
   options,
   onChange,
+  index_type,
   showDefaultHint,
   showNoDefaultHint,
   onClickShowModal = undefined,
@@ -41,37 +69,59 @@ function DataVersionSelect({
     null
   );
 
-  let optionsToShow = groupedOptions || options;
-
-  if (isUnknownDataset) {
-    optionsToShow = [
-      {
+  const optionsToShow = useMemo(() => {
+    if (isUnknownDataset) {
+      const pseudoOption = {
         value,
-        label: "⚠️ unknown version",
+        label: `⚠️ unknown version “${value}”`,
         isDisabled: true,
         isDefault: false,
-        disabledReason: `Unknown data version with id ${value}.`,
-      } as Props["options"][number],
-    ];
-  }
+        disabledReason: (
+          <div>
+            The data version “{value}” may have been renamed or removed.
+          </div>
+        ),
+      } as Props["options"][number];
+
+      if (groupedOptions) {
+        return [
+          { label: "Unknown data type", options: [pseudoOption] },
+          ...groupedOptions,
+        ];
+      }
+
+      return [pseudoOption, ...options];
+    }
+
+    if (groupedOptions && groupedOptions.length > 0) {
+      return groupedOptions;
+    }
+
+    return options;
+  }, [isUnknownDataset, groupedOptions, options, value]);
 
   useEffect(() => {
-    if (!shouldGroupByDataType) {
+    if (!index_type || (!shouldGroupByDataType && !shouldGroupBySliceType)) {
       setGroupedOptions(null);
       return;
     }
 
     (async () => {
-      const datasets = await cached(breadboxAPI).getDatasets();
-
+      const datasets = await fetchDatasetsByIndexType(index_type, value);
       const groups: Record<string, typeof options> = {};
+      const groupBy = shouldGroupBySliceType
+        ? "slice_type_display_name"
+        : "data_type";
 
       options.forEach((option) => {
         const dataset = datasets.find(
           (d) => d.id === option.value || d.given_id === option.value
         )!;
-        groups[dataset.data_type] ||= [];
-        groups[dataset.data_type].push(option);
+
+        if (dataset) {
+          groups[dataset[groupBy]] ||= [];
+          groups[dataset[groupBy]].push(option);
+        }
       });
 
       const groupedOpts = Object.keys(groups)
@@ -82,7 +132,37 @@ function DataVersionSelect({
 
       setGroupedOptions(groupedOpts);
     })();
-  }, [options, shouldGroupByDataType]);
+  }, [
+    value,
+    options,
+    index_type,
+    shouldGroupByDataType,
+    shouldGroupBySliceType,
+  ]);
+
+  let displayValue:
+    | string
+    | null
+    | { label: string; value: string } = useValueAsGivenIdWherePossible(
+    value,
+    index_type
+  );
+
+  if (isLoading) {
+    displayValue = null;
+  }
+
+  if (isUnknownDataset && optionsToShow?.[0]) {
+    type Options = { label: string; value: string }[];
+    type NestedOptions = { options: Options }[];
+    const opts = optionsToShow as Options | NestedOptions;
+
+    if ("options" in opts[0]) {
+      displayValue = opts[0]?.options?.[0] || null;
+    } else {
+      displayValue = opts[0] || null;
+    }
+  }
 
   return (
     <PlotConfigSelect
@@ -90,11 +170,15 @@ function DataVersionSelect({
       isClearable
       hasError={isUnknownDataset}
       show={show}
-      enable={options.length > 1 && !isLoading}
+      enable={(options.length > 1 || isUnknownDataset) && !isLoading}
       isLoading={isLoading}
-      value={isLoading ? null : value}
+      value={displayValue}
       options={optionsToShow}
-      onChange={onChange}
+      onChangeUsesWrappedValue
+      onChange={(wrappedValue) => {
+        const selection = wrappedValue as typeof options[number] | null;
+        onChange(selection?.value || null);
+      }}
       label={
         <span>
           Data Version
@@ -143,7 +227,7 @@ function DataVersionSelect({
               }
               placement="top"
             >
-              <span className={styles.noDefaultChip}>no default</span>
+              <span className={styles.noDefaultChip}>no default found</span>
             </Tooltip>
           );
         }

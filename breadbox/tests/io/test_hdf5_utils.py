@@ -4,14 +4,18 @@ import pandas as pd
 from breadbox.schemas.dataframe_wrapper import (
     ParquetDataFrameWrapper,
     PandasDataFrameWrapper,
+    HDF5DataFrameWrapper,
 )
-from breadbox.io.hdf5_utils import write_hdf5_file
+from breadbox.schemas.custom_http_exception import LargeDatasetReadError
+from breadbox.io.hdf5_utils import write_hdf5_file, read_hdf5_file
 import pytest
 import h5py
 
+TEST_COLUMN_COUNT = 20
+
 
 @pytest.fixture
-def test_dataframe(row_length: int = 500, col_length: int = 11000):
+def test_dataframe(row_length: int = 500, col_length: int = TEST_COLUMN_COUNT):
     cols = [f"Col-{i}" for i in range(col_length)]
     rows = [f"Row-{i}" for i in range(row_length)]
     data = np.round(np.random.uniform(0.0, 10.0, size=(row_length, col_length)), 6)
@@ -21,23 +25,54 @@ def test_dataframe(row_length: int = 500, col_length: int = 11000):
 
 @pytest.fixture
 def test_parquet_file(tmpdir, test_dataframe):
-    # NOTE: the client reads in a dataframe with index as a column, so reset the index
-    test_dataframe.reset_index(inplace=True)
     path = tmpdir.join("test.parquet")
-    test_dataframe.to_parquet(path, index=False)
+    test_dataframe.reset_index().to_parquet(path, index=False)
     return str(path)
 
 
-def test_parquet_wrapper(tmpdir, test_dataframe, test_parquet_file):
+def _write_hdf5_file(filename, df):
+    # assuming index is in the first column
+    with h5py.File(filename, "w") as f:
+        f["data"] = df.values
+        f["dim_0"] = [x.encode("utf-8") for x in df.index]
+        f["dim_1"] = [x.encode("utf-8") for x in df.columns]
+
+
+def test_hdf5_wrapper(tmpdir, test_dataframe):
+    hdf5_file = str(tmpdir.join("test.hdf5"))
+
+    src_dfw = PandasDataFrameWrapper(test_dataframe)
+    _write_hdf5_file(hdf5_file, test_dataframe)
+
+    # now verify hdf5 wrapper matches the source
+    hdf5w = HDF5DataFrameWrapper(hdf5_file)
+
+    assert src_dfw.get_index_names() == hdf5w.get_index_names()
+    assert src_dfw.get_column_names() == hdf5w.get_column_names()
+    for column_name in src_dfw.get_column_names():
+        pd.testing.assert_frame_equal(
+            src_dfw.read_columns([column_name]), hdf5w.read_columns([column_name])
+        )
+
+
+def test_parquet_wrapper(tmpdir, test_dataframe, test_parquet_file, monkeypatch):
+    import breadbox.schemas.dataframe_wrapper
+
     parquet_wrapper = ParquetDataFrameWrapper(parquet_path=test_parquet_file)
-    assert parquet_wrapper.get_index_names() == test_dataframe["index"].to_list()
-    assert parquet_wrapper.get_column_names() == test_dataframe.columns[1:].to_list()
+    assert parquet_wrapper.get_index_names() == test_dataframe.index.to_list()
+    assert parquet_wrapper.get_column_names() == test_dataframe.columns.to_list()
     assert parquet_wrapper.read_columns(["Col-0", "Col-1"]).shape == (
         len(test_dataframe),
         2,
     )
     assert parquet_wrapper.is_sparse() == False
     assert parquet_wrapper.is_numeric_cols() == True
+
+    # this should work fine
+    parquet_wrapper.get_df()
+
+    # but if we lower max columns fetched we should get an exception
+    monkeypatch.setattr(breadbox.schemas.dataframe_wrapper, "MAX_COLUMNS_FETCHED", 5)
     with pytest.raises(Exception):
         parquet_wrapper.get_df()
 
@@ -67,9 +102,9 @@ def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
     # Verify output
     with h5py.File(output_h5, "r") as f:
         data = f["data"][:]
-        assert data.shape == (500, 11000)
+        assert data.shape == (500, TEST_COLUMN_COUNT)
         # Check if the first column matches the first column of the original dataframe
-        assert (data[:, 0] == test_dataframe.iloc[:, 1]).all()
+        assert (data[:, 0] == test_dataframe.iloc[:, 0]).all()
         indices: h5py.Dataset = f["samples"][:]
         expected_indices = wrapper.get_index_names()
         assert indices[0].decode("utf-8") == expected_indices[0]
@@ -90,7 +125,6 @@ def test_write_parquet_nulls_to_hdf5(tmpdir):
 
     # Create DataFrame
     test_df = pd.DataFrame(data, columns=cols, index=rows).convert_dtypes()
-
     test_df.reset_index(inplace=True)
 
     path = tmpdir.join("test.parquet")
@@ -118,3 +152,31 @@ def test_write_parquet_nulls_to_hdf5(tmpdir):
         expeted_columns = wrapper.get_column_names()
         columns: h5py.Dataset = f["features"][:]
         assert len(columns) == len(expeted_columns)
+
+
+def create_mock_hdf5(path, num_samples, num_features):
+    with h5py.File(path, "w") as f:
+        data = np.random.rand(num_samples, num_features)
+        f.create_dataset("data", data=data)
+        f.create_dataset(
+            "features", data=[f"f{i}".encode("utf8") for i in range(num_features)]
+        )
+        f.create_dataset(
+            "samples", data=[f"s{i}".encode("utf8") for i in range(num_samples)]
+        )
+
+
+def test_large_read_raises_exception(monkeypatch, tmpdir):
+    # Simulate a smaller threshold by monkeypatching
+    monkeypatch.setattr(
+        "breadbox.io.hdf5_utils.MAX_HDF5_READ_IN_BYTES",
+        1000,  # Lower threshold to trigger easily
+    )
+
+    path = tmpdir.join("test.hdf5")
+    create_mock_hdf5(
+        path, num_samples=100, num_features=100
+    )  # 100*100 = 10000 > 1000 -> triggers mock
+
+    with pytest.raises(LargeDatasetReadError):
+        read_hdf5_file(path)

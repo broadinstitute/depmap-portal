@@ -234,8 +234,8 @@ class CompoundFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "compound"
-    compound_id = factory.Sequence(
-        lambda n: f"DPC-{n:06d}"
+    compound_id = typing.cast(
+        str, factory.Sequence(lambda n: f"DPC-{n:06d}")
     )  # Generates IDs like DPC-000001, DPC-000002, etc.
     label = typing.cast(
         str, factory.Sequence(lambda number: "compound_{}".format(number))

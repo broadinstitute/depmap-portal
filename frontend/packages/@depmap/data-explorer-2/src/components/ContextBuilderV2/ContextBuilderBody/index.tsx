@@ -1,5 +1,6 @@
 import React from "react";
 import { Modal } from "react-bootstrap";
+import { Spinner } from "@depmap/common-components";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 import NameInput from "./NameInput";
 import Expression from "./Expression";
@@ -10,23 +11,25 @@ import styles from "../../../styles/ContextBuilderV2.scss";
 function ContextBuilderBody() {
   const { isInitializing, mainExpr, showTableView } = useContextBuilderState();
 
+  if (isInitializing) {
+    return (
+      <Modal.Body>
+        <Spinner position="static" />
+      </Modal.Body>
+    );
+  }
+
   return (
     <Modal.Body>
-      {isInitializing ? (
-        <h2>Loading...</h2>
-      ) : (
-        <>
-          <NameInput />
-          <div className={styles.mainContent}>
-            {showTableView ? (
-              <ContextBuilderTableView />
-            ) : (
-              <Expression expr={mainExpr} path={[]} />
-            )}
-          </div>
-          <DebugInfo />
-        </>
-      )}
+      <NameInput />
+      <div className={styles.mainContent}>
+        {showTableView ? (
+          <ContextBuilderTableView />
+        ) : (
+          <Expression expr={mainExpr} path={[]} />
+        )}
+      </div>
+      <DebugInfo />
     </Modal.Body>
   );
 }

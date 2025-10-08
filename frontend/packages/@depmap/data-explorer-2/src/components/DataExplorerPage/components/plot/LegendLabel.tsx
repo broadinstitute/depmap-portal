@@ -1,6 +1,5 @@
 import React, { useLayoutEffect, useRef, useState } from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { DataExplorerPlotConfig } from "@depmap/types";
 import {
   calcBins,
   categoryToDisplayName,
@@ -17,10 +16,9 @@ interface Props {
   };
   continuousBins: ReturnType<typeof calcBins>;
   category: LegendKey;
-  color_by: DataExplorerPlotConfig["color_by"];
 }
 
-function LegendLabel({ data, continuousBins, category, color_by }: Props) {
+function LegendLabel({ data, continuousBins, category }: Props) {
   const ref = useRef<HTMLElement | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -31,12 +29,7 @@ function LegendLabel({ data, continuousBins, category, color_by }: Props) {
     }
   }, []);
 
-  const name = categoryToDisplayName(
-    category,
-    data,
-    continuousBins,
-    color_by || null
-  );
+  const name = categoryToDisplayName(category, data, continuousBins);
   const nameElement =
     typeof name === "string" ? (
       <span>{name}</span>

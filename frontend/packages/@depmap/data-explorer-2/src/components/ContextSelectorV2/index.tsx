@@ -6,7 +6,7 @@ import PlotConfigSelect from "../PlotConfigSelect";
 import useGlobalEvents from "./useGlobalEvents";
 import useContextHash from "./useContextHash";
 import useOptions from "./useOptions";
-import useChangeHandler from "./useChangeHandler";
+import useChangeHandler, { handleCaseEdit } from "./useChangeHandler";
 import useLabel from "./useLabel";
 import usePlaceholder from "./usePlaceholder";
 import styles from "../../styles/ContextSelector.scss";
@@ -21,7 +21,7 @@ interface Props {
     context: DataExplorerContextV2 | null,
     hash: string | null
   ) => void;
-  label?: React.ReactNode | ((dimensionType: DimensionType) => string);
+  label?: React.ReactNode | ((dimensionType: DimensionType | null) => string);
   swatchColor?: string;
   includeAllInOptions?: boolean;
   hasError?: boolean;
@@ -40,7 +40,6 @@ function ContextSelectorV2({
   hasError = false,
 }: Props) {
   if (value && !isV2Context(value)) {
-    // TODO: Implementation conversion from legacy format.
     throw new Error("ContextSelectorV2 does not support legacy contexts");
   }
 
@@ -60,7 +59,11 @@ function ContextSelectorV2({
   );
   const resolvedLabel = useLabel(label, context_type);
   const placeholder = usePlaceholder(context_type, isLoading);
-  const { reactKey } = useGlobalEvents(value, hashOfSelectedValue, onChange);
+  const { evalFailed, reactKey } = useGlobalEvents(
+    value,
+    hashOfSelectedValue,
+    onChange
+  );
 
   return (
     <div className={styles.contextSelector}>
@@ -70,14 +73,14 @@ function ContextSelectorV2({
         isClearable
         label={resolvedLabel}
         width={300}
-        hasError={hasError}
+        hasError={hasError || evalFailed}
         placeholder={placeholder}
         options={options}
         enable={enable && context_type !== "other"}
         value={hashWithPrefix}
         isLoading={isLoading}
         swatchColor={swatchColor}
-        onChange={handleChange as any}
+        onChange={(handleChange as unknown) as (value: string | null) => void}
         onChangeUsesWrappedValue
         classNamePrefix="context-selector"
         formatOptionLabel={(option: { label: string; value: string }) => {
@@ -97,13 +100,23 @@ function ContextSelectorV2({
           return option.label;
         }}
       />
-      {shouldShowSaveButton && (
+      {Boolean(shouldShowSaveButton || evalFailed) && (
         <button
           className={styles.saveAsContextButton}
           type="button"
-          onClick={onClickSaveAsContext}
+          onClick={() => {
+            if (shouldShowSaveButton) {
+              onClickSaveAsContext();
+            } else {
+              handleCaseEdit(value, hashOfSelectedValue);
+            }
+          }}
         >
-          Save as Context +
+          {evalFailed ? (
+            <span> See issues ⚠️</span>
+          ) : (
+            <span>Save as Context +</span>
+          )}
         </button>
       )}
     </div>

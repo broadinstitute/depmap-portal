@@ -8,16 +8,21 @@ import {
   DimensionTypeUpdateArgs,
   DimensionTypeWithCounts,
   Group,
-  instanceOfErrorDetail,
+  ErrorTypeError,
   TabularDataset,
 } from "@depmap/types";
 
-import { FormModal, Spinner, ToggleSwitch } from "@depmap/common-components";
+import {
+  FormModal,
+  getConfirmation,
+  Spinner,
+  ToggleSwitch,
+} from "@depmap/common-components";
 import WideTable from "@depmap/wide-table";
 import Button from "react-bootstrap/lib/Button";
 
 import styles from "../styles/styles.scss";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { breadboxAPI } from "@depmap/api";
 
 import DatasetForm from "./DatasetForm";
 import { Alert } from "react-bootstrap";
@@ -231,7 +236,7 @@ export default function Datasets() {
             uploadFile={postFileUpload}
             uploadDataset={postDatasetUpload}
             isAdvancedMode={isAdvancedMode}
-            getTaskStatus={legacyPortalAPI.getTaskStatus}
+            getTaskStatus={breadboxAPI.getTaskStatus}
             onSuccess={(dataset: Dataset, showModal: boolean) => {
               const addedDatasets = [...datasets, dataset];
               setDatasets(addedDatasets);
@@ -432,6 +437,33 @@ export default function Datasets() {
     setIsDeletingDataset(true);
     setDatasetDeleteError(null);
 
+    const names = [...selectedDatasetIds].map(
+      (id) => datasets.find((d) => d.id === id)?.name || id
+    );
+
+    const confirmed = await getConfirmation({
+      yesText: `Delete ${names.length === 1 ? "dataset" : "datasets"}`,
+      noText: "Cancel",
+      message:
+        names.length === 1 ? (
+          <div>Are you sure want to delete the dataset “{names[0]}”?</div>
+        ) : (
+          <div>
+            <p>Are you sure you want to delete the following datasets?</p>
+            <ul>
+              {names.map((name) => (
+                <li key={name}>{name}</li>
+              ))}
+            </ul>
+          </div>
+        ),
+    });
+
+    if (!confirmed) {
+      setIsDeletingDataset(false);
+      return;
+    }
+
     await Promise.all(
       Array.from(selectedDatasetIds).map((dataset_id) => {
         return breadboxAPI.deleteDataset(dataset_id);
@@ -451,8 +483,10 @@ export default function Datasets() {
       })
       .catch((e) => {
         console.error(e);
-        if (instanceOfErrorDetail(e)) {
-          setDatasetDeleteError(e.detail);
+        if (e instanceof ErrorTypeError) {
+          setDatasetDeleteError(e.message);
+        } else {
+          setDatasetDeleteError("An unknown error occurred!");
         }
       });
 
@@ -479,8 +513,10 @@ export default function Datasets() {
           })
           .catch((e) => {
             console.error(e);
-            if (instanceOfErrorDetail(e)) {
-              setDimTypeDeleteError(e.detail);
+            if (e instanceof ErrorTypeError) {
+              setDimTypeDeleteError(e.message);
+            } else {
+              setDimTypeDeleteError("An unknown error occurred!");
             }
           });
       }

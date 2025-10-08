@@ -54,14 +54,19 @@ export class CustomOrCatalogVectorSelect extends React.Component<
   }
 
   renderVectorCatalog = () => {
-    const onChangeDimension = (dimension: any) => {
+    const onChangeDimension = (
+      dimension:
+        | DataExplorerPlotConfigDimension
+        | DataExplorerPlotConfigDimensionV2
+    ) => {
       this.setState({ selectedDimension: dimension });
 
       if (isCompleteDimension(dimension)) {
+        // TODO: Rework Custom Analysis to no longer rely on slice IDs!
         const sliceId = convertDimensionToSliceId(dimension);
 
         const simulatedVectorCatalogSelections = [
-          dimension.slice_type,
+          dimension.slice_type as string,
 
           dimension.slice_type === "gene"
             ? dimension.context.name
@@ -86,11 +91,14 @@ export class CustomOrCatalogVectorSelect extends React.Component<
         <DimensionSelectV2
           mode="entity-only"
           index_type="depmap_model"
-          valueTypes={DimensionSelectV2.CONTINUOUS_ONLY}
           value={
             this.state.selectedDimension as DataExplorerPlotConfigDimensionV2
           }
-          onChange={onChangeDimension}
+          onChange={
+            onChangeDimension as (
+              nextValue: Partial<DataExplorerPlotConfigDimensionV2>
+            ) => void
+          }
         />
       );
     }
@@ -99,9 +107,12 @@ export class CustomOrCatalogVectorSelect extends React.Component<
       <DimensionSelect
         mode="entity-only"
         index_type="depmap_model"
-        valueTypes={DimensionSelect.CONTINUOUS_ONLY}
         value={this.state.selectedDimension as DataExplorerPlotConfigDimension}
-        onChange={onChangeDimension}
+        onChange={
+          onChangeDimension as (
+            nextValue: Partial<DataExplorerPlotConfigDimension>
+          ) => void
+        }
       />
     );
   };
@@ -156,27 +167,22 @@ export class CustomOrCatalogVectorSelect extends React.Component<
         messageWarning = uploadTask.result.warnings.join("\n");
       }
 
-      if (uploadTask.sliceId) {
-        this.props.onChange(
-          uploadTask.sliceId,
-          // HACK: Even though this comes from a file upload, mimic the format
-          // of a vector catalog selection. This is used to generate links to
-          // Data Explorer 2.
-          [
-            { link: null, label: "", value: "custom" },
-            { link: null, label: "", value: uploadTask.result.datasetId },
-            { link: null, label: "", value: "custom data" },
-          ]
-        );
-      } else {
-        // Breadbox uses a more streamline approach for setting sliceId in the backend.
-        // This means sliceId is present in uploadTask.result, rather than the uploadTask
-        // itself. We leave the logic for uploadTask.sliceId, because this component is shared
-        // by the legacy portal backend.
+      const encodedDatasetID = encodeURIComponent(uploadTask.result.datasetId);
+      const sliceId = `"slice/${encodedDatasetID}/custom%20data/label"`;
 
-        this.props.onChange(uploadTask.result.sliceId);
-      }
+      this.props.onChange(
+        sliceId,
+        // HACK: Even though this comes from a file upload, mimic the format
+        // of a vector catalog selection. This is used to generate links to
+        // Data Explorer 2.
+        [
+          { link: null, label: "", value: "custom" },
+          { link: null, label: "", value: uploadTask.result.datasetId },
+          { link: null, label: "", value: "custom data" },
+        ]
+      );
     }
+
     this.setState({
       messageWarning,
       messageDetail: "",

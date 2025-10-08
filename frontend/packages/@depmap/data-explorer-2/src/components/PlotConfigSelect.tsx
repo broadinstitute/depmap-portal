@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { createFilter, Props as ReactSelectProps } from "react-select";
 import ReactWindowedSelect from "react-windowed-select";
 import extendReactSelect from "../utils/extend-react-select";
@@ -77,29 +77,61 @@ function PlotConfigSelect({
   width = "max-content",
   ...otherProps
 }: Props) {
-  const flattenedOptions = Array.isArray(options)
-    ? reactSelectOptionsToMap(options as Option[])
-    : options;
+  const flattenedOptions = useMemo(() => {
+    if (Array.isArray(options)) {
+      return reactSelectOptionsToMap(options as Option[]);
+    }
 
-  const toOption = (val: string | null) => {
-    return val != null && val !== ""
-      ? { value: val, label: flattenedOptions[val] }
-      : null;
-  };
+    return options;
+  }, [options]);
 
-  const formattedOptions = Array.isArray(options)
-    ? options
-    : Object.keys(options).map(toOption);
+  const formattedOptions = useMemo(() => {
+    if (Array.isArray(options)) {
+      return options;
+    }
 
-  const reactSelectValue =
-    value !== null && typeof value === "object"
-      ? value
-      : toOption(value as string | null);
+    const toOption = (val: string | null) => {
+      return val != null && val !== ""
+        ? { value: val, label: flattenedOptions[val] }
+        : null;
+    };
+
+    return Object.keys(options).map(toOption);
+  }, [options, flattenedOptions]);
+
+  const reactSelectValue = useMemo(() => {
+    if (value !== null && typeof value === "object") {
+      return value;
+    }
+
+    if (value != null && value !== "") {
+      return { value, label: flattenedOptions[value] || value };
+    }
+
+    return null;
+  }, [value, flattenedOptions]);
+
+  const noOptionForValue = useMemo(() => {
+    if (Object.keys(flattenedOptions).length === 0) {
+      return false;
+    }
+
+    if (typeof value === "string" && flattenedOptions[value] === undefined) {
+      return true;
+    }
+
+    if (value !== null && typeof value === "object" && value.value !== null) {
+      return flattenedOptions[value.value] === undefined;
+    }
+
+    return false;
+  }, [value, flattenedOptions]);
 
   return (
     <ExtendedSelect
       {...otherProps}
       isDisabled={!enable}
+      hasError={noOptionForValue || otherProps.hasError}
       label={label}
       width={width}
       value={reactSelectValue}

@@ -22,7 +22,7 @@ def main(
     screen_sequence_map_taiga_id = get_id(taiga_ids["screen_sequence_map_taiga_id"])
     rnai_taiga_id = get_id(taiga_ids["rnai_cell_lines_taiga_id"])
     repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])
-    prism_oncref_auc_matrix = get_id(taiga_ids["oncref_auc_taiga_id"])
+    prism_oncology_reference_auc_matrix = get_id(taiga_ids["oncref_auc_taiga_id"])
 
     tc = create_taiga_client_v3()
 
@@ -66,8 +66,8 @@ def main(
     ] = True
 
     # PRISM OncRef
-    if prism_oncref_auc_matrix is not None:
-        OncRef_Matrix = tc.get(prism_oncref_auc_matrix)
+    if prism_oncology_reference_auc_matrix is not None:
+        OncRef_Matrix = tc.get(prism_oncology_reference_auc_matrix)
         assert OncRef_Matrix is not None
 
         overall_summary["PRISMOncRef"] = False

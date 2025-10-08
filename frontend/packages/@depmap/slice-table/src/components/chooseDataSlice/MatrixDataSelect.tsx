@@ -40,15 +40,11 @@ async function convertSliceQueryToDataExplorerDimension(
 
   if (identifier_type === "feature_id") {
     slice_type = dataset.feature_type_name;
-    const features = await cached(breadboxAPI).getMatrixDatasetFeatures(
-      dataset_id
-    );
+    const features = await cached(breadboxAPI).getDatasetFeatures(dataset_id);
     name = features.find((f) => f.id === identifier)?.label || "unknown";
   } else {
     slice_type = dataset.sample_type_name;
-    const samples = await cached(breadboxAPI).getMatrixDatasetSamples(
-      dataset_id
-    );
+    const samples = await cached(breadboxAPI).getDatasetSamples(dataset_id);
     name = samples.find((f) => f.id === identifier)?.label || "unknown";
   }
 
@@ -90,6 +86,7 @@ function MatrixDataSelect({ defaultValue, index_type_name, onChange }: Props) {
   return (
     <DimensionSelectV2
       mode="entity-only"
+      allowNullFeatureType
       index_type={index_type_name}
       value={valueAsDimension}
       onChange={async (dimension) => {

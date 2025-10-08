@@ -15,7 +15,12 @@ export function BoxPlotHeaderTitle({
   return selectedCode === subtypeCode ? (
     <span className={styles.unlinkedBoxPlotTitle}>{subtypeCode}</span>
   ) : (
-    <a className={styles.linkedBoxPlotTitle} href={url}>
+    <a
+      className={styles.linkedBoxPlotTitle}
+      rel="noreferrer"
+      target="_blank"
+      href={url}
+    >
       {subtypeCode}
     </a>
   );

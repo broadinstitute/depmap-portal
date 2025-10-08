@@ -9,7 +9,7 @@ rule get_context_analysis:
         gene_dependency_taiga_id={"type":"raw-dep-prob-matrix", "label": 'Chronos_Combined'},
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
 #        repurposing_list_taiga_id=all {"type": "repurposing_list_taiga_id"},
-#        oncref_auc_taiga_id=all {"type":"prism_oncref_auc_matrix"},
+#        oncref_auc_taiga_id=all {"type":"prism_oncology_reference_auc_matrix"},
         compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
         compound_summary_oncref={"type": "compound-summary", "dataset": "Prism_oncology_AUC"},
         tda_table={"type":"tda-table"},

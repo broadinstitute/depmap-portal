@@ -3,20 +3,18 @@ import { ContextPath, DataExplorerContext, FilterKey } from "@depmap/types";
 import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import ContextSelector from "../../../ContextSelector";
 import DatasetMetadataSelector from "../../../DatasetMetadataSelector";
-import DimensionSelectV1 from "../../../DimensionSelect";
-import DimensionSelectV2 from "../../../DimensionSelectV2";
 import SliceLabelSelectV1 from "../../../DimensionSelect/SliceLabelSelect";
 import SliceLabelSelectV2 from "../../../DimensionSelectV2/SliceSelect";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
-import { ColorByTypeSelector, SortBySelector } from "./selectors";
+import {
+  ColorByTypeSelector,
+  ColorByDimensionSelect,
+  SortBySelector,
+} from "./selectors";
 import MetadataColumnSelect from "./MetadataColumnSelect";
 import TabularDatasetSelect from "./TabularDatasetSelect";
 import styles from "../../styles/ConfigurationPanel.scss";
-
-const DimensionSelect = isBreadboxOnlyMode
-  ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
-  : DimensionSelectV1;
 
 const SliceLabelSelect = isBreadboxOnlyMode
   ? ((SliceLabelSelectV2 as unknown) as typeof SliceLabelSelectV1)
@@ -140,6 +138,21 @@ function ColorByViewOptions({
             payload: sliceQuery,
           });
         }}
+        onConvertToColorContext={(context) => {
+          dispatch({
+            type: "batch",
+            payload: [
+              { type: "select_color_by", payload: "aggregated_slice" },
+              {
+                type: "select_filter",
+                payload: {
+                  key: "color1" as FilterKey,
+                  filter: (context as unknown) as DataExplorerContext,
+                },
+              },
+            ],
+          });
+        }}
       />
       <TabularDatasetSelect
         show={color_by === "tabular_dataset"}
@@ -170,11 +183,9 @@ function ColorByViewOptions({
         />
       </div>
       {color_by === "custom" && (
-        <DimensionSelect
-          mode="entity-or-context"
-          className={styles.customColorDimension}
+        <ColorByDimensionSelect
+          plot_type={plot_type}
           index_type={plot.index_type || null}
-          includeAllInContextOptions={false}
           value={dimensions.color || null}
           onChange={(dimension) => {
             dispatch({
@@ -191,10 +202,13 @@ function ColorByViewOptions({
             const context = plot.dimensions.color.context;
             onClickSaveAsContext(context, path);
           }}
-          onHeightChange={(el) => {
-            el.scrollIntoView({
-              behavior: "smooth",
-              block: "nearest",
+          // A secondary SortBySelector appears only when the selected matrix
+          // has categorical values (only supported in "Breadbox mode").
+          sortByValue={sort_by}
+          onChangeSortBy={(next_sort_by) => {
+            dispatch({
+              type: "select_sort_by",
+              payload: next_sort_by,
             });
           }}
         />

@@ -57,4 +57,3 @@ def test_dimension_labels(app, empty_db_mock_downloads, mock_breadbox_client):
         response = json.loads(gzip.decompress(r.data).decode("utf8"))
 
         assert response.get("labels") == ["gene0", "gene1", "gene2"]
-        assert response.get("aliases") == []

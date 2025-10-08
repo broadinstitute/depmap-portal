@@ -13,7 +13,6 @@ interface Props {
   isExistingContext: boolean;
   onClickSave: (newContext: DataExplorerContextV2) => void;
   onHide: () => void;
-  show: boolean;
 }
 
 function ContextBuilderModal({
@@ -22,7 +21,6 @@ function ContextBuilderModal({
   isExistingContext,
   onClickSave,
   onHide,
-  show,
 }: Props) {
   return (
     <ContextBuilderStateProvider
@@ -30,16 +28,16 @@ function ContextBuilderModal({
       onChangeContext={onClickSave}
     >
       <Modal
+        show
         id="context-builder-modal"
         className={styles.ContextBuilder}
         backdrop={backdrop}
-        show={show}
         onHide={onHide}
         bsSize="large"
         keyboard={false}
       >
         <ContextBuilderHeader
-          context={context}
+          hasExpr={"expr" in context}
           isExistingContext={isExistingContext}
         />
         <ContextBuilderBody />

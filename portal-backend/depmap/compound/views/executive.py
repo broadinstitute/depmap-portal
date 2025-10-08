@@ -99,35 +99,53 @@ def format_dep_dist_caption(
     # DEPRECATED: will be redesigned/replaced
     if compound_experiment_and_datasets is None:
         return None
+
+    s = ""
+    if any(
+        (
+            dataset.units == "log2(AUC)"
+            for _, dataset in compound_experiment_and_datasets
+        )
+    ):
+        s += "Please note that log2(AUC) values depend on the dose range of the screen and are not comparable across different assays. "
+
     if any((dataset.units == "AUC" for _, dataset in compound_experiment_and_datasets)):
-        s = "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays."
-        if any(
-            (
-                dataset.name == DependencyEnum.CTRP_AUC
-                for _, dataset in compound_experiment_and_datasets
-            )
-        ):
-            s += " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1."
+        s += "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays."
+
+    if any(
+        (
+            dataset.name == DependencyEnum.CTRP_AUC
+            for _, dataset in compound_experiment_and_datasets
+        )
+    ):
+        s += " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1."
+
+    if s != "":
         return s
-    else:
-        return None
+
+    return None
 
 
-def get_order(has_predictability: bool, has_heatmap: bool):
+def get_order(
+    has_predictability: bool, has_heatmap: bool, show_enriched_lineages: bool
+):
     # hardcoded approximate heights of the different cards.  These values are used for sorting cards into columns such that column heights are as close as they can be
     tile_large = 650
     tile_medium = 450
     tile_small = 300
-    header_cards = {
-        CompoundTileEnum.sensitivity.value: tile_medium,
-        CompoundTileEnum.selectivity.value: tile_large,
-        CompoundTileEnum.correlations.value: tile_small,
-        CompoundTileEnum.availability.value: tile_small,
-    }
+
+    header_cards = {CompoundTileEnum.sensitivity.value: tile_medium}
+
+    if show_enriched_lineages:
+        header_cards[CompoundTileEnum.selectivity.value] = tile_large
+    header_cards[CompoundTileEnum.correlations.value] = tile_small
+    header_cards[CompoundTileEnum.availability.value] = tile_small
+
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
     }
+
     if has_heatmap:
         anywhere_cards[CompoundTileEnum.heatmap.value] = tile_medium
 
@@ -194,6 +212,9 @@ def format_dep_dists(compound_experiment_and_datasets):
         color = colors[dataset.name]
 
         svg = format_generic_distribution_plot(values, color)
+
+        units = dataset.matrix.units
+
         dep_dists.append(
             {
                 "svg": svg,
@@ -201,7 +222,7 @@ def format_dep_dists(compound_experiment_and_datasets):
                     compound_experiment.label, dataset.display_name
                 ),
                 "num_lines": len(values),
-                "units": dataset.matrix.units,
+                "units": units,
                 "color": color,
             }
         )

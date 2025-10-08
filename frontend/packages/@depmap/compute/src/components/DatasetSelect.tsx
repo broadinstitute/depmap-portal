@@ -7,8 +7,9 @@ import update from "immutability-helper";
 
 import { SelectNSOption } from "../models/compute";
 import { UploadTask } from "@depmap/user-upload";
+import { isBreadboxOnlyMode } from "@depmap/data-explorer-2";
 import { FileUpload } from "@depmap/compute";
-import { legacyPortalAPI } from "@depmap/api";
+import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
 
 import "../styles/DatasetSelect.scss";
 
@@ -120,7 +121,7 @@ export class DatasetSelect extends React.Component<
         }),
       },
       () =>
-        legacyPortalAPI
+        (isBreadboxOnlyMode ? breadboxAPI : legacyPortalAPI)
           .postCustomCsv({
             uploadFile,
             displayName: uploadFile.name,
