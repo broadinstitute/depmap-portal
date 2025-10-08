@@ -15,14 +15,22 @@ export const getLayout = (
   // Parts of the layout that are different for screen sizes less than 1250
   const gridRows = useStackedLayout ? 2 : 1;
   const gridColumns = useStackedLayout ? 1 : 2;
-  const margin = useStackedLayout ? { t: 25, b: 25 } : { t: 25, b: 25 };
+  const margin = useStackedLayout ? { t: 0, b: 25 } : { t: 25, b: 25 };
   const xDomain = useStackedLayout ? [0, 1] : [0, 0.7];
   const x2Domain = useStackedLayout ? [0, 1] : [0.73, 1];
   const showY2Axis = useStackedLayout;
+  // If there are selected columns, the tick marks push the heatmap x axis rangeslider and label downwards towards the barchart.
+  // This gives us more room so that the x axis label does not overlap the barchart.
+  const stackedLayoutYGap = selectedColumns.size > 0 ? 0.5 : 0.4;
 
   return {
     autosize: true,
-    grid: { rows: gridRows, columns: gridColumns, pattern: "independent" },
+    grid: {
+      rows: gridRows,
+      columns: gridColumns,
+      ygap: useStackedLayout ? stackedLayoutYGap : 0,
+      pattern: "independent",
+    },
     height: 600,
     margin,
     hovermode: "closest",

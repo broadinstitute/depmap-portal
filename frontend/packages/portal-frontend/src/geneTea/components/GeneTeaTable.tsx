@@ -7,7 +7,6 @@ import GeneTeaContextModal from "@depmap/data-explorer-2/src/components/DataExpl
 interface GeneTeaTableProps {
   error: boolean;
   isLoading: boolean;
-  height: number;
   tableData: any;
   prefferedTableDataForDownload: any;
   selectedTableRows: Set<string>;
@@ -18,7 +17,6 @@ interface GeneTeaTableProps {
 const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
   error,
   isLoading,
-  height,
   tableData,
   prefferedTableDataForDownload,
   selectedTableRows,

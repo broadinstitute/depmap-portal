@@ -170,7 +170,6 @@ function TopTermsTab({
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
-          height={800}
           tableData={roundedAndUnroundedTableData.roundedData}
           prefferedTableDataForDownload={
             roundedAndUnroundedTableData.unroundedData

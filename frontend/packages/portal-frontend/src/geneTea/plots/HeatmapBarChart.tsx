@@ -71,11 +71,17 @@ function HeatmapBarChart({
   const updateLayoutOnScreenSizeChange = useCallback(
     (plot: ExtendedPlotType) => {
       if (plot && plot.layout) {
+        const stackedLayoutYGap = selectedColumns.size > 0 ? 0.5 : 0.4;
         Plotly.relayout(plot, {
           ...plot.layout,
           grid:
             window.innerWidth < 1250
-              ? { rows: 2, columns: 1, pattern: "independent" }
+              ? {
+                  rows: 2,
+                  columns: 1,
+                  ygap: stackedLayoutYGap,
+                  pattern: "independent",
+                }
               : { rows: 1, columns: 2, pattern: "independent" },
           xaxis: {
             ...plot.layout.xaxis,
@@ -92,7 +98,7 @@ function HeatmapBarChart({
         });
       }
     },
-    [Plotly]
+    [Plotly, selectedColumns.size]
   );
 
   useEffect(() => {

@@ -138,7 +138,6 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
-          height={800}
           tableData={roundedAndUnroundedTableData.roundedData}
           prefferedTableDataForDownload={
             roundedAndUnroundedTableData.unroundedData
