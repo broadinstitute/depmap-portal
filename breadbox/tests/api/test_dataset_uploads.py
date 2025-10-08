@@ -72,7 +72,11 @@ class TestPost:
         }
 
     def test_dataset_given_id_validation(
-        self, client: TestClient, minimal_db: SessionWithUser, private_group: Dict
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
     ):
         user = "someone@private-group.com"
         headers = {"X-Forwarded-User": user}
