@@ -420,6 +420,7 @@ class BBClient:
         group_id: Union[str, Unset] = UNSET,
         given_id: Union[str, Unset, None] = UNSET,
         description: Union[str, Unset, None] = UNSET,
+            priority: Union[int, Unset, None] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
         from breadbox_client.models import MatrixDatasetUpdateParams, TabularDatasetUpdateParams
@@ -438,6 +439,7 @@ class BBClient:
             group_id=group_id,
             given_id=given_id,
             description=description,
+            priority=priority,
         )
         breadbox_response = update_dataset_client.sync_detailed(
             dataset_id=dataset_id,

@@ -47,7 +47,7 @@ function ContextBuilderV2({
       } else {
         (async () => {
           setIsConverting(true);
-          const { convertedContext } = await convertContextV1toV2(context);
+          const convertedContext = await convertContextV1toV2(context);
           setIsConverting(false);
 
           setContextToEdit(convertedContext);

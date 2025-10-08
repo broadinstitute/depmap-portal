@@ -212,9 +212,7 @@ class FeatureFlags:
 
     @property
     def show_peddep_landing_page(self):
-        return (
-            self.is_prerelease_env()
-        )  # TODO: Temporarily set for review. Change back to public only
+        return self.is_public()
 
     @property
     def data_explorer_2_experimental_settings(self):

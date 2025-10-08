@@ -71,6 +71,47 @@ class TestPost:
             "B": {"ACH-1": 0.3, "ACH-2": 0.4},
         }
 
+    def test_dataset_given_id_validation(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        file = factories.continuous_matrix_csv_file()
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file, chunk_count=3)
+        matrix_dataset_given_id = "bad_given/id"
+
+        json_body = {
+            "format": "matrix",
+            "name": "a dataset",
+            "given_id": matrix_dataset_given_id,
+            "units": "a unit",
+            "feature_type": "generic",
+            "sample_type": "depmap_model",
+            "data_type": "User upload",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
+            "group_id": private_group["id"],
+            "value_type": "continuous",
+            "allowed_values": None,
+            "description": "a dataset",
+            "version": "v1",
+        }
+        failed_response = client.post("/dataset-v2/", json=json_body, headers=headers,)
+        assert failed_response.status_code == 422  # because the given_id is invalid
+
+        # now confirm the failure was due to given id by trying again, but without given_id
+        del json_body["given_id"]
+        successful_response = client.post(
+            "/dataset-v2/", json=json_body, headers=headers,
+        )
+        assert_status_ok(successful_response)
+
     # Dataset post endpoint using uploads
     def test_dataset_uploads_task(
         self,
@@ -345,7 +386,7 @@ class TestPost:
         # Test matrix with True and False
         file2 = factories.matrix_csv_data_file_with_values(values=[True, False])
         file_ids, expected_md5 = upload_and_get_file_ids(client, file2)
-        categorical_dataset2_given_id = "another given id"
+        categorical_dataset2_given_id = "another_given_id"
         categorical_matrix_dataset2 = client.post(
             "/dataset-v2/",
             json={
@@ -385,7 +426,7 @@ class TestPost:
             values=[True, False, pd.NA, np.nan, "true", None]
         )
         file_ids, expected_md5 = upload_and_get_file_ids(client, file3)
-        categorical_dataset3_given_id = "yet another given id"
+        categorical_dataset3_given_id = "yet_another_given_id"
         categorical_matrix_dataset3 = client.post(
             "/dataset-v2/",
             json={

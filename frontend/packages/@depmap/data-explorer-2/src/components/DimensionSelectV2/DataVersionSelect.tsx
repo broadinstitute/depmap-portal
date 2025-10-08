@@ -117,8 +117,11 @@ function DataVersionSelect({
         const dataset = datasets.find(
           (d) => d.id === option.value || d.given_id === option.value
         )!;
-        groups[dataset[groupBy]] ||= [];
-        groups[dataset[groupBy]].push(option);
+
+        if (dataset) {
+          groups[dataset[groupBy]] ||= [];
+          groups[dataset[groupBy]].push(option);
+        }
       });
 
       const groupedOpts = Object.keys(groups)
@@ -137,15 +140,28 @@ function DataVersionSelect({
     shouldGroupBySliceType,
   ]);
 
-  let displayValue = useValueAsGivenIdWherePossible(value, index_type);
+  let displayValue:
+    | string
+    | null
+    | { label: string; value: string } = useValueAsGivenIdWherePossible(
+    value,
+    index_type
+  );
 
   if (isLoading) {
     displayValue = null;
   }
 
   if (isUnknownDataset && optionsToShow?.[0]) {
-    const opts = (optionsToShow as unknown) as { options?: string[] }[];
-    displayValue = opts[0]?.options?.[0] || null;
+    type Options = { label: string; value: string }[];
+    type NestedOptions = { options: Options }[];
+    const opts = optionsToShow as Options | NestedOptions;
+
+    if ("options" in opts[0]) {
+      displayValue = opts[0]?.options?.[0] || null;
+    } else {
+      displayValue = opts[0] || null;
+    }
   }
 
   return (
@@ -154,7 +170,7 @@ function DataVersionSelect({
       isClearable
       hasError={isUnknownDataset}
       show={show}
-      enable={options.length > 1 && !isLoading}
+      enable={(options.length > 1 || isUnknownDataset) && !isLoading}
       isLoading={isLoading}
       value={displayValue}
       options={optionsToShow}
