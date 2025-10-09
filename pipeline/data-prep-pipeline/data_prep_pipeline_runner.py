@@ -149,9 +149,7 @@ class DataPrepPipelineRunner(PipelineRunner):
 
     def handle_special_features(self, config):
         """Handle START_WITH functionality for data prep pipeline."""
-        # Ensure DO-NOT-EDIT-ME files exist so we can log inputs before the run
         self.preprocess_release_inputs(config)
-        self.track_dataset_usage(config)
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
             # Clean out old invocation
@@ -177,5 +175,5 @@ class DataPrepPipelineRunner(PipelineRunner):
             self.run_via_container("conseq forget --regex publish.*", config)
 
     def handle_post_run_tasks(self, config):
-        """After conseq finishes, scan generated input files and log dataset usage."""
+        """After conseq finishes, log dataset usage."""
         self.track_dataset_usage(config)
