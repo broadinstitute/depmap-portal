@@ -116,8 +116,8 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         <div className={styles.errorMessage}>Error loading plot data.</div>
       ) : (
         <div>
-          <div className={styles.mainContentGrid}>
-            <div className={styles.plotArea}>
+          <div className={styles.mainContentGridAllMatchingTerms}>
+            <div className={styles.plotAreaAllMatchingTerms}>
               <PlotSection
                 isLoading={isLoading}
                 plotElement={plotElement}
@@ -138,7 +138,6 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
-          height={800}
           tableData={roundedAndUnroundedTableData.roundedData}
           prefferedTableDataForDownload={
             roundedAndUnroundedTableData.unroundedData
