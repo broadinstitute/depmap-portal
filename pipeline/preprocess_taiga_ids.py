@@ -1,7 +1,6 @@
 import sys
 import re
 from taigapy import create_taiga_client_v3
-import requests
 import json
 import os
 

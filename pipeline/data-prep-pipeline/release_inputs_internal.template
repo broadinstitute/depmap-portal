@@ -1,6 +1,8 @@
+# This file exists in the depmap-deploy repo which contains the release label and taiga id
 # TAIGA_PREPROCESSOR_INCLUDE "internal.conseq"
 
-# Destination Taiga ID
+# Destination Taiga ID is needed to know where to upload the transformed files
+# This only happens in the data-prep-pipeline
 add-if-missing {
  "type": "release_taiga_id",
  "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
@@ -18,7 +20,9 @@ add-if-missing {
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "Model") 
 }
 
-# Portal Compounds
+##########################
+#### Portal Compounds ####
+##########################
 add-if-missing {
   "type": "repsdrug_matrix",
   "dataset_id": "repurposing-public-24q2-875f.4/Repurposing_Public_24Q2_Extended_Primary_Data_Matrix"
@@ -34,13 +38,46 @@ add-if-missing {
   "dataset_id": "compound-metadata-de37.42/PortalCompounds"
 }
 
-# HGNC Gene Table
+add-if-missing {
+  "type": "prism_oncology_reference_auc_matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLog2AUCMatrix") 
+}
+
+# Dummy artifact for filter portal compounds. Read the details in filter_portal_compounds.conseq. 
+add-if-missing {
+    "type": "stub-artifact"
+}
+#########################
+
+#########################
+#### HGNC Gene Table ####
+#########################
 add-if-missing {
   "type": "hgnc_gene_table",
   "dataset_id": "hgnc-gene-table-e250.4/hgnc_complete_set"
 }
 
-# Driver Events
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect"),
+  "label": "Chronos_Combined",
+  "confounders_label": "crispr-confounders",
+}
+
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneDependency"),
+  "label": "Chronos_Combined",
+}
+
+add-if-missing {
+  "type": "crispr-inferred-common-essentials",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRInferredCommonEssentials"),
+  "label": "Chronos_Combined"
+}
+#######################
+
+#### Driver Events ####
 add-if-missing {
   "type": "mutations",
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutations") 
@@ -50,6 +87,7 @@ add-if-missing {
   "type": "oncokb_annotated",
   "dataset_id": "oncokb-annotated-mutations-7e2e.17/oncokb_annotated"
 }
+######################
 
 # Fusion
 add-if-missing {
@@ -57,7 +95,7 @@ add-if-missing {
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsFusionFiltered") 
 }
 
-# CRISPR Confounders
+### CRISPR Confounders ###
 add-if-missing {
   "type": "achilles_screen_qc_report",
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesScreenQCReport") 
@@ -67,8 +105,11 @@ add-if-missing {
   "type": "crispr_screen_map",
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRScreenMap") 
 }
+######################
 
-# Legacy Data
+######################
+#### Legacy Data #####
+######################
 
 add-if-missing {
   "type": "rnai_data",
@@ -94,7 +135,11 @@ add-if-missing {
   "type": "metabolomics",
   "dataset_id": "metabolomics-cd0c.4/CCLE_metabolomics_20190502"
 }
+######################
 
+######################
+#### Subtype Tree ####
+######################
 add-if-missing {
     "type": "oncotree",
     "dataset_id": "subtypetree-919e.7/oncotree"
@@ -109,32 +154,4 @@ add-if-missing {
     "type": "omics_inferred_molecular_subtype",
     "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsInferredMolecularSubtypes")
 }
-
-# Dummy artifact for filter portal compounds. Read the details in filter_portal_compounds.conseq. 
-add-if-missing {
-    "type": "stub-artifact"
-}
-
-add-if-missing {
-  "type": "prism_oncology_reference_auc_matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLog2AUCMatrix") 
-}
-
-add-if-missing {
-  "type": "raw-dep-matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect"),
-  "label": "Chronos_Combined",
-  "confounders_label": "crispr-confounders",
-}
-
-add-if-missing {
-  "type": "raw-dep-prob-matrix",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneDependency"),
-  "label": "Chronos_Combined",
-}
-
-add-if-missing {
-  "type": "crispr-inferred-common-essentials",
-  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRInferredCommonEssentials"),
-  "label": "Chronos_Combined"
-}
+#######################
