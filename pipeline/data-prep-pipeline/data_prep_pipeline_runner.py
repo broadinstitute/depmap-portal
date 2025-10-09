@@ -66,9 +66,9 @@ class DataPrepPipelineRunner(PipelineRunner):
     def get_conseq_file(self, config):
         """Get conseq file for data prep pipeline."""
         if config["is_external"]:
-            return "data_prep_pipeline/run_external_data_prep.conseq"
+            return "data_prep_pipeline/run_external.conseq"
         else:
-            return "data_prep_pipeline/run_internal_data_prep.conseq"
+            return "data_prep_pipeline/run_internal.conseq"
 
     def run_via_container(self, command, config):
         """Run command inside Docker container with data prep specific configuration."""
