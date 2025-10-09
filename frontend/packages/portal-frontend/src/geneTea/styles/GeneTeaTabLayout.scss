@@ -1,12 +1,12 @@
 .geneTeaTabLayout {
   display: grid;
-  grid-template-columns: 1fr 10fr;
+  grid-template-columns: 1fr minmax(450px, 10fr);
   grid-template-areas: "filters main main main main main main main main main main";
   min-height: 100vh;
 
   @media (max-width: 1200px) {
     grid-template-areas: "filters main";
-    grid-template-columns: 1fr 12fr;
+    grid-template-columns: 1fr minmax(450px, 12fr);
     grid-template-rows: auto auto;
   }
 
@@ -70,9 +70,8 @@
       grid-template-areas:
         "selections"
         "plot";
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(450px, 1fr);
       grid-template-rows: auto auto;
-      max-width: 65%;
     }
   }
 

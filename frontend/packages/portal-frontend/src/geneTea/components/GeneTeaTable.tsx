@@ -162,35 +162,33 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
     );
   } else {
     tableContent = (
-      <section style={{ overflow: "auto", maxWidth: "99%" }}>
-        <div>
-          <WideTable
-            idProp="term"
-            rowHeight={32}
-            fixedHeight={500}
-            data={tableData || []}
-            prefferedTableDataForDownload={prefferedTableDataForDownload || []}
-            columns={tableColumns}
-            columnOrdering={tableColumns.map((col) => col.accessor)}
-            defaultColumnsToShow={tableColumns.map((col) => col.accessor)}
-            selectedTableLabels={selectedTableRows}
-            onChangeSelections={handleChangeSelection}
-            hideSelectAllCheckbox
-            allowDownloadFromTableDataWithMenu
-            allowDownloadFromTableDataWithMenuFileName="gene-tea-data.csv"
-            minimumAllowedSelections={1}
-            useAllSelectionsInOnChangeHandler
-          />{" "}
-          <GeneTeaContextModal
-            show={Boolean(selectedTerm)}
-            term={selectedTerm?.term || ""}
-            synonyms={[]}
-            coincident={[]}
-            matchingGenes={selectedTerm?.matchingGenes || []}
-            onClose={() => setSelectedTerm(null)}
-          />
-        </div>
-      </section>
+      <div style={{ minWidth: 0, overflow: "hidden" }}>
+        <WideTable
+          idProp="term"
+          rowHeight={32}
+          fixedHeight={500}
+          data={tableData || []}
+          prefferedTableDataForDownload={prefferedTableDataForDownload || []}
+          columns={tableColumns}
+          columnOrdering={tableColumns.map((col) => col.accessor)}
+          defaultColumnsToShow={tableColumns.map((col) => col.accessor)}
+          selectedTableLabels={selectedTableRows}
+          onChangeSelections={handleChangeSelection}
+          hideSelectAllCheckbox
+          allowDownloadFromTableDataWithMenu
+          allowDownloadFromTableDataWithMenuFileName="gene-tea-data.csv"
+          minimumAllowedSelections={1}
+          useAllSelectionsInOnChangeHandler
+        />{" "}
+        <GeneTeaContextModal
+          show={Boolean(selectedTerm)}
+          term={selectedTerm?.term || ""}
+          synonyms={[]}
+          coincident={[]}
+          matchingGenes={selectedTerm?.matchingGenes || []}
+          onClose={() => setSelectedTerm(null)}
+        />
+      </div>
     );
   }
   return <>{tableContent}</>;
