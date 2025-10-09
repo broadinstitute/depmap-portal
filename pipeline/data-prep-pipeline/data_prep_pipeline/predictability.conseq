@@ -29,7 +29,7 @@ rule transform_fusion:
     inputs:
         fusion={"type": "fusion"},
         gene={"type": "gene"},
-        script=fileref('../../pipeline/scripts/make_fusions_matrix.py'),
+        script=fileref('../../preprocessing-pipeline/scripts/make_fusions_matrix.py'),
     outputs:
         {
             "type": "predictability_fusion",
