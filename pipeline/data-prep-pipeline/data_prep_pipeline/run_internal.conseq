@@ -9,13 +9,4 @@ subprocess.check_call(cmd)
 """
 
 include "release_inputs_internal-DO-NOT-EDIT-ME"
-
-include "data_prep_pipeline/update_hgnc_gene_table.conseq"
-include "data_prep_pipeline/cngene_log_2_transformation.conseq"
-include "data_prep_pipeline/filter_portal_compounds.conseq"
-include "data_prep_pipeline/predictability.conseq"
-include "data_prep_pipeline/subtype_tree.conseq"
-
-if "config.get('is_dev', 'True') != 'True'":
-  include "data_prep_pipeline/publish.conseq"
-endif
+include "data_prep_pipeline/run_common.conseq"
