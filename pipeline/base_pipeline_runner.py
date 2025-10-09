@@ -3,7 +3,6 @@ import os
 import subprocess
 import sys
 import tempfile
-import time
 import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -20,36 +19,25 @@ class PipelineRunner(ABC):
 
     def get_git_commit_sha(self):
         """Get the current git commit SHA."""
-        try:
-            result = subprocess.run(
-                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-            )
-            return result.stdout.strip()
-        except subprocess.CalledProcessError:
-            return "unknown"
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        )
+        return result.stdout.strip()
 
     def read_docker_image_name(self, script_dir):
         """Load Docker image name from image-name file."""
-        # Try current directory first
-        image_name_file = script_dir / "image-name"
-
-        # If not found, try one level up
-        if not image_name_file.exists():
+        try:
             image_name_file = script_dir.parent / "image-name"
-
-        if not image_name_file.exists():
+        except FileNotFoundError:
             raise FileNotFoundError(
-                f"Could not find image-name file in {script_dir} or {script_dir.parent}"
+                f"Could not find image-name file in {script_dir.parent}"
             )
-
         # Parse the file to get DOCKER_IMAGE variable
         with open(image_name_file, "r") as f:
             for line in f:
                 line = line.strip()
                 if line.startswith("DOCKER_IMAGE="):
                     return line.split("=", 1)[1].strip("\"'")
-
-        raise ValueError(f"DOCKER_IMAGE not found in {image_name_file}")
 
     def backup_conseq_logs(self, state_path, log_destination):
         """Copy all logs to specified directory."""
@@ -118,8 +106,9 @@ class PipelineRunner(ABC):
             "pipeline": self.pipeline_name,
             "timestamp": datetime.now().astimezone().isoformat(),
         }
-
+        print("--------------------------------")
         print(json.dumps(final_log, indent=2))
+        print("--------------------------------")
 
     @abstractmethod
     def create_argument_parser(self):
