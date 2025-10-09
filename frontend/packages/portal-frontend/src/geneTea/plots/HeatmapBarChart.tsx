@@ -71,11 +71,17 @@ function HeatmapBarChart({
   const updateLayoutOnScreenSizeChange = useCallback(
     (plot: ExtendedPlotType) => {
       if (plot && plot.layout) {
+        const stackedLayoutYGap = 0.5;
         Plotly.relayout(plot, {
           ...plot.layout,
           grid:
             window.innerWidth < 1250
-              ? { rows: 2, columns: 1, pattern: "independent" }
+              ? {
+                  rows: 2,
+                  columns: 1,
+                  ygap: stackedLayoutYGap,
+                  pattern: "independent",
+                }
               : { rows: 1, columns: 2, pattern: "independent" },
           xaxis: {
             ...plot.layout.xaxis,
@@ -113,33 +119,43 @@ function HeatmapBarChart({
     setShowFullAxisTickLabels,
   ] = useState<boolean>(false);
 
-  const getShowXAxisTickLabels = useCallback(() => {
-    if (ref.current) {
-      const dataToPiixels = (ref.current as any)._fullLayout.xaxis.l2p;
+  const calculateTickLabelVisibility = (
+    plotRef: React.RefObject<ExtendedPlotType>
+  ): boolean => {
+    const plot = plotRef.current;
+    if (plot && (plot as any)._fullLayout) {
+      const fullLayout = (plot as any)._fullLayout;
 
-      const pixelWidth = dataToPiixels(1) - dataToPiixels(0);
+      if (fullLayout.xaxis && fullLayout.xaxis.l2p) {
+        const dataToPixels = fullLayout.xaxis.l2p;
 
-      return pixelWidth > 20;
+        // Calculate pixel width of Heatmap column
+        const pixelWidth = dataToPixels(1) - dataToPixels(0);
+
+        return pixelWidth > 20;
+      }
     }
-
     return false;
-    // eslint-disable-next-line
-  }, [selectedRange, selectedColumns]);
+  };
+
+  useEffect(() => {
+    const showTickLabels = calculateTickLabelVisibility(ref);
+
+    if (showTickLabels !== showFullXAxisTickLabels) {
+      setShowFullAxisTickLabels(showTickLabels);
+    }
+  }, [showFullXAxisTickLabels]);
 
   const xAxisTickLabels = useMemo(() => {
-    const showTickLabels = getShowXAxisTickLabels();
-    setShowFullAxisTickLabels(showTickLabels);
+    if (!showFullXAxisTickLabels && selectedColumns.size === 0) return [];
     return generateTickLabels(
       heatmapData.x.map(String),
-      selectedColumns,
+      !showFullXAxisTickLabels && selectedColumns.size >= 0
+        ? selectedColumns
+        : new Set(heatmapData.x.map((_, i) => i)),
       showFullXAxisTickLabels
     );
-  }, [
-    heatmapData.x,
-    selectedColumns,
-    getShowXAxisTickLabels,
-    showFullXAxisTickLabels,
-  ]);
+  }, [heatmapData.x, showFullXAxisTickLabels, selectedColumns]);
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
@@ -236,7 +252,7 @@ function HeatmapBarChart({
 
     const zoom = (val: "in" | "out" | "reset") => {
       getButton("zoom", val).click();
-      const showTickLabels = getShowXAxisTickLabels();
+      const showTickLabels = calculateTickLabelVisibility(ref);
       setShowFullAxisTickLabels(showTickLabels);
       // This redraw fixes a very strange bug where setting the drag mode to
       // select (or lasso) with a filter also applied causes all of the points
@@ -253,6 +269,11 @@ function HeatmapBarChart({
       zoom("reset");
       Plotly.react(plot, plot.data, nextLayout, plot.config);
     };
+
+    on("plotly_relayout", () => {
+      const showTickLabels = calculateTickLabelVisibility(ref);
+      setShowFullAxisTickLabels(showTickLabels);
+    });
 
     on("plotly_afterplot", () => {
       customizeDragLayer({
@@ -309,7 +330,7 @@ function HeatmapBarChart({
           } as object),
         });
 
-        const showTickLabels = getShowXAxisTickLabels();
+        const showTickLabels = calculateTickLabelVisibility(ref);
         setShowFullAxisTickLabels(showTickLabels);
       }
     };
@@ -364,7 +385,6 @@ function HeatmapBarChart({
   }, [
     heatmapData,
     barChartXAxisTitle,
-    getShowXAxisTickLabels,
     onSelectColumnRange,
     selectedColumns,
     legendTitle,
@@ -384,7 +404,7 @@ function HeatmapBarChart({
 
   return (
     <>
-      <h3 style={{ textAlign: "center" }}>{plotTitle}</h3>
+      {ref.current && <h3 style={{ textAlign: "center" }}>{plotTitle}</h3>}
       <div className={styles.HeatmapBarChart} ref={ref} />
     </>
   );

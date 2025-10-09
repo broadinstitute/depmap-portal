@@ -45,18 +45,18 @@ export async function fetchMetadata<T>(
 
 export function generateTickLabels(
   columnNames: string[],
-  selectedColumnIndices: Set<number>,
+  columnIndices: Set<number>,
   showFullXAxisTickLabels: boolean
 ): string[] {
   // Initialize output array with empty strings
   const tickvals: string[] = new Array(columnNames.length).fill("");
 
-  if (selectedColumnIndices.size === 0) {
+  if (columnIndices.size === 0) {
     return tickvals;
   }
 
   // Convert Set to sorted array for easier processing
-  const sortedIndices = Array.from(selectedColumnIndices).sort((a, b) => a - b);
+  const sortedIndices = Array.from(columnIndices).sort((a, b) => a - b);
 
   // Find contiguous subsets
   const contiguousSubsets: number[][] = [];

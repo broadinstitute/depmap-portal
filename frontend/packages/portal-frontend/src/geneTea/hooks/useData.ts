@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { MAX_GENES_ALLOWED, SortOption } from "../types";
 
 // TODO: picked these numbers at random. Figure out what they should actually be.
-const MIN_SELECTION = 3;
+const MIN_SELECTION = 2;
 // TODO: Only keep MAX_SELECTION or MAX_GENES_ALLOWED since they're the same thing.
 const MAX_SELECTION = MAX_GENES_ALLOWED; // TODO: The API will error at a certain number. Make sure this doesn't exceed that number.
 
