@@ -110,25 +110,13 @@ class PipelineRunner(ABC):
             }
             subprocess.run(["docker", "pull", docker_image], check=True, env=env_vars)
 
-    def fix_permissions(self):
-        """Fix file permissions after Docker execution."""
-        import platform
-
-        if platform.system() == "Linux":
-            subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
-        else:
-            print("Skipping permission fix (not needed on macOS)")
-
-    def log_dataset_usage(self, dataset_taiga_id, release_taiga_id=None):
+    def log_dataset_usage(self, dataset_taiga_id):
         """Print dataset usage information."""
         final_log = {
             "pipeline_run_id": self.pipeline_run_id,
-            "release_taiga_id": release_taiga_id,
             "dataset_taiga_id": dataset_taiga_id,
             "pipeline": self.pipeline_name,
-            "datasets_used": [
-                {"timestamp": time.time(), "dataset_taiga_id": dataset_taiga_id,}
-            ],
+            "timestamp": datetime.now().astimezone().isoformat(),
         }
 
         print(json.dumps(final_log, indent=2))
@@ -216,7 +204,7 @@ class PipelineRunner(ABC):
                 self.backup_conseq_logs(config["state_path"], config["log_destination"])
 
             print("Pipeline run complete")
-            self.fix_permissions()
+            subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
             sys.exit(run_exit_status)
 
         except Exception as e:

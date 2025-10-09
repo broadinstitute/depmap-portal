@@ -104,10 +104,6 @@ class AnalysisPipelineRunner(PipelineRunner):
 
     def track_dataset_usage_from_templates(self, config):
         """Track dataset usage from template files for analysis pipeline."""
-        # Get the release taiga ID from config
-        release_taiga_id = config.get(
-            "release_taiga_id", f'analysis-pipeline-{config["env_name"]}'
-        )
 
         # Look for DO-NOT-EDIT-ME files that contain dataset IDs
         pipeline_dir = Path("pipeline/analysis-pipeline")
@@ -129,7 +125,7 @@ class AnalysisPipelineRunner(PipelineRunner):
                         if "/" in dataset_id and "." in dataset_id:
                             # Basic validation - should look like taiga ID
                             if len(dataset_id.split("/")[0]) > 5:
-                                self.log_dataset_usage(dataset_id, release_taiga_id)
+                                self.log_dataset_usage(dataset_id)
                                 print(f"Tracked dataset usage: {dataset_id}")
 
             except Exception as e:

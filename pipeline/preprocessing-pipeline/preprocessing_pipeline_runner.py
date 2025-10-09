@@ -158,11 +158,6 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def track_dataset_usage_from_conseq(self, config):
         """Track dataset usage from conseq files for preprocessing pipeline."""
-        # Get the release taiga ID from config
-        release_taiga_id = config.get(
-            "release_taiga_id", f'preprocessing-pipeline-{config["env_name"]}'
-        )
-
         # Look for DO-NOT-EDIT-ME files that contain dataset IDs
         pipeline_dir = Path("pipeline/preprocessing-pipeline")
         version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
@@ -182,7 +177,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
                     for dataset_id in set(dataset_ids):
                         if "/" in dataset_id and "." in dataset_id:
                             if len(dataset_id.split("/")[0]) > 5:  # Basic validation
-                                self.log_dataset_usage(dataset_id, release_taiga_id)
+                                self.log_dataset_usage(dataset_id)
                                 print(f"Tracked dataset usage: {dataset_id}")
 
             except Exception as e:

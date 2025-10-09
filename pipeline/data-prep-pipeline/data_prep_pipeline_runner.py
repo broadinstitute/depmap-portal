@@ -104,11 +104,6 @@ class DataPrepPipelineRunner(PipelineRunner):
 
     def track_dataset_usage(self, config):
         """Track dataset usage from template files and log to usage tracker."""
-        # Get the release taiga ID from config if available
-        release_taiga_id = config.get(
-            "release_taiga_id", f'data-prep-pipeline-{config["env_name"]}'
-        )
-
         # Look for DO-NOT-EDIT-ME files that contain dataset IDs
         pipeline_dir = Path("pipeline/data-prep-pipeline")
         version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
@@ -127,7 +122,7 @@ class DataPrepPipelineRunner(PipelineRunner):
                     # Log each dataset usage
                     for dataset_id in dataset_ids:
                         if "/" in dataset_id and "." in dataset_id:
-                            self.log_dataset_usage(dataset_id, release_taiga_id)
+                            self.log_dataset_usage(dataset_id)
                             print(f"Tracked dataset usage: {dataset_id}")
 
             except Exception as e:
