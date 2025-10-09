@@ -102,6 +102,23 @@ class DataPrepPipelineRunner(PipelineRunner):
         print("command", command)
         return subprocess.run(docker_cmd)
 
+    def preprocess_release_inputs(self, config):
+        """Preprocess templates to generate DO-NOT-EDIT-ME files before run."""
+        template = (
+            "release_inputs_external.template"
+            if config["is_external"]
+            else "release_inputs_internal.template"
+        )
+        output = (
+            "release_inputs_external-DO-NOT-EDIT-ME"
+            if config["is_external"]
+            else "release_inputs_internal-DO-NOT-EDIT-ME"
+        )
+        # Run the same preprocessor conseq triggers, but up-front so we can log usage
+        self.run_via_container(
+            f"python ../preprocess_taiga_ids.py {template} {output}", config
+        )
+
     def track_dataset_usage(self, config):
         """Track dataset usage from template files and log to usage tracker."""
         # Look for DO-NOT-EDIT-ME files that contain dataset IDs
@@ -132,9 +149,9 @@ class DataPrepPipelineRunner(PipelineRunner):
 
     def handle_special_features(self, config):
         """Handle START_WITH functionality for data prep pipeline."""
-        # Track dataset usage at the beginning
+        # Ensure DO-NOT-EDIT-ME files exist so we can log inputs before the run
+        self.preprocess_release_inputs(config)
         self.track_dataset_usage(config)
-
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
             # Clean out old invocation
@@ -158,3 +175,7 @@ class DataPrepPipelineRunner(PipelineRunner):
 
             # Forget publish rules
             self.run_via_container("conseq forget --regex publish.*", config)
+
+    def handle_post_run_tasks(self, config):
+        """After conseq finishes, scan generated input files and log dataset usage."""
+        self.track_dataset_usage(config)
