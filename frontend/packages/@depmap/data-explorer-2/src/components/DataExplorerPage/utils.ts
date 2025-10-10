@@ -3,6 +3,7 @@ import pako from "pako";
 import omit from "lodash.omit";
 import { Base64 } from "js-base64";
 import stableStringify from "json-stable-stringify";
+import { breadboxAPI, cached } from "@depmap/api";
 import {
   ContextPath,
   DataExplorerContext,
@@ -28,7 +29,10 @@ import {
 import { fetchContext, persistContext } from "../../utils/context-storage";
 import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
 import { convertContextV1toV2 } from "../../utils/context-converter";
-import { sliceIdToSliceQuery } from "../../utils/slice-id";
+import {
+  legacyPortalIdToBreadboxGivenId,
+  sliceIdToSliceQuery,
+} from "../../utils/slice-id";
 import wellKnownDatasets from "../../constants/wellKnownDatasets";
 import {
   hasSomeShorthandParams,
@@ -437,15 +441,10 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
               };
             };
 
-        let context =
+        const context =
           "hash" in dimension.context
             ? await fetchContext(dimension.context.hash)
             : dimension.context;
-
-        if (isBreadboxOnlyMode && !isV2Context(context)) {
-          const convertedContext = await convertContextV1toV2(context);
-          context = convertedContext;
-        }
 
         nextDimensions[dimensionKey] = {
           ...dimension,
@@ -470,13 +469,8 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
               negated: boolean;
             };
 
-        let context =
+        const context =
           "hash" in filter ? await fetchContext(filter.hash) : filter;
-
-        if (isBreadboxOnlyMode && !isV2Context(context)) {
-          const convertedContext = await convertContextV1toV2(context);
-          context = convertedContext;
-        }
 
         nextFilters[filterKey] =
           "negated" in filter && filter.negated
@@ -697,8 +691,7 @@ export async function makePlotConfigBreadboxModeCompatible(
   if (plot?.dimensions) {
     for (const dimKey of Object.keys(plot.dimensions)) {
       const d = plot.dimensions[dimKey as DimensionKey]!;
-      // Strip any "/breadbox" prefixes from dataset IDs.
-      d.dataset_id = d.dataset_id.replace("breadbox/", "");
+      d.dataset_id = legacyPortalIdToBreadboxGivenId(d.dataset_id);
 
       // "custom" was never a real dimension type -- just a sentinel
       // value we had been using. We use `null` for that now.
@@ -710,6 +703,9 @@ export async function makePlotConfigBreadboxModeCompatible(
 
   // Convert any `metadata` values from slice IDs to SliceQuery objects.
   if (plot?.metadata) {
+    const datasets = await cached(breadboxAPI).getDatasets();
+    const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+
     for (const key of Object.keys(plot.metadata)) {
       const value = plot.metadata[key];
 
@@ -719,6 +715,20 @@ export async function makePlotConfigBreadboxModeCompatible(
           "categorical",
           plot.index_type
         );
+
+        if (nextValue.dataset_id.endsWith("_metadata")) {
+          const dimTypeName = nextValue.dataset_id.replace(/_metadata$/, "");
+          const dimType = dimTypes.find((dt) => dt.name === dimTypeName);
+
+          if (dimType?.metadata_dataset_id) {
+            const regularId = dimType.metadata_dataset_id;
+            const dataset = datasets.find((d) => d.id === regularId);
+
+            if (dataset && dataset.given_id !== nextValue.dataset_id) {
+              nextValue.dataset_id = regularId;
+            }
+          }
+        }
 
         plot.metadata[key] = nextValue;
 

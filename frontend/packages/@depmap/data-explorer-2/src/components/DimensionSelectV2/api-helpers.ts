@@ -1,4 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
+import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
 import { SliceTypeNull } from "./useDimensionStateManager/types";
 
 export async function fetchDimensionIdentifiers(
@@ -43,4 +44,20 @@ export async function fetchDatasetIdentifiers(
   }
 
   return result;
+}
+
+export async function fetchDimensionTypeDisplayName(
+  dimensionTypeName: string | null
+) {
+  if (!dimensionTypeName) {
+    return "";
+  }
+
+  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
+  const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
+
+  return (
+    dimType?.display_name ||
+    capitalize(getDimensionTypeLabel(dimensionTypeName))
+  );
 }

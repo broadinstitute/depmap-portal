@@ -14,7 +14,7 @@ function useData() {
     (async () => {
       try {
         const response = await fetch(
-          "../breadbox/datasets/tabular/anchor-screen-metadata",
+          "../breadbox/datasets/tabular/anchor_experiment_metadata",
           { method: "POST" }
         );
 
