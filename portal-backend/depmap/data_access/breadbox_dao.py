@@ -4,7 +4,6 @@ from typing import Literal, Optional, Union, cast
 from breadbox_client.models import (
     DimensionType,
     MatrixDatasetResponse,
-    MatrixDatasetResponseFormat,
     TabularDatasetResponse,
 )
 from breadbox_client.types import Unset
@@ -45,7 +44,7 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     matrix_datasets = []
     for dataset in _get_breadbox_datasets_with_caching():
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
@@ -69,7 +68,7 @@ def get_filtered_matrix_datasets(
     )
     matrix_datasets = []
     for dataset in datasets:
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
