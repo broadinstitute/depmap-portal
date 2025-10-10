@@ -12,7 +12,7 @@ COPY . /install/breadbox
 WORKDIR /install/breadbox
 
 # Install dependencies:
-RUN pip install poetry==1.8.3
+RUN pip install poetry==1.8.5
 # Ensure that when packages are installed with Poetry a virtual environment is NOT created first. 
 # You’re already in a virtual environment by using a docker image
 RUN poetry config virtualenvs.create false
