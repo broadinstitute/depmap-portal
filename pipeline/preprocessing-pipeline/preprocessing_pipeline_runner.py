@@ -153,7 +153,9 @@ class PreprocessingPipelineRunner(PipelineRunner):
             "-c",
             f"source /aws-keys/broad-paquitas && {command}",
         ]
-        print("command", command)
+        print("--------------------------------")
+        print("PreprocessingPipelineRunner command:", command)
+        print("--------------------------------")
         return subprocess.run(docker_cmd)
 
     def track_dataset_usage_from_conseq(self, config):
