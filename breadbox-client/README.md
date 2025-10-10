@@ -130,60 +130,20 @@ installed by brew and when using `poetry self ...` it's not updating the
 environment in the right directory. `poetry self update` flat out aborts
 saying it cannot do that when installed via brew.)
 
-# Advanced Client Usage
+# Authentication
 
-If the endpoints you're going to hit require authentication, use `AuthenticatedClient` instead:
+If you're making requests to a non-public environment, you will need to use an authenticated client.
+* Step 1: reach out to the software team to request a username/password login be created for you
+* Step 2: provide the username and password as arguments when creating the breadbox client
 
+Example:
 ```python
-from breadbox_client import AuthenticatedClient
+client = BBClient(base_url="https://nonpublicdepmap.org/portal/breadbox/", user="someusername", password="somepassword")
 
-client = AuthenticatedClient(base_url="https://api.example.com", token="SuperSecretToken")
+datasets = client.get_datasets()
 ```
 
-Now call your endpoint and use your models:
-
-```python
-from breadbox_client.models import MyDataModel
-from breadbox_client.api.my_tag import get_my_data_model
-from breadbox_client.types import Response
-
-with client as client:
-    my_data: MyDataModel = get_my_data_model.sync(client=client)
-    # or if you need more info (e.g. status_code)
-    response: Response[MyDataModel] = get_my_data_model.sync_detailed(client=client)
-```
-
-Or do the same thing with an async version:
-
-```python
-from breadbox_client.models import MyDataModel
-from breadbox_client.api.my_tag import get_my_data_model
-from breadbox_client.types import Response
-
-async with client as client:
-    my_data: MyDataModel = await get_my_data_model.asyncio(client=client)
-    response: Response[MyDataModel] = await get_my_data_model.asyncio_detailed(client=client)
-```
-
-By default, when you're calling an HTTPS API it will attempt to verify that SSL is working correctly. Using certificate verification is highly recommended most of the time, but sometimes you may need to authenticate to a server (especially an internal server) using a custom certificate bundle.
-
-```python
-client = AuthenticatedClient(
-    base_url="https://internal_api.example.com",
-    token="SuperSecretToken",
-    verify_ssl="/path/to/certificate_bundle.pem",
-)
-```
-
-You can also disable certificate validation altogether, but beware that **this is a security risk**.
-
-```python
-client = AuthenticatedClient(
-    base_url="https://internal_api.example.com",
-    token="SuperSecretToken",
-    verify_ssl=False
-)
-```
+# Tips for developers
 
 Things to know:
 
