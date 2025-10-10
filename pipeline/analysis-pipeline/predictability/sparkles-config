@@ -1,6 +1,6 @@
 [config]
-default_url_prefix=gs://broad-achilles-kubeque/depmap-pipeline
-project=broad-achilles
+default_url_prefix=gs://dpp-sparkles/depmap-pipeline
+project=depmap-portal-pipeline
 region=us-central1
 machine_type=n1-highmem-2
 account=856306709302-compute@developer.gserviceaccount.com

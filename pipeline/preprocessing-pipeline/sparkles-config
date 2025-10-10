@@ -1,6 +1,6 @@
 [config]
-default_url_prefix=gs://broad-achilles-kubeque/depmap-pipeline
-project=broad-achilles
+default_url_prefix=gs://dpp-sparkles/depmap-pipeline
+project=depmap-portal-pipeline
 default_image=us.gcr.io/broad-achilles/tda-pipeline:v2
 region=us-central1
 machine_type=n2-highmem-2
