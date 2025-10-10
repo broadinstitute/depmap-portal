@@ -577,7 +577,7 @@ def get_anchor_screen_metadata_table():
 
     def get_data():
         df = extensions.breadbox.client.get_tabular_dataset_data(
-            dataset_id="anchor-screen-metadata",
+            dataset_id="anchor_experiment_metadata",
             columns=cols,
             identifier=None,
             indices=None,
