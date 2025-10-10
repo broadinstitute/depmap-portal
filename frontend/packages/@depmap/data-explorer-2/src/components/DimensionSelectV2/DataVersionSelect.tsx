@@ -243,7 +243,7 @@ function DataVersionSelect({
         },
         { context }: { context: "menu" | "value" }
       ) => {
-        if (option.isDisabled) {
+        if (option.isDisabled && context === "menu") {
           return (
             <Tooltip
               className={styles.unblockable}

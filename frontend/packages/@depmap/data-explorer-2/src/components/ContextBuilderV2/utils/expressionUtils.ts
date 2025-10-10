@@ -121,7 +121,12 @@ export const makeCompatibleExpression = (
   let nextValue = value;
 
   if (!operatorsByValueType[value_type].has(op)) {
-    nextOp = defaultOperatorByValueType[value_type];
+    // HACK: Special case for legacy one-hot encoded datasets.
+    if (op === "==" && value === 0) {
+      nextOp = "<=";
+    } else {
+      nextOp = defaultOperatorByValueType[value_type];
+    }
   }
 
   if (value_type === "continuous") {
