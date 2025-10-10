@@ -154,7 +154,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
             f"source /aws-keys/broad-paquitas && {command}",
         ]
         print("--------------------------------")
-        print("PreprocessingPipelineRunner command:", command)
+        print("Preprocessing Pipeline Runner command:", docker_cmd)
         print("--------------------------------")
         return subprocess.run(docker_cmd)
 
