@@ -153,7 +153,10 @@ class ParquetDataFrameWrapper(DataFrameWrapper):
             raise Exception(
                 "Parquet file has too many columns to read into memory at once."
             )
-        return self.file.read().to_pandas()
+        df = self.file.read().to_pandas()
+        df.index = df[df.columns[0]]
+        df.drop(columns=[df.columns[0]], inplace=True)
+        return df
 
     def is_numeric_cols(self) -> bool:
         for i, field in enumerate(self.schema):
