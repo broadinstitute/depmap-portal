@@ -104,7 +104,7 @@ pytest = "^7.4.0"
 pytest-split = "^0.8.1"
 multidict = "^6.0.4"
 html-sanitizer = "^2.3.0"
-depmap-compute = {version = "^0.1.16", source = "public-python"}
+depmap-compute = {version = "^0.1.17", source = "public-python"}
 # depmap-compute = {path = "../depmap-compute", develop = true}
 
 
