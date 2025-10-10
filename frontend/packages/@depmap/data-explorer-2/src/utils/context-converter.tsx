@@ -15,8 +15,16 @@ const CATEGORICAL_MATRICES = new Set([
 ]);
 
 const extractCompoundName = (label?: string | null) => {
-  const REGEX = /(.*) ((?<!-)\(.*)/;
-  return label ? (REGEX.exec(label) || [])[1] ?? null : null;
+  if (!label) {
+    return null;
+  }
+
+  const idx = label.search(/ (?=\(.*$)/); // space before '('
+  if (idx === -1 || /-\(.*$/.test(label)) {
+    return null;
+  }
+
+  return label.slice(0, idx);
 };
 
 const rewriteCompoundExpr = (expr: object) => {
