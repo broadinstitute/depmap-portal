@@ -14,20 +14,45 @@ const CATEGORICAL_MATRICES = new Set([
   wellKnownDatasets.mutation_protein_change,
 ]);
 
-// Returns a Promise of { success, convertedContext }.
-//
-// We make a best effort to return a `convertedContext` no matter what. If it
-// contains some broken dataset IDs or identifiers, it's still returned by
-// `success` is set false. That way it can be passed into ContextBuilder when
-// the user can attempt to repair it.
-//
-// `success: true` indicates that the context was passed to the evaluator and
-// that did not cause an error.
+const extractCompoundName = (label?: string | null) => {
+  if (!label) {
+    return null;
+  }
+
+  const idx = label.search(/ (?=\(.*$)/); // space before '('
+  if (idx === -1 || /-\(.*$/.test(label)) {
+    return null;
+  }
+
+  return label.slice(0, idx);
+};
+
+const rewriteCompoundExpr = (expr: object) => {
+  return JSON.parse(JSON.stringify(expr), (_, value) => {
+    if (typeof value === "string") {
+      return extractCompoundName(value) || value;
+    }
+
+    return value;
+  });
+};
+
 export async function convertContextV1toV2(
   context: DataExplorerContext
 ): Promise<DataExplorerContextV2> {
   if ("dimension_type" in context) {
     throw new Error("Already a V2 context!");
+  }
+
+  const context_type = context.context_type;
+  let dimension_type: string | null = context_type;
+
+  if (context_type === "custom") {
+    dimension_type = null;
+  }
+
+  if (context_type === "compound_experiment") {
+    dimension_type = "compound_v2";
   }
 
   // Simplest case to satisfy:
@@ -36,7 +61,7 @@ export async function convertContextV1toV2(
   if (typeof context.expr !== "object" && context.expr !== null) {
     return {
       name: context.name,
-      dimension_type: context.context_type,
+      dimension_type: dimension_type!,
       expr: context.expr,
       vars: {},
     };
@@ -50,18 +75,18 @@ export async function convertContextV1toV2(
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const hasValidDimensionType =
-    context.context_type === null ||
-    context.context_type === "custom" ||
-    dimTypes.some((dt) => dt.name === context.context_type);
+    context_type === "custom" ||
+    context_type === "compound_experiment" ||
+    dimTypes.some((dt) => dt.name === context_type);
 
   if (!hasValidDimensionType) {
     showInfoModal({
       title: "Error reading context",
       closeButtonText: "OK",
-      content: <div>Invalid dimension type “{context.context_type}”.</div>,
+      content: <div>Invalid dimension type “{context_type}”.</div>,
     });
 
-    throw new Error(`Invalid dimension type “${context.context_type}”.`);
+    throw new Error(`Invalid dimension type “${context_type}”.`);
   }
 
   // Extract the variables from the expression.
@@ -98,7 +123,7 @@ export async function convertContextV1toV2(
   for (const varName of Object.keys(varTypes)) {
     if (varName === "entity_label") {
       vars[varName] = {
-        dataset_id: `${context.context_type}_metadata`,
+        dataset_id: `${context_type}_metadata`,
         identifier_type: "column",
         identifier: "label",
         source: "metadata_column",
@@ -107,7 +132,7 @@ export async function convertContextV1toV2(
       const sliceQuery = sliceIdToSliceQuery(
         varName,
         varTypes[varName],
-        context.context_type
+        context_type
       );
 
       let source: DataExplorerContextVariable["source"] = "matrix_dataset";
@@ -156,6 +181,14 @@ export async function convertContextV1toV2(
         }
       }
     }
+  }
+
+  if (dimension_type === "compound_v2") {
+    return {
+      name: extractCompoundName(context.name),
+      dimension_type,
+      expr: rewriteCompoundExpr(context.expr),
+    } as DataExplorerContextV2;
   }
 
   return {

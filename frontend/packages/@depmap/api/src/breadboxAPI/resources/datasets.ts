@@ -6,6 +6,7 @@ import {
   Dataset,
   DatasetUpdateArgs,
   DatasetValueType,
+  ErrorTypeError,
   SearchDimenionsRequest,
   SearchDimenionsResponse,
   SliceQuery,
@@ -26,7 +27,7 @@ export function getDatasets(
   return getJson<Dataset[]>("/datasets/", params);
 }
 
-export async function getDataset(datasetId: string) {
+export function getDataset(datasetId: string) {
   return getJson<Dataset>(uri`/datasets/${datasetId}`);
 }
 
@@ -80,25 +81,64 @@ export function getMatrixDatasetData(
   );
 }
 
-export function getTabularDatasetData(
+export async function getTabularDatasetData(
   datasetId: string,
   args: TabularDatasetDataArgs
 ) {
-  return postJson<{
+  const result = await postJson<{
     [key: string]: Record<string, any>;
   }>(uri`/datasets/tabular/${datasetId}`, args);
+
+  // WORKAROUND: Breadbox responds with a 200 even though there was an error.
+  if ("detail" in result && "error_type" in result.detail) {
+    const detail = (result as {
+      detail: {
+        message: string;
+        error_type: any;
+      };
+    }).detail;
+
+    throw new ErrorTypeError({
+      errorType: detail.error_type,
+      message: detail.message,
+    });
+  }
+
+  return result;
 }
 
-export function getDatasetSamples(datasetId: string) {
-  return getJson<{ id: string; label: string }[]>(
+export async function getDatasetSamples(datasetId: string) {
+  const result = await getJson<{ id: string; label: string }[]>(
     uri`/datasets/samples/${datasetId}`
   );
+
+  if (!Array.isArray(result)) {
+    const detail = (result as any).detail;
+
+    throw new ErrorTypeError({
+      errorType: detail.error_type,
+      message: detail.message,
+    });
+  }
+
+  return result;
 }
 
-export function getDatasetFeatures(datasetId: string) {
-  return getJson<{ id: string; label: string }[]>(
+export async function getDatasetFeatures(datasetId: string) {
+  const result = await getJson<{ id: string; label: string }[]>(
     uri`/datasets/features/${datasetId}`
   );
+
+  if (!Array.isArray(result)) {
+    const detail = (result as any).detail;
+
+    throw new ErrorTypeError({
+      errorType: detail.error_type,
+      message: detail.message,
+    });
+  }
+
+  return result;
 }
 
 export function searchDimensions({

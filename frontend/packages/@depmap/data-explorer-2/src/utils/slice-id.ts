@@ -1,6 +1,31 @@
 import { SliceQuery } from "@depmap/types";
 import wellKnownDatasets from "../constants/wellKnownDatasets";
 
+export function legacyPortalIdToBreadboxGivenId(legacyId: string) {
+  switch (legacyId) {
+    case "Context_Matrix":
+      return wellKnownDatasets.subtype_matrix;
+
+    case "CTRP_AUC":
+      return "CTRP_AUC_collapsed";
+
+    case "GDSC1_AUC":
+      return "GDSC1_AUC_collapsed";
+
+    case "GDSC2_AUC":
+      return "GDSC2_AUC_collapsed";
+
+    case "Prism_oncology_AUC":
+      return "Prism_oncology_AUC_collapsed";
+
+    case "Repurposing_secondary_AUC":
+      return "REPURPOSING_AUC_collapsed";
+
+    default:
+      return legacyId.replace("breadbox/", "");
+  }
+}
+
 export function sliceIdToSliceQuery(
   slice_id: string,
   value_type: "categorical" | "continuous" | "list_strings",
@@ -16,7 +41,7 @@ export function sliceIdToSliceQuery(
 
   if (value_type === "continuous") {
     return {
-      dataset_id: dataset_id.replace("breadbox/", ""),
+      dataset_id: legacyPortalIdToBreadboxGivenId(dataset_id),
       identifier,
       identifier_type:
         labelType === "transpose_label" ? "sample_label" : "feature_label",
@@ -118,14 +143,24 @@ export function sliceIdToSliceQuery(
         identifier_type: "feature_label",
       };
 
+    case "gene_essentiality":
+      return {
+        dataset_id: "gene_metadata",
+        identifier_type: "column",
+        identifier: "essentiality",
+      };
+
+    case "gene_selectivity":
+      return {
+        dataset_id: "gene_metadata",
+        identifier_type: "column",
+        identifier: "selectivity",
+      };
+
     // TODO: Spport these special cases
     // case "msi-0584.6/msi":
     // case "prism-pools-4441.2/coded_prism_pools":
-    // case "gene_essentiality":
-    // case "gene_selectivity":
     // case "compound_experiment":
-    // case "OmicsInferredMolecularSubtypes":
-    // case "Context_Matrix":
 
     default:
       if (identifier === "all") {

@@ -114,6 +114,7 @@ function CellLineListsDropdown({
             hashWithoutPrefix
           );
         } catch (e) {
+          handleChange(null, null);
           window.console.error(e);
         }
       }

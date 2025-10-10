@@ -296,6 +296,12 @@ export async function fetchPlotDimensions(
             indexed_values,
             key,
           };
+        })
+        .catch((e) => {
+          window.dispatchEvent(
+            new CustomEvent("dx2_context_eval_failed", { detail: filter })
+          );
+          throw e;
         });
     }),
 

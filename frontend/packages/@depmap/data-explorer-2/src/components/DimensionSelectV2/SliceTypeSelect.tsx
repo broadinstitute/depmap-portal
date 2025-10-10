@@ -1,17 +1,12 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import {
-  capitalize,
-  getDimensionTypeLabel,
-  isSampleType,
-  pluralize,
-  useDimensionType,
-} from "../../utils/misc";
+import { isSampleType, pluralize, useDimensionType } from "../../utils/misc";
 import {
   State,
   SLICE_TYPE_NULL,
   SliceTypeNull,
 } from "./useDimensionStateManager/types";
+import { fetchDimensionTypeDisplayName } from "./api-helpers";
 import PlotConfigSelect from "../PlotConfigSelect";
 import styles from "../../styles/DimensionSelect.scss";
 
@@ -62,6 +57,7 @@ function SliceTypeSelect({
   value,
   onChange,
 }: Props) {
+  const [sliceTypeLabel, setSliceTypeLabel] = useState("");
   const label = useLabel(index_type, axis_type, aggregation);
 
   let placeholder = isLoading
@@ -74,9 +70,19 @@ function SliceTypeSelect({
     } type)`;
   }
 
-  const sliceTypeLabel = value ? capitalize(getDimensionTypeLabel(value)) : "";
+  useEffect(() => {
+    if (!value) {
+      setSliceTypeLabel("");
+      return;
+    }
+
+    fetchDimensionTypeDisplayName(value).then((displayName) => {
+      setSliceTypeLabel(displayName);
+    });
+  }, [value]);
+
   let displayValue =
-    value === undefined ? null : ({ value, label: value } as any);
+    value === undefined ? null : ({ value, label: sliceTypeLabel } as any);
 
   if (value === null) {
     displayValue = {
