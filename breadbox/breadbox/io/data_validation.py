@@ -184,18 +184,26 @@ def _validate_data_value_type(
         # to make it not case-sensitive, convert all to lower case
 
         lower_df = df.applymap(lambda x: None if pd.isna(x) else str(x).lower())
+
         # NOTE: Boolean values turned to string
+
         lower_allowed_values = [
             str(x).lower() for x in allowed_values if x is not None
         ] + [
             None
         ]  # Data values can include missing values
-        if not bool(
-            lower_df.isin(lower_allowed_values).all(axis=None)
-        ):  # Flattened and checked all values
+
+        present_values = set(lower_df.values.flatten())
+        unexpected_values = present_values.difference(lower_allowed_values)
+        if len(unexpected_values) > 0:
+            sorted_unexpected_values = sorted(unexpected_values)
+            examples = ", ".join([repr(x) for x in sorted_unexpected_values[:10]])
+            if len(sorted_unexpected_values) > 10:
+                examples += ", ..."
             raise FileValidationError(
-                f"Value must be in list of allowed values: {allowed_values}"
+                f"Found values (examples: {examples}) not in list of allowed values: {allowed_values}"
             )
+
         # Convert categories to ints for more optimal storage
         lower_allowed_values_map = {x: i for i, x in enumerate(lower_allowed_values)}
         int_df = lower_df.applymap(lambda x: lower_allowed_values_map[x])
