@@ -15,20 +15,20 @@ Some decisions about user upload datasets:
 - the feature name for a user uploaded dataset is always "feature"
 """
 
-import uuid
 import os
-from depmap.enums import DataTypeEnum
 import pandas as pd
 from math import isnan
 from typing import Any, List, Dict, Optional
 import celery
 from flask import current_app, url_for
+
+from breadbox_facade import BreadboxException
+
+from depmap import data_access
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
 from depmap.interactive.nonstandard.models import (
-    NonstandardMatrix,
     CellLineNameType,
-    CustomDatasetConfig,
 )
 from depmap.utilities import hdf5_utils
 from depmap.utilities.hashing_utils import hash_df
@@ -57,7 +57,6 @@ def update_state(
     task.update_state(state=state, meta=meta)
 
 
-# Split out from task because we also use it in the loader
 def _upload_transient_csv(
     task: celery.Task,
     label: str,
@@ -65,49 +64,56 @@ def _upload_transient_csv(
     is_transpose: bool,
     csv_path: str,
     single_column: bool,
-    use_data_explorer_2: bool,
 ):
     update_state(task, state="PROGRESS")
-    validate_common_metadata(label, units)
-    # update state to checking file...
-    df = validate_csv_format(csv_path, single_column)
 
-    dataset_uuid = str(uuid.uuid4())
-    config = format_config(label, units, is_transpose)
+    # Validate parameters
+    if label is None:
+        raise UserError("Invalid input: Display name cannot be empty")
+    if units is None:
+        raise UserError("Invalid input: Units cannot be empty")
+    
+    # Read and validate data from CSV, 
+    # Ensure the dataframe is in the format Breadbox expects
+    df = read_and_validate_csv_shape(csv_path, single_column, is_transpose)
+
+    # In order to support legacy PRISM datasets which may be diplayed in the portal,
+    # we still need to support uploads which are indexed by CCLE Name instead of depmap ID. 
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
+    warnings = validate_df_indices(df, cell_line_name_type)
+    if cell_line_name_type == CellLineNameType.ccle_name:
+        df = map_ccle_index_to_depmap_id(df)
 
-    # update state to validating cell lines...
-    warnings = validate_cell_lines_and_register_as_nonstandard_matrix(
-        df, dataset_uuid, cell_line_name_type, config, PUBLIC_ACCESS_GROUP
-    )
-    add_transient_config(dataset_uuid, config)
-    node_id = "custom_dataset/{}".format(dataset_uuid)
+    try:
+        bb_dataset_uuid, bb_warnings = data_access.add_matrix_dataset_to_breadbox(
+            name=label,
+            units=units,
+            data_type="User upload",
+            data_df=df,
+            sample_type="depmap_model",
+            feature_type=None,
+            is_transient=True,
+        )
+        dataset_id = f"breadbox/{bb_dataset_uuid}"
+        warnings.extend(bb_warnings)
 
-    if use_data_explorer_2:
-        return {
-            "datasetId": dataset_uuid,
-            "warnings": warnings,
-            "forwardingUrl": url_for(
-                "data_explorer_2.view_data_explorer_2",
-                # Data Explorer 2 links require an xFeature (it does not
-                # support linking to a partially defined plot)
-                xFeature=list(df.columns)[0],
-                yFeature=list(df.columns)[0],
-                xDataset=dataset_uuid,
-                yDataset=dataset_uuid,
-            ),
-        }
+    except BreadboxException as e:
+        raise UserError(e)
 
     return {
-        "datasetId": dataset_uuid,
+        "datasetId": dataset_id,
         "warnings": warnings,
         "forwardingUrl": url_for(
-            "interactive.view_interactive",
-            x=node_id,
-            y=node_id,
-            defaultCustomAnalysisToX=True,
+            "data_explorer_2.view_data_explorer_2",
+            # Data Explorer 2 links require an xFeature (it does not
+            # support linking to a partially defined plot)
+            xFeature=list(df.columns)[1],
+            yFeature=list(df.columns)[1],
+            xDataset=dataset_id,
+            yDataset=dataset_id,
         ),
     }
+
 
 
 @app.task(bind=True)
@@ -118,22 +124,17 @@ def upload_transient_csv(
     is_transpose: bool,
     csv_path: str,
     single_column: bool,
-    use_data_explorer_2: bool = False,
 ):
     return _upload_transient_csv(
-        self, label, units, is_transpose, csv_path, single_column, use_data_explorer_2
+        self, label, units, is_transpose, csv_path, single_column
     )
 
 
-def validate_common_metadata(label, units):
-    if label is None:
-        raise UserError("Invalid input: Display name cannot be empty")
-
-    if units is None:
-        raise UserError("Invalid input: Units cannot be empty")
-
-
-def validate_csv_format(csv_path: str, single_column: bool = False):
+def read_and_validate_csv_shape(csv_path: str, single_column: bool = False, is_transpose = True):
+    """
+    Read the CSV from file. If the CSV is expected to be a single column, 
+    validate that is actually the case.
+    """
     assert isinstance(csv_path, str)
     assert os.path.exists(csv_path)
 
@@ -154,6 +155,10 @@ def validate_csv_format(csv_path: str, single_column: bool = False):
 
         df.columns = ["custom data"]
         df.index.name = None
+    elif not is_transpose:
+        # Breadbox uploads are transposed versions of the legacy datasets, so
+        # When is_transpose=False in the portal-backend, we _do_ need to transpose the data for breadbox.
+        df = df.transpose()
 
     try:
         # the df to hdf5 file storage converts it to a float
@@ -165,6 +170,9 @@ def validate_csv_format(csv_path: str, single_column: bool = False):
     # fill in NaNs in the both the row index and column names with empty string
     df.index = [convert_to_empty_string_if_nan(x) for x in df.index]
     df.columns = [convert_to_empty_string_if_nan(x) for x in df.columns]
+
+    # reset the index because breadbox expects the first column to contain the sample IDs
+    df = df.reset_index()
 
     return df
 
@@ -178,56 +186,34 @@ def convert_to_empty_string_if_nan(x):
         return x
 
 
-def format_config(label, units, is_transpose, data_type=DataTypeEnum.user_upload.name):
-    """
-    This function is used to format config for uploaded datasets
-    """
-    config = {
-        "label": label,
-        "units": units,
-        "data_type": DataTypeEnum[data_type],
-        "feature_name": "feature",
-        "transpose": is_transpose,
-        "is_standard": False,
-    }
-    return config
+def get_matching_cell_line_entities(cell_line_name_type: CellLineNameType, cell_line_names: list[str]) -> list[CellLine]:
+    return CellLine.query.filter(
+        getattr(CellLine, cell_line_name_type.db_col_name).in_(cell_line_names)
+    ).all()
 
-
-def validate_cell_lines_and_register_as_nonstandard_matrix(
-    df: pd.DataFrame,
-    dataset_uuid: str,
-    cell_line_name_type: CellLineNameType,
-    config: Dict,
-    owner_id: int,
-):
+    
+def map_ccle_index_to_depmap_id(df: pd.DataFrame) -> pd.DataFrame:
     """
-    aka, do common stuff in the second half
+    Update the index to use depmap_ids instead of ccle_names.
+    Drop any rows that don't have matching records in the database
+    (we've already generated warnings about any rows were this is the case).
     """
-    is_transpose = config["transpose"]
-    warnings = validate_df_indices(df, is_transpose, cell_line_name_type)
-    hdf5_file_name = convert_to_hdf5(df)
+    index_col_name: str = df.columns[0] # pyright: ignore
 
-    assert (
-        cell_line_name_type != CellLineNameType.display_name
-    )  # we don't support that yet, it's currently user_arxspan_
-    use_arxspan_id = cell_line_name_type == CellLineNameType.depmap_id
+    # Load a mapping between the old index and the new
+    cell_line_names = list(df[index_col_name])
+    cell_lines = get_matching_cell_line_entities(CellLineNameType.ccle_name, cell_line_names)
+    ccle_to_depmap_id_mapping = {cell_line.cell_line_name: cell_line.depmap_id for cell_line in cell_lines}
 
-    # Not catching AllRowsOrColsSkipped here, because we don't expect it to happen. I suppose it could happen if the csv had no rows
-    # Skipping all cols should be verified in validate df cell lines. And all rows should be accepted
-    # Data access details should be in interactive config (including references to NonstandardMatrix)
-    _, cols_skipped = NonstandardMatrix.read_file_and_add_dataset_index(
-        dataset_id=dataset_uuid,
-        config=config,
-        file_path=hdf5_file_name,
-        entity_class=None,
-        use_arxspan_id=use_arxspan_id,
-        owner_id=owner_id,
-    )
-    return warnings
+    # Overwrite the existing index column with the new values
+    df[index_col_name] = df[index_col_name].map(ccle_to_depmap_id_mapping)
+    # Drop any rows which don't exist in the mapping.
+    df = df.dropna(subset=[index_col_name])
+    return df
 
 
 def validate_df_indices(
-    df, is_transpose, cell_line_name_type: CellLineNameType
+    df: pd.DataFrame, cell_line_name_type: CellLineNameType
 ) -> List[str]:
     """
     Validate that
@@ -235,13 +221,12 @@ def validate_df_indices(
         no duplicate cell lines
         no duplicates in the non-cell line index
     :return: list of any warnings
+    Most of the validations here are redundant now that we are uploading to breadbox.
+    However, I am leaving them in place for now because they handle some of the complexity of
+    validating matrices which are indexed by CCLE names instead of DepMap IDs.
     """
-    if is_transpose:
-        cell_line_names = df.index.tolist()
-        feature_index = df.columns.tolist()
-    else:
-        cell_line_names = df.columns.tolist()
-        feature_index = df.index.tolist()
+    cell_line_names = list(df[df.columns[0]])
+    feature_index = df.columns.tolist()
 
     def count_duplicates(l):
         return [(l.count(x), x) for x in l]
@@ -272,9 +257,7 @@ def validate_df_indices(
             )
         )
 
-    cell_lines: List[CellLine] = CellLine.query.filter(
-        getattr(CellLine, cell_line_name_type.db_col_name).in_(cell_line_names)
-    ).all()
+    cell_lines = get_matching_cell_line_entities(cell_line_name_type, cell_line_names)
 
     if len(cell_lines) == 0:
         raise UserError(
@@ -302,59 +285,27 @@ def validate_df_indices(
 
 def get_cell_line_name_type(df, is_transpose):
     """
+    Support uploads by depmap ID or CCLE Name. 
+    Note, we do not currently support uploads by stripped cell line names.
     :param df: df where cols are cell lines
     """
-    if is_transpose:
-        cols = df.index
-    else:
-        cols = df.columns
+    cell_line_names = df[df.columns[0]]
 
     assert all(
-        [type(col) == str for col in cols]
-    ), "The passed df should have had NaNs in the index filled in. {}".format(cols)
-    nonempty_cols = [col for col in cols if col != ""]
+        [type(name) == str for name in cell_line_names]
+    ), "The passed df should have had NaNs in the index filled in. {}".format(cell_line_names)
+    nonempty_names = [name for name in cell_line_names if name != ""]
 
-    if len(nonempty_cols) == 0:
+    if len(nonempty_names) == 0:
         raise UserError(
             "Invalid input: Cell line dimension ({}) is all empty".format(
                 "rows" if is_transpose else "columns"
             )
         )
 
-    first_col_name = nonempty_cols[0]
-    if first_col_name.startswith("ACH-"):
+    first_cell_line_name = nonempty_names[0]
+    if first_cell_line_name.startswith("ACH-"):
         return CellLineNameType.depmap_id
     else:
         return CellLineNameType.ccle_name
 
-    # we don't yet support stripped cell line names
-    # elif first_col_name.isupper() and '_' in first_col_name:
-    #     return CellLineNameType.ccle_name
-    # else:
-    #     return CellLineNameType.display_name
-
-
-def convert_to_hdf5(df):
-    """
-    :return: name of hdf5 in the nonstandard data dir directory, NOT the full path
-    """
-    source_dir = current_app.config["NONSTANDARD_DATA_DIR"]
-    hash = hash_df(df)
-    local_file_name = "{}.hdf5".format(hash)
-    local_file_path = os.path.join(source_dir, local_file_name)
-
-    if not os.path.exists(local_file_path):
-        # If MatrixConversionException is thrown from this, it is not an expected error
-        # we currently don't expect that a valid dataframe
-        # we expect that every dataframe that has gone through the validation checks that we put in place (e.g. conversion to float)
-        #   should be able to be converted to a hdf5
-        # thus if there is indeed an error in running this, we let it be thrown as a hard error, so that we get stackdriver notified
-        hdf5_utils.df_to_hdf5(df, local_file_path)
-
-    return local_file_name
-
-
-def add_transient_config(dataset_uuid, config):
-    # Need to convert data_type to str to be able to serialize
-    config["data_type"] = config["data_type"].name
-    CustomDatasetConfig.add(dataset_uuid, config)

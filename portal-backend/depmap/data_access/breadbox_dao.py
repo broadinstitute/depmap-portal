@@ -4,20 +4,17 @@ from typing import Literal, Optional, Union, cast
 from breadbox_client.models import (
     DimensionType,
     MatrixDatasetResponse,
-    MatrixDatasetResponseFormat,
     TabularDatasetResponse,
 )
 from breadbox_client.types import Unset
 from depmap.data_access.response_parsing import (
     is_breadbox_id_format,
-    parse_breadbox_slice_id,
     parse_matrix_dataset_response,
     remove_breadbox_prefix,
 )
 from depmap.data_access.models import MatrixDataset
 from depmap import extensions
 from depmap.partials.matrix.models import CellLineSeries
-from depmap.interactive.config.models import DatasetSortKey, DatasetSortFirstKey
 import flask
 
 
@@ -45,7 +42,7 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     matrix_datasets = []
     for dataset in _get_breadbox_datasets_with_caching():
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
@@ -69,7 +66,7 @@ def get_filtered_matrix_datasets(
     )
     matrix_datasets = []
     for dataset in datasets:
-        if dataset.format_ == MatrixDatasetResponseFormat.MATRIX_DATASET:
+        if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
@@ -238,3 +235,43 @@ def get_metadata_dataset_id(dimension_type_name: str) -> Union[str, None]:
     )
 
     return None if dataset_id is Unset else cast(Union[str, None], dataset_id)
+
+
+def add_matrix_dataset(
+    name: str,
+    units: str,
+    data_type: str,
+    data_df: pd.DataFrame,
+    sample_type: str,
+    feature_type: Optional[str],
+    is_transient: bool = False
+) -> tuple[str, list[str]]:
+    """
+    Upload the given matrix dataset to breadbox.
+    If successful, return the dataset ID and any warnings.
+    If not successful, raise a BreadboxException.
+    """
+    if is_transient:
+        group_id = extensions.breadbox.client.TRANSIENT_GROUP_ID
+    else: 
+        group_id = extensions.breadbox.client.PUBLIC_GROUP_ID
+
+    upload_result = extensions.breadbox.client.add_matrix_dataset(
+        name=name,
+        units=units,
+        data_type=data_type,
+        data_df=data_df,
+        sample_type=sample_type,
+        feature_type=feature_type,
+        is_transient=is_transient,
+        group_id=group_id,
+    )
+    # Generate warnings for any IDs which don't have matching metadata
+    warnings = []
+    if "unknownIDs" in upload_result:
+        for idset in upload_result["unknownIDs"]:
+            missing_ids = idset["IDs"]
+            warnings.append( f"{len(missing_ids)} IDs in uploaded data are missing from our metadata: {idset}")
+
+    assert "datasetId" in upload_result, "Unexpected result format from data upload. Expected `datasetId` field."
+    return upload_result["datasetId"], warnings
