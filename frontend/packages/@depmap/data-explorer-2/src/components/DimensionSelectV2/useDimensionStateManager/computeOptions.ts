@@ -134,6 +134,7 @@ async function fetchContextCompatibleDataTypes(dimension: State["dimension"]) {
 
 async function computeDataTypeOptions(
   index_type: string | null,
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
   dimension: State["dimension"]
 ) {
   const [
@@ -188,6 +189,16 @@ async function computeDataTypeOptions(
   }
 
   return dataTypes
+    .filter((dataType) => {
+      return datasets.some((dataset) => {
+        const value_type = dataset.value_type as typeof valueTypes extends Set<
+          infer U
+        >
+          ? U
+          : never;
+        return dataset.data_type === dataType && valueTypes.has(value_type);
+      });
+    })
     .map((dataType) => {
       let isDisabled = false;
       let disabledReason = "";
@@ -494,7 +505,7 @@ export default async function computeOptions(
     sliceTypeOptions,
     dataVersionOptions,
   ] = await Promise.all([
-    computeDataTypeOptions(index_type, dimension),
+    computeDataTypeOptions(index_type, valueTypes, dimension),
     computeSliceTypeOptions(index_type, selectedDataType, dimension),
     computeDataVersionOptions(
       index_type,
