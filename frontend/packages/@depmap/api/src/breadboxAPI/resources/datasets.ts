@@ -91,17 +91,15 @@ export async function getTabularDatasetData(
   }>(uri`/datasets/tabular/${datasetId}`, args);
 
   // WORKAROUND: Breadbox responds with a 200 even though there was an error.
-  if ("detail" in result && "error_type" in result.detail) {
-    const detail = (result as {
-      detail: {
-        message: string;
-        error_type: any;
-      };
-    }).detail;
+  if ("detail" in result) {
+    const isErrorObj = typeof result.detail === "object";
 
     throw new ErrorTypeError({
-      errorType: detail.error_type,
-      message: detail.message,
+      errorType: isErrorObj
+        ? result.detail.errorType
+        : ("UNSPECIFIED_LEGACY_ERROR" as ErrorTypeError["errorType"]),
+
+      message: isErrorObj ? result.detail.message : result.detail,
     });
   }
 
