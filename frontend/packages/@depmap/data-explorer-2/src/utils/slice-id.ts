@@ -166,7 +166,6 @@ export function sliceIdToSliceQuery(
 
     // TODO: Spport these special cases
     // case "prism-pools-4441.2/coded_prism_pools":
-    // case "compound_experiment":
 
     default:
       if (identifier === "all") {
