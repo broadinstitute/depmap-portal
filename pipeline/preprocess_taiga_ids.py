@@ -12,6 +12,12 @@ import os
 tc = create_taiga_client_v3()
 
 
+def _resolve_versioned_dataset_id(taiga_permaname):
+    if "." in taiga_permaname:
+        return taiga_permaname
+    return tc.get_latest_version_id(taiga_permaname)
+
+
 def _rewrite_stream(vars, in_name, in_lines, out_fd):
     fd = out_fd
     for line in in_lines:
@@ -42,10 +48,14 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             line_prefix = m.group(1)
             orig_taiga_dataset_var_name = m.group(2)
             line_suffix = m.group(3)
+            taiga_permaname = vars[orig_taiga_dataset_var_name]
+            taiga_dataset_id_with_latest_version = _resolve_versioned_dataset_id(
+                taiga_permaname
+            )
             line = (
                 line_prefix
                 + '"'
-                + vars[orig_taiga_dataset_var_name]
+                + taiga_dataset_id_with_latest_version
                 + '"'
                 + line_suffix
             )
@@ -60,20 +70,15 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
 
             taiga_filename = m.group(3)
             taiga_permaname = vars[orig_taiga_dataset_var_name]
-            if (
-                "." in taiga_permaname
-            ):  # if we already have the version specified, don't take the latest
-                taiga_dataset_id_with_latest_version = taiga_permaname
-            else:
-                taiga_dataset_id_with_latest_version = tc.get_latest_version_id(
-                    taiga_permaname
-                )
+            taiga_dataset_id_with_latest_version = _resolve_versioned_dataset_id(
+                taiga_permaname
+            )
             taiga_id = taiga_dataset_id_with_latest_version + "/" + taiga_filename
             try:
-                tc.get_canonical_id(taiga_id)
+                canonical = tc.get_canonical_id(taiga_id)
             except:
                 print(f"failed to get data from canonical taiga id for {taiga_id}")
-            line = line_prefix + '"' + tc.get_canonical_id(taiga_id) + '"' + line_suffix
+            line = line_prefix + '"' + canonical + '"' + line_suffix
         fd.write(line)
 
 
