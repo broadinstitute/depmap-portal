@@ -1,5 +1,6 @@
 from .interface import (
     # methods that will likely be supported going forward
+    add_matrix_dataset_to_breadbox,
     get_all_matrix_datasets,
     get_matrix_dataset,
     get_dataset_feature_ids,
