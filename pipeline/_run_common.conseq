@@ -1,7 +1,6 @@
 include "exec.conseq"
 include "cell_lines.conseq"
 include "create-biomarker-matrix-contexts.conseq"
-include "correlation.conseq"
 include "process-drug-screens.conseq"
 include "preprocess_raw_biom_matrix.conseq"
 include "reformat_deps.conseq"
