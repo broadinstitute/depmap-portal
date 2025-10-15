@@ -10,6 +10,7 @@ import wellKnownDatasets from "../constants/wellKnownDatasets";
 import { sliceIdToSliceQuery } from "./slice-id";
 
 const CATEGORICAL_MATRICES = new Set([
+  wellKnownDatasets.legacy_msi,
   wellKnownDatasets.mutations_prioritized,
   wellKnownDatasets.mutation_protein_change,
 ]);

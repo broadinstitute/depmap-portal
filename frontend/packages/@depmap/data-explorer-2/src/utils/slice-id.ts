@@ -143,6 +143,13 @@ export function sliceIdToSliceQuery(
         identifier_type: "feature_label",
       };
 
+    case "msi-0584.6/msi":
+      return {
+        dataset_id: wellKnownDatasets.legacy_msi,
+        identifier,
+        identifier_type: "feature_label",
+      };
+
     case "gene_essentiality":
       return {
         dataset_id: "gene_metadata",
@@ -158,9 +165,7 @@ export function sliceIdToSliceQuery(
       };
 
     // TODO: Spport these special cases
-    // case "msi-0584.6/msi":
     // case "prism-pools-4441.2/coded_prism_pools":
-    // case "compound_experiment":
 
     default:
       if (identifier === "all") {
