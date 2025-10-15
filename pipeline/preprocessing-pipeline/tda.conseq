@@ -33,7 +33,7 @@ rule get_crispr_inferred_common_essentials:
 
 
 rule common_essentials:
-    executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}
+    executor: dsub {"docker_image": "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda:v10", "min_ram": "10"}
     inputs:
         data={'type': 'dep-matrix-csv'},
         crispr_inferred_common_essentials={'type': 'crispr-inferred-common-essentials-file'},
@@ -44,7 +44,7 @@ rule common_essentials:
 
 
 rule dep_moments:
-    executor: dsub {"docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10", "min_ram": "10"}
+    executor: dsub {"docker_image": "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda:v10", "min_ram": "10"}
     inputs:
         data={'type': 'dep-matrix-csv'},
         script=fileref('scripts/tda/moments.py')

@@ -2,7 +2,7 @@
 cas_url_prefix=gs://dpp-sparkles/test/cas
 default_url_prefix=gs://dpp-sparkles/depmap-pipeline
 project=depmap-portal-pipeline
-default_image=us.gcr.io/broad-achilles/tda-pipeline:v2
+default_image=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/tda-pipeline:v2
 region=us-central1
 machine_type=n2-highmem-4
 mount_1_type=pd-standard

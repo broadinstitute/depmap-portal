@@ -31,7 +31,7 @@ rule dep_dep_correlation:
         {{ config.sparkles_path }} \
         --config {{ inputs.sparkles_config.filename }} \
         sub \
-        -i us.gcr.io/broad-achilles/depmap-pipeline-run:v4 \
+        -i us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:v4 \
         -u {{ inputs.dep.filename }}:dep.hdf5 \
         -u {{ inputs.script.filename }}:cor.py \
         -u {{ inputs.hdf5_utils.filename }}:hdf5_utils.py \
@@ -84,7 +84,7 @@ rule dep_bio_correlation:
         {{ config.sparkles_path }} \
         --config {{ inputs.sparkles_config_n1_highmem_4.filename }} \
         sub \
-        -i us.gcr.io/broad-achilles/depmap-pipeline-run:v4 \
+        -i us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:v4 \
         -u {{ inputs.dep.filename }}:dep.hdf5 \
         -u {{ inputs.biomarker.filename }}:biomarker.hdf5 \
         -u {{ inputs.script.filename }}:cor.py \
