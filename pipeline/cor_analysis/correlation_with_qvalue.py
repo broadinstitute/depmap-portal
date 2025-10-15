@@ -33,6 +33,29 @@ def _reindex_matrix(mat, given_ids):
 
 
 def map_to_given_ids(mat: pd.DataFrame, parameters: dict) -> pd.DataFrame:
+    if "IsDefaultEntryForModel" in mat.columns:
+        orig_shape = mat.shape
+        print(
+            "Detected multiple sequencings present in file -- filtering down by IsDefaultEntryForModel=='Y'"
+        )
+        mat = mat[mat["IsDefaultEntryForModel"] == "Yes"].copy()
+        assert mat.shape[1] > 0, "Filtered out all rows"
+        assert (
+            sum(mat["ModelID"].duplicated()) == 0
+        ), "ModelID must be unique after filtering by IsDefaultEntryForModel"
+        mat.index = mat["ModelID"]
+        mat.drop(
+            columns=[
+                "IsDefaultEntryForModel",
+                "ModelID",
+                "SequencingID",
+                "ModelConditionID",
+                "IsDefaultEntryForMC",
+            ],
+            inplace=True,
+        )
+        print(f"Size before filtering: {orig_shape} After filtering: {mat.shape}")
+
     feature_names = list(mat.columns)
     feature_id_format = parameters["feature_id_format"]
     if feature_id_format == "gene":
