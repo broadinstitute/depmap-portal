@@ -5,7 +5,9 @@ include "process-drug-screens.conseq"
 include "preprocess_raw_biom_matrix.conseq"
 include "reformat_deps.conseq"
 include "tda.conseq"
+if "(config.get('publish_dest', 'INVALID')) != 'INVALID' and ('test-perf' in config.get('publish_dest', 'INVALID'))":
 include "predictability/predictability.conseq"
+endif
 include "reformat_repurposing_data.conseq"
 include "pref_essential_genes.conseq"
 include "validation.conseq"
