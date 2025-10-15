@@ -439,42 +439,100 @@ function mergeDataAvailability(
   allContextDatasetDataAvail: ContextSummary,
   subtypeDataAvail: ContextSummary
 ) {
-  const selectedModelIds = subtypeDataAvail.all_depmap_ids.map(
-    (item) => item[1]
+  // --- 1. Establish the final Column Order for the merge ---
+
+  // Get the set of IDs present in the subtype data (the ones we want to keep/merge)
+  const selectedModelIds = new Set(
+    subtypeDataAvail.all_depmap_ids.map((item) => item[1])
   );
 
-  const orderedModelIds = allContextDatasetDataAvail.all_depmap_ids.filter(
-    (indexedModel) => selectedModelIds.includes(indexedModel[1])
-  );
+  // Filter the canonical IDs (from allContextDatasetDataAvail) based on the selected set.
+  // This array defines the final column order for the merged matrix.
+  const finalColumnOrder: string[] = allContextDatasetDataAvail.all_depmap_ids
+    .filter((indexedModel) => selectedModelIds.has(indexedModel[1]))
+    .map((indexedModel) => indexedModel[1]);
+
+  // Create the final indexed ID list (the array that goes into all_depmap_ids)
   const indexedOrderedModelIds: [
     number,
     string
-  ][] = orderedModelIds.map((modelId: [number, string], index: number) => [
+  ][] = finalColumnOrder.map((depmapId: string, index: number) => [
     index,
-    modelId[1],
+    depmapId,
   ]);
 
-  const vals: number[][] = [];
-  const dataTypes: string[] = [];
-  allContextDatasetDataAvail.values.forEach((row: number[], index: number) => {
-    const filteredRow = row.filter((rowVals: number, j: number) =>
-      selectedModelIds.includes(allContextDatasetDataAvail.all_depmap_ids[j][1])
-    );
-    vals.push(filteredRow);
-    dataTypes.push(allContextDatasetDataAvail.data_types[index]);
+  // --- 2. Process allContextDatasetDataAvail ---
+
+  const orderedVals: number[][] = [];
+  const orderedDataTypes: string[] = [];
+
+  // Iterate rows of the allContextDatasetDataAvail data and filter columns based on finalColumnOrder
+  allContextDatasetDataAvail.data_types.forEach(
+    (dataType: string, rowIndex: number) => {
+      const originalRow = allContextDatasetDataAvail.values[rowIndex];
+      const filteredRow: number[] = [];
+
+      // Use the canonical IDs' list to align the values based on their original index
+      allContextDatasetDataAvail.all_depmap_ids.forEach(
+        (indexedModel, colIndex) => {
+          if (selectedModelIds.has(indexedModel[1])) {
+            filteredRow.push(originalRow[colIndex]);
+          }
+        }
+      );
+
+      orderedVals.push(filteredRow);
+      orderedDataTypes.push(dataType);
+    }
+  );
+
+  // --- 3. Process subtypeDataAvail. Requires reordering to match the columns of crispr, wgs, wes, etc ---
+
+  // Create a lookup map for the subtype data: DepMap ID -> Original Column Index
+  const subtypeIdToIndexMap = new Map<string, number>();
+  subtypeDataAvail.all_depmap_ids.forEach((depmapIdTup, index) => {
+    subtypeIdToIndexMap.set(depmapIdTup[1], index);
   });
 
-  const orderedDataTypes = [...dataTypes];
-  const orderedVals = [...vals];
+  const reorderedSubtypeVals: number[][] = [];
+
+  // Reorder subtypeDataAvail.values based on finalColumnOrder
+  subtypeDataAvail.values.forEach((row: number[]) => {
+    const newRow: number[] = [];
+
+    // Build the new row by iterating through the FINAL desired order
+    finalColumnOrder.forEach((depmapId) => {
+      const originalColIndex = subtypeIdToIndexMap.get(depmapId);
+
+      // The DepMap ID MUST be present in subtypeDataAvail to be in finalColumnOrder,
+      if (originalColIndex !== undefined) {
+        newRow.push(row[originalColIndex]);
+      }
+    });
+    reorderedSubtypeVals.push(newRow);
+  });
+
+  // The subtypeDataAvail.data_types array does not need reordering since it represents
+  // the rows, and those rows (data types) are being appended as a block.
+
+  // --- 4. Final Merge ---
+
+  // Merge the aligned arrays
+  const mergedAllDepmapIds = indexedOrderedModelIds;
+  const mergedDataTypes = [...orderedDataTypes, ...subtypeDataAvail.data_types];
+  const mergedValues = [...orderedVals, ...reorderedSubtypeVals];
+
+  mergedDataTypes.reverse(); // reverse necessary because of the plotly config
+  mergedValues.reverse(); // reverse necessary because of the plotly config
+
   const mergedDataAvail = {
-    all_depmap_ids: indexedOrderedModelIds,
-    data_types: [...orderedDataTypes, ...subtypeDataAvail.data_types].reverse(),
-    values: [...orderedVals, ...subtypeDataAvail.values].reverse(),
+    all_depmap_ids: mergedAllDepmapIds,
+    data_types: mergedDataTypes,
+    values: mergedValues,
   };
 
   return mergedDataAvail;
 }
-
 function getSelectedContextData(
   selectedContextNode: ContextNode,
   allContextDatasetDataAvail: ContextSummary,
