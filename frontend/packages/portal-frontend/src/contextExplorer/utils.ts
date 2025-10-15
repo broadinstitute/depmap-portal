@@ -490,8 +490,8 @@ function mergeDataAvailability(
 
   // Create a lookup map for the subtype data: DepMap ID -> Original Column Index
   const subtypeIdToIndexMap = new Map<string, number>();
-  subtypeDataAvail.all_depmap_ids.forEach(([_, depmapId], index) => {
-    subtypeIdToIndexMap.set(depmapId, index);
+  subtypeDataAvail.all_depmap_ids.forEach((depmapIdTup, index) => {
+    subtypeIdToIndexMap.set(depmapIdTup[1], index);
   });
 
   const reorderedSubtypeVals: number[][] = [];
