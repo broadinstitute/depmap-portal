@@ -114,7 +114,6 @@ class DataPrepPipelineRunner(PipelineRunner):
             if config["is_external"]
             else "release_inputs_internal-DO-NOT-EDIT-ME"
         )
-        # Run the same preprocessor conseq triggers, but up-front so we can log usage
         self.run_via_container(
             f"python ../preprocess_taiga_ids.py {template} {output}", config
         )

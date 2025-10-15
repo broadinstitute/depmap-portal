@@ -2,7 +2,6 @@ import re
 import pandas as pd
 import argparse
 import json
-from google.cloud import storage
 
 from taigapy import create_taiga_client_v3
 

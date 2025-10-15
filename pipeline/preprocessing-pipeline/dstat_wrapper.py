@@ -12,8 +12,8 @@ terminal_states = [
     "SUCCEEDED",
     "FAILED",
     "CANCELLED",
-    "SCHEDULED_PENDING_FAILED",  # Failed before running started
-    "RUNNING_PENDING_FAILED",  # Failed while trying to start running
+    "SCHEDULED_PENDING_FAILED",
+    "RUNNING_PENDING_FAILED",
 ]
 in_progress_state = [
     "QUEUED",
