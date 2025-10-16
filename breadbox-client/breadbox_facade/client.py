@@ -454,7 +454,7 @@ class BBClient:
 
         params = param_factory(
             name=name,
-            dataset_metadata=metadata,
+            dataset_metadata=metadata, # the types suggest this must be a specific type, but the generated code looks like passing in a generic dict would work fine
             group_id=group_id,
             given_id=given_id,
             description=description,
