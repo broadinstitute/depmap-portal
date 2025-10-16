@@ -153,6 +153,7 @@ const CollapsiblePanelBody = ({
     <div className={styles.accordionBodyContent}>
       <hr />
       <br />
+      <div className={styles.fileNameLabel}>{file.fileName}</div>
       <div className={styles.releaseLabel}>{file.releaseName}</div>
 
       <br />
