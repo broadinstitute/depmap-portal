@@ -44,7 +44,7 @@ type DataVersionOption = BaseOption & {
 
 export interface State {
   dirty: boolean;
-  justSynced: boolean;
+  needsSync: boolean;
   unitsOptions: UnitsOption[];
   dataTypeOptions: DataTypeOption[];
   sliceTypeOptions: SliceTypeOption[];
@@ -59,7 +59,7 @@ export interface State {
 
 export const DEFAULT_STATE: State = {
   dirty: false,
-  justSynced: false,
+  needsSync: false,
   unitsOptions: [],
   dataTypeOptions: [],
   sliceTypeOptions: [],

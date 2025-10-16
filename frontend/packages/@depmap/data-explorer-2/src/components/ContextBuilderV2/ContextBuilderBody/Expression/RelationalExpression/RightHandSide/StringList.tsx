@@ -168,7 +168,9 @@ function StringList({ expr, path, domain, isLoading }: Props) {
         })}
         styles={selectStyles}
         value={
-          expr ? expr.map((value: string) => ({ value, label: value })) : null
+          Array.isArray(expr)
+            ? expr.map((value: string) => ({ value, label: value }))
+            : null
         }
         onChange={(val) => {
           const selections = (val as unknown) as { value: string }[] | null;

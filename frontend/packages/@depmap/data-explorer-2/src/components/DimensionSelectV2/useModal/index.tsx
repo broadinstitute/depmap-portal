@@ -10,6 +10,8 @@ interface Props {
   mode: Mode;
   onChange: (dimension: DataExplorerPlotConfigDimensionV2) => void;
   state: State;
+  allowNullFeatureType: boolean;
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
 }
 
 export default function useModal({
@@ -18,6 +20,8 @@ export default function useModal({
   mode,
   onChange,
   state,
+  allowNullFeatureType,
+  valueTypes,
 }: Props) {
   const onClickShowModal = useCallback(() => {
     const container = document.createElement("div");
@@ -40,10 +44,20 @@ export default function useModal({
           unmount();
         }}
         includeAllInContextOptions={includeAllInContextOptions}
+        allowNullFeatureType={allowNullFeatureType}
+        valueTypes={valueTypes}
       />,
       container
     );
-  }, [includeAllInContextOptions, index_type, mode, onChange, state]);
+  }, [
+    includeAllInContextOptions,
+    allowNullFeatureType,
+    valueTypes,
+    index_type,
+    mode,
+    onChange,
+    state,
+  ]);
 
   return onClickShowModal;
 }
