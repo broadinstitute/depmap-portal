@@ -75,6 +75,7 @@ from breadbox_client.models import (
     GroupOut,
     MatrixDatasetParams,
     MatrixDatasetParamsDatasetMetadataType0,
+    MatrixDatasetUpdateParamsDatasetMetadataType0,
     MatrixDatasetResponse,
     MatrixDimensionsInfo,
     SampleTypeOut,
@@ -83,6 +84,7 @@ from breadbox_client.models import (
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
     TableDatasetParamsDatasetMetadataType0,
+    TabularDatasetUpdateParamsDatasetMetadataType0,
     TabularDatasetResponse,
     TabularDimensionsInfo,
     UpdateDimensionType,
@@ -427,13 +429,13 @@ class BBClient:
 
 
     def update_dataset(
-        self,
-        dataset_id: str,
-        name: Union[str, Unset] = UNSET,
-        dataset_metadata: Optional[dict] = None,
-        group_id: Union[str, Unset] = UNSET,
-        given_id: Union[str, Unset, None] = UNSET,
-        description: Union[str, Unset, None] = UNSET,
+            self,
+            dataset_id: str,
+            name: Union[str, Unset] = UNSET,
+            dataset_metadata: Optional[dict] = None,
+            group_id: Union[str, Unset] = UNSET,
+            given_id: Union[str, Unset, None] = UNSET,
+            description: Union[str, Unset, None] = UNSET,
             priority: Union[int, Unset, None] = UNSET,
     ) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
         """Update the values specified for the given dataset"""
@@ -442,9 +444,13 @@ class BBClient:
         dataset = self.get_dataset(dataset_id)
         if isinstance(dataset, MatrixDatasetResponse):
             param_factory = lambda **kwargs: MatrixDatasetUpdateParams(format_="matrix", **kwargs)
+            metadata = MatrixDatasetUpdateParamsDatasetMetadataType0.from_dict(
+                dataset_metadata) if dataset_metadata else None
         else:
             assert isinstance(dataset, TabularDatasetResponse)
             param_factory = lambda **kwargs: TabularDatasetUpdateParams(format_="tabular", **kwargs)
+            metadata = TabularDatasetUpdateParamsDatasetMetadataType0.from_dict(
+                dataset_metadata) if dataset_metadata else None
 
         metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not None else UNSET
         params = param_factory(
