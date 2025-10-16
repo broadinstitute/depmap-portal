@@ -14,7 +14,7 @@ if "(config.get('publish_dest', 'INVALID')) != 'INVALID' and ('test-perf' not in
 # run in testing mode if we're on the test-perf branch because we don't really need predictability results to test most of the
 # functionality
 let testpred="true"
-elif
+else
 let testpred=""
 endif
 
