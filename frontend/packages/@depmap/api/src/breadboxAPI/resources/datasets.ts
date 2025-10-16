@@ -27,19 +27,29 @@ export function getDatasets(
   return getJson<Dataset[]>("/datasets/", params);
 }
 
+const checkDatasetId = (id: string) => {
+  if (id.includes("/")) {
+    throw new Error(
+      `given_id "${id}" contains a slash! Breadbox does not support this.`
+    );
+  }
+};
+
 export function getDataset(datasetId: string) {
+  checkDatasetId(datasetId);
   return getJson<Dataset>(uri`/datasets/${datasetId}`);
 }
 
-export function deleteDataset(id: string) {
-  // TODO: Figure out return type.
-  return deleteJson<unknown>("/datasets/", id);
+export function deleteDataset(datasetId: string) {
+  checkDatasetId(datasetId);
+  return deleteJson<{ message: string }>(uri`/datasets/${datasetId}`);
 }
 
 export function updateDataset(
   datasetId: string,
   datasetUpdateArgs: DatasetUpdateArgs
 ) {
+  checkDatasetId(datasetId);
   return postJson<Dataset>(uri`/datasets/${datasetId}`, datasetUpdateArgs);
 }
 
@@ -56,6 +66,8 @@ export function getMatrixDatasetData(
     };
   }
 ) {
+  checkDatasetId(datasetId);
+
   if (!args.sample_identifier && !args.feature_identifier) {
     throw new Error(
       "Must supply at least a `sample_identifier` or `feature_identifier`"
@@ -86,6 +98,8 @@ export async function getTabularDatasetData(
   datasetId: string,
   args: TabularDatasetDataArgs
 ) {
+  checkDatasetId(datasetId);
+
   const result = await postJson<{
     [key: string]: Record<string, any>;
   }>(uri`/datasets/tabular/${datasetId}`, args);
@@ -107,6 +121,8 @@ export async function getTabularDatasetData(
 }
 
 export async function getDatasetSamples(datasetId: string) {
+  checkDatasetId(datasetId);
+
   const result = await getJson<{ id: string; label: string }[]>(
     uri`/datasets/samples/${datasetId}`
   );
@@ -124,6 +140,8 @@ export async function getDatasetSamples(datasetId: string) {
 }
 
 export async function getDatasetFeatures(datasetId: string) {
+  checkDatasetId(datasetId);
+
   const result = await getJson<{ id: string; label: string }[]>(
     uri`/datasets/features/${datasetId}`
   );

@@ -2,7 +2,7 @@ import { breadboxAPI, cached } from "@depmap/api";
 import { Dataset, MatrixDataset } from "@depmap/types";
 import { SliceTypeNull, SLICE_TYPE_NULL } from "./types";
 
-interface DataExplorerDatasetDescriptor {
+export interface DataExplorerDatasetDescriptor {
   data_type: string;
   id: string;
   index_type: string;

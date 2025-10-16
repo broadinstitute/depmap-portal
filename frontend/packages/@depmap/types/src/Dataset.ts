@@ -38,6 +38,7 @@ export type DatasetParams = TableDatasetParams | MatrixDatasetParams;
 export interface MatrixDataset {
   id: string;
   format: "matrix_dataset";
+  description: string | null;
   dataset_md5: string | null;
   name: string;
   units: string;
@@ -58,6 +59,7 @@ export interface MatrixDataset {
 export interface TabularDataset {
   id: string;
   format: "tabular_dataset";
+  description: string | null;
   dataset_md5: string | null;
   name: string;
   index_type_name: string;

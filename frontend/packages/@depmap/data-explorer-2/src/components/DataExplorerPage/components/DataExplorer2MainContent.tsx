@@ -18,7 +18,11 @@ import {
   DataExplorerPlotConfig,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import { logInitialPlot, logReducerTransform } from "../debug";
+import {
+  logInitialPlot,
+  logDirectPlotChange,
+  logReducerTransform,
+} from "../debug";
 import plotConfigReducer, {
   PlotConfigReducerAction,
 } from "../reducers/plotConfigReducer";
@@ -95,7 +99,12 @@ function DataExplorer2MainContent({
   useEffect(() => {
     const onPopState = (e: PopStateEvent) => {
       readPlotFromQueryString().then((nextPlot) => {
+        if (nextPlot === DEFAULT_EMPTY_PLOT) {
+          reactKey.current++;
+        }
+
         setPlot(nextPlot);
+        logDirectPlotChange("onPopState", plot, nextPlot);
 
         const initial = window.location.search.substr(1) === "";
         setIsInitialPageLoad(initial);
@@ -109,7 +118,7 @@ function DataExplorer2MainContent({
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [plot]);
 
   const {
     ContextBuilder,

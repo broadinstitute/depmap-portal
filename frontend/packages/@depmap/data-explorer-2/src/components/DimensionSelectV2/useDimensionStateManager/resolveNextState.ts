@@ -7,7 +7,7 @@ import {
   inferSliceType,
   inferTypesFromDatasetId,
 } from "./utils";
-import computeOptions from "./computeOptions";
+import computeOptions, { computeUnitsOptions } from "./computeOptions";
 
 async function resolveNextState(
   index_type: string | null,
@@ -141,20 +141,13 @@ async function resolveNextState(
 
   if ("units" in changes && units !== changes.units) {
     units = changes.units || null;
-
-    if (
-      units &&
-      prev.dataVersionOptions.filter((o) => !o.isDisabled).length > 1
-    ) {
-      dataset_id = undefined;
-      isUnknownDataset = false;
-    }
   }
 
   const options = shouldCalcOptions
     ? await computeOptions(
         index_type,
         dataType,
+        units,
         prev.allowNullFeatureType,
         prev.valueTypes,
         {
@@ -180,13 +173,7 @@ async function resolveNextState(
     slice_type !== pd.slice_type ||
     context !== pd.context;
 
-  const unitsChanged = units && units !== prev.units;
-
-  if (
-    !dataset_id &&
-    hasAllRequiredProps &&
-    (requiredPropChanged || unitsChanged)
-  ) {
+  if (!dataset_id && hasAllRequiredProps && requiredPropChanged) {
     const defaultDatasetOption = options.dataVersionOptions.find(
       (d) => d.isDefault
     );
@@ -194,6 +181,47 @@ async function resolveNextState(
     if (defaultDatasetOption) {
       dataset_id = defaultDatasetOption.value;
       isUnknownDataset = false;
+    }
+  }
+
+  const unitsChanged = units && units !== prev.units;
+
+  if (unitsChanged) {
+    const defaultDatasetOption = options.dataVersionOptions.find(
+      (d) => d.isDefault
+    );
+
+    if (defaultDatasetOption) {
+      dataset_id = defaultDatasetOption.value;
+      isUnknownDataset = false;
+
+      const {
+        inferredSliceType,
+        inferredDataType,
+      } = await inferTypesFromDatasetId(index_type, dataset_id);
+
+      slice_type = inferredSliceType?.valueOf();
+      dataType = inferredDataType;
+
+      // recompute units options now that we've updated slice_type and dataType.
+      options.unitsOptions = await computeUnitsOptions(
+        index_type,
+        dataType,
+        prev.valueTypes,
+        {
+          ...prev.dimension,
+          axis_type,
+          context,
+          dataset_id,
+          slice_type,
+          aggregation,
+        }
+      );
+    } else if (slice_type === null) {
+      slice_type = undefined;
+      context = undefined;
+    } else {
+      dataset_id = undefined;
     }
   }
 

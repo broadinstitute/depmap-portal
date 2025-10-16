@@ -12,17 +12,21 @@
   "dependencies": {
     "@depmap/compute": "1.0.0",
     "classnames": "^2.3.1",
+    "github-markdown-css": "^5.8.1",
     "histoslider": "^2.0.14",
     "lodash.memoize": "^4.1.2",
     "react-bootstrap": "^0.32.3",
     "react-csv": "^1.1.1",
-    "react-select": "^3.2.0"
+    "react-markdown": "7",
+    "react-select": "^3.2.0",
+    "rehype-raw": "6",
+    "remark-gfm": "3"
   },
   "devDependencies": {
     "@types/lodash.memoize": "^4.1.6",
     "@types/react-bootstrap": "^0.32.24",
-    "@types/react-select": "3.1.2",
-    "@types/react-csv": "^1.1.1"
+    "@types/react-csv": "^1.1.1",
+    "@types/react-select": "3.1.2"
   },
   "peerDependencies": {
     "react": "^16.9.35",

@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import PlotConfigSelect from "../../../../../PlotConfigSelect";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import useTabularDatasets from "../../../../hooks/useTabularDatasets";
+import { operatorsByValueType } from "../../../../utils/expressionUtils";
 import styles from "../../../../../../styles/ContextBuilderV2.scss";
 
 interface Props {
@@ -62,8 +63,10 @@ function MetadataColumnSelect({ varName }: Props) {
             col_type: string;
           };
 
-          if (col_type !== "text" && col_type !== "categorical") {
-            window.console.warn(`Warning: unsupported col_type "${col_type}"`);
+          if (!(col_type in operatorsByValueType)) {
+            window.console.warn(
+              `Warning: unsupported col_type "${col_type}" for column ${value}`
+            );
           }
 
           setVar(varName, {

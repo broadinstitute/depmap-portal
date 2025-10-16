@@ -2,7 +2,7 @@ import React, { useMemo } from "react";
 import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
 import AllSelects from "./AllSelects";
 import useDimensionStateManager from "./useDimensionStateManager";
-// import useModal from "./useModal";
+import useModal from "./useModal";
 import { wrapWithErrorBoundary } from "./ErrorBoundary";
 
 export interface Props {
@@ -125,14 +125,15 @@ function DimensionSelectV2({
     allowNullFeatureType,
   });
 
-  // FIXME: Add support for the dataset details modal.
-  // const onClickShowModal = useModal({
-  //   mode,
-  //   index_type,
-  //   includeAllInContextOptions,
-  //   state,
-  //   onChange,
-  // });
+  const onClickShowModal = useModal({
+    mode,
+    index_type,
+    includeAllInContextOptions,
+    state,
+    onChange,
+    valueTypes,
+    allowNullFeatureType,
+  });
 
   return (
     <AllSelects
@@ -145,7 +146,7 @@ function DimensionSelectV2({
       includeAllInContextOptions={includeAllInContextOptions}
       onClickCreateContext={onClickCreateContext}
       onClickSaveAsContext={onClickSaveAsContext}
-      // onClickShowModal={onClickShowModal}
+      onClickShowModal={onClickShowModal}
       onHeightChange={onHeightChange}
     />
   );
