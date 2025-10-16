@@ -5,11 +5,7 @@ include "process-drug-screens.conseq"
 include "preprocess_raw_biom_matrix.conseq"
 include "reformat_deps.conseq"
 include "tda.conseq"
-if "(config.get('publish_dest', 'INVALID')) != 'INVALID' and ('test-perf' not in config.get('publish_dest', 'INVALID'))":
-# disable if we're on the test-perf branch because we don't really need predictability results to test most of the
-# functionality
 include "predictability/predictability.conseq"
-endif
 include "reformat_repurposing_data.conseq"
 include "pref_essential_genes.conseq"
 include "validation.conseq"
