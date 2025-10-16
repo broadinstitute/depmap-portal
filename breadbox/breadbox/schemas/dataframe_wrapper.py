@@ -11,7 +11,7 @@ import pyarrow
 from breadbox.schemas.custom_http_exception import FileValidationError
 
 # fetching more than this number of columns at one time will result in an exception being thrown
-MAX_COLUMNS_FETCHED = 10000
+MAX_COLUMNS_FETCHED = 20000
 
 
 class DataFrameWrapper(Protocol):
