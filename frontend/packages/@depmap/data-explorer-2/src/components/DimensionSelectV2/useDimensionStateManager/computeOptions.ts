@@ -328,8 +328,11 @@ async function computeSliceTypeOptions(
     // If this datatype has any datasets with a `null`
     // feature type...
     Boolean(
-      isSampleType(index_type, dimensionTypes) &&
-        datasets.some((d) => d.slice_type === null)
+      selectedDataType &&
+        datasets.some(
+          (d) =>
+            d.data_type === selectedDataType && d.slice_type === SLICE_TYPE_NULL
+        )
     ) ||
     // ... or we've already inferred the slice_type is null...
     dimension.slice_type === null ||
