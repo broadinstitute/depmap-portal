@@ -452,7 +452,6 @@ class BBClient:
             metadata = TabularDatasetUpdateParamsDatasetMetadataType0.from_dict(
                 dataset_metadata) if dataset_metadata else None
 
-        metadata = DatasetMetadata.from_dict(dataset_metadata) if dataset_metadata is not None else UNSET
         params = param_factory(
             name=name,
             dataset_metadata=metadata,
