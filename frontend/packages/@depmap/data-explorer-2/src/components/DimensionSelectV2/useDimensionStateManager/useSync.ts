@@ -19,17 +19,18 @@ export default function useSync({
 }: Props) {
   useEffect(() => {
     if (state.dirty) {
-      setState((prev) => ({ ...prev, dirty: false, justSynced: true }));
-      onChange(state.dimension);
+      setState((prev) => ({ ...prev, dirty: false, needsSync: true }));
     }
-  }, [state.dirty, state.dimension, onChange, setState]);
+  }, [state.dirty, setState]);
 
   useEffect(() => {
-    setState((prev) => {
-      if (prev.justSynced) {
-        return { ...prev, justSynced: false };
-      }
+    if (state.needsSync) {
+      onChange(state.dimension);
+      setState((prev) => ({ ...prev, needsSync: false }));
+      return;
+    }
 
+    setState((prev) => {
       if (prev.dirty) {
         return prev;
       }
@@ -72,5 +73,6 @@ export default function useSync({
         },
       };
     });
-  }, [value, mode, setState]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, mode, state.needsSync]);
 }

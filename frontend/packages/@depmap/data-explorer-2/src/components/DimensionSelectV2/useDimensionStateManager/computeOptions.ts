@@ -1,16 +1,28 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
+import { DimensionType } from "@depmap/types";
 import {
   isSampleType,
   pluralize,
   sortDimensionTypes,
 } from "../../../utils/misc";
-import { State, SliceTypeNull, SLICE_TYPE_NULL } from "./types";
-import { fetchDatasetsByIndexType } from "./utils";
+import { State, SLICE_TYPE_NULL } from "./types";
+import {
+  DataExplorerDatasetDescriptor,
+  fetchDatasetsByIndexType,
+} from "./utils";
+
+function formatList(items: string[]) {
+  if (items.length === 0) return "";
+  if (items.length === 1) return items[0];
+  if (items.length === 2) return items.join(" and ");
+  return items.slice(0, -1).join(", ") + ", and " + items.at(-1);
+}
 
 async function fetchIndexCompatibleDatasets(
   index_type: string | null,
-  selectedDatasetId: string | null
+  selectedDatasetId: string | null,
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">
 ) {
   if (!index_type) {
     return [];
@@ -25,7 +37,11 @@ async function fetchIndexCompatibleDatasets(
     throw new Error(`Unknown dimension type "${index_type}".`);
   }
 
-  return datasets;
+  return datasets.filter((d) =>
+    valueTypes.has(
+      d.value_type as typeof valueTypes extends Set<infer U> ? U : never
+    )
+  );
 }
 
 async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
@@ -134,18 +150,13 @@ async function fetchContextCompatibleDataTypes(dimension: State["dimension"]) {
 
 async function computeDataTypeOptions(
   index_type: string | null,
-  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
-  dimension: State["dimension"]
+  dimension: State["dimension"],
+  datasets: DataExplorerDatasetDescriptor[],
+  dimensionTypes: DimensionType[]
 ) {
-  const [
-    datasets,
-    contextCompatibleDataTypes,
-    dimensionTypes,
-  ] = await Promise.all([
-    fetchIndexCompatibleDatasets(index_type, dimension?.dataset_id || null),
-    fetchContextCompatibleDataTypes(dimension),
-    cached(breadboxAPI).getDimensionTypes(),
-  ]);
+  const contextCompatibleDataTypes = await fetchContextCompatibleDataTypes(
+    dimension
+  );
 
   const dataTypes = [...new Set(datasets.map((d) => d.data_type))].sort(
     compareCaseInsensitive
@@ -189,16 +200,6 @@ async function computeDataTypeOptions(
   }
 
   return dataTypes
-    .filter((dataType) => {
-      return datasets.some((dataset) => {
-        const value_type = dataset.value_type as typeof valueTypes extends Set<
-          infer U
-        >
-          ? U
-          : never;
-        return dataset.data_type === dataType && valueTypes.has(value_type);
-      });
-    })
     .map((dataType) => {
       let isDisabled = false;
       let disabledReason = "";
@@ -220,7 +221,7 @@ async function computeDataTypeOptions(
           isSampleType(dimension.slice_type, dimensionTypes)
             ? "sample type"
             : "feature type",
-          `“${dimension.slice_type as string}”`,
+          `“${sliceDisplayName}”`,
           "is incompatible with this data type",
         ].join(" ");
       } else if (
@@ -259,62 +260,68 @@ async function computeDataTypeOptions(
 async function computeSliceTypeOptions(
   index_type: string | null,
   selectedDataType: string | null,
-  dimension: State["dimension"]
+  selectedUnits: string | null,
+  dimension: State["dimension"],
+  datasets: DataExplorerDatasetDescriptor[],
+  dimensionTypes: DimensionType[]
 ) {
-  const [datasets, dimensionTypes] = await Promise.all([
-    fetchIndexCompatibleDatasets(index_type, dimension.dataset_id || null),
-    cached(breadboxAPI).getDimensionTypes(),
-  ]);
-
   const sliceTypeOptions: State["sliceTypeOptions"] = [];
-  const seen = new Set<string | SliceTypeNull>();
+  const seen = new Set<string>();
+  let selectedUnitsMatchNullSliceType = false;
 
   datasets.forEach((dataset) => {
-    if (!dimension.dataset_id && dataset.slice_type === SLICE_TYPE_NULL) {
+    if (
+      dataset.units === selectedUnits &&
+      dataset.slice_type === SLICE_TYPE_NULL
+    ) {
+      selectedUnitsMatchNullSliceType = true;
+    }
+
+    if (dataset.slice_type === SLICE_TYPE_NULL) {
       return;
     }
 
-    if (dataset.slice_type !== null && !seen.has(dataset.slice_type)) {
-      const label =
-        dimensionTypes.find((d) => d.name === dataset.slice_type)
-          ?.display_name || dataset.slice_type.toString();
-
-      let isDisabled = false;
-      let disabledReason = "";
-
-      const isCompatibleWithDataType =
-        !selectedDataType ||
-        datasets.find(
-          (d) =>
-            d.data_type === selectedDataType &&
-            d.slice_type === dataset.slice_type
-        ) !== undefined;
-
-      if (!isCompatibleWithDataType) {
-        isDisabled = true;
-
-        disabledReason = [
-          "The data type",
-          `“${selectedDataType}”`,
-          "is incompatible with this",
-          typeof dataset.slice_type === "string" &&
-          isSampleType(dataset.slice_type, dimensionTypes)
-            ? "sample type"
-            : "feature type",
-        ].join(" ");
-      }
-
-      sliceTypeOptions.push({
-        label,
-        value: dataset.slice_type,
-        isDisabled,
-        disabledReason,
-      });
+    if (seen.has(dataset.slice_type as string)) {
+      return;
     }
 
-    if (dataset.slice_type !== null) {
-      seen.add(dataset.slice_type);
+    seen.add(dataset.slice_type as string);
+
+    const label =
+      dimensionTypes.find((d) => d.name === dataset.slice_type)?.display_name ||
+      dataset.slice_type.toString();
+
+    let isDisabled = false;
+    let disabledReason = "";
+
+    const isCompatibleWithDataType =
+      !selectedDataType ||
+      datasets.find(
+        (d) =>
+          d.data_type === selectedDataType &&
+          d.slice_type === dataset.slice_type
+      ) !== undefined;
+
+    if (!isCompatibleWithDataType) {
+      isDisabled = true;
+
+      disabledReason = [
+        "The data type",
+        `“${selectedDataType}”`,
+        "is incompatible with this",
+        typeof dataset.slice_type === "string" &&
+        isSampleType(dataset.slice_type, dimensionTypes)
+          ? "sample type"
+          : "feature type",
+      ].join(" ");
     }
+
+    sliceTypeOptions.push({
+      label,
+      value: dataset.slice_type,
+      isDisabled,
+      disabledReason,
+    });
   });
 
   if (
@@ -325,7 +332,9 @@ async function computeSliceTypeOptions(
         datasets.some((d) => d.slice_type === null)
     ) ||
     // ... or we've already inferred the slice_type is null...
-    Boolean(dimension.slice_type === null && !seen.has(SLICE_TYPE_NULL))
+    dimension.slice_type === null ||
+    // ... or this special case
+    selectedUnitsMatchNullSliceType
   ) {
     // ... then make sure a corresponding option exists.
     sliceTypeOptions.unshift({
@@ -357,40 +366,18 @@ async function computeSliceTypeOptions(
 async function computeDataVersionOptions(
   index_type: string | null,
   selectedDataType: string | null,
+  selectedUnits: string | null,
   allowNullFeatureType: boolean,
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
-  dimension: State["dimension"]
+  dimension: State["dimension"],
+  datasets: DataExplorerDatasetDescriptor[],
+  dimensionTypes: DimensionType[]
 ) {
-  const [
-    datasets,
-    contextCompatibleDatasetIds,
-    dimensionTypes,
-  ] = await Promise.all([
-    fetchIndexCompatibleDatasets(index_type, dimension.dataset_id || null),
-    fetchContextCompatibleDatasetIds(dimension),
-    cached(breadboxAPI).getDimensionTypes(),
-  ]);
+  const contextCompatibleDatasetIds = await fetchContextCompatibleDatasetIds(
+    dimension
+  );
 
-  // TODO:
-  //        disabledReason = [
-  //          "This version is only compatible with the measure",
-  //          `“${dataset.units}”`,
-  //        ].join(" ");
-
-  let defaultDataset: typeof datasets[number] | null = null;
-
-  for (const d of datasets) {
-    if (
-      d.data_type === selectedDataType &&
-      d.slice_type === dimension.slice_type &&
-      d.priority !== null &&
-      (!defaultDataset ||
-        defaultDataset.priority === null ||
-        defaultDataset.priority < d.priority)
-    ) {
-      defaultDataset = d;
-    }
-  }
+  let foundDefault = false;
 
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
@@ -400,12 +387,20 @@ async function computeDataVersionOptions(
         d.value_type as typeof valueTypes extends Set<infer U> ? U : never
       )
     )
-    .sort((a, b) => compareCaseInsensitive(a.name, b.name))
+    .sort((a, b) => (a.priority ?? -Infinity) - (b.priority ?? -Infinity))
     .map((dataset) => {
       let isDisabled = false;
       let disabledReason = "";
 
       const typeDisplayName = dataset.slice_type_display_name;
+
+      if (selectedUnits && selectedUnits !== dataset.units) {
+        isDisabled = true;
+        disabledReason = [
+          "This version is only compatible with the measure",
+          `“${dataset.units}”`,
+        ].join(" ");
+      }
 
       if (
         dimension.axis_type === "aggregated_slice" &&
@@ -482,45 +477,158 @@ async function computeDataVersionOptions(
         }
       }
 
+      let isDefault = false;
+
+      if (!foundDefault && !isDisabled) {
+        foundDefault = true;
+        isDefault = true;
+      }
+
       return {
         label: dataset.name,
         value: dataset.given_id || dataset.id,
         isDisabled,
         disabledReason,
-        isDefault: dataset === defaultDataset,
+        isDefault,
       };
     })
+    .sort((a, b) => compareCaseInsensitive(a.label, b.label))
     .sort(compareDisabledLast);
+}
+
+export async function computeUnitsOptions(
+  index_type: string | null,
+  selectedDataType: string | null,
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
+  dimension: State["dimension"]
+) {
+  const [datasets, dimensionTypes] = await Promise.all([
+    fetchIndexCompatibleDatasets(
+      index_type,
+      dimension.dataset_id || null,
+      valueTypes
+    ),
+    cached(breadboxAPI).getDimensionTypes(),
+  ]);
+
+  const compatSliceTypes: Record<string, Set<string | null>> = {};
+
+  for (const d of datasets) {
+    compatSliceTypes[d.units] ||= new Set<string | null>();
+    compatSliceTypes[d.units].add(d.slice_type.valueOf());
+  }
+
+  const unitsOptions = [
+    ...new Set(
+      datasets
+        .filter((d) => {
+          if (!d.units) {
+            return false;
+          }
+
+          return !selectedDataType || d.data_type === selectedDataType;
+        })
+        .map((d) => d.units)
+    ),
+  ]
+    .sort((a, b) => (a.toLowerCase() < b.toLowerCase() ? -1 : 1))
+    .map((units) => {
+      let isDisabled = false;
+      let disabledReason = "";
+
+      if (
+        dimension.slice_type !== undefined &&
+        !compatSliceTypes[units]?.has(dimension.slice_type)
+      ) {
+        isDisabled = true;
+
+        const sliceTypes = [...compatSliceTypes[units]]
+          .filter(Boolean)
+          .map((dimensionTypeName) => {
+            return (
+              dimensionTypes.find((dt) => dt.name === dimensionTypeName)
+                ?.display_name || dimensionTypeName
+            );
+          });
+
+        const sampleOrFeature = isSampleType(
+          dimension.slice_type,
+          dimensionTypes
+        )
+          ? "sample"
+          : "feature";
+
+        disabledReason =
+          sliceTypes.length > 0
+            ? [
+                "This measure is only compatible with",
+                sampleOrFeature,
+                sliceTypes.length === 1 ? "type" : "types",
+                formatList(sliceTypes.map((t) => `“${t}”`)),
+              ].join(" ")
+            : `Clear the ${sampleOrFeature} type to use this measure`;
+      }
+
+      return {
+        label: units,
+        value: units,
+        isDisabled,
+        disabledReason,
+      };
+    });
+
+  return unitsOptions;
 }
 
 export default async function computeOptions(
   index_type: string | null,
   selectedDataType: string | null,
+  selectedUnits: string | null,
   allowNullFeatureType: boolean,
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
   dimension: State["dimension"]
 ) {
+  const [datasets, dimensionTypes] = await Promise.all([
+    fetchIndexCompatibleDatasets(
+      index_type,
+      dimension.dataset_id || null,
+      valueTypes
+    ),
+    cached(breadboxAPI).getDimensionTypes(),
+  ]);
+
   const [
     dataTypeOptions,
     sliceTypeOptions,
     dataVersionOptions,
+    unitsOptions,
   ] = await Promise.all([
-    computeDataTypeOptions(index_type, valueTypes, dimension),
-    computeSliceTypeOptions(index_type, selectedDataType, dimension),
+    computeDataTypeOptions(index_type, dimension, datasets, dimensionTypes),
+    computeSliceTypeOptions(
+      index_type,
+      selectedDataType,
+      selectedUnits,
+      dimension,
+      datasets,
+      dimensionTypes
+    ),
     computeDataVersionOptions(
       index_type,
       selectedDataType,
+      selectedUnits,
       allowNullFeatureType,
       valueTypes,
-      dimension
+      dimension,
+      datasets,
+      dimensionTypes
     ),
+    computeUnitsOptions(index_type, selectedDataType, valueTypes, dimension),
   ]);
 
   return {
     dataTypeOptions,
     sliceTypeOptions,
     dataVersionOptions,
-    // FIXME
-    unitsOptions: [] as State["unitsOptions"],
+    unitsOptions,
   };
 }

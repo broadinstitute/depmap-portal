@@ -130,7 +130,7 @@ function AllSelects({
         onChange={onChangeAggregation}
       />
       <UnitsSelect
-        show={Boolean(dataType && isModalVersion)}
+        show={isModalVersion}
         value={units}
         options={unitsOptions}
         onChange={onChangeUnits}

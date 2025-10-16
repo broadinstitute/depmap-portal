@@ -25,3 +25,12 @@
   /* Opera doesn't support this in the shorthand */
   background-attachment: local, local, scroll, scroll;
 }
+
+@mixin chip {
+  color: #fff;
+  border-width: 1px;
+  border-style: solid;
+  padding: 0 4px;
+  border-radius: 3px;
+  margin-right: 3px;
+}
