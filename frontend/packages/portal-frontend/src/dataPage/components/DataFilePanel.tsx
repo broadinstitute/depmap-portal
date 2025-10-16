@@ -6,6 +6,7 @@ import { Tooltip } from "@depmap/common-components";
 import { CollapsiblePanel } from "./CollapsiblePanel";
 import { DownloadGlyph, DownloadLink } from "@depmap/downloads";
 import { enabledFeatures } from "@depmap/globals";
+import { VersionBadge } from "./VersionBadge";
 
 interface DataFilePanelProps {
   data: DownloadTableData;
@@ -61,6 +62,7 @@ const CollapsiblePanelHeader = ({
   return (
     <span className={styles.accordionTitle}>
       <span className={styles.one}>
+        {file.version && <VersionBadge versionNumber={file.version} />}
         {file.retractionOverride
           ? file.fileName + " (retracted)"
           : file.fileName}
