@@ -1,0 +1,39 @@
+---
+name: Build breadbox client
+
+on:
+  push:
+    - "breadbox/**"
+    - "breadbox-client/**"
+
+#permissions:
+#  contents: write
+
+env:
+  DOCKER_REPO: us.gcr.io/broad-achilles/depmap-breadbox
+  DOCKER_TAG: ga2-build-${{ github.run_number }}
+
+jobs:
+  build-breadbox-client:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out"
+        uses: actions/checkout@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          fetch-depth: 0
+
+      - name: Prepare breadbox client
+        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
+
+      - name: "Install breadbox_client and dependencies"
+        working-directory: ./breadbox-client
+        run: "poetry install && poetry run pyright breadbox_facade"
+
+      - name: Running pyright
+        working-directory: ./breadbox-client
+        run: "poetry run pyright breadbox_facade"
+
+      - name: Running pytest
+        working-directory: ./breadbox-client
+        run: "poetry run pytest"
