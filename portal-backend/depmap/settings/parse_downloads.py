@@ -18,7 +18,6 @@ from depmap.download.models import (
     RetractedUrl,
     SummaryStats,
     SummaryStatsDict,
-    TaigaOnly,
 )
 
 from typing import Dict
@@ -86,8 +85,6 @@ def get_proper_url_format(url):
 
     if isinstance(url, dict):
         return get_bucket(url)
-    elif url == "TaigaOnly()":
-        return TaigaOnly()
     elif url == "RetractedUrl":
         return RetractedUrl()
     else:
@@ -114,7 +111,7 @@ def make_file(
     canonical_taiga_id = file.get("canonical_taiga_id", None)
 
     url: Union[
-        ExternalBucketUrl, TaigaOnly, DmcBucketUrl, RetractedUrl, str, Any
+        ExternalBucketUrl, DmcBucketUrl, RetractedUrl, str, Any
     ] = get_proper_url_format(file.get("url", ""))
 
     # Everything below this point is optional for DownloadFile

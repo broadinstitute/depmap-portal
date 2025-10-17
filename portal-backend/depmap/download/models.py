@@ -225,7 +225,9 @@ class ReleaseTerms(Enum):
             "ccle": """CCLE publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("ccle", path="terms_and_conditions")
             ),
-            "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(url_for("public.terms")),
+            "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
+                url_for("public.terms")
+            ),
             "ctd2": """The CTD^2 releases data in accordance with their <a target="_blank" href="https://ocg.cancer.gov/programs/ctd2/using-ctd2-data">data release policy</a>""",
             "dmc": """Data for the Dependency Map Consortium is made available under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("public.terms")
@@ -322,7 +324,7 @@ class DownloadRelease:
                 if isinstance(file._url, RetractedUrl):
                     assert file.retraction_override is not None
                 else:
-                    assert isinstance(file._url, TaigaOnly), file._url
+                    assert isinstance(file._url, DmcBucketUrl), file._url
             terms = MockTerms()
         else:
             assert isinstance(terms, ReleaseTerms)
@@ -423,19 +425,6 @@ class DownloadRelease:
         return terms
 
 
-class TaigaOnly:
-    def __str__(self):
-        return "<TaigaOnly>"
-
-    def __repr__(self):
-        return "TaigaOnly()"
-
-    def get_url(self):
-        raise NotImplementedError(
-            "This method should never be called, is a Taiga ID missing? Links to taiga are only allowed if we are on internal. And if we are on internal, we should link to taiga for all downloads with a Taiga ID anyway."
-        )
-
-
 # for global search support. Release and file name allow link from search directly to downloads page modals
 class DownloadFileGlobalSearch(Model):
     __tablename__ = "download_file"
@@ -461,7 +450,7 @@ class DownloadFile:
         name: str,
         type: FileType,
         size: str,
-        url: Union[BucketUrl, TaigaOnly, RetractedUrl, str],
+        url: Union[BucketUrl, RetractedUrl, str],
         sub_type: Optional[FileSubtype] = None,  # Required on the most current release
         taiga_id: Optional[str] = None,
         canonical_taiga_id: Optional[str] = None,
@@ -486,7 +475,7 @@ class DownloadFile:
         self.sub_type: Optional[FileSubtype] = sub_type
 
         self.size: str = size
-        self._url: Union[BucketUrl, TaigaOnly, RetractedUrl, str] = url
+        self._url: Union[BucketUrl, RetractedUrl, str] = url
 
         # Download file yaml configs might receive updated taiga_ids
         # that don't have a match in the TaigaAlias table. This is a new
@@ -632,12 +621,10 @@ class DownloadFile:
 
     @property
     def url(self):
-        if current_app.config[
-            "ENABLED_FEATURES"
-        ].use_taiga_urls_downloads_page and isinstance(self._url, TaigaOnly):
+        if current_app.config["ENABLED_FEATURES"].use_taiga_urls_downloads_page:
             # queries to the db use .taiga_id. outward links use .original_taiga_id
             assert self.original_taiga_id is not None
-            return None  # front end will use taiga_id field
+            return self._url.get_url()
         elif isinstance(self._url, str):
             return self._url
         elif isinstance(self._url, RetractedUrl):
