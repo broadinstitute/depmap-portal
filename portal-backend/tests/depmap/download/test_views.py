@@ -89,6 +89,7 @@ def test_get_file_record(app, _empty_db_base):
         "sources": ["Broad Institute", "Marcotte et al."],
         "fileName": "test file name",
         "fileType": "Genetic Dependency",
+        "version": None,
         "fileSubType": {
             "code": "crispr_screen",
             "label": "CRISPR Screen",
@@ -118,6 +119,7 @@ def test_get_file_record(app, _empty_db_base):
         "sources": ["Broad Institute"],
         "fileName": "headliner2 file name",
         "fileType": "Cellular Models",
+        "version": None,
         "fileSubType": {"code": "mutations", "label": "Mutations", "position": 1},
         "size": "headliner2 size",
         "fileDescription": None,

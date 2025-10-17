@@ -1,0 +1,23 @@
+.badgeContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 9999px;
+  padding: 0.03rem 0.8rem;
+
+  color: white;
+  background-color: rgb(5, 207, 49);
+  font-size: 1.2rem;
+  line-height: 2rem;
+  font-weight: 600;
+  margin-right: 5px;
+}
+
+.vPrefix {
+  margin-right: 0.25rem;
+}
+
+.versionNumber {
+  font-size: 1.5;
+}
