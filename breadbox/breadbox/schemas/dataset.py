@@ -85,7 +85,8 @@ class SharedDatasetParams(BaseModel):
     given_id: Annotated[
         Optional[str],
         Field(
-            description="Stable human-readable identifier that the portal uses to look up specific datasets."
+            description="Stable human-readable identifier that the portal uses to look up specific datasets.",
+            pattern="^[A-Za-z0-9_.-]+$",
         ),
     ] = None
     priority: Annotated[

@@ -281,13 +281,13 @@ crt = ["awscrt (==0.16.26)"]
 
 [[package]]
 name = "breadbox-client"
-version = "4.0.0"
+version = "3.40.5"
 description = "A client library for accessing Breadbox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "breadbox_client-4.0.0-py3-none-any.whl", hash = "sha256:e52ca164a5cdac773418fbca2f2e4adc4cf5dc1c2d870a9208c7286e2c03584e"},
-    {file = "breadbox_client-4.0.0.tar.gz", hash = "sha256:e8bd94ce688ba0e114b43048d96e3f658a4554b8e53bc6353bb867813d717134"},
+    {file = "breadbox_client-3.40.5-py3-none-any.whl", hash = "sha256:575f7b67ff00876b998ca9e2f0d96c1990c7202afb5e9bc92d1e2bdd82b49e46"},
+    {file = "breadbox_client-3.40.5.tar.gz", hash = "sha256:87cdbda436acc424542dbd2859bcfecc6f66aed7c2940ce7ac7258f2c11e224b"},
 ]
 
 [package.dependencies]
@@ -674,18 +674,17 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.15"
+version = "0.1.17"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.15-py3-none-any.whl", hash = "sha256:173f85991b41f3ae46082e716fcd0427064bde55da5d201e4172a3196d8b6b69"},
-    {file = "depmap_compute-0.1.15.tar.gz", hash = "sha256:ecc8a08aab82cb638ccdc3ebf28ecb80f432f5001c063f9455db8cb3ffe63618"},
+    {file = "depmap_compute-0.1.17-py3-none-any.whl", hash = "sha256:9c7c9e97459bb48117fbceb5fa3210bf4fcce4ab309411b13d5e9fee521eae4f"},
+    {file = "depmap_compute-0.1.17.tar.gz", hash = "sha256:ef4978a2d0898f8ea5993183e07807ec9d81ecf842eca2681a034e4548066673"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3.0"
-httpx = ">=0.15.4,<0.24.0"
 json-logic = ">=0.7.0-alpha,<0.8.0"
 python-dateutil = ">=2.8.0,<3.0.0"
 
@@ -4996,4 +4995,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "0e2f4bea7c402430b88b466fe5f0d855c3695f5c764bf78c5fbe5c87e4e40c10"
+content-hash = "27c8ad7658d18a29bba6c477e2f1a090abad3067d9e4fde302eb4d0b942d7871"

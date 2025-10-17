@@ -174,12 +174,17 @@ jobs:
       - name: Get current version
         run: echo "${{ steps.current-version.outputs.current_version}}"
 
-      - name: Bump version and tag
+      - name: config git for tagging
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
           git pull origin HEAD:master
-          uvx --from commitizen cz --no-raise 21 bump --check-consistency
+
+      - name: run cz bump
+        run: uvx --from commitizen cz --no-raise 21 bump --check-consistency
+
+      - name: git push tags
+        run: |
           git push origin HEAD:master
           git push origin HEAD:master --tags
 

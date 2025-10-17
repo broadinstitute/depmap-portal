@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import styles from "../../styles/GeneTea.scss";
 import GeneTeaTable from "../GeneTeaTable";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { tableColumns } from "../../utils";
 import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
 import {
   GeneTeaEnrichedTerms,
@@ -46,6 +45,20 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
 
     return lookup;
   }, [rawData?.allEnrichedTerms]);
+
+  const termToMatchingGenesMap = useMemo(() => {
+    const lookup = new Map<string, string[]>();
+    if (rawData?.frequentTerms) {
+      for (let i = 0; i < rawData?.frequentTerms?.term.length; ++i) {
+        lookup.set(
+          rawData?.frequentTerms?.term[i],
+          rawData?.frequentTerms?.matchingGenesInList[i].split(" ")
+        );
+      }
+    }
+
+    return lookup;
+  }, [rawData?.frequentTerms]);
 
   // Get the table data and prefferedTableDataForDownload. Combined in this useMemo so we don't
   // have to iterate through allEnrichedTerms twice. The only difference is that the tableData is
@@ -103,8 +116,8 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         <div className={styles.errorMessage}>Error loading plot data.</div>
       ) : (
         <div>
-          <div className={styles.mainContentGrid}>
-            <div className={styles.plotArea}>
+          <div className={styles.mainContentGridAllMatchingTerms}>
+            <div className={styles.plotAreaAllMatchingTerms}>
               <PlotSection
                 isLoading={isLoading}
                 plotElement={plotElement}
@@ -125,15 +138,12 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
-          height={800}
           tableData={roundedAndUnroundedTableData.roundedData}
           prefferedTableDataForDownload={
             roundedAndUnroundedTableData.unroundedData
           }
-          tableColumns={tableColumns}
-          columnOrdering={tableColumns.map((col) => col.accessor)}
-          defaultCols={tableColumns.map((col) => col.accessor)}
           selectedTableRows={selectedTableRows}
+          termToMatchingGenesMap={termToMatchingGenesMap}
           handleChangeSelection={(selections: string[]) => {
             if (selections.length === 0) return;
             handleSetPlotOrTableSelectedTerms(new Set(selections), false);

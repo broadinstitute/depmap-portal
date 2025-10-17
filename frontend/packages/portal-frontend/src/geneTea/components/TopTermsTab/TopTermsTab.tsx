@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import styles from "../../styles/GeneTea.scss";
 import GeneTeaTable from "../GeneTeaTable";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
-import { tableColumns } from "../../utils";
 import { useGeneTeaFiltersContext } from "../../context/GeneTeaFiltersContext";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 
@@ -94,6 +93,20 @@ function TopTermsTab({
     return { roundedData, unroundedData };
   }, [rawData]);
 
+  const termToMatchingGenesMap = useMemo(() => {
+    const lookup = new Map<string, string[]>();
+    if (rawData?.allEnrichedTerms) {
+      for (let i = 0; i < rawData?.allEnrichedTerms?.term.length; ++i) {
+        lookup.set(
+          rawData?.allEnrichedTerms?.term[i],
+          rawData?.allEnrichedTerms?.matchingGenesInList[i].split(" ")
+        );
+      }
+    }
+
+    return lookup;
+  }, [rawData?.allEnrichedTerms]);
+
   // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>
@@ -108,7 +121,7 @@ function TopTermsTab({
           values.{" "}
           <PurpleHelpIcon
             tooltipText="Interaction with the heatmap will offer more information about
-          selected genes, while interaction with the barplot offers the
+          selected genes, while interaction with the table offers the
           opportunity to refer to the relevant text excerpts for a given term.
           To see the enrichment results across all terms matching the query,
           navigate to the ‘All Matching Terms’ tab above."
@@ -157,19 +170,16 @@ function TopTermsTab({
         <GeneTeaTable
           error={error}
           isLoading={isLoading}
-          height={800}
           tableData={roundedAndUnroundedTableData.roundedData}
           prefferedTableDataForDownload={
             roundedAndUnroundedTableData.unroundedData
           }
-          tableColumns={tableColumns}
-          columnOrdering={tableColumns.map((col) => col.accessor)}
-          defaultCols={tableColumns.map((col) => col.accessor)}
           selectedTableRows={
             selectedTableRows.size > 0
               ? selectedTableRows
               : new Set(rawData.enrichedTerms?.term)
           }
+          termToMatchingGenesMap={termToMatchingGenesMap}
           handleChangeSelection={(selections: string[]) => {
             if (selections.length === 0) return;
             handleSetSelectedTableRows(new Set(selections));

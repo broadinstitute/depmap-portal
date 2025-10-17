@@ -1,4 +1,3 @@
-
 rule get_context_analysis:
     inputs:
         script=fileref("./get_context_analysis.py"),
@@ -10,8 +9,9 @@ rule get_context_analysis:
 #        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
 #        repurposing_list_taiga_id=all {"type": "repurposing_list_taiga_id"},
 #        oncref_auc_taiga_id=all {"type":"prism_oncology_reference_auc_matrix"},
-        compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
-        compound_summary_oncref={"type": "compound-summary", "dataset": "Prism_oncology_AUC"},
+        compound_summaries=all {"type" ~ "compound-summary"},
+#       compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
+#       compound_summary_oncref={"type": "compound-summary", "dataset": "Prism_oncology_AUC"},
         tda_table={"type":"tda-table"},
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
@@ -20,11 +20,21 @@ rule get_context_analysis:
     
         artifacts = {{ inputs.artifacts }}
 
+        compound_tables = {{ inputs.compound_summaries }}
+    
+        # oncref_table_path is optional, because it should not be there in the public env
+        oncref_table_path = [cmpd for cmpd in compound_tables if cmpd and 'dataset' in cmpd and cmpd['dataset'] == 'Prism_oncology_AUC']
+        oncref_table_path = oncref_table_path[0] if len(oncref_table_path) > 0 else None
+        
+        # repurposing_table_path is required in all envs
+        repurposing_table_path = [cmpd for cmpd in compound_tables if cmpd and cmpd['dataset'] == 'Rep_all_single_pt']
+        assert len(repurposing_table_path) == 1, f"Expected exactly one Rep_all_single_pt compound table, got {len(repurposing_table_path)}"
+        
         # transformed will be our newly constructed dict of name -> artifact
         transformed = {
             # handle the ones that couldn't uniquely be identified by type specially
-            "repurposing_table_path": [{{ inputs.compound_summary_repurposing }}],
-            "oncref_table_path": [{{ inputs.compound_summary_oncref }}],
+            "repurposing_table_path": repurposing_table_path,
+            "oncref_table_path": [] if oncref_table_path is None else [oncref_table_path],
             "gene_effect_taiga_id": [ {{ inputs.gene_effect_taiga_id }} ],
             "gene_dependency_taiga_id": [ {{ inputs.gene_dependency_taiga_id }} ],
             "tda_table": [ {{ inputs.tda_table }} ],
