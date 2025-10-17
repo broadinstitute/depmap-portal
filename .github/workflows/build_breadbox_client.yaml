@@ -6,6 +6,7 @@ on:
     paths:
       - "breadbox/**"
       - "breadbox-client/**"
+      - ".github/workflows/build_breadbox_client.yaml"
 
 #permissions:
 #  contents: write
