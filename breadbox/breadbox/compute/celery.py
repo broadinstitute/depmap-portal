@@ -59,7 +59,7 @@ app = Celery(
         "breadbox.compute.site_check_task",
         "breadbox.compute.dataset_uploads_tasks",
     ],
-    **storage_configuration
+    **storage_configuration  # pyright: ignore
 )
 
 # Add prefix to celery so Breadbox celery tasks triggered by the portal use the correct celery
