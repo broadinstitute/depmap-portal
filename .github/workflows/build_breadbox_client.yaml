@@ -8,6 +8,7 @@ on:
       - "breadbox-client/**"
       - ".github/workflows/build_breadbox_client.yaml"
 
+# v1
 #permissions:
 #  contents: write
 
