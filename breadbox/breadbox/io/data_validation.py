@@ -134,7 +134,8 @@ def _validate_dimension_type_metadata_file(
         raise FileValidationError(f"Make sure all ids in {id_column} are unique.")
 
     # make sure id column have no missing info
-    if df[id_column].isna().any():
+    has_missing_ids = df[id_column].isna().any()
+    if isinstance(has_missing_ids, bool) and has_missing_ids:
         raise FileValidationError(
             f"Make sure there are no missing ids in the {id_column} column."
         )
@@ -498,7 +499,8 @@ def validate_dimension_type_metadata(
         )
     if not metadata_df["label"].is_unique:
         raise FileValidationError("Make sure all labels are unique.")
-    if metadata_df["label"].isna().any():
+    has_missing_labels = metadata_df["label"].isna().any()
+    if isinstance(has_missing_labels, bool) and has_missing_labels:
         raise FileValidationError(
             f"Make sure there are no missing labels in the 'label' column."
         )

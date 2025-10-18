@@ -24,6 +24,4 @@ Base = declarative_base(metadata=metadata_obj)
 
 
 class UUIDMixin:
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id = String(36, primary_key=True, default=lambda: str(uuid.uuid4()))

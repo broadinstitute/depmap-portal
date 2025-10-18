@@ -13,4 +13,4 @@ from breadbox.db.base_class import Base
 class DataType(Base):
     __tablename__ = "data_type"
 
-    data_type: Mapped[str] = mapped_column(String, primary_key=True)
+    data_type = String(primary_key=True)
