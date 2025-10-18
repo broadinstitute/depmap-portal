@@ -208,11 +208,14 @@ def delete_group_entry(db: SessionWithUser, user: str, group_entry_id: str):
     if not user in settings.admin_users and group_entry.email in settings.admin_users:
         raise GroupPermissionError("User cannot remove admin")
 
-    owner_entries = [
-        group_entry
-        for group_entry in group.group_entries
-        if group_entry.access_type == AccessType.owner
-    ]
+    # Add null check to avoid potential None access
+    owner_entries = []
+    if group is not None:
+        owner_entries = [
+            group_entry
+            for group_entry in group.group_entries
+            if group_entry.access_type == AccessType.owner
+        ]
     if (len(owner_entries) == 1) and (group_entry.access_type == AccessType.owner):
         raise UserError("Group requires at least one owner!")
 

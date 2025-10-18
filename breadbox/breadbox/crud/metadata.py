@@ -1,8 +1,9 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 import json
 
 import pandas as pd
-from sqlalchemy import and_, or_, false, ColumnElement
+from sqlalchemy import and_, or_, false
+from sqlalchemy.sql.elements import ColumnElement  # Import from correct module
 
 from breadbox.db.session import SessionWithUser
 from breadbox.crud.group import get_groups_with_visible_contents
@@ -24,7 +25,7 @@ def _get_dataset_filter_clauses(
     groups = get_groups_with_visible_contents(db, user)
     group_ids = [group.id for group in groups]
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]  # type: ignore
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == false())
 
@@ -57,8 +58,9 @@ def _get_metadata_as_name_value_list(df: pd.DataFrame):
     # Samples and features could exist without metadata
     formatted_metadata: List[Dict[str, Any]] = []
     if len(id_vals) > 0:
-
-        assert (id_vals[0] == id_vals).all()
+        # Convert to list to avoid numpy array attribute access issues
+        id_vals_list = id_vals.tolist()
+        assert all(id_vals_list[0] == val for val in id_vals_list)
 
         for index, row in df[["given_id", "value", "annotation_type"]].iterrows():
             formatted_metadata.append(
