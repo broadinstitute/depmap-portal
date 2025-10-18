@@ -63,13 +63,18 @@ def _get_metadata_as_name_value_list(df: pd.DataFrame):
         assert all(id_vals_list[0] == val for val in id_vals_list)
 
         for index, row in df[["given_id", "value", "annotation_type"]].iterrows():
+            # Convert annotation_type to its string value if it has a value attribute
+            annotation_type_value = row["annotation_type"]
+            if hasattr(annotation_type_value, "value"):
+                annotation_type_value = annotation_type_value.value
+                
             formatted_metadata.append(
                 {
                     "given_id": row["given_id"],
                     "value": cast_tabular_cell_value_type(
                         row["value"], row["annotation_type"]
                     ),
-                    "annotation_type": row["annotation_type"].value,
+                    "annotation_type": annotation_type_value,
                 }
             )
 
