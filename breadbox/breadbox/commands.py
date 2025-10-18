@@ -1,7 +1,14 @@
 import sys
+import os
 
-print("path")
+print("IN COMMANDS: path")
 print(sys.path)
+print("argv")
+print(sys.argv)
+print("env")
+print(os.environ)
+print("cwd")
+print(os.getcwd())
 
 import re
 from typing import List, Optional
