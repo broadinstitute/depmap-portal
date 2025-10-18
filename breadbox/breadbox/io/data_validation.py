@@ -170,7 +170,7 @@ def _validate_data_value_type(
     if value_type == ValueType.categorical:
         df = dfw.get_df()
         assert (
-            allowed_values
+            allowed_values is not None
         ), "Allowed values must be specified for categorical datasets."
         # Either string or boolean values allowed
         if not all(

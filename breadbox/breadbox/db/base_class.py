@@ -7,8 +7,8 @@ try:
 except ImportError:
     # For older versions of SQLAlchemy that don't have these types
     from typing import Any
-    Mapped = Any
-    mapped_column = lambda *args, **kwargs: args[0]
+    Mapped = Any  # type: ignore
+    def mapped_column(*args, **kwargs): return args[0]
 
 # It has been a pain point encountering unnamed constraints when migrating since you can't drop unnamed constraints. These conventions will be used when the sqlalchemy model has constraints that are unnamed
 convention = {
