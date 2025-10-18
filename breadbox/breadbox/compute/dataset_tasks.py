@@ -142,7 +142,7 @@ def _validate_dataset_fields(
                 detail=f"Invalid document type for '{n}'. Expected 'text/csv/' but got {f.content_type}",
             )
 
-    validated_allowed_values = _get_allowed_values_list(allowed_values)
+    validated_allowed_values = _get_allowed_values_list(allowed_values) if allowed_values is not None else []
     return ValidatedDatasetFields(
         valid_feature_type, valid_sample_type, data_type, validated_allowed_values
     )
