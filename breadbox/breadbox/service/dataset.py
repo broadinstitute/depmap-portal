@@ -85,7 +85,7 @@ def get_subsetted_matrix_dataset_df(
 
     if dimensions_info.features is None:
         feature_indexes = None
-    elif dimensions_info.feature_identifier.value == "id":
+    elif dimensions_info.feature_identifier and dimensions_info.feature_identifier.value == "id":
         (
             feature_indexes,
             missing_features,
@@ -93,7 +93,7 @@ def get_subsetted_matrix_dataset_df(
             db, user, dataset, dimensions_info.features
         )
     else:
-        assert dimensions_info.feature_identifier.value == "label"
+        assert dimensions_info.feature_identifier and dimensions_info.feature_identifier.value == "label"
         (
             feature_indexes,
             missing_features,
@@ -106,7 +106,7 @@ def get_subsetted_matrix_dataset_df(
 
     if dimensions_info.samples is None:
         sample_indexes = None
-    elif dimensions_info.sample_identifier.value == "id":
+    elif dimensions_info.sample_identifier and dimensions_info.sample_identifier.value == "id":
         sample_indexes, missing_samples = dataset_crud.get_sample_indexes_by_given_ids(
             db, user, dataset, dimensions_info.samples
         )
@@ -140,13 +140,13 @@ def get_subsetted_matrix_dataset_df(
     df = get_slice(dataset, feature_indexes, sample_indexes, filestore_location)
 
     # Re-index by label if applicable
-    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
+    if dimensions_info.feature_identifier and dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
         labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
             db, user, dataset
         )
         df = df.rename(columns=labels_by_id)
 
-    if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
+    if dimensions_info.sample_identifier and dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
         label_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
             db, user, dataset
         )
