@@ -1,5 +1,6 @@
 import os
-from typing import Tuple
+from typing import Tuple, Optional
+from os import stat_result
 
 from fastapi.staticfiles import StaticFiles
 
@@ -18,14 +19,14 @@ class SinglePageApplication(StaticFiles):
         # the base path is passed in
         super().__init__(directory=directory, packages=None, html=True, check_dir=True)
 
-    def lookup_path(self, path: str) -> Tuple[str, os.stat_result]:
+    def lookup_path(self, path: str) -> Tuple[str, Optional[os.stat_result]]:
         """Returns the index file when no match is found.
 
         Args:
             path (str): Resource path.
 
         Returns:
-            [tuple[str, os.stat_result]]: Always retuens a full path and stat result.
+            [tuple[str, Optional[os.stat_result]]]: Always returns a full path and stat result.
         """
         # WORKAROUND: For some reason, this prefix gets added to paths when
         # Breadbox is running in one of our deployed environments. It doesn't
