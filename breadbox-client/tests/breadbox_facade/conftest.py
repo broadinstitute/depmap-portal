@@ -17,6 +17,10 @@ def _run_in_poetry_venv(dir : str, cmd : List[str], env:Optional[Dict[str,str]] 
     if env is None:
         env = dict(os.environ)
 
+    print("dumping env")
+    for key, value in env.items():
+        print(f"{key}={value}")
+
     print("poetry info")
     subprocess.run(["poetry", "-vvv", "env", "info"], cwd=dir)
 
