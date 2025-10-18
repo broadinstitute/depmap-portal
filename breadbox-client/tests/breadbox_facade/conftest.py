@@ -47,10 +47,10 @@ def breadbox_proc():
         new_env["PYTHONUNBUFFERED"] = "1"
         new_env.update({"BREADBOX_SETTINGS_PATH": f"{tmpdir}/settings"})
 
-        cmd = ["poetry", "run", "./bb", "recreate-dev-db"]
+        cmd = ["poetry", "run", "bb-cmd", "recreate-dev-db"]
         subprocess.run(cmd, cwd="../breadbox", check=True, env=new_env)
 
-        cmd = ["poetry", "run", "./bb", "run", "--no-reload", "--port", str(breadbox_test_instance_port)]
+        cmd = ["poetry", "run", "bb-cmd", "run", "--no-reload", "--port", str(breadbox_test_instance_port)]
         proc = subprocess.Popen(cmd, cwd="../breadbox", env=new_env)
 
         try:
