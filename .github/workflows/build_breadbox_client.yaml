@@ -41,9 +41,17 @@ jobs:
         working-directory: ./breadbox-client
         run: "poetry run which python"
 
+      - name: getting env 1 path
+        working-directory: ./breadbox-client
+        run: "poetry show"
+
       - name: getting env 2 path
         working-directory: ./breadbox
         run: "poetry run bash -c 'cd ../breadbox && poetry run which python'"
+
+      - name: getting env 2 path
+        working-directory: ./breadbox
+        run: "poetry run bash -c 'cd ../breadbox && poetry show'"
 
       - name: Running pyright
         working-directory: ./breadbox-client
