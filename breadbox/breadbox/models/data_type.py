@@ -1,5 +1,11 @@
 from sqlalchemy import String
-from sqlalchemy.orm import Mapped, mapped_column
+try:
+    from sqlalchemy.orm import Mapped, mapped_column
+except ImportError:
+    # For older versions of SQLAlchemy that don't have these types
+    from typing import Any
+    Mapped = Any
+    mapped_column = lambda *args, **kwargs: args[0]
 
 from breadbox.db.base_class import Base
 
