@@ -235,7 +235,8 @@ def _add_metadata(db: SessionWithUser, df: pd.DataFrame) -> pd.DataFrame:
         col for col in metadata_df if col.startswith("lineage")
     ]
     metadata_df = metadata_df[metadata_cols]
-    df = metadata_df.merge(df, left_index=True, right_index=True)
+    # Use pandas merge instead of numpy array merge
+    df = pd.merge(metadata_df, df, left_index=True, right_index=True)
 
     return df
 
@@ -383,7 +384,7 @@ def export_merged_datasets(
             user=user,
         )
 
-        df, nas_dropped = _handle_df_nas(drop_nas, df, df.columns.values, sample_ids)
+        df, nas_dropped = _handle_df_nas(drop_nas, df, df.columns.tolist(), sample_ids)
 
         file_name = f"depmap_export_{datetime.now()}"
         filename_for_user = _get_filename_for_user(
@@ -465,7 +466,7 @@ def export_dataset(
             user=user,
         )
 
-        df, nas_dropped = _handle_df_nas(drop_nas, df, df.columns.values, sample_ids)
+        df, nas_dropped = _handle_df_nas(drop_nas, df, df.columns.tolist(), sample_ids)
 
         file_name = dataset.name.replace(" ", "_")
         filename_for_user = _get_filename_for_user(
