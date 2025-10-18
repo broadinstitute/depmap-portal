@@ -22,7 +22,7 @@ async def depmap_post(path: str, request: Request, response: Response):
 
     async with httpx.AsyncClient() as client:
         proxy = await client.post(
-            f"http://127.0.0.1:5000{path}", data=data, headers=headers
+            f"http://127.0.0.1:5000{path}", content=data, headers=headers
         )
     response.body = proxy.content
     response.status_code = proxy.status_code
