@@ -1,3 +1,8 @@
+import sys
+
+print("path")
+print(sys.path)
+
 import re
 from typing import List, Optional
 import click
