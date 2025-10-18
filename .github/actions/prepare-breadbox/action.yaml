@@ -12,7 +12,7 @@ runs:
     - name: "Install and configure Poetry"
       uses: snok/install-poetry@v1
       with:
-        version: 2.2
+        version: 1.8.2
         virtualenvs-create: true
 
     - name: "Set up poetry cache"
