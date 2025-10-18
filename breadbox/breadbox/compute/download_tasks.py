@@ -236,6 +236,12 @@ def _add_metadata(db: SessionWithUser, df: pd.DataFrame) -> pd.DataFrame:
     ]
     metadata_df = metadata_df[metadata_cols]
     # Use pandas merge instead of numpy array merge
+    # Ensure both are DataFrames before merging
+    if not isinstance(metadata_df, pd.DataFrame):
+        metadata_df = pd.DataFrame(metadata_df)
+    if not isinstance(df, pd.DataFrame):
+        df = pd.DataFrame(df)
+    
     df = pd.merge(metadata_df, df, left_index=True, right_index=True)
 
     return df
