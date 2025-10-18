@@ -19,6 +19,7 @@ def _run_in_poetry_venv(dir : str, cmd : List[str], env:Optional[Dict[str,str]] 
 
     result = subprocess.run(["poetry", "env", "info", "--path"], cwd=dir, check=True, capture_output=True, text=True)
     venv_path = result.stdout.strip()
+    print(f"venv path from running in {dir}: {venv_path}")
 
     path = env['PATH']
     env["PATH"] = f"{venv_path}/bin:{path}"
