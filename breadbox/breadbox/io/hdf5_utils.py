@@ -1,4 +1,4 @@
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Any, cast, TypeVar, Union
 
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
@@ -12,6 +12,7 @@ from pandas.core.algorithms import isin
 from breadbox.io.data_validation import DataFrameWrapper, PandasDataFrameWrapper
 import pyarrow as pa
 from pyarrow.parquet import ParquetFile
+from h5py import Dataset
 
 # This is the Object dtype with metadata for HDF5 to parse it as (variable-length)
 # string. The metadata is not used for checking equality.
@@ -127,34 +128,36 @@ def read_hdf5_file(
 ):
     """Return subsetted df based on provided feature and sample indexes. If either feature or sample indexes is None then return all features or samples"""
     with h5py.File(path, mode="r") as f:
-        row_len, col_len = f["data"].shape  # type: ignore
+        data_dataset = cast(Dataset, f["data"])
+        row_len, col_len = data_dataset.shape
+        
         if feature_indexes is not None and sample_indexes is not None:
             _validate_read_size(len(feature_indexes), len(sample_indexes))
             # Not an optimized way of subsetting data but probably fine
-            data = f["data"][sample_indexes, :][:, feature_indexes]
-            feature_ids = f["features"][feature_indexes]
-            sample_ids = f["samples"][sample_indexes]
+            data = data_dataset[sample_indexes, :][:, feature_indexes]
+            feature_ids = cast(List[bytes], f["features"][feature_indexes])  # type: ignore
+            sample_ids = cast(List[bytes], f["samples"][sample_indexes])  # type: ignore
         elif feature_indexes is not None:
             _validate_read_size(len(feature_indexes), row_len)
-            data = f["data"][:, feature_indexes]
-            feature_ids = f["features"][feature_indexes]
-            sample_ids = f["samples"]
+            data = data_dataset[:, feature_indexes]
+            feature_ids = cast(List[bytes], f["features"][feature_indexes])  # type: ignore
+            sample_ids = cast(List[bytes], f["samples"][:])  # type: ignore
         elif sample_indexes is not None:
             _validate_read_size(col_len, len(sample_indexes))
-            data = f["data"][sample_indexes]
-            feature_ids = f["features"]
-            sample_ids = f["samples"][sample_indexes]
+            data = data_dataset[sample_indexes]
+            feature_ids = cast(List[bytes], f["features"][:])  # type: ignore
+            sample_ids = cast(List[bytes], f["samples"][sample_indexes])  # type: ignore
         else:
             _validate_read_size(col_len, row_len)
-            data = f["data"]
-            feature_ids = f["features"]
-            sample_ids = f["samples"]
+            data = data_dataset[:]
+            feature_ids = cast(List[bytes], f["features"][:])  # type: ignore
+            sample_ids = cast(List[bytes], f["samples"][:])  # type: ignore
 
-        feature_ids = [x.decode("utf8") for x in feature_ids]
-        sample_ids = [x.decode("utf8") for x in sample_ids]
+        feature_ids_str = [x.decode("utf8") for x in feature_ids]
+        sample_ids_str = [x.decode("utf8") for x in sample_ids]
 
         df = pd.DataFrame(
-            data=data, columns=pd.Index(feature_ids), index=pd.Index(sample_ids)
+            data=data, columns=pd.Index(feature_ids_str), index=pd.Index(sample_ids_str)
         )
 
         # Must convert NaNs to None bc NaNs not json serializable
