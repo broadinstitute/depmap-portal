@@ -28,6 +28,10 @@ jobs:
       - name: Prepare breadbox client
         uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
 
+      - name: "Install breadbox and dependencies"
+        working-directory: ./breadbox
+        run: "poetry install"
+
       - name: "Install breadbox_client and dependencies"
         working-directory: ./breadbox-client
         run: "poetry install && poetry run pyright breadbox_facade"
