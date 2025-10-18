@@ -44,6 +44,8 @@ pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0
 pyright="^1.1.361"
 commitizen = "^3.22.0"
 
+[tool.poetry.scripts]
+bb-cmd = "breadbox.commands:cli"
 
 [[tool.poetry.source]]
 name = "public-python"

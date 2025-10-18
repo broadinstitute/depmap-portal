@@ -1,4 +1,5 @@
 import time
+from typing import List, Optional, Dict
 
 from pytest import fixture
 import subprocess
@@ -11,6 +12,39 @@ import socket
 breadbox_test_instance_port = 8291
 user = "admin"
 base_url = f"http://localhost:{breadbox_test_instance_port}"
+
+def _run_in_poetry_venv(dir : str, cmd : List[str], env:Optional[Dict[str,str]] = None, check: bool = False):
+    if env is None:
+        env = dict(os.environ)
+
+
+    print("dumping env")
+    for key, value in env.items():
+        print(f"{key}={value}")
+
+    if "VIRTUAL_ENV" in env:
+        print("Dropping virtual env from environment")
+        del env["VIRTUAL_ENV"]
+
+    print("poetry info")
+    subprocess.run(["poetry", "-vvv", "env", "info"], cwd=dir, env=env)
+
+    print('poetry config')
+    subprocess.run(["poetry", "-vvv", "config", "--list"], cwd=dir, env=env)
+
+    result = subprocess.run(["poetry", "env", "info", "--path"], cwd=dir, check=True, capture_output=True, text=True, env=env)
+    venv_path = result.stdout.strip()
+    print(f"venv path from running in {dir}: {venv_path}")
+
+    path = env['PATH']
+    env["PATH"] = f"{venv_path}/bin:{path}"
+
+    new_cmd = list(cmd)
+    new_cmd[0] = f"{venv_path}/bin/{cmd[0]}"
+    if check:
+        subprocess.run(new_cmd, cwd=dir, env=env, check=True)
+    else:
+        return subprocess.Popen(new_cmd, cwd=dir, env=env)
 
 # This takes a few seconds to startup breadbox, so create a single instance for all tests. This does mean
 # that tests will have to be more careful about not making assumptions about the state of the DB
@@ -47,11 +81,11 @@ def breadbox_proc():
         new_env["PYTHONUNBUFFERED"] = "1"
         new_env.update({"BREADBOX_SETTINGS_PATH": f"{tmpdir}/settings"})
 
-        cmd = ["poetry", "run", "./bb", "recreate-dev-db"]
-        subprocess.run(cmd, cwd="../breadbox", check=True, env=new_env)
+        cmd = ["bb-cmd", "recreate-dev-db"]
+        _run_in_poetry_venv("../breadbox", cmd, env=new_env, check=True)
 
-        cmd = ["poetry", "run", "./bb", "run", "--no-reload", "--port", str(breadbox_test_instance_port)]
-        proc = subprocess.Popen(cmd, cwd="../breadbox", env=new_env)
+        cmd = ["bb-cmd", "run", "--no-reload", "--port", str(breadbox_test_instance_port)]
+        proc = _run_in_poetry_venv("../breadbox", cmd, env=new_env)
 
         try:
             yield proc

@@ -8,6 +8,7 @@ on:
       - "breadbox-client/**"
       - ".github/workflows/build_breadbox_client.yaml"
 
+# 2
 #permissions:
 #  contents: write
 
@@ -28,9 +29,38 @@ jobs:
       - name: Prepare breadbox client
         uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
 
+      - name: "Install breadbox and dependencies"
+        working-directory: ./breadbox
+        run: "poetry install"
+
       - name: "Install breadbox_client and dependencies"
         working-directory: ./breadbox-client
-        run: "poetry install && poetry run pyright breadbox_facade"
+        run: "poetry install"
+
+      - name: getting env 1 path
+        working-directory: ./breadbox-client
+        run: "poetry run which python"
+
+      - name: getting env 1 path
+        working-directory: ./breadbox-client
+        run: "poetry show"
+
+      - name: getting env 2 path
+        working-directory: ./breadbox
+        run: "poetry run bash -c 'cd ../breadbox && poetry run which python'"
+
+      # this next one works fine. poetry run seems to want to activate and then run
+      - name: getting env 2 path
+        working-directory: ./breadbox
+        run: "poetry run bash -c 'cd ../breadbox && eval `poetry run which python` commands.py '"
+
+      - name: getting env 2 path
+        working-directory: ./breadbox
+        run: "poetry run bash -c 'cd ../breadbox && poetry run printenv'"
+
+      - name: getting env 2 path
+        working-directory: ./breadbox
+        run: "poetry run bash -c 'cd ../breadbox && poetry show'"
 
       - name: Running pyright
         working-directory: ./breadbox-client
