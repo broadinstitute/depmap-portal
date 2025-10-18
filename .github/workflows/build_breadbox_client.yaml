@@ -51,6 +51,10 @@ jobs:
 
       - name: getting env 2 path
         working-directory: ./breadbox
+        run: "poetry run bash -c 'cd ../breadbox && eval `poetry run which python` bb '"
+
+      - name: getting env 2 path
+        working-directory: ./breadbox
         run: "poetry run bash -c 'cd ../breadbox && poetry run printenv'"
 
       - name: getting env 2 path
