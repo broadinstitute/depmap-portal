@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import warnings
 
 import pandas as pd
-from sqlalchemy import and_, func, or_, select, true
+from sqlalchemy import and_, func, or_, select, true, false
 from sqlalchemy.sql import distinct
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
@@ -99,7 +99,9 @@ def get_datasets(
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    filter_clauses: List[ColumnElement[bool]] = []
+    if group_ids:
+        filter_clauses.append(Dataset.group_id.in_(group_ids))
 
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
@@ -156,7 +158,11 @@ def get_datasets(
                 .filter(and_(DatasetSample.given_id == sample_id,))
                 .all()
             ]
-            filter_clauses.append(dataset_poly.MatrixDataset.id.in_(dataset_ids))
+            if dataset_ids:
+                filter_clauses.append(dataset_poly.MatrixDataset.id.in_(dataset_ids))
+            else:
+                # If no datasets match, add a filter that will return no results
+                filter_clauses.append(false())
 
     if value_type is not None:
         filter_clauses.append(dataset_poly.MatrixDataset.value_type == value_type)
