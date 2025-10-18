@@ -12,7 +12,7 @@ from sqlalchemy import (
     Text,
     DateTime,
 )
-from sqlalchemy.orm import relationship, backref, Mapped, mapped_column
+from sqlalchemy.orm import relationship, backref, Mapped, mapped_column  # type: ignore
 from sqlalchemy.sql import func
 from breadbox.schemas.dataset import ColumnMetadata
 
@@ -53,17 +53,17 @@ class DimensionType(Base):
         CheckConstraint("(axis == 'feature') OR (axis == 'sample')", name="ck_axis"),
     )
 
-    name: Mapped[str] = mapped_column(String, nullable=False, primary_key=True)
-    display_name: Mapped[str] = mapped_column(
+    name: Mapped[str] = mapped_column(String, nullable=False, primary_key=True)  # type: ignore
+    display_name: Mapped[str] = mapped_column(  # type: ignore
         String, nullable=False, default=default_display_name
     )
-    id_column: Mapped[str] = mapped_column(
+    id_column: Mapped[str] = mapped_column(  # type: ignore
         String, nullable=False
     )  # The column name in the file
-    axis: Mapped[str] = mapped_column(
+    axis: Mapped[str] = mapped_column(  # type: ignore
         String, nullable=False
     )  # "feature" or "sample" type
-    dataset_id: Mapped[Optional[str]] = mapped_column(
+    dataset_id: Mapped[Optional[str]] = mapped_column(  # type: ignore
         String, ForeignKey("dataset.id")
     )  # One to One relationship
     dataset = relationship(
@@ -84,35 +84,35 @@ class Dataset(Base, UUIDMixin, GroupMixin):
         ),
     )
 
-    given_id: Mapped[Optional[str]] = mapped_column(String, unique=True)
-    name: Mapped[str] = mapped_column(String, nullable=False)
-    short_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    version: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    format: Mapped[str] = mapped_column(String, nullable=False)
-    data_type: Mapped[str] = mapped_column(
+    given_id: Mapped[Optional[str]] = mapped_column(String, unique=True)  # type: ignore
+    name: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
+    short_name: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # type: ignore
+    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # type: ignore
+    version: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # type: ignore
+    format: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
+    data_type: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey(DataType.data_type), nullable=False
     )
-    is_transient: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    is_transient: Mapped[bool] = mapped_column(Boolean, nullable=False)  # type: ignore
 
-    priority: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    priority: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # type: ignore
+    taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # type: ignore
 
-    dataset_metadata: Mapped[Optional[dict]] = mapped_column(
+    dataset_metadata: Mapped[Optional[dict]] = mapped_column(  # type: ignore
         JSON, nullable=True
     )  # jsonified dictionary
     # DB calculates timestamp itself
-    upload_date: Mapped[DateTime] = mapped_column(
+    upload_date: Mapped[DateTime] = mapped_column(  # type: ignore
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
     # When row is updated, sqlalchemy inserts a new timestamp. DB calculates timestamp itself
-    update_date: Mapped[DateTime] = mapped_column(
+    update_date: Mapped[DateTime] = mapped_column(  # type: ignore
         DateTime(timezone=True),
         onupdate=func.now(),
         server_default=func.now(),
         nullable=False,
     )
-    md5_hash: Mapped[Optional[str]] = mapped_column(
+    md5_hash: Mapped[Optional[str]] = mapped_column(  # type: ignore
         String(32)
     )  # NOTE: MD5 hashes are 128bits -> 32 hex digits
 
@@ -123,13 +123,13 @@ class TabularDataset(Dataset):
     __tablename__ = "tabular_dataset"
 
     # Cascade deletes so when Dataset row deleted, corresponding TabularDataset also deleted
-    id: Mapped[str] = mapped_column(
+    id: Mapped[str] = mapped_column(  # type: ignore
         String(36),
         ForeignKey("dataset.id", ondelete="CASCADE"),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
-    index_type_name: Mapped[str] = mapped_column(
+    index_type_name: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     __mapper_args__ = {"polymorphic_identity": "tabular_dataset"}
@@ -168,25 +168,25 @@ class MatrixDataset(Dataset):
         ),
     )
     # Cascade deletes so when Dataset row deleted, corresponding MatrixDataset also deleted
-    id: Mapped[str] = mapped_column(
+    id: Mapped[str] = mapped_column(  # type: ignore
         String(36),
         ForeignKey("dataset.id", ondelete="CASCADE"),
         primary_key=True,
         default=lambda: str(uuid.uuid4()),
     )
-    units: Mapped[str] = mapped_column(
+    units: Mapped[str] = mapped_column(  # type: ignore
         String, nullable=False
     )  # TODO: Limit to conitnuous value types later
-    feature_type_name: Mapped[Optional[str]] = mapped_column(
+    feature_type_name: Mapped[Optional[str]] = mapped_column(  # type: ignore
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=True,
     )
-    sample_type_name: Mapped[str] = mapped_column(
+    sample_type_name: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     feature_type = relationship("DimensionType", foreign_keys=[feature_type_name])
     sample_type = relationship("DimensionType", foreign_keys=[sample_type_name])
-    value_type: Mapped[ValueType] = mapped_column(Enum(ValueType), nullable=False)
-    allowed_values: Mapped[Optional[list]] = mapped_column(
+    value_type: Mapped[ValueType] = mapped_column(Enum(ValueType), nullable=False)  # type: ignore
+    allowed_values: Mapped[Optional[list]] = mapped_column(  # type: ignore
         JSON, nullable=True
     )  # jsonfied string of a list_strings
 
@@ -211,25 +211,25 @@ class Dimension(Base, UUIDMixin, GroupMixin):
             name="units_for_tabular_subtype",
         ),
     )
-    dataset_id: Mapped[str] = mapped_column(
+    dataset_id: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dataset.id", ondelete="CASCADE"), nullable=False
     )
     dataset = relationship(
         Dataset, backref=backref("dimensions", cascade="all, delete-orphan")
     )
-    given_id: Mapped[str] = mapped_column(
+    given_id: Mapped[str] = mapped_column(  # type: ignore
         String, nullable=False
     )  # name of series (column or index name of the dataset)
     # Denormalized data: this information is also stored in the dataset's corresponding
     # feature/sample/index type name column (the information is duplicated here for convenience)
-    dataset_dimension_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    subtype: Mapped[str] = mapped_column(String, nullable=False)  # discriminator column
+    dataset_dimension_type: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # type: ignore
+    subtype: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore  # discriminator column
 
     # NOTE: The type stubs package 'sqlalchemy-stubs' with mypy plugin 'sqlmypy' does not support SQLAlchemy's declared attributes decorator (and the module it's imported from) and this is still an open issue (https://github.com/dropbox/sqlalchemy-stubs/issues/97).
     # We are using the SQLAlchemy single table inheritance model for potential performance benefits and in doing so, fields with the same name in different subtables need to use this decorator.
     # Although SQLAlchemy's first-party mypy plugin packaged at sqlalchemy2-stubs has support for the declared attributes decorator, it seems to require more explicit type mappings with SQLAlchemy models which the original sqlalchemy-stubs package could automatically infer.
     # We have decided to work around the issue by sticking with the sqlmypy plugin using sqlalchemy-stubs and moving those fields to the parent table with constraints on its values
-    index: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    index: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)  # type: ignore
 
     __mapper_args__ = {"polymorphic_on": subtype, "polymorphic_identity": "dimension"}
 
@@ -255,10 +255,10 @@ class DatasetSample(Dimension):
 class TabularColumn(Dimension):
     __mapper_args__ = {"polymorphic_identity": "tabular_column"}
 
-    annotation_type: Mapped[Optional[AnnotationType]] = mapped_column(
+    annotation_type: Mapped[Optional[AnnotationType]] = mapped_column(  # type: ignore
         Enum(AnnotationType)
     )  # annotation type (i.e. text, categorical)
-    units: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    units: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # type: ignore
 
     tabular_cells = relationship(
         "TabularCell",
@@ -268,7 +268,7 @@ class TabularColumn(Dimension):
         uselist=True,
     )
 
-    references_dimension_type_name: Mapped[Optional[str]] = mapped_column(
+    references_dimension_type_name: Mapped[Optional[str]] = mapped_column(  # type: ignore
         String, ForeignKey("dimension_type.name"), nullable=True
     )
     references_dimension_type = relationship(DimensionType)
@@ -288,8 +288,8 @@ class TabularCell(Base, GroupMixin):
         ),
         UniqueConstraint("dimension_given_id", "tabular_column_id"),
     )
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tabular_column_id: Mapped[str] = mapped_column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)  # type: ignore
+    tabular_column_id: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dimension.id", ondelete="CASCADE")
     )
     tabular_column = relationship(
@@ -298,8 +298,8 @@ class TabularCell(Base, GroupMixin):
         back_populates="tabular_cells",
         lazy="select",
     )
-    dimension_given_id: Mapped[str] = mapped_column(String, nullable=False)
-    value: Mapped[Optional[str]] = mapped_column(Text)
+    dimension_given_id: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
+    value: Mapped[Optional[str]] = mapped_column(Text)  # type: ignore
 
 
 class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
@@ -320,28 +320,28 @@ class DimensionSearchIndex(Base, UUIDMixin, GroupMixin):
         ),
     )
 
-    property: Mapped[str] = mapped_column(String, nullable=False)
-    value: Mapped[Optional[str]] = mapped_column(String, nullable=True)
-    label: Mapped[str] = mapped_column(String, nullable=False)
+    property: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
+    value: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # type: ignore
+    label: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
     # the uk for the bag of words
-    dimension_type_name: Mapped[str] = mapped_column(
+    dimension_type_name: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     dimension_type = relationship(DimensionType,)
-    dimension_given_id: Mapped[str] = mapped_column(String, nullable=False)
+    dimension_given_id: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
 
 
 class PropertyToIndex(Base, UUIDMixin, GroupMixin):
     __tablename__ = "property_to_index"
 
-    dimension_type_name: Mapped[str] = mapped_column(
+    dimension_type_name: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
     )
     dimension_type = relationship(
         DimensionType,
         backref=backref("properties_to_index", cascade="all, delete-orphan"),
     )
-    property: Mapped[str] = mapped_column(String, nullable=False)
+    property: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
 
 
 class PrecomputedAssociation(Base, UUIDMixin):
@@ -359,17 +359,17 @@ class PrecomputedAssociation(Base, UUIDMixin):
         ),
     )
 
-    dataset_1_id: Mapped[str] = mapped_column(
+    dataset_1_id: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dataset.id"), nullable=False
     )
     dataset_1 = relationship(Dataset, foreign_keys=[dataset_1_id])
-    dataset_2_id: Mapped[str] = mapped_column(
+    dataset_2_id: Mapped[str] = mapped_column(  # type: ignore
         String, ForeignKey("dataset.id"), nullable=False
     )
     dataset_2 = relationship(Dataset, foreign_keys=[dataset_2_id])
 
-    axis: Mapped[str] = mapped_column(
+    axis: Mapped[str] = mapped_column(  # type: ignore
         String, nullable=False
     )  # "feature" or "sample" type
 
-    filename: Mapped[str] = mapped_column(String, nullable=False)
+    filename: Mapped[str] = mapped_column(String, nullable=False)  # type: ignore
