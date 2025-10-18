@@ -49,6 +49,7 @@ jobs:
         working-directory: ./breadbox
         run: "poetry run bash -c 'cd ../breadbox && poetry run which python'"
 
+      # this next one works fine. poetry run seems to want to activate and then run
       - name: getting env 2 path
         working-directory: ./breadbox
         run: "poetry run bash -c 'cd ../breadbox && eval `poetry run which python` commands.py '"
