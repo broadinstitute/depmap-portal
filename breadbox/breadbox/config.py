@@ -29,9 +29,16 @@ class Settings(BaseSettings):
         "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
     )
 
+    # if set, causes celery to executes tasks in a synchronous mode. Not exactly the same
+    # as normal execution, but everything runs within one process and no need for a broker
+    # or result backend. Should only be used for testing.
+    brokerless_celery_for_testing: bool = False
+
     LEGACY_CAS_BUCKET: Optional[str] = os.environ.get("LEGACY_CAS_BUCKET")
 
-    model_config = SettingsConfigDict(env_file=".env",)
+    model_config = SettingsConfigDict(
+        env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),
+    )
 
     @field_validator("host_scheme_override")
     def env_contains_colon(cls, v):

@@ -211,7 +211,15 @@ def check_api(path: str):
 
 @cli.command()
 @click.option("-p", "--with_proxy", is_flag=True, default=False)
-def run(with_proxy):
+@click.option("--port", default=8000, help="The port to listen on")
+@click.option("--host", default="127.0.0.1", help="Bind socket to this host")
+@click.option(
+    "--reload/--no-reload",
+    default=True,
+    help="Whether to monitor files and reload on changes",
+)
+# @click.option("--eager-tasks", default=False, is_flag=True, help="If set, sets up celery to execute tasks in 'eager' mode. (ie: without being dispatched to a worker)")
+def run(with_proxy: bool, port: int, host: str, reload: bool):
     # before running, try reading settings to make sure they're valid
     # this function will throw an exception if there's a problem and
     # better to discover and abort now rather then when the
@@ -226,14 +234,21 @@ def run(with_proxy):
     run_command_list = [
         "uvicorn",
         "breadbox.main:app",
-        "--reload",
-        "--reload-dir",
-        "breadbox",
+        "--port",
+        str(port),
+        "--host",
+        host,
     ]
     if with_proxy:
         run_command_list = run_command_list + ["--root-path", "/breadbox"]
+    if reload:
+        run_command_list = run_command_list + [
+            "--reload",
+            "--reload-dir",
+            "breadbox",
+        ]
 
-    subprocess.run(run_command_list, check=True)
+    os.execvp(run_command_list[0], run_command_list)
 
 
 @cli.command()
