@@ -20,7 +20,8 @@ class ResponseMixin:
 
     @classmethod
     def from_model(cls, model):
-        response_fields = cls.__fields__
+        from pydantic import fields
+        response_fields = fields.Field.__fields_set__  # type: ignore
         mapping = {}
         for field_name in response_fields:
             if field_name in cls.__mapping_overrides__:
