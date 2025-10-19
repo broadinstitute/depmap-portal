@@ -37,31 +37,6 @@ jobs:
         working-directory: ./breadbox-client
         run: "poetry install"
 
-      - name: getting env 1 path
-        working-directory: ./breadbox-client
-        run: "poetry run which python"
-
-      - name: getting env 1 path
-        working-directory: ./breadbox-client
-        run: "poetry show"
-
-      - name: getting env 2 path
-        working-directory: ./breadbox
-        run: "poetry run bash -c 'cd ../breadbox && poetry run which python'"
-
-      # this next one works fine. poetry run seems to want to activate and then run
-      - name: getting env 2 path
-        working-directory: ./breadbox
-        run: "poetry run bash -c 'cd ../breadbox && eval `poetry run which python` commands.py '"
-
-      - name: getting env 2 path
-        working-directory: ./breadbox
-        run: "poetry run bash -c 'cd ../breadbox && poetry run printenv'"
-
-      - name: getting env 2 path
-        working-directory: ./breadbox
-        run: "poetry run bash -c 'cd ../breadbox && poetry show'"
-
       - name: Running pyright
         working-directory: ./breadbox-client
         run: "poetry run pyright breadbox_facade"

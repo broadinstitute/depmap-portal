@@ -18,16 +18,11 @@ class Settings(BaseSettings):
     breadbox_env: str = "dev"
     # prefix all routes with api_prefix if it's not an empty string
     api_prefix: str = ""
+
     # used for configuring CORS allowed origins
     origins: List[str] = [
         "http://127.0.0.1:5000",
     ]
-    # CELERY_BROKER_URL: Union[RedisDsn, str] = os.environ.get(
-    #     "CELERY_BROKER_URL", "redis://127.0.0.1:6379/0"
-    # )
-    # CELERY_RESULT_BACKEND: Union[RedisDsn, str] = os.environ.get(
-    #     "CELERY_RESULT_BACKEND", "redis://127.0.0.1:6379/0"
-    # )
 
     # if set, causes celery to executes tasks in a synchronous mode. Not exactly the same
     # as normal execution, but everything runs within one process and no need for a broker
