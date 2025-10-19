@@ -27,12 +27,12 @@ def _run_in_poetry_venv(dir : str, cmd : List[str], env:Optional[Dict[str,str]] 
         del env["VIRTUAL_ENV"]
 
     print("poetry info")
-    subprocess.run(["poetry", "-vvv", "env", "info"], cwd=dir)
+    subprocess.run(["poetry", "-vvv", "env", "info"], cwd=dir, env=env)
 
     print('poetry config')
-    subprocess.run(["poetry", "-vvv", "config", "--list"], cwd=dir)
+    subprocess.run(["poetry", "-vvv", "config", "--list"], cwd=dir, env=env)
 
-    result = subprocess.run(["poetry", "env", "info", "--path"], cwd=dir, check=True, capture_output=True, text=True)
+    result = subprocess.run(["poetry", "env", "info", "--path"], cwd=dir, check=True, capture_output=True, text=True, env=env)
     venv_path = result.stdout.strip()
     print(f"venv path from running in {dir}: {venv_path}")
 
