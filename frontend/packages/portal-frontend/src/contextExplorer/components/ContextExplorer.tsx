@@ -191,7 +191,7 @@ export const ContextExplorer = () => {
       }
       handleSetCheckedDatatypes(newSelectedDatatypes);
     },
-    [checkedDatatypes]
+    [checkedDatatypes, handleSetCheckedDatatypes]
   );
 
   const onRefineYourContext = useCallback(
@@ -238,7 +238,12 @@ export const ContextExplorer = () => {
       }
       setIsLoading(false);
     },
-    [allLineageContextData, allMolecularSubtypeContextData, contextInfo]
+    [
+      allLineageContextData,
+      allMolecularSubtypeContextData,
+      contextInfo,
+      handleSetCheckedDatatypes,
+    ]
   );
 
   const customInfoImg = (
