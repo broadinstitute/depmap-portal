@@ -23,8 +23,14 @@ import {
 } from "../utils";
 import ContextExplorerTabs from "./ContextExplorerTabs";
 import LeftSearchPanel from "./LeftSearchPanel";
+import { useContextExplorerContext } from "../context/ContextExplorerContext";
 
 export const ContextExplorer = () => {
+  const {
+    checkedDatatypes,
+    handleSetCheckedDatatypes,
+  } = useContextExplorerContext();
+
   const [lineageSearchOptions, setLineageSearchOptions] = useState<
     { value: string; label: string; level: 0; numModels?: number }[]
   >([]);
@@ -70,9 +76,7 @@ export const ContextExplorer = () => {
 
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [contextPath, setContextPath] = useState<string[] | null>(null);
-  const [checkedDatatypes, setCheckedDatatypes] = useState<Set<string>>(
-    new Set()
-  );
+
   const [selectedTab, setSelectedTab] = useState<TabTypes | null>(null);
 
   const [selectedTreeType, setSelectedTreeType] = useState<TreeType>(
@@ -185,7 +189,7 @@ export const ContextExplorer = () => {
           $add: [clicked],
         });
       }
-      setCheckedDatatypes(newSelectedDatatypes);
+      handleSetCheckedDatatypes(newSelectedDatatypes);
     },
     [checkedDatatypes]
   );
@@ -198,6 +202,7 @@ export const ContextExplorer = () => {
     ) => {
       setIsLoading(true);
       deleteSpecificQueryParams(["context"]);
+      handleSetCheckedDatatypes(new Set<string>([]));
 
       if (
         (allMolecularSubtypeContextData || allLineageContextData) &&
