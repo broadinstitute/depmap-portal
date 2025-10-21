@@ -3,7 +3,7 @@ import re
 
 from commitizen.bump import update_version_in_files
 
-VERSION_TAG_PATTERN="breadbox-\\d+.\\d+.\\d+"
+VERSION_TAG_PATTERN="breadbox-(\\d+.\\d+.\\d+)"
 IGNORE_CONVENTIONAL_COMMIT_TYPES = ["build", "chore:", "ci", "docs", "style", "refactor", "perf", "test"]
 PATCH_CONVENTIONAL_COMMIT_TYPES = ["fix"]
 MINOR_CONVENTIONAL_COMMIT_TYPES = ["feat"]
@@ -38,16 +38,36 @@ def main():
 def update_version_in_files(version_str):
     for filename in ["pyproject.toml", "../breadbox-client/pyproject.toml"]:
         # read file, update version, and write it back out
+        with open(filename, 'r') as file:
+            content = file.read()
+        
+        # Update version using regex
+        updated_content = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{version_str}"', content)
+        
+        # Write updated content back
+        with open(filename, 'w') as file:
+            file.write(updated_content)
+        
         # execute 'git add' to the file
+        subprocess.run(["git", "add", filename], check=True)
+    
     # execute 'git commit'
+    subprocess.run(["git", "commit", "-m", f"build(breadbox): bump version to {version_str}"], check=True)
 
 def tag_repo(version_str):
-    # todo
+    tag_name = f"breadbox-{version_str}"
+    # Create an annotated tag
+    subprocess.run(["git", "tag", "-a", tag_name, "-m", f"Release {version_str}"], check=True)
+    # Push the tag to remote
+    subprocess.run(["git", "push", "origin", tag_name], check=True)
 
 def publish():
-    # run:
-    # poetry self add keyrings.google-artifactregistry-auth poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
-    # poetry publish --build --repository public-python
+    # Configure poetry to use Google Artifact Registry
+    subprocess.run(["poetry", "self", "add", "keyrings.google-artifactregistry-auth"], check=True)
+    subprocess.run(["poetry", "config", "repositories.public-python", "https://us-central1-python.pkg.dev/cds-artifacts/public-python/"], check=True)
+    
+    # Build and publish the package
+    subprocess.run(["poetry", "publish", "--build", "--repository", "public-python"], check=True)
 
 def rule_from_conventional_commit_type(commit_type, is_breaking):
     if is_breaking:
@@ -83,13 +103,34 @@ def to_sem_version(tags):
     given a list of tags, extract the semantic version number using VERSION_TAG_PATTERN. If there are multiple, returns the max.
     If there are no tags or none match, returns None.
     """
+    versions = []
+    for tag in tags:
+        match = re.match(VERSION_TAG_PATTERN, tag)
+        if match:
+            # Extract version number from the tag using regex group
+            version_str = match.group(1)
+            # Convert to tuple of integers for comparison
+            version_tuple = tuple(map(int, version_str.split('.')))
+            versions.append(version_tuple)
+    
+    if not versions:
+        return None
+    
+    # Return the highest version
+    return max(versions)
 
 def rule_from_conventional_commit(subject):
     """
     uses conventional commit nomeclature to determine the rule used to bump the version.
-    :param subject:
-    :return:
+    :param subject: The commit subject line
+    :return: A function that takes the current version and returns the new version
     """
+    match = re.match(CONVENTIONAL_COMMIT_SYNTAX, subject)
+    if match:
+        commit_type = match.group('committype')
+        is_breaking = bool(match.group('isbreaking'))
+        return rule_from_conventional_commit_type(commit_type, is_breaking)
+    return None
 
 
 
