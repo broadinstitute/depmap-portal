@@ -31,8 +31,8 @@ import argparse
 from commitizen.bump import update_version_in_files
 
 VERSION_TAG_PATTERN="breadbox-(\\d+.\\d+.\\d+)"
-IGNORE_CONVENTIONAL_COMMIT_TYPES = ["build", "chore:", "ci", "docs", "style", "refactor", "perf", "test"]
-PATCH_CONVENTIONAL_COMMIT_TYPES = ["fix"]
+IGNORE_CONVENTIONAL_COMMIT_TYPES = ["build", "chore", "ci", "docs", "style", "refactor", "perf", "test"]
+PATCH_CONVENTIONAL_COMMIT_TYPES = ["fix", "revert"]
 MINOR_CONVENTIONAL_COMMIT_TYPES = ["feat"]
 CONVENTIONAL_COMMIT_SYNTAX= ("(?P<committype>" + ( '|'.join(IGNORE_CONVENTIONAL_COMMIT_TYPES + PATCH_CONVENTIONAL_COMMIT_TYPES + MINOR_CONVENTIONAL_COMMIT_TYPES) ) + ")\\(breadbox\\)(?P<isbreaking>!?):.*")
 
