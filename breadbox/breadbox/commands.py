@@ -1,15 +1,6 @@
 import sys
 import os
 
-print("IN COMMANDS: path")
-print(sys.path)
-print("argv")
-print(sys.argv)
-print("env")
-print(os.environ)
-print("cwd")
-print(os.getcwd())
-
 import re
 from typing import List, Optional
 import click
@@ -289,7 +280,7 @@ def _get_version():
 def update_client():
     "Update the code for the breadbox client based. (Also saving out a new 'latest-breadbox-api.json' file)"
 
-    _export_api_spec("../breadbox-client/latest-breadbox-api.json")  # TODO: call helper
+    _export_api_spec("../breadbox-client/latest-breadbox-api.json")
 
     # use the breadbox-client-generator directory which has a different virtual env with incompatible
     # libraries, but we need it in order to run the openapi-python-client generator
