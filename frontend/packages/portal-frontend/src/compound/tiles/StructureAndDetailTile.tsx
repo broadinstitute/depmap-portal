@@ -129,7 +129,7 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
                   {metadata.GeneSymbolOfTargets[compoundId].map(
                     (gene: string, i: number) =>
                       i <
-                      metadata.GeneSymbolOfTargets[compoundId].length - 1 ? (
+                      metadata.GeneSymbolOfTargets[compoundId]!.length - 1 ? (
                         <a
                           href={getGenePageUrl(gene)}
                           target="_blank"
