@@ -87,8 +87,7 @@ def main():
             break
 
     if last_version is None:
-        print("No previous version tag found. Starting from 0.0.0")
-        last_version = (0, 0, 0)
+        raise AssertionError("No previous version tag found. Cannot proceed without a base version.")
 
     print(f"Applying {len(bump_rules)} version bump rules...")
     bump_rules.reverse()
