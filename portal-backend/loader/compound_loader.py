@@ -107,7 +107,7 @@ def get_target_genes(entrez_id_of_targets: str):
     ]
     genes = []
     for entrez_id in entrez_ids:
-        gene = Gene.get_gene_by_entrez(int(entrez_id), must=False)
+        gene = Gene.get_gene_by_entrez(int(float(entrez_id)), must=False)
         if gene is None:
             log_data_issue(
                 "CompoundTarget", "Missing gene", identifier=entrez_id, id_type="gene"
