@@ -370,6 +370,7 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
         )
 
     existing_user_upload_data_type = data_type_crud.get_data_type(db, "User upload")
+    print("debuging ", existing_user_upload_data_type)
     if not existing_user_upload_data_type:
         data_type_crud.add_data_type(db, "User upload")
 
