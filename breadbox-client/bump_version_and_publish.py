@@ -73,13 +73,11 @@ def main():
     last_version = None
     print("Analyzing git history for version tags and conventional commits...")
     for commit_hash, version, bump_rule, commit_subject in get_sem_versions_and_bumps():
-        bump_rules.append((commit_hash, commit_subject, bump_rule))
+        if bump_rule is not None:
+            bump_rules.append((commit_hash, commit_subject, bump_rule))
 
         if last_commit is None:
             last_commit = commit_hash
-            print(f"Using commit {last_commit[:8]} as reference point")
-
-        bump_rules.append(bump_rule)
 
         if version is not None:
             last_version = version
@@ -89,9 +87,14 @@ def main():
     if last_version is None:
         raise AssertionError("No previous version tag found. Cannot proceed without a base version.")
 
-    print(f"Applying {len(bump_rules)} version bump rules...")
+    if len(bump_rules) == 0:
+        print(
+            f"No changes found which require updating version")
+        return
+
+    print(f"Applying {len(bump_rules)} version bump rules, starting with {last_version} to generate version for {last_commit}...")
     bump_rules.reverse()
-    for i, (commit_hash, commit_subject, bump_rule) in enumerate(bump_rules):
+    for commit_hash, commit_subject, bump_rule in bump_rules:
         old_version = last_version
         last_version = bump_rule(*last_version)
         print(f"  {commit_subject}: {'.'.join(map(str, old_version))} -> {'.'.join(map(str, last_version))}")
@@ -203,12 +206,10 @@ def get_sem_versions_and_bumps():
         tags = [t.replace("tag: ", "") for t in tags]
         
         version = to_sem_version(tags)
-        if version:
-            print(f"  Found version {'.'.join(map(str, version))} at commit {commit_hash[:8]}")
-            
+
         bump_rule = rule_from_conventional_commit(subject)
-        if bump_rule is not None:
-            print(f"  Found conventional commit at {commit_hash[:8]}: {subject}")
+        if bump_rule is not None or version is not None:
+            # print(f"  Found conventional commit at {commit_hash[:8]}: {subject}")
             yield commit_hash, version, bump_rule, subject
 
 def to_sem_version(tags):
@@ -226,7 +227,6 @@ def to_sem_version(tags):
             try:
                 version_tuple = tuple(map(int, version_str.split('.')))
                 versions.append(version_tuple)
-                print(f"    Found version tag: {tag} -> {version_str}")
             except ValueError as e:
                 print(f"    Warning: Could not parse version from tag {tag}: {str(e)}")
     
@@ -235,7 +235,6 @@ def to_sem_version(tags):
     
     # Return the highest version
     highest = max(versions)
-    print(f"    Highest version found: {'.'.join(map(str, highest))}")
     return highest
 
 def rule_from_conventional_commit(subject):
