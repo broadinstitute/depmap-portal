@@ -30,37 +30,6 @@ env:
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
-  check-pr-title:
-    runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'pull_request' && github.base_ref == 'master' }}
-    defaults:
-      run:
-        working-directory: ./breadbox
-    steps:
-      - name: Check out
-        uses: actions/checkout@v3
-        with:
-          token: "${{ secrets.GITHUB_TOKEN }}"
-          fetch-depth: 0
-      - name: Install and configure Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: 1.7.1
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-      - name: Set up cache
-        uses: actions/cache@v3
-        id: cached-poetry-dependencies
-        with:
-          path: .venv
-          key: venv-${{ runner.os }}-${{ steps.full-python-version.outputs.version }}-${{ hashFiles('**/poetry.lock') }}
-      - name: Install dependencies from project
-        run: poetry install
-      #        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
-      # We want to use the rules defined in breadbox/pyproject.toml
-      - name: Check PR title
-        run: poetry run cz check -m '${{ github.event.pull_request.title }}'
-
   build-docker:
     runs-on: ubuntu-latest
     steps:
