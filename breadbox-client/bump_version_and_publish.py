@@ -72,8 +72,8 @@ def main():
     last_commit = None
     last_version = None
     print("Analyzing git history for version tags and conventional commits...")
-    for commit_hash, version, bump_rule in get_sem_versions_and_bumps():
-        bump_rules.append(bump_rule)
+    for commit_hash, version, bump_rule, commit_subject in get_sem_versions_and_bumps():
+        bump_rules.append((commit_hash, commit_subject, bump_rule))
 
         if last_commit is None:
             last_commit = commit_hash
@@ -91,10 +91,10 @@ def main():
 
     print(f"Applying {len(bump_rules)} version bump rules...")
     bump_rules.reverse()
-    for i, bump_rule in enumerate(bump_rules):
+    for i, (commit_hash, commit_subject, bump_rule) in enumerate(bump_rules):
         old_version = last_version
         last_version = bump_rule(*last_version)
-        print(f"  Rule {i+1}: {'.'.join(map(str, old_version))} -> {'.'.join(map(str, last_version))}")
+        print(f"  {commit_subject}: {'.'.join(map(str, old_version))} -> {'.'.join(map(str, last_version))}")
 
     version_str = ".".join(map(str, last_version))
     print(f"New version: {version_str}")
@@ -209,7 +209,7 @@ def get_sem_versions_and_bumps():
         bump_rule = rule_from_conventional_commit(subject)
         if bump_rule is not None:
             print(f"  Found conventional commit at {commit_hash[:8]}: {subject}")
-            yield commit_hash, version, bump_rule
+            yield commit_hash, version, bump_rule, subject
 
 def to_sem_version(tags):
     """
