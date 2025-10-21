@@ -18,10 +18,11 @@ The script follows semantic versioning principles:
 - PATCH version for bug fixes (fix)
 
 Usage:
-  python bump_version_and_publish.py [--dryrun]
+  python bump_version_and_publish.py [--dryrun] [--dry-run-if-not-branch BRANCH]
 
 Options:
-  --dryrun    Run without making actual commits or publishing
+  --dryrun                     Run without making actual commits or publishing
+  --dry-run-if-not-branch      Run in dry run mode if current branch is not the specified branch
 """
 
 import subprocess
@@ -36,12 +37,34 @@ PATCH_CONVENTIONAL_COMMIT_TYPES = ["fix", "revert"]
 MINOR_CONVENTIONAL_COMMIT_TYPES = ["feat"]
 CONVENTIONAL_COMMIT_SYNTAX= ("(?P<committype>" + ( '|'.join(IGNORE_CONVENTIONAL_COMMIT_TYPES + PATCH_CONVENTIONAL_COMMIT_TYPES + MINOR_CONVENTIONAL_COMMIT_TYPES) ) + ")\\(breadbox\\)(?P<isbreaking>!?):.*")
 
+def get_current_branch():
+    """Get the name of the current git branch"""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            text=True
+        ).strip()
+    except Exception as e:
+        print(f"Error getting current branch: {str(e)}")
+        return None
+
 def main():
     parser = argparse.ArgumentParser(description="Bump version and publish breadbox client")
     parser.add_argument("--dryrun", action="store_true", help="Skip git commits and publishing")
+    parser.add_argument("--dry-run-if-not-branch", metavar="BRANCH", help="Run in dry run mode if current branch is not BRANCH")
     args = parser.parse_args()
     
-    if args.dryrun:
+    # Determine if we should run in dry run mode
+    run_dryrun = args.dryrun
+    
+    # Check branch condition if specified
+    if args.dry_run_if_not_branch and not run_dryrun:
+        current_branch = get_current_branch()
+        if current_branch != args.dry_run_if_not_branch:
+            run_dryrun = True
+            print(f"Current branch '{current_branch}' is not '{args.dry_run_if_not_branch}', running in DRY RUN mode")
+    
+    if run_dryrun:
         print("Running in DRY RUN mode - no changes will be committed or published")
     
     print("Starting version bump process...")
@@ -79,9 +102,9 @@ def main():
     print(f"New version: {version_str}")
     
     print("Updating version in files...")
-    update_version_in_files(version_str, dryrun=args.dryrun)
+    update_version_in_files(version_str, dryrun=run_dryrun)
     
-    if not args.dryrun:
+    if not run_dryrun:
         print("Tagging repository...")
         tag_repo(version_str)
         
