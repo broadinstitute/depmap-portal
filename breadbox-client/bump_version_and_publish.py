@@ -1,3 +1,29 @@
+#!/usr/bin/env python3
+"""
+Breadbox Version Bumping and Publishing Script
+=============================================
+
+This script automates the process of versioning and publishing the breadbox client package.
+It performs the following steps:
+
+1. Analyzes git history to find version tags and conventional commits
+2. Determines the appropriate version bump based on conventional commit messages
+3. Updates version numbers in pyproject.toml files
+4. Creates a git tag for the new version
+5. Publishes the package to Google Artifact Registry
+
+The script follows semantic versioning principles:
+- MAJOR version for breaking changes (indicated by '!' in commit message)
+- MINOR version for new features (feat)
+- PATCH version for bug fixes (fix)
+
+Usage:
+  python bump_version_and_publish.py [--dryrun]
+
+Options:
+  --dryrun    Run without making actual commits or publishing
+"""
+
 import subprocess
 import re
 import argparse
