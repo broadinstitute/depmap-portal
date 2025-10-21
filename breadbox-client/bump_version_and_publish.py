@@ -118,7 +118,7 @@ def main():
         print("DRY RUN complete - no changes were committed")
 
 def update_version_in_files(version_str, dryrun=False):
-    for filename in ["pyproject.toml", "../breadbox-client/pyproject.toml"]:
+    for filename in ["pyproject.toml", "../breadbox/pyproject.toml"]:
         print(f"  Updating version in {filename}...")
         try:
             # read file, update version, and write it back out
@@ -250,7 +250,6 @@ def rule_from_conventional_commit(subject):
         rule = rule_from_conventional_commit_type(commit_type, is_breaking)
         if rule:
             bump_type = "MAJOR" if is_breaking else ("MINOR" if commit_type in MINOR_CONVENTIONAL_COMMIT_TYPES else "PATCH")
-            print(f"    Conventional commit found: {commit_type} -> {bump_type} bump")
         return rule
     return None
 
