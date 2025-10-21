@@ -7,7 +7,7 @@ VERSION_TAG_PATTERN="breadbox-(\\d+.\\d+.\\d+)"
 IGNORE_CONVENTIONAL_COMMIT_TYPES = ["build", "chore:", "ci", "docs", "style", "refactor", "perf", "test"]
 PATCH_CONVENTIONAL_COMMIT_TYPES = ["fix"]
 MINOR_CONVENTIONAL_COMMIT_TYPES = ["feat"]
-CONVENTIONAL_COMMIT_SYNTAX= ("(?P<committype>" + ( '|'.join(IGNORE_CONVENTIONAL_COMMIT_TYPES + PATCH_CONVENTIONAL_COMMIT_TYPES + MINOR_CONVENTIONAL_COMMIT_TYPES) ) + ")\(breadbox\)(?P<isbreaking>!?):.*"
+CONVENTIONAL_COMMIT_SYNTAX= ("(?P<committype>" + ( '|'.join(IGNORE_CONVENTIONAL_COMMIT_TYPES + PATCH_CONVENTIONAL_COMMIT_TYPES + MINOR_CONVENTIONAL_COMMIT_TYPES) ) + ")\\(breadbox\\)(?P<isbreaking>!?):.*")
 
 def main():
     bump_rules = []
@@ -95,8 +95,7 @@ def get_sem_versions_and_bumps():
         version = to_sem_version(tags)
         bump_rule = rule_from_conventional_commit(subject)
         if bump_rule is not None:
-
-        yield commit_hash, version, bump_rule
+            yield commit_hash, version, bump_rule
 
 def to_sem_version(tags):
     """
@@ -132,7 +131,5 @@ def rule_from_conventional_commit(subject):
         return rule_from_conventional_commit_type(commit_type, is_breaking)
     return None
 
-
-
-
-print(commits)
+if __name__ == "__main__":
+    main()
