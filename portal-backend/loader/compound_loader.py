@@ -101,13 +101,13 @@ def load_compounds(filename):
     )
 
 
-def get_target_genes(entrez_id_of_targets):
+def get_target_genes(entrez_id_of_targets: str):
     entrez_ids = [
         x.strip() for x in re.split("[,;]", entrez_id_of_targets) if x.strip() != ""
     ]
     genes = []
     for entrez_id in entrez_ids:
-        gene = Gene.get_gene_by_entrez(entrez_id, must=False)
+        gene = Gene.get_gene_by_entrez(int(entrez_id), must=False)
         if gene is None:
             log_data_issue(
                 "CompoundTarget", "Missing gene", identifier=entrez_id, id_type="gene"
