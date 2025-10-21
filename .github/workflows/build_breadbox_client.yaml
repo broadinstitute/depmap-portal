@@ -8,10 +8,6 @@ on:
       - "breadbox-client/**"
       - ".github/workflows/build_breadbox_client.yaml"
 
-# 2
-#permissions:
-#  contents: write
-
 env:
   DOCKER_REPO: us.gcr.io/broad-achilles/depmap-breadbox
   DOCKER_TAG: ga2-build-${{ github.run_number }}
