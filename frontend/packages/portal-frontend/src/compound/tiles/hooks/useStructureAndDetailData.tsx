@@ -30,7 +30,7 @@ function mapEntrezIdToSymbols(
 
   // 1. Calculate the new 'GeneSymbolOfTargets' map
   for (const compoundId in compoundMetadata.EntrezIDsOfTargets) {
-    if (compoundMetadata.EntrezIDsOfTargets.hasOwnProperty(compoundId)) {
+    if (Object.keys(compoundMetadata.EntrezIDsOfTargets).includes(compoundId)) {
       const entrezIds = compoundMetadata.EntrezIDsOfTargets[compoundId];
 
       const geneSymbols = entrezIds
