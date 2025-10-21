@@ -1,5 +1,6 @@
 import subprocess
 import re
+import argparse
 
 from commitizen.bump import update_version_in_files
 
@@ -10,6 +11,13 @@ MINOR_CONVENTIONAL_COMMIT_TYPES = ["feat"]
 CONVENTIONAL_COMMIT_SYNTAX= ("(?P<committype>" + ( '|'.join(IGNORE_CONVENTIONAL_COMMIT_TYPES + PATCH_CONVENTIONAL_COMMIT_TYPES + MINOR_CONVENTIONAL_COMMIT_TYPES) ) + ")\\(breadbox\\)(?P<isbreaking>!?):.*")
 
 def main():
+    parser = argparse.ArgumentParser(description="Bump version and publish breadbox client")
+    parser.add_argument("--dryrun", action="store_true", help="Skip git commits and publishing")
+    args = parser.parse_args()
+    
+    if args.dryrun:
+        print("Running in DRY RUN mode - no changes will be committed or published")
+    
     print("Starting version bump process...")
     bump_rules = []
 
@@ -45,17 +53,21 @@ def main():
     print(f"New version: {version_str}")
     
     print("Updating version in files...")
-    update_version_in_files(version_str)
+    update_version_in_files(version_str, dryrun=args.dryrun)
     
-    print("Tagging repository...")
-    tag_repo(version_str)
-    
-    print("Publishing package...")
-    publish()
-    
-    print("Version bump and publish complete!")
+    if not args.dryrun:
+        print("Tagging repository...")
+        tag_repo(version_str)
+        
+        print("Publishing package...")
+        publish()
+        
+        print("Version bump and publish complete!")
+    else:
+        print("DRY RUN: Skipping repository tagging and package publishing")
+        print("DRY RUN complete - no changes were committed")
 
-def update_version_in_files(version_str):
+def update_version_in_files(version_str, dryrun=False):
     for filename in ["pyproject.toml", "../breadbox-client/pyproject.toml"]:
         print(f"  Updating version in {filename}...")
         try:
@@ -70,16 +82,22 @@ def update_version_in_files(version_str):
             with open(filename, 'w') as file:
                 file.write(updated_content)
             
-            # execute 'git add' to the file
-            print(f"  Adding {filename} to git...")
-            subprocess.run(["git", "add", filename], check=True)
+            if not dryrun:
+                # execute 'git add' to the file
+                print(f"  Adding {filename} to git...")
+                subprocess.run(["git", "add", filename], check=True)
+            else:
+                print(f"  DRY RUN: Would add {filename} to git")
         except Exception as e:
             print(f"Error updating {filename}: {str(e)}")
             raise
     
-    # execute 'git commit'
-    print("  Committing version changes...")
-    subprocess.run(["git", "commit", "-m", f"build(breadbox): bump version to {version_str}"], check=True)
+    if not dryrun:
+        # execute 'git commit'
+        print("  Committing version changes...")
+        subprocess.run(["git", "commit", "-m", f"build(breadbox): bump version to {version_str}"], check=True)
+    else:
+        print("  DRY RUN: Would commit version changes")
 
 def tag_repo(version_str):
     tag_name = f"breadbox-{version_str}"
