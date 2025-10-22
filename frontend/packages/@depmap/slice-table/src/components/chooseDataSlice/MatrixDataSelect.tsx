@@ -83,6 +83,7 @@ function MatrixDataSelect({ defaultValue, index_type_name, onChange }: Props) {
   if (defaultValue && !valueAsDimension) {
     return <div>Loading...</div>;
   }
+
   return (
     <DimensionSelectV2
       mode="entity-only"
@@ -90,6 +91,8 @@ function MatrixDataSelect({ defaultValue, index_type_name, onChange }: Props) {
       index_type={index_type_name}
       value={valueAsDimension}
       onChange={async (dimension) => {
+        setValueAsDimension(dimension as DataExplorerPlotConfigDimensionV2);
+
         const sliceQuery = await convertDimensionToSliceQuery(dimension);
         onChange(sliceQuery);
       }}

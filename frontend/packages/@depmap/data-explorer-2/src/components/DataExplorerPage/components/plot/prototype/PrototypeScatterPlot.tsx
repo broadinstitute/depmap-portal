@@ -411,7 +411,7 @@ function PrototypeScatterPlot({
 
     if (contColorData && contLegendKeys) {
       const sortedX: (number | null)[] = [];
-      const sortedY: number[] = [];
+      const sortedY: (number | null)[] = [];
       const sortedColor: (number | null)[] = [];
       const hoverColor: string[] = [];
       const sortedText: string[] = [];
@@ -447,8 +447,8 @@ function PrototypeScatterPlot({
         })
         .forEach(({ origIndex }, i: number) => {
           contTraceIndex.push(origIndex);
-          sortedX.push(visible[origIndex] ? x[origIndex] : null);
-          sortedY.push(y[origIndex]);
+          sortedX.push(templateTrace.x[origIndex]);
+          sortedY.push(templateTrace.y[origIndex]);
           sortedColor.push(contColorData[origIndex]);
           hoverColor.push(colorMap![contLegendKeys[origIndex]]);
           sortedText.push(text[origIndex]);
