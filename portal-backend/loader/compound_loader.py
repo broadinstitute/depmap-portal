@@ -58,7 +58,7 @@ def load_compounds(filename):
                     entity_alias=alias_objects,
                     compound_id=row["CompoundID"],
                     target_or_mechanism=row["TargetOrMechanism"],
-                    target_gene=get_target_genes(row["GeneSymbolOfTargets"]),
+                    target_gene=get_target_genes(row["EntrezIDsOfTargets"]),
                     smiles=row["SMILES"],
                     inchikey=row["InChIKey"],
                     units=units,
@@ -101,16 +101,16 @@ def load_compounds(filename):
     )
 
 
-def get_target_genes(gene_name_of_targets):
-    labels = [
-        x.strip() for x in re.split("[,;]", gene_name_of_targets) if x.strip() != ""
+def get_target_genes(entrez_id_of_targets: str):
+    entrez_ids = [
+        x.strip() for x in re.split("[,;]", entrez_id_of_targets) if x.strip() != ""
     ]
     genes = []
-    for label in labels:
-        gene = Gene.get_by_label(label, must=False)
+    for entrez_id in entrez_ids:
+        gene = Gene.get_gene_by_entrez(int(float(entrez_id)), must=False)
         if gene is None:
             log_data_issue(
-                "CompoundTarget", "Missing gene", identifier=label, id_type="gene"
+                "CompoundTarget", "Missing gene", identifier=entrez_id, id_type="gene"
             )
         else:
             genes.append(gene)
