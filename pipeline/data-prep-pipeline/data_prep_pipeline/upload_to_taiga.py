@@ -76,10 +76,7 @@ if __name__ == "__main__":
 
     tc = create_taiga_client_v3()
 
-    dataset_id_with_latest_version = tc.get_latest_version_id(args.dataset_id)
-    existing_file_taiga_id = (
-        f"{dataset_id_with_latest_version}/{args.matrix_name_in_taiga}"
-    )
+    existing_file_taiga_id = f"{args.dataset_id}/{args.matrix_name_in_taiga}"
     print(f"Taiga ID of the existing file: {existing_file_taiga_id}")
 
     # Check if the file with the same name already exists in the dataset
