@@ -5,13 +5,16 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import ContextExplorer from "src/contextExplorer/components/ContextExplorer";
 import "react-bootstrap-typeahead/css/Typeahead.css";
 import "src/common/styles/typeahead_fix.scss";
+import { ContextExplorerContextProvider } from "src/contextExplorer/context/ContextExplorerContext";
 
 const container = document.getElementById("react-context-explorer");
 
 const App = () => {
   return (
     <ErrorBoundary>
-      <ContextExplorer />
+      <ContextExplorerContextProvider>
+        <ContextExplorer />
+      </ContextExplorerContextProvider>
     </ErrorBoundary>
   );
 };

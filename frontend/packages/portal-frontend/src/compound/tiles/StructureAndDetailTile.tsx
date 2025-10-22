@@ -122,14 +122,15 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
                 {metadata.TargetOrMechanism[compoundId]}
               </div>
             )}
-            {metadata.GeneSymbolOfTargets[compoundId] &&
-              metadata.GeneSymbolOfTargets[compoundId].length > 0 && (
+            {Object.keys(metadata.GeneSymbolOfTargets).includes(compoundId) &&
+              metadata.GeneSymbolOfTargets[compoundId] &&
+              metadata.GeneSymbolOfTargets[compoundId]!.length > 0 && (
                 <div className={styles.metadataLine}>
                   <h4 className={styles.metadataLineLabel}>Target: </h4>
-                  {metadata.GeneSymbolOfTargets[compoundId].map(
+                  {metadata.GeneSymbolOfTargets[compoundId]?.map(
                     (gene: string, i: number) =>
                       i <
-                      metadata.GeneSymbolOfTargets[compoundId].length - 1 ? (
+                      metadata.GeneSymbolOfTargets[compoundId]!.length - 1 ? (
                         <a
                           href={getGenePageUrl(gene)}
                           target="_blank"
