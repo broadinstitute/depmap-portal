@@ -35,8 +35,7 @@ rule transform_fusion:
             "type": "predictability_fusion",
             "filename": {"$filename": "fusion.csv"},
         }
-    run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv"
-
+    run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv --rows-per-model"
 
 rule transform_lineage:
     inputs:
