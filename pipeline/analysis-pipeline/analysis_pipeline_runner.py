@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -104,8 +105,7 @@ class AnalysisPipelineRunner(PipelineRunner):
 
     def track_dataset_usage_from_templates(self, config):
         """Track dataset usage from template files for analysis pipeline."""
-
-        # Look for DO-NOT-EDIT-ME files that contain dataset IDs
+        # Look for DO-NOT-EDIT-ME files that contain the release taiga ID
         pipeline_dir = Path("pipeline/analysis-pipeline")
         version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
 
@@ -113,20 +113,20 @@ class AnalysisPipelineRunner(PipelineRunner):
             try:
                 with open(version_file, "r") as f:
                     content = f.read()
-                    # Extract dataset IDs from version file
-                    import re
 
-                    # "dataset_id": "some-taiga-id.version/name"
-                    dataset_pattern = r'"dataset_id":\s*"([^"]+)"'
-                    dataset_ids = re.findall(dataset_pattern, content)
+                    # Find the release_taiga_id entry specifically
+                    # Pattern matches: "type": "release_taiga_id" followed by "dataset_id": "..."
+                    release_pattern = (
+                        r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
+                    )
+                    match = re.search(release_pattern, content, re.DOTALL)
 
-                    # Log each unique dataset usage
-                    for dataset_id in set(dataset_ids):
-                        if "/" in dataset_id and "." in dataset_id:
-                            # Basic validation - should look like taiga ID
-                            if len(dataset_id.split("/")[0]) > 5:
-                                self.log_dataset_usage(dataset_id)
-                                print(f"Tracked dataset usage: {dataset_id}")
+                    if match:
+                        release_taiga_id = match.group(1)
+                        self.log_dataset_usage(release_taiga_id)
+                        print(f"Tracked release dataset usage: {release_taiga_id}")
+                        # Only log once per file, so break after finding it
+                        break
 
             except Exception as e:
                 print(

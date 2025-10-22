@@ -1,8 +1,7 @@
-# Destination Taiga ID is needed to know where to upload the transformed files
-# This only happens in the data-prep-pipeline
+# Current release taiga id
 add-if-missing {
  "type": "release_taiga_id",
- "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
+ "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname)
 }
 
 # CN gene expression data

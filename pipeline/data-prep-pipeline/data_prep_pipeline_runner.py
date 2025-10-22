@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -120,7 +121,7 @@ class DataPrepPipelineRunner(PipelineRunner):
 
     def track_dataset_usage(self, config):
         """Track dataset usage from template files and log to usage tracker."""
-        # Look for DO-NOT-EDIT-ME files that contain dataset IDs
+        # Look for DO-NOT-EDIT-ME files that contain the release taiga ID
         pipeline_dir = Path("pipeline/data-prep-pipeline")
         version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
 
@@ -128,18 +129,20 @@ class DataPrepPipelineRunner(PipelineRunner):
             try:
                 with open(version_file, "r") as f:
                     content = f.read()
-                    # Extract dataset IDs from version file
-                    import re
 
-                    # Find patterns like "dataset_id": "some-taiga-id.version/name"
-                    dataset_pattern = r'"dataset_id":\s*"([^"]+)"'
-                    dataset_ids = re.findall(dataset_pattern, content)
+                    # Find the release_taiga_id entry specifically
+                    # Pattern matches: "type": "release_taiga_id" followed by "dataset_id": "..."
+                    release_pattern = (
+                        r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
+                    )
+                    match = re.search(release_pattern, content, re.DOTALL)
 
-                    # Log each dataset usage
-                    for dataset_id in dataset_ids:
-                        if "/" in dataset_id and "." in dataset_id:
-                            self.log_dataset_usage(dataset_id)
-                            print(f"Tracked dataset usage: {dataset_id}")
+                    if match:
+                        release_taiga_id = match.group(1)
+                        self.log_dataset_usage(release_taiga_id)
+                        print(f"Tracked release dataset usage: {release_taiga_id}")
+                        # Only log once per file, so break after finding it
+                        break
 
             except Exception as e:
                 print(
