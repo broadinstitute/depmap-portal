@@ -55,7 +55,7 @@ rule publish_driver_events:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_driver_events_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated driver events data for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated PredictabilityDriverEventsTransformed for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
 
 
 rule publish_genetic_derangement:
@@ -65,7 +65,7 @@ rule publish_genetic_derangement:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_genetic_derangement_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated genetic derangement data for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated PredictabilityGeneticDerangementTransformed for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
 
 
 rule publish_fusion:
@@ -75,7 +75,7 @@ rule publish_fusion:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_fusion_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated fusion data for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated PredictabilityFusionTransformed for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
 
 
 # rule publish_lineage:
@@ -95,4 +95,4 @@ rule publish_crispr_confounders:
         update_taiga_script=fileref('upload_to_taiga.py')
     outputs:{"type": "predictability_crispr_confounders_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated CRISPR confounders data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated PredictabilityCRISPRConfoundersTransformed data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
