@@ -181,5 +181,5 @@ add-if-missing {
     "type": "feature",
     "label": "rnaseq",
     "category": "gene",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionProteinCodingGenesTPMLogp1")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionTPMLogp1HumanProteinCodingGenes")
 }
