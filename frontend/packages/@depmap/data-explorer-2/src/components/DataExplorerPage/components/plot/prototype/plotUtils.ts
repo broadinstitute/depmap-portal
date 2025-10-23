@@ -1195,7 +1195,7 @@ export function categoryToDisplayName(
       (val) => val === "other" || val === "Other"
     );
 
-    return catSlice && !hasOther ? "Other" : "N/A";
+    return continuousBins || hasOther ? "N/A" : "Other";
   }
 
   if (typeof category === "symbol") {

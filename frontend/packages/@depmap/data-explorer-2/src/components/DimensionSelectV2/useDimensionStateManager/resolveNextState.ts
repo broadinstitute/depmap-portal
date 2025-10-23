@@ -208,6 +208,7 @@ async function resolveNextState(
         index_type,
         dataType,
         prev.valueTypes,
+        prev.allowNullFeatureType,
         {
           ...prev.dimension,
           axis_type,
