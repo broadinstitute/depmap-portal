@@ -52,15 +52,12 @@ def main():
     assert sum(pred["BroadID"].duplicated()) == 0
 
     drug_metadata = pd.read_csv(args.drug_metadata_csv)
-    # Remove the "BRD:" prefix from BroadID if it has a pattern of BRD:PRC-xxxxx such as PRC-000015573-601-10
-    # This is because the BroadID in both the predictability table and the dataset matrix does not have the BRD: prefix
-    # So by removing the prefix, we can match the BroadID in the drug_metadata, predictability, and the dataset matrix table
-    drug_metadata["BroadID"] = drug_metadata["BroadID"].apply(remove_brd_prefix)
     assert sum(drug_metadata["BroadID"].duplicated()) == 0
 
     # Filter drug metadata based on whether compound is in predictability compounds
     pred_drug_metadata_cpds = drug_metadata["BroadID"].isin(pred["BroadID"])
     pred_drug_metadata = drug_metadata[pred_drug_metadata_cpds]
+
     assert (
         len(pred_drug_metadata) > 0
     ), "No drug metadata found for predictability compounds"
