@@ -80,7 +80,6 @@ def main():
     merged_df = pred.merge(pred_drug_metadata, on="BroadID", how="left")
 
     # Filter dataset by compound ids in predictability compounds
-    breakpoint()
     dataset_df = dataset_df.loc[pred["BroadID"]]
 
     # Calculate the bimodality coefficient for each compound row and merge
