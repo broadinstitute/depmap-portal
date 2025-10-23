@@ -636,11 +636,7 @@ class DownloadFile:
 
     @property
     def url(self):
-        if current_app.config["ENABLED_FEATURES"].use_taiga_urls_downloads_page:
-            # queries to the db use .taiga_id. outward links use .original_taiga_id
-            assert self.original_taiga_id is not None
-            return self._url.get_url()
-        elif isinstance(self._url, str):
+        if isinstance(self._url, str):
             return self._url
         elif isinstance(self._url, RetractedUrl):
             return None

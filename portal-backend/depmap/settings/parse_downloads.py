@@ -339,11 +339,20 @@ def _parse_downloads(downloads_paths: List[str]) -> DownloadInfoFromConfig:
     )
 
 
+def prioritize_nonpublic_downloads(path: str) -> int:
+    target_suffix = "/shared/nonpublic_downloads"
+    if path.endswith(target_suffix):
+        return 0
+    else:
+        return 1
+
+
 def _parse_downloads_with_caching(downloads_paths: List[str]) -> DownloadInfoFromConfig:
     """
     Checks to see if the index files in any of the given paths have changed. If it has, it will re-parse the files
     """
     timestamp = None
+
     for downloads_path in downloads_paths:
         index_path = os.path.join(downloads_path, "index.yaml")
 
@@ -408,6 +417,9 @@ def get_taiga_ids_from_all_downloads():
 # If this is called directly, it WILL BYPASS ACCESS CONTROLS. For access controls use get_download_list
 def parse_downloads_unsafe() -> DownloadInfoFromConfig:
     downloads_paths = current_app.config["DOWNLOADS_PATHS"]  # pyright: ignore
+
+    # Sort so that the latest release is index 0 in the list of downloads.
+    downloads_paths.sort(key=prioritize_nonpublic_downloads)
     assert isinstance(downloads_paths, list)
     if len(downloads_paths) == 0:
         return DownloadInfoFromConfig(
