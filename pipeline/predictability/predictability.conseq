@@ -11,6 +11,11 @@
 # rules take in pred-biomarker-matrix-csv and pred-dep-matrix as inputs
 
 let testpred=""
+if "(config.get('publish_dest', 'INVALID')) != 'INVALID' and ('test-perf' not in config.get('publish_dest', 'INVALID'))":
+# run in testing mode if we're on the test-perf branch because we don't really need predictability results to test most of the
+# functionality
+let testpred="true"
+endif
 
 # Create different model configs for each target matrix (artifacts of type dep-matrix-ftr-unfiltered)
 rule process_model_config:

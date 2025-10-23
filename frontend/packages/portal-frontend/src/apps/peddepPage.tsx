@@ -18,7 +18,7 @@ if (!dataElement || !dataElement.textContent) {
 const App = () => {
   return (
     <ErrorBoundary>
-        <PeddepPage />
+      <PeddepPage />
     </ErrorBoundary>
   );
 };

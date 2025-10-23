@@ -700,6 +700,18 @@ const correlateDimension = memoize(
       );
     }
 
+    const representedIds: string[] = [];
+
+    Object.keys(data).forEach((key, i) => {
+      const values = data[key];
+      const distinct = new Set(values);
+      if (distinct.size === 1 && [...distinct][0] == null) {
+        delete data[key];
+      } else {
+        representedIds.push(ids[i]);
+      }
+    });
+
     const { columns, matrix } = correlationMatrix(data, use_clustering);
 
     const isAutoNamedContext = context.name.match(/^\(\d+ selected\)/) !== null;
@@ -707,7 +719,7 @@ const correlateDimension = memoize(
 
     let axis_label = isAutoNamedContext
       ? `correlation of ${context.name} ${entities}`
-      : `correlation of ${labels.length} ${context.name} ${entities}`;
+      : `correlation of ${columns.length} ${entities} (from context “${context.name}”)`;
 
     if (filter && filterIdentifiers) {
       const dName = filter.name;
@@ -737,7 +749,7 @@ const correlateDimension = memoize(
       values: (matrix as unknown) as number[],
     };
 
-    return [outputDimension, columns, ids];
+    return [outputDimension, columns, representedIds];
   }
 );
 

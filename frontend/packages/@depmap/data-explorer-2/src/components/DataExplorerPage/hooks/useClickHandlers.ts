@@ -39,10 +39,20 @@ export default function useClickHandlers(
       const labelToIdMap = Object.fromEntries(
         identifiers.map(({ label, id }) => [label, id])
       );
-      const ids =
-        plot.index_type === "depmap_model"
-          ? labels
-          : labels.map((label) => labelToIdMap[label]);
+
+      // "depmap_model" is a confusing type because its IDs were considered
+      // labels by the legacy portal.
+      let labelsAreDemapIds = plot.index_type === "depmap_model";
+
+      // To add an extra layer of confusion, this plot type's index isn't
+      // really a proper index.
+      if (plot.plot_type === "correlation_heatmap") {
+        labelsAreDemapIds = !labelsAreDemapIds;
+      }
+
+      const ids = labelsAreDemapIds
+        ? labels
+        : labels.map((label) => labelToIdMap[label]);
 
       const context = {
         name: defaultContextName(selectedLabels.size),

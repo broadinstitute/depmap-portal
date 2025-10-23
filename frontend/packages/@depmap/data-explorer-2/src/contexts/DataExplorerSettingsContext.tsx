@@ -11,7 +11,7 @@ const SettingsModal = React.lazy(
 );
 
 export const DEFAULT_SETTINGS = {
-  useBreadboxBackend: false,
+  useLegacyPortalBackend: false,
   plotStyles: {
     pointSize: 10,
     pointOpacity: 0.5,
@@ -114,8 +114,10 @@ const resolveSettingsWithDefaults = (newSettings: Settings) => {
 
 export const DataExplorerSettingsProvider = ({
   children,
+  feedbackUrl = "",
 }: {
   children: React.ReactNode;
+  feedbackUrl?: string;
 }) => {
   const [settings, setSettings] = useState<Settings>(() => {
     const storageItem = window.localStorage.getItem("data_explorer_2_settings");
@@ -134,6 +136,7 @@ export const DataExplorerSettingsProvider = ({
         <SettingsModal
           initialSettings={settings}
           defaultSettings={DEFAULT_SETTINGS}
+          feedbackUrl={feedbackUrl}
           onSave={(updatedSettings) => {
             window.localStorage.setItem(
               "data_explorer_2_settings",
@@ -143,22 +146,9 @@ export const DataExplorerSettingsProvider = ({
             hide();
 
             if (
-              updatedSettings.useBreadboxBackend !== settings.useBreadboxBackend
+              updatedSettings.useLegacyPortalBackend !==
+              settings.useLegacyPortalBackend
             ) {
-              const url = new URL(window.location.href);
-
-              url.searchParams.set(
-                "bb",
-                settings.useBreadboxBackend ? "1" : "0"
-              );
-              window.history.pushState({}, "", url);
-
-              url.searchParams.set(
-                "bb",
-                settings.useBreadboxBackend ? "0" : "1"
-              );
-              window.history.replaceState({}, "", url);
-
               window.location.reload();
             }
           }}
@@ -167,7 +157,7 @@ export const DataExplorerSettingsProvider = ({
       </React.Suspense>,
       container
     );
-  }, [settings]);
+  }, [settings, feedbackUrl]);
 
   return (
     <DataExplorerSettingsContext.Provider

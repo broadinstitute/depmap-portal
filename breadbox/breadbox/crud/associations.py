@@ -11,8 +11,9 @@ from breadbox.schemas.custom_http_exception import (
 import os
 from ..service import metadata
 from ..crud import access_control
-from typing import Optional
+from typing import Optional, List
 import packed_cor_tables
+from sqlalchemy import or_
 
 
 def _validate_association_table(
@@ -102,13 +103,22 @@ def add_association_table(
     return precomputed_assoc
 
 
-def get_association_tables(db: SessionWithUser, dataset_id: Optional[str]):
+def get_association_tables(
+    db: SessionWithUser,
+    dataset_id: Optional[str],
+    association_datasets: Optional[List[str]] = None,
+):
     from sqlalchemy.orm import aliased
 
     d1 = aliased(MatrixDataset)
     query = db.query(PrecomputedAssociation).join(d1, PrecomputedAssociation.dataset_1)
     if dataset_id is not None:
         query = query.filter(d1.id == dataset_id)
+    if association_datasets is not None:
+        d2 = aliased(MatrixDataset)
+        query = query.join(d2, PrecomputedAssociation.dataset_2).filter(
+            or_(d2.id.in_(association_datasets), d2.given_id.in_(association_datasets))
+        )  # support dataset_ids or given_ids
     return query.all()
 
 

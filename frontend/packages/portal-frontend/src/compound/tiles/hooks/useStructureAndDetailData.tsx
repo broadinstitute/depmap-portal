@@ -3,14 +3,58 @@ import { breadboxAPI } from "@depmap/api";
 import { fetchMetadata } from "src/compound/fetchDataHelpers";
 import { compoundImageBaseURL, pythonQuote } from "src/compound/utils";
 
-interface CompoundDetailsResponse {
-  GeneSymbolOfTargets: { [compoundId: string]: string[] };
+interface CompoundDetailsResponseWSymbols {
+  GeneSymbolOfTargets: { [compoundId: string]: string[] | null };
   TargetOrMechanism: { [compoundId: string]: string };
   SMILES: { [compoundId: string]: string | null };
   PubChemCID: { [compoundId: string]: string };
   ChEMBLID: { [compoundId: string]: string };
 }
 
+interface CompoundDetailsResponse {
+  EntrezIDsOfTargets: { [compoundId: string]: string[] | null };
+  TargetOrMechanism: { [compoundId: string]: string };
+  SMILES: { [compoundId: string]: string | null };
+  PubChemCID: { [compoundId: string]: string };
+  ChEMBLID: { [compoundId: string]: string };
+}
+
+type SymbolTargetMap = { [compoundId: string]: string[] | null };
+
+function mapEntrezIdToSymbols(
+  compoundMetadata: CompoundDetailsResponse,
+  geneMetadata: { label: { [key: number]: string } }
+): CompoundDetailsResponseWSymbols {
+  const symbolLookup = geneMetadata.label;
+  const geneSymbolOfTargets: SymbolTargetMap = {};
+
+  // 1. Calculate the new 'GeneSymbolOfTargets' map
+  for (const compoundId in compoundMetadata.EntrezIDsOfTargets) {
+    if (Object.keys(compoundMetadata.EntrezIDsOfTargets).includes(compoundId)) {
+      const entrezIds = compoundMetadata.EntrezIDsOfTargets[compoundId];
+
+      const geneSymbols = entrezIds
+        ? entrezIds.map((entrezId) => {
+            // Look up the symbol, using the Entrez ID as fallback if not found.
+            return symbolLookup[Number(entrezId)] || entrezId;
+          })
+        : null;
+
+      geneSymbolOfTargets[compoundId] = geneSymbols;
+    }
+  }
+
+  const { EntrezIDsOfTargets, ...otherMetadata } = compoundMetadata;
+
+  const output: CompoundDetailsResponseWSymbols = {
+    ...otherMetadata,
+
+    // Explicitly add the new, calculated field
+    GeneSymbolOfTargets: geneSymbolOfTargets,
+  };
+
+  return output;
+}
 function getCompoundImageUrl(smiles: string | null): string | null {
   if (smiles === null || smiles === "") {
     return null;
@@ -22,7 +66,10 @@ function getCompoundImageUrl(smiles: string | null): string | null {
 }
 
 export default function useStructureAndDetailData(compoundId: string) {
-  const [metadata, setMetdata] = useState<CompoundDetailsResponse | null>(null);
+  const [
+    metadata,
+    setMetdata,
+  ] = useState<CompoundDetailsResponseWSymbols | null>(null);
   const [structureImageUrl, setStructureImageUrl] = useState<string | null>(
     null
   );
@@ -43,13 +90,23 @@ export default function useStructureAndDetailData(compoundId: string) {
         const bbapi = breadboxAPI;
 
         const columnsOfInterest = [
-          "GeneSymbolOfTargets",
+          "EntrezIDsOfTargets",
           "TargetOrMechanism",
           "SMILES",
           "PubChemCID",
           "ChEMBLID",
         ];
 
+        // Get a mapping of entrez id --> gene symbol
+        const geneMetadata = await fetchMetadata<any>(
+          "gene",
+          null,
+          ["label"],
+          breadboxAPI,
+          "id"
+        );
+
+        // Has targets listed as entrez ids
         const compoundDetailMetadata = await fetchMetadata<CompoundDetailsResponse>(
           "compound_v2",
           [compoundId],
@@ -58,7 +115,13 @@ export default function useStructureAndDetailData(compoundId: string) {
           "id"
         );
 
-        setMetdata(compoundDetailMetadata);
+        // Updates the compound metadata to have targets listed as symbols for the UI
+        const compoundMetadataWSymbols = mapEntrezIdToSymbols(
+          compoundDetailMetadata,
+          geneMetadata
+        );
+
+        setMetdata(compoundMetadataWSymbols);
 
         const smiles = compoundDetailMetadata?.SMILES[compoundId];
         const imgUrl = getCompoundImageUrl(smiles);

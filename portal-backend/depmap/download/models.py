@@ -451,6 +451,7 @@ class DownloadFile:
         type: FileType,
         size: str,
         url: Union[BucketUrl, RetractedUrl, str],
+        version: Optional[int] = None,
         sub_type: Optional[FileSubtype] = None,  # Required on the most current release
         taiga_id: Optional[str] = None,
         canonical_taiga_id: Optional[str] = None,
@@ -473,6 +474,8 @@ class DownloadFile:
         assert isinstance(type, FileType)
         self.type: FileType = type
         self.sub_type: Optional[FileSubtype] = sub_type
+
+        self.version: Optional[int] = version
 
         self.size: str = size
         self._url: Union[BucketUrl, RetractedUrl, str] = url

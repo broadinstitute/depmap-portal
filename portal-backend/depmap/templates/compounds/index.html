@@ -94,6 +94,17 @@ active_tab_set = False %}
     >
   </li>
   {% set active_tab_set = True %} {% endif %}
+  {% if show_compound_correlations %}
+  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
+    <a
+      href="#corr_analysis"
+      aria-controls="corr_analysis"
+      role="tab"
+      data-toggle="tab"
+      >Correlation Analysis</a
+    >
+  </li>
+  {% set active_tab_set = True %} {% endif %}
 </ul>
 
 {% set active_tab_set = False %}
@@ -175,6 +186,14 @@ active_tab_set = False %}
     active_tab_set = True %}
   </div>
   {% endif %}
+  <div
+    role="tabpanel"
+    class="tab-pane {% if not active_tab_set %}active{% endif %}"
+    id="corr_analysis"
+  >
+    <div id="correlations-analysis-tab-content"></div>
+    {% set active_tab_set = True %}
+  </div>
 </div>
 {% endif %} {% if not has_datasets and not show_sensitivity_tab %}
 <p style="padding: 15px 0">No data was found on this compound.</p>
@@ -249,6 +268,12 @@ active_tab_set = False %}
           "compound",
           {{ predictability_custom_downloads_link | tojson }},
           {{ predictability_methodology_link | tojson }}
+        );
+      }
+      else if (target === "#corr_analysis") {
+        DepMap.initCorrelationAnalysisTab(
+          "correlations-analysis-tab-content",
+          {{name | tojson}},
         );
       }
       loadedTabs[target] = true;

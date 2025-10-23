@@ -12,7 +12,7 @@ rule create_cor_analysis_pairs:
         """
     run "python3 {{inputs.script.filename}} inputs.json results.json"
 
-rule run_cor_analysis_pair:
+rule run_cor_analysis_pair_v2:
     resources: {'slots': "0.05"} # let up to 20 of these run in parallel
     inputs:
         pair={'type': 'cor_input_pair'},

@@ -1,32 +1,14 @@
 import * as React from "react";
-
-const colors = [
-  { hex: "#A0DA38" },
-  { hex: "#4AC16D" },
-  { hex: "#1EA187" },
-  { hex: "#277F8E" },
-  { hex: "#365C8D" },
-  { hex: "#46327E" },
-  { hex: "#440154" },
-  { hex: "#F89540" },
-  { hex: "#CC4778" },
-];
+import styles from "../styles/CorrelationAnalysis.scss";
 
 interface DoseLegendProps {
-  doseColors: { hex: string; dose: string }[];
+  doseColors: { hex: string | undefined; dose: string }[];
 }
 
 export default function DoseLegend(props: DoseLegendProps) {
   const { doseColors } = props;
   return (
-    <div
-      style={{
-        border: "1px solid #d9d9d9",
-        padding: "10px",
-        maxWidth: "max-content",
-        maxHeight: "max-content",
-      }}
-    >
+    <div className={styles.doseLegendContainer}>
       <header>Dose</header>
       {doseColors.map((doseColor, idx) => (
         <div key={idx} style={{ display: "flex" }}>
