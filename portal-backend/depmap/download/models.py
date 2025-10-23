@@ -149,6 +149,16 @@ class DmcBucketUrl(BucketUrl):
         return "DmcBucketUrl({})".format(repr(self.file_name))
 
 
+class InternalBucketUrl(BucketUrl):
+    BUCKET = "depmap-internal-downloads"
+
+    def __init__(self, file_name, dl_name=None):
+        super().__init__(InternalBucketUrl.BUCKET, file_name=file_name, dl_name=dl_name)
+
+    def __repr__(self):
+        return "InternalBucketUrl({})".format(repr(self.file_name))
+
+
 class RetractedUrl:
     def __repr__(self):
         return "RetractedUrl()"
@@ -324,7 +334,9 @@ class DownloadRelease:
                 if isinstance(file._url, RetractedUrl):
                     assert file.retraction_override is not None
                 else:
-                    assert isinstance(file._url, DmcBucketUrl), file._url
+                    assert isinstance(file._url, DmcBucketUrl) or isinstance(
+                        file._url, InternalBucketUrl
+                    ), file._url
             terms = MockTerms()
         else:
             assert isinstance(terms, ReleaseTerms)

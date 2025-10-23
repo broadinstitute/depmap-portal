@@ -13,6 +13,7 @@ from depmap.download.models import (
     FileSource,
     FileSubtype,
     FileType,
+    InternalBucketUrl,
     ReleaseTerms,
     ReleaseType,
     RetractedUrl,
@@ -71,6 +72,10 @@ def get_summary_stats(stats: List[Dict[str, Any]]) -> SummaryStats:
 def get_bucket(url: dict):
     if url.get("bucket", "") == DmcBucketUrl.BUCKET:
         return DmcBucketUrl(url.get("file_name", ""), dl_name=url.get("dl_name", ""))
+    elif url.get("bucket", "") == InternalBucketUrl.BUCKET:
+        return InternalBucketUrl(
+            url.get("file_name", ""), dl_name=url.get("dl_name", "")
+        )
     else:
         return BucketUrl(
             url.get("bucket", ""),
@@ -111,7 +116,7 @@ def make_file(
     canonical_taiga_id = file.get("canonical_taiga_id", None)
 
     url: Union[
-        ExternalBucketUrl, DmcBucketUrl, RetractedUrl, str, Any
+        ExternalBucketUrl, DmcBucketUrl, InternalBucketUrl, RetractedUrl, str, Any
     ] = get_proper_url_format(file.get("url", ""))
 
     # Everything below this point is optional for DownloadFile
