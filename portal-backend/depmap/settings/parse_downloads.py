@@ -410,7 +410,6 @@ def get_taiga_ids_from_all_downloads():
 def parse_downloads_unsafe() -> DownloadInfoFromConfig:
     downloads_paths = current_app.config["DOWNLOADS_PATHS"]  # pyright: ignore
 
-    # Sort so that the latest release is index 0 in the list of downloads.
     assert isinstance(downloads_paths, list)
     if len(downloads_paths) == 0:
         return DownloadInfoFromConfig(
