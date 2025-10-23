@@ -339,14 +339,6 @@ def _parse_downloads(downloads_paths: List[str]) -> DownloadInfoFromConfig:
     )
 
 
-def prioritize_nonpublic_downloads(path: str) -> int:
-    target_suffix = "/shared/nonpublic_downloads"
-    if path.endswith(target_suffix):
-        return 0
-    else:
-        return 1
-
-
 def _parse_downloads_with_caching(downloads_paths: List[str]) -> DownloadInfoFromConfig:
     """
     Checks to see if the index files in any of the given paths have changed. If it has, it will re-parse the files
