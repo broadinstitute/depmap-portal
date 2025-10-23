@@ -6,6 +6,7 @@ import { Tooltip } from "@depmap/common-components";
 import { CollapsiblePanel } from "./CollapsiblePanel";
 import { DownloadGlyph, DownloadLink } from "@depmap/downloads";
 import { enabledFeatures } from "@depmap/globals";
+import { VersionBadge } from "./VersionBadge";
 
 interface DataFilePanelProps {
   data: DownloadTableData;
@@ -61,11 +62,29 @@ const CollapsiblePanelHeader = ({
   return (
     <span className={styles.accordionTitle}>
       <span className={styles.one}>
+        {file.version && <VersionBadge versionNumber={file.version} />}
         {file.retractionOverride
           ? file.fileName + " (retracted)"
           : file.fileName}
       </span>
-      <div className={styles.two}>{description}</div>
+      <Tooltip
+        id={`${file.fileName}-description-tooltip`}
+        content={description}
+        placement="top"
+        style={{
+          maxWidth: "500px",
+          width: "max-content",
+          maxHeight: "250px",
+          textOverflow: "ellipsis",
+          overflow: "hidden",
+          WebkitLineClamp: 10,
+          lineClamp: 10,
+          display: "-webkit-box",
+          WebkitBoxOrient: "vertical",
+        }}
+      >
+        <div className={styles.two}>{description}</div>
+      </Tooltip>
       {file.size && <span className={styles.three}>{file.size}</span>}
       <span className={styles.four}>
         <div className={styles.iconsContainer}>
@@ -136,6 +155,7 @@ const CollapsiblePanelBody = ({
     <div className={styles.accordionBodyContent}>
       <hr />
       <br />
+      <div className={styles.fileNameLabel}>{file.fileName}</div>
       <div className={styles.releaseLabel}>{file.releaseName}</div>
 
       <br />

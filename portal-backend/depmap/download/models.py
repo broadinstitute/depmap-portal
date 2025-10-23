@@ -225,7 +225,9 @@ class ReleaseTerms(Enum):
             "ccle": """CCLE publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("ccle", path="terms_and_conditions")
             ),
-            "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(url_for("public.terms")),
+            "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
+                url_for("public.terms")
+            ),
             "ctd2": """The CTD^2 releases data in accordance with their <a target="_blank" href="https://ocg.cancer.gov/programs/ctd2/using-ctd2-data">data release policy</a>""",
             "dmc": """Data for the Dependency Map Consortium is made available under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("public.terms")
@@ -462,6 +464,7 @@ class DownloadFile:
         type: FileType,
         size: str,
         url: Union[BucketUrl, TaigaOnly, RetractedUrl, str],
+        version: Optional[int] = None,
         sub_type: Optional[FileSubtype] = None,  # Required on the most current release
         taiga_id: Optional[str] = None,
         canonical_taiga_id: Optional[str] = None,
@@ -484,6 +487,8 @@ class DownloadFile:
         assert isinstance(type, FileType)
         self.type: FileType = type
         self.sub_type: Optional[FileSubtype] = sub_type
+
+        self.version: Optional[int] = version
 
         self.size: str = size
         self._url: Union[BucketUrl, TaigaOnly, RetractedUrl, str] = url
