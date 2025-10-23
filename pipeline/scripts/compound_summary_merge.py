@@ -8,13 +8,10 @@ sys.path.append(".")
 from hdf5_utils import read_hdf5
 
 
-def remove_brd_prefix(value):
-    # Split on 'BRD:' and check if 'PRC' follows immediately
-    # If so, return the value after 'BRD:'
-    # Otherwise, return the original value
-    if "BRD:" in value and "PRC" in value.split("BRD:")[1]:
-        return value.split("BRD:")[1]
-    return value
+def add_brd_prefix_if_necessary(x):
+    if x.startswith("PRC-"):
+        return "BRD:" + x
+    return x
 
 
 def main():
@@ -29,6 +26,7 @@ def main():
 
     pred = pd.read_csv(args.predictability_csv)
     dataset_df = read_hdf5(args.dataset_matrix_hdf5)
+    dataset_df.index = [add_brd_prefix_if_necessary(x) for x in dataset_df.index]
     assert sum(dataset_df.index.duplicated()) == 0
     assert sum(dataset_df.columns.duplicated()) == 0
     dataset_units = args.dataset_units
@@ -82,6 +80,7 @@ def main():
     merged_df = pred.merge(pred_drug_metadata, on="BroadID", how="left")
 
     # Filter dataset by compound ids in predictability compounds
+    breakpoint()
     dataset_df = dataset_df.loc[pred["BroadID"]]
 
     # Calculate the bimodality coefficient for each compound row and merge
