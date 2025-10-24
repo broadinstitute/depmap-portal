@@ -1,7 +1,12 @@
 import os
 import pathlib
+import time
+import uuid
 
 from fastapi.routing import APIRouter
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
+from .utils.debug_event_log import record_span
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,6 +66,9 @@ def create_app(settings: Settings):
             scheme_override=scheme_override,
             host_override=host_override,
         )
+    
+    # Add request logging middleware
+    app.add_middleware(RequestLoggingMiddleware)
 
     return app
 
@@ -68,6 +76,35 @@ def create_app(settings: Settings):
 def ensure_directories_exist(settings):
     if not os.path.exists(settings.filestore_location):
         os.mkdir(settings.filestore_location)
+
+
+class RequestLoggingMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "unknown")
+        method = scope.get("method", "unknown")
+        request_id = str(uuid.uuid4())
+        
+        # Create a span name that includes the HTTP method and path
+        span_name = f"HTTP {method} {path}"
+        
+        # Use the record_span context manager to track this request
+        with record_span(span_name):
+            # Capture the original send function to intercept the response
+            original_send = send
+            
+            async def wrapped_send(message):
+                # Pass through to the original send
+                await original_send(message)
+            
+            # Use the wrapped send function
+            await self.app(scope, receive, wrapped_send)
 
 
 class OverrideMiddleWare:
