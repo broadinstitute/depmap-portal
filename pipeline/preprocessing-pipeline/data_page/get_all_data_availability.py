@@ -474,7 +474,7 @@ def main(
         taiga_ids = json.load(input_json)
 
     # taiga ids
-    depmap_data_taiga_id = get_taiga_id(taiga_ids["depmap_data_taiga_id"])
+    release_taiga_id = get_taiga_id(taiga_ids["release_taiga_id"])
     depmap_oncref_taiga_id = get_taiga_id(taiga_ids["oncref_taiga_id"])
     rnai_drive_taiga_id = get_taiga_id(taiga_ids["rnai_drive_taiga_id"])
     repurposing_matrix_taiga_id = get_taiga_id(taiga_ids["repurposing_matrix_taiga_id"])
@@ -498,7 +498,7 @@ def main(
     )
 
     tc = create_taiga_client_v3()
-    Model = tc.get(f"{depmap_data_taiga_id[0]}/Model")
+    Model = tc.get(f"{release_taiga_id[0]}/Model")
     assert Model is not None
 
     ####################
@@ -591,7 +591,7 @@ def main(
 
     # WES (Broad), WES (Sanger), WGS (Broad), RNA (Broad)
     omics_summary = get_omics_summary(
-        tc=tc, omics_taiga_id=f"{depmap_data_taiga_id[0]}/OmicsProfiles"
+        tc=tc, omics_taiga_id=f"{release_taiga_id[0]}/OmicsProfiles"
     )
     assert omics_summary.index.is_unique
 

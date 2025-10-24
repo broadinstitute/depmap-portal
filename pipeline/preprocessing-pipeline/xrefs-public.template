@@ -1,5 +1,180 @@
 # SET_TAIGA_PREPROCESSOR repurposing_taiga_id "repurposing-public-24q2-875f.4"
 
+add-if-missing {
+    "type": "release_taiga_id",
+    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname)
+}
+
+# The following 3 artifacts are necessary for the Context Explorer preprocessing
+# scripts to run successfully
+add-if-missing {
+  "type": "subtype_tree",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "SubtypeTree"),
+}
+
+add-if-missing {
+  "type": "omics_profiles",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsProfiles")
+}
+
+add-if-missing {
+  "type": "subtype_context_matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "SubtypeMatrix"),
+}
+
+
+# Sample info file
+add-if-missing {
+  "type": "sample_info_dataset_id",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "Model"),
+}
+
+add-if-missing {
+    "type": "crispr-confounder-parameters",
+    "achilles_qc_report_taiga_id":  PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesScreenQCReport"),
+    "crispr_screen_map_taiga_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRScreenMap")
+}
+
+# Chronos Combined
+add-if-missing {
+  "type": "raw-dep-prob-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneDependency"),
+  "label": "Chronos_Combined",
+  "rows": "cell-lines"
+}
+
+add-if-missing {
+  "type": "crispr-screen-sequence-map",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "ScreenSequenceMap")
+}
+
+
+add-if-missing {
+  "type": "raw-dep-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect"),
+  "label": "Chronos_Combined",
+  "rows": "cell-lines",
+  "confounders_label": "crispr-confounders",
+}
+
+# Chronos Achilles
+add-if-missing {
+  "type": "confounders-matrix-essential-genes",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesCommonEssentialControls")
+}
+
+add-if-missing {
+  "type": "confounders-matrix-nonessential-genes",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesNonessentialControls")
+}
+
+# Mutation table
+add-if-missing {
+  "type": "mutation-maf",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutations")
+}
+
+add-if-missing {
+    "type": "other-taiga-dataset",
+    "category": "fusions",
+    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsFusionFiltered")
+}
+
+# CRISPRInferredCommonEssentials
+add-if-missing {
+  "type": "crispr-inferred-common-essentials",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRInferredCommonEssentials")
+}
+
+# biomarker-matrix
+add-if-missing {
+  'type': 'raw-expr-matrix',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
+  'category' : 'expression',
+}
+
+# biomarker-matrix
+add-if-missing {
+  'type': 'raw-expr-matrix-profile',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionTPMLogp1HumanAllGenes"),
+  'category' : 'expression',
+}
+
+
+# profile-map
+add-if-missing {
+  'type': 'profile-map',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsProfiles"),
+  'category' : 'mapping',
+}
+
+# model-condition
+add-if-missing {
+  'type': 'model-condition',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "ModelCondition"),
+  'category' : 'mapping',
+}
+
+# Log2-transformed CNGene data
+add-if-missing {
+  'type': 'biomarker-needing-transpose',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "PortalOmicsCNGeneLog2"),
+  'category': 'copy-number-relative'
+}
+
+
+add-if-missing {
+  "type": "raw-mutations-bool-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixDamaging"),
+  "category": "damaging"
+}
+
+add-if-missing {
+  "type": "raw-mutations-bool-matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixHotspot"),
+  "category": "hotspot"
+}
+
+
+# These below are used to label datasets. It's a little odd that the display label is stored 
+# seperately from the artifact with the data (and so we'll have to update both when versions change)
+# but doing it this way saves us from having to re-run rules when the display name changes
+
+add-if-missing {
+    'type': 'dataset-display-name',
+    'display_name': 'Copy Number WGS {{ config.RELEASE_LABEL }} (Log2 transformed)',
+    'label': 'copy_number_relative',
+    'dataset_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalOmicsCNGeneLog2")
+}
+
+add-if-missing {
+    'type': 'dataset-display-name',
+    'display_name': 'Expression {{ config.RELEASE_LABEL }}',
+    'label': 'expression',
+    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
+}
+
+add-if-missing {
+    'type': 'dataset-display-name',
+    'display_name': 'Fusions {{ config.RELEASE_LABEL }}',
+    'label': 'fusions',
+    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsFusionFiltered"),
+}
+
+add-if-missing {
+    'type': 'dataset-display-name',
+    'display_name': 'Mutation {{ config.RELEASE_LABEL }}',
+    'label': 'mutation_pearson',
+    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutations"),
+}
+
+add-if-missing {
+    'type': 'dataset-display-name',
+    'display_name': 'CRISPR (DepMap {{ config.RELEASE_LABEL }}+Score, Chronos)',
+    'label': 'Chronos_Combined',
+    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect"),
+}
+
 # These artifacts are used to associate with the dataset name  "Rep_all_single_pt". 
 add-if-missing {
     'type' : 'repallsinglept-taiga-id',

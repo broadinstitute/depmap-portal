@@ -1,5 +1,5 @@
 add-if-missing {
-    "type": "depmap_data_taiga_id",
+    "type": "release_taiga_id",
     "dataset_id": "public-23q2-19de.101"
 }
 

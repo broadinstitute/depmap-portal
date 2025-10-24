@@ -1,5 +1,5 @@
 rule publish_depmap_release2:
-    inputs: release={"type": "depmap_data_taiga_id"}
+    inputs: release={"type": "release_taiga_id"}
     publish: "{{config.publish_dest}}/depmap-release.json"
 
 rule publish_dep_mats:

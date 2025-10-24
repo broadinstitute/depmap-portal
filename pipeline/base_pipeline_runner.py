@@ -4,6 +4,7 @@ import subprocess
 import sys
 import tempfile
 import uuid
+import yaml
 from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
@@ -16,6 +17,18 @@ class PipelineRunner(ABC):
         self.script_path = None
         self.pipeline_name = None
         self.pipeline_run_id = str(uuid.uuid4())
+        self.config_data = self._load_config()
+
+    def _load_config(self):
+        """Load pipeline configuration from YAML file."""
+        config_path = Path(__file__).parent / "pipeline_config.yaml"
+        assert config_path.exists(), f"Config file not found: {config_path}"
+
+        with open(config_path, "r") as f:
+            config = yaml.safe_load(f)
+
+        assert config, "Config file is empty or invalid"
+        return config
 
     def get_git_commit_sha(self):
         """Get the current git commit SHA."""
@@ -26,18 +39,19 @@ class PipelineRunner(ABC):
 
     def read_docker_image_name(self, script_dir):
         """Load Docker image name from image-name file."""
-        try:
-            image_name_file = script_dir.parent / "image-name"
-        except FileNotFoundError:
-            raise FileNotFoundError(
-                f"Could not find image-name file in {script_dir.parent}"
-            )
-        # Parse the file to get DOCKER_IMAGE variable
+        image_name_file = script_dir.parent / "image-name"
+        assert (
+            image_name_file.exists()
+        ), f"Could not find image-name file in {script_dir.parent}"
+
         with open(image_name_file, "r") as f:
             for line in f:
                 line = line.strip()
                 if line.startswith("DOCKER_IMAGE="):
-                    return line.split("=", 1)[1].strip("\"'")
+                    image_name = line.split("=", 1)[1].strip("\"'")
+                    return image_name
+
+        raise ValueError(f"Could not find DOCKER_IMAGE= in {image_name_file}")
 
     def backup_conseq_logs(self, state_path, log_destination):
         """Copy all logs to specified directory."""
@@ -45,43 +59,36 @@ class PipelineRunner(ABC):
         if not state_dir.exists():
             return
 
-        # Create temporary file list
         with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
             temp_file = f.name
 
-        try:
-            # Find log files
-            find_commands = [
-                ["find", ".", "-name", "std*.txt"],
-                ["find", ".", "-name", "*.sh"],
-                ["find", ".", "-name", "*.log"],
-            ]
+        assert temp_file, "Temporary file name cannot be empty"
+        assert os.path.exists(temp_file), f"Temporary file was not created: {temp_file}"
 
-            with open(temp_file, "w") as f:
-                for cmd in find_commands:
-                    result = subprocess.run(
-                        cmd, cwd=state_dir, capture_output=True, text=True, check=True
-                    )
-                    f.write(result.stdout)
+        find_commands = [
+            ["find", ".", "-name", "std*.txt"],
+            ["find", ".", "-name", "*.sh"],
+            ["find", ".", "-name", "*.log"],
+        ]
 
-            # Use rsync to copy files
-            subprocess.run(
-                [
-                    "rsync",
-                    "-a",
-                    state_path,
-                    log_destination,
-                    f"--files-from={temp_file}",
-                ],
-                check=True,
-            )
+        with open(temp_file, "w") as f:
+            for cmd in find_commands:
+                assert cmd, "Find command cannot be empty"
+                result = subprocess.run(
+                    cmd, cwd=state_dir, capture_output=True, text=True, check=True
+                )
+                f.write(result.stdout)
 
-        finally:
-            os.unlink(temp_file)
+        subprocess.run(
+            ["rsync", "-a", state_path, log_destination, f"--files-from={temp_file}",],
+            check=True,
+        )
+
+        os.unlink(temp_file)
 
     def check_credentials(self, creds_dir):
         """Check that required credential files exist."""
-        required_files = ["broad-paquitas", "sparkles", "depmap-pipeline-runner.json"]
+        required_files = self.config_data["credentials"]["required_files"]
 
         for filename in required_files:
             filepath = Path(creds_dir) / filename
@@ -90,7 +97,7 @@ class PipelineRunner(ABC):
 
     def pull_docker_image(self, docker_image):
         """Pull Docker image if it has a registry path."""
-        if "/" in docker_image:
+        if docker_image and "/" in docker_image:
             print("Pulling Docker image...")
             env_vars = {
                 **os.environ,
@@ -106,9 +113,9 @@ class PipelineRunner(ABC):
             "pipeline": self.pipeline_name,
             "timestamp": datetime.now().astimezone().isoformat(),
         }
-        print("--------------------------------")
+        print("=" * 50)
         print(json.dumps(final_log, indent=2))
-        print("--------------------------------")
+        print("=" * 50)
 
     @abstractmethod
     def create_argument_parser(self):
@@ -140,72 +147,62 @@ class PipelineRunner(ABC):
         self.script_path = Path(script_file_path)
         self.pipeline_name = self.script_path.parent.name
 
-        # Print basic pipeline info
         print(f"Pipeline run ID: {self.pipeline_run_id}")
-
-        # Show version files information
-        pipeline_dir = self.script_path.parent
-        version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
-        print(f"Found {len(version_files)} version files: {version_files}")
 
         parser = self.create_argument_parser()
         args = parser.parse_args()
 
         config = self.get_pipeline_config(args)
 
-        try:
-            # Load Docker image and get commit SHA
-            if config.get("image"):
-                docker_image = config["image"]
-            else:
-                docker_image = self.read_docker_image_name(self.script_path.parent)
-            config["docker_image"] = docker_image
-            config["commit_sha"] = self.get_git_commit_sha()
+        docker_image = config.get("image") or self.read_docker_image_name(
+            self.script_path.parent
+        )
+        config["docker_image"] = docker_image
+        config["commit_sha"] = self.get_git_commit_sha()
 
-            self.pull_docker_image(docker_image)
+        self.pull_docker_image(docker_image)
 
+        self.backup_conseq_logs(config["state_path"], config["log_destination"])
+        self.handle_special_features(config)
+
+        config["conseq_file"] = self.get_conseq_file(config)
+
+        if config.get("manually_run_conseq"):
+            conseq_args = config.get("conseq_args", [])
+            print(f"executing: conseq {' '.join(conseq_args)}")
+            result = self.run_via_container(
+                f"conseq -D is_dev=False {' '.join(conseq_args)}", config
+            )
+            run_exit_status = result.returncode
+        else:
+            # Clean up unused directories from past runs
+            result = self.run_via_container("conseq gc", config)
+            assert result.returncode == 0, "Conseq gc failed"
+
+            # Build and run main conseq command
+            conseq_run_cmd = self.build_conseq_run_command(config)
+            result = self.run_via_container(conseq_run_cmd, config)
+            run_exit_status = result.returncode
+
+            # Handle post-run tasks (export, reports, etc.)
+            self.handle_post_run_tasks(config)
+
+            # Copy the latest logs
             self.backup_conseq_logs(config["state_path"], config["log_destination"])
-            self.handle_special_features(config)
 
-            conseq_file = self.get_conseq_file(config)
-            config["conseq_file"] = conseq_file
-
-            if config.get("manually_run_conseq"):
-                print(f"executing: conseq {' '.join(config['conseq_args'])}")
-                result = self.run_via_container(
-                    f"conseq -D is_dev=False {' '.join(config['conseq_args'])}", config
-                )
-                run_exit_status = result.returncode
-            else:
-                # Clean up unused directories from past runs
-                result = self.run_via_container("conseq gc", config)
-                assert result.returncode == 0, "Conseq gc failed"
-
-                # Build and run main conseq command
-                conseq_run_cmd = self.build_conseq_run_command(config)
-                result = self.run_via_container(conseq_run_cmd, config)
-                run_exit_status = result.returncode
-
-                # Handle post-run tasks (export, reports, etc.)
-                self.handle_post_run_tasks(config)
-
-                # Copy the latest logs
-                self.backup_conseq_logs(config["state_path"], config["log_destination"])
-
-            print("Pipeline run complete")
-            subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
-            sys.exit(run_exit_status)
-
-        except Exception as e:
-            print(f"Error: {e}", file=sys.stderr)
-            sys.exit(1)
+        print("Pipeline run complete")
+        subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
+        sys.exit(run_exit_status)
 
     def build_conseq_run_command(self, config):
         """Build the main conseq run command."""
+        conseq_cfg = self.config_data["conseq"]
+        common_args = " ".join(conseq_cfg["common_args"])
+
         cmd_parts = [
             f"conseq run --addlabel commitsha={config['commit_sha']}",
-            "--no-reattach --maxfail 20 --remove-unknown-artifacts",
-            "-D sparkles_path=/install/sparkles/bin/sparkles",
+            f"{common_args} --maxfail {conseq_cfg['max_fail']}",
+            f"-D sparkles_path={conseq_cfg['sparkles_path']}",
             "-D is_dev=False",
         ]
 
@@ -215,7 +212,8 @@ class PipelineRunner(ABC):
         if config.get("publish_dest"):
             cmd_parts.append(f"-D publish_dest={config['publish_dest']}")
 
-        cmd_parts.extend([config["conseq_file"], " ".join(config["conseq_args"])])
+        conseq_args = config.get("conseq_args", [])
+        cmd_parts.extend([config["conseq_file"], " ".join(conseq_args)])
         return " ".join(cmd_parts)
 
     def handle_post_run_tasks(self, config):

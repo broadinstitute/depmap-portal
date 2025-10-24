@@ -16,21 +16,20 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def map_environment_name(self, env_name):
         """Map environment names to actual conseq file names."""
-        env_mapping = {
-            "qa": "iqa",
-            "external": "external",
-            "dqa": "dqa",
-            "internal": "internal",
-        }
+        env_mapping = self.config_data["pipelines"]["preprocessing"]["env_mapping"]
 
-        return (
-            "iqa"
-            if env_name.startswith("test-")
-            else env_mapping.get(env_name, env_name)
-        )
+        # Handle test- prefix
+        if env_name.startswith("test-"):
+            return env_mapping["test-prefix"]
+
+        mapped_name = env_mapping.get(env_name, env_name)
+        assert mapped_name, "Mapped environment name cannot be empty"
+        return mapped_name
 
     def create_argument_parser(self):
         """Create argument parser for preprocessing pipeline."""
+        defaults = self.config_data["defaults"]
+
         parser = argparse.ArgumentParser(
             description="Run preprocessing pipeline (Jenkins style)"
         )
@@ -46,13 +45,11 @@ class PreprocessingPipelineRunner(PipelineRunner):
             help="If set args will be passed directly to conseq",
         )
         parser.add_argument(
-            "--taiga-dir",
-            default="/data2/depmap-pipeline-taiga",
-            help="Taiga directory path",
+            "--taiga-dir", default=defaults["taiga_dir"], help="Taiga directory path",
         )
         parser.add_argument(
             "--creds-dir",
-            default="/etc/depmap-pipeline-runner-creds",
+            default=defaults["creds_dir"],
             help="Pipeline runner credentials directory",
         )
         parser.add_argument(
@@ -68,6 +65,8 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def get_pipeline_config(self, args):
         """Get configuration for preprocessing pipeline."""
+        pipeline_cfg = self.config_data["pipelines"]["preprocessing"]
+
         config = {
             "env_name": args.env_name,
             "job_name": args.job_name,
@@ -79,9 +78,9 @@ class PreprocessingPipelineRunner(PipelineRunner):
             "publish_dest": args.publish_dest,
             "export_path": args.export_path,
             "image": args.image,
-            "state_path": "pipeline/preprocessing-pipeline/state",
-            "log_destination": "preprocess-logs",
-            "working_dir": "/work/pipeline/preprocessing-pipeline",
+            "state_path": pipeline_cfg["state_path"],
+            "log_destination": pipeline_cfg["log_destination"],
+            "working_dir": pipeline_cfg["working_dir"],
         }
 
         # Check credentials
@@ -126,77 +125,69 @@ class PreprocessingPipelineRunner(PipelineRunner):
     def run_via_container(self, command, config):
         """Run command inside Docker container with preprocessing specific configuration."""
         cwd = os.getcwd()
+        docker_cfg = self.config_data["docker"]
+        volumes = docker_cfg["volumes"]
+        env_vars = docker_cfg["env_vars"]
+        cred_files = self.config_data["credentials"]["required_files"]
 
         docker_cmd = [
             "docker",
             "run",
             "--security-opt",
-            "seccomp=unconfined",  # Needed after dev.cds.team upgrade
+            docker_cfg["options"]["preprocessing"]["security_opt"],
             "--rm",
             "-v",
-            f"{cwd}:/work",
+            f"{cwd}:{volumes['work_dir']}",
             "-w",
             config["working_dir"],
             "-v",
-            f"{config['creds_dir']}/broad-paquitas:/aws-keys/broad-paquitas",
+            f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
             "-v",
-            f"{config['creds_dir']}/sparkles:/root/.sparkles-cache",
+            f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
             "-v",
-            f"{config['creds_dir']}/depmap-pipeline-runner.json:/etc/google_default_creds.json",
+            f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
             "-v",
-            f"{config['taiga_dir']}:/root/.taiga",
+            f"{config['taiga_dir']}:{volumes['taiga']}",
             "-e",
-            "GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json",
+            f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
             "--name",
             config["job_name"],
             config["docker_image"],
             "bash",
             "-c",
-            f"source /aws-keys/broad-paquitas && {command}",
+            f"source {volumes['aws_keys']} && {command}",
         ]
-        print("--------------------------------")
+        print("=" * 50)
         print("Preprocessing Pipeline Runner command:", docker_cmd)
-        print("--------------------------------")
+        print("=" * 50)
         return subprocess.run(docker_cmd)
 
-    def track_dataset_usage_from_conseq(self, config):
-        """Track dataset usage from conseq files for preprocessing pipeline."""
-        # Look for DO-NOT-EDIT-ME files that contain the release taiga ID
+    def track_dataset_usage_from_conseq(self):
+        """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
         pipeline_dir = Path("pipeline/preprocessing-pipeline")
         version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
 
         for version_file in version_files:
-            try:
-                with open(version_file, "r") as f:
-                    content = f.read()
+            with open(version_file, "r") as f:
+                content = f.read()
 
-                    # Find the release_taiga_id entry specifically
-                    # Pattern matches: "type": "release_taiga_id" followed by "dataset_id": "..."
-                    release_pattern = (
-                        r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
-                    )
-                    match = re.search(release_pattern, content, re.DOTALL)
-
-                    if match:
-                        release_taiga_id = match.group(1)
-                        self.log_dataset_usage(release_taiga_id)
-                        print(f"Tracked release dataset usage: {release_taiga_id}")
-                        # Only log once per file, so break after finding it
-                        break
-
-            except Exception as e:
-                print(
-                    f"Warning: Could not track dataset usage from {version_file}: {e}"
+                release_pattern = (
+                    r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
                 )
+                match = re.search(release_pattern, content, re.DOTALL)
+
+                if match:
+                    release_taiga_id = match.group(1)
+                    assert release_taiga_id, "Release taiga ID is empty"
+                    self.log_dataset_usage(release_taiga_id)
+                    break
 
     def handle_special_features(self, config):
         """Handle START_WITH functionality for preprocessing pipeline."""
-        # Track dataset usage at the beginning
-        self.track_dataset_usage_from_conseq(config)
+        self.track_dataset_usage_from_conseq()
 
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
-            # Clean out old invocation
             subprocess.run(
                 ["sudo", "chown", "-R", "ubuntu", "pipeline/preprocessing-pipeline"],
                 check=True,
@@ -235,19 +226,18 @@ class PreprocessingPipelineRunner(PipelineRunner):
                     env=env_with_temp_home,
                 )
 
-            # Run the downloaded export
             self.run_via_container("conseq run downloaded-export.conseq", config)
-
-            # Forget publish rules
             self.run_via_container("conseq forget --regex 'publish.*'", config)
 
     def handle_post_run_tasks(self, config):
         """Handle export and report generation for preprocessing pipeline."""
-        # Generate export (this pipeline actually does export)
         if config["export_path"]:
             self.run_via_container(
                 f"conseq export {config['conseq_file']} {config['export_path']}", config
             )
-
-        # Generate report (this pipeline actually generates reports)
         self.run_via_container("conseq report html", config)
+
+
+if __name__ == "__main__":
+    runner = PreprocessingPipelineRunner()
+    runner.run(Path(__file__))
