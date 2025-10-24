@@ -79,7 +79,7 @@ if settings is not None:
         rhost = os.getenv("REDIS_HOST", "localhost")
 
         storage_configuration = dict(
-            broker_url="redis://" + rhost, backend="redis://" + rhost,
+            broker_url="redis://" + rhost, result_backend="redis://" + rhost,
         )
     app.conf.update(**storage_configuration)  # pyright: ignore
 
@@ -89,17 +89,19 @@ def task_prerun_handler(task_id, task, *args, **kwargs):
     log_filename = _get_log_filename()
     if log_filename:
         # Generate a readable task name
-        task_name = task.name if hasattr(task, 'name') else str(task)
+        task_name = task.name if hasattr(task, "name") else str(task)
         # Log task start
         log_event(log_filename, "start", task_id, {"n": f"Task {task_name}"})
+
 
 @signals.task_success.connect
 def task_success_handler(result, **kwargs):
     log_filename = _get_log_filename()
     if log_filename:
-        task_id = kwargs.get('sender').request.id
+        task_id = kwargs.get("sender").request.id
         # Log task success
         log_event(log_filename, "end", task_id, {"s": "success"})
+
 
 @signals.task_failure.connect
 def task_failure_handler(task_id, exception, **kwargs):
@@ -107,6 +109,7 @@ def task_failure_handler(task_id, exception, **kwargs):
     if log_filename:
         # Log task failure
         log_event(log_filename, "end", task_id, {"s": "error", "e": str(exception)})
+
 
 if __name__ == "__main__":
     app.start()
