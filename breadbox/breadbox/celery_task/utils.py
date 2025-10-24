@@ -213,6 +213,12 @@ def check_celery(app: Celery):
     Checks to see if celery redis broker is connected.
     Check worker stats to see if any workers are running
     """
+
+    # if the app is configured to execute tasks synchronously, bail out of this function
+    # without checking for workers
+    if app.conf.task_always_eager:
+        return
+
     inspect = app.control.inspect()
     try:
         # Tries to connect to celery broker

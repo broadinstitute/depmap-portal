@@ -7,9 +7,11 @@ from fastapi import HTTPException
 from breadbox.logging import GCPExceptionReporter
 from breadbox.celery_task.utils import check_celery
 
+from ..config import Settings, get_settings
+from pydantic import ValidationError
 
-rhost = os.getenv("REDIS_HOST", "localhost")
 breadbox_env = os.getenv("BREADBOX_ENV", "dev")
+
 
 log = getLogger(__name__)
 exception_reporter = GCPExceptionReporter(
@@ -37,8 +39,6 @@ class LogErrorsTask(Task):
 
 app = Celery(
     "breadbox-celery",
-    broker_url="redis://" + rhost,
-    backend="redis://" + rhost,
     include=[
         "breadbox.compute.analysis_tasks",
         "breadbox.compute.download_tasks",
@@ -83,6 +83,29 @@ def _get_rss():
 #        f"[AFTER] Finished task {sender.name} rss:{_get_rss()} ({task_id}) with result={retval}, state={state}"
 #    )
 
+try:
+    settings = get_settings()
+except ValidationError:
+    log.warning(
+        "Could not load settings used to set up celery, so leaving unconfigured"
+    )
+    settings = None
+
+if settings is not None:
+    if settings.brokerless_celery_for_testing:
+        storage_configuration = dict(
+            broker_url="memory://",
+            result_backend="cache+memory://",
+            task_always_eager=True,
+            task_store_eager_result=True,
+        )
+    else:
+        rhost = os.getenv("REDIS_HOST", "localhost")
+
+        storage_configuration = dict(
+            broker_url="redis://" + rhost, backend="redis://" + rhost,
+        )
+    app.conf.update(**storage_configuration)  # pyright: ignore
 
 if __name__ == "__main__":
     app.start()

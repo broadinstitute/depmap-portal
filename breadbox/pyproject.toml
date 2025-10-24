@@ -42,8 +42,9 @@ psutil = "^7.1.0"
 [tool.poetry.group.dev.dependencies]
 pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}
 pyright="^1.1.361"
-commitizen = "^3.22.0"
 
+[tool.poetry.scripts]
+bb-cmd = "breadbox.commands:cli"
 
 [[tool.poetry.source]]
 name = "public-python"
@@ -55,88 +56,3 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 
-[tool.commitizen]
-name = "cz_customize"   # Must use name 'cz_customize' in order to enable customized rules defined below! Otherwise defaults to 'cz_conventional_commits'
-# We don't currently auto generate a tag when calling `cz bump --files-only` since commitizen can't cleverly distinguish tags between projects in a monorepo 
-# but we choose this format since tags are still required in the bump command
-tag_format = "breadbox-$version"
-version_scheme = "pep440"
-version_provider = "poetry"
-version = "4.3.3"
-version_files = [
-    'pyproject.toml:version',
-    '../breadbox-client/pyproject.toml:version',
-    '../breadbox-client/latest-breadbox-api.json:"version"',
-]
-
-
-[tool.commitizen.customize]
-message_template = "{{change_type}}({{scope}}){% if is_breaking %}!{% endif %}: {{message}}\n{% if description %}{{description}}{% endif %}\n{% if is_breaking and footer %}BREAKING CHANGE: {{footer}}{% endif %}"
-example = "feat(breadbox): Add this feature that does something"
-
-bump_pattern = '^(feat\((breadbox)\)(!)?|fix\((breadbox)\)(!)?|build\((breadbox)\)(!)?|chore\((breadbox)\)(!)?|perf\((breadbox)\)|test\((breadbox)\)|refactor\((breadbox)\)|docs\((breadbox)\)|ci\((breadbox)\))'
-# Changelog currently unused but will keep this here if we decide to in the future..
-changelog_pattern = '^(feat|fix|build|chore|perf)\((breadbox)\)(!)?:'
-schema_pattern = '(feat|fix|build|chore|perf|test|refactor|docs|ci)\((breadbox)\)(!)?:(\s.*)'
-
-# bump_map keys are regex matched with regex match for commit with bump_pattern  (See: python3.9/site-packages/commitizen/bump.py: find_increment())
-[tool.commitizen.customize.bump_map]
-"feat\\((breadbox)\\)!" = "MAJOR"
-"fix\\((breadbox)\\)!" = "MAJOR"
-"build\\((breadbox)\\)!" = "MAJOR"
-"chore\\((breadbox)\\)!" = "MAJOR"
-"feat\\((breadbox)\\)" = "MINOR"
-"perf\\((breadbox)\\)" = "MINOR"
-"fix\\((breadbox)\\)" = "PATCH"
-"build\\((breadbox)\\)" = "PATCH"
-"chore\\((breadbox)\\)" = "PATCH"
-"test\\((breadbox)\\)" = "PATCH"
-"refactor\\((breadbox)\\)" = "PATCH"
-"docs\\((breadbox)\\)" = "PATCH"
-"ci\\((breadbox)\\)" = "PATCH"
-
-# Using the customization for commitizen requires rest of customization sections defined... https://github.com/commitizen-tools/commitizen/issues/781
-# Below questions are an attempt to mimic original prompts
-[[tool.commitizen.customize.questions]]
-type = "list"
-name = "change_type"
-choices = [
-    {value = "fix", name = "fix: A bug fix. Correlates with PATCH in SemVer"},
-    {value = "feat", name = "feat: A new feature. Correlates with MINOR in SemVer"},
-    {value = "test", name = "test: Adding missing or correcting existing tests"},
-    {value = "refactor", name = "refactor: A code change that neither fixes a bug nor adds a feature"},
-    {value = "docs", name = "docs: Documentation only changes"},
-    {value = "perf", name = "perf: A code change that improves performance"},
-    {value = "build", name = "build: Changes that affect the build system or external dependencies (example scopes: pip, docker, npm)"},
-    {value = "chore", name = "chore: Upgrades libraries and/or performs maintenance tasks."},
-    {value = "ci", name = "ci: Changes to our CI configuration files and scripts (example scopes: GitLabCI, GitHub Actions)"}]
-message = "Select the type of change you are committing"
-
-# TODO: This is probably not needed if breadbox is only option
-[[tool.commitizen.customize.questions]]
-type = "list"
-name = "scope"
-choices = ["breadbox"]
-default = "breadbox"
-message = "What is the scope of this change? (Changes should only affect breadbox or breadbox-client packages!)"
-
-[[tool.commitizen.customize.questions]]
-type = "input"
-name = "message"
-message = "Write a short and imperative summary of the code changes:"
-
-[[tool.commitizen.customize.questions]]
-type = "input"
-name = "description"
-message = "Provide additional contextual information about the code changes: (press [enter] to skip)"
-
-[[tool.commitizen.customize.questions]]
-type = "confirm"
-name = "is_breaking"
-message = "Is this a BREAKING CHANGE? Correlates with MAJOR in SemVer"
-default = false
-
-[[tool.commitizen.customize.questions]]
-type = "input"
-name = "footer"
-message = "Footer. Information about Breaking Changes and reference issues that this commit closes: (press [enter] to skip)"
