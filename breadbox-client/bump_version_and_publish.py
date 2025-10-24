@@ -208,33 +208,58 @@ def rule_from_conventional_commit_type(commit_type, is_breaking):
 def get_sem_versions_and_bumps():
     print("  Retrieving git commit history...")
     try:
-        output = subprocess.check_output(
-            ["git", "log", "--pretty=format:%H%x09%s%x09%D"],
+        # Get all tags
+        tags_output = subprocess.check_output(
+            ["git", "tag"],
+            text=True
+        ).strip().split('\n')
+        
+        # Get highest version from tags
+        highest_version = to_sem_version(tags_output)
+        
+        # Get commit history for conventional commits
+        commit_output = subprocess.check_output(
+            ["git", "log", "--pretty=format:%H%x09%s"],
             text=True
         )
     except Exception as e:
         print(f"Error retrieving git history: {str(e)}")
         raise
 
-    for line in output.splitlines():
-        commit_hash, subject, refs = line.split("\t", 2)
-        tags = [r.strip() for r in refs.split(",") if r.strip().startswith("tag: ")]
-        tags = [t.replace("tag: ", "") for t in tags]
-        
-        version = to_sem_version(tags)
+    # First yield the highest version with the most recent commit
+    if highest_version is not None:
+        # Get the commit hash for this version tag
+        try:
+            tag_name = f"breadbox-{'.'.join(map(str, highest_version))}"
+            tag_commit = subprocess.check_output(
+                ["git", "rev-list", "-n", "1", tag_name],
+                text=True
+            ).strip()
+            yield tag_commit, highest_version, None, f"Version tag: {tag_name}"
+        except Exception as e:
+            print(f"Warning: Could not get commit for tag {tag_name}: {str(e)}")
+            # Still yield the version with a placeholder commit
+            yield "unknown", highest_version, None, f"Version tag: {tag_name}"
 
-        bump_rule = rule_from_conventional_commit(subject)
-        if bump_rule is not None or version is not None:
-            # print(f"  Found conventional commit at {commit_hash[:8]}: {subject}")
-            yield commit_hash, version, bump_rule, subject
+    # Then yield all conventional commits
+    for line in commit_output.splitlines():
+        parts = line.split("\t", 1)
+        if len(parts) == 2:
+            commit_hash, subject = parts
+            bump_rule = rule_from_conventional_commit(subject)
+            if bump_rule is not None:
+                yield commit_hash, None, bump_rule, subject
 
 def to_sem_version(tags):
     """
-    given a list of tags, extract the semantic version number using VERSION_TAG_PATTERN. If there are multiple, returns the max.
-    If there are no tags or none match, returns None.
+    Given a list of tags, extract the semantic version numbers using VERSION_TAG_PATTERN.
+    Returns the highest version found, or None if no valid version tags exist.
     """
     versions = []
     for tag in tags:
+        if not tag:  # Skip empty tags
+            continue
+            
         match = re.match(VERSION_TAG_PATTERN, tag)
         if match:
             # Extract version number from the tag using regex group
