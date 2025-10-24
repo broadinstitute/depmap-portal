@@ -67,6 +67,7 @@ def main():
         print("Running in DRY RUN mode - no changes will be committed or published")
     
     print("Starting version bump process...")
+    
     bump_rules = []
 
     last_commit = None
@@ -94,11 +95,15 @@ def main():
 
     print(f"Applying {len(bump_rules)} version bump rules, starting with {last_version} to generate version for {last_commit}...")
     bump_rules.reverse()
-    for commit_hash, commit_subject, bump_rule in bump_rules:
-        old_version = last_version
-        last_version = bump_rule(*last_version)
-        print(f"  {commit_subject}: {'.'.join(map(str, old_version))} -> {'.'.join(map(str, last_version))}")
 
+    index_to_bump = 2
+    
+    for commit_hash, commit_subject, bump_rule in bump_rules:
+        index = {"MAJOR": 0, "MINOR": 1, "PATCH": 2}[bump_rule]
+        index_to_bump = min(index_to_bump, index)
+        print(f"  {commit_subject}: {bump_rule}")
+
+    last_version = last_version[:index] + [last_version[index] + 1] + ( [0] * (2-index) )
     version_str = ".".join(map(str, last_version))
     print(f"New version: {version_str}")
     
@@ -192,17 +197,6 @@ def publish():
         print(f"Error publishing package: {str(e)}")
         raise
 
-def rule_from_conventional_commit_type(commit_type, is_breaking):
-    if is_breaking:
-        return lambda major, minor, patch: (major+1,0,0)
-    if commit_type in PATCH_CONVENTIONAL_COMMIT_TYPES:
-        return lambda major, minor, patch: (major, minor, patch+1)
-    elif commit_type in MINOR_CONVENTIONAL_COMMIT_TYPES:
-        return lambda major, minor, patch: (major, minor+1, 0)
-    elif commit_type in IGNORE_CONVENTIONAL_COMMIT_TYPES:
-        return lambda major, minor, patch: (major, minor, patch)
-    else:
-        return None
 
 def get_sem_versions_and_bumps():
     print("  Retrieving git commit history...")
@@ -224,7 +218,6 @@ def get_sem_versions_and_bumps():
 
         bump_rule = rule_from_conventional_commit(subject)
         if bump_rule is not None or version is not None:
-            # print(f"  Found conventional commit at {commit_hash[:8]}: {subject}")
             yield commit_hash, version, bump_rule, subject
 
 def to_sem_version(tags):
@@ -252,6 +245,19 @@ def to_sem_version(tags):
     highest = max(versions)
     return highest
 
+def rule_from_conventional_commit_type(commit_type, is_breaking):
+    # returns a tuple signifying which position to increment
+    if is_breaking:
+        return "MAJOR"
+    if commit_type in PATCH_CONVENTIONAL_COMMIT_TYPES:
+        return "PATCH"
+    elif commit_type in MINOR_CONVENTIONAL_COMMIT_TYPES:
+        return "MINOR"
+    elif commit_type in IGNORE_CONVENTIONAL_COMMIT_TYPES:
+        return None
+    else:
+        return None
+
 def rule_from_conventional_commit(subject):
     """
     uses conventional commit nomeclature to determine the rule used to bump the version.
@@ -263,8 +269,6 @@ def rule_from_conventional_commit(subject):
         commit_type = match.group('committype')
         is_breaking = bool(match.group('isbreaking'))
         rule = rule_from_conventional_commit_type(commit_type, is_breaking)
-        if rule:
-            bump_type = "MAJOR" if is_breaking else ("MINOR" if commit_type in MINOR_CONVENTIONAL_COMMIT_TYPES else "PATCH")
         return rule
     return None
 
