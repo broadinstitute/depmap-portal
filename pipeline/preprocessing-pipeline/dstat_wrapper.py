@@ -8,7 +8,13 @@ import re
 # whether a job is running or not
 
 # based on https://cloud.google.com/batch/docs/reference/rest/v1alpha/projects.locations.jobs#State
-terminal_states = ["SUCCEEDED", "FAILED", "CANCELLED"]
+terminal_states = [
+    "SUCCEEDED",
+    "FAILED",
+    "CANCELLED",
+    "SCHEDULED_PENDING_FAILED",
+    "RUNNING_PENDING_FAILED",
+]
 in_progress_state = [
     "QUEUED",
     "SCHEDULED",
@@ -27,7 +33,7 @@ try:
         prefix = "IN_PROGRESS"
     else:
         m = re.match(
-            "Job state is set from [A-Z]+ to ([A-Z]+) for job.*", status_message
+            "Job state is set from [A-Z_]+ to ([A-Z_]+) for job.*", status_message
         )
         assert m is not None
         state = m.group(1)

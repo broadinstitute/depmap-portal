@@ -29,24 +29,13 @@ rule transform_fusion:
     inputs:
         fusion={"type": "fusion"},
         gene={"type": "gene"},
-        script=fileref('../scripts/predictability/transform_fusion.py'),
+        script=fileref('../../preprocessing-pipeline/scripts/make_fusions_matrix.py'),
     outputs:
         {
             "type": "predictability_fusion",
             "filename": {"$filename": "fusion.csv"},
         }
     run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv --rows-per-model"
-
-rule transform_lineage:
-    inputs:
-        model={"type": "model"},
-        script=fileref('../scripts/predictability/transform_lineage.py'),
-    outputs:
-        {
-            "type": "predictability_lineage",
-            "filename": {"$filename": "lineage.csv"},
-        }
-    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} lineage.csv"
 
 
 rule transform_crispr_confounders:

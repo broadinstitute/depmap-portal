@@ -78,6 +78,16 @@ rule publish_fusion:
     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated PredictabilityFusionTransformed for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
 
 
+# rule publish_lineage:
+#     inputs:
+#         lineage_data={"type": "predictability_lineage"},
+#         release_taiga_id={"type": "release_taiga_id"},
+#         update_taiga_script=fileref('upload_to_taiga.py')
+#     outputs:{"type": "predictability_lineage_published"}
+
+#     run "python3 {{inputs.update_taiga_script.filename}} {{inputs.release_taiga_id.dataset_id}} 'Generated lineage data for predictability'  'PredictabilityLineageTransformed' {{inputs.lineage_data.filename}} 'csv_matrix'"
+
+
 rule publish_crispr_confounders:
     inputs:
         crispr_confounders_data={"type": "predictability_crispr_confounders"},

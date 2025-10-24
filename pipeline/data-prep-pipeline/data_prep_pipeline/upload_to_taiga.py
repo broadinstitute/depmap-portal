@@ -22,14 +22,14 @@ def get_sha256(file_path: Path) -> str:
 
 
 def update_taiga(
-    dataset_id: str,
+    dataset_permaname: str,
     description_of_changes: str,
     matrix_name_in_taiga: str,
     file_local_path: Path,
     file_format: str,
 ) -> None:
     """Update a dataset in Taiga with transformed data."""
-    assert dataset_id, "Dataset ID cannot be empty"
+    assert dataset_permaname, "Dataset permaname cannot be empty"
     assert description_of_changes, "Description of changes cannot be empty"
     assert matrix_name_in_taiga, "Matrix name in Taiga cannot be empty"
     assert file_local_path, "File path cannot be empty"
@@ -43,7 +43,7 @@ def update_taiga(
         tc = create_taiga_client_v3()
         # Update the dataset with the transformed data
         version = tc.update_dataset(
-            dataset_id,
+            dataset_permaname,
             description_of_changes,
             additions=[
                 UploadedFile(
@@ -76,11 +76,11 @@ if __name__ == "__main__":
 
     tc = create_taiga_client_v3()
 
-    dataset_id_with_latest_version = tc.get_latest_version_id(args.dataset_id)
-    existing_file_taiga_id = (
-        f"{dataset_id_with_latest_version}/{args.matrix_name_in_taiga}"
-    )
+    existing_file_taiga_id = f"{args.dataset_id}/{args.matrix_name_in_taiga}"
     print(f"Taiga ID of the existing file: {existing_file_taiga_id}")
+
+    dataset_permaname = args.dataset_id.split(".")[0]
+    print(f"Dataset permaname is: {dataset_permaname}")
 
     # Check if the file with the same name already exists in the dataset
     if tc.get_datafile_metadata(existing_file_taiga_id) is None:
@@ -88,7 +88,7 @@ if __name__ == "__main__":
             f"File with Taiga ID {existing_file_taiga_id} does not exist. Uploading a new file."
         )
         update_taiga(
-            args.dataset_id,
+            dataset_permaname,
             args.description_of_changes,
             args.matrix_name_in_taiga,
             args.file_local_path,
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         else:
             # If the file to upload is different from the existing file in Taiga, update the dataset
             update_taiga(
-                args.dataset_id,
+                dataset_permaname,
                 args.description_of_changes,
                 args.matrix_name_in_taiga,
                 args.file_local_path,

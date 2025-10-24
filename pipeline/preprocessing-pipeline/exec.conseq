@@ -1,6 +1,6 @@
 let STAGING_URL = "gs://preprocessing-pipeline-outputs/conseq/depmap"
-let DEFAULT_DOCKER_IMAGE = "us.gcr.io/broad-achilles/depmap-pipeline-run:ga2-build-13"
-let DEFAULT_GCP_PROJECT = "broad-achilles"
+let DEFAULT_DOCKER_IMAGE = "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:ga2-build-23"
+let DEFAULT_GCP_PROJECT = "depmap-portal-pipeline"
 let DEFAULT_GCP_ZONE = "us-central*"
 let DSUB_EXE_PATH="dsub"
 let DSTAT_EXE_PATH="dstat"

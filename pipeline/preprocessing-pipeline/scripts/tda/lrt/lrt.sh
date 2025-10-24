@@ -55,7 +55,7 @@ job_name=lrt-`cat job-hash.txt`
 # away from it. Given that, I don't think it's worth any additional investigation and I'm electing to just
 # continue using the old docker image until the day we can abandon LRT.
 #LRT_DOCKER_IMAGE="us.gcr.io/broad-achilles/depmap-pipeline-tda-lrt:v3"
-LRT_DOCKER_IMAGE=us.gcr.io/broad-achilles/tda-pipeline:v2
+LRT_DOCKER_IMAGE=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/tda-pipeline:v2
 
 #Submit job
 eval "$sparkles_path" \

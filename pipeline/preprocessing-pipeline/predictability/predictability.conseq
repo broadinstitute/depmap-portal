@@ -11,11 +11,6 @@
 # rules take in pred-biomarker-matrix-csv and pred-dep-matrix as inputs
 
 let testpred=""
-if "(config.get('publish_dest', 'INVALID')) != 'INVALID' and ('test-perf' not in config.get('publish_dest', 'INVALID'))":
-# run in testing mode if we're on the test-perf branch because we don't really need predictability results to test most of the
-# functionality
-let testpred="true"
-endif
 
 # Create different model configs for each target matrix (artifacts of type dep-matrix-ftr-unfiltered)
 rule process_model_config:
@@ -132,7 +127,7 @@ rule download_dep_matrix:
 
 # Create the "y" matrix containing the genes to predict.
 rule filter_dep_ftr:
-    executor: dsub {"min_ram":"10", "docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10"}
+    executor: dsub {"min_ram":"10", "docker_image": "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda:v10"}
     inputs:
         dep={"type": "dep-matrix-ftr-unfiltered"}
     outputs:
@@ -377,7 +372,7 @@ rule prep_rppa_pred_biomarker_matrix:
 
 # Construct the feature matrix for each target matrix (and its corresponding model config)
 rule assemble_feature_matrix:
-    executor: dsub {"min_ram":"15", "docker_image": "us.gcr.io/broad-achilles/depmap-pipeline-tda:v10"}
+    executor: dsub {"min_ram":"15", "docker_image": "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda:v10"}
     inputs:
         expression={'type': 'pred-biomarker-matrix-csv', 'category': 'expression'},
         # ssgsea={'type': 'pred-biomarker-matrix-csv', 'category': 'ssgsea'},
@@ -562,7 +557,7 @@ rule fit_predictive_model:
         {{ config.sparkles_path }} \
         --config {{ inputs.sparkles_config.filename }} \
         sub \
-        -i us.gcr.io/broad-achilles/depmap-pipeline-tda:v6 \
+        -i us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda:v6 \
         -u {{ inputs.dep.filename }}:target.ftr \
         -u {{ inputs.model_config.filename }}:model-config.yaml \
         -u {{ inputs.ensemble_feature_set.filename }}:X.ftr \
