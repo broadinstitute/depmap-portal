@@ -203,7 +203,9 @@ function Variable({
 
   const varDatasetId = extractDatasetIdFromSlice(value, variables);
 
-  const varSliceType = datasets?.find((d) => d.id === varDatasetId)?.slice_type;
+  const varSliceType = datasets?.find(
+    (d) => d.id === varDatasetId || d.given_id === varDatasetId
+  )?.slice_type;
 
   const dataSource = (placeholderDataSource ||
     inferDataSource(value, metadataSlices, isPartialContinuousSliceId)) as
