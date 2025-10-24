@@ -143,6 +143,21 @@ def update_version_in_files(version_str, dryrun=False):
             raise
     
     if not dryrun:
+        # Check if git has author information set
+        print("  Checking git author configuration...")
+        try:
+            user_email = subprocess.check_output(["git", "config", "user.email"], text=True).strip()
+            user_name = subprocess.check_output(["git", "config", "user.name"], text=True).strip()
+        except subprocess.CalledProcessError:
+            user_email = ""
+            user_name = ""
+        
+        # If author info is not set, configure it for GitHub Actions
+        if not user_email or not user_name:
+            print("  Setting git author information for GitHub Actions...")
+            subprocess.run(["git", "config", "user.email", "github-actions@github.com"], check=True)
+            subprocess.run(["git", "config", "user.name", "github-actions"], check=True)
+        
         # execute 'git commit'
         print("  Committing version changes...")
         subprocess.run(["git", "commit", "-m", f"build(breadbox): bump version to {version_str}"], check=True)
