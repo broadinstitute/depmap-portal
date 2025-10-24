@@ -541,8 +541,9 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
 
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
-        assert len(result) == 1
-        assert result[0] == expected_oncref_dataset_w_priority
+        assert len(result) >= 1
+        matches = [x for x in result if x == expected_oncref_dataset_w_priority]
+        assert len(matches) == 1
 
 
 def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
@@ -587,8 +588,9 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         result = get_heatmap_options_new_tab_if_available(
             compound.label, compound.compound_id
         )
-        assert len(result) == 1
-        assert result[0] == expected_oncref_dataset_w_priority
+        assert len(result) >= 1
+        matches = [x for x in result if x == expected_oncref_dataset_w_priority]
+        assert len(matches) == 1
 
 
 def config(request):

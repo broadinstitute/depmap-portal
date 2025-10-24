@@ -14,6 +14,7 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
+
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
@@ -21,6 +22,7 @@ import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
+import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 
@@ -31,6 +33,22 @@ type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
 if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
 }
+
+const CorrelatedDependenciesTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "CorrelatedDependenciesTile" */
+      "./compound/tiles/CorrelatedDependenciesTile/CorrelatedDependenciesTile"
+    )
+);
+
+const RelatedCompoundsTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "RelatedCompoundsTile" */
+      "./compound/tiles/RelatedCompoundsTile/RelatedCompoundsTile"
+    )
+);
 
 const DoseResponseTab = React.lazy(
   () =>
@@ -267,6 +285,18 @@ export function initHeatmapTile(
   );
 }
 
+export function initCorrelatedDependenciesTile(
+  elementId: string,
+  entityLabel: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelatedDependenciesTile entityLabel={entityLabel} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
 export function initStructureAndDetailTile(
   elementId: string,
   compoundId: string
@@ -274,6 +304,27 @@ export function initStructureAndDetailTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <StructureAndDetailTile compoundId={compoundId} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initRelatedCompoundsTile(
+  elementId: string,
+  entityLabel: string
+) {
+  const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
+    Chronos_Combined: "CRISPR",
+    RNAi_merged: "RNAi",
+  };
+
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <RelatedCompoundsTile
+        entityLabel={entityLabel}
+        datasetId="Prism_oncology_AUC_collapsed"
+        datasetToDataTypeMap={datasetToDataTypeMap}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -309,6 +360,18 @@ export function initDoseResponseTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initCorrelationAnalysisTab(
+  elementId: string,
+  compoundName: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelationAnalysis compound={compoundName} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

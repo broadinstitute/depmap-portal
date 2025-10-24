@@ -145,9 +145,11 @@ def test_associations(
     response = client.post(
         "/temp/associations/query-slice",
         json={
-            "identifier_type": "feature_id",
-            "dataset_id": dataset_1.id,
-            "identifier": "feature0",
+            "slice_query": {
+                "identifier_type": "feature_id",
+                "dataset_id": dataset_1.id,
+                "identifier": "feature0",
+            }
         },
         headers={"X-Forwarded-User": "anon"},
     )

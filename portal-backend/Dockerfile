@@ -13,13 +13,15 @@ RUN useradd -u 997 -g cds-service depmap
 RUN mkdir -p /depmap && chown -R depmap:cds-service /depmap
 RUN mkdir -p /data1/taiga && chown -R depmap:cds-service /data1/taiga
 
+ENV ORIG_PATH="${PATH}"
 ENV PATH="/python3.9/bin:${PATH}"
 ENV FLASK_APP autoapp.py
 ENV LC_ALL C.UTF-8
 ENV LANG C.UTF-8
 
 # Install requirements
-RUN pip install poetry==1.5.1 && poetry config virtualenvs.create false 
+RUN pip install poetry==1.5.1 && poetry config virtualenvs.in-project true
+
 RUN mkdir -p /install
 ADD dist/additional-files.tar.gz /install
 
@@ -36,5 +38,6 @@ WORKDIR /install/portal-backend
 USER depmap
 
 RUN echo "breadbox_required=true" > /install/deploy_variables
+ENV PATH="/install/portal-backend/.venv/bin:${ORIG_PATH}"
 
 CMD gunicorn -b 0.0.0.0:5001 autoapp:app --access-logfile -

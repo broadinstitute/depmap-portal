@@ -179,7 +179,9 @@ def render_compound_tile(
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
         CompoundTileEnum.heatmap.value: get_heatmap_html,
+        CompoundTileEnum.correlated_dependencies.value: get_correlated_dependencies_html,
         CompoundTileEnum.description.value: get_structure_and_detail_html,
+        CompoundTileEnum.related_compounds.value: get_related_compounds_html,
     }
 
     if tile_name not in tiles:
@@ -385,6 +387,43 @@ def get_heatmap_html(
         f"""(
         function() {{
             DepMap.initHeatmapTile("{div_id}", "{compound_id}", "{entity_label}");
+        }})""",
+    )
+
+
+def get_correlated_dependencies_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    # unique id to insert in DOM
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
+
+    return RenderedTile(
+        f'<div id="{div_id}">get_correlated_dependencies_html is stubbed out</div>',
+        f"""(
+        function() {{
+            console.log("about to call initCorrelatedDependenciesTile");
+            DepMap.initCorrelatedDependenciesTile("{div_id}", "{entity_label}");
+            console.log("after initCorrelatedDependenciesTile");
+        }})""",
+    )
+
+
+def get_related_compounds_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    # unique id to insert in DOM
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
+    print(entity.entity_id)
+
+    return RenderedTile(
+        f'<div id="{div_id}">get_correlated_dependencies_html is stubbed out</div>',
+        f"""(
+        function() {{
+            console.log("about to call initRelatedCompoundsTile");
+            DepMap.initRelatedCompoundsTile("{div_id}", "{entity_label}");
+            console.log("after initRelatedCompoundsTile");
         }})""",
     )
 

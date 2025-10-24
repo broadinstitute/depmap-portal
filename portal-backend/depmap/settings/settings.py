@@ -103,14 +103,9 @@ class FeatureFlags:
     def new_compound_page_tabs(self):
         return self.is_prerelease_env()
 
-    # TODO: This should be VERY temporary and is only here to hide
-    # the extra datasets while discrepancies in IDs are resolved.
-    # This affects both the heatmap and the dose curves tab.
-    # The dose curve uses legacy db curves and replicates for the plot and table.
-    # The heatmap table has hidden-by-default dose curve param columns.
     @property
     def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
-        return False
+        return True
 
     @property
     def data_page(self):
@@ -212,6 +207,10 @@ class FeatureFlags:
 
     @property
     def data_explorer_2_experimental_settings(self):
+        return self.is_skyros()
+
+    @property
+    def show_compound_correlations(self):
         return self.is_skyros()
 
 

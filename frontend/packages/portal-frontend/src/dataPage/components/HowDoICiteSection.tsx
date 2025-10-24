@@ -37,10 +37,10 @@ const HowDoICiteSection = ({
             <div className={styles.col1}>
               <div style={{ fontWeight: "500" }}>
                 <b>
-                  Data in the DepMap portal is available for the community to use. 
-                  The DepMap team does not need to be included as authors should 
-                  you seek to publish on the data, but we do ask that you use the 
-                  following citing instructions.
+                  Data in the DepMap portal is available for the community to
+                  use. The DepMap team does not need to be included as authors
+                  should you seek to publish on the data, but we do ask that you
+                  use the following citing instructions.
                 </b>
               </div>
               <br />
@@ -56,8 +56,8 @@ const HowDoICiteSection = ({
               </div>
               <br />
               <div>
-                DepMap releases data publicly independent of publication. We ask 
-                that instead of citing a publication, cite the figshare for the 
+                DepMap releases data publicly independent of publication. We ask
+                that instead of citing a publication, cite the figshare for the
                 data release you are using.
               </div>
             </div>
@@ -67,9 +67,9 @@ const HowDoICiteSection = ({
               )}
               <div style={{ marginBottom: "35px" }}>
                 <b>We ask that you also cite the DepMap program:</b> <br />
-                Arafeh, R., Shibue, T., Dempster, J.M. <i>et al.</i>{" "}
-                The present and future of the Cancer Dependency Map.{" "}
-                <i>Nat Rev Cancer</i> <b>25</b>, 59-73 (2025).
+                Arafeh, R., Shibue, T., Dempster, J.M. <i>et al.</i> The present
+                and future of the Cancer Dependency Map. <i>Nat Rev Cancer</i>{" "}
+                <b>25</b>, 59-73 (2025).
                 https://doi.org/10.1038/s41568-024-00763-x
               </div>
               <div>

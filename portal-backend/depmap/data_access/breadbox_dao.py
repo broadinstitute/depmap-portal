@@ -5,6 +5,7 @@ from breadbox_client.models import (
     DimensionType,
     MatrixDatasetResponse,
     TabularDatasetResponse,
+    ValueType,
 )
 from breadbox_client.types import Unset
 from depmap.data_access.response_parsing import (
@@ -44,6 +45,8 @@ def get_all_matrix_datasets() -> list[MatrixDataset]:
     for dataset in _get_breadbox_datasets_with_caching():
         if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
+            if dataset.value_type != ValueType.CONTINUOUS:
+                continue
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
     return matrix_datasets
@@ -68,6 +71,8 @@ def get_filtered_matrix_datasets(
     for dataset in datasets:
         if dataset.format_ == "matrix_dataset":
             assert isinstance(dataset, MatrixDatasetResponse)
+            if dataset.value_type != ValueType.CONTINUOUS:
+                continue
             parsed_dataset = parse_matrix_dataset_response(dataset)
             matrix_datasets.append(parsed_dataset)
     return matrix_datasets
@@ -244,7 +249,7 @@ def add_matrix_dataset(
     data_df: pd.DataFrame,
     sample_type: str,
     feature_type: Optional[str],
-    is_transient: bool = False
+    is_transient: bool = False,
 ) -> tuple[str, list[str]]:
     """
     Upload the given matrix dataset to breadbox.
@@ -253,7 +258,7 @@ def add_matrix_dataset(
     """
     if is_transient:
         group_id = extensions.breadbox.client.TRANSIENT_GROUP_ID
-    else: 
+    else:
         group_id = extensions.breadbox.client.PUBLIC_GROUP_ID
 
     upload_result = extensions.breadbox.client.add_matrix_dataset(
@@ -271,7 +276,11 @@ def add_matrix_dataset(
     if "unknownIDs" in upload_result:
         for idset in upload_result["unknownIDs"]:
             missing_ids = idset["IDs"]
-            warnings.append( f"{len(missing_ids)} IDs in uploaded data are missing from our metadata: {idset}")
+            warnings.append(
+                f"{len(missing_ids)} IDs in uploaded data are missing from our metadata: {idset}"
+            )
 
-    assert "datasetId" in upload_result, "Unexpected result format from data upload. Expected `datasetId` field."
+    assert (
+        "datasetId" in upload_result
+    ), "Unexpected result format from data upload. Expected `datasetId` field."
     return upload_result["datasetId"], warnings
