@@ -1,0 +1,62 @@
+let DEFAULT_DOCKER_IMAGE = "us.gcr.io/broad-achilles/depmap-pipeline-run:ga2-build-8"
+
+add-if-missing {
+  "type": "config-file",
+  "name": "taiga-token",
+  "filename": {"$filename": "{{config.ENV['HOME']}}/.taiga/token"}
+}
+
+# add-if-missing {
+# 'type': 'cor-analysis-a',
+# 'given_id': 'oncref-viability',
+# 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2ViabilityCollapsedMatrix',
+# 'feature_id_format': 'compound+dose',
+# 'features_taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2ViabilityCollapsedConditions',
+# 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+# }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'oncref-auc',
+ 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceAUCMatrix',
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+ }
+
+#add-if-missing {
+# 'type': 'cor-analysis-a',
+# 'given_id': 'oncref-ic50',
+# 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2IC50Matrix',
+# 'feature_id_format': 'compound',
+# 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+# }
+
+add-if-missing {
+'type': 'cor-analysis-b',
+'given_id': 'crispr',
+'taiga_id': 'internal-24q4-8c04.117/CRISPRGeneEffect',
+'feature_id_format': 'gene'
+}
+
+# add-if-missing {
+# 'type': 'cor-analysis-b',
+# 'given_id': 'cn',
+# 'taiga_id': 'internal-24q4-8c04.117/OmicsCNGene',
+# 'feature_id_format': 'gene'
+# }
+
+# add-if-missing {
+# 'type': 'cor-analysis-b',
+# 'given_id': 'expression',
+# 'taiga_id': 'internal-24q4-8c04.117/OmicsExpressionProteinCodingGenesTPMLogp1',
+# 'feature_id_format': 'gene'
+# }
+
+include "cor_analysis.conseq"
+
+
+#let publish_dest = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test"
+#let S3_STAGING_URL = "gs://preprocessing-pipeline-outputs/depmap-pipeline/pgm-test/staging"
+#rule publish_cor_tables:
+#    inputs: cor_tables=all {"type": "cor_table"}
+#    publish: "{{config.publish_dest}}/cor_tables.json"
