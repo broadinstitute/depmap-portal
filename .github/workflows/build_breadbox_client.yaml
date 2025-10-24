@@ -24,15 +24,15 @@ jobs:
           token: "${{ secrets.GITHUB_TOKEN }}"
           fetch-depth: 0
 
+      - name: Prepare breadbox client
+        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
+
       - name: "Set up authentication for publishing breadbox client"
         working-directory: "./breadbox-client"
         run: |
           poetry self add keyrings.google-artifactregistry-auth
           poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
         shell: bash
-
-      - name: Prepare breadbox client
-        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
 
       - name: "Install breadbox and dependencies"
         working-directory: ./breadbox
