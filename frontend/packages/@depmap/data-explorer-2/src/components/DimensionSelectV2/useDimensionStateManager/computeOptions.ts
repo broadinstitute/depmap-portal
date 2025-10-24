@@ -22,7 +22,8 @@ function formatList(items: string[]) {
 async function fetchIndexCompatibleDatasets(
   index_type: string | null,
   selectedDatasetId: string | null,
-  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
+  allowNullFeatureType: boolean
 ) {
   if (!index_type) {
     return [];
@@ -37,11 +38,15 @@ async function fetchIndexCompatibleDatasets(
     throw new Error(`Unknown dimension type "${index_type}".`);
   }
 
-  return datasets.filter((d) =>
-    valueTypes.has(
+  return datasets.filter((d) => {
+    if (!allowNullFeatureType && d.slice_type === SLICE_TYPE_NULL) {
+      return false;
+    }
+
+    return valueTypes.has(
       d.value_type as typeof valueTypes extends Set<infer U> ? U : never
-    )
-  );
+    );
+  });
 }
 
 async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
@@ -370,7 +375,6 @@ async function computeDataVersionOptions(
   index_type: string | null,
   selectedDataType: string | null,
   selectedUnits: string | null,
-  allowNullFeatureType: boolean,
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
   dimension: State["dimension"],
   datasets: DataExplorerDatasetDescriptor[],
@@ -384,7 +388,6 @@ async function computeDataVersionOptions(
 
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
-    .filter((d) => allowNullFeatureType || d.slice_type !== SLICE_TYPE_NULL)
     .filter((d) =>
       valueTypes.has(
         d.value_type as typeof valueTypes extends Set<infer U> ? U : never
@@ -503,13 +506,15 @@ export async function computeUnitsOptions(
   index_type: string | null,
   selectedDataType: string | null,
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
+  allowNullFeatureType: boolean,
   dimension: State["dimension"]
 ) {
   const [datasets, dimensionTypes] = await Promise.all([
     fetchIndexCompatibleDatasets(
       index_type,
       dimension.dataset_id || null,
-      valueTypes
+      valueTypes,
+      allowNullFeatureType
     ),
     cached(breadboxAPI).getDimensionTypes(),
   ]);
@@ -595,7 +600,8 @@ export default async function computeOptions(
     fetchIndexCompatibleDatasets(
       index_type,
       dimension.dataset_id || null,
-      valueTypes
+      valueTypes,
+      allowNullFeatureType
     ),
     cached(breadboxAPI).getDimensionTypes(),
   ]);
@@ -619,13 +625,18 @@ export default async function computeOptions(
       index_type,
       selectedDataType,
       selectedUnits,
-      allowNullFeatureType,
       valueTypes,
       dimension,
       datasets,
       dimensionTypes
     ),
-    computeUnitsOptions(index_type, selectedDataType, valueTypes, dimension),
+    computeUnitsOptions(
+      index_type,
+      selectedDataType,
+      valueTypes,
+      allowNullFeatureType,
+      dimension
+    ),
   ]);
 
   return {

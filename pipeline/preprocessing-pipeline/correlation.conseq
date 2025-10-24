@@ -1,0 +1,104 @@
+rule dep_dep_correlation:
+    resources: {'slots': "0.05"} # let up to 20 of these run in parallel
+    inputs: dep={'type': 'dep-matrix', 
+            'label' ~ '^(?!Repurposing_secondary_dose).*$'}, # negative lookahead to not run on secondary dose
+            script=fileref('scripts/correlation.py'),
+            hdf5_utils=fileref('scripts/hdf5_utils.py'),
+            compute_hash=fileref('scripts/compute_hash.py'),
+            sparkles_config=fileref('sparkles-config')
+            
+    outputs: {
+        'type': 'dep-matrix-pearson-cor',
+        'db': {'$filename': 'dep_dep_cor.db'},
+        'label': '{{ inputs.dep.label }}',
+        'dep_dataset_id': '{{ inputs.dep.orig_dataset_id }}',
+        'category': 'dep'
+    }
+
+    run """python3 {{ inputs.compute_hash.filename }} \
+        -u {{ inputs.dep.filename }}:dep.hdf5 \
+        -u {{ inputs.script.filename }}:cor.py \
+        -u {{ inputs.hdf5_utils.filename }}:hdf5_utils.py \
+        --len 10 \
+        dep-dep-correlation \
+        -o job-hash.txt
+    """
+        
+    run 'bash' with """
+        set -ex
+        HASH=`cat job-hash.txt`
+
+        {{ config.sparkles_path }} \
+        --config {{ inputs.sparkles_config.filename }} \
+        sub \
+        -i us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:v4 \
+        -u {{ inputs.dep.filename }}:dep.hdf5 \
+        -u {{ inputs.script.filename }}:cor.py \
+        -u {{ inputs.hdf5_utils.filename }}:hdf5_utils.py \
+        --skipifexists \
+        -n correlation_${HASH} \
+        python ./cor.py dep.hdf5 dep.hdf5 dep_dep_cor.db --label0 {{ inputs.dep.label }} --label1 {{ inputs.dep.label }}
+    """
+    run "bash" with """
+        set -ex
+        HASH=`cat job-hash.txt`
+        {{ config.sparkles_path }} --config {{ inputs.sparkles_config.filename }} watch correlation_${HASH} --loglive
+        default_url_prefix=$(awk -F "=" '/default_url_prefix/ {print $2}' "{{ inputs.sparkles_config.filename }}")
+        gsutil -m cp ${default_url_prefix}/correlation_${HASH}/1/dep_dep_cor.db .
+        """
+
+rule dep_bio_correlation:
+    resources: {'slots': "0.05"} # let up to 20 of these run in parallel
+    inputs:
+        dep={'type': 'dep-matrix', 'label' ~ 'Chronos_Combined|Chronos_Achilles|CERES_Combined|Avana|RNAi_Ach|RNAi_Nov_DEM|RNAi_merged|GDSC1_AUC|GDSC2_AUC|CTRP_AUC|Repurposing_secondary_AUC|Rep_all_single_pt'},
+        biomarker={'type': 'biomarker-matrix', 'category' ~ 'expression|copy-number-relative|copy-number-absolute|mutation-pearson|mutations-damaging|mutations-hotspot|mutations-driver'}, # Add biomarkers to association_bioms in db_load_commands.py to show for sample cors
+        script=fileref('scripts/correlation.py'),
+        hdf5_utils=fileref('scripts/hdf5_utils.py'),
+        taiga_token={'type': 'config-file', 'name': 'taiga-token'},
+        compute_hash=fileref('scripts/compute_hash.py'),
+        sparkles_config=fileref('sparkles-config'),
+        sparkles_config_n1_highmem_4=fileref('sparkles-config-n1-highmem-4')
+    outputs: {
+        'type': 'dep-matrix-pearson-cor',
+        'db': {'$filename': 'dep_biom_cor.db'},
+        'label': '{{ inputs.dep.label }}',
+        'dep_dataset_id': '{{ inputs.dep.orig_dataset_id }}',
+        'category': '{{ inputs.biomarker.category }}',
+        'biom_source_dataset_id': '{{ inputs.biomarker.source_dataset_id }}'
+    }
+
+    run """python3 {{ inputs.compute_hash.filename }} \
+        -u {{ inputs.dep.filename }}:dep.hdf5 \
+        -u {{ inputs.biomarker.filename }}:biomarker.hdf5 \
+        -u {{ inputs.script.filename }}:cor.py \
+        -u {{ inputs.hdf5_utils.filename }}:hdf5_utils.py \
+        --len 10 \
+        dep-biomarker-correlation \
+        -o job-hash.txt
+    """
+        
+    run 'bash' with """
+        set -ex
+        HASH=`cat job-hash.txt`
+
+        {{ config.sparkles_path }} \
+        --config {{ inputs.sparkles_config_n1_highmem_4.filename }} \
+        sub \
+        -i us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:v4 \
+        -u {{ inputs.dep.filename }}:dep.hdf5 \
+        -u {{ inputs.biomarker.filename }}:biomarker.hdf5 \
+        -u {{ inputs.script.filename }}:cor.py \
+        -u {{ inputs.hdf5_utils.filename }}:hdf5_utils.py \
+        -u {{ inputs.taiga_token.filename}}:taiga-token \
+        --skipifexists \
+        -n correlation_${HASH} \
+        python ./cor.py dep.hdf5 biomarker.hdf5 dep_biom_cor.db --label0 {{ inputs.dep.label }} --label1 {{ inputs.biomarker.category }}
+    """
+
+    run "bash" with """
+        set -ex
+        HASH=`cat job-hash.txt`
+        {{ config.sparkles_path }} --config {{ inputs.sparkles_config_n1_highmem_4.filename }} watch correlation_${HASH} --loglive
+        default_url_prefix=$(awk -F "=" '/default_url_prefix/ {print $2}' "{{ inputs.sparkles_config.filename }}")
+        gsutil -m cp ${default_url_prefix}/correlation_${HASH}/1/dep_biom_cor.db .
+        """

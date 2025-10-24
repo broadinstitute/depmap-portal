@@ -152,6 +152,7 @@ def get_file_record(release: DownloadRelease, f: DownloadFile):
         "fileName": f.name,
         "fileType": f.type.display_name,
         "size": f.size,
+        "version": f.version,
         "fileDescription": None
         if f.description is None
         else markdown.markdown(f.description),

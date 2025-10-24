@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import stableStringify from "json-stable-stringify";
 import { Button, Modal } from "react-bootstrap";
-import { enabledFeatures } from "@depmap/globals";
 import type { Settings } from "../../contexts/DataExplorerSettingsContext";
 import { isValidNumber, updateColor, updateStyle } from "./utils";
 import ColorSelector from "./ColorSelector";
@@ -14,6 +13,7 @@ interface Props {
   defaultSettings: Settings;
   onSave: (nextValue: Settings) => void;
   onHide: () => void;
+  feedbackUrl?: string;
 }
 
 function SettingsModal({
@@ -21,6 +21,7 @@ function SettingsModal({
   defaultSettings,
   onSave,
   onHide,
+  feedbackUrl = "",
 }: Props) {
   const [settings, setSettings] = useState(initialSettings);
 
@@ -268,31 +269,48 @@ function SettingsModal({
             </Button>
           </div>
         </section>
-        {enabledFeatures.data_explorer_2_experimental_settings && (
-          <section>
-            <h2>
-              Experimental <i className="fa fa-flask" />
-            </h2>
+        <section>
+          <h2>
+            Experimental <i className="fa fa-flask" />
+          </h2>
+          <div>
             <label className={styles.checkboxLabel}>
               <input
-                id="use-breadbox-backend"
+                id="use-legacy-portal-backend"
                 type="checkbox"
-                checked={settings.useBreadboxBackend}
+                checked={settings.useLegacyPortalBackend}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   const { checked } = e.target;
                   setSettings((prev) => ({
                     ...prev,
-                    useBreadboxBackend: checked,
+                    useLegacyPortalBackend: checked,
                   }));
                 }}
               />
-              <span>
-                Enable “Breadbox-only” mode (all data will be loaded directly
-                from Breadbox using only Breadbox APIs)
-              </span>
+              <span>Use Legacy Mode</span>
             </label>
-          </section>
-        )}
+            <p>
+              <i>
+                Try this if any data fails to load. It will fall back to using
+                our legacy database.
+              </i>
+              {feedbackUrl && (
+                <i>
+                  <br />
+                  Then{" "}
+                  <a
+                    href={feedbackUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    let us know
+                  </a>{" "}
+                  so we can resolve the issue!
+                </i>
+              )}
+            </p>
+          </div>
+        </section>
       </Modal.Body>
       <Modal.Footer>
         <Button onClick={onHide}>Cancel</Button>
