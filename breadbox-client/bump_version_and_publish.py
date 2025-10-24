@@ -29,8 +29,8 @@ import subprocess
 import re
 import argparse
 
-
-VERSION_TAG_PATTERN="breadbox-(\\d+.\\d+.\\d+)"
+TAG_PREFIX = "breadbox-"
+VERSION_TAG_PATTERN=TAG_PREFIX + "(\\d+.\\d+.\\d+)"
 IGNORE_CONVENTIONAL_COMMIT_TYPES = ["build", "chore", "ci", "docs", "style", "refactor", "perf", "test"]
 PATCH_CONVENTIONAL_COMMIT_TYPES = ["fix", "revert"]
 MINOR_CONVENTIONAL_COMMIT_TYPES = ["feat"]
@@ -73,9 +73,12 @@ def main():
     if last_version is None:
         raise AssertionError("No previous version tag found. Cannot proceed without a base version.")
 
-    print("Analyzing git history for version tags and conventional commits...")
+    # Create tag name from last version
+    last_tag = f"{TAG_PREFIX}{'.'.join(map(str, last_version))}"
 
-    for commit_hash, bump_rule, commit_subject in get_bumps(last_version):
+    print(f"Looking at git history starting at {last_tag} for conventional commits...")
+
+    for commit_hash, bump_rule, commit_subject in get_bumps(last_tag):
         bump_rules.append((commit_hash, commit_subject, bump_rule))
 
     if len(bump_rules) == 0:
@@ -156,14 +159,14 @@ def update_version_in_files(version_str, dryrun=False):
         print("  DRY RUN: Would commit version changes")
 
 def tag_repo(version_str):
-    tag_name = f"breadbox-{version_str}"
+    tag_name = f"{TAG_PREFIX}{version_str}"
     print(f"  Creating git tag: {tag_name}...")
     try:
         # Create an annotated tag
         subprocess.run(["git", "tag", "-a", tag_name, "-m", f"Release {version_str}"], check=True)
         # Push the tag to remote
         print("  Pushing tag to remote...")
-        subprocess.run(["git", "push", "origin", tag_name], check=True)
+        subprocess.run(["git", "push", "origin", tag_name, "master"], check=True)
     except Exception as e:
         print(f"Error tagging repository: {str(e)}")
         raise
@@ -210,12 +213,10 @@ def get_last_sem_version():
         raise
     return highest_version
 
-def get_bumps(last_version):
+def get_bumps(last_tag):
     print("  Retrieving git commit history...")
     
-    # Create tag name from last version
-    last_tag = f"breadbox-{'.'.join(map(str, last_version))}"
-    
+
     # Get commits from HEAD to the last version tag
     commit_output = subprocess.check_output(
         ["git", "log", f"{last_tag}..HEAD", "--pretty=format:%H%x09%s"],
