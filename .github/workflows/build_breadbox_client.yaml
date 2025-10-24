@@ -27,6 +27,11 @@ jobs:
       - name: Prepare breadbox client
         uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
 
+      - name: "Authenticate to Google Cloud"
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}"
+
       - name: "Set up authentication for publishing breadbox client"
         working-directory: "./breadbox-client"
         run: |
