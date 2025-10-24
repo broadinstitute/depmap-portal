@@ -4,6 +4,7 @@ import { Tab, Tabs } from "react-bootstrap";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
 import { stripHtmlTags } from "./utils";
+import { enabledFeatures } from "@depmap/globals";
 
 interface ReleaseTabsProps {
   currentReleaseData: DownloadTableData;
@@ -54,7 +55,7 @@ const ReleaseTabs = ({
           title={releaseDataGroupedBySubtype[code][0].fileSubType.label}
           key={code}
         >
-          {pipelineByCode[code] && (
+          {enabledFeatures.pipeline_overview && pipelineByCode[code] && (
             <>
               <h3>Pipeline Overview</h3>
               <div> {stripHtmlTags(pipelineByCode[code].description)}</div>

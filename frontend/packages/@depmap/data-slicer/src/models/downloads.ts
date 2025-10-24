@@ -64,7 +64,7 @@ export interface DownloadFile {
   pipeline: {
     name: string;
     description: string;
-  };
+  } | null;
   size: string;
   sources: Array<FileSource>;
   summaryStats?: SummaryStats;
