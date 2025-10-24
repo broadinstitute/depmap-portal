@@ -17,6 +17,7 @@ def log_event(filename, phase, op_id, context=None):
             "id": op_id,
             "t": datetime.datetime.now().isoformat(timespec="seconds"),
             "m": rss,
+            "pid": os.getpid(),
         }
         if context:
             record.update(context)

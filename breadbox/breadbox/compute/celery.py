@@ -1,11 +1,13 @@
 import psutil
 from celery import Celery, Task, signals
 import os
+import uuid
 from logging import getLogger
 from fastapi import HTTPException
 
 from breadbox.logging import GCPExceptionReporter
 from breadbox.celery_task.utils import check_celery
+from breadbox.utils.debug_event_log import log_event, _get_log_filename
 
 from ..config import Settings, get_settings
 from pydantic import ValidationError
@@ -80,6 +82,31 @@ if settings is not None:
             broker_url="redis://" + rhost, backend="redis://" + rhost,
         )
     app.conf.update(**storage_configuration)  # pyright: ignore
+
+# Set up task logging using Celery signals
+@signals.task_prerun.connect
+def task_prerun_handler(task_id, task, *args, **kwargs):
+    log_filename = _get_log_filename()
+    if log_filename:
+        # Generate a readable task name
+        task_name = task.name if hasattr(task, 'name') else str(task)
+        # Log task start
+        log_event(log_filename, "start", task_id, {"n": f"Task {task_name}"})
+
+@signals.task_success.connect
+def task_success_handler(result, **kwargs):
+    log_filename = _get_log_filename()
+    if log_filename:
+        task_id = kwargs.get('sender').request.id
+        # Log task success
+        log_event(log_filename, "end", task_id, {"s": "success"})
+
+@signals.task_failure.connect
+def task_failure_handler(task_id, exception, **kwargs):
+    log_filename = _get_log_filename()
+    if log_filename:
+        # Log task failure
+        log_event(log_filename, "end", task_id, {"s": "error", "e": str(exception)})
 
 if __name__ == "__main__":
     app.start()
