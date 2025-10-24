@@ -98,7 +98,7 @@ def task_prerun_handler(task_id, task, *args, **kwargs):
 def task_success_handler(result, **kwargs):
     log_filename = _get_log_filename()
     if log_filename:
-        task_id = kwargs.get("sender").request.id
+        task_id = kwargs["sender"].request.id
         # Log task success
         log_event(log_filename, "end", task_id, {"s": "success"})
 
