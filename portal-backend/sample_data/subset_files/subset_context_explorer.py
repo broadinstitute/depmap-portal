@@ -28,13 +28,13 @@ cell_lines_arxspan = [
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("depmap_data_taiga_id")
+    parser.add_argument("release_taiga_id")
     parser.add_argument("repurposing_taiga_id")
     parser.add_argument("rnai_taiga_id")
     parser.add_argument("dest")
     parser.add_argument("file_name")
     args = parser.parse_args()
-    depmap_data_taiga_id = args.depmap_data_taiga_id
+    release_taiga_id = args.release_taiga_id
     repurposing_taiga_id = args.repurposing_taiga_id
     rnai_taiga_id = args.rnai_taiga_id
     dest = args.dest
@@ -43,7 +43,7 @@ def main():
 
     tc = create_taiga_client_v3()
     # Data for CRISPR, RNAi, Omics, PRISM
-    ScreenSequenceMap = tc.get(f"{depmap_data_taiga_id}/ScreenSequenceMap")
+    ScreenSequenceMap = tc.get(f"{release_taiga_id}/ScreenSequenceMap")
     ScreenSequenceMap = ScreenSequenceMap[
         ScreenSequenceMap["ModelID"].isin(cell_lines_arxspan)
     ]
@@ -52,7 +52,7 @@ def main():
     CL_data_comb = tc.get(rnai_taiga_id)
     assert CL_data_comb is not None
 
-    OmicsProfiles = tc.get(f"{depmap_data_taiga_id}/OmicsProfiles")
+    OmicsProfiles = tc.get(f"{release_taiga_id}/OmicsProfiles")
     OmicsProfiles = OmicsProfiles[OmicsProfiles["ModelID"].isin(cell_lines_arxspan)]
     assert OmicsProfiles is not None
 
@@ -62,7 +62,7 @@ def main():
     ]
     assert Repurposing_23Q2_Cell_Line_Meta_Data is not None
 
-    Model = tc.get(f"{depmap_data_taiga_id}/Model")
+    Model = tc.get(f"{release_taiga_id}/Model")
     Model = Model[Model["ModelID"].isin(cell_lines_arxspan)]
     assert Model is not None
 

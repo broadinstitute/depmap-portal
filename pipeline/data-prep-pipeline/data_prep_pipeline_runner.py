@@ -11,6 +11,8 @@ from base_pipeline_runner import PipelineRunner
 
 class DataPrepPipelineRunner(PipelineRunner):
     def create_argument_parser(self):
+        defaults = self.config_data["defaults"]
+
         parser = argparse.ArgumentParser(description="Run data prep pipeline")
         parser.add_argument("env_name", help="Name of environment")
         parser.add_argument("job_name", help="Name to use for job")
@@ -20,45 +22,31 @@ class DataPrepPipelineRunner(PipelineRunner):
             help="Run external pipeline (default is internal)",
         )
         parser.add_argument(
-            "--manually-run-conseq",
-            action="store_true",
-            help="If set args will be passed directly to conseq",
-        )
-        parser.add_argument(
-            "--taiga-dir",
-            default="/data2/depmap-pipeline-taiga",
-            help="Taiga directory path",
+            "--taiga-dir", default=defaults["taiga_dir"], help="Taiga directory path",
         )
         parser.add_argument(
             "--creds-dir",
-            default="/etc/depmap-pipeline-runner-creds",
+            default=defaults["creds_dir"],
             help="Pipeline runner credentials directory",
         )
         parser.add_argument(
             "--image", help="If set, use this docker image when running the pipeline",
         )
-        parser.add_argument(
-            "--start-with", help="Start with existing export from GCS path"
-        )
-        parser.add_argument(
-            "conseq_args", nargs="*", help="parameters to pass to conseq"
-        )
         return parser
 
     def get_pipeline_config(self, args):
+        pipeline_cfg = self.config_data["pipelines"]["data_prep"]
+
         config = {
             "env_name": args.env_name,
             "job_name": args.job_name,
-            "conseq_args": args.conseq_args,
             "taiga_dir": args.taiga_dir,
             "creds_dir": args.creds_dir,
-            "manually_run_conseq": args.manually_run_conseq,
-            "start_with": args.start_with,
             "is_external": args.external,
             "image": args.image,
-            "state_path": "pipeline/data-prep-pipeline/state",
-            "log_destination": "data-prep-logs",
-            "working_dir": "/work/pipeline/data-prep-pipeline",
+            "state_path": pipeline_cfg["state_path"],
+            "log_destination": pipeline_cfg["log_destination"],
+            "working_dir": pipeline_cfg["working_dir"],
         }
 
         self.check_credentials(config["creds_dir"])
@@ -66,31 +54,37 @@ class DataPrepPipelineRunner(PipelineRunner):
 
     def get_conseq_file(self, config):
         """Get conseq file for data prep pipeline."""
+        conseq_files = self.config_data["pipelines"]["data_prep"]["conseq_files"]
+
         if config["is_external"]:
-            return "data_prep_pipeline/run_external.conseq"
+            return conseq_files["external"]
         else:
-            return "data_prep_pipeline/run_internal.conseq"
+            return conseq_files["internal"]
 
     def run_via_container(self, command, config):
         """Run command inside Docker container with data prep specific configuration."""
         cwd = os.getcwd()
+        docker_cfg = self.config_data["docker"]
+        volumes = docker_cfg["volumes"]
+        env_vars = docker_cfg["env_vars"]
+        cred_files = self.config_data["credentials"]["required_files"]
 
         docker_cmd = [
             "docker",
             "run",
             "--rm",
             "-v",
-            f"{cwd}:/work",
+            f"{cwd}:{volumes['work_dir']}",
             "-v",
-            f"{config['creds_dir']}/broad-paquitas:/aws-keys/broad-paquitas",
+            f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
             "-v",
-            f"{config['creds_dir']}/sparkles:/root/.sparkles-cache",
+            f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
             "-v",
-            f"{config['creds_dir']}/depmap-pipeline-runner.json:/etc/google_default_creds.json",
+            f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
             "-v",
-            f"{config['taiga_dir']}:/root/.taiga",
+            f"{config['taiga_dir']}:{volumes['taiga']}",
             "-e",
-            "GOOGLE_APPLICATION_CREDENTIALS=/etc/google_default_creds.json",
+            f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
             "-w",
             config["working_dir"],
             "--name",
@@ -98,84 +92,51 @@ class DataPrepPipelineRunner(PipelineRunner):
             config["docker_image"],
             "bash",
             "-c",
-            f"source /aws-keys/broad-paquitas && {command}",
+            f"source {volumes['aws_keys']} && {command}",
         ]
         print("command", command)
         return subprocess.run(docker_cmd)
 
-    def preprocess_release_inputs(self, config):
-        """Preprocess templates to generate DO-NOT-EDIT-ME files before run."""
-        template = (
-            "release_inputs_external.template"
-            if config["is_external"]
-            else "release_inputs_internal.template"
-        )
-        output = (
-            "release_inputs_external-DO-NOT-EDIT-ME"
-            if config["is_external"]
-            else "release_inputs_internal-DO-NOT-EDIT-ME"
-        )
-        self.run_via_container(
-            f"python ../preprocess_taiga_ids.py {template} {output}", config
-        )
-
-    def track_dataset_usage(self, config):
-        """Track dataset usage from template files and log to usage tracker."""
-        # Look for DO-NOT-EDIT-ME files that contain the release taiga ID
+    def track_dataset_usage(self):
+        """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
         pipeline_dir = Path("pipeline/data-prep-pipeline")
         version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
 
         for version_file in version_files:
-            try:
-                with open(version_file, "r") as f:
-                    content = f.read()
+            assert version_file.exists(), f"Version file does not exist: {version_file}"
 
-                    # Find the release_taiga_id entry specifically
-                    # Pattern matches: "type": "release_taiga_id" followed by "dataset_id": "..."
-                    release_pattern = (
-                        r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
-                    )
-                    match = re.search(release_pattern, content, re.DOTALL)
+            with open(version_file, "r") as f:
+                content = f.read()
+                assert content, f"Version file is empty: {version_file}"
 
-                    if match:
-                        release_taiga_id = match.group(1)
-                        self.log_dataset_usage(release_taiga_id)
-                        print(f"Tracked release dataset usage: {release_taiga_id}")
-                        # Only log once per file, so break after finding it
-                        break
-
-            except Exception as e:
-                print(
-                    f"Warning: Could not track dataset usage from {version_file}: {e}"
+                release_pattern = (
+                    r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
                 )
+                match = re.search(release_pattern, content, re.DOTALL)
+
+                if match:
+                    release_taiga_id = match.group(1)
+                    assert release_taiga_id, "Release taiga ID is empty"
+                    self.log_dataset_usage(release_taiga_id)
+                    break
 
     def handle_special_features(self, config):
-        """Handle START_WITH functionality for data prep pipeline."""
-        self.preprocess_release_inputs(config)
-        if config["start_with"]:
-            print(f"Starting with existing export: {config['start_with']}")
-            # Clean out old invocation
-            subprocess.run(
-                ["sudo", "chown", "-R", "ubuntu", "data-prep-pipeline"], check=True
-            )
-            subprocess.run(["rm", "-rf", "data-prep-pipeline/state"], check=True)
+        """Preprocess templates to generate DO-NOT-EDIT-ME files before run."""
+        templates = self.config_data["pipelines"]["data_prep"]["templates"]
 
-            # Download the export
-            subprocess.run(
-                [
-                    "bash",
-                    "-c",
-                    f"source {config['creds_dir']}/broad-paquitas && gsutil cp {config['start_with']} data-prep-pipeline/data_prep_pipeline/downloaded-export.conseq",
-                ],
-                check=True,
-            )
+        template_key = "external" if config["is_external"] else "internal"
+        template = templates[template_key]["input"]
+        output = templates[template_key]["output"]
 
-            # Run the downloaded export
-            self.run_via_container("conseq run downloaded-export.conseq", config)
-
-            # Forget publish rules
-            self.run_via_container("conseq forget --regex publish.*", config)
+        self.run_via_container(
+            f"python ../preprocess_taiga_ids.py {template} {output}", config
+        )
 
     def handle_post_run_tasks(self, config):
         """After conseq finishes, log dataset usage."""
-        self.track_dataset_usage(config)
+        self.track_dataset_usage()
+
+
+if __name__ == "__main__":
+    runner = DataPrepPipelineRunner()
+    runner.run(Path(__file__))
