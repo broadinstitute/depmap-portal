@@ -75,7 +75,7 @@ def main():
 
     print("Analyzing git history for version tags and conventional commits...")
 
-    for commit_hash, bump_rule, commit_subject in get_bumps():
+    for commit_hash, bump_rule, commit_subject in get_bumps(last_version):
         bump_rules.append((commit_hash, commit_subject, bump_rule))
 
     if len(bump_rules) == 0:
@@ -210,11 +210,15 @@ def get_last_sem_version():
         raise
     return highest_version
 
-def get_bumps():
+def get_bumps(last_version):
     print("  Retrieving git commit history...")
-
+    
+    # Create tag name from last version
+    last_tag = f"breadbox-{'.'.join(map(str, last_version))}"
+    
+    # Get commits from HEAD to the last version tag
     commit_output = subprocess.check_output(
-        ["git", "log", "--pretty=format:%H%x09%s"],
+        ["git", "log", f"{last_tag}..HEAD", "--pretty=format:%H%x09%s"],
         text=True
     )
 
