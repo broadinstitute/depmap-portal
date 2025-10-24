@@ -15,7 +15,7 @@ env:
 jobs:
   build-breadbox-client:
     permissions:
-      contents: read
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - name: "Check out"
