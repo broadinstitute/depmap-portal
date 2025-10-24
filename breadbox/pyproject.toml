@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox"
-version = "4.3.3"
+version = "4.3.8"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
@@ -19,8 +19,8 @@ redis = "^4.5.0"
 pytest = "^7.2.0"
 httpx = "^0.23.1"
 uvicorn = "^0.20.0"
-pydantic = {extras = ["email"], version = "^2.7.1"}
-taigapy = {version = "3.14.0", source = "public-python"}
+pydantic = {extras = ["email"], version = "4.3.8"}
+taigapy = {version = "4.3.8", source = "public-python"}
 SQLAlchemy= "^2.0.40"
 factory-boy = "^3.3.0"
 google-cloud-error-reporting = "^1.10.0"
@@ -28,14 +28,14 @@ itsdangerous = "^2.1.2"
 pandera = "^0.18.3"
 bpython = "^0.24"
 pydantic-settings = "^2.2.1"
-depmap-compute = {version = "0.1.13", source = "public-python"}
+depmap-compute = {version = "4.3.8", source = "public-python"}
 # depmap-compute = {path = "../depmap-compute", develop = true}
 fastparquet = "^2024.5.0"
 sqlitedict="^2.1.0"
 google-cloud-storage = "^3.1.0"
-packed-cor-tables = {version = "^0.2.0", source = "public-python"}
+packed-cor-tables = {version = "4.3.8", source = "public-python"}
 orjson = "^3.10.16"
-pypatch-and-run = {version = "^0.3.1", source = "public-python"}
+pypatch-and-run = {version = "4.3.8", source = "public-python"}
 python-multipart = "^0.0.20" # fastapi 0.115.12 needs this
 psutil = "^7.1.0"
 
