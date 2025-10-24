@@ -5,6 +5,7 @@ from depmap.download.models import (
     DownloadRelease,
     DownloadFile,
     FileSubtype,
+    InternalBucketUrl,
     ReleaseType,
     FileSource,
     FileType,
@@ -25,6 +26,16 @@ expected_downloads = [
         terms=ReleaseTerms.depmap,
         citation="This is a fake dev citation",
         all_files=[
+            DownloadFile(
+                name="test_internal_bucket.csv",
+                type=FileType.genetic_dependency,
+                sub_type=FileSubtype(
+                    code="crispr_screen", label="CRISPR Screen", position=0
+                ),
+                size="MB",
+                url=InternalBucketUrl("test/test_internal_bucket.csv"),
+                taiga_id="small-chronos-combined-e82b.2/chronos_combined_score",
+            ),
             DownloadFile(
                 name="gene_effect.csv",
                 type=FileType.genetic_dependency,
@@ -172,9 +183,12 @@ def test_parse_download_file(
     file_path="tests/depmap/download/test_download_release.yaml",
 ):
     observed_downloads_release = parse_downloads_file(file_path)
-    assert len(observed_downloads_release.all_files) == 6
+    assert len(observed_downloads_release.all_files) == 7
 
     assert repr(observed_downloads_release.all_files[0]._url) == repr(
+        InternalBucketUrl("test/test_internal_bucket.csv")
+    )
+    assert repr(observed_downloads_release.all_files[1]._url) == repr(
         DmcBucketUrl("test/gene_effect.csv")
     )
     assert observed_downloads_release.all_files[0].satisfies_db_taiga_id == None

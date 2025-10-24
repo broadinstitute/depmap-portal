@@ -11,6 +11,7 @@ from uuid import UUID
 import pandas as pd
 
 from breadbox_client import Client
+from breadbox_client.api.health_check import ok
 from breadbox_client.api.api import get_task_status as get_task_status_client
 from breadbox_client.api.compute import compute_univariate_associations as compute_univariate_associations_client
 from breadbox_client.api.data_types import add_data_type as add_data_type_client
@@ -645,3 +646,7 @@ class BBClient:
             return task_response["result"]
         else:
             raise ValueError(f"Unexpected task state: {task_state}")
+
+    def is_ok(self):
+        response = ok.sync_detailed(client=self.client)
+        return response
