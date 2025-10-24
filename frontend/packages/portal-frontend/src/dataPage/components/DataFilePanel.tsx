@@ -7,6 +7,7 @@ import { CollapsiblePanel } from "./CollapsiblePanel";
 import { DownloadGlyph, DownloadLink } from "@depmap/downloads";
 import { enabledFeatures } from "@depmap/globals";
 import { VersionBadge } from "./VersionBadge";
+import { stripHtmlTags } from "./utils";
 
 interface DataFilePanelProps {
   data: DownloadTableData;
@@ -25,13 +26,6 @@ interface SinglePanelBodyProps {
   file: DownloadFile;
   release?: Release;
 }
-
-const stripHtmlTags = (htmlStr: string | null) => {
-  if (!htmlStr) {
-    return "";
-  }
-  return htmlStr.replace(/(<([^>]+)>)/gi, "");
-};
 
 const CollapsiblePanelHeader = ({
   file,

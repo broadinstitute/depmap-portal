@@ -3,6 +3,7 @@ import React from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import styles from "src/dataPage/styles/DataPage.scss";
 import DataFilePanel from "./DataFilePanel";
+import { stripHtmlTags } from "./utils";
 
 interface ReleaseTabsProps {
   currentReleaseData: DownloadTableData;
@@ -34,6 +35,12 @@ const ReleaseTabs = ({
       releaseDataGroupedBySubtype[b][0].fileSubType.position
   );
 
+  const pipelineByCode = currentReleaseData.reduce((acc, data) => {
+    // Use the fileSubType as the key
+    acc[data.fileSubType.code] = data.pipeline;
+    return acc;
+  }, {} as Record<string, any>); // Initialize the accumulator as an empty object
+
   return (
     <Tabs
       className={styles.releaseTabs}
@@ -47,6 +54,12 @@ const ReleaseTabs = ({
           title={releaseDataGroupedBySubtype[code][0].fileSubType.label}
           key={code}
         >
+          {pipelineByCode[code] && (
+            <>
+              <h3>Pipeline Overview</h3>
+              <div> {stripHtmlTags(pipelineByCode[code].description)}</div>
+            </>
+          )}
           <DataFilePanel
             data={releaseDataGroupedBySubtype[code]}
             termsDefinitions={termsDefinitions}
