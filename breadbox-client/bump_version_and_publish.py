@@ -80,7 +80,8 @@ def main():
             last_commit = commit_hash
 
         if version is not None:
-            last_version = version
+            if last_version is None or last_version < version:
+                last_version = version
             print(f"Found version tag: {'.'.join(map(str, version))}")
             break
 
