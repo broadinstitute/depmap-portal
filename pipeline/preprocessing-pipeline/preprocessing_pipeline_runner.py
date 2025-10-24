@@ -184,8 +184,6 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def handle_special_features(self, config):
         """Handle START_WITH functionality for preprocessing pipeline."""
-        self.track_dataset_usage_from_conseq()
-
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
             subprocess.run(
@@ -236,6 +234,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
                 f"conseq export {config['conseq_file']} {config['export_path']}", config
             )
         self.run_via_container("conseq report html", config)
+        self.track_dataset_usage_from_conseq()
 
 
 if __name__ == "__main__":
