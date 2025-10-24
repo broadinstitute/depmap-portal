@@ -125,8 +125,14 @@ class RequestLoggingMiddleware:
             if is_final_message:
                 log_event(log_filename, "end", request_id, {"s": response_status})
         
-        # Use the wrapped send function
-        await self.app(scope, receive, wrapped_send)
+        # Use the wrapped send function and catch any exceptions
+        try:
+            await self.app(scope, receive, wrapped_send)
+        except Exception as e:
+            # Log the exception as an end event
+            log_event(log_filename, "end", request_id, {"s": 500, "error": str(e)})
+            # Re-raise the exception to maintain the original behavior
+            raise
 
 
 class OverrideMiddleWare:
