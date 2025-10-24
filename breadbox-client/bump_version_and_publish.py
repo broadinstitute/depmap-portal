@@ -69,31 +69,21 @@ def main():
     print("Starting version bump process...")
     bump_rules = []
 
-    last_commit = None
-    last_version = None
-    print("Analyzing git history for version tags and conventional commits...")
-    for commit_hash, version, bump_rule, commit_subject in get_sem_versions_and_bumps():
-        if bump_rule is not None:
-            bump_rules.append((commit_hash, commit_subject, bump_rule))
-
-        if last_commit is None:
-            last_commit = commit_hash
-
-        if version is not None:
-            if last_version is None or last_version < version:
-                last_version = version
-            print(f"Found version tag: {'.'.join(map(str, version))}")
-            break
-
+    last_version = get_last_sem_version()
     if last_version is None:
         raise AssertionError("No previous version tag found. Cannot proceed without a base version.")
+
+    print("Analyzing git history for version tags and conventional commits...")
+
+    for commit_hash, bump_rule, commit_subject in get_bumps():
+        bump_rules.append((commit_hash, commit_subject, bump_rule))
 
     if len(bump_rules) == 0:
         print(
             f"No changes found which require updating version")
         return
 
-    print(f"Applying {len(bump_rules)} version bump rules, starting with {last_version} to generate version for {last_commit}...")
+    print(f"Applying {len(bump_rules)} version bump rules, starting with {last_version}")
     bump_rules.reverse()
     for commit_hash, commit_subject, bump_rule in bump_rules:
         old_version = last_version
@@ -205,41 +195,28 @@ def rule_from_conventional_commit_type(commit_type, is_breaking):
     else:
         return None
 
-def get_sem_versions_and_bumps():
-    print("  Retrieving git commit history...")
+def get_last_sem_version():
     try:
         # Get all tags
         tags_output = subprocess.check_output(
             ["git", "tag"],
             text=True
         ).strip().split('\n')
-        
+
         # Get highest version from tags
         highest_version = to_sem_version(tags_output)
-        
-        # Get commit history for conventional commits
-        commit_output = subprocess.check_output(
-            ["git", "log", "--pretty=format:%H%x09%s"],
-            text=True
-        )
     except Exception as e:
         print(f"Error retrieving git history: {str(e)}")
         raise
+    return highest_version
 
-    # First yield the highest version with the most recent commit
-    if highest_version is not None:
-        # Get the commit hash for this version tag
-        try:
-            tag_name = f"breadbox-{'.'.join(map(str, highest_version))}"
-            tag_commit = subprocess.check_output(
-                ["git", "rev-list", "-n", "1", tag_name],
-                text=True
-            ).strip()
-            yield tag_commit, highest_version, None, f"Version tag: {tag_name}"
-        except Exception as e:
-            print(f"Warning: Could not get commit for tag {tag_name}: {str(e)}")
-            # Still yield the version with a placeholder commit
-            yield "unknown", highest_version, None, f"Version tag: {tag_name}"
+def get_bumps():
+    print("  Retrieving git commit history...")
+
+    commit_output = subprocess.check_output(
+        ["git", "log", "--pretty=format:%H%x09%s"],
+        text=True
+    )
 
     # Then yield all conventional commits
     for line in commit_output.splitlines():
@@ -248,7 +225,7 @@ def get_sem_versions_and_bumps():
             commit_hash, subject = parts
             bump_rule = rule_from_conventional_commit(subject)
             if bump_rule is not None:
-                yield commit_hash, None, bump_rule, subject
+                yield commit_hash, bump_rule, subject
 
 def to_sem_version(tags):
     """
