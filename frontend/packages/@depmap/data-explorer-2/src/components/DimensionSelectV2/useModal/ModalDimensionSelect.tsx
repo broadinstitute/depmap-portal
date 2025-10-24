@@ -13,6 +13,8 @@ export interface Props {
   mode: "entity-only" | "context-only" | "entity-or-context";
   onClickCreateContext: () => void;
   onClickSaveAsContext: () => void;
+  allowNullFeatureType: boolean;
+  valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
 }
 
 function ModalDimensionSelect({
@@ -24,6 +26,8 @@ function ModalDimensionSelect({
   mode,
   onClickCreateContext,
   onClickSaveAsContext,
+  allowNullFeatureType,
+  valueTypes,
 }: Props) {
   const state = useDimensionStateManager({
     index_type,
@@ -31,6 +35,8 @@ function ModalDimensionSelect({
     value,
     onChange,
     initialDataType,
+    allowNullFeatureType,
+    valueTypes,
   });
 
   return (
@@ -38,9 +44,9 @@ function ModalDimensionSelect({
       mode={mode}
       state={state}
       index_type={index_type}
+      includeAllInContextOptions={includeAllInContextOptions}
       onClickCreateContext={onClickCreateContext}
       onClickSaveAsContext={onClickSaveAsContext}
-      includeAllInContextOptions={includeAllInContextOptions}
       isModalVersion
     />
   );

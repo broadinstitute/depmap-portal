@@ -1,0 +1,100 @@
+@import "./Tabs.scss";
+@import "./GeneTeaTabLayout.scss";
+@import "./PlotSection.scss";
+@import "./PlotSelections.scss";
+
+.header {
+  padding-left: 20px;
+  margin-bottom: 18px;
+  margin-top: 30px;
+  max-width: 150ch;
+
+  h1 {
+    color: #333333;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 0 0 9px 0;
+  }
+
+  & > p {
+    font-size: 16px;
+  }
+}
+
+.main {
+  max-width: 1920px;
+}
+
+.errorMessage {
+  padding: 24px;
+  text-align: center;
+  color: #b00020;
+  font-weight: 600;
+}
+
+.tableSpinnerContainer {
+  padding: 24px;
+  text-align: center;
+}
+
+.plotSelectionsContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  button {
+    font-size: 13px;
+
+    :global .glyphicon {
+      position: relative;
+      top: 2px;
+      left: 4px;
+    }
+  }
+}
+
+.toggleSwitch {
+  margin-left: 15px;
+  padding-top: 8px;
+  .label {
+    font-size: 7px;
+  }
+  button {
+    height: 19px;
+    transition: background-color 0.2s;
+  }
+  button[aria-checked="true"],
+  button.active,
+  button:checked {
+    border-width: 2px;
+    border-color: rgba(25, 118, 210, 1);
+    color: #fff;
+  }
+}
+
+.GeneTeaModal {
+  @media screen and (min-height: 510px) {
+    height: 100px;
+  }
+}
+
+.linkButton {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  cursor: pointer;
+  text-decoration: none;
+
+  &:active {
+    text-decoration: underline;
+  }
+
+  &:hover {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}

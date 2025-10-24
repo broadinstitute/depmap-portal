@@ -59,6 +59,9 @@ export type DoseTableRow = {
 
 export interface DRCDatasetOptions {
   display_name: string;
+  auc_dataset_priority: number | null;
+  auc_dataset_display_name: string; // for label on heatmap tile
+  viability_dataset_display_name: string; // for label on heatmap tile
   viability_dataset_given_id: string;
   replicate_dataset: string;
   auc_dataset_given_id: string;

@@ -6,7 +6,7 @@ import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
 import { toStaticUrl } from "@depmap/globals";
 
-import { getQueryParams } from "@depmap/utils";
+import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
 
 import { DatasetOption } from "src/entity/components/EntitySummary";
 
@@ -14,16 +14,15 @@ import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
+
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import {
-  initializeDevContexts,
-  isBreadboxOnlyMode,
-} from "@depmap/data-explorer-2";
+import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
+import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 
@@ -34,6 +33,22 @@ type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
 if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
 }
+
+const CorrelatedDependenciesTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "CorrelatedDependenciesTile" */
+      "./compound/tiles/CorrelatedDependenciesTile/CorrelatedDependenciesTile"
+    )
+);
+
+const RelatedCompoundsTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "RelatedCompoundsTile" */
+      "./compound/tiles/RelatedCompoundsTile/RelatedCompoundsTile"
+    )
+);
 
 const DoseResponseTab = React.lazy(
   () =>
@@ -175,18 +190,48 @@ export function editContext(
   );
 }
 
+export function repairContext(
+  context: DataExplorerContextV2
+): Promise<DataExplorerContextV2 | null> {
+  const container = document.getElementById("cell_line_selector_modal");
+
+  const unmount = () => {
+    ReactDOM.unmountComponentAtNode(container as HTMLElement);
+  };
+
+  unmount();
+
+  let resolve: (repairedContext: DataExplorerContextV2 | null) => void;
+
+  const promise = new Promise<DataExplorerContextV2 | null>((origResolve) => {
+    resolve = origResolve;
+  });
+
+  ReactDOM.render(
+    <React.Suspense fallback={null}>
+      <StandaloneContextEditor
+        context={context}
+        hash={null}
+        onSave={(nextContext: DataExplorerContextV2) => {
+          resolve(nextContext);
+        }}
+        onHide={() => {
+          resolve(null);
+          unmount();
+        }}
+      />
+    </React.Suspense>,
+    container
+  );
+
+  return promise;
+}
+
 export function saveNewContext(
-  context: DataExplorerContext,
+  context: DataExplorerContext | DataExplorerContextV2,
   onHide?: () => void,
   onSave?: (context: DataExplorerContext, hash: string) => void
 ) {
-  if (isBreadboxOnlyMode) {
-    // FIXME: We need to convert the context and
-    // make  sure it opens in ContextBuilderV2.
-    window.alert("Error: context is in legacy format.");
-    return;
-  }
-
   const container = document.getElementById("modal-container");
   const unmount = () =>
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
@@ -240,6 +285,18 @@ export function initHeatmapTile(
   );
 }
 
+export function initCorrelatedDependenciesTile(
+  elementId: string,
+  entityLabel: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelatedDependenciesTile entityLabel={entityLabel} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
 export function initStructureAndDetailTile(
   elementId: string,
   compoundId: string
@@ -247,6 +304,27 @@ export function initStructureAndDetailTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <StructureAndDetailTile compoundId={compoundId} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initRelatedCompoundsTile(
+  elementId: string,
+  entityLabel: string
+) {
+  const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
+    Chronos_Combined: "CRISPR",
+    RNAi_merged: "RNAi",
+  };
+
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <RelatedCompoundsTile
+        entityLabel={entityLabel}
+        datasetId="Prism_oncology_AUC_collapsed"
+        datasetToDataTypeMap={datasetToDataTypeMap}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -287,6 +365,18 @@ export function initDoseResponseTab(
   );
 }
 
+export function initCorrelationAnalysisTab(
+  elementId: string,
+  compoundName: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelationAnalysis compound={compoundName} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
 // New dose curves tab
 export function initDoseCurvesTab(
   elementId: string,
@@ -298,7 +388,11 @@ export function initDoseCurvesTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <DoseCurvesTab
-        datasetOptions={datasetOptions}
+        datasetOptions={sortByNumberOrNull(
+          datasetOptions,
+          "auc_dataset_priority",
+          "asc"
+        )}
         doseUnits={units}
         compoundName={name}
         compoundId={compoundId}
@@ -318,7 +412,11 @@ export function initHeatmapTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <HeatmapTab
-        datasetOptions={datasetOptions}
+        datasetOptions={sortByNumberOrNull(
+          datasetOptions,
+          "auc_dataset_priority",
+          "asc"
+        )}
         doseUnits={units}
         compoundName={name}
         compoundId={compoundId}

@@ -24,8 +24,10 @@
   "resolutions": {
     "ip": "1.1.8",
     "@base2/pretty-print-object": "^1.0.2",
+    "kleur": "3.0.3",
     "strip-ansi": "^6.0.1",
     "string-width": "^4.2.2",
+    "uvu": "0.5.0",
     "wrap-ansi": "^7.0.0",
     "plotly.js": "2.12.1"
   },

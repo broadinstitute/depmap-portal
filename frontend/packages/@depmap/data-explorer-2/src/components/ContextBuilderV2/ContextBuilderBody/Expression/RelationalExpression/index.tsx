@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   getOperator,
   makeCompatibleExpression,
@@ -27,16 +27,22 @@ function RelationalExpression({ expr, path, isLastOfList }: Props) {
 
   const { dispatch } = useContextBuilderState();
   const { isLoading, domain } = useDomain(varName);
+  const prevDomain = useRef<typeof domain | null>(null);
 
   useEffect(() => {
-    const nextExpr = makeCompatibleExpression(expr, domain);
+    if (prevDomain.current || !right) {
+      const nextExpr = makeCompatibleExpression(expr, domain);
 
-    if (expr !== nextExpr) {
-      dispatch({
-        type: "update-value",
-        payload: { path, value: nextExpr },
-      });
+      if (expr !== nextExpr) {
+        dispatch({
+          type: "update-value",
+          payload: { path, value: nextExpr },
+        });
+      }
     }
+
+    prevDomain.current = domain;
+
     // Only initialize the value when the domain changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [domain]);

@@ -121,7 +121,12 @@ export const makeCompatibleExpression = (
   let nextValue = value;
 
   if (!operatorsByValueType[value_type].has(op)) {
-    nextOp = defaultOperatorByValueType[value_type];
+    // HACK: Special case for legacy one-hot encoded datasets.
+    if (op === "==" && value === 0) {
+      nextOp = "<=";
+    } else {
+      nextOp = defaultOperatorByValueType[value_type];
+    }
   }
 
   if (value_type === "continuous") {
@@ -158,3 +163,20 @@ export const makeCompatibleExpression = (
 
   return { [nextOp]: [variable, nextValue] };
 };
+
+export function flattenExpr(expr: Expr) {
+  if (!isBoolean(expr)) {
+    return expr;
+  }
+
+  if ("and" in expr && expr.and.length === 1) {
+    return expr.and[0];
+  }
+
+  if ("or" in expr && expr.or.length === 1) {
+    return expr.or[0];
+  }
+
+  // Can't flatten because there's more than one alternative so return as-is.
+  return expr;
+}

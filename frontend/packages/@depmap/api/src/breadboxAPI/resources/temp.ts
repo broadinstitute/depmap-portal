@@ -1,23 +1,18 @@
-import { DataExplorerContextV2, SliceQuery } from "@depmap/types";
+import {
+  DatasetAssociations,
+  DataExplorerContextV2,
+  SliceQuery,
+} from "@depmap/types";
 import { postJson } from "../client";
 
-export function fetchAssociations(sliceQuery: SliceQuery) {
-  return postJson<{
-    dataset_name: string;
-    dimension_label: string;
-    associated_datasets: {
-      name: string;
-      dimension_type: string;
-      dataset_id: string;
-    }[];
-    associated_dimensions: {
-      correlation: number;
-      log10qvalue: number;
-      other_dataset_id: string;
-      other_dimension_given_id: string;
-      other_dimension_label: string;
-    }[];
-  }>("/temp/associations/query-slice", sliceQuery);
+export function fetchAssociations(
+  sliceQuery: SliceQuery,
+  associatedDatasetIds?: string[]
+) {
+  return postJson<DatasetAssociations>("/temp/associations/query-slice", {
+    slice_query: sliceQuery,
+    association_datasets: associatedDatasetIds,
+  });
 }
 
 export async function evaluateContext(
@@ -50,12 +45,19 @@ export async function evaluateContext(
       }
     // WORKAROUND: Errors result in a code 200 like regular responses.
     // We'll look for detail property to detect them.
-    | { detail: string }
+    // FIXME: Figure out why Breadbox doesn't respond with an error! It's
+    // formatted like one.
+    | {
+        detail: {
+          message: string;
+          error_type: string;
+        };
+      }
   >("/temp/context", contextToEval);
 
   if ("detail" in response) {
     window.console.warn("Could not evaluate context", context);
-    throw new Error(response.detail);
+    throw new Error(JSON.stringify(response.detail, null, 2));
   }
 
   return response;

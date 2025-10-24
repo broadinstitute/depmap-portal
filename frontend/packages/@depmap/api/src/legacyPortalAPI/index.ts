@@ -7,6 +7,7 @@ import * as data_page from "./resources/data_page";
 import * as download from "./resources/download";
 import * as entity_summary from "./resources/entity_summary";
 import * as genetea from "./resources/genetea";
+import * as experimental_genetea from "./resources/experimental_genetea";
 import * as interactive from "./resources/interactive";
 import * as tda from "./resources/tda";
 import * as misc from "./resources/misc";
@@ -24,6 +25,7 @@ export const legacyPortalAPI = {
   ...interactive,
   ...tda,
   ...misc,
+  ...experimental_genetea,
 };
 
 type Api = typeof legacyPortalAPI;
@@ -38,7 +40,21 @@ type Api = typeof legacyPortalAPI;
       // @ts-expect-error 2556
       return await originalFn(...args);
     } catch (error) {
-      window.console.warn(callSiteError.stack);
+      const lines = callSiteError.stack?.split("\n") || [];
+      let stack = "";
+
+      const occurrences = lines
+        .map((line, i) => (line.includes(name) ? i : -1))
+        .filter((i) => i !== -1);
+
+      if (occurrences.length < 2) {
+        stack = callSiteError.stack || "";
+      } else {
+        const idx = occurrences[1] + 1;
+        stack = [lines[0], ...lines.slice(idx)].join("\n");
+      }
+
+      window.console.warn(stack);
       throw error;
     }
   };

@@ -1,45 +1,63 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import {
-  DataExplorerDatasetDescriptor,
-  DataExplorerPlotConfigDimensionV2,
-  MatrixDataset,
-} from "@depmap/types";
+import { Dataset, MatrixDataset } from "@depmap/types";
+import { SliceTypeNull, SLICE_TYPE_NULL } from "./types";
 
-export async function validateDimension(
-  dimension: Partial<DataExplorerPlotConfigDimensionV2>
-) {
-  if (dimension.dataset_id) {
-    // TODO: Validate that this is a known dataset and that it has the expected
-    // slice_type.
-  }
+export interface DataExplorerDatasetDescriptor {
+  data_type: string;
+  id: string;
+  index_type: string;
+  given_id: string | null;
+  name: string;
+  priority: number | null;
+  slice_type: string | SliceTypeNull;
+  slice_type_display_name: string;
+  units: string;
+  value_type: string;
 }
 
-let datasetsByIndexType: Record<
-  string,
-  DataExplorerDatasetDescriptor[]
-> | null = null;
+const privateDatasets: Map<string, Dataset> = new Map();
 
-export async function fetchDatasetsByIndexType() {
-  if (datasetsByIndexType) {
-    return datasetsByIndexType;
+export async function fetchDatasetsByIndexType(
+  index_type: string,
+  // We need to also check this explicitly because it may be a transient
+  // dataset or user upload (those are not returned by getDatasets()).
+  selectedDatasetId: string | null
+) {
+  const publicDatasets = await cached(breadboxAPI).getDatasets();
+  const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+
+  const datasets = [...publicDatasets, ...privateDatasets.values()];
+
+  if (selectedDatasetId) {
+    let dataset = datasets.find(
+      (d) => d.id === selectedDatasetId || d.given_id === selectedDatasetId
+    );
+
+    if (!dataset) {
+      try {
+        dataset = await cached(breadboxAPI).getDataset(selectedDatasetId);
+        datasets.push(dataset);
+
+        if (!privateDatasets.has(selectedDatasetId)) {
+          privateDatasets.set(selectedDatasetId, dataset);
+        }
+      } catch (e) {
+        // Ignore error
+      }
+    }
   }
 
-  const datasets = await cached(breadboxAPI).getDatasets();
-  datasetsByIndexType = {};
+  const dimTypeDisplayNames: Record<string, string> = {};
+
+  dimTypes.forEach((dt) => {
+    dimTypeDisplayNames[dt.name] = dt.display_name || dt.name;
+  });
+
+  const out: DataExplorerDatasetDescriptor[] = [];
 
   datasets.forEach((dataset) => {
     // TODO: add support for tabular datasets
     if (dataset.format !== "matrix_dataset") {
-      return;
-    }
-
-    // TODO: add support for other value types
-    if (dataset.value_type !== "continuous") {
-      return;
-    }
-
-    // TODO: add support for `null` dimension types
-    if (!dataset.sample_type_name || !dataset.feature_type_name) {
       return;
     }
 
@@ -52,7 +70,14 @@ export async function fetchDatasetsByIndexType() {
       units,
       sample_type_name,
       feature_type_name,
-    } = dataset as MatrixDataset;
+      value_type,
+    } =
+      // FIXME: The MatrixDataset definition has yet to be updated (because
+      // that will have many knock-on effects) but Breadbox allows datasets
+      // to have no feature type. Data Explorer needs to handle that specially.
+      dataset as Omit<MatrixDataset, "feature_type_name"> & {
+        feature_type_name: string | null;
+      };
 
     const commonProperties = {
       data_type,
@@ -61,42 +86,46 @@ export async function fetchDatasetsByIndexType() {
       name,
       priority,
       units,
+      value_type: value_type as string,
     };
 
-    datasetsByIndexType![sample_type_name] = [
-      ...(datasetsByIndexType![sample_type_name] || []),
-      {
+    if (index_type === sample_type_name) {
+      out.push({
         ...commonProperties,
         index_type: sample_type_name,
-        slice_type: feature_type_name,
-      },
-    ];
+        slice_type: feature_type_name || SLICE_TYPE_NULL,
+        slice_type_display_name: feature_type_name
+          ? dimTypeDisplayNames[feature_type_name]
+          : SLICE_TYPE_NULL.toString(),
+      });
+    }
 
-    datasetsByIndexType![feature_type_name] = [
-      ...(datasetsByIndexType![feature_type_name] || []),
-      {
+    if (index_type === feature_type_name) {
+      out.push({
         ...commonProperties,
         index_type: feature_type_name,
         slice_type: sample_type_name,
-      },
-    ];
+        slice_type_display_name: dimTypeDisplayNames[sample_type_name],
+      });
+    }
   });
 
-  return datasetsByIndexType;
+  return out;
 }
 
 export async function inferSliceType(
   index_type: string | null,
-  dataType: string | null
+  dataType: string | null,
+  selectedDatasetId: string | null
 ) {
   if (!index_type || !dataType) {
     return undefined;
   }
 
-  const ds = await fetchDatasetsByIndexType();
-  const sliceTypes = new Set<string>();
+  const ds = await fetchDatasetsByIndexType(index_type, selectedDatasetId);
+  const sliceTypes = new Set<string | SliceTypeNull>();
 
-  ds[index_type].forEach((dataset) => {
+  ds.forEach((dataset) => {
     if (dataset.data_type === dataType) {
       sliceTypes.add(dataset.slice_type);
     }
@@ -107,16 +136,17 @@ export async function inferSliceType(
 
 export async function inferDataType(
   index_type: string | null,
-  slice_type: string | null
+  slice_type: string | SliceTypeNull | undefined,
+  selectedDatasetId: string | null
 ) {
   if (!index_type || !slice_type) {
     return null;
   }
 
-  const ds = await fetchDatasetsByIndexType();
+  const ds = await fetchDatasetsByIndexType(index_type, selectedDatasetId);
   const dataTypes = new Set<string>();
 
-  ds[index_type].forEach((dataset) => {
+  ds.forEach((dataset) => {
     if (dataset.slice_type === slice_type) {
       dataTypes.add(dataset.data_type);
     }
@@ -136,8 +166,8 @@ export async function inferTypesFromDatasetId(
     };
   }
 
-  const ds = await fetchDatasetsByIndexType();
-  const dataset = ds[index_type].find((d) => {
+  const ds = await fetchDatasetsByIndexType(index_type, dataset_id);
+  const dataset = ds.find((d) => {
     return d.id === dataset_id || d.given_id === dataset_id;
   });
 
@@ -146,24 +176,28 @@ export async function inferTypesFromDatasetId(
   }
 
   return {
-    inferredSliceType: dataset.slice_type,
+    inferredSliceType: dataset.slice_type || SLICE_TYPE_NULL,
     inferredDataType: dataset.data_type,
   };
 }
 
 export async function inferDatasetId(
   index_type: string | null,
-  slice_type: string | null,
-  dataType: string | null
+  slice_type: string | SliceTypeNull | null,
+  dataType: string | null,
+  selectedDatasetId: string | null
 ) {
   if (!index_type || !slice_type || !dataType) {
     return undefined;
   }
 
-  const datasets = await fetchDatasetsByIndexType();
+  const datasets = await fetchDatasetsByIndexType(
+    index_type,
+    selectedDatasetId
+  );
   const ids = new Set<string>();
 
-  datasets[index_type].forEach((dataset) => {
+  datasets.forEach((dataset) => {
     if (dataset.slice_type === slice_type && dataset.data_type === dataType) {
       ids.add(dataset.id);
     }
@@ -172,36 +206,17 @@ export async function inferDatasetId(
   return ids.size === 1 ? [...ids][0] : undefined;
 }
 
-export async function findDataType(dataset_id: string | null) {
-  const datasets = await cached(breadboxAPI).getDatasets();
+export async function findDataType(
+  index_type: string | null,
+  dataset_id: string | null
+) {
+  const datasets = await fetchDatasetsByIndexType(
+    index_type as string,
+    dataset_id
+  );
   const dataset = datasets.find((d) => {
     return d.id === dataset_id || d.given_id === dataset_id;
   });
 
   return dataset?.data_type || null;
-}
-
-export async function findHighestPriorityDataset(
-  index_type: string | null,
-  slice_type: string,
-  dataType: string
-) {
-  if (!index_type) {
-    return undefined;
-  }
-
-  const datasets = await fetchDatasetsByIndexType();
-  const dataset = datasets[index_type]
-    .filter((d) => {
-      return (
-        d.slice_type === slice_type &&
-        d.data_type === dataType &&
-        d.priority !== null
-      );
-    })
-    .sort((a, b) => {
-      return (a.priority as number) - (b.priority as number);
-    })[0];
-
-  return dataset?.id;
 }

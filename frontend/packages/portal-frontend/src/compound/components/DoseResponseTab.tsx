@@ -271,11 +271,22 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
       : [];
     columns.sort((a, b) => parseFloat(a.key) - parseFloat(b.key));
     const table = this.state.doseResponseTable;
-    columns.unshift({
-      key: "auc",
-      type: "continuous",
-      displayName: "AUC",
-    });
+    const colKeys = columns.map((col) => col.key);
+
+    if (colKeys.includes("log2(AUC)")) {
+      columns.unshift({
+        key: "log2(AUC)",
+        type: "continuous",
+        displayName: "log2(AUC)",
+      });
+    }
+    if (colKeys.includes("AUC")) {
+      columns.unshift({
+        key: "AUC",
+        type: "continuous",
+        displayName: "AUC",
+      });
+    }
     columns.push({
       key: "cell_line_display_name",
       type: "character",
@@ -331,7 +342,11 @@ class DoseResponseTab extends React.Component<DoseResponseProps, State> {
               hiddenCols={["depmapId"]}
               columns={columns}
               idCol="depmapId"
-              defaultSort={{ col: "auc", order: "ASC" }}
+              defaultSort={
+                colKeys.includes("log2(AUC)")
+                  ? { col: "log2(AUC)", order: "ASC" }
+                  : { col: "AUC", order: "ASC" }
+              }
               onRowClick={({ event, rowKey, rowData }) =>
                 this.onRowClick(event, rowKey, rowData)
               }

@@ -20,6 +20,10 @@ declare global {
       ) => void;
 
       editContext: (context: DataExplorerContextV2, hash: string) => void;
+
+      repairContext: (
+        badContext: DataExplorerContextV2
+      ) => Promise<DataExplorerContextV2 | null>;
     };
   }
 }
@@ -33,5 +37,19 @@ window.DepMap = {
 
   editContext: (context, hash) => {
     launchStandaloneContextBuilderModal(context, hash);
+  },
+
+  repairContext: (context) => {
+    return new Promise((resolve) => {
+      const onSave = (nextContext: DataExplorerContextV2) => {
+        resolve(nextContext);
+      };
+
+      const onHide = () => {
+        resolve(null);
+      };
+
+      launchStandaloneContextBuilderModal(context, null, onSave, onHide);
+    });
   },
 };

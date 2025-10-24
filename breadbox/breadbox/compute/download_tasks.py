@@ -315,7 +315,7 @@ def get_feature_and_sample_indices_per_merged_dataset(
     feature_indices_per_dataset: List[List[int]] = []
     datasets: List[Dataset] = []
     for dataset_id in dataset_ids:
-        features, feature_indices, dataset = get_features_info_and_dataset(
+        _, feature_indices, dataset = get_features_info_and_dataset(
             db, user, dataset_id, feature_labels
         )
 
@@ -446,7 +446,7 @@ def export_dataset(
         settings = get_settings()
 
         # Get feature_indices using feature_labels as a filter
-        features, feature_indices, dataset = get_features_info_and_dataset(
+        _, feature_indices, dataset = get_features_info_and_dataset(
             db, user, dataset_id, feature_labels
         )
 

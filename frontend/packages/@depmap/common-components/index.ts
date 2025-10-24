@@ -9,6 +9,7 @@ export { default as showInfoModal } from "./src/utils/showInfoModal";
 export { default as WordBreaker } from "./src/components/WordBreaker";
 export { default as Highlighter } from "./src/components/Highlighter";
 export { default as ExternalLink } from "./src/components/ExternalLink";
+export { default as Markdown } from "./src/components/Markdown";
 export {
   default as Accordion,
   OpenCloseSymbol,

@@ -144,6 +144,15 @@ export async function fetchContext(
     }
   }
 
+  if (response && response.status > 299) {
+    window.console.warn(
+      `Context with hash "${hash}" was cached with status code ${response.status}!`
+    );
+
+    // Clear out this useless response because it's effectively a cache miss
+    response = undefined;
+  }
+
   // handle cache miss
   if (!response) {
     response = await fetch(request.clone());
@@ -161,8 +170,38 @@ export async function fetchContext(
     throw new Error("Error fetching context.");
   }
 
-  const body = await response.json();
+  let body = await response.json();
+
+  // A response was returned but it wasn't formatted as expected.
+  if (!("value" in body)) {
+    // Retry the request against the legacy Portal API (Breadbox is supposed to
+    // do this automatically but sometimes it doesn't work).
+    if (isBreadboxOnlyMode && !isElara) {
+      window.console.warn(`Request failed: ${JSON.stringify(body)}.`);
+      window.console.warn("Retrying the request using the legacy Portal API.");
+
+      const url = new URL(request.url);
+      url.pathname = url.pathname.replace("/breadbox/temp/", "/");
+
+      const newRequest = new Request(url.toString(), request);
+      response = await fetch(newRequest);
+      body = await response.json();
+
+      if (!("value" in body)) {
+        throw new Error(JSON.stringify(body));
+      } else {
+        window.console.warn("Success!");
+      }
+    } else {
+      throw new Error(JSON.stringify(body));
+    }
+  }
+
   const context = JSON.parse(body.value);
+
+  if (!context) {
+    throw new Error(`Cound not fetch context from unknown hash "${hash}".`);
+  }
 
   if (!cache) {
     fallbackInMemoryCache[hash] = context;

@@ -46,7 +46,7 @@ class ContextEvaluator:
             - a set of `vars`, each of which assigns a name to a slice query
         """
         self.expr = _encode_dots_in_vars(context["expr"])
-        self.slice_query_vars = context.get("vars", {})
+        self.slice_query_vars = _escape_dots(context.get("vars", {}))
 
         # Takes a slice query, returns a dictionary of slice values (indexed by ID)
         self.get_slice_data = get_slice_data
@@ -242,3 +242,10 @@ def _encode_dots_in_vars(expr: dict):
         return node
 
     return walk(expr, None)
+
+
+def _escape_dots(d: dict) -> dict:
+    """Return a new dict with all dots in keys replaced by %2E."""
+    return {
+        (k.replace(".", "%2E") if isinstance(k, str) else k): v for k, v in d.items()
+    }

@@ -204,17 +204,12 @@ function DataExplorerDensity1DPlot({
     }
 
     (Reflect.ownKeys(colorMap || {}) as LegendKey[]).forEach((key) => {
-      const name = categoryToDisplayName(
-        key,
-        data,
-        continuousBins,
-        plotConfig.color_by || null
-      );
+      const name = categoryToDisplayName(key, data, continuousBins);
       out[key] = typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
     });
 
     return out;
-  }, [colorMap, data, continuousBins, plotConfig.color_by]);
+  }, [colorMap, data, continuousBins]);
 
   let legendTitle = "";
 
@@ -293,7 +288,6 @@ function DataExplorerDensity1DPlot({
               data={data}
               colorMap={colorMap}
               continuousBins={continuousBins}
-              color_by={plotConfig.color_by}
               hiddenLegendValues={hiddenLegendValues}
               legendKeysWithNoData={legendKeysWithNoData}
               onClickLegendItem={onClickLegendItem}

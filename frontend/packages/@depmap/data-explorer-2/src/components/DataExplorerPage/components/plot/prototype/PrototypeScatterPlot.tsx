@@ -231,6 +231,7 @@ function PrototypeScatterPlot({
     const yaxis = axes.current.yaxis;
 
     if (xaxis) {
+      xaxis.tickfont = { size: xAxisFontSize };
       xaxis.title = {
         ...(xaxis.title as object),
         font: { size: xAxisFontSize },
@@ -238,6 +239,7 @@ function PrototypeScatterPlot({
     }
 
     if (yaxis) {
+      yaxis.tickfont = { size: yAxisFontSize };
       yaxis.title = {
         ...(yaxis.title as object),
         font: { size: yAxisFontSize },
@@ -409,7 +411,7 @@ function PrototypeScatterPlot({
 
     if (contColorData && contLegendKeys) {
       const sortedX: (number | null)[] = [];
-      const sortedY: number[] = [];
+      const sortedY: (number | null)[] = [];
       const sortedColor: (number | null)[] = [];
       const hoverColor: string[] = [];
       const sortedText: string[] = [];
@@ -445,8 +447,8 @@ function PrototypeScatterPlot({
         })
         .forEach(({ origIndex }, i: number) => {
           contTraceIndex.push(origIndex);
-          sortedX.push(visible[origIndex] ? x[origIndex] : null);
-          sortedY.push(y[origIndex]);
+          sortedX.push(templateTrace.x[origIndex]);
+          sortedY.push(templateTrace.y[origIndex]);
           sortedColor.push(contColorData[origIndex]);
           hoverColor.push(colorMap![contLegendKeys[origIndex]]);
           sortedText.push(text[origIndex]);
@@ -540,6 +542,7 @@ function PrototypeScatterPlot({
         font: { size: xAxisFontSize },
         standoff: 8,
       } as any,
+      tickfont: { size: xAxisFontSize },
       exponentformat: "e",
       type: "linear",
       autorange: true,
@@ -553,6 +556,7 @@ function PrototypeScatterPlot({
         font: { size: yAxisFontSize },
         standoff: 0,
       } as any,
+      tickfont: { size: yAxisFontSize },
       exponentformat: "e",
       autorange: true,
     };

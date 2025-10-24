@@ -30,24 +30,23 @@ dev = ["black", "coverage", "isort", "pre-commit", "pyenchant", "pylint"]
 
 [[package]]
 name = "anyio"
-version = "3.7.1"
-description = "High level compatibility layer for multiple asynchronous event loop implementations"
+version = "4.11.0"
+description = "High-level concurrency and networking framework on top of asyncio or Trio"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.9"
 files = [
-    {file = "anyio-3.7.1-py3-none-any.whl", hash = "sha256:91dee416e570e92c64041bd18b900d1d6fa78dff7048769ce5ac5ddad004fbb5"},
-    {file = "anyio-3.7.1.tar.gz", hash = "sha256:44a3c9aba0f5defa43261a8b3efb97891f2bd7d804e0e1f56419befa1adfc780"},
+    {file = "anyio-4.11.0-py3-none-any.whl", hash = "sha256:0287e96f4d26d4149305414d4e3bc32f0dcd0862365a4bddea19d7a1ec38c4fc"},
+    {file = "anyio-4.11.0.tar.gz", hash = "sha256:82a8d0b81e318cc5ce71a5f1f8b5c4e63619620b63141ef8c995fa0db95a57c4"},
 ]
 
 [package.dependencies]
-exceptiongroup = {version = "*", markers = "python_version < \"3.11\""}
+exceptiongroup = {version = ">=1.0.2", markers = "python_version < \"3.11\""}
 idna = ">=2.8"
 sniffio = ">=1.1"
+typing_extensions = {version = ">=4.5", markers = "python_version < \"3.13\""}
 
 [package.extras]
-doc = ["Sphinx", "packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme (>=1.2.2)", "sphinxcontrib-jquery"]
-test = ["anyio[trio]", "coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "mock (>=4)", "psutil (>=5.9)", "pytest (>=7.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (>=0.17)"]
-trio = ["trio (<0.22)"]
+trio = ["trio (>=0.31.0)"]
 
 [[package]]
 name = "appdirs"
@@ -281,19 +280,18 @@ crt = ["awscrt (==0.16.26)"]
 
 [[package]]
 name = "breadbox-client"
-version = "3.22.0"
+version = "4.3.2"
 description = "A client library for accessing Breadbox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "breadbox_client-3.22.0-py3-none-any.whl", hash = "sha256:8d2c714449e0ad20898103f802bb0aeb51f3919d140b04b36c8439b18720eab4"},
-    {file = "breadbox_client-3.22.0.tar.gz", hash = "sha256:5e3399e0dd7036fc50c281286fccc918d003fe238ebe8dcaaca3175ed3071846"},
+    {file = "breadbox_client-4.3.2-py3-none-any.whl", hash = "sha256:f9b9035b7e483c5fcc9946d0fac889795f24caf951aa504d49f434b6244d3bd2"},
+    {file = "breadbox_client-4.3.2.tar.gz", hash = "sha256:951f0dc5050fba7de8ee9c5a84efb3ff964fe67a0941cc65f1dae09dd05193b0"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3.0"
-httpx = ">=0.20.0,<0.26.0"
-pandas = ">=1.5.1,<2.0.0"
+pandas = ">=1.5.1"
 pytest = ">=7.2.0,<8.0.0"
 python-dateutil = ">=2.8.0,<3.0.0"
 
@@ -674,18 +672,17 @@ files = [
 
 [[package]]
 name = "depmap-compute"
-version = "0.1.15"
+version = "0.1.17"
 description = "Code related to computations shared between the Depmap Portal and BreadBox"
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "depmap_compute-0.1.15-py3-none-any.whl", hash = "sha256:173f85991b41f3ae46082e716fcd0427064bde55da5d201e4172a3196d8b6b69"},
-    {file = "depmap_compute-0.1.15.tar.gz", hash = "sha256:ecc8a08aab82cb638ccdc3ebf28ecb80f432f5001c063f9455db8cb3ffe63618"},
+    {file = "depmap_compute-0.1.17-py3-none-any.whl", hash = "sha256:9c7c9e97459bb48117fbceb5fa3210bf4fcce4ab309411b13d5e9fee521eae4f"},
+    {file = "depmap_compute-0.1.17.tar.gz", hash = "sha256:ef4978a2d0898f8ea5993183e07807ec9d81ecf842eca2681a034e4548066673"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3.0"
-httpx = ">=0.15.4,<0.24.0"
 json-logic = ">=0.7.0-alpha,<0.8.0"
 python-dateutil = ">=2.8.0,<3.0.0"
 
@@ -1825,24 +1822,24 @@ lxml = ">=4.9.1"
 
 [[package]]
 name = "httpcore"
-version = "0.16.3"
+version = "1.0.8"
 description = "A minimal low-level HTTP client."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "httpcore-0.16.3-py3-none-any.whl", hash = "sha256:da1fb708784a938aa084bde4feb8317056c55037247c787bd7e19eb2c2949dc0"},
-    {file = "httpcore-0.16.3.tar.gz", hash = "sha256:c5d6f04e2fc530f39e0c077e6a30caa53f1451096120f1f38b954afd0b17c0cb"},
+    {file = "httpcore-1.0.8-py3-none-any.whl", hash = "sha256:5254cf149bcb5f75e9d1b2b9f729ea4a4b883d1ad7379fc632b727cec23674be"},
+    {file = "httpcore-1.0.8.tar.gz", hash = "sha256:86e94505ed24ea06514883fd44d2bc02d90e77e7979c8eb71b90f41d364a1bad"},
 ]
 
 [package.dependencies]
-anyio = ">=3.0,<5.0"
 certifi = "*"
 h11 = ">=0.13,<0.15"
-sniffio = "==1.*"
 
 [package.extras]
+asyncio = ["anyio (>=4.0,<5.0)"]
 http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (==1.*)"]
+trio = ["trio (>=0.22.0,<1.0)"]
 
 [[package]]
 name = "httplib2"
@@ -1860,26 +1857,27 @@ pyparsing = {version = ">=2.4.2,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.0.2 || >3.0
 
 [[package]]
 name = "httpx"
-version = "0.23.3"
+version = "0.28.1"
 description = "The next generation HTTP client."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "httpx-0.23.3-py3-none-any.whl", hash = "sha256:a211fcce9b1254ea24f0cd6af9869b3d29aba40154e947d2a07bb499b3e310d6"},
-    {file = "httpx-0.23.3.tar.gz", hash = "sha256:9818458eb565bb54898ccb9b8b251a28785dd4a55afbc23d0eb410754fe7d0f9"},
+    {file = "httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad"},
+    {file = "httpx-0.28.1.tar.gz", hash = "sha256:75e98c5f16b0f35b567856f597f06ff2270a374470a5c2392242528e3e3e42fc"},
 ]
 
 [package.dependencies]
+anyio = "*"
 certifi = "*"
-httpcore = ">=0.15.0,<0.17.0"
-rfc3986 = {version = ">=1.3,<2", extras = ["idna2008"]}
-sniffio = "*"
+httpcore = "==1.*"
+idna = "*"
 
 [package.extras]
 brotli = ["brotli", "brotlicffi"]
-cli = ["click (==8.*)", "pygments (==2.*)", "rich (>=10,<13)"]
+cli = ["click (==8.*)", "pygments (==2.*)", "rich (>=10,<14)"]
 http2 = ["h2 (>=3,<5)"]
 socks = ["socksio (==1.*)"]
+zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
 name = "humanize"
@@ -3976,23 +3974,6 @@ files = [
 requests = ">=2.0.1,<3.0.0"
 
 [[package]]
-name = "rfc3986"
-version = "1.5.0"
-description = "Validating URI References per RFC 3986"
-optional = false
-python-versions = "*"
-files = [
-    {file = "rfc3986-1.5.0-py2.py3-none-any.whl", hash = "sha256:a86d6e1f5b1dc238b218b012df0aa79409667bb209e58da56d0b94704e712a97"},
-    {file = "rfc3986-1.5.0.tar.gz", hash = "sha256:270aaf10d87d0d4e095063c65bf3ddbc6ee3d0b226328ce21e036f946e421835"},
-]
-
-[package.dependencies]
-idna = {version = "*", optional = true, markers = "extra == \"idna2008\""}
-
-[package.extras]
-idna2008 = ["idna"]
-
-[[package]]
 name = "rpds-py"
 version = "0.8.10"
 description = "Python bindings to Rust's persistent data structures (rpds)"
@@ -4996,4 +4977,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "967ca36d7f81806a8869029fb0e5f225f9917d78e97135ce950d6fa264f8b6cc"
+content-hash = "6b9217399590fbd565e21ab384bcc1f1c534ec6ba4cdba0b38c6f4159694ce69"

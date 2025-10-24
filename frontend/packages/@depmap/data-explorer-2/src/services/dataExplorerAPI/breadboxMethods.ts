@@ -1,4 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
+import { isContextAll } from "../../utils/context";
 import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
 import {
   correlationMatrix,
@@ -13,13 +14,15 @@ import {
   DataExplorerMetadata,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
+  DataExplorerPlotResponseDimension,
   FilterKey,
   MatrixDataset,
   SliceQuery,
 } from "@depmap/types";
 import { fetchDatasetIdentifiers } from "./identifiers";
+import { getDimensionDataWithoutLabels } from "./helpers";
 
-type VarEqualityExpression = { "==": [{ var: string }, string | number] };
+type VarEqualityExpression = { "==": [{ var: string }, string] };
 
 async function fetchEntitiesLabel(dimensionType: string) {
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
@@ -61,11 +64,35 @@ async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
 
   const idsInDataset = new Set(dsIdentifiers.map(({ id }) => id));
   const overlappingIds = ids.filter((id) => idsInDataset.has(id));
-  const contextCount = overlappingIds.length;
+  const contextCount = overlappingIds.length.toLocaleString();
 
   const entities = await fetchEntitiesLabel(dimension.slice_type);
 
+  if (isContextAll(context)) {
+    return `${aggregation} ${units} of all ${contextCount} ${entities}`;
+  }
+
   return `${aggregation} ${units} of ${contextCount} ${context.name} ${entities}`;
+}
+
+async function fetchValueType(dimension?: DataExplorerPlotConfigDimension) {
+  if (!dimension || !isCompleteDimension(dimension)) {
+    return "continuous";
+  }
+
+  const dataset = await cached(breadboxAPI).getDataset(dimension.dataset_id);
+
+  if (!dataset) {
+    throw new Error(`Unknown dataset "${dimension.dataset_id}"`);
+  }
+
+  if (dataset.format !== "matrix_dataset") {
+    throw new Error(
+      "Dataset is not a matrix! This is not supported for plot dimensions."
+    );
+  }
+
+  return dataset.value_type;
 }
 
 async function fetchDatasetLabel(dataset_id?: string) {
@@ -111,49 +138,70 @@ export async function fetchPlotDimensions(
   // This is just to get things working for now.
   const uniqueLabels = new Set<string>();
 
-  // HACK: For now we'll use this to suppor the legacy index_aliases property.
+  // HACK: For now we'll reverse the relationship of id and label for models.
   const cellLineIdMapping = {} as Record<string, string>;
 
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
 
-  function fetchRawDimension(key: string) {
+  async function fetchRawDimension(key: string) {
     const { context, dataset_id, slice_type } = dimensions[key];
-    const identifier = (context.expr as VarEqualityExpression)[
+
+    // FIXME: Remove this when we convert everything to use IDs.
+    const idToLabelMapping = await (() => {
+      return fetchDatasetIdentifiers(
+        index_type,
+        dataset_id
+      ).then((identifiers) =>
+        Object.fromEntries(identifiers.map(({ id, label }) => [id, label]))
+      );
+    })();
+
+    const [variable, identifier] = (context.expr as VarEqualityExpression)[
       "=="
-    ][1] as string;
+    ];
 
-    const identifier_type = isSampleType(slice_type, dimensionTypes)
-      ? "sample_id"
-      : "feature_id";
+    const identifier_type = (() => {
+      if (variable.var === "entity_label" && slice_type !== "depmap_model") {
+        return isSampleType(slice_type, dimensionTypes)
+          ? "sample_label"
+          : "feature_label";
+      }
 
-    return cached(breadboxAPI)
-      .getDimensionData({ dataset_id, identifier, identifier_type })
-      .then(({ ids, labels, values }) => {
-        const indexed_values: Record<
-          string,
-          string | string[] | number | null
-        > = {};
+      return isSampleType(slice_type, dimensionTypes)
+        ? "sample_id"
+        : "feature_id";
+    })();
 
+    return getDimensionDataWithoutLabels({
+      dataset_id,
+      identifier,
+      identifier_type,
+    }).then(({ ids, values }) => {
+      const indexed_values: Record<
+        string,
+        string | string[] | number | null
+      > = {};
+
+      for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
         // TODO: Change this to use ids instead of labels.
-        for (let i = 0; i < labels.length; i++) {
-          const label = labels[i];
-          const id = ids[i];
-          uniqueLabels.add(label);
+        const label = idToLabelMapping[id];
+        uniqueLabels.add(label);
 
-          if (index_type === "depmap_model") {
-            indexed_values[id] = values[i];
-            cellLineIdMapping[label] = id;
-          } else {
-            indexed_values[label] = values[i];
-          }
+        if (index_type === "depmap_model") {
+          indexed_values[id] = values[i];
+          cellLineIdMapping[label] = id;
+        } else {
+          indexed_values[label] = values[i];
         }
+      }
 
-        return {
-          property: "dimensions",
-          indexed_values,
-          key,
-        };
-      });
+      return {
+        property: "dimensions",
+        indexed_values,
+        key,
+      };
+    });
   }
 
   async function fetchAggregatedDimension(key: string) {
@@ -169,9 +217,20 @@ export async function fetchPlotDimensions(
       ? "samples"
       : "features";
 
-    const { ids } = await cached(breadboxAPI).evaluateContext(
-      (context as unknown) as DataExplorerContextV2
-    );
+    let ids: string[] = [];
+
+    try {
+      const result = await cached(breadboxAPI).evaluateContext(
+        (context as unknown) as DataExplorerContextV2
+      );
+
+      ids = result.ids;
+    } catch (e) {
+      window.dispatchEvent(
+        new CustomEvent("dx2_context_eval_failed", { detail: context })
+      );
+      throw e;
+    }
 
     const index_indentifiers = await fetchDatasetIdentifiers(
       index_type,
@@ -237,6 +296,12 @@ export async function fetchPlotDimensions(
             indexed_values,
             key,
           };
+        })
+        .catch((e) => {
+          window.dispatchEvent(
+            new CustomEvent("dx2_context_eval_failed", { detail: filter })
+          );
+          throw e;
         });
     }),
 
@@ -244,29 +309,29 @@ export async function fetchPlotDimensions(
       const indexed_values: Record<string, string | null> = {};
 
       const sliceQuery = metadata![key] as SliceQuery;
-      const data = await cached(breadboxAPI).getDimensionData(sliceQuery);
+      const data = await getDimensionDataWithoutLabels(sliceQuery);
 
-      if (!("values" in data)) {
-        window.console.error({
-          sliceQuery: metadata![key],
-          response: data,
-        });
-        throw new Error(
-          "Bad response from /datasets/dimension/data/. Contains no `values!`"
-        );
-      }
+      // FIXME: Remove this when we convert everything to use IDs.
+      const idToLabelMapping = await (() => {
+        return cached(breadboxAPI)
+          .getDimensionTypeIdentifiers(index_type)
+          .then((identifiers) =>
+            Object.fromEntries(identifiers.map(({ id, label }) => [id, label]))
+          );
+      })();
 
-      const indexProp = index_type === "depmap_model" ? "ids" : "labels";
       const uniqueValues = new Set<string>();
 
       for (let i = 0; i < data.values.length; i += 1) {
-        const label = data[indexProp][i];
-        const value = data.values[i];
+        const id = data.ids[i];
+        const indexKey =
+          index_type === "depmap_model" ? id : idToLabelMapping[id];
+        const indexedValue = data.values[i];
 
-        indexed_values[label] = value;
+        indexed_values[indexKey] = indexedValue;
 
-        if (value) {
-          uniqueValues.add(value);
+        if (indexedValue) {
+          uniqueValues.add(indexedValue);
         }
       }
 
@@ -288,24 +353,16 @@ export async function fetchPlotDimensions(
       ? [...uniqueLabels].map((label) => cellLineIdMapping[label])
       : [...uniqueLabels];
 
-  const index_aliases =
-    index_type === "depmap_model"
-      ? [
-          {
-            label: "Cell Line Name",
-            slice_id: "slice/cell_line_display_name/all/label",
-            values: [...uniqueLabels],
-          },
-        ]
-      : [];
+  const index_display_labels =
+    index_type === "depmap_model" ? [...uniqueLabels] : index_labels;
 
   return (async () => {
     const out = {
       index_type,
       index_labels,
-      index_aliases,
+      index_display_labels,
       linreg_by_group: [],
-      dimensions: {} as Record<string, unknown>,
+      dimensions: {} as DataExplorerPlotResponse["dimensions"],
       filters: {} as Record<string, unknown>,
       metadata: {} as Record<string, unknown>,
     };
@@ -315,6 +372,12 @@ export async function fetchPlotDimensions(
       y: await fetchAxisLabel(dimensions?.y),
       color: await fetchAxisLabel(dimensions?.color),
     } as Record<string, string>;
+
+    const valueTypes = {
+      x: await fetchValueType(dimensions?.x),
+      y: await fetchValueType(dimensions?.y),
+      color: await fetchValueType(dimensions?.color),
+    } as Record<string, DataExplorerPlotResponseDimension["value_type"]>;
 
     const datasetLabels = {
       x: dimensions.x ? await fetchDatasetLabel(dimensions.x.dataset_id) : null,
@@ -334,14 +397,15 @@ export async function fetchPlotDimensions(
       };
 
       if (property === "dimensions") {
-        out.dimensions[key] = {
+        out.dimensions[key as keyof DataExplorerPlotResponse["dimensions"]] = {
           slice_type: dimensions[key].slice_type,
           dataset_id: dimensions[key].dataset_id,
           axis_label: axisLabels[key],
-          dataset_label: datasetLabels[key],
+          dataset_label: datasetLabels[key] as string,
+          value_type: valueTypes[key],
           values: out.index_labels.map((label) => {
             return indexed_values[label] ?? null;
-          }),
+          }) as number[],
         };
       }
 
@@ -405,8 +469,13 @@ export const fetchDatasetsByIndexType = memoize(async () => {
       return;
     }
 
-    // TODO: add support for `null` dimension types
-    if (!dataset.sample_type_name || !dataset.feature_type_name) {
+    // Only supported by DimensionSelectV2.
+    if (!dataset.feature_type_name) {
+      return;
+    }
+
+    // This should never happen
+    if (!dataset.sample_type_name) {
       return;
     }
 
@@ -473,6 +542,14 @@ export const fetchLinearRegression = memoize(
 
     if (data.metadata?.color_property) {
       categories = data.metadata.color_property.values;
+    }
+
+    if (
+      ["categorical", "text"].includes(
+        data.dimensions?.color?.value_type as string
+      )
+    ) {
+      categories = data.dimensions.color!.values;
     }
 
     if (data.filters?.color1 || data.filters?.color2) {
@@ -575,6 +652,7 @@ const correlateDimension = memoize(
         ({
           slice_type,
           values: [],
+          value_type: "continuous",
           dataset_label,
           context_size: labels.length,
           axis_label:
@@ -622,6 +700,18 @@ const correlateDimension = memoize(
       );
     }
 
+    const representedIds: string[] = [];
+
+    Object.keys(data).forEach((key, i) => {
+      const values = data[key];
+      const distinct = new Set(values);
+      if (distinct.size === 1 && [...distinct][0] == null) {
+        delete data[key];
+      } else {
+        representedIds.push(ids[i]);
+      }
+    });
+
     const { columns, matrix } = correlationMatrix(data, use_clustering);
 
     const isAutoNamedContext = context.name.match(/^\(\d+ selected\)/) !== null;
@@ -629,7 +719,7 @@ const correlateDimension = memoize(
 
     let axis_label = isAutoNamedContext
       ? `correlation of ${context.name} ${entities}`
-      : `correlation of ${labels.length} ${context.name} ${entities}`;
+      : `correlation of ${columns.length} ${entities} (from context “${context.name}”)`;
 
     if (filter && filterIdentifiers) {
       const dName = filter.name;
@@ -648,6 +738,10 @@ const correlateDimension = memoize(
       slice_type,
       axis_label,
       dataset_label,
+      // We assume `value_type` is "continuous" because it wouldn't make sense
+      // to compute a correlation otherwise.
+      // TODO: Add validation for this.
+      value_type: "continuous" as const,
       // HACK: The correlation heatmap is a special case and breaks the
       // standard dimension type. `matrix` is of type number[][] but we'll
       // cast it to number[] just to keep the types simple. Caution must be
@@ -655,7 +749,7 @@ const correlateDimension = memoize(
       values: (matrix as unknown) as number[],
     };
 
-    return [outputDimension, columns, ids];
+    return [outputDimension, columns, representedIds];
   }
 );
 
@@ -688,15 +782,7 @@ export async function fetchCorrelation(
   return {
     index_type,
     index_labels: isModelCorrelation ? ids : xColumns,
-    index_aliases: isModelCorrelation
-      ? [
-          {
-            label: "Cell Line Name",
-            slice_id: "slice/cell_line_display_name/all/label",
-            values: xColumns,
-          },
-        ]
-      : [],
+    index_display_labels: xColumns,
     dimensions: x2 ? { x, x2 } : { x },
     filters: {},
     metadata: {},
@@ -716,7 +802,12 @@ export async function fetchWaterfall(
     metadata
   );
 
-  const categoricalValues = unsortedData.metadata?.color_property?.values;
+  let categoricalValues = unsortedData.metadata?.color_property?.values;
+
+  // FIXME: Should we make this easier to work with?
+  if (unsortedData.dimensions.color?.value_type === "categorical") {
+    categoricalValues = unsortedData.dimensions.color.values;
+  }
 
   const sortedLabels = unsortedData.index_labels
     .map(
@@ -761,14 +852,20 @@ export async function fetchWaterfall(
   };
 
   const sortedDimensions: DataExplorerPlotResponse["dimensions"] = {
+    // HACK: This ouput "x" dimension does not match the input "x" dimension.
+    // Rather, it is a special "rank" dimension that's derived from it.
     x: {
       axis_label: categoricalValues ? "" : "Rank",
       dataset_label: "",
       dataset_id: dimensions.x.dataset_id,
       slice_type: dimensions.x.slice_type,
+      value_type: "continuous",
       values: Array.from({ length: sortedLabels.length }, (_, i) => i),
     },
 
+    // HACK: We remap the "x" dimension from the plot config onto the y axis.
+    // This is for consistency with the density plot, which has a single "x"
+    // dimension.
     y: {
       ...unsortedData.dimensions.x,
       values: sortByReindexedLabels(unsortedData.dimensions.x.values),
@@ -776,7 +873,7 @@ export async function fetchWaterfall(
   };
 
   // FIXME: Instead of coloring the points as one big group, we could split it
-  // into smaller grouper according to how the continuous values get bucketed.
+  // into smaller groups according to how the continuous values get bucketed.
   // The only reason we didn't do that before is because this waterfall
   // implementation used to live on the backend while the buckets were always
   // calculated here on the frontend.
@@ -786,17 +883,6 @@ export async function fetchWaterfall(
       values: sortByReindexedLabels(unsortedData.dimensions.color.values),
     };
   }
-
-  const sortedIndexAliases =
-    index_type === "depmap_model"
-      ? [
-          {
-            label: "Cell Line Name",
-            slice_id: "slice/cell_line_display_name/all/label",
-            values: sortByReindexedLabels(unsortedData.index_aliases[0].values),
-          },
-        ]
-      : [];
 
   const sortedFilters: DataExplorerPlotResponse["filters"] = {};
   const sortedMetadata: DataExplorerPlotResponse["metadata"] = {};
@@ -819,10 +905,14 @@ export async function fetchWaterfall(
     };
   });
 
+  const sortedIndexDisplayLabels = sortByReindexedLabels(
+    unsortedData.index_display_labels
+  );
+
   return {
     index_type,
     index_labels: sortedLabels,
-    index_aliases: sortedIndexAliases,
+    index_display_labels: sortedIndexDisplayLabels,
     dimensions: sortedDimensions,
     filters: sortedFilters,
     metadata: sortedMetadata,

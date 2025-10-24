@@ -1,0 +1,215 @@
+import React, { useEffect, useRef, useState } from "react";
+import { Button } from "react-bootstrap";
+import styles from "../styles/MultiSelectTextArea.scss";
+import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
+import { MAX_GENES_ALLOWED } from "../types";
+import PurpleHelpIcon from "./PurpleHelpIcon";
+
+// TODO move to utils
+function replaceLineBreaksWithSingleSpace(text: string): string {
+  // The regular expression /(\r\n|\n|\r)/g matches all occurrences of:
+  // - \r\n (carriage return followed by newline, common on Windows)
+  // - \n (newline, common on Unix/Linux/macOS)
+  // - \r (carriage return, less common but still possible)
+  // The 'g' flag ensures that all occurrences are replaced, not just the first one.
+  return text.replace(/(\r\n|\n|\r)/g, " ");
+}
+
+const MultiSelectTextarea: React.FC = () => {
+  const {
+    selectedPlotGenes,
+    handleSetPlotSelectedGenes,
+    geneSymbolSelections,
+    handleSetGeneSymbolSelections,
+    validGeneSymbols,
+    handleSetValidGeneSymbols,
+    inValidGeneSymbols,
+    handleSetInValidGeneSymbols,
+    handleClearSelectedTopTermsTableRows,
+    handleSetError,
+    error,
+    errorMessage,
+    isLoading,
+  } = useGeneTeaFiltersContext();
+
+  const [inputValue, setInputValue] = useState("");
+
+  const handleInputChange = (e: any) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleKeyDown = (e: any) => {
+    if (e.key === "Enter" && inputValue.trim() !== "") {
+      e.preventDefault(); // Prevent newline in textarea
+
+      const newItems = replaceLineBreaksWithSingleSpace(inputValue)
+        .split(/[, ]+/)
+        .filter((item) => item.trim() !== "");
+      handleSetGeneSymbolSelections(
+        (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
+      ); // Add only unique items
+      setInputValue(""); // Clear input
+    } else if (e.key === "Enter" && inputValue.trim() === "") {
+      e.preventDefault();
+    }
+  };
+
+  const handleRemoveChip = (chipToRemove: string) => {
+    handleSetGeneSymbolSelections((prevChips: Set<string>) => {
+      const newGeneSymbolSelections = new Set(
+        [...prevChips].filter((chip) => chip !== chipToRemove)
+      );
+
+      return newGeneSymbolSelections;
+    });
+
+    // Update Plot Selections panel in case a selected plot gene is no longer valid.
+    if (selectedPlotGenes.has(chipToRemove)) {
+      const newSelections = [...selectedPlotGenes].filter(
+        (geneSymbol) => geneSymbol !== chipToRemove
+      );
+      handleSetPlotSelectedGenes(new Set(newSelections), false);
+    }
+  };
+
+  const targetRef = useRef<HTMLTextAreaElement | null>(null);
+
+  useEffect(() => {
+    // Scroll to the element once the component mounts or the `items` change.
+    if (targetRef.current) {
+      targetRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }
+  }, [inputValue]); // Re-run the effect if the items array changes.
+
+  return (
+    <div className={styles.multiSelectTextareaContainer}>
+      <h4 className={styles.sectionTitle}>
+        Enter Gene Symbols{" "}
+        <span>
+          <PurpleHelpIcon
+            tooltipText="Type or paste a set of 2-1000 gene symbols to test for enrichment."
+            popoverId="enter-gene-symbol-help"
+          />
+        </span>
+      </h4>
+      {geneSymbolSelections.size < 3 && (
+        <h5 className={styles.sectionSubTitle}>
+          Please enter between 2 and 1000 gene symbols.
+        </h5>
+      )}
+      <div
+        className={styles.multiSelectTextareaBorder}
+        style={{
+          border:
+            geneSymbolSelections.size > MAX_GENES_ALLOWED
+              ? "2px solid #b00020"
+              : "1px solid #ccc",
+        }}
+      >
+        <div className={styles.chipList}>
+          {[...geneSymbolSelections].map((chip, index) => {
+            let chipClass = styles.chip;
+            if (inValidGeneSymbols && inValidGeneSymbols.has(chip)) {
+              chipClass += " " + styles.chipInvalid;
+            } else if (validGeneSymbols && validGeneSymbols.has(chip)) {
+              chipClass += " " + styles.chipValid;
+            }
+            return (
+              <span className={chipClass} key={index}>
+                {chip}
+                <button
+                  type="button"
+                  disabled={isLoading}
+                  className={styles.chipRemoveButton}
+                  onClick={() => handleRemoveChip(chip)}
+                >
+                  x
+                </button>
+              </span>
+            );
+          })}
+        </div>
+        <textarea
+          ref={targetRef}
+          className={styles.multiSelectTextarea}
+          style={{
+            border: "none",
+            resize: "none",
+            width: "100%",
+            height: "100%",
+            scrollMargin: 80,
+          }}
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          placeholder={
+            geneSymbolSelections.size === 0
+              ? "Enter gene symbols, separated by commas or spaces, then press Enter"
+              : undefined
+          }
+          rows={2}
+        />
+      </div>
+      {geneSymbolSelections.size <= MAX_GENES_ALLOWED &&
+        validGeneSymbols.size > 0 && (
+          <div className={styles.validGenesLegend}>
+            <span className={styles.validGenesSwatch} />
+            <span>= valid genes ({validGeneSymbols.size})</span>
+          </div>
+        )}
+      {geneSymbolSelections.size <= MAX_GENES_ALLOWED &&
+        inValidGeneSymbols.size > 0 && (
+          <div className={styles.invalidGenesLegend}>
+            <span className={styles.invalidGenesSwatch} />
+            <span>= invalid genes ({inValidGeneSymbols.size})</span>
+          </div>
+        )}
+      {geneSymbolSelections.size > MAX_GENES_ALLOWED && error && (
+        <div className={styles.tooManySymbols}>
+          <span className="glyphicon glyphicon-exclamation-sign" />{" "}
+          {errorMessage}
+        </div>
+      )}
+      <div className={styles.buttonRow}>
+        <Button
+          className={styles.selectGenesButton}
+          disabled={inputValue.length === 0}
+          onClick={() => {
+            const newItems = replaceLineBreaksWithSingleSpace(inputValue)
+              .split(/[, ]+/)
+              .filter((item) => item.trim() !== "");
+            handleSetGeneSymbolSelections(
+              (prevChips: Set<string>) => new Set([...prevChips, ...newItems])
+            ); // Add only unique items
+            setInputValue(""); // Clear input
+          }}
+        >
+          Select
+        </Button>
+        <Button
+          className={styles.clearInputButton}
+          disabled={
+            (inputValue.length === 0 && geneSymbolSelections.size === 0) ||
+            isLoading
+          }
+          onClick={() => {
+            handleSetGeneSymbolSelections(() => new Set());
+            handleSetValidGeneSymbols(new Set());
+            handleSetInValidGeneSymbols(new Set());
+            handleSetPlotSelectedGenes(new Set(), false);
+            handleClearSelectedTopTermsTableRows();
+            setInputValue(""); // Clear input
+            handleSetError(false);
+          }}
+        >
+          Clear
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+export default MultiSelectTextarea;

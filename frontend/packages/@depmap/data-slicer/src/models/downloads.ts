@@ -58,6 +58,7 @@ export interface DownloadFile {
   fileSubType: FileSubtype;
   fileDescription: string;
   downloadUrl: string;
+  version: number | null;
   taigaUrl: string;
   releaseName: string;
   size: string;

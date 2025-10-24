@@ -1,4 +1,6 @@
 import { breadboxAPI, cached } from "@depmap/api";
+import { capitalize, getDimensionTypeLabel } from "../../utils/misc";
+import { SliceTypeNull } from "./useDimensionStateManager/types";
 
 export async function fetchDimensionIdentifiers(
   dimensionTypeName: string,
@@ -17,17 +19,45 @@ export async function fetchDimensionIdentifiers(
 }
 
 export async function fetchDatasetIdentifiers(
-  dimensionTypeName: string,
+  dimensionTypeName: string | SliceTypeNull,
   dataset_id: string
 ) {
+  let isFeature = true;
+
+  if (typeof dimensionTypeName === "string") {
+    const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
+    const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
+
+    if (!dimType) {
+      throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
+    }
+
+    isFeature = dimType.axis === "feature";
+  }
+
+  const result = isFeature
+    ? await cached(breadboxAPI).getDatasetFeatures(dataset_id)
+    : await cached(breadboxAPI).getDatasetSamples(dataset_id);
+
+  if ("detail" in result) {
+    throw new Error(JSON.stringify(result.detail));
+  }
+
+  return result;
+}
+
+export async function fetchDimensionTypeDisplayName(
+  dimensionTypeName: string | null
+) {
+  if (!dimensionTypeName) {
+    return "";
+  }
+
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
 
-  if (!dimType) {
-    throw new Error(`Unrecognized dimension type "${dimensionTypeName}"!`);
-  }
-
-  return dimType.axis === "feature"
-    ? cached(breadboxAPI).getMatrixDatasetFeatures(dataset_id)
-    : cached(breadboxAPI).getMatrixDatasetSamples(dataset_id);
+  return (
+    dimType?.display_name ||
+    capitalize(getDimensionTypeLabel(dimensionTypeName))
+  );
 }

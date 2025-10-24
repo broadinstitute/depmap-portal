@@ -11,7 +11,6 @@ from .group import Group
 import enum
 from datetime import datetime
 
-
 # NOTE: Using multivalue Literals seems to be creating errors in pydantic models and fastapi request params.
 # It is possible that for our version of pydantic, the schema for Literals is messed up
 # (see: https://github.com/tiangolo/fastapi/issues/562).
@@ -86,7 +85,8 @@ class SharedDatasetParams(BaseModel):
     given_id: Annotated[
         Optional[str],
         Field(
-            description="Stable human-readable identifier that the portal uses to look up specific datasets."
+            description="Stable human-readable identifier that the portal uses to look up specific datasets.",
+            pattern="^[A-Za-z0-9_.-]+$",
         ),
     ] = None
     priority: Annotated[
@@ -153,9 +153,9 @@ class MatrixDatasetParams(SharedDatasetParams):
     ] = None
 
     data_file_format: Annotated[
-        Literal["csv", "parquet"],
+        Literal["csv", "parquet", "hdf5"],
         Field(
-            description="The format of the uploaded data file. May either be 'csv' or 'parquet'"
+            description="The format of the uploaded data file. May either be 'csv', 'parquet' or 'hdf5'.",
         ),
     ] = "csv"
 

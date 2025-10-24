@@ -1,8 +1,13 @@
 import { useEffect, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
-import { SliceQuery } from "@depmap/types";
+import {
+  DataExplorerContextExpression,
+  DataExplorerContextV2,
+  SliceQuery,
+} from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
-import { Expr, isBoolean, getVariableNames } from "../utils/expressionUtils";
+import { Expr, getVariableNames, flattenExpr } from "../utils/expressionUtils";
+import simplifyVarNames from "../utils/simplifyVarNames";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
 function useMatches(expr: Expr) {
@@ -21,33 +26,22 @@ function useMatches(expr: Expr) {
       isCompleteExpression(expr) &&
       varNames.every((v) => fullySpecifiedVars.has(v))
     ) {
-      // TODO: Make this more cacheable. varNames can appear unique even when
-      // they represent the same value. I should come up with a normal form for
-      // one-off evaluations.
       const exprVars = Object.fromEntries(
         Object.entries(vars).filter(([key]) => varNames.includes(key))
       ) as Record<string, SliceQuery>;
-
-      let flattenedExpr = expr;
-
-      if (isBoolean(expr) && expr.and?.length === 1) {
-        flattenedExpr = expr.and[0];
-      }
-
-      if (isBoolean(expr) && expr.or?.length === 1) {
-        flattenedExpr = expr.or[0];
-      }
 
       setIsLoading(true);
       setHasError(false);
 
       (async () => {
         try {
-          const result = await cached(breadboxAPI).evaluateContext({
-            dimension_type,
-            expr: flattenedExpr as Record<string, unknown>,
-            vars: exprVars,
-          });
+          const result = await cached(breadboxAPI).evaluateContext(
+            simplifyVarNames({
+              dimension_type,
+              expr: flattenExpr(expr) as DataExplorerContextExpression,
+              vars: exprVars,
+            } as DataExplorerContextV2)
+          );
 
           setMatchingIds(result.ids);
           setNumMatches(result.ids.length);
@@ -62,6 +56,7 @@ function useMatches(expr: Expr) {
       })();
     } else {
       setNumMatches(null);
+      setHasError(false);
     }
   }, [expr, dimension_type, fullySpecifiedVars, vars]);
 

@@ -18,7 +18,6 @@ from depmap.extensions import csrf_protect
 from depmap.access_control import is_current_user_an_admin
 from depmap.data_explorer_2.links import get_plot_link, get_tutorial_link
 from depmap.data_explorer_2.plot import (
-    compute_all,
     compute_dimension,
     compute_filter,
     compute_metadata,
@@ -27,13 +26,13 @@ from depmap.data_explorer_2.plot import (
 from depmap.data_explorer_2.performance import generate_performance_report
 from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
 from depmap.data_explorer_2.utils import (
-    get_aliases_matching_labels,
     get_all_dimension_labels_by_id,
     get_all_supported_continuous_datasets,
     get_dimension_labels_across_datasets,
     get_dimension_labels_to_datasets_mapping,
     get_file_and_release_from_dataset,
     get_ids_and_labels_matching_context,
+    get_index_display_labels,
     get_reoriented_df,
     get_series_from_de2_slice_id,
     get_union_of_index_labels,
@@ -72,20 +71,6 @@ def view_data_explorer_2():
     )
 
 
-@blueprint.route("/plot_dimensions", methods=["POST"])
-@csrf_protect.exempt
-def plot_dimensions():
-    json = request.get_json()
-    index_type = json["index_type"]
-    dimensions = json["dimensions"]
-    filters = json.get("filters") or {}
-    metadata = json.get("metadata") or {}
-
-    return make_gzipped_json_response(
-        compute_all(index_type, dimensions, filters, metadata)
-    )
-
-
 @blueprint.route("/get_waterfall", methods=["POST"])
 @csrf_protect.exempt
 def get_waterfall():
@@ -108,10 +93,10 @@ def get_shared_index():
     dataset_ids = json["dataset_ids"]
 
     index_labels = get_union_of_index_labels(index_type, dataset_ids)
-    index_aliases = get_aliases_matching_labels(index_type, index_labels)
+    index_display_labels = get_index_display_labels(index_type, index_labels)
 
     return make_gzipped_json_response(
-        {"index_labels": index_labels, "index_aliases": index_aliases}
+        {"index_labels": index_labels, "index_display_labels": index_display_labels,}
     )
 
 
@@ -188,6 +173,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": "cannot plot",
+            "value_type": "continuous",
             "values": [],
             "context_size": len(row_labels),
             "slice_type": slice_type,
@@ -197,6 +183,7 @@ def get_correlation():
             {
                 "index_type": index_type,
                 "index_labels": output_index_labels,
+                "index_display_labels": output_index_labels,
                 "dimensions": {"x": x_dimension},
             }
         )
@@ -206,6 +193,7 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": "context produced no matches",
+            "value_type": "continuous",
             "values": [],
             "context_size": 0,
             "slice_type": slice_type,
@@ -299,17 +287,18 @@ def get_correlation():
             "dataset_id": dataset_id,
             "dataset_label": dataset_label,
             "axis_label": axis_label,
+            "value_type": "continuous",
             "values": values,
             "slice_type": slice_type,
         }
 
-    index_aliases = get_aliases_matching_labels(dimension_type, row_labels)
+    index_display_labels = get_index_display_labels(dimension_type, row_labels)
 
     return make_gzipped_json_response(
         {
             "index_type": index_type,
             "index_labels": row_labels,
-            "index_aliases": index_aliases,
+            "index_display_labels": index_display_labels,
             "dimensions": dimensions,
         }
     )
@@ -356,12 +345,25 @@ def datasets_by_index_type():
     return make_gzipped_json_response(output)
 
 
-# FIXME: Rename this to something like /types/dimensions/{name}/labels
 @blueprint.route("/dimension_labels")
 def dimension_labels():
     dimension_type = request.args.get("dimension_type")
     labels = get_dimension_labels_across_datasets(dimension_type)
-    aliases = get_aliases_matching_labels(dimension_type, labels)
+    aliases = []
+
+    if dimension_type == "depmap_model":
+        label = "Cell Line Name"
+        slice_id = "slice/cell_line_display_name/all/label"
+
+        values = []
+        values_by_label = slice_to_dict(slice_id)
+
+        for label in labels:
+            values.append(values_by_label.get(label, None))
+
+        aliases.append(
+            {"label": label, "slice_id": slice_id, "values": values,}
+        )
 
     return make_gzipped_json_response({"labels": labels, "aliases": aliases})
 
@@ -371,9 +373,12 @@ def dimension_labels_to_datasets_mapping():
     dimension_type = request.args.get("dimension_type")
 
     mapping = get_dimension_labels_to_datasets_mapping(dimension_type)
-    mapping["aliases"] = get_aliases_matching_labels(
-        dimension_type, mapping["dimension_labels"].keys()
-    )
+    mapping["aliases"] = None
+
+    if dimension_type == "depmap_model":
+        mapping["aliases"] = get_index_display_labels(
+            "depmap_model", mapping["dimension_labels"].keys()
+        )
 
     return make_gzipped_json_response(mapping)
 
@@ -386,9 +391,8 @@ def dimension_labels_of_dataset():
     is_transpose = dimension_type == data_access.get_dataset_sample_type(dataset_id)
 
     labels = get_vector_labels(dataset_id, is_transpose)
-    aliases = get_aliases_matching_labels(dimension_type, labels)
 
-    return make_gzipped_json_response({"labels": labels, "aliases": aliases})
+    return make_gzipped_json_response({"labels": labels})
 
 
 @blueprint.route("/unique_values_or_range")

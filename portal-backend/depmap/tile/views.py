@@ -2,7 +2,6 @@ from dataclasses import dataclass
 import uuid
 
 from flask.globals import current_app
-import pandas as pd
 
 from dataclasses import dataclass
 import uuid
@@ -17,7 +16,6 @@ from depmap.entity.views.executive import (
     format_generic_distribution_plot,
 )
 from depmap.cell_line.models_new import DepmapModel
-from depmap.cell_line.views import get_image_url
 from depmap.entity.models import Entity
 from depmap.gene.views.confidence import format_confidence
 from depmap.enums import DependencyEnum
@@ -26,20 +24,17 @@ from depmap.gene.views.executive import (
     format_codependencies,
     generate_correlations_table_from_datasets,
     get_dependency_distribution,
-    get_enrichment_boxes,
 )
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
-    format_enrichment_boxes,
     get_best_compound_predictability,
     format_dep_dists,
     format_dep_dist_caption,
     format_top_corr_table,
     format_availability_tile,
 )
-from depmap.compound.views.index import format_about
 from depmap.gene.models import Gene
-from depmap.compound.models import Compound, CompoundExperiment, drc_compound_datasets
+from depmap.compound.models import Compound, CompoundExperiment
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
 from depmap.metmap.models import MetMap500
 from depmap.extensions import cansar, breadbox
@@ -90,9 +85,7 @@ def render_tile(subject_type, tile_name, identifier):
             compound.entity_id
         )
         compound_experiment_and_datasets = [
-            x
-            for x in compound_experiment_and_datasets
-            if not x[1].is_dose_replicate
+            x for x in compound_experiment_and_datasets if not x[1].is_dose_replicate
         ]  # filter for non dose replicate datasets
 
         rendered_tile = render_compound_tile(
@@ -186,7 +179,9 @@ def render_compound_tile(
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
         CompoundTileEnum.heatmap.value: get_heatmap_html,
+        CompoundTileEnum.correlated_dependencies.value: get_correlated_dependencies_html,
         CompoundTileEnum.description.value: get_structure_and_detail_html,
+        CompoundTileEnum.related_compounds.value: get_related_compounds_html,
     }
 
     if tile_name not in tiles:
@@ -396,6 +391,43 @@ def get_heatmap_html(
     )
 
 
+def get_correlated_dependencies_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    # unique id to insert in DOM
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
+
+    return RenderedTile(
+        f'<div id="{div_id}">get_correlated_dependencies_html is stubbed out</div>',
+        f"""(
+        function() {{
+            console.log("about to call initCorrelatedDependenciesTile");
+            DepMap.initCorrelatedDependenciesTile("{div_id}", "{entity_label}");
+            console.log("after initCorrelatedDependenciesTile");
+        }})""",
+    )
+
+
+def get_related_compounds_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    # unique id to insert in DOM
+    div_id = str(uuid.uuid4())
+    entity_label = entity.label
+    print(entity.entity_id)
+
+    return RenderedTile(
+        f'<div id="{div_id}">get_correlated_dependencies_html is stubbed out</div>',
+        f"""(
+        function() {{
+            console.log("about to call initRelatedCompoundsTile");
+            DepMap.initRelatedCompoundsTile("{div_id}", "{entity_label}");
+            console.log("after initRelatedCompoundsTile");
+        }})""",
+    )
+
+
 def get_mutations_html(gene):
     mutation = format_mutation_profile(gene.entity_id)
     return render_template("tiles/mutations.html", mutation=mutation)
@@ -494,30 +526,26 @@ def get_omics_html(gene):
     return render_template("tiles/omics.html", omics=omics,)
 
 
-def get_description_html(entity, cpd_exp_and_datasets=None, query_params_dict={}):
+def get_description_html(entity):
     entity_type = entity.type
-    if entity_type == "gene":
-        html = render_template(
-            "tiles/description.html",
-            about={
-                "entrez_id": entity.entrez_id,
-                "symbol": entity.symbol,
-                "full_name": entity.name,
-                "aka": ", ".join([alias.alias for alias in entity.entity_alias.all()]),
-                "ensembl_id": entity.ensembl_id,  # lazy to rename, this isn't just entrez
-                "hngc_id": entity.hgnc_id,
-            },
-        )
+    assert entity_type == "gene"
 
-        js_callback = (
-            '(function() {getAbout("' + str(entity.entrez_id) + '")})'
-        )  # References function in about.js.
-        return RenderedTile(html, js_callback)
+    html = render_template(
+        "tiles/description.html",
+        about={
+            "entrez_id": entity.entrez_id,
+            "symbol": entity.symbol,
+            "full_name": entity.name,
+            "aka": ", ".join([alias.alias for alias in entity.entity_alias.all()]),
+            "ensembl_id": entity.ensembl_id,  # lazy to rename, this isn't just entrez
+            "hngc_id": entity.hgnc_id,
+        },
+    )
 
-    elif entity_type == "compound":
-        return render_template(
-            "tiles/compound_description.html", about=format_about(entity),
-        )
+    js_callback = (
+        '(function() {getAbout("' + str(entity.entrez_id) + '")})'
+    )  # References function in about.js.
+    return RenderedTile(html, js_callback)
 
 
 def get_essentiality_html(gene):

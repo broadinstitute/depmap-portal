@@ -26,25 +26,51 @@ export default function useClickHandlers(
     path: ContextPath | null
   ) => void
 ) {
-  const handleClickSaveSelectionAsContext = (
+  const handleClickSaveSelectionAsContext = async (
     context_type: string,
     selectedLabels: Set<string>
   ) => {
     const labels = [...selectedLabels];
 
-    const context = isBreadboxOnlyMode
-      ? {
-          name: defaultContextName(selectedLabels.size),
-          dimension_type: context_type,
-          expr: { in: [{ var: "given_id" }, labels] },
-        }
-      : {
-          name: defaultContextName(selectedLabels.size),
-          context_type,
-          expr: { in: [{ var: "entity_label" }, labels] },
-        };
+    if (isBreadboxOnlyMode) {
+      const identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
+        context_type
+      );
+      const labelToIdMap = Object.fromEntries(
+        identifiers.map(({ label, id }) => [label, id])
+      );
 
-    onClickSaveAsContext(context as DataExplorerContext, null);
+      // "depmap_model" is a confusing type because its IDs were considered
+      // labels by the legacy portal.
+      let labelsAreDemapIds = plot.index_type === "depmap_model";
+
+      // To add an extra layer of confusion, this plot type's index isn't
+      // really a proper index.
+      if (plot.plot_type === "correlation_heatmap") {
+        labelsAreDemapIds = !labelsAreDemapIds;
+      }
+
+      const ids = labelsAreDemapIds
+        ? labels
+        : labels.map((label) => labelToIdMap[label]);
+
+      const context = {
+        name: defaultContextName(selectedLabels.size),
+        dimension_type: context_type,
+        expr: { in: [{ var: "given_id" }, ids] },
+        vars: {},
+      };
+
+      onClickSaveAsContext((context as unknown) as DataExplorerContext, null);
+    } else {
+      const context = {
+        name: defaultContextName(selectedLabels.size),
+        context_type,
+        expr: { in: [{ var: "entity_label" }, labels] },
+      };
+
+      onClickSaveAsContext(context, null);
+    }
   };
 
   const handleClickVisualizeSelected = useCallback(

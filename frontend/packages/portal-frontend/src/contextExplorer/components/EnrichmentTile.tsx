@@ -20,7 +20,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
   entityType,
 }) => {
   const contextExplorerHref = window.location.href
-    .split(entityLabel)[0]
+    .split(encodeURIComponent(entityLabel))[0]
     .replace(entityType, "context_explorer");
 
   const [tileData, setTileData] = useState<EnrichedLineagesTileData | null>(
@@ -158,8 +158,8 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
           </div>
           {tileData && (
             <p className="stacked-boxplot-download-container">
-              View more contexts in the{" "}
-              <a href={tileData?.context_explorer_url}>Context Explorer</a>
+              Click a context name above to view this enrichment and additional
+              subtype-specific results in Context Explorer
             </p>
           )}
         </div>

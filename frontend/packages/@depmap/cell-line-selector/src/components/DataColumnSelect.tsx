@@ -42,7 +42,6 @@ function DataColumnSelect({ onChange }: Props) {
           className={styles.DimensionSelect}
           mode="entity-only"
           index_type="depmap_model"
-          valueTypes={DimensionSelect.CONTINUOUS_ONLY}
           value={null}
           onChange={(dimension) => {
             const sliceId = convertDimensionToSliceId(dimension);

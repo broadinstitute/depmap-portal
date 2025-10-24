@@ -5,8 +5,10 @@ import tempfile
 from typing import Any, List, Optional
 import zipfile
 from depmap.compound import legacy_utils
-import requests
-import urllib.parse
+from depmap.compound.utils import (
+    get_compound_dataset_with_name_and_priority,
+    dataset_exists_with_compound_in_auc_and_rep_datasets,
+)
 
 import numpy as np
 import pandas as pd
@@ -28,6 +30,7 @@ from depmap.compound.models import (
     Compound,
     CompoundDoseReplicate,
     CompoundExperiment,
+    DRCCompoundDatasetWithNamesAndPriority,
     DoseResponseCurve,
     drc_compound_datasets,
 )
@@ -95,10 +98,10 @@ def view_compound(name):
         )
 
     dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
-        compound_label=compound.label
+        compound_label=compound.label, compound_id=compound.compound_id
     )
-    heatmap_dataset_options = format_heatmap_options_new_tab_if_available(
-        compound_label=compound.label
+    heatmap_dataset_options = get_heatmap_options_new_tab_if_available(
+        compound_label=compound.label, compound_id=compound.compound_id
     )
 
     # If there are no no valid dataset options, hide the heatmap tab and tile
@@ -110,6 +113,9 @@ def view_compound(name):
     ) or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
         DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
     )
+    show_compound_correlations = current_app.config[
+        "ENABLED_FEATURES"
+    ].show_compound_correlations
 
     return render_template(
         "compounds/index.html",
@@ -118,7 +124,6 @@ def view_compound(name):
         title=name,
         compound_aliases=compound_aliases,
         summary=sensitivity_tab_compound_summary,
-        about=format_about(compound),
         has_predictability=has_predictability,
         predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
         predictability_methodology_link=get_signed_url(
@@ -129,6 +134,7 @@ def view_compound(name):
             has_predictability,
             has_heatmap=show_heatmap_tab,
             show_enriched_lineages=show_enriched_lineages,
+            show_compound_correlations=show_compound_correlations,
         ),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         # If len(dose_curve_options_new) is 0, hide the tab in the index.html
@@ -139,6 +145,7 @@ def view_compound(name):
         compound_units=compound.units,
         show_heatmap_tab=show_heatmap_tab,
         show_enriched_lineages=show_enriched_lineages,
+        show_compound_correlations=show_compound_correlations,
     )
 
 
@@ -223,7 +230,9 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab_if_available(compound_label: str):
+def format_dose_curve_options_new_tab_if_available(
+    compound_label: str, compound_id: str
+):
     """
     Used for jinja rendering of the dose curve tab
     """
@@ -234,10 +243,10 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
     valid_options = []
     if show_new_dose_curves_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.dataset_exists(
-                drc_dataset.auc_dataset_given_id
-            ) and data_access.valid_row(
-                drc_dataset.auc_dataset_given_id, compound_label
+            if dataset_exists_with_compound_in_auc_and_rep_datasets(
+                drc_dataset=drc_dataset,
+                compound_label=compound_label,
+                compound_id=compound_id,
             ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
                 if (
@@ -246,21 +255,27 @@ def format_dose_curve_options_new_tab_if_available(compound_label: str):
                         "ENABLED_FEATURES"
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
-                    valid_options.append(drc_dataset)
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset
+                    )
+                    valid_options.append(complete_option)
 
     return valid_options
 
 
-def format_heatmap_options_new_tab_if_available(compound_label: str):
+def get_heatmap_options_new_tab_if_available(
+    compound_label: str, compound_id: str
+) -> List[DRCCompoundDatasetWithNamesAndPriority]:
     show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
 
     valid_options = []
     if show_heatmap_tab:
         for drc_dataset in drc_compound_datasets:
-            if data_access.dataset_exists(
-                drc_dataset.auc_dataset_given_id
-            ) and data_access.valid_row(
-                drc_dataset.auc_dataset_given_id, compound_label
+            # TODO: Theoretically, we could let the Heatmap load without the dose curve params, but this would involve some frontend changes.
+            if dataset_exists_with_compound_in_auc_and_rep_datasets(
+                drc_dataset=drc_dataset,
+                compound_label=compound_label,
+                compound_id=compound_id,
             ):
                 # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
                 if (
@@ -269,77 +284,12 @@ def format_heatmap_options_new_tab_if_available(compound_label: str):
                         "ENABLED_FEATURES"
                     ].show_all_new_dose_curve_and_heatmap_tab_datasets
                 ):
-                    valid_options.append(drc_dataset)
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset
+                    )
+                    valid_options.append(complete_option)
 
     return valid_options
-
-
-def is_url_valid(url):
-    """Check if a URL is valid
-
-    Args:
-        url (string): URL to check
-
-    Returns:
-        Bool: True if the URL is valid, False otherwise
-    """
-    try:
-        response = requests.head(url)
-        return response.status_code == 200
-    except requests.exceptions.RequestException as e:
-        return False
-
-
-def format_about(compound):
-    targets = [
-        {"label": gene.label, "url": url_for("gene.view_gene", gene_symbol=gene.label)}
-        for gene in compound.target_gene
-    ]
-
-    if len(targets) == 0:
-        targets = None
-    first_brd_compound_experiment = CompoundExperiment.get_first_with_compound_xref_type(
-        compound.entity_id, "BRD"
-    )
-
-    # Generate the structure URL
-    structure_url = (
-        "https://storage.googleapis.com/depmap-compound-images/{}.svg".format(
-            urllib.parse.quote(
-                compound.smiles
-            )  # Encode a compound SMILES string such as
-            # "CN(C)C/C=C/C(=O)Nc1cc2c(Nc3ccc(F)c(Cl)c3)ncnc2cc1O[C@H]1CCOC1" to
-            # "CN%28C%29C/C%3DC/C%28%3DO%29Nc1cc2c%28Nc3ccc%28F%29c%28Cl%29c3%29ncnc2cc1O%5BC%40H%5D1CCOC1"
-        )
-        if first_brd_compound_experiment
-        else None
-    )
-
-    # Validate the structure URL
-    if structure_url and not is_url_valid(structure_url):
-        structure_url = None
-
-    # Generate the ChEMBL URL
-    chembl_id = compound.chembl_id
-    chembl_url = (
-        f"https://www.ebi.ac.uk/chembl/compound_report_card/{chembl_id}"
-        if chembl_id
-        else None
-    )
-
-    about = {
-        "structure_url": structure_url,
-        "target_or_mechanism": compound.target_or_mechanism,
-        "targets": targets,
-        "label": compound.label,
-        "chembl_id": chembl_id,
-        "chembl_url": chembl_url,
-    }
-
-    if all([value == None or value == "" for key, value in about.items()]):
-        return None  # easier for html template to test
-    else:
-        return about
 
 
 @blueprint.route("/compoundUrlRoot")
@@ -515,8 +465,10 @@ def get_auc_data(dataset_name, compound_experiment):
         auc_data = auc_matrix.get_cell_line_values_and_depmap_ids(
             compound_experiment.entity_id
         )
+        auc_log_or_auc_col = auc_dataset.matrix.units
+
         auc_data = pd.DataFrame.from_dict(
-            auc_data.to_dict(), orient="index", columns=["auc"]
+            auc_data.to_dict(), orient="index", columns=[auc_log_or_auc_col]
         )
         auc_data.index.name = "depmap_id"
         return auc_data

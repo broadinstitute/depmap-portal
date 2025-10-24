@@ -1,6 +1,7 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { AnnotationType, DataExplorerContextVariable } from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
+import { getDimensionDataWithoutLabels } from "./helpers";
 
 export async function fetchVariableDomain(
   variable: DataExplorerContextVariable
@@ -42,20 +43,15 @@ export async function fetchVariableDomain(
   };
 
   try {
-    data = await cached(breadboxAPI).getDimensionData(sliceQuery);
+    data = await getDimensionDataWithoutLabels(sliceQuery);
+
+    if (data.values.length === 0) {
+      window.console.error({ sliceQuery });
+      throw new Error("Slice query returned empty data!");
+    }
   } catch {
     window.console.error({ sliceQuery });
     throw new Error("Error fetching data from slice query");
-  }
-
-  if (!("values" in data)) {
-    window.console.error({
-      sliceQuery,
-      response: data,
-    });
-    throw new Error(
-      "Bad response from /datasets/dimension/data/. Contains no `values!`"
-    );
   }
 
   if (value_type === "text" || value_type === "categorical") {
@@ -70,13 +66,39 @@ export async function fetchVariableDomain(
   }
 
   if (value_type === "continuous") {
-    const numberValues = data.values.filter(
-      (val) => typeof val === "number"
-    ) as number[];
+    let min = Infinity;
+    let max = -Infinity;
+
+    for (let i = 0; i < data.values.length; i += 1) {
+      const value = data.values[i];
+
+      if (typeof value === "number") {
+        if (value < min) {
+          min = value;
+        }
+
+        if (value > max) {
+          max = value;
+        }
+      }
+    }
+
+    return Promise.resolve({ min, max, value_type });
+  }
+
+  if (value_type === "list_strings") {
+    const stringValues = new Set<string>();
+
+    for (let i = 0; i < data.values.length; i += 1) {
+      const value = data.values[i];
+
+      if (Array.isArray(value)) {
+        value.forEach((s) => stringValues.add(s));
+      }
+    }
 
     return Promise.resolve({
-      min: Math.min(...numberValues),
-      max: Math.max(...numberValues),
+      unique_values: [...stringValues].sort(compareCaseInsensitive),
       value_type,
     });
   }

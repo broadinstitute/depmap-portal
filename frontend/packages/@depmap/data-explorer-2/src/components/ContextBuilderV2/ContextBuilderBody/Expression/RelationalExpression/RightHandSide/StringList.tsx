@@ -5,12 +5,16 @@ import React, {
   useRef,
 } from "react";
 import cx from "classnames";
-import Select, { Props as ReactSelectProps } from "react-select";
+import ReactSelect from "react-select";
+import WindowedSelect from "react-windowed-select";
+import type { Props as ReactSelectProps } from "react-select";
 import { getConfirmation } from "@depmap/common-components";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import { scrollParentIntoView } from "../../../../utils/domUtils";
 import OptimizedSelectOption from "../../../../../OptimizedSelectOption";
 import styles from "../../../../../../styles/ContextBuilderV2.scss";
+
+const Select = (WindowedSelect as unknown) as typeof ReactSelect;
 
 interface Props {
   expr: string[] | null;
@@ -164,7 +168,9 @@ function StringList({ expr, path, domain, isLoading }: Props) {
         })}
         styles={selectStyles}
         value={
-          expr ? expr.map((value: string) => ({ value, label: value })) : null
+          Array.isArray(expr)
+            ? expr.map((value: string) => ({ value, label: value }))
+            : null
         }
         onChange={(val) => {
           const selections = (val as unknown) as { value: string }[] | null;

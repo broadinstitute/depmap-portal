@@ -11,8 +11,8 @@ from depmap.data_access.models import MatrixDataset
 from depmap.utilities.data_access_log import log_dataset_access
 from depmap.data_explorer_2.datatypes import get_hardcoded_metadata_slices
 from depmap.data_explorer_2.utils import (
-    get_aliases_matching_labels,
     get_dimension_labels_across_datasets,
+    get_index_display_labels,
     get_reoriented_df,
     get_union_of_index_labels,
     get_vector_labels,
@@ -100,6 +100,7 @@ def compute_dimension(
         "dataset_label": dataset.label,
         "axis_label": axis_label,
         "slice_type": dimension["slice_type"],
+        "value_type": "continuous",
         "indexed_values": indexed_values,
     }
 
@@ -165,52 +166,6 @@ def compute_metadata(metadata):
     }
 
 
-def compute_all(index_type, dimensions, filters, metadata):
-    dataset_ids = [d["dataset_id"] for d in dimensions.values()]
-    index_labels = get_union_of_index_labels(index_type, dataset_ids)
-    index_aliases = get_aliases_matching_labels(index_type, index_labels)
-
-    output_dimensions = {}
-    output_filters = {}
-    output_metadata = {}
-
-    for dimension_key, dimension in dimensions.items():
-        dimension = compute_dimension(dimension, index_type)
-        indexed_values = dimension["indexed_values"]
-        output_dimensions[dimension_key] = {
-            "dataset_id": dimension["dataset_id"],
-            "dataset_label": dimension["dataset_label"],
-            "axis_label": dimension["axis_label"],
-            "slice_type": dimension["slice_type"],
-            "values": [indexed_values.get(label, None) for label in index_labels],
-        }
-
-    for filter_key, input_filter in filters.items():
-        computed_filter = compute_filter(input_filter)
-        indexed_values = computed_filter["indexed_values"]
-        output_filters[filter_key] = {
-            "name": input_filter["name"],
-            "values": [indexed_values.get(label, None) for label in index_labels],
-        }
-
-    for metadata_key, input_metadata in metadata.items():
-        computed_metadata = compute_metadata(input_metadata)
-        indexed_values = computed_metadata["indexed_values"]
-        output_metadata[metadata_key] = {
-            "slice_id": input_metadata["slice_id"],
-            "values": [indexed_values.get(label, None) for label in index_labels],
-        }
-
-    return {
-        "index_type": index_type,
-        "index_labels": index_labels,
-        "index_aliases": index_aliases,
-        "dimensions": output_dimensions,
-        "filters": output_filters,
-        "metadata": output_metadata,
-    }
-
-
 def compute_waterfall(index_type, dimensions, filters, metadata):
     output_dimensions = {}
     output_filters = {}
@@ -242,13 +197,14 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
                 indexed_values[key] = value
 
     index_labels = list(indexed_values.keys())
-    index_aliases = get_aliases_matching_labels(index_type, index_labels)
+    index_display_labels = get_index_display_labels(index_type, index_labels)
 
     output_dimensions["x"] = {
         "dataset_id": primary_dimension["dataset_id"],
         "dataset_label": "",
         "axis_label": "Rank" if categorical_colors is None else "",
         "slice_type": primary_dimension["slice_type"],
+        "value_type": "continuous",
         "values": list(range(0, len(index_labels))),
     }
 
@@ -257,6 +213,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
         "dataset_label": primary_dimension["dataset_label"],
         "axis_label": primary_dimension["axis_label"],
         "slice_type": primary_dimension["slice_type"],
+        "value_type": "continuous",
         "values": [indexed_values.get(label, None) for label in index_labels],
     }
 
@@ -267,6 +224,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
             "dataset_label": color_dimension["dataset_label"],
             "axis_label": color_dimension["axis_label"],
             "slice_type": color_dimension["slice_type"],
+            "value_type": "continuous",
             "values": [
                 color_dimension["indexed_values"].get(label, None)
                 for label in index_labels
@@ -299,7 +257,7 @@ def compute_waterfall(index_type, dimensions, filters, metadata):
     return {
         "index_type": index_type,
         "index_labels": index_labels,
-        "index_aliases": index_aliases,
+        "index_display_labels": index_display_labels,
         "dimensions": output_dimensions,
         "filters": output_filters,
         "metadata": output_metadata,
@@ -321,12 +279,10 @@ def _get_axis_label(
         axis_label = single_slice_label
 
         if dimension_type == "depmap_model":
-            index_aliases = get_aliases_matching_labels(
+            index_display_labels = get_index_display_labels(
                 "depmap_model", [single_slice_label]
             )
-            for alias in index_aliases:
-                if alias["slice_id"] == "slice/cell_line_display_name/all/label":
-                    axis_label = f"{alias['values'][0]} ({axis_label})"
+            axis_label = f"{index_display_labels[0]} ({single_slice_label})"
         if units:
             axis_label += " " + units
         return axis_label

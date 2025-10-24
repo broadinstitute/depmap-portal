@@ -6,6 +6,7 @@ import {
   DataExplorerPlotResponse,
   SliceQuery,
 } from "@depmap/types";
+import wellKnownDatasets from "../../../../../constants/wellKnownDatasets";
 
 // HACK: Copied from the "depmap-shared" directory.
 const colorPalette = {
@@ -181,6 +182,41 @@ function nullifyUnplottableValues(
   return out;
 }
 
+export function findCategoricalSlice(data: DataExplorerPlotResponse | null) {
+  if (!data) {
+    return null;
+  }
+
+  const colorDim = data.dimensions?.color;
+
+  if (colorDim && colorDim.value_type === "categorical") {
+    return {
+      label: colorDim.axis_label,
+      dataset_id: colorDim.dataset_id,
+      values: colorDim.values,
+      value_type: colorDim.value_type,
+    };
+  }
+
+  return data?.metadata?.color_property || null;
+}
+
+export function findContinuousColorSlice(
+  data: DataExplorerPlotResponse | null
+) {
+  const colorDim = data?.dimensions?.color;
+
+  if (colorDim?.value_type === "continuous") {
+    return {
+      label: colorDim.axis_label,
+      values: colorDim.values,
+      value_type: colorDim.value_type,
+    };
+  }
+
+  return null;
+}
+
 export function formatDataForScatterPlot(
   data: DataExplorerPlotResponse | null,
   color_by: DataExplorerPlotConfig["color_by"]
@@ -194,9 +230,10 @@ export function formatDataForScatterPlot(
 
   const c1Values = data.filters?.color1?.values;
   const c2Values = data.filters?.color2?.values;
-  const catValues = data.metadata?.color_property?.values;
+  const catValues = findCategoricalSlice(data)?.values;
+  const contSlice = findContinuousColorSlice(data);
   const contValues = nullifyUnplottableValues(
-    data.dimensions.color?.values,
+    contSlice?.values,
     data.filters?.visible?.values,
     [data.dimensions.x, data.dimensions.y!]
   );
@@ -244,10 +281,10 @@ export function formatDataForScatterPlot(
       const aliases: string[] = [];
       const colorInfo = [];
 
-      if (data?.index_aliases) {
-        data.index_aliases.forEach((alias) => {
-          aliases.push(`<b>${alias.values[i]}</b>`);
-        });
+      // FIXME: We shouldn't have a special case for models.
+      // We should just show both id and label.
+      if (data.index_type === "depmap_model") {
+        aliases.push(`<b>${data.index_display_labels[i]}</b>`);
       }
 
       if (c1Values && c1Values[i] && color_by === "aggregated_slice") {
@@ -294,10 +331,10 @@ export function formatDataForScatterPlot(
     annotationText: data.index_labels.map((label: string, i: number) => {
       const aliases: string[] = [];
 
-      if (data?.index_aliases) {
-        data.index_aliases.forEach((alias) => {
-          aliases.push(`<b>${alias.values[i]}</b>`);
-        });
+      // FIXME: We shouldn't have a special case for models.
+      // We should just show both id and label.
+      if (data.index_type === "depmap_model") {
+        aliases.push(`<b>${data.index_display_labels[i]}</b>`);
       }
 
       const formattedLabel =
@@ -582,7 +619,7 @@ export function calcVisibility(
   }
 
   const contKeys = Reflect.ownKeys(continuousBins || {});
-  const contValues = data.dimensions.color?.values;
+  const contValues = findContinuousColorSlice(data)?.values;
 
   if (contValues) {
     return contValues.map((value: number) => {
@@ -610,7 +647,7 @@ export function calcVisibility(
     });
   }
 
-  const catValues = data.metadata?.color_property?.values;
+  const catValues = findCategoricalSlice(data)?.values;
 
   if (catValues) {
     const hideOthers = hiddenLegendValues.has(LEGEND_OTHER);
@@ -671,7 +708,7 @@ export function calcVisibility(
 }
 
 export function getLegendKeysWithNoData(data: any, continuousBins: any) {
-  const catData = data?.metadata?.color_property;
+  const catData = findCategoricalSlice(data);
   const visible = data?.filters?.visible;
 
   if (catData && visible) {
@@ -887,9 +924,9 @@ const hasPlottableNulls = (
 
 function makeCategoricalColorMap(
   values: string[] | null,
-  slice_id: string,
-  dimensions: Record<string, { values: unknown[] }> | null,
+  dimensions: Record<string, { dataset_id: string; values: unknown[] }> | null,
   filters: Record<string, { values: boolean[] }> | null,
+  metadata: DataExplorerMetadata | null,
   palette: DataExplorerColorPalette
 ) {
   if (!values) {
@@ -910,16 +947,26 @@ function makeCategoricalColorMap(
     .filter((key) => counts.get(key)! > 0 && plottableCategories.has(key))
     .sort(collator.compare);
 
-  if (slice_id.startsWith("slice/mutations_prioritized/")) {
+  const legacySliceId = (metadata?.color_property as { slice_id?: string })
+    ?.slice_id;
+
+  if (
+    legacySliceId?.startsWith("slice/mutations_prioritized/") ||
+    dimensions?.color?.dataset_id === wellKnownDatasets.mutations_prioritized
+  ) {
     const fixedColors = {
       "Other conserving": colorPalette.other_conserving_color,
       "Other non-conserving": colorPalette.other_non_conserving_color,
       Damaging: colorPalette.damaging_color,
       Hotspot: colorPalette.hotspot_color,
+      Other: colorPalette.other_conserving_color,
     };
 
     keys.forEach((key) => {
-      out[key] = fixedColors[key as keyof typeof fixedColors];
+      out[key] =
+        key in fixedColors
+          ? fixedColors[key as keyof typeof fixedColors]
+          : palette.other;
     });
   } else {
     const colors =
@@ -959,17 +1006,20 @@ export function getColorMap(
 
   let colorMap: Partial<Record<LegendKey, string>> = {};
 
-  if (data.metadata?.color_property) {
+  const catSlice = findCategoricalSlice(data);
+  const contSlice = findContinuousColorSlice(data);
+
+  if (catSlice) {
     colorMap = makeCategoricalColorMap(
-      data.metadata.color_property.values,
-      data.metadata.color_property.slice_id,
+      catSlice.values as string[],
       data.dimensions,
       data.filters,
+      data.metadata,
       palette
     ) as any;
   }
 
-  if (data.dimensions.color) {
+  if (contSlice) {
     colorMap = {
       [LEGEND_RANGE_1]: palette.sequentialScale[0][1],
       [LEGEND_RANGE_2]: palette.sequentialScale[1][1],
@@ -1032,7 +1082,7 @@ export function getColorMap(
   }
 
   if (
-    data.dimensions?.color &&
+    contSlice &&
     hasSomeNullValuesUniqueToDimension(data.dimensions, "color")
   ) {
     colorMap[LEGEND_OTHER] = palette.other;
@@ -1119,13 +1169,15 @@ export type ContinuousBins = ReturnType<typeof calcBins>;
 export function categoryToDisplayName(
   category: LegendKey,
   data: {
+    dimensions?: {
+      color?: object;
+    };
     filters: {
       color1?: { name: string };
       color2?: { name: string };
     };
   },
-  continuousBins: ContinuousBins,
-  color_by: string | null
+  continuousBins: ContinuousBins
 ) {
   if (category === LEGEND_BOTH) {
     return `Both (${[data.filters.color1!.name, data.filters.color2!.name].join(
@@ -1138,7 +1190,12 @@ export function categoryToDisplayName(
   }
 
   if (category === LEGEND_OTHER) {
-    return color_by === "custom" ? "N/A" : "Other";
+    const catSlice = findCategoricalSlice(data as DataExplorerPlotResponse);
+    const hasOther = catSlice?.values.some(
+      (val) => val === "other" || val === "Other"
+    );
+
+    return continuousBins || hasOther ? "N/A" : "Other";
   }
 
   if (typeof category === "symbol") {
@@ -1358,8 +1415,8 @@ export function calcDensityStats(
 ) {
   const color1 = data?.filters?.color1;
   const color2 = data?.filters?.color2;
-  const catData = data?.metadata?.color_property;
-  const contData = data?.dimensions?.color;
+  const catData = findCategoricalSlice(data);
+  const contData = findContinuousColorSlice(data);
   const visible = data?.filters?.visible;
 
   if (color1 || color2) {

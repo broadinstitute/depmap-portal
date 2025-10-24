@@ -1,3 +1,5 @@
+@import "mixins";
+
 .DimensionSelect {
   & > div:not(:first-child) {
     margin-top: 10px;
@@ -34,15 +36,6 @@
   cursor: not-allowed;
 }
 
-@mixin chip {
-  color: #fff;
-  border-width: 1px;
-  border-style: solid;
-  padding: 0 4px;
-  border-radius: 3px;
-  margin-right: 3px;
-}
-
 .defaultChip {
   @include chip;
   background-color: #2d8de1;
@@ -51,8 +44,8 @@
 
 .noDefaultChip {
   @include chip;
-  background-color: #d84848;
-  border-color: #8f1e1e;
+  background-color: #bbb;
+  border-color: #aaa;
 }
 
 .defaultDataset {
@@ -110,6 +103,19 @@
   }
 }
 
+.DimensionDetailsModalV2 {
+  display: flex;
+}
+
+.DataVersionMarkdown {
+  @include scroll-shadow;
+  margin-left: 15px;
+  padding: 0 20px;
+  min-height: 300px;
+  height: 369px;
+  overflow: auto;
+}
+
 .emptyDatasetDetails {
   display: flex;
   justify-content: center;
@@ -117,6 +123,11 @@
   width: 100%;
   font-size: 20px;
   font-weight: 300;
+
+  :global .glyphicon {
+    font-size: 24px;
+    margin-right: 5px;
+  }
 }
 
 .detailsButton {

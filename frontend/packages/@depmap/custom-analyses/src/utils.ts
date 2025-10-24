@@ -2,6 +2,8 @@ import qs from "qs";
 import stableStringify from "json-stable-stringify";
 import { CustomList } from "@depmap/cell-line-selector";
 import { AnalysisType, ComputeResponseResult } from "@depmap/compute";
+import { isBreadboxOnlyMode } from "@depmap/data-explorer-2";
+import { getUrlPrefix, isElara } from "@depmap/globals";
 
 // Convert the cell line to a context and persists it to Content Addressable
 // Storage so we can refer to it simply by hash.
@@ -13,7 +15,35 @@ async function cellLineListToContextHash(list: CustomList) {
       : list.fromContext.hash;
   }
 
-  let hash;
+  if (isBreadboxOnlyMode) {
+    const context = {
+      name: list.name,
+      dimension_type: "depmap_model",
+      expr: { in: [{ var: "given_id" }, [...list.lines]] },
+      vars: {},
+    };
+
+    const url = isElara
+      ? `${getUrlPrefix()}/temp/cas`
+      : `${getUrlPrefix()}/breadbox/temp/cas`;
+    const json = stableStringify(context);
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ value: json }),
+    });
+
+    if (res.status < 200 || res.status > 299) {
+      throw new Error("Bad request");
+    }
+
+    const responseJson = await res.json();
+    return responseJson.key;
+  }
 
   const context = {
     name: list.name,
@@ -29,13 +59,11 @@ async function cellLineListToContextHash(list: CustomList) {
   try {
     const response = await fetch("../cas/", options);
     const responseJson = await response.json();
-    hash = responseJson.key;
+    return responseJson.key;
   } catch (e) {
     window.console.error(e);
     throw new Error("Failed to persist context");
   }
-
-  return hash;
 }
 
 export async function getDataExplorer2Url(
@@ -46,8 +74,9 @@ export async function getDataExplorer2Url(
 ): Promise<string> {
   const task = result.taskId;
   const firstFeature = result.data[0].label;
+
   const firstDataset = decodeURIComponent(
-    result.data[0].vectorId.replace(/slice\/([^/]+)\/.*/, "$1")
+    result.data[0].vectorId.split("/")?.[1]
   );
 
   if (analysisType === "two_class") {

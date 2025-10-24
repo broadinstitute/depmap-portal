@@ -9,6 +9,25 @@ add-if-missing {
     "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id)
 }
 
+
+# The following 3 artifacts are necessary for the Context Explorer preprocessing
+# scripts to run successfully
+add-if-missing {
+  "type": "subtype_tree",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "SubtypeTree"),
+}
+
+add-if-missing {
+  "type": "omics_profiles",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsProfiles")
+}
+
+add-if-missing {
+  "type": "subtype_context_matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_dataset_id, "SubtypeMatrix"),
+}
+
+
 # Sample info file
 add-if-missing {
   "type": "sample_info_dataset_id",
@@ -75,7 +94,14 @@ add-if-missing {
 # biomarker-matrix
 add-if-missing {
   'type': 'raw-expr-matrix',
-  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionProteinCodingGenesTPMLogp1"),
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
+  'category' : 'expression',
+}
+
+# biomarker-matrix
+add-if-missing {
+  'type': 'raw-expr-matrix-profile',
+  'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionTPMLogp1HumanAllGenes"),
   'category' : 'expression',
 }
 
@@ -130,7 +156,7 @@ add-if-missing {
     'type': 'dataset-display-name',
     'display_name': 'Expression {{ config.RELEASE_LABEL }}',
     'label': 'expression',
-    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionProteinCodingGenesTPMLogp1"),
+    'dataset_id' : PREPROCESS_TAIGA_ID(virtual_dataset_id, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
 }
 
 add-if-missing {

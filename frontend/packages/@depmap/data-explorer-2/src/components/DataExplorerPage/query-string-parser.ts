@@ -1,4 +1,5 @@
 import { isCompleteExpression, isSampleType } from "../../utils/misc";
+import { legacyPortalIdToBreadboxGivenId } from "../../utils/slice-id";
 import {
   DataExplorerContext,
   DataExplorerDatasetDescriptor,
@@ -9,6 +10,19 @@ import {
 import { isCompletePlot } from "./validation";
 
 type Datasets = Record<string, DataExplorerDatasetDescriptor[]>;
+
+const findDataset = (
+  dataset_id: string,
+  datasetList: DataExplorerDatasetDescriptor[]
+) => {
+  return datasetList.find((d) => {
+    return (
+      d.id === dataset_id ||
+      d.given_id === dataset_id ||
+      d.given_id === legacyPortalIdToBreadboxGivenId(dataset_id)
+    );
+  });
+};
 
 const makeDatasetParser = (dimensionKey: DimensionKey) => (
   partialPlot: PartialDataExplorerPlotConfig,
@@ -42,10 +56,7 @@ const makeFeatureParser = (dimensionKey: DimensionKey) => (
     return partialPlot;
   }
 
-  const dataset = datasets.depmap_model.find((d) => {
-    return d.id === dataset_id || d.given_id === dataset_id;
-  });
-
+  const dataset = findDataset(dataset_id, datasets.depmap_model);
   const slice_type = dataset ? dataset.slice_type : "custom";
 
   p.dimensions = p.dimensions || {};
@@ -84,9 +95,7 @@ const makeSampleParser = (dimensionKey: DimensionKey) => (
 
   Object.keys(datasets).forEach((index_type) => {
     if (isSampleType(index_type)) {
-      const matchingDs = datasets[index_type].find((d) => {
-        return d.id === dataset_id || d.given_id === dataset_id;
-      });
+      const matchingDs = findDataset(dataset_id, datasets[index_type]);
 
       if (matchingDs) {
         dataset = matchingDs;
@@ -270,17 +279,15 @@ const inferIndexType = (
   const dataset_id = partialPlot.dimensions?.x?.dataset_id;
   const slice_type = partialPlot.dimensions?.x?.slice_type;
 
-  if (!dataset_id || !slice_type) {
+  if (!dataset_id || slice_type === undefined) {
     return null;
   }
 
-  if (slice_type === "custom") {
+  if (slice_type === "custom" || slice_type === null) {
     return "depmap_model";
   }
 
-  const dataset = datasets[slice_type].find((d) => {
-    return d.id === dataset_id || d.given_id === dataset_id;
-  });
+  const dataset = findDataset(dataset_id, datasets[slice_type]);
 
   return dataset?.slice_type || null;
 };
@@ -367,6 +374,10 @@ export function parseShorthandParams(params: qs.ParsedQs, datasets: Datasets) {
 
   if (!isCompletePlot(plot)) {
     let message = "Unable to construct a plot from URL params. Problems:\n";
+
+    if (!plot.index_type) {
+      message += "- Could not infer index_type";
+    }
 
     if (params.yDataset && !params.xDataset) {
       message += "- `yDataset` was specified without an `xDataset` \n";

@@ -19,7 +19,7 @@ import {
 } from "@depmap/utils";
 import { CustomList } from "./ListStorage";
 
-type LegacyCellLineListsDropdownProps = {
+type Props = {
   defaultNone?: boolean;
   onListSelect: (cellLineList: CustomList) => void;
 };
@@ -35,17 +35,14 @@ const setSelectedContextHash = (hash: string | null, negated: boolean) => {
   );
 };
 
-const ContextEnabledDropdown = ({
+function CellLineListsDropdown({
   // `defaultNone` means this component should neither read nor write the value
   // that determines how to highlight cell lines throughout the Portal. This
   // value was previously known as "selectedCellLineListName." The new
   // "model_context_to_highlight" fills a similar role.
-  defaultNone,
+  defaultNone = false,
   onListSelect,
-}: {
-  defaultNone: boolean;
-  onListSelect: LegacyCellLineListsDropdownProps["onListSelect"];
-}) => {
+}: Props) {
   const [isLoading, setIsLoading] = useState(!defaultNone);
   const [value, setValue] = useState<DataExplorerContext | null>(null);
 
@@ -67,7 +64,7 @@ const ContextEnabledDropdown = ({
           }
 
           const result = await breadboxAPI.evaluateContext(context);
-          labels = result.labels;
+          labels = result.ids;
         } else {
           labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
             context
@@ -117,6 +114,7 @@ const ContextEnabledDropdown = ({
             hashWithoutPrefix
           );
         } catch (e) {
+          handleChange(null, null);
           window.console.error(e);
         }
       }
@@ -157,18 +155,6 @@ const ContextEnabledDropdown = ({
       onChange={handleChange}
       onClickCreateContext={handleClickCreateContext}
       onClickSaveAsContext={handleClickSaveAsContext}
-    />
-  );
-};
-
-function CellLineListsDropdown({
-  defaultNone = false,
-  onListSelect,
-}: LegacyCellLineListsDropdownProps) {
-  return (
-    <ContextEnabledDropdown
-      defaultNone={defaultNone}
-      onListSelect={onListSelect}
     />
   );
 }

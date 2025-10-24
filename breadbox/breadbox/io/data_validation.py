@@ -11,7 +11,9 @@ import pandera as pa
 from pandera.errors import SchemaError, SchemaErrorReason
 from fastapi import UploadFile
 from sqlalchemy import and_, or_
+import logging
 
+log = logging.getLogger(__name__)
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
@@ -25,6 +27,7 @@ from breadbox.schemas.dataframe_wrapper import (
     DataFrameWrapper,
     PandasDataFrameWrapper,
     ParquetDataFrameWrapper,
+    HDF5DataFrameWrapper,
 )
 from breadbox.io.filestore_crud import save_dataset_file
 from breadbox.schemas.custom_http_exception import (
@@ -181,18 +184,26 @@ def _validate_data_value_type(
         # to make it not case-sensitive, convert all to lower case
 
         lower_df = df.applymap(lambda x: None if pd.isna(x) else str(x).lower())
+
         # NOTE: Boolean values turned to string
+
         lower_allowed_values = [
             str(x).lower() for x in allowed_values if x is not None
         ] + [
             None
         ]  # Data values can include missing values
-        if not bool(
-            lower_df.isin(lower_allowed_values).all(axis=None)
-        ):  # Flattened and checked all values
+
+        present_values = set(lower_df.values.flatten())
+        unexpected_values = present_values.difference(lower_allowed_values)
+        if len(unexpected_values) > 0:
+            sorted_unexpected_values = sorted(unexpected_values)
+            examples = ", ".join([repr(x) for x in sorted_unexpected_values[:10]])
+            if len(sorted_unexpected_values) > 10:
+                examples += ", ..."
             raise FileValidationError(
-                f"Value must be in list of allowed values: {allowed_values}"
+                f"Found values (examples: {examples}) not in list of allowed values: {allowed_values}"
             )
+
         # Convert categories to ints for more optimal storage
         lower_allowed_values_map = {x: i for i, x in enumerate(lower_allowed_values)}
         int_df = lower_df.applymap(lambda x: lower_allowed_values_map[x])
@@ -220,24 +231,26 @@ def _validate_data_value_type(
         return dfw
 
 
-def _read_parquet(file) -> ParquetDataFrameWrapper:
-    parquet_wrapper = ParquetDataFrameWrapper(file)
-    cols = parquet_wrapper.get_column_names()
+def _check_for_unique_col_row_names(dfw):
+    cols = dfw.get_column_names()
     if len(cols) != len(set(cols)):
-        raise FileValidationError(
-            f"Make sure all column names in the parquet file are unique."
-        )
-    indices = parquet_wrapper.get_index_names()
+        raise FileValidationError(f"Make sure all column names in the file are unique.")
+    indices = dfw.get_index_names()
     if len(indices) != len(set(indices)):
         raise FileValidationError(
-            f"Make sure all index names (col 0) in the parquet file are unique."
+            f"Make sure all index names (col 0) in the file are unique."
         )
-    # the first column will be treated as the index. Make sure it's of type string
-    index_col = parquet_wrapper.schema.names[0]
-    if not pyarrow.types.is_string(parquet_wrapper.schema.field(index_col).type):
-        raise FileValidationError(
-            f"Make sure the first column in the parquet file is the index and is of type string."
-        )
+
+
+def _read_hdf5(file) -> HDF5DataFrameWrapper:
+    dfw = HDF5DataFrameWrapper(file)
+    _check_for_unique_col_row_names(dfw)
+    return dfw
+
+
+def _read_parquet(file) -> ParquetDataFrameWrapper:
+    parquet_wrapper = ParquetDataFrameWrapper(file)
+    _check_for_unique_col_row_names(parquet_wrapper)
     return parquet_wrapper
 
 
@@ -457,6 +470,8 @@ def validate_and_upload_dataset_files(
         unchecked_dfw = _read_csv(data_file.file, value_type)
     elif data_file_format == "parquet":
         unchecked_dfw = _read_parquet(data_file.file)
+    elif data_file_format == "hdf5":
+        unchecked_dfw = _read_hdf5(data_file.file)
     else:
         raise FileValidationError(
             f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
@@ -556,7 +571,8 @@ def read_and_validate_matrix_df(
 
     if data_file_format == "parquet":
         df_wrapper = _read_parquet(file_path)
-
+    elif data_file_format == "hdf5":
+        df_wrapper = _read_hdf5(file_path)
     elif data_file_format == "csv":
         with open(file_path, "rb") as fd:
             df_wrapper = _read_csv(fd, value_type)

@@ -5,7 +5,6 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import { breadboxAPI } from "@depmap/api";
 
 export default function SubGroupsPlot() {
-
   const [data, setData] = useState<any | null>(null);
   const [subgroups, setSubgroups] = useState<Subgroup[]>([
     "CNS/Brain",
@@ -23,7 +22,9 @@ export default function SubGroupsPlot() {
     (async () => {
       try {
         // Get depmap models data
-        const dimensionType = await breadboxAPI.getDimensionType("depmap_model");
+        const dimensionType = await breadboxAPI.getDimensionType(
+          "depmap_model"
+        );
         if (dimensionType.metadata_dataset_id) {
           const modelSubsetColData = await breadboxAPI.getTabularDatasetData(
             dimensionType.metadata_dataset_id,

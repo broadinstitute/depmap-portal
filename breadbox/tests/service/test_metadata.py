@@ -8,7 +8,10 @@ from breadbox.service.metadata import (
     get_dataset_feature_by_label,
 )
 from breadbox.models.dataset import AnnotationType
-from breadbox.schemas.custom_http_exception import ResourceNotFoundError
+from breadbox.schemas.custom_http_exception import (
+    DatasetNotFoundError,
+    FeatureNotFoundError,
+)
 from breadbox.schemas.dataset import ColumnMetadata
 from tests import factories
 
@@ -128,7 +131,7 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
     assert feature.given_id == "featureID1"
 
     # When the dataset does not exist, a clear error should be raised
-    with pytest.raises(ResourceNotFoundError):
+    with pytest.raises(DatasetNotFoundError):
         get_dataset_feature_by_label(
             minimal_db,
             dataset_id="Undefined-dataset",
@@ -136,7 +139,7 @@ def test_get_dataset_feature_by_label(minimal_db: SessionWithUser, settings):
         )
 
     # When the featureLabel does not exist within the dataset, a clear error should be raised
-    with pytest.raises(ResourceNotFoundError):
+    with pytest.raises(FeatureNotFoundError):
         get_dataset_feature_by_label(
             minimal_db,
             dataset_id=dataset_with_generic_features.id,

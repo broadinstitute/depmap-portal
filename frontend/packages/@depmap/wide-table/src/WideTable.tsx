@@ -11,7 +11,7 @@ import {
   Modal,
 } from "react-bootstrap";
 import { colorPalette } from "depmap-shared";
-import { Histogram, Histoslider } from "@depmap/common-components";
+import { Histogram, Histoslider, Tooltip } from "@depmap/common-components";
 import ReactTableV7 from "./ReactTableV7";
 
 import * as ReactCSV from "react-csv";
@@ -42,7 +42,13 @@ export interface WideTableColumns {
   /**
    * used to render helper text popover in column header
    */
-  helperText?: React.ReactNode;
+  helperText?: React.ReactNode; // WARNING!!! CANNOT BE USED IN CONJUNCTION WITH tooltipText (see below for a more detailed explanation...)
+
+  // WARNING!!!: tooltipText and helperText cannot both be used on the same column. helperText is older and adds
+  // an overlay popover to a glyphicon; however, it does this in such a way that the column minWidth/width/maxWidth's
+  // are not respected. tooltipText uses a Tooltip (from: "@depmap/common-components") wrapped around the entire header
+  // AND glyphicon. This seems to fix the column width issue.
+  tooltipText?: React.ReactNode;
 
   /**
    * used with the Data Tables in the depmap portal
@@ -82,9 +88,11 @@ export interface WideTableColumns {
 export interface WideTableProps {
   /**
    * array of objects, all data for the table (will be what ends up downloaded if
-   * allowDownloadFromTableData is set to true and the user clicks "download table")
+   * allowDownloadFromTableData is set to true, prefferedTableDataForDownload is undefined
+   *  and the user clicks "download table")
    */
   data: any[];
+  prefferedTableDataForDownload?: any[]; // If set, use this for the download table instead of "data"
   columns: Array<WideTableColumns & Partial<Column>>; // refer to the react-table docs for structure
   invisibleColumns?: Array<number>;
 
@@ -131,6 +139,16 @@ export interface WideTableProps {
    *  selections change. If this is prop is used, `idProp` must also be defined.
    */
   onChangeSelections?: (selections: any[]) => void;
+  // Added for GeneTea so that the onChangeSelections handler will still consider "invisible"
+  // selections when the user is filtering to find their term/row of interest.
+  useAllSelectionsInOnChangeHandler?: boolean;
+
+  /**
+   *  Use this to prevent the user from selecting less than some number of selections. This is useful
+   *  if some number of table rows is selected by default and it does not make sense to allow the user
+   *  to reach 0 rows selected. Used in GeneTEA (frontend/packages/portal-frontend/src/geneTea/components/GeneTeaTable.tsx)
+   */
+  minimumAllowedSelections?: number;
 
   /**
    *  This determines what property of each row will be used to track
@@ -543,17 +561,44 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
               alignItems: "center",
             }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              {header}
-              {this.isColsCustomType(cols) &&
-                cols[i].helperText &&
-                this.addHelperText(cols[i])}
-            </div>
+            {cols[i].tooltipText && !cols[i].helperText && (
+              <Tooltip
+                id={cols[i].accessor}
+                content={cols[i].tooltipText}
+                placement="top"
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  {header}
+                  <span
+                    className="glyphicon glyphicon-question-sign"
+                    style={{
+                      marginInlineStart: 5,
+                      color: "rgb(134, 57, 124)",
+                      border: "black",
+                    }}
+                  />
+                </div>
+              </Tooltip>
+            )}
+            {!cols[i].tooltipText && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                {header}
+                {this.isColsCustomType(cols) &&
+                  cols[i].helperText &&
+                  this.addHelperText(cols[i])}
+              </div>
+            )}
+
             <div
               style={{
                 marginInlineEnd: 10,
@@ -864,7 +909,8 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
     const dropdownColumnHideShowMenu = this.renderShowHideMenu();
     let downloadButton = null;
     let numberOfRows = null;
-    const dataToDownload = this.props.data;
+    const dataToDownload =
+      this.props.prefferedTableDataForDownload || this.props.data;
     if (this.props.downloadURL) {
       downloadButton = (
         <Button
@@ -906,7 +952,7 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
       );
 
       const getData = () => {
-        return this.props.data;
+        return this.props.prefferedTableDataForDownload || this.props.data;
       };
 
       downloadButton = (
@@ -1030,6 +1076,10 @@ class WideTable extends React.Component<WideTableProps, WideTableState> {
           hideSelectAllCheckbox={this.props.hideSelectAllCheckbox}
           initialSortBy={this.props.sorted}
           fixedHeight={this.props.fixedHeight}
+          minimumAllowedSelections={this.props.minimumAllowedSelections}
+          useAllSelectionsVisibleAndInvisible={
+            this.props.useAllSelectionsInOnChangeHandler
+          }
         />
       </div>
     );

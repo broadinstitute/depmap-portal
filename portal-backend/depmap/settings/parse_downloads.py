@@ -118,6 +118,7 @@ def make_file(
     ] = get_proper_url_format(file.get("url", ""))
 
     # Everything below this point is optional for DownloadFile
+    version = file.get("version", None)
     sources: List[FileSource] = get_sources(file.get("sources", []))
     description = file.get("description", "")
     is_main_file = file.get("is_main_file", False)
@@ -142,6 +143,7 @@ def make_file(
 
     return DownloadFile(
         name=name,
+        version=version,
         type=type,
         size=size,
         url=url,

@@ -1,98 +1,63 @@
-import React, { useEffect, useState } from "react";
-import * as Plotly from "plotly.js";
-import { VolcanoPlot } from "../../plot/components/VolcanoPlot";
-import { VolcanoData } from "src/plot/models/volcanoPlotModels";
+import React, { useCallback } from "react";
+import VolcanoPlot from "./VolcanoPlot";
+import { VolcanoPlotData, VolcanoPlotPoint } from "../models/VolcanoPlot";
+import { formatVolcanoTrace } from "../utilities/volcanoPlotUtils";
 
 interface CorrelationsPlotProps {
-  featureType: string;
-  data: VolcanoData[];
+  correlatedDatasetName: string;
+  data: VolcanoPlotData[];
   selectedFeatures: string[];
-  hasOtherSelectedFeatureTypeFeatures: boolean;
+  hasOtherSelectedCorrelatedDatasetFeatures: boolean;
   forwardPlotSelectedFeatures: (
-    featureType: string,
+    correlatedDataset: string,
     newSelectedLabels: string[]
   ) => void;
 }
 
 export default function CorrelationsPlot(props: CorrelationsPlotProps) {
   const {
-    featureType,
+    correlatedDatasetName,
     data,
     selectedFeatures,
-    hasOtherSelectedFeatureTypeFeatures,
+    hasOtherSelectedCorrelatedDatasetFeatures,
     forwardPlotSelectedFeatures,
   } = props;
 
-  const volcanoPlotsRef = React.useRef<any | null>(null);
-
-  useEffect(() => {
-    if (!volcanoPlotsRef.current) return;
-
-    const traceHighlights: Array<number[]> = [];
-    const traceIndexes: number[] = [];
-    data.forEach((doseTrace, traceIndex) => {
-      const traceOpacity = doseTrace.label?.map((label) => {
-        if (selectedFeatures.length) {
-          return selectedFeatures.includes(label) ? 1 : 0.05;
+  const onPointClick = useCallback(
+    (point: VolcanoPlotPoint, keyModifier: boolean) => {
+      const selectedLabel = point.text;
+      // NOTE: valid key modifiers are ctrlKey/metaKey/shiftKey
+      if (keyModifier) {
+        if (selectedFeatures.includes(selectedLabel)) {
+          // deselect point if point is already selected
+          forwardPlotSelectedFeatures(
+            correlatedDatasetName,
+            selectedFeatures.filter((label) => label !== selectedLabel)
+          );
+        } else {
+          // add point to be among selected
+          forwardPlotSelectedFeatures(correlatedDatasetName, [
+            ...selectedFeatures,
+            selectedLabel,
+          ]);
         }
-        if (
-          selectedFeatures.length === 0 &&
-          hasOtherSelectedFeatureTypeFeatures
-        ) {
-          return 0.05;
-        }
-
-        return 1;
-      });
-      traceHighlights.push(traceOpacity);
-      traceIndexes.push(traceIndex);
-    });
-    const update = { "marker.opacity": traceHighlights };
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    Plotly.restyle(volcanoPlotsRef.current, update, traceIndexes);
-  }, [data, hasOtherSelectedFeatureTypeFeatures, selectedFeatures]);
+      } else {
+        // only select one label at a time if key modifier not used
+        forwardPlotSelectedFeatures(correlatedDatasetName, [selectedLabel]);
+      }
+    },
+    [selectedFeatures, correlatedDatasetName, forwardPlotSelectedFeatures]
+  );
 
   return (
-    <div>
-      <header
-        style={{
-          textAlign: "center",
-          fontSize: "18px",
-          backgroundColor: "#eee",
-        }}
-      >
-        {featureType}
-      </header>
+    <div style={{ maxWidth: "100%" }}>
       <VolcanoPlot
-        ref={(el) => {
-          volcanoPlotsRef.current = el;
-        }}
-        Plotly={Plotly}
-        xLabel="Correlation Coefficient"
-        yLabel="q value"
-        data={data}
-        onPointClick={(e) => {
-          const selectedLabel = e.customdata as string;
-          if (selectedFeatures.includes(selectedLabel)) {
-            // deselect point if point is already selected
-            forwardPlotSelectedFeatures(
-              featureType,
-              selectedFeatures.filter((label) => label !== selectedLabel)
-            );
-          } else {
-            forwardPlotSelectedFeatures(featureType, [
-              ...selectedFeatures,
-              selectedLabel,
-            ]);
-          }
-          // replace the entire marker object with the one provided
-          // const update = {
-          //     marker: {color: 'red'}
-          // };
-          // Plotly.restyle(volcanoPlotsRef.current, update)
-        }}
+        volcanoTrace={formatVolcanoTrace(
+          data,
+          selectedFeatures,
+          hasOtherSelectedCorrelatedDatasetFeatures
+        )}
+        onPointClick={onPointClick}
       />
     </div>
   );

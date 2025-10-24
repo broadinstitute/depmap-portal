@@ -65,7 +65,6 @@ def add_dataset_uploads(
         - `col_type`: Annotation type for the column. Annotation types may include: `continuous`, `categorical`, `text`, or `list_strings`
 
     """
-    utils.check_celery()
 
     if not dataset.is_transient and dataset.expiry_in_seconds is not None:
         raise UserError(

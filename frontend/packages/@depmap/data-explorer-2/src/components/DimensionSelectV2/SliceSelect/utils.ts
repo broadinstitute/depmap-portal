@@ -21,7 +21,7 @@ export function tokenize(input: string | null) {
 }
 
 export const toOutputValue = (
-  slice_type: string,
+  slice_type: string | null,
   selectedOption?: { label: string; value: string } | null
 ) => {
   if (!selectedOption) {

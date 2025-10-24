@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
-import Select, { ActionMeta, OptionsType } from "react-select";
+import React, { useCallback } from "react";
+import Select from "react-select";
 import styles from "../styles/CorrelationFilters.scss";
 
 export interface FilterOption {
@@ -10,10 +10,10 @@ export interface FilterOption {
 }
 
 interface CorrelationFiltersProps {
-  getDatasets: () => Promise<any[]>;
-  onChangeDataset: (dataset: string | null) => void; // undetermined for now
-  getFeatureTypes: () => Promise<any[]>;
-  onChangeFeatureTypes: (featureTypes: string[]) => void;
+  datasets: any[];
+  onChangeDataset: (dataset: string) => void; // undetermined for now
+  correlatedDatasets: any[];
+  onChangeCorrelatedDatasets: (correlatedDatasets: string[]) => void;
   doses: string[];
   onChangeDoses: (doses: string[]) => void;
   compoundName: string;
@@ -21,49 +21,34 @@ interface CorrelationFiltersProps {
 
 export default function CorrelationFilters(props: CorrelationFiltersProps) {
   const {
-    getDatasets,
+    datasets,
     onChangeDataset,
-    getFeatureTypes,
-    onChangeFeatureTypes,
+    correlatedDatasets,
+    onChangeCorrelatedDatasets,
     doses,
     onChangeDoses,
     compoundName,
   } = props;
-  const [datasetOptions, setDatasetOptions] = useState<FilterOption[]>([]);
-  const [featureTypeOptions, setFeatureTypeOptions] = useState<FilterOption[]>(
-    []
-  );
+
+  const datasetOptions = datasets.map((dataset) => {
+    return { label: dataset, value: dataset };
+  });
+  const correlatedDatasetOptions = correlatedDatasets.map((corrDataset) => {
+    return { label: corrDataset, value: corrDataset };
+  });
+
   const getDoseOptions = useCallback(() => {
     return doses.map((dose) => {
       return { label: dose, value: dose };
     });
   }, [doses]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const datasets = await getDatasets();
-        setDatasetOptions(
-          datasets.map((dataset) => {
-            return { label: dataset.label, value: dataset.label };
-          })
-        );
-        const featureTypes = await getFeatureTypes();
-        setFeatureTypeOptions(
-          featureTypes.map((featureType) => {
-            return { label: featureType.label, value: featureType.label };
-          })
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    })();
-  }, [getDatasets, getFeatureTypes]);
-
   return (
     <div className={styles.correlationFilters}>
       <div className={styles.filters}>
-        <header>Dataset ({compoundName})</header>
+        <header>
+          <b>Dataset ({compoundName})</b>
+        </header>
         <Select
           className={styles.filterStyle}
           placeholder="Select..."
@@ -75,11 +60,17 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
           }}
         />
         <header
-          style={{ paddingBottom: "10px", borderTop: "1px solid darkgrey" }}
+          style={{
+            paddingTop: "20px",
+            paddingBottom: "10px",
+            borderTop: "1px solid darkgrey",
+          }}
         >
-          FILTERS
+          <b>FILTERS</b>
         </header>
-        <header>Dose</header>
+        <header>
+          <b>Dose</b>
+        </header>
         <Select
           className={styles.filterStyle}
           placeholder="Select..."
@@ -93,18 +84,23 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
             );
           }}
         />
-        <header>Correlated Dataset</header>
+        <header>
+          <b>Correlated Dataset</b>
+        </header>
         <Select
           className={styles.filterStyle}
           placeholder="Select..."
           defaultOptions
-          options={featureTypeOptions}
+          options={correlatedDatasetOptions}
           isMulti
           onChange={(value, action) => {
             console.log(value, action);
-            onChangeFeatureTypes(
+            onChangeCorrelatedDatasets(
               value
-                ? value.map((selectedFeatureType) => selectedFeatureType.value)
+                ? value.map(
+                    (selectedCorrelatedDataset) =>
+                      selectedCorrelatedDataset.value
+                  )
                 : []
             );
           }}

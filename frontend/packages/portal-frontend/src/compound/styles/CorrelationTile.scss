@@ -1,0 +1,41 @@
+.dependencyMeter {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  border-left: 1px black solid;
+}
+
+.targetIconContainer {
+  display: flex;
+  align-items: center;
+  img {
+    height: 12px;
+  }
+}
+
+// center text in div
+.errorMessage {
+  display: grid;
+  place-items: center;
+  height: 50px;
+}
+
+// Style for truncating names
+.ellipsisStyle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tileDatasetTitle {
+  font-size: 16px;
+}
+
+.columnStyle {
+  text-align: center;
+  padding: 8px;
+}
+
+.cellStyle {
+  padding: 4px;
+}

@@ -23,6 +23,9 @@ from ..schemas.custom_http_exception import (
     DatasetAccessError,
     ResourceNotFoundError,
     UserError,
+    DatasetNotFoundError,
+    FeatureNotFoundError,
+    SampleNotFoundError,
 )
 from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import (
@@ -746,7 +749,7 @@ def get_dataset_feature_by_given_id(
 ) -> DatasetFeature:
     dataset = get_dataset(db, db.user, dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert_user_has_access_to_dataset(dataset, db.user)
     assert isinstance(dataset, MatrixDataset)
 
@@ -760,7 +763,7 @@ def get_dataset_feature_by_given_id(
     )
 
     if feature is None:
-        raise ResourceNotFoundError(
+        raise FeatureNotFoundError(
             f"Feature given ID '{feature_given_id}' not found in dataset '{dataset_id}'."
         )
     return feature
@@ -771,7 +774,7 @@ def get_dataset_sample_by_given_id(
 ) -> DatasetSample:
     dataset = get_dataset(db, db.user, dataset_id)
     if dataset is None:
-        raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
+        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
     assert_user_has_access_to_dataset(dataset, db.user)
     assert isinstance(dataset, MatrixDataset)
 
@@ -785,7 +788,7 @@ def get_dataset_sample_by_given_id(
     )
 
     if sample is None:
-        raise ResourceNotFoundError(
+        raise SampleNotFoundError(
             f"Sample given ID '{sample_given_id}' not found in dataset '{dataset_id}'."
         )
     return sample

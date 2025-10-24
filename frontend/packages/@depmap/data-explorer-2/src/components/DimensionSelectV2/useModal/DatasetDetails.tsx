@@ -1,16 +1,15 @@
 import React from "react";
-import { Spinner } from "@depmap/common-components";
-import { DownloadFile, Release } from "@depmap/data-slicer";
-import { FileCard } from "@depmap/downloads";
-import { DataExplorerApiResponse } from "../../../contexts/DataExplorerApiContext";
+import { Markdown, Spinner } from "@depmap/common-components";
 import styles from "../../../styles/DimensionSelect.scss";
 
 interface Props {
   isLoading: boolean;
-  details: DataExplorerApiResponse["fetchDatasetDetails"] | null;
+  // `undefined` represents no selection.
+  // `null` means a selection has been made but that dataset has no description.
+  description: string | undefined | null;
 }
 
-function DatasetDetails({ isLoading, details }: Props) {
+function DatasetDetails({ isLoading, description }: Props) {
   if (isLoading) {
     return (
       <div style={{ paddingTop: 30, width: "100%" }}>
@@ -19,20 +18,20 @@ function DatasetDetails({ isLoading, details }: Props) {
     );
   }
 
-  if (details && details.file) {
+  if (description) {
     return (
-      <FileCard
-        file={details.file as DownloadFile}
-        release={details.release as Release}
-        termsDefinitions={details.termsDefinitions}
-      />
+      <Markdown className={styles.DataVersionMarkdown}>{description}</Markdown>
     );
   }
 
-  if (details && !details.file) {
+  if (description === null) {
     return (
       <div className={styles.emptyDatasetDetails}>
-        (No description could be found for this version)
+        <span
+          className="glyphicon glyphicon-exclamation-sign"
+          aria-hidden="true"
+        />
+        <span>No description could be found for this version.</span>
       </div>
     );
   }

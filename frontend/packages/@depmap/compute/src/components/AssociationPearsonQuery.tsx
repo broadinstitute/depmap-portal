@@ -252,11 +252,25 @@ export default class AssociationPearsonQuery extends React.Component<
       params.vectorVariableType = vectorVariableType;
     }
 
-    const runCustomAnalysis = () => {
-      return isBreadboxOnlyMode
-        ? breadboxAPI.computeUnivariateAssociations(params)
-        : legacyPortalAPI.computeUnivariateAssociations(params);
-    };
+    const runCustomAnalysis = isBreadboxOnlyMode
+      ? () => {
+          const bbParams = { ...params } as Parameters<
+            typeof breadboxAPI.computeUnivariateAssociations
+          >[0];
+
+          if (queryVectorId) {
+            const [, queryDatasetId, queryFeatureId] = queryVectorId
+              .split("/")
+              .map((s) => decodeURIComponent(s));
+            bbParams.queryDatasetId = queryDatasetId;
+            bbParams.queryFeatureId = queryFeatureId;
+          }
+
+          return breadboxAPI.computeUnivariateAssociations(bbParams);
+        }
+      : () => {
+          return legacyPortalAPI.computeUnivariateAssociations(params);
+        };
 
     sendQueryGeneric(runCustomAnalysis, this.onSuccess);
   };

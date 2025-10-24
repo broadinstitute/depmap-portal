@@ -243,8 +243,7 @@ function DataExplorerScatterPlot({
         const name = categoryToDisplayName(
           key as LegendKey,
           data as DataExplorerPlotResponse,
-          continuousBins,
-          plotConfig.color_by || null
+          continuousBins
         );
         const formattedName =
           typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
@@ -260,7 +259,7 @@ function DataExplorerScatterPlot({
       title,
       items,
     };
-  }, [colorMap, data, continuousBins, hiddenLegendValues, plotConfig.color_by]);
+  }, [colorMap, data, continuousBins, hiddenLegendValues]);
 
   const pointVisibility = useMemo(
     () => calcVisibility(data, hiddenLegendValues, continuousBins),
@@ -301,7 +300,7 @@ function DataExplorerScatterPlot({
         hidden = true;
       }
 
-      if (plotConfig.color_by === "custom" && plotConfig.show_regression_line) {
+      if (data?.dimensions?.color && plotConfig.show_regression_line) {
         hidden = false;
       }
 
@@ -316,7 +315,14 @@ function DataExplorerScatterPlot({
         b: Number(linreg.intercept),
       };
     });
-  }, [linreg_by_group, plotConfig, colorMap, hiddenLegendValues, palette]);
+  }, [
+    colorMap,
+    data?.dimensions?.color,
+    hiddenLegendValues,
+    linreg_by_group,
+    palette,
+    plotConfig.show_regression_line,
+  ]);
 
   const showIdentityLine = Boolean(
     data?.dimensions?.x &&
@@ -381,7 +387,6 @@ function DataExplorerScatterPlot({
             <PlotLegend
               data={data}
               colorMap={colorMap}
-              color_by={plotConfig.color_by}
               continuousBins={continuousBins}
               hiddenLegendValues={hiddenLegendValues}
               legendKeysWithNoData={legendKeysWithNoData}
