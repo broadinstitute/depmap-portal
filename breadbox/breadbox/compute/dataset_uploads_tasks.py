@@ -1,3 +1,4 @@
+from datetime import timedelta
 from uuid import UUID, uuid4
 from typing import Any, List, Optional, Union, Literal, Dict
 
@@ -81,6 +82,12 @@ def dataset_upload(
     )
 
     dataset_id = str(uuid4())
+    expiry = None
+    if dataset_params.expiry_in_seconds is not None:
+        assert dataset_params.is_transient
+        expiry = dataset_crud.get_current_datetime() + timedelta(
+            seconds=dataset_params.expiry_in_seconds
+        )
 
     unknown_ids = []
 
@@ -132,6 +139,7 @@ def dataset_upload(
             sample_type_name=dataset_params.sample_type,
             data_type=dataset_params.data_type,
             is_transient=dataset_params.is_transient,
+            expiry=expiry,
             group_id=str(dataset_params.group_id),
             value_type=dataset_params.value_type,
             priority=dataset_params.priority,
@@ -186,6 +194,7 @@ def dataset_upload(
             index_type_name=dataset_params.index_type,
             data_type=dataset_params.data_type,
             is_transient=dataset_params.is_transient,
+            expiry=expiry,
             group_id=str(dataset_params.group_id),
             priority=dataset_params.priority,
             taiga_id=dataset_params.taiga_id,
