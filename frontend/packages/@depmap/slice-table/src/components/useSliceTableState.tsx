@@ -186,10 +186,15 @@ export function useSliceTableState({
 
     // Download as file
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const href = URL.createObjectURL(blob);
+    const dlAttr = downloadFilename.endsWith(".csv")
+      ? downloadFilename
+      : `${downloadFilename}.csv`;
+
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", downloadFilename);
+    link.setAttribute("href", href);
+    link.setAttribute("download", dlAttr);
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

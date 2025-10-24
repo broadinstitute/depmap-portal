@@ -170,7 +170,7 @@ function DataVersionSelect({
       isClearable
       hasError={isUnknownDataset}
       show={show}
-      enable={(options.length > 1 || isUnknownDataset) && !isLoading}
+      enable={!isLoading}
       isLoading={isLoading}
       value={displayValue}
       options={optionsToShow}
