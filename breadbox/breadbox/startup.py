@@ -98,16 +98,9 @@ class RequestLoggingMiddleware:
         request_id = str(uuid.uuid4())
         
         # Log request start
-        span_name = f"HTTP {method} {path}"
-        context = {
-            "path": path,
-            "method": method,
-            "request_id": request_id,
-        }
-        log_event(log_filename, "start", span_name, request_id, context)
-        
-        start_time = time.time()
-        
+        span_name = f"{method} {path}"
+        log_event(log_filename, "start", request_id, {"n": span_name})
+
         # Capture the original send function to intercept the response
         original_send = send
         response_status = None
@@ -130,15 +123,7 @@ class RequestLoggingMiddleware:
             
             # If this is the final message, log the completion
             if is_final_message:
-                duration = time.time() - start_time
-                end_context = {
-                    "path": path,
-                    "method": method,
-                    "request_id": request_id,
-                    "status": response_status,
-                    "duration_ms": round(duration * 1000, 2)
-                }
-                log_event(log_filename, "end", span_name, request_id, end_context)
+                log_event(log_filename, "end", request_id, {"s": response_status})
         
         # Use the wrapped send function
         await self.app(scope, receive, wrapped_send)
