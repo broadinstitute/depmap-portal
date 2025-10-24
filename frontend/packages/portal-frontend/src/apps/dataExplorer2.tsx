@@ -28,7 +28,7 @@ const App = () => {
   return (
     <ErrorBoundary>
       <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
-        <DataExplorerSettingsProvider>
+        <DataExplorerSettingsProvider feedbackUrl={feedbackUrl}>
           <DataExplorerPage
             feedbackUrl={feedbackUrl}
             contactEmail={contactEmail}
