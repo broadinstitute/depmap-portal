@@ -57,32 +57,6 @@ def _get_rss():
     return process.memory_info().rss
 
 
-# from typing import Optional, Any, Dict
-#
-# @signals.task_prerun.connect
-# def task_prerun_handler(
-#    sender:Optional[Any] =None, task_id : Optional[str] =None, task : Optional[Task]=None, args:Optional[Any]=None, kwargs:Optional[Dict[str, Any]]=None, **extras
-# ):
-#    print(
-#        f"[BEFORE] Running task {sender.name} rss:{_get_rss()} ({task_id}) with args={args}, kwargs={kwargs}"
-#    )
-#
-#
-# @signals.task_postrun.connect
-# def task_postrun_handler(
-#    sender:Optional[Any]=None,
-#    task_id : Optional[str]=None,
-#    task: Optional[Task]=None,
-#    args:Optional[Any] = None,
-#    kwargs:Optional[Dict[str, Any]] =None,
-#    retval:Any = None,
-#    state : Any=None,
-#    **extras,
-# ):
-#    print(
-#        f"[AFTER] Finished task {sender.name} rss:{_get_rss()} ({task_id}) with result={retval}, state={state}"
-#    )
-
 try:
     settings = get_settings()
 except ValidationError:
