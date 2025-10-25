@@ -292,6 +292,7 @@ class DownloadRelease:
         release_date,
         description,
         all_files,
+        pipelines=None,
         version_group=None,
         funding=None,
         terms=None,
@@ -323,7 +324,7 @@ class DownloadRelease:
         self.__release_date: date = release_date
 
         self.description: str = description
-
+        self.pipelines: Optional[Dict[str, str]] = pipelines
         self.version_group: Optional[str] = version_group
 
         self.funding: str = funding
@@ -464,6 +465,7 @@ class DownloadFile:
         size: str,
         url: Union[BucketUrl, RetractedUrl, str],
         version: Optional[int] = None,
+        pipeline_name: Optional[str] = None,
         sub_type: Optional[FileSubtype] = None,  # Required on the most current release
         taiga_id: Optional[str] = None,
         canonical_taiga_id: Optional[str] = None,
@@ -486,7 +488,7 @@ class DownloadFile:
         assert isinstance(type, FileType)
         self.type: FileType = type
         self.sub_type: Optional[FileSubtype] = sub_type
-
+        self.pipeline_name: Optional[str] = pipeline_name
         self.version: Optional[int] = version
 
         self.size: str = size

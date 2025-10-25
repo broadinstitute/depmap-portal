@@ -56,3 +56,10 @@ export const getFileUrl = (urlSuffix: string | null) => {
 
   return allDataTabHref.concat("&").concat(fileReleaseParams);
 };
+
+export const stripHtmlTags = (htmlStr: string | null) => {
+  if (!htmlStr) {
+    return "";
+  }
+  return htmlStr.replace(/(<([^>]+)>)/gi, "");
+};

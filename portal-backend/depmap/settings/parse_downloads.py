@@ -96,6 +96,13 @@ def get_proper_url_format(url):
         return url
 
 
+def make_pipeline(pipeline: Dict[str, str]):
+    name = pipeline.get("name", "")
+    description = pipeline.get("description", "")
+
+    return {name: description}
+
+
 def make_file(
     file: Dict[str, Any], subtype_mapping_w_positions: Dict[str, FileSubtype]
 ) -> DownloadFile:
@@ -121,6 +128,7 @@ def make_file(
 
     # Everything below this point is optional for DownloadFile
     version = file.get("version", None)
+    pipeline_name = file.get("pipeline_name", None)
     sources: List[FileSource] = get_sources(file.get("sources", []))
     description = file.get("description", "")
     is_main_file = file.get("is_main_file", False)
@@ -162,6 +170,7 @@ def make_file(
         md5_hash=md5_hash,
         display_label=display_label,
         sub_type=sub_type,
+        pipeline_name=pipeline_name,
     )
 
 
@@ -209,6 +218,8 @@ def make_downloads_release_from_parsed_yaml(release: Dict[str, Any]) -> Download
 
     files_preparse = release.get("files", "")
 
+    pipelines_preparse = release.get("pipelines", None)
+
     virtual_dataset_id = release.get("virtual_dataset_id")
 
     subtype_mapping = release.get("subtypes")
@@ -224,12 +235,21 @@ def make_downloads_release_from_parsed_yaml(release: Dict[str, Any]) -> Download
         make_file(file, subtype_mapping_w_positions) for file in files_preparse
     ]
 
+    pipelines: Optional[Dict[str, str]] = (
+        pipelines_preparse
+        and {
+            pipeline["name"]: pipeline["description"] for pipeline in pipelines_preparse
+        }
+        or None
+    )
+
     final_release = DownloadRelease(
         name,
         type,
         release_date,
         description,
         files,
+        pipelines,
         version_group,
         funding,
         terms,
