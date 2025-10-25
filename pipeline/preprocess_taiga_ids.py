@@ -1,7 +1,7 @@
 import sys
 import re
 from taigapy import create_taiga_client_v3
-import requests
+import json
 import os
 
 # this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
@@ -10,6 +10,12 @@ import os
 # into one while the taiga IDs are being processed
 
 tc = create_taiga_client_v3()
+
+
+def _resolve_versioned_dataset_id(taiga_permaname):
+    if "." in taiga_permaname:
+        return taiga_permaname
+    return tc.get_latest_version_id(taiga_permaname)
 
 
 def _rewrite_stream(vars, in_name, in_lines, out_fd):
@@ -30,15 +36,26 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             value = m.group(2)
             vars[variable_name] = value
 
+        m = re.match("(.*)PREPROCESS_FORMAT_STR\\(([^ ,]+)\\)(.*)", line, re.DOTALL)
+        if m is not None:
+            line_prefix = m.group(1)
+            template = m.group(2)
+            line_suffix = m.group(3)
+            line = line_prefix + repr(json.loads(template.format(**vars))) + line_suffix
+
         m = re.match("(.*)PREPROCESS_TAIGA_ID\\(([^ ,]+)\\)(.*)", line, re.DOTALL)
         if m is not None:
             line_prefix = m.group(1)
             orig_taiga_dataset_var_name = m.group(2)
             line_suffix = m.group(3)
+            taiga_permaname = vars[orig_taiga_dataset_var_name]
+            taiga_dataset_id_with_latest_version = _resolve_versioned_dataset_id(
+                taiga_permaname
+            )
             line = (
                 line_prefix
                 + '"'
-                + vars[orig_taiga_dataset_var_name]
+                + taiga_dataset_id_with_latest_version
                 + '"'
                 + line_suffix
             )
@@ -48,17 +65,20 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
         )
         if m is not None:
             orig_taiga_dataset_var_name = m.group(2)
-            taiga_filename = m.group(3)
             line_prefix = m.group(1)
             line_suffix = m.group(4)
-            taiga_id = vars[orig_taiga_dataset_var_name] + "/" + taiga_filename
+
+            taiga_filename = m.group(3)
+            taiga_permaname = vars[orig_taiga_dataset_var_name]
+            taiga_dataset_id_with_latest_version = _resolve_versioned_dataset_id(
+                taiga_permaname
+            )
+            taiga_id = taiga_dataset_id_with_latest_version + "/" + taiga_filename
             try:
-                tc.get_canonical_id(taiga_id)
+                canonical = tc.get_canonical_id(taiga_id)
             except:
                 print(f"failed to get data from canonical taiga id for {taiga_id}")
-                raise
-            line = line_prefix + '"' + tc.get_canonical_id(taiga_id) + '"' + line_suffix
-
+            line = line_prefix + '"' + canonical + '"' + line_suffix
         fd.write(line)
 
 
