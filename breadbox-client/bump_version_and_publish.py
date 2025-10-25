@@ -120,8 +120,9 @@ def update_version_in_files(version_str, dryrun=False):
                 content = file.read()
             
             # Update version using regex
-            updated_content = re.sub(r'^version\s*=\s*"[^"]+"', f'version = "{version_str}"', content)
-            
+            updated_content = re.sub(r'^version\s*=\s*"[^"]+"$', f'version = "{version_str}"', content, flags=re.MULTILINE)
+            assert updated_content != content, "Version should have changed, but result after substituting was the same"
+
             # Write updated content back
             with open(filename, 'w') as file:
                 file.write(updated_content)
