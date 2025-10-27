@@ -51,19 +51,20 @@ def main():
 
     drug_metadata = pd.read_csv(args.drug_metadata_csv)
     assert sum(drug_metadata["BroadID"].duplicated()) == 0
-
-    # Filter drug metadata based on whether compound is in predictability compounds
-    pred_drug_metadata_cpds = drug_metadata["BroadID"].isin(pred["BroadID"])
-    pred_drug_metadata = drug_metadata[pred_drug_metadata_cpds]
+    # Filter drug metadata based on being present in the screening dataset
+    screen_drug_metadata = drug_metadata[
+        drug_metadata["BroadID"].isin(dataset_df.index)
+    ]
 
     assert (
-        len(pred_drug_metadata) > 0
+        len(screen_drug_metadata) > 0
     ), "No drug metadata found for predictability compounds"
-    assert sum(pred_drug_metadata["BroadID"].duplicated()) == 0
+    assert sum(screen_drug_metadata["BroadID"].duplicated()) == 0
     # keep only the following columns from drug metadata
-    pred_drug_metadata = pred_drug_metadata[
+    screen_drug_metadata = screen_drug_metadata[
         [
             "BroadID",
+            "CompoundID",
             "CompoundName",
             "Synonyms",
             "TargetOrMechanism",
@@ -71,16 +72,16 @@ def main():
         ]
     ]
     # Rename columns
-    pred_drug_metadata.rename(
+    screen_drug_metadata.rename(
         columns={"CompoundName": "Name", "GeneSymbolOfTargets": "Target",},
         inplace=True,
     )
 
     # Merge the predictability table with the drug metadata
-    merged_df = pred.merge(pred_drug_metadata, on="BroadID", how="left")
+    merged_df = screen_drug_metadata.merge(pred, on="BroadID", how="left")
 
-    # Filter dataset by compound ids in predictability compounds
-    dataset_df = dataset_df.loc[pred["BroadID"]]
+    # Filter dataset by compound ids
+    dataset_df = dataset_df.loc[merged_df["BroadID"]]
 
     # Calculate the bimodality coefficient for each compound row and merge
     cpd_bimodality_coefficients: pd.Series = dataset_df.apply(
