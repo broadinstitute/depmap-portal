@@ -61,6 +61,10 @@ export interface DownloadFile {
   version: number | null;
   taigaUrl: string;
   releaseName: string;
+  pipeline: {
+    name: string;
+    description: string;
+  } | null;
   size: string;
   sources: Array<FileSource>;
   summaryStats?: SummaryStats;
