@@ -103,7 +103,7 @@ if settings is not None:
         rhost = os.getenv("REDIS_HOST", "localhost")
 
         storage_configuration = dict(
-            broker_url="redis://" + rhost, backend="redis://" + rhost,
+            broker_url="redis://" + rhost, result_backend="redis://" + rhost,
         )
     app.conf.update(**storage_configuration)  # pyright: ignore
 

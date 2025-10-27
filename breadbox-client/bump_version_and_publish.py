@@ -29,8 +29,8 @@ import subprocess
 import re
 import argparse
 
-
-VERSION_TAG_PATTERN="breadbox-(\\d+.\\d+.\\d+)"
+TAG_PREFIX = "breadbox-"
+VERSION_TAG_PATTERN=TAG_PREFIX + "(\\d+.\\d+.\\d+)"
 IGNORE_CONVENTIONAL_COMMIT_TYPES = ["build", "chore", "ci", "docs", "style", "refactor", "perf", "test"]
 PATCH_CONVENTIONAL_COMMIT_TYPES = ["fix", "revert"]
 MINOR_CONVENTIONAL_COMMIT_TYPES = ["feat"]
@@ -69,30 +69,24 @@ def main():
     print("Starting version bump process...")
     bump_rules = []
 
-    last_commit = None
-    last_version = None
-    print("Analyzing git history for version tags and conventional commits...")
-    for commit_hash, version, bump_rule, commit_subject in get_sem_versions_and_bumps():
-        if bump_rule is not None:
-            bump_rules.append((commit_hash, commit_subject, bump_rule))
-
-        if last_commit is None:
-            last_commit = commit_hash
-
-        if version is not None:
-            last_version = version
-            print(f"Found version tag: {'.'.join(map(str, version))}")
-            break
-
+    last_version = get_last_sem_version()
     if last_version is None:
         raise AssertionError("No previous version tag found. Cannot proceed without a base version.")
+
+    # Create tag name from last version
+    last_tag = f"{TAG_PREFIX}{'.'.join(map(str, last_version))}"
+
+    print(f"Looking at git history starting at {last_tag} for conventional commits...")
+
+    for commit_hash, bump_rule, commit_subject in get_bumps(last_tag):
+        bump_rules.append((commit_hash, commit_subject, bump_rule))
 
     if len(bump_rules) == 0:
         print(
             f"No changes found which require updating version")
         return
 
-    print(f"Applying {len(bump_rules)} version bump rules, starting with {last_version} to generate version for {last_commit}...")
+    print(f"Applying {len(bump_rules)} version bump rules, starting with {last_version}")
     bump_rules.reverse()
     for commit_hash, commit_subject, bump_rule in bump_rules:
         old_version = last_version
@@ -126,8 +120,9 @@ def update_version_in_files(version_str, dryrun=False):
                 content = file.read()
             
             # Update version using regex
-            updated_content = re.sub(r'version\s*=\s*"[^"]+"', f'version = "{version_str}"', content)
-            
+            updated_content = re.sub(r'^version\s*=\s*"[^"]+"$', f'version = "{version_str}"', content, flags=re.MULTILINE)
+            assert updated_content != content, "Version should have changed, but result after substituting was the same"
+
             # Write updated content back
             with open(filename, 'w') as file:
                 file.write(updated_content)
@@ -165,14 +160,14 @@ def update_version_in_files(version_str, dryrun=False):
         print("  DRY RUN: Would commit version changes")
 
 def tag_repo(version_str):
-    tag_name = f"breadbox-{version_str}"
+    tag_name = f"{TAG_PREFIX}{version_str}"
     print(f"  Creating git tag: {tag_name}...")
     try:
         # Create an annotated tag
         subprocess.run(["git", "tag", "-a", tag_name, "-m", f"Release {version_str}"], check=True)
         # Push the tag to remote
         print("  Pushing tag to remote...")
-        subprocess.run(["git", "push", "origin", tag_name], check=True)
+        subprocess.run(["git", "push", "origin", tag_name, "master"], check=True)
     except Exception as e:
         print(f"Error tagging repository: {str(e)}")
         raise
@@ -204,36 +199,50 @@ def rule_from_conventional_commit_type(commit_type, is_breaking):
     else:
         return None
 
-def get_sem_versions_and_bumps():
-    print("  Retrieving git commit history...")
+def get_last_sem_version():
     try:
-        output = subprocess.check_output(
-            ["git", "log", "--pretty=format:%H%x09%s%x09%D"],
+        # Get all tags
+        tags_output = subprocess.check_output(
+            ["git", "tag"],
             text=True
-        )
+        ).strip().split('\n')
+
+        # Get highest version from tags
+        highest_version = to_sem_version(tags_output)
     except Exception as e:
         print(f"Error retrieving git history: {str(e)}")
         raise
+    return highest_version
 
-    for line in output.splitlines():
-        commit_hash, subject, refs = line.split("\t", 2)
-        tags = [r.strip() for r in refs.split(",") if r.strip().startswith("tag: ")]
-        tags = [t.replace("tag: ", "") for t in tags]
-        
-        version = to_sem_version(tags)
+def get_bumps(last_tag):
+    print("  Retrieving git commit history...")
+    
 
-        bump_rule = rule_from_conventional_commit(subject)
-        if bump_rule is not None or version is not None:
-            # print(f"  Found conventional commit at {commit_hash[:8]}: {subject}")
-            yield commit_hash, version, bump_rule, subject
+    # Get commits from HEAD to the last version tag
+    commit_output = subprocess.check_output(
+        ["git", "log", f"{last_tag}..HEAD", "--pretty=format:%H%x09%s"],
+        text=True
+    )
+
+    # Then yield all conventional commits
+    for line in commit_output.splitlines():
+        parts = line.split("\t", 1)
+        if len(parts) == 2:
+            commit_hash, subject = parts
+            bump_rule = rule_from_conventional_commit(subject)
+            if bump_rule is not None:
+                yield commit_hash, bump_rule, subject
 
 def to_sem_version(tags):
     """
-    given a list of tags, extract the semantic version number using VERSION_TAG_PATTERN. If there are multiple, returns the max.
-    If there are no tags or none match, returns None.
+    Given a list of tags, extract the semantic version numbers using VERSION_TAG_PATTERN.
+    Returns the highest version found, or None if no valid version tags exist.
     """
     versions = []
     for tag in tags:
+        if not tag:  # Skip empty tags
+            continue
+            
         match = re.match(VERSION_TAG_PATTERN, tag)
         if match:
             # Extract version number from the tag using regex group

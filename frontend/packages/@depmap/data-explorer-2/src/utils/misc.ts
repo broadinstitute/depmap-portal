@@ -270,6 +270,7 @@ export const sortDimensionTypes = (types: string[]) => {
           "compound_experiment",
           "other",
           "custom",
+          "(dataset specific)",
         ].includes(type)
     )
     .sort(Intl.Collator("en").compare);
@@ -285,5 +286,6 @@ export const sortDimensionTypes = (types: string[]) => {
     ...middle,
     set.has("other") ? "other" : null,
     set.has("custom") ? "custom" : null,
+    set.has("(dataset specific)") ? "(dataset specific)" : null,
   ].filter(Boolean) as string[];
 };

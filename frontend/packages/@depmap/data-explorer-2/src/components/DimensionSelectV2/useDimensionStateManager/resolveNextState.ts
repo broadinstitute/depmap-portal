@@ -226,30 +226,14 @@ async function resolveNextState(
     }
   }
 
-  if (!dataType && options.dataTypeOptions.length === 1) {
-    dataType = options.dataTypeOptions[0].value;
-  }
-
-  if (!slice_type && options.sliceTypeOptions.length === 1) {
-    slice_type = options.sliceTypeOptions[0].value.valueOf();
-  }
-
-  if (!dataset_id && options.dataVersionOptions.length === 1) {
+  if (
+    !dataset_id &&
+    !("slice_type" in changes) &&
+    !("dataset_id" in changes) &&
+    !("context" in changes) &&
+    options.dataVersionOptions.length === 1
+  ) {
     dataset_id = options.dataVersionOptions[0].value;
-  }
-
-  if (!prev.dimension.slice_type && slice_type && !dataType) {
-    const enabledOpts = options.dataTypeOptions.filter((o) => !o.isDisabled);
-    if (enabledOpts.length === 1) {
-      dataType = enabledOpts[0].value;
-    }
-  }
-
-  if (!prev.dataType && dataType && !slice_type) {
-    const enabledOpts = options.sliceTypeOptions.filter((o) => !o.isDisabled);
-    if (enabledOpts.length === 1) {
-      slice_type = enabledOpts[0].value.valueOf();
-    }
   }
 
   if (!prev.dimension.context && context && !dataset_id) {

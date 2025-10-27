@@ -162,38 +162,46 @@ export async function fetchContext(
     }
   }
 
-  if (response.status === 404) {
-    throw new Error("Context not found.");
-  }
+  let body: any;
+  let requestFailed = false;
 
   if (response.status >= 400) {
-    throw new Error("Error fetching context.");
+    window.console.warn(`Error ${response.status} fetching context.`);
+    requestFailed = true;
+  } else {
+    body = await response.json();
+
+    if (!("value" in body)) {
+      window.console.warn(`Context CAS fetch failed: ${JSON.stringify(body)}.`);
+      requestFailed = true;
+    }
   }
 
-  let body = await response.json();
+  if (requestFailed) {
+    if (!isBreadboxOnlyMode) {
+      throw new Error(`Failed to fetch context with hash "${hash}".`);
+    }
 
-  // A response was returned but it wasn't formatted as expected.
-  if (!("value" in body)) {
     // Retry the request against the legacy Portal API (Breadbox is supposed to
     // do this automatically but sometimes it doesn't work).
-    if (isBreadboxOnlyMode && !isElara) {
-      window.console.warn(`Request failed: ${JSON.stringify(body)}.`);
-      window.console.warn("Retrying the request using the legacy Portal API.");
+    window.console.warn("Retrying the request using the legacy Portal API.");
 
-      const url = new URL(request.url);
-      url.pathname = url.pathname.replace("/breadbox/temp/", "/");
+    const url = new URL(request.url);
+    url.pathname = url.pathname.replace("/breadbox/temp/", "/");
 
-      const newRequest = new Request(url.toString(), request);
-      response = await fetch(newRequest);
-      body = await response.json();
+    const newRequest = new Request(url.toString(), request);
+    response = await fetch(newRequest);
 
-      if (!("value" in body)) {
-        throw new Error(JSON.stringify(body));
-      } else {
-        window.console.warn("Success!");
-      }
-    } else {
+    if (response.status >= 400) {
+      throw new Error(`Error ${response.status} on retry of fetching context.`);
+    }
+
+    body = await response.json();
+
+    if (!("value" in body)) {
       throw new Error(JSON.stringify(body));
+    } else {
+      window.console.warn("Success!");
     }
   }
 

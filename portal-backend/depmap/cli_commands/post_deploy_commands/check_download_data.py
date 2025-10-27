@@ -142,7 +142,6 @@ def _check_download_data(downloads: list[DownloadRelease]):
                 urls.append(file._url)
             elif isinstance(file._url, BucketUrl):
                 urls.append(file._url.bucket + file._url.file_name)
-            # else taigaonly, don't add
 
             if file.original_taiga_id:
                 if not (

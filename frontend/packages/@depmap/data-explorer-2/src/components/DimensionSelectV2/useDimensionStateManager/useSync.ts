@@ -21,17 +21,24 @@ export default function useSync({
     if (state.dirty) {
       setState((prev) => ({ ...prev, dirty: false, needsSync: true }));
     }
-  }, [state.dirty, setState]);
+    // eslint-disable-next-line
+  }, [state.dirty]);
 
   useEffect(() => {
     if (state.needsSync) {
       onChange(state.dimension);
       setState((prev) => ({ ...prev, needsSync: false }));
-      return;
     }
+    // eslint-disable-next-line
+  }, [state.needsSync]);
 
+  useEffect(() => {
     setState((prev) => {
       if (prev.dirty) {
+        return prev;
+      }
+
+      if (prev.needsSync) {
         return prev;
       }
 
@@ -74,5 +81,5 @@ export default function useSync({
       };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, mode, state.needsSync]);
+  }, [value]);
 }

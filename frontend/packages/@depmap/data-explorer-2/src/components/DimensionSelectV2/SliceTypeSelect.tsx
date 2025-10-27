@@ -96,7 +96,7 @@ function SliceTypeSelect({
     <PlotConfigSelect
       show
       isClearable
-      enable={options.length > 1}
+      enable={!isLoading}
       label={label}
       placeholder={placeholder}
       isLoading={isLoading}

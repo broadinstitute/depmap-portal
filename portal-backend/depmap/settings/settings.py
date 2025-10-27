@@ -207,7 +207,7 @@ class FeatureFlags:
 
     @property
     def show_compound_correlations(self):
-        return self.is_skyros()
+        return False
 
 
 def make_log_config(log_dir):
