@@ -56,7 +56,7 @@ add-if-missing {
 
 rule process_celligner_inputs:
     executor: dsub {
-       "docker_image": "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/celligner@sha256:53c77a879a693c82eb7f34b83a45ef04cd7f73f913eddb74899e30da8d0a6056",
+       "docker_image": "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/celligner@sha256:890ca0afafea6fd7e40c79b7aef773b81dcf5919a5dee2d7eb63905990c55cbd",
        "min_ram": "100",
        "boot_disk_size": "70", 
        "helper_path": "/opt/conseq/bin/conseq-helper" }
