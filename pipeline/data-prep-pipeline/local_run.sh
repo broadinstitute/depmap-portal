@@ -1,9 +1,14 @@
 #!/bin/bash
 
-# Default to internal if no parameter provided
-ENV_TYPE="${1:-internal}"
+ENV_TYPE="$1"
 
 # Validate input
+if [[ -z "$ENV_TYPE" ]]; then
+    echo "Error: Parameter is required"
+    echo "Usage: $0 [internal|external]"
+    exit 1
+fi
+
 if [[ "$ENV_TYPE" != "internal" && "$ENV_TYPE" != "external" ]]; then
     echo "Error: Parameter must be 'internal' or 'external'"
     echo "Usage: $0 [internal|external]"

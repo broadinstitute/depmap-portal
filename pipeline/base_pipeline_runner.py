@@ -117,6 +117,125 @@ class PipelineRunner(ABC):
         print(json.dumps(final_log, indent=2))
         print("=" * 50)
 
+    def track_dataset_usage_from_conseq(self, pipeline_dir):
+        """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
+        import re
+
+        pipeline_path = Path(pipeline_dir)
+        version_files = list(pipeline_path.glob("*-DO-NOT-EDIT-ME"))
+
+        if not version_files:
+            raise ValueError(f"No *-DO-NOT-EDIT-ME files found in {pipeline_dir}")
+
+        for version_file in version_files:
+            assert version_file.exists(), f"Version file does not exist: {version_file}"
+
+            with open(version_file, "r") as f:
+                content = f.read()
+                assert content, f"Version file is empty: {version_file}"
+
+                release_pattern = (
+                    r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
+                )
+                match = re.search(release_pattern, content, re.DOTALL)
+
+                if match:
+                    release_taiga_id = match.group(1)
+                    assert release_taiga_id, "Release taiga ID is empty"
+                    self.log_dataset_usage(release_taiga_id)
+                    return
+
+        raise ValueError(
+            f"Release taiga ID not found in any *-DO-NOT-EDIT-ME files in {pipeline_dir}. "
+            "Please check the files and try again."
+        )
+
+    def add_common_arguments(self, parser):
+        """Add common CLI arguments that all pipelines share."""
+        defaults = self.config_data["defaults"]
+
+        parser.add_argument("env_name", help="Name of environment")
+        parser.add_argument("job_name", help="Name to use for job")
+        parser.add_argument(
+            "--taiga-dir", default=defaults["taiga_dir"], help="Taiga directory path"
+        )
+        parser.add_argument(
+            "--creds-dir",
+            default=defaults["creds_dir"],
+            help="Pipeline runner credentials directory",
+        )
+        parser.add_argument(
+            "--image", help="If set, use this docker image when running the pipeline"
+        )
+
+    def build_common_config(self, args, pipeline_name):
+        """Build common configuration dictionary that all pipelines share."""
+        pipeline_cfg = self.config_data["pipelines"][pipeline_name]
+
+        config = {
+            "env_name": args.env_name,
+            "job_name": args.job_name,
+            "taiga_dir": args.taiga_dir,
+            "creds_dir": args.creds_dir,
+            "image": args.image,
+            "state_path": pipeline_cfg["state_path"],
+            "log_destination": pipeline_cfg["log_destination"],
+            "working_dir": pipeline_cfg["working_dir"],
+        }
+
+        self.check_credentials(config["creds_dir"])
+        return config
+
+    def run_via_container(self, command, config):
+        """Run command inside Docker container with pipeline-specific configuration."""
+        cwd = os.getcwd()
+        docker_cfg = self.config_data["docker"]
+        volumes = docker_cfg["volumes"]
+        env_vars = docker_cfg["env_vars"]
+        cred_files = self.config_data["credentials"]["required_files"]
+
+        # Start building docker command
+        docker_cmd = ["docker", "run"]
+
+        # Add pipeline-specific options (e.g., security settings)
+        pipeline_options = docker_cfg["options"].get(self.pipeline_name, {})
+        if "security_opt" in pipeline_options:
+            docker_cmd.extend(["--security-opt", pipeline_options["security_opt"]])
+
+        # Add common options
+        docker_cmd.extend(
+            [
+                "--rm",
+                "-v",
+                f"{cwd}:{volumes['work_dir']}",
+                "-w",
+                config["working_dir"],
+                "-v",
+                f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
+                "-v",
+                f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
+                "-v",
+                f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
+                "-v",
+                f"{config['taiga_dir']}:{volumes['taiga']}",
+                "-e",
+                f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
+                "--name",
+                config["job_name"],
+                config["docker_image"],
+                "bash",
+                "-c",
+                f"source {volumes['aws_keys']} && {command}",
+            ]
+        )
+
+        print("=" * 50)
+        print(f"{self.pipeline_name} Pipeline Runner command:")
+        print(f"  {command}")
+        print("=" * 50)
+
+        return subprocess.run(docker_cmd)
+
     @abstractmethod
     def create_argument_parser(self):
         """Create and return the argument parser for this pipeline."""
@@ -125,11 +244,6 @@ class PipelineRunner(ABC):
     @abstractmethod
     def get_pipeline_config(self, args):
         """Return pipeline-specific configuration."""
-        pass
-
-    @abstractmethod
-    def run_via_container(self, command, config):
-        """Run command inside Docker container with pipeline-specific configuration."""
         pass
 
     @abstractmethod

@@ -8,11 +8,11 @@ package-mode = false
 
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = ">=3.9, <3.10"
 pandas = "1.5.3"
 click = "^8.1.7"
 numpy = "^1.25.1"
-taigapy = {version = "4.0.0", source = "gcp-artifact-registry"}
+taigapy = {version = "4.1.0", source = "gcp-artifact-registry"}
 ipykernel = "^6.29.5"
 
 

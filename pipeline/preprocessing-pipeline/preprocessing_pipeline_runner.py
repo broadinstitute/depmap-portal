@@ -1,6 +1,5 @@
 import argparse
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -33,8 +32,11 @@ class PreprocessingPipelineRunner(PipelineRunner):
         parser = argparse.ArgumentParser(
             description="Run preprocessing pipeline (Jenkins style)"
         )
-        parser.add_argument("env_name", help="Name of environment")
-        parser.add_argument("job_name", help="Name to use for job")
+
+        # Add common arguments
+        self.add_common_arguments(parser)
+
+        # Add preprocessing-specific arguments
         parser.add_argument(
             "--publish-dest", help="S3/GCS path override for publishing"
         )
@@ -43,17 +45,6 @@ class PreprocessingPipelineRunner(PipelineRunner):
             "--manually-run-conseq",
             action="store_true",
             help="If set args will be passed directly to conseq",
-        )
-        parser.add_argument(
-            "--taiga-dir", default=defaults["taiga_dir"], help="Taiga directory path",
-        )
-        parser.add_argument(
-            "--creds-dir",
-            default=defaults["creds_dir"],
-            help="Pipeline runner credentials directory",
-        )
-        parser.add_argument(
-            "--image", help="If set, use this docker image when running the pipeline",
         )
         parser.add_argument(
             "--start-with", help="Start with existing export from GCS path"
@@ -65,26 +56,20 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def get_pipeline_config(self, args):
         """Get configuration for preprocessing pipeline."""
-        pipeline_cfg = self.config_data["pipelines"]["preprocessing"]
+        # Build common config
+        config = self.build_common_config(args, "preprocessing")
 
-        config = {
-            "env_name": args.env_name,
-            "job_name": args.job_name,
-            "conseq_args": args.conseq_args,
-            "taiga_dir": args.taiga_dir,
-            "creds_dir": args.creds_dir,
-            "manually_run_conseq": args.manually_run_conseq,
-            "start_with": args.start_with,
-            "publish_dest": args.publish_dest,
-            "export_path": args.export_path,
-            "image": args.image,
-            "state_path": pipeline_cfg["state_path"],
-            "log_destination": pipeline_cfg["log_destination"],
-            "working_dir": pipeline_cfg["working_dir"],
-        }
+        # Add preprocessing-specific config
+        config.update(
+            {
+                "conseq_args": args.conseq_args,
+                "manually_run_conseq": args.manually_run_conseq,
+                "start_with": args.start_with,
+                "publish_dest": args.publish_dest,
+                "export_path": args.export_path,
+            }
+        )
 
-        # Check credentials
-        self.check_credentials(config["creds_dir"])
         return config
 
     def create_override_conseq_file(self, env_name, publish_dest):
@@ -122,70 +107,8 @@ class PreprocessingPipelineRunner(PipelineRunner):
             print("No S3 path override specified")
             return f"run_{mapped_env}.conseq"
 
-    def run_via_container(self, command, config):
-        """Run command inside Docker container with preprocessing specific configuration."""
-        cwd = os.getcwd()
-        docker_cfg = self.config_data["docker"]
-        volumes = docker_cfg["volumes"]
-        env_vars = docker_cfg["env_vars"]
-        cred_files = self.config_data["credentials"]["required_files"]
-
-        docker_cmd = [
-            "docker",
-            "run",
-            "--security-opt",
-            docker_cfg["options"]["preprocessing"]["security_opt"],
-            "--rm",
-            "-v",
-            f"{cwd}:{volumes['work_dir']}",
-            "-w",
-            config["working_dir"],
-            "-v",
-            f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
-            "-v",
-            f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
-            "-v",
-            f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
-            "-v",
-            f"{config['taiga_dir']}:{volumes['taiga']}",
-            "-e",
-            f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
-            "--name",
-            config["job_name"],
-            config["docker_image"],
-            "bash",
-            "-c",
-            f"source {volumes['aws_keys']} && {command}",
-        ]
-        print("=" * 50)
-        print("Preprocessing Pipeline Runner command:", docker_cmd)
-        print("=" * 50)
-        return subprocess.run(docker_cmd)
-
-    def track_dataset_usage_from_conseq(self):
-        """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
-        pipeline_dir = Path("pipeline/preprocessing-pipeline")
-        version_files = list(pipeline_dir.glob("*-DO-NOT-EDIT-ME"))
-
-        for version_file in version_files:
-            with open(version_file, "r") as f:
-                content = f.read()
-
-                release_pattern = (
-                    r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
-                )
-                match = re.search(release_pattern, content, re.DOTALL)
-
-                if match:
-                    release_taiga_id = match.group(1)
-                    assert release_taiga_id, "Release taiga ID is empty"
-                    self.log_dataset_usage(release_taiga_id)
-                    break
-
     def handle_special_features(self, config):
         """Handle START_WITH functionality for preprocessing pipeline."""
-        self.track_dataset_usage_from_conseq()
-
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
             subprocess.run(
@@ -236,6 +159,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
                 f"conseq export {config['conseq_file']} {config['export_path']}", config
             )
         self.run_via_container("conseq report html", config)
+        self.track_dataset_usage_from_conseq("pipeline/preprocessing-pipeline")
 
 
 if __name__ == "__main__":
