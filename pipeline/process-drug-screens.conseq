@@ -64,9 +64,10 @@ rule process_drug_screen_auc_matrix:
       "type": "dep-matrix",
       "dataset_id": "{{ inputs.download.dataset_id }}",
       "filename": {"$filename": "{{ inputs.download.label }}.hdf5"},
-      "confounders_label": "{{ inputs.download.confounders_label }}"
+      "confounders_label": "{{ inputs.download.confounders_label }}",
+      "units": "{{ inputs.download.units }}"
      }
-   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} '{{inputs.download.source_units | default('AUC')}}' {{ inputs.download.label }}.hdf5"
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} '{{inputs.download.units}}' {{ inputs.download.label }}.hdf5"
 
 
 rule process_drug_screen_drc:

@@ -42,4 +42,4 @@ rule merge_predictability_into_compound_summary:
         'filename': {"$filename": "compound_summary_table.csv"}
     }
      run "cp {{ inputs.hdf5_utils.filename }} hdf5_utils.py"
-     run "python3 {{ inputs.script.filename }} {{ inputs.predictions.filename }} {{ inputs.dataset_matrix.filename }} '{{inputs.dataset_for_compound_dashboard.units}}' {{ inputs.drug_metadata.filename }} {{ inputs.dose_data.filename }} compound_summary_table.csv"
+     run "python3 {{ inputs.script.filename }} {{ inputs.predictions.filename }} {{ inputs.dataset_matrix.filename }} '{{inputs.dataset_matrix.units}}' {{ inputs.drug_metadata.filename }} {{ inputs.dose_data.filename }} compound_summary_table.csv"
