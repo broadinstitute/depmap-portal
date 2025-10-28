@@ -182,7 +182,8 @@ def publish():
         
         # Build and publish the package
         print("  Building and publishing package...")
-        subprocess.run(["poetry", "build", "-vvv"], check=True) # list files as we go through
+#        subprocess.run(["poetry", "build", "-vvv"], check=True) # list files as we go through
+        subprocess.run(["poetry", "build", "-f", "sdist"], check=True) # only build sdist because something is wrong with building wheel
         subprocess.run(["poetry", "publish", "--repository", "public-python"], check=True)
         print("  Package published successfully!")
     except Exception as e:
