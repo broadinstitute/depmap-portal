@@ -182,7 +182,8 @@ def publish():
         
         # Build and publish the package
         print("  Building and publishing package...")
-        subprocess.run(["poetry", "publish", "--build", "--repository", "public-python"], check=True)
+        subprocess.run(["poetry", "build", "-vvv"], check=True)
+        subprocess.run(["poetry", "publish", "--repository", "public-python"], check=True)
         print("  Package published successfully!")
     except Exception as e:
         print(f"Error publishing package: {str(e)}")
