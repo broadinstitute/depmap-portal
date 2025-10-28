@@ -35,11 +35,12 @@ class PropertyValuePair:
 class MetadataCacheEntry:
     properties_to_index_df: pd.DataFrame
     columns_metadata: Dict[str, ColumnMetadata]
-    label_by_given_id: Dict[str, str]
-    rows_by_index: Dict[str, Dict[str, str]]
+
+    def get_label_for_given_id(self, given_id):
+        return self.properties_to_index_df.loc[given_id, "label"]
 
     def get_properties_dict(self, given_id: str):
-        return self.rows_by_index.get(given_id)
+        return self.properties_to_index_df.loc[given_id].to_dict()
 
 
 class MetadataCache:
@@ -76,10 +77,6 @@ class MetadataCache:
 
                 columns_metadata = dict(dimension_type.dataset.columns_metadata)
 
-                label_by_given_id = get_dimension_type_metadata_col(
-                    self.db, dimension_type_name=dimension_type.name, col_name="label"
-                )
-
             rows_by_index = {}
             for record in properties_to_index_df.to_records():
                 rows_by_index[record.index] = record
@@ -87,8 +84,6 @@ class MetadataCache:
             entry = MetadataCacheEntry(
                 properties_to_index_df=properties_to_index_df,
                 columns_metadata=columns_metadata,
-                label_by_given_id=label_by_given_id,
-                rows_by_index=rows_by_index,
             )
             self.cache[dimension_type_name] = entry
 
@@ -159,7 +154,7 @@ def refresh_search_index_for_dimension_type(
                     group_id=dimension_type.dataset.group_id,
                     dimension_type_name=dimension_type.name,
                     dimension_given_id=given_id,
-                    label=cache_entry.label_by_given_id[given_id],
+                    label=cache_entry.get_label_for_given_id(given_id),
                 )
 
     dimension_search_index_row_count = 0
