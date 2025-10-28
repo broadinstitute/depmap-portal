@@ -122,46 +122,6 @@ class PreprocessingPipelineRunner(PipelineRunner):
             print("No S3 path override specified")
             return f"run_{mapped_env}.conseq"
 
-    def run_via_container(self, command, config):
-        """Run command inside Docker container with preprocessing specific configuration."""
-        cwd = os.getcwd()
-        docker_cfg = self.config_data["docker"]
-        volumes = docker_cfg["volumes"]
-        env_vars = docker_cfg["env_vars"]
-        cred_files = self.config_data["credentials"]["required_files"]
-
-        docker_cmd = [
-            "docker",
-            "run",
-            "--security-opt",
-            docker_cfg["options"]["preprocessing"]["security_opt"],
-            "--rm",
-            "-v",
-            f"{cwd}:{volumes['work_dir']}",
-            "-w",
-            config["working_dir"],
-            "-v",
-            f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
-            "-v",
-            f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
-            "-v",
-            f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
-            "-v",
-            f"{config['taiga_dir']}:{volumes['taiga']}",
-            "-e",
-            f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
-            "--name",
-            config["job_name"],
-            config["docker_image"],
-            "bash",
-            "-c",
-            f"source {volumes['aws_keys']} && {command}",
-        ]
-        print("=" * 50)
-        print("Preprocessing Pipeline Runner command:", docker_cmd)
-        print("=" * 50)
-        return subprocess.run(docker_cmd)
-
     def track_dataset_usage_from_conseq(self):
         """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
         pipeline_dir = Path("pipeline/preprocessing-pipeline")

@@ -61,42 +61,6 @@ class DataPrepPipelineRunner(PipelineRunner):
         else:
             return conseq_files["internal"]
 
-    def run_via_container(self, command, config):
-        """Run command inside Docker container with data prep specific configuration."""
-        cwd = os.getcwd()
-        docker_cfg = self.config_data["docker"]
-        volumes = docker_cfg["volumes"]
-        env_vars = docker_cfg["env_vars"]
-        cred_files = self.config_data["credentials"]["required_files"]
-
-        docker_cmd = [
-            "docker",
-            "run",
-            "--rm",
-            "-v",
-            f"{cwd}:{volumes['work_dir']}",
-            "-v",
-            f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
-            "-v",
-            f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
-            "-v",
-            f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
-            "-v",
-            f"{config['taiga_dir']}:{volumes['taiga']}",
-            "-e",
-            f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
-            "-w",
-            config["working_dir"],
-            "--name",
-            config["job_name"],
-            config["docker_image"],
-            "bash",
-            "-c",
-            f"source {volumes['aws_keys']} && {command}",
-        ]
-        print("command", command)
-        return subprocess.run(docker_cmd)
-
     def track_dataset_usage(self):
         """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
         pipeline_dir = Path("pipeline/data-prep-pipeline")

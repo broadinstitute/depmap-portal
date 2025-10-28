@@ -20,11 +20,11 @@ docker:
     google_creds: /etc/google_default_creds.json
     taiga: /root/.taiga
 
-  # Docker run options
+  # Docker run options (keyed by directory name)
   options:
-    preprocessing:
+    preprocessing-pipeline:
       security_opt: seccomp=unconfined
-    data_prep: {} # No special options
+    data-prep-pipeline: {} # No special options
 
   # Environment variables to set in container
   env_vars:
