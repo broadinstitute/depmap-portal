@@ -7,7 +7,7 @@ import enum
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import pandas as pd
 from depmap.gene.models import Gene
-from depmap.compound.models import CompoundExperiment
+from depmap.compound.models import Compound
 from depmap.enums import DependencyEnum
 from depmap.dataset.models import DependencyDataset
 from depmap.context.models_new import SubtypeContext, SubtypeNode
@@ -218,10 +218,7 @@ def get_context_analysis_query(
                 out_group=out_group,
                 dependency_dataset_id=dependency_dataset_id,
             )
-            .join(
-                CompoundExperiment,
-                CompoundExperiment.entity_id == ContextAnalysis.entity_id,
-            )
+            .join(Compound, Compound.entity_id == ContextAnalysis.entity_id,)
             .add_columns(
                 sqlalchemy.column('"entity".label', is_literal=True).label("entity")
             )

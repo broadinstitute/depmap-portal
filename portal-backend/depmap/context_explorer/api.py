@@ -2,7 +2,7 @@ import dataclasses
 from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
-from depmap.compound.models import Compound, CompoundExperiment
+from depmap.compound.models import Compound
 from depmap.context_explorer.utils import (
     get_entity_id_from_entity_full_label,
     get_path_to_node,
@@ -436,12 +436,11 @@ def _get_analysis_data_table(
         )
     elif entity_type == "compound":
 
-        def get_compound_label_for_compound_experiment(entity: str):
-            compound_exp = CompoundExperiment.get_by_label(entity)
-            compound = Compound.get_by_id(compound_exp.compound_id)
+        def get_compound_label(compound_id: str):
+            compound = Compound.get_by_compound_id(compound_id)
             return compound.label
 
-        data["label"] = data["entity"].apply(get_compound_label_for_compound_experiment)
+        data["label"] = data["entity"].apply(get_compound_label)
         # These columns don't make sense for compounds and will always be NaNs, so just drop them
         data = data.drop(
             ["n_dep_in", "n_dep_out", "frac_dep_in", "frac_dep_out"], axis=1
