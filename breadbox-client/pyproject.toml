@@ -10,7 +10,11 @@ packages = [
     {include = "breadbox_client"},
     {include = "breadbox_facade"},
 ]
-include = ["CHANGELOG.md", "breadbox_client/py.typed", "breadbox_client/**/*"]
+
+include = [
+    { path = "CHANGELOG.md", format = ["sdist", "wheel"] },
+    { path = "breadbox_client/py.typed", format = ["sdist", "wheel"] },
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
