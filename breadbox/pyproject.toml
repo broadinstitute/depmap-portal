@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox"
-version = "4.3.17"
+version = "4.3.18"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
