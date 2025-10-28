@@ -5,12 +5,14 @@ from fastapi.testclient import TestClient
 from tests import factories
 from ..utils import assert_status_ok
 import json
+import pytest
 
 
 def _print_mem_delta(msg):
     print(msg)
 
 
+@pytest.skip("Only useful for testing memory usage")
 def test_reindexing_memory_usage(
     minimal_db, client: TestClient, settings, public_group
 ):
