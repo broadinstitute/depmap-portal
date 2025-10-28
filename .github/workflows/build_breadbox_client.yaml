@@ -55,10 +55,6 @@ jobs:
         working-directory: ./breadbox-client
         run: "poetry run pytest"
 
-      - name: "Confirm client generated"
-        working-directory: "./breadbox-client"
-        run: "find ."
-
       - name: Bump version and publish
         working-directory: ./breadbox-client
         run: "python bump_version_and_publish.py --dry-run-if-not-branch master"
