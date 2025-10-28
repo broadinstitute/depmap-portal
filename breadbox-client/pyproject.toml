@@ -7,13 +7,17 @@ authors = []
 
 readme = "README.md"
 packages = [
-    {include = "breadbox_client"},
     {include = "breadbox_facade"},
 ]
 
 include = [
     { path = "CHANGELOG.md", format = ["sdist", "wheel"] },
+    # because the breadbox_client directory is generated, it's listed in .gitignore
+    # however, this causes poetry to also ignore these files. There doesn't seem to
+    # be a way to override that behavior so explictly tell it to add all the files
+    # to the wheel and sdist files
     { path = "breadbox_client/py.typed", format = ["sdist", "wheel"] },
+    { path = "breadbox_client/**/*.py", format = ["sdist", "wheel"] }
 ]
 
 [tool.poetry.dependencies]
