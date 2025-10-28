@@ -83,6 +83,10 @@ class DataPrepPipelineRunner(PipelineRunner):
                     assert release_taiga_id, "Release taiga ID is empty"
                     self.log_dataset_usage(release_taiga_id)
                     break
+                else:
+                    raise ValueError(
+                        f"Release taiga ID not found in {version_file}. Please check the file and try again."
+                    )
 
     def handle_special_features(self, config):
         """Preprocess templates to generate DO-NOT-EDIT-ME files before run."""

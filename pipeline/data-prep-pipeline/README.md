@@ -12,7 +12,7 @@ Second, check out the `depmap-deploy` repo if you have not already and put that 
 Then, assuming you are in `depmap-portal/pipeline/data-prep-pipeline` where this readme is located:
 
 1. Run `eval $(poetry env activate)` or `poetry shell` if poetry is <2.0. Then install the packages inside the poetry env.
-2. Once inside the poetry environment, run `local_run.sh` which will run each rule mentioned there and produce the relevant output.
+2. Once inside the poetry environment, run `local_run.sh` with either `internal` or `external` as parameters depending on the environment which will run each rule mentioned there and produce the relevant output.
 
 ## How to extend the pipeline to add additional files to the release
 
