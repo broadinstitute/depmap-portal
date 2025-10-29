@@ -527,35 +527,6 @@ def get_organized_contexts(
 ################################################################################
 ### Enrichment Tile Boxplots (shown on the Gene and Compound overview pages) ###
 ################################################################################
-def temp_get_compound_experiment_dataset(compound_experiment_and_datasets):
-    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
-    dataset_regexp_ranking = [
-        "Prism_oncology.*",
-        "Rep_all_single_pt.*",
-        ".*",
-    ]
-    ce_and_d = []
-    for regexp in dataset_regexp_ranking:
-        for ce, d in compound_experiment_and_datasets:
-            pattern = re.compile(regexp)
-            if pattern.match(d.name.value):
-                ce_and_d = [[ce, d]]
-                return ce_and_d
-
-
-def get_compound_experiment_and_dataset_name_from_compound(compound: Compound):
-    # Figure out membership in different datasets
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound.entity_id
-    )
-    compound_experiment_and_datasets = [
-        x for x in compound_experiment_and_datasets if not x[1].is_dose_replicate
-    ]  # filter for non dose replicate datasets"
-    best_ce_and_d = temp_get_compound_experiment_dataset(
-        compound_experiment_and_datasets
-    )
-
-    return best_ce_and_d
 
 
 def get_gene_enriched_lineages_entity_id_and_dataset_name(
@@ -577,42 +548,45 @@ def get_gene_enriched_lineages_entity_id_and_dataset_name(
     }
 
 
-def get_compound_enriched_lineages_entity_id_and_dataset_name(
-    entity_label: str,
+def get_compound_enriched_lineages_feature_id_and_dataset_name(
+    compound_id: str,
 ) -> dict:
-    compound = Compound.get_by_label(entity_label)
-    best_ce_and_d = get_compound_experiment_and_dataset_name_from_compound(compound)
+    compound = Compound.get_by_label(compound_id)
 
-    assert best_ce_and_d is not None
+    possible_datasets = data_access.get_all_datasets_containing_compound(
+        compound_id=compound.compound_id
+    )
 
-    compound_experiment = best_ce_and_d[0][0]
-    dataset_name = best_ce_and_d[0][1].name.name
-    dataset_display_name = best_ce_and_d[0][1].display_name
+    assert len(possible_datasets) > 0
+
+    priority_dataset = possible_datasets[0]
+    dataset_display_name = priority_dataset.label
+    dataset_given_id = priority_dataset.given_id
 
     return {
-        "entity_id": compound_experiment.entity_id,
-        "dataset_name": dataset_name,
-        "compound_experiment_label": compound_experiment.label,
+        "feature_id": compound.compound_id,
+        "dataset_given_id": dataset_given_id,
+        "compound_label": compound.label,
         "dataset_display_name": dataset_display_name,
     }
 
 
 def get_data_to_show_if_no_contexts_significant(
-    entity_type: str, entity_label: str, tree_type: str, dataset_name: str
+    feature_type: str, feature_label: str, tree_type: str, dataset_given_id: str
 ):
-    entity_id_and_label = utils.get_feature_id_from_full_label(
-        feature_type=entity_type, feature_full_label=entity_label
+    feature_id_and_label = utils.get_feature_id_from_full_label(
+        feature_type=feature_type, feature_full_label=feature_label
     )
-    entity_label = entity_id_and_label["label"]
-    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
+    feature_label = feature_id_and_label["label"]
+    entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
 
-    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
+    entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_given_id=dataset_name, label=entity_label
+        dataset_given_id=dataset_given_id, label=feature_label
     )
     entity_full_row_of_values.dropna(inplace=True)
     drug_dotted_line = (
-        entity_full_row_of_values.mean() if entity_type == "compound" else None
+        entity_full_row_of_values.mean() if feature_type == "compound" else None
     )
 
     grouped_other_box_plot_data = get_box_plot_data_for_other_category(
@@ -625,7 +599,8 @@ def get_data_to_show_if_no_contexts_significant(
 
     solid_box_plot_data = grouped_other_box_plot_data.solid
 
-    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_given_id)
+    dataset_display_name = data_access.get_dataset_label(dataset_id=dataset_given_id)
     assert dataset_units is not None
 
     ordered_box_plot_data = ContextPlotBoxData(
@@ -635,7 +610,7 @@ def get_data_to_show_if_no_contexts_significant(
         insignificant_heme_data=heme_box_plot_data,
         insignificant_solid_data=solid_box_plot_data,
         drug_dotted_line=drug_dotted_line,
-        feature_label=entity_label,
+        feature_label=feature_label,
         feature_overview_page_label=entity_overview_page_label,
         dataset_units=dataset_units,
     )
@@ -644,8 +619,8 @@ def get_data_to_show_if_no_contexts_significant(
         box_plot_data=ordered_box_plot_data,
         top_context_name_info=None,
         selected_context_name_info=None,
-        dataset_name=dataset_name,
-        dataset_display_name="",
+        dataset_name=dataset_given_id,
+        dataset_display_name=dataset_display_name,
         context_explorer_url=url_for("context_explorer.view_context_explorer"),
     )
 

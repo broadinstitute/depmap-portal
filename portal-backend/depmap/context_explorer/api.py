@@ -629,16 +629,16 @@ class EnrichedLineagesTile(
         # Note: docstrings to restplus methods end up in the swagger documentation.
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
         tree_type = request.args.get("tree_type")
-        entity_label = request.args.get("entity_label")
-        entity_type = request.args.get("entity_type")
+        feature_id = request.args.get("feature_id")
+        feature_type = request.args.get("feature_type")
 
         entity_id_and_dataset_name = (
             box_plot_utils.get_gene_enriched_lineages_entity_id_and_dataset_name(
                 entity_label=entity_label
             )
-            if entity_type == "gene"
-            else box_plot_utils.get_compound_enriched_lineages_entity_id_and_dataset_name(
-                entity_label=entity_label
+            if feature_type == "gene"
+            else box_plot_utils.get_compound_enriched_lineages_feature_id_and_dataset_name(
+                compound_id=feature_id
             )
         )
 
@@ -649,7 +649,7 @@ class EnrichedLineagesTile(
         dataset_name = entity_id_and_dataset_name["dataset_name"]
         dataset_display_name = entity_id_and_dataset_name["dataset_display_name"]
 
-        if entity_type == "compound":
+        if feature_type == "compound":
             entity_label = entity_id_and_dataset_name["compound_experiment_label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
@@ -672,9 +672,9 @@ class EnrichedLineagesTile(
         if sig_contexts.empty:
             return box_plot_utils.get_data_to_show_if_no_contexts_significant(
                 entity_type=entity_type,
-                entity_label=entity_label,
+                feature_label=entity_label,
                 tree_type=tree_type,
-                dataset_name=dataset_name,
+                dataset_given_id=dataset_name,
             )
 
         # "sig_contexts" includes a column for "level_0" and a column for "subtype_code". This is necessary

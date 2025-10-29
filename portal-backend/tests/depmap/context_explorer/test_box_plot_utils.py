@@ -689,9 +689,9 @@ def test_get_data_to_show_if_no_contexts_significant(
 
     data = box_plot_utils.get_data_to_show_if_no_contexts_significant(
         entity_type=entity_type,
-        entity_label=entity.label,
+        feature_label=entity.label,
         tree_type=tree_type,
-        dataset_name=dataset_name,
+        dataset_given_id=dataset_name,
     )
 
     assert len(data["box_plot_data"]["significant_selection"]) == 0
