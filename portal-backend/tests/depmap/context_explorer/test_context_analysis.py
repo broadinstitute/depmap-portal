@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import dataclasses
 from depmap.cell_line.models_new import DepmapModel
 from depmap.cell_line.views import get_subtype_tree_info
-from depmap.context.models_new import SubtypeContext, TreeType
+from depmap.context.models_new import TreeType
 from depmap.context_explorer import box_plot_utils
 from depmap.context_explorer.api import _get_analysis_data_table
 import pytest
@@ -13,7 +13,6 @@ from depmap.context_explorer.utils import (
     get_full_row_of_values_and_depmap_ids,
     _get_compound_experiment_id_from_entity_label,
 )
-from depmap.context_explorer.box_plot_utils import get_organized_contexts
 from depmap.dataset.models import DependencyDataset
 import numpy as np
 from tests.factories import (

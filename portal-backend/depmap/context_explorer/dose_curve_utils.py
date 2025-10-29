@@ -1,25 +1,19 @@
-from typing import Dict, List
+from typing import List
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context_explorer.models import ContextExplorerDatasets
-from depmap.partials.matrix.models import CellLineSeries
 import pandas as pd
 from depmap.context_explorer import utils
 from depmap.context.models_new import SubtypeNode, SubtypeContext
 from depmap.dataset.models import Dataset, DependencyDataset
-from depmap.compound.models import (
-    Compound,
-    CompoundExperiment,
-    CompoundDoseReplicate,
-    DoseResponseCurve,
-)
+from depmap.compound.models import Compound, CompoundDoseReplicate
 
 
 def _get_out_group_model_ids(
-    out_group_type, dataset_name, in_group_model_ids, label, tree_type
+    out_group_type, dataset_given_id, in_group_model_ids, label, tree_type
 ):
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_given_id=dataset_name, label=label
+        dataset_given_id=dataset_given_id, label=label
     )
     entity_full_row_of_values.dropna(inplace=True)
     entity_full_row_of_values = pd.DataFrame(entity_full_row_of_values)
@@ -55,8 +49,8 @@ def _get_out_group_model_ids(
 
 
 def _get_in_group_out_group_model_ids(
-    dataset_name: str,
-    entity_full_label: str,
+    dataset_given_id: str,
+    feature_full_label: str,
     subtype_code: str,
     level: int,
     out_group_type: str,
@@ -68,9 +62,9 @@ def _get_in_group_out_group_model_ids(
 
     out_group_model_ids = _get_out_group_model_ids(
         out_group_type,
-        dataset_name=dataset_name,
+        dataset_given_id=dataset_given_id,
         in_group_model_ids=in_group_model_ids,
-        label=entity_full_label,
+        label=feature_full_label,
         tree_type=tree_type,
     )
 
@@ -175,8 +169,8 @@ def get_context_dose_curves(
     compound = Compound.get_by_compound_id(feature_full_label)
 
     in_group_out_group_model_ids = _get_in_group_out_group_model_ids(
-        dataset_name=dataset_given_id,
-        entity_full_label=feature_full_label,
+        dataset_given_id=dataset_given_id,
+        feature_full_label=feature_full_label,
         subtype_code=subtype_code,
         level=level,
         out_group_type=out_group_type,

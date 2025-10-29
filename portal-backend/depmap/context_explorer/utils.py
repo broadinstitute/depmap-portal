@@ -1,14 +1,10 @@
 from typing import Literal
-from depmap.partials.matrix.models import CellLineSeries
 import pandas as pd
 
 from depmap import data_access
 from depmap.context.models_new import SubtypeNode, TreeType
 from depmap.context_explorer.models import ContextPathInfo
-from depmap.compound.models import (
-    CompoundExperiment,
-    Compound,
-)
+from depmap.compound.models import Compound
 from depmap.gene.models import Gene
 import re
 
@@ -44,27 +40,6 @@ def get_path_to_node(selected_code: str) -> ContextPathInfo:
         node_obj.tree_type
     ).value
     return ContextPathInfo(path=path, tree_type=tree_type)
-
-
-def _get_compound_experiment_id_from_entity_label(entity_full_label: str):
-    m = re.search(r"([A-Z0-9]*:[A-Z0-9-]*)", entity_full_label)
-    assert m is not None
-    compound_experiment_id = m.group(1)
-
-    return compound_experiment_id
-
-
-def get_compound_experiment(entity_full_label: str):
-    compound_experiment_id = _get_compound_experiment_id_from_entity_label(
-        entity_full_label=entity_full_label
-    )
-
-    assert ":" in compound_experiment_id
-    compound_experiment = CompoundExperiment.get_by_xref_full(
-        compound_experiment_id, must=False
-    )
-
-    return compound_experiment
 
 
 # For genes, full label refers to gene_symbol (entrez_id)
