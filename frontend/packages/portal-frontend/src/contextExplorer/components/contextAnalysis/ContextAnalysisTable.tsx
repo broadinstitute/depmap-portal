@@ -14,7 +14,7 @@ interface ContextAnalysisTableProps {
   pointVisibility: boolean[];
   handleSelectRowAndPoint: (entityLabel: string) => void;
   selectedTableLabels: Set<string> | null;
-  entityType: string;
+  featureType: string;
   datasetId: ContextExplorerDatasets;
 }
 
@@ -24,7 +24,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     pointVisibility,
     handleSelectRowAndPoint,
     selectedTableLabels,
-    entityType,
+    featureType,
     datasetId,
   } = props;
 
@@ -43,13 +43,13 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
 
   useEffect(() => {
     const iData = [];
-    const entityLabelMap: { [entity: string]: string } = {};
+    const featureLabelMap: { [feature: string]: string } = {};
     if (data) {
-      for (let index = 0; index < data?.entity.length; index++) {
+      for (let index = 0; index < data?.feature.length; index++) {
         if (pointVisibility[index]) {
-          if (entityType === "gene") {
+          if (featureType === "gene") {
             iData.push({
-              entity: data.entity[index],
+              feature: data.feature[index],
               tTestQVal: data.t_qval[index],
               inContextMean: data.mean_in[index],
               outGroupMean: data.mean_out[index],
@@ -60,7 +60,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
             });
           } else {
             iData.push({
-              entity: data.entity[index],
+              feature: data.feature[index],
               tTestQVal: data.t_qval[index],
               inContextMean: data.mean_in[index],
               outGroupMean: data.mean_out[index],
@@ -69,7 +69,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
             });
           }
 
-          entityLabelMap[data.entity[index]] = data.label[index];
+          featureLabelMap[data.feature[index]] = data.label[index];
         }
       }
     }
@@ -89,7 +89,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       );
     };
 
-    const selectivityValLabel = getSelectivityValLabel(entityType);
+    const selectivityValLabel = getSelectivityValLabel(featureType);
 
     const getDrugInGroupLabel = () => {
       if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
@@ -112,16 +112,16 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
 
     let initialCols = [
       {
-        accessor: "entity",
-        Header: entityType === "gene" ? "Gene" : "Drug",
-        id: "entity",
+        accessor: "feature",
+        Header: featureType === "gene" ? "Gene" : "Drug",
+        id: "feature",
         maxWidth: 120,
         minWidth: 120,
         customFilter: renderFilterPlaceholder,
         Cell: (row: any) => (
           <a
             href={toPortalLink(
-              `/${entityType}/${entityLabelMap[row.value] as string}`
+              `/${featureType}/${featureLabelMap[row.value] as string}`
             )}
             target="_blank"
             rel="noreferrer"
@@ -159,7 +159,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         accessor: "inContextMean",
         id: "inContextMean",
         Header:
-          entityType === "gene"
+          featureType === "gene"
             ? "In-context mean gene effect"
             : getDrugInGroupLabel(),
         maxWidth: 90,
@@ -170,7 +170,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         accessor: "outGroupMean",
         id: "outGroupMean",
         Header:
-          entityType === "gene"
+          featureType === "gene"
             ? "Out-group mean gene effect"
             : getDrugOutGroupLabel(),
         maxWidth: 90,
@@ -179,13 +179,13 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       },
     ];
 
-    if (entityType === "gene") {
+    if (featureType === "gene") {
       const geneOnlyColumns = [
         {
           accessor: "fractionInContextLinesDependent",
           id: "fractionInContextLinesDependent",
           Header:
-            entityType === "gene"
+            featureType === "gene"
               ? "Fraction of in-context lines dependent"
               : "Fraction in-context lines sensitive",
           maxWidth: 90,
@@ -197,7 +197,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
           accessor: "fractionOutGroupLinesDependent",
           id: "fractionOutGroupLinesDependent",
           Header:
-            entityType === "gene"
+            featureType === "gene"
               ? "Fraction of out-group lines dependent"
               : "Fraction of out-group lines sensitive",
           maxWidth: 90,
@@ -209,7 +209,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       initialCols = [...initialCols, ...geneOnlyColumns];
     }
     setColumns(initialCols);
-  }, [data, pointVisibility, entityType, datasetId]);
+  }, [data, pointVisibility, featureType, datasetId]);
 
   const handleChangeSelection = (selections: string[]) => {
     handleSelectRowAndPoint(selections[0]);
@@ -220,7 +220,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
       <div className={styles.geneDepTable}>
         {columns && (
           <WideTable
-            idProp={"entity"}
+            idProp={"feature"}
             rowHeight={28}
             data={formattedData}
             columns={columns}

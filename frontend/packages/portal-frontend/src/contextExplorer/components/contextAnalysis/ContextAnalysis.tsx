@@ -72,7 +72,7 @@ interface ContextAnalysisProps {
   selectedContextNode: ContextNode | null;
   topContextNameInfo: ContextNameInfo;
   treeType: TreeType;
-  entityType: string;
+  featureType: string;
   datasetId: ContextExplorerDatasets;
   customInfoImg: React.JSX.Element;
 }
@@ -82,7 +82,7 @@ function ContextAnalysis({
   selectedContextNode,
   topContextNameInfo,
   treeType,
-  entityType,
+  featureType,
   datasetId,
   customInfoImg,
 }: ContextAnalysisProps) {
@@ -171,7 +171,7 @@ function ContextAnalysis({
       const promise = legacyPortalAPI.getContextExplorerAnalysisData(
         selectedContextNameInfo.subtype_code,
         outgroup.value,
-        entityType,
+        featureType,
         datasetId
       );
 
@@ -203,7 +203,7 @@ function ContextAnalysis({
     selectedContextNameInfo.subtype_code,
     outgroup,
     datasetId,
-    entityType,
+    featureType,
     treeType,
     didValidateOutgroup,
   ]);
@@ -320,15 +320,15 @@ function ContextAnalysis({
         return "Out-group mean log2(viability)";
       };
 
-      const entityLabels: string[] = [];
+      const featureLabels: string[] = [];
       const selectivityVal: number[] = [];
       const tTestXVals: number[] = [];
       const tTestYVals: number[] = [];
       const inVsOutXVals: number[] = [];
       const inVsOutYVals: number[] = [];
 
-      tableData.entity.forEach((entity, i) => {
-        entityLabels.push(entity);
+      tableData.feature.forEach((feature, i) => {
+        featureLabels.push(feature);
         selectivityVal.push(tableData.selectivity_val[i]);
         tTestXVals.push(tableData.effect_size[i]);
         tTestYVals.push(tableData.t_qval_log[i]);
@@ -336,7 +336,7 @@ function ContextAnalysis({
         inVsOutYVals.push(tableData.mean_out[i]);
       });
       return {
-        indexLabels: entityLabels,
+        indexLabels: featureLabels,
         selectivityVal,
         tTest: {
           x: {
@@ -351,14 +351,14 @@ function ContextAnalysis({
         inVsOut: {
           x: {
             axisLabel:
-              entityType === "gene"
+              featureType === "gene"
                 ? "In-group mean gene effect"
                 : getDrugXAxisLabel(),
             values: inVsOutXVals,
           },
           y: {
             axisLabel:
-              entityType === "gene"
+              featureType === "gene"
                 ? "Out-group mean gene effect"
                 : getDrugYAxisLabel(),
             values: inVsOutYVals,
@@ -366,7 +366,7 @@ function ContextAnalysis({
         },
       };
     },
-    [entityType, datasetId]
+    [featureType, datasetId]
   );
 
   const formattedScatterPlotData = useMemo(
@@ -435,9 +435,9 @@ function ContextAnalysis({
   );
 
   const handleSelectRowAndPoint = useCallback(
-    (entityLabel: string) => {
+    (featureLabel: string) => {
       if (plotData && plotData.indexLabels) {
-        const label = entityLabel;
+        const label = featureLabel;
 
         setSelectedTableLabels((xs) => {
           let ys = new Set(xs);
@@ -514,7 +514,7 @@ function ContextAnalysis({
       return undefined;
     }
 
-    if (entityType === "gene") {
+    if (featureType === "gene") {
       const { min, max } = calcMinMax(values);
       const scale = getLogOrColorScale(min, max);
 
@@ -531,7 +531,7 @@ function ContextAnalysis({
     ];
 
     return scale;
-  }, [plotData, entityType]);
+  }, [plotData, featureType]);
 
   const getBins = useCallback(
     (
@@ -563,8 +563,8 @@ function ContextAnalysis({
       }
 
       const { min, max } = calcMinMax(values);
-      console.log(min);
-      if (entityType !== "gene") {
+
+      if (featureType !== "gene") {
         const binNumber = 5;
         const legendMin = 0;
         const legendMax = max;
@@ -595,7 +595,7 @@ function ContextAnalysis({
         [LEGEND_RANGE_7]: bins[6],
       };
     },
-    [entityType, getBins]
+    [featureType, getBins]
   );
 
   const continuousBins = useMemo(
@@ -619,7 +619,7 @@ function ContextAnalysis({
     let colorM: Partial<Record<LegendKey, string>> = {};
 
     colorM =
-      entityType === "gene"
+      featureType === "gene"
         ? {
             [LEGEND_RANGE_1]: continuousColorScale[0][1],
             [LEGEND_RANGE_2]: "#BCD0F5",
@@ -638,7 +638,7 @@ function ContextAnalysis({
           };
 
     return colorM;
-  }, [plotData?.selectivityVal, continuousColorScale, entityType]);
+  }, [plotData?.selectivityVal, continuousColorScale, featureType]);
 
   const [boxPlotData, setBoxPlotData] = useState<ContextPlotBoxData | null>(
     null
@@ -690,7 +690,6 @@ function ContextAnalysis({
       boxPlotMinFracDepIn
     ) {
       setBoxPlotData(null);
-      // setEntityDetailMainPlotElement(null);
       setIsLoadingBoxplot(true);
       setBoxplotError(false);
       const boxplotPromise = cached(
@@ -699,7 +698,7 @@ function ContextAnalysis({
         selectedContextNameInfo.subtype_code,
         treeType,
         datasetId,
-        entityType,
+        featureType,
         [...selectedPlotLabels][0],
         boxPlotMaxFDR,
         boxPlotMinEffectSize,
@@ -729,7 +728,7 @@ function ContextAnalysis({
     outgroup,
     datasetId,
     selectedPlotLabels,
-    entityType,
+    featureType,
     treeType,
     topContextNameInfo,
     boxPlotMaxFDR,
@@ -744,7 +743,7 @@ function ContextAnalysis({
         <div className={styles.overviewGraphHeader}>
           {selectedContextNameInfo.name !== "All" && data && (
             <>
-              {entityType === "gene" && (
+              {featureType === "gene" && (
                 <>
                   <h2>
                     Dependencies enriched in {selectedContextNameInfo.name}
@@ -801,7 +800,7 @@ function ContextAnalysis({
             !isLoading &&
             !data && (
               <>
-                {entityType === "gene" && (
+                {featureType === "gene" && (
                   <h2>
                     Not enough data points to compute enriched dependencies for
                     {selectedContextNameInfo.name}. Enriched dependencies are
@@ -863,7 +862,7 @@ function ContextAnalysis({
             )}
             {continuousBins && selectedContextNameInfo.name !== "All" && (
               <ScatterPlotLegend
-                legendTitle={getSelectivityValLabel(entityType)}
+                legendTitle={getSelectivityValLabel(featureType)}
                 colorMap={colorMap}
                 continuousBins={continuousBins}
                 legendKeysWithNoData={null}
@@ -897,7 +896,7 @@ function ContextAnalysis({
                     selectedPlotLabels={selectedPlotLabels}
                     colorScale={continuousColorScale}
                     isLoading={isLoading}
-                    entityType={entityType}
+                    featureType={featureType}
                     showYEqualXLine={false}
                   />
                 )}
@@ -927,7 +926,7 @@ function ContextAnalysis({
                     selectedPlotLabels={selectedPlotLabels}
                     colorScale={continuousColorScale}
                     isLoading={isLoading}
-                    entityType={entityType}
+                    featureType={featureType}
                     showYEqualXLine
                   />
                 )}
@@ -976,7 +975,7 @@ function ContextAnalysis({
                 </span>
               </h3>
 
-              {entityType === "gene" && (
+              {featureType === "gene" && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -1021,14 +1020,14 @@ function ContextAnalysis({
                   key="gene-dep-plot-filters"
                   data={data}
                   group={
-                    entityType === "gene"
+                    featureType === "gene"
                       ? filterLayoutGene[0].groups[0]
                       : filterLayoutDrug[0].groups[0]
                   }
                   filters={transientFilterState}
                   onChangeFilter={updateFilter}
                   hasChanges={
-                    entityType === "gene"
+                    featureType === "gene"
                       ? filterLayoutGene[0].groups[0].keys.some(
                           (key: any) => changedFilters.indexOf(key) > -1
                         )
@@ -1046,7 +1045,7 @@ function ContextAnalysis({
                 pointVisibility={pointVisibilityFiltered ?? pointVisibility}
                 handleSelectRowAndPoint={handleSelectRowAndPoint}
                 selectedTableLabels={selectedTableLabels}
-                entityType={entityType}
+                featureType={featureType}
                 datasetId={datasetId}
               />
             </div>
@@ -1064,7 +1063,7 @@ function ContextAnalysis({
                 fontWeight: "bold",
               }}
             >
-              {entityType === "gene" ? "Gene" : "Drug"} Detail
+              {featureType === "gene" ? "Gene" : "Drug"} Detail
               {selectedPlotLabels && (
                 <span>
                   {" "}
@@ -1082,7 +1081,7 @@ function ContextAnalysis({
             {boxPlotData && (
               <a
                 href={toPortalLink(
-                  `/${entityType}/${boxPlotData.entity_overview_page_label}`
+                  `/${featureType}/${boxPlotData.entity_overview_page_label}`
                 )}
                 target="_blank"
                 rel="noreferrer"
@@ -1092,7 +1091,7 @@ function ContextAnalysis({
                   marginBottom: "25px",
                 }}
               >
-                Go to {entityType} page
+                Go to {featureType} page
               </a>
             )}
           </>
@@ -1108,7 +1107,7 @@ function ContextAnalysis({
                 selectedLevel={selectedContextNameInfo.node_level}
                 selectedContextName={selectedContextNameInfo.name}
                 selectedDrugLabel={[...selectedPlotLabels][0]}
-                datasetName={datasetId}
+                datasetGivenId={datasetId}
                 selectedOutGroupType={outgroup.value}
                 selectedTreeType={treeType}
                 getContextExplorerDoseResponsePoints={
@@ -1146,7 +1145,7 @@ function ContextAnalysis({
                         topContextNameInfo={topContextNameInfo}
                         selectedCode={selectedContextNameInfo.subtype_code}
                         boxPlotData={boxPlotData}
-                        entityType={entityType}
+                        featureType={featureType}
                         datasetId={datasetId}
                       />
                     )}
@@ -1158,7 +1157,7 @@ function ContextAnalysis({
                       marginBottom: "15px",
                     }}
                   >
-                    {entityType === "gene" ? "Gene" : "Compound"} Detail
+                    {featureType === "gene" ? "Gene" : "Compound"} Detail
                   </h2>
                   <h4
                     style={{
@@ -1166,12 +1165,12 @@ function ContextAnalysis({
                       margin: "20 20 20 20",
                     }}
                   >
-                    {entityType === "gene" && GENE_DETAIL_NO_GENE_SELECTED}
-                    {entityType === "compound" &&
+                    {featureType === "gene" && GENE_DETAIL_NO_GENE_SELECTED}
+                    {featureType === "compound" &&
                       datasetId ===
                         ContextExplorerDatasets.Prism_oncology_AUC &&
                       ONCREF_DETAIL_NO_COMPOUND_SELECTED}
-                    {entityType === "compound" &&
+                    {featureType === "compound" &&
                       datasetId === ContextExplorerDatasets.Rep_all_single_pt &&
                       REPURPOSING_DETAIL_NO_COMPOUND_SELECTED}
                   </h4>

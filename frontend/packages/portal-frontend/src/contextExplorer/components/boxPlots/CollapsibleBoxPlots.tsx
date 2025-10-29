@@ -26,7 +26,7 @@ interface Props {
   topContextNameInfo: ContextNameInfo | null;
   selectedCode: string | undefined;
   boxPlotData: ContextPlotBoxData | null;
-  entityType: string;
+  featureType: string;
   datasetId: ContextExplorerDatasets;
   urlPrefix?: string;
   tab?: string;
@@ -37,7 +37,7 @@ function CollapsibleBoxPlots({
   topContextNameInfo,
   selectedCode,
   boxPlotData,
-  entityType,
+  featureType,
   datasetId,
   urlPrefix = undefined,
   tab = undefined,
@@ -58,7 +58,9 @@ function CollapsibleBoxPlots({
 
   const drugDottedLine = boxPlotData?.drug_dotted_line;
   const EntityBoxColorList =
-    entityType === "gene" ? GeneEntityBoxColorList : CompoundEntityBoxColorList;
+    featureType === "gene"
+      ? GeneEntityBoxColorList
+      : CompoundEntityBoxColorList;
 
   useEffect(() => {
     if (boxPlotData) {
@@ -241,7 +243,7 @@ function CollapsibleBoxPlots({
           selectedContextBoxData={selectedContextBoxData}
           handleSetMainPlotElement={handleSetMainPlotElement}
           xAxisRange={xAxisRange}
-          entityType={entityType}
+          entityType={featureType}
           urlPrefix={urlPrefix}
           tab={tab}
           drugDottedLine={drugDottedLine}
@@ -268,7 +270,7 @@ function CollapsibleBoxPlots({
                   level0Code={level0Code}
                   xAxisRange={xAxisRange}
                   card={otherCard}
-                  entityType={entityType}
+                  entityType={featureType}
                   drugDottedLine={drugDottedLine}
                   urlPrefix={urlPrefix}
                   tab={tab}
@@ -280,7 +282,7 @@ function CollapsibleBoxPlots({
         <OtherSolidAndHemeBoxPlots
           otherBoxData={otherBoxData}
           xAxisRange={xAxisRange}
-          entityType={entityType}
+          entityType={featureType}
           drugDottedLine={drugDottedLine}
           xAxisTitle={xAxisTitle}
         />

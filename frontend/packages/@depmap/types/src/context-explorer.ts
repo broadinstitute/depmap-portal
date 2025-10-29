@@ -25,7 +25,7 @@ export interface ContextPathInfo {
 }
 
 export type ContextAnalysisTableType = {
-  entity: string[];
+  feature: string[];
   t_pval: number[];
   mean_in: number[];
   mean_out: number[];

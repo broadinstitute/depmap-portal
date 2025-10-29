@@ -258,12 +258,12 @@ export function saveNewContext(
 
 export function initEnrichmentTile(
   elementId: string,
-  entityLabel: string,
-  entityType: string
+  featureLabel: string,
+  featureType: string
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <EnrichmentTile entityLabel={entityLabel} entityType={entityType} />
+      <EnrichmentTile featureLabel={featureLabel} featureType={featureType} />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

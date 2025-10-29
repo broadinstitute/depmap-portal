@@ -162,7 +162,7 @@ const ContextExplorerTabs = ({
                   overlappingDepmapIds.length > 0
                     ? formattedFilteredData.filter(
                         (dataItem: CellLineOverview) =>
-                          overlappingDepmapIds.includes(dataItem.depmapId)
+                          overlappingDepmapIds.includes(dataItem.modelId)
                       )
                     : formattedFilteredData
                 }
@@ -177,7 +177,7 @@ const ContextExplorerTabs = ({
               selectedContextNameInfo={selectedContextNameInfo}
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
-              entityType={"gene"}
+              featureType={"gene"}
               datasetId={ContextExplorerDatasets.Chronos_Combined}
               customInfoImg={customInfoImg}
             />
@@ -192,7 +192,7 @@ const ContextExplorerTabs = ({
                 selectedContextNameInfo={selectedContextNameInfo}
                 topContextNameInfo={topContextNameInfo}
                 treeType={treeType}
-                entityType={"compound"}
+                featureType={"compound"}
                 datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
                 customInfoImg={customInfoImg}
               />
@@ -207,7 +207,7 @@ const ContextExplorerTabs = ({
               selectedContextNameInfo={selectedContextNameInfo}
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
-              entityType={"compound"}
+              featureType={"compound"}
               datasetId={ContextExplorerDatasets.Rep_all_single_pt}
               customInfoImg={customInfoImg}
             />

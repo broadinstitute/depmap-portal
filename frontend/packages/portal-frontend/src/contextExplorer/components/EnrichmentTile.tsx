@@ -11,17 +11,17 @@ import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 import CollapsibleBoxPlots from "./boxPlots/CollapsibleBoxPlots";
 
 interface EnrichmentTileProps {
-  entityLabel: string;
-  entityType: string;
+  featureLabel: string;
+  featureType: string;
 }
 
 export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
-  entityLabel,
-  entityType,
+  featureLabel,
+  featureType,
 }) => {
   const contextExplorerHref = window.location.href
-    .split(encodeURIComponent(entityLabel))[0]
-    .replace(entityType, "context_explorer");
+    .split(encodeURIComponent(featureLabel))[0]
+    .replace(featureType, "context_explorer");
 
   const [tileData, setTileData] = useState<EnrichedLineagesTileData | null>(
     null
@@ -38,8 +38,8 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
     // setBoxplotError(false);
     const boxplotPromise = legacyPortalAPI.getEnrichmentTileData(
       "Lineage",
-      entityType,
-      entityLabel
+      featureType,
+      featureLabel
     );
 
     boxplotLatestPromise.current = boxplotPromise;
@@ -57,7 +57,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
         }
       })
       .finally(() => setIsLoadingBoxplot(false));
-  }, [setIsLoadingBoxplot, entityType, entityLabel]);
+  }, [setIsLoadingBoxplot, featureType, featureLabel]);
 
   const getTabFromDatasetName = useCallback((datasetName: string) => {
     if (datasetName === ContextExplorerDatasets.Chronos_Combined.toString()) {
@@ -105,7 +105,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
   };
 
   const tooltipText =
-    entityType === "gene"
+    featureType === "gene"
       ? "Lineages and/or subtypes that have, on average, a stronger dependency on this gene compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. gene effect difference < -0.25 and min. 1 dependent in-group model)."
       : getCompoundToolTip();
 
@@ -124,7 +124,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
           )}
         </h2>
         <div className="card_padding">
-          {entityType === "gene" ? (
+          {featureType === "gene" ? (
             <h4 className="crispr">{tileData?.dataset_display_name}</h4>
           ) : (
             <h4>{tileData?.dataset_display_name}</h4>
@@ -145,7 +145,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
                 topContextNameInfo={tileData.top_context_name_info}
                 selectedCode={tileData.selected_context_name_info?.subtype_code}
                 boxPlotData={tileData.box_plot_data}
-                entityType={entityType}
+                featureType={featureType}
                 urlPrefix={contextExplorerHref}
                 tab={getTabFromDatasetName(tileData.dataset_name)}
                 datasetId={

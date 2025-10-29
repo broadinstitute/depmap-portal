@@ -498,7 +498,7 @@ class ContextDoseCurves(Resource):
         description="",
     )  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
-        dataset_name = request.args.get("dataset_name")
+        dataset_given_id = request.args.get("dataset_given_id")
         entity_full_label = request.args.get("entity_full_label")
         subtype_code = request.args.get("subtype_code")
         level = request.args.get("level")
@@ -506,7 +506,7 @@ class ContextDoseCurves(Resource):
         tree_type = request.args.get("tree_type")
 
         dose_curve_info = dose_curve_utils.get_context_dose_curves(
-            dataset_given_id=dataset_name,
+            dataset_given_id=dataset_given_id,
             feature_full_label=entity_full_label,
             subtype_code=subtype_code,
             level=level,

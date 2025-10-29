@@ -10,7 +10,7 @@ interface DoseCurvesTileProps {
   subtypeCode: string;
   selectedLevel: number;
   selectedOutGroupType: string;
-  datasetName: string;
+  datasetGivenId: string;
   selectedTreeType: string;
   getContextExplorerDoseResponsePoints: (
     datasetName: string,
@@ -29,7 +29,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
     selectedContextName,
     selectedLevel,
     selectedOutGroupType,
-    datasetName,
+    datasetGivenId: datasetName,
     selectedTreeType,
     getContextExplorerDoseResponsePoints,
   } = props;
