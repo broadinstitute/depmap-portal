@@ -1,6 +1,6 @@
 from cmath import nan
 import os
-from depmap.compound.models import CompoundExperiment
+from depmap.compound.models import Compound
 from depmap.context_explorer.models import ContextAnalysis
 from depmap.gene.models import Gene
 from depmap.utilities.caching import LazyCache
@@ -9,7 +9,6 @@ from loader.dataset_loader.biomarker_loader import _batch_load
 import pandas as pd
 import numpy as np
 from depmap.database import db
-from depmap.dataset.models import DependencyDataset
 from depmap.context.models_new import SubtypeContext, SubtypeNode
 from flask import current_app
 
@@ -37,9 +36,7 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
     gene_cache = LazyCache(lambda name: Gene.get_gene_from_rowname(name, must=False))
     context_cache = LazyCache(lambda code: SubtypeContext.get_by_code(code, must=False))
     compound_cache = LazyCache(
-        lambda xref: CompoundExperiment.get_by_xref_full_return_none_if_invalid_id(
-            xref, must=False
-        )
+        lambda compound_id: Compound.get_by_compound_id(compound_id, must=False)
     )
 
     skipped_entity = 0
@@ -53,29 +50,28 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             return num_value
 
     for row in dr:
-        gene = gene_cache.get(row["entity_id"])
-        compound = compound_cache.get(row["entity_id"])
+        gene = gene_cache.get(row["feature_id"])
+        compound = compound_cache.get(row["feature_id"])
 
-        # HACK until I can figure out the norm for handling PRC- prefixed compounds.
         if gene is None and compound is None:
-            entity_id = row["entity_id"]
-            compound = compound_cache.get(f"BRD:{entity_id}")
+            feature_id = row["feature_id"]
+            compound = compound_cache.get(feature_id)
 
         if gene is None and compound is None:
             skipped_entity += 1
             log_data_issue(
                 "ContextAnalysis",
-                "Missing entity",
-                identifier=row["entity_id"],
+                "Missing feature",
+                identifier=row["feature_id"],
                 id_type="entity",
             )
             continue
 
         entity_id = None
         if gene is not None:
-            entity_id = gene.entity_id
+            entity_id = gene.entrez_id
         else:
-            entity_id = compound.entity_id
+            entity_id = compound.compound_id
 
         context = context_cache.get(row["subtype_code"])
 
@@ -89,26 +85,11 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             )
             continue
 
-        # TODO: Is there a better way to do this??
-        dependency_dataset = row["dataset"]
-
-        dataset_str_to_name_mapping = {
-            "CRISPR": "Chronos_Combined",
-            "PRISMOncRef": "Prism_oncology_AUC",
-            "PRISMRepurposing": "Rep_all_single_pt",
-        }
-
-        dataset_name = DependencyDataset.DependencyEnum(
-            dataset_str_to_name_mapping[dependency_dataset]
-        ).value
-        dataset = DependencyDataset.get_dataset_by_name(dataset_name)
-        assert dataset is not None, f"Could not find {dataset_name}"
-
         analysis = dict(
             # TODO: Eventually subtype_code should come from the context cache
             subtype_code=row["subtype_code"],
-            entity_id=entity_id,
-            dependency_dataset_id=dataset.dependency_dataset_id,
+            feature_id=entity_id,
+            dataset_given_id=row["dataset"],
             out_group=row["out_group"],
             t_pval=float(_to_nan(row["t_pval"])),
             mean_in=float(_to_nan(row["mean_in"])),

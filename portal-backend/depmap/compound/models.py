@@ -169,7 +169,9 @@ class Compound(Entity):
         return compound_aliases
 
     @staticmethod
-    def get_dose_response_curves(compound_id: str, drc_dataset_label: str):
+    def get_dose_response_curves(
+        compound_id: str, drc_dataset_label: str, model_ids: Optional[List[str]] = None
+    ):
         # Step 1: Get the compound
         compound = Compound.query.filter(
             Compound.compound_id == compound_id
@@ -185,10 +187,27 @@ class Compound(Entity):
         experiment_ids = [exp.entity_id for exp in experiments]
 
         # Step 3: Get all DoseResponseCurves for these experiments and label
-        dose_response_curves = DoseResponseCurve.query.filter(
-            DoseResponseCurve.compound_exp_id.in_(experiment_ids),
-            DoseResponseCurve.drc_dataset_label == drc_dataset_label,
-        ).all()
+        dose_response_curves = []
+        if model_ids:
+            dose_response_curves = (
+                DoseResponseCurve.query.filter(
+                    and_(
+                        DoseResponseCurve.compound_exp_id.in_(experiment_ids),
+                        DoseResponseCurve.depmap_id.in_(model_ids),
+                    )
+                )
+                .join(
+                    CompoundDoseReplicate,
+                    CompoundDoseReplicate.compound_experiment_id
+                    == DoseResponseCurve.compound_exp_id,
+                )
+                .all()
+            )
+        else:
+            dose_response_curves = DoseResponseCurve.query.filter(
+                DoseResponseCurve.compound_exp_id.in_(experiment_ids),
+                DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+            ).all()
 
         return dose_response_curves
 
@@ -378,9 +397,9 @@ class CompoundDoseReplicate(Entity):
         return q.all()
 
     @staticmethod
-    def get_dose_min_max_of_replicates_with_compound_experiment_id(cpd_exp_id):
-        q = CompoundDoseReplicate.query.filter_by(
-            compound_experiment_id=cpd_exp_id
+    def get_dose_min_max_of_replicates_with_compound_id(cpd_id):
+        q = CompoundDoseReplicate.query.join(
+            CompoundExperiment, CompoundExperiment.compound_id == cpd_id
         ).with_entities(
             CompoundDoseReplicate.entity_id,
             func.max(CompoundDoseReplicate.dose).label("max_dose"),

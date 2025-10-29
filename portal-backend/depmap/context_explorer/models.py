@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import json
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 import sqlalchemy
 from sqlalchemy import and_, or_, func, desc
@@ -21,6 +22,16 @@ from depmap.database import (
     db,
     relationship,
 )
+
+
+class ContextExplorerDatasets(enum.Enum):
+    Rep_all_single_pt = "Rep_all_single_pt"
+    Prism_oncology_AUC = "Prism_oncology_AUC"
+    Chronos_Combined = "Chronos_Combined"
+
+    @staticmethod
+    def values():
+        return {x.value for x in ContextExplorerDatasets}
 
 
 @dataclass
@@ -58,17 +69,17 @@ class ContextPlotBoxData:
     insignificant_heme_data: BoxData
     insignificant_solid_data: BoxData
     drug_dotted_line: Any
-    entity_label: str
-    entity_overview_page_label: str
+    feature_label: str
+    feature_overview_page_label: str
     dataset_units: str
 
 
 @dataclass
 class NodeEntityData:
-    entity_id: int
-    entity_label: str
-    entity_full_row_of_values: pd.Series
-    entity_overview_page_label: str
+    feature_id: int
+    label: str
+    feature_full_row_of_values: pd.Series
+    feature_overview_page_label: str
 
 
 @dataclass
@@ -187,25 +198,21 @@ class ContextNode(dict):
 def get_context_analysis_query(
     subtype_code: str,
     out_group: str,
-    entity_type: Literal["gene", "compound"],
-    dataset_name: str,
+    feature_type: Literal["gene", "compound"],
+    dataset_given_id: str,
 ):
-    assert dataset_name in DependencyEnum.values()
+    assert dataset_given_id in ContextExplorerDatasets.values()
 
-    dependency_dataset = DependencyDataset.get_dataset_by_name(dataset_name)
-    assert dependency_dataset is not None
-    dependency_dataset_id = dependency_dataset.dependency_dataset_id
-
-    if entity_type == "gene":
+    if feature_type == "gene":
         query = (
             ContextAnalysis.query.filter_by(
                 subtype_code=subtype_code,
                 out_group=out_group,
-                dependency_dataset_id=dependency_dataset_id,
+                dataset_given_id=dataset_given_id,
             )
-            .join(Gene, Gene.entity_id == ContextAnalysis.entity_id)
+            .join(Gene, Gene.entity_id == ContextAnalysis.feature_id)
             .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("entity"),
+                sqlalchemy.column('"gene".label', is_literal=True).label("entity"),
                 sqlalchemy.column('"gene".entrez_id', is_literal=True).label(
                     "entrez_id"
                 ),
@@ -216,11 +223,11 @@ def get_context_analysis_query(
             ContextAnalysis.query.filter_by(
                 subtype_code=subtype_code,
                 out_group=out_group,
-                dependency_dataset_id=dependency_dataset_id,
+                dataset_given_id=dataset_given_id,
             )
-            .join(Compound, Compound.entity_id == ContextAnalysis.entity_id,)
+            .join(Compound, Compound.entity_id == ContextAnalysis.feature_id)
             .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
+                sqlalchemy.column('"compound".label', is_literal=True).label("entity")
             )
         )
 
@@ -234,9 +241,12 @@ class BoxPlotTypes(enum.Enum):
 
 class ContextAnalysis(Model):
     __table_args__ = (
-        db.Index("context_analysis_idx_1", "entity_id", "out_group"),
+        db.Index("context_analysis_idx_1", "feature_id", "out_group"),
         db.UniqueConstraint(
-            "subtype_code", "out_group", "entity_id", name="uc_context_outgroup_entity",
+            "subtype_code",
+            "out_group",
+            "feature_id",
+            name="uc_context_outgroup_entity",
         ),
     )
     context_analysis_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -247,24 +257,10 @@ class ContextAnalysis(Model):
     subtype_context = relationship(
         "SubtypeContext", foreign_keys="ContextAnalysis.subtype_code", uselist=False
     )
-    entity_id = Column(
-        Integer, ForeignKey("entity.entity_id"), nullable=False, index=True
-    )
-    entity = relationship(
-        "Entity", foreign_keys="ContextAnalysis.entity_id", uselist=False
-    )
+    # A gene's feature id or a compound_id å
+    feature_id = Column(String, nullable=False, index=True)
 
-    dependency_dataset_id = Column(
-        Integer,
-        ForeignKey("dependency_dataset.dependency_dataset_id"),
-        nullable=False,
-        index=True,
-    )
-    dataset = relationship(
-        "DependencyDataset",
-        foreign_keys="ContextAnalysis.dependency_dataset_id",
-        uselist=False,
-    )
+    dataset_given_id = Column(String, nullable=False)
 
     out_group = Column(String, nullable=False)
     t_pval = Column(Float)
@@ -280,14 +276,13 @@ class ContextAnalysis(Model):
     selectivity_val = Column(Float)
 
     def to_dict(self):
-        entity_label = self.entity.label
-        if self.entity.type == "gene":
-            gene = Gene.get_by_id(self.entity_id)
-            if gene.entrez_id:
-                entity_label = f"{entity_label} ({gene.entrez_id})"
+        feature_labels_by_id = data_access.get_dataset_feature_labels_by_id(
+            self.dataset_given_id
+        )
+        feature_label = feature_labels_by_id.get(self.feature_id, self.feature_id)
 
         return {
-            "entity": entity_label,
+            "feature": feature_label,
             "subtype_code": self.subtype_code,
             "dataset_name": self.dataset_name,
             "out_group": self.out_group,
@@ -306,28 +301,15 @@ class ContextAnalysis(Model):
 
     @property
     def dataset_name(self):
-        dependency_dataset = DependencyDataset.get_dataset_by_id(
-            self.dependency_dataset_id
-        )
-        assert dependency_dataset is not None
-        return dependency_dataset.name
+        return data_access.get_dataset_label(self.dataset_given_id)
 
     @staticmethod
     def get_enriched_context_cell_line_p_value_effect_size(
-        entity_id, dataset_id, entity_type, negative_only=True
+        feature_id, dataset_id, feature_type, negative_only=True
     ):
-        def _get_compound_min_effect_size_by_dependency_dataset_name(
-            dependency_dataset_id,
-        ):
-            dependency_dataset = DependencyDataset.get_dataset_by_id(
-                dataset_id=dependency_dataset_id
-            )
-            assert dependency_dataset is not None
+        def _get_compound_min_effect_size_by_dependency_dataset_name():
 
-            if (
-                dependency_dataset.name
-                == DependencyDataset.DependencyEnum.Prism_oncology_AUC
-            ):
+            if dataset_id == ContextExplorerDatasets.Prism_oncology_AUC:
                 return 0.1
             else:
                 return 0.5
@@ -335,25 +317,23 @@ class ContextAnalysis(Model):
         base_query = (
             ContextAnalysis.query.filter(
                 and_(
-                    ContextAnalysis.entity_id == entity_id,
-                    ContextAnalysis.dependency_dataset_id == dataset_id,
+                    ContextAnalysis.feature_id == feature_id,
+                    ContextAnalysis.dataset_given_id == dataset_id,
                     ContextAnalysis.out_group == "All Others",
                     ContextAnalysis.t_qval <= 0.05,
                     ContextAnalysis.frac_dep_in >= 0.1,
                     func.abs(ContextAnalysis.effect_size) >= 0.25,
                 )
             )
-            if entity_type == "gene"
+            if feature_type == "gene"
             else ContextAnalysis.query.filter(
                 and_(
-                    ContextAnalysis.entity_id == entity_id,
-                    ContextAnalysis.dependency_dataset_id == dataset_id,
+                    ContextAnalysis.feature_id == feature_id,
+                    ContextAnalysis.dataset_given_id == dataset_id,
                     ContextAnalysis.out_group == "All Others",
                     ContextAnalysis.t_qval <= 0.05,
                     func.abs(ContextAnalysis.effect_size)
-                    >= _get_compound_min_effect_size_by_dependency_dataset_name(
-                        dataset_id
-                    ),
+                    >= _get_compound_min_effect_size_by_dependency_dataset_name(),
                 )
             )
         )
@@ -402,14 +382,14 @@ class ContextAnalysis(Model):
     def find_context_analysis_by_subtype_code_out_group(
         subtype_code: str,
         out_group: str,
-        entity_type: Literal["gene", "compound"],
-        dataset_name: str,
+        feature_type: Literal["gene", "compound"],
+        dataset_given_id: str,
     ):
         query = get_context_analysis_query(
             subtype_code=subtype_code,
             out_group=out_group,
-            entity_type=entity_type,
-            dataset_name=dataset_name,
+            entity_type=feature_type,
+            dataset_given_id=dataset_given_id,
         )
         context_analysis_df = pd.read_sql(query.statement, query.session.connection())
 
@@ -418,8 +398,8 @@ class ContextAnalysis(Model):
     @staticmethod
     def get_context_dependencies(
         tree_type: str,
-        entity_id: int,
-        dataset_name: str,
+        feature_id: int,
+        dataset_given_id: str,
         entity_type: str,
         max_fdr: float,
         min_abs_effect_size: float,
@@ -427,18 +407,14 @@ class ContextAnalysis(Model):
         show_positive_effect_sizes: bool,
         out_group: str = "All Others",
     ):
-        assert dataset_name in DependencyEnum.values()
-
-        dependency_dataset = DependencyDataset.get_dataset_by_name(dataset_name)
-        assert dependency_dataset is not None
-        dependency_dataset_id = dependency_dataset.dependency_dataset_id
+        assert dataset_given_id in ContextExplorerDatasets.values()
 
         if entity_type == "gene":
             filters = (
                 and_(
                     ContextAnalysis.out_group == out_group,
-                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.dataset_given_id == dataset_given_id,
+                    ContextAnalysis.feature_id == feature_id,
                     ContextAnalysis.t_qval <= max_fdr,
                     func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
                     ContextAnalysis.frac_dep_in >= min_frac_dep_in,
@@ -446,8 +422,8 @@ class ContextAnalysis(Model):
                 if show_positive_effect_sizes
                 else and_(
                     ContextAnalysis.out_group == out_group,
-                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.dataset_given_id == dataset_given_id,
+                    ContextAnalysis.feature_id == feature_id,
                     ContextAnalysis.t_qval <= max_fdr,
                     ContextAnalysis.effect_size < 0,
                     func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
@@ -478,16 +454,16 @@ class ContextAnalysis(Model):
             filters = (
                 and_(
                     ContextAnalysis.out_group == out_group,
-                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.dataset_given_id == dataset_given_id,
+                    ContextAnalysis.feature_id == feature_id,
                     ContextAnalysis.t_qval <= max_fdr,
                     func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
                 )
                 if show_positive_effect_sizes
                 else and_(
                     ContextAnalysis.out_group == out_group,
-                    ContextAnalysis.dependency_dataset_id == dependency_dataset_id,
-                    ContextAnalysis.entity_id == entity_id,
+                    ContextAnalysis.dataset_given_id == dataset_given_id,
+                    ContextAnalysis.feature_id == feature_id,
                     ContextAnalysis.t_qval <= max_fdr,
                     func.abs(ContextAnalysis.effect_size) >= min_abs_effect_size,
                     ContextAnalysis.effect_size < 0,

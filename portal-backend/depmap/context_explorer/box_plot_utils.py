@@ -24,25 +24,25 @@ from depmap.context_explorer.models import ContextPlotBoxData, BoxData, NodeEnti
 
 
 def _get_node_entity_data(
-    dataset_name: str, entity_type: str, entity_full_label: str
+    dataset_given_id: str, feature_type: str, entity_full_label: str
 ) -> NodeEntityData:
-    entity_id_and_label = utils.get_entity_id_from_entity_full_label(
-        entity_type=entity_type, entity_full_label=entity_full_label
+    feature_id_and_label = utils.get_feature_id_from_full_label(
+        feature_type=feature_type, feature_full_label=entity_full_label
     )
-    entity_id = entity_id_and_label["entity_id"]
-    entity_label = entity_id_and_label["label"]
-    entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
+    feature_id = feature_id_and_label["feature_id"]
+    label = feature_id_and_label["label"]
+    entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_name=dataset_name, label=entity_label
+        dataset_given_id=dataset_given_id, label=label
     )
     entity_full_row_of_values.dropna(inplace=True)
 
     return NodeEntityData(
-        entity_id=entity_id,
-        entity_label=entity_label,
-        entity_full_row_of_values=entity_full_row_of_values,
-        entity_overview_page_label=entity_overview_page_label,
+        feature_id=feature_id,
+        label=label,
+        feature_full_row_of_values=entity_full_row_of_values,
+        feature_overview_page_label=entity_overview_page_label,
     )
 
 
@@ -378,15 +378,15 @@ def get_context_plot_box_data(
     tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
     node_entity_data = _get_node_entity_data(
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        dataset_given_id=dataset_name,
+        feature_type=entity_type,
         entity_full_label=entity_label,
     )
 
-    entity_full_row_of_values = node_entity_data.entity_full_row_of_values
+    entity_full_row_of_values = node_entity_data.feature_full_row_of_values
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_name=dataset_name, label=node_entity_data.entity_label
+        dataset_given_id=dataset_name, label=node_entity_data.entity_label
     )
     entity_full_row_of_values.dropna(inplace=True)
 
@@ -466,8 +466,8 @@ def get_context_plot_box_data(
         insignificant_heme_data=solid_and_heme_box_data.heme,
         insignificant_solid_data=solid_and_heme_box_data.solid,
         drug_dotted_line=drug_dotted_line,
-        entity_label=node_entity_data.entity_label,
-        entity_overview_page_label=node_entity_data.entity_overview_page_label,
+        feature_label=node_entity_data.entity_label,
+        feature_overview_page_label=node_entity_data.feature_overview_page_label,
         dataset_units=dataset_units,
     )
 
@@ -516,8 +516,8 @@ def get_organized_contexts(
         insignificant_heme_data=context_box_plot_data.insignificant_heme_data,
         insignificant_solid_data=context_box_plot_data.insignificant_solid_data,
         drug_dotted_line=context_box_plot_data.drug_dotted_line,
-        entity_label=context_box_plot_data.entity_label,
-        entity_overview_page_label=context_box_plot_data.entity_overview_page_label,
+        feature_label=context_box_plot_data.feature_label,
+        feature_overview_page_label=context_box_plot_data.feature_overview_page_label,
         dataset_units=dataset_units,
     )
 
@@ -600,15 +600,15 @@ def get_compound_enriched_lineages_entity_id_and_dataset_name(
 def get_data_to_show_if_no_contexts_significant(
     entity_type: str, entity_label: str, tree_type: str, dataset_name: str
 ):
-    entity_id_and_label = utils.get_entity_id_from_entity_full_label(
-        entity_type=entity_type, entity_full_label=entity_label
+    entity_id_and_label = utils.get_feature_id_from_full_label(
+        feature_type=entity_type, feature_full_label=entity_label
     )
     entity_label = entity_id_and_label["label"]
     entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
 
     entity_overview_page_label = entity_id_and_label["entity_overview_page_label"]
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_name=dataset_name, label=entity_label
+        dataset_given_id=dataset_name, label=entity_label
     )
     entity_full_row_of_values.dropna(inplace=True)
     drug_dotted_line = (
@@ -635,8 +635,8 @@ def get_data_to_show_if_no_contexts_significant(
         insignificant_heme_data=heme_box_plot_data,
         insignificant_solid_data=solid_box_plot_data,
         drug_dotted_line=drug_dotted_line,
-        entity_label=entity_label,
-        entity_overview_page_label=entity_overview_page_label,
+        feature_label=entity_label,
+        feature_overview_page_label=entity_overview_page_label,
         dataset_units=dataset_units,
     )
 

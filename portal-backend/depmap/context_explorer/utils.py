@@ -13,9 +13,11 @@ from depmap.gene.models import Gene
 import re
 
 
-def get_full_row_of_values_and_depmap_ids(dataset_name: str, label: str) -> pd.Series:
+def get_full_row_of_values_and_depmap_ids(
+    dataset_given_id: str, label: str
+) -> pd.Series:
     full_row_of_values = data_access.get_row_of_values(
-        dataset_id=dataset_name, feature=label
+        dataset_id=dataset_given_id, feature=label
     )
 
     if len(full_row_of_values.cell_lines) == 0:
@@ -65,38 +67,31 @@ def get_compound_experiment(entity_full_label: str):
     return compound_experiment
 
 
-def get_entity_id_from_entity_full_label(
-    entity_type: str, entity_full_label: str
-) -> dict:
-    entity = None
-    if entity_type == "gene":
-        m = re.match("\\S+ \\((\\d+)\\)", entity_full_label)
+# For genes, full label refers to gene_symbol (entrez_id)
+def get_feature_id_from_full_label(feature_type: str, feature_full_label: str) -> dict:
+    if feature_type == "gene":
+        m = re.match("\\S+ \\((\\d+)\\)", feature_full_label)
 
         gene = None
         if m is not None:
             entrez_id = int(m.group(1))
             gene = Gene.get_gene_by_entrez(entrez_id)
         else:
-            gene = Gene.get_by_label(entity_full_label)
+            gene = Gene.get_by_label(feature_full_label)
 
         assert gene is not None
         label = gene.label
         entity_overview_page_label = gene.label
-        entity = gene
-        entity_id = entity.entity_id
+        feature_id = gene.entrez_id
 
     else:
-        compound_experiment = get_compound_experiment(
-            entity_full_label=entity_full_label
-        )
-        entity_id = compound_experiment.entity_id
-        label = CompoundExperiment.get_by_entity_id(entity_id).label
-        entity_overview_page_label = Compound.get_by_id(
-            compound_experiment.compound_id
-        ).label
+        compound = Compound.get_by_compound_id(feature_full_label)
+        label = compound.label
+        entity_overview_page_label = compound.label
+        feature_id = compound.compound_id  # e.g. DPC-000001
 
     return {
-        "entity_id": entity_id,
+        "feature_id": feature_id,
         "label": label,
         "entity_overview_page_label": entity_overview_page_label,
     }

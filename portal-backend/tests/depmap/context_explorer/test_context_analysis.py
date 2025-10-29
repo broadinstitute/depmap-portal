@@ -9,7 +9,7 @@ import pytest
 from typing import List, Literal, Optional
 from depmap.context_explorer.dose_curve_utils import get_context_dose_curves
 from depmap.context_explorer.utils import (
-    get_entity_id_from_entity_full_label,
+    get_feature_id_from_full_label,
     get_full_row_of_values_and_depmap_ids,
     _get_compound_experiment_id_from_entity_label,
 )
@@ -638,8 +638,8 @@ def test_get_dose_curves(empty_db_mock_downloads):
     selected_entity_label = compound_a.label
 
     dose_curve_info = get_context_dose_curves(
-        dataset_name=dataset_name,
-        entity_full_label=selected_entity_label,
+        dataset_given_id=dataset_name,
+        feature_full_label=selected_entity_label,
         subtype_code="ES",
         level=1,
         out_group_type="All Others",
@@ -918,8 +918,8 @@ def test_get_dose_curves(empty_db_mock_downloads):
     }
     # Test other bone outgroup
     dose_curve_info = get_context_dose_curves(
-        dataset_name=dataset_name,
-        entity_full_label=selected_entity_label,
+        dataset_given_id=dataset_name,
+        feature_full_label=selected_entity_label,
         subtype_code="ES",
         level=1,
         out_group_type="BONE",
@@ -1072,7 +1072,7 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_name):
     selected_entity_label = gene_a.label if use_genes else compound_a.label
 
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_name=dataset_name, label=selected_entity_label
+        dataset_given_id=dataset_name, label=selected_entity_label
     )
     entity_full_row_of_values.dropna(inplace=True)
 
@@ -1094,8 +1094,8 @@ def _get_box_plot_data(
     min_frac_dep_in: float = 0.1,
 ) -> Optional[dict]:
 
-    entity_id_and_label = get_entity_id_from_entity_full_label(
-        entity_type=entity_type, entity_full_label=selected_entity_label,
+    entity_id_and_label = get_feature_id_from_full_label(
+        feature_type=entity_type, feature_full_label=selected_entity_label,
     )
     entity_id = entity_id_and_label["entity_id"]
     entity_label = entity_id_and_label["label"]

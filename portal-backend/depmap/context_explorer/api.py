@@ -4,7 +4,7 @@ import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound
 from depmap.context_explorer.utils import (
-    get_entity_id_from_entity_full_label,
+    get_feature_id_from_full_label,
     get_path_to_node,
 )
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
@@ -27,7 +27,7 @@ namespace = Namespace("context_explorer", description="View context data in the 
 DATA_AVAIL_FILE = "data_avail.csv"
 
 GENE_INOUT_ANALYSIS_COLS = {
-    "entity": str,
+    "feature": str,
     "t_pval": float,
     "mean_in": float,
     "mean_out": float,
@@ -45,7 +45,7 @@ GENE_INOUT_ANALYSIS_COLS = {
 }
 
 DRUG_INOUT_ANALYSIS_COLS = {
-    "entity": str,
+    "feature": str,
     "t_pval": float,
     "mean_in": float,
     "mean_out": float,
@@ -413,8 +413,8 @@ class ContextSummary(
 def _get_analysis_data_table(
     in_group: str,
     out_group_type: str,
-    entity_type: Literal["gene", "compound"],
-    dataset_name: str,
+    feature_type: Literal["gene", "compound"],
+    dataset_given_id: str,
 ):
     if in_group == "All":
         return None
@@ -422,19 +422,19 @@ def _get_analysis_data_table(
     data = ContextAnalysis.find_context_analysis_by_subtype_code_out_group(
         subtype_code=in_group,
         out_group=out_group_type,
-        entity_type=entity_type,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        dataset_given_id=dataset_given_id,
     )
 
     if data.empty:
         return None
 
-    if entity_type == "gene":
+    if feature_type == "gene":
         data["label"] = data["entity"]
         data["entity"] = data[["entity", "entrez_id"]].agg(
             lambda a: a[0] + f" ({str(a[1])})", axis=1
         )
-    elif entity_type == "compound":
+    elif feature_type == "compound":
 
         def get_compound_label(compound_id: str):
             compound = Compound.get_by_compound_id(compound_id)
@@ -456,7 +456,7 @@ def _get_analysis_data_table(
     # TODO: Add test for this endpoint to assert the proper columns are returned
     #  depending on "gene" or "compound" entity_type
     in_out_analysis_cols = (
-        GENE_INOUT_ANALYSIS_COLS if entity_type == "gene" else DRUG_INOUT_ANALYSIS_COLS
+        GENE_INOUT_ANALYSIS_COLS if feature_type == "gene" else DRUG_INOUT_ANALYSIS_COLS
     )
 
     data_table = {
@@ -477,19 +477,16 @@ class AnalysisData(Resource):
         # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
         in_group = request.args.get("in_group")
         out_group_type = request.args.get("out_group_type")
-        entity_type = request.args.get("entity_type")
+        feature_type = request.args.get("feature_type")
 
-        # Can be either
-        # DependencyEnum.Chronos_Combined.name
-        # Repurposing aka DependencyEnum.Rep_all_single_pt.name
-        # OncRef aka DependencyEnum.Prism_oncology_AUC.name
-        dataset_name = request.args.get("dataset_name")
+        # Can be anything in ContextExplorerDatasets (portal-backend/depmap/context_explorer/models.py)
+        dataset_given_id = request.args.get("dataset_given_id")
 
         data_table = _get_analysis_data_table(
             in_group=in_group,
             out_group_type=out_group_type,
-            entity_type=entity_type,
-            dataset_name=dataset_name,
+            feature_type=feature_type,
+            dataset_given_id=dataset_given_id,
         )
 
         return data_table
@@ -509,8 +506,8 @@ class ContextDoseCurves(Resource):
         tree_type = request.args.get("tree_type")
 
         dose_curve_info = dose_curve_utils.get_context_dose_curves(
-            dataset_name=dataset_name,
-            entity_full_label=entity_full_label,
+            dataset_given_id=dataset_name,
+            feature_full_label=entity_full_label,
             subtype_code=subtype_code,
             level=level,
             out_group_type=out_group_type,
@@ -559,8 +556,8 @@ class ContextBoxPlotData(Resource):
     def get(self):
         selected_subtype_code = request.args.get("selected_subtype_code")
         tree_type = request.args.get("tree_type")
-        dataset_name = request.args.get("dataset_name")
-        entity_type = request.args.get("entity_type")
+        dataset_given_id = request.args.get("dataset_given_id")
+        feature_type = request.args.get("feature_type")
         entity_full_label = request.args.get("entity_full_label")
         max_fdr = request.args.get("max_fdr", type=float)
         min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
@@ -569,17 +566,17 @@ class ContextBoxPlotData(Resource):
 
         show_positive_effect_sizes = show_positive_effect_sizes == "true"
 
-        entity_id_and_label = get_entity_id_from_entity_full_label(
-            entity_type=entity_type, entity_full_label=entity_full_label,
+        entity_id_and_label = get_feature_id_from_full_label(
+            feature_type=feature_type, feature_full_label=entity_full_label,
         )
         entity_id = entity_id_and_label["entity_id"]
         entity_label = entity_id_and_label["label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
-            entity_type=entity_type,
+            feature_type=feature_type,
             entity_id=entity_id,
-            dataset_name=dataset_name,
+            dataset_given_id=dataset_given_id,
             max_fdr=max_fdr,
             min_abs_effect_size=min_abs_effect_size,
             min_frac_dep_in=min_frac_dep_in,
