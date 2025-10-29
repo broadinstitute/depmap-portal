@@ -1101,9 +1101,9 @@ def _get_box_plot_data(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_id=entity_id,
+        dataset_given_id=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=min_frac_dep_in,

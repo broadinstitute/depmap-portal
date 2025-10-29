@@ -321,9 +321,9 @@ def test_get_sig_context_dataframe_level_0_significant(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_id=entity_id,
+        dataset_given_id=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -367,9 +367,9 @@ def test_get_sig_context_dataframe_level_0_not_significant(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_id=entity_id,
+        dataset_given_id=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -452,9 +452,9 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_id=entity_id,
+        dataset_given_id=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -465,9 +465,9 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_id=entity_id,
+        dataset_given_id=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -506,9 +506,9 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=9999,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_id=9999,
+        dataset_given_id=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=1,
         min_frac_dep_in=frac_dep_in,
@@ -552,9 +552,9 @@ def test_get_context_plot_data(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_id=entity_id,
+        dataset_given_id=dataset_name,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,

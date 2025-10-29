@@ -277,9 +277,9 @@ def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]
 
 def get_sig_context_dataframe(
     tree_type: str,
-    entity_type: str,
-    entity_id: int,
-    dataset_name: str,
+    feature_type: str,
+    feature_id: int,
+    dataset_given_id: str,
     max_fdr: float = 0.1,
     min_abs_effect_size: float = 0.25,
     min_frac_dep_in: float = 0.1,
@@ -293,16 +293,16 @@ def get_sig_context_dataframe(
             min_abs_effect_size,
             min_frac_dep_in,
         ) = enrichment_tile_filters.get_enrichment_tile_filters(
-            entity_type=entity_type, dataset_name=dataset_name
+            feature_type=feature_type, dataset_given_id=dataset_given_id
         )
 
     # If this doesn't find the node, something is wrong with how we
     # loaded the SubtypeNode database table data.
     sig_contexts = ContextAnalysis.get_context_dependencies(
         tree_type=tree_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=min_frac_dep_in,
@@ -530,9 +530,9 @@ def get_organized_contexts(
 
 
 def get_gene_enriched_lineages_entity_id_and_dataset_name(
-    entity_label: str,
+    feature_id: str,
 ) -> Optional[dict]:
-    gene = Gene.get_by_label(entity_label)
+    gene = Gene.get_gene_by_entrez(feature_id)
     dataset = get_dependency_dataset_for_entity(
         DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.entity_id
     )
@@ -542,8 +542,9 @@ def get_gene_enriched_lineages_entity_id_and_dataset_name(
     dataset_display_name = dataset.display_name
 
     return {
-        "entity_id": gene.entity_id,
-        "dataset_name": dataset_name,
+        "feature_id": gene.entrez_id,
+        "dataset_given_id": dataset_name,
+        "label": gene.label,
         "dataset_display_name": dataset_display_name,
     }
 

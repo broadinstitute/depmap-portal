@@ -575,7 +575,7 @@ class ContextBoxPlotData(Resource):
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
             feature_type=feature_type,
-            entity_id=entity_id,
+            feature_id=entity_id,
             dataset_given_id=dataset_given_id,
             max_fdr=max_fdr,
             min_abs_effect_size=min_abs_effect_size,
@@ -632,9 +632,9 @@ class EnrichedLineagesTile(
         feature_id = request.args.get("feature_id")
         feature_type = request.args.get("feature_type")
 
-        entity_id_and_dataset_name = (
+        feature_id_and_dataset_given_id = (
             box_plot_utils.get_gene_enriched_lineages_entity_id_and_dataset_name(
-                entity_label=entity_label
+                feature_id=feature_id
             )
             if feature_type == "gene"
             else box_plot_utils.get_compound_enriched_lineages_feature_id_and_dataset_name(
@@ -642,21 +642,21 @@ class EnrichedLineagesTile(
             )
         )
 
-        if entity_id_and_dataset_name is None:
+        if feature_id_and_dataset_given_id is None:
             return None
 
-        entity_id = entity_id_and_dataset_name["entity_id"]
-        dataset_name = entity_id_and_dataset_name["dataset_name"]
-        dataset_display_name = entity_id_and_dataset_name["dataset_display_name"]
+        feature_id = feature_id_and_dataset_given_id["feature_id"]
+        dataset_given_id = feature_id_and_dataset_given_id["dataset_given_id"]
+        dataset_display_name = feature_id_and_dataset_given_id["dataset_display_name"]
 
         if feature_type == "compound":
-            entity_label = entity_id_and_dataset_name["compound_experiment_label"]
+            entity_label = feature_id_and_dataset_given_id["compound_experiment_label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            dataset_name=dataset_name,
+            feature_type=feature_type,
+            feature_id=feature_id,
+            dataset_given_id=dataset_given_id,
             use_enrichment_tile_filters=True,
         )
 

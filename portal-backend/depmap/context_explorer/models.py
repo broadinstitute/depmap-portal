@@ -388,7 +388,7 @@ class ContextAnalysis(Model):
         query = get_context_analysis_query(
             subtype_code=subtype_code,
             out_group=out_group,
-            entity_type=feature_type,
+            feature_type=feature_type,
             dataset_given_id=dataset_given_id,
         )
         context_analysis_df = pd.read_sql(query.statement, query.session.connection())
@@ -400,7 +400,7 @@ class ContextAnalysis(Model):
         tree_type: str,
         feature_id: int,
         dataset_given_id: str,
-        entity_type: str,
+        feature_type: str,
         max_fdr: float,
         min_abs_effect_size: float,
         min_frac_dep_in: float,
@@ -409,7 +409,7 @@ class ContextAnalysis(Model):
     ):
         assert dataset_given_id in ContextExplorerDatasets.values()
 
-        if entity_type == "gene":
+        if feature_type == "gene":
             filters = (
                 and_(
                     ContextAnalysis.out_group == out_group,
