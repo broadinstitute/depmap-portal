@@ -566,16 +566,16 @@ class ContextBoxPlotData(Resource):
 
         show_positive_effect_sizes = show_positive_effect_sizes == "true"
 
-        entity_id_and_label = get_feature_id_from_full_label(
+        feature_id_and_label = get_feature_id_from_full_label(
             feature_type=feature_type, feature_full_label=entity_full_label,
         )
-        entity_id = entity_id_and_label["entity_id"]
-        entity_label = entity_id_and_label["label"]
+        feature_id = feature_id_and_label["feature_id"]
+        feature_label = feature_id_and_label["label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
             feature_type=feature_type,
-            feature_id=entity_id,
+            feature_id=feature_id,
             dataset_given_id=dataset_given_id,
             max_fdr=max_fdr,
             min_abs_effect_size=min_abs_effect_size,
@@ -586,9 +586,9 @@ class ContextBoxPlotData(Resource):
         context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,
             sig_contexts=sig_contexts,
-            feature_type=entity_type,
-            feature_label=entity_label,
-            dataset_given_id=dataset_name,
+            feature_type=feature_type,
+            feature_label=feature_label,
+            dataset_given_id=dataset_given_id,
             tree_type=tree_type,
         )
 
