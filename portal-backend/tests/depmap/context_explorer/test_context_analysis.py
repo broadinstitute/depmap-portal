@@ -1112,9 +1112,9 @@ def _get_box_plot_data(
     context_box_plot_data = box_plot_utils.get_organized_contexts(
         selected_subtype_code=selected_subtype_code,
         sig_contexts=sig_contexts,
-        entity_type=entity_type,
-        entity_label=entity_label,
-        dataset_name=dataset_name,
+        feature_type=entity_type,
+        feature_label=entity_label,
+        dataset_given_id=dataset_name,
         tree_type=tree_type,
     )
 

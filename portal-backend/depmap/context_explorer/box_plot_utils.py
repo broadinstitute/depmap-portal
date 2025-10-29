@@ -370,32 +370,30 @@ def get_all_significant_context_codes_ordered_by_significance(
 
 
 def get_context_plot_box_data(
-    dataset_name: str,
-    entity_type: str,
-    entity_label: str,
+    dataset_given_id: str,
+    feature_type: str,
+    feature_label: str,
     sig_contexts: pd.DataFrame,
     level_0: str,
     tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
     node_entity_data = _get_node_entity_data(
-        dataset_given_id=dataset_name,
-        feature_type=entity_type,
-        entity_full_label=entity_label,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
+        entity_full_label=feature_label,
     )
 
     entity_full_row_of_values = node_entity_data.feature_full_row_of_values
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_given_id=dataset_name, label=node_entity_data.entity_label
+        dataset_given_id=dataset_given_id, label=node_entity_data.label
     )
     entity_full_row_of_values.dropna(inplace=True)
 
     drug_dotted_line = (
-        entity_full_row_of_values.mean() if entity_type == "compound" else None
+        entity_full_row_of_values.mean() if feature_type == "compound" else None
     )
 
-    heme_box_plot_data = {}
-    solid_box_plot_data = {}
     other_box_plot_data = []
     ordered_sig_context_codes = (
         []
@@ -456,7 +454,7 @@ def get_context_plot_box_data(
         else selected_sig_box_plot_card_data.insignificant
     )
 
-    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_given_id)
     assert dataset_units is not None
 
     return ContextPlotBoxData(
@@ -466,7 +464,7 @@ def get_context_plot_box_data(
         insignificant_heme_data=solid_and_heme_box_data.heme,
         insignificant_solid_data=solid_and_heme_box_data.solid,
         drug_dotted_line=drug_dotted_line,
-        feature_label=node_entity_data.entity_label,
+        feature_label=node_entity_data.label,
         feature_overview_page_label=node_entity_data.feature_overview_page_label,
         dataset_units=dataset_units,
     )
@@ -475,18 +473,18 @@ def get_context_plot_box_data(
 def get_organized_contexts(
     selected_subtype_code: str,
     sig_contexts: pd.DataFrame,
-    entity_type: str,
-    entity_label: str,
-    dataset_name: str,
+    feature_type: str,
+    feature_label: str,
+    dataset_given_id: str,
     tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
     node = SubtypeNode.get_by_code(selected_subtype_code)
     assert node is not None
 
     context_box_plot_data = get_context_plot_box_data(
-        dataset_name=dataset_name,
-        entity_type=entity_type,
-        entity_label=entity_label,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
+        feature_label=feature_label,
         sig_contexts=sig_contexts,
         level_0=node.level_0,
         tree_type=tree_type,
@@ -506,7 +504,7 @@ def get_organized_contexts(
             key=lambda x: level_0_sort_order.index(x.level_0_code),
         )
 
-    dataset_units = data_access.get_dataset_units(dataset_id=dataset_name)
+    dataset_units = data_access.get_dataset_units(dataset_id=dataset_given_id)
     assert dataset_units is not None
 
     ordered_box_plot_data = ContextPlotBoxData(
@@ -567,7 +565,7 @@ def get_compound_enriched_lineages_feature_id_and_dataset_name(
     return {
         "feature_id": compound.compound_id,
         "dataset_given_id": dataset_given_id,
-        "compound_label": compound.label,
+        "label": compound.label,
         "dataset_display_name": dataset_display_name,
     }
 

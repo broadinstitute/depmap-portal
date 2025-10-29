@@ -586,9 +586,9 @@ class ContextBoxPlotData(Resource):
         context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,
             sig_contexts=sig_contexts,
-            entity_type=entity_type,
-            entity_label=entity_label,
-            dataset_name=dataset_name,
+            feature_type=entity_type,
+            feature_label=entity_label,
+            dataset_given_id=dataset_name,
             tree_type=tree_type,
         )
 
@@ -649,8 +649,7 @@ class EnrichedLineagesTile(
         dataset_given_id = feature_id_and_dataset_given_id["dataset_given_id"]
         dataset_display_name = feature_id_and_dataset_given_id["dataset_display_name"]
 
-        if feature_type == "compound":
-            entity_label = feature_id_and_dataset_given_id["compound_experiment_label"]
+        feature_label = feature_id_and_dataset_given_id["label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
@@ -671,10 +670,10 @@ class EnrichedLineagesTile(
         # and open by default.
         if sig_contexts.empty:
             return box_plot_utils.get_data_to_show_if_no_contexts_significant(
-                entity_type=entity_type,
-                feature_label=entity_label,
+                feature_type=feature_type,
+                feature_label=feature_label,
                 tree_type=tree_type,
-                dataset_given_id=dataset_name,
+                dataset_given_id=dataset_given_id,
             )
 
         # "sig_contexts" includes a column for "level_0" and a column for "subtype_code". This is necessary
@@ -690,9 +689,9 @@ class EnrichedLineagesTile(
 
         context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,
-            entity_type=entity_type,
-            entity_label=entity_label,
-            dataset_name=dataset_name,
+            feature_type=feature_type,
+            feature_label=feature_label,
+            dataset_given_id=dataset_given_id,
             sig_contexts=sig_contexts,
             tree_type=tree_type,
         )
@@ -704,7 +703,7 @@ class EnrichedLineagesTile(
             box_plot_data=context_box_plot_data,
             top_context_name_info=top_context_name_info,
             selected_context_name_info=top_context_name_info,  # top_context_name_info is repeated here on purpose. As described above, "selected context" is inherited from the Context Explorer page version of the box plots
-            dataset_name=dataset_name,  # for the frontend to determine the tab of context_explorer to link to: "oncref", "repurposing", or "geneDependency"
+            dataset_name=dataset_given_id,  # for the frontend to determine the tab of context_explorer to link to: "oncref", "repurposing", or "geneDependency"
             dataset_display_name=dataset_display_name,
             context_explorer_url=url_for(
                 "context_explorer.view_context_explorer"

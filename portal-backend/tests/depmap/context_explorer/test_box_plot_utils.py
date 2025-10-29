@@ -563,9 +563,9 @@ def test_get_context_plot_data(
     assert sig_contexts["subtype_code"].values.tolist() == ["A2A", "A1", "A"]
 
     context_plot_box_data = box_plot_utils.get_context_plot_box_data(
-        dataset_name=dataset_name,
-        entity_type=entity_type,
-        entity_label=entity.label,
+        dataset_given_id=dataset_name,
+        feature_type=entity_type,
+        feature_label=entity.label,
         sig_contexts=sig_contexts,
         level_0="A",
         tree_type=tree_type,
