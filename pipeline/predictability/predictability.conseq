@@ -17,7 +17,7 @@ let testpred=""
 
 add-if-missing {
   "type": "predictability-test-mode",
-  "is_test": "{{ inputs.testpred }}"
+  "is_test": "{{ config.testpred }}"
 }
 
 # Create different model configs for each target matrix (artifacts of type dep-matrix-ftr-unfiltered)
