@@ -21,12 +21,15 @@ on:
       - "peddep*"
       - "dmc*"
       - "external*"
+      - "test-*"
+      - "artifact-migration-25q3"
 
 permissions:
   contents: write
 
 env:
   DOCKER_REPO: us.gcr.io/broad-achilles/depmap-breadbox
+  ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
@@ -132,6 +135,12 @@ jobs:
         uses: docker/login-action@v1
         with:
           registry: us.gcr.io
+          username: _json_key
+          password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v1
+        with:
+          registry: us-central1-docker.pkg.dev
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Pull Docker image
