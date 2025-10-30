@@ -3,6 +3,8 @@ name: Build breadbox client
 
 on:
   push:
+    branches:
+      - "artifact-migration-25q3"
     paths:
       - "breadbox/**"
       - "breadbox-client/**"
