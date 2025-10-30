@@ -8,19 +8,23 @@
 # The "testpred" variable below can be used to run the ensemble pipeline on a small subset of data. (The first 5 columns of each matrix)
 # the way that this works is by preprocessing all the biomarker-matrix-csv -> pred-biomarker-matrix-csv artifacts. If the variable
 # is 'true', this will subset the matrix. If not, it will just publish a new artifact which points to the full file. The downstream
-# rules take in pred-biomarker-matrix-csv and pred-dep-matrix as inputs
+# rules take in pred-biomarker-matrix-csv and pred-dep-matrix as inputs. 
+#
+# Change the value of the flag in the next line to control whether to use this "test" mode or not. Several rules use the artifact predictability-test-mode
+# but that's just to ensure that they can detect when the value is changed and know to re-run if the testpred variable changed
 
 let testpred=""
-if "(config.get('publish_dest', 'INVALID')) != 'INVALID' and ('test-perf' not in config.get('publish_dest', 'INVALID'))":
-# run in testing mode if we're on the test-perf branch because we don't really need predictability results to test most of the
-# functionality
-let testpred="true"
-endif
+
+add-if-missing {
+  "type": "predictability-test-mode",
+  "is_test": "{{ inputs.testpred }}"
+}
 
 # Create different model configs for each target matrix (artifacts of type dep-matrix-ftr-unfiltered)
 rule process_model_config:
     inputs:
         data={"type": "dep-matrix-ftr-unfiltered"},
+        mode={"type": "predictability-test-mode"},
         model_config=fileref("model-config.yaml")
     outputs:
         {
@@ -275,7 +279,9 @@ if "config.get('testpred', 'false') == 'true'":
 
     rule make_pred_biomarker_matrix:
         inputs:
+            mode={"type": "predictability-test-mode"},
             in={'type': 'biomarker-matrix-csv'}
+            
         outputs:
             {'type':'pred-biomarker-matrix-csv',
             'testpred':"{{ config.testpred }}",
@@ -286,6 +292,7 @@ if "config.get('testpred', 'false') == 'true'":
 
     rule make_pred_dep_matrix:
         inputs:
+            mode={"type": "predictability-test-mode"},
             in={'type': 'dep-matrix-csv'}
         outputs:
             {'type':'pred-dep-matrix-csv',
@@ -297,6 +304,7 @@ if "config.get('testpred', 'false') == 'true'":
 
     rule make_pred_dep_ftr:
         inputs:
+            mode={"type": "predictability-test-mode"},
             in={'type':'dep-matrix-ftr'}
         outputs: {"confounders_label":"{{inputs.in.confounders_label}}",
                 'type':'pred-dep-matrix-ftr',
@@ -315,6 +323,7 @@ if "config.get('testpred', 'false') == 'true'":
 else:
     rule make_pred_biomarker_matrix:
         inputs:
+            mode={"type": "predictability-test-mode"},
             in={'type': 'biomarker-matrix-csv'}
         outputs:
             {'type':'pred-biomarker-matrix-csv',
@@ -325,6 +334,7 @@ else:
 
     rule make_pred_dep_matrix:
         inputs:
+            mode={"type": "predictability-test-mode"},
             in={'type': 'dep-matrix-csv'}
         outputs:
             {'type':'pred-dep-matrix-csv',
@@ -336,6 +346,7 @@ else:
 
     rule make_pred_dep_ftr:
         inputs:
+            mode={"type": "predictability-test-mode"},
             in={'type':'dep-matrix-ftr'}
         outputs: {"confounders_label":"{{inputs.in.confounders_label}}",
             'type':'pred-dep-matrix-ftr',
