@@ -16,6 +16,7 @@ from depmap.utilities import json_dump
 schema = DataFrameSchema(
     {
         "BroadID": Column("string", unique=True),
+        "CompoundID": Column("string"),
         "Name": Column("string"),
         "PearsonScore": Column("Float64"),
         "BimodalityCoefficient": Column("Float64"),
