@@ -297,7 +297,7 @@ def get_top_correlated_expression(compound_experiment_and_datasets):
                 other_dataset_ids=[expression_dataset.dataset_id],
             )
             for gene in corr_df["other_entity_label"]:
-                curr_row = corr_df.loc[corr_df["other_entity_label"] == gene]
+                curr_row = corr_df.loc[corr_df["other_entity_label"] == gene].copy()
                 curr_row["compound_dataset"] = dataset.name.value
                 curr_row["compound_label"] = compound_experiment.label
                 try:
