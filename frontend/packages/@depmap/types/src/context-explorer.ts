@@ -16,7 +16,7 @@ export interface ContextInfo {
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
   Rep_all_single_pt = "Rep_all_single_pt",
-  Prism_oncology_AUC = "Prism_oncology_AUC",
+  Prism_oncology_AUC = "Prism_oncology_AUC_collapsed",
 }
 
 export interface ContextPathInfo {
@@ -25,6 +25,7 @@ export interface ContextPathInfo {
 }
 
 export type ContextAnalysisTableType = {
+  feature_id: string[];
   feature: string[];
   t_pval: number[];
   mean_in: number[];

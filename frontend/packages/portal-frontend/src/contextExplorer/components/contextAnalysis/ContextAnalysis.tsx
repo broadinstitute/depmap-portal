@@ -160,6 +160,9 @@ function ContextAnalysis({
   }, [outgroup, outgroupOptions]);
 
   const [data, setData] = useState<ContextAnalysisTableType | null>(null);
+  const [featureLabelMapping, setFeatureLabelIdMapping] = useState<
+    Map<string, string>
+  >(new Map<string, string>());
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const latestPromise = useRef<Promise<ContextAnalysisTableType> | null>(null);
@@ -180,6 +183,11 @@ function ContextAnalysis({
         .then((fetchedData) => {
           if (promise === latestPromise.current) {
             setData(fetchedData);
+            const featureMapping = new Map<string, string>();
+            fetchedData.feature_id.forEach((feature_id: string, i: number) => {
+              featureMapping.set(fetchedData.feature[i], feature_id);
+            });
+            setFeatureLabelIdMapping(featureMapping);
           }
         })
         .catch((e) => {
@@ -320,6 +328,7 @@ function ContextAnalysis({
         return "Out-group mean log2(viability)";
       };
 
+      const featureIds: string[] = [];
       const featureLabels: string[] = [];
       const selectivityVal: number[] = [];
       const tTestXVals: number[] = [];
@@ -328,6 +337,7 @@ function ContextAnalysis({
       const inVsOutYVals: number[] = [];
 
       tableData.feature.forEach((feature, i) => {
+        featureIds.push(tableData.feature_id[i]);
         featureLabels.push(feature);
         selectivityVal.push(tableData.selectivity_val[i]);
         tTestXVals.push(tableData.effect_size[i]);
@@ -699,7 +709,7 @@ function ContextAnalysis({
         treeType,
         datasetId,
         featureType,
-        [...selectedPlotLabels][0],
+        featureLabelMapping.get([...selectedPlotLabels][0])!,
         boxPlotMaxFDR,
         boxPlotMinEffectSize,
         boxPlotMinFracDepIn,
@@ -1107,6 +1117,9 @@ function ContextAnalysis({
                 selectedLevel={selectedContextNameInfo.node_level}
                 selectedContextName={selectedContextNameInfo.name}
                 selectedDrugLabel={[...selectedPlotLabels][0]}
+                selectedFeatureId={
+                  featureLabelMapping.get([...selectedPlotLabels][0])!
+                }
                 datasetGivenId={datasetId}
                 selectedOutGroupType={outgroup.value}
                 selectedTreeType={treeType}

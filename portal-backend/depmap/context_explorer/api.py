@@ -22,7 +22,6 @@ from depmap.context_explorer.models import (
     EnrichedLineagesTileData,
 )
 from depmap.context.models_new import SubtypeNode, TreeType
-import sqlalchemy
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -30,6 +29,7 @@ namespace = Namespace("context_explorer", description="View context data in the 
 DATA_AVAIL_FILE = "data_avail.csv"
 
 GENE_INOUT_ANALYSIS_COLS = {
+    "feature_id": str,
     "feature": str,
     "t_pval": float,
     "mean_in": float,
@@ -48,6 +48,7 @@ GENE_INOUT_ANALYSIS_COLS = {
 }
 
 DRUG_INOUT_ANALYSIS_COLS = {
+    "feature_id": str,
     "feature": str,
     "t_pval": float,
     "mean_in": float,
@@ -435,6 +436,7 @@ def _get_analysis_data_table(
         return None
 
     if feature_type == "gene":
+        data["feature_id"] = data["feature_id"]
         data["label"] = data["feature"]
         data["feature"] = data[["feature", "entrez_id"]].agg(
             lambda a: a[0] + f" ({str(a[1])})", axis=1
@@ -446,6 +448,7 @@ def _get_analysis_data_table(
 
             return compound.label
 
+        data["feature_id"] = data["feature_id"]
         data["feature"] = data["feature_id"].apply(get_compound_label)
         data["label"] = data["feature"]
         # These columns don't make sense for compounds and will always be NaNs, so just drop them
@@ -506,7 +509,7 @@ class ContextDoseCurves(Resource):
     )  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
         dataset_given_id = request.args.get("dataset_given_id")
-        entity_full_label = request.args.get("entity_full_label")
+        feature_id = request.args.get("feature_id")
         subtype_code = request.args.get("subtype_code")
         level = request.args.get("level")
         out_group_type = request.args.get("out_group_type")
@@ -514,33 +517,15 @@ class ContextDoseCurves(Resource):
 
         dose_curve_info = dose_curve_utils.get_context_dose_curves(
             dataset_given_id=dataset_given_id,
-            feature_full_label=entity_full_label,
+            feature_id=feature_id,
             subtype_code=subtype_code,
             level=level,
             out_group_type=out_group_type,
             tree_type=tree_type,
         )
 
-        compound_experiment = dose_curve_info["compound_experiment"]
+        compound = dose_curve_info["compound"]
         dataset = dose_curve_info["dataset"]
-        replicate_dataset_name = dose_curve_info["replicate_dataset_name"]
-
-        label = f"{compound_experiment.label} {dataset.display_name}"
-
-        # TODO not sure if I need this metadata yet
-        dose_curve_metadata = {
-            "label": label,
-            "id": f"{dataset.name.name}_{compound_experiment.entity_id}",  # used for uniqueness
-            "dataset": dataset.name.name,
-            "entity": compound_experiment.entity_id,
-            "dose_replicate_dataset": replicate_dataset_name,
-            "auc_dataset_display_name": dataset.display_name,
-            "compound_label": compound_experiment.label,
-            "compound_xref_full": compound_experiment.xref_full,
-            "dose_replicate_level_yunits": DATASET_METADATA[
-                dataset.get_dose_replicate_enum()
-            ].units,
-        }
 
         return {
             "in_group_curve_params": dose_curve_info["dose_curve_info"][
@@ -551,7 +536,6 @@ class ContextDoseCurves(Resource):
             ],
             "max_dose": min(dose_curve_info["dose_curve_info"]["max_dose"], 1.0),
             "min_dose": dose_curve_info["dose_curve_info"]["min_dose"],
-            "dose_curve_metadata": dose_curve_metadata,
         }
 
 
@@ -565,18 +549,16 @@ class ContextBoxPlotData(Resource):
         tree_type = request.args.get("tree_type")
         dataset_given_id = request.args.get("dataset_given_id")
         feature_type = request.args.get("feature_type")
-        entity_full_label = request.args.get("entity_full_label")
+        feature_id = request.args.get("feature_id")
         max_fdr = request.args.get("max_fdr", type=float)
         min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
         min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
         show_positive_effect_sizes = request.args.get("show_positive_effect_sizes")
 
         show_positive_effect_sizes = show_positive_effect_sizes == "true"
-
         feature_id_and_label = get_feature_id_from_full_label(
-            feature_type=feature_type, feature_full_label=entity_full_label,
+            feature_type=feature_type, feature_id=feature_id,
         )
-        feature_id = feature_id_and_label["feature_id"]
         feature_label = feature_id_and_label["label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
@@ -594,7 +576,7 @@ class ContextBoxPlotData(Resource):
             selected_subtype_code=selected_subtype_code,
             sig_contexts=sig_contexts,
             feature_type=feature_type,
-            feature_label=feature_label,
+            feature_id=feature_id,
             dataset_given_id=dataset_given_id,
             tree_type=tree_type,
         )
@@ -678,7 +660,7 @@ class EnrichedLineagesTile(
         if sig_contexts.empty:
             return box_plot_utils.get_data_to_show_if_no_contexts_significant(
                 feature_type=feature_type,
-                feature_label=feature_label,
+                feature_id=feature_id,
                 tree_type=tree_type,
                 dataset_given_id=dataset_given_id,
             )
@@ -697,7 +679,7 @@ class EnrichedLineagesTile(
         context_box_plot_data = box_plot_utils.get_organized_contexts(
             selected_subtype_code=selected_subtype_code,
             feature_type=feature_type,
-            feature_label=feature_label,
+            feature_id=feature_id,
             dataset_given_id=dataset_given_id,
             sig_contexts=sig_contexts,
             tree_type=tree_type,
@@ -732,7 +714,7 @@ import re
 def fix_dataset_given_ids(value):
     dataset_str_to_name_mapping = {
         "CRISPR": "Chronos_Combined",
-        "PRISMOncRef": "Prism_oncology_AUC",
+        "PRISMOncRef": "Prism_oncology_AUC_collapsed",
         "PRISMRepurposing": "Rep_all_single_pt",
     }
 

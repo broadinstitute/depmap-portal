@@ -24,17 +24,17 @@ from depmap.context_explorer.models import ContextPlotBoxData, BoxData, NodeEnti
 
 
 def _get_node_entity_data(
-    dataset_given_id: str, feature_type: str, entity_full_label: str
+    dataset_given_id: str, feature_type: str, feature_id: str
 ) -> NodeEntityData:
     feature_id_and_label = utils.get_feature_id_from_full_label(
-        feature_type=feature_type, feature_full_label=entity_full_label
+        feature_type=feature_type, feature_id=feature_id
     )
     feature_id = feature_id_and_label["feature_id"]
     label = feature_id_and_label["label"]
     entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_given_id=dataset_given_id, label=label
+        dataset_given_id=dataset_given_id, feature_id=feature_id
     )
     entity_full_row_of_values.dropna(inplace=True)
 
@@ -372,7 +372,7 @@ def get_all_significant_context_codes_ordered_by_significance(
 def get_context_plot_box_data(
     dataset_given_id: str,
     feature_type: str,
-    feature_label: str,
+    feature_id: str,
     sig_contexts: pd.DataFrame,
     level_0: str,
     tree_type: str,
@@ -380,13 +380,13 @@ def get_context_plot_box_data(
     node_entity_data = _get_node_entity_data(
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
-        entity_full_label=feature_label,
+        feature_id=feature_id,
     )
 
     entity_full_row_of_values = node_entity_data.feature_full_row_of_values
 
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_given_id=dataset_given_id, label=node_entity_data.label
+        dataset_given_id=dataset_given_id, feature_id=feature_id
     )
     entity_full_row_of_values.dropna(inplace=True)
 
@@ -474,7 +474,7 @@ def get_organized_contexts(
     selected_subtype_code: str,
     sig_contexts: pd.DataFrame,
     feature_type: str,
-    feature_label: str,
+    feature_id: str,
     dataset_given_id: str,
     tree_type: str,
 ) -> Optional[ContextPlotBoxData]:
@@ -484,7 +484,7 @@ def get_organized_contexts(
     context_box_plot_data = get_context_plot_box_data(
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
-        feature_label=feature_label,
+        feature_id=feature_id,
         sig_contexts=sig_contexts,
         level_0=node.level_0,
         tree_type=tree_type,
@@ -571,17 +571,17 @@ def get_compound_enriched_lineages_feature_id_and_dataset_name(
 
 
 def get_data_to_show_if_no_contexts_significant(
-    feature_type: str, feature_label: str, tree_type: str, dataset_given_id: str
+    feature_type: str, feature_id: str, tree_type: str, dataset_given_id: str
 ):
     feature_id_and_label = utils.get_feature_id_from_full_label(
-        feature_type=feature_type, feature_full_label=feature_label
+        feature_type=feature_type, feature_id=feature_id
     )
     feature_label = feature_id_and_label["label"]
     entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
 
     entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
-        dataset_given_id=dataset_given_id, label=feature_label
+        dataset_given_id=dataset_given_id, feature_id=feature_id
     )
     entity_full_row_of_values.dropna(inplace=True)
     drug_dotted_line = (
