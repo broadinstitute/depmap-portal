@@ -162,7 +162,7 @@ const ContextExplorerTabs = ({
                   overlappingDepmapIds.length > 0
                     ? formattedFilteredData.filter(
                         (dataItem: CellLineOverview) =>
-                          overlappingDepmapIds.includes(dataItem.modelId)
+                          overlappingDepmapIds.includes(dataItem.depmapId)
                       )
                     : formattedFilteredData
                 }

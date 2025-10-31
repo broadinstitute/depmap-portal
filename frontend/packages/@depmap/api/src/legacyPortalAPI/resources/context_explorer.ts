@@ -99,7 +99,7 @@ export function getContextExplorerAnalysisData(
   const params = {
     in_group: in_group_code,
     out_group_type,
-    entity_type: feature_type,
+    feature_type,
     dataset_given_id,
   };
 

@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import json
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
+from depmap.entity.models import Entity
 import sqlalchemy
 from sqlalchemy import and_, or_, func, desc
 import enum
@@ -210,9 +211,9 @@ def get_context_analysis_query(
                 out_group=out_group,
                 dataset_given_id=dataset_given_id,
             )
-            .join(Gene, Gene.entity_id == ContextAnalysis.feature_id)
+            .join(Gene, Gene.entrez_id == ContextAnalysis.feature_id)
             .add_columns(
-                sqlalchemy.column('"gene".label', is_literal=True).label("entity"),
+                sqlalchemy.column('"entity".label', is_literal=True).label("feature"),
                 sqlalchemy.column('"gene".entrez_id', is_literal=True).label(
                     "entrez_id"
                 ),
@@ -225,9 +226,10 @@ def get_context_analysis_query(
                 out_group=out_group,
                 dataset_given_id=dataset_given_id,
             )
-            .join(Compound, Compound.entity_id == ContextAnalysis.feature_id)
+            .join(Compound, Compound.compound_id == ContextAnalysis.feature_id)
+            .join(Entity, Entity.entity_id == Compound.entity_id)
             .add_columns(
-                sqlalchemy.column('"compound".label', is_literal=True).label("entity")
+                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
             )
         )
 
@@ -257,7 +259,7 @@ class ContextAnalysis(Model):
     subtype_context = relationship(
         "SubtypeContext", foreign_keys="ContextAnalysis.subtype_code", uselist=False
     )
-    # A gene's feature id or a compound_id å
+    # A gene's entrez_id or a compound_id
     feature_id = Column(String, nullable=False, index=True)
 
     dataset_given_id = Column(String, nullable=False)

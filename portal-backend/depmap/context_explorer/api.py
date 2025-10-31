@@ -1,6 +1,8 @@
 import dataclasses
-from typing import Any, Dict, List, Literal, Tuple, Union
+from sqlite3 import IntegrityError
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 import os
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound
 from depmap.context_explorer.utils import (
@@ -20,6 +22,7 @@ from depmap.context_explorer.models import (
     EnrichedLineagesTileData,
 )
 from depmap.context.models_new import SubtypeNode, TreeType
+import sqlalchemy
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -164,6 +167,8 @@ class ContextSearchOptions(
         lineage_context_name_info = _get_all_level_0_subtype_info(
             tree_type=TreeType.Lineage
         )
+        # load_csv_to_sqlite("/Users/amourey/updated_context_analysis3.csv")
+        # breakpoint()
 
         return {
             "lineage": lineage_context_name_info,
@@ -430,14 +435,15 @@ def _get_analysis_data_table(
         return None
 
     if feature_type == "gene":
-        data["label"] = data["entity"]
-        data["entity"] = data[["entity", "entrez_id"]].agg(
+        data["label"] = data["feature"]
+        data["feature"] = data[["feature", "entrez_id"]].agg(
             lambda a: a[0] + f" ({str(a[1])})", axis=1
         )
     elif feature_type == "compound":
 
         def get_compound_label(compound_id: str):
             compound = Compound.get_by_compound_id(compound_id)
+
             return compound.label
 
         data["label"] = data["entity"].apply(get_compound_label)
@@ -711,3 +717,143 @@ class EnrichedLineagesTile(
         )
 
         return dataclasses.asdict(tile_data)
+
+
+### TEMPORARY FOR TESTING
+
+import pandas as pd
+from pathlib import Path
+from typing import Union
+from depmap.database import db
+import re
+
+
+def fix_dataset_given_ids(value):
+    dataset_str_to_name_mapping = {
+        "CRISPR": "Chronos_Combined",
+        "PRISMOncRef": "Prism_oncology_AUC",
+        "PRISMRepurposing": "Rep_all_single_pt",
+    }
+
+    assert (
+        value in dataset_str_to_name_mapping.keys()
+    ), f"This key is not present {value}"
+
+    return dataset_str_to_name_mapping[value]
+
+
+def extract_or_keep(value):
+    assert not pd.isna(value)
+
+    # Ensure we are working with a string for regex matching
+    value_str = str(value)
+
+    # Regex pattern: \((\d+)\) captures one or more digits between parentheses
+    match = re.search(r"\s\((\d+)\)$", value_str)
+
+    if match:
+        # Keep entrez ids as strings even though they could be ints to allow storing in a column that also
+        # includes compound_ids (e.g. DPC-00001)
+        return match.group(1)
+    else:
+        # If no pattern match is found, return the original value
+        return value
+
+
+def clean_csv_duplicates(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Cleans the DataFrame by removing rows that would violate the UNIQUE constraint
+    on the combination of subtype_code, feature_id (entity_id), and out_group.
+
+    Args:
+        df: The DataFrame loaded from the input CSV.
+
+    Returns:
+        A DataFrame with duplicates removed based on the unique key columns.
+    """
+
+    # We must rename columns temporarily to match the required SQL column names for cleaning
+    temp_df = df.rename(
+        columns={"entity_id": "feature_id", "dataset": "dataset_given_id"}
+    )
+
+    # Identify the columns that constitute the unique key constraint
+    key_columns = ["subtype_code", "feature_id", "out_group", "dataset_given_id"]
+
+    # Identify all rows that are duplicates based on the key, keeping only the first one
+    # This mask is True for all rows that are NOT the first occurrence of a duplicate key.
+    duplicate_mask = temp_df.duplicated(subset=key_columns, keep="first")
+
+    # 1. Get the DataFrame of removed (duplicate) rows
+    df_removed = temp_df[duplicate_mask].copy()
+
+    # 2. Get the cleaned DataFrame (rows that were kept)
+    df_cleaned = temp_df[~duplicate_mask].copy()
+
+    return df_cleaned, df_removed
+
+
+def load_csv_to_sqlite(csv_file_path: Union[str, Path]) -> int:
+    # Define the mapping from CSV column names to SQL table column names
+    COLUMN_RENAME_MAP = {"entity_id": "feature_id", "dataset": "dataset_given_id"}
+
+    print(f"Loading data from {csv_file_path}...")
+
+    try:
+        # 1. Read the CSV data into a Pandas DataFrame
+        df = pd.read_csv(csv_file_path)
+    except FileNotFoundError:
+        print(f"Error: CSV file not found at {csv_file_path}")
+        return 0
+
+    # 1.5. Clean the DataFrame to eliminate rows that violate the UNIQUE constraint
+    df_cleaned, df_removed = clean_csv_duplicates(df)
+
+    df = df_cleaned  # Use the cleaned dataframe for insertion
+
+    rows_removed = len(df_removed)
+
+    if rows_removed > 0:
+        # Define the path for the removed rows CSV file
+        path_obj = Path(csv_file_path)
+        removed_csv_path = path_obj.parent / f"{path_obj.stem}_removed_duplicates.csv"
+
+        # Write removed rows to CSV
+        df_removed.to_csv(removed_csv_path, index=False)
+
+        print(
+            f"WARNING: Removed {rows_removed} duplicate rows based on the UNIQUE key (subtype, feature_id, out_group)."
+        )
+        print(f"Removed rows written to: {removed_csv_path}")
+
+    # 2. Rename columns to match the SQL schema
+    df = df.rename(columns=COLUMN_RENAME_MAP)
+    df["feature_id"] = df["feature_id"].apply(extract_or_keep)
+
+    df_remove_null_subtypes = df.dropna(subset=["subtype_code"])
+    df_remove_null_subtypes["dataset_given_id"] = df_remove_null_subtypes[
+        "dataset_given_id"
+    ].apply(fix_dataset_given_ids)
+
+    try:
+        # 4. Insert data into the context_analysis table using the SQLAlchemy engine
+        # if_exists='append' is the default and safe for new rows, but will fail on duplicates.
+        rows_inserted = df_remove_null_subtypes.to_sql(
+            "context_analysis", db.engine, if_exists="append", index=False
+        )
+
+        print(f"Successfully inserted {rows_inserted} rows.")
+        return rows_inserted
+
+    except Exception as e:
+        print(e)
+        # FIX: Catch the specific IntegrityError (UNIQUE constraint violation)
+        # and abort gracefully to PREVENT the loss of context_analysis_id sequence.
+        print(
+            f"ERROR: Insertion failed due to UNIQUE constraint violation. "
+            f"The primary key sequence has been preserved."
+        )
+        print(
+            "To proceed, you must manually run SQL to use INSERT OR IGNORE/REPLACE, or clean your input data."
+        )
+        return 0

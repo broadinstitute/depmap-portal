@@ -67,11 +67,11 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
             )
             continue
 
-        entity_id = None
+        feature_id = None
         if gene is not None:
-            entity_id = gene.entrez_id
+            feature_id = gene.entrez_id
         else:
-            entity_id = compound.compound_id
+            feature_id = compound.compound_id
 
         context = context_cache.get(row["subtype_code"])
 
@@ -88,7 +88,7 @@ def _read_context_analyses(dr, pbar, gene_cache, cell_line_cache):
         analysis = dict(
             # TODO: Eventually subtype_code should come from the context cache
             subtype_code=row["subtype_code"],
-            feature_id=entity_id,
+            feature_id=feature_id,
             dataset_given_id=row["dataset"],
             out_group=row["out_group"],
             t_pval=float(_to_nan(row["t_pval"])),
