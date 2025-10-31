@@ -227,7 +227,6 @@ def get_context_analysis_query(
                 dataset_given_id=dataset_given_id,
             )
             .join(Compound, Compound.compound_id == ContextAnalysis.feature_id)
-            .join(Entity, Entity.entity_id == Compound.entity_id)
             .add_columns(
                 sqlalchemy.column('"entity".label', is_literal=True).label("entity")
             )

@@ -446,7 +446,8 @@ def _get_analysis_data_table(
 
             return compound.label
 
-        data["label"] = data["entity"].apply(get_compound_label)
+        data["feature"] = data["feature_id"].apply(get_compound_label)
+        data["label"] = data["feature"]
         # These columns don't make sense for compounds and will always be NaNs, so just drop them
         data = data.drop(
             ["n_dep_in", "n_dep_out", "frac_dep_in", "frac_dep_out"], axis=1
