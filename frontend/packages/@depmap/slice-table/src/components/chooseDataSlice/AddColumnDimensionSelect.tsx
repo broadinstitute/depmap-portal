@@ -62,7 +62,11 @@ async function convertSliceQueryToDataExplorerDimension(
   };
 }
 
-function MatrixDataSelect({ defaultValue, index_type_name, onChange }: Props) {
+function AddColumnDimensionSelect({
+  defaultValue,
+  index_type_name,
+  onChange,
+}: Props) {
   const [
     valueAsDimension,
     setValueAsDimension,
@@ -88,6 +92,9 @@ function MatrixDataSelect({ defaultValue, index_type_name, onChange }: Props) {
     <DimensionSelectV2
       mode="entity-only"
       allowNullFeatureType
+      allowTextValueType
+      allowCategoricalValueType
+      allowListStringsValueType
       index_type={index_type_name}
       value={valueAsDimension}
       onChange={async (dimension) => {
@@ -98,4 +105,4 @@ function MatrixDataSelect({ defaultValue, index_type_name, onChange }: Props) {
   );
 }
 
-export default MatrixDataSelect;
+export default AddColumnDimensionSelect;

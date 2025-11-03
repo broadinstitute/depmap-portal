@@ -43,7 +43,7 @@ function ContinuousDataPreview({
         height={500}
         xKey="x"
         data={plotData}
-        colorMap={{ [LEGEND_ALL]: plotStyles.palette.all }}
+        colorMap={new Map([[LEGEND_ALL, plotStyles.palette.all]])}
         legendDisplayNames={{ [LEGEND_ALL]: "All" }}
         hoverTextKey="hoverText"
         selectedPoints={null}

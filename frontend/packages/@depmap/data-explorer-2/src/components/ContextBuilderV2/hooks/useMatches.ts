@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import {
   DataExplorerContextExpression,
@@ -16,6 +16,7 @@ function useMatches(expr: Expr) {
   const [numCandidates, setNumCandidates] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const latestPromise = useRef<Promise<unknown>>(Promise.resolve());
 
   const { dimension_type, vars, fullySpecifiedVars } = useContextBuilderState();
 
@@ -33,9 +34,15 @@ function useMatches(expr: Expr) {
       setIsLoading(true);
       setHasError(false);
 
+      let promise: Promise<{
+        ids: string[];
+        labels: string[];
+        num_candidates: number;
+      }> = Promise.resolve({ ids: [], labels: [], num_candidates: 0 });
+
       (async () => {
         try {
-          const result = await cached(breadboxAPI).evaluateContext(
+          promise = cached(breadboxAPI).evaluateContext(
             simplifyVarNames({
               dimension_type,
               expr: flattenExpr(expr) as DataExplorerContextExpression,
@@ -43,15 +50,23 @@ function useMatches(expr: Expr) {
             } as DataExplorerContextV2)
           );
 
-          setMatchingIds(result.ids);
-          setNumMatches(result.ids.length);
-          setNumCandidates(result.num_candidates);
+          latestPromise.current = promise;
+          const result = await promise;
+
+          if (promise === latestPromise.current) {
+            setMatchingIds(result.ids);
+            setNumMatches(result.ids.length);
+            setNumCandidates(result.num_candidates);
+            setIsLoading(false);
+          }
         } catch (e) {
           window.console.error(e);
-          setNumMatches(null);
-          setHasError(true);
-        } finally {
-          setIsLoading(false);
+
+          if (promise === latestPromise.current) {
+            setNumMatches(null);
+            setHasError(true);
+            setIsLoading(false);
+          }
         }
       })();
     } else {

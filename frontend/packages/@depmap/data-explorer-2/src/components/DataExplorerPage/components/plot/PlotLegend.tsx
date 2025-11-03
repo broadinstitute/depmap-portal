@@ -11,24 +11,35 @@ const HEIGHT_WITHOUT_LIST = 54;
 function LegendLabels({
   data,
   colorMap,
-  sortedLegendKeys,
+  sortedLegendKeys = undefined,
   continuousBins,
   hiddenLegendValues,
   legendKeysWithNoData,
   onClickLegendItem,
   handleClickShowAll,
   handleClickHideAll,
-}: any) {
+}: {
+  data: any;
+  colorMap: Map<LegendKey, string>;
+  sortedLegendKeys?: LegendKey[];
+  continuousBins: any;
+  hiddenLegendValues: any;
+  legendKeysWithNoData: Set<LegendKey> | null;
+  onClickLegendItem: any;
+  handleClickShowAll: any;
+  handleClickHideAll: any;
+}) {
   const { sectionHeights } = useContext(SectionStackContext);
 
-  const categories = (
-    sortedLegendKeys || Reflect.ownKeys(colorMap || {})
-  ).filter(
-    (category: any) =>
+  const categories = (sortedLegendKeys || [...colorMap.keys()]).filter(
+    (category) =>
       data?.dimensions?.color ||
       !legendKeysWithNoData ||
       !legendKeysWithNoData.has(category)
   );
+
+  // TODO: Update callbacks to use `colorMap` directly.
+  const colorMapAsObject = Object.fromEntries(colorMap);
 
   const hasColorDimensionLabels = Boolean(data?.dimensions?.color);
   const extraTextHeight = hasColorDimensionLabels ? 40 : 0;
@@ -42,23 +53,26 @@ function LegendLabels({
             Show all
           </button>
           <span> | </span>
-          <button type="button" onClick={() => handleClickHideAll(colorMap)}>
+          <button
+            type="button"
+            onClick={() => handleClickHideAll(colorMapAsObject)}
+          >
             Hide all
           </button>
         </div>
       )}
-      {categories.map((category: any) => (
+      {categories.map((category) => (
         <div key={category.toString()}>
           <button
             type="button"
             style={{
               opacity: hiddenLegendValues.has(category) ? 0.3 : 1.0,
             }}
-            onClick={() => onClickLegendItem(category, colorMap)}
+            onClick={() => onClickLegendItem(category, colorMapAsObject)}
           >
             <span
               className={styles.legendSwatch}
-              style={{ backgroundColor: colorMap[category] }}
+              style={{ backgroundColor: colorMap.get(category) }}
             />
             <LegendLabel
               data={data}
@@ -83,9 +97,13 @@ function SliceDescription({ data }: { data: DataExplorerPlotResponse | null }) {
   }
 
   if (data?.metadata?.color_property) {
+    const { label, units, dataset_label } = data.metadata.color_property;
+
     return (
       <div className={styles.colorDimensionLabels}>
-        <div>{data.metadata.color_property.label}</div>
+        <div>{label}</div>
+        {units && <div>{units}</div>}
+        {dataset_label && <div>{dataset_label}</div>}
       </div>
     );
   }
@@ -95,11 +113,8 @@ function SliceDescription({ data }: { data: DataExplorerPlotResponse | null }) {
 
 interface Props {
   data: DataExplorerPlotResponse | null;
-  // TODO: Convert `colorMap` to a proper Map so that `sortedLegendKeys` is not
-  // needed (objects aren't guaranteed to maintain the order of their keys and
-  // do especially weird things with keys that are symbols).
-  colorMap: Record<string | symbol, string>;
-  sortedLegendKeys?: (string | symbol)[];
+  colorMap: Map<LegendKey, string>;
+  sortedLegendKeys?: LegendKey[];
   continuousBins: ContinuousBins;
   hiddenLegendValues: Set<LegendKey>;
   legendKeysWithNoData: Set<LegendKey> | null;

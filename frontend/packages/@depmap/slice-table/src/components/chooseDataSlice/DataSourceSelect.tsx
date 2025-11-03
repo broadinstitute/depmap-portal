@@ -2,8 +2,8 @@ import React from "react";
 import { PlotConfigSelect } from "@depmap/data-explorer-2";
 
 interface Props {
-  value: "metadata_column" | "matrix_dataset";
-  onChange: (nextValue: "metadata_column" | "matrix_dataset") => void;
+  value: "property" | "custom";
+  onChange: (nextValue: "property" | "custom") => void;
 }
 
 function DataSourceSelect({ value, onChange }: Props) {
@@ -11,19 +11,10 @@ function DataSourceSelect({ value, onChange }: Props) {
     <PlotConfigSelect
       show
       enable
-      label="Data Source"
       value={value}
-      options={[
-        {
-          label: "Annotation",
-          value: "metadata_column",
-        },
-        {
-          label: "Matrix Dataset",
-          value: "matrix_dataset",
-        },
-      ]}
+      options={{ property: "Annotation", custom: "Dataset" }}
       onChange={onChange as (value: string | null) => void}
+      label="Data Source"
       placeholder="Select data source…"
       menuPortalTarget={document.querySelector("#modal-container")}
     />

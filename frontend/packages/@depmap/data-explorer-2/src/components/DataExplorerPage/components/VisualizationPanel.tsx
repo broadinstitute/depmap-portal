@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { DataExplorerContext, DataExplorerPlotConfig } from "@depmap/types";
 import { usePlotData } from "../hooks";
 import DataExplorerScatterPlot from "./plot/DataExplorerScatterPlot";
@@ -44,7 +44,24 @@ function VisualizationPanel({
     hadError,
     errorMessage,
   } = usePlotData(plotConfig);
-  const isLoading = plotConfig !== fetchedPlotConfig;
+
+  const [hasExternalLoadEvent, setHasExternalLoadEvent] = useState(false);
+
+  useEffect(() => {
+    const event = "dx2_start_load_event";
+    const callback = () => setHasExternalLoadEvent(true);
+    window.addEventListener(event, callback);
+    return () => window.removeEventListener(event, callback);
+  }, []);
+
+  useEffect(() => {
+    const event = "dx2_end_load_event";
+    const callback = () => setHasExternalLoadEvent(false);
+    window.addEventListener(event, callback);
+    return () => window.removeEventListener(event, callback);
+  }, []);
+
+  const isLoading = plotConfig !== fetchedPlotConfig || hasExternalLoadEvent;
 
   if (hadError) {
     return (

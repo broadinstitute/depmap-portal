@@ -1,5 +1,6 @@
-import { AnnotationType, TabularDataset } from "@depmap/types";
+import { useEffect, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
+import { AnnotationType, Dataset, TabularDataset } from "@depmap/types";
 
 export async function fetchMetadataAndOtherTabularDatasets(
   dimension_type: string,
@@ -44,4 +45,69 @@ export async function fetchMetadataAndOtherTabularDatasets(
     });
 
   return { metadataDataset, metadataIdColumn, otherTabularDatasets };
+}
+
+export function useAnnotationDatasets(dimension_type: string) {
+  const [axis, setAxis] = useState<"sample" | "feature">();
+  const [metadataDataset, setMetadataDataset] = useState<TabularDataset>();
+  const [metadataIdColumn, setMetadataIdColumn] = useState<string | undefined>(
+    undefined
+  );
+  const [annotationDatasets, setAnnotationDatasets] = useState<Dataset[]>([]);
+  const [
+    isLoadingAnnotationDatasets,
+    setIsLoadingAnnotationDatasets,
+  ] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      // prefetch all data
+      cached(breadboxAPI).getDatasets();
+      cached(breadboxAPI).getDimensionType(dimension_type);
+      fetchMetadataAndOtherTabularDatasets(dimension_type);
+
+      const dType = await cached(breadboxAPI).getDimensionType(dimension_type);
+      setAxis(dType.axis);
+
+      const {
+        metadataDataset: metaDs,
+        metadataIdColumn: metaIdCol,
+      } = await fetchMetadataAndOtherTabularDatasets(dimension_type);
+
+      setMetadataDataset(metaDs);
+      setMetadataIdColumn(metaIdCol);
+
+      const datasets = await cached(breadboxAPI)
+        .getDatasets()
+        .then((allDatasets) =>
+          allDatasets
+            .filter((d) => {
+              const dimType =
+                d.format === "matrix_dataset"
+                  ? d[`${dType.axis}_type_name`]
+                  : d.index_type_name;
+
+              return (
+                d.id !== metaDs?.id &&
+                dimType === dimension_type &&
+                d.data_type === "Annotations"
+              );
+            })
+            .sort((a, b) => {
+              return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
+            })
+        );
+
+      setAnnotationDatasets(datasets);
+      setIsLoadingAnnotationDatasets(false);
+    })();
+  }, [dimension_type]);
+
+  return {
+    axis,
+    metadataDataset,
+    metadataIdColumn,
+    annotationDatasets,
+    isLoadingAnnotationDatasets,
+  };
 }
