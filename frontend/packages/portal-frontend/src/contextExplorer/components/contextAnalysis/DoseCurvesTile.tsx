@@ -73,6 +73,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
         .finally(() => setIsLoading(false));
     }
   }, [
+    selectedFeatureId,
     datasetName,
     subtypeCode,
     selectedDrugLabel,

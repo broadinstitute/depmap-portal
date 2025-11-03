@@ -782,7 +782,9 @@ export const REP_DETAIL_TOOLTIP =
   "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are selected based on default Context Explorer filters (T-test FDR<0.1, avg. log2(Viability) difference < -0.5).";
 
 export function getDetailPanelTooltip(datasetId: ContextExplorerDatasets) {
-  if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+  if (
+    datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+  ) {
     return ONC_DETAIL_TOOLTIP;
   }
 

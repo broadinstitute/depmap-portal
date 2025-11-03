@@ -1,8 +1,6 @@
 import dataclasses
-from sqlite3 import IntegrityError
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, List, Literal, Tuple, Union
 import os
-from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound
 from depmap.context_explorer.utils import (
@@ -14,7 +12,6 @@ from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
 from flask import current_app, request, url_for
 import pandas as pd
-from depmap.settings.shared import DATASET_METADATA
 from depmap.context_explorer.models import (
     ContextAnalysis,
     ContextNode,
@@ -524,9 +521,6 @@ class ContextDoseCurves(Resource):
             tree_type=tree_type,
         )
 
-        compound = dose_curve_info["compound"]
-        dataset = dose_curve_info["dataset"]
-
         return {
             "in_group_curve_params": dose_curve_info["dose_curve_info"][
                 "in_group_curve_params"
@@ -559,7 +553,6 @@ class ContextBoxPlotData(Resource):
         feature_id_and_label = get_feature_id_from_full_label(
             feature_type=feature_type, feature_id=feature_id,
         )
-        feature_label = feature_id_and_label["label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
@@ -714,7 +707,7 @@ import re
 def fix_dataset_given_ids(value):
     dataset_str_to_name_mapping = {
         "CRISPR": "Chronos_Combined",
-        "PRISMOncRef": "Prism_oncology_AUC_collapsed",
+        "PRISMOncRef": "PRISMOncologyReferenceLog2AUCMatrix",
         "PRISMRepurposing": "Rep_all_single_pt",
     }
 

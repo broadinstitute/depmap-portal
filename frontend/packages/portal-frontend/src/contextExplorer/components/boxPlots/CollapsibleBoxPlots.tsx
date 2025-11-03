@@ -171,7 +171,9 @@ function CollapsibleBoxPlots({
   };
 
   const xAxisTitle = useMemo(() => {
-    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+    if (
+      datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+    ) {
       return boxPlotData?.dataset_units || "";
     }
 

@@ -1,17 +1,13 @@
 from dataclasses import dataclass
-import json
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
-from depmap.entity.models import Entity
 import sqlalchemy
-from sqlalchemy import and_, or_, func, desc
+from sqlalchemy import and_, func, desc
 import enum
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, List, Literal, Optional, Tuple, Union
 import pandas as pd
 from depmap.gene.models import Gene
 from depmap.compound.models import Compound
-from depmap.enums import DependencyEnum
-from depmap.dataset.models import DependencyDataset
 from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.database import (
     Column,
@@ -27,7 +23,7 @@ from depmap.database import (
 
 class ContextExplorerDatasets(enum.Enum):
     Rep_all_single_pt = "Rep_all_single_pt"
-    Prism_oncology_AUC_collapsed = "Prism_oncology_AUC_collapsed"
+    PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix"
     Chronos_Combined = "Chronos_Combined"
 
     @staticmethod
@@ -310,7 +306,10 @@ class ContextAnalysis(Model):
     ):
         def _get_compound_min_effect_size_by_dependency_dataset_name():
 
-            if dataset_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed:
+            if (
+                dataset_id
+                == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+            ):
                 return 0.1
             else:
                 return 0.5

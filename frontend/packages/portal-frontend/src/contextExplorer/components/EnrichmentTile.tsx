@@ -98,7 +98,10 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
   );
 
   const getCompoundToolTip = () => {
-    if (tileData?.dataset_name === ContextExplorerDatasets.Prism_oncology_AUC) {
+    if (
+      tileData?.dataset_name ===
+      ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+    ) {
       return `Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. AUC difference < -0.1).`;
     }
     return "Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. log2(Viability) difference < -0.5).";

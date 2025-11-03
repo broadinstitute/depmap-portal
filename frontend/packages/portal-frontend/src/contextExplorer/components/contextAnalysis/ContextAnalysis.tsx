@@ -183,11 +183,15 @@ function ContextAnalysis({
         .then((fetchedData) => {
           if (promise === latestPromise.current) {
             setData(fetchedData);
-            const featureMapping = new Map<string, string>();
-            fetchedData.feature_id.forEach((feature_id: string, i: number) => {
-              featureMapping.set(fetchedData.feature[i], feature_id);
-            });
-            setFeatureLabelIdMapping(featureMapping);
+            if (fetchedData !== null) {
+              const featureMapping = new Map<string, string>();
+              fetchedData.feature_id.forEach(
+                (feature_id: string, i: number) => {
+                  featureMapping.set(fetchedData.feature[i], feature_id);
+                }
+              );
+              setFeatureLabelIdMapping(featureMapping);
+            }
           }
         })
         .catch((e) => {
@@ -256,7 +260,9 @@ function ContextAnalysis({
   // TDA, and Compound Dashboard all at once.
 
   const getFilterDefinitions = useCallback(() => {
-    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+    if (
+      datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+    ) {
       return oncrefFilterDefinitions;
     }
 
@@ -312,7 +318,10 @@ function ContextAnalysis({
   const formatDataForScatterPlot = useCallback(
     (tableData: ContextAnalysisTableType) => {
       const getDrugXAxisLabel = () => {
-        if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+        if (
+          datasetId ===
+          ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+        ) {
           // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
           // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
           return `In-context mean AUC`;
@@ -322,7 +331,10 @@ function ContextAnalysis({
       };
 
       const getDrugYAxisLabel = () => {
-        if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC) {
+        if (
+          datasetId ===
+          ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+        ) {
           return `Out-group mean AUC`;
         }
         return "Out-group mean log2(viability)";
@@ -572,7 +584,7 @@ function ContextAnalysis({
         return null;
       }
 
-      const { min, max } = calcMinMax(values);
+      const { max } = calcMinMax(values);
 
       if (featureType !== "gene") {
         const binNumber = 5;
@@ -733,6 +745,7 @@ function ContextAnalysis({
         .finally(() => setIsLoadingBoxplot(false));
     }
   }, [
+    featureLabelMapping,
     setIsLoadingBoxplot,
     selectedContextNameInfo,
     outgroup,
@@ -765,7 +778,8 @@ function ContextAnalysis({
                   </h4>
                 </>
               )}
-              {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+              {datasetId ===
+                ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                 <>
                   <h2>
                     OncRef sensitivies enriched in{" "}
@@ -818,7 +832,8 @@ function ContextAnalysis({
                     screened models.
                   </h2>
                 )}
-                {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+                {datasetId ===
+                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                   <h2>
                     Not enough data points to compute enriched PRISM OncRef
                     compound sensitivities for {selectedContextNameInfo.name}.
@@ -996,7 +1011,8 @@ function ContextAnalysis({
                   {GENE_DEP_TABLE_DESCRIPTION}
                 </p>
               )}
-              {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
+              {datasetId ===
+                ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -1108,7 +1124,8 @@ function ContextAnalysis({
         )}
         {selectedPlotLabels &&
           selectedPlotLabels.size > 0 &&
-          datasetId === ContextExplorerDatasets.Prism_oncology_AUC &&
+          datasetId ===
+            ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix &&
           !isLoading &&
           data && (
             <div className={styles.plotFrame}>
@@ -1181,7 +1198,7 @@ function ContextAnalysis({
                     {featureType === "gene" && GENE_DETAIL_NO_GENE_SELECTED}
                     {featureType === "compound" &&
                       datasetId ===
-                        ContextExplorerDatasets.Prism_oncology_AUC &&
+                        ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix &&
                       ONCREF_DETAIL_NO_COMPOUND_SELECTED}
                     {featureType === "compound" &&
                       datasetId === ContextExplorerDatasets.Rep_all_single_pt &&

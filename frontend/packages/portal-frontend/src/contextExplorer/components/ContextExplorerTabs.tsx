@@ -193,7 +193,9 @@ const ContextExplorerTabs = ({
                 topContextNameInfo={topContextNameInfo}
                 treeType={treeType}
                 featureType={"compound"}
-                datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
+                datasetId={
+                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+                }
                 customInfoImg={customInfoImg}
               />
             )}
