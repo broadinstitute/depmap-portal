@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import qs from "qs";
 import {
   ContextPath,
@@ -41,6 +41,8 @@ function ViewOptions({
   onClickCreateContext,
   onClickSaveAsContext,
 }: Props) {
+  const ref = useRef<HTMLDivElement>(null);
+
   let filterKeys: FilterKey[] = [];
 
   if (plot.plot_type !== "correlation_heatmap" && plot.index_type !== "other") {
@@ -51,7 +53,19 @@ function ViewOptions({
   const defaultOpen = !params.task;
 
   return (
-    <Section title="View Options" defaultOpen={defaultOpen}>
+    <Section
+      title="View Options"
+      defaultOpen={defaultOpen}
+      innerRef={ref}
+      onOpen={() => {
+        setTimeout(() => {
+          ref.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+          });
+        });
+      }}
+    >
       <ShowPointsCheckbox
         show={plot.plot_type === "density_1d"}
         value={!plot.hide_points}

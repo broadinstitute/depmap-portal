@@ -14,6 +14,8 @@ interface Props {
   onChange: (nextValue: string) => void;
   useContextBuilderV2: boolean;
   title?: string;
+  // Use this if you don't want to show types that there are no datasets for.
+  hideUnpopulatedTypes?: boolean;
 }
 
 function ContextTypeSelect({
@@ -21,6 +23,7 @@ function ContextTypeSelect({
   onChange,
   useContextBuilderV2,
   title = "Context type",
+  hideUnpopulatedTypes = false,
 }: Props) {
   const [options, setOptions] = useState<{ label: string; value: string }[]>(
     []
@@ -35,7 +38,33 @@ function ContextTypeSelect({
             dimensionTypes.map(({ name }) => name)
           );
 
+          const populatedTypes = new Set<string>();
+
+          if (hideUnpopulatedTypes) {
+            const datasets = await cached(breadboxAPI).getDatasets();
+
+            for (const d of datasets) {
+              if (d.format === "matrix_dataset") {
+                populatedTypes.add(d.sample_type_name);
+
+                if (d.feature_type_name !== null) {
+                  populatedTypes.add(d.feature_type_name);
+                }
+              } else if (
+                d.given_id !== `${d.index_type_name}_metadata` &&
+                d.id !==
+                  dimensionTypes.find((dt) => dt.name === d.index_type_name)
+                    ?.metadata_dataset_id
+              ) {
+                populatedTypes.add(d.index_type_name);
+              }
+            }
+          }
+
           const opts = dimensionTypes
+            .filter(
+              (dt) => !hideUnpopulatedTypes || populatedTypes.has(dt.name)
+            )
             .map((dt) => ({
               value: dt.name,
               label: dt.display_name,
@@ -64,7 +93,7 @@ function ContextTypeSelect({
         window.console.error(e);
       }
     })();
-  }, [useContextBuilderV2]);
+  }, [hideUnpopulatedTypes, useContextBuilderV2]);
 
   return (
     <PlotConfigSelect

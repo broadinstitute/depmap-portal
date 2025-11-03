@@ -7,6 +7,7 @@ import type {
 } from "@depmap/types";
 import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 import { persistContext } from "./context-storage";
+import getContextHash from "./get-context-hash";
 
 export const isContextAll = (
   context: DataExplorerContext | DataExplorerContextV2
@@ -193,6 +194,32 @@ export async function saveContextToLocalStorageAndPersist(
   }
 
   return nextHash as string;
+}
+
+export async function replaceLegacyContextIfExistsInLocalStorage(
+  legacyContext: DataExplorerContext,
+  convertedContext: DataExplorerContextV2
+) {
+  const legacyHash = await getContextHash(legacyContext);
+
+  const json = window.localStorage.getItem(userContextStorageKey());
+  const storedContexts: StoredContexts = json ? JSON.parse(json) : {};
+  const existingEntry = storedContexts[legacyHash];
+
+  if (existingEntry) {
+    const nextHash = await getContextHash(convertedContext);
+    const replacementEntry = toStoredContext(convertedContext);
+
+    storedContexts[nextHash] = replacementEntry;
+    delete storedContexts[legacyHash];
+
+    window.localStorage.setItem(
+      userContextStorageKey(),
+      JSON.stringify(storedContexts)
+    );
+
+    window.dispatchEvent(new Event("dx2_contexts_updated"));
+  }
 }
 
 // This only deletes the entry from the map of hashes to names. The content of

@@ -191,19 +191,18 @@ function DataExplorerDensity1DPlot({
     handleClickHideAll,
   } = useLegendState(plotConfig, legendKeysWithNoData);
 
-  const colorMap = useMemo(
-    () => getColorMap(data, plotConfig, palette, sortedLegendKeys),
-    [data, plotConfig, palette, sortedLegendKeys]
-  );
+  const colorMap = useMemo(() => {
+    return getColorMap(data, plotConfig, palette, sortedLegendKeys);
+  }, [data, plotConfig, palette, sortedLegendKeys]);
 
   const legendDisplayNames = useMemo(() => {
-    const out: any = {};
+    const out: Partial<Record<LegendKey, string>> = {};
 
     if (!data) {
       return out;
     }
 
-    (Reflect.ownKeys(colorMap || {}) as LegendKey[]).forEach((key) => {
+    [...colorMap.keys()].forEach((key) => {
       const name = categoryToDisplayName(key, data, continuousBins);
       out[key] = typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
     });

@@ -25,6 +25,7 @@ import {
   isNegatedContext,
   isV2Context,
   negateContext,
+  replaceLegacyContextIfExistsInLocalStorage,
 } from "../../utils/context";
 import { fetchContext, persistContext } from "../../utils/context-storage";
 import { isCompleteDimension, isPartialSliceId } from "../../utils/misc";
@@ -636,6 +637,10 @@ async function convertAllLegacyContexts(plot: DataExplorerPlotConfig | null) {
 
           if (isBreadboxOnlyMode && !isV2Context(context)) {
             const convertedContext = await convertContextV1toV2(context);
+            replaceLegacyContextIfExistsInLocalStorage(
+              context,
+              convertedContext
+            );
             context = (convertedContext as unknown) as DataExplorerContext;
           }
 
@@ -655,6 +660,7 @@ async function convertAllLegacyContexts(plot: DataExplorerPlotConfig | null) {
 
         if (isBreadboxOnlyMode && !isV2Context(context)) {
           const convertedContext = await convertContextV1toV2(context);
+          replaceLegacyContextIfExistsInLocalStorage(context, convertedContext);
           context = convertedContext;
         }
 
@@ -706,6 +712,23 @@ export async function makePlotConfigBreadboxModeCompatible(
     const datasets = await cached(breadboxAPI).getDatasets();
     const dimTypes = await cached(breadboxAPI).getDimensionTypes();
 
+    // eslint-disable-next-line no-inner-declarations
+    function maybeFallbackToMetadataDatasetNonGivenId(dataset_id: string) {
+      const dimTypeName = dataset_id.replace(/_metadata$/, "");
+      const dimType = dimTypes.find((dt) => dt.name === dimTypeName);
+
+      if (dimType?.metadata_dataset_id) {
+        const regularId = dimType.metadata_dataset_id;
+        const dataset = datasets.find((d) => d.id === regularId);
+
+        if (dataset && dataset.given_id !== dataset_id) {
+          return regularId;
+        }
+      }
+
+      return dataset_id;
+    }
+
     for (const key of Object.keys(plot.metadata)) {
       const value = plot.metadata[key];
 
@@ -717,26 +740,32 @@ export async function makePlotConfigBreadboxModeCompatible(
         );
 
         if (nextValue.dataset_id.endsWith("_metadata")) {
-          const dimTypeName = nextValue.dataset_id.replace(/_metadata$/, "");
-          const dimType = dimTypes.find((dt) => dt.name === dimTypeName);
-
-          if (dimType?.metadata_dataset_id) {
-            const regularId = dimType.metadata_dataset_id;
-            const dataset = datasets.find((d) => d.id === regularId);
-
-            if (dataset && dataset.given_id !== nextValue.dataset_id) {
-              nextValue.dataset_id = regularId;
-            }
-          }
+          // This shouldn't bee necessary because we now auto-generate a
+          // given_id for every metadata dataset. However, at least at one
+          // point, there were some crufty dimension types that slipped through
+          // the cracks. This accounts for that.
+          nextValue.dataset_id = maybeFallbackToMetadataDatasetNonGivenId(
+            nextValue.dataset_id
+          );
         }
 
         plot.metadata[key] = nextValue;
 
         if (key === "color_property" && nextValue) {
-          // In some rare cases, what used to be considered a color property
-          // (was stored as custom slice) is now a "custom" color option (now
-          // stored in a matrix).
-          if (nextValue.identifier_type !== "column") {
+          if (nextValue.identifier_type === "column") {
+            plot.color_by = nextValue.dataset_id.endsWith("_metadata")
+              ? "property"
+              : "custom";
+          } else if (
+            nextValue.dataset_id === wellKnownDatasets.subtype_matrix
+          ) {
+            plot.color_by = "property";
+          } else {
+            // In some rare cases, what used to be considered a color "property"
+            // (was keyed as model metadata) is now now stored in a matrix.
+            // Known cases:
+            // mutations_prioritized
+            // mutation_protein_change
             const slice_type =
               nextValue.dataset_id === wellKnownDatasets.mutations_prioritized
                 ? "gene"
@@ -756,11 +785,6 @@ export async function makePlotConfigBreadboxModeCompatible(
               },
             } as unknown) as DataExplorerPlotConfigDimension;
             delete plot.metadata[key];
-          } else {
-            plot.color_by = nextValue.dataset_id.endsWith("_metadata")
-              ? "metadata_column"
-              : // TODO: Add support for coloring by an arbitrary table!
-                "tabular_dataset";
           }
         }
       }

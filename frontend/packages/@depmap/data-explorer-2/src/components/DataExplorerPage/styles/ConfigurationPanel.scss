@@ -106,10 +106,14 @@
 }
 
 .sortByContainer {
+  position: relative;
+
   &:not(:empty) {
-    margin-left: 170px;
-    margin-top: -101px;
-    margin-bottom: 38px;
+    & > div {
+      position: absolute;
+      margin-left: 170px;
+      margin-top: -60px;
+    }
   }
 }
 
@@ -119,8 +123,12 @@
 }
 
 .customColorSortBy {
-  margin-top: -229px;
-  padding-bottom: 168px;
+  position: relative;
+
+  & > div {
+    position: absolute;
+    margin-top: -229px;
+  }
 }
 
 .checkbox {
@@ -130,6 +138,12 @@
 
 .ColorByViewOptions {
   margin-top: 14px;
+  margin-bottom: 4px;
+  scroll-margin-bottom: 24px;
+}
+
+.ColorByAnnotationSelect {
+  margin-top: 10px;
 }
 
 .distinguishOptions {

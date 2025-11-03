@@ -158,7 +158,9 @@ function StringList({ expr, path, domain, isLoading }: Props) {
       onCopy={handleCopy}
       onPaste={handlePaste}
     >
+      <label htmlFor="list-values">Values</label>
       <Select
+        id="list-values"
         isMulti
         isClearable={false}
         isLoading={isLoading}

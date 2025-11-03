@@ -71,7 +71,7 @@ function MatrixDataSelect({ varName }: Props) {
           dataset_id: nextDimension.dataset_id,
           identifier,
           identifier_type,
-          source: "matrix_dataset",
+          source: "custom",
           slice_type: nextDimension.slice_type,
           label: nextDimension.context?.name,
         });
