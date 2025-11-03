@@ -11,6 +11,7 @@ import { sliceIdToSliceQuery } from "./slice-id";
 
 const CATEGORICAL_MATRICES = new Set([
   wellKnownDatasets.legacy_msi,
+  wellKnownDatasets.legacy_prism_pools,
   wellKnownDatasets.mutations_prioritized,
   wellKnownDatasets.mutation_protein_change,
 ]);
@@ -127,7 +128,7 @@ export async function convertContextV1toV2(
         dataset_id: `${context_type}_metadata`,
         identifier_type: "column",
         identifier: "label",
-        source: "metadata_column",
+        source: "property",
       };
     } else {
       const sliceQuery = sliceIdToSliceQuery(
@@ -136,15 +137,17 @@ export async function convertContextV1toV2(
         context_type
       );
 
-      let source: DataExplorerContextVariable["source"] = "matrix_dataset";
+      let source: DataExplorerContextVariable["source"] = "custom";
 
       if (
         varTypes[varName] === "categorical" &&
         !CATEGORICAL_MATRICES.has(sliceQuery.dataset_id)
       ) {
-        source = sliceQuery.dataset_id.endsWith("_metadata")
-          ? "metadata_column"
-          : "tabular_dataset";
+        source = "property";
+      }
+
+      if (sliceQuery.dataset_id === wellKnownDatasets.subtype_matrix) {
+        source = "property";
       }
 
       vars[varName] = { ...sliceQuery, source };

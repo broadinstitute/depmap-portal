@@ -18,6 +18,7 @@ import {
   hexToRgba,
   isEveryValueNull,
   LEGEND_ALL,
+  LegendKey,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
@@ -32,7 +33,7 @@ interface Props {
   hoverTextKey?: string;
   annotationTextKey?: string;
   height: number | "auto";
-  colorMap: any;
+  colorMap: Map<LegendKey, string>;
   colorData?: any;
   continuousColorKey?: string;
   legendDisplayNames: any;
@@ -220,7 +221,7 @@ function PrototypeDensity1D({
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-    const colorKeys = Reflect.ownKeys(colorMap || {});
+    const colorKeys = [...colorMap.keys()];
     const x = data[xKey] as number[];
     const y = calcY(x, colorKeys, colorData, hiddenLegendValues);
     const text = hoverTextKey ? data[hoverTextKey] : null;
@@ -289,10 +290,10 @@ function PrototypeDensity1D({
 
     const colorTraces =
       colorMap && colorData && !contColorData
-        ? [...new Set(Reflect.ownKeys(colorMap))].map((key) =>
+        ? [...colorMap.keys()].map((key) =>
             makeColorTrace(
-              colorMap[key],
-              (i) => colorMap[key] === colorMap[colorData[i]]
+              colorMap.get(key)!,
+              (i) => colorMap.get(key) === colorMap.get(colorData[i])
             )
           )
         : [];
@@ -302,7 +303,7 @@ function PrototypeDensity1D({
       ? {
           ...templateTrace,
           hoverlabel: {
-            bgcolor: colorData.map((key: string | symbol) => colorMap[key]),
+            bgcolor: colorData.map((key: LegendKey) => colorMap.get(key)),
           },
           marker: {
             size: pointSize,
@@ -359,7 +360,7 @@ function PrototypeDensity1D({
     const violinTraces = colorKeys
       .filter((key) => !hiddenLegendValues.has(key))
       .map((legendKey, index) => {
-        let fillcolor = colorMap[legendKey];
+        let fillcolor = colorMap.get(legendKey);
 
         if (useSemiOpaqueViolins) {
           fillcolor += "88";
@@ -684,7 +685,7 @@ function PrototypeDensity1D({
       const legendTraces = colorKeys
         .filter((key) => !hiddenLegendValues.has(key))
         .map((legendKey) => {
-          const fillcolor = colorMap[legendKey];
+          const fillcolor = colorMap.get(legendKey);
 
           return {
             type: "violin",

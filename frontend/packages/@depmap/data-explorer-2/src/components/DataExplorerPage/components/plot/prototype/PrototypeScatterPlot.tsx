@@ -61,7 +61,7 @@ interface Props {
   categoricalColorKey?: string;
   continuousColorKey?: string;
   contLegendKeys?: LegendKey[] | null;
-  colorMap?: Record<string | symbol, string>;
+  colorMap: Map<LegendKey, string>;
   selectedPoints?: Set<number>;
   // Special case. Set to false to avoid outlining the VERY densely packed Waterfall plot points.
   outlineUnselectedPoints?: boolean;
@@ -385,16 +385,22 @@ function PrototypeScatterPlot({
 
       categoricalColorTraces =
         catCardinality < 75
-          ? Object.keys(colorMap)
+          ? [...colorMap.keys()]
               .sort(byValueCountOf(catColorValueCounts))
               .map((key) =>
-                makeColorTrace(colorMap[key], (i) => key === catColorData[i])
+                makeColorTrace(
+                  colorMap.get(key)!,
+                  (i) => key === catColorData[i]
+                )
               )
           : // WORKAROUND: If there's a large number of categories,
             // make a trace for each color instead. This is worse
             // for the stacking order but better for performance.
-            [...new Set(Object.values(colorMap))].map((color) =>
-              makeColorTrace(color, (i) => color === colorMap[catColorData[i]])
+            [...new Set(colorMap.values())].map((color) =>
+              makeColorTrace(
+                color!,
+                (i) => color === colorMap.get(catColorData[i])
+              )
             );
     }
 
@@ -418,7 +424,7 @@ function PrototypeScatterPlot({
       const sortedAnnotationText: string[] = [];
       const remappedSelectedPoints: number[] = [];
 
-      const sortedBins = Reflect.ownKeys(colorMap || {})
+      const sortedBins = [...colorMap.keys()]
         .sort(byValueCountOf(contColorValueCounts))
         .reverse();
 
@@ -450,7 +456,7 @@ function PrototypeScatterPlot({
           sortedX.push(templateTrace.x[origIndex]);
           sortedY.push(templateTrace.y[origIndex]);
           sortedColor.push(contColorData[origIndex]);
-          hoverColor.push(colorMap![contLegendKeys[origIndex]]);
+          hoverColor.push(colorMap.get(contLegendKeys[origIndex])!);
           sortedText.push(text[origIndex]);
           sortedAnnotationText.push(annotationText[origIndex]);
           if (selectedPoints?.has(origIndex)) {

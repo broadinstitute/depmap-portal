@@ -70,7 +70,7 @@ function DataVersionSelect({
       options={options}
       onChange={onChange}
       label={
-        <span>
+        <span className={styles.labelWithDetailsButton}>
           Data Version
           {onClickShowModal && (
             <button

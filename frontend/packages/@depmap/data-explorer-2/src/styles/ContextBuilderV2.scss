@@ -157,14 +157,6 @@
   }
 }
 
-.spacerWidth300 {
-  width: 300px;
-}
-
-.spacerWidth400 {
-  width: 400px;
-}
-
 .Operator {
   margin-top: 22px;
   max-width: 108px;
@@ -210,6 +202,11 @@
 
 .ListSelect {
   min-width: 452px;
+  margin-top: -3px;
+
+  label {
+    font-size: 12px;
+  }
 }
 
 .invalidSelect {
