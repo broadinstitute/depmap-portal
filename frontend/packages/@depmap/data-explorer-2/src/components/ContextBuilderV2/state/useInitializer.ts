@@ -69,7 +69,7 @@ function useInitializer(
 
         for (const newName of varsToCreate) {
           setVar(newName, {
-            source: "metadata_column",
+            source: "property",
             dataset_id: metadataDataset.given_id || metadataDataset.id,
             identifier: metadataIdColumn,
             identifier_type: "column",
@@ -84,7 +84,7 @@ function useInitializer(
           variable.identifier_type === "column" &&
           variable.dataset_id?.endsWith("_metadata")
         ) {
-          setVar(name, { ...variable, source: "metadata_column" });
+          setVar(name, { ...variable, source: "property" });
         }
       }
 

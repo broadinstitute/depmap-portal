@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Checkbox } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
 import {
@@ -6,6 +6,7 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
+  DataExplorerPlotType,
 } from "@depmap/types";
 import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
@@ -17,7 +18,6 @@ import {
   sortDimensionTypes,
 } from "../../../../utils/misc";
 import renderConditionally from "../../../../utils/render-conditionally";
-import { fetchMetadataAndOtherTabularDatasets } from "../../../../utils/api-helpers";
 import PlotConfigSelect from "../../../PlotConfigSelect";
 import DimensionSelectV1 from "../../../DimensionSelect";
 import DimensionSelectV2 from "../../../DimensionSelectV2";
@@ -141,42 +141,24 @@ export function ColorByTypeSelector({
   show,
   enable,
   value,
+  plot_type,
   slice_type,
   onChange,
 }: {
   show: boolean;
   enable: boolean;
   value: string | null;
+  plot_type: DataExplorerPlotType;
   slice_type: string;
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
   const sliceTypeLabel = capitalize(getDimensionTypeLabel(slice_type));
   const [hasLegacyColorProperty, setHasLegacyColorProperty] = useState(false);
-  const [hasMetadataDataset, setHasMetadataDataset] = useState(false);
-  const [
-    hasSomeCategoricalTabularColumns,
-    setHasSomeCategoricalTabularColumns,
-  ] = useState(false);
 
   useEffect(() => {
     (async () => {
-      if (isBreadboxOnlyMode) {
-        const {
-          metadataDataset,
-          otherTabularDatasets,
-        } = await fetchMetadataAndOtherTabularDatasets(slice_type, [
-          "categorical",
-          // TODO: In the future we should only support "categorical" and
-          // remove "text" here. But most datasets are not tagged that way
-          // which can make it appear we are missing metadata. For now, we'lll
-          // include "text" even though that may include some columns that have
-          // too many disinct values to color by.
-          "text",
-        ]);
-
-        setHasMetadataDataset(Boolean(metadataDataset));
-        setHasSomeCategoricalTabularColumns(otherTabularDatasets.length > 0);
-      } else {
+      if (!isBreadboxOnlyMode) {
         const keyedSlices = await deprecatedDataExplorerAPI.fetchMetadataSlices(
           slice_type
         );
@@ -208,7 +190,7 @@ export function ColorByTypeSelector({
     );
   }
 
-  if (hasLegacyColorProperty || value === "property") {
+  if (isBreadboxOnlyMode || hasLegacyColorProperty || value === "property") {
     options.property = `${sliceTypeLabel} Annotation`;
     helpContent.push(
       <p key={2}>
@@ -219,17 +201,7 @@ export function ColorByTypeSelector({
     );
   }
 
-  if (isBreadboxOnlyMode && hasMetadataDataset) {
-    // FIXME: add helpContent for this option
-    options.metadata_column = `${sliceTypeLabel} Annotation`;
-  }
-
-  if (isBreadboxOnlyMode && hasSomeCategoricalTabularColumns) {
-    // FIXME: add helpContent for this option
-    options.tabular_dataset = "Tabular Dataset";
-  }
-
-  if (slice_type !== "other") {
+  if (!isBreadboxOnlyMode && slice_type !== "other") {
     options.custom = "Matrix Data";
     helpContent.push(
       <p key={3}>
@@ -239,12 +211,24 @@ export function ColorByTypeSelector({
     );
   }
 
+  if (isBreadboxOnlyMode) {
+    options.custom = "Dataset";
+    helpContent.push(
+      <p key={3}>
+        Choose <b>Dataset</b> to treat color as a third axis, letting you choose
+        any data type that could have been an axis.
+      </p>
+    );
+  }
+
   return (
-    <div className={styles.colorBySelector}>
+    <div ref={ref} className={styles.colorBySelector}>
       <PlotConfigSelect
         label={
           <span>
-            Color by
+            {["density_1d", "waterfall"].includes(plot_type)
+              ? "Color & group by"
+              : "Color by"}
             {slice_type && (
               <HelpTip id="color-by-help" customContent={helpContent} />
             )}
@@ -255,9 +239,18 @@ export function ColorByTypeSelector({
         show={show}
         enable={enable}
         value={value}
-        onChange={(nextValue) =>
-          onChange(nextValue as DataExplorerPlotConfig["color_by"])
-        }
+        onChange={(nextValue) => {
+          onChange(nextValue as DataExplorerPlotConfig["color_by"]);
+
+          if (isBreadboxOnlyMode) {
+            setTimeout(() => {
+              ref.current?.parentElement?.scrollIntoView({
+                behavior: "smooth",
+                block: "nearest",
+              });
+            }, 0);
+          }
+        }}
       />
     </div>
   );
@@ -276,7 +269,7 @@ export function SortBySelector({
 }) {
   return (
     <PlotConfigSelect
-      label="Sort by"
+      label="Sort groups by"
       placeholder="Select sort…"
       options={{
         alphabetical: "Alphabetical",

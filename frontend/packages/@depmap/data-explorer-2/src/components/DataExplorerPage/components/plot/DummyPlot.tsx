@@ -62,6 +62,7 @@ function EmptyScatter() {
       data={data}
       xKey="x"
       yKey="y"
+      colorMap={new Map()}
       colorKey1="color1"
       colorKey2="color2"
       categoricalColorKey="catColorData"
@@ -114,7 +115,7 @@ function DummyPlot({
             continuousBins={null}
             hiddenLegendValues={hiddenLegendValues}
             onClickLegendItem={onClickLegendItem}
-            colorMap={{}}
+            colorMap={new Map()}
             legendKeysWithNoData={null}
             handleClickShowAll={() => {}}
             handleClickHideAll={() => {}}

@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import { Button } from "react-bootstrap";
+import { breadboxAPI, cached } from "@depmap/api";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import type { RowSelectionState } from "@depmap/react-table";
 import type { SliceQuery } from "@depmap/types";
@@ -105,8 +106,19 @@ export function useSliceTableState({
     async (column: typeof columns[number]) => {
       const defaultValue = column.meta.sliceQuery;
 
+      const datasets = await cached(breadboxAPI).getDatasets();
+      const initialSource =
+        datasets.find(
+          (d) =>
+            d.id === defaultValue.dataset_id ||
+            d.given_id === defaultValue.dataset_id
+        )?.data_type === "Annotations"
+          ? "property"
+          : "custom";
+
       const editedSlice = await chooseDataSlice({
         defaultValue,
+        initialSource,
         index_type_name,
         PlotlyLoader,
         onClickRemoveColumn: () => {

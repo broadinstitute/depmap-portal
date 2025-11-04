@@ -238,8 +238,8 @@ function DataExplorerScatterPlot({
 
     const items: { name: string; hexColor: string }[] = [];
 
-    Reflect.ownKeys(colorMap || {}).forEach((key: string | symbol) => {
-      if (!hiddenLegendValues.has(key as LegendKey)) {
+    [...colorMap.keys()].forEach((key) => {
+      if (!hiddenLegendValues.has(key)) {
         const name = categoryToDisplayName(
           key as LegendKey,
           data as DataExplorerPlotResponse,
@@ -250,7 +250,7 @@ function DataExplorerScatterPlot({
 
         items.push({
           name: formattedName,
-          hexColor: colorMap[key],
+          hexColor: colorMap.get(key)!,
         });
       }
     });
@@ -267,7 +267,7 @@ function DataExplorerScatterPlot({
   );
 
   const regressionLines = useMemo(() => {
-    if (!linreg_by_group || !colorMap || !hiddenLegendValues) {
+    if (!linreg_by_group || !hiddenLegendValues) {
       return null;
     }
 
@@ -310,7 +310,7 @@ function DataExplorerScatterPlot({
 
       return {
         hidden,
-        color: colorMap[label] || palette.other,
+        color: colorMap.get(label) || palette.other,
         m: Number(linreg.slope),
         b: Number(linreg.intercept),
       };

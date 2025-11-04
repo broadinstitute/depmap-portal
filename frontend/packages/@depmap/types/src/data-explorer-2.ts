@@ -9,10 +9,16 @@ export type DataExplorerPlotType =
   | "waterfall";
 
 export type DataExplorerContextVariable = SliceQuery & {
-  source?: "metadata_column" | "tabular_dataset" | "matrix_dataset";
+  source?: "property" | "custom";
   slice_type?: string | null;
   label?: string;
 };
+
+export type ColorByValue =
+  | "raw_slice"
+  | "aggregated_slice"
+  | "property"
+  | "custom";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DataExplorerContextExpression = Record<string, any> | boolean;
@@ -84,15 +90,6 @@ export interface DataExplorerPlotResponseDimension {
   value_type: "continuous" | "text" | "categorical" | "list_strings";
 }
 
-export type ColorByValue =
-  | "raw_slice"
-  | "aggregated_slice"
-  | "property"
-  | "custom"
-  // Only supported in Elara. These map to how data is stored in Breadbox.
-  | "metadata_column"
-  | "tabular_dataset";
-
 // A DataExplorerPlotConfig is an object with all the configurable parameters
 // used to generate a plot. Note that some properties only make sense with
 // certain plot types (but encoding that in type system would be much more
@@ -151,12 +148,23 @@ export interface DataExplorerPlotResponse {
   filters: Partial<Record<FilterKey, { name: string; values: boolean[] }>>;
   metadata: Partial<
     Record<
-      string,
+      // Officially used to color by annotations, but other properties may
+      // exist in the future.
+      "color_property" | string,
       {
         label: string;
-        slice_id: string;
-        values: (string | number)[];
-        value_type: "categorical" | "binary";
+        slice_id: string; // TODO: Remove this
+        sliceQuery?: SliceQuery;
+        dataset_label?: string;
+        units?: string;
+        values: (string | number | null)[];
+        value_type:
+          | "continuous"
+          | "text"
+          | "categorical"
+          // Only used by the legacy DE2 backend.
+          // While Breadbox supports it, we don't use it.
+          | "binary";
       }
     >
   >;
