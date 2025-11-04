@@ -125,6 +125,7 @@ def _check_download_data(downloads: list[DownloadRelease]):
         # not 100% sure what's changed, but as we're moving to BB, hopefully all of this checking code can
         # be deleted soon.
         "rrbs-4b29.7/CCLE_RRBS_TSS1kb_20181022_matrix",
+        "processed-files-for-ctd2-gdsc1-gdsc2-and-repurposing-secondary-4e65.3",
     }
 
     issues = DownloadIssues()
