@@ -110,7 +110,8 @@ async function extractColumnRenames(
 
 const isLinkable = (dimension_type?: string | null) =>
   !isElara &&
-  ["depmap_model", "gene", "compound_v2"].includes(dimension_type || "");
+  dimension_type &&
+  ["depmap_model", "gene", "compound_v2"].includes(dimension_type);
 
 function toDetailPageLink(id: string, label: string, dimension_type: string) {
   let href = "";
@@ -308,6 +309,7 @@ function transformToTableData(
   indexType: DimensionType,
   idColumnDisplayName: string,
   labelColumnDisplayName: string,
+  idToLabelMappings: Record<string, Record<string, string>>,
   rowFilters?: RowFilters,
   selectedRowIds?: Set<string>
 ) {
@@ -395,7 +397,7 @@ function transformToTableData(
       const id = getValue() as string;
       const label = row.original.label as string;
 
-      return shouldRenderIdsAsLinks
+      return id != null && shouldRenderIdsAsLinks
         ? toDetailPageLink(id, label, indexType.name)
         : id;
     },
@@ -474,15 +476,20 @@ function transformToTableData(
       ...(isLinkable(references) && {
         cell: ({
           getValue,
-          row,
         }: {
           getValue: () => unknown;
           row: { original: Record<string, unknown> };
         }) => {
-          return toDetailPageLink(
-            getValue() as string,
-            row.original.label as string,
-            references as string
+          const value = getValue();
+
+          return value != null ? (
+            toDetailPageLink(
+              getValue() as string,
+              idToLabelMappings[references!][value as string],
+              references as string
+            )
+          ) : (
+            <></>
           );
         },
       }),
@@ -639,6 +646,38 @@ export default function useAlignedData({
 
         if (isCancelled) return;
 
+        // Grab the sample/feature labels for any referenced types
+        const idToLabelMappings = {} as Record<string, Record<string, string>>;
+
+        for (const slice of slices) {
+          const dataset = datasets.find(
+            (d) => d.given_id === slice.dataset_id || d.id === slice.dataset_id
+          );
+
+          if (!dataset) {
+            // eslint-disable-next-line no-continue
+            continue;
+          }
+
+          const references =
+            dataset.format === "tabular_dataset"
+              ? dataset.columns_metadata[slice.identifier].references
+              : null;
+
+          if (references && !(references in idToLabelMappings)) {
+            // eslint-disable-next-line no-await-in-loop
+            const identifiers = await cached(
+              breadboxAPI
+            ).getDimensionTypeIdentifiers(references);
+
+            idToLabelMappings[references] = {};
+
+            identifiers.forEach(({ id, label }) => {
+              idToLabelMappings[references][id] = label;
+            });
+          }
+        }
+
         // Transform the responses into table data
         const { data, columns } = transformToTableData(
           dataResponses,
@@ -649,6 +688,7 @@ export default function useAlignedData({
           indexType,
           idColumnDisplayName,
           labelColumnDisplayName,
+          idToLabelMappings,
           rowFilters,
           selectedRowIds
         );
