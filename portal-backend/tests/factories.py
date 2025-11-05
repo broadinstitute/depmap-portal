@@ -876,16 +876,9 @@ class ContextAnalysisFactory(SQLAlchemyModelFactory):
         SubtypeContextFactory, subtype_code=factory.SelfAttribute("..subtype_code")
     )
 
-    dependency_dataset_id = factory.Sequence(lambda number: number)
-    dataset = factory.SubFactory(
-        DependencyDatasetFactory,
-        dependency_dataset_id=factory.SelfAttribute("..dependency_dataset_id"),
-    )
+    dataset_given_id = factory.Sequence(lambda number: f"dataset_{number}")
+    feature_id = factory.Sequence(lambda number: f"feature_{number}")
 
-    entity_id = factory.Sequence(lambda number: number)
-    entity = factory.SubFactory(
-        EntityFactory, entity_id=factory.SelfAttribute("..entity_id")
-    )
     out_group = factory.Sequence(lambda number: "out_group_{}".format(number))
     t_pval = factory.Sequence(lambda number: number)
     mean_in = factory.Sequence(lambda number: number)
