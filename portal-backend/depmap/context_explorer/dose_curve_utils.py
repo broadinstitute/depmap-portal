@@ -1,5 +1,4 @@
 from typing import List
-from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound import new_dose_curves_utils
 from depmap.context_explorer.models import ContextExplorerDatasets
@@ -163,7 +162,7 @@ def get_context_dose_curves(
 ):
 
     assert dataset_given_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name
-    dataset = data_access.get_matrix_dataset(dataset_given_id)
+
     drc_dataset = utils.find_compound_dataset(
         datasets=drc_compound_datasets,
         key_name="auc_dataset_given_id",
@@ -192,7 +191,6 @@ def get_context_dose_curves(
     )
 
     return {
-        "dataset": dataset,
         "compound": compound,
         "replicate_dataset_name": replicate_dataset_name,
         "dose_curve_info": dose_curve_info,

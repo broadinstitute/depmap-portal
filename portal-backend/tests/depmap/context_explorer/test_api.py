@@ -418,8 +418,8 @@ def test_unknown_context_analysis_data(populated_db):
                 "api.context_explorer_analysis_data",
                 in_group="unknown",
                 out_group_type="All",
-                entity_type="gene",
-                dataset_name="Chronos_Combined",
+                feature_type="gene",
+                dataset_given_id="Chronos_Combined",
             ),
             content_type="application/json",
         )
@@ -493,8 +493,8 @@ def test_get_context_dose_curves_invalid_request_arguments(populated_db):
             r = c.get(
                 url_for(
                     "api.context_explorer_context_dose_curves",
-                    dataset_name="Chronos_Combined",
-                    entity_full_label="BRD:PRC-003330600-058-29",
+                    dataset_given_id="Chronos_Combined",
+                    feature_id="BRD:PRC-003330600-058-29",
                     context_name="bone",
                     level="1",
                     out_group_type="All Others",

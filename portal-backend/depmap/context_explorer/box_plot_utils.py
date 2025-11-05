@@ -1,6 +1,5 @@
 from functools import partial
 from operator import contains
-import re
 from typing import Dict, List, Literal, Optional, Set
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
