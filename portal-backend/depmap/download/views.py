@@ -153,6 +153,14 @@ def get_file_record(release: DownloadRelease, f: DownloadFile):
         "fileType": f.type.display_name,
         "size": f.size,
         "version": f.version,
+        "pipeline": None
+        if not f.pipeline_name
+        or not release.pipelines
+        or (f.pipeline_name not in release.pipelines.keys())
+        else {
+            "name": f.pipeline_name,
+            "description": markdown.markdown(release.pipelines[f.pipeline_name]),
+        },
         "fileDescription": None
         if f.description is None
         else markdown.markdown(f.description),

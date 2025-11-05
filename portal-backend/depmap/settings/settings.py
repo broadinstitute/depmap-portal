@@ -111,6 +111,11 @@ class FeatureFlags:
     def data_page(self):
         return True
 
+    # The pipeline overview is always hidden because it is an unfinished feature
+    @property
+    def pipeline_overview(self):
+        return False
+
     @property
     def context_explorer(self):
         return True

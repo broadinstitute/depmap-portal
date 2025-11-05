@@ -99,6 +99,7 @@ def test_get_file_record(app, _empty_db_base):
         "fileDescription": "<p>test file description</p>",
         "isMainFile": False,
         "retractionOverride": None,
+        "pipeline": None,
         "downloadUrl": "test url",
         "taigaUrl": "https://cds.team/taiga/dataset/test-taiga-id/1",  # this should be test-taiga-id
         "releaseName": "test name version",
@@ -120,6 +121,7 @@ def test_get_file_record(app, _empty_db_base):
         "fileName": "headliner2 file name",
         "fileType": "Cellular Models",
         "version": None,
+        "pipeline": None,
         "fileSubType": {"code": "mutations", "label": "Mutations", "position": 1},
         "size": "headliner2 size",
         "fileDescription": None,

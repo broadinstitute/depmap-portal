@@ -107,14 +107,16 @@ export function useSliceTableState({
       const defaultValue = column.meta.sliceQuery;
 
       const datasets = await cached(breadboxAPI).getDatasets();
-      const initialSource =
-        datasets.find(
-          (d) =>
-            d.id === defaultValue.dataset_id ||
-            d.given_id === defaultValue.dataset_id
-        )?.data_type === "Annotations"
-          ? "property"
-          : "custom";
+      const dataset = datasets.find(
+        (d) =>
+          d.id === defaultValue.dataset_id ||
+          d.given_id === defaultValue.dataset_id
+      );
+      const initialSource = ["Annotations", "metadata"].includes(
+        dataset?.data_type || ""
+      )
+        ? "property"
+        : "custom";
 
       const editedSlice = await chooseDataSlice({
         defaultValue,
@@ -199,9 +201,11 @@ export function useSliceTableState({
     // Download as file
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
     const href = URL.createObjectURL(blob);
-    const dlAttr = downloadFilename.endsWith(".csv")
-      ? downloadFilename
-      : `${downloadFilename}.csv`;
+
+    let dlAttr = downloadFilename || `${index_type_name} table`;
+    if (!dlAttr.endsWith(".csv")) {
+      dlAttr += ".csv";
+    }
 
     const link = document.createElement("a");
     link.setAttribute("href", href);
@@ -210,7 +214,7 @@ export function useSliceTableState({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [downloadFilename, exportToCsv]);
+  }, [index_type_name, downloadFilename, exportToCsv]);
 
   return {
     data,
