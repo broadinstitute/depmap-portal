@@ -14,7 +14,7 @@ def get_enrichment_tile_filters(feature_type: str, dataset_given_id: str):
         # TODO also allow new OncRef
         if (
             dataset_given_id
-            == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
+            == ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name
         ):
             max_fdr = 0.1
             min_abs_effect_size = 0.1

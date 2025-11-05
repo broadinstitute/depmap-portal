@@ -193,9 +193,7 @@ const ContextExplorerTabs = ({
                 topContextNameInfo={topContextNameInfo}
                 treeType={treeType}
                 featureType={"compound"}
-                datasetId={
-                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
-                }
+                datasetId={ContextExplorerDatasets.Prism_oncology_AUC_collapsed}
                 customInfoImg={customInfoImg}
               />
             )}
@@ -210,7 +208,7 @@ const ContextExplorerTabs = ({
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
               featureType={"compound"}
-              datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+              datasetId={ContextExplorerDatasets.REPURPOSING_AUC_collapsed}
               customInfoImg={customInfoImg}
             />
           )}

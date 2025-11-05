@@ -707,8 +707,8 @@ import re
 def fix_dataset_given_ids(value):
     dataset_str_to_name_mapping = {
         "CRISPR": "Chronos_Combined",
-        "PRISMOncRef": "PRISMOncologyReferenceLog2AUCMatrix",
-        "PRISMRepurposing": "Rep_all_single_pt",
+        "PRISMOncRef": "Prism_oncology_AUC_collapsed",
+        "PRISMRepurposing": "REPURPOSING_AUC_collapsed",
     }
 
     assert (

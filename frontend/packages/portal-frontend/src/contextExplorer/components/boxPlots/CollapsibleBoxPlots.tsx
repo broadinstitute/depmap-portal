@@ -171,13 +171,11 @@ function CollapsibleBoxPlots({
   };
 
   const xAxisTitle = useMemo(() => {
-    if (
-      datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
-    ) {
+    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC_collapsed) {
       return boxPlotData?.dataset_units || "";
     }
 
-    if (datasetId === ContextExplorerDatasets.Rep_all_single_pt) {
+    if (datasetId === ContextExplorerDatasets.REPURPOSING_AUC_collapsed) {
       return "log2(Viability)";
     }
 
