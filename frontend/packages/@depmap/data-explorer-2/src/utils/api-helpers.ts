@@ -90,7 +90,7 @@ export function useAnnotationDatasets(dimension_type: string) {
               return (
                 d.id !== metaDs?.id &&
                 dimType === dimension_type &&
-                d.data_type === "Annotations"
+                ["Annotations", "metadata"].includes(d.data_type)
               );
             })
             .sort((a, b) => {
