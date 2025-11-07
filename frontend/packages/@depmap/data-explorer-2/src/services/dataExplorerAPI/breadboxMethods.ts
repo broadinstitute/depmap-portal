@@ -9,6 +9,7 @@ import {
 } from "@depmap/statistics";
 import {
   DataExplorerContextV2,
+  DataExplorerContextVariable,
   DataExplorerDatasetDescriptor,
   DataExplorerFilters,
   DataExplorerMetadata,
@@ -131,6 +132,25 @@ const isPrimaryMetatadata = (dataset?: Dataset) => {
   return dataset.given_id === `${dataset.index_type_name}_metadata`;
 };
 
+function contextVariablesAsMetadata(filters?: DataExplorerFilters) {
+  const colorMetadata = {} as DataExplorerMetadata;
+  const uniqueVars = new Set<string>();
+
+  for (const filter of Object.values(
+    filters || {}
+  ) as DataExplorerContextV2[]) {
+    Object.values(filter.vars).forEach((variable) => {
+      uniqueVars.add(JSON.stringify(variable));
+    });
+  }
+
+  [...uniqueVars].forEach((stringVar, i) => {
+    colorMetadata[`context_var_${i}`] = JSON.parse(stringVar);
+  });
+
+  return colorMetadata;
+}
+
 function getExtraMetadata(index_type: string, metadata?: DataExplorerMetadata) {
   const extraMetadata = {} as DataExplorerMetadata;
   // HACK: Always include this info about models so we can show it in hover
@@ -168,6 +188,7 @@ export async function fetchPlotDimensions(
   // eslint-disable-next-line no-param-reassign
   metadata = {
     ...metadata,
+    ...contextVariablesAsMetadata(filters),
     ...getExtraMetadata(index_type, metadata),
   };
 
@@ -506,7 +527,7 @@ export async function fetchPlotDimensions(
         };
       }
       if (property === "metadata") {
-        const sliceQuery = metadata![key] as SliceQuery;
+        const sliceQuery = metadata![key] as DataExplorerContextVariable;
 
         const dataset = datasets.find((d) => {
           return (
@@ -520,7 +541,7 @@ export async function fetchPlotDimensions(
           dataset && !isPrimaryMetatadata(dataset) ? dataset.name : undefined;
 
         out.metadata[key] = {
-          label: (metadata![key] as SliceQuery).identifier,
+          label: sliceQuery.label || sliceQuery.identifier,
           slice_id: "TODO: remove references to slice_id !",
           sliceQuery,
           value_type: (response as any).value_type,

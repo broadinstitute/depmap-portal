@@ -2,6 +2,7 @@ import { breadboxAPI, cached } from "@depmap/api";
 import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
 import { DimensionType } from "@depmap/types";
 import {
+  dataTypeSortComparator,
   isSampleType,
   pluralize,
   sortDimensionTypes,
@@ -264,30 +265,8 @@ async function computeDataTypeOptions(
     };
   });
 
-  const priorityOrder = [
-    "CRISPR",
-    "RNAi",
-    "CN",
-    "Expression",
-    "Drug screen",
-    "Combo Drug screen",
-  ];
-
   return options
-    .sort((a, b) => {
-      const ai = priorityOrder.indexOf(a.value);
-      const bi = priorityOrder.indexOf(b.value);
-
-      if (ai !== -1 && bi !== -1) {
-        // both are in priority list — sort by their order in that list
-        return ai - bi;
-      }
-      if (ai !== -1) return -1; // a is priority, b is not
-      if (bi !== -1) return 1; // b is priority, a is not
-
-      // neither are priority — sort alphabetically
-      return a.value.localeCompare(b.value);
-    })
+    .sort((a, b) => dataTypeSortComparator(a.value, b.value))
     .sort(compareDisabledLast);
 }
 

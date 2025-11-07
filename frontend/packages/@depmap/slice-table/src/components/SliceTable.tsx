@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
 import type { RowSelectionState } from "@depmap/react-table";
@@ -15,6 +15,8 @@ interface Props {
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
   initialRowSelection?: RowSelectionState;
   enableRowSelection?: boolean;
+  onChangeRowSelection?: (nextRowSelection: Record<string, boolean>) => void;
+  renderCustomControls?: () => React.ReactNode;
   renderCustomActions?: () => React.ReactNode;
   downloadFilename?: string;
 }
@@ -24,6 +26,7 @@ const getRowId = (row: Record<string, string | number | undefined>) => {
 };
 
 const EMPTY_SET = new Set<SliceQuery>();
+const EMPTY_OBJECT = {};
 const NOOP = () => {};
 
 function SliceTable({
@@ -31,8 +34,10 @@ function SliceTable({
   initialSlices = [],
   viewOnlySlices = EMPTY_SET,
   onChangeSlices = NOOP,
-  initialRowSelection = {},
+  initialRowSelection = EMPTY_OBJECT,
   enableRowSelection = false,
+  onChangeRowSelection = NOOP,
+  renderCustomControls = () => null,
   renderCustomActions = () => null,
   downloadFilename = "",
 }: Props) {
@@ -56,6 +61,12 @@ function SliceTable({
     downloadFilename,
   });
 
+  useEffect(() => {
+    if (rowSelection !== initialRowSelection) {
+      onChangeRowSelection(rowSelection);
+    }
+  }, [rowSelection, initialRowSelection, onChangeRowSelection]);
+
   return (
     <div className={styles.SliceTable}>
       <Controls
@@ -63,47 +74,44 @@ function SliceTable({
         hadError={Boolean(error)}
         onClickFilterButton={handleClickFilterButton}
         onClickDownload={handleClickDownload}
+        renderCustomControls={renderCustomControls}
       />
-      {loading || error ? (
-        <>
-          {loading && (
-            <div className={styles.loadingContainer}>
-              <Spinner position="static" />
-            </div>
-          )}
-          {error && (
-            <div className={styles.errorContainer}>
-              <p>⚠️ Sorry, there was an error loading the table.</p>
-              <details>{error}</details>
-            </div>
-          )}
-        </>
-      ) : (
-        <ReactTable
-          height="100%"
-          data={data}
-          columns={columns}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          getRowId={getRowId}
-          enableRowSelection={enableRowSelection}
-          enableMultiRowSelection
-          enableStickyFirstColumn
-          columnVisibility={{ label: shouldShowLabelColumn }}
-          defaultSort={(a, b) => {
-            const aId = getRowId(a);
-            const bId = getRowId(b);
-
-            const aSelected = rowSelection[aId] || false;
-            const bSelected = rowSelection[bId] || false;
-
-            if (aSelected && !bSelected) return -1;
-            if (!aSelected && bSelected) return 1;
-
-            return 0;
-          }}
-        />
+      {loading && (
+        <div className={styles.loadingContainer}>
+          <Spinner position="static" />
+        </div>
       )}
+      {error && (
+        <div className={styles.errorContainer}>
+          <p>⚠️ Sorry, there was an error loading the table.</p>
+          <details>{error}</details>
+        </div>
+      )}
+      <ReactTable
+        className={loading ? styles.hidden : ""}
+        height="100%"
+        data={data}
+        columns={columns}
+        rowSelection={rowSelection}
+        onRowSelectionChange={setRowSelection}
+        getRowId={getRowId}
+        enableRowSelection={enableRowSelection}
+        enableMultiRowSelection
+        enableStickyFirstColumn
+        columnVisibility={{ label: shouldShowLabelColumn }}
+        defaultSort={(a, b) => {
+          const aId = getRowId(a);
+          const bId = getRowId(b);
+
+          const aSelected = initialRowSelection[aId] || false;
+          const bSelected = initialRowSelection[bId] || false;
+
+          if (aSelected && !bSelected) return -1;
+          if (!aSelected && bSelected) return 1;
+
+          return 0;
+        }}
+      />
       <Actions
         isLoading={loading}
         hadError={Boolean(error)}
