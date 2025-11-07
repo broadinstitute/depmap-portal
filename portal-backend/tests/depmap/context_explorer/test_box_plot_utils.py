@@ -184,7 +184,7 @@ def set_up_node_and_context_objects(
     ]
 
     feature_id = (
-        GeneFactory(entrez_id="entrez_id").entrez_id
+        str(GeneFactory(entrez_id="entrez_id").entrez_id)
         if feature_type == "gene"
         else CompoundFactory(compound_id="compound_id").compound_id
     )
@@ -316,6 +316,7 @@ def test_get_sig_context_dataframe_level_0_significant(
         make_level_0_significant=True,
         tree_type=tree_type,
     )
+    feature_id = str(feature_id)
 
     empty_db_mock_downloads.session.flush()
 
@@ -359,6 +360,7 @@ def test_get_sig_context_dataframe_level_0_not_significant(
         make_level_0_significant=False,
         tree_type=tree_type,
     )
+    feature_id = str(feature_id)
 
     empty_db_mock_downloads.session.flush()
 
@@ -441,6 +443,7 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
         make_level_0_significant=True,
         tree_type=tree_type,
     )
+    feature_id = str(feature_id)
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
@@ -537,6 +540,7 @@ def test_get_context_plot_data(
         make_level_0_significant=True,
         tree_type=tree_type,
     )
+    feature_id = str(feature_id)
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
@@ -675,7 +679,7 @@ def test_get_data_to_show_if_no_contexts_significant(
         make_level_0_significant=False,
         tree_type=tree_type,
     )
-
+    feature_id = str(feature_id)
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 

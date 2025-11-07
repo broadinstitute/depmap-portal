@@ -73,7 +73,7 @@ class ContextPlotBoxData:
 
 @dataclass
 class NodeEntityData:
-    feature_id: int
+    feature_id: str
     label: str
     feature_full_row_of_values: pd.Series
     feature_overview_page_label: str
@@ -395,7 +395,7 @@ class ContextAnalysis(Model):
     @staticmethod
     def get_context_dependencies(
         tree_type: str,
-        feature_id: int,
+        feature_id: str,
         dataset_given_id: str,
         feature_type: str,
         max_fdr: float,

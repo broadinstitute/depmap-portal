@@ -277,7 +277,7 @@ def get_branch_subtype_codes_organized_by_code(sig_contexts: Dict[str, List[str]
 def get_sig_context_dataframe(
     tree_type: str,
     feature_type: str,
-    feature_id: int,
+    feature_id: str,  # entrez_id for genes. compound_id for compounds.
     dataset_given_id: str,
     max_fdr: float = 0.1,
     min_abs_effect_size: float = 0.25,
@@ -529,7 +529,10 @@ def get_organized_contexts(
 def get_gene_enriched_lineages_entity_id_and_dataset_name(
     feature_id: str,
 ) -> Optional[dict]:
-    gene = Gene.get_gene_by_entrez(feature_id)
+    gene = Gene.get_gene_by_entrez(int(feature_id))
+
+    assert gene is not None
+
     dataset = get_dependency_dataset_for_entity(
         DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.entity_id
     )

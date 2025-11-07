@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 import pandas as pd
 
 from depmap import data_access
@@ -42,21 +42,20 @@ def get_path_to_node(selected_code: str) -> ContextPathInfo:
     return ContextPathInfo(path=path, tree_type=tree_type)
 
 
-# For genes, full label refers to gene_symbol (entrez_id)
-def get_feature_id_from_full_label(feature_type: str, feature_id: str) -> dict:
+def get_feature_id_from_full_label(
+    feature_type: str, feature_id: str
+) -> Dict[str, str]:
     if feature_type == "gene":
-        gene = Gene.get_gene_by_entrez(feature_id)
+        gene = Gene.get_gene_by_entrez(int(feature_id))
 
         assert gene is not None
         label = gene.label
         entity_overview_page_label = gene.label
-        feature_id = gene.entrez_id
 
     else:
         compound = Compound.get_by_compound_id(feature_id)
         label = compound.label
         entity_overview_page_label = compound.label
-        feature_id = compound.compound_id  # e.g. DPC-000001
 
     return {
         "feature_id": feature_id,
@@ -67,7 +66,7 @@ def get_feature_id_from_full_label(feature_type: str, feature_id: str) -> dict:
 
 def find_compound_dataset(
     datasets: List[DRCCompoundDataset], key_name: str, value_name: str
-) -> DRCCompoundDataset:
+) -> Optional[DRCCompoundDataset]:
     """
     Searches a list of DRCCompoundDataset objects for the first object 
     whose attribute (key_name) matches the specified value (value_name).

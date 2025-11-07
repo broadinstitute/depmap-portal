@@ -127,16 +127,14 @@ def _setup_factories(
     empty_db_mock_downloads,
     dataset_given_id: str,
     monkeypatch,
-    gene_a: Optional[GeneFactory] = None,
-    gene_b: Optional[GeneFactory] = None,
-    compound_a: Optional[CompoundFactory] = None,
-    compound_b: Optional[CompoundFactory] = None,
-    compound_exp_a: Optional[CompoundExperimentFactory] = None,
-    compound_exp_b: Optional[CompoundExperimentFactory] = None,
+    gene_a: GeneFactory,
+    gene_b: GeneFactory,
+    compound_a: CompoundFactory,
+    compound_b: CompoundFactory,
+    compound_exp_a: CompoundExperimentFactory,
+    compound_exp_b: CompoundExperimentFactory,
     feature_type: Literal["gene", "compound"] = "gene",
-) -> List[DepmapModelFactory]:
-    assert gene_a and gene_b if feature_type == "gene" else compound_a and compound_b
-
+):
     use_genes = feature_type == "gene"
 
     bone_es_cell_lines = [
@@ -1074,7 +1072,7 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeyp
 
     interactive_test_utils.reload_interactive_config()
 
-    feature_id = gene_a.entrez_id if use_genes else compound_a.compound_id
+    feature_id = str(gene_a.entrez_id) if use_genes else compound_a.compound_id
 
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
         dataset_given_id=dataset_given_id, feature_id=feature_id
@@ -1146,7 +1144,7 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
 
     interactive_test_utils.reload_interactive_config()
 
-    feature_id = gene_a.entrez_id if use_genes else compound_a.compound_id
+    feature_id = str(gene_a.entrez_id) if use_genes else compound_a.compound_id
 
     ### Test - the User is on the Lineage tab and selects "BONE". Then, the
     ### user selects a specific gene/compound from either the scatter plots or

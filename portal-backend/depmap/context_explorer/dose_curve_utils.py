@@ -167,6 +167,9 @@ def get_context_dose_curves(
         key_name="auc_dataset_given_id",
         value_name=dataset_given_id,
     )
+
+    assert drc_dataset is not None
+
     replicate_dataset_id = drc_dataset.replicate_dataset
 
     replicate_dataset_name = replicate_dataset_id

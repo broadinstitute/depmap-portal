@@ -392,13 +392,9 @@ test_executive.py: error: Argument of type "GeneFactory" cannot be assigned to p
 test_executive.py: error: Argument of type "GeneFactory" cannot be assigned to parameter "gene" of type "Gene" in function "format_dep_dist_info"
 test_executive.py: error: Argument of type "list[DependencyDatasetFactory]" cannot be assigned to parameter "datasets" of type "List[DependencyDataset]" in function "format_predictability_tile"
 test_executive.py: error: Argument of type "list[Unknown] | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
-test_executive.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
-test_executive.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
 test_executive.py: error: Cannot access member "units" for type "LazyAttribute"
 test_executive.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 test_executive.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-test_executive.py: error: Operator "in" not supported for types "Literal['svg']" and "dict[str, dict[Unknown, Unknown]] | dict[str, Unknown] | None"
-test_executive.py: error: Operator "not in" not supported for types "Literal['svg']" and "dict[str, dict[Unknown, Unknown]] | dict[str, Unknown] | None"
 test_factories.py: error: "cell_line_1" is possibly unbound (reportPossiblyUnboundVariable)
 test_get_and_process_data.py: error: "file_path" is not a known member of "None" (reportOptionalMemberAccess)
 test_get_and_process_data.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
