@@ -197,6 +197,7 @@ add-if-missing {
 
 ####### Repurposing secondary screen
 
+### NOTE if this changes it will also affect Context Explorer!
 add-if-missing {
   "type": "drug_screen_auc_matrix",
   "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGAUCMatrix",
@@ -308,6 +309,3 @@ add-if-missing {
   "conditions_dataset_id": "processed-gdsc-ee73.2/GDSC2Log2ViabilityCollapsedConditions",
   "sample_id_prefix": "GDSC2"
 }
-
-
-

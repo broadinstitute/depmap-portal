@@ -5,7 +5,9 @@ import statsmodels.api as sm
 import warnings
 import argparse
 import json
-
+from scripts.calculate_bimodality_coefficient import (
+    bimodality_coefficient_for_cpd_viabilities,
+)
 from taigapy import create_taiga_client_v3
 
 MIN_GROUP_SIZE = 5
@@ -48,8 +50,8 @@ def load_crispr_data(
     return gene_effect, gene_dependency
 
 
-def load_prism_data(tc, repurposing_matrix_taiga_id, repurposing_list_taiga_id):
-    Extended_Primary_Compound_List = tc.get(repurposing_list_taiga_id)
+def load_prism_data(tc, repurposing_matrix_taiga_id, portal_compounds_taiga_id):
+    Portal_Compounds = tc.get(portal_compounds_taiga_id)
     Extended_Primary_Data_Matrix = tc.get(repurposing_matrix_taiga_id).T
     Data_Matrix_Discrete = Extended_Primary_Data_Matrix < np.log2(0.3)
     Data_Matrix_Discrete = Data_Matrix_Discrete.mask(
@@ -146,11 +148,9 @@ def load_all_data(
     gene_effect_taiga_id,
     gene_dependency_taiga_id,
     repurposing_matrix_taiga_id,
-    repurposing_list_taiga_id,
     oncref_auc_taiga_id,
-    repurposing_table_path,
-    oncref_table_path,
     tda_table_path,
+    portal_compounds_taiga_id,
 ):
 
     all_data_dict = dict()
@@ -182,7 +182,7 @@ def load_all_data(
     rep_sensitivity = load_prism_data(
         tc=tc,
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
-        repurposing_list_taiga_id=repurposing_list_taiga_id,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
     datasets_to_test["PRISMRepurposing"] = rep_sensitivity
 
@@ -469,35 +469,28 @@ def compute_context_explorer_results(inputs, out_filename):
     repurposing_matrix_taiga_id = get_id_or_file_name(
         taiga_ids_or_file_name["repurposing_matrix_taiga_id"]
     )
-    repurposing_list_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["repurposing_list_taiga_id"]
-    )
     oncref_auc_taiga_id = get_id_or_file_name(
         taiga_ids_or_file_name["oncref_auc_taiga_id"]
     )
 
-    repurposing_table_path = get_id_or_file_name(
-        taiga_ids_or_file_name["repurposing_table_path"], id_key="filename"
-    )
-    oncref_table_path = get_id_or_file_name(
-        taiga_ids_or_file_name["oncref_table_path"], id_key="filename"
-    )
     tda_table_path = get_id_or_file_name(
         taiga_ids_or_file_name["tda_table"], id_key="filename"
     )
 
+    portal_compounds_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["portal_compounds_taiga_id"]
+    )
+
     ### ---- LOAD DATA ---- ###
     data_dict = load_all_data(
-        subtype_tree_taiga_id,
-        context_matrix_taiga_id,
-        gene_effect_taiga_id,
-        gene_dependency_taiga_id,
-        repurposing_matrix_taiga_id,
-        repurposing_list_taiga_id,
-        oncref_auc_taiga_id,
-        repurposing_table_path,
-        oncref_table_path,
-        tda_table_path,
+        subtype_tree_taiga_id=subtype_tree_taiga_id,
+        context_matrix_taiga_id=context_matrix_taiga_id,
+        gene_effect_taiga_id=gene_effect_taiga_id,
+        gene_dependency_taiga_id=gene_dependency_taiga_id,
+        repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
+        oncref_auc_taiga_id=oncref_auc_taiga_id,
+        tda_table_path=tda_table_path,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
     context_explorer_results = compute_in_out_groups(**data_dict)
