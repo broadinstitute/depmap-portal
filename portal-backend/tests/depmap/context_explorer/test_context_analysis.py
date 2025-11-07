@@ -1056,7 +1056,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
 
 @pytest.mark.parametrize(
     "dataset_given_id",
-    ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC"],
+    ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"],
 )
 def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeypatch):
     use_genes = dataset_given_id == ContextExplorerDatasets.Chronos_Combined.name
@@ -1126,7 +1126,7 @@ def _get_box_plot_data(
 
 @pytest.mark.parametrize(
     "dataset_given_id",
-    ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC"],
+    ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"],
 )
 def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):
     use_genes = (
@@ -1148,6 +1148,11 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
     ### the data table.
     selected_subtype_code = "BONE"
     tree_type = "Lineage"
+
+    def mock_get_dataset_units(dataset_id):
+        return "units"
+
+    monkeypatch.setattr(data_access, "get_dataset_units", mock_get_dataset_units)
 
     data = _get_box_plot_data(
         dataset_given_id=dataset_given_id,
