@@ -3,7 +3,7 @@ import dataclasses
 from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.cell_line.views import get_subtype_tree_info
-from depmap.compound.models import CompoundExperiment
+from depmap.compound.models import CompoundDoseReplicate, CompoundExperiment
 from depmap.context.models_new import TreeType
 from depmap.context_explorer import box_plot_utils
 from depmap.context_explorer.api import _get_analysis_data_table
@@ -76,10 +76,9 @@ narrow_filters = OtherContextFilterVals(
 wide_filters = OtherContextFilterVals(t_qval=8.5, effect_size=0, frac_dep_in=0)
 
 
-def _setup_dose_response_curves(models: List[DepmapModelFactory], compounds: list):
+def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps: list):
     dose_rep_entities = []
-    for cpd in compounds:
-        cpd_exp = CompoundExperimentFactory(compound=cpd)
+    for cpd_exp in compound_exps:
         dose_1 = CompoundDoseReplicateFactory(
             compound_experiment=cpd_exp, dose=0.1, replicate=10
         )
@@ -113,8 +112,7 @@ def _setup_dose_response_curves(models: List[DepmapModelFactory], compounds: lis
         ),
     )
 
-    for compound in compounds:
-        compound_exp = CompoundExperimentFactory(compound=compound)
+    for compound_exp in compound_exps:
         curves = [
             DoseResponseCurveFactory(
                 compound_exp=compound_exp,
@@ -133,6 +131,8 @@ def _setup_factories(
     gene_b: Optional[GeneFactory] = None,
     compound_a: Optional[CompoundFactory] = None,
     compound_b: Optional[CompoundFactory] = None,
+    compound_exp_a: Optional[CompoundExperimentFactory] = None,
+    compound_exp_b: Optional[CompoundExperimentFactory] = None,
     feature_type: Literal["gene", "compound"] = "gene",
 ) -> List[DepmapModelFactory]:
     assert gene_a and gene_b if feature_type == "gene" else compound_a and compound_b
@@ -469,7 +469,7 @@ def _setup_factories(
 
     if dataset_given_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name:
         _setup_dose_response_curves(
-            models=matrix_cell_lines, compounds=[compound_a, compound_b]
+            models=matrix_cell_lines, compound_exps=[compound_exp_a, compound_exp_b]
         )
 
     empty_db_mock_downloads.session.flush()
@@ -489,12 +489,17 @@ def _setup_entities_and_dataset_id(
     xref_full_b = xref_type + ":" + xref_b
     compound_b = CompoundFactory(compound_id=xref_full_b)
 
+    compound_exp_a = CompoundExperimentFactory(compound=compound_a)
+    compound_exp_b = CompoundExperimentFactory(compound=compound_b)
+
     _setup_factories(
         empty_db_mock_downloads=empty_db_mock_downloads,
         gene_a=gene_a,
         gene_b=gene_b,
         compound_a=compound_a,
         compound_b=compound_b,
+        compound_exp_a=compound_exp_a,
+        compound_exp_b=compound_exp_b,
         feature_type=feature_type,
         dataset_given_id=dataset_given_id,
         monkeypatch=monkeypatch,

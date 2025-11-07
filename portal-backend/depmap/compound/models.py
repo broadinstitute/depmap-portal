@@ -1,6 +1,7 @@
 from typing import List, Optional, Union
 import sqlalchemy
 from sqlalchemy import and_, func
+from sqlalchemy.orm import aliased
 from depmap.database import (
     Column,
     Float,
@@ -321,16 +322,17 @@ class CompoundExperiment(Entity):
     def get_corresponding_compound_experiment_using_drc_dataset_label(
         compound_id: str, drc_dataset_label: str
     ):
+        CompoundAlias = aliased(Compound)
         query = (
             db.session.query(CompoundExperiment)
-            .join(Compound, Compound.entity_id == CompoundExperiment.compound_id)
+            .join(CompoundExperiment.compound.of_type(CompoundAlias))
             .join(
                 DoseResponseCurve,
                 DoseResponseCurve.compound_exp_id == CompoundExperiment.entity_id,
             )
             .filter(
                 and_(
-                    Compound.compound_id == compound_id,
+                    CompoundAlias.compound_id == compound_id,
                     DoseResponseCurve.drc_dataset_label == drc_dataset_label,
                 )
             )

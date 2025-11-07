@@ -258,7 +258,7 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     type = "compound_experiment"
     compound_id = factory.Sequence(lambda number: number)
     compound = factory.SubFactory(
-        CompoundFactory, entity_id=factory.SelfAttribute("..compound_id")
+        CompoundFactory, compound_id=factory.SelfAttribute("..compound_id")
     )
     label = typing.cast(str, factory.Sequence(lambda number: "CTRP:{}".format(number)))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
