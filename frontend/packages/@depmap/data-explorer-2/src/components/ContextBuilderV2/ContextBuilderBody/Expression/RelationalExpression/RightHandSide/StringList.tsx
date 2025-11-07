@@ -1,14 +1,17 @@
 import React, {
   ClipboardEventHandler,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import cx from "classnames";
+import { Button } from "react-bootstrap";
 import ReactSelect from "react-select";
 import WindowedSelect from "react-windowed-select";
 import type { Props as ReactSelectProps } from "react-select";
-import { getConfirmation } from "@depmap/common-components";
+import { getConfirmation, Tooltip } from "@depmap/common-components";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import { scrollParentIntoView } from "../../../../utils/domUtils";
 import OptimizedSelectOption from "../../../../../OptimizedSelectOption";
@@ -21,6 +24,7 @@ interface Props {
   path: (string | number)[];
   domain: { unique_values: string[] } | null;
   isLoading: boolean;
+  onClickShowDistribution: () => void;
 }
 
 const selectStyles: ReactSelectProps["styles"] = {
@@ -103,7 +107,13 @@ async function pastedTextToSliceLabels(
   return filtered;
 }
 
-function StringList({ expr, path, domain, isLoading }: Props) {
+function StringList({
+  expr,
+  path,
+  domain,
+  isLoading,
+  onClickShowDistribution,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const { dispatch, shouldShowValidation } = useContextBuilderState();
 
@@ -158,7 +168,16 @@ function StringList({ expr, path, domain, isLoading }: Props) {
       onCopy={handleCopy}
       onPaste={handlePaste}
     >
-      <label htmlFor="list-values">Values</label>
+      <div>
+        <label htmlFor="list-values">Values</label>
+        <button
+          type="button"
+          className={styles.detailsButton}
+          onClick={onClickShowDistribution}
+        >
+          details
+        </button>
+      </div>
       <Select
         id="list-values"
         isMulti
@@ -190,7 +209,14 @@ function StringList({ expr, path, domain, isLoading }: Props) {
             },
           });
 
-          scrollParentIntoView(ref.current);
+          if (
+            expr &&
+            nextValue &&
+            nextValue.length > expr.length &&
+            nextValue.length < 50
+          ) {
+            scrollParentIntoView(ref.current);
+          }
         }}
         options={options}
         isDisabled={!options}
@@ -204,4 +230,56 @@ function StringList({ expr, path, domain, isLoading }: Props) {
   );
 }
 
-export default StringList;
+function LongListWrapper(props: Props) {
+  const MAX = 50;
+
+  const [showAll, setShowAll] = useState(false);
+  const numValues = props.expr?.length || 0;
+  const prevNumValues = useRef(numValues);
+
+  useEffect(() => {
+    if (numValues > MAX && prevNumValues.current === MAX) {
+      setShowAll(true);
+    }
+
+    prevNumValues.current = numValues;
+  }, [numValues]);
+
+  if (!showAll && numValues > MAX) {
+    return (
+      <div className={styles.LongListWrapper}>
+        <div>
+          <label htmlFor="edit-values">Values</label>
+          <button
+            type="button"
+            className={styles.detailsButton}
+            onClick={props.onClickShowDistribution}
+          >
+            details
+          </button>
+        </div>
+        <Tooltip
+          id="edit-values-tooltip"
+          content="Click to edit values"
+          placement="top"
+        >
+          <Button
+            className={styles.showAllValuesButton}
+            id="edit-values"
+            onClick={() => setShowAll(true)}
+          >
+            {numValues.toLocaleString()} values
+            <i
+              className="glyphicon glyphicon-pencil"
+              style={{ marginLeft: 5 }}
+            />
+          </Button>
+        </Tooltip>
+      </div>
+    );
+  }
+
+  return <StringList {...props} />;
+}
+
+export default LongListWrapper;

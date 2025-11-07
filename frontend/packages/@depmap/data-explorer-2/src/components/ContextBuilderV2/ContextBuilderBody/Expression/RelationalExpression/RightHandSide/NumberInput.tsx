@@ -11,9 +11,16 @@ interface Props {
   path: (string | number)[];
   domain: { min: number; max: number; isAllIntegers: boolean } | null;
   isLoading: boolean;
+  onClickShowDistribution: () => void;
 }
 
-function NumberInput({ expr, path, domain, isLoading }: Props) {
+function NumberInput({
+  expr,
+  path,
+  domain,
+  isLoading,
+  onClickShowDistribution,
+}: Props) {
   const [value, setValue] = useState<number | null>(expr);
   const { dispatch, shouldShowValidation } = useContextBuilderState();
 
@@ -40,7 +47,16 @@ function NumberInput({ expr, path, domain, isLoading }: Props) {
 
   return (
     <div className={styles.NumberInput}>
-      <label htmlFor={`number-input-${path}`}>Value</label>
+      <div>
+        <label htmlFor={`number-input-${path}`}>Value</label>
+        <button
+          type="button"
+          className={styles.detailsButton}
+          onClick={onClickShowDistribution}
+        >
+          details
+        </button>
+      </div>
       <FormControl
         className={cx({
           [styles.invalidNumber]:

@@ -16,13 +16,36 @@
   text-align: start;
   font-size: 12px;
 
-  label {
-    margin-right: 6px;
+  &:not(.inlineLabel) {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
   }
 
   &.inlineLabel {
     font-size: 13px;
+    margin-right: 6px;
     display: inline-block;
+  }
+}
+
+.detailsButtonContainer {
+  button {
+    all: unset;
+    cursor: pointer;
+    color: #337ab7;
+    cursor: pointer;
+    font-weight: bold;
+
+    &:hover,
+    &:focus {
+      color: #23527c;
+    }
+
+    &:focus-visible {
+      outline: 5px auto -webkit-focus-ring-color;
+      outline-offset: 3px;
+    }
   }
 }
 
