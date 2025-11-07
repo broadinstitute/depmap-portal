@@ -329,12 +329,15 @@ class CompoundExperiment(Entity):
                 DoseResponseCurve.compound_exp_id == CompoundExperiment.entity_id,
             )
             .filter(
-                Compound.compound_id == compound_id,
-                DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+                and_(
+                    Compound.compound_id == compound_id,
+                    DoseResponseCurve.drc_dataset_label == drc_dataset_label,
+                )
             )
             .distinct()
         )
         results = query.all()
+
         return results
 
 

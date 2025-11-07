@@ -258,7 +258,7 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
     type = "compound_experiment"
     compound_id = factory.Sequence(lambda number: number)
     compound = factory.SubFactory(
-        CompoundFactory, compound_id=factory.SelfAttribute("..compound_id")
+        CompoundFactory, entity_id=factory.SelfAttribute("..compound_id")
     )
     label = typing.cast(str, factory.Sequence(lambda number: "CTRP:{}".format(number)))
     entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
@@ -295,7 +295,9 @@ class DoseResponseCurveFactory(SQLAlchemyModelFactory):
     slope = 0
     upper_asymptote = 0
     lower_asymptote = 0
-    drc_dataset_label = "GDSC1"
+    drc_dataset_label = typing.cast(
+        str, factory.Sequence(lambda number: "drc_dataset_label{}".format(number))
+    )
 
 
 class GeneFactory(SQLAlchemyModelFactory):

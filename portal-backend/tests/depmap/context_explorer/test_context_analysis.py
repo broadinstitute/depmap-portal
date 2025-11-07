@@ -96,19 +96,30 @@ def _setup_dose_response_curves(models: List[DepmapModelFactory], compounds: lis
         )
         dose_rep_entities.append(dose_3)
 
-    # def get_matrix_dataset(dataset_id, feature, feature_identifier = "id"):
-    #     viability_df = pd.DataFrame(
-    #     {model.cell_line_name: [10, 20, 30, 10, 20, 30] for model in models},
-    #     index=["dose_1", "dose_2", "dose_3", "dose_4", "dose_5", "dose_6"],
-    # )
+    # The legacy DependencyDatasetFactory is still used here, because dose replicates and dose
+    # response curves have not yet been migrated to Breadbox.
+    viability_df = pd.DataFrame(
+        {model.cell_line_name: [10, 20, 30, 10, 20, 30] for model in models},
+        index=["dose_1", "dose_2", "dose_3", "dose_4", "dose_5", "dose_6"],
+    )
 
-    # monkeypatch.setattr(data_access, "get_row_of_values", mock_get_row_of_values)
+    dataset = DependencyDatasetFactory(
+        name=DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate,
+        matrix=MatrixFactory(
+            entities=dose_rep_entities,
+            cell_lines=models,
+            data=viability_df,
+            using_depmap_model_table=True,
+        ),
+    )
 
     for compound in compounds:
-        compound_exp = CompoundExperimentFactory(compound)
+        compound_exp = CompoundExperimentFactory(compound=compound)
         curves = [
             DoseResponseCurveFactory(
-                compound_exp=compound_exp, cell_line=model.cell_line
+                compound_exp=compound_exp,
+                cell_line=model.cell_line,
+                drc_dataset_label="Prism_oncology_per_curve",
             )
             for model in models
         ]
@@ -322,8 +333,8 @@ def _setup_factories(
     )
 
     def mock_get_row_of_values(dataset_id, feature, feature_identifier="id"):
-        data_list = [[num for num in range(31)], [num for num in range(31)]]
-        index_list = matrix_cell_lines
+        data_list = [num for num in range(31)]
+        index_list = [cell_line.model_id for cell_line in matrix_cell_lines]
         data_series = pd.Series(data=data_list, index=index_list)
         return CellLineSeries(data_series)
 
@@ -456,7 +467,7 @@ def _setup_factories(
         frac_dep_in=90 if use_genes else None,
     )
 
-    if dataset_given_id == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name:
+    if dataset_given_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name:
         _setup_dose_response_curves(
             models=matrix_cell_lines, compounds=[compound_a, compound_b]
         )
@@ -627,11 +638,11 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_label = compound_a.label
+    feature_id = compound_a.compound_id
 
     dose_curve_info = get_context_dose_curves(
         dataset_given_id=dataset_given_id,
-        feature_full_label=selected_entity_label,
+        feature_id=feature_id,
         subtype_code="ES",
         level=1,
         out_group_type="All Others",
@@ -639,16 +650,12 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
     )
 
     assert list(dose_curve_info.keys()) == [
-        "dataset",
-        "compound_experiment",
-        "replicate_dataset_given_id",
+        "compound",
+        "replicate_dataset_name",
         "dose_curve_info",
     ]
-    assert dose_curve_info["dataset"].name.value == dataset_given_id
-    assert dose_curve_info["compound_experiment"].type == "compound_experiment"
-    assert dose_curve_info["compound_experiment"].xref == "PRC-003465060-210-01"
-    assert dose_curve_info["compound_experiment"].xref_type == "BRD"
-    assert dose_curve_info["compound_experiment"].label == "BRD:PRC-003465060-210-01"
+
+    assert dose_curve_info["compound"].compound_id == "BRD:PRC-003465060-210-01"
 
     # If this breaks, double check that nothing changed with the id or displayName. In the past
     # this assertion broke because both "id" and "displanName" were being filled with the model_id.
@@ -911,7 +918,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
     # Test other bone outgroup
     dose_curve_info = get_context_dose_curves(
         dataset_given_id=dataset_given_id,
-        feature_full_label=selected_entity_label,
+        feature_id=feature_id,
         subtype_code="ES",
         level=1,
         out_group_type="BONE",
@@ -1052,9 +1059,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
     ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC"],
 )
 def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeypatch):
-    use_genes = (
-        dataset_given_id == DependencyDataset.DependencyEnum.Chronos_Combined.name
-    )
+    use_genes = dataset_given_id == ContextExplorerDatasets.Chronos_Combined.name
 
     feature_type = "gene" if use_genes else "compound"
 
@@ -1064,10 +1069,10 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeyp
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_label = gene_a.label if use_genes else compound_a.label
+    feature_id = gene_a.entrez_id if use_genes else compound_a.compound_id
 
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_given_id=dataset_given_id, label=selected_entity_label
+        dataset_given_id=dataset_given_id, feature_id=feature_id
     )
     entity_full_row_of_values.dropna(inplace=True)
 

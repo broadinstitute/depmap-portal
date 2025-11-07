@@ -161,16 +161,6 @@ def get_dependency_distribution(gene, crispr_dataset, rnai_dataset):
     return dep_dist
 
 
-# Enriched Lineages - only has crispr data as of 25q2
-def get_enrichment_boxes(gene, crispr_dataset):
-    enrichment_boxes = None
-
-    if crispr_dataset:
-        enrichment_boxes = format_enrichment_boxes(gene, crispr_dataset)
-
-    return enrichment_boxes
-
-
 def format_dep_dist_svg(
     gene: Gene,
     crispr_dataset: Optional[DependencyDataset],

@@ -1,10 +1,12 @@
 import dataclasses
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.context_explorer import box_plot_utils, enrichment_tile_filters
 from depmap.context_explorer.models import ContextExplorerDatasets
 from depmap.dataset.models import DependencyDataset
 from depmap.gene.models import Gene
+from depmap.partials.matrix.models import CellLineSeries
 import numpy as np
 import pytest
 from tests.factories import (
@@ -82,6 +84,7 @@ def make_depmap_model_objects(level_0_code, node_level, number_of_models):
 
 
 def set_up_node_and_context_objects(
+    monkeypatch,
     empty_db_mock_downloads,
     dataset_given_id: str,
     feature_type: str,
@@ -181,11 +184,23 @@ def set_up_node_and_context_objects(
     ]
 
     feature_id = (
-        GeneFactory(entrez_id="entrez_id")
+        GeneFactory(entrez_id="entrez_id").entrez_id
         if feature_type == "gene"
-        else CompoundFactory(compound_id="compound_id")
+        else CompoundFactory(compound_id="compound_id").compound_id
     )
-    matrix_data = np.array([[num for num in range(len(matrix_models))]])
+
+    def mock_get_row_of_values(dataset_id, feature, feature_identifier="id"):
+        data_list = [num for num in range(len(matrix_models))]
+        index_list = [cell_line.model_id for cell_line in matrix_models]
+        data_series = pd.Series(data=data_list, index=index_list)
+        return CellLineSeries(data_series)
+
+    monkeypatch.setattr(data_access, "get_row_of_values", mock_get_row_of_values)
+
+    def mock_get_dataset_units(dataset_id):
+        return "Gene Effect"
+
+    monkeypatch.setattr(data_access, "get_dataset_units", mock_get_dataset_units)
 
     if make_level_0_significant:
         ContextAnalysisFactory(
@@ -284,16 +299,17 @@ def get_context_explorer_box_plot_filters(dataset_given_id: str):
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
+        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_significant(
-    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
     feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
@@ -326,16 +342,17 @@ def test_get_sig_context_dataframe_level_0_significant(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
+        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_not_significant(
-    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
     feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
@@ -407,16 +424,17 @@ def test_get_enrichment_tile_filters():
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
+        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_data_frame_show_positive_effect_sizes(
-    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
     feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
@@ -460,16 +478,17 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
+        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_no_significant_analyses_found(
-    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
     feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
@@ -486,7 +505,7 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
         feature_type=feature_type,
-        feature_id=9999,
+        feature_id="9999",
         dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=1,
@@ -501,16 +520,17 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
+        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_context_plot_data(
-    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
     feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
@@ -638,16 +658,17 @@ def test_get_context_plot_data(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
+        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_data_to_show_if_no_contexts_significant(
-    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
     feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
         dataset_given_id=dataset_given_id,
         feature_type=feature_type,
@@ -660,6 +681,11 @@ def test_get_data_to_show_if_no_contexts_significant(
 
     # Pretending sig_contexts is empty so we don't need to write a new
     # set_up_node_and_context_objects just to create no contexts significant
+
+    def mock_get_dataset_label(dataset_id):
+        return "CRISPR"
+
+    monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
 
     data = box_plot_utils.get_data_to_show_if_no_contexts_significant(
         feature_type=feature_type,
