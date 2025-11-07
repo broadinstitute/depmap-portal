@@ -23,7 +23,7 @@ export type OperatorType = keyof typeof opLabels;
 const supportedOperators = new Set(Object.keys(opLabels));
 
 export const operatorsByValueType = {
-  continuous: new Set(["<", "<=", ">", ">="]),
+  continuous: new Set(["<", "<=", ">", ">=", "==", "!="]),
   text: new Set(["==", "!=", "in", "!in"]),
   categorical: new Set(["==", "!=", "in", "!in"]),
   list_strings: new Set(["has_any", "!has_any"]),
@@ -95,11 +95,9 @@ export const getVariableNames = (expr: Expr) => {
   return varNames;
 };
 
-export const ceil = (num: number) =>
-  Math.ceil((num + Number.EPSILON) * 100) / 100;
+export const ceil = (num: number) => Math.ceil(num * 100) / 100;
 
-export const floor = (num: number) =>
-  Math.floor((num + Number.EPSILON) * 100) / 100;
+export const floor = (num: number) => Math.floor(num * 100) / 100;
 
 export const round = (num: number) =>
   Math.round((num + Number.EPSILON) * 100) / 100;
@@ -120,24 +118,35 @@ export const makeCompatibleExpression = (
   let nextOp = op;
   let nextValue = value;
 
-  if (!operatorsByValueType[value_type].has(op)) {
-    // HACK: Special case for legacy one-hot encoded datasets.
-    if (op === "==" && value === 0) {
-      nextOp = "<=";
-    } else {
-      nextOp = defaultOperatorByValueType[value_type];
-    }
+  if (value == null || !operatorsByValueType[value_type].has(op)) {
+    nextValue = null;
+    nextOp = defaultOperatorByValueType[value_type];
   }
 
   if (value_type === "continuous") {
-    const { min, max } = domain;
+    const { min, max, isBinary, isBinaryish, isAllIntegers } = domain;
 
-    if (typeof nextValue !== "number") {
-      nextValue = nextOp === "<" || nextOp === "<=" ? ceil(max) : floor(min);
+    if (isBinary && !["==", "!="].includes(nextOp)) {
+      nextOp = "==";
+    }
+
+    if (isBinaryish && typeof nextValue !== "number") {
+      nextOp = ">=";
+    }
+
+    if (
+      typeof nextValue !== "number" ||
+      (isAllIntegers && !Number.isInteger(nextValue))
+    ) {
+      if (isBinary || isBinaryish) {
+        nextValue = 1;
+      } else {
+        nextValue = nextOp === "<" || nextOp === "<=" ? ceil(max) : floor(min);
+      }
     } else if ((nextValue as number) < min) {
-      nextValue = floor(min);
+      nextValue = isBinary || isBinaryish ? 0 : floor(min);
     } else if ((nextValue as number) > max) {
-      nextValue = ceil(max);
+      nextValue = isBinary || isBinaryish ? 1 : floor(min);
     }
   }
 

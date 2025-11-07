@@ -1,3 +1,58 @@
+rule process_taiga_pulled_artifact:
+   inputs:
+      download={"type": "download_from_taiga"},
+      hdf5_utils=fileref("scripts/hdf5_utils.py")
+   run "python" with """
+      import shutil
+      import taigapy
+      import os
+
+      tc = taigapy.TaigaClient() # TODO: Need to update to Taiga Client V3 but don't know what the requested format should be for download_to_cache
+
+      ### The if blocks are here to convert the new oncref format to the old oncref format so that 
+      ### the oncref datasets can be ingested in the pipeline without much additional changes.
+      if {{ inputs.download.label == "Prism_oncology_AUC" or inputs.download.label == "Prism_oncology_IC50"}}:
+         prism_oncref_df = tc.get("{{ inputs.download.dataset_id }}")
+         prism_oncref_df = prism_oncref_df.transpose()
+         prism_oncref_df.to_csv("out.csv", index=True)
+      elif {{ inputs.download.label == "Prism_oncology_per_curve" }}:
+         prism_oncref_curves_df = tc.get("{{ inputs.download.dataset_id }}")
+         prism_oncref_curves_df = prism_oncref_curves_df.rename(columns={
+            'ModelID': 'cell_line_name',
+            'SampleID': 'compound_name',
+            'EC50': 'ec50',
+            'LowerAsymptote': 'lower_asymptote',
+            'UpperAsymptote': 'upper_asymptote',
+            'Slope': 'slope'
+         })
+         prism_oncref_curves_df.to_csv("out.csv", index=False)
+      else:
+         cached = tc.download_to_cache("{{ inputs.download.dataset_id }}")
+         shutil.copy2(cached, "out.csv")
+      
+      assert os.path.exists("out.csv"), "Output file 'out.csv' not generated"
+	"""
+   # Convert files to HDF5 if needed
+   run "bash" with """
+      if [[ "{{ inputs.download.format }}" == "hdf5" ]]; then
+         python {{ inputs.hdf5_utils.filename }} to_hdf5 out.csv csv out.hdf5
+      fi
+   """
+   # The input is polymorphic and we want the output to have (mostly) the same keys
+   run "python" with """
+      import json
+
+      artifact = {{inputs.download | quoted}}
+      artifact["filename"] = {"$filename": "out.{{ inputs.download.format }}"}
+      artifact["type"] = artifact["target_type"]
+
+      del artifact["target_type"]
+      del artifact["$manually-added"]
+
+      with open("results.json", "w") as f:
+         json.dump({"outputs": [artifact]}, f)
+   """
+
 rule process_drug_screen_auc_matrix:
    inputs:
       download={"type": "drug_screen_auc_matrix"},
@@ -9,9 +64,10 @@ rule process_drug_screen_auc_matrix:
       "type": "dep-matrix",
       "dataset_id": "{{ inputs.download.dataset_id }}",
       "filename": {"$filename": "{{ inputs.download.label }}.hdf5"},
-      "confounders_label": "{{ inputs.download.confounders_label }}"
+      "confounders_label": "{{ inputs.download.confounders_label }}",
+      "units": "{{ inputs.download.units }}"
      }
-   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} '{{inputs.download.source_units | default('AUC')}}' {{ inputs.download.label }}.hdf5"
+   run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} '{{inputs.download.units}}' {{ inputs.download.label }}.hdf5"
 
 
 rule process_drug_screen_drc:

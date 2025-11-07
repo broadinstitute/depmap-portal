@@ -28,9 +28,21 @@ function Operator({ expr, path, varName, value_type, isLoading }: Props) {
 
   const options = value_type
     ? Object.fromEntries(
-        Object.entries(opLabels).filter(([key]) => {
-          return operatorsByValueType[value_type].has(key);
-        })
+        Object.entries(opLabels)
+          .filter(([key]) => {
+            return operatorsByValueType[value_type].has(key);
+          })
+          .map(([val, label]) => {
+            if (value_type === "continuous" && val === "==") {
+              return [val, "＝"];
+            }
+
+            if (value_type === "continuous" && val === "!=") {
+              return [val, "≠"];
+            }
+
+            return [val, label];
+          })
       )
     : opLabels;
 

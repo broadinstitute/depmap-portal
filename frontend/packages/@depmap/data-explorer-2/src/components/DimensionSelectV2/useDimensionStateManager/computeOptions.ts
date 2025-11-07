@@ -35,7 +35,7 @@ async function fetchIndexCompatibleDatasets(
   );
 
   if (datasets.length === 0) {
-    throw new Error(`Unknown dimension type "${index_type}".`);
+    throw new Error(`Unknown or unpopulated dimension type "${index_type}".`);
   }
 
   return datasets.filter((d) => {
@@ -208,61 +208,85 @@ async function computeDataTypeOptions(
     });
   }
 
-  return dataTypes
-    .map((dataType) => {
-      let isDisabled = false;
-      let disabledReason = "";
+  const options = dataTypes.map((dataType) => {
+    let isDisabled = false;
+    let disabledReason = "";
 
-      const isCompatibleWithSliceType =
-        !dimension.slice_type ||
-        datasets.find((dataset) => {
-          return (
-            dataset.data_type === dataType &&
-            dataset.slice_type === dimension.slice_type
-          );
-        }) !== undefined;
+    const isCompatibleWithSliceType =
+      !dimension.slice_type ||
+      datasets.find((dataset) => {
+        return (
+          dataset.data_type === dataType &&
+          dataset.slice_type === dimension.slice_type
+        );
+      }) !== undefined;
 
-      if (!isCompatibleWithSliceType) {
-        isDisabled = true;
+    if (!isCompatibleWithSliceType) {
+      isDisabled = true;
 
+      disabledReason = [
+        "The",
+        isSampleType(dimension.slice_type, dimensionTypes)
+          ? "sample type"
+          : "feature type",
+        `“${sliceDisplayName}”`,
+        "is incompatible with this data type",
+      ].join(" ");
+    } else if (
+      dimension.slice_type !== null &&
+      contextCompatibleDataTypes &&
+      !contextCompatibleDataTypes.has(dataType)
+    ) {
+      isDisabled = true;
+
+      const dimensionLabel = dimension.context?.name;
+
+      if (dimension.axis_type === "aggregated_slice") {
         disabledReason = [
-          "The",
-          isSampleType(dimension.slice_type, dimensionTypes)
-            ? "sample type"
-            : "feature type",
-          `“${sliceDisplayName}”`,
-          "is incompatible with this data type",
+          `The context “${dimensionLabel}”`,
+          `has no ${pluralize(
+            sliceDisplayName as string
+          )} associated with this type`,
         ].join(" ");
-      } else if (
-        dimension.slice_type !== null &&
-        contextCompatibleDataTypes &&
-        !contextCompatibleDataTypes.has(dataType)
-      ) {
-        isDisabled = true;
-
-        const dimensionLabel = dimension.context?.name;
-
-        if (dimension.axis_type === "aggregated_slice") {
-          disabledReason = [
-            `The context “${dimensionLabel}”`,
-            `has no ${pluralize(
-              sliceDisplayName as string
-            )} associated with this type`,
-          ].join(" ");
-        } else {
-          disabledReason = [
-            `The ${sliceDisplayName} “${dimensionLabel}”`,
-            "is not found in any data versions associated with this type",
-          ].join(" ");
-        }
+      } else {
+        disabledReason = [
+          `The ${sliceDisplayName} “${dimensionLabel}”`,
+          "is not found in any data versions associated with this type",
+        ].join(" ");
       }
+    }
 
-      return {
-        label: dataType,
-        value: dataType,
-        isDisabled,
-        disabledReason,
-      };
+    return {
+      label: dataType,
+      value: dataType,
+      isDisabled,
+      disabledReason,
+    };
+  });
+
+  const priorityOrder = [
+    "CRISPR",
+    "RNAi",
+    "CN",
+    "Expression",
+    "Drug screen",
+    "Combo Drug screen",
+  ];
+
+  return options
+    .sort((a, b) => {
+      const ai = priorityOrder.indexOf(a.value);
+      const bi = priorityOrder.indexOf(b.value);
+
+      if (ai !== -1 && bi !== -1) {
+        // both are in priority list — sort by their order in that list
+        return ai - bi;
+      }
+      if (ai !== -1) return -1; // a is priority, b is not
+      if (bi !== -1) return 1; // b is priority, a is not
+
+      // neither are priority — sort alphabetically
+      return a.value.localeCompare(b.value);
     })
     .sort(compareDisabledLast);
 }

@@ -9,7 +9,7 @@ import styles from "../../../../../../styles/ContextBuilderV2.scss";
 interface Props {
   expr: number | null;
   path: (string | number)[];
-  domain: { min: number; max: number } | null;
+  domain: { min: number; max: number; isAllIntegers: boolean } | null;
   isLoading: boolean;
 }
 
@@ -21,7 +21,7 @@ function NumberInput({ expr, path, domain, isLoading }: Props) {
 
   const min = domain ? domain.min : -Infinity;
   const max = domain ? domain.max : Infinity;
-  const step = ceil(max - min) / 100;
+  const step = domain?.isAllIntegers ? 1 : ceil(max - min) / 100;
   const pathAsString = JSON.stringify(path);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -13,6 +13,7 @@ interface Props {
   index_type_name: string;
   PlotlyLoader: any;
   defaultValue?: SliceQuery | null;
+  initialSource?: "property" | "custom";
   onClickRemoveColumn?: () => void;
 }
 
@@ -20,6 +21,7 @@ function chooseDataSlice({
   index_type_name,
   PlotlyLoader,
   defaultValue = null,
+  initialSource = "property",
   onClickRemoveColumn = () => {},
 }: Props) {
   const isEditMode = defaultValue !== null;
@@ -40,6 +42,7 @@ function chooseDataSlice({
               index_type_name={index_type_name}
               value={value}
               defaultValue={defaultValue}
+              initialSource={initialSource}
               onChange={onChange}
             />
           </div>

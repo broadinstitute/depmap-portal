@@ -85,10 +85,4 @@ else:
 data_df.columns = [fixup_sample_id(x) for x in data_df.columns]
 data_df = data_df.transpose()
 
-if source_units == "log2(AUC)":
-    # this rule should always generate an HDF5 with AUC units. If the source was log'd, invert the log to get back the AUC value
-    data_df = data_df.apply(lambda x: 2 ** x)
-else:
-    assert source_units == "AUC"
-
 write_hdf5(data_df, output_filename)

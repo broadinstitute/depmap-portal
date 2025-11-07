@@ -8,13 +8,10 @@ sys.path.append(".")
 from hdf5_utils import read_hdf5
 
 
-def remove_brd_prefix(value):
-    # Split on 'BRD:' and check if 'PRC' follows immediately
-    # If so, return the value after 'BRD:'
-    # Otherwise, return the original value
-    if "BRD:" in value and "PRC" in value.split("BRD:")[1]:
-        return value.split("BRD:")[1]
-    return value
+def add_brd_prefix_if_necessary(x):
+    if x.startswith("PRC-"):
+        return "BRD:" + x
+    return x
 
 
 def main():
@@ -29,6 +26,7 @@ def main():
 
     pred = pd.read_csv(args.predictability_csv)
     dataset_df = read_hdf5(args.dataset_matrix_hdf5)
+    dataset_df.index = [add_brd_prefix_if_necessary(x) for x in dataset_df.index]
     assert sum(dataset_df.index.duplicated()) == 0
     assert sum(dataset_df.columns.duplicated()) == 0
     dataset_units = args.dataset_units
@@ -52,23 +50,21 @@ def main():
     assert sum(pred["BroadID"].duplicated()) == 0
 
     drug_metadata = pd.read_csv(args.drug_metadata_csv)
-    # Remove the "BRD:" prefix from BroadID if it has a pattern of BRD:PRC-xxxxx such as PRC-000015573-601-10
-    # This is because the BroadID in both the predictability table and the dataset matrix does not have the BRD: prefix
-    # So by removing the prefix, we can match the BroadID in the drug_metadata, predictability, and the dataset matrix table
-    drug_metadata["BroadID"] = drug_metadata["BroadID"].apply(remove_brd_prefix)
     assert sum(drug_metadata["BroadID"].duplicated()) == 0
+    # Filter drug metadata based on being present in the screening dataset
+    screen_drug_metadata = drug_metadata[
+        drug_metadata["BroadID"].isin(dataset_df.index)
+    ]
 
-    # Filter drug metadata based on whether compound is in predictability compounds
-    pred_drug_metadata_cpds = drug_metadata["BroadID"].isin(pred["BroadID"])
-    pred_drug_metadata = drug_metadata[pred_drug_metadata_cpds]
     assert (
-        len(pred_drug_metadata) > 0
+        len(screen_drug_metadata) > 0
     ), "No drug metadata found for predictability compounds"
-    assert sum(pred_drug_metadata["BroadID"].duplicated()) == 0
+    assert sum(screen_drug_metadata["BroadID"].duplicated()) == 0
     # keep only the following columns from drug metadata
-    pred_drug_metadata = pred_drug_metadata[
+    screen_drug_metadata = screen_drug_metadata[
         [
             "BroadID",
+            "CompoundID",
             "CompoundName",
             "Synonyms",
             "TargetOrMechanism",
@@ -76,16 +72,16 @@ def main():
         ]
     ]
     # Rename columns
-    pred_drug_metadata.rename(
+    screen_drug_metadata.rename(
         columns={"CompoundName": "Name", "GeneSymbolOfTargets": "Target",},
         inplace=True,
     )
 
     # Merge the predictability table with the drug metadata
-    merged_df = pred.merge(pred_drug_metadata, on="BroadID", how="left")
+    merged_df = screen_drug_metadata.merge(pred, on="BroadID", how="left")
 
-    # Filter dataset by compound ids in predictability compounds
-    dataset_df = dataset_df.loc[pred["BroadID"]]
+    # Filter dataset by compound ids
+    dataset_df = dataset_df.loc[merged_df["BroadID"]]
 
     # Calculate the bimodality coefficient for each compound row and merge
     cpd_bimodality_coefficients: pd.Series = dataset_df.apply(

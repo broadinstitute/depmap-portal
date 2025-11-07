@@ -90,10 +90,11 @@ function AllSelects({
       <AxisTypeToggle
         show={
           mode === "entity-or-context" &&
-          Boolean(slice_type || axis_type === "aggregated_slice")
+          Boolean(slice_type !== undefined || axis_type === "aggregated_slice")
         }
         value={axis_type as "raw_slice" | "aggregated_slice"}
         onChange={onChangeAxisType}
+        slice_type={slice_type}
         dataset_id={dataset_id}
       />
       <SliceSelect

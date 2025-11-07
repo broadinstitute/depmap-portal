@@ -34,7 +34,7 @@ function SliceTable({
   initialRowSelection = {},
   enableRowSelection = false,
   renderCustomActions = () => null,
-  downloadFilename = "data-export.csv",
+  downloadFilename = "",
 }: Props) {
   const {
     data,

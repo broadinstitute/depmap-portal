@@ -1,7 +1,12 @@
 import os
 import pathlib
+import time
+import uuid
 
 from fastapi.routing import APIRouter
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
+from .utils.debug_event_log import log_event, _get_log_filename
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,6 +66,9 @@ def create_app(settings: Settings):
             scheme_override=scheme_override,
             host_override=host_override,
         )
+    
+    # Add request logging middleware
+    app.add_middleware(RequestLoggingMiddleware)
 
     return app
 
@@ -68,6 +76,63 @@ def create_app(settings: Settings):
 def ensure_directories_exist(settings):
     if not os.path.exists(settings.filestore_location):
         os.mkdir(settings.filestore_location)
+
+
+class RequestLoggingMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        log_filename = _get_log_filename()
+        if not log_filename:
+            # If logging is disabled, just pass through
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "unknown")
+        method = scope.get("method", "unknown")
+        request_id = str(uuid.uuid4())
+        
+        # Log request start
+        span_name = f"{method} {path}"
+        log_event(log_filename, "start", request_id, {"n": span_name})
+
+        # Capture the original send function to intercept the response
+        original_send = send
+        response_status = None
+        
+        async def wrapped_send(message):
+            nonlocal response_status
+            
+            if message["type"] == "http.response.start":
+                # Capture the status code when headers are sent
+                response_status = message.get("status", 0)
+            
+            # Check if this is the final response body message
+            is_final_message = (
+                message["type"] == "http.response.body" and 
+                not message.get("more_body", False)
+            )
+            
+            # Pass through to the original send
+            await original_send(message)
+            
+            # If this is the final message, log the completion
+            if is_final_message:
+                log_event(log_filename, "end", request_id, {"s": response_status})
+        
+        # Use the wrapped send function and catch any exceptions
+        try:
+            await self.app(scope, receive, wrapped_send)
+        except Exception as e:
+            # Log the exception as an end event
+            log_event(log_filename, "end", request_id, {"s": 500, "error": str(e)})
+            # Re-raise the exception to maintain the original behavior
+            raise
 
 
 class OverrideMiddleWare:

@@ -7,6 +7,7 @@ import styles from "../../styles/DimensionSelect.scss";
 interface Props {
   value: "raw_slice" | "aggregated_slice";
   onChange: (nextValue: "raw_slice" | "aggregated_slice") => void;
+  slice_type: string | null | undefined;
   dataset_id: string | undefined;
 }
 
@@ -17,10 +18,15 @@ const toggleOptions = [
   { label: "Multiple", value: "aggregated_slice" },
 ] as [ToggleOption, ToggleOption];
 
-function AxisTypeToggle({ value, onChange, dataset_id }: Props) {
-  const [disabled, setDisabled] = useState(false);
+function AxisTypeToggle({ value, onChange, slice_type, dataset_id }: Props) {
+  const [disabled, setDisabled] = useState(slice_type === null);
 
   useEffect(() => {
+    if (slice_type === null) {
+      setDisabled(true);
+      return;
+    }
+
     if (dataset_id) {
       cached(breadboxAPI)
         .getDataset(dataset_id)
@@ -33,7 +39,7 @@ function AxisTypeToggle({ value, onChange, dataset_id }: Props) {
     } else {
       setDisabled(false);
     }
-  }, [dataset_id]);
+  }, [dataset_id, slice_type]);
 
   return (
     <ToggleSwitch

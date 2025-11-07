@@ -232,6 +232,7 @@ function ContextManager({
             value={contextType}
             onChange={(value: string) => setContextType(value)}
             useContextBuilderV2={isBreadboxOnlyMode}
+            hideUnpopulatedTypes
           />
           <div className={styles.ContextList}>
             <div

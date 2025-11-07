@@ -12,8 +12,7 @@ import {
   ColorByDimensionSelect,
   SortBySelector,
 } from "./selectors";
-import MetadataColumnSelect from "./MetadataColumnSelect";
-import TabularDatasetSelect from "./TabularDatasetSelect";
+import ColorByAnnotationSelect from "./ColorByAnnotationSelect";
 import styles from "../../styles/ConfigurationPanel.scss";
 
 const SliceLabelSelect = isBreadboxOnlyMode
@@ -60,10 +59,12 @@ function ColorByViewOptions({
 
   return (
     <div className={styles.ColorByViewOptions}>
+      <hr className={styles.hr} />
       <ColorByTypeSelector
         show
         enable={Boolean(index_type)}
         value={color_by || null}
+        plot_type={plot_type}
         slice_type={index_type as string}
         onChange={(nextColorBy) =>
           dispatch({
@@ -117,7 +118,7 @@ function ColorByViewOptions({
         ))}
       </div>
       <DatasetMetadataSelector
-        show={color_by === "property"}
+        show={!isBreadboxOnlyMode && color_by === "property"}
         enable={color_by === "property"}
         slice_type={index_type}
         value={metadata?.color_property?.slice_id}
@@ -128,9 +129,9 @@ function ColorByViewOptions({
           });
         }}
       />
-      <MetadataColumnSelect
-        show={color_by === "metadata_column"}
-        slice_type={index_type as string}
+      <ColorByAnnotationSelect
+        show={isBreadboxOnlyMode && color_by === "property"}
+        dimension_type={index_type as string}
         value={metadata?.color_property}
         onChange={(sliceQuery) => {
           dispatch({
@@ -154,23 +155,11 @@ function ColorByViewOptions({
           });
         }}
       />
-      <TabularDatasetSelect
-        show={color_by === "tabular_dataset"}
-        slice_type={index_type as string}
-        value={metadata?.color_property}
-        onChange={(sliceQuery) => {
-          dispatch({
-            type: "select_color_property",
-            payload: sliceQuery,
-          });
-        }}
-      />
       <div className={styles.sortByContainer}>
         <SortBySelector
           show={
-            ["property", "metadata_column", "tabular_dataset"].includes(
-              color_by
-            ) && ["density_1d", "waterfall"].includes(plot_type)
+            color_by === "property" &&
+            ["density_1d", "waterfall"].includes(plot_type)
           }
           enable
           value={sort_by}

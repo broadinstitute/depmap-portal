@@ -4,6 +4,7 @@
 add-if-missing {
     'type' : 'repallsinglept-taiga-id',
     'label' : 'Rep_all_single_pt', # matches with Dataset enum
+    'units' : 'log2 fold change',
     'dataset_id' : PREPROCESS_TAIGA_ID(repurposing_taiga_id, "Repurposing_Public_24Q2_Extended_Primary_Data_Matrix"),
 }
 
@@ -23,7 +24,6 @@ add-if-missing {
 add-if-missing {
     "type": "needs-compound-dashboard",
     "dataset": "Rep_all_single_pt",
-    "units": "log2 fold change" # Must match shared.py
 }
 
 add-if-missing {

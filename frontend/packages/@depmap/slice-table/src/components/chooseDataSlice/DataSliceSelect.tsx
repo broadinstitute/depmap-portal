@@ -1,29 +1,25 @@
 import React, { useState } from "react";
 import type { SliceQuery } from "@depmap/types";
 import DataSourceSelect from "./DataSourceSelect";
-import MetadataColumnSelect from "./MetadataColumnSelect";
-import MatrixDataSelect from "./MatrixDataSelect";
+import AddColumnAnnotationSelect from "./AddColumnAnnotationSelect";
+import AddColumnDimensionSelect from "./AddColumnDimensionSelect";
 
 interface Props {
   index_type_name: string;
-  value: any;
-  defaultValue: any;
+  value: SliceQuery | null;
+  defaultValue: SliceQuery | null;
   onChange: (nextValue: SliceQuery | null) => void;
+  initialSource: "property" | "custom";
 }
 
 function DataSliceSelect({
   index_type_name,
-  value,
   defaultValue,
+  initialSource,
+  value,
   onChange,
 }: Props) {
-  const [source, setSource] = useState(() => {
-    if (["feature_id", "sample_id"].includes(defaultValue?.identifier_type)) {
-      return "matrix_dataset" as const;
-    }
-
-    return "metadata_column" as const;
-  });
+  const [source, setSource] = useState(initialSource);
 
   return (
     <div>
@@ -35,15 +31,15 @@ function DataSliceSelect({
         }}
       />
       <div style={{ height: 10 }} />
-      {source === "metadata_column" && (
-        <MetadataColumnSelect
+      {source === "property" && (
+        <AddColumnAnnotationSelect
           value={value}
           index_type_name={index_type_name}
           onChange={onChange}
         />
       )}
-      {source === "matrix_dataset" && (
-        <MatrixDataSelect
+      {source === "custom" && (
+        <AddColumnDimensionSelect
           defaultValue={defaultValue}
           index_type_name={index_type_name}
           onChange={onChange}
