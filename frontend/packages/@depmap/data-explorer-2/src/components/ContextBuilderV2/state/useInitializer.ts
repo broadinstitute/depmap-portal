@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
-import type { DataExplorerContextVariable } from "@depmap/types";
+import type {
+  DataExplorerContextVariable,
+  TabularDataset,
+} from "@depmap/types";
 import { fetchMetadataAndOtherTabularDatasets } from "../../../utils/api-helpers";
 import type { ExprReducerAction } from "./expressionReducer";
 
@@ -12,12 +15,27 @@ function useInitializer(
   dispatch: React.Dispatch<ExprReducerAction>
 ) {
   const [isInitializing, setIsInitializing] = useState(true);
+  const [initializationError, setInitializationError] = useState(false);
+
+  const [data, setData] = useState(
+    {} as {
+      metadataDataset: TabularDataset | undefined;
+      metadataIdColumn: string | undefined;
+    }
+  );
 
   useEffect(() => {
     (async () => {
       const seen = new Set<string>();
       const varsToCopy: string[][] = [];
       const varsToCreate: string[] = [];
+
+      const {
+        metadataDataset,
+        metadataIdColumn,
+      } = await fetchMetadataAndOtherTabularDatasets(dimension_type);
+
+      setData({ metadataDataset, metadataIdColumn });
 
       const nextExpr = JSON.parse(JSON.stringify(mainExpr), (key, value) => {
         if (key !== "var") {
@@ -29,9 +47,11 @@ function useInitializer(
 
         // If the expression uses the magic variable "given_id",
         // turn it into a proper variable that can be edited.
+        // We give it the special variable name "list" so it will
+        // behave exactly like an manual list a user created.
         if (oldName === "given_id") {
-          varsToCreate.push(newName);
-          return newName;
+          varsToCreate.push("list");
+          return "list";
         }
 
         // Duplicate any variables that appear more than once.
@@ -50,21 +70,20 @@ function useInitializer(
       }
 
       if (varsToCreate.length > 0) {
-        const {
-          metadataDataset,
-          metadataIdColumn,
-        } = await fetchMetadataAndOtherTabularDatasets(dimension_type);
-
         if (!metadataDataset) {
-          throw new Error(
+          setInitializationError(true);
+          window.console.error(
             `Dimension type "${dimension_type}" has no metadata dataset!`
           );
+          return;
         }
 
         if (!metadataIdColumn) {
-          throw new Error(
+          setInitializationError(true);
+          window.console.error(
             `Dimension type "${dimension_type}" has no \`id_column\` set!`
           );
+          return;
         }
 
         for (const newName of varsToCreate) {
@@ -102,7 +121,12 @@ function useInitializer(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return isInitializing;
+  return {
+    isInitializing,
+    initializationError,
+    metadataDataset: data.metadataDataset,
+    metadataIdColumn: data.metadataIdColumn,
+  };
 }
 
 export default useInitializer;

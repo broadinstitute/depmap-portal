@@ -7,6 +7,7 @@ interface Props {
   hadError: boolean;
   onClickFilterButton: () => void;
   onClickDownload: () => void;
+  renderCustomControls: () => React.ReactNode;
 }
 
 function Controls({
@@ -14,25 +15,29 @@ function Controls({
   hadError,
   onClickFilterButton,
   onClickDownload,
+  renderCustomControls,
 }: Props) {
   return (
     <div className={styles.Controls}>
-      <Button
-        onClick={onClickFilterButton}
-        bsSize="small"
-        disabled={isLoading || hadError}
-      >
-        <i className="glyphicon glyphicon-filter" />
-        <span> Filters</span>
-      </Button>
-      <Button
-        onClick={onClickDownload}
-        bsSize="small"
-        disabled={isLoading || hadError}
-      >
-        <i className="glyphicon glyphicon-download-alt" />
-        <span> Download data</span>
-      </Button>
+      <div>{renderCustomControls()}</div>
+      <div>
+        <Button
+          onClick={onClickFilterButton}
+          bsSize="small"
+          disabled={isLoading || hadError}
+        >
+          <i className="glyphicon glyphicon-filter" />
+          <span> Filters</span>
+        </Button>
+        <Button
+          onClick={onClickDownload}
+          bsSize="small"
+          disabled={isLoading || hadError}
+        >
+          <i className="glyphicon glyphicon-download-alt" />
+          <span> Download data</span>
+        </Button>
+      </div>
     </div>
   );
 }

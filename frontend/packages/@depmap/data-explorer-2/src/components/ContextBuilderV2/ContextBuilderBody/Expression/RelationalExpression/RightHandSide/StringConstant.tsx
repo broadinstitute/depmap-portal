@@ -7,9 +7,16 @@ interface Props {
   path: (string | number)[];
   domain: { unique_values: string[] } | null;
   isLoading: boolean;
+  onClickShowDistribution: () => void;
 }
 
-function StringConstant({ expr, path, domain, isLoading }: Props) {
+function StringConstant({
+  expr,
+  path,
+  domain,
+  isLoading,
+  onClickShowDistribution,
+}: Props) {
   const { dispatch, shouldShowValidation } = useContextBuilderState();
 
   const { options, isValidExpr } = useMemo(() => {
@@ -46,6 +53,15 @@ function StringConstant({ expr, path, domain, isLoading }: Props) {
       isLoading={isLoading}
       hasError={hasError}
       label="Value"
+      renderDetailsButton={
+        domain && !isLoading
+          ? () => (
+              <button type="button" onClick={onClickShowDistribution}>
+                details
+              </button>
+            )
+          : undefined
+      }
       value={expr}
       options={options}
       onChange={(value) => {

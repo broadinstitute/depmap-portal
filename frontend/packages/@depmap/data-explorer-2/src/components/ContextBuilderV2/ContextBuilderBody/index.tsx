@@ -9,7 +9,16 @@ import ContextBuilderTableView from "./ContextBuilderTableView";
 import styles from "../../../styles/ContextBuilderV2.scss";
 
 function ContextBuilderBody() {
-  const { isInitializing, mainExpr, showTableView } = useContextBuilderState();
+  const {
+    isInitializing,
+    mainExpr,
+    showTableView,
+    initializationError,
+  } = useContextBuilderState();
+
+  if (initializationError) {
+    return <Modal.Body>⚠️ An unepxected error occurred.</Modal.Body>;
+  }
 
   if (isInitializing) {
     return (

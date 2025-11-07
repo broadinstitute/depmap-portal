@@ -66,6 +66,7 @@ function launchModal<T>(
       {(value, onChange, acceptText, setAcceptText) => (
         <Modal
           backdrop="static"
+          dialogClassName="stackableConfirmationModal"
           {...options.modalProps}
           show
           onHide={() => {

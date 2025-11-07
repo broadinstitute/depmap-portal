@@ -332,7 +332,15 @@ export function formatDataForScatterPlot(
           : [`<b>${formattedLabel}</b>`, ...colorInfo];
 
       Object.keys(data.metadata || {}).forEach((key) => {
-        const { label: hoverLabel, values, value_type } = data.metadata[key]!;
+        let { label: hoverLabel } = data.metadata[key]!;
+        const { values, value_type, dataset_label } = data.metadata[key]!;
+
+        if (value_type === "continuous" && dataset_label) {
+          hoverLabel += " " + dataset_label;
+        }
+
+        hoverLabel =
+          hoverLabel.length > 25 ? `${hoverLabel.substr(0, 25)}…` : hoverLabel;
 
         const nullValueLabel =
           value_type === "categorical" ? "<b>N/A</b>" : "Other";

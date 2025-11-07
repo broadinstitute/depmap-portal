@@ -131,29 +131,6 @@
   }
 }
 
-.labelWithDetailsButton {
-  display: flex;
-  justify-content: space-between;
-  min-width: 162px;
-}
-
-.detailsButton {
-  all: unset;
-  cursor: pointer;
-  color: #337ab7;
-  cursor: pointer;
-
-  &:hover,
-  &:focus {
-    color: #23527c;
-  }
-
-  &:focus-visible {
-    outline: 5px auto -webkit-focus-ring-color;
-    outline-offset: 3px;
-  }
-}
-
 .aggregation {
   padding-left: 10px;
 

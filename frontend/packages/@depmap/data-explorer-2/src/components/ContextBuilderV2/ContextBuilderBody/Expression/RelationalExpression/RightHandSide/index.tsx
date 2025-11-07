@@ -1,5 +1,8 @@
-import React, { useEffect } from "react";
-import { isValidSliceQuery } from "@depmap/types";
+import React, { useCallback, useEffect } from "react";
+import { showInfoModal } from "@depmap/common-components";
+import { SlicePreview } from "@depmap/slice-table";
+import { isValidSliceQuery, SliceQuery } from "@depmap/types";
+import { usePlotlyLoader } from "../../../../../../contexts/PlotlyLoaderContext";
 import { DataExplorerApiResponse } from "../../../../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import {
@@ -20,7 +23,7 @@ interface Props {
 }
 
 function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
-  const { dispatch, vars } = useContextBuilderState();
+  const { dimension_type, dispatch, vars } = useContextBuilderState();
   const variable = varName ? vars[varName] : null;
 
   useEffect(() => {
@@ -32,6 +35,21 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
     }
   }, [dispatch, expr, path, variable]);
 
+  const PlotlyLoader = usePlotlyLoader();
+
+  const handleClickShowDistribution = useCallback(() => {
+    showInfoModal({
+      title: `${variable!.label || variable!.identifier} distribution`,
+      content: (
+        <SlicePreview
+          value={variable as SliceQuery}
+          index_type_name={dimension_type}
+          PlotlyLoader={PlotlyLoader}
+        />
+      ),
+    });
+  }, [dimension_type, PlotlyLoader, variable]);
+
   if (isListOperator(op)) {
     return (
       <StringList
@@ -39,6 +57,7 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
         path={path}
         domain={domain as { unique_values: string[] } | null}
         isLoading={isLoading}
+        onClickShowDistribution={handleClickShowDistribution}
       />
     );
   }
@@ -50,6 +69,7 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
         path={path}
         domain={domain}
         isLoading={isLoading}
+        onClickShowDistribution={handleClickShowDistribution}
       />
     );
   }
@@ -60,6 +80,7 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
       path={path}
       domain={domain}
       isLoading={isLoading}
+      onClickShowDistribution={handleClickShowDistribution}
     />
   );
 }
