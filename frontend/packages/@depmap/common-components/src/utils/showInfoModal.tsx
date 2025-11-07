@@ -37,6 +37,7 @@ export default function showInfoModal(
   ReactDOM.render(
     <Modal
       backdrop="static"
+      dialogClassName="stackableConfirmationModal"
       {...options.modalProps}
       show
       onHide={() => {

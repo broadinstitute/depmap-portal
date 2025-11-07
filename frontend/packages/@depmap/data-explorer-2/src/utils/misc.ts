@@ -293,3 +293,27 @@ export const sortDimensionTypes = (types: string[]) => {
     set.has("(dataset specific)") ? "(dataset specific)" : null,
   ].filter(Boolean) as string[];
 };
+
+const datsaTypePriorityOrder = [
+  "CRISPR",
+  "RNAi",
+  "CN",
+  "Expression",
+  "Drug screen",
+  "Combo Drug screen",
+];
+
+export const dataTypeSortComparator = (a: string, b: string) => {
+  const ai = datsaTypePriorityOrder.indexOf(a);
+  const bi = datsaTypePriorityOrder.indexOf(b);
+
+  if (ai !== -1 && bi !== -1) {
+    // both are in priority list — sort by their order in that list
+    return ai - bi;
+  }
+  if (ai !== -1) return -1; // a is priority, b is not
+  if (bi !== -1) return 1; // b is priority, a is not
+
+  // neither are priority — sort alphabetically
+  return a.localeCompare(b);
+};

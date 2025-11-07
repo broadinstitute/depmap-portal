@@ -71,7 +71,14 @@ export function TableBody<T>({
                     tableLayout: "fixed",
                     cursor: row.getCanSelect() ? "pointer" : "default",
                   }}
-                  onClick={() => {
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+
+                    // Don't select if clicking on a link or inside a link
+                    if (target.closest("a")) {
+                      return;
+                    }
+
                     if (row.getCanSelect()) {
                       row.toggleSelected();
                     }

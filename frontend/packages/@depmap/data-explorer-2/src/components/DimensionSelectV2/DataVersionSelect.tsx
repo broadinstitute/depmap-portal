@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import cx from "classnames";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
+import { dataTypeSortComparator } from "../../utils/misc";
 import PlotConfigSelect from "../PlotConfigSelect";
 import { fetchDatasetsByIndexType } from "./useDimensionStateManager/utils";
 import { State } from "./useDimensionStateManager/types";
@@ -125,10 +126,10 @@ function DataVersionSelect({
       });
 
       const groupedOpts = Object.keys(groups)
-        .sort()
         .map((dataType) => {
           return { label: dataType, options: groups[dataType] };
-        });
+        })
+        .sort((a, b) => dataTypeSortComparator(a.label, b.label));
 
       setGroupedOptions(groupedOpts);
     })();
@@ -179,19 +180,15 @@ function DataVersionSelect({
         const selection = wrappedValue as typeof options[number] | null;
         onChange(selection?.value || null);
       }}
-      label={
-        <span className={styles.labelWithDetailsButton}>
-          Data Version
-          {onClickShowModal && (
-            <button
-              type="button"
-              className={styles.detailsButton}
-              onClick={onClickShowModal}
-            >
-              details
-            </button>
-          )}
-        </span>
+      label="Data Version"
+      renderDetailsButton={
+        onClickShowModal
+          ? () => (
+              <button type="button" onClick={onClickShowModal}>
+                details
+              </button>
+            )
+          : undefined
       }
       placeholder={(() => {
         if (isLoading) {
