@@ -184,7 +184,7 @@ def set_up_node_and_context_objects(
     ]
 
     feature_id = (
-        str(GeneFactory(entrez_id="entrez_id").entrez_id)
+        str(GeneFactory(entrez_id=1234).entrez_id)
         if feature_type == "gene"
         else CompoundFactory(compound_id="compound_id").compound_id
     )
