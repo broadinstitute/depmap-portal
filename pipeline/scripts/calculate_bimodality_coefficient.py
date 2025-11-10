@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 
 def bimodality_coefficient_for_cpd_viabilities(cpd_viabilities: pd.Series) -> pd.Series:
