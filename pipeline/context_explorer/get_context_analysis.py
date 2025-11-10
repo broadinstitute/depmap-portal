@@ -5,6 +5,11 @@ import statsmodels.api as sm
 import warnings
 import argparse
 import json
+
+# need to add ../pipeline/ to the sys path in order to import from scripts
+import sys
+from pathlib import Path
+sys.path.append(str(Path().resolve().parents[0]))
 from scripts.calculate_bimodality_coefficient import (
     bimodality_coefficient_for_cpd_viabilities,
 )
@@ -176,7 +181,7 @@ def load_all_data(
         gene_dependency_taiga_id=gene_dependency_taiga_id,
         tda_table_path=tda_table_path,
     )
-    datasets_to_test["CRISPR"] = gene_effect
+    datasets_to_test["Chronos_Combined"] = gene_effect
     data_for_extra_cols["gene_dependency"] = gene_dependency
 
     rep_sensitivity = load_prism_data(
@@ -184,14 +189,14 @@ def load_all_data(
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
         portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
-    datasets_to_test["PRISMRepurposing"] = rep_sensitivity
+    datasets_to_test["REPURPOSING_AUC_collapsed"] = rep_sensitivity
 
     # OncRef will be None on the public portal
     if oncref_auc_taiga_id is not None:
         oncref_aucs, oncref_log_aucs = load_oncref_data(
             tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
         )
-        datasets_to_test["PRISMOncRef"] = oncref_log_aucs
+        datasets_to_test["Prism_oncology_AUC_collapsed"] = oncref_log_aucs
 
         # for OncRef we compute the t-test on the logged AUCs,
         # but want to set the mean_in and mean_out columns based on
@@ -333,7 +338,7 @@ def compute_context_results(
             subtype_code=ctx, out_group=out_label, dataset=ds_name
         )
 
-        if ds_name == "CRISPR":
+        if ds_name == "Chronos_Combined":
             ds_res = add_crispr_columns(
                 ds_res,
                 data_for_extra_cols["gene_dependency"],
@@ -341,7 +346,7 @@ def compute_context_results(
                 ds_out_group,
             ).reset_index(names="entity_id")
 
-        elif ds_name == "PRISMOncRef":
+        elif ds_name == "Prism_oncology_AUC_collapsed":
             # replace mean_in, mean_out, and effect size with non-logged versions
             ds_res["mean_in"] = (
                 data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
@@ -351,7 +356,7 @@ def compute_context_results(
             )
             ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
-        if ds_name in ["PRISMRepurposing", "PRISMOncRef"]:
+        if ds_name in ["REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"]:
             # merge with selectivity vals
             ds_res = ds_res.reset_index(names="entity_id").merge(
                 data_for_extra_cols["selectivity_vals"]
