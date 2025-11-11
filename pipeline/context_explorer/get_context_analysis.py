@@ -123,12 +123,12 @@ def format_selectivity_vals(repurposing_table_path, oncref_table_path):
 
     # reformat repurposing compounds
     repurposing_table = pd.read_csv(repurposing_table_path)
-    repurposing_table["entity_id"] = repurposing_table.apply(
+    repurposing_table["feature_id"] = repurposing_table.apply(
         lambda x: f"BRD:{x.BroadID}", axis=1
     )
     repurposing_selectivity = repurposing_table.rename(
         columns={"BimodalityCoefficient": "selectivity_val"}
-    )[["entity_id", "selectivity_val"]]
+    )[["feature_id", "selectivity_val"]]
 
     selectivity_dfs.append(repurposing_selectivity)
 
@@ -136,8 +136,8 @@ def format_selectivity_vals(repurposing_table_path, oncref_table_path):
     if oncref_table_path is not None:
         oncref_table = pd.read_csv(oncref_table_path)
         oncref_selectivity = oncref_table.rename(
-            columns={"BroadID": "entity_id", "BimodalityCoefficient": "selectivity_val"}
-        )[["entity_id", "selectivity_val"]]
+            columns={"BroadID": "feature_id", "BimodalityCoefficient": "selectivity_val"}
+        )[["feature_id", "selectivity_val"]]
 
         selectivity_dfs.append(oncref_selectivity)
 
@@ -306,7 +306,7 @@ def compute_context_results(
     col_order = [
         "subtype_code",
         "out_group",
-        "entity_id",
+        "feature_id",
         "dataset",
         "t_pval",
         "t_qval",
@@ -344,7 +344,7 @@ def compute_context_results(
                 data_for_extra_cols["gene_dependency"],
                 ds_in_group,
                 ds_out_group,
-            ).reset_index(names="entity_id")
+            ).reset_index(names="feature_id")
 
         elif ds_name == "Prism_oncology_AUC_collapsed":
             # replace mean_in, mean_out, and effect size with non-logged versions
@@ -358,7 +358,7 @@ def compute_context_results(
 
         if ds_name in ["REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"]:
             # merge with selectivity vals
-            ds_res = ds_res.reset_index(names="entity_id").merge(
+            ds_res = ds_res.reset_index(names="feature_id").merge(
                 data_for_extra_cols["selectivity_vals"]
             )
 
