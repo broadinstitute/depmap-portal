@@ -11,7 +11,7 @@ on:
       - ".github/workflows/build_breadbox_client.yaml"
 
 env:
-  DOCKER_REPO: us.gcr.io/broad-achilles/depmap-breadbox
+  ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
