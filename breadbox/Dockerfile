@@ -1,11 +1,38 @@
-# This base image sets the python version to 3.9.15.
-# Since we no longer depend on R, we could move away from using this custom base image. The remaining non-R dependencies may be fairly quick to install.
-FROM us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox-base:v2
+# Using Debian Trixie with Python 3.9 via pyenv
+FROM debian:trixie
 
-# install security updated
-RUN apt update && apt upgrade -y
+# Set environment to non-interactive
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN mkdir /install/breadbox
+# Install dependencies for pyenv and Python builds
+RUN apt-get update && apt-get install -y \
+    curl \
+    git \
+    build-essential \
+    libssl-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libffi-dev \
+    liblzma-dev \
+    libatomic1 \
+    && apt-get upgrade -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install pyenv
+ENV PYENV_ROOT=/root/.pyenv
+ENV PATH=$PYENV_ROOT/shims:$PYENV_ROOT/bin:$PATH
+RUN curl https://pyenv.run | bash
+
+# Install Python 3.9.15 via pyenv
+ENV PYTHON_VERSION=3.9.15
+RUN pyenv install ${PYTHON_VERSION} && \
+    pyenv global ${PYTHON_VERSION} && \
+    pyenv rehash
+
+# Create the installation directory
+RUN mkdir -p /install/breadbox
 
 # Copy files:
 COPY . /install/breadbox
