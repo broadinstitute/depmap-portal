@@ -5,12 +5,9 @@ import sys
 import re
 import os
 
-DOCKER_REPO = sys.argv[1]
+ARTIFACT_REGISTRY_REPO = sys.argv[1]
 IMAGE_TAG = sys.argv[2]
 BRANCH_NAME = sys.argv[3]
-
-# Additional repository for Artifact Registry
-ARTIFACT_REGISTRY_REPO = sys.argv[4] if len(sys.argv) > 4 else None
 
 quarterly_release_branch_match = re.match(
     "(dmc|external|peddep)-(\\d\\d.\\d)", BRANCH_NAME
@@ -62,19 +59,10 @@ if "master" in dest_tags:
     dest_tags.add("latest")
 
 for dest_tag in dest_tags:
-    # Push to GCR (existing repository)
+    # Push to Artifact Registry
     run_each(
         f"""
-        docker tag {IMAGE_TAG} {DOCKER_REPO}:{dest_tag}
-        docker push {DOCKER_REPO}:{dest_tag}
+        docker tag {IMAGE_TAG} {ARTIFACT_REGISTRY_REPO}:{dest_tag}
+        docker push {ARTIFACT_REGISTRY_REPO}:{dest_tag}
         """
     )
-
-    # Push to Artifact Registry if provided
-    if ARTIFACT_REGISTRY_REPO:
-        run_each(
-            f"""
-            docker tag {IMAGE_TAG} {ARTIFACT_REGISTRY_REPO}:{dest_tag}
-            docker push {ARTIFACT_REGISTRY_REPO}:{dest_tag}
-            """
-        )
