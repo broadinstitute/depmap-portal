@@ -12,11 +12,9 @@ on:
       - "dmc*"
       - "external*"
       - "test-*"
-      - "artifact-migration-25q3"
 
 env:
   DOCKER_REPO: us.gcr.io/broad-achilles/depmap
-  ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
@@ -107,16 +105,10 @@ jobs:
           registry: us.gcr.io
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
-      - name: Login to Artifact Registry
-        uses: docker/login-action@v2
-        with:
-          registry: us-central1-docker.pkg.dev
-          username: _json_key
-          password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Pull Docker image
         run: docker pull ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: Push Docker tags
         run: |
           chmod +x ./.github/push_docker.py
           # GITHUB_REF##*/ is github actions magic which expands to the branch name
-          ./.github/push_docker.py ${{env.DOCKER_REPO}} ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/} ${{ env.ARTIFACT_REGISTRY_REPO }}
+          ./.github/push_docker.py ${{env.DOCKER_REPO}} ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/}
