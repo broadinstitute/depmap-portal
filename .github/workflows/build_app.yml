@@ -15,6 +15,7 @@ on:
       - "artifact-migration-25q3"
 
 env:
+  DOCKER_REPO: us.gcr.io/broad-achilles/depmap
   ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
@@ -54,20 +55,20 @@ jobs:
           echo "SHA: ${{ github.sha }} Build: ${{ github.run_number	}}" > portal-backend/depmap/templates/build_info.html
           echo "SHA=\"${{ github.sha }}\"" > portal-backend/depmap/settings/build.py
           echo "BUILD=\"${{ github.run_number	}}\"" >> portal-backend/depmap/settings/build.py
-      - name: Login to Artifact Registry
+      - name: Login to GCR
         uses: docker/login-action@v2
         with:
-          registry: us-central1-docker.pkg.dev
+          registry: us.gcr.io
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Build Docker image
-        run: cd portal-backend && bash build-docker-image.sh ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }}
+        run: cd portal-backend && bash build-docker-image.sh ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: Run pyright-ratchet
-        run: docker run -e HOME=/install/pyright ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }} pyright-ratchet
+        run: docker run -e HOME=/install/pyright ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} pyright-ratchet
       - name: Run import linter
-        run: docker run ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }} lint-imports
+        run: docker run ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} lint-imports
       - name: Push Docker image
-        run: docker push ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }}
+        run: docker push ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
 
   run-pytest:
     runs-on: ubuntu-latest
@@ -77,21 +78,21 @@ jobs:
         pytest-group: [1, 2, 3, 4, 5]
     steps:
       - uses: actions/checkout@v3
-      - name: Login to Artifact Registry
+      - name: Login to GCR
         uses: docker/login-action@v2
         with:
-          registry: us-central1-docker.pkg.dev
+          registry: us.gcr.io
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Pull Docker image
-        run: docker pull ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }}
+        run: docker pull ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: Get pytest durations
         uses: actions/cache@v3
         with:
           path: .test_durations
           key: ${{ runner.os }}-pytest-durations
       - name: Run pytest
-        run: cd portal-backend && docker run -v $PWD/../.test_durations:/install/.test_durations -e PYTHONWARNINGS="ignore::DeprecationWarning" ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }} pytest --splits 5 --group ${{ matrix.pytest-group }}
+        run: cd portal-backend && docker run -v $PWD/../.test_durations:/install/.test_durations -e PYTHONWARNINGS="ignore::DeprecationWarning" ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} pytest --splits 5 --group ${{ matrix.pytest-group }}
 
   push-docker-tags:
     runs-on: ubuntu-latest
@@ -100,6 +101,12 @@ jobs:
       - run-frontend-tests
     steps:
       - uses: actions/checkout@v3
+      - name: Login to GCR
+        uses: docker/login-action@v2
+        with:
+          registry: us.gcr.io
+          username: _json_key
+          password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Login to Artifact Registry
         uses: docker/login-action@v2
         with:
@@ -107,9 +114,9 @@ jobs:
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Pull Docker image
-        run: docker pull ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }}
+        run: docker pull ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }}
       - name: Push Docker tags
         run: |
           chmod +x ./.github/push_docker.py
           # GITHUB_REF##*/ is github actions magic which expands to the branch name
-          ./.github/push_docker.py ${{ env.ARTIFACT_REGISTRY_REPO }} ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/}
+          ./.github/push_docker.py ${{env.DOCKER_REPO}} ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/} ${{ env.ARTIFACT_REGISTRY_REPO }}
