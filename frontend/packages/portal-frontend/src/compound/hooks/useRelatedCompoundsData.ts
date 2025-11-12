@@ -1,6 +1,7 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { DatasetAssociations } from "@depmap/types/src/Dataset";
 import { useEffect, useState } from "react";
+import { fetchMetadata } from "../fetchDataHelpers";
 
 interface TargetCorrelatedCompound {
   gene: string;
@@ -74,6 +75,20 @@ function getTopCorrelatedData(
   return { topCorrelates, topTargets, topCompounds };
 }
 
+function mapEntrezIdToSymbols(
+  entrezIds: string[],
+  geneMetadata: { label: { [key: number]: string } }
+): string[] {
+  const symbolLookup = geneMetadata.label;
+
+  const geneSymbols = entrezIds.map((entrezId) => {
+    // Look up the symbol, using the Entrez ID as fallback if not found.
+    return symbolLookup[Number(entrezId)] || entrezId;
+  });
+
+  return geneSymbols;
+}
+
 function useRelatedCompoundsData(
   datasetId: string, // should be a compound dataset. Could be hardcoded instead of param..
   compoundLabel: string,
@@ -109,11 +124,24 @@ function useRelatedCompoundsData(
             compoundDimType.metadata_dataset_id,
             {
               identifier: "label",
-              columns: ["CompoundID", "GeneSymbolOfTargets"],
+              columns: ["CompoundID", "EntrezIDsOfTargets"],
             }
           );
-          const targetGenes: string[] =
-            allCompoundMetadata.GeneSymbolOfTargets[compoundLabel] || [];
+          const targetEntrezIDs: string[] =
+            allCompoundMetadata.EntrezIDsOfTargets[compoundLabel] || [];
+
+          const geneMetadata = await fetchMetadata<any>(
+            "gene",
+            null,
+            ["label"],
+            breadboxAPI,
+            "id"
+          );
+
+          const targetGenes = mapEntrezIdToSymbols(
+            targetEntrezIDs,
+            geneMetadata
+          );
 
           // make a list of datasets to correlate and gene target pairs to query by (ex: {dataset1, gene1}, {dataset2, gene1}, {dataset1, gene2}, {dataset2, gene2})
           const datasetGenePairs = Object.keys(
@@ -130,7 +158,7 @@ function useRelatedCompoundsData(
                 {
                   dataset_id: dataset,
                   identifier: gene,
-                  identifier_type: "feature_label",
+                  identifier_type: "feature_id",
                 },
                 [datasetId]
               )
