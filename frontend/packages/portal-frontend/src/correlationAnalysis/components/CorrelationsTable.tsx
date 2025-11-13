@@ -27,20 +27,46 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
     <div>
       <WideTable
         columns={[
-          { accessor: "feature", Header: "Feature" },
-          { accessor: "featureDataset", Header: "Correlated Dataset" },
-          { accessor: "dose", Header: `${compound} Dose` },
-          { accessor: "correlation", Header: "Correlation" },
-          { accessor: "log10qvalue", Header: "log10(q value)" },
-          { accessor: "rank", Header: "Rank" },
+          {
+            accessor: "feature",
+            maxWidth: 200,
+            minWidth: 150,
+            Header: "Feature",
+          },
+          {
+            accessor: "featureDataset",
+            maxWidth: 200,
+            minWidth: 150,
+            Header: "Correlated Dataset",
+          },
+          {
+            accessor: "dose",
+            maxWidth: 200,
+            minWidth: 150,
+            Header: `${compound} Dose`,
+          },
+          {
+            accessor: "correlation",
+            maxWidth: 200,
+            minWidth: 150,
+            Header: "Correlation",
+          },
+          {
+            accessor: "log10qvalue",
+            maxWidth: 200,
+            minWidth: 150,
+            Header: "log10(q value)",
+          },
+          { accessor: "rank", maxWidth: 200, minWidth: 150, Header: "Rank" },
         ]}
         data={tableData}
-        rowHeight={40}
-        allowDownloadFromTableData
+        rowHeight={28}
+        fixedHeight={500}
         idProp="id"
         onChangeSelections={onChangeSelections}
         selectedTableLabels={selectedRows}
         hideSelectAllCheckbox
+        allowDownloadFromTableDataWithMenu
       />
     </div>
   );

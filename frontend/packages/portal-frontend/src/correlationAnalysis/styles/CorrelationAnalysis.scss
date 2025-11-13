@@ -6,11 +6,12 @@
 
 .plotContainer {
   display: grid;
-  @media screen and (min-width: 990px) {
-    grid-template-columns: repeat(3, minmax(0, 1fr)); // Force equal widths
+  grid-template-columns: repeat(3, minmax(200px, 1fr)); // Force equal widths
+  @media screen and (max-width: 1001px) {
+    grid-template-columns: repeat(2, minmax(200px, 1fr)); // Force equal widths
   }
-  @media screen and (max-width: 991px) {
-    grid-template-columns: repeat(2, minmax(0, 1fr)); // Force equal widths
+  @media screen and (max-width: 900px) {
+    grid-template-columns: repeat(1, minmax(200px, 1fr)); // Force equal widths
   }
   gap: 2rem;
   margin-bottom: 50px;
@@ -44,4 +45,151 @@
   :hover {
     text-decoration: none;
   }
+}
+
+.mainContentContainer {
+  margin-left: 10px;
+  margin-right: 60px;
+  padding-bottom: 60px;
+
+  .mainContentHeader {
+    margin-top: 20px;
+    margin-bottom: 20px;
+
+    p {
+      max-width: 780px;
+    }
+  }
+
+  .mainContentGrid {
+    display: grid;
+    grid-template-columns: 4fr;
+    grid-template-areas: "plot plot plot plot";
+    gap: 1rem;
+
+    .plotArea {
+      grid-area: "plot";
+    }
+
+    @media (max-width: 950px) {
+      grid-template-areas: "plot";
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto;
+    }
+  }
+
+  .mainContentHr {
+    border-top: 1px solid #b8b8b8;
+    margin-top: 30px;
+  }
+
+  .mainContentCellLines {
+    margin-top: 20px;
+    margin-bottom: 20px;
+
+    p {
+      max-width: 780px;
+    }
+  }
+}
+
+.PlotSection {
+  margin-left: 0px;
+  margin-right: 20px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: visible;
+  border: 1px solid #b8b8b8;
+
+  @media (max-width: 950px) {
+    margin-right: 0px;
+  }
+
+  .sectionHeader {
+    margin-bottom: 20px;
+  }
+
+  .plotArea {
+    position: relative;
+    width: 98%;
+    height: 100%;
+    margin: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+
+    > * {
+      width: 96%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+    }
+  }
+
+  .plotSpinnerContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    z-index: 2;
+  }
+}
+
+.tabGrid {
+  display: grid;
+  grid-template-columns: 250px 6fr;
+  grid-template-areas: "filters main main main main main main";
+  gap: 2rem;
+  min-height: 100vh;
+
+  .tabFilters {
+    grid-area: filters;
+    background-color: rgba(123, 140, 178, 0.1);
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 15px;
+  }
+
+  .tabMain {
+    grid-area: main;
+  }
+}
+
+.FiltersPanel {
+  .sectionTitle {
+    font-size: 16px;
+    padding-bottom: 4px;
+    margin-bottom: 0px;
+  }
+
+  .filtersPanelHr {
+    margin-top: 20px;
+    border-top: 1px solid rgba(0, 0, 0, 1);
+  }
+
+  .toggleRow {
+    padding-top: 8px;
+    padding-bottom: 8px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.errorMessage {
+  padding: 24px;
+  text-align: center;
+  color: #b00020;
+  font-weight: 600;
+}
+
+.tableSpinnerContainer {
+  padding: 24px;
+  text-align: center;
 }
