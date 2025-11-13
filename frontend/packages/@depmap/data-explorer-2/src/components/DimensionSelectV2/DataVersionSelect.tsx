@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import cx from "classnames";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
 import { dataTypeSortComparator } from "../../utils/misc";
 import PlotConfigSelect from "../PlotConfigSelect";
@@ -253,22 +252,7 @@ function DataVersionSelect({
           );
         }
 
-        if (context === "value" || !option.isDefault) {
-          return option.label;
-        }
-
-        return (
-          <div>
-            {option.label}
-            <i
-              className={cx(
-                "glyphicon",
-                "glyphicon-star",
-                styles.defaultDataset
-              )}
-            />
-          </div>
-        );
+        return option.label;
       }}
     />
   );

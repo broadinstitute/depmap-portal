@@ -377,6 +377,12 @@ async function computeDataVersionOptions(
 
   let foundDefault = false;
 
+  const priorities: Record<string, number> = {};
+
+  for (const d of datasets) {
+    priorities[d.id] = d.priority as number;
+  }
+
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
     .filter((d) =>
@@ -489,7 +495,7 @@ async function computeDataVersionOptions(
         isDefault,
       };
     })
-    .sort((a, b) => compareCaseInsensitive(a.label, b.label))
+    .sort((a, b) => priorities[a.value] - priorities[b.value])
     .sort(compareDisabledLast);
 }
 
