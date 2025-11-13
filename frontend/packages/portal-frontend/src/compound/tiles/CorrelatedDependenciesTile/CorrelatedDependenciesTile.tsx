@@ -36,7 +36,7 @@ const CorrelatedDependenciesTile = ({
   }
 
   return (
-    <article className="card_wrapper">
+    <article className={`card_wrapper stacked-boxplot-tile`}>
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">Correlated Dependencies</h2>
         <div className="card_padding">
@@ -68,15 +68,17 @@ const CorrelatedDependenciesTile = ({
                 )
               );
               return (
-                <TopDatasetDependencies
-                  featureId={entityLabel}
-                  datasetId={correlationData.dataset_given_id}
-                  key={assocDatasetGivenId}
-                  dataType={dataType}
-                  featureType={associated_dataset?.dimension_type}
-                  topDatasetCorrelations={topDatasetCorrelations}
-                  geneTargets={geneTargets}
-                />
+                <div>
+                  <TopDatasetDependencies
+                    featureId={entityLabel}
+                    datasetId={correlationData.dataset_given_id}
+                    key={assocDatasetGivenId}
+                    dataType={dataType}
+                    featureType={associated_dataset?.dimension_type}
+                    topDatasetCorrelations={topDatasetCorrelations}
+                    geneTargets={geneTargets}
+                  />
+                </div>
               );
             })}
         </div>

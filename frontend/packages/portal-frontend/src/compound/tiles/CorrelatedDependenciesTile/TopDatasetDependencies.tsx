@@ -27,7 +27,7 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
   return (
     <div>
       <h3 className={styles.tileDatasetTitle}>{dataType}</h3>
-      <table style={{ width: "100%", tableLayout: "fixed" }}>
+      <table style={{ width: "80%", tableLayout: "fixed" }}>
         <thead>
           <tr>
             <th style={{ width: "15%" }} />
