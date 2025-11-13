@@ -31,17 +31,15 @@ function ContextBuilderTableView() {
     uniqueVariableSlices,
   } = useContextBuilderState();
 
-  const { isLoading, matchingIds } = useMatches(mainExpr);
-  const [isViewInitialized, setIsViewInitialized] = useState(() => {
-    // Edge case: we were dropped right into table mode before a valid
-    // expression was created. We can skip initialization.
-    if (!isCompleteExpression(mainExpr)) {
-      return true;
-    }
-
-    return false;
-  });
   const wasLoading = useRef(false);
+  const { isLoading, matchingIds } = useMatches(mainExpr);
+  const [isViewInitialized, setIsViewInitialized] = useState(isLoading);
+
+  useEffect(() => {
+    if (!isCompleteExpression(mainExpr)) {
+      setIsViewInitialized(false);
+    }
+  }, [mainExpr]);
 
   const viewOnlySlices = useRef<Set<SliceQuery>>(new Set(uniqueVariableSlices));
   const initialSlices = useRef([...viewOnlySlices.current, ...tableOnlySlices]);
@@ -114,7 +112,9 @@ function ContextBuilderTableView() {
   if (!isViewInitialized) {
     return (
       <div className={styles.ContextBuilderTableView}>
-        <Spinner position="absolute" left="calc(50vw - 100px)" />
+        <div className={styles.spinner}>
+          <Spinner position="absolute" left="calc(50vw - 100px)" />
+        </div>
       </div>
     );
   }

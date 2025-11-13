@@ -275,6 +275,11 @@
   height: calc(100vh - 273px);
   min-height: 300px;
 
+  .spinner > div {
+    top: 50%;
+    margin: 0;
+  }
+
   .manualSelectionControls {
     color: #444;
 

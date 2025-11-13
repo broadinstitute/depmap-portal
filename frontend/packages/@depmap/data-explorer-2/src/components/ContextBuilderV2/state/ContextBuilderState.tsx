@@ -176,6 +176,7 @@ export const ContextBuilderStateProvider = ({
   const [showTableView, setShowTableView] = useState(false);
   const [tableOnlySlices, setTableOnlySlices] = useState<SliceQuery[]>([]);
 
+  // When switching to table view, thow out any incomplete rules.
   useEffect(() => {
     if (
       showTableView &&

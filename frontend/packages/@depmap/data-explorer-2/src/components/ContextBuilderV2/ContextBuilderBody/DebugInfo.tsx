@@ -27,7 +27,21 @@ const DebugInfo = () => {
       const keyedDomains = {} as Record<string, object | null>;
 
       domains.forEach((domain, i) => {
-        keyedDomains[varNames[i]] = domain;
+        // eslint-disable-next-line
+        let domainToSet = { ...domain } as any;
+
+        if (
+          domain &&
+          "unique_values" in domain &&
+          domain.unique_values.length > 5
+        ) {
+          domainToSet.unique_values = [
+            ...domain.unique_values.slice(0, 3),
+            `…and ${domain.unique_values.length - 3} more`,
+          ];
+        }
+
+        keyedDomains[varNames[i]] = domainToSet;
       });
 
       setVarDomains(keyedDomains);
