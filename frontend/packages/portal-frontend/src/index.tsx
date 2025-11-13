@@ -322,7 +322,7 @@ export function initRelatedCompoundsTile(
     <React.Suspense fallback={<div>Loading...</div>}>
       <RelatedCompoundsTile
         entityLabel={entityLabel}
-        datasetId="Prism_oncology_AUC_collapsed"
+        datasetId="PRISMOncologyReferenceLog2AUCMatrix"
         datasetToDataTypeMap={datasetToDataTypeMap}
       />
     </React.Suspense>,
@@ -367,11 +367,15 @@ export function initDoseResponseTab(
 
 export function initCorrelationAnalysisTab(
   elementId: string,
-  compoundName: string
+  compoundName: string,
+  compoundId: string
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelationAnalysis compound={compoundName} />
+      <CorrelationAnalysis
+        compoundName={compoundName}
+        compoundId={compoundId}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

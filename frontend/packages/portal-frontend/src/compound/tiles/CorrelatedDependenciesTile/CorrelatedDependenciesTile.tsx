@@ -19,7 +19,7 @@ const CorrelatedDependenciesTile = ({
     isLoading,
     error,
   } = useCorrelatedDependenciesData(
-    "Prism_oncology_AUC_collapsed",
+    "PRISMOncologyReferenceLog2AUCMatrix",
     entityLabel
   );
 

@@ -158,7 +158,7 @@ function useRelatedCompoundsData(
                 {
                   dataset_id: dataset,
                   identifier: gene,
-                  identifier_type: "feature_id",
+                  identifier_type: "feature_label",
                 },
                 [datasetId]
               )

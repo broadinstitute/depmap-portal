@@ -14,19 +14,20 @@ import {
 } from "../models/CorrelationPlot";
 
 interface CorrelationAnalysisProps {
-  compound: string;
+  compoundId: string;
+  compoundName: string;
 }
 
 const datasetMap: Record<string, { auc: string; viability: string }> = {
   OncRef: {
-    auc: "Prism_oncology_AUC_collapsed",
+    auc: "PRISMOncologyReferenceLog2AUCMatrix",
     viability: "Prism_oncology_viability",
   },
   // TBD: Add more after correlations are generated
 };
 
 export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
-  const { compound } = props;
+  const { compoundId, compoundName } = props;
   const [selectedDataset, setSelectedDataset] = React.useState<string>(
     "OncRef"
   );
@@ -56,9 +57,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     hasError,
   } = useCorrelationAnalysisData(
     selectedDataset,
-    compound,
-    "compound_v2",
-    ["CompoundID"],
+    compoundId,
+    compoundName,
     datasetMap[selectedDataset]
   );
 
@@ -133,7 +133,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     selectedDoses,
     allSelectedLabels,
     correlationAnalysisData,
-    compound,
+    compoundId,
   ]);
 
   const volcanoDataForCorrelatedDataset = React.useMemo(() => {
@@ -277,7 +277,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           }
           doses={doseColors.map((doseColor) => doseColor.dose)}
           onChangeDoses={(newDoses) => setSelectedDoses(newDoses || [])}
-          compoundName={compound}
+          compoundName={compoundName}
         />
       </div>
 
@@ -313,7 +313,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
 
         <CorrelationsTable
           data={filteredTableCorrelationAnalysisData}
-          compound={compound}
+          compound={compoundName}
           selectedRows={selectedRows}
           onChangeSelections={(selections: any[]) => {
             const prevSelections = Array.from(selectedRows);
