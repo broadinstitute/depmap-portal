@@ -29,7 +29,6 @@ from depmap.cas.views import blueprint as cas_blueprint
 from depmap.cell_line.views import blueprint as cell_line_blueprint
 from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.compound.views.index import blueprint as compound_blueprint
-from depmap.compute.views import blueprint as compute_blueprint
 from depmap.constellation.views import blueprint as constellation_blueprint
 from depmap.anchor_screen_dashboard.views import (
     blueprint as anchor_screen_dashboard_blueprint,
@@ -324,7 +323,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(compound_blueprint)
     app.register_blueprint(methylation_blueprint)
     app.register_blueprint(experimental_blueprint)
-    app.register_blueprint(compute_blueprint)
     app.register_blueprint(cansar_blueprint)
     app.register_blueprint(cas_blueprint)
     app.register_blueprint(access_control_blueprint)
