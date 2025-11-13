@@ -2,6 +2,7 @@ import { breadboxAPI, cached } from "@depmap/api";
 import { DatasetAssociations } from "@depmap/types/src/Dataset";
 import { useEffect, useState } from "react";
 import { fetchMetadata } from "../fetchDataHelpers";
+import { mapEntrezIdToSymbols } from "../utils";
 
 interface TargetCorrelatedCompound {
   gene: string;
@@ -73,20 +74,6 @@ function getTopCorrelatedData(
     }
   }
   return { topCorrelates, topTargets, topCompounds };
-}
-
-function mapEntrezIdToSymbols(
-  entrezIds: string[],
-  geneMetadata: { label: { [key: number]: string } }
-): string[] {
-  const symbolLookup = geneMetadata.label;
-
-  const geneSymbols = entrezIds.map((entrezId) => {
-    // Look up the symbol, using the Entrez ID as fallback if not found.
-    return symbolLookup[Number(entrezId)] || entrezId;
-  });
-
-  return geneSymbols;
 }
 
 function useRelatedCompoundsData(
