@@ -21,7 +21,7 @@ import simplifyVarNames from "../utils/simplifyVarNames";
 import useInitializer from "./useInitializer";
 import expressionReducer, { ExprReducerAction } from "./expressionReducer";
 
-const DEFAULT_EMPTY_EXPR = { and: [{ "==": [null, null] }] };
+export const DEFAULT_EMPTY_EXPR = { and: [{ "==": [null, null] }] };
 
 const ContextBuilderState = createContext({
   name: "",
@@ -158,17 +158,22 @@ export const ContextBuilderStateProvider = ({
     return false;
   }, [mainExpr]);
 
-  const lastValidExpressionRef = useRef<Expr | null>(null);
-  const lastValidVars = useRef<typeof vars | null>(null);
+  const lastValidExpressionRef = useRef<Expr>(DEFAULT_EMPTY_EXPR);
+  const lastValidVars = useRef<typeof vars>({});
 
   useEffect(() => {
     if (isCompleteExpression(mainExpr)) {
       lastValidExpressionRef.current = mainExpr;
+    } else if (mainExpr?.and?.length === 0 || mainExpr?.or?.length === 0) {
+      lastValidExpressionRef.current = DEFAULT_EMPTY_EXPR;
     }
   }, [mainExpr]);
 
   useEffect(() => {
-    if (Object.keys(vars).every((varName) => fullySpecifiedVars.has(varName))) {
+    if (
+      Object.keys(vars).length > 0 &&
+      Object.keys(vars).every((varName) => fullySpecifiedVars.has(varName))
+    ) {
       lastValidVars.current = vars;
     }
   }, [vars, fullySpecifiedVars]);
@@ -270,7 +275,10 @@ export const ContextBuilderStateProvider = ({
     "list" in vars &&
     Object.keys(vars).length === 1 &&
     vars.list.identifier === metadataIdColumn &&
-    Boolean(manualModeRestorePoint.current.expr);
+    Boolean(
+      manualModeRestorePoint.current.expr &&
+        manualModeRestorePoint.current.expr !== DEFAULT_EMPTY_EXPR
+    );
 
   const undoManualSelectionMode = useCallback(() => {
     const {

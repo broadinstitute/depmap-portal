@@ -10,7 +10,10 @@ import { Spinner } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
 import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
 import { isCompleteExpression } from "../../../../utils/misc";
-import { useContextBuilderState } from "../../state/ContextBuilderState";
+import {
+  DEFAULT_EMPTY_EXPR,
+  useContextBuilderState,
+} from "../../state/ContextBuilderState";
 import NumberOfMatches from "../Expression/NumberOfMatches";
 import useMatches from "../../hooks/useMatches";
 import confirmManualSelectMode from "./confirmManualSelectMode";
@@ -31,12 +34,14 @@ function ContextBuilderTableView() {
     uniqueVariableSlices,
   } = useContextBuilderState();
 
-  const wasLoading = useRef(false);
+  const [isViewInitialized, setIsViewInitialized] = useState(false);
   const { isLoading, matchingIds } = useMatches(mainExpr);
-  const [isViewInitialized, setIsViewInitialized] = useState(isLoading);
+  const wasLoading = useRef(false);
 
   useEffect(() => {
-    if (!isCompleteExpression(mainExpr)) {
+    if (mainExpr === DEFAULT_EMPTY_EXPR) {
+      setIsViewInitialized(true);
+    } else if (!isCompleteExpression(mainExpr)) {
       setIsViewInitialized(false);
     }
   }, [mainExpr]);
