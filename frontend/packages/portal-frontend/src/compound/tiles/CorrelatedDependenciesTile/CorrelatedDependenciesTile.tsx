@@ -68,17 +68,15 @@ const CorrelatedDependenciesTile = ({
                 )
               );
               return (
-                <div>
-                  <TopDatasetDependencies
-                    featureId={entityLabel}
-                    datasetId={correlationData.dataset_given_id}
-                    key={assocDatasetGivenId}
-                    dataType={dataType}
-                    featureType={associated_dataset?.dimension_type}
-                    topDatasetCorrelations={topDatasetCorrelations}
-                    geneTargets={geneTargets}
-                  />
-                </div>
+                <TopDatasetDependencies
+                  featureId={entityLabel}
+                  datasetId={correlationData.dataset_given_id}
+                  key={assocDatasetGivenId}
+                  dataType={dataType}
+                  featureType={associated_dataset?.dimension_type}
+                  topDatasetCorrelations={topDatasetCorrelations}
+                  geneTargets={geneTargets}
+                />
               );
             })}
         </div>
