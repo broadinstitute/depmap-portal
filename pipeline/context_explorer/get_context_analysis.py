@@ -17,6 +17,10 @@ from taigapy import create_taiga_client_v3
 
 MIN_GROUP_SIZE = 5
 
+CRISPR_DATASET_NAME = 'Chronos_Combined'
+REPURPOSING_DATASET_NAME = 'REPURPOSING_primary_collapsed'
+ONCREF_DATASET_NAME = 'PRISMOncologyReferenceLog2AUCMatrix'
+
 ### ----- LOAD DATA FROM TAIGA ----- ###
 def load_subtype_tree(tc, subtype_tree_taiga_id, context_matrix_taiga_id):
     subtype_tree = tc.get(subtype_tree_taiga_id)
@@ -181,7 +185,7 @@ def load_all_data(
         gene_dependency_taiga_id=gene_dependency_taiga_id,
         tda_table_path=tda_table_path,
     )
-    datasets_to_test["Chronos_Combined"] = gene_effect
+    datasets_to_test[CRISPR_DATASET_NAME] = gene_effect
     data_for_extra_cols["gene_dependency"] = gene_dependency
 
     rep_sensitivity = load_prism_data(
@@ -189,14 +193,14 @@ def load_all_data(
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
         portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
-    datasets_to_test["REPURPOSING_AUC_collapsed"] = rep_sensitivity
+    datasets_to_test[REPURPOSING_DATASET_NAME] = rep_sensitivity
 
     # OncRef will be None on the public portal
     if oncref_auc_taiga_id is not None:
         oncref_aucs, oncref_log_aucs = load_oncref_data(
             tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
         )
-        datasets_to_test["Prism_oncology_AUC_collapsed"] = oncref_log_aucs
+        datasets_to_test[ONCREF_DATASET_NAME] = oncref_log_aucs
 
         # for OncRef we compute the t-test on the logged AUCs,
         # but want to set the mean_in and mean_out columns based on
@@ -338,7 +342,7 @@ def compute_context_results(
             subtype_code=ctx, out_group=out_label, dataset=ds_name
         )
 
-        if ds_name == "Chronos_Combined":
+        if ds_name == CRISPR_DATASET_NAME:
             ds_res = add_crispr_columns(
                 ds_res,
                 data_for_extra_cols["gene_dependency"],
@@ -346,7 +350,7 @@ def compute_context_results(
                 ds_out_group,
             ).reset_index(names="feature_id")
 
-        elif ds_name == "Prism_oncology_AUC_collapsed":
+        elif ds_name == ONCREF_DATASET_NAME:
             # replace mean_in, mean_out, and effect size with non-logged versions
             ds_res["mean_in"] = (
                 data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
@@ -356,7 +360,7 @@ def compute_context_results(
             )
             ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
-        if ds_name in ["REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"]:
+        if ds_name in [REPURPOSING_DATASET_NAME, ONCREF_DATASET_NAME]:
             # merge with selectivity vals
             ds_res = ds_res.reset_index(names="feature_id").merge(
                 data_for_extra_cols["selectivity_vals"]
