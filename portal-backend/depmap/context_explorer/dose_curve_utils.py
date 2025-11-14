@@ -160,11 +160,14 @@ def get_context_dose_curves(
     out_group_type: str,
     tree_type: str,
 ):
-    assert dataset_given_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name
+    assert (
+        dataset_given_id
+        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
+    )
 
     drc_dataset = utils.find_compound_dataset(
         datasets=drc_compound_datasets,
-        key_name="auc_dataset_given_id",
+        key_name="log_auc_dataset_given_id",
         value_name=dataset_given_id,
     )
 

@@ -30,13 +30,20 @@ class DRCCompoundDataset:
     replicate_dataset: str
     auc_dataset_given_id: str
     display_name: str
+    log_auc_dataset_given_id: Optional[str] = None
 
 
 @dataclass
-class DRCCompoundDatasetWithNamesAndPriority(DRCCompoundDataset):
+class DRCCompoundDatasetWithNamesAndPriority:
+    drc_dataset_label: str
+    viability_dataset_given_id: str
+    replicate_dataset: str
+    auc_dataset_given_id: str
+    display_name: str
     auc_dataset_priority: Union[int, None]
     auc_dataset_display_name: str
     viability_dataset_display_name: str
+    log_auc_dataset_given_id: Optional[str] = None
 
 
 drc_compound_datasets = [
@@ -46,6 +53,7 @@ drc_compound_datasets = [
         replicate_dataset="Prism_oncology_dose_replicate",
         auc_dataset_given_id="Prism_oncology_AUC_collapsed",
         display_name="PRISM OncRef",
+        log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
     ),
     DRCCompoundDataset(
         drc_dataset_label="GDSC2",

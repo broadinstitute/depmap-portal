@@ -465,7 +465,10 @@ def _setup_factories(
         frac_dep_in=90 if use_genes else None,
     )
 
-    if dataset_given_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name:
+    if (
+        dataset_given_id
+        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
+    ):
         _setup_dose_response_curves(
             models=matrix_cell_lines, compound_exps=[compound_exp_a, compound_exp_b]
         )
@@ -508,7 +511,11 @@ def _setup_entities_and_dataset_id(
 
 @pytest.mark.parametrize(
     "dataset_given_id",
-    ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"],
+    [
+        "Chronos_Combined",
+        "REPURPOSING_primary_collapsed",
+        "PRISMOncologyReferenceLog2AUCMatrix",
+    ],
 )
 def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):
     use_genes = dataset_given_id == ContextExplorerDatasets.Chronos_Combined.name
@@ -632,7 +639,7 @@ def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
 
 
 def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
-    dataset_given_id = "Prism_oncology_AUC_collapsed"
+    dataset_given_id = "PRISMOncologyReferenceLog2AUCMatrix"
     feature_type = "compound"
 
     (_, _, compound_a, compound_b,) = _setup_entities_and_dataset_id(
@@ -1059,7 +1066,11 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
 
 @pytest.mark.parametrize(
     "dataset_given_id",
-    ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"],
+    [
+        "Chronos_Combined",
+        "REPURPOSING_primary_collapsed",
+        "PRISMOncologyReferenceLog2AUCMatrix",
+    ],
 )
 def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeypatch):
     use_genes = dataset_given_id == ContextExplorerDatasets.Chronos_Combined.name
@@ -1129,7 +1140,11 @@ def _get_box_plot_data(
 
 @pytest.mark.parametrize(
     "dataset_given_id",
-    ["Chronos_Combined", "REPURPOSING_AUC_collapsed", "Prism_oncology_AUC_collapsed"],
+    [
+        "Chronos_Combined",
+        "REPURPOSING_primary_collapsed",
+        "PRISMOncologyReferenceLog2AUCMatrix",
+    ],
 )
 def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):
     use_genes = (

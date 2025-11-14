@@ -22,8 +22,8 @@ from depmap.database import (
 
 
 class ContextExplorerDatasets(enum.Enum):
-    REPURPOSING_AUC_collapsed = "REPURPOSING_AUC_collapsed"
-    Prism_oncology_AUC_collapsed = "Prism_oncology_AUC_collapsed"
+    REPURPOSING_primary_collapsed = "REPURPOSING_primary_collapsed"
+    PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix"
     Chronos_Combined = "Chronos_Combined"
 
     @staticmethod
@@ -306,7 +306,10 @@ class ContextAnalysis(Model):
     ):
         def _get_compound_min_effect_size_by_dependency_dataset_name():
 
-            if dataset_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed:
+            if (
+                dataset_id
+                == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+            ):
                 return 0.1
             else:
                 return 0.5

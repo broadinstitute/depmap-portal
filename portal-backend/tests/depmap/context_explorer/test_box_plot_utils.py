@@ -284,10 +284,13 @@ def get_context_explorer_box_plot_filters(dataset_given_id: str):
     frac_dep_in = 0.1
     max_fdr = 0.01
     min_abs_effect_size = 0.25
-    if dataset_given_id == ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name:
+    if (
+        dataset_given_id
+        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
+    ):
         max_fdr = 0.1
         min_abs_effect_size = 0.1
-    elif dataset_given_id == ContextExplorerDatasets.REPURPOSING_AUC_collapsed.name:
+    elif dataset_given_id == ContextExplorerDatasets.REPURPOSING_primary_collapsed.name:
         max_fdr = 0.1
         min_abs_effect_size = 0.5
 
@@ -299,10 +302,10 @@ def get_context_explorer_box_plot_filters(dataset_given_id: str):
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
-        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_significant(
@@ -343,10 +346,10 @@ def test_get_sig_context_dataframe_level_0_significant(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
-        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_not_significant(
@@ -402,7 +405,7 @@ def test_get_enrichment_tile_filters():
         min_frac_dep_in,
     ) = enrichment_tile_filters.get_enrichment_tile_filters(
         feature_type="compound",
-        dataset_given_id=ContextExplorerDatasets.Prism_oncology_AUC_collapsed.name,
+        dataset_given_id=ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name,
     )
 
     assert max_fdr == 0.1
@@ -414,7 +417,7 @@ def test_get_enrichment_tile_filters():
         min_frac_dep_in,
     ) = enrichment_tile_filters.get_enrichment_tile_filters(
         feature_type="compound",
-        dataset_given_id=ContextExplorerDatasets.REPURPOSING_AUC_collapsed.name,
+        dataset_given_id=ContextExplorerDatasets.REPURPOSING_primary_collapsed.name,
     )
 
     assert max_fdr == 0.1
@@ -426,10 +429,10 @@ def test_get_enrichment_tile_filters():
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
-        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_data_frame_show_positive_effect_sizes(
@@ -481,10 +484,10 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
-        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_no_significant_analyses_found(
@@ -523,10 +526,10 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
-        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_context_plot_data(
@@ -662,10 +665,10 @@ def test_get_context_plot_data(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_AUC_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_AUC_collapsed", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC_collapsed", "compound", "Lineage"),
-        ("Prism_oncology_AUC_collapsed", "compound", "MolecularSubtype"),
+        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
+        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_data_to_show_if_no_contexts_significant(
