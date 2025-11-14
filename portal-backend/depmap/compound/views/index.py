@@ -315,6 +315,9 @@ def get_corr_analysis_options_if_available(
     if drc_dataset is None:
         return []
 
+    if drc_dataset.log_auc_dataset_given_id is None:
+        return []
+
     does_dataset_exist_with_compound = data_access.dataset_exists(
         drc_dataset.log_auc_dataset_given_id
     ) and data_access.valid_row(drc_dataset.log_auc_dataset_given_id, compound_label)
