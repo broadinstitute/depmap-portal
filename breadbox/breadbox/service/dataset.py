@@ -192,10 +192,31 @@ def get_subsetted_matrix_dataset_df(
 from breadbox.utils.debug_log import print_span_stats
 
 
+def _chunked_aggregate_matrix_df(
+    df: pd.DataFrame, axis: int, agg_method, chunk_size_in_mb=10
+):
+    aggregated = []
+    chunk_size = chunk_size_in_mb * 1024 ** 2 // (df.shape[axis] * 8)
+    chunked_axis_length = df.shape[axis ^ 1]
+    for chunk_start in range(0, chunked_axis_length, chunk_size):
+        chunk_end = min(chunk_start + chunk_size, chunked_axis_length)
+        if axis == 0:
+            chunked_df = df.iloc[:, chunk_start:chunk_end]
+        else:
+            chunked_df = df.iloc[chunk_start:chunk_end, :]
+
+        aggregated.append(
+            chunked_df.replace({pd.NA: np.nan}).agg(agg_method, axis=axis)
+        )
+
+    return pd.concat(aggregated)
+
+
 def _aggregate_matrix_df(
     df: pd.DataFrame,
     aggregate_by: Literal["features", "samples"],
     aggregation: AggregationMethod,
+    use_chunking=True,
 ):
     enum_to_agg_method = {
         AggregationMethod.mean: np.mean,
@@ -204,17 +225,26 @@ def _aggregate_matrix_df(
         AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
     }
 
-    with print_span_stats("na replace"):
-        # Replace None with numpy nan so np.nanpercentile works
-        df: pd.DataFrame = df.replace({pd.NA: np.nan})
+    axis = 0 if aggregate_by == "samples" else 1
+    agg_method = enum_to_agg_method[aggregation]
 
-    with print_span_stats("call agg function"):
-        df = df.agg(
-            enum_to_agg_method[aggregation], axis=0 if aggregate_by == "samples" else 1
-        )
+    if use_chunking:
+        with print_span_stats("_chunked_aggregate_matrix_df"):
+            df = _chunked_aggregate_matrix_df(df, axis, agg_method).to_frame(
+                name=aggregation.value
+            )
+    else:
+        with print_span_stats("na replace"):
+            # Replace None with numpy nan so np.nanpercentile works
+            df: pd.DataFrame = df.replace({pd.NA: np.nan})
 
-    with print_span_stats("to frame"):
-        return df.to_frame(name=aggregation.value)
+        with print_span_stats("call agg function"):
+            df = df.agg(agg_method, axis=axis)
+
+        with print_span_stats("to frame"):
+            df = df.to_frame(name=aggregation.value)
+
+    return df
 
 
 def get_subsetted_tabular_dataset_df(

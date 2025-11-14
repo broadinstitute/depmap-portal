@@ -1,6 +1,9 @@
 from contextlib import contextmanager
-import psutil, os, time
+import time
 import resource
+from logging import getLogger
+
+log = getLogger(__name__)
 
 
 def get_rss():
@@ -18,6 +21,6 @@ def print_span_stats(name):
         end_rss = get_rss()
         rss_delta = end_rss - start_rss
         end_time = time.perf_counter()
-        print(
+        log.debug(
             f"span {name}: elapsed time: {end_time - start_time}, rss delta: {rss_delta} ({end_rss} - {start_rss})"
         )
