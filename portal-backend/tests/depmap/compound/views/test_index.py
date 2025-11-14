@@ -726,3 +726,15 @@ def test_format_heatmap_options_new_tab_if_available_false(app):
             compound.label, compound.compound_id
         )
         assert result == []
+
+
+def test_get_corr_analysis_options_if_available_false(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        compound = CompoundFactory()
+        result = get_corr_analysis_options_if_available(
+            drc_dataset_attribute_to_match="log_auc_dataset_given_id",
+            given_id="PRISMOncologyReferenceLog2AUCMatrix",
+            compound_label=compound.label,
+        )
+        assert result == []
