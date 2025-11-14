@@ -140,6 +140,14 @@ function contextVariablesAsMetadata(filters?: DataExplorerFilters) {
     filters || {}
   ) as DataExplorerContextV2[]) {
     Object.values(filter.vars).forEach((variable) => {
+      if (
+        variable.dataset_id === "depmap_model_metadata" &&
+        (variable.identifier === "OncotreeLineage" ||
+          variable.identifier === "OncotreePrimaryDisease")
+      ) {
+        return;
+      }
+
       uniqueVars.add(JSON.stringify(variable));
     });
   }
@@ -185,8 +193,7 @@ export async function fetchPlotDimensions(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
-  // eslint-disable-next-line no-param-reassign
-  metadata = {
+  const extendedMetadata = {
     ...metadata,
     ...contextVariablesAsMetadata(filters),
     ...getExtraMetadata(index_type, metadata),
@@ -209,7 +216,7 @@ export async function fetchPlotDimensions(
 
   // TODO: Recreate this hack when index_type === 'depmap_model'
   // https://github.com/broadinstitute/depmap-portal/blob/5099618/frontend/packages/portal-frontend/src/data-explorer-2/deprecated-api.ts#L412-L435
-  const metadataKeys = Object.keys(metadata || {});
+  const metadataKeys = Object.keys(extendedMetadata || {});
 
   // FIXME: We shouldn't be indexing things by label. We should use id instead.
   // This is just to get things working for now.
@@ -385,7 +392,7 @@ export async function fetchPlotDimensions(
     ...metadataKeys.map(async (key) => {
       const indexed_values: Record<string, string | null> = {};
 
-      const sliceQuery = metadata![key] as SliceQuery;
+      const sliceQuery = extendedMetadata![key] as SliceQuery;
       const data = await getDimensionDataWithoutLabels(sliceQuery);
       let value_type = await fetchValueType(sliceQuery);
 
@@ -414,7 +421,7 @@ export async function fetchPlotDimensions(
       }
 
       if (key === "color_property" && distinct.size > 100) {
-        window.console.error(metadata![key]);
+        window.console.error(extendedMetadata![key]);
         throw new Error("Too many distinct categorical values to plot!");
       }
 
@@ -527,7 +534,9 @@ export async function fetchPlotDimensions(
         };
       }
       if (property === "metadata") {
-        const sliceQuery = metadata![key] as DataExplorerContextVariable;
+        const sliceQuery = extendedMetadata![
+          key
+        ] as DataExplorerContextVariable;
 
         const dataset = datasets.find((d) => {
           return (

@@ -15,7 +15,7 @@ function CategoricalDataPreview({ value, data, uniqueId }: Props) {
     }
 
     const countsByValue: Record<string, number> = {};
-    const values = data.map((row: any) => row[uniqueId]);
+    const values = data.flatMap((row: any) => row[uniqueId]);
 
     values.forEach((val: string | undefined) => {
       // TODO: Add an option to show NAs instead of always ignoring them.

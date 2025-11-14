@@ -7,6 +7,7 @@
     "test": "echo 'no tests to run'"
   },
   "dependencies": {
+    "@depmap/common-components": "1.0.0",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.10",
     "classnames": "^2.3.1"
