@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { Dataset, TabularDataset } from "@depmap/types";
 import PlotConfigSelect from "../PlotConfigSelect";
 import showAnnotationDetailsModal from "./showAnnotationDetailsModal";
-import styles from "../../styles/DimensionSelect.scss";
 
 interface Props {
   axis: "sample" | "feature" | undefined;
@@ -51,21 +50,18 @@ function AnnotationSourceSelect({
   return (
     <PlotConfigSelect
       show
-      label={
-        <span className={styles.labelWithDetailsButton}>
-          Annotation Source
-          <button
-            type="button"
-            className={styles.detailsButton}
-            disabled={!value}
-            onClick={() => {
-              showAnnotationDetailsModal(value!);
-            }}
-          >
-            details
-          </button>
-        </span>
-      }
+      label="Annotation Source"
+      renderDetailsButton={() => (
+        <button
+          type="button"
+          disabled={!value}
+          onClick={() => {
+            showAnnotationDetailsModal(value!);
+          }}
+        >
+          details
+        </button>
+      )}
       value={value}
       enable={!isLoadingAnnotationDatasets}
       isLoading={isLoadingAnnotationDatasets}

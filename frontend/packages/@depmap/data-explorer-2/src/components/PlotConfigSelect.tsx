@@ -7,6 +7,7 @@ import renderConditionally from "../utils/render-conditionally";
 interface Props extends Omit<ReactSelectProps, "options"> {
   label?: React.ReactNode;
   inlineLabel?: boolean;
+  renderDetailsButton?: () => React.ReactNode;
   /*
    * react-select uses options formatted like:
    * [{ value: 'a', label: 'Label A' }, { value: 'b', label: 'Label B' }]

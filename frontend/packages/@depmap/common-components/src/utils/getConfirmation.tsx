@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import { Button, Modal } from "react-bootstrap";
-import "../styles/modals.scss";
+import styles from "../styles/modals.scss";
 
 interface ConfirmationOptions {
   title?: string | null;
@@ -10,12 +10,24 @@ interface ConfirmationOptions {
   message: React.ReactNode;
   showModalBackdrop?: boolean | null;
   yesButtonBsStyle?: string | null | undefined;
+  dontShowAgainLocalStorageKey?: string;
 }
 
 const launchModal = (
   options: ConfirmationOptions,
   resolve: (ok: boolean) => void
 ) => {
+  if (options.dontShowAgainLocalStorageKey) {
+    const skip =
+      window.localStorage.getItem(options.dontShowAgainLocalStorageKey!) ===
+      "true";
+
+    if (skip) {
+      resolve(true);
+      return;
+    }
+  }
+
   const container = document.createElement("div");
   container.id = "confirmation-modal-container";
   document.body.append(container);
@@ -28,6 +40,7 @@ const launchModal = (
   ReactDOM.render(
     <Modal
       show
+      dialogClassName="stackableConfirmationModal"
       backdrop={
         typeof options.showModalBackdrop === "boolean"
           ? options.showModalBackdrop
@@ -43,6 +56,29 @@ const launchModal = (
       </Modal.Header>
       <Modal.Body>
         <section>{options.message}</section>
+        {options.dontShowAgainLocalStorageKey && (
+          <section className={styles.dontShowThisAgain}>
+            <label>
+              <input
+                type="checkbox"
+                defaultChecked={false}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (e.target.checked) {
+                    window.localStorage.setItem(
+                      options.dontShowAgainLocalStorageKey!,
+                      "true"
+                    );
+                  } else {
+                    window.localStorage.removeItem(
+                      options.dontShowAgainLocalStorageKey!
+                    );
+                  }
+                }}
+              />
+              <span>Don’t show this again</span>
+            </label>
+          </section>
+        )}
       </Modal.Body>
       <Modal.Footer>
         <Button

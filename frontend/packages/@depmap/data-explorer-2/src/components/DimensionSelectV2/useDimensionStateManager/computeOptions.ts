@@ -2,6 +2,7 @@ import { breadboxAPI, cached } from "@depmap/api";
 import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
 import { DimensionType } from "@depmap/types";
 import {
+  dataTypeSortComparator,
   isSampleType,
   pluralize,
   sortDimensionTypes,
@@ -264,30 +265,8 @@ async function computeDataTypeOptions(
     };
   });
 
-  const priorityOrder = [
-    "CRISPR",
-    "RNAi",
-    "CN",
-    "Expression",
-    "Drug screen",
-    "Combo Drug screen",
-  ];
-
   return options
-    .sort((a, b) => {
-      const ai = priorityOrder.indexOf(a.value);
-      const bi = priorityOrder.indexOf(b.value);
-
-      if (ai !== -1 && bi !== -1) {
-        // both are in priority list — sort by their order in that list
-        return ai - bi;
-      }
-      if (ai !== -1) return -1; // a is priority, b is not
-      if (bi !== -1) return 1; // b is priority, a is not
-
-      // neither are priority — sort alphabetically
-      return a.value.localeCompare(b.value);
-    })
+    .sort((a, b) => dataTypeSortComparator(a.value, b.value))
     .sort(compareDisabledLast);
 }
 
@@ -397,6 +376,12 @@ async function computeDataVersionOptions(
   );
 
   let foundDefault = false;
+
+  const priorities: Record<string, number> = {};
+
+  for (const d of datasets) {
+    priorities[d.id] = d.priority as number;
+  }
 
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
@@ -510,7 +495,7 @@ async function computeDataVersionOptions(
         isDefault,
       };
     })
-    .sort((a, b) => compareCaseInsensitive(a.label, b.label))
+    .sort((a, b) => priorities[a.value] - priorities[b.value])
     .sort(compareDisabledLast);
 }
 

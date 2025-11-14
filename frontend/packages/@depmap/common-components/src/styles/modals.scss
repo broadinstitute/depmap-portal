@@ -1,22 +1,25 @@
 :global {
-  #confirmation-modal-container,
-  #prompt-modal-container {
-    & ~ div[role="dialog"] {
-      // Detect when the modal has a sibling later in the DOM. That suggests it
-      // has launched another modal that should take precedence.
-      &:has(~ div[role="dialog"]) {
-        .modal-content {
-          display: none;
-        }
-      }
-
-      // Hide the backdrop of that later sibling so there is only one backdrop
-      // at a time.
-      & ~ div[role="dialog"] {
-        .modal-backdrop {
-          display: none;
-        }
-      }
+  // A parent modal that launches a confirmation modal
+  //  should not be fully hidden, just darkened.
+  // This overrides the behavior specified here:
+  // https://github.com/broadinstitute/depmap-portal/blob/e1e9134/frontend/packages/@depmap/data-explorer-2/src/styles/ContextBuilderV2.scss#L16-L36
+  div[role="dialog"]:has(~ div[role="dialog"] .stackableConfirmationModal) {
+    .modal-content {
+      display: block !important;
+      filter: brightness(0.5);
+      transition: filter 0.3s ease;
     }
+  }
+}
+
+.dontShowThisAgain {
+  label {
+    font-weight: normal;
+    cursor: pointer;
+  }
+
+  span {
+    margin: 5px;
+    vertical-align: top;
   }
 }

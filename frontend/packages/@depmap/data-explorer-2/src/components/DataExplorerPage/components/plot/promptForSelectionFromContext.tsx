@@ -1,13 +1,31 @@
 import React, { useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
 import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
-import ContextSelector from "../../../ContextSelector";
+import { isV2Context } from "../../../../utils/context";
 import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
+import ContextSelector from "../../../ContextSelector";
 import { DepMap } from "@depmap/globals";
-import { DataExplorerContext, DataExplorerPlotResponse } from "@depmap/types";
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  DataExplorerPlotResponse,
+} from "@depmap/types";
+
+const resolveToLabels = async (
+  context: DataExplorerContext | DataExplorerContextV2
+) => {
+  if (!isV2Context(context)) {
+    return deprecatedDataExplorerAPI.evaluateLegacyContext(context);
+  }
+
+  const result = await cached(breadboxAPI).evaluateContext(context);
+
+  return context.dimension_type === "depmap_model" ? result.ids : result.labels;
+};
 
 export default async function promptForSelectionFromContext(
   data: DataExplorerPlotResponse
@@ -53,9 +71,7 @@ export default async function promptForSelectionFromContext(
           return;
         }
 
-        const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
-          nextContext
-        );
+        const labels = await resolveToLabels(nextContext);
         const contextLabels = new Set(labels);
 
         const found = [...datasetLabels].filter((label) => {
@@ -140,7 +156,7 @@ export default async function promptForSelectionFromContext(
     return null;
   }
 
-  const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(context);
+  const labels = await resolveToLabels(context);
   const contextLabels = new Set(labels);
   const matchingLabels = data.index_labels.filter((label, i) => {
     return (

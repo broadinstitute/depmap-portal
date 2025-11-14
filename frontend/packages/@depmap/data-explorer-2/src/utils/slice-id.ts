@@ -22,7 +22,13 @@ export function legacyPortalIdToBreadboxGivenId(legacyId: string) {
       return "REPURPOSING_AUC_collapsed";
 
     default:
-      return legacyId.replace("breadbox/", "");
+      return (
+        legacyId
+          // "breadbox/" prefix is no longer relevant
+          .replace("breadbox/", "")
+          // replace any special characters with dashes (as is our convention)
+          .replace(/[^A-Za-z0-9_-]/g, "-")
+      );
   }
 }
 

@@ -18,6 +18,8 @@ export interface ExtendedSelectProps {
   label?: React.ReactNode;
   // If true the label will be to left instead of above.
   inlineLabel?: boolean;
+  // If defined, will render a styled button next to the label.
+  renderDetailsButton?: () => React.ReactNode;
   // How wide (in pixels) should the dropdown options list be?
   menuWidth?: number | "max-content";
   // Adds a thin colored bar to left edge of the dropdown. This is intended as
@@ -243,6 +245,7 @@ export default function extendReactSelect(
       isLoading,
       hasError = false,
       inlineLabel = false,
+      renderDetailsButton = undefined,
       label = null,
       menuWidth = "max-content",
       placeholder = undefined,
@@ -330,6 +333,11 @@ export default function extendReactSelect(
               })}
             >
               <label>{label}</label>
+              {renderDetailsButton ? (
+                <span className={styles.detailsButtonContainer}>
+                  {renderDetailsButton()}
+                </span>
+              ) : null}
             </div>
           )}
           <ConditionalTooltip

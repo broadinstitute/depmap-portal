@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { DataExplorerContextV2, DimensionType } from "@depmap/types";
 import { isV2Context } from "../../utils/context";
 import renderConditionally from "../../utils/render-conditionally";
@@ -43,8 +43,10 @@ function ContextSelectorV2({
     throw new Error("ContextSelectorV2 does not support legacy contexts");
   }
 
+  const [isLoadingContext, setIsLoadingContext] = useState(false);
+
   const {
-    isLoading,
+    isLoadingHash,
     hashWithPrefix,
     hashOfSelectedValue,
     shouldShowSaveButton,
@@ -55,10 +57,14 @@ function ContextSelectorV2({
     onChange,
     onClickCreateContext,
     value,
-    hashOfSelectedValue
+    hashOfSelectedValue,
+    setIsLoadingContext
   );
   const resolvedLabel = useLabel(label, context_type);
-  const placeholder = usePlaceholder(context_type, isLoading);
+  const placeholder = usePlaceholder(
+    context_type,
+    isLoadingContext || isLoadingHash
+  );
   const { evalFailed, reactKey } = useGlobalEvents(
     value,
     hashOfSelectedValue,
@@ -78,7 +84,7 @@ function ContextSelectorV2({
         options={options}
         enable={enable && context_type !== "other"}
         value={hashWithPrefix}
-        isLoading={isLoading}
+        isLoading={isLoadingContext || isLoadingHash}
         swatchColor={swatchColor}
         onChange={(handleChange as unknown) as (value: string | null) => void}
         onChangeUsesWrappedValue

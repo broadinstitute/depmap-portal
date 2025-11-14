@@ -5,7 +5,7 @@ import {
   useDataExplorerSettings,
 } from "@depmap/data-explorer-2";
 import type { SliceQuery } from "@depmap/types";
-import useData, { createUniqueColumnKey } from "../useData";
+import useData from "../useData";
 import CategoricalDataPreview from "./CategoricalDataPreview";
 import ContinuousDataPreview from "./ContinuousDataPreview";
 import styles from "../../styles/AddColumnModal.scss";
@@ -29,8 +29,10 @@ function SlicePreview({ index_type_name, value, PlotlyLoader }: Props) {
     index_type_name,
     slices,
   });
-  const uniqueId = value ? createUniqueColumnKey(value) : "";
-  const column = previewColumns.find(({ id }) => id === uniqueId);
+
+  const column = previewColumns.find(({ meta }) => {
+    return meta.sliceQuery.identifier === value?.identifier;
+  });
 
   if (error) {
     return <div>An unexpected error occurred.</div>;
@@ -57,7 +59,7 @@ function SlicePreview({ index_type_name, value, PlotlyLoader }: Props) {
         <CategoricalDataPreview
           value={value}
           data={previewData}
-          uniqueId={uniqueId}
+          uniqueId={column.id}
         />
       )}
       {column && column.meta.value_type === "continuous" && (
@@ -66,7 +68,7 @@ function SlicePreview({ index_type_name, value, PlotlyLoader }: Props) {
           data={previewData}
           column={column}
           plotStyles={plotStyles}
-          uniqueId={uniqueId}
+          uniqueId={column.id}
         />
       )}
     </PlotlyLoaderProvider>
