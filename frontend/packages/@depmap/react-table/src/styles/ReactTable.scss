@@ -133,6 +133,11 @@
   position: relative;
 }
 
+.cellAsListTooltip {
+  text-align: left;
+  list-style: square;
+}
+
 .stickyCell {
   position: sticky;
   left: 0;

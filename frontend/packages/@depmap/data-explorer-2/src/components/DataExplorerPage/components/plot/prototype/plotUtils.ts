@@ -335,7 +335,7 @@ export function formatDataForScatterPlot(
         let { label: hoverLabel } = data.metadata[key]!;
         const { values, value_type, dataset_label } = data.metadata[key]!;
 
-        if (value_type === "continuous" && dataset_label) {
+        if (dataset_label) {
           hoverLabel += " " + dataset_label;
         }
 
@@ -1244,7 +1244,7 @@ const sortLegendKeys = (
   dimensionValues: (number | null)[],
   visibleValues: boolean[] | null,
   catData: any,
-  sort_by: string | undefined
+  sort_by: string = "alphabetical"
 ) => {
   if (sort_by === "mean_values_asc" || sort_by === "mean_values_desc") {
     const meansByCategory: Map<LegendKey, [number, number]> = new Map();

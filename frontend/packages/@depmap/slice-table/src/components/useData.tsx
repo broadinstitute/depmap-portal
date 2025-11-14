@@ -482,15 +482,22 @@ function transformToTableData(
         }) => {
           const value = getValue();
 
-          return value != null ? (
+          return value == null ? (
+            <></>
+          ) : (
             toDetailPageLink(
               getValue() as string,
               idToLabelMappings[references!][value as string],
               references as string
             )
-          ) : (
-            <></>
           );
+        },
+      }),
+      // Add a custom cell renderer for string lists.
+      ...(value_type === "list_strings" && {
+        cell: ({ getValue }: { getValue: () => unknown }) => {
+          const value = getValue();
+          return value == null ? <></> : (value as string[]).join(", ");
         },
       }),
     };

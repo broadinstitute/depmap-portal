@@ -199,6 +199,10 @@
   }
 }
 
+.unblockable {
+  display: block !important;
+}
+
 .NumberInput {
   & > div {
     display: flex;
