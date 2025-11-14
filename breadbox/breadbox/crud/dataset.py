@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import warnings
 
 import pandas as pd
-from sqlalchemy import and_, func, or_, select, true
+from sqlalchemy import and_, func, or_, select, true, text
 from sqlalchemy.sql import distinct
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
@@ -449,6 +449,45 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     )
 
     return dimensions
+
+
+def _print_db_mem_usage(db: SessionWithUser):
+    result = db.execute(text("PRAGMA page_count"))
+    page_count = result.scalar()
+
+    result = db.execute(text("PRAGMA page_size"))
+    page_size = result.scalar()
+
+    estimated_size = page_count * page_size
+    log.warning(f"Estimated database size: {estimated_size / (1024 ** 2):.2f} MB")
+
+
+def get_matrix_dataset_features_df(
+    db: SessionWithUser, dataset: MatrixDataset, filter_by_labels: Optional[Set[str]]
+):
+    """Returns a dataframe with columns given_id, index, label"""
+    assert_user_has_access_to_dataset(dataset, db.user)
+
+    query = db.query(DatasetFeature).filter(DatasetFeature.dataset_id == dataset.id)
+
+    if filter_by_labels:
+        query = query.filter(DatasetFeature.given_id.in_(filter_by_labels))
+
+    _print_db_mem_usage(db)
+    dataset_features = pd.DataFrame(
+        query.with_entities(DatasetFeature.given_id, DatasetFeature.index).all(),
+        columns=["given_id", "index"],
+    )
+
+    mem = dataset_features.memory_usage(deep=True)
+    total = mem.sum()
+
+    for col in mem.index:
+        log.warning(f"{col}: {mem[col]:,} bytes ({100 * mem[col] / total:.1f}%)")
+
+    _print_db_mem_usage(db)
+
+    return dataset_features
 
 
 def get_matrix_dataset_features(

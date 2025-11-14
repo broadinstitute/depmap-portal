@@ -132,8 +132,17 @@ def read_hdf5_file(
     with h5py.File(path, mode="r") as f:
         with print_span_stats("basic read from hdf5 file"):
             row_len, col_len = f["data"].shape  # type: ignore
+            if feature_indexes is None:
+                read_col_count = col_len
+            else:
+                read_col_count = len(feature_indexes)
+            if sample_indexes is None:
+                read_row_count = row_len
+            else:
+                read_row_count = len(sample_indexes)
+
             print(
-                f"reading {row_len} rows and {col_len} columns (expected size: {row_len * col_len * 8 // 1024 ** 2} MB)"
+                f"reading {read_row_count} x {read_col_count} from hdf5 with matrix {row_len} x {col_len} (expected size: {read_row_count * read_col_count * 8 // 1024 ** 2} MB)"
             )
             if feature_indexes is not None and sample_indexes is not None:
                 _validate_read_size(len(feature_indexes), len(sample_indexes))
