@@ -6,7 +6,6 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import SpinnerOverlay from "./SpinnerOverlay";
@@ -412,23 +411,16 @@ function DataExplorerScatterPlot({
               onClickClearSelection={() => {
                 setSelectedLabels(null);
               }}
-              onClickSetSelectionFromContext={
-                // FIXME
-                isBreadboxOnlyMode
-                  ? () => {
-                      window.alert("Not currently supported with Breadbox!");
-                    }
-                  : async () => {
-                      const labels = await promptForSelectionFromContext(data!);
+              onClickSetSelectionFromContext={async () => {
+                const labels = await promptForSelectionFromContext(data!);
 
-                      if (labels === null) {
-                        return;
-                      }
+                if (labels === null) {
+                  return;
+                }
 
-                      setSelectedLabels(labels);
-                      plotElement?.annotateSelected();
-                    }
-              }
+                setSelectedLabels(labels);
+                plotElement?.annotateSelected();
+              }}
             />
           </StackableSection>
           {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (

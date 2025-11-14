@@ -3,7 +3,7 @@ import * as React from "react";
 import { Button, Checkbox, Radio, Modal } from "react-bootstrap";
 import update from "immutability-helper";
 
-import { enabledFeatures, toStaticUrl } from "@depmap/globals";
+import { DepMap, enabledFeatures, toStaticUrl } from "@depmap/globals";
 import { CellLineListsDropdown, CustomList } from "@depmap/cell-line-selector";
 import {
   DatasetOptionsWithLabels,
@@ -575,13 +575,17 @@ export default class DataSlicer extends React.Component<
           </Radio>
           <InfoIcon
             target={customInfoImg}
-            popoverContent={
+            popoverContent={(dismiss) => (
               <p>
                 Use the{" "}
                 <a
                   style={{ cursor: "pointer" }}
-                  onClick={() => {
-                    window.alert("TODO: Launch context manager here");
+                  onClick={(e) => {
+                    dismiss();
+
+                    DepMap.launchContextManagerModal({
+                      initialContextType: "depmap_model",
+                    });
                   }}
                 >
                   Context Manager
@@ -589,7 +593,7 @@ export default class DataSlicer extends React.Component<
                 to create custom rulesets that can be applied across tools and
                 plots throughout the portal.
               </p>
-            }
+            )}
             popoverId={`custom-cell-lines-popover`}
             trigger="click"
           />
