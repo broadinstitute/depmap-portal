@@ -55,3 +55,17 @@ export const staticDoseViabilityCols = [
   },
   ...hiddenDoseViabilityCols,
 ];
+
+export function mapEntrezIdToSymbols(
+  entrezIds: string[],
+  geneMetadata: { label: { [key: number]: string } }
+): string[] {
+  const symbolLookup = geneMetadata.label;
+
+  const geneSymbols = entrezIds.map((entrezId) => {
+    // Look up the symbol, using the Entrez ID as fallback if not found.
+    return symbolLookup[Number(entrezId)] || entrezId;
+  });
+
+  return geneSymbols;
+}

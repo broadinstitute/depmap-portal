@@ -93,8 +93,8 @@ active_tab_set = False %}
       >Genomic Associations</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %}
-  {% if show_compound_correlations %}
+  {% set active_tab_set = True %} {% endif %} {% if show_compound_correlations
+  %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#corr_analysis"
@@ -274,6 +274,7 @@ active_tab_set = False %}
         DepMap.initCorrelationAnalysisTab(
           "correlations-analysis-tab-content",
           {{name | tojson}},
+          {{ compound_id | tojson }},
         );
       }
       loadedTabs[target] = true;

@@ -19,7 +19,7 @@ const CorrelatedDependenciesTile = ({
     isLoading,
     error,
   } = useCorrelatedDependenciesData(
-    "Prism_oncology_AUC_collapsed",
+    "PRISMOncologyReferenceLog2AUCMatrix",
     entityLabel
   );
 
@@ -36,7 +36,7 @@ const CorrelatedDependenciesTile = ({
   }
 
   return (
-    <article className="card_wrapper">
+    <article className={`card_wrapper stacked-boxplot-tile`}>
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">Correlated Dependencies</h2>
         <div className="card_padding">

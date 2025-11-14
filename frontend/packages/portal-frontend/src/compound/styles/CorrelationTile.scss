@@ -10,6 +10,7 @@
   align-items: center;
   img {
     height: 12px;
+    padding-right: 3px;
   }
 }
 
@@ -28,6 +29,11 @@
 }
 
 .tileDatasetTitle {
+  font-size: 16px;
+  padding-bottom: 10px;
+}
+
+.tableDatasetTitle {
   font-size: 16px;
 }
 
