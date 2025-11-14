@@ -9,7 +9,6 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import {
   LegendKey,
   calcBins,
@@ -311,23 +310,16 @@ function DataExplorerDensity1DPlot({
               onClickClearSelection={() => {
                 setSelectedLabels(null);
               }}
-              onClickSetSelectionFromContext={
-                // FIXME
-                isBreadboxOnlyMode
-                  ? () => {
-                      window.alert("Not currently supported with Breadbox!");
-                    }
-                  : async () => {
-                      const labels = await promptForSelectionFromContext(data!);
+              onClickSetSelectionFromContext={async () => {
+                const labels = await promptForSelectionFromContext(data!);
 
-                      if (labels === null) {
-                        return;
-                      }
+                if (labels === null) {
+                  return;
+                }
 
-                      setSelectedLabels(labels);
-                      plotElement?.annotateSelected();
-                    }
-              }
+                setSelectedLabels(labels);
+                plotElement?.annotateSelected();
+              }}
             />
           </StackableSection>
           {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (

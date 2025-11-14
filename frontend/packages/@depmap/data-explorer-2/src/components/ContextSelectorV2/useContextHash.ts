@@ -38,7 +38,7 @@ export default function useContextHash(
     })();
   }, [value]);
 
-  const isLoading = Boolean(value) && !hashOfSelectedValue;
+  const isLoadingHash = Boolean(value) && !hashOfSelectedValue;
 
   const hashWithPrefix = isNegatedContext(value)
     ? `not_${hashOfSelectedValue}`
@@ -63,7 +63,7 @@ export default function useContextHash(
     hashOfSelectedValue,
     hashWithPrefix,
     isKnownContext,
-    isLoading,
+    isLoadingHash,
     shouldShowSaveButton,
   };
 }

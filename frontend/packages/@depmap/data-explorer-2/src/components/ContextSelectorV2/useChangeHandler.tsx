@@ -43,7 +43,8 @@ export const handleCaseEdit = (
 const handleDefaultCase = async (
   contextHash: string,
   isLegacyList: boolean,
-  onChange: OnChange
+  onChange: OnChange,
+  setIsLoadingContext: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
   const negate = contextHash.startsWith("not_");
   const hashToFetch = contextHash.replace("not_", "");
@@ -55,6 +56,7 @@ const handleDefaultCase = async (
     throw new Error("Selection of legacy lists is not yet supported");
   }
 
+  setIsLoadingContext(true);
   let fetchedContext: DataExplorerContext | DataExplorerContextV2;
 
   try {
@@ -65,6 +67,7 @@ const handleDefaultCase = async (
       content: "Unable to load context. It may have not been saved properly.",
     });
 
+    setIsLoadingContext(false);
     return;
   }
 
@@ -107,12 +110,14 @@ const handleDefaultCase = async (
       });
 
       if (!confirmed) {
+        setIsLoadingContext(false);
         return;
       }
 
       const repaired = await DepMap.repairContext(convertedContext);
 
       if (!repaired) {
+        setIsLoadingContext(false);
         return;
       }
 
@@ -129,6 +134,7 @@ const handleDefaultCase = async (
     context = negateContext(context);
   }
 
+  setIsLoadingContext(false);
   onChange(context || null, persistedHash || hashToFetch);
 };
 
@@ -137,7 +143,8 @@ export default function useChangeHandler(
   onChange: OnChange,
   onClickCreateContext: () => void,
   value: DataExplorerContextV2 | null,
-  hashOfSelectedValue: string | null
+  hashOfSelectedValue: string | null,
+  setIsLoadingContext: React.Dispatch<React.SetStateAction<boolean>>
 ) {
   return useMemo(
     () => async (wrapper: { value: string | null; isLegacyList: boolean }) => {
@@ -163,9 +170,21 @@ export default function useChangeHandler(
           return onChange(null, null);
 
         default:
-          return handleDefaultCase(contextHash, isLegacyList, onChange);
+          return handleDefaultCase(
+            contextHash,
+            isLegacyList,
+            onChange,
+            setIsLoadingContext
+          );
       }
     },
-    [context_type, onChange, onClickCreateContext, value, hashOfSelectedValue]
+    [
+      context_type,
+      onChange,
+      onClickCreateContext,
+      value,
+      hashOfSelectedValue,
+      setIsLoadingContext,
+    ]
   );
 }
