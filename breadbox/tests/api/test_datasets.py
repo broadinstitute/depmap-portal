@@ -7,7 +7,6 @@ import pandas as pd
 from breadbox.crud.dimension_types import get_dimension_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
-from sqlalchemy import and_
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
