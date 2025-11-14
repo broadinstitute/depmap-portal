@@ -15,8 +15,8 @@ export interface ContextInfo {
 
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
-  REPURPOSING_AUC_collapsed = "REPURPOSING_AUC_collapsed",
-  Prism_oncology_AUC_collapsed = "Prism_oncology_AUC_collapsed",
+  REPURPOSING_primary_collapsed = "REPURPOSING_primary_collapsed",
+  PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix",
 }
 
 export interface ContextPathInfo {

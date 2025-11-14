@@ -260,11 +260,13 @@ function ContextAnalysis({
   // TDA, and Compound Dashboard all at once.
 
   const getFilterDefinitions = useCallback(() => {
-    if (datasetId === ContextExplorerDatasets.Prism_oncology_AUC_collapsed) {
+    if (
+      datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+    ) {
       return oncrefFilterDefinitions;
     }
 
-    if (datasetId === ContextExplorerDatasets.REPURPOSING_AUC_collapsed) {
+    if (datasetId === ContextExplorerDatasets.REPURPOSING_primary_collapsed) {
       return repurposingFilterDefinitions;
     }
 
@@ -317,7 +319,8 @@ function ContextAnalysis({
     (tableData: ContextAnalysisTableType) => {
       const getDrugXAxisLabel = () => {
         if (
-          datasetId === ContextExplorerDatasets.Prism_oncology_AUC_collapsed
+          datasetId ===
+          ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
         ) {
           // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
           // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
@@ -329,7 +332,8 @@ function ContextAnalysis({
 
       const getDrugYAxisLabel = () => {
         if (
-          datasetId === ContextExplorerDatasets.Prism_oncology_AUC_collapsed
+          datasetId ===
+          ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
         ) {
           return `Out-group mean AUC`;
         }
@@ -775,7 +779,7 @@ function ContextAnalysis({
                 </>
               )}
               {datasetId ===
-                ContextExplorerDatasets.Prism_oncology_AUC_collapsed && (
+                ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                 <>
                   <h2>
                     OncRef sensitivies enriched in{" "}
@@ -789,7 +793,7 @@ function ContextAnalysis({
                 </>
               )}
               {datasetId ===
-                ContextExplorerDatasets.REPURPOSING_AUC_collapsed && (
+                ContextExplorerDatasets.REPURPOSING_primary_collapsed && (
                 <>
                   <h2>
                     PRISM Repurposing compound sensitivities enriched in{" "}
@@ -830,7 +834,7 @@ function ContextAnalysis({
                   </h2>
                 )}
                 {datasetId ===
-                  ContextExplorerDatasets.Prism_oncology_AUC_collapsed && (
+                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                   <h2>
                     Not enough data points to compute enriched PRISM OncRef
                     compound sensitivities for {selectedContextNameInfo.name}.
@@ -839,7 +843,7 @@ function ContextAnalysis({
                   </h2>
                 )}
                 {datasetId ===
-                  ContextExplorerDatasets.REPURPOSING_AUC_collapsed && (
+                  ContextExplorerDatasets.REPURPOSING_primary_collapsed && (
                   <h2>
                     Not enough data points to compute enriched PRISM Repurposing
                     compound sensitivities for {selectedContextNameInfo.name}.
@@ -1010,7 +1014,7 @@ function ContextAnalysis({
                 </p>
               )}
               {datasetId ===
-                ContextExplorerDatasets.Prism_oncology_AUC_collapsed && (
+                ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -1022,7 +1026,7 @@ function ContextAnalysis({
                 </p>
               )}
               {datasetId ===
-                ContextExplorerDatasets.REPURPOSING_AUC_collapsed && (
+                ContextExplorerDatasets.REPURPOSING_primary_collapsed && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -1123,7 +1127,8 @@ function ContextAnalysis({
         )}
         {selectedPlotLabels &&
           selectedPlotLabels.size > 0 &&
-          datasetId === ContextExplorerDatasets.Prism_oncology_AUC_collapsed &&
+          datasetId ===
+            ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix &&
           !isLoading &&
           data && (
             <div className={styles.plotFrame}>
@@ -1196,11 +1201,11 @@ function ContextAnalysis({
                     {featureType === "gene" && GENE_DETAIL_NO_GENE_SELECTED}
                     {featureType === "compound" &&
                       datasetId ===
-                        ContextExplorerDatasets.Prism_oncology_AUC_collapsed &&
+                        ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix &&
                       ONCREF_DETAIL_NO_COMPOUND_SELECTED}
                     {featureType === "compound" &&
                       datasetId ===
-                        ContextExplorerDatasets.REPURPOSING_AUC_collapsed &&
+                        ContextExplorerDatasets.REPURPOSING_primary_collapsed &&
                       REPURPOSING_DETAIL_NO_COMPOUND_SELECTED}
                   </h4>
                 </div>

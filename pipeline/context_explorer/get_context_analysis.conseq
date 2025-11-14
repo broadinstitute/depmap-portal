@@ -7,7 +7,7 @@ rule get_context_analysis:
         gene_effect_taiga_id={"type":"raw-dep-matrix", "label": 'Chronos_Combined'},
         gene_dependency_taiga_id={"type":"raw-dep-prob-matrix", "label": 'Chronos_Combined'},
         portal_compounds={"type": "drug-metadata", "name": "merged-drugs"},
-        repurposing_matrix_taiga_id=all {"type": "drug_screen_auc_matrix", "label": "Repurposing_secondary_AUC"}
+        repurposing_matrix_taiga_id=all {"type": "rep-primary-collapsed-taiga-id", "label": "REPURPOSING_primary_collapsed"}
 #        oncref_auc_taiga_id=all {"type":"prism_oncology_reference_auc_matrix"},
         tda_table={"type":"tda-table"},
     outputs:

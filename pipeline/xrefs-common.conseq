@@ -169,6 +169,13 @@ add-if-missing {
 
 # repurposing
 
+### NOTE if this changes it will also affect Context Explorer!
+add-if-missing {
+  "type": "rep-primary-collapsed-taiga-id",
+  "dataset_id": "repurposing-23q2-a803.4/Repurposing_23Q2_Extended_Primary_Data_Matrix_Per_Compound",
+  "label": "REPURPOSING_primary_collapsed",
+}
+
 add-if-missing {
     'type': 'dataset-display-name',
     'display_name': 'PRISM Repurposing Public 24Q2', # Doesn't use config.RELEASE_LABEL bc not part of quarterly virtual release datasets
@@ -196,8 +203,6 @@ add-if-missing {
 }
 
 ####### Repurposing secondary screen
-
-### NOTE if this changes it will also affect Context Explorer!
 add-if-missing {
   "type": "drug_screen_auc_matrix",
   "dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGAUCMatrix",
