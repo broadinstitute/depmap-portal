@@ -604,7 +604,7 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         assert len(matches) == 1
 
 
-def config(request):
+def corr_analysis_config(request):
     class TestFeatureFlags:
         def show_compound_correlations(self):
             return True
@@ -615,7 +615,7 @@ def config(request):
     return TestVersionConfig
 
 
-@override(config=config)
+@override(config=corr_analysis_config)
 def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
     with app.app_context():
 
