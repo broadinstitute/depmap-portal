@@ -43,6 +43,9 @@ def get_file_location(
     return os.path.join(filestore_location, dataset.id, file_name)
 
 
+from breadbox.utils.debug_log import print_span_stats
+
+
 def get_slice(
     dataset: Dataset,
     feature_indexes: Optional[List[int]],
@@ -50,14 +53,19 @@ def get_slice(
     filestore_location: str,
     keep_nans: Optional[bool] = False,
 ):
-    df = read_hdf5_file(
-        get_file_location(dataset, filestore_location),
-        feature_indexes=feature_indexes,
-        sample_indexes=sample_indexes,
-        keep_nans=keep_nans,
-    )
+    rows = "all" if feature_indexes is None else str(len(feature_indexes))
+    cols = "all" if sample_indexes is None else str(len(sample_indexes))
 
-    df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
+    with print_span_stats(f"read_hdf5_file {rows} x {cols}"):
+        df = read_hdf5_file(
+            get_file_location(dataset, filestore_location),
+            feature_indexes=feature_indexes,
+            sample_indexes=sample_indexes,
+            keep_nans=keep_nans,
+        )
+
+    with print_span_stats("get_df_by_value_type"):
+        df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
 
     return df
 
