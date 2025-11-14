@@ -8,6 +8,7 @@ import Plotly, {
 } from "plotly.js";
 import { formatLayout } from "../utilities/volcanoPlotUtils";
 import { VolcanoPlotPoint } from "../models/VolcanoPlot";
+import styles from "../styles/VolcanoPlot.scss";
 
 type VolcanoPlotProps = {
   volcanoTrace: Partial<PlotData>[];
@@ -57,7 +58,7 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
     };
   }, [volcanoTrace, onPointClick]);
 
-  return <div ref={plotRef} />;
+  return <div className={styles.VolcanoPlot} ref={plotRef} />;
 }
 
 export default VolcanoPlot;

@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import Select from "react-select";
-import styles from "../styles/CorrelationFilters.scss";
+import styles from "../styles/CorrelationAnalysis.scss";
 
 export interface FilterOption {
   readonly label: string;
@@ -16,7 +16,6 @@ interface CorrelationFiltersProps {
   onChangeCorrelatedDatasets: (correlatedDatasets: string[]) => void;
   doses: string[];
   onChangeDoses: (doses: string[]) => void;
-  compoundName: string;
 }
 
 export default function CorrelationFilters(props: CorrelationFiltersProps) {
@@ -27,7 +26,6 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
     onChangeCorrelatedDatasets,
     doses,
     onChangeDoses,
-    compoundName,
   } = props;
 
   const datasetOptions = datasets.map((dataset) => {
@@ -44,68 +42,53 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
   }, [doses]);
 
   return (
-    <div className={styles.correlationFilters}>
-      <div className={styles.filters}>
-        <header>
-          <b>Dataset ({compoundName})</b>
-        </header>
-        <Select
-          className={styles.filterStyle}
-          placeholder="Select..."
-          value={datasetOptions[0]}
-          options={datasetOptions}
-          onChange={(value, action) => {
-            console.log(value, action);
-            onChangeDataset(value ? value.value : null);
-          }}
-        />
-        <header
-          style={{
-            paddingTop: "20px",
-            paddingBottom: "10px",
-            borderTop: "1px solid darkgrey",
-          }}
-        >
-          <b>FILTERS</b>
-        </header>
-        <header>
-          <b>Dose</b>
-        </header>
-        <Select
-          className={styles.filterStyle}
-          placeholder="Select..."
-          defaultOptions
-          options={getDoseOptions()}
-          isMulti
-          onChange={(value, action) => {
-            console.log(value, action);
-            onChangeDoses(
-              value ? value.map((selectedDose) => selectedDose.value) : []
-            );
-          }}
-        />
-        <header>
-          <b>Correlated Dataset</b>
-        </header>
-        <Select
-          className={styles.filterStyle}
-          placeholder="Select..."
-          defaultOptions
-          options={correlatedDatasetOptions}
-          isMulti
-          onChange={(value, action) => {
-            console.log(value, action);
-            onChangeCorrelatedDatasets(
-              value
-                ? value.map(
-                    (selectedCorrelatedDataset) =>
-                      selectedCorrelatedDataset.value
-                  )
-                : []
-            );
-          }}
-        />
-      </div>
+    <div className={styles.FiltersPanel}>
+      <h4 className={styles.sectionTitle}>Dataset</h4>
+      <Select
+        placeholder="Select..."
+        value={datasetOptions[0]}
+        options={datasetOptions}
+        onChange={(value, action) => {
+          console.log(value, action);
+          onChangeDataset(value ? value.value : null);
+        }}
+        id="corr-analysis-dataset-selection"
+      />
+      <hr className={styles.filtersPanelHr} />
+      <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
+        Filters
+      </h4>
+      <h4>Dose</h4>
+      <Select
+        placeholder="Select..."
+        defaultOptions
+        options={getDoseOptions()}
+        isMulti
+        onChange={(value, action) => {
+          console.log(value, action);
+          onChangeDoses(
+            value ? value.map((selectedDose) => selectedDose.value) : []
+          );
+        }}
+        id="corr-analysis-filter-by-dose"
+      />
+      <h4>Correlated Dataset</h4>
+      <Select
+        placeholder="Select..."
+        defaultOptions
+        options={correlatedDatasetOptions}
+        isMulti
+        onChange={(value, action) => {
+          console.log(value, action);
+          onChangeCorrelatedDatasets(
+            value
+              ? value.map(
+                  (selectedCorrelatedDataset) => selectedCorrelatedDataset.value
+                )
+              : []
+          );
+        }}
+      />
     </div>
   );
 }
