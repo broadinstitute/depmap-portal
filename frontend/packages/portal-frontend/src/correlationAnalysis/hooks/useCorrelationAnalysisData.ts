@@ -50,7 +50,7 @@ function useCorrelationAnalysisData(
         ).filter((feature) => feature.id.includes(compoundID));
         compoundDoseFeatures.forEach((feature) => {
           const dose = feature.id.replace(compoundID, "").trim();
-          compoundDoseToDose.set(feature.id, dose);
+          compoundDoseToDose.set(feature.label, dose); // Must use feature.label to match compoundDoseCorrelates.dimension_label below
           compoundDoseDatasets.push([feature.id, doseViabilityDataset]);
         });
 
@@ -96,6 +96,7 @@ function useCorrelationAnalysisData(
             datasetLookup,
             compoundDoseToDose
           );
+
           Object.entries(doseAssociationsByFeatureDataset).forEach(
             ([featureDataset, associations]) => {
               if (featureDataset in featureDatasetDoseCorrelates) {
