@@ -213,11 +213,13 @@ def _chunked_aggregate_matrix_df(
 
 
 def _aggregate_matrix_df(
-    df: pd.DataFrame,
+    df_: pd.DataFrame,
     aggregate_by: Literal["features", "samples"],
     aggregation: AggregationMethod,
     use_chunking=True,
 ):
+    df = df_
+
     enum_to_agg_method = {
         AggregationMethod.mean: np.mean,
         AggregationMethod.median: np.median,
@@ -239,10 +241,7 @@ def _aggregate_matrix_df(
             df: pd.DataFrame = df.replace({pd.NA: np.nan})
 
         with print_span_stats("call agg function"):
-            df = df.agg(agg_method, axis=axis)
-
-        with print_span_stats("to frame"):
-            df = df.to_frame(name=aggregation.value)
+            df = df.agg(agg_method, axis=axis).to_frame(name=aggregation.value)
 
     return df
 
