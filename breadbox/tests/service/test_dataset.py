@@ -24,7 +24,9 @@ def test_aggregate_matrix_df():
         agg_df = _aggregate_matrix_df(
             df, "samples", AggregationMethod.mean, use_chunking=use_chunking
         )
+        # fmt: off
         expected_df = pd.DataFrame(
-            {"mean": [1, 22.0 / 4]}, index=["A", "B"]
-        )  # pyright: ignore
+            {"mean": [1, 22.0 / 4]}, index=["A", "B"] # pyright: ignore
+        )
+        # fmt: on
         assert_frame_equal(agg_df, expected_df)
