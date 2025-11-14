@@ -368,11 +368,13 @@ export function initDoseResponseTab(
 export function initCorrelationAnalysisTab(
   elementId: string,
   compoundName: string,
-  compoundId: string
+  compoundId: string,
+  datasetOptions: Array<any>
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis
+        datasetOptions={datasetOptions}
         compoundName={compoundName}
         compoundId={compoundId}
       />
