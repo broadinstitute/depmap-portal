@@ -146,8 +146,11 @@ def read_hdf5_file(
             )
             if feature_indexes is not None and sample_indexes is not None:
                 _validate_read_size(len(feature_indexes), len(sample_indexes))
-                # Not an optimized way of subsetting data but probably fine
-                data = f["data"][sample_indexes, :][:, feature_indexes]
+                # subset first by the more selective axis. (HDF5 doesn't allow us to subset both axes in a single request)
+                if len(feature_indexes) < len(sample_indexes):
+                    data = f["data"][:, feature_indexes][sample_indexes, :]
+                else:
+                    data = f["data"][sample_indexes, :][:, feature_indexes]
                 feature_ids = f["features"][feature_indexes]
                 sample_ids = f["samples"][sample_indexes]
             elif feature_indexes is not None:
