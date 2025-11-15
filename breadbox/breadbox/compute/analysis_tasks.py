@@ -181,8 +181,8 @@ def _get_filtered_query_feature(
         common_models_series = dataset_samples_df.given_id[
             dataset_samples_df.given_id.isin(common_models)
         ]
-        common_models_series.sort_values(inplace=True)
-        query = query.reindex(common_models_series.to_list())
+        common_models_series.sort_index(inplace=True)
+        query = query.loc[common_models_series.to_list()]
 
     return query, common_models_series.index, len(dataset_sample_ids_set)
 
@@ -295,6 +295,12 @@ class CustomAnalysisCallbacksImpl:
         return create_cell_line_group(self.user, model_ids, use_feature_ids)
 
     def get_dataset_df(self, feature_matrix_indices: List[int]) -> np.array:
+        assert is_increasing(
+            feature_matrix_indices
+        ), "Feature matrix indices out of order"
+        assert is_increasing(
+            self.sample_matrix_indices
+        ), "Sample matrix indices out of order"
         m = get_slice(
             self.dataset,
             feature_matrix_indices,
@@ -305,6 +311,16 @@ class CustomAnalysisCallbacksImpl:
         m = m.values
         assert m.dtype == np.dtype("float64")
         return m
+
+
+def is_increasing(values):
+    prev = None
+    for value in values:
+        if prev is not None:
+            if prev >= value:
+                return False
+        prev = value
+    return True
 
 
 @contextmanager
