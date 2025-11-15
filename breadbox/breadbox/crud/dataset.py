@@ -451,43 +451,61 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     return dimensions
 
 
-def _print_db_mem_usage(db: SessionWithUser):
-    result = db.execute(text("PRAGMA page_count"))
-    page_count = result.scalar()
+class IndexedGivenIDDataFrame(pd.DataFrame):
+    """ A subclass of DataFrame which is intended to enforce typesafety. Anywhere this type appears, you can be guarenteed that the required_columns are present. Similarly, there are @properties defined so you can make typesafe access to columns"""
 
-    result = db.execute(text("PRAGMA page_size"))
-    page_size = result.scalar()
+    required_columns = ["given_id"]
 
-    estimated_size = page_count * page_size
-    log.warning(f"Estimated database size: {estimated_size / (1024 ** 2):.2f} MB")
+    def __init__(self, source: pd.DataFrame):
+        assert set(self.required_columns).issubset(source.columns)
+        super(IndexedGivenIDDataFrame, self).__init__(source[self.required_columns])
+
+    @property
+    def given_id(self):
+        return self["given_id"]
 
 
-def get_matrix_dataset_features_df(
-    db: SessionWithUser, dataset: MatrixDataset, filter_by_labels: Optional[Set[str]]
+def get_matrix_dataset_sample_df(
+    db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
 ):
     """Returns a dataframe with columns given_id, index, label"""
     assert_user_has_access_to_dataset(dataset, db.user)
 
+    query = db.query(DatasetSample).filter(DatasetSample.dataset_id == dataset.id)
+
+    if filter_by_given_ids:
+        query = query.filter(DatasetSample.given_id.in_(filter_by_given_ids))
+
+    dataset_features = pd.DataFrame(
+        query.with_entities(DatasetSample.given_id, DatasetSample.index).all(),
+        columns=["given_id", "index"],
+    )
+
+    dataset_features.index = dataset_features["index"]
+    dataset_features.drop(columns=["index"], inplace=True)
+
+    return IndexedGivenIDDataFrame(dataset_features)
+
+
+def get_matrix_dataset_features_df(
+    db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
+):
+    assert_user_has_access_to_dataset(dataset, db.user)
+
     query = db.query(DatasetFeature).filter(DatasetFeature.dataset_id == dataset.id)
 
-    if filter_by_labels:
-        query = query.filter(DatasetFeature.given_id.in_(filter_by_labels))
+    if filter_by_given_ids:
+        query = query.filter(DatasetFeature.given_id.in_(filter_by_given_ids))
 
-    _print_db_mem_usage(db)
     dataset_features = pd.DataFrame(
         query.with_entities(DatasetFeature.given_id, DatasetFeature.index).all(),
         columns=["given_id", "index"],
     )
 
-    mem = dataset_features.memory_usage(deep=True)
-    total = mem.sum()
+    dataset_features.index = dataset_features["index"]
+    dataset_features.drop(columns=["index"], inplace=True)
 
-    for col in mem.index:
-        log.warning(f"{col}: {mem[col]:,} bytes ({100 * mem[col] / total:.1f}%)")
-
-    _print_db_mem_usage(db)
-
-    return dataset_features
+    return IndexedGivenIDDataFrame(dataset_features)
 
 
 def get_matrix_dataset_features(

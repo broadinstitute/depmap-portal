@@ -2,7 +2,7 @@ import os
 import numpy as np
 from typing import List, Optional
 
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.associations import (
     Associations,

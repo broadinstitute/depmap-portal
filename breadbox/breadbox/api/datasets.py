@@ -61,7 +61,7 @@ from breadbox.service import slice as slice_service
 from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 from breadbox.utils.debug_log import print_span_stats
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])

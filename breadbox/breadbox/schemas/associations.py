@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 from typing import List, Optional, Union
 
 

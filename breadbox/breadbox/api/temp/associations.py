@@ -14,7 +14,7 @@ from breadbox.schemas.associations import (
     AssociationTable,
     AssociationsIn,
 )
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 from typing import List
 from breadbox.service import associations as associations_service
 from breadbox.crud import associations as associations_crud

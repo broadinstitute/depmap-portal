@@ -7,10 +7,15 @@ import dataclasses
 import warnings
 
 import pandas as pd
+from mypy.server.aststrip import contextmanager
 
-from depmap_compute import models
-from depmap_compute import analysis_tasks_interface
-from depmap_compute.analysis_tasks_interface import Feature
+from breadbox.utils.debug_log import print_span_stats
+
+from breadbox.depmap_compute_embed import models, FeaturesExtDataFrame
+from breadbox.depmap_compute_embed import analysis_tasks_interface
+import csv
+from io import StringIO, BytesIO
+import numpy as np
 
 from breadbox.db.session import SessionWithUser
 from breadbox.config import get_settings
@@ -113,37 +118,20 @@ def _filter_out_models_not_in_search_dataset_old(
     )
 
 
-def _filter_out_models_not_in_search_dataset(
-    feature_df: pd.DataFrame,
-    model_query_vector: List[str],
-    value_query_vector: Union[List[float], List[int]],
-) -> Tuple[List[str], List[float], pd.DataFrame]:
-    query = pd.Series(value_query_vector, index=model_query_vector)
-
-    common_models = sorted(set(feature_df.index).intersection(query.index))
-
-    query = query.reindex(common_models)
-    final_feature_df = feature_df.reindex(common_models)
-
-    return (query.index.tolist(), query.values.tolist(), final_feature_df)
-
-
-def _get_filtered_dataset_and_query_feature(
+def _get_filtered_query_feature(
+    db: SessionWithUser,
     analysis_type: str,
     dataset: Dataset,  # dataset we're searching
     query_series: Optional[pd.DataFrame],
-    filestore_location: str,
     depmap_model_ids: List[str],
     query_values: Optional[List[str]],
-    feature_indices: List[int],  # indices for the dataset we're searching
-) -> Tuple[List[str], Union[List[int], List[float]], pd.DataFrame]:
+):
 
     with print_span_stats("get_slice dataset"):
-        # Get the dataframe of features for the dataset we're searching in
-        feature_df = get_slice(
-            dataset, feature_indices, None, filestore_location, keep_nans=True
+        dataset_samples_df = dataset_crud.get_matrix_dataset_sample_df(
+            db, dataset, None
         )
-        dataset_sample_ids = feature_df.index
+        dataset_sample_ids_set = set(dataset_samples_df.given_id)
 
     if analysis_type == models.AnalysisType.two_class:
         assert query_values is not None
@@ -164,11 +152,11 @@ def _get_filtered_dataset_and_query_feature(
             for i in range(len(query_values))
             if query_values[i] == "out"
         }
-        if len(in_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
+        if len(in_group_sample_ids.intersection(dataset_sample_ids_set)) == 0:
             raise UserError(
                 "No cell lines in common between in-group and dataset selected"
             )
-        if len(out_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
+        if len(out_group_sample_ids.intersection(dataset_sample_ids_set)) == 0:
             raise UserError(
                 "No cell lines in common between out-group and dataset selected"
             )
@@ -188,22 +176,16 @@ def _get_filtered_dataset_and_query_feature(
         raise ValueError(f"Unexpected analysis type {analysis_type}")
 
     with print_span_stats("_filter_out_models_not_in_search_dataset"):
-        (
-            filtered_model_query_vector,
-            filtered_value_query_vector,
-            filtered_feature_df,
-        ) = _filter_out_models_not_in_search_dataset(
-            feature_df, model_query_vector, value_query_vector
-        )
+        query = pd.Series(value_query_vector, index=model_query_vector)
+        common_models = dataset_sample_ids_set.intersection(query.index)
+        common_models_series = dataset_samples_df.given_id[
+            dataset_samples_df.given_id.isin(common_models)
+        ]
+        common_models_series.sort_values(inplace=True)
+        query = query.reindex(common_models_series.to_list())
 
-    return (
-        filtered_model_query_vector,
-        filtered_value_query_vector,
-        filtered_feature_df,
-    )
+    return query, common_models_series.index, len(dataset_sample_ids_set)
 
-
-from typing import Set
 
 # returns a set of features and their indices in the same order such the features[i] corresponds to indices[i]
 def get_features_info_and_dataset(
@@ -211,7 +193,7 @@ def get_features_info_and_dataset(
     user: str,
     dataset_id: str,
     feature_filter_labels: Optional[List[str]] = None,
-) -> Tuple[List[Feature], List[int], Dataset]:
+):
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
 
     if dataset is None:
@@ -245,18 +227,17 @@ def get_features_info_and_dataset(
     with print_span_stats("add extra cols"):
         # drop any records which don't have a label (indicating the given_id is not registered as valid in the feature type)
         dataset_features_df = dataset_features_df[
-            dataset_features_df["given_id"].isin(feature_labels_by_id)
+            dataset_features_df.given_id.isin(feature_labels_by_id)
         ]
 
         # populate slice_id and label columns based on given_id
         dataset_features_df["slice_id"] = [
             _format_breadbox_shim_slice_id(dataset.id, given_id)
-            for given_id in dataset_features_df["given_id"]
+            for given_id in dataset_features_df.given_id
         ]
 
         dataset_features_df["label"] = [
-            feature_labels_by_id[given_id]
-            for given_id in dataset_features_df["given_id"]
+            feature_labels_by_id[given_id] for given_id in dataset_features_df.given_id
         ]
 
     # HDF5 indexing requires that when slicing out by index, the indices are sorted. I personally
@@ -264,15 +245,8 @@ def get_features_info_and_dataset(
     # about that -- but we are addressing an issue at the moment and I want to mimize the impact of
     # changes right now. So, we'll sort feature_indices and reorder result_features to match
 
-    dataset_features_df.sort_values("index", inplace=True)
-
-    with print_span_stats("prepare result_features"):
-        result_features = [
-            Feature(label=row.label, slice_id=row.slice_id)
-            for row in dataset_features_df.itertuples()
-        ]
-
-    return result_features, dataset_features_df["index"].to_list(), dataset
+    final_features_df = FeaturesExtDataFrame(dataset_features_df.sort_values("index"))
+    return final_features_df, dataset
 
 
 def _get_update_message_callback(task):
@@ -306,7 +280,36 @@ def _get_update_message_callback(task):
     return update_message
 
 
-from breadbox.utils.debug_log import print_span_stats
+class CustomAnalysisCallbacksImpl:
+    def __init__(
+        self, user, dataset, sample_matrix_indices: List[int], filestore_location: str
+    ):
+        self.user = user
+        self.sample_matrix_indices = sample_matrix_indices
+        self.dataset = dataset
+        self.filestore_location = filestore_location
+
+    def create_cell_line_group(
+        self, model_ids: List[str], use_feature_ids: bool
+    ) -> str:
+        return create_cell_line_group(self.user, model_ids, use_feature_ids)
+
+    def get_dataset_df(self, feature_matrix_indices: List[int]) -> np.array:
+        m = get_slice(
+            self.dataset,
+            feature_matrix_indices,
+            self.sample_matrix_indices,
+            self.filestore_location,
+            keep_nans=True,
+        )
+        m = m.values
+        assert m.dtype == np.dtype("float64")
+        return m
+
+
+@contextmanager
+def no_op_ctx():
+    yield
 
 
 @app.task(base=LogErrorsTask, bind=True)
@@ -329,9 +332,10 @@ def run_custom_analysis(
 ):
     import memray
 
-    with memray.Tracker(
-        f"memray-{datetime.now().isoformat(timespec='seconds').replace(':', '-')}.bin"
-    ):
+    with no_op_ctx():
+        # with memray.Tracker(
+        #     f"memray-{datetime.now().isoformat(timespec='seconds').replace(':', '-')}.bin"
+        # ):
         with print_span_stats("run_custom_analysis"):
             if self.request.called_directly:
                 task_id = "called_directly"
@@ -344,7 +348,7 @@ def run_custom_analysis(
             with db_context(user) as db:
                 with print_span_stats("get_features_info_and_dataset"):
                     # All features and feature_indices for the dataset we're searching in
-                    features, feature_indices, dataset = get_features_info_and_dataset(
+                    features_df, dataset = get_features_info_and_dataset(
                         db, user, dataset_id
                     )
                     if not isinstance(dataset, MatrixDataset):
@@ -382,24 +386,29 @@ def run_custom_analysis(
                             query_values, index=depmap_model_ids
                         ).to_frame()
 
-                with print_span_stats("_get_filtered_dataset_and_query_feature"):
+                with print_span_stats("_get_filtered_query_feature"):
                     (
-                        filtered_cell_line_list,
-                        filtered_query_values_list,
-                        dataset_df,
-                    ) = _get_filtered_dataset_and_query_feature(
+                        filtered_query,
+                        sample_matrix_indices,
+                        dataset_sample_count,
+                    ) = _get_filtered_query_feature(
+                        db,
                         analysis_type,
                         dataset,
                         query_series,
-                        filestore_location,
                         depmap_model_ids,
                         query_values,
-                        feature_indices,
                     )
-                    if len(filtered_cell_line_list) == 0:
+                    if len(filtered_query) == 0:
                         raise UserError(
                             "No cell lines in common between query and dataset searched"
                         )
+
+                filtered_query_values_list = filtered_query.to_list()
+                filtered_cell_line_list = filtered_query.index.to_list()
+                features_per_batch = (
+                    10 * 1024 ** 2 // (dataset_sample_count * 8)
+                )  # aim for 10MB per batch
 
                 parameters = dict(
                     datasetId=dataset_id,
@@ -413,9 +422,9 @@ def run_custom_analysis(
                     ),
                 )
 
-                def wrapped_create_cell_line_group(*args, **kwargs):
-                    # this exists so we can add `user` as a parameter
-                    return create_cell_line_group(user, *args, **kwargs)
+                callbacks = CustomAnalysisCallbacksImpl(
+                    user, dataset, sample_matrix_indices, filestore_location
+                )
 
                 with print_span_stats("analysis_tasks_interface.run_custom_analysis"):
                     result = analysis_tasks_interface.run_custom_analysis(
@@ -424,23 +433,20 @@ def run_custom_analysis(
                         analysis_type=analysis_type,
                         depmap_model_ids=filtered_cell_line_list,
                         value_query_vector=filtered_query_values_list,
-                        features=features,
+                        features_df=features_df,
                         feature_type=feature_type_name,
-                        dataset=dataset_df.to_numpy().transpose(),
                         vector_is_dependent=vector_is_dependent,
                         parameters=parameters,
                         result_dir=results_dir,
-                        create_cell_line_group=wrapped_create_cell_line_group,
+                        callbacks=callbacks,
                         use_feature_ids=True,
+                        features_per_batch=features_per_batch,
                     )
 
                 return result
 
 
-def _create_csv_file(feature_ids=[], sample_ids=["ACH-1", "ACH-2"], values=[]):
-    import csv
-    from io import StringIO, BytesIO
-    import numpy as np
+def _create_csv_file(feature_ids, sample_ids, values):
 
     buf = StringIO()
     w = csv.writer(buf)
