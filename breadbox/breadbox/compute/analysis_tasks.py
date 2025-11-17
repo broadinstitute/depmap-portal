@@ -362,7 +362,6 @@ def run_custom_analysis(
     depmap_model_ids: List[str] = [],
     query_values: Optional[List[Any]] = None,
 ):
-    import memray
 
     update_message_callback = UpdateMessageCallback(self)
 

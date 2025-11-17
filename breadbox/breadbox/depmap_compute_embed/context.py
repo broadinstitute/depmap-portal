@@ -116,9 +116,11 @@ class _JsonLogicVarLookup(dict):
         else:
             if var_name not in self.cache:
                 try:
+                    # fmt: off
                     slice_query = SliceQuery(
-                        **self.slice_query_vars[var_name]
-                    )  # pyright: ignore
+                        **self.slice_query_vars[var_name] # pyright: ignore
+                    )
+                    # fmt: on
                     self.cache[var_name] = self.get_slice_data(slice_query).to_dict()
                 except (KeyError, TypeError, ValueError) as e:
                     raise LookupError(e)

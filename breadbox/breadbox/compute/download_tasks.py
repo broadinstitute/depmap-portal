@@ -446,7 +446,7 @@ def export_dataset(
         settings = get_settings()
 
         # Get feature_indices using feature_labels as a filter
-        _, feature_indices, dataset = get_features_info_and_dataset(
+        feature_indices, dataset = get_features_info_and_dataset(
             db, user, dataset_id, feature_labels
         )
 
@@ -459,7 +459,7 @@ def export_dataset(
             db=db,
             dataset=dataset,
             filestore_location=settings.filestore_location,
-            feature_indices=feature_indices,
+            feature_indices=feature_indices.index.to_list(),
             sample_indices=sample_indices,
             progress_callback=progress_callback,
             user=user,
