@@ -6,7 +6,7 @@ from flask.globals import current_app
 from dataclasses import dataclass
 import uuid
 
-
+from depmap import data_access
 import depmap.celfie.utils as celfie_utils
 from flask import Blueprint, render_template, abort, jsonify, url_for, request
 from depmap.enums import GeneTileEnum, CompoundTileEnum, CellLineTileEnum
@@ -602,16 +602,15 @@ def get_tractability_html(gene):
 
 
 def get_sensitivity_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
+    compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    # DEPRECATED: will be redesigned/replaced
-    best_ce_and_d = determine_compound_experiment_and_dataset(
-        compound_experiment_and_datasets
-    )
+    # First, load ALL portal datasets containing the compound.
+    all_matching_datasets = data_access.get_all_datasets_containing_compound(compound.id)
+    
     return render_template(
         "tiles/sensitivity.html",
-        dep_dists=format_dep_dists(best_ce_and_d),
-        dep_dist_caption=format_dep_dist_caption(best_ce_and_d),
+        dep_dists=format_dep_dists(compound, all_matching_datasets),
+        dep_dist_caption=format_dep_dist_caption(all_matching_datasets),
     )
 
 

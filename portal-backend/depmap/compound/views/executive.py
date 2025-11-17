@@ -9,6 +9,7 @@ matplotlib.use(
 import pandas as pd
 
 from depmap import data_access
+from depmap_compute.slice import SliceQuery
 from depmap.data_access.models import MatrixDataset
 from depmap.entity.views.executive import (
     format_enrichment_box_for_dataset,
@@ -93,38 +94,24 @@ data_availability_datasets = [
 ]
 
 
-def format_dep_dist_caption(
-    compound_experiment_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]]
-):
-    # DEPRECATED: will be redesigned/replaced
-    if compound_experiment_and_datasets is None:
+def format_dep_dist_caption(all_matching_datasets: list[MatrixDataset]):
+    if all_matching_datasets == []:
         return None
 
     s = ""
-    if any(
-        (
-            dataset.units == "log2(AUC)"
-            for _, dataset in compound_experiment_and_datasets
-        )
-    ):
+    if any(dataset.units == "log2(AUC)"for dataset in all_matching_datasets):
         s += "Please note that log2(AUC) values depend on the dose range of the screen and are not comparable across different assays. "
 
-    if any((dataset.units == "AUC" for _, dataset in compound_experiment_and_datasets)):
+    if any((dataset.units == "AUC" for dataset in all_matching_datasets)):
         s += "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays."
 
-    if any(
-        (
-            dataset.name == DependencyEnum.CTRP_AUC
-            for _, dataset in compound_experiment_and_datasets
-        )
-    ):
+    if any("CTRP_AUC" in dataset.given_id for dataset in all_matching_datasets):
         s += " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1."
 
     if s != "":
         return s
 
     return None
-
 
 def get_order(
     has_predictability: bool,
@@ -206,30 +193,33 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
                 return ce_and_d
 
 
-def format_dep_dists(compound_experiment_and_datasets):
-    # DEPRECATED: will be redesigned/replaced
-    if compound_experiment_and_datasets is None:
+def format_dep_dists(compound: Compound, all_matching_datasets: list[MatrixDataset]):
+    if all_matching_datasets == []:
         return None
     dep_dists = []
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        values = [
-            x
-            for x in dataset.matrix.get_values_by_entity(compound_experiment.entity_id)
-            if not isnan(x)  # needed for num_lines, and probably the plot
+    for dataset in all_matching_datasets:
+        slice_query = SliceQuery(
+            dataset_id=dataset.id,
+            identifier=compound.id,
+            identifier_type="feature_id"
+        )
+        slice_vals = data_access.get_slice_data(slice_query)
+        filtered_values = [
+            x for x in slice_vals if not isnan(x)  # needed for num_lines, and probably the plot
         ]
         color = colors[dataset.name]
 
-        svg = format_generic_distribution_plot(values, color)
+        svg = format_generic_distribution_plot(filtered_values, color)
 
-        units = dataset.matrix.units
+        units = dataset.units
 
         dep_dists.append(
             {
                 "svg": svg,
                 "title": "{} {}".format(
-                    compound_experiment.label, dataset.display_name
+                    compound.label, dataset.label
                 ),
-                "num_lines": len(values),
+                "num_lines": len(filtered_values),
                 "units": units,
                 "color": color,
             }
