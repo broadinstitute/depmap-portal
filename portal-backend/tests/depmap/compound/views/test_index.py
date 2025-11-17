@@ -715,6 +715,7 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
                 auc_dataset_priority=1,
                 auc_dataset_display_name="dataset_label",
                 viability_dataset_display_name="dataset_label",
+                log_auc_dataset_given_id=dataset.log_auc_dataset_given_id,
             )
             for dataset in drc_compound_datasets
         ]
