@@ -149,12 +149,12 @@ import pandera as pa
 def write_custom_analysis_table(df, result_task_dir, effect_size_column):
     schema = pa.DataFrameSchema(
         {
-            "label": pa.Column(pa.String(), nullable=False),
-            "vectorId": pa.Column(pa.String(), nullable=False),
-            "numCellLines": pa.Column(pa.Int64(), nullable=False),
-            effect_size_column: pa.Column(pa.Float64(), nullable=True),
-            "QValue": pa.Column(pa.Float64(), nullable=True),
-            "PValue": pa.Column(pa.Float64(), nullable=True),
+            "label": pa.Column(str, nullable=False),
+            "vectorId": pa.Column(str, nullable=False),
+            "numCellLines": pa.Column(int, nullable=False),
+            effect_size_column: pa.Column(float, nullable=True),
+            "QValue": pa.Column(float, nullable=True),
+            "PValue": pa.Column(float, nullable=True),
         }
     )
 
