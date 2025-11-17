@@ -26,7 +26,7 @@ def lin_associations_wrapper(features, profile, profile_is_dependent):
     )
     df = full_output
     valid_var_cols = features.std(axis=0) > 0.001
-    assert isinstance(valid_var_cols, pd.DataFrame)
+    assert isinstance(valid_var_cols, pd.Series)
     outmask = pd.Series(data=df["mask"].to_numpy(), index=valid_var_cols.index)
     outmask = outmask & valid_var_cols
     df = df[pd.Index(outmask)]
