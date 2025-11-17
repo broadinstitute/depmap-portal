@@ -604,7 +604,7 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    all_matching_datasets = data_access.get_all_datasets_containing_compound(compound.id)
+    all_matching_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
     if len(all_matching_datasets) == 0:
         return render_template("tiles/sensitivity.html", dep_dist=None, dep_dist_caption=None)
     
