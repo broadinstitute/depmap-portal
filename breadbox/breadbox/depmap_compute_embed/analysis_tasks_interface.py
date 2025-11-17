@@ -5,15 +5,13 @@ import json
 import numpy as np
 import pandas as pd
 import logging
-import traceback
 
 from breadbox.depmap_compute_embed.models import AnalysisType
 from dataclasses import dataclass
 
-from fastapi.encoders import isoformat
-
 from .lin_associations import lin_associations_wrapper
 from scipy import stats
+from ..crud.dataset import IndexedGivenIDDataFrame
 
 
 log = logging.getLogger(__name__)
@@ -34,14 +32,6 @@ class CustomAnalysisCallbacks(Protocol):
         ...
 
 
-# @dataclass
-# class Feature:
-#     label: str
-#     slice_id: str
-#
-from ..crud.dataset import IndexedGivenIDDataFrame
-
-
 class FeaturesExtDataFrame(IndexedGivenIDDataFrame):
     required_columns = ["given_id", "label", "slice_id"]
 
@@ -55,33 +45,6 @@ class FeaturesExtDataFrame(IndexedGivenIDDataFrame):
     @property
     def label(self):
         return self["label"]
-
-
-def assert_df_format(df, expected_columns, ignore_extra_columns=True):
-    # compute an index of column name -> type
-    df_column_types = dict(zip(df.columns, df.dtypes))
-
-    unverified_columns = set(df_column_types.keys())
-    problems = []
-    for name, type in expected_columns:
-        if name not in df_column_types:
-            problems.append(f"missing column {name}")
-            continue
-        unverified_columns.remove(name)
-        if df_column_types[name] != type:
-            problems.append(
-                f"expected column {name} to have type {type} but was {df_column_types[name]}"
-            )
-            continue
-
-    if not ignore_extra_columns:
-        if len(unverified_columns) > 0:
-            extra_columns = list(unverified_columns)
-            problems.append(f"extra columns: {extra_columns}")
-
-    assert (
-        len(problems) == 0
-    ), f"Found following problems: {problems} in dataframe: {df}"
 
 
 @dataclass
@@ -180,22 +143,22 @@ def _run_lm(
     return df
 
 
+import pandera as pa
+
+
 def write_custom_analysis_table(df, result_task_dir, effect_size_column):
-    assert_df_format(
-        df,
-        [
-            ("label", object),
-            (
-                "vectorId",
-                object,
-            ),  # depmap uses a string slice_id, breadbox uses an int feature_catalog_node.id
-            ("numCellLines", np.int64),
-            (effect_size_column, np.float64),
-            ("QValue", np.float64),
-            ("PValue", np.float64),
-        ],
-        ignore_extra_columns=False,
+    schema = pa.DataFrameSchema(
+        {
+            "label": pa.Column(pa.String(), nullable=False),
+            "vectorId": pa.Column(pa.String(), nullable=False),
+            "numCellLines": pa.Column(pa.Int64(), nullable=False),
+            effect_size_column: pa.Column(pa.Float64(), nullable=True),
+            "QValue": pa.Column(pa.Float64(), nullable=True),
+            "PValue": pa.Column(pa.Float64(), nullable=True),
+        }
     )
+
+    df = schema.validate(df)
 
     df_dict = df.replace({np.nan: None}).to_dict(orient="records")
 

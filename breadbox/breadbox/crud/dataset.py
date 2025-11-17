@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 import warnings
 
 import pandas as pd
-from sqlalchemy import and_, func, or_, select, true, text
+from sqlalchemy import and_, func, or_, select, true
 from sqlalchemy.sql import distinct
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic

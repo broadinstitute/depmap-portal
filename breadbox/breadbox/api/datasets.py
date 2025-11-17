@@ -62,7 +62,6 @@ from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
-from breadbox.utils.debug_log import print_span_stats
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 log = getLogger(__name__)
@@ -319,23 +318,16 @@ def get_matrix_dataset_data(
         ),
     ] = False,
 ):
-    with print_span_stats("get_matrix_dataset_data"):
-
-        if dataset.format != "matrix_dataset":
-            raise UserError(
-                "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
-            )
-
-        df = dataset_service.get_subsetted_matrix_dataset_df(
-            db,
-            user,
-            dataset,
-            matrix_dimensions_info,
-            settings.filestore_location,
-            strict,
+    if dataset.format != "matrix_dataset":
+        raise UserError(
+            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
         )
 
-        return Response(df.to_json(), media_type="application/json")
+    df = dataset_service.get_subsetted_matrix_dataset_df(
+        db, user, dataset, matrix_dimensions_info, settings.filestore_location, strict,
+    )
+
+    return Response(df.to_json(), media_type="application/json")
 
 
 @router.post(
@@ -400,29 +392,28 @@ def get_dataset_data(
     ] = None,
 ):
     """Get dataset dataframe subset given the features and samples. Filtering should be possible using either labels (cell line name, gene name, etc.) or ids (depmap_id, entrez_id, etc.). If features or samples are not specified, return all features or samples"""
-    with print_span_stats("get_dataset_data"):
-        if dataset.format != "matrix_dataset":
-            raise UserError(
-                "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
-            )
-        try:
-            dim_info = MatrixDimensionsInfo(
-                features=features,
-                feature_identifier=feature_identifier,
-                samples=samples,
-                sample_identifier=sample_identifier,
-            )
-        except UserError as e:
-            raise e
-
-        df = dataset_service.get_subsetted_matrix_dataset_df(
-            db, user, dataset, dim_info, settings.filestore_location
+    if dataset.format != "matrix_dataset":
+        raise UserError(
+            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
         )
+    try:
+        dim_info = MatrixDimensionsInfo(
+            features=features,
+            feature_identifier=feature_identifier,
+            samples=samples,
+            sample_identifier=sample_identifier,
+        )
+    except UserError as e:
+        raise e
 
-        # NOTE: to_json() is better than to_dict() bc FastAPI behind the scenes automatically converts the non-JSON objects into JSON-compatible data using the jsonable_encoder, and then uses the Python standard json.dumps() to serialise the object which is quite slow.
-        # To avoid the extra processing, use to_json() method and put the JSON string in a custom Response and return it directly
-        # See: https://stackoverflow.com/questions/71203579/how-to-return-a-csv-file-pandas-dataframe-in-json-format-using-fastapi and https://stackoverflow.com/questions/73564771/fastapi-is-very-slow-in-returning-a-large-amount-of-json-data/73580096#73580096
-        return Response(df.to_json(), media_type="application/json")
+    df = dataset_service.get_subsetted_matrix_dataset_df(
+        db, user, dataset, dim_info, settings.filestore_location
+    )
+
+    # NOTE: to_json() is better than to_dict() bc FastAPI behind the scenes automatically converts the non-JSON objects into JSON-compatible data using the jsonable_encoder, and then uses the Python standard json.dumps() to serialise the object which is quite slow.
+    # To avoid the extra processing, use to_json() method and put the JSON string in a custom Response and return it directly
+    # See: https://stackoverflow.com/questions/71203579/how-to-return-a-csv-file-pandas-dataframe-in-json-format-using-fastapi and https://stackoverflow.com/questions/73564771/fastapi-is-very-slow-in-returning-a-large-amount-of-json-data/73580096#73580096
+    return Response(df.to_json(), media_type="application/json")
 
 
 @router.get(

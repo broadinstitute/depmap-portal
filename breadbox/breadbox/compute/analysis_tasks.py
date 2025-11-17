@@ -8,8 +8,6 @@ from typing import cast, Sequence
 import pandas as pd
 from contextlib import contextmanager
 
-from breadbox.utils.debug_log import print_span_stats
-
 from breadbox.depmap_compute_embed import models, FeaturesExtDataFrame
 from breadbox.depmap_compute_embed import analysis_tasks_interface
 import csv
@@ -92,31 +90,6 @@ def get_feature_data_slice_values(
     return data_slice
 
 
-def _filter_out_models_not_in_search_dataset_old(
-    feature_df: pd.DataFrame,
-    model_query_vector: List[str],
-    value_query_vector: Union[List[float], List[int]],
-) -> Tuple[List[str], List[float], pd.DataFrame]:
-    final_model_query_vector = []
-    final_value_query_vector = []
-    transposed_feature_df = feature_df.transpose()
-    for model in list(transposed_feature_df.columns.values):
-        if model in model_query_vector:
-            final_model_query_vector.append(model)
-            if model_query_vector.index(model) < len(value_query_vector):
-                final_value_query_vector.append(
-                    value_query_vector[model_query_vector.index(model)]
-                )
-        else:
-            transposed_feature_df.drop(model, axis=1, inplace=True)
-
-    return (
-        final_model_query_vector,
-        final_value_query_vector,
-        transposed_feature_df.transpose(),
-    )
-
-
 def _get_filtered_query_feature(
     db: SessionWithUser,
     analysis_type: str,
@@ -126,11 +99,8 @@ def _get_filtered_query_feature(
     query_values: Optional[List[str]],
 ):
 
-    with print_span_stats("get_slice dataset"):
-        dataset_samples_df = dataset_crud.get_matrix_dataset_sample_df(
-            db, dataset, None
-        )
-        dataset_sample_ids_set = set(dataset_samples_df.given_id)
+    dataset_samples_df = dataset_crud.get_matrix_dataset_sample_df(db, dataset, None)
+    dataset_sample_ids_set = set(dataset_samples_df.given_id)
 
     if analysis_type == models.AnalysisType.two_class:
         assert query_values is not None
@@ -164,25 +134,23 @@ def _get_filtered_query_feature(
         analysis_type == models.AnalysisType.pearson
         or analysis_type == models.AnalysisType.association
     ):
-        with print_span_stats("_subset_feature_df query"):
-            assert query_series is not None
-            assert query_series.shape[1] == 1
-            model_query_vector, value_query_vector = _subset_feature_df(
-                query_series.iloc[:, 0], depmap_model_ids
-            )
+        assert query_series is not None
+        assert query_series.shape[1] == 1
+        model_query_vector, value_query_vector = _subset_feature_df(
+            query_series.iloc[:, 0], depmap_model_ids
+        )
 
     else:
         raise ValueError(f"Unexpected analysis type {analysis_type}")
 
-    with print_span_stats("_filter_out_models_not_in_search_dataset"):
-        query = pd.Series(value_query_vector, index=model_query_vector)
-        common_models = dataset_sample_ids_set.intersection(query.index)
-        common_models_series = dataset_samples_df.given_id[
-            dataset_samples_df.given_id.isin(cast(Sequence, common_models))
-        ]
-        assert isinstance(common_models_series, pd.Series)
-        common_models_series.sort_index(inplace=True)
-        query = query.loc[common_models_series.to_list()]
+    query = pd.Series(value_query_vector, index=model_query_vector)
+    common_models = dataset_sample_ids_set.intersection(query.index)
+    common_models_series = dataset_samples_df.given_id[
+        dataset_samples_df.given_id.isin(cast(Sequence, common_models))
+    ]
+    assert isinstance(common_models_series, pd.Series)
+    common_models_series.sort_index(inplace=True)
+    query = query.loc[common_models_series.to_list()]
 
     return query, common_models_series.index, len(dataset_sample_ids_set)
 
@@ -201,44 +169,40 @@ def get_features_info_and_dataset(
 
     assert isinstance(dataset, MatrixDataset)
 
-    with print_span_stats("get_matrix_dataset_feature_labels_by_id"):
-        feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
-            db, db.user, dataset
-        )
+    feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
+        db, db.user, dataset
+    )
 
-    with print_span_stats("prep filter_by_feature_given_ids"):
-        # filter by label if necessary (used by custom downloads)
-        filter_by_feature_given_ids = None
-        if feature_filter_labels is not None:
-            filter_by_feature_given_ids = set()
-            given_id_by_label = {
-                label: given_id for given_id, label in feature_labels_by_id.items()
-            }
-            for label in feature_filter_labels:
-                given_id = given_id_by_label.get(label)
-                if given_id is not None:
-                    filter_by_feature_given_ids.add(given_id)
+    # filter by label if necessary (used by custom downloads)
+    filter_by_feature_given_ids = None
+    if feature_filter_labels is not None:
+        filter_by_feature_given_ids = set()
+        given_id_by_label = {
+            label: given_id for given_id, label in feature_labels_by_id.items()
+        }
+        for label in feature_filter_labels:
+            given_id = given_id_by_label.get(label)
+            if given_id is not None:
+                filter_by_feature_given_ids.add(given_id)
 
-    with print_span_stats("get_matrix_dataset_features_df"):
-        dataset_features_df = dataset_crud.get_matrix_dataset_features_df(
-            db, dataset, filter_by_feature_given_ids
-        )
+    dataset_features_df = dataset_crud.get_matrix_dataset_features_df(
+        db, dataset, filter_by_feature_given_ids
+    )
 
-    with print_span_stats("add extra cols"):
-        # drop any records which don't have a label (indicating the given_id is not registered as valid in the feature type)
-        dataset_features_df = dataset_features_df[
-            dataset_features_df.given_id.isin(feature_labels_by_id)
-        ]
+    # drop any records which don't have a label (indicating the given_id is not registered as valid in the feature type)
+    dataset_features_df = dataset_features_df[
+        dataset_features_df.given_id.isin(feature_labels_by_id)
+    ]
 
-        # populate slice_id and label columns based on given_id
-        dataset_features_df["slice_id"] = [
-            _format_breadbox_shim_slice_id(dataset.id, given_id)
-            for given_id in dataset_features_df.given_id
-        ]
+    # populate slice_id and label columns based on given_id
+    dataset_features_df["slice_id"] = [
+        _format_breadbox_shim_slice_id(dataset.id, given_id)
+        for given_id in dataset_features_df.given_id
+    ]
 
-        dataset_features_df["label"] = [
-            feature_labels_by_id[given_id] for given_id in dataset_features_df.given_id
-        ]
+    dataset_features_df["label"] = [
+        feature_labels_by_id[given_id] for given_id in dataset_features_df.given_id
+    ]
 
     # HDF5 indexing requires that when slicing out by index, the indices are sorted. I personally
     # would prefer to handle this inside of our code for reading from HDF5 so we don't have to worry
@@ -365,120 +329,105 @@ def run_custom_analysis(
 
     update_message_callback = UpdateMessageCallback(self)
 
-    with no_op_ctx():
-        # with memray.Tracker(
-        #     f"memray-{datetime.now().isoformat(timespec='seconds').replace(':', '-')}.bin"
-        # ):
-        with print_span_stats("run_custom_analysis"):
-            if self.request.called_directly:
-                task_id = "called_directly"
+    if self.request.called_directly:
+        task_id = "called_directly"
+    else:
+        task_id = self.request.id
+
+    update_message_callback.update_message("Fetching data")
+
+    with db_context(user) as db:
+        # All features and feature_indices for the dataset we're searching in
+        features_df, dataset = get_features_info_and_dataset(db, user, dataset_id)
+        if not isinstance(dataset, MatrixDataset):
+            raise UserError(
+                f"Expected a matrix dataset. Unable to run custom analysis for tabular dataset: '{dataset_id}' "
+            )
+        feature_type_name = dataset.feature_type_name
+
+        # Pearson and association calculate the value_query_vector they're searching
+        # for by getting the data_slice, and separating the values and model_names into.
+        # two_class skips this if block because it's value_query_vector is ultimately turned into
+        # 1's and 0's dependning on "in" vs "out" values in queryValues.
+        query_series = None
+
+        if (
+            analysis_type == models.AnalysisType.pearson
+            or analysis_type == models.AnalysisType.association
+        ):
+            if query_feature_id and query_dataset_id:
+                # The query_feature_id is a given ID
+                feature = dataset_crud.get_dataset_feature_by_given_id(
+                    db, query_dataset_id, query_feature_id
+                )
+                assert feature.index is not None, index_error_msg(feature)
+                query_series = filestore_crud.get_feature_slice(
+                    dataset=feature.dataset,
+                    feature_indexes=[feature.index],
+                    filestore_location=filestore_location,
+                )
+                query_series.dropna(inplace=True)
+            # The query ID can be a numeric node id OR a UUID feature ID
             else:
-                task_id = self.request.id
+                # Use the given query values instead of trying to load them from the query_id
+                query_series = pd.Series(
+                    query_values, index=depmap_model_ids
+                ).to_frame()
 
-            update_message_callback.update_message("Fetching data")
+        (
+            filtered_query,
+            sample_matrix_indices,
+            dataset_sample_count,
+        ) = _get_filtered_query_feature(
+            db, analysis_type, dataset, query_series, depmap_model_ids, query_values,
+        )
+        if len(filtered_query) == 0:
+            raise UserError(
+                "No cell lines in common between query and dataset searched"
+            )
 
-            with db_context(user) as db:
-                with print_span_stats("get_features_info_and_dataset"):
-                    # All features and feature_indices for the dataset we're searching in
-                    features_df, dataset = get_features_info_and_dataset(
-                        db, user, dataset_id
-                    )
-                    if not isinstance(dataset, MatrixDataset):
-                        raise UserError(
-                            f"Expected a matrix dataset. Unable to run custom analysis for tabular dataset: '{dataset_id}' "
-                        )
-                    feature_type_name = dataset.feature_type_name
+        filtered_query_values_list = filtered_query.to_list()
+        filtered_cell_line_list = filtered_query.index.to_list()
+        features_per_batch = (
+            10 * 1024 ** 2 // (dataset_sample_count * 8)
+        )  # aim for 10MB per batch
 
-                # Pearson and association calculate the value_query_vector they're searching
-                # for by getting the data_slice, and separating the values and model_names into.
-                # two_class skips this if block because it's value_query_vector is ultimately turned into
-                # 1's and 0's dependning on "in" vs "out" values in queryValues.
-                query_series = None
+        parameters = dict(
+            datasetId=dataset_id,
+            query=dict(
+                analysisType=analysis_type,
+                queryFeatureId=query_feature_id,
+                queryDatasetId=query_dataset_id,
+                queryValues=filtered_query_values_list,
+                vectorIsDependent=vector_is_dependent,
+                queryCellLines=filtered_cell_line_list,
+            ),
+        )
 
-                if (
-                    analysis_type == models.AnalysisType.pearson
-                    or analysis_type == models.AnalysisType.association
-                ):
-                    if query_feature_id and query_dataset_id:
-                        # The query_feature_id is a given ID
-                        feature = dataset_crud.get_dataset_feature_by_given_id(
-                            db, query_dataset_id, query_feature_id
-                        )
-                        assert feature.index is not None, index_error_msg(feature)
-                        query_series = filestore_crud.get_feature_slice(
-                            dataset=feature.dataset,
-                            feature_indexes=[feature.index],
-                            filestore_location=filestore_location,
-                        )
-                        query_series.dropna(inplace=True)
-                    # The query ID can be a numeric node id OR a UUID feature ID
-                    else:
-                        # Use the given query values instead of trying to load them from the query_id
-                        query_series = pd.Series(
-                            query_values, index=depmap_model_ids
-                        ).to_frame()
+        callbacks = CustomAnalysisCallbacksImpl(
+            user,
+            dataset,
+            sample_matrix_indices.to_list(),
+            filestore_location,
+            update_message_callback,
+        )
 
-                with print_span_stats("_get_filtered_query_feature"):
-                    (
-                        filtered_query,
-                        sample_matrix_indices,
-                        dataset_sample_count,
-                    ) = _get_filtered_query_feature(
-                        db,
-                        analysis_type,
-                        dataset,
-                        query_series,
-                        depmap_model_ids,
-                        query_values,
-                    )
-                    if len(filtered_query) == 0:
-                        raise UserError(
-                            "No cell lines in common between query and dataset searched"
-                        )
+        result = analysis_tasks_interface.run_custom_analysis(
+            task_id,
+            analysis_type=analysis_type,
+            depmap_model_ids=filtered_cell_line_list,
+            value_query_vector=filtered_query_values_list,
+            features_df=features_df,
+            feature_type=feature_type_name,
+            vector_is_dependent=vector_is_dependent,
+            parameters=parameters,
+            result_dir=results_dir,
+            callbacks=callbacks,
+            use_feature_ids=True,
+            features_per_batch=features_per_batch,
+        )
 
-                filtered_query_values_list = filtered_query.to_list()
-                filtered_cell_line_list = filtered_query.index.to_list()
-                features_per_batch = (
-                    10 * 1024 ** 2 // (dataset_sample_count * 8)
-                )  # aim for 10MB per batch
-
-                parameters = dict(
-                    datasetId=dataset_id,
-                    query=dict(
-                        analysisType=analysis_type,
-                        queryFeatureId=query_feature_id,
-                        queryDatasetId=query_dataset_id,
-                        queryValues=filtered_query_values_list,
-                        vectorIsDependent=vector_is_dependent,
-                        queryCellLines=filtered_cell_line_list,
-                    ),
-                )
-
-                callbacks = CustomAnalysisCallbacksImpl(
-                    user,
-                    dataset,
-                    sample_matrix_indices.to_list(),
-                    filestore_location,
-                    update_message_callback,
-                )
-
-                with print_span_stats("analysis_tasks_interface.run_custom_analysis"):
-                    result = analysis_tasks_interface.run_custom_analysis(
-                        task_id,
-                        analysis_type=analysis_type,
-                        depmap_model_ids=filtered_cell_line_list,
-                        value_query_vector=filtered_query_values_list,
-                        features_df=features_df,
-                        feature_type=feature_type_name,
-                        vector_is_dependent=vector_is_dependent,
-                        parameters=parameters,
-                        result_dir=results_dir,
-                        callbacks=callbacks,
-                        use_feature_ids=True,
-                        features_per_batch=features_per_batch,
-                    )
-
-                return result
+        return result
 
 
 def _create_csv_file(feature_ids, sample_ids, values):

@@ -119,9 +119,6 @@ def write_hdf5_file(
 #         yield column_names[i : i + batch_size]
 
 
-from breadbox.utils.debug_log import print_span_stats
-
-
 def read_hdf5_file(
     path: str,
     feature_indexes: Optional[List[int]] = None,
@@ -130,58 +127,43 @@ def read_hdf5_file(
 ):
     """Return subsetted df based on provided feature and sample indexes. If either feature or sample indexes is None then return all features or samples"""
     with h5py.File(path, mode="r") as f:
-        with print_span_stats("basic read from hdf5 file"):
-            row_len, col_len = f["data"].shape  # type: ignore
-            if feature_indexes is None:
-                read_col_count = col_len
+        row_len, col_len = f["data"].shape  # type: ignore
+
+        if feature_indexes is not None and sample_indexes is not None:
+            _validate_read_size(len(feature_indexes), len(sample_indexes))
+            # subset first by the more selective axis. (HDF5 doesn't allow us to subset both axes in a single request)
+            if len(feature_indexes) < len(sample_indexes):
+                data = f["data"][:, feature_indexes][sample_indexes, :]
             else:
-                read_col_count = len(feature_indexes)
-            if sample_indexes is None:
-                read_row_count = row_len
-            else:
-                read_row_count = len(sample_indexes)
+                data = f["data"][sample_indexes, :][:, feature_indexes]
+            feature_ids = f["features"][feature_indexes]
+            sample_ids = f["samples"][sample_indexes]
+        elif feature_indexes is not None:
+            _validate_read_size(len(feature_indexes), row_len)
+            data = f["data"][:, feature_indexes]
+            feature_ids = f["features"][feature_indexes]
+            sample_ids = f["samples"]
+        elif sample_indexes is not None:
+            _validate_read_size(col_len, len(sample_indexes))
+            data = f["data"][sample_indexes]
+            feature_ids = f["features"]
+            sample_ids = f["samples"][sample_indexes]
+        else:
+            _validate_read_size(col_len, row_len)
+            data = f["data"]
+            feature_ids = f["features"]
+            sample_ids = f["samples"]
 
-            print(
-                f"reading {read_row_count} x {read_col_count} from hdf5 with matrix {row_len} x {col_len} (expected size: {read_row_count * read_col_count * 8 // 1024 ** 2} MB)"
-            )
-            if feature_indexes is not None and sample_indexes is not None:
-                _validate_read_size(len(feature_indexes), len(sample_indexes))
-                # subset first by the more selective axis. (HDF5 doesn't allow us to subset both axes in a single request)
-                if len(feature_indexes) < len(sample_indexes):
-                    data = f["data"][:, feature_indexes][sample_indexes, :]
-                else:
-                    data = f["data"][sample_indexes, :][:, feature_indexes]
-                feature_ids = f["features"][feature_indexes]
-                sample_ids = f["samples"][sample_indexes]
-            elif feature_indexes is not None:
-                _validate_read_size(len(feature_indexes), row_len)
-                data = f["data"][:, feature_indexes]
-                feature_ids = f["features"][feature_indexes]
-                sample_ids = f["samples"]
-            elif sample_indexes is not None:
-                _validate_read_size(col_len, len(sample_indexes))
-                data = f["data"][sample_indexes]
-                feature_ids = f["features"]
-                sample_ids = f["samples"][sample_indexes]
-            else:
-                _validate_read_size(col_len, row_len)
-                data = f["data"]
-                feature_ids = f["features"]
-                sample_ids = f["samples"]
+        feature_ids = [x.decode("utf8") for x in feature_ids]
+        sample_ids = [x.decode("utf8") for x in sample_ids]
 
-            with print_span_stats("read labels"):
-                feature_ids = [x.decode("utf8") for x in feature_ids]
-                sample_ids = [x.decode("utf8") for x in sample_ids]
+        df = pd.DataFrame(
+            data=data, columns=pd.Index(feature_ids), index=pd.Index(sample_ids)
+        )
 
-            with print_span_stats("construct dataframe"):
-                df = pd.DataFrame(
-                    data=data, columns=pd.Index(feature_ids), index=pd.Index(sample_ids)
-                )
-
-            with print_span_stats("conversion nonsense"):
-                # Must convert NaNs to None bc NaNs not json serializable
-                if not keep_nans:
-                    df = df.replace({np.nan: None})
+        # Must convert NaNs to None bc NaNs not json serializable
+        if not keep_nans:
+            df = df.replace({np.nan: None})
     return df
 
 
