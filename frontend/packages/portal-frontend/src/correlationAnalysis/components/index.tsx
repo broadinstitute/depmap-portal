@@ -294,6 +294,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             </div>
             <div>
               <CorrelationsTable
+                isLoading={isLoading}
+                hasError={hasError}
                 data={filteredTableCorrelationAnalysisData}
                 compound={compoundName}
                 selectedRows={selectedRows}
@@ -348,10 +350,12 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                 }}
               />
             </div>
-            <p>
-              Showing {filteredTableCorrelationAnalysisData.length} of{" "}
-              {correlationAnalysisData.length} entries
-            </p>
+            {!isLoading && !hasError && (
+              <p>
+                Showing {filteredTableCorrelationAnalysisData.length} of{" "}
+                {correlationAnalysisData.length} entries
+              </p>
+            )}
           </div>
         </div>
       </div>
