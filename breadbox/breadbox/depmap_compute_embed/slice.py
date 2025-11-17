@@ -44,6 +44,8 @@ def slice_id_to_slice_query(slice_id: str) -> SliceQuery:
     """Take a legacy slice ID string and convert it to the newer slice query format."""
     dataset_id, dimension_identifier, slice_type = decode_slice_id(slice_id)
 
+    slice_query_identifier_type: Literal["feature_label", "sample_id", "feature_id"]
+
     # Slice query identifier types use different (more descriptive) terminology
     if slice_type == "label":
         slice_query_identifier_type = "feature_label"
@@ -59,6 +61,8 @@ def slice_id_to_slice_query(slice_id: str) -> SliceQuery:
             "breadbox/"
         ), "Breadbox datasets do not support lookups by entity_id"
         slice_query_identifier_type = "feature_id"
+    else:
+        raise NotImplementedError(f"Unknown slice type: {slice_type}")
 
     return SliceQuery(
         dataset_id=dataset_id,
