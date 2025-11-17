@@ -29,7 +29,7 @@ from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     get_best_compound_predictability,
     format_dep_dists,
-    format_dep_dist_caption,
+    format_dep_dist_warnings,
     format_top_corr_table,
     format_availability_tile,
 )
@@ -604,13 +604,19 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    # First, load ALL portal datasets containing the compound.
     all_matching_datasets = data_access.get_all_datasets_containing_compound(compound.id)
+    if len(all_matching_datasets) == 0:
+        return render_template("tiles/sensitivity.html", None, None)
+    
+    # This tile was originally configured to show multiple distributions, but
+    # was later updated to only display the top priority dataset
+    top_priority_dataset = all_matching_datasets[0]
+    dependency_distribution_info = format_dep_dists(compound, top_priority_dataset)
     
     return render_template(
         "tiles/sensitivity.html",
-        dep_dists=format_dep_dists(compound, all_matching_datasets),
-        dep_dist_caption=format_dep_dist_caption(all_matching_datasets),
+        dep_dists=[dependency_distribution_info], # TODO: simplify this as well to only show one datasaet
+        dep_dist_caption=format_dep_dist_warnings(top_priority_dataset),
     )
 
 

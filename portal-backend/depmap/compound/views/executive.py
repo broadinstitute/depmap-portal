@@ -94,18 +94,15 @@ data_availability_datasets = [
 ]
 
 
-def format_dep_dist_caption(all_matching_datasets: list[MatrixDataset]):
-    if all_matching_datasets == []:
-        return None
-
+def format_dep_dist_warnings(dataset: MatrixDataset):
     s = ""
-    if any(dataset.units == "log2(AUC)"for dataset in all_matching_datasets):
+    if dataset.units == "log2(AUC)":
         s += "Please note that log2(AUC) values depend on the dose range of the screen and are not comparable across different assays. "
 
-    if any((dataset.units == "AUC" for dataset in all_matching_datasets)):
+    if dataset.units == "AUC":
         s += "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays."
 
-    if any("CTRP_AUC" in dataset.given_id for dataset in all_matching_datasets):
+    if "CTRP_AUC" in dataset.given_id:
         s += " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1."
 
     if s != "":
@@ -193,39 +190,32 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
                 return ce_and_d
 
 
-def format_dep_dists(compound: Compound, all_matching_datasets: list[MatrixDataset]):
-    if all_matching_datasets == []:
-        return None
-    dep_dists = []
-    for dataset in all_matching_datasets:
-        slice_query = SliceQuery(
-            dataset_id=dataset.id,
-            identifier=compound.compound_id,
-            identifier_type="feature_id"
-        )
-        # TODO: this get_slice_data method does not for looking up records in a CE-indexed dataset by compound ID.
-        slice_vals = data_access.get_slice_data(slice_query)
-        filtered_values = [
-            x for x in slice_vals if not isnan(x)  # needed for num_lines, and probably the plot
-        ]
-        color = colors[dataset.given_id]
+def format_dep_dists(compound: Compound, dataset: MatrixDataset):
+    slice_query = SliceQuery(
+        dataset_id=dataset.id,
+        identifier=compound.compound_id,
+        identifier_type="feature_id"
+    )
+    # TODO: this get_slice_data method does not for looking up records in a CE-indexed dataset by compound ID.
+    slice_vals = data_access.get_slice_data(slice_query)
+    filtered_values = [
+        x for x in slice_vals if not isnan(x)  # needed for num_lines, and probably the plot
+    ]
+    color = colors[dataset.given_id]
 
-        svg = format_generic_distribution_plot(filtered_values, color)
+    svg = format_generic_distribution_plot(filtered_values, color)
 
-        units = dataset.units
+    units = dataset.units
 
-        dep_dists.append(
-            {
-                "svg": svg,
-                "title": "{} {}".format(
-                    compound.label, dataset.label
-                ),
-                "num_lines": len(filtered_values),
-                "units": units,
-                "color": color,
-            }
-        )
-    return dep_dists
+    return {
+            "svg": svg,
+            "title": "{} {}".format(
+                compound.label, dataset.label
+            ),
+            "num_lines": len(filtered_values),
+            "units": units,
+            "color": color,
+        }
 
 
 def format_enrichment_boxes(compound_experiment_and_datasets):
