@@ -15,18 +15,8 @@ from depmap.entity.views.executive import (
     format_enrichment_box_for_dataset,
     format_generic_distribution_plot,
 )
-from depmap.utilities import color_palette
+from depmap.utilities.color_palette import compound_color
 from depmap.enums import DependencyEnum, CompoundTileEnum
-
-colors = { # TODO: re-implement this mapping 
-    DependencyEnum.GDSC1_AUC: color_palette.gdsc_color,
-    DependencyEnum.GDSC2_AUC: color_palette.gdsc_color,
-    DependencyEnum.CTRP_AUC: color_palette.ctrp_color,
-    DependencyEnum.Repurposing_secondary_AUC: color_palette.repurp_color,
-    DependencyEnum.Rep1M: color_palette.rep1m_color,
-    DependencyEnum.Rep_all_single_pt: color_palette.rep_all_single_pt_color,
-    DependencyEnum.Prism_oncology_AUC: color_palette.prism_oncology_color,
-}
 from depmap.correlation.utils import get_all_correlations
 
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
@@ -189,7 +179,6 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
                 ce_and_d = [[ce, d]]
                 return ce_and_d
 
-
 def format_dep_dist(compound: Compound, dataset: MatrixDataset):
     slice_query = SliceQuery(
         dataset_id=dataset.id,
@@ -201,7 +190,7 @@ def format_dep_dist(compound: Compound, dataset: MatrixDataset):
     filtered_values = [
         x for x in slice_vals if not isnan(x)  # needed for num_lines, and probably the plot
     ]
-    color = colors[dataset.given_id]
+    color = compound_color
 
     svg = format_generic_distribution_plot(filtered_values, color)
 
@@ -225,7 +214,7 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
     for compound_experiment, dataset in compound_experiment_and_datasets:
         # compound dataset titles should not be colored
         enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment, dataset, colors[dataset.name], "default"
+            compound_experiment, dataset, compound_color, "default"
         )
         enrichment_box["title"] = "{} {}".format(
             compound_experiment.label, dataset.display_name
