@@ -28,7 +28,7 @@ from depmap.gene.views.executive import (
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     get_best_compound_predictability,
-    format_dep_dists,
+    format_dep_dist,
     format_dep_dist_warnings,
     format_top_corr_table,
     format_availability_tile,
@@ -611,11 +611,11 @@ def get_sensitivity_html(
     # This tile was originally configured to show multiple distributions, but
     # was later updated to only display the top priority dataset
     top_priority_dataset = all_matching_datasets[0]
-    dependency_distribution_info = format_dep_dists(compound, top_priority_dataset)
+    dependency_distribution_info = format_dep_dist(compound, top_priority_dataset)
     
     return render_template(
         "tiles/sensitivity.html",
-        dep_dists=[dependency_distribution_info], # TODO: simplify this as well to only show one datasaet
+        dep_dist=dependency_distribution_info, # TODO: simplify this as well to only show one datasaet
         dep_dist_caption=format_dep_dist_warnings(top_priority_dataset),
     )
 

@@ -3,7 +3,7 @@ from depmap.compound.models import Compound
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     format_availability_tile,
-    format_dep_dists,
+    format_dep_dist,
     format_enrichment_boxes,
     format_top_corr_table,
 )
@@ -27,7 +27,7 @@ from tests.factories import (
 from tests.utilities import interactive_test_utils
 
 
-def test_format_dep_dists(empty_db_mock_downloads):
+def test_format_dep_dist(empty_db_mock_downloads):
     """
     test that
         one element for every compound experiment, dataset
@@ -55,15 +55,12 @@ def test_format_dep_dists(empty_db_mock_downloads):
         data_access.get_matrix_dataset(dataset_1.name.name),
         data_access.get_matrix_dataset(dataset_2.name.name)
     ]
-    breakpoint()
 
-    dep_dists = format_dep_dists(compound_experiment_1.compound, all_matrix_datasets)
+    dep_dist = format_dep_dist(compound_experiment_1.compound, all_matrix_datasets)
 
-    assert len(dep_dists) == 4
-    for dep_dist in dep_dists:
-        assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
-        assert dep_dist["num_lines"] == 2
-        assert_is_svg(dep_dist["svg"])
+    assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
+    assert dep_dist["num_lines"] == 2
+    assert_is_svg(dep_dist["svg"])
 
 
 def test_format_enrichment_boxes(empty_db_mock_downloads):

@@ -190,7 +190,7 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
                 return ce_and_d
 
 
-def format_dep_dists(compound: Compound, dataset: MatrixDataset):
+def format_dep_dist(compound: Compound, dataset: MatrixDataset):
     slice_query = SliceQuery(
         dataset_id=dataset.id,
         identifier=compound.compound_id,
