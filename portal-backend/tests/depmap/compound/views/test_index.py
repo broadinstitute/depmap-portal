@@ -17,6 +17,7 @@ from depmap.compound.models import (
 )
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
+    get_corr_analysis_options_if_available,
     get_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
@@ -49,6 +50,16 @@ expected_oncref_dataset_w_priority = DRCCompoundDatasetWithNamesAndPriority(
     auc_dataset_priority=1,
     auc_dataset_display_name="PRISM OncRef",
     viability_dataset_display_name="PRISM OncRef",
+    log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
+)
+
+expected_corr_analysis_dataset = DRCCompoundDataset(
+    drc_dataset_label="Prism_oncology_per_curve",
+    viability_dataset_given_id="Prism_oncology_viability",
+    replicate_dataset="Prism_oncology_dose_replicate",
+    auc_dataset_given_id="Prism_oncology_AUC_collapsed",
+    display_name="PRISM OncRef",
+    log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
 )
 
 
@@ -593,6 +604,51 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
         assert len(matches) == 1
 
 
+def corr_analysis_config(request):
+    class TestFeatureFlags:
+        def show_compound_correlations(self):
+            return True
+
+    class TestVersionConfig(TestConfig):
+        ENABLED_FEATURES = TestFeatureFlags
+
+    return TestVersionConfig
+
+
+@override(config=corr_analysis_config)
+def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
+    with app.app_context():
+
+        def mock_valid_row(a, b):
+            return True
+
+        def mock_has_config(dataset_id):
+            return False
+
+        def mock_is_breadbox_id(dataset_id):
+            return True
+
+        def mock_get_dataset_label(dataset):
+            return "PRISM OncRef"
+
+        monkeypatch.setattr(breadbox_dao, "valid_row", mock_valid_row)
+        monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
+        monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
+        monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
+
+        # TODO: Update when more datasets are available and the legacy db has been
+        # updated with the processed versions of older drug datasets.
+        compound = CompoundFactory()
+        result = get_corr_analysis_options_if_available(
+            drc_dataset_attribute_to_match="log_auc_dataset_given_id",
+            given_id="PRISMOncologyReferenceLog2AUCMatrix",
+            compound_label=compound.label,
+        )
+        assert len(result) >= 1
+        matches = [x for x in result if x == expected_corr_analysis_dataset]
+        assert len(matches) == 1
+
+
 def config(request):
     class TestFeatureFlags:
         def new_compound_page_tabs(self):
@@ -659,6 +715,7 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
                 auc_dataset_priority=1,
                 auc_dataset_display_name="dataset_label",
                 viability_dataset_display_name="dataset_label",
+                log_auc_dataset_given_id=dataset.log_auc_dataset_given_id,
             )
             for dataset in drc_compound_datasets
         ]
@@ -680,5 +737,17 @@ def test_format_heatmap_options_new_tab_if_available_false(app):
         compound = CompoundFactory()
         result = get_heatmap_options_new_tab_if_available(
             compound.label, compound.compound_id
+        )
+        assert result == []
+
+
+def test_get_corr_analysis_options_if_available_false(app):
+    with app.app_context():
+        app.config["ENV_TYPE"] = "public"
+        compound = CompoundFactory()
+        result = get_corr_analysis_options_if_available(
+            drc_dataset_attribute_to_match="log_auc_dataset_given_id",
+            given_id="PRISMOncologyReferenceLog2AUCMatrix",
+            compound_label=compound.label,
         )
         assert result == []

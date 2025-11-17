@@ -12,24 +12,19 @@ import {
   SortedCorrelations,
   VolcanoDataForCorrelatedDataset,
 } from "../models/CorrelationPlot";
+import { DRCDatasetOptions } from "@depmap/types";
+import { useState } from "react";
 
 interface CorrelationAnalysisProps {
+  datasetOptions: DRCDatasetOptions[];
   compoundId: string;
   compoundName: string;
 }
 
-const datasetMap: Record<string, { auc: string; viability: string }> = {
-  OncRef: {
-    auc: "PRISMOncologyReferenceLog2AUCMatrix",
-    viability: "Prism_oncology_viability",
-  },
-  // TBD: Add more after correlations are generated
-};
-
 export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
-  const { compoundId, compoundName } = props;
-  const [selectedDataset, setSelectedDataset] = React.useState<string>(
-    "OncRef"
+  const { compoundId, compoundName, datasetOptions } = props;
+  const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
+    datasetOptions[0]
   );
 
   const [
@@ -55,12 +50,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     doseColors,
     isLoading,
     hasError,
-  } = useCorrelationAnalysisData(
-    selectedDataset,
-    compoundId,
-    compoundName,
-    datasetMap[selectedDataset]
-  );
+  } = useCorrelationAnalysisData(selectedDataset, compoundId, compoundName);
 
   React.useEffect(() => {
     // if no filter applied, show all correlation analysis data
@@ -247,8 +237,14 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     <div className={styles.tabGrid}>
       <div className={styles.tabFilters}>
         <CorrelationFilters
-          datasets={Object.keys(datasetMap)}
-          onChangeDataset={(dataset: string) => setSelectedDataset(dataset)}
+          datasets={datasetOptions.map((d) => d.display_name)}
+          onChangeDataset={(displayName: string) =>
+            setSelectedDataset(
+              datasetOptions.find(
+                (opt: DRCDatasetOptions) => opt.display_name === displayName
+              )!
+            )
+          }
           correlatedDatasets={correlatedDatasets}
           onChangeCorrelatedDatasets={(newCorrelatedDatasets: string[]) =>
             setSelectedCorrelatedDatasets(
