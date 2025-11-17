@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { DataExplorerContextV2, DimensionType } from "@depmap/types";
-import { isV2Context } from "../../utils/context";
 import renderConditionally from "../../utils/render-conditionally";
 import PlotConfigSelect from "../PlotConfigSelect";
 import useGlobalEvents from "./useGlobalEvents";
@@ -39,10 +38,6 @@ function ContextSelectorV2({
   includeAllInOptions = false,
   hasError = false,
 }: Props) {
-  if (value && !isV2Context(value)) {
-    throw new Error("ContextSelectorV2 does not support legacy contexts");
-  }
-
   const [isLoadingContext, setIsLoadingContext] = useState(false);
 
   const {
