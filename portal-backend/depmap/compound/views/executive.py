@@ -180,19 +180,13 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
                 return ce_and_d
 
 def format_dep_dist(compound: Compound, dataset: MatrixDataset):
-    slice_query = SliceQuery(
-        dataset_id=dataset.id,
-        identifier=compound.compound_id,
-        identifier_type="feature_id"
-    )
-    # TODO: this get_slice_data method does not for looking up records in a CE-indexed dataset by compound ID.
-    slice_vals = data_access.get_slice_data(slice_query)
-    filtered_values = [
-        x for x in slice_vals if not isnan(x)  # needed for num_lines, and probably the plot
-    ]
+    df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset.id)
+    feature_data = df.loc[compound.label]
+    filtered_feature_data = [x for x in feature_data if not isnan(x)]
+    
     color = compound_color
 
-    svg = format_generic_distribution_plot(filtered_values, color)
+    svg = format_generic_distribution_plot(filtered_feature_data, color)
 
     units = dataset.units
 
@@ -201,7 +195,7 @@ def format_dep_dist(compound: Compound, dataset: MatrixDataset):
             "title": "{} {}".format(
                 compound.label, dataset.label
             ),
-            "num_lines": len(filtered_values),
+            "num_lines": len(filtered_feature_data),
             "units": units,
             "color": color,
         }
