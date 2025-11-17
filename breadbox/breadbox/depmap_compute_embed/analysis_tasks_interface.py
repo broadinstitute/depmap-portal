@@ -25,7 +25,12 @@ class CustomAnalysisCallbacks(Protocol):
     ) -> str:
         ...
 
-    def get_dataset_df(self, features: List[int]) -> np.array:
+    def get_dataset_df(self, feature_matrix_indices: List[int]) -> np.ndarray:
+        ...
+
+    def update_message(
+        self, message=None, start_time=None, max_time: int = 45, percent_complete=None
+    ):
         ...
 
 
@@ -91,14 +96,14 @@ def _run_lm(
     value_query_vector: Union[List[int], List[float]],
     features_df: FeaturesExtDataFrame,
     vector_is_dependent: bool,
-) -> CustomAnalysisResult:
+):
     assert vector_is_dependent is not None
 
     # only supporting AnalysisType.two_class
 
     update_message("Running two class comparison...")
 
-    dataset = callbacks.get_dataset_df(features_df.index)
+    dataset = callbacks.get_dataset_df(features_df.index.to_list())
 
     df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
     df = df[
@@ -142,11 +147,13 @@ def _run_lm(
         "p.val",
         "Index",
     ]
+    assert isinstance(df, pd.DataFrame)
     assert list(df.columns) == expected_columns, "columns not expected: {}".format(
         df.columns
     )
 
     df = df[["Index", "PosteriorMean", "p.val", "qvalue",]]
+    assert isinstance(df, pd.DataFrame)
     df = df.rename(
         columns={"PosteriorMean": "EffectSize", "p.val": "PValue", "qvalue": "QValue",},
     )
@@ -200,7 +207,6 @@ def write_custom_analysis_table(df, result_task_dir, effect_size_column):
 
 
 def _local_run_pearson(
-    update_message: Callable[[str], None],
     callbacks: CustomAnalysisCallbacks,
     value_query_vector: Union[List[int], List[float]],
     features_df: FeaturesExtDataFrame,
@@ -209,7 +215,7 @@ def _local_run_pearson(
 
     assert np.isnan(value_query_vector).sum() == 0
 
-    update_message("Running Pearson correlation...")
+    callbacks.update_message("Running Pearson correlation...")
 
     def progress_callback(fraction_complete):
         # assuming 10% of time is before computing correlations
@@ -219,7 +225,7 @@ def _local_run_pearson(
                 "fraction_complete should be between 0 and 1 but was %f",
                 fraction_complete,
             )
-        update_message(
+        callbacks.update_message(
             "Running Pearson correlation...",
             percent_complete=((fraction_complete * 0.8 + 0.1) * 100),
         )
@@ -270,7 +276,6 @@ def _make_result_task_directory(result_dir, task_id):
 
 def run_custom_analysis(
     task_id: str,
-    update_message: Callable[[str], None],
     analysis_type: str,
     depmap_model_ids: List[str],
     value_query_vector: Union[List[int], List[float]],
@@ -288,6 +293,8 @@ def run_custom_analysis(
         - lm and pearson will both run with only 2 points. pearson will just return cor 1, and p val and q val NaN
         - if there is only 1 point (e.g. due to NaNs), the code will leave out the entity. lmstats and pearson each individually drop it before the merge
     """
+    update_message = callbacks.update_message
+
     update_message("Loading...")
     assert isinstance(features_df, pd.DataFrame)
 
@@ -307,11 +314,7 @@ def run_custom_analysis(
 
     if analysis_type == AnalysisType.pearson:
         df = _local_run_pearson(
-            update_message,
-            callbacks,
-            value_query_vector,
-            features_df,
-            features_per_batch,
+            callbacks, value_query_vector, features_df, features_per_batch,
         )
         effect_size_column = "Cor"
     else:

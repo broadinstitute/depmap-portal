@@ -315,11 +315,11 @@ def get_feature_and_sample_indices_per_merged_dataset(
     feature_indices_per_dataset: List[List[int]] = []
     datasets: List[Dataset] = []
     for dataset_id in dataset_ids:
-        _, feature_indices, dataset = get_features_info_and_dataset(
+        feature_indices, dataset = get_features_info_and_dataset(
             db, user, dataset_id, feature_labels
         )
 
-        feature_indices_per_dataset.append(feature_indices)
+        feature_indices_per_dataset.append(feature_indices.index.to_list())
         datasets.append(dataset)
 
     sample_indices: List[int] = []

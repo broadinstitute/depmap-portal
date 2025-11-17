@@ -64,7 +64,10 @@ def get_dataset_filter_clauses(db, user):
     groups = get_groups_with_visible_contents(db, user)  # TODO: update
     group_ids = [group.id for group in groups]
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
+
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
 
@@ -99,7 +102,9 @@ def get_datasets(
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
 
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
@@ -478,11 +483,10 @@ def get_matrix_dataset_sample_df(
 
     dataset_features = pd.DataFrame(
         query.with_entities(DatasetSample.given_id, DatasetSample.index).all(),
-        columns=["given_id", "index"],
+        columns=pd.Index(["given_id", "index"]),
     )
 
-    dataset_features.index = dataset_features["index"]
-    dataset_features.drop(columns=["index"], inplace=True)
+    dataset_features.set_index(["index"], drop=True, inplace=True)
 
     return IndexedGivenIDDataFrame(dataset_features)
 
@@ -499,11 +503,10 @@ def get_matrix_dataset_features_df(
 
     dataset_features = pd.DataFrame(
         query.with_entities(DatasetFeature.given_id, DatasetFeature.index).all(),
-        columns=["given_id", "index"],
+        columns=pd.Index(["given_id", "index"]),
     )
 
-    dataset_features.index = dataset_features["index"]
-    dataset_features.drop(columns=["index"], inplace=True)
+    dataset_features.set_index(["index"], drop=True, inplace=True)
 
     return IndexedGivenIDDataFrame(dataset_features)
 

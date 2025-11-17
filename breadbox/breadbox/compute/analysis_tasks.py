@@ -1,13 +1,12 @@
 import tempfile
 import time
-from datetime import datetime
 from typing import Any, List, Optional, Tuple, Union
 from uuid import uuid4
 import dataclasses
 import warnings
-
+from typing import cast, Sequence
 import pandas as pd
-from mypy.server.aststrip import contextmanager
+from contextlib import contextmanager
 
 from breadbox.utils.debug_log import print_span_stats
 
@@ -179,8 +178,9 @@ def _get_filtered_query_feature(
         query = pd.Series(value_query_vector, index=model_query_vector)
         common_models = dataset_sample_ids_set.intersection(query.index)
         common_models_series = dataset_samples_df.given_id[
-            dataset_samples_df.given_id.isin(common_models)
+            dataset_samples_df.given_id.isin(cast(Sequence, common_models))
         ]
+        assert isinstance(common_models_series, pd.Series)
         common_models_series.sort_index(inplace=True)
         query = query.loc[common_models_series.to_list()]
 
@@ -245,56 +245,72 @@ def get_features_info_and_dataset(
     # about that -- but we are addressing an issue at the moment and I want to mimize the impact of
     # changes right now. So, we'll sort feature_indices and reorder result_features to match
 
-    final_features_df = FeaturesExtDataFrame(dataset_features_df.sort_values("index"))
+    assert isinstance(dataset_features_df, pd.DataFrame)
+    final_features_df = FeaturesExtDataFrame(dataset_features_df.sort_values(["index"]))
     return final_features_df, dataset
 
 
-def _get_update_message_callback(task):
-    last_state_update = {
-        "start_time": time.time(),
-        "message": "Beginning calculations...",
-    }
+class UpdateMessageCallback:
+    def __init__(self, task):
+        self.task = task
+        self.last_state_update = {
+            "start_time": time.time(),
+            "message": "Beginning calculations...",
+        }
 
     def update_message(
-        message=None, start_time=None, max_time: int = 45, percent_complete=None
+        self, message=None, start_time=None, max_time: int = 45, percent_complete=None
     ):
         """
         :start_time: the presence of this is used to determine whether we show a progress presented
         :max_time: used to calculate to the end of a fake gloating bar
         """
         # remember the value used for the last update_message so that we don't have to pass all the parameters every time.
-        nonlocal last_state_update
 
         if message is not None:
-            last_state_update["message"] = message
+            self.last_state_update["message"] = message
         if start_time is not None:
-            last_state_update["start_time"] = start_time
-        last_state_update["max_time"] = max_time
-        last_state_update["percent_complete"] = percent_complete
+            self.last_state_update["start_time"] = start_time
+        self.last_state_update["max_time"] = max_time
+        self.last_state_update["percent_complete"] = percent_complete
 
-        if not task.request.called_directly:
-            task.update_state(
-                state="PROGRESS", meta=last_state_update,
+        if not self.task.request.called_directly:
+            self.task.update_state(
+                state="PROGRESS", meta=self.last_state_update,
             )
-
-    return update_message
 
 
 class CustomAnalysisCallbacksImpl:
     def __init__(
-        self, user, dataset, sample_matrix_indices: List[int], filestore_location: str
+        self,
+        user,
+        dataset,
+        sample_matrix_indices: List[int],
+        filestore_location: str,
+        update_message_callback: UpdateMessageCallback,
     ):
         self.user = user
         self.sample_matrix_indices = sample_matrix_indices
         self.dataset = dataset
         self.filestore_location = filestore_location
+        self.update_message_callback = update_message_callback
+
+    def update_message(
+        self, message=None, start_time=None, max_time: int = 45, percent_complete=None
+    ):
+        self.update_message_callback.update_message(
+            message=message,
+            start_time=start_time,
+            max_time=max_time,
+            percent_complete=percent_complete,
+        )
 
     def create_cell_line_group(
         self, model_ids: List[str], use_feature_ids: bool
     ) -> str:
         return create_cell_line_group(self.user, model_ids, use_feature_ids)
 
-    def get_dataset_df(self, feature_matrix_indices: List[int]) -> np.array:
+    def get_dataset_df(self, feature_matrix_indices: List[int]) -> np.ndarray:
         assert is_increasing(
             feature_matrix_indices
         ), "Feature matrix indices out of order"
@@ -308,12 +324,12 @@ class CustomAnalysisCallbacksImpl:
             self.filestore_location,
             keep_nans=True,
         )
-        m = m.values
-        assert m.dtype == np.dtype("float64")
-        return m
+        m_values = m.values
+        assert m_values.dtype == np.dtype("float64")
+        return m_values
 
 
-def is_increasing(values):
+def is_increasing(values: Sequence):
     prev = None
     for value in values:
         if prev is not None:
@@ -348,6 +364,8 @@ def run_custom_analysis(
 ):
     import memray
 
+    update_message_callback = UpdateMessageCallback(self)
+
     with no_op_ctx():
         # with memray.Tracker(
         #     f"memray-{datetime.now().isoformat(timespec='seconds').replace(':', '-')}.bin"
@@ -358,8 +376,7 @@ def run_custom_analysis(
             else:
                 task_id = self.request.id
 
-            update_message = _get_update_message_callback(self)
-            update_message("Fetching data")
+            update_message_callback.update_message("Fetching data")
 
             with db_context(user) as db:
                 with print_span_stats("get_features_info_and_dataset"):
@@ -439,13 +456,16 @@ def run_custom_analysis(
                 )
 
                 callbacks = CustomAnalysisCallbacksImpl(
-                    user, dataset, sample_matrix_indices, filestore_location
+                    user,
+                    dataset,
+                    sample_matrix_indices.to_list(),
+                    filestore_location,
+                    update_message_callback,
                 )
 
                 with print_span_stats("analysis_tasks_interface.run_custom_analysis"):
                     result = analysis_tasks_interface.run_custom_analysis(
                         task_id,
-                        update_message,
                         analysis_type=analysis_type,
                         depmap_model_ids=filtered_cell_line_list,
                         value_query_vector=filtered_query_values_list,

@@ -17,26 +17,20 @@ def lin_associations_wrapper(features, profile, profile_is_dependent):
     )
     features = pd.DataFrame(
         data=features,
-        columns=["COL_" + str(i) for i in range(features.shape[1])],
-        index=["ROW_" + str(i) for i in range(len(features))],
+        columns=pd.Index(["COL_" + str(i) for i in range(features.shape[1])]),
+        index=pd.Index(["ROW_" + str(i) for i in range(len(features))]),
     )
 
     full_output = lin_associations_with_ind_flag(
         features, profile, A_is_independent=profile_is_dependent
     )
     df = full_output
-    if profile_is_dependent:
-        valid_var_cols = features.std(axis=0) > 0.001
-        outmask = pd.Series(data=df["mask"].to_numpy(), index=valid_var_cols.index)
-        outmask = outmask & valid_var_cols
-        df = df[pd.Index(outmask)]
-        df["Index"] = df.index
-    else:
-        valid_var_cols = features.std(axis=0) > 0.001
-        outmask = pd.Series(data=df["mask"].to_numpy(), index=valid_var_cols.index)
-        outmask = outmask & valid_var_cols
-        df = df[pd.Index(outmask)]
-        df["Index"] = df.index
+    valid_var_cols = features.std(axis=0) > 0.001
+    assert isinstance(valid_var_cols, pd.DataFrame)
+    outmask = pd.Series(data=df["mask"].to_numpy(), index=valid_var_cols.index)
+    outmask = outmask & valid_var_cols
+    df = df[pd.Index(outmask)]
+    df["Index"] = df.index
     df["dep.var"] = np.nan
     df["ind.var"] = np.nan
     return df
@@ -57,12 +51,11 @@ def lin_associations_with_ind_flag(A, B, A_is_independent):
     return out
 
 
-def robust_linear_model(X, y, W=None):
+def robust_linear_model(X, y):
     """
     Uses "robust" linear modeling to arrive at a moderated p-value compared to the default
     :param X: NumPy array. Observations of independent variable. nxm (m=number of features)
     :param y: NumPy array. Observations of dependent variable. nx1
-    :param W: NumPy array. Confounders. nxp (p=number of confounders)
     :return: Dict with output statistics:
         betahat: estimated linear coefficient controlled for W.
         sebetahat: standard error for the estimate of beta.
@@ -82,16 +75,6 @@ def robust_linear_model(X, y, W=None):
     assert type(y) == np.ndarray, "y must be a numpy array"
     X = ma.array(X, mask=~np.isfinite(X))
     y = ma.array(y, mask=~np.isfinite(y))
-    if W:
-        assert type(W) == np.ndarray, "W must be a numpy array"
-        assert np.isfinite(W.to_numpy()).all(), "W cannot have any null values"
-        # add intercept column
-        W = np.hstack((np.ones(W.shape[0], 1), W))
-        # Frisch-Waugh-Lovell matrix
-        H = np.eye(W.shape[0]) - W.dot(np.linalg.solve(W.T.dot(W), W.T))
-        X = H.dot(X)
-        y = H.dot(y)
-        d = W.shape[1] + 1
 
     # define S and related statistics
     assert (len(y.shape) == 1 or len(X.shape) == 1) or (
