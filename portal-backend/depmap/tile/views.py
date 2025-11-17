@@ -347,13 +347,14 @@ def get_enrichment_html(
     entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
     div_id = str(uuid.uuid4())
-    entity_label = entity.label
+    feature_label = entity.label
+    feature_type = entity.type
 
     return RenderedTile(
         f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
         f"""(
         function() {{
-            DepMap.initEnrichmentTile("{div_id}", "{entity_label}", "{entity.type}");
+            DepMap.initEnrichmentTile("{div_id}", "{feature_label}", "{feature_type}");
         }})""",
     )
 

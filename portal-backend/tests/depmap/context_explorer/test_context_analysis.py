@@ -1,23 +1,26 @@
 from dataclasses import dataclass
 import dataclasses
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.cell_line.views import get_subtype_tree_info
-from depmap.context.models_new import SubtypeContext, TreeType
+from depmap.compound.models import CompoundDoseReplicate, CompoundExperiment
+from depmap.context.models_new import TreeType
 from depmap.context_explorer import box_plot_utils
 from depmap.context_explorer.api import _get_analysis_data_table
+from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.partials.matrix.models import CellLineSeries
 import pytest
 from typing import List, Literal, Optional
 from depmap.context_explorer.dose_curve_utils import get_context_dose_curves
 from depmap.context_explorer.utils import (
-    get_entity_id_from_entity_full_label,
+    get_feature_id_from_full_label,
     get_full_row_of_values_and_depmap_ids,
-    _get_compound_experiment_id_from_entity_label,
 )
-from depmap.context_explorer.box_plot_utils import get_organized_contexts
 from depmap.dataset.models import DependencyDataset
 import numpy as np
 from tests.factories import (
     CompoundExperimentFactory,
+    CompoundFactory,
     ContextAnalysisFactory,
     SubtypeContextFactory,
     DependencyDatasetFactory,
@@ -92,6 +95,8 @@ def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps:
         )
         dose_rep_entities.append(dose_3)
 
+    # The legacy DependencyDatasetFactory is still used here, because dose replicates and dose
+    # response curves have not yet been migrated to Breadbox.
     viability_df = pd.DataFrame(
         {model.cell_line_name: [10, 20, 30, 10, 20, 30] for model in models},
         index=["dose_1", "dose_2", "dose_3", "dose_4", "dose_5", "dose_6"],
@@ -110,7 +115,9 @@ def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps:
     for compound_exp in compound_exps:
         curves = [
             DoseResponseCurveFactory(
-                compound_exp=compound_exp, cell_line=model.cell_line
+                compound_exp=compound_exp,
+                cell_line=model.cell_line,
+                drc_dataset_label="Prism_oncology_per_curve",
             )
             for model in models
         ]
@@ -118,16 +125,17 @@ def _setup_dose_response_curves(models: List[DepmapModelFactory], compound_exps:
 
 def _setup_factories(
     empty_db_mock_downloads,
-    dataset_name: str,
-    gene_a: Optional[GeneFactory] = None,
-    gene_b: Optional[GeneFactory] = None,
-    compound_a: Optional[CompoundExperimentFactory] = None,
-    compound_b: Optional[CompoundExperimentFactory] = None,
-    entity_type: Literal["gene", "compound"] = "gene",
+    dataset_given_id: str,
+    monkeypatch,
+    gene_a: GeneFactory,
+    gene_b: GeneFactory,
+    compound_a: CompoundFactory,
+    compound_b: CompoundFactory,
+    compound_exp_a: CompoundExperimentFactory,
+    compound_exp_b: CompoundExperimentFactory,
+    feature_type: Literal["gene", "compound"] = "gene",
 ):
-    assert gene_a and gene_b if entity_type == "gene" else compound_a and compound_b
-
-    use_genes = entity_type == "gene"
+    use_genes = feature_type == "gene"
 
     bone_es_cell_lines = [
         DepmapModelFactory(
@@ -322,29 +330,20 @@ def _setup_factories(
         + bone_insig_child_cell_lines
     )
 
-    matrix = MatrixFactory(
-        entities=[
-            gene_a if use_genes else compound_a,
-            gene_b if use_genes else compound_b,
-        ],
-        data=np.array([[num for num in range(31)], [num for num in range(31)]]),
-        cell_lines=matrix_cell_lines,
-        using_depmap_model_table=True,
-    )
+    def mock_get_row_of_values(dataset_id, feature, feature_identifier="id"):
+        data_list = [num for num in range(31)]
+        index_list = [cell_line.model_id for cell_line in matrix_cell_lines]
+        data_series = pd.Series(data=data_list, index=index_list)
+        return CellLineSeries(data_series)
 
-    dataset = DependencyDatasetFactory(
-        display_name="test display name",
-        name=DependencyDataset.DependencyEnum(dataset_name),
-        matrix=matrix,
-        priority=1,
-    )
+    monkeypatch.setattr(data_access, "get_row_of_values", mock_get_row_of_values)
 
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=bone_ES_context,
         subtype_code="ES",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_pval=1.0,
         mean_in=6,
         mean_out=0.5,
@@ -354,11 +353,11 @@ def _setup_factories(
     )
 
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=myeloid_context,
         subtype_code="MYELOID",
         out_group="Other Heme",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_pval=1,
         mean_in=2,
         mean_out=3,
@@ -366,11 +365,11 @@ def _setup_factories(
     )
 
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=lung_context,
         subtype_code="LUNG",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_pval=1.0,
         mean_in=6,
         mean_out=0.5,
@@ -380,11 +379,11 @@ def _setup_factories(
     )
 
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=bone_OS_context,
         subtype_code="OS",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_pval=1.0,
         mean_in=6,
         mean_out=0.5,
@@ -393,11 +392,11 @@ def _setup_factories(
         frac_dep_in=0 if use_genes else None,
     )
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=bone_ES_context,
         subtype_code="ES",
         out_group="BONE",  # outgroup encoded as BONE. Technically, "Other BONE"
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_pval=3.0,
         mean_in=0.1,
         mean_out=8,
@@ -409,11 +408,11 @@ def _setup_factories(
     # the Other <Lineage> plot from showing up if the level_0 itself was significant, but 1
     #  or more of its children were not.
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=insig_bone_child_context,
         subtype_code="INSIG_BONE_CHILD",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_pval=3.0,
         mean_in=0.1,
         mean_out=8,
@@ -423,32 +422,32 @@ def _setup_factories(
     )
     # never want this to be signficant
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=myeloid_context,
         subtype_code="MYELOID",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_qval=0,
         effect_size=1000,
         frac_dep_in=1000 if use_genes else None,
     )
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=aml_context,
         subtype_code="AML",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_qval=0.01,
         effect_size=0,
         frac_dep_in=0 if use_genes else None,
     )
 
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=CHILD_OF_MYELOID_context,
         subtype_code="CHILD_OF_MYELOID",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_qval=wide_filters.t_qval,
         effect_size=narrow_filters.effect_size,
         frac_dep_in=narrow_filters.frac_dep_in if use_genes else None,
@@ -456,39 +455,43 @@ def _setup_factories(
 
     # Added so we get 1 result for the Others - heme boxplot
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=lymph_context,
         subtype_code="LYMPH",
         out_group="All Others",
-        entity=gene_a if use_genes else compound_a,
+        feature_id=gene_a.entrez_id if use_genes else compound_a.compound_id,
         t_qval=90,
         effect_size=90,
         frac_dep_in=90 if use_genes else None,
     )
 
-    if dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC.name:
+    if (
+        dataset_given_id
+        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
+    ):
         _setup_dose_response_curves(
-            models=matrix_cell_lines, compound_exps=[compound_a, compound_b]
+            models=matrix_cell_lines, compound_exps=[compound_exp_a, compound_exp_b]
         )
 
     empty_db_mock_downloads.session.flush()
 
 
-def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type, dataset_name):
+def _setup_entities_and_dataset_id(
+    empty_db_mock_downloads, feature_type, dataset_given_id, monkeypatch
+):
     gene_a = GeneFactory(label="gene_0 (0)", entrez_id=0)
     gene_b = GeneFactory(label="gene_1 (1)", entrez_id=1)
 
     xref_type = "BRD"
     xref = "PRC-003465060-210-01"
     xref_full = xref_type + ":" + xref
-    compound_a = CompoundExperimentFactory(
-        xref_type=xref_type, xref=xref, label=xref_full
-    )
+    compound_a = CompoundFactory(compound_id=xref_full)
     xref_b = "PRC-003538266-583-86"
     xref_full_b = xref_type + ":" + xref_b
-    compound_b = CompoundExperimentFactory(
-        xref_type=xref_type, xref=xref_b, label=xref_full_b
-    )
+    compound_b = CompoundFactory(compound_id=xref_full_b)
+
+    compound_exp_a = CompoundExperimentFactory(compound=compound_a)
+    compound_exp_b = CompoundExperimentFactory(compound=compound_b)
 
     _setup_factories(
         empty_db_mock_downloads=empty_db_mock_downloads,
@@ -496,36 +499,45 @@ def _setup_entities_and_dataset_id(empty_db_mock_downloads, entity_type, dataset
         gene_b=gene_b,
         compound_a=compound_a,
         compound_b=compound_b,
-        entity_type=entity_type,
-        dataset_name=dataset_name,
+        compound_exp_a=compound_exp_a,
+        compound_exp_b=compound_exp_b,
+        feature_type=feature_type,
+        dataset_given_id=dataset_given_id,
+        monkeypatch=monkeypatch,
     )
 
     return gene_a, gene_b, compound_a, compound_b
 
 
 @pytest.mark.parametrize(
-    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
+    "dataset_given_id",
+    [
+        "Chronos_Combined",
+        "REPURPOSING_primary_collapsed",
+        "PRISMOncologyReferenceLog2AUCMatrix",
+    ],
 )
-def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
-    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
+def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):
+    use_genes = dataset_given_id == ContextExplorerDatasets.Chronos_Combined.name
 
-    entity_type = "gene" if use_genes else "compound"
+    feature_type = "gene" if use_genes else "compound"
 
     (gene_a, gene_b, compound_a, compound_b) = _setup_entities_and_dataset_id(
-        empty_db_mock_downloads, entity_type, dataset_name
+        empty_db_mock_downloads, feature_type, dataset_given_id, monkeypatch
     )
 
     ew_vs_all = _get_analysis_data_table(
         in_group="ES",
         out_group_type="All Others",
-        entity_type=entity_type,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        dataset_given_id=dataset_given_id,
     )
 
     # Make sure the expected columns are present.
-    if entity_type == "gene":
+    if feature_type == "gene":
         assert list(ew_vs_all.keys()) == [
-            "entity",
+            "feature_id",
+            "feature",
             "t_pval",
             "mean_in",
             "mean_out",
@@ -543,7 +555,8 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
         ]
     else:
         assert list(ew_vs_all.keys()) == [
-            "entity",
+            "feature_id",
+            "feature",
             "t_pval",
             "mean_in",
             "mean_out",
@@ -562,7 +575,7 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
             "label",
         ]
 
-    assert ew_vs_all["entity"] == [
+    assert ew_vs_all["feature"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
     ]
     assert ew_vs_all["t_pval"] == [1.0]
@@ -575,11 +588,11 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     ew_vs_lineage = _get_analysis_data_table(
         in_group="ES",
         out_group_type="BONE",
-        entity_type=entity_type,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        dataset_given_id=dataset_given_id,
     )
 
-    assert ew_vs_lineage["entity"] == [
+    assert ew_vs_lineage["feature"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
     ]
     assert ew_vs_lineage["t_pval"] == [3.0]
@@ -592,11 +605,11 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     myeloid_vs_other_heme = _get_analysis_data_table(
         in_group="MYELOID",
         out_group_type="Other Heme",
-        entity_type=entity_type,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        dataset_given_id=dataset_given_id,
     )
 
-    assert myeloid_vs_other_heme["entity"] == [
+    assert myeloid_vs_other_heme["feature"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
     ]
     assert myeloid_vs_other_heme["t_pval"] == [1]
@@ -609,8 +622,8 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     empty_data = _get_analysis_data_table(
         in_group="Skin",
         out_group_type="All Others",
-        entity_type=entity_type,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        dataset_given_id=dataset_given_id,
     )
 
     assert empty_data == None
@@ -618,28 +631,28 @@ def test_get_anaysis_data(empty_db_mock_downloads, dataset_name):
     all_in_group = _get_analysis_data_table(
         in_group="All",
         out_group_type="All Others",
-        entity_type=entity_type,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        dataset_given_id=dataset_given_id,
     )
 
     assert all_in_group == None
 
 
-def test_get_dose_curves(empty_db_mock_downloads):
-    dataset_name = "Prism_oncology_AUC"
-    entity_type = "compound"
+def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
+    dataset_given_id = "PRISMOncologyReferenceLog2AUCMatrix"
+    feature_type = "compound"
 
     (_, _, compound_a, compound_b,) = _setup_entities_and_dataset_id(
-        empty_db_mock_downloads, entity_type, dataset_name
+        empty_db_mock_downloads, feature_type, dataset_given_id, monkeypatch
     )
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_label = compound_a.label
+    feature_id = compound_a.compound_id
 
     dose_curve_info = get_context_dose_curves(
-        dataset_name=dataset_name,
-        entity_full_label=selected_entity_label,
+        dataset_given_id=dataset_given_id,
+        feature_id=feature_id,
         subtype_code="ES",
         level=1,
         out_group_type="All Others",
@@ -647,16 +660,12 @@ def test_get_dose_curves(empty_db_mock_downloads):
     )
 
     assert list(dose_curve_info.keys()) == [
-        "dataset",
-        "compound_experiment",
+        "compound",
         "replicate_dataset_name",
         "dose_curve_info",
     ]
-    assert dose_curve_info["dataset"].name.value == dataset_name
-    assert dose_curve_info["compound_experiment"].type == "compound_experiment"
-    assert dose_curve_info["compound_experiment"].xref == "PRC-003465060-210-01"
-    assert dose_curve_info["compound_experiment"].xref_type == "BRD"
-    assert dose_curve_info["compound_experiment"].label == "BRD:PRC-003465060-210-01"
+
+    assert dose_curve_info["compound"].compound_id == "BRD:PRC-003465060-210-01"
 
     # If this breaks, double check that nothing changed with the id or displayName. In the past
     # this assertion broke because both "id" and "displanName" were being filled with the model_id.
@@ -918,8 +927,8 @@ def test_get_dose_curves(empty_db_mock_downloads):
     }
     # Test other bone outgroup
     dose_curve_info = get_context_dose_curves(
-        dataset_name=dataset_name,
-        entity_full_label=selected_entity_label,
+        dataset_given_id=dataset_given_id,
+        feature_id=feature_id,
         subtype_code="ES",
         level=1,
         out_group_type="BONE",
@@ -1056,28 +1065,33 @@ def test_get_dose_curves(empty_db_mock_downloads):
 
 
 @pytest.mark.parametrize(
-    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
+    "dataset_given_id",
+    [
+        "Chronos_Combined",
+        "REPURPOSING_primary_collapsed",
+        "PRISMOncologyReferenceLog2AUCMatrix",
+    ],
 )
-def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_name):
-    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
+def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeypatch):
+    use_genes = dataset_given_id == ContextExplorerDatasets.Chronos_Combined.name
 
-    entity_type = "gene" if use_genes else "compound"
+    feature_type = "gene" if use_genes else "compound"
 
     (gene_a, gene_b, compound_a, compound_b,) = _setup_entities_and_dataset_id(
-        empty_db_mock_downloads, entity_type, dataset_name
+        empty_db_mock_downloads, feature_type, dataset_given_id, monkeypatch
     )
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_label = gene_a.label if use_genes else compound_a.label
+    feature_id = str(gene_a.entrez_id) if use_genes else compound_a.compound_id
 
     (entity_full_row_of_values) = get_full_row_of_values_and_depmap_ids(
-        dataset_name=dataset_name, label=selected_entity_label
+        dataset_given_id=dataset_given_id, feature_id=feature_id
     )
     entity_full_row_of_values.dropna(inplace=True)
 
     drug_dotted_line = (
-        entity_full_row_of_values.mean() if entity_type == "compound" else None
+        entity_full_row_of_values.mean() if feature_type == "compound" else None
     )
 
     assert drug_dotted_line == None if use_genes else 7.0
@@ -1085,26 +1099,25 @@ def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_name):
 
 def _get_box_plot_data(
     selected_subtype_code: str,
-    dataset_name: str,
-    selected_entity_label: str,
+    dataset_given_id: str,
+    feature_id: str,
     tree_type: str,
-    entity_type: str,
+    feature_type: str,
     max_fdr: float = 0.5,
     min_abs_effect_size: float = 0.1,
     min_frac_dep_in: float = 0.1,
 ) -> Optional[dict]:
 
-    entity_id_and_label = get_entity_id_from_entity_full_label(
-        entity_type=entity_type, entity_full_label=selected_entity_label,
+    feature_id_and_label = get_feature_id_from_full_label(
+        feature_type=feature_type, feature_id=feature_id,
     )
-    entity_id = entity_id_and_label["entity_id"]
-    entity_label = entity_id_and_label["label"]
+    feature_id = feature_id_and_label["feature_id"]
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=min_frac_dep_in,
@@ -1113,9 +1126,9 @@ def _get_box_plot_data(
     context_box_plot_data = box_plot_utils.get_organized_contexts(
         selected_subtype_code=selected_subtype_code,
         sig_contexts=sig_contexts,
-        entity_type=entity_type,
-        entity_label=entity_label,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
         tree_type=tree_type,
     )
 
@@ -1126,20 +1139,27 @@ def _get_box_plot_data(
 
 
 @pytest.mark.parametrize(
-    "dataset_name", ["Chronos_Combined", "Rep_all_single_pt", "Prism_oncology_AUC"],
+    "dataset_given_id",
+    [
+        "Chronos_Combined",
+        "REPURPOSING_primary_collapsed",
+        "PRISMOncologyReferenceLog2AUCMatrix",
+    ],
 )
-def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
-    use_genes = dataset_name == DependencyDataset.DependencyEnum.Chronos_Combined.name
+def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):
+    use_genes = (
+        dataset_given_id == DependencyDataset.DependencyEnum.Chronos_Combined.name
+    )
 
-    entity_type = "gene" if use_genes else "compound"
+    feature_type = "gene" if use_genes else "compound"
 
     (gene_a, gene_b, compound_a, compound_b) = _setup_entities_and_dataset_id(
-        empty_db_mock_downloads, entity_type, dataset_name
+        empty_db_mock_downloads, feature_type, dataset_given_id, monkeypatch
     )
 
     interactive_test_utils.reload_interactive_config()
 
-    selected_entity_label = gene_a.label if use_genes else compound_a.label
+    feature_id = str(gene_a.entrez_id) if use_genes else compound_a.compound_id
 
     ### Test - the User is on the Lineage tab and selects "BONE". Then, the
     ### user selects a specific gene/compound from either the scatter plots or
@@ -1147,12 +1167,17 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     selected_subtype_code = "BONE"
     tree_type = "Lineage"
 
+    def mock_get_dataset_units(dataset_id):
+        return "units"
+
+    monkeypatch.setattr(data_access, "get_dataset_units", mock_get_dataset_units)
+
     data = _get_box_plot_data(
-        dataset_name=dataset_name,
-        selected_entity_label=selected_entity_label,
+        dataset_given_id=dataset_given_id,
+        feature_id=feature_id,
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
-        entity_type=entity_type,
+        feature_type=feature_type,
         max_fdr=all_range.max_fdr,
         min_abs_effect_size=all_range.min_abs_effect_size,
         min_frac_dep_in=all_range.min_frac_dep_in,
@@ -1269,11 +1294,11 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     # 2. Test selected context is a primary disease.
     selected_subtype_code = "ES"
     data = _get_box_plot_data(
-        dataset_name=dataset_name,
-        selected_entity_label=selected_entity_label,
+        dataset_given_id=dataset_given_id,
+        feature_id=feature_id,
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
-        entity_type=entity_type,
+        feature_type=feature_type,
         max_fdr=all_range.max_fdr,
         min_abs_effect_size=all_range.min_abs_effect_size,
         min_frac_dep_in=all_range.min_frac_dep_in,
@@ -1353,11 +1378,11 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
 
     selected_subtype_code = "ES"
     data = _get_box_plot_data(
-        dataset_name=dataset_name,
-        selected_entity_label=selected_entity_label,
+        dataset_given_id=dataset_given_id,
+        feature_id=feature_id,
         selected_subtype_code=selected_subtype_code,
         tree_type=tree_type,
-        entity_type=entity_type,
+        feature_type=feature_type,
         max_fdr=nothing_range.max_fdr,
         min_abs_effect_size=nothing_range.min_abs_effect_size,
         min_frac_dep_in=nothing_range.min_frac_dep_in,
@@ -1418,23 +1443,9 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_name):
     }
 
 
-def test_get_compound_experiment_id_from_entity_label():
-    entity_full_label = "CC-90011 (BENZENESULFONATE) (BRD:BRD-K00091110-074-01-9)"
-    compound_experiment_id = _get_compound_experiment_id_from_entity_label(
-        entity_full_label
-    )
-    assert compound_experiment_id == "BRD:BRD-K00091110-074-01-9"
-
-    entity_full_label = "CCT196969 (BRD:BRD-K00005244-001-01-9)"
-    compound_experiment_id = _get_compound_experiment_id_from_entity_label(
-        entity_full_label
-    )
-    assert compound_experiment_id == "BRD:BRD-K00005244-001-01-9"
-
-
-def test_get_subtype_tree_info(empty_db_mock_downloads):
+def test_get_subtype_tree_info(empty_db_mock_downloads, monkeypatch):
     (gene_a, gene_b, compound_a, compound_b,) = _setup_entities_and_dataset_id(
-        empty_db_mock_downloads, "gene", "Chronos_Combined"
+        empty_db_mock_downloads, "gene", "Chronos_Combined", monkeypatch
     )
 
     model_id = "ACH-1es"

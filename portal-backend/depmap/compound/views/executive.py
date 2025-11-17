@@ -237,22 +237,6 @@ def format_dep_dists(compound_experiment_and_datasets):
     return dep_dists
 
 
-def format_enrichment_boxes(compound_experiment_and_datasets):
-    if compound_experiment_and_datasets is None:
-        return None
-    enrichment_boxes = []
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        # compound dataset titles should not be colored
-        enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment, dataset, colors[dataset.name], "default"
-        )
-        enrichment_box["title"] = "{} {}".format(
-            compound_experiment.label, dataset.display_name
-        )
-        enrichment_boxes.append(enrichment_box)
-    return enrichment_boxes
-
-
 def format_top_corr_table(compound_experiment_and_datasets):
     # DEPRECATED: will be replaced/redesigned
     top_correlations = get_top_correlated_expression(compound_experiment_and_datasets)

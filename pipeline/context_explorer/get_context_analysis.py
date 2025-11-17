@@ -5,10 +5,22 @@ import statsmodels.api as sm
 import warnings
 import argparse
 import json
+import re
 
+# need to add ../pipeline/ to the sys path in order to import from scripts
+import sys
+from pathlib import Path
+sys.path.append(str(Path().resolve().parents[0]))
+from scripts.calculate_bimodality_coefficient import (
+    bimodality_coefficient_for_cpd_viabilities,
+)
 from taigapy import create_taiga_client_v3
 
 MIN_GROUP_SIZE = 5
+
+CRISPR_DATASET_NAME = 'Chronos_Combined'
+REPURPOSING_DATASET_NAME = 'REPURPOSING_primary_collapsed'
+ONCREF_DATASET_NAME = 'PRISMOncologyReferenceLog2AUCMatrix'
 
 ### ----- LOAD DATA FROM TAIGA ----- ###
 def load_subtype_tree(tc, subtype_tree_taiga_id, context_matrix_taiga_id):
@@ -48,95 +60,143 @@ def load_crispr_data(
     return gene_effect, gene_dependency
 
 
-def load_prism_data(tc, repurposing_matrix_taiga_id, repurposing_list_taiga_id):
-    Extended_Primary_Compound_List = tc.get(repurposing_list_taiga_id)
-    Extended_Primary_Data_Matrix = tc.get(repurposing_matrix_taiga_id).T
-    Data_Matrix_Discrete = Extended_Primary_Data_Matrix < np.log2(0.3)
-    Data_Matrix_Discrete = Data_Matrix_Discrete.mask(
-        Extended_Primary_Data_Matrix.isnull()
+def strip_brd_prefix(sample_id):
+    brd_prefix_pattern = '(BRD[:-]{1})+'
+
+    brd_prefix_match = re.search(
+        brd_prefix_pattern,
+        sample_id
+    )
+
+    if brd_prefix_match:
+        new_sample_id = sample_id[brd_prefix_match.span()[1]:]
+        return new_sample_id
+    
+    return sample_id
+
+def load_SampleID_to_CompoundID_mapping(tc, portal_compounds_taiga_id):
+    portal_compounds = tc.get(portal_compounds_taiga_id)
+    portal_compounds['sample_id_list'] = [i.split(';') for i in portal_compounds.SampleIDs]
+
+    exploded_portal_compounds = portal_compounds.explode('sample_id_list')
+    exploded_portal_compounds['sample_id_clean'] = exploded_portal_compounds.sample_id_list.apply(
+        strip_brd_prefix
+    )
+
+    sample_id_to_compound_id = dict(zip(
+        exploded_portal_compounds.sample_id_clean,
+        exploded_portal_compounds.CompoundID
+    ))
+
+    return sample_id_to_compound_id
+
+
+def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taiga_id):
+    #construct the mapping of stripped compound sample IDs to compound IDs
+    sample_id_to_compound_id_map = load_SampleID_to_CompoundID_mapping(
+        tc, portal_compounds_taiga_id
+    )
+
+    repurposing_matrix_samples = tc.get(repurposing_matrix_taiga_id).T
+
+    #strip BRD prefixes from the compound sample IDs
+    repurposing_matrix_samples.columns = [
+        strip_brd_prefix(i) for i in repurposing_matrix_samples.columns
+    ]
+    
+    #assert that the columns are compound-sample IDs
+    assert(
+        set(repurposing_matrix_samples.columns).issubset(
+            sample_id_to_compound_id_map.keys()
+        )
+    )
+
+    repurposing_matrix = repurposing_matrix_samples.rename(
+        columns=sample_id_to_compound_id_map
+    )
+
+    #verify that all the columns are now compound IDs
+    assert(
+        set(repurposing_matrix.columns).issubset(
+            sample_id_to_compound_id_map.values()
+        )
+    )
+    #verify that there are no duplicates per compound ID
+    assert (
+        repurposing_matrix.columns.nunique() == repurposing_matrix.shape[1]
     )
 
     # filter PRISM data --> Restrict analysis to drugs that are sens in min. 1
     #                       cell line and toxic to < 75% of cell lines.
-    #                       Additionally, retain only the compounds tested at 2.5ul
-    perc_sens_lines = Data_Matrix_Discrete.mean()
-    n_sens_lines = Data_Matrix_Discrete.sum()
+
+    #First we have to define sensitive and non-sensitive
+    repurposing_discrete = repurposing_matrix < np.log2(0.3)
+    repurposing_discrete = repurposing_discrete.mask(
+        repurposing_matrix.isnull()
+    )
+
+    #Then define our list of valid drugs
+    perc_sens_lines = repurposing_discrete.mean()
+    n_sens_lines = repurposing_discrete.sum()
     incl_drugs = pd.Index(
         set(perc_sens_lines[perc_sens_lines < 0.75].index).intersection(
             set(n_sens_lines[n_sens_lines > 1].index),
-            set(
-                Extended_Primary_Compound_List[
-                    Extended_Primary_Compound_List.dose == 2.5
-                ].IDs
-            ),
         )
     )
 
-    compound_list = Extended_Primary_Compound_List[
-        Extended_Primary_Compound_List.IDs.isin(incl_drugs)
-    ].reindex()
-    drug_sensitivity = Extended_Primary_Data_Matrix.loc[:, incl_drugs].reindex()
-
-    # identify duplicate drug IDs (same drug and screen, but diff. batch),
-    # and only keep the ID with the greatest number of finite values
-    dup_idx = compound_list[["Drug.Name", "screen"]].duplicated(keep=False)
-    dup = compound_list[dup_idx].sort_values("Drug.Name")
-    dup_drugs = list(set(zip(dup["Drug.Name"], dup.screen)))
-
-    drop_ids = pd.Index([])
-    for drug_info in dup_drugs:
-        drug_ids = compound_list[
-            (compound_list["Drug.Name"] == drug_info[0])
-            & (compound_list.screen == drug_info[1])
-        ].IDs
-
-        drug_drop_ids = (
-            drug_sensitivity[drug_ids].count().sort_values(ascending=False).index[1:]
-        )
-        drop_ids = drop_ids.append(drug_drop_ids)
-
-    drug_sensitivity.drop(drop_ids, axis=1, inplace=True)
+    #Finally, filter the matrix to only the drugs that we'll test
+    drug_sensitivity = repurposing_matrix.loc[:, incl_drugs]
 
     return drug_sensitivity
 
 
-def load_oncref_data(tc, oncref_auc_taiga_id):
-    log_auc_matrix = tc.get(oncref_auc_taiga_id)
+def load_oncref_data(tc, oncref_auc_taiga_id, portal_compounds_taiga_id):
+    log_auc_matrix_samples = tc.get(oncref_auc_taiga_id)
 
-    auc_matrix = 2 ** log_auc_matrix
+    sample_id_to_compound_id_map = load_SampleID_to_CompoundID_mapping(
+        tc, portal_compounds_taiga_id
+    )
+
+    #map sample IDs to compound IDs
+    log_auc_matrix_compounds = log_auc_matrix_samples.rename(
+        columns=sample_id_to_compound_id_map
+    )
+
+    #verify that all columns are compound IDs
+    assert(
+        set(log_auc_matrix_compounds.columns).issubset(
+            set(sample_id_to_compound_id_map.values())
+        )
+    )
+    #verify that there are no duplicates per compound ID
+    assert (
+        log_auc_matrix_compounds.columns.nunique() == log_auc_matrix_compounds.shape[1]
+    )
+
+    auc_matrix = 2 ** log_auc_matrix_compounds
 
     # verify that the NaNs are the same between the two matrices
-    assert (log_auc_matrix.isna() != auc_matrix.isna()).sum().sum() == 0
+    assert (log_auc_matrix_compounds.isna() != auc_matrix.isna()).sum().sum() == 0
 
-    return auc_matrix, log_auc_matrix
+    return auc_matrix, log_auc_matrix_compounds
 
 
-def format_selectivity_vals(repurposing_table_path, oncref_table_path):
-    selectivity_dfs = []
+def format_selectivity_vals(drug_data_dict):
+    selectivity_vals_by_dataset = []
+    for dataset_label, dataset in drug_data_dict.items():
+        bimodality_results = dataset.apply(
+            bimodality_coefficient_for_cpd_viabilities
+        ).reset_index(
+            name='selectivity_val'
+        ).rename(
+            columns={'index':'feature_id'}
+        ).assign(
+            dataset=dataset_label
+        )
 
-    # reformat repurposing compounds
-    repurposing_table = pd.read_csv(repurposing_table_path)
-    repurposing_table["entity_id"] = repurposing_table.apply(
-        lambda x: f"BRD:{x.BroadID}", axis=1
-    )
-    repurposing_selectivity = repurposing_table.rename(
-        columns={"BimodalityCoefficient": "selectivity_val"}
-    )[["entity_id", "selectivity_val"]]
+        selectivity_vals_by_dataset.append(bimodality_results)
 
-    selectivity_dfs.append(repurposing_selectivity)
-
-    # reformat oncref compounds
-    if oncref_table_path is not None:
-        oncref_table = pd.read_csv(oncref_table_path)
-        oncref_selectivity = oncref_table.rename(
-            columns={"BroadID": "entity_id", "BimodalityCoefficient": "selectivity_val"}
-        )[["entity_id", "selectivity_val"]]
-
-        selectivity_dfs.append(oncref_selectivity)
-
-    # put them all together
-    selectivity_vals = pd.concat(selectivity_dfs)
-
+    selectivity_vals = pd.concat(selectivity_vals_by_dataset)
     return selectivity_vals
 
 
@@ -146,11 +206,9 @@ def load_all_data(
     gene_effect_taiga_id,
     gene_dependency_taiga_id,
     repurposing_matrix_taiga_id,
-    repurposing_list_taiga_id,
     oncref_auc_taiga_id,
-    repurposing_table_path,
-    oncref_table_path,
     tda_table_path,
+    portal_compounds_taiga_id,
 ):
 
     all_data_dict = dict()
@@ -160,6 +218,9 @@ def load_all_data(
 
     # dictionary for dataframes used to add extra information to the results
     data_for_extra_cols = dict()
+
+    # dictionary for dataframes where we need to calculate bimodality coeffecients
+    datasets_to_calculate_bimodality = dict()
 
     tc = create_taiga_client_v3()
     subtype_tree, context_matrix = load_subtype_tree(
@@ -176,22 +237,26 @@ def load_all_data(
         gene_dependency_taiga_id=gene_dependency_taiga_id,
         tda_table_path=tda_table_path,
     )
-    datasets_to_test["CRISPR"] = gene_effect
+    datasets_to_test[CRISPR_DATASET_NAME] = gene_effect
     data_for_extra_cols["gene_dependency"] = gene_dependency
 
-    rep_sensitivity = load_prism_data(
+    rep_sensitivity = load_repurposing_data(
         tc=tc,
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
-        repurposing_list_taiga_id=repurposing_list_taiga_id,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
-    datasets_to_test["PRISMRepurposing"] = rep_sensitivity
+    datasets_to_test[REPURPOSING_DATASET_NAME] = rep_sensitivity
+    datasets_to_calculate_bimodality[REPURPOSING_DATASET_NAME] = rep_sensitivity
 
     # OncRef will be None on the public portal
     if oncref_auc_taiga_id is not None:
         oncref_aucs, oncref_log_aucs = load_oncref_data(
-            tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
+            tc=tc, 
+            oncref_auc_taiga_id=oncref_auc_taiga_id,
+            portal_compounds_taiga_id=portal_compounds_taiga_id,
         )
-        datasets_to_test["PRISMOncRef"] = oncref_log_aucs
+        datasets_to_test[ONCREF_DATASET_NAME] = oncref_log_aucs
+        datasets_to_calculate_bimodality[ONCREF_DATASET_NAME] = oncref_log_aucs
 
         # for OncRef we compute the t-test on the logged AUCs,
         # but want to set the mean_in and mean_out columns based on
@@ -203,7 +268,7 @@ def load_all_data(
         data_for_extra_cols["oncref_aucs"] = oncref_aucs
 
     selectivity_vals = format_selectivity_vals(
-        repurposing_table_path, oncref_table_path
+        datasets_to_calculate_bimodality
     )
     data_for_extra_cols["selectivity_vals"] = selectivity_vals
 
@@ -301,7 +366,7 @@ def compute_context_results(
     col_order = [
         "subtype_code",
         "out_group",
-        "entity_id",
+        "feature_id",
         "dataset",
         "t_pval",
         "t_qval",
@@ -333,15 +398,15 @@ def compute_context_results(
             subtype_code=ctx, out_group=out_label, dataset=ds_name
         )
 
-        if ds_name == "CRISPR":
+        if ds_name == CRISPR_DATASET_NAME:
             ds_res = add_crispr_columns(
                 ds_res,
                 data_for_extra_cols["gene_dependency"],
                 ds_in_group,
                 ds_out_group,
-            ).reset_index(names="entity_id")
+            ).reset_index(names="feature_id")
 
-        elif ds_name == "PRISMOncRef":
+        elif ds_name == ONCREF_DATASET_NAME:
             # replace mean_in, mean_out, and effect size with non-logged versions
             ds_res["mean_in"] = (
                 data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
@@ -351,10 +416,11 @@ def compute_context_results(
             )
             ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
-        if ds_name in ["PRISMRepurposing", "PRISMOncRef"]:
+        if ds_name in [REPURPOSING_DATASET_NAME, ONCREF_DATASET_NAME]:
             # merge with selectivity vals
-            ds_res = ds_res.reset_index(names="entity_id").merge(
-                data_for_extra_cols["selectivity_vals"]
+            ds_res = ds_res.reset_index(names="feature_id").merge(
+                data_for_extra_cols["selectivity_vals"],
+                on=['feature_id', 'dataset'], how='left'
             )
 
         ctx_res_dfs.append(ds_res)
@@ -469,35 +535,28 @@ def compute_context_explorer_results(inputs, out_filename):
     repurposing_matrix_taiga_id = get_id_or_file_name(
         taiga_ids_or_file_name["repurposing_matrix_taiga_id"]
     )
-    repurposing_list_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["repurposing_list_taiga_id"]
-    )
     oncref_auc_taiga_id = get_id_or_file_name(
         taiga_ids_or_file_name["oncref_auc_taiga_id"]
     )
 
-    repurposing_table_path = get_id_or_file_name(
-        taiga_ids_or_file_name["repurposing_table_path"], id_key="filename"
-    )
-    oncref_table_path = get_id_or_file_name(
-        taiga_ids_or_file_name["oncref_table_path"], id_key="filename"
-    )
     tda_table_path = get_id_or_file_name(
         taiga_ids_or_file_name["tda_table"], id_key="filename"
     )
 
+    portal_compounds_taiga_id = get_id_or_file_name(
+        taiga_ids_or_file_name["portal_compounds_taiga_id"]
+    )
+
     ### ---- LOAD DATA ---- ###
     data_dict = load_all_data(
-        subtype_tree_taiga_id,
-        context_matrix_taiga_id,
-        gene_effect_taiga_id,
-        gene_dependency_taiga_id,
-        repurposing_matrix_taiga_id,
-        repurposing_list_taiga_id,
-        oncref_auc_taiga_id,
-        repurposing_table_path,
-        oncref_table_path,
-        tda_table_path,
+        subtype_tree_taiga_id=subtype_tree_taiga_id,
+        context_matrix_taiga_id=context_matrix_taiga_id,
+        gene_effect_taiga_id=gene_effect_taiga_id,
+        gene_dependency_taiga_id=gene_dependency_taiga_id,
+        repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
+        oncref_auc_taiga_id=oncref_auc_taiga_id,
+        tda_table_path=tda_table_path,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
     context_explorer_results = compute_in_out_groups(**data_dict)
