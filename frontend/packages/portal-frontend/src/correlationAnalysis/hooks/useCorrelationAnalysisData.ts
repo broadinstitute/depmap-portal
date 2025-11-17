@@ -9,10 +9,9 @@ import { SortedCorrelations } from "../models/CorrelationPlot";
 
 // we separate this out into a hook. In the future, we may want to reuse this hook for correlation analysis in gene page
 function useCorrelationAnalysisData(
-  selectedDataset: string,
+  selectedDataset: any,
   featureId: string,
-  featureLabel: string,
-  featureDatasets: { auc: string; viability: string }
+  featureLabel: string
 ) {
   const bapi = cached(breadboxAPI);
 
@@ -35,8 +34,8 @@ function useCorrelationAnalysisData(
         const compoundID = featureId;
 
         // get selected datasets
-        const aucDataset = featureDatasets.auc;
-        const doseViabilityDataset = featureDatasets.viability;
+        const aucDataset = selectedDataset.log_auc_dataset_given_id!;
+        const doseViabilityDataset = selectedDataset.viability_dataset_given_id;
 
         // map compound dose features to their dose measurement
         const compoundDoseToDose = new Map();
