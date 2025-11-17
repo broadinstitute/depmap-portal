@@ -606,7 +606,7 @@ def get_sensitivity_html(
 ):
     all_matching_datasets = data_access.get_all_datasets_containing_compound(compound.id)
     if len(all_matching_datasets) == 0:
-        return render_template("tiles/sensitivity.html", None, None)
+        return render_template("tiles/sensitivity.html", dep_dist=None, dep_dist_caption=None)
     
     # This tile was originally configured to show multiple distributions, but
     # was later updated to only display the top priority dataset

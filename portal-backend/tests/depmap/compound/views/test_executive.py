@@ -50,13 +50,9 @@ def test_format_dep_dist(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()    
     interactive_test_utils.reload_interactive_config()
 
+    top_priority_dataset = data_access.get_matrix_dataset(dataset_1.name.name)
 
-    all_matrix_datasets = [
-        data_access.get_matrix_dataset(dataset_1.name.name),
-        data_access.get_matrix_dataset(dataset_2.name.name)
-    ]
-
-    dep_dist = format_dep_dist(compound_experiment_1.compound, all_matrix_datasets)
+    dep_dist = format_dep_dist(compound_experiment_1.compound, top_priority_dataset) # pyright: ignore
 
     assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
     assert dep_dist["num_lines"] == 2

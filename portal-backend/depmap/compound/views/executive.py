@@ -85,6 +85,7 @@ data_availability_datasets = [
 
 
 def format_dep_dist_warnings(dataset: MatrixDataset):
+    dataset_given_id = dataset.given_id if dataset.given_id else dataset.id
     s = ""
     if dataset.units == "log2(AUC)":
         s += "Please note that log2(AUC) values depend on the dose range of the screen and are not comparable across different assays. "
@@ -92,7 +93,7 @@ def format_dep_dist_warnings(dataset: MatrixDataset):
     if dataset.units == "AUC":
         s += "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays."
 
-    if "CTRP_AUC" in dataset.given_id:
+    if "CTRP_AUC" in dataset_given_id:
         s += " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1."
 
     if s != "":
