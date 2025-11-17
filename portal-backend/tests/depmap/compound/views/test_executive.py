@@ -1,3 +1,4 @@
+from depmap import data_access
 from depmap.compound.models import Compound
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
@@ -46,15 +47,17 @@ def test_format_dep_dists(empty_db_mock_downloads):
     dataset_2 = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.CTRP_AUC, matrix=matrix
     )
-    compound_experiment_and_datasets = [
-        (compound_experiment_1, dataset_1),
-        (compound_experiment_2, dataset_1),
-        (compound_experiment_1, dataset_2),
-        (compound_experiment_2, dataset_2),
-    ]
-    empty_db_mock_downloads.session.flush()
+    empty_db_mock_downloads.session.flush()    
+    interactive_test_utils.reload_interactive_config()
 
-    dep_dists = format_dep_dists(compound_experiment_and_datasets)
+
+    all_matrix_datasets = [
+        data_access.get_matrix_dataset(dataset_1.name.name),
+        data_access.get_matrix_dataset(dataset_2.name.name)
+    ]
+    breakpoint()
+
+    dep_dists = format_dep_dists(compound_experiment_1.compound, all_matrix_datasets)
 
     assert len(dep_dists) == 4
     for dep_dist in dep_dists:

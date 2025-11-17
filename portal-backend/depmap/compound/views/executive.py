@@ -18,7 +18,7 @@ from depmap.entity.views.executive import (
 from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, CompoundTileEnum
 
-colors = {
+colors = { # TODO: re-implement this mapping 
     DependencyEnum.GDSC1_AUC: color_palette.gdsc_color,
     DependencyEnum.GDSC2_AUC: color_palette.gdsc_color,
     DependencyEnum.CTRP_AUC: color_palette.ctrp_color,
@@ -200,14 +200,15 @@ def format_dep_dists(compound: Compound, all_matching_datasets: list[MatrixDatas
     for dataset in all_matching_datasets:
         slice_query = SliceQuery(
             dataset_id=dataset.id,
-            identifier=compound.id,
+            identifier=compound.compound_id,
             identifier_type="feature_id"
         )
+        # TODO: this get_slice_data method does not for looking up records in a CE-indexed dataset by compound ID.
         slice_vals = data_access.get_slice_data(slice_query)
         filtered_values = [
             x for x in slice_vals if not isnan(x)  # needed for num_lines, and probably the plot
         ]
-        color = colors[dataset.name]
+        color = colors[dataset.given_id]
 
         svg = format_generic_distribution_plot(filtered_values, color)
 
