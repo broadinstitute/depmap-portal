@@ -498,7 +498,7 @@ def get_matrix_dataset_features_df(
 
     query = db.query(DatasetFeature).filter(DatasetFeature.dataset_id == dataset.id)
 
-    if filter_by_given_ids:
+    if filter_by_given_ids is not None:
         query = query.filter(DatasetFeature.given_id.in_(filter_by_given_ids))
 
     dataset_features = pd.DataFrame(
