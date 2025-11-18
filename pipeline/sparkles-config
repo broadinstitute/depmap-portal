@@ -1,7 +1,7 @@
 [config]
 default_url_prefix=gs://broad-achilles-kubeque/depmap-pipeline
 project=broad-achilles
-default_image=us.gcr.io/broad-achilles/tda-pipeline:v2
+default_image=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/tda-pipeline:v2
 region=us-central1
 machine_type=n2-highmem-2
 account=856306709302-compute@developer.gserviceaccount.com
