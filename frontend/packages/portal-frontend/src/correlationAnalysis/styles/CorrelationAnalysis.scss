@@ -20,6 +20,10 @@
 .plotItem {
   display: flex;
   flex-direction: column;
+  /* allow the plot item to grow and shrink to fill available space
+     and prevent its children from forcing overflow */
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .doseLegendContainer {

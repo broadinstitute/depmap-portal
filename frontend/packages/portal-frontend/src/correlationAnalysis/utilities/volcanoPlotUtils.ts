@@ -52,7 +52,7 @@ export const formatVolcanoTrace = (
 export const formatLayout = () => {
   const layout: Partial<Layout> = {
     autosize: true, // autosizes width but not height
-    height: 600,
+    height: 380,
     hovermode: "closest",
     margin: {
       l: 70,

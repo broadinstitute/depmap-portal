@@ -53,7 +53,6 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
 
     // cleanup listeners
     return () => {
-      console.log("Cleanup plot listeners");
       plot?.removeAllListeners("plotly_click");
     };
   }, [volcanoTrace, onPointClick]);
