@@ -147,7 +147,7 @@ jobs:
         run: |
           chmod +x ./.github/push_docker.py
           # GITHUB_REF##*/ is github actions magic which expands to the branch name
-          ./.github/push_docker.py ${{ env.DOCKER_REPO }} ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/} ${{ env.ARTIFACT_REGISTRY_REPO }}
+          ./.github/push_docker.py ${{ env.DOCKER_REPO }} ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/}
 
   bump-versions:
     if: ${{ !startsWith(github.event.head_commit.message, 'bump:') && (!startsWith(github.actor, 'github-actions') || !startsWith(github.event.pusher.name, 'github-actions')) && (github.ref_name == 'master') && (github.event_name == 'push') }}
