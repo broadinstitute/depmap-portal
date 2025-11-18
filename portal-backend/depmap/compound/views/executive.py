@@ -6,16 +6,14 @@ import matplotlib
 matplotlib.use(
     "svg", force=True
 )  # this line must come before this import, otherwise matplotlib complains about python not being installed as a framework
-import pandas as pd
 
 from depmap import data_access
-from depmap_compute.slice import SliceQuery
 from depmap.data_access.models import MatrixDataset
 from depmap.entity.views.executive import (
     format_enrichment_box_for_dataset,
     format_generic_distribution_plot,
 )
-from depmap.utilities.color_palette import compound_color
+from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, CompoundTileEnum
 from depmap.correlation.utils import get_all_correlations
 
@@ -185,7 +183,7 @@ def format_dep_dist(compound: Compound, dataset: MatrixDataset):
     feature_data = df.loc[compound.label]
     filtered_feature_data = [x for x in feature_data if not isnan(x)]
     
-    color = compound_color
+    color = color_palette.compound_color
 
     svg = format_generic_distribution_plot(filtered_feature_data, color)
 
@@ -209,7 +207,7 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
     for compound_experiment, dataset in compound_experiment_and_datasets:
         # compound dataset titles should not be colored
         enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment, dataset, compound_color, "default"
+            compound_experiment, dataset, color_palette.compound_color, "default"
         )
         enrichment_box["title"] = "{} {}".format(
             compound_experiment.label, dataset.display_name
