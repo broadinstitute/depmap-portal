@@ -49,7 +49,7 @@ export const formatVolcanoTrace = (
   return traces;
 };
 
-export const formatLayout = () => {
+export const formatLayout = (xMin: number, xMax: number) => {
   const layout: Partial<Layout> = {
     autosize: true, // autosizes width but not height
     height: 600,
@@ -63,6 +63,7 @@ export const formatLayout = () => {
     xaxis: {
       title: { text: "Correlation Coefficient", font: { size: 12 } },
       tickfont: { size: 10 },
+      range: [xMin, xMax],
     },
     yaxis: {
       title: { text: `-log10(q value)`, font: { size: 11 } },

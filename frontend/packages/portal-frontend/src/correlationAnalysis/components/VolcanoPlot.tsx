@@ -22,8 +22,14 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
     const plot = plotRef.current;
 
     if (!plot) return undefined;
-
-    const layout: Partial<Layout> = formatLayout();
+    // Gather all x values from all traces (more performant)
+    const allX = volcanoTrace.flatMap((trace) =>
+      Array.isArray(trace.x) ? (trace.x as number[]) : []
+    );
+    // Always include 0 in the range
+    const xMin = Math.min(...allX, 0);
+    const xMax = Math.max(...allX, 0);
+    const layout: Partial<Layout> = formatLayout(xMin, xMax);
 
     const config: Partial<Config> = {
       responsive: true,
