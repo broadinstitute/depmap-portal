@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "master"
+      - "artifact-migration-25q3"
     paths:
       - "pipeline/build-pipeline-docker-images/tda-docker/**"
       - "pipeline/build-pipeline-docker-images/build.sh"
@@ -11,6 +12,7 @@ on:
 
 env:
   DOCKER_REPO: us.gcr.io/broad-achilles/depmap-pipeline-tda
+  ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-tda
   DOCKER_TAG: ga2-build-${{ github.run_number }}
   DOCKERFILE_DIR: tda-docker
 
@@ -25,5 +27,15 @@ jobs:
           registry: us.gcr.io
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
+      - name: Login to Artifact Registry
+        uses: docker/login-action@v2
+        with:
+          registry: us-central1-docker.pkg.dev
+          username: _json_key
+          password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Build and push depmap pipeline tda docker image
         run: cd pipeline/build-pipeline-docker-images && bash build.sh ${{ env.DOCKER_REPO }} ${{ env.DOCKER_TAG }} ${{ env.DOCKERFILE_DIR}}
+      - name: Tag and push to Artifact Registry
+        run: |
+          docker tag ${{ env.DOCKER_REPO }}:${{ env.DOCKER_TAG }} ${{ env.ARTIFACT_REGISTRY_REPO }}:latest
+          docker push ${{ env.ARTIFACT_REGISTRY_REPO }}:latest
