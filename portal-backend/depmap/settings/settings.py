@@ -28,7 +28,9 @@ class FeatureFlags:
     def is_qa(self):
         from flask import current_app
 
-        return current_app.config["ENV"].endswith("qa")
+        env = current_app.config["ENV"]  # pyright: ignore
+        assert isinstance(env, str)
+        return env.endswith("qa")
 
     def is_skyros(self):
         from flask import current_app
