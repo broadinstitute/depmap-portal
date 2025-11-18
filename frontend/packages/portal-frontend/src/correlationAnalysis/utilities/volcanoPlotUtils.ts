@@ -56,7 +56,7 @@ export const formatLayout = () => {
     hovermode: "closest",
     margin: {
       l: 70,
-      r: 0,
+      r: 10,
       b: 50,
       t: 30,
     },
