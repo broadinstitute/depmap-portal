@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React from "react";
 import Select from "react-select";
 import styles from "../styles/CorrelationAnalysis.scss";
 
@@ -18,7 +18,7 @@ interface CorrelationFiltersProps {
   onChangeDoses: (doses: string[]) => void;
 }
 
-export default function CorrelationFilters(props: CorrelationFiltersProps) {
+function CorrelationFilters(props: CorrelationFiltersProps) {
   const {
     datasets,
     onChangeDataset,
@@ -28,18 +28,48 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
     onChangeDoses,
   } = props;
 
-  const datasetOptions = datasets.map((dataset) => {
-    return { label: dataset, value: dataset };
-  });
-  const correlatedDatasetOptions = correlatedDatasets.map((corrDataset) => {
-    return { label: corrDataset, value: corrDataset };
-  });
+  const handleDatasetChange = React.useCallback(
+    (value: any) => {
+      // react-select provides the selected option or null
+      onChangeDataset(value ? value.value : null);
+    },
+    [onChangeDataset]
+  );
 
-  const getDoseOptions = useCallback(() => {
-    return doses.map((dose) => {
-      return { label: dose, value: dose };
-    });
-  }, [doses]);
+  const handleDosesChange = React.useCallback(
+    (value: any) => {
+      onChangeDoses(value ? value.map((selected: any) => selected.value) : []);
+    },
+    [onChangeDoses]
+  );
+
+  const handleCorrelatedDatasetsChange = React.useCallback(
+    (value: any) => {
+      onChangeCorrelatedDatasets(
+        value ? value.map((selected: any) => selected.value) : []
+      );
+    },
+    [onChangeCorrelatedDatasets]
+  );
+
+  const datasetOptions = React.useMemo(
+    () => datasets.map((dataset) => ({ label: dataset, value: dataset })),
+    [datasets]
+  );
+
+  const correlatedDatasetOptions = React.useMemo(
+    () =>
+      correlatedDatasets.map((corrDataset) => ({
+        label: corrDataset,
+        value: corrDataset,
+      })),
+    [correlatedDatasets]
+  );
+
+  const doseOptions = React.useMemo(
+    () => doses.map((dose) => ({ label: dose, value: dose })),
+    [doses]
+  );
 
   return (
     <div className={styles.FiltersPanel}>
@@ -48,10 +78,7 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
         placeholder="Select..."
         value={datasetOptions[0]}
         options={datasetOptions}
-        onChange={(value, action) => {
-          console.log(value, action);
-          onChangeDataset(value ? value.value : null);
-        }}
+        onChange={handleDatasetChange}
         id="corr-analysis-dataset-selection"
       />
       <hr className={styles.filtersPanelHr} />
@@ -62,14 +89,9 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
       <Select
         placeholder="Select..."
         defaultOptions
-        options={getDoseOptions()}
+        options={doseOptions}
         isMulti
-        onChange={(value, action) => {
-          console.log(value, action);
-          onChangeDoses(
-            value ? value.map((selectedDose) => selectedDose.value) : []
-          );
-        }}
+        onChange={handleDosesChange}
         id="corr-analysis-filter-by-dose"
       />
       <h4>Correlated Dataset</h4>
@@ -78,17 +100,10 @@ export default function CorrelationFilters(props: CorrelationFiltersProps) {
         defaultOptions
         options={correlatedDatasetOptions}
         isMulti
-        onChange={(value, action) => {
-          console.log(value, action);
-          onChangeCorrelatedDatasets(
-            value
-              ? value.map(
-                  (selectedCorrelatedDataset) => selectedCorrelatedDataset.value
-                )
-              : []
-          );
-        }}
+        onChange={handleCorrelatedDatasetsChange}
       />
     </div>
   );
 }
+
+export default React.memo(CorrelationFilters);
