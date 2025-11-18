@@ -1,1 +1,1 @@
-DOCKER_IMAGE=us.gcr.io/broad-achilles/data-prep-pipeline-run:v1
+DOCKER_IMAGE=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/data-prep-pipeline-run:v1
