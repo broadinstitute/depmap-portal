@@ -81,7 +81,10 @@ export default async function checkPlottable({
     return true;
   }
 
-  if ("unique_values" in domain && domain.unique_values.length <= 100) {
+  if (
+    ["categorial", "text"].includes(domain.value_type) &&
+    domain.unique_values.length <= 100
+  ) {
     return true;
   }
 
