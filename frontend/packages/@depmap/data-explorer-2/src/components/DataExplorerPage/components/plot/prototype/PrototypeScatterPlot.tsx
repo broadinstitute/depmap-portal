@@ -34,6 +34,11 @@ type Data = Record<string, any>;
 
 const MAX_POINTS_TO_ANNOTATE = 50;
 
+const truncate = (s: string) => {
+  const MAX = 25;
+  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
+};
+
 interface LegendInfo {
   title: string;
   items: { name: string; hexColor: string }[];
@@ -843,10 +848,14 @@ function PrototypeScatterPlot({
           // prevents a rare bug where these dummy traces interfere with the
           // real ones and some points don't get rendered.
           type: "indicator",
-          name,
+          name: truncate(name),
           x: [null], // Data doesn't matter but can't be completely empty
           y: [null],
-          marker: { ...templateTrace.marker, color: hexColor },
+          marker: {
+            ...templateTrace.marker,
+            color: hexColor,
+            line: { color: hexColor, width: 2 },
+          },
         };
       });
 
@@ -863,9 +872,8 @@ function PrototypeScatterPlot({
           ),
           showlegend: true,
           legend: {
-            title: {
-              text: legendForDownload.title,
-            },
+            title: { text: legendForDownload.title },
+            font: { size: 14 },
           },
         },
       };

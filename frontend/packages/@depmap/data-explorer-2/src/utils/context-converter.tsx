@@ -127,7 +127,7 @@ export async function convertContextV1toV2(
       vars[varName] = {
         dataset_id: `${context_type}_metadata`,
         identifier_type: "column",
-        identifier: "label",
+        identifier: context_type === "depmap_model" ? "depmap_id" : "label",
         source: "property",
       };
     } else {

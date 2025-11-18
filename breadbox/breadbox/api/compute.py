@@ -5,7 +5,7 @@ from logging import getLogger
 from fastapi import APIRouter, HTTPException, Depends
 
 from breadbox.config import Settings, get_settings
-from depmap_compute import models
+from breadbox.depmap_compute_embed import models
 
 from breadbox.schemas.custom_http_exception import UserError
 from ..schemas.compute import ComputeParams, ComputeResponse

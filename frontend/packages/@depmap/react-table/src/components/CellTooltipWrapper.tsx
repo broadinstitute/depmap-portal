@@ -12,7 +12,7 @@ function formatTooltipContent(value: unknown): React.ReactNode {
   if (Array.isArray(value)) {
     const MAX_ITEMS = 25;
     const totalItems = value.length;
-    const shouldTruncate = totalItems > MAX_ITEMS;
+    const shouldTruncate = totalItems - 1 > MAX_ITEMS;
     const itemsToShow = shouldTruncate ? value.slice(0, MAX_ITEMS) : value;
     const remainingCount = totalItems - MAX_ITEMS;
 

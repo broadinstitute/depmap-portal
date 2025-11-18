@@ -19,7 +19,7 @@ from breadbox.models.dataset import (
     DimensionType,
 )
 
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 
 log = logging.getLogger(__name__)
 

@@ -36,7 +36,6 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
-import pyarrow
 
 
 pd.set_option("mode.use_inf_as_na", True)

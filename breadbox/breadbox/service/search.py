@@ -37,10 +37,16 @@ class MetadataCacheEntry:
     columns_metadata: Dict[str, ColumnMetadata]
 
     def get_label_for_given_id(self, given_id):
-        return self.properties_to_index_df.loc[given_id, "label"]
+        try:
+            return self.properties_to_index_df.loc[given_id, "label"]
+        except KeyError:
+            return None
 
     def get_properties_dict(self, given_id: str):
-        return self.properties_to_index_df.loc[given_id].to_dict()
+        try:
+            return self.properties_to_index_df.loc[given_id].to_dict()
+        except KeyError:
+            return None
 
 
 class MetadataCache:

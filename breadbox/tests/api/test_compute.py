@@ -13,12 +13,10 @@ from sqlalchemy import and_
 from breadbox.db.session import SessionWithUser
 from breadbox.compute.analysis_tasks import run_custom_analysis
 from breadbox.api import compute
-from depmap_compute.models import AnalysisType
+from breadbox.depmap_compute_embed import fast_cor_with_p_values_with_missing
+from breadbox.depmap_compute_embed.models import AnalysisType
 from breadbox.models.dataset import DatasetFeature
 from breadbox.models.dataset import ValueType
-from depmap_compute.analysis_tasks_interface import (
-    fast_cor_with_p_and_q_values_with_missing,
-)
 from breadbox.compute import analysis_tasks
 from breadbox.compute.analysis_tasks import get_feature_data_slice_values
 from breadbox.celery_task import utils
@@ -32,7 +30,11 @@ class TestData:
 
     expected_pearsonCor = [0.828417, 0.332349, 0.195789]
     expected_pearsonPValue = [0.005800, 0.382209, 0.587756]
-    expected_pearsonQValue = [0.005800, 0.382209, 0.587756]
+    expected_pearsonQValue = [
+        0.0174000,
+        0.5733135,
+        0.5877560,
+    ]  # computed from R's p.adjust(c(0.005800, 0.382209, 0.587756), method='fdr')
 
     # for dev sanity checking
     __pearson_results = """
@@ -131,6 +133,7 @@ class TestData:
     ):
         n_features, n_model_ids = (3, 10)
         data = TestData._make_data(test_empty_assoc_table) if len(data) == 0 else data
+        # pd.DataFrame(data, columns=["a", "b", "c", "d"]).to_csv("test_data.csv", index=False)
         models = ["ACH-0000{}".format(x) for x in range(n_model_ids)]
 
         admin_user = settings.admin_users[0]
@@ -626,7 +629,7 @@ def test_run_custom_analysis_no_variance_vector(
 ):
     """
     We previously had an issue in aligning pearson and limma results
-        There are certain cirumstances, such as when one data vector is a vector of just one value, that limma returns results but pearson does not
+        There are certain circumstances, such as when one data vector is a vector of just one value, that limma returns results but pearson does not
         For a further description on this issue, see the comment containing "pearson df should not drop NAs" in compute/tasks.py
     Test that when a data vector only has one value,
         The code runs
@@ -803,16 +806,9 @@ def test_fast_cor_with_p_and_q_values_with_missing():
             expected_pearson[i_x, i_y] = pearson
             expected_p[i_x, i_y] = p
 
-    (
-        actual_pearson,
-        actual_p,
-        actual_q,
-        actual_num_used,
-    ) = fast_cor_with_p_and_q_values_with_missing(
-        x.transpose(), y.transpose(), progress_callback=progress_callback
+    (actual_pearson, actual_p, actual_num_used,) = fast_cor_with_p_values_with_missing(
+        x.transpose(), y.transpose()
     )
-
-    np.greater_equal(actual_q, actual_p)
 
     assert np.allclose(expected_pearson, actual_pearson, rtol=0.01, equal_nan=True)
     assert np.allclose(expected_p, actual_p, rtol=0.01, equal_nan=True)
