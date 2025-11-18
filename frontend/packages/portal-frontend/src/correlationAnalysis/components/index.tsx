@@ -355,8 +355,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
             <p>
               Univariate associations between sensitivity profiles and the
               genomic features or genetic dependencies are presented in the
-              table and plots. Click on a plot to enlarge it. Hover over plot
-              points for tooltip information.
+              table and plots. Hover over plot points for tooltip information.
             </p>
           </div>
           <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
