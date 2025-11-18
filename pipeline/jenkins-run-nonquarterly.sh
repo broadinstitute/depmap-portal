@@ -7,7 +7,7 @@ fi
 
 ENV_NAME="$1"
 CONSEQ_FILE="nonquarterly_$ENV_NAME.conseq"
-DOCKER_IMAGE=us.gcr.io/broad-achilles/depmap-pipeline-run:v14
+DOCKER_IMAGE=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:v4
 COMMIT_SHA=`git rev-parse HEAD`
 if [ "${COMMIT_SHA}" == "" ]; then
   COMMIT_SHA="unknown"

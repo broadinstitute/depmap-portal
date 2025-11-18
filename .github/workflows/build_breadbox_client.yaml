@@ -3,13 +3,15 @@ name: Build breadbox client
 
 on:
   push:
+    branches:
+      - "artifact-migration-25q3"
     paths:
       - "breadbox/**"
       - "breadbox-client/**"
       - ".github/workflows/build_breadbox_client.yaml"
 
 env:
-  DOCKER_REPO: us.gcr.io/broad-achilles/depmap-breadbox
+  ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
@@ -54,10 +56,6 @@ jobs:
       - name: Running pytest
         working-directory: ./breadbox-client
         run: "poetry run pytest"
-
-      - name: "Confirm client generated"
-        working-directory: "./breadbox-client"
-        run: "find ."
 
       - name: Bump version and publish
         working-directory: ./breadbox-client

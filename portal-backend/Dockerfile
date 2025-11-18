@@ -1,4 +1,4 @@
-FROM us.gcr.io/broad-achilles/depmap-base:v11
+FROM us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-base:v11
 
 # create cds-service user and group
 RUN groupadd -g 990 cds-service

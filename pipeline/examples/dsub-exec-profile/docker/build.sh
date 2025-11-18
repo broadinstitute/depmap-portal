@@ -1,2 +1,2 @@
-docker build --platform=linux/amd64 . -t us.gcr.io/broad-achilles/testimg
-docker push us.gcr.io/broad-achilles/testimg
+docker build --platform=linux/amd64 . -t us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/testimg
+docker push us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/testimg
