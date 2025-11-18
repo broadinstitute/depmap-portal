@@ -19,7 +19,7 @@ from breadbox.service import metadata as metadata_service
 from breadbox.service import dataset as dataset_service
 from breadbox.utils.asserts import index_error_msg
 
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 
 
 @dataclass

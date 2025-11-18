@@ -4,7 +4,6 @@ import {
   ContextSelector,
   deprecatedDataExplorerAPI,
   fetchContext,
-  isBreadboxOnlyMode,
   isNegatedContext,
   isV2Context,
   negateContext,
@@ -58,14 +57,13 @@ function CellLineListsDropdown({
       if (context && hash) {
         let labels: string[] = [];
 
-        if (isBreadboxOnlyMode) {
-          if (!isV2Context(context)) {
-            throw new Error("Can't evaluate a legacy context with Breadbox!");
-          }
-
+        if (isV2Context(context)) {
           const result = await breadboxAPI.evaluateContext(context);
           labels = result.ids;
         } else {
+          // TODO: Convert to a V2 context instead. That way we remove the
+          // depedency on this deprecated endpoint (and eventually remove it
+          // too).
           labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
             context
           );
@@ -101,11 +99,9 @@ function CellLineListsDropdown({
       if (selectedContextHash) {
         const hashWithoutPrefix = selectedContextHash.replace("not_", "");
         try {
-          const context = await fetchContext(hashWithoutPrefix);
-
-          if (isV2Context(context)) {
-            throw new Error("V2 contexts not supported!");
-          }
+          const context = (await fetchContext(
+            hashWithoutPrefix
+          )) as DataExplorerContext;
 
           handleChange(
             selectedContextHash.startsWith("not_")

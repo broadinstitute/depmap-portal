@@ -63,9 +63,7 @@ from breadbox.models.dataset import (
     DimensionType,
 )
 
-
 log = logging.getLogger(__name__)
-from breadbox.utils.debug_log import print_span_stats
 
 
 def get_subsetted_matrix_dataset_df(
@@ -81,115 +79,102 @@ def get_subsetted_matrix_dataset_df(
     If the dimensions are specified by label, then return a result indexed by labels
     """
 
-    with print_span_stats("intro"):
-        missing_features = []
-        missing_samples = []
+    missing_features = []
+    missing_samples = []
 
-        if dimensions_info.features is None:
-            feature_indexes = None
-        elif dimensions_info.feature_identifier.value == "id":
-            (
-                feature_indexes,
-                missing_features,
-            ) = dataset_crud.get_feature_indexes_by_given_ids(
-                db, user, dataset, dimensions_info.features
-            )
-        else:
-            assert dimensions_info.feature_identifier.value == "label"
-            (
-                feature_indexes,
-                missing_features,
-            ) = metadata_service.get_dimension_indexes_of_labels(
-                db,
-                user,
-                dataset,
-                axis="feature",
-                dimension_labels=dimensions_info.features,
-            )
-
-        if len(missing_features) > 0:
-            log.warning(f"Could not find features: {missing_features}")
-
-    with print_span_stats("getting ids"):
-        if dimensions_info.samples is None:
-            sample_indexes = None
-        elif dimensions_info.sample_identifier.value == "id":
-            (
-                sample_indexes,
-                missing_samples,
-            ) = dataset_crud.get_sample_indexes_by_given_ids(
-                db, user, dataset, dimensions_info.samples
-            )
-        else:
-            (
-                sample_indexes,
-                missing_samples,
-            ) = metadata_service.get_dimension_indexes_of_labels(
-                db,
-                user,
-                dataset,
-                axis="sample",
-                dimension_labels=dimensions_info.samples,
-            )
-
-        if len(missing_samples) > 0:
-            log.warning(f"Could not find samples: {missing_samples}")
-
-        if strict:
-            num_missing_features = len(missing_features)
-            missing_features_msg = f"{num_missing_features} missing features: {missing_features[:20] + ['...'] if num_missing_features >= 20 else missing_features}"
-            num_missing_samples = len(missing_samples)
-            missing_samples_msg = f"{num_missing_samples} missing samples: {missing_samples[:20] + ['...'] if num_missing_samples >= 20 else missing_samples}"
-            if len(missing_features) > 0:
-                raise FeatureNotFoundError(missing_features_msg)
-            if len(missing_samples) > 0:
-                raise SampleNotFoundError(missing_samples_msg)
-
-    with print_span_stats("get slice"):
-        # call sort on the indices because hdf5_read requires indices be in ascending order
-        if feature_indexes is not None:
-            feature_indexes = sorted(feature_indexes)
-        if sample_indexes is not None:
-            sample_indexes = sorted(sample_indexes)
-
-        df = get_slice(
-            dataset, feature_indexes, sample_indexes, filestore_location, keep_nans=True
+    if dimensions_info.features is None:
+        feature_indexes = None
+    elif dimensions_info.feature_identifier.value == "id":
+        (
+            feature_indexes,
+            missing_features,
+        ) = dataset_crud.get_feature_indexes_by_given_ids(
+            db, user, dataset, dimensions_info.features
+        )
+    else:
+        assert dimensions_info.feature_identifier.value == "label"
+        (
+            feature_indexes,
+            missing_features,
+        ) = metadata_service.get_dimension_indexes_of_labels(
+            db,
+            user,
+            dataset,
+            axis="feature",
+            dimension_labels=dimensions_info.features,
         )
 
-    with print_span_stats("reindex"):
-        # Re-index by label if applicable
-        if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
-            labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
-                db, user, dataset
+    if len(missing_features) > 0:
+        log.warning(f"Could not find features: {missing_features}")
+
+    if dimensions_info.samples is None:
+        sample_indexes = None
+    elif dimensions_info.sample_identifier.value == "id":
+        (
+            sample_indexes,
+            missing_samples,
+        ) = dataset_crud.get_sample_indexes_by_given_ids(
+            db, user, dataset, dimensions_info.samples
+        )
+    else:
+        (
+            sample_indexes,
+            missing_samples,
+        ) = metadata_service.get_dimension_indexes_of_labels(
+            db, user, dataset, axis="sample", dimension_labels=dimensions_info.samples,
+        )
+
+    if len(missing_samples) > 0:
+        log.warning(f"Could not find samples: {missing_samples}")
+
+    if strict:
+        num_missing_features = len(missing_features)
+        missing_features_msg = f"{num_missing_features} missing features: {missing_features[:20] + ['...'] if num_missing_features >= 20 else missing_features}"
+        num_missing_samples = len(missing_samples)
+        missing_samples_msg = f"{num_missing_samples} missing samples: {missing_samples[:20] + ['...'] if num_missing_samples >= 20 else missing_samples}"
+        if len(missing_features) > 0:
+            raise FeatureNotFoundError(missing_features_msg)
+        if len(missing_samples) > 0:
+            raise SampleNotFoundError(missing_samples_msg)
+
+    # call sort on the indices because hdf5_read requires indices be in ascending order
+    if feature_indexes is not None:
+        feature_indexes = sorted(feature_indexes)
+    if sample_indexes is not None:
+        sample_indexes = sorted(sample_indexes)
+
+    df = get_slice(
+        dataset, feature_indexes, sample_indexes, filestore_location, keep_nans=True
+    )
+
+    # Re-index by label if applicable
+    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
+        labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
+            db, user, dataset
+        )
+        df = df.rename(columns=labels_by_id)
+
+    if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
+        label_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
+            db, user, dataset
+        )
+        df = df.rename(index=label_by_id)
+
+    if dimensions_info.aggregate:
+        if dataset.value_type != ValueType.continuous:
+            raise UserError(
+                f"The `value_type` of '{dataset.name}' is '{dataset.value_type.value}'. Dataset must have continuous values! "
             )
-            df = df.rename(columns=labels_by_id)
 
-        if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
-            label_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
-                db, user, dataset
-            )
-            df = df.rename(index=label_by_id)
+        df = _aggregate_matrix_df(
+            df,
+            dimensions_info.aggregate.aggregate_by,
+            dimensions_info.aggregate.aggregation,
+        )
 
-    with print_span_stats("aggregate"):
-        if dimensions_info.aggregate:
-            if dataset.value_type != ValueType.continuous:
-                raise UserError(
-                    f"The `value_type` of '{dataset.name}' is '{dataset.value_type.value}'. Dataset must have continuous values! "
-                )
-
-            df = _aggregate_matrix_df(
-                df,
-                dimensions_info.aggregate.aggregate_by,
-                dimensions_info.aggregate.aggregation,
-            )
-
-    with print_span_stats("replace nans"):
-        df = df.replace({np.nan: None})
+    df = df.replace({np.nan: None})
 
     return df
-
-
-from breadbox.utils.debug_log import print_span_stats
 
 
 def _chunked_aggregate_matrix_df(
@@ -231,17 +216,14 @@ def _aggregate_matrix_df(
     agg_method = enum_to_agg_method[aggregation]
 
     if use_chunking:
-        with print_span_stats("_chunked_aggregate_matrix_df"):
-            df = _chunked_aggregate_matrix_df(df, axis, agg_method).to_frame(
-                name=aggregation.value
-            )
+        df = _chunked_aggregate_matrix_df(df, axis, agg_method).to_frame(
+            name=aggregation.value
+        )
     else:
-        with print_span_stats("na replace"):
-            # Replace None with numpy nan so np.nanpercentile works
-            df: pd.DataFrame = df.replace({pd.NA: np.nan})
+        # Replace None with numpy nan so np.nanpercentile works
+        df: pd.DataFrame = df.replace({pd.NA: np.nan})
 
-        with print_span_stats("call agg function"):
-            df = df.agg(agg_method, axis=axis).to_frame(name=aggregation.value)
+        df = df.agg(agg_method, axis=axis).to_frame(name=aggregation.value)
 
     return df
 

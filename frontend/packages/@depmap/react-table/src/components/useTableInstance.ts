@@ -211,7 +211,7 @@ export function useTableInstance<TData extends RowData>(
       sortUndefined: "last",
       size: 150,
       minSize: 100,
-      maxSize: 500,
+      maxSize: 1000,
     },
   });
 
