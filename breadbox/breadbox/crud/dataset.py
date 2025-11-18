@@ -64,7 +64,10 @@ def get_dataset_filter_clauses(db, user):
     groups = get_groups_with_visible_contents(db, user)  # TODO: update
     group_ids = [group.id for group in groups]
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
+
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
 
@@ -99,7 +102,9 @@ def get_datasets(
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
 
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
@@ -449,6 +454,61 @@ def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: s
     )
 
     return dimensions
+
+
+class IndexedGivenIDDataFrame(pd.DataFrame):
+    """ A subclass of DataFrame which is intended to enforce typesafety. Anywhere this type appears, you can be guarenteed that the required_columns are present. Similarly, there are @properties defined so you can make typesafe access to columns"""
+
+    required_columns = ["given_id"]
+
+    def __init__(self, source: pd.DataFrame):
+        assert set(self.required_columns).issubset(source.columns)
+        super(IndexedGivenIDDataFrame, self).__init__(source[self.required_columns])
+
+    @property
+    def given_id(self):
+        return self["given_id"]
+
+
+def get_matrix_dataset_sample_df(
+    db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
+):
+    """Returns a dataframe with columns given_id, index, label"""
+    assert_user_has_access_to_dataset(dataset, db.user)
+
+    query = db.query(DatasetSample).filter(DatasetSample.dataset_id == dataset.id)
+
+    if filter_by_given_ids:
+        query = query.filter(DatasetSample.given_id.in_(filter_by_given_ids))
+
+    dataset_features = pd.DataFrame(
+        query.with_entities(DatasetSample.given_id, DatasetSample.index).all(),
+        columns=pd.Index(["given_id", "index"]),
+    )
+
+    dataset_features.set_index(["index"], drop=True, inplace=True)
+
+    return IndexedGivenIDDataFrame(dataset_features)
+
+
+def get_matrix_dataset_features_df(
+    db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
+):
+    assert_user_has_access_to_dataset(dataset, db.user)
+
+    query = db.query(DatasetFeature).filter(DatasetFeature.dataset_id == dataset.id)
+
+    if filter_by_given_ids is not None:
+        query = query.filter(DatasetFeature.given_id.in_(filter_by_given_ids))
+
+    dataset_features = pd.DataFrame(
+        query.with_entities(DatasetFeature.given_id, DatasetFeature.index).all(),
+        columns=pd.Index(["given_id", "index"]),
+    )
+
+    dataset_features.set_index(["index"], drop=True, inplace=True)
+
+    return IndexedGivenIDDataFrame(dataset_features)
 
 
 def get_matrix_dataset_features(
