@@ -25,6 +25,11 @@ class FeatureFlags:
 
         return current_app.config["ENV_TYPE"] == "public"
 
+    def is_qa(self):
+        from flask import current_app
+
+        return current_app.config["ENV"].endswith("qa")
+
     def is_skyros(self):
         from flask import current_app
 
@@ -212,7 +217,7 @@ class FeatureFlags:
 
     @property
     def show_compound_correlations(self):
-        return False
+        return self.is_qa()
 
 
 def make_log_config(log_dir):
