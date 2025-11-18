@@ -61,6 +61,9 @@ function CellLineListsDropdown({
           const result = await breadboxAPI.evaluateContext(context);
           labels = result.ids;
         } else {
+          // TODO: Convert to a V2 context instead. That way we remove the
+          // depedency on this deprecated endpoint (and eventually remove it
+          // too).
           labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
             context
           );

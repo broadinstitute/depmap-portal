@@ -705,9 +705,8 @@ function PrototypeDensity1D({
           ...plot.layout,
           showlegend: true,
           legend: {
-            title: {
-              text: legendTitle,
-            },
+            title: { text: legendTitle },
+            font: { size: 14 },
           },
         },
       };
