@@ -5,7 +5,7 @@ import sys
 import re
 import os
 
-DOCKER_REPO = sys.argv[1]
+ARTIFACT_REGISTRY_REPO = sys.argv[1]
 IMAGE_TAG = sys.argv[2]
 BRANCH_NAME = sys.argv[3]
 
@@ -20,6 +20,7 @@ if (
     BRANCH_NAME == "master"
     or BRANCH_NAME == "internal"
     or BRANCH_NAME == "qa"
+    or BRANCH_NAME == "artifact-migration-25q3"  # Remove after migration
     or test_deploy_branch_match is not None
     or quarterly_release_branch_match is not None
 ):
@@ -58,9 +59,10 @@ if "master" in dest_tags:
     dest_tags.add("latest")
 
 for dest_tag in dest_tags:
+    # Push to Artifact Registry
     run_each(
         f"""
-        docker tag {IMAGE_TAG} {DOCKER_REPO}:{dest_tag}
-        docker push {DOCKER_REPO}:{dest_tag}
+        docker tag {IMAGE_TAG} {ARTIFACT_REGISTRY_REPO}:{dest_tag}
+        docker push {ARTIFACT_REGISTRY_REPO}:{dest_tag}
         """
     )
