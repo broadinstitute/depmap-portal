@@ -13,7 +13,7 @@ from breadbox.schemas.context import (
 )
 from breadbox.service import slice as slice_service
 
-from depmap_compute.context import ContextEvaluator
+from breadbox.depmap_compute_embed.context import ContextEvaluator
 
 from .router import router
 

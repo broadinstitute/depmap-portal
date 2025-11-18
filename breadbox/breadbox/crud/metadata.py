@@ -24,7 +24,10 @@ def _get_dataset_filter_clauses(
     groups = get_groups_with_visible_contents(db, user)
     group_ids = [group.id for group in groups]
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
+
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == false())
 
