@@ -1,6 +1,6 @@
 # This base image sets the python version to 3.9.15.
 # Since we no longer depend on R, we could move away from using this custom base image. The remaining non-R dependencies may be fairly quick to install.
-FROM us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox-base:v2
+FROM us.gcr.io/broad-achilles/depmap-breadbox-base:v2
 
 # install security updated
 RUN apt update && apt upgrade -y
