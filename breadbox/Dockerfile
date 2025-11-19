@@ -43,4 +43,7 @@ RUN pip install poetry==1.8.5
 # Ensure that when packages are installed with Poetry a virtual environment is NOT created first. 
 # You’re already in a virtual environment by using a docker image
 RUN poetry config virtualenvs.create false
-RUN poetry install 
+RUN poetry install
+
+# Expose Poetry-installed console scripts (e.g. pypatch-and-run) via /usr/local/bin
+RUN ln -s $PYENV_ROOT/versions/${PYTHON_VERSION}/bin/* /usr/local/bin/
