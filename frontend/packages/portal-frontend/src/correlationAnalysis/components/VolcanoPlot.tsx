@@ -29,7 +29,7 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
     // Always include 0 in the range
     const xMin = Math.min(...allX, 0);
     const xMax = Math.max(...allX, 0);
-    const layout: Partial<Layout> = formatLayout(xMin, xMax);
+    const layout: Partial<Layout> = formatLayout(xMin - 0.1, xMax + 0.1);
 
     const config: Partial<Config> = {
       responsive: true,
