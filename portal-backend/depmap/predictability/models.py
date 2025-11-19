@@ -269,7 +269,8 @@ class PredictiveFeature(Model):
             # interface for performance reasons. This get_correlation_for_entity method is used 
             # to load data for the predictability tab - and is sometimes called 60+ times in a row 
             # to load data for various features. Breadbox is not currently equipped to handle this 
-            # many subsequent requests in a performant way.
+            # many subsequent requests in a performant way. That's fine because predictability is not 
+            # breadbox-friendly at the moment anyway.
             self_values = interactive_utils.get_row_of_values(
                 self.dataset_id, self.feature_name
             )
