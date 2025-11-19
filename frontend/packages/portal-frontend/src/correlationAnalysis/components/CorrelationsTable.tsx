@@ -89,14 +89,14 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
               maxWidth: 200,
               minWidth: 150,
               Header: "Correlation",
-              useHistoSliderFilter: true,
+              customFilter: renderFilterPlaceholder,
             },
             {
               accessor: "log10qvalue",
               maxWidth: 200,
               minWidth: 150,
               Header: "log10(q value)",
-              useHistoSliderFilter: true,
+              customFilter: renderFilterPlaceholder,
             },
             {
               accessor: "rank",
