@@ -26,7 +26,3 @@ jobs:
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Build and push depmap base docker image
         run: cd depmap-base && bash build-depmap-base.sh ${{ env.ARTIFACT_REGISTRY_REPO }} ${{ env.DOCKER_TAG }}
-      - name: Tag and push to Artifact Registry
-        run: |
-          docker tag ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }} ${{ env.ARTIFACT_REGISTRY_REPO }}:latest
-          docker push ${{ env.ARTIFACT_REGISTRY_REPO }}:latest
