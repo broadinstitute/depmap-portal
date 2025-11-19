@@ -290,13 +290,13 @@ export async function initCorrelatedDependenciesTile(
   elementId: string,
   compoundName: string,
   compoundID: string
-) {
+): Promise<void> {
   const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
     compoundID
   );
 
   if (highestPriorityGivenId === null) {
-    return null;
+    return;
   }
 
   renderWithErrorBoundary(
@@ -326,7 +326,7 @@ export async function initRelatedCompoundsTile(
   elementId: string,
   entityLabel: string,
   compoundID: string
-) {
+): Promise<void> {
   const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
     Chronos_Combined: "CRISPR",
     RNAi_merged: "RNAi",
@@ -337,7 +337,7 @@ export async function initRelatedCompoundsTile(
   );
 
   if (highestPriorityGivenId === null) {
-    return null;
+    return;
   }
 
   renderWithErrorBoundary(
