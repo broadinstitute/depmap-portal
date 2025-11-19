@@ -565,7 +565,7 @@ export async function fetchPlotDimensions(
 
         // HACK! I never imagined there would be continuous metadata. We'll
         // fake it too like a color dimension instead.
-        if (value_type === "continuous") {
+        if (key === "color_property" && value_type === "continuous") {
           out.dimensions.color = ({
             axis_label: sliceQuery.label || sliceQuery.identifier,
             dataset_id: sliceQuery.dataset_id,
