@@ -62,13 +62,16 @@ data_availability_datasets = [
         label="Repurposing single point",
         dose_range="2.5μM",
         assay="PRISM",
-        given_ids=["REPURPOSING_AUC_collapsed", DependencyEnum.Rep_all_single_pt.name],
+        given_ids=[DependencyEnum.Rep_all_single_pt.name],
     ),
     DataAvailabilityDataset(
         label="Repurposing multi-dose",
         dose_range="1nM - 10μM",
         assay="PRISM",
-        given_ids=[DependencyEnum.Repurposing_secondary_AUC.name],
+        given_ids=[
+            "REPURPOSING_AUC_collapsed",
+            DependencyEnum.Repurposing_secondary_AUC.name,
+        ],
     ),
     DataAvailabilityDataset(
         label="OncRef",
@@ -98,6 +101,7 @@ def format_dep_dist_warnings(dataset: MatrixDataset):
         return s
 
     return None
+
 
 def get_order(
     has_predictability: bool,
@@ -178,11 +182,12 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
                 ce_and_d = [[ce, d]]
                 return ce_and_d
 
+
 def format_dep_dist(compound: Compound, dataset: MatrixDataset):
     df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset.id)
     feature_data = df.loc[compound.label]
     filtered_feature_data = [x for x in feature_data if not isnan(x)]
-    
+
     color = color_palette.compound_color
 
     svg = format_generic_distribution_plot(filtered_feature_data, color)
@@ -190,14 +195,12 @@ def format_dep_dist(compound: Compound, dataset: MatrixDataset):
     units = dataset.units
 
     return {
-            "svg": svg,
-            "title": "{} {}".format(
-                compound.label, dataset.label
-            ),
-            "num_lines": len(filtered_feature_data),
-            "units": units,
-            "color": color,
-        }
+        "svg": svg,
+        "title": "{} {}".format(compound.label, dataset.label),
+        "num_lines": len(filtered_feature_data),
+        "units": units,
+        "color": color,
+    }
 
 
 def format_enrichment_boxes(compound_experiment_and_datasets):
