@@ -7,6 +7,7 @@ type Data = Record<string, any>;
 interface Props {
   data: Data;
   xAxisTitle: string;
+  useLogScale?: boolean;
 }
 
 type ExtendedPlotType = HTMLDivElement &
@@ -19,6 +20,7 @@ type ExtendedPlotType = HTMLDivElement &
 function PrototypeBarChart({
   data,
   xAxisTitle,
+  useLogScale = false,
   onLoad = () => {},
   Plotly,
 }: Props & { onLoad?: (el: ExtendedPlotType) => void; Plotly: any }) {
@@ -51,9 +53,7 @@ function PrototypeBarChart({
         title: xAxisTitle,
       },
       yaxis: {
-        // TODO: Add an option to show log scale
-        // type: useLogScale ? "log" : "linear",
-        type: "linear",
+        type: useLogScale ? "log" : "linear",
         title: "count",
       },
     };
@@ -66,7 +66,7 @@ function PrototypeBarChart({
     };
 
     Plotly.react(plot!, plotlyData, layout, config);
-  }, [data, xAxisTitle, Plotly]);
+  }, [data, xAxisTitle, useLogScale, Plotly]);
 
   return <div ref={ref} />;
 }
