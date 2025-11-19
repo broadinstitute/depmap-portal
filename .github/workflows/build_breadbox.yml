@@ -211,4 +211,3 @@ jobs:
 
       - name: Publish breadbox client
         uses: ./.github/actions/publish-breadbox-client
-          ./.github/push_docker.py ${{ env.ARTIFACT_REGISTRY_REPO }} ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }} ${GITHUB_REF##*/}
