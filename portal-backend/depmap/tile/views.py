@@ -615,7 +615,7 @@ def get_sensitivity_html(
     
     return render_template(
         "tiles/sensitivity.html",
-        dep_dist=dependency_distribution_info, # TODO: simplify this as well to only show one datasaet
+        dep_dist=dependency_distribution_info,
         dep_dist_caption=format_dep_dist_warnings(top_priority_dataset),
     )
 
