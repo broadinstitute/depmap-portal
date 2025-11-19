@@ -22,6 +22,7 @@ from depmap.dataset.models import (
     DependencyDataset,
     DATASET_NAME_TO_FEATURE_TYPE,
 )
+from depmap.partials.matrix.models import CellLineSeries
 from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 from depmap.match_related.models import RelatedEntityIndex
@@ -243,14 +244,11 @@ class PredictiveFeature(Model):
         )
 
     def get_correlation_for_entity(
-        self, dep_dataset: DependencyDataset, entity: Entity
+        self, dep_dataset_values: CellLineSeries
     ) -> Optional[float]:
         if not self._get_feature_is_loaded():
             return None
 
-        dep_dataset_values = data_access.get_row_of_values(
-            dep_dataset.name.name, entity.label
-        )
         if self.dataset_id == "context":
             cell_lines_in_self_context = data_access.get_row_of_values(
                 data_access.get_context_dataset(), self.feature_name

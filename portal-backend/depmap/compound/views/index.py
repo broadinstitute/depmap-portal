@@ -516,7 +516,6 @@ def get_auc_data(dataset_name, compound_experiment):
 def get_predictive_table():
     compound_label = request.args.get("compoundLabel")
     compound = Compound.get_by_label(compound_label)
-
     compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
         compound.entity_id
     )
@@ -544,6 +543,9 @@ def get_predictive_table():
             sorted_feature_results: List[PredictiveFeatureResult] = sorted(
                 model.feature_results, key=lambda result: result.rank
             )
+            dep_dataset_values = data_access.get_row_of_values(
+                model.dataset.name.name, ce.label
+            )
             results = []
             for feature_result in sorted_feature_results:
                 related_type = feature_result.feature.get_relation_to_entity(
@@ -554,7 +556,7 @@ def get_predictive_table():
                     "featureName": feature_result.feature.feature_name,
                     "featureImportance": feature_result.importance,
                     "correlation": feature_result.feature.get_correlation_for_entity(
-                        model.dataset, ce
+                        dep_dataset_values
                     ),
                     "featureType": feature_result.feature.feature_type,
                     "relatedType": related_type,
