@@ -1,3 +1,6 @@
+import { breadboxAPI, cached } from "@depmap/api";
+import { MatrixDataset } from "@depmap/types/src/Dataset";
+
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
 export const Rep3Color = "#176CE0";
@@ -68,4 +71,28 @@ export function mapEntrezIdToSymbols(
   });
 
   return geneSymbols;
+}
+
+function isMatrixDataset(d: unknown): d is MatrixDataset {
+  return (
+    typeof d === "object" &&
+    d !== null &&
+    "units" in d &&
+    typeof (d as any).units === "string"
+  );
+}
+
+export async function getHighestPriorityCorrelationDatasetForEntity(
+  compoundID: string
+) {
+  const datasets = await cached(breadboxAPI).getDatasets({
+    feature_id: compoundID,
+    feature_type: "compound_v2",
+  });
+
+  const match = datasets.find(
+    (d) => isMatrixDataset(d) && d.priority === 1 && d.units === "log2(AUC)"
+  );
+
+  return match ? match.given_id : null;
 }

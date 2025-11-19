@@ -25,6 +25,7 @@ import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
+import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -285,13 +286,25 @@ export function initHeatmapTile(
   );
 }
 
-export function initCorrelatedDependenciesTile(
+export async function initCorrelatedDependenciesTile(
   elementId: string,
-  entityLabel: string
+  compoundName: string,
+  compoundID: string
 ) {
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return null;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelatedDependenciesTile entityLabel={entityLabel} />
+      <CorrelatedDependenciesTile
+        entityLabel={compoundName}
+        datasetID={highestPriorityGivenId!}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -309,20 +322,29 @@ export function initStructureAndDetailTile(
   );
 }
 
-export function initRelatedCompoundsTile(
+export async function initRelatedCompoundsTile(
   elementId: string,
-  entityLabel: string
+  entityLabel: string,
+  compoundID: string
 ) {
   const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
     Chronos_Combined: "CRISPR",
     RNAi_merged: "RNAi",
   };
 
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return null;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <RelatedCompoundsTile
         entityLabel={entityLabel}
-        datasetId="PRISMOncologyReferenceLog2AUCMatrix"
+        datasetId={highestPriorityGivenId}
         datasetToDataTypeMap={datasetToDataTypeMap}
       />
     </React.Suspense>,
