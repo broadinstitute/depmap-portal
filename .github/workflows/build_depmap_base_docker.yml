@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "master"
-      - "artifact-migration-25q3"
     paths:
       - "depmap-base/**"
       - ".github/workflows/build_depmap_base_docker.yml"

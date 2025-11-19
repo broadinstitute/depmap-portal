@@ -22,7 +22,6 @@ on:
       - "dmc*"
       - "external*"
       - "test-*"
-      - "artifact-migration-25q3"
 
 permissions:
   contents: write

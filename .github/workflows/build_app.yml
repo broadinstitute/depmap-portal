@@ -12,7 +12,6 @@ on:
       - "dmc*"
       - "external*"
       - "test-*"
-      - "artifact-migration-25q3"
 
 env:
   ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap

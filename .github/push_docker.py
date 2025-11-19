@@ -20,7 +20,6 @@ if (
     BRANCH_NAME == "master"
     or BRANCH_NAME == "internal"
     or BRANCH_NAME == "qa"
-    or BRANCH_NAME == "artifact-migration-25q3"  # Remove after migration
     or test_deploy_branch_match is not None
     or quarterly_release_branch_match is not None
 ):

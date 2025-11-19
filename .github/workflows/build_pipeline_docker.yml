@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "master"
-      - "artifact-migration-25q3"
     paths:
       - "pipeline/build-pipeline-docker-images/pipeline-run-docker/**"
       - "pipeline/build-pipeline-docker-images/build.sh"
