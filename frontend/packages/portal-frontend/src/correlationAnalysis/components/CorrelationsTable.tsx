@@ -34,6 +34,19 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
     });
   }, [data]);
 
+  const renderFilterPlaceholder = ({
+    column: { filterValue, setFilter },
+  }: any) => {
+    return (
+      <input
+        type="text"
+        placeholder={`Search...`}
+        value={filterValue || ""}
+        onChange={(event) => setFilter(event.target.value || undefined)}
+        style={{ width: "90%", fontSize: "12px" }}
+      />
+    );
+  };
   let tableContent;
   if (hasError) {
     tableContent = (
@@ -55,32 +68,43 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
               maxWidth: 200,
               minWidth: 150,
               Header: "Feature",
+              customFilter: renderFilterPlaceholder,
             },
             {
               accessor: "featureDataset",
               maxWidth: 200,
               minWidth: 150,
               Header: "Correlated Dataset",
+              customFilter: renderFilterPlaceholder,
             },
             {
               accessor: "dose",
               maxWidth: 200,
               minWidth: 150,
               Header: `${compound} Dose`,
+              customFilter: renderFilterPlaceholder,
             },
             {
               accessor: "correlation",
               maxWidth: 200,
               minWidth: 150,
               Header: "Correlation",
+              customFilter: renderFilterPlaceholder,
             },
             {
               accessor: "log10qvalue",
               maxWidth: 200,
               minWidth: 150,
               Header: "log10(q value)",
+              customFilter: renderFilterPlaceholder,
             },
-            { accessor: "rank", maxWidth: 200, minWidth: 150, Header: "Rank" },
+            {
+              accessor: "rank",
+              maxWidth: 200,
+              minWidth: 150,
+              Header: "Rank",
+              customFilter: renderFilterPlaceholder,
+            },
           ]}
           data={tableData}
           rowHeight={28}
