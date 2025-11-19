@@ -6,7 +6,7 @@ from flask.globals import current_app
 from dataclasses import dataclass
 import uuid
 
-
+from depmap import data_access
 import depmap.celfie.utils as celfie_utils
 from flask import Blueprint, render_template, abort, jsonify, url_for, request
 from depmap.enums import GeneTileEnum, CompoundTileEnum, CellLineTileEnum
@@ -28,8 +28,8 @@ from depmap.gene.views.executive import (
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     get_best_compound_predictability,
-    format_dep_dists,
-    format_dep_dist_caption,
+    format_dep_dist,
+    format_dep_dist_warnings,
     format_top_corr_table,
     format_availability_tile,
 )
@@ -602,16 +602,21 @@ def get_tractability_html(gene):
 
 
 def get_sensitivity_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
+    compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    # DEPRECATED: will be redesigned/replaced
-    best_ce_and_d = determine_compound_experiment_and_dataset(
-        compound_experiment_and_datasets
-    )
+    all_matching_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
+    if len(all_matching_datasets) == 0:
+        return render_template("tiles/sensitivity.html", dep_dist=None, dep_dist_caption=None)
+    
+    # This tile was originally configured to show multiple distributions, but
+    # was later updated to only display the top priority dataset
+    top_priority_dataset = all_matching_datasets[0]
+    dependency_distribution_info = format_dep_dist(compound, top_priority_dataset)
+    
     return render_template(
         "tiles/sensitivity.html",
-        dep_dists=format_dep_dists(best_ce_and_d),
-        dep_dist_caption=format_dep_dist_caption(best_ce_and_d),
+        dep_dist=dependency_distribution_info,
+        dep_dist_caption=format_dep_dist_warnings(top_priority_dataset),
     )
 
 

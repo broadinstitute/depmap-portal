@@ -395,7 +395,6 @@ test_executive.py: error: Argument of type "list[Unknown] | None" cannot be assi
 test_executive.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
 test_executive.py: error: Cannot access member "entity_id" for type "CompoundExperimentFactory"
 test_executive.py: error: Cannot access member "units" for type "LazyAttribute"
-test_executive.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 test_executive.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_executive.py: error: Operator "in" not supported for types "Literal['svg']" and "dict[str, dict[Unknown, Unknown]] | dict[str, Unknown] | None"
 test_executive.py: error: Operator "not in" not supported for types "Literal['svg']" and "dict[str, dict[Unknown, Unknown]] | dict[str, Unknown] | None"
@@ -543,7 +542,6 @@ views.py: error: Argument of type "Unknown | FileStorage" cannot be assigned to 
 views.py: error: Argument of type "Unknown | Hashable" cannot be assigned to parameter "group_name" of type "str" in function "__init__"
 views.py: error: Argument of type "Unknown | int | list[Unknown]" cannot be assigned to parameter "color_num" of type "str | int" in function "__init__" (reportArgumentType)
 views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to parameter "breadbox_feature_data" of type "list[Series]" in function "get_df_from_feature_list"
-views.py: error: Argument of type "list[list[Unknown]] | None" cannot be assigned to parameter "compound_experiment_and_datasets" of type "List[Tuple[CompoundExperiment, DependencyDataset]]" in function "format_dep_dist_caption"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
 views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "_VT@dict" in function "__setitem__"
