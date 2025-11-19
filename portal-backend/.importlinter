@@ -8,7 +8,6 @@ source_modules=
     depmap.cell_line
     depmap.data_explorer_2
     depmap.download
-    depmap.predictability
     depmap.tile
     depmap.user_uploads
 forbidden_modules=
