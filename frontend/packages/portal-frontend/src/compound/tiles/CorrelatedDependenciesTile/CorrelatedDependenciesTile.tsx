@@ -22,11 +22,13 @@ const CorrelatedDependenciesTile = ({
     error,
   } = useCorrelatedDependenciesData(datasetID, entityLabel);
 
-  // Get the top 5 dataset associations based on correlation sorted in descending order
+  // Get the top 5 dataset associations based on abs(correlation) sorted in descending order
   const getTopDatasetAssociations = (
     datasetAssociations: AssociatedFeatures[]
   ) => {
-    datasetAssociations.sort((a, b) => b.correlation - a.correlation);
+    datasetAssociations.sort(
+      (a, b) => Math.abs(b.correlation) - Math.abs(a.correlation)
+    );
     return datasetAssociations.slice(0, 5);
   };
   // If there is no data, don't show tile
