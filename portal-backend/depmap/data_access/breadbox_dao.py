@@ -39,6 +39,10 @@ def _get_breadbox_datasets_with_caching() -> list[
     
 
 def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
+    """
+    Load the information about a single dataset from the cache (if the cache exists).
+    If not, load the information about all datasets and populate the cache.
+    """
     datasets_list = _get_breadbox_datasets_with_caching()
     for dataset in datasets_list:
         if dataset.id == breadbox_dataset_id or dataset.given_id == breadbox_dataset_id:
@@ -50,9 +54,13 @@ def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[Matrix
 def _get_row_of_values_with_caching(
     breadbox_dataset_id: str, feature: str, feature_identifier: Literal["id", "label"]
 ) -> CellLineSeries:
-    # TODO: improve documentation here
+    """
+    Cache the data for a single feature (in a single dataset), scoped to the flask request. 
+    Certain API endpoints (predictability, compound page) make a lot of 
+    repetative calls to load data.
+    """
     key_for_lookup = (breadbox_dataset_id, feature, feature_identifier)
-    print("Looking up", key_for_lookup)
+
     if hasattr(flask.g, "__cached_feature_values"):
         cached_feature_values = cast(
             dict[tuple, CellLineSeries],
