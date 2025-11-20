@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Literal, Optional, Union, cast
 
+from breadbox_facade.exceptions import BreadboxException
 from breadbox_client.models import (
     DimensionType,
     MatrixDatasetResponse,
@@ -35,6 +36,16 @@ def _get_breadbox_datasets_with_caching() -> list[
     else:
         flask.g.__cached_get_datasets = extensions.breadbox.client.get_datasets()
         return flask.g.__cached_get_datasets
+    
+
+
+def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
+    datasets_list = _get_breadbox_datasets_with_caching()
+    for dataset in datasets_list:
+        if dataset.id == breadbox_dataset_id or dataset.given_id == breadbox_dataset_id:
+            return dataset
+    
+    raise BreadboxException(f"Dataset not found '{breadbox_dataset_id}'")
 
 
 def get_all_matrix_datasets() -> list[MatrixDataset]:
@@ -97,8 +108,11 @@ def is_breadbox_id(dataset_id: str) -> bool:
 
 # Eventually we will also need a more generic "get_dataset" that can handle tabular datasets
 def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
+    # Usually by the time we are looking up a specific dataset, we've already called 
+    # _get_breadbox_datasets_with_caching to confirm that the dataset exists.
+    # This is a good use for caching (at least per-request)
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
-    dataset = extensions.breadbox.client.get_dataset(bb_dataset_id)
+    dataset = _get_breadbox_dataset_with_caching(bb_dataset_id)
     assert isinstance(
         dataset, MatrixDatasetResponse
     ), f"Expected {dataset_id} to be a matrix dataset"
