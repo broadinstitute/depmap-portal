@@ -52,6 +52,6 @@ mkdir -p dist
 DOCKER_BUILDKIT=1 \
   docker build . \
   -t ${IMAGE_TAG} \
-  --cache-from us.gcr.io/broad-achilles/depmap:latest \
+  --cache-from us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap:latest \
   --build-arg BUILDKIT_INLINE_CACHE=1
 

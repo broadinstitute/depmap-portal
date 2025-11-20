@@ -4,12 +4,13 @@ on:
   push:
     branches:
       - "master"
+      - "artifact-migration-25q3"
     paths:
       - "depmap-base/**"
       - ".github/workflows/build_depmap_base_docker.yml"
 
 env:
-  DOCKER_REPO: us.gcr.io/broad-achilles/depmap-base
+  ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-base
   DOCKER_TAG: ga2-build-${{ github.run_number }}
 
 jobs:
@@ -17,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Login to GCR
+      - name: Login to Artifact Registry
         uses: docker/login-action@v2
         with:
-          registry: us.gcr.io
+          registry: us-central1-docker.pkg.dev
           username: _json_key
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Build and push depmap base docker image
-        run: cd depmap-base && bash build-depmap-base.sh ${{ env.DOCKER_REPO }} ${{ env.DOCKER_TAG }}
+        run: cd depmap-base && bash build-depmap-base.sh ${{ env.ARTIFACT_REGISTRY_REPO }} ${{ env.DOCKER_TAG }}
