@@ -94,7 +94,9 @@ export async function getHighestPriorityCorrelationDatasetForEntity(
     return null;
   }
 
-  const matrixDatasets = datasets.filter((d) => isMatrixDataset(d));
+  const matrixDatasets = datasets.filter(
+    (d) => isMatrixDataset(d) && d.units === "log2(AUC)"
+  );
 
   const sorted = [...matrixDatasets].sort((a, b) => {
     const pa = typeof a.priority === "number" ? a.priority : Infinity;
