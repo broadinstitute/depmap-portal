@@ -476,6 +476,7 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
     PredictiveBackgroundFactory(dataset=rep1m_dataset)
 
     empty_db_mock_downloads.session.flush()
+    interactive_test_utils.reload_interactive_config()
 
     with app.test_client() as c:
         # Data exists for compound 1
