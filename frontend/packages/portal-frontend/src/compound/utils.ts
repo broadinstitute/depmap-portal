@@ -84,15 +84,25 @@ function isMatrixDataset(d: unknown): d is MatrixDataset {
 
 export async function getHighestPriorityCorrelationDatasetForEntity(
   compoundID: string
-) {
+): Promise<string | null> {
   const datasets = await cached(breadboxAPI).getDatasets({
     feature_id: compoundID,
     feature_type: "compound_v2",
   });
 
-  const match = datasets.find(
-    (d) => isMatrixDataset(d) && d.priority === 1 && d.units === "log2(AUC)"
-  );
+  if (datasets.length === 0) {
+    return null;
+  }
 
-  return match ? match.given_id : null;
+  const matrixDatasets = datasets.filter((d) => isMatrixDataset(d));
+
+  const sorted = [...matrixDatasets].sort((a, b) => {
+    const pa = typeof a.priority === "number" ? a.priority : Infinity;
+    const pb = typeof b.priority === "number" ? b.priority : Infinity;
+    return pa - pb;
+  });
+
+  if (sorted.length === 0) return null;
+
+  return sorted[0].given_id || null;
 }
