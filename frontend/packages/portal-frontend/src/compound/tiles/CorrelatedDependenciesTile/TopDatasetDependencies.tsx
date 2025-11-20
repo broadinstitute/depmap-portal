@@ -1,11 +1,11 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from "react";
-import { DependencyMeter } from "./DependencyMeter";
 import { toStaticUrl } from "@depmap/globals";
 import styles from "../../styles/CorrelationTile.scss";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { Tooltip } from "@depmap/common-components";
 import { getFullUrlPrefix } from "src/compound/utils";
+import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 
 interface TopDatasetDependencyProps {
   featureId: string;
@@ -28,7 +28,7 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
   return (
     <div>
       <h3 className={styles.tableDatasetTitle}>{dataType}</h3>
-      <table style={{ width: "85%", tableLayout: "fixed" }}>
+      <table style={{ width: "90%", tableLayout: "fixed" }}>
         <thead>
           <tr>
             <th style={{ width: "10%" }} />
@@ -36,7 +36,8 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
             <th style={{ width: "30%" }}>
               {featureType === "gene" ? "Gene" : "Compound"}
             </th>
-            <th style={{ width: "35%" }}>Correlation</th>
+            <th style={{ width: "10%" }}>Correlation</th>
+            <th style={{ width: "30%" }}></th>
           </tr>
         </thead>
         <tbody>
@@ -78,13 +79,13 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                   </Tooltip>
                 </td>
 
+                <td>{datasetCor.correlation.toFixed(2)}</td>
                 <td>
-                  <td style={{ paddingRight: "3rem" }}>
-                    {datasetCor.correlation.toFixed(2)}
-                  </td>
-                  <td>
-                    <DependencyMeter correlation={datasetCor.correlation} />
-                  </td>
+                  <CorrelationMeter
+                    showLabel={false}
+                    correlation={datasetCor.correlation}
+                    useGradedColorScheme
+                  />
                 </td>
               </tr>
             );
