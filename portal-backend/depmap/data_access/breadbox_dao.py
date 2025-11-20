@@ -57,7 +57,7 @@ def _get_row_of_values_with_caching(
     """
     Cache the data for a single feature (in a single dataset), scoped to the flask request. 
     Certain API endpoints (predictability, compound page) make a lot of 
-    repetative calls to load data.
+    repetative calls to load data - this addresses that issue.
     """
     key_for_lookup = (breadbox_dataset_id, feature, feature_identifier)
 
@@ -143,9 +143,6 @@ def is_breadbox_id(dataset_id: str) -> bool:
 
 # Eventually we will also need a more generic "get_dataset" that can handle tabular datasets
 def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
-    # Usually by the time we are looking up a specific dataset, we've already called 
-    # _get_breadbox_datasets_with_caching to confirm that the dataset exists.
-    # This is a good use for caching (at least per-request)
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
     dataset = _get_breadbox_dataset_with_caching(bb_dataset_id)
     assert isinstance(
