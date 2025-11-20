@@ -51,7 +51,7 @@ def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[Matrix
     raise BreadboxException(f"Dataset not found '{breadbox_dataset_id}'")
 
 
-def _get_row_of_values_with_caching(
+def _get_feature_data_with_caching(
     breadbox_dataset_id: str, feature: str, feature_identifier: Literal["id", "label"]
 ) -> CellLineSeries:
     """
@@ -217,7 +217,7 @@ def get_row_of_values(
     Get a row of numeric or string values, indexed by depmap_id.
     """
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
-    return _get_row_of_values_with_caching(
+    return _get_feature_data_with_caching(
         breadbox_dataset_id=bb_dataset_id, 
         feature=feature, 
         feature_identifier=feature_identifier
