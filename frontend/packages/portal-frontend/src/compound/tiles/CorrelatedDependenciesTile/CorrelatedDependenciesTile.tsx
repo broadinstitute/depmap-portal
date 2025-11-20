@@ -7,10 +7,12 @@ import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 
 interface CorrelatedDependenciesTileProps {
   entityLabel: string;
+  datasetID: string;
 }
 
 const CorrelatedDependenciesTile = ({
   entityLabel,
+  datasetID,
 }: CorrelatedDependenciesTileProps) => {
   const {
     correlationData,
@@ -18,10 +20,7 @@ const CorrelatedDependenciesTile = ({
     geneTargets,
     isLoading,
     error,
-  } = useCorrelatedDependenciesData(
-    "PRISMOncologyReferenceLog2AUCMatrix",
-    entityLabel
-  );
+  } = useCorrelatedDependenciesData(datasetID, entityLabel);
 
   // Get the top 5 dataset associations based on correlation sorted in descending order
   const getTopDatasetAssociations = (

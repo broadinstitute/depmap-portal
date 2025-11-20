@@ -396,15 +396,14 @@ def get_correlated_dependencies_html(
 ):
     # unique id to insert in DOM
     div_id = str(uuid.uuid4())
-    entity_label = entity.label
+    compound_name = entity.label
+    compound_id = Compound.get_by_label(compound_name).compound_id
 
     return RenderedTile(
-        f'<div id="{div_id}">get_correlated_dependencies_html is stubbed out</div>',
+        f'<div id="{div_id}"></div>',
         f"""(
         function() {{
-            console.log("about to call initCorrelatedDependenciesTile");
-            DepMap.initCorrelatedDependenciesTile("{div_id}", "{entity_label}");
-            console.log("after initCorrelatedDependenciesTile");
+            DepMap.initCorrelatedDependenciesTile("{div_id}", "{compound_name}", "{compound_id}");
         }})""",
     )
 
@@ -415,15 +414,14 @@ def get_related_compounds_html(
     # unique id to insert in DOM
     div_id = str(uuid.uuid4())
     entity_label = entity.label
-    print(entity.entity_id)
+    compound_name = entity.label
+    compound_id = Compound.get_by_label(compound_name).compound_id
 
     return RenderedTile(
-        f'<div id="{div_id}">get_correlated_dependencies_html is stubbed out</div>',
+        f'<div id="{div_id}"></div>',
         f"""(
         function() {{
-            console.log("about to call initRelatedCompoundsTile");
-            DepMap.initRelatedCompoundsTile("{div_id}", "{entity_label}");
-            console.log("after initRelatedCompoundsTile");
+            DepMap.initRelatedCompoundsTile("{div_id}", "{entity_label}", "{compound_id}");
         }})""",
     )
 
@@ -604,15 +602,19 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    all_matching_datasets = data_access.get_all_datasets_containing_compound(compound.compound_id)
+    all_matching_datasets = data_access.get_all_datasets_containing_compound(
+        compound.compound_id
+    )
     if len(all_matching_datasets) == 0:
-        return render_template("tiles/sensitivity.html", dep_dist=None, dep_dist_caption=None)
-    
+        return render_template(
+            "tiles/sensitivity.html", dep_dist=None, dep_dist_caption=None
+        )
+
     # This tile was originally configured to show multiple distributions, but
     # was later updated to only display the top priority dataset
     top_priority_dataset = all_matching_datasets[0]
     dependency_distribution_info = format_dep_dist(compound, top_priority_dataset)
-    
+
     return render_template(
         "tiles/sensitivity.html",
         dep_dist=dependency_distribution_info,
