@@ -1,4 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
+import { getUrlPrefix } from "@depmap/globals";
 import { MatrixDataset } from "@depmap/types/src/Dataset";
 
 export const Rep1Color = "#CC4778";
@@ -107,4 +108,15 @@ export async function getHighestPriorityCorrelationDatasetForEntity(
   if (sorted.length === 0) return null;
 
   return sorted[0].given_id || null;
+}
+
+export function getFullUrlPrefix() {
+  let relativeUrlPrefix = getUrlPrefix();
+
+  if (relativeUrlPrefix === "/") {
+    relativeUrlPrefix = "";
+  }
+
+  const urlPrefix = `${window.location.protocol}//${window.location.host}${relativeUrlPrefix}`;
+  return urlPrefix;
 }

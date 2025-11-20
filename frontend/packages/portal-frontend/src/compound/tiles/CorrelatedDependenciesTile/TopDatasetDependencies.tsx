@@ -5,6 +5,7 @@ import { toStaticUrl } from "@depmap/globals";
 import styles from "../../styles/CorrelationTile.scss";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { Tooltip } from "@depmap/common-components";
+import { getFullUrlPrefix } from "src/compound/utils";
 
 interface TopDatasetDependencyProps {
   featureId: string;
@@ -23,7 +24,7 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
   topDatasetCorrelations,
   geneTargets,
 }) => {
-  const urlPrefix = window.location.origin;
+  const urlPrefix = getFullUrlPrefix();
   return (
     <div>
       <h3 className={styles.tableDatasetTitle}>{dataType}</h3>
@@ -55,7 +56,6 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                   {geneTargets.includes(datasetCor.other_dimension_label) ? (
                     <img
                       src={toStaticUrl("img/compound/target.svg")}
-                      onLoad={() => console.log("image loaded")}
                       alt="Target Feature"
                     />
                   ) : (
