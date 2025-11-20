@@ -28,14 +28,15 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
   return (
     <div>
       <h3 className={styles.tableDatasetTitle}>{dataType}</h3>
-      <table style={{ width: "80%", tableLayout: "fixed" }}>
+      <table style={{ width: "85%", tableLayout: "fixed" }}>
         <thead>
           <tr>
-            <th style={{ width: "15%" }} />
-            <th style={{ width: "45%" }}>
+            <th style={{ width: "10%" }} />
+            <th style={{ width: "8%" }} />
+            <th style={{ width: "30%" }}>
               {featureType === "gene" ? "Gene" : "Compound"}
             </th>
-            <th style={{ width: "40%" }}>Correlation</th>
+            <th style={{ width: "35%" }}>Correlation</th>
           </tr>
         </thead>
         <tbody>
@@ -53,14 +54,14 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                 </td>
 
                 <td className={styles.targetIconContainer}>
-                  {geneTargets.includes(datasetCor.other_dimension_label) ? (
+                  {geneTargets.includes(datasetCor.other_dimension_label) && (
                     <img
                       src={toStaticUrl("img/compound/target.svg")}
                       alt="Target Feature"
                     />
-                  ) : (
-                    <p style={{ paddingLeft: "12px" }} />
                   )}
+                </td>
+                <td>
                   <Tooltip
                     id="correlated-gene-tooltip"
                     content={datasetCor.other_dimension_label}
