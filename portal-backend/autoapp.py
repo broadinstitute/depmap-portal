@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 
 import faulthandler
 import signal
-from .tweaked_proxy import ProxyMiddlewareWithLogging
+from depmap.tweaked_proxy import ProxyMiddlewareWithLogging
 from werkzeug.wrappers import Request, Response
 from depmap.read_config import read_config
 from itsdangerous import Serializer
