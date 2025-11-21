@@ -2,6 +2,30 @@ import React from "react";
 import Select from "react-select";
 import styles from "../styles/CorrelationAnalysis.scss";
 
+const customStyles = {
+  multiValue: (s: any) => ({
+    ...s,
+    maxWidth: "100%",
+    flex: "1 1 auto",
+    margin: "2px 4px",
+    backgroundColor: "#eef2ff",
+  }),
+
+  multiValueLabel: (s: any) => ({
+    ...s,
+    whiteSpace: "normal",
+    wordBreak: "break-word",
+    padding: "2px 8px",
+    fontSize: "1.1rem",
+    lineHeight: "1.25",
+  }),
+
+  valueContainer: (s: any) => ({
+    ...s,
+    flexWrap: "wrap",
+  }),
+};
+
 export interface FilterOption {
   readonly label: string;
   readonly value: string;
@@ -101,6 +125,7 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
         options={correlatedDatasetOptions}
         isMulti
         onChange={handleCorrelatedDatasetsChange}
+        styles={customStyles}
       />
     </div>
   );
