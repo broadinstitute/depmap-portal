@@ -111,12 +111,10 @@ def write_hdf5_file(
         f.close()
 
 
-# def batched_columns(column_names: List[str], batch_size: int = 5000):
-#     """
-#     Returns a generator that yields batches of column names to avoid memory issues with large datasets (e.g. >200k columns).
-#     """
-#     for i in range(0, len(column_names), batch_size):
-#         yield column_names[i : i + batch_size]
+# import contextlib
+# @contextlib.contextmanager
+# def with_
+#
 
 
 def read_hdf5_file(
@@ -127,6 +125,7 @@ def read_hdf5_file(
 ):
     """Return subsetted df based on provided feature and sample indexes. If either feature or sample indexes is None then return all features or samples"""
     with h5py.File(path, mode="r") as f:
+        f_data = f["data"]
         row_len, col_len = f["data"].shape  # type: ignore
 
         if feature_indexes is not None and sample_indexes is not None:
