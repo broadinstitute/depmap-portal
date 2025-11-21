@@ -218,7 +218,11 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def show_compound_correlations(self):
+    def compound_correlation_tiles(self):
+        return self.is_qa()
+
+    @property
+    def correlation_analysis(self):
         return self.is_qa()
 
 

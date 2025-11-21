@@ -606,7 +606,7 @@ def test_format_heatmap_options_new_tab_if_available_true(app, monkeypatch):
 
 def corr_analysis_config(request):
     class TestFeatureFlags:
-        def show_compound_correlations(self):
+        def correlation_analysis(self):
             return True
 
     class TestVersionConfig(TestConfig):
