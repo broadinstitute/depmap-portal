@@ -126,30 +126,30 @@ def read_hdf5_file(
     """Return subsetted df based on provided feature and sample indexes. If either feature or sample indexes is None then return all features or samples"""
     with h5py.File(path, mode="r") as f:
         f_data = f["data"]
-        row_len, col_len = f["data"].shape  # type: ignore
+        row_len, col_len = f_data.shape  # type: ignore
 
         if feature_indexes is not None and sample_indexes is not None:
             _validate_read_size(len(feature_indexes), len(sample_indexes))
             # subset first by the more selective axis. (HDF5 doesn't allow us to subset both axes in a single request)
             if len(feature_indexes) < len(sample_indexes):
-                data = f["data"][:, feature_indexes][sample_indexes, :]
+                data = f_data[:, feature_indexes][sample_indexes, :]
             else:
-                data = f["data"][sample_indexes, :][:, feature_indexes]
+                data = f_data[sample_indexes, :][:, feature_indexes]
             feature_ids = f["features"][feature_indexes]
             sample_ids = f["samples"][sample_indexes]
         elif feature_indexes is not None:
             _validate_read_size(len(feature_indexes), row_len)
-            data = f["data"][:, feature_indexes]
+            data = f_data[:, feature_indexes]
             feature_ids = f["features"][feature_indexes]
             sample_ids = f["samples"]
         elif sample_indexes is not None:
             _validate_read_size(col_len, len(sample_indexes))
-            data = f["data"][sample_indexes]
+            data = f_data[sample_indexes]
             feature_ids = f["features"]
             sample_ids = f["samples"][sample_indexes]
         else:
             _validate_read_size(col_len, row_len)
-            data = f["data"]
+            data = f_data
             feature_ids = f["features"]
             sample_ids = f["samples"]
 
