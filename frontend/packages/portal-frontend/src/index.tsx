@@ -1,6 +1,6 @@
 import "src/public-path";
 
-import React, { useState } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
@@ -33,7 +33,6 @@ import {
   getAvailableCorrelationDatasetForEntity,
   getHighestPriorityCorrelationDatasetForEntity,
 } from "./compound/utils";
-import { useEffect } from "react";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
