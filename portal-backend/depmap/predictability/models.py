@@ -137,15 +137,12 @@ class PredictiveModel(Model):
                 "correlation": None,
                 "related_type": False,
             }
-            values_for_entity = data_access.get_row_of_values(
-                predictive_model.dataset.name.name, predictive_model.entity.label
-            )
             if feature is not None:
                 row["interactive_url"] = feature.get_interactive_url_for_entity(
                     predictive_model.dataset, predictive_model.entity,
                 )
                 row["correlation"] = feature.get_correlation_for_entity(
-                    values_for_entity
+                    predictive_model.dataset, predictive_model.entity,
                 )
                 row["related_type"] = feature.get_relation_to_entity(entity_id)
             rows.append(row)
@@ -248,11 +245,14 @@ class PredictiveFeature(Model):
         )
 
     def get_correlation_for_entity(
-        self, dep_dataset_values: CellLineSeries
+        self, dep_dataset: DependencyDataset, entity: Entity
     ) -> Optional[float]:
         if not self._get_feature_is_loaded():
             return None
-
+        
+        dep_dataset_values = data_access.get_row_of_values(
+            dep_dataset.name.name, entity.label
+        )
         if self.dataset_id == "context":
             cell_lines_in_self_context = data_access.get_row_of_values(
                 data_access.get_context_dataset(), self.feature_name

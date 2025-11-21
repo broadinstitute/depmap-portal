@@ -280,9 +280,6 @@ def get_predictive_table():
         model_order = {"Core_omics": 0, "Related": 1, "DNA_based": 2}
         models = [model for model in models if model.label in model_order.keys()]
         models.sort(key=lambda model: model_order.get(model.label))
-        dep_dataset_values = data_access.get_row_of_values(
-            dataset.name.name, gene.label
-        )
         models_and_results = []
         for model in models:
             sorted_feature_results: List[PredictiveFeatureResult] = sorted(
@@ -296,7 +293,7 @@ def get_predictive_table():
                     "featureName": feature_result.feature.feature_name,
                     "featureImportance": feature_result.importance,
                     "correlation": feature_result.feature.get_correlation_for_entity(
-                        dep_dataset_values
+                        dataset, gene
                     ),
                     "featureType": feature_result.feature.feature_type,
                     "relatedType": related_type,
