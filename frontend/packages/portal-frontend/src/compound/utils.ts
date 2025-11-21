@@ -1,6 +1,6 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { getUrlPrefix } from "@depmap/globals";
-import { MatrixDataset } from "@depmap/types/src/Dataset";
+import { Dataset, MatrixDataset } from "@depmap/types/src/Dataset";
 
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
@@ -83,9 +83,9 @@ function isMatrixDataset(d: unknown): d is MatrixDataset {
   );
 }
 
-export async function getHighestPriorityCorrelationDatasetForEntity(
+export async function getAvailableCorrelationDatasetForEntity(
   compoundID: string
-): Promise<string | null> {
+): Promise<Dataset[] | null> {
   const datasets = await cached(breadboxAPI).getDatasets({
     feature_id: compoundID,
     feature_type: "compound_v2",
@@ -106,6 +106,16 @@ export async function getHighestPriorityCorrelationDatasetForEntity(
   });
 
   if (sorted.length === 0) return null;
+
+  return sorted;
+}
+
+export async function getHighestPriorityCorrelationDatasetForEntity(
+  compoundID: string
+): Promise<string | null> {
+  const sorted = await getAvailableCorrelationDatasetForEntity(compoundID);
+
+  if (sorted == null) return null;
 
   return sorted[0].given_id || null;
 }

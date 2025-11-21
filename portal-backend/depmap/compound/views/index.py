@@ -31,7 +31,6 @@ from depmap.compound.models import (
     Compound,
     CompoundDoseReplicate,
     CompoundExperiment,
-    DRCCompoundDataset,
     DRCCompoundDatasetWithNamesAndPriority,
     DoseResponseCurve,
     drc_compound_datasets,
@@ -106,11 +105,7 @@ def view_compound(name):
         compound_label=compound.label, compound_id=compound.compound_id
     )
 
-    corr_analysis_options = get_corr_analysis_options_if_available(
-        drc_dataset_attribute_to_match="log_auc_dataset_given_id",
-        given_id="PRISMOncologyReferenceLog2AUCMatrix",
-        compound_label=compound.label,
-    )
+    corr_analysis_options = drc_compound_datasets
 
     # If there are no no valid dataset options, hide the heatmap tab and tile
     show_heatmap_tab = len(heatmap_dataset_options) > 0
@@ -121,9 +116,9 @@ def view_compound(name):
     ) or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
         DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
     )
-    show_compound_correlations = current_app.config[
+    show_compound_correlation_tiles = current_app.config[
         "ENABLED_FEATURES"
-    ].show_compound_correlations
+    ].compound_correlation_tiles
 
     return render_template(
         "compounds/index.html",
@@ -142,7 +137,7 @@ def view_compound(name):
             has_predictability,
             has_heatmap=show_heatmap_tab,
             show_enriched_lineages=show_enriched_lineages,
-            show_compound_correlations=show_compound_correlations,
+            show_compound_correlation_tiles=show_compound_correlation_tiles,
         ),
         dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         # If len(dose_curve_options_new) is 0, hide the tab in the index.html
@@ -154,7 +149,6 @@ def view_compound(name):
         compound_units=compound.units,
         show_heatmap_tab=show_heatmap_tab,
         show_enriched_lineages=show_enriched_lineages,
-        show_compound_correlations=show_compound_correlations,
     )
 
 
@@ -299,33 +293,6 @@ def get_heatmap_options_new_tab_if_available(
                     valid_options.append(complete_option)
 
     return valid_options
-
-
-def get_corr_analysis_options_if_available(
-    drc_dataset_attribute_to_match: str, given_id: str, compound_label: str
-) -> List[DRCCompoundDataset]:
-    if not current_app.config["ENABLED_FEATURES"].show_compound_correlations:
-        return []
-
-    # TODO This needs to be updated when Correlation Analysis can support more than just OncRef
-    drc_dataset = find_compound_dataset(
-        drc_compound_datasets, drc_dataset_attribute_to_match, given_id
-    )
-
-    if drc_dataset is None:
-        return []
-
-    if drc_dataset.log_auc_dataset_given_id is None:
-        return []
-
-    does_dataset_exist_with_compound = data_access.dataset_exists(
-        drc_dataset.log_auc_dataset_given_id
-    ) and data_access.valid_row(drc_dataset.log_auc_dataset_given_id, compound_label)
-
-    if does_dataset_exist_with_compound:
-        return [drc_dataset]
-
-    return []
 
 
 @blueprint.route("/compoundUrlRoot")

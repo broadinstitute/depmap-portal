@@ -1,10 +1,10 @@
 import "src/public-path";
 
-import React from "react";
+import React, { useState } from "react";
 import ReactDOM from "react-dom";
 import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
-import { toStaticUrl } from "@depmap/globals";
+import { enabledFeatures, toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
 
@@ -15,7 +15,11 @@ import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
 
-import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  DRCDatasetOptions,
+} from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
@@ -25,7 +29,11 @@ import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
-import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
+import {
+  getAvailableCorrelationDatasetForEntity,
+  getHighestPriorityCorrelationDatasetForEntity,
+} from "./compound/utils";
+import { useEffect } from "react";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -387,12 +395,47 @@ export function initDoseResponseTab(
   );
 }
 
-export function initCorrelationAnalysisTab(
+export async function initCorrelationAnalysisTab(
+  tabId: string,
   elementId: string,
   compoundName: string,
   compoundId: string,
-  datasetOptions: Array<any>
+  possibleDatasetOptions: Array<any>
 ) {
+  const tabElement = document.getElementById(tabId);
+  if (tabElement === null) return;
+
+  if (!enabledFeatures.correlation_analysis) {
+    tabElement.style.display = "none";
+    return;
+  }
+
+  // Is there any associations data for this compound?
+  const associationsData = await getAvailableCorrelationDatasetForEntity(
+    compoundId
+  );
+
+  if (associationsData === null || associationsData.length === 0) {
+    tabElement.style.display = "none";
+    return;
+  }
+
+  // Match the associations data to the DRCCompoundDataset to get the full set of auc and viability given ids as well
+  // as a display label that matches the label used by the Heatmap and Dose Curves tabs.
+  const associationsGivenIds = associationsData.map((d) => d.given_id); // Datasets we have associations data for
+
+  // Associations dataset with matching options in the backend drc_compound_datasets
+  const datasetOptions = possibleDatasetOptions.filter(
+    (opt: DRCDatasetOptions) =>
+      opt.log_auc_dataset_given_id &&
+      associationsGivenIds.includes(opt.log_auc_dataset_given_id)
+  );
+
+  if (datasetOptions.length === 0) {
+    tabElement.style.display = "none";
+    return;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis

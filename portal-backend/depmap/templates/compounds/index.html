@@ -10,7 +10,6 @@ endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
 show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
 show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
-show_corr_analysis = corr_analysis_options | length > 0 %} {% set
 show_heatmap_tab = show_heatmap_tab %} {% set show_enriched_lineages =
 show_enriched_lineages %} {% set show_celfie_tab = has_celfie %} {% set
 show_aliases = compound_aliases|length > 0 %} {% block content %}
@@ -94,17 +93,18 @@ active_tab_set = False %}
       >Genomic Associations</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %} {% if show_corr_analysis %}
+  {% set active_tab_set = True %} {% endif %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#corr_analysis"
       aria-controls="corr_analysis"
       role="tab"
       data-toggle="tab"
+      id="corr-analysis-tab-li"
       >Correlation Analysis</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %}
+  {% set active_tab_set = True %}
 </ul>
 
 {% set active_tab_set = False %}
@@ -215,6 +215,14 @@ active_tab_set = False %}
   if (isMobile) {
     DepMap.initOverviewTab();
   }
+
+  DepMap.initCorrelationAnalysisTab(
+          "corr-analysis-tab-li",
+          "correlations-analysis-tab-content",
+          {{name | tojson}},
+          {{ compound_id | tojson }},
+          {{ corr_analysis_options | tojson }},
+        );
 </script>
 <script>
    // This is the only place we still use jquery-stickytabs. It should be
@@ -270,14 +278,9 @@ active_tab_set = False %}
           {{ predictability_methodology_link | tojson }}
         );
       }
-      else if (target === "#corr_analysis") {
-        DepMap.initCorrelationAnalysisTab(
-          "correlations-analysis-tab-content",
-          {{name | tojson}},
-          {{ compound_id | tojson }},
-          {{ corr_analysis_options | tojson }},
-        );
-      }
+
+
+
       loadedTabs[target] = true;
     });
     // Optionally, trigger the active tab on page load
