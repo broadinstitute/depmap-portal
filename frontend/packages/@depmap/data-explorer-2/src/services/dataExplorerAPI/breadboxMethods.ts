@@ -416,11 +416,19 @@ export async function fetchPlotDimensions(
         indexed_values[indexKey] = indexedValue;
 
         if (indexedValue) {
-          distinct.add(indexedValue);
+          if (Array.isArray(indexedValue)) {
+            indexedValue.forEach((v) => distinct.add(v));
+          } else {
+            distinct.add(indexedValue);
+          }
         }
       }
 
-      if (key === "color_property" && distinct.size > 100) {
+      if (
+        value_type !== "continuous" &&
+        key === "color_property" &&
+        distinct.size > 100
+      ) {
         window.console.error(extendedMetadata![key]);
         throw new Error("Too many distinct categorical values to plot!");
       }
@@ -533,6 +541,7 @@ export async function fetchPlotDimensions(
           }),
         };
       }
+
       if (property === "metadata") {
         const sliceQuery = extendedMetadata![
           key
@@ -549,16 +558,34 @@ export async function fetchPlotDimensions(
         const dataset_label =
           dataset && !isPrimaryMetatadata(dataset) ? dataset.name : undefined;
 
+        const value_type = (response as any).value_type;
+        const values = out.index_labels.map((label) => {
+          return indexed_values[label] ?? null;
+        });
+
+        // HACK! I never imagined there would be continuous metadata. We'll
+        // fake it too like a color dimension instead.
+        if (key === "color_property" && value_type === "continuous") {
+          out.dimensions.color = ({
+            axis_label: sliceQuery.label || sliceQuery.identifier,
+            dataset_id: sliceQuery.dataset_id,
+            dataset_label,
+            slice_type: null,
+            values,
+            value_type,
+          } as unknown) as DataExplorerPlotResponseDimension;
+
+          return;
+        }
+
         out.metadata[key] = {
           label: sliceQuery.label || sliceQuery.identifier,
           slice_id: "TODO: remove references to slice_id !",
           sliceQuery,
-          value_type: (response as any).value_type,
+          value_type,
           units,
           dataset_label,
-          values: out.index_labels.map((label) => {
-            return indexed_values[label] ?? null;
-          }),
+          values,
         };
       }
     });

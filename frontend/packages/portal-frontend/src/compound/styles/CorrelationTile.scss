@@ -8,9 +8,11 @@
 .targetIconContainer {
   display: flex;
   align-items: center;
+  justify-content: center;
+  padding-top: 3px !important;
+
   img {
-    height: 12px;
-    padding-right: 3px;
+    height: 14px;
   }
 }
 

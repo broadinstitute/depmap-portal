@@ -1,10 +1,11 @@
 /* eslint-disable jsx-a11y/control-has-associated-label */
 import React from "react";
-import { DependencyMeter } from "./DependencyMeter";
 import { toStaticUrl } from "@depmap/globals";
 import styles from "../../styles/CorrelationTile.scss";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { Tooltip } from "@depmap/common-components";
+import { getFullUrlPrefix } from "src/compound/utils";
+import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 
 interface TopDatasetDependencyProps {
   featureId: string;
@@ -23,18 +24,20 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
   topDatasetCorrelations,
   geneTargets,
 }) => {
-  const urlPrefix = window.location.origin;
+  const urlPrefix = getFullUrlPrefix();
   return (
     <div>
       <h3 className={styles.tableDatasetTitle}>{dataType}</h3>
-      <table style={{ width: "80%", tableLayout: "fixed" }}>
+      <table style={{ width: "90%", tableLayout: "fixed" }}>
         <thead>
           <tr>
-            <th style={{ width: "15%" }} />
-            <th style={{ width: "45%" }}>
+            <th style={{ width: "10%" }} />
+            <th style={{ width: "8%" }} />
+            <th style={{ width: "30%" }}>
               {featureType === "gene" ? "Gene" : "Compound"}
             </th>
-            <th style={{ width: "40%" }}>Correlation</th>
+            <th style={{ width: "10%" }}>Correlation</th>
+            <th style={{ width: "30%" }} />
           </tr>
         </thead>
         <tbody>
@@ -52,15 +55,14 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                 </td>
 
                 <td className={styles.targetIconContainer}>
-                  {geneTargets.includes(datasetCor.other_dimension_label) ? (
+                  {geneTargets.includes(datasetCor.other_dimension_label) && (
                     <img
                       src={toStaticUrl("img/compound/target.svg")}
-                      onLoad={() => console.log("image loaded")}
                       alt="Target Feature"
                     />
-                  ) : (
-                    <p style={{ paddingLeft: "12px" }} />
                   )}
+                </td>
+                <td>
                   <Tooltip
                     id="correlated-gene-tooltip"
                     content={datasetCor.other_dimension_label}
@@ -77,13 +79,13 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                   </Tooltip>
                 </td>
 
+                <td>{datasetCor.correlation.toFixed(2)}</td>
                 <td>
-                  <td style={{ paddingRight: "3rem" }}>
-                    {datasetCor.correlation.toFixed(2)}
-                  </td>
-                  <td>
-                    <DependencyMeter correlation={datasetCor.correlation} />
-                  </td>
+                  <CorrelationMeter
+                    showLabel={false}
+                    correlation={datasetCor.correlation}
+                    useGradedColorScheme
+                  />
                 </td>
               </tr>
             );

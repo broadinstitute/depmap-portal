@@ -1,6 +1,7 @@
 import pandas as pd
 from typing import Literal, Optional, Union, cast
 
+from breadbox_facade.exceptions import BreadboxException
 from breadbox_client.models import (
     DimensionType,
     MatrixDatasetResponse,
@@ -33,13 +34,66 @@ def _get_breadbox_datasets_with_caching() -> list[
             flask.g.__cached_get_datasets,
         )
     else:
-        flask.g.__cached_get_datasets = extensions.breadbox.client.get_datasets()
-        return flask.g.__cached_get_datasets
+        __cached_get_datasets = extensions.breadbox.client.get_datasets()
+        __cached_get_datasets_by_id = {dataset.id : dataset for dataset in __cached_get_datasets}
+        __cached_get_datasets_by_id.update({dataset.given_id: dataset for dataset in __cached_get_datasets if dataset.given_id })
+        flask.g.__cached_get_datasets_by_id = __cached_get_datasets_by_id
+        flask.g.__cached_get_datasets = __cached_get_datasets
+        # TODO cast appropriately?
+        return __cached_get_datasets
+    
 
+def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
+    """
+    Load the information about a single dataset from the cache (if the cache exists).
+    If not, load the information about all datasets and populate the cache.
+    """
+    # ensure cache is populated
+    _get_breadbox_datasets_with_caching()
+    # use cached map populated by _get_breadbox_datasets_with_caching
+    dataset = flask.g.__cached_get_datasets_by_id.get(breadbox_dataset_id) # pyright: ignore
+    if dataset is None:
+        raise BreadboxException(f"Dataset not found '{breadbox_dataset_id}'")
+    return dataset
+
+
+def _get_feature_data_with_caching(
+    breadbox_dataset_id: str, feature: str, feature_identifier: Literal["id", "label"]
+) -> CellLineSeries:
+    """
+    Cache the data for a single feature (in a single dataset), scoped to the flask request. 
+    Certain API endpoints (predictability, compound page) make a lot of 
+    repetative calls to load data - this addresses that issue.
+    """
+    key_for_lookup = (breadbox_dataset_id, feature, feature_identifier)
+
+    if hasattr(flask.g, "__cached_feature_values"):
+        cached_feature_values = cast(
+            dict[tuple, CellLineSeries],
+            flask.g.__cached_feature_values,
+        )
+        if key_for_lookup in cached_feature_values:
+            return cached_feature_values[key_for_lookup]
+    else:
+        flask.g.__cached_feature_values = {}
+
+    single_col_df = extensions.breadbox.client.get_dataset_data(
+        dataset_id=breadbox_dataset_id,
+        features=[feature],
+        feature_identifier=feature_identifier,
+        samples=None,
+        sample_identifier=None,
+    )
+    result_series = CellLineSeries(single_col_df[feature])
+    flask.g.__cached_feature_values[key_for_lookup] = result_series # pyright: ignore
+    return result_series
+    
 
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     Return all breadbox matrix datasets.
+    Since this function uses caching, the first call to it may be slower 
+    but subsequent calls should be very fast. 
     """
     matrix_datasets = []
     for dataset in _get_breadbox_datasets_with_caching():
@@ -98,7 +152,7 @@ def is_breadbox_id(dataset_id: str) -> bool:
 # Eventually we will also need a more generic "get_dataset" that can handle tabular datasets
 def get_matrix_dataset(dataset_id: str) -> MatrixDataset:
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
-    dataset = extensions.breadbox.client.get_dataset(bb_dataset_id)
+    dataset = _get_breadbox_dataset_with_caching(bb_dataset_id)
     assert isinstance(
         dataset, MatrixDatasetResponse
     ), f"Expected {dataset_id} to be a matrix dataset"
@@ -168,17 +222,14 @@ def get_row_of_values(
 ) -> CellLineSeries:
     """
     For the given dataset id and a feature label, 
-    Get a row of numeric or string values, indexed by depmap_id
+    Get a row of numeric or string values, indexed by depmap_id.
     """
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
-    single_col_df = extensions.breadbox.client.get_dataset_data(
-        dataset_id=bb_dataset_id,
-        features=[feature],
-        feature_identifier=feature_identifier,
-        samples=None,
-        sample_identifier=None,
+    return _get_feature_data_with_caching(
+        breadbox_dataset_id=bb_dataset_id, 
+        feature=feature, 
+        feature_identifier=feature_identifier
     )
-    return CellLineSeries(single_col_df[feature])
 
 
 def get_subsetted_df_by_labels(

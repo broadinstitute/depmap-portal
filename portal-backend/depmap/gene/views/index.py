@@ -279,8 +279,8 @@ def get_predictive_table():
         model_order = {"Core_omics": 0, "Related": 1, "DNA_based": 2}
         models = [model for model in models if model.label in model_order.keys()]
         models.sort(key=lambda model: model_order.get(model.label))
-
         models_and_results = []
+
         for model in models:
             sorted_feature_results: List[PredictiveFeatureResult] = sorted(
                 model.feature_results, key=lambda result: result.rank

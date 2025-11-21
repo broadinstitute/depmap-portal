@@ -223,8 +223,20 @@ export function findContinuousColorSlice(
   if (colorDim?.value_type === "continuous") {
     return {
       label: colorDim.axis_label,
+      dataset_id: colorDim.dataset_id,
       values: colorDim.values,
       value_type: colorDim.value_type,
+    };
+  }
+
+  const color_property = data?.metadata?.color_property;
+
+  if (color_property?.value_type === "continuous") {
+    return {
+      label: color_property.label,
+      dataset_id: color_property.sliceQuery?.dataset_id,
+      values: color_property.values as number[],
+      value_type: color_property.value_type,
     };
   }
 
@@ -315,7 +327,7 @@ export function formatDataForScatterPlot(
 
         colorInfo.push(
           [
-            `<b>${truncate(data.dimensions.color!.axis_label)}</b>`,
+            `<b>${truncate(contSlice!.label)}</b>`,
             round(contValues[i] as number),
           ].join(": ")
         );
@@ -758,7 +770,7 @@ export function getLegendKeysWithNoData(data: any, continuousBins: any) {
     return unusedKeys as Set<LegendKey>;
   }
 
-  const contData = data?.dimensions?.color;
+  const contData = findContinuousColorSlice(data);
 
   if (!contData || !continuousBins) {
     return null;
@@ -1106,7 +1118,7 @@ export function getColorMap(
   }
 
   if (
-    contSlice &&
+    data.dimensions.color &&
     hasSomeNullValuesUniqueToDimension(data.dimensions, "color")
   ) {
     colorMap.set(LEGEND_OTHER, palette.other);
@@ -1419,7 +1431,8 @@ export const sortLegendKeysWaterfall = (
 
 export function continuousValuesToLegendKeySeries(
   contValues: (number | null)[],
-  continuousBins: ContinuousBins
+  continuousBins: ContinuousBins,
+  visible?: boolean[]
 ) {
   const series: any = [];
   const len = contValues.length;
@@ -1428,6 +1441,7 @@ export function continuousValuesToLegendKeySeries(
 
   for (let i = 0; i < len; i += 1) {
     const value = contValues[i];
+    const isVisible = !visible || visible[i];
     let found = false;
 
     if (value === null) {
@@ -1443,6 +1457,7 @@ export function continuousValuesToLegendKeySeries(
       if (
         !found &&
         value !== null &&
+        isVisible &&
         value >= binStart &&
         (value < binEnd || (isLastBin && value === binEnd))
       ) {
@@ -1529,7 +1544,8 @@ export function calcDensityStats(
   if (contData) {
     const [series, unusedKeys] = continuousValuesToLegendKeySeries(
       contData.values,
-      continuousBins
+      continuousBins,
+      data.filters?.visible?.values
     );
 
     return [series, unusedKeys];
