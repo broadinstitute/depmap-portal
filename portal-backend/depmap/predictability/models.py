@@ -6,6 +6,7 @@ import pandas as pd
 from flask import url_for, current_app
 
 from depmap import data_access
+from depmap.interactive import interactive_utils
 from depmap.compound.models import Compound
 from depmap.database import (
     Column,
@@ -263,7 +264,13 @@ class PredictiveFeature(Model):
                 dtype=int,
             )
         else:
-            self_values = data_access.get_row_of_values(
+            # For now, this one method call should continue to use the legacy interactive_utils
+            # interface for performance reasons. This get_correlation_for_entity method is used 
+            # to load data for the predictability tab - and is sometimes called 60+ times in a row 
+            # to load data for various features. Breadbox is not currently equipped to handle this 
+            # many subsequent requests in a performant way. That's fine because predictability is not 
+            # breadbox-friendly at the moment anyway.
+            self_values = interactive_utils.get_row_of_values(
                 self.dataset_id, self.feature_name
             )
         cor = dep_dataset_values.corr(self_values)
