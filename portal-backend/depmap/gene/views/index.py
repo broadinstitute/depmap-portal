@@ -16,7 +16,6 @@ from flask import (
     send_file,
     url_for,
 )
-from depmap import data_access
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.entity.views.index import format_celfie, format_summary
@@ -281,6 +280,7 @@ def get_predictive_table():
         models = [model for model in models if model.label in model_order.keys()]
         models.sort(key=lambda model: model_order.get(model.label))
         models_and_results = []
+
         for model in models:
             sorted_feature_results: List[PredictiveFeatureResult] = sorted(
                 model.feature_results, key=lambda result: result.rank

@@ -23,7 +23,6 @@ from depmap.dataset.models import (
     DependencyDataset,
     DATASET_NAME_TO_FEATURE_TYPE,
 )
-from depmap.partials.matrix.models import CellLineSeries
 from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 from depmap.match_related.models import RelatedEntityIndex
@@ -249,7 +248,7 @@ class PredictiveFeature(Model):
     ) -> Optional[float]:
         if not self._get_feature_is_loaded():
             return None
-        
+
         dep_dataset_values = data_access.get_row_of_values(
             dep_dataset.name.name, entity.label
         )

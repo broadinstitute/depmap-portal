@@ -516,7 +516,7 @@ def get_auc_data(dataset_name, compound_experiment):
 def get_predictive_table():
     compound_label = request.args.get("compoundLabel")
     compound = Compound.get_by_label(compound_label)
-    
+
     compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
         compound.entity_id
     )
