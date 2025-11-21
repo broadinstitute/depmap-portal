@@ -67,7 +67,6 @@ def _get_feature_data_with_caching(
             flask.g.__cached_feature_values,
         )
         if key_for_lookup in cached_feature_values:
-            print("\t found in cache!")
             return cached_feature_values[key_for_lookup]
     else:
         flask.g.__cached_feature_values = {}
