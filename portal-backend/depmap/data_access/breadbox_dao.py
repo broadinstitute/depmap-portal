@@ -34,8 +34,13 @@ def _get_breadbox_datasets_with_caching() -> list[
             flask.g.__cached_get_datasets,
         )
     else:
-        flask.g.__cached_get_datasets = extensions.breadbox.client.get_datasets()
-        return flask.g.__cached_get_datasets
+        __cached_get_datasets = extensions.breadbox.client.get_datasets()
+        __cached_get_datasets_by_id = {dataset.id : dataset for dataset in __cached_get_datasets}
+        __cached_get_datasets_by_id.update({dataset.given_id: dataset for dataset in __cached_get_datasets if dataset.given_id })
+        flask.g.__cached_get_datasets_by_id = __cached_get_datasets_by_id
+        flask.g.__cached_get_datasets = __cached_get_datasets
+        # TODO cast appropriately?
+        return __cached_get_datasets
     
 
 def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[MatrixDatasetResponse, TabularDatasetResponse]:
@@ -43,12 +48,13 @@ def _get_breadbox_dataset_with_caching(breadbox_dataset_id: str) -> Union[Matrix
     Load the information about a single dataset from the cache (if the cache exists).
     If not, load the information about all datasets and populate the cache.
     """
-    datasets_list = _get_breadbox_datasets_with_caching()
-    for dataset in datasets_list:
-        if dataset.id == breadbox_dataset_id or dataset.given_id == breadbox_dataset_id:
-            return dataset
-    
-    raise BreadboxException(f"Dataset not found '{breadbox_dataset_id}'")
+    # ensure cache is populated
+    _get_breadbox_datasets_with_caching()
+    # use cached map populated by _get_breadbox_datasets_with_caching
+    dataset = flask.g.__cached_get_datasets_by_id.get(breadbox_dataset_id) # pyright: ignore
+    if dataset is None:
+        raise BreadboxException(f"Dataset not found '{breadbox_dataset_id}'")
+    return dataset
 
 
 def _get_feature_data_with_caching(
@@ -86,6 +92,8 @@ def _get_feature_data_with_caching(
 def get_all_matrix_datasets() -> list[MatrixDataset]:
     """
     Return all breadbox matrix datasets.
+    Since this function uses caching, the first call to it may be slower 
+    but subsequent calls should be very fast. 
     """
     matrix_datasets = []
     for dataset in _get_breadbox_datasets_with_caching():
