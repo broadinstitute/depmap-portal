@@ -1,4 +1,8 @@
+import os.path
+import tempfile
 from typing import List, Optional, Literal
+
+from h5py.version import hdf5_version
 
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
@@ -111,12 +115,85 @@ def write_hdf5_file(
         f.close()
 
 
-# def batched_columns(column_names: List[str], batch_size: int = 5000):
-#     """
-#     Returns a generator that yields batches of column names to avoid memory issues with large datasets (e.g. >200k columns).
-#     """
-#     for i in range(0, len(column_names), batch_size):
-#         yield column_names[i : i + batch_size]
+DUPLICATE_STORAGE = "duplicate_storage"
+CHUNKED_STORAGE = "chunked_storage"
+
+import contextlib
+
+
+@contextlib.contextmanager
+def with_hdf5_cache(
+    filename,
+    feature_indexes: Optional[List[int]],
+    sample_indexes: Optional[List[int]],
+    cache_strategy,
+):
+    if cache_strategy is None:
+        reformated_file = filename
+    else:
+        reformated_file = f"{os.path.dirname(filename)}/temp/{cache_strategy}/{os.path.basename(filename)}.h5"
+        if not os.path.exists(reformated_file):
+            dest_dir = os.path.dirname(reformated_file)
+            os.makedirs(dest_dir, exist_ok=True)
+
+            # read the original and copy data to new file
+            tmp = tempfile.NamedTemporaryFile(suffix=".h5", delete=False, dir=dest_dir)
+            with h5py.File(filename, "r") as src:
+                with h5py.File(tmp.name, "w") as dest:
+                    for src_name in ["features", "samples"]:
+                        data = pd.Index([x.decode("utf8") for x in src[src_name]])
+                        create_index_dataset(dest, src_name, data)
+
+                    f_data = src["data"]
+                    if cache_strategy == DUPLICATE_STORAGE:
+                        dest.create_dataset(
+                            "data_by_col",
+                            shape=f_data.shape,
+                            dtype=f_data.dtype,
+                            data=f_data,
+                            chunks=(f_data.shape[0], 1),
+                        )
+
+                        dest.create_dataset(
+                            "data_by_row",
+                            shape=f_data.shape,
+                            dtype=f_data.dtype,
+                            data=f_data,
+                            chunks=(1, f_data.shape[1]),
+                        )
+                    else:
+                        assert cache_strategy == CHUNKED_STORAGE
+
+                        dest.create_dataset(
+                            "data_by_chunk",
+                            shape=f_data.shape,
+                            dtype=f_data.dtype,
+                            data=f_data,
+                            chunks=True,
+                        )
+
+            os.rename(tmp.name, reformated_file)
+
+    with h5py.File(reformated_file, "r") as f:
+        if cache_strategy == DUPLICATE_STORAGE:
+            if feature_indexes is not None and sample_indexes is not None:
+                if len(feature_indexes) < len(sample_indexes):
+                    f_data = f["data_by_col"]
+                else:
+                    f_data = f["data_by_row"]
+            elif feature_indexes is not None:
+                f_data = f["data_by_col"]
+            elif sample_indexes is not None:
+                f_data = f["data_by_row"]
+            else:
+                f_data = f["data_by_row"]
+        elif cache_strategy == CHUNKED_STORAGE:
+            f_data = f["data_by_chunk"]
+        else:
+            assert cache_strategy is None
+            f_data = f["data"]
+
+        yield f, f_data
 
 
 def read_hdf5_file(
@@ -124,33 +201,37 @@ def read_hdf5_file(
     feature_indexes: Optional[List[int]] = None,
     sample_indexes: Optional[List[int]] = None,
     keep_nans: Optional[bool] = False,
+    cache_strategy: Optional[str] = None,
 ):
     """Return subsetted df based on provided feature and sample indexes. If either feature or sample indexes is None then return all features or samples"""
-    with h5py.File(path, mode="r") as f:
-        row_len, col_len = f["data"].shape  # type: ignore
+    with with_hdf5_cache(path, feature_indexes, sample_indexes, cache_strategy) as (
+        f,
+        f_data,
+    ):
+        row_len, col_len = f_data.shape  # type: ignore
 
         if feature_indexes is not None and sample_indexes is not None:
             _validate_read_size(len(feature_indexes), len(sample_indexes))
             # subset first by the more selective axis. (HDF5 doesn't allow us to subset both axes in a single request)
             if len(feature_indexes) < len(sample_indexes):
-                data = f["data"][:, feature_indexes][sample_indexes, :]
+                data = f_data[:, feature_indexes][sample_indexes, :]
             else:
-                data = f["data"][sample_indexes, :][:, feature_indexes]
+                data = f_data[sample_indexes, :][:, feature_indexes]
             feature_ids = f["features"][feature_indexes]
             sample_ids = f["samples"][sample_indexes]
         elif feature_indexes is not None:
             _validate_read_size(len(feature_indexes), row_len)
-            data = f["data"][:, feature_indexes]
+            data = f_data[:, feature_indexes]
             feature_ids = f["features"][feature_indexes]
             sample_ids = f["samples"]
         elif sample_indexes is not None:
             _validate_read_size(col_len, len(sample_indexes))
-            data = f["data"][sample_indexes]
+            data = f_data[sample_indexes]
             feature_ids = f["features"]
             sample_ids = f["samples"][sample_indexes]
         else:
             _validate_read_size(col_len, row_len)
-            data = f["data"]
+            data = f_data
             feature_ids = f["features"]
             sample_ids = f["samples"]
 

@@ -28,7 +28,6 @@ association_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cann
 association_loader.py: error: Argument of type "str" cannot be assigned to parameter "__key" of type "LiteralString" in function "__getitem__"
 association_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 autoapp.py: error: "DispatcherMiddleware" is unknown import symbol (reportAttributeAccessIssue)
-autoapp.py: error: "ProxyMiddleware" is unknown import symbol (reportAttributeAccessIssue)
 biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVariable)
 biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
 biomarker_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
