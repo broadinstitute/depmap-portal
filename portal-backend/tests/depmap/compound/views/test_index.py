@@ -17,7 +17,6 @@ from depmap.compound.models import (
 )
 from depmap.compound.views.index import (
     format_dose_curve_options_new_tab_if_available,
-    get_corr_analysis_options_if_available,
     get_heatmap_options_new_tab_if_available,
     get_sensitivity_tab_info,
     format_summary_option,
