@@ -29,7 +29,6 @@ from breadbox.schemas.dataframe_wrapper import (
     ParquetDataFrameWrapper,
     HDF5DataFrameWrapper,
 )
-from breadbox.io.filestore_crud import save_dataset_file
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     AnnotationValidationError,
@@ -483,6 +482,8 @@ def validate_and_upload_dataset_files(
     )
 
     # TODO: Move save function to api layer. Need to make sure the db save is successful first
+    from breadbox.io.filestore_crud import save_dataset_file
+
     save_dataset_file(dataset_id, data_dfw, value_type, filestore_location)
 
     return dataframe_validated_dimensions
