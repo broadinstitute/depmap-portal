@@ -79,8 +79,9 @@ def _get_feature_data_with_caching(
         samples=None,
         sample_identifier=None,
     )
-    flask.g.__cached_feature_values[key_for_lookup] = CellLineSeries(single_col_df[feature])
-    return flask.g.__cached_feature_values[key_for_lookup]
+    result_series = CellLineSeries(single_col_df[feature])
+    flask.g.__cached_feature_values[key_for_lookup] = result_series # pyright: ignore
+    return result_series
     
 
 def get_all_matrix_datasets() -> list[MatrixDataset]:
