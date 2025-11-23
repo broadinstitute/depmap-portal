@@ -20,6 +20,10 @@ from breadbox.models.dataset import (
 )
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
+from breadbox.crud.dimension_ids import (
+    get_matrix_dataset_given_ids,
+    get_tabular_dataset_index_given_ids,
+)
 
 log = logging.getLogger(__name__)
 
@@ -37,9 +41,7 @@ def get_tabular_dataset_metadata_annotations(
         db, dimension_type_name=dataset.index_type_name, col_name=metadata_col_name
     )
     # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_index_given_ids = dataset_crud.get_tabular_dataset_index_given_ids(
-        db, dataset
-    )
+    dataset_index_given_ids = get_tabular_dataset_index_given_ids(db, dataset)
     filtered_metadata_vals = {}
     for given_id in dataset_index_given_ids:
         metadata_val = full_metadata_col.get(given_id)
@@ -70,9 +72,7 @@ def get_matrix_dataset_feature_labels_by_id(
             return metadata_labels_by_given_id
 
     # If there are no labels or there is no feature type, return the given IDs
-    feature_given_ids = dataset_crud.get_matrix_dataset_given_ids(
-        db, dataset, axis="feature"
-    )
+    feature_given_ids = get_matrix_dataset_given_ids(db, dataset, axis="feature")
     return {given_id: given_id for given_id in feature_given_ids}
 
 
@@ -95,7 +95,7 @@ def get_matrix_dataset_sample_labels_by_id(
     if metadata_labels_by_given_id:
         return metadata_labels_by_given_id
     else:
-        sample_given_ids = dataset_crud.get_matrix_dataset_given_ids(
+        sample_given_ids = get_matrix_dataset_given_ids(
             db=db, dataset=dataset, axis="sample"
         )
         return {given_id: given_id for given_id in sample_given_ids}
@@ -115,9 +115,7 @@ def get_tabular_dataset_labels_by_id(
     if metadata_labels:
         return metadata_labels
     else:
-        dataset_index_given_ids = dataset_crud.get_tabular_dataset_index_given_ids(
-            db, dataset
-        )
+        dataset_index_given_ids = get_tabular_dataset_index_given_ids(db, dataset)
         return {given_id: given_id for given_id in dataset_index_given_ids}
 
 

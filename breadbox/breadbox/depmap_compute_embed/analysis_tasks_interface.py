@@ -11,7 +11,7 @@ from dataclasses import dataclass
 
 from .lin_associations import lin_associations_wrapper
 from scipy import stats
-from ..crud.dataset import IndexedGivenIDDataFrame
+from ..crud.dimension_ids import IndexedGivenIDDataFrame
 
 
 log = logging.getLogger(__name__)

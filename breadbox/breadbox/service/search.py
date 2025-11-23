@@ -102,6 +102,10 @@ def populate_search_index_after_update(
     """
     Update the search index for all dimension_types impacted by `dimension_type` changing in some way.
     """
+    from breadbox.crud.dimension_ids import _populate_dimension_type_labels
+
+    _populate_dimension_type_labels(db, dimension_type.name)
+
     impacted_dimension_types = _get_datatypes_referencing(db, dimension_type.name)
 
     md = MetadataCache(db)

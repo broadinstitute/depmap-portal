@@ -17,7 +17,7 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.service import slice as slice_service
 import logging
-from breadbox.crud.dimension_types import get_dimension_type_labels_by_id
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 
 import packed_cor_tables
 
