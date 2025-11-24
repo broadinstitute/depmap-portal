@@ -12,6 +12,7 @@ function useCorrelatedDependenciesData(
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [datasetName, setDatasetName] = useState<string>("");
   const [
     correlationData,
     setCorrelationData,
@@ -27,6 +28,10 @@ function useCorrelatedDependenciesData(
     (async () => {
       try {
         setIsLoading(true);
+
+        // get compound dataset name
+        const compoundDataset = await bapi.getDataset(datasetId);
+        setDatasetName(compoundDataset.name);
 
         // get compound id by label
         const compoundDimType = await bapi.getDimensionType("compound_v2");
@@ -82,6 +87,7 @@ function useCorrelatedDependenciesData(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return {
+    datasetName,
     correlationData,
     dataTypeToDatasetMap,
     geneTargets,

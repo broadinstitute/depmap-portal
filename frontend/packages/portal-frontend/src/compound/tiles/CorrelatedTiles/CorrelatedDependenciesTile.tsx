@@ -17,6 +17,7 @@ const CorrelatedDependenciesTile = ({
   datasetID,
 }: CorrelatedDependenciesTileProps) => {
   const {
+    datasetName,
     correlationData,
     dataTypeToDatasetMap,
     geneTargets,
@@ -76,6 +77,7 @@ const CorrelatedDependenciesTile = ({
             </div>
           )}
           {!correlationData && isLoading && <PlotSpinner />}
+          <h3 className={styles.tileDatasetTitle}>{datasetName}</h3>
           {correlationData &&
             Object.keys(dataTypeToDatasetMap).map((dataType) => {
               // Get the associated dataset given ID from the map to filter
