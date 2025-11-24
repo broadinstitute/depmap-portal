@@ -74,6 +74,8 @@ def _get_metadata_as_name_value_list(df: pd.DataFrame):
                 }
             )
 
+    given_ids = [x["given_id"] for x in formatted_metadata]
+    assert len(set(given_ids)) == len(given_ids)
     return formatted_metadata
 
 
