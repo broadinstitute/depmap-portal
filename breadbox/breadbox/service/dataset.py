@@ -15,6 +15,7 @@ from ..schemas.dataset import (
     MatrixDatasetIn,
     ColumnMetadata,
 )
+from typing import cast
 
 from ..schemas.custom_http_exception import (
     DatasetAccessError,
@@ -116,8 +117,8 @@ def get_subsetted_matrix_dataset_df(
             )
 
     def resolve_dimension(
-        identifier_type: FeatureSampleIdentifier,
-        identifiers: List[str],
+        identifier_type: Optional[FeatureSampleIdentifier],
+        identifiers: Optional[List[str]],
         axis: Type[Union[DatasetFeature, DatasetSample]],
     ):
         data_type = get_data_type(dataset, axis)
@@ -137,7 +138,7 @@ def get_subsetted_matrix_dataset_df(
             )
             # map given_ids to labels to get the final mapping
             mapping_df = _add_labels(data_type, given_id_index_df)
-            missing = set(identifiers).difference(mapping_df.given_id)
+            missing = sorted(set(identifiers).difference(mapping_df.given_id))
         else:
             assert identifier_type == FeatureSampleIdentifier.label
 
@@ -160,7 +161,7 @@ def get_subsetted_matrix_dataset_df(
                     how="inner",
                 )
             )
-            missing = set(identifiers).difference(mapping_df.label)
+            missing = sorted(set(identifiers).difference(mapping_df.label))
 
         return mapping_df, missing
 
@@ -202,8 +203,10 @@ def get_subsetted_matrix_dataset_df(
 
     # The resulting df has matrix indices as the feature and sample index. Map these to either given_ids or labels depending on which type of id was orignally passed in
 
-    def make_mapping(df: pd.DataFrame, from_col: str, to_col: str):
-        return {row[from_col]: row[to_col] for _, row in df.iterrows()}
+    def make_mapping(df: pd.DataFrame, from_col: str, to_col: str) -> Dict[str, str]:
+        return cast(
+            Dict[str, str], {row[from_col]: row[to_col] for _, row in df.iterrows()}
+        )
 
     if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
         df = df.rename(columns=make_mapping(feature_index_mapping_df, "index", "label"))

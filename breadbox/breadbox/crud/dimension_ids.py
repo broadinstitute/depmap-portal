@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict, namedtuple
-from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
+from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set, Collection
 import warnings
 from typing import Dict, List, Literal, Optional, Type, Union
 from breadbox.models.dataset import DimensionTypeLabel
@@ -78,8 +78,10 @@ class IndexedGivenIDDataFrame(pd.DataFrame):
         super(IndexedGivenIDDataFrame, self).__init__(source[self.required_columns])
 
     @property
-    def given_id(self):
-        return self["given_id"]
+    def given_id(self) -> pd.Series:
+        column = self["given_id"]
+        assert isinstance(column, pd.Series)
+        return column
 
 
 def get_dimension_type_labels_by_id(
@@ -116,8 +118,8 @@ def _populate_dimension_type_labels(db: SessionWithUser, dimension_type_name: st
 def get_dimension_type_label_mapping_df(
     db: SessionWithUser,
     dimension_type_name: Optional[str],
-    given_ids: Optional[List[str]] = None,
-    labels: Optional[List[str]] = None,
+    given_ids: Optional[Collection[str]] = None,
+    labels: Optional[Collection[str]] = None,
 ) -> GivenIDLabelDataFrame:
     from breadbox.models.dataset import DimensionTypeLabel
 
@@ -163,8 +165,8 @@ def _get_matrix_dataset_index_id_mapping_df(
     db: SessionWithUser,
     dataset: MatrixDataset,
     axis: Type[Union[DatasetSample, DatasetFeature]],
-    given_ids: Optional[List[str]] = None,
-    indices: Optional[List[int]] = None,
+    given_ids: Optional[Collection[str]] = None,
+    indices: Optional[Collection[int]] = None,
 ) -> IndexedGivenIDDataFrame:
 
     assert_user_has_access_to_dataset(dataset, db.user)
@@ -189,7 +191,9 @@ def _get_matrix_dataset_index_id_mapping_df(
 
 
 def get_matrix_dataset_sample_df(
-    db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
+    db: SessionWithUser,
+    dataset: MatrixDataset,
+    filter_by_given_ids: Optional[Collection[str]],
 ) -> IndexedGivenIDDataFrame:
     return _get_matrix_dataset_index_id_mapping_df(
         db, dataset, DatasetSample, given_ids=filter_by_given_ids
@@ -197,7 +201,9 @@ def get_matrix_dataset_sample_df(
 
 
 def get_matrix_dataset_features_df(
-    db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
+    db: SessionWithUser,
+    dataset: MatrixDataset,
+    filter_by_given_ids: Optional[Collection[str]],
 ) -> IndexedGivenIDDataFrame:
     return _get_matrix_dataset_index_id_mapping_df(
         db, dataset, DatasetFeature, given_ids=filter_by_given_ids

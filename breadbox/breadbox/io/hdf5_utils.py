@@ -250,6 +250,7 @@ def read_hdf5_file(
             feature_idx = pd.Index(feature_indexes)
             sample_idx = pd.Index(sample_indexes)
         else:
+            assert feature_ids is not None and sample_ids is not None
             feature_idx = pd.Index([x.decode("utf8") for x in feature_ids])
             sample_idx = pd.Index([x.decode("utf8") for x in sample_ids])
 

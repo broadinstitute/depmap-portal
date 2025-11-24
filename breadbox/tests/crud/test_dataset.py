@@ -230,6 +230,7 @@ def test_get_datasets_by_dimension_types(minimal_db, settings):
     depmap_model_metadata = get_dataset(
         minimal_db, minimal_db.user, "depmap_model_metadata"
     )
+    assert depmap_model_metadata
     assert len(datasets_with_sample_type) == 4
     for dataset in datasets_with_sample_type:
         assert dataset.id in [
