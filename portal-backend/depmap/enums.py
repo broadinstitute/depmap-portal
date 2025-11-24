@@ -135,7 +135,6 @@ class CompoundTileEnum(enum.Enum):
     predictability = "predictability"
     description = "description"
     sensitivity = "sensitivity"
-    correlations = "correlations"
     availability = "availability"
     celfie = "celfie"
     heatmap = "heatmap"

@@ -126,9 +126,7 @@ def get_order(
         CompoundTileEnum.celfie.value: tile_large,
     }
     if show_compound_correlations:
-        anywhere_cards[
-            CompoundTileEnum.correlated_dependencies.value
-        ] = tile_large  # TBD: Actually we want to group with CompoundTileEnum.correlations
+        anywhere_cards[CompoundTileEnum.correlated_dependencies.value] = tile_large
         anywhere_cards[CompoundTileEnum.related_compounds.value] = tile_medium
 
     if has_heatmap:

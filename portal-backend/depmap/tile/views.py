@@ -175,7 +175,6 @@ def render_compound_tile(
         CompoundTileEnum.predictability.value: get_predictability_html,
         CompoundTileEnum.selectivity.value: get_enrichment_html,
         CompoundTileEnum.sensitivity.value: get_sensitivity_html,
-        CompoundTileEnum.correlations.value: get_correlations_html,
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
         CompoundTileEnum.heatmap.value: get_heatmap_html,
