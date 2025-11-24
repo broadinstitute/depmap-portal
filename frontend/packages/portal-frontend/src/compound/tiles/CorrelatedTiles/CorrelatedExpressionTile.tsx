@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import styles from "../../styles/CorrelationTile.scss";
-import { TopDatasetDependencies } from "./TopDatasetDependencies";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import { toStaticUrl } from "@depmap/globals";
+import { TopDatasetDependencies } from "./TopDatasetDependencies";
 import InfoIcon from "src/common/components/InfoIcon";
 import useCorrelatedExpressionData from "src/compound/hooks/useCorrelatedExpressionData";
 

@@ -39,7 +39,7 @@ const CorrelatedDependenciesTile = React.lazy(
   () =>
     import(
       /* webpackChunkName: "CorrelatedDependenciesTile" */
-      "./compound/tiles/CorrelatedDependenciesTile/CorrelatedDependenciesTile"
+      "./compound/tiles/CorrelatedTiles/CorrelatedDependenciesTile"
     )
 );
 
@@ -47,7 +47,7 @@ const CorrelatedExpressionTile = React.lazy(
   () =>
     import(
       /* webpackChunkName: "CorrelatedExpressionTile" */
-      "./compound/tiles/CorrelatedExpressionTile/CorrelatedExpressionTile"
+      "./compound/tiles/CorrelatedTiles/CorrelatedExpressionTile"
     )
 );
 
