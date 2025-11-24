@@ -1,9 +1,6 @@
 import os.path
 import tempfile
 from typing import List, Optional, Literal
-
-from h5py.version import hdf5_version
-
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     LargeDatasetReadError,
@@ -11,11 +8,8 @@ from breadbox.schemas.custom_http_exception import (
 import h5py
 import numpy as np
 import pandas as pd
-from pandas.core.algorithms import isin
 
 from breadbox.io.data_validation import DataFrameWrapper, PandasDataFrameWrapper
-import pyarrow as pa
-from pyarrow.parquet import ParquetFile
 
 # This is the Object dtype with metadata for HDF5 to parse it as (variable-length)
 # string. The metadata is not used for checking equality.
@@ -202,13 +196,27 @@ def read_hdf5_file(
     sample_indexes: Optional[List[int]] = None,
     keep_nans: Optional[bool] = False,
     cache_strategy: Optional[str] = None,
+    read_index_names: bool = True,
+    indices_as_index: bool = False,
 ):
     """Return subsetted df based on provided feature and sample indexes. If either feature or sample indexes is None then return all features or samples"""
     with with_hdf5_cache(path, feature_indexes, sample_indexes, cache_strategy) as (
         f,
         f_data,
     ):
+        # HDF5 requires indices used by indexing are sorted
+        if feature_indexes is not None:
+            feature_indexes = sorted(feature_indexes)
+
+        if sample_indexes is not None:
+            sample_indexes = sorted(sample_indexes)
+
         row_len, col_len = f_data.shape  # type: ignore
+        feature_ids = None
+        sample_ids = None
+
+        if indices_as_index:
+            read_index_names = False
 
         if feature_indexes is not None and sample_indexes is not None:
             _validate_read_size(len(feature_indexes), len(sample_indexes))
@@ -217,34 +225,41 @@ def read_hdf5_file(
                 data = f_data[:, feature_indexes][sample_indexes, :]
             else:
                 data = f_data[sample_indexes, :][:, feature_indexes]
-            feature_ids = f["features"][feature_indexes]
-            sample_ids = f["samples"][sample_indexes]
+            if read_index_names:
+                feature_ids = f["features"][feature_indexes]
+                sample_ids = f["samples"][sample_indexes]
         elif feature_indexes is not None:
             _validate_read_size(len(feature_indexes), row_len)
             data = f_data[:, feature_indexes]
-            feature_ids = f["features"][feature_indexes]
-            sample_ids = f["samples"]
+            if read_index_names:
+                feature_ids = f["features"][feature_indexes]
+                sample_ids = f["samples"]
         elif sample_indexes is not None:
             _validate_read_size(col_len, len(sample_indexes))
             data = f_data[sample_indexes]
-            feature_ids = f["features"]
-            sample_ids = f["samples"][sample_indexes]
+            if read_index_names:
+                feature_ids = f["features"]
+                sample_ids = f["samples"][sample_indexes]
         else:
             _validate_read_size(col_len, row_len)
             data = f_data
             feature_ids = f["features"]
             sample_ids = f["samples"]
 
-        feature_ids = [x.decode("utf8") for x in feature_ids]
-        sample_ids = [x.decode("utf8") for x in sample_ids]
+        if indices_as_index:
+            feature_idx = pd.Index(feature_indexes)
+            sample_idx = pd.Index(sample_indexes)
+        else:
+            assert feature_ids is not None and sample_ids is not None
+            feature_idx = pd.Index([x.decode("utf8") for x in feature_ids])
+            sample_idx = pd.Index([x.decode("utf8") for x in sample_ids])
 
-        df = pd.DataFrame(
-            data=data, columns=pd.Index(feature_ids), index=pd.Index(sample_ids)
-        )
+        df = pd.DataFrame(data=data, columns=feature_idx, index=sample_idx)
 
         # Must convert NaNs to None bc NaNs not json serializable
         if not keep_nans:
             df = df.replace({np.nan: None})
+
     return df
 
 

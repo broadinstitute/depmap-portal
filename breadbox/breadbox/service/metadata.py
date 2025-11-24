@@ -4,6 +4,13 @@ from typing import Any, Optional
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import dimension_types as types_crud
 from breadbox.db.session import SessionWithUser
+from breadbox.crud.dimension_ids import (
+    get_dimension_type_labels_by_id,
+    get_dataset_feature_by_given_id,
+    get_dataset_sample_by_given_id,
+    get_feature_indexes_by_given_ids,
+    get_sample_indexes_by_given_ids,
+)
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     DatasetNotFoundError,
@@ -20,6 +27,10 @@ from breadbox.models.dataset import (
 )
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
+from breadbox.crud.dimension_ids import (
+    get_matrix_dataset_given_ids,
+    get_tabular_dataset_index_given_ids,
+)
 
 log = logging.getLogger(__name__)
 
@@ -37,9 +48,7 @@ def get_tabular_dataset_metadata_annotations(
         db, dimension_type_name=dataset.index_type_name, col_name=metadata_col_name
     )
     # Filter the metadata to only include the given IDs belonging to this dataset
-    dataset_index_given_ids = dataset_crud.get_tabular_dataset_index_given_ids(
-        db, dataset
-    )
+    dataset_index_given_ids = get_tabular_dataset_index_given_ids(db, dataset)
     filtered_metadata_vals = {}
     for given_id in dataset_index_given_ids:
         metadata_val = full_metadata_col.get(given_id)
@@ -70,9 +79,7 @@ def get_matrix_dataset_feature_labels_by_id(
             return metadata_labels_by_given_id
 
     # If there are no labels or there is no feature type, return the given IDs
-    feature_given_ids = dataset_crud.get_matrix_dataset_given_ids(
-        db, dataset, axis="feature"
-    )
+    feature_given_ids = get_matrix_dataset_given_ids(db, dataset, axis="feature")
     return {given_id: given_id for given_id in feature_given_ids}
 
 
@@ -95,7 +102,7 @@ def get_matrix_dataset_sample_labels_by_id(
     if metadata_labels_by_given_id:
         return metadata_labels_by_given_id
     else:
-        sample_given_ids = dataset_crud.get_matrix_dataset_given_ids(
+        sample_given_ids = get_matrix_dataset_given_ids(
             db=db, dataset=dataset, axis="sample"
         )
         return {given_id: given_id for given_id in sample_given_ids}
@@ -115,9 +122,7 @@ def get_tabular_dataset_labels_by_id(
     if metadata_labels:
         return metadata_labels
     else:
-        dataset_index_given_ids = dataset_crud.get_tabular_dataset_index_given_ids(
-            db, dataset
-        )
+        dataset_index_given_ids = get_tabular_dataset_index_given_ids(db, dataset)
         return {given_id: given_id for given_id in dataset_index_given_ids}
 
 
@@ -185,9 +190,7 @@ def get_dataset_feature_by_label(
             f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
         )
 
-    return dataset_crud.get_dataset_feature_by_given_id(
-        db, dataset_id, feature_given_id
-    )
+    return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
 
 
 def get_dataset_sample_by_label(
@@ -208,7 +211,7 @@ def get_dataset_sample_by_label(
             f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
         )
 
-    return dataset_crud.get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
+    return get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
 
 
 def get_dimension_indexes_of_labels(
@@ -253,12 +256,12 @@ def get_dimension_indexes_of_labels(
 
     # now resolve those given_ids to indices
     if axis == "feature":
-        indices, missing_given_ids = dataset_crud.get_feature_indexes_by_given_ids(
+        indices, missing_given_ids = get_feature_indexes_by_given_ids(
             db, user, dataset, list(filtered_given_ids_to_labels.keys())
         )
     else:
         assert axis == "sample"
-        indices, missing_given_ids = dataset_crud.get_sample_indexes_by_given_ids(
+        indices, missing_given_ids = get_sample_indexes_by_given_ids(
             db, user, dataset, list(filtered_given_ids_to_labels.keys())
         )
 
@@ -282,7 +285,7 @@ def get_dimension_type_identifiers(
     regardless of whether they are used in any dataset. 
     """
     # Get all dimension identifiers in a dimension type
-    dim_type_ids_and_labels = types_crud.get_dimension_type_labels_by_id(
+    dim_type_ids_and_labels = get_dimension_type_labels_by_id(
         db, dimension_type.name, limit=limit,
     )
 

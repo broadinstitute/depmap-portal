@@ -32,6 +32,7 @@ from ..config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import dimension_types as type_crud
+from ..crud.dimension_ids import get_dataset_feature_by_given_id
 
 from ..models.dataset import (
     Dataset as DatasetModel,
@@ -170,7 +171,7 @@ def get_feature_data(
 
     feature_data = []
     for i in range(len(feature_ids)):
-        feature = dataset_crud.get_dataset_feature_by_given_id(
+        feature = get_dataset_feature_by_given_id(
             db=db, dataset_id=dataset_ids[i], feature_given_id=feature_ids[i]
         )
         dataset = feature.dataset
@@ -305,7 +306,6 @@ def get_dataset(dataset: DatasetModel = Depends(get_dataset_dep)):
 )
 def get_matrix_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    user: Annotated[str, Depends(get_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
     matrix_dimensions_info: Annotated[
@@ -324,7 +324,7 @@ def get_matrix_dataset_data(
         )
 
     df = dataset_service.get_subsetted_matrix_dataset_df(
-        db, user, dataset, matrix_dimensions_info, settings.filestore_location, strict,
+        db, dataset, matrix_dimensions_info, settings.filestore_location, strict,
     )
 
     return Response(df.to_json(), media_type="application/json")
@@ -406,8 +406,9 @@ def get_dataset_data(
     except UserError as e:
         raise e
 
+    assert isinstance(dataset, MatrixDataset)
     df = dataset_service.get_subsetted_matrix_dataset_df(
-        db, user, dataset, dim_info, settings.filestore_location
+        db, dataset, dim_info, settings.filestore_location
     )
 
     # NOTE: to_json() is better than to_dict() bc FastAPI behind the scenes automatically converts the non-JSON objects into JSON-compatible data using the jsonable_encoder, and then uses the Python standard json.dumps() to serialise the object which is quite slow.

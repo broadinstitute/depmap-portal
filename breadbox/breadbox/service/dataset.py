@@ -15,13 +15,13 @@ from ..schemas.dataset import (
     MatrixDatasetIn,
     ColumnMetadata,
 )
+from typing import cast
 
 from ..schemas.custom_http_exception import (
     DatasetAccessError,
     FeatureNotFoundError,
     SampleNotFoundError,
 )
-from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import MatrixDataset
 from breadbox.crud.group import (
     get_group,
@@ -30,6 +30,10 @@ from breadbox.crud.group import (
 )
 
 from ..crud.dataset import add_tabular_dimensions, add_matrix_dataset_dimensions
+from ..crud.dimension_ids import (
+    IndexedGivenIDDataFrame,
+    get_dimension_type_label_mapping_df,
+)
 from ..crud.dimension_types import (
     set_properties_to_index,
     add_metadata_dimensions,
@@ -62,13 +66,14 @@ from breadbox.models.dataset import (
     DatasetFeature,
     DimensionType,
 )
+from breadbox.crud.dimension_ids import _get_matrix_dataset_index_id_mapping_df
+from breadbox.crud.dimension_ids import GivenIDLabelIndex
 
 log = logging.getLogger(__name__)
 
 
 def get_subsetted_matrix_dataset_df(
     db: SessionWithUser,
-    user: str,
     dataset: MatrixDataset,
     dimensions_info: MatrixDimensionsInfo,
     filestore_location,
@@ -79,50 +84,99 @@ def get_subsetted_matrix_dataset_df(
     If the dimensions are specified by label, then return a result indexed by labels
     """
 
-    missing_features = []
-    missing_samples = []
+    def get_data_type(
+        dataset: MatrixDataset, axis: Type[Union[DatasetFeature, DatasetSample]]
+    ):
+        return {
+            DatasetFeature: dataset.feature_type_name,
+            DatasetSample: dataset.sample_type_name,
+        }[axis]
 
-    if dimensions_info.features is None:
-        feature_indexes = None
-    elif dimensions_info.feature_identifier.value == "id":
-        (
-            feature_indexes,
-            missing_features,
-        ) = dataset_crud.get_feature_indexes_by_given_ids(
-            db, user, dataset, dimensions_info.features
-        )
-    else:
-        assert dimensions_info.feature_identifier.value == "label"
-        (
-            feature_indexes,
-            missing_features,
-        ) = metadata_service.get_dimension_indexes_of_labels(
-            db,
-            user,
-            dataset,
-            axis="feature",
-            dimension_labels=dimensions_info.features,
-        )
+    def _add_labels(
+        data_type: Optional[str], given_id_index_df: IndexedGivenIDDataFrame
+    ):
+        if data_type is None:
+            return GivenIDLabelIndex(
+                {
+                    "given_id": given_id_index_df.given_id,
+                    "label": given_id_index_df.given_id,
+                    "index": given_id_index_df.index,
+                }
+            )
+        else:
+            given_id_labels_df = get_dimension_type_label_mapping_df(
+                db, data_type, given_ids=given_id_index_df.given_id
+            )
+            return GivenIDLabelIndex(
+                pd.merge(
+                    given_id_index_df.reset_index(),
+                    given_id_labels_df.reset_index(drop=True),
+                    on="given_id",
+                    how="inner",
+                )
+            )
 
+    def resolve_dimension(
+        identifier_type: Optional[FeatureSampleIdentifier],
+        identifiers: Optional[List[str]],
+        axis: Type[Union[DatasetFeature, DatasetSample]],
+    ):
+        data_type = get_data_type(dataset, axis)
+        missing = []
+
+        if identifiers is None:
+            # if we want everything from this dimension, look up all the index -> given_id mappings in this dataset
+            given_id_index_df = _get_matrix_dataset_index_id_mapping_df(
+                db, dataset, axis
+            )
+            # map given_ids to labels to get the final mapping
+            mapping_df = _add_labels(data_type, given_id_index_df)
+        elif identifier_type == FeatureSampleIdentifier.id:
+            # if we have a set of given_ids look up the index -> given_id for those given_ids requested
+            given_id_index_df = _get_matrix_dataset_index_id_mapping_df(
+                db, dataset, axis, given_ids=identifiers
+            )
+            # map given_ids to labels to get the final mapping
+            mapping_df = _add_labels(data_type, given_id_index_df)
+            missing = sorted(set(identifiers).difference(mapping_df.given_id))
+        else:
+            assert identifier_type == FeatureSampleIdentifier.label
+
+            # if we have a set of labels to look up, start by finding the mapping between label <-> given_id for those labels
+            given_id_labels_df = get_dimension_type_label_mapping_df(
+                db, data_type, labels=identifiers
+            )
+
+            # now, fetch the indices for those given_ids such that we have index -> given_id
+            given_id_index_df = _get_matrix_dataset_index_id_mapping_df(
+                db, dataset, axis, given_ids=given_id_labels_df.given_id
+            )
+
+            # lastly, merge the index -> given_id table with the label <-> given_id table to get our final mapping
+            mapping_df = GivenIDLabelIndex(
+                pd.merge(
+                    given_id_index_df.reset_index(),
+                    given_id_labels_df.reset_index(drop=True),
+                    on="given_id",
+                    how="inner",
+                )
+            )
+            missing = sorted(set(identifiers).difference(mapping_df.label))
+
+        return mapping_df, missing
+
+    # get mapping between given_id, label and index
+    (feature_index_mapping_df, missing_features) = resolve_dimension(
+        dimensions_info.feature_identifier, dimensions_info.features, DatasetFeature
+    )
+
+    (sample_index_mapping_df, missing_samples) = resolve_dimension(
+        dimensions_info.sample_identifier, dimensions_info.samples, DatasetSample
+    )
+
+    # handle case where some requested features/samples are missing
     if len(missing_features) > 0:
         log.warning(f"Could not find features: {missing_features}")
-
-    if dimensions_info.samples is None:
-        sample_indexes = None
-    elif dimensions_info.sample_identifier.value == "id":
-        (
-            sample_indexes,
-            missing_samples,
-        ) = dataset_crud.get_sample_indexes_by_given_ids(
-            db, user, dataset, dimensions_info.samples
-        )
-    else:
-        (
-            sample_indexes,
-            missing_samples,
-        ) = metadata_service.get_dimension_indexes_of_labels(
-            db, user, dataset, axis="sample", dimension_labels=dimensions_info.samples,
-        )
 
     if len(missing_samples) > 0:
         log.warning(f"Could not find samples: {missing_samples}")
@@ -137,28 +191,36 @@ def get_subsetted_matrix_dataset_df(
         if len(missing_samples) > 0:
             raise SampleNotFoundError(missing_samples_msg)
 
-    # call sort on the indices because hdf5_read requires indices be in ascending order
-    if feature_indexes is not None:
-        feature_indexes = sorted(feature_indexes)
-    if sample_indexes is not None:
-        sample_indexes = sorted(sample_indexes)
-
+    # fetch data
     df = get_slice(
-        dataset, feature_indexes, sample_indexes, filestore_location, keep_nans=True
+        dataset,
+        sorted(feature_index_mapping_df.index),
+        sorted(sample_index_mapping_df.index),
+        filestore_location,
+        keep_nans=True,
+        indices_as_index=True,
     )
 
-    # Re-index by label if applicable
-    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
-        labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
-            db, user, dataset
-        )
-        df = df.rename(columns=labels_by_id)
+    # The resulting df has matrix indices as the feature and sample index. Map these to either given_ids or labels depending on which type of id was orignally passed in
 
-    if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
-        label_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
-            db, user, dataset
+    def make_mapping(df: pd.DataFrame, from_col: str, to_col: str) -> Dict[str, str]:
+        return cast(
+            Dict[str, str], {row[from_col]: row[to_col] for _, row in df.iterrows()}
         )
-        df = df.rename(index=label_by_id)
+
+    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
+        df = df.rename(columns=make_mapping(feature_index_mapping_df, "index", "label"))
+    else:
+        df = df.rename(
+            columns=make_mapping(feature_index_mapping_df, "index", "given_id")
+        )
+
+    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
+        df = df.rename(index=make_mapping(sample_index_mapping_df, "index", "label"))
+    else:
+        df = df.rename(index=make_mapping(sample_index_mapping_df, "index", "given_id"))
+
+    # now perform any aggregation requested
 
     if dimensions_info.aggregate:
         if dataset.value_type != ValueType.continuous:
@@ -172,6 +234,7 @@ def get_subsetted_matrix_dataset_df(
             dimensions_info.aggregate.aggregation,
         )
 
+    # replace nans (because they cannot serialize as json) near the last possible moment
     df = df.replace({np.nan: None})
 
     return df
@@ -206,8 +269,8 @@ def _aggregate_matrix_df(
     df = df_
 
     enum_to_agg_method = {
-        AggregationMethod.mean: np.mean,
-        AggregationMethod.median: np.median,
+        AggregationMethod.mean: "mean",
+        AggregationMethod.median: "median",
         AggregationMethod.per25: lambda x: np.nanpercentile(x, q=0.25),
         AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
     }

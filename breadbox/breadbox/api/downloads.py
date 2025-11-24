@@ -16,7 +16,7 @@ from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
 
 from breadbox.compute import download_tasks
-from breadbox.crud.dataset import get_matching_feature_metadata_labels
+from breadbox.crud.dimension_ids import get_matching_feature_metadata_labels
 
 from ..config import Settings, get_settings
 from .dependencies import get_user, get_db_with_user
