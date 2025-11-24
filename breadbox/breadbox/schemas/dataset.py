@@ -47,6 +47,7 @@ class AggregationMethod(enum.Enum):
     median = "median"
     per25 = "25%tile"
     per75 = "75%tile"
+    stddev = "stddev"
 
 
 # NOTE: `param: Annotated[Optional[str], Field(None)]` gives pydantic error 'ValueError: `Field` default cannot be set in `Annotated` for 'param''.

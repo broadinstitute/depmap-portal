@@ -273,6 +273,7 @@ def _aggregate_matrix_df(
         AggregationMethod.median: "median",
         AggregationMethod.per25: lambda x: np.nanpercentile(x, q=0.25),
         AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
+        AggregationMethod.stddev: lambda x: np.nanstd(x, ddof=1),
     }
 
     axis = 0 if aggregate_by == "samples" else 1
