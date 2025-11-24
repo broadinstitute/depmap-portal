@@ -118,6 +118,7 @@ def sample_type(
     id_column="id",
     given_ids: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
+    metadata_given_id: Optional[str] = None,
 ):
     settings: realSettings = MockSettings(user)  # pyright: ignore
     display_name_val = display_name if display_name else name
@@ -137,7 +138,7 @@ def sample_type(
     if labels is not None and given_ids is None:
         raise NotImplementedError("populate given_ids if you want to specify labels")
 
-    add_dimension_type(
+    dimension_type = add_dimension_type(
         db,
         settings,
         user,
@@ -148,6 +149,8 @@ def sample_type(
         annotation_type_mapping=annotation_type_mapping,
         metadata_df=metadata_df,
     )
+    if metadata_given_id is not None:
+        dimension_type.dataset.given_id = metadata_given_id
     db.flush()
 
 

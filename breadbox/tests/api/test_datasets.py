@@ -3496,6 +3496,15 @@ class TestDelete:
     def test_delete_sample_type_and_feature_type(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
+
+        orig_dataset_count = minimal_db.query(Dataset).count()
+        orig_tabular_column_count = minimal_db.query(TabularColumn).count()
+        orig_tabular_cell_count = minimal_db.query(TabularCell).count()
+        orig_property_to_index_count = minimal_db.query(PropertyToIndex).count()
+        orig_dimension_search_index_count = minimal_db.query(
+            DimensionSearchIndex
+        ).count()
+
         admin_user = settings.admin_users[0]
         admin_headers = {"X-Forwarded-Email": admin_user}
         r_feature_metadata = client.post(
@@ -3555,12 +3564,16 @@ class TestDelete:
             f"/types/feature/gene", headers=admin_headers
         )
         assert_status_ok(r_delete_feature_type)
-        assert len(minimal_db.query(Dataset).all()) == 0
-        assert len(minimal_db.query(TabularDataset).all()) == 0
-        assert len(minimal_db.query(TabularColumn).all()) == 0
-        assert len(minimal_db.query(TabularCell).all()) == 0
-        assert len(minimal_db.query(PropertyToIndex).all()) == 0
-        assert len(minimal_db.query(DimensionSearchIndex).all()) == 0
+        assert len(minimal_db.query(Dataset).all()) == orig_dataset_count
+        assert len(minimal_db.query(TabularColumn).all()) == orig_tabular_column_count
+        assert len(minimal_db.query(TabularCell).all()) == orig_tabular_cell_count
+        assert (
+            len(minimal_db.query(PropertyToIndex).all()) == orig_property_to_index_count
+        )
+        assert (
+            len(minimal_db.query(DimensionSearchIndex).all())
+            == orig_dimension_search_index_count
+        )
 
 
 def test_get_feature_data(minimal_db, settings, client: TestClient):

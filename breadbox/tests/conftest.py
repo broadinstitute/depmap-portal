@@ -190,6 +190,7 @@ def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_
         display_name="Depmap Model",
         id_column="depmap_id",
         given_ids=["ACH-1", "ACH-2"],
+        metadata_given_id="depmap_model_metadata",
     )
     db.commit()
     db.flush()
