@@ -76,8 +76,8 @@ const CorrelatedDependenciesTile = ({
               Error loading correlation data. Please try again later.
             </div>
           )}
-          {!correlationData && isLoading && <PlotSpinner />}
           <h3 className={styles.tileDatasetTitle}>{datasetName}</h3>
+          {!correlationData && isLoading && <PlotSpinner />}
           {correlationData &&
             Object.keys(dataTypeToDatasetMap).map((dataType) => {
               // Get the associated dataset given ID from the map to filter
