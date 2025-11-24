@@ -207,7 +207,7 @@ class FeatureFlags:
     # refers to the portal gene tea tool page.
     @property
     def gene_tea_portal_page(self):
-        return self.is_skyros()
+        return self.is_prerelease_env()
 
     @property
     def anchor_screen_dashboard(self):
