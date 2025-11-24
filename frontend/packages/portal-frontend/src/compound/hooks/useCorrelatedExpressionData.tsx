@@ -13,6 +13,7 @@ function useCorrelatedExpressionData(
 
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [datasetName, setDatasetName] = useState<string>("");
   const [
     correlationData,
     setCorrelationData,
@@ -23,6 +24,10 @@ function useCorrelatedExpressionData(
     (async () => {
       try {
         setIsLoading(true);
+
+        // get compound dataset name
+        const compoundDataset = await bapi.getDataset(datasetId);
+        setDatasetName(compoundDataset.name);
 
         // get compound id by label
         const compoundDimType = await bapi.getDimensionType("compound_v2");
@@ -76,6 +81,7 @@ function useCorrelatedExpressionData(
     })();
   }, [associationDatasetId, correlationData, compoundLabel, bapi, datasetId]);
   return {
+    datasetName,
     correlationData,
     geneTargets,
     isLoading,

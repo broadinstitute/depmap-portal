@@ -18,6 +18,7 @@ const CorrelatedExpressionTile = ({
   associationDatasetId,
 }: CorrelatedExpressionTileProps) => {
   const {
+    datasetName,
     correlationData,
     geneTargets,
     isLoading,
@@ -89,15 +90,18 @@ const CorrelatedExpressionTile = ({
           )}
           {!correlationData && isLoading && <PlotSpinner />}
           {correlationData && associatedDataset && topDatasetCorrelations && (
-            <TopDatasetDependencies
-              featureId={entityLabel}
-              datasetId={correlationData.dataset_given_id}
-              key={datasetID}
-              dataType={""}
-              featureType={associatedDataset?.dimension_type}
-              topDatasetCorrelations={topDatasetCorrelations}
-              geneTargets={geneTargets}
-            />
+            <>
+              <h3 className={styles.tileDatasetTitle}>{datasetName}</h3>
+              <TopDatasetDependencies
+                featureId={entityLabel}
+                datasetId={correlationData.dataset_given_id}
+                key={datasetID}
+                dataType={""}
+                featureType={associatedDataset?.dimension_type}
+                topDatasetCorrelations={topDatasetCorrelations}
+                geneTargets={geneTargets}
+              />
+            </>
           )}
         </div>
       </div>
