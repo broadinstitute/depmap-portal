@@ -213,9 +213,10 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
     dataset = DependencyDataset.get_dataset_by_data_type_priority(data_type)
     if dataset is None:
         abort(404)
+
     # dataset_name is dataset enum name
     dataset_name = dataset.name.name
-    df = data_access.get_subsetted_df_by_labels(dataset_name)
+    df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
     return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
@@ -226,14 +227,64 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
     )
     if dataset is None:
         abort(404)
+
     dataset_name = dataset.name.name
     df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
-
     return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
+def _as_series(df: pd.DataFrame) -> pd.Series:
+    raise NotImplementedError()
+
+
+def get_lowest_z_scored_df(dataset_name: str, model_id: str):
+    stddev_per_feature = _as_series(
+        data_access.get_subsetted_df_by_labels(
+            dataset_name, aggregatation=("sample", "stddev")
+        )
+    )
+    mean_per_feature = _as_series(
+        data_access.get_subsetted_df_by_labels(
+            dataset_name, aggregatation=("sample", "mean")
+        )
+    )
+    value_per_feature = _as_series(data_access.get_subsetted_df_by_labels(model_id))
+    top_features = get_features_with_lowest_z_scores(
+        value_per_feature, mean_per_feature, stddev_per_feature
+    )
+
+    values_for_all_models = data_access.get_subsetted_df_by_labels(
+        dataset_name, feature_row_labels=top_features
+    )
+    zscore_for_all_models = (
+        values_for_all_models - mean_per_feature
+    ) / stddev_per_feature
+    return zscore_for_all_models
+
+
+def get_features_with_lowest_z_scores(
+    cell_line_values: pd.Series,
+    mean_per_gene: pd.Series,
+    stddev_per_gene: pd.Series,
+    top_n=10,
+):
+    # sort the matrix using cell line z-scores
+    cell_line_z_scores = (cell_line_values - mean_per_gene) / stddev_per_gene
+
+    # filter out NAs
+    cell_line_z_scores = cell_line_z_scores[~pd.isna(cell_line_z_scores)]
+
+    # get the top scores
+    sorted_by_zscore = cell_line_z_scores.sort_values()
+    top_zscore = sorted_by_zscore.head(
+        top_n
+    )  # return data for the top 10 genes or compounds
+
+    return top_zscore.index.tolist()
+
+
 def get_lowest_z_scores_response(
-    dataset_name: str, model_id: str, dataset_df: pd.DataFrame
+    dataset_name: str, model_id: str, top_zscored_df: pd.DataFrame
 ):
     """Gets data for the top 10 rows of the given dataset, where top values have the 
     lowest z-scores for the cell line (matching the given depmap id). For example, 
@@ -248,24 +299,13 @@ def get_lowest_z_scores_response(
     the full matrix here. 
     """
     cell_line = DepmapModel.get_by_model_id(model_id, must=False)
-    result = {
+    return {
         "model_id": cell_line.model_id,
         "dataset_label": data_access.get_dataset_label(dataset_name),
+        "labels": top_zscored_df.index.to_list(),
+        "data": top_zscored_df.replace({np.nan: None}).values.tolist(),
+        "cell_line_col_index": top_zscored_df.columns.get_loc(model_id),
     }
-
-    if model_id in dataset_df.columns:
-        # filter nulls
-        dataset_df = dataset_df[np.isfinite(dataset_df[model_id])]
-        # sort the matrix using cell line z-scores
-        cell_line_z_scores = convert_to_z_score_matrix(dataset_df)[model_id]
-        sorted_index = cell_line_z_scores.sort_values().index
-        sorted_df = dataset_df.loc[sorted_index]
-        result_df = sorted_df.head(10)  # return data for the top 10 genes
-        # Construct result
-        result["labels"] = result_df.index.values.tolist()
-        result["data"] = result_df.replace({np.nan: None}).values.tolist()
-        result["cell_line_col_index"] = result_df.columns.get_loc(model_id)
-    return result
 
 
 def convert_to_z_score_matrix(data_matrix: pd.DataFrame) -> pd.DataFrame:
