@@ -312,7 +312,7 @@ export async function initCorrelatedExpressionTile(
       <CorrelatedExpressionTile
         entityLabel={compoundName}
         datasetID={highestPriorityGivenId!}
-        associationDatasetId={"Chronos_Combined"}
+        associationDatasetId={"expression"}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
