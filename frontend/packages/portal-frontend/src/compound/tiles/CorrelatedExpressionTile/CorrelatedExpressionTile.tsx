@@ -1,28 +1,29 @@
-import React from "react";
+import React, { useMemo } from "react";
 import styles from "../../styles/CorrelationTile.scss";
 import { TopDatasetDependencies } from "./TopDatasetDependencies";
-import useCorrelatedDependenciesData from "../../hooks/useCorrelatedDependenciesData";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
+import useCorrelatedExpressionData from "src/compound/hooks/useCorrelatedExpressionData";
 
 interface CorrelatedExpressionTileProps {
   entityLabel: string;
   datasetID: string;
+  associationDatasetId: string;
 }
 
 const CorrelatedExpressionTile = ({
   entityLabel,
   datasetID,
+  associationDatasetId,
 }: CorrelatedExpressionTileProps) => {
   const {
     correlationData,
-    dataTypeToDatasetMap,
     geneTargets,
     isLoading,
     error,
-  } = useCorrelatedDependenciesData(datasetID, entityLabel);
+  } = useCorrelatedExpressionData(datasetID, entityLabel, associationDatasetId);
 
   // Get the top 5 dataset associations based on abs(correlation) sorted in descending order
   const getTopDatasetAssociations = (
@@ -33,10 +34,6 @@ const CorrelatedExpressionTile = ({
     );
     return datasetAssociations.slice(0, 5);
   };
-  // If there is no data, don't show tile
-  if (correlationData?.associated_dimensions.length === 0) {
-    return null;
-  }
 
   const customInfoImg = (
     <img
@@ -51,23 +48,38 @@ const CorrelatedExpressionTile = ({
     />
   );
 
+  const associated_dataset = useMemo(
+    () =>
+      correlationData?.associated_datasets.find(
+        (dataset) => dataset.dataset_given_id === associationDatasetId
+      ) || null,
+    [correlationData, associationDatasetId]
+  );
+
+  const datasetAssociations = correlationData?.associated_dimensions.filter(
+    (datasetAssociation) =>
+      datasetAssociation.other_dataset_given_id === associationDatasetId
+  );
+
+  const topDatasetCorrelations = datasetAssociations
+    ? getTopDatasetAssociations(datasetAssociations)
+    : null;
+
+  console.log("topDatasetCorrelations", topDatasetCorrelations);
+
   return (
     <article className={`card_wrapper stacked-boxplot-tile`}>
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">
-          Correlated Dependencies{" "}
-          <InfoIcon
-            target={customInfoImg}
-            popoverContent={
-              <p>
-                {
-                  "The top 5 correlated gene dependencies according to data from CRISPR knockout as well as RNAi inhibition. Correlation refers to Pearson correlation, and the ordering is based on absolute value of correlation. Genes which are an annotated target of this compound are denoted with a red T to the left of the gene symbol."
-                }
-              </p>
-            }
-            popoverId={`corr-dependencies-popover`}
-            trigger={["hover", "focus"]}
-          />
+          Correlated Expression{" "}
+          {false && (
+            <InfoIcon
+              target={customInfoImg}
+              popoverContent={<p>{"placeholder"}</p>}
+              popoverId={`corr-expression-popover`}
+              trigger={["hover", "focus"]}
+            />
+          )}
         </h2>
         <div className="card_padding">
           {error && !correlationData && (
@@ -76,39 +88,17 @@ const CorrelatedExpressionTile = ({
             </div>
           )}
           {!correlationData && isLoading && <PlotSpinner />}
-          {correlationData &&
-            Object.keys(dataTypeToDatasetMap).map((dataType) => {
-              // Get the associated dataset given ID from the map to filter
-              const assocDatasetGivenId = dataTypeToDatasetMap[dataType];
-              if (!assocDatasetGivenId) {
-                return null;
-              }
-              // NOTE: Associated dataset should has feature_type gene or (TBD: compound)
-              const associated_dataset = correlationData.associated_datasets.find(
-                (dataset) => dataset.dataset_given_id === assocDatasetGivenId
-              );
-              if (!associated_dataset) {
-                return null;
-              }
-              const topDatasetCorrelations = getTopDatasetAssociations(
-                correlationData.associated_dimensions.filter(
-                  (datasetAssociation) =>
-                    datasetAssociation.other_dataset_given_id ===
-                    assocDatasetGivenId
-                )
-              );
-              return (
-                <TopDatasetDependencies
-                  featureId={entityLabel}
-                  datasetId={correlationData.dataset_given_id}
-                  key={assocDatasetGivenId}
-                  dataType={dataType}
-                  featureType={associated_dataset?.dimension_type}
-                  topDatasetCorrelations={topDatasetCorrelations}
-                  geneTargets={geneTargets}
-                />
-              );
-            })}
+          {correlationData && associated_dataset && topDatasetCorrelations && (
+            <TopDatasetDependencies
+              featureId={entityLabel}
+              datasetId={correlationData.dataset_given_id}
+              key={datasetID}
+              dataType={""}
+              featureType={associated_dataset?.dimension_type}
+              topDatasetCorrelations={topDatasetCorrelations}
+              geneTargets={geneTargets}
+            />
+          )}
         </div>
       </div>
     </article>

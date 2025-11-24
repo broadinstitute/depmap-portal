@@ -43,6 +43,14 @@ const CorrelatedDependenciesTile = React.lazy(
     )
 );
 
+const CorrelatedExpressionTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "CorrelatedExpressionTile" */
+      "./compound/tiles/CorrelatedExpressionTile/CorrelatedExpressionTile"
+    )
+);
+
 const RelatedCompoundsTile = React.lazy(
   () =>
     import(
@@ -280,6 +288,31 @@ export function initHeatmapTile(
       <HeatmapTileContainer
         compoundId={compoundId}
         compoundName={compoundName}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export async function initCorrelatedExpressionTile(
+  elementId: string,
+  compoundName: string,
+  compoundID: string
+): Promise<void> {
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return;
+  }
+
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelatedExpressionTile
+        entityLabel={compoundName}
+        datasetID={highestPriorityGivenId!}
+        associationDatasetId={"Chronos_Combined"}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

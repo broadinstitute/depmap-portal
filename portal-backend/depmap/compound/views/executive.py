@@ -118,7 +118,7 @@ def get_order(
 
     if show_enriched_lineages:
         header_cards[CompoundTileEnum.selectivity.value] = tile_large
-    header_cards[CompoundTileEnum.correlations.value] = tile_small
+    header_cards[CompoundTileEnum.correlated_expression.value] = tile_small
     header_cards[CompoundTileEnum.availability.value] = tile_small
 
     anywhere_cards = {

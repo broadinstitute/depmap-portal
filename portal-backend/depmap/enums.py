@@ -141,6 +141,7 @@ class CompoundTileEnum(enum.Enum):
     heatmap = "heatmap"
     correlated_dependencies = "correlated_dependencies"
     related_compounds = "related_compounds"
+    correlated_expression = "correlated_expression"
 
 
 class DataTypeEnum(enum.Enum):
