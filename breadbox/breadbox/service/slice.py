@@ -20,7 +20,10 @@ from breadbox.service import dataset as dataset_service
 from breadbox.utils.asserts import index_error_msg
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
-from breadbox.crud.dimension_ids import get_dataset_sample_by_given_id
+from breadbox.crud.dimension_ids import (
+    get_dataset_sample_by_given_id,
+    get_dataset_feature_by_given_id,
+)
 
 
 @dataclass
@@ -116,7 +119,7 @@ def get_slice_data(
         )
 
     elif slice_query.identifier_type == "feature_id":
-        feature = dataset_crud.get_dataset_feature_by_given_id(
+        feature = get_dataset_feature_by_given_id(
             db, dataset_id, feature_given_id=slice_query.identifier
         )
         assert feature.index is not None, index_error_msg(feature)
