@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import styles from "../../styles/CorrelationTile.scss";
 import { TopDatasetDependencies } from "./TopDatasetDependencies";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 import useCorrelatedExpressionData from "src/compound/hooks/useCorrelatedExpressionData";
@@ -25,15 +24,35 @@ const CorrelatedExpressionTile = ({
     error,
   } = useCorrelatedExpressionData(datasetID, entityLabel, associationDatasetId);
 
-  // Get the top 5 dataset associations based on abs(correlation) sorted in descending order
-  const getTopDatasetAssociations = (
-    datasetAssociations: AssociatedFeatures[]
-  ) => {
-    datasetAssociations.sort(
+  // Get the top 10 dataset associations based on abs(correlation) sorted in descending order
+  const topDatasetCorrelations = useMemo(() => {
+    if (!correlationData) {
+      return null;
+    }
+
+    const associatedFeatures = correlationData.associated_dimensions.filter(
+      (datasetAssociation) =>
+        datasetAssociation.other_dataset_given_id === associationDatasetId
+    );
+
+    if (associatedFeatures.length === 0) {
+      return null;
+    }
+
+    const sortedFeatures = [...associatedFeatures].sort(
       (a, b) => Math.abs(b.correlation) - Math.abs(a.correlation)
     );
-    return datasetAssociations.slice(0, 5);
-  };
+
+    return sortedFeatures.slice(0, 10);
+  }, [correlationData, associationDatasetId]);
+
+  const associatedDataset = useMemo(
+    () =>
+      correlationData?.associated_datasets.find(
+        (dataset) => dataset.dataset_given_id === associationDatasetId
+      ) || null,
+    [correlationData, associationDatasetId]
+  );
 
   const customInfoImg = (
     <img
@@ -47,25 +66,6 @@ const CorrelatedExpressionTile = ({
       className="icon"
     />
   );
-
-  const associated_dataset = useMemo(
-    () =>
-      correlationData?.associated_datasets.find(
-        (dataset) => dataset.dataset_given_id === associationDatasetId
-      ) || null,
-    [correlationData, associationDatasetId]
-  );
-
-  const datasetAssociations = correlationData?.associated_dimensions.filter(
-    (datasetAssociation) =>
-      datasetAssociation.other_dataset_given_id === associationDatasetId
-  );
-
-  const topDatasetCorrelations = datasetAssociations
-    ? getTopDatasetAssociations(datasetAssociations)
-    : null;
-
-  console.log("topDatasetCorrelations", topDatasetCorrelations);
 
   return (
     <article className={`card_wrapper stacked-boxplot-tile`}>
@@ -88,13 +88,13 @@ const CorrelatedExpressionTile = ({
             </div>
           )}
           {!correlationData && isLoading && <PlotSpinner />}
-          {correlationData && associated_dataset && topDatasetCorrelations && (
+          {correlationData && associatedDataset && topDatasetCorrelations && (
             <TopDatasetDependencies
               featureId={entityLabel}
               datasetId={correlationData.dataset_given_id}
               key={datasetID}
               dataType={""}
-              featureType={associated_dataset?.dimension_type}
+              featureType={associatedDataset?.dimension_type}
               topDatasetCorrelations={topDatasetCorrelations}
               geneTargets={geneTargets}
             />
