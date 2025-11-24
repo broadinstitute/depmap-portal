@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 
 from breadbox.db.session import SessionWithUser
-from breadbox.crud.dataset import (
-    get_dataset,
+from breadbox.crud.dimension_ids import (
     get_dataset_feature_by_given_id,
     get_tabular_dataset_index_given_ids,
+)
+from breadbox.crud.dataset import (
+    get_dataset,
     get_datasets,
     get_unique_dimension_ids_from_datasets,
 )

@@ -1,5 +1,5 @@
 import logging
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 import warnings
 from typing import Dict, List, Literal, Optional, Type, Union
@@ -30,6 +30,25 @@ from breadbox.models.dataset import (
 from .dataset import assert_user_has_access_to_dataset, get_dataset
 
 
+class GivenIDLabelIndex(pd.DataFrame):
+    """ A subclass of DataFrame which is intended to enforce typesafety. Anywhere this type appears, you can be guaranteed that the required_columns are present. Similarly, there are @properties defined so you can make typesafe access to columns"""
+
+    required_columns = ["given_id", "label", "index"]
+
+    def __init__(self, *args, **kwargs):
+        super(GivenIDLabelIndex, self).__init__(*args, **kwargs)
+        self.set_index(["index"], drop=False, inplace=True)
+        assert set(self.required_columns).issubset(self.columns)
+
+    @property
+    def label(self):
+        return self["label"]
+
+    @property
+    def given_id(self):
+        return self["given_id"]
+
+
 class GivenIDLabelDataFrame(pd.DataFrame):
     """ A subclass of DataFrame which is intended to enforce typesafety. Anywhere this type appears, you can be guaranteed that the required_columns are present. Similarly, there are @properties defined so you can make typesafe access to columns"""
 
@@ -37,6 +56,7 @@ class GivenIDLabelDataFrame(pd.DataFrame):
 
     def __init__(self, *args, **kwargs):
         super(GivenIDLabelDataFrame, self).__init__(*args, **kwargs)
+        assert set(self.required_columns).issubset(self.columns)
         self.set_index(["given_id"], drop=False, inplace=True)
 
     @property
@@ -95,12 +115,21 @@ def _populate_dimension_type_labels(db: SessionWithUser, dimension_type_name: st
 
 def get_dimension_type_label_mapping_df(
     db: SessionWithUser,
-    dimension_type_name: str,
+    dimension_type_name: Optional[str],
     given_ids: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
 ) -> GivenIDLabelDataFrame:
-    # need new cached label table
     from breadbox.models.dataset import DimensionTypeLabel
+
+    if dimension_type_name is None or dimension_type_name == "generic":
+        if given_ids is not None:
+            return GivenIDLabelDataFrame({"given_id": given_ids, "label": given_ids})
+        elif labels is not None:
+            return GivenIDLabelDataFrame({"given_id": labels, "label": labels})
+        else:
+            raise NotImplementedError(
+                "Can't figure out the labels for a generic feature type"
+            )
 
     query = db.query(DimensionTypeLabel).filter(
         DimensionTypeLabel.dimension_type_name == dimension_type_name
@@ -115,6 +144,20 @@ def get_dimension_type_label_mapping_df(
     query = query.with_entities(DimensionTypeLabel.given_id, DimensionTypeLabel.label)
     return GivenIDLabelDataFrame(query.all(), columns=pd.Index(["given_id", "label"]))
 
+    ##########################
+    # from .dataset import get_metadata_used_in_matrix_dataset
+    # from .dimension_types import get_dimension_type
+    # dimension_type = get_dimension_type(db, dimension_type_name)
+    # metadata_labels_by_given_id = get_metadata_used_in_matrix_dataset(
+    #     db=db,
+    #     dimension_type=dimension_type,
+    #     matrix_dataset=dataset,
+    #     dimension_subtype_cls=DatasetFeature,
+    #     metadata_col_name="label",
+    # )
+    # if metadata_labels_by_given_id:
+    #     return metadata_labels_by_given_id
+
 
 def _get_matrix_dataset_index_id_mapping_df(
     db: SessionWithUser,
@@ -122,7 +165,7 @@ def _get_matrix_dataset_index_id_mapping_df(
     axis: Type[Union[DatasetSample, DatasetFeature]],
     given_ids: Optional[List[str]] = None,
     indices: Optional[List[int]] = None,
-):
+) -> IndexedGivenIDDataFrame:
 
     assert_user_has_access_to_dataset(dataset, db.user)
 
@@ -137,31 +180,28 @@ def _get_matrix_dataset_index_id_mapping_df(
         query = query.filter(axis.index.in_(indices))
 
     dataset_features = pd.DataFrame(
-        query.with_entities(DatasetSample.given_id, DatasetSample.index).all(),
+        query.with_entities(axis.given_id, axis.index).all(),
         columns=pd.Index(["given_id", "index"]),
     )
+    dataset_features.set_index(["index"], drop=True, inplace=True)
 
-    return dataset_features
+    return IndexedGivenIDDataFrame(dataset_features)
 
 
 def get_matrix_dataset_sample_df(
     db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
-):
-    dataset_features = _get_matrix_dataset_index_id_mapping_df(
+) -> IndexedGivenIDDataFrame:
+    return _get_matrix_dataset_index_id_mapping_df(
         db, dataset, DatasetSample, given_ids=filter_by_given_ids
     )
-    dataset_features.set_index(["index"], drop=True, inplace=True)
-    return IndexedGivenIDDataFrame(dataset_features)
 
 
 def get_matrix_dataset_features_df(
     db: SessionWithUser, dataset: MatrixDataset, filter_by_given_ids: Optional[Set[str]]
-):
-    dataset_features = _get_matrix_dataset_index_id_mapping_df(
+) -> IndexedGivenIDDataFrame:
+    return _get_matrix_dataset_index_id_mapping_df(
         db, dataset, DatasetFeature, given_ids=filter_by_given_ids
     )
-    dataset_features.set_index(["index"], drop=True, inplace=True)
-    return IndexedGivenIDDataFrame(dataset_features)
 
 
 def get_matrix_dataset_features(
@@ -299,10 +339,29 @@ def get_all_sample_indexes(
     return df.index.tolist()
 
 
+IndicesAndMissing = namedtuple("IndicesAndMissing", "indices missing")
+
+
+def get_feature_indexes_by_given_ids(
+    db: SessionWithUser, user: str, dataset: MatrixDataset, given_ids: List[str]
+) -> IndicesAndMissing:
+    indexed_df = _get_matrix_dataset_index_id_mapping_df(
+        db, dataset, DatasetFeature, given_ids
+    )
+    return IndicesAndMissing(
+        indexed_df.index.tolist(), set(given_ids).difference(indexed_df.given_id)
+    )
+
+
 def get_sample_indexes_by_given_ids(
-    db: SessionWithUser, user: str, dataset: Dataset, given_ids: List[str]
-):
-    return _get_indexes_by_given_id(db, user, dataset, DatasetSample, given_ids)
+    db: SessionWithUser, user: str, dataset: MatrixDataset, given_ids: List[str]
+) -> IndicesAndMissing:
+    indexed_df = _get_matrix_dataset_index_id_mapping_df(
+        db, dataset, DatasetSample, given_ids
+    )
+    return IndicesAndMissing(
+        indexed_df.index.tolist(), set(given_ids).difference(indexed_df.given_id)
+    )
 
 
 def get_dataset_feature_by_given_id(

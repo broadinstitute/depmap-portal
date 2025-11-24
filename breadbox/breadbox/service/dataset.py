@@ -66,30 +66,9 @@ from breadbox.models.dataset import (
     DimensionType,
 )
 from breadbox.crud.dimension_ids import _get_matrix_dataset_index_id_mapping_df
+from breadbox.crud.dimension_ids import GivenIDLabelIndex
 
 log = logging.getLogger(__name__)
-
-
-class GivenIDLabelIndex(pd.DataFrame):
-    """ A subclass of DataFrame which is intended to enforce typesafety. Anywhere this type appears, you can be guaranteed that the required_columns are present. Similarly, there are @properties defined so you can make typesafe access to columns"""
-
-    required_columns = ["given_id", "label", "index"]
-
-    def __init__(self, source: pd.DataFrame):
-        assert set(self.required_columns).issubset(source.columns)
-        super(GivenIDLabelIndex, self).__init__(source[self.required_columns])
-
-    @property
-    def index(self):
-        return self["index"]
-
-    @property
-    def label(self):
-        return self["label"]
-
-    @property
-    def given_id(self):
-        return self["given_id"]
 
 
 def get_subsetted_matrix_dataset_df(
@@ -117,7 +96,11 @@ def get_subsetted_matrix_dataset_df(
     ):
         if data_type is None:
             return GivenIDLabelIndex(
-                {"given_id": df["given_id"], "label": df["given_id"], "index": df.index}
+                {
+                    "given_id": given_id_index_df.given_id,
+                    "label": given_id_index_df.given_id,
+                    "index": given_id_index_df.index,
+                }
             )
         else:
             given_id_labels_df = get_dimension_type_label_mapping_df(
@@ -125,7 +108,7 @@ def get_subsetted_matrix_dataset_df(
             )
             return GivenIDLabelIndex(
                 pd.merge(
-                    given_id_index_df,
+                    given_id_index_df.reset_index(),
                     given_id_labels_df.reset_index(drop=True),
                     on="given_id",
                     how="inner",
@@ -141,29 +124,40 @@ def get_subsetted_matrix_dataset_df(
         missing = []
 
         if identifiers is None:
+            # if we want everything from this dimension, look up all the index -> given_id mappings in this dataset
             given_id_index_df = _get_matrix_dataset_index_id_mapping_df(
                 db, dataset, axis
             )
+            # map given_ids to labels to get the final mapping
             mapping_df = _add_labels(data_type, given_id_index_df)
         elif identifier_type == FeatureSampleIdentifier.id:
+            # if we have a set of given_ids look up the index -> given_id for those given_ids requested
             given_id_index_df = _get_matrix_dataset_index_id_mapping_df(
                 db, dataset, axis, given_ids=identifiers
             )
+            # map given_ids to labels to get the final mapping
             mapping_df = _add_labels(data_type, given_id_index_df)
             missing = set(identifiers).difference(mapping_df.given_id)
         else:
             assert identifier_type == FeatureSampleIdentifier.label
 
+            # if we have a set of labels to look up, start by finding the mapping between label <-> given_id for those labels
             given_id_labels_df = get_dimension_type_label_mapping_df(
                 db, data_type, labels=identifiers
             )
 
+            # now, fetch the indices for those given_ids such that we have index -> given_id
             given_id_index_df = _get_matrix_dataset_index_id_mapping_df(
-                db, dataset, axis, given_ids=given_id_labels_df.given_ids
+                db, dataset, axis, given_ids=given_id_labels_df.given_id
             )
+
+            # lastly, merge the index -> given_id table with the label <-> given_id table to get our final mapping
             mapping_df = GivenIDLabelIndex(
                 pd.merge(
-                    given_id_index_df, given_id_labels_df, on="given_id", how="inner"
+                    given_id_index_df.reset_index(),
+                    given_id_labels_df.reset_index(drop=True),
+                    on="given_id",
+                    how="inner",
                 )
             )
             missing = set(identifiers).difference(mapping_df.label)
@@ -272,8 +266,8 @@ def _aggregate_matrix_df(
     df = df_
 
     enum_to_agg_method = {
-        AggregationMethod.mean: np.mean,
-        AggregationMethod.median: np.median,
+        AggregationMethod.mean: "mean",
+        AggregationMethod.median: "median",
         AggregationMethod.per25: lambda x: np.nanpercentile(x, q=0.25),
         AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
     }

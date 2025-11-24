@@ -4,6 +4,13 @@ from typing import Any, Optional
 from breadbox.crud import dataset as dataset_crud
 from breadbox.crud import dimension_types as types_crud
 from breadbox.db.session import SessionWithUser
+from breadbox.crud.dimension_ids import (
+    get_dimension_type_labels_by_id,
+    get_dataset_feature_by_given_id,
+    get_dataset_sample_by_given_id,
+    get_feature_indexes_by_given_ids,
+    get_sample_indexes_by_given_ids,
+)
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     DatasetNotFoundError,
@@ -183,9 +190,7 @@ def get_dataset_feature_by_label(
             f"Feature label '{feature_label}' not found in dataset '{dataset_id}'."
         )
 
-    return dataset_crud.get_dataset_feature_by_given_id(
-        db, dataset_id, feature_given_id
-    )
+    return get_dataset_feature_by_given_id(db, dataset_id, feature_given_id)
 
 
 def get_dataset_sample_by_label(
@@ -206,7 +211,7 @@ def get_dataset_sample_by_label(
             f"Sample label '{sample_label}' not found in dataset '{dataset_id}'."
         )
 
-    return dataset_crud.get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
+    return get_dataset_sample_by_given_id(db, dataset_id, sample_given_id)
 
 
 def get_dimension_indexes_of_labels(
@@ -251,12 +256,12 @@ def get_dimension_indexes_of_labels(
 
     # now resolve those given_ids to indices
     if axis == "feature":
-        indices, missing_given_ids = dataset_crud.get_feature_indexes_by_given_ids(
+        indices, missing_given_ids = get_feature_indexes_by_given_ids(
             db, user, dataset, list(filtered_given_ids_to_labels.keys())
         )
     else:
         assert axis == "sample"
-        indices, missing_given_ids = dataset_crud.get_sample_indexes_by_given_ids(
+        indices, missing_given_ids = get_sample_indexes_by_given_ids(
             db, user, dataset, list(filtered_given_ids_to_labels.keys())
         )
 
@@ -280,7 +285,7 @@ def get_dimension_type_identifiers(
     regardless of whether they are used in any dataset. 
     """
     # Get all dimension identifiers in a dimension type
-    dim_type_ids_and_labels = types_crud.get_dimension_type_labels_by_id(
+    dim_type_ids_and_labels = get_dimension_type_labels_by_id(
         db, dimension_type.name, limit=limit,
     )
 

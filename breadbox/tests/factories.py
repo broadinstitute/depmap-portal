@@ -116,9 +116,27 @@ def sample_type(
     name: str,
     display_name: Optional[str] = None,
     id_column="id",
+    given_ids: Optional[List[str]] = None,
+    labels: Optional[List[str]] = None,
 ):
     settings: realSettings = MockSettings(user)  # pyright: ignore
     display_name_val = display_name if display_name else name
+
+    metadata_df = None
+    annotation_type_mapping = None
+
+    if given_ids is not None:
+        if labels is None:
+            labels = given_ids
+        annotation_type_mapping = {
+            id_column: AnnotationType.text,
+            "label": AnnotationType.text,
+        }
+        metadata_df = pd.DataFrame({id_column: given_ids, "label": labels})
+
+    if labels is not None and given_ids is None:
+        raise NotImplementedError("populate given_ids if you want to specify labels")
+
     add_dimension_type(
         db,
         settings,
@@ -127,6 +145,8 @@ def sample_type(
         display_name=display_name_val,
         id_column=id_column,
         axis="sample",
+        annotation_type_mapping=annotation_type_mapping,
+        metadata_df=metadata_df,
     )
     db.flush()
 
