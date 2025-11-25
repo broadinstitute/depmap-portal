@@ -639,16 +639,6 @@ def get_sensitivity_html(
     )
 
 
-def get_correlations_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
-):
-    # DEPRECATED: will be redesigned/replaced
-    return render_template(
-        "tiles/correlations.html",
-        correlations=format_top_corr_table(compound_experiment_and_datasets),
-    )
-
-
 def get_availability_html(
     compound, compound_experiment_and_datasets, query_params_dict={}
 ):
