@@ -201,9 +201,14 @@ export async function convertDimensionToSliceQuery(
     throw new Error("Malformed context expression.");
   }
 
+  const varExpr = expr["=="][0] as Record<string, unknown>;
   const identifier = expr["=="][1];
-  const identifier_type =
-    dimType?.axis === "sample" ? "sample_id" : "feature_id";
+
+  const axis = dimType?.axis || "sample";
+  const idOrLabel =
+    "var" in varExpr && varExpr.var === "entity_label" ? "label" : "id";
+
+  const identifier_type = `${axis}_${idOrLabel}` as const;
 
   return {
     identifier,

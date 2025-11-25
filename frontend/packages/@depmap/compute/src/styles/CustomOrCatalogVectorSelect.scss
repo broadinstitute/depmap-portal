@@ -15,3 +15,14 @@
     color: #a94442;
   }
 }
+
+.AnalysisDimensionSelectContainer {
+  & > div > span {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+.AnalysisDimensionSelect {
+  width: 100%;
+}

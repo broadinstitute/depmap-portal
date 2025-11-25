@@ -80,7 +80,13 @@ export interface CommonQueryProps {
   ) => void;
   queryInfo: {
     cellLineData: Map<string, { displayName: string }>; // map with key = depmapId
-    datasets: Array<SelectNSOption>;
+    datasets:
+      | SelectNSOption[]
+      | Array<
+          // HACK: `data_type` and `priority` were not available in the legacy
+          // portal. THese will only be present if `isBreadboxOnlyMode` is true.
+          SelectNSOption & { data_type?: string; priority?: number }
+        >;
   };
   onAssociationResultsComplete: (
     numCellLinesUsed: number,

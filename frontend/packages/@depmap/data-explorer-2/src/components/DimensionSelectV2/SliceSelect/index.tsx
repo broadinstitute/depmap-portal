@@ -17,6 +17,7 @@ interface Props {
   isUnknownDataset: boolean;
   isLoading: boolean;
   swatchColor?: string;
+  selectClassName?: string;
 }
 
 function SliceSelect({
@@ -29,6 +30,7 @@ function SliceSelect({
   isUnknownDataset,
   isLoading,
   swatchColor = undefined,
+  selectClassName = undefined,
 }: Props) {
   if (isUnknownDataset) {
     return (
@@ -36,6 +38,7 @@ function SliceSelect({
         index_type={index_type}
         value={value}
         onChange={onChange}
+        selectClassName={selectClassName}
       />
     );
   }
@@ -50,6 +53,7 @@ function SliceSelect({
         dataset_id={dataset_id}
         value={value}
         onChange={onChange}
+        selectClassName={selectClassName}
       />
     );
   }
@@ -64,6 +68,7 @@ function SliceSelect({
       onChange={onChange}
       isLoading={isLoading}
       swatchColor={swatchColor}
+      selectClassName={selectClassName}
     />
   );
 }

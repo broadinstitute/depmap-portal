@@ -89,7 +89,12 @@ export default class CustomAnalysesPage extends React.Component<
                   d.sample_type_name === "depmap_model"
                 );
               })
-              .map(({ id, name }) => ({ value: id, label: name }));
+              .map(({ id, name, data_type, priority }) => ({
+                value: id,
+                label: name,
+                data_type,
+                priority,
+              }));
           })
       : legacyPortalAPI.getCustomAnalysisDatasets;
 

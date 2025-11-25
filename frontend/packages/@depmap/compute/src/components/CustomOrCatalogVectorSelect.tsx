@@ -16,8 +16,7 @@ import { UploadTask } from "@depmap/user-upload";
 import { Link } from "../models/legacy";
 import { FileUpload } from "./FileUpload";
 import uniqueId from "lodash.uniqueid";
-
-import "../styles/CustomOrCatalogVectorSelect.scss";
+import styles from "../styles/CustomOrCatalogVectorSelect.scss";
 
 type vectorSelectInputType = "catalog" | "custom";
 
@@ -89,6 +88,8 @@ export class CustomOrCatalogVectorSelect extends React.Component<
     if (isBreadboxOnlyMode) {
       return (
         <DimensionSelectV2
+          className={styles.AnalysisDimensionSelectContainer}
+          selectClassName={styles.AnalysisDimensionSelect}
           mode="entity-only"
           index_type="depmap_model"
           value={
