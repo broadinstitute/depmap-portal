@@ -4,6 +4,7 @@ import json
 from typing import Any, Dict, List
 from depmap.context.models_new import SubtypeContext, TreeType
 from depmap.enums import DataTypeEnum, TabularEnum
+from depmap.interactive import interactive_utils
 from depmap.oncokb_version.models import OncokbDatasetVersionDate
 from flask import (
     Blueprint,
@@ -215,7 +216,13 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
         abort(404)
     # dataset_name is dataset enum name
     dataset_name = dataset.name.name
-    df = data_access.get_subsetted_df_by_labels(dataset_name)
+    # HACK: bypass data_access because the code (as-written) requires the full matrix which is
+    # far too large to efficiently fetch from breadbox. Ultimately we want to rewrite this to
+    # make requests multiple, but smaller, requests to breadbox. For now, we'll bypass breadbox
+    # entirely until we make that change. Alternatively, we _could_ request the full matrix from breadbox
+    # and have the legacy portal cache its own copy. That would probably also be "good enough" to be
+    # a bandaid for the moment. (Although, it'd create a few additional changes: 1. we'd need a better way to transfer such a large paylout. 2. We'd need to make some new caching infrastructure)
+    df = interactive_utils.get_subsetted_df_by_labels(dataset_name, None, None)
     return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
@@ -227,7 +234,8 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
     if dataset is None:
         abort(404)
     dataset_name = dataset.name.name
-    df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_name)
+    # HACK: See comment in get_pref_dep_data_for_data_type
+    df = interactive_utils.get_subsetted_df_by_labels(dataset_name, None, None)
 
     return get_lowest_z_scores_response(dataset_name, model_id, df)
 
