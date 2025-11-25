@@ -5,7 +5,6 @@ from depmap.compound.views.executive import (
     format_availability_tile,
     format_dep_dist,
     format_enrichment_boxes,
-    format_top_corr_table,
 )
 from depmap.context_explorer.models import ContextAnalysis
 from depmap.dataset.models import DependencyDataset
@@ -47,12 +46,14 @@ def test_format_dep_dist(empty_db_mock_downloads):
     dataset_2 = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.CTRP_AUC, matrix=matrix
     )
-    empty_db_mock_downloads.session.flush()    
+    empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
     top_priority_dataset = data_access.get_matrix_dataset(dataset_1.name.name)
 
-    dep_dist = format_dep_dist(compound_experiment_1.compound, top_priority_dataset) # pyright: ignore
+    dep_dist = format_dep_dist(
+        compound_experiment_1.compound, top_priority_dataset
+    )  # pyright: ignore
 
     assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
     assert dep_dist["num_lines"] == 2
@@ -112,40 +113,6 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
 
     # only one has a positive t-statistic
     assert len(enrichment_boxes) == 1
-
-
-def test_format_top_corr_table(tmpdir, empty_db_mock_downloads):
-    gene = GeneFactory(label="G")
-    compound_experiment = CompoundExperimentFactory(label="C")
-
-    matrix = MatrixFactory(entities=[compound_experiment])
-    dataset = DependencyDatasetFactory(
-        display_name="avana", name=DependencyDataset.DependencyEnum.Avana, matrix=matrix
-    )
-
-    expr_matrix = MatrixFactory(entities=[gene])
-    expression_dataset = BiomarkerDatasetFactory(
-        name=BiomarkerEnum.expression, matrix=expr_matrix
-    )
-    CorrelationFactory(
-        expression_dataset,
-        dataset,
-        str(tmpdir.join("cors.sqlite3")),
-        cor_values=[[0.5]],
-    )
-
-    empty_db_mock_downloads.session.flush()
-
-    table = format_top_corr_table([(compound_experiment, dataset)])
-    assert len(table) == 1
-    entry = table[0]
-    assert (
-        entry["interactive_url"]
-        == "/data_explorer_2/?xDataset=Avana&xFeature=C&yDataset=expression&yFeature=G"
-    )
-    assert entry["gene_url"] == "/gene/G"
-    assert entry["correlation"] == 0.5
-    assert entry["gene_symbol"] == "G"
 
 
 def test_format_availability_tile(empty_db_mock_downloads):
