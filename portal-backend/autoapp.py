@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 
 import faulthandler
 import signal
-from werkzeug.wsgi import ProxyMiddleware
+from depmap.tweaked_proxy import ProxyMiddlewareWithLogging
 from werkzeug.wrappers import Request, Response
 from depmap.read_config import read_config
 from itsdangerous import Serializer
@@ -38,7 +38,7 @@ class UserOverrideMiddleware:
     def __init__(
         self,
         app,
-        proxy: ProxyMiddleware,
+        proxy: ProxyMiddlewareWithLogging,
         serializer: Serializer,
         user_override: Optional[str],
     ):
@@ -112,7 +112,7 @@ def setup_middleware(app, CONFIG):
     # then app.wsgi_app to UserOverrideMiddleware since the latest one set becomes first in the call chain
     app.wsgi_app = UserOverrideMiddleware(
         app.wsgi_app,
-        ProxyMiddleware(
+        ProxyMiddlewareWithLogging(
             app.wsgi_app,
             {
                 "/breadbox/": {
@@ -120,6 +120,7 @@ def setup_middleware(app, CONFIG):
                     "remove_prefix": True,
                 }
             },
+            timeout=CONFIG.BREADBOX_PROXY_TIMEOUT,
         ),
         Serializer(CONFIG.SECRET_KEY),
         CONFIG.BREADBOX_PROXY_DEFAULT_USER,

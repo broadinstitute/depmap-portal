@@ -350,6 +350,9 @@ class Config(object):
     MAX_UPLOAD_SIZE = 10 ** 10
     FORUM_API_KEY = os.getenv("FORUM_API_KEY")
 
+    # How long to wait for breadbox before reporting a timeout (in proxy)
+    BREADBOX_PROXY_TIMEOUT = 60
+
 
 class RemoteConfig(Config):
     CACHE_TYPE = "redis"

@@ -19,6 +19,10 @@ from breadbox.config import get_settings
 from breadbox.io.data_validation import validate_and_upload_dataset_files
 from breadbox.io.filestore_crud import get_slice
 from breadbox.utils.asserts import index_error_msg
+from breadbox.crud.dimension_ids import (
+    get_dataset_feature_by_given_id,
+    get_matrix_dataset_sample_df,
+)
 
 from breadbox.models.dataset import (
     Dataset,
@@ -32,6 +36,10 @@ from breadbox.schemas.dataset import MatrixDatasetIn
 from breadbox.service import metadata as metadata_service
 
 from ..crud.dimension_types import get_dimension_type
+from ..crud.dimension_ids import (
+    get_matrix_dataset_features_df,
+    get_dataset_feature_by_uuid,
+)
 from ..crud import dataset as dataset_crud
 from ..service import dataset as dataset_service
 from ..crud import group as group_crud
@@ -81,7 +89,7 @@ def get_feature_data_slice_values(
         "get_feature_data_slice_values is deprecated and should only be used by legacy Elara functionality."
     )
 
-    feature = dataset_crud.get_dataset_feature_by_uuid(
+    feature = get_dataset_feature_by_uuid(
         db, user, dataset=dataset, feature_uuid=dataset_feature_id
     )
     assert feature.index is not None, index_error_msg(feature)
@@ -99,7 +107,7 @@ def _get_filtered_query_feature(
     query_values: Optional[List[str]],
 ):
 
-    dataset_samples_df = dataset_crud.get_matrix_dataset_sample_df(db, dataset, None)
+    dataset_samples_df = get_matrix_dataset_sample_df(db, dataset, None)
     dataset_sample_ids_set = set(dataset_samples_df.given_id)
 
     if analysis_type == models.AnalysisType.two_class:
@@ -185,7 +193,7 @@ def get_features_info_and_dataset(
             if given_id is not None:
                 filter_by_feature_given_ids.add(given_id)
 
-    dataset_features_df = dataset_crud.get_matrix_dataset_features_df(
+    dataset_features_df = get_matrix_dataset_features_df(
         db, dataset, filter_by_feature_given_ids
     )
 
@@ -357,7 +365,7 @@ def run_custom_analysis(
         ):
             if query_feature_id and query_dataset_id:
                 # The query_feature_id is a given ID
-                feature = dataset_crud.get_dataset_feature_by_given_id(
+                feature = get_dataset_feature_by_given_id(
                     db, query_dataset_id, query_feature_id
                 )
                 assert feature.index is not None, index_error_msg(feature)

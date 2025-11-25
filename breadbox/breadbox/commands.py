@@ -16,6 +16,7 @@ from breadbox.crud import group as group_crud
 from breadbox.crud import dimension_types as types_crud
 from breadbox.crud import data_type as data_type_crud
 from breadbox.db.util import transaction
+from breadbox.models.dataset import DimensionTypeLabel
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
 from pydantic import ValidationError
@@ -112,6 +113,20 @@ def _regenerate_entire_search_index(db: SessionWithUser):
             db.expunge_all()
 
 
+def _regenerate_all_dim_type_labels(db: SessionWithUser):
+    from breadbox.crud.dimension_types import get_dimension_types, get_dimension_type
+    from breadbox.crud.dimension_ids import _populate_dimension_type_labels
+
+    dimension_type_names = [x.name for x in get_dimension_types(db)]
+    # re-look up each dimension_type by name to make sure the instance of dimension_type we have is associated with
+    # the session after we clear it each loop. If we were looping over instances of dimension_types, the call to expunge_all
+    # could cause problems, because the next instance would be in a "detached" state.
+    with transaction(db):
+        for dimension_type_name in dimension_type_names:
+            print(dimension_type_name)
+            _populate_dimension_type_labels(db, dimension_type_name)
+
+
 def _post_alembic_upgrade(db: SessionWithUser):
     """This method is called after we apply alembic schema migrations. Alembic migrations are great for cases which are
     simple enough that they can be achieved with SQL or a small amount of Python. However, we can't use any
@@ -130,6 +145,11 @@ def _post_alembic_upgrade(db: SessionWithUser):
         )
         _regenerate_entire_search_index(db)
         print("The search index is regenerated")
+
+    if db.query(DimensionTypeLabel).count() == 0:
+        print("No entries in DimensionTypeLabel -- proceeding to regenerate")
+        _regenerate_all_dim_type_labels(db)
+        print("The dimension type labels are regenerated")
 
 
 def _upgrade_db():
