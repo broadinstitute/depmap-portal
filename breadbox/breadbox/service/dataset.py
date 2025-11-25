@@ -215,7 +215,7 @@ def get_subsetted_matrix_dataset_df(
             columns=make_mapping(feature_index_mapping_df, "index", "given_id")
         )
 
-    if dimensions_info.feature_identifier == FeatureSampleIdentifier.label:
+    if dimensions_info.sample_identifier == FeatureSampleIdentifier.label:
         df = df.rename(index=make_mapping(sample_index_mapping_df, "index", "label"))
     else:
         df = df.rename(index=make_mapping(sample_index_mapping_df, "index", "given_id"))
