@@ -1,11 +1,11 @@
 import React from "react";
 import styles from "../../styles/CorrelationTile.scss";
-import { TopDatasetDependencies } from "./TopDatasetDependencies";
 import useCorrelatedDependenciesData from "../../hooks/useCorrelatedDependenciesData";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
+import { TopDatasetDependencies } from "./TopDatasetDependencies";
 
 interface CorrelatedDependenciesTileProps {
   entityLabel: string;
@@ -17,6 +17,7 @@ const CorrelatedDependenciesTile = ({
   datasetID,
 }: CorrelatedDependenciesTileProps) => {
   const {
+    datasetName,
     correlationData,
     dataTypeToDatasetMap,
     geneTargets,
@@ -75,6 +76,7 @@ const CorrelatedDependenciesTile = ({
               Error loading correlation data. Please try again later.
             </div>
           )}
+          <h3 className={styles.tileDatasetTitle}>{datasetName}</h3>
           {!correlationData && isLoading && <PlotSpinner />}
           {correlationData &&
             Object.keys(dataTypeToDatasetMap).map((dataType) => {

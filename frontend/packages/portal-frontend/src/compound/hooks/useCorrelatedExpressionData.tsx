@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { mapEntrezIdToSymbols } from "../utils";
 import { fetchMetadata } from "../fetchDataHelpers";
 
-function useCorrelatedDependenciesData(
+function useCorrelatedExpressionData(
   datasetId: string,
-  compoundLabel: string
+  compoundLabel: string,
+  associationDatasetId: string
 ) {
   const bapi = cached(breadboxAPI);
 
@@ -18,11 +19,6 @@ function useCorrelatedDependenciesData(
     setCorrelationData,
   ] = useState<DatasetAssociations | null>(null);
   const [geneTargets, setGeneTargets] = useState<string[]>([]);
-
-  const dataTypeToDatasetMap: Record<string, string> = {
-    CRISPR: "Chronos_Combined",
-    RNAi: "RNAi_merged",
-  };
 
   useEffect(() => {
     (async () => {
@@ -66,7 +62,7 @@ function useCorrelatedDependenciesData(
               identifier: compoundID,
               identifier_type: "feature_id",
             },
-            Object.values(dataTypeToDatasetMap)
+            [associationDatasetId]
           );
 
           setCorrelationData(datasetAssociations);
@@ -83,17 +79,14 @@ function useCorrelatedDependenciesData(
         setIsLoading(false);
       }
     })();
-    // Only run this effect once when the component mounts
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [associationDatasetId, correlationData, compoundLabel, bapi, datasetId]);
   return {
     datasetName,
     correlationData,
-    dataTypeToDatasetMap,
     geneTargets,
     isLoading,
     error,
   };
 }
 
-export default useCorrelatedDependenciesData;
+export default useCorrelatedExpressionData;

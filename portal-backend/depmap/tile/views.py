@@ -175,11 +175,11 @@ def render_compound_tile(
         CompoundTileEnum.predictability.value: get_predictability_html,
         CompoundTileEnum.selectivity.value: get_enrichment_html,
         CompoundTileEnum.sensitivity.value: get_sensitivity_html,
-        CompoundTileEnum.correlations.value: get_correlations_html,
         CompoundTileEnum.availability.value: get_availability_html,
         CompoundTileEnum.celfie.value: get_celfie_html,
         CompoundTileEnum.heatmap.value: get_heatmap_html,
         CompoundTileEnum.correlated_dependencies.value: get_correlated_dependencies_html,
+        CompoundTileEnum.correlated_expression.value: get_correlated_expression_html,
         CompoundTileEnum.description.value: get_structure_and_detail_html,
         CompoundTileEnum.related_compounds.value: get_related_compounds_html,
     }
@@ -404,6 +404,23 @@ def get_correlated_dependencies_html(
         f"""(
         function() {{
             DepMap.initCorrelatedDependenciesTile("{div_id}", "{compound_name}", "{compound_id}");
+        }})""",
+    )
+
+
+def get_correlated_expression_html(
+    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
+):
+    # unique id to insert in DOM
+    div_id = str(uuid.uuid4())
+    compound_name = entity.label
+    compound_id = Compound.get_by_label(compound_name).compound_id
+
+    return RenderedTile(
+        f'<div id="{div_id}"></div>',
+        f"""(
+        function() {{
+            DepMap.initCorrelatedExpressionTile("{div_id}", "{compound_name}", "{compound_id}");
         }})""",
     )
 
