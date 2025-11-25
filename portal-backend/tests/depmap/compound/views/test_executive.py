@@ -23,6 +23,7 @@ from tests.factories import (
     MatrixFactory,
     SubtypeNodeFactory,
 )
+import typing
 from tests.utilities import interactive_test_utils
 
 
@@ -52,8 +53,8 @@ def test_format_dep_dist(empty_db_mock_downloads):
     top_priority_dataset = data_access.get_matrix_dataset(dataset_1.name.name)
 
     dep_dist = format_dep_dist(
-        compound_experiment_1.compound, top_priority_dataset
-    )  # pyright: ignore
+        typing.cast(Compound, compound_experiment_1.compound), top_priority_dataset
+    )
 
     assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
     assert dep_dist["num_lines"] == 2
