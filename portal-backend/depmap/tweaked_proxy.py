@@ -1,6 +1,7 @@
 # this is copy of werkzeug.wsgi.ProxyMiddleware which has had some tweaks made to it such that it will log exceptions
 from __future__ import annotations
 
+import socket
 import typing as t
 from http import client
 from urllib.parse import quote
@@ -9,6 +10,7 @@ from urllib.parse import urlsplit
 from werkzeug.datastructures import EnvironHeaders
 from werkzeug.http import is_hop_by_hop_header
 from werkzeug.wsgi import get_input_stream
+from werkzeug.exceptions import BadGateway
 
 if t.TYPE_CHECKING:
     from _typeshed.wsgi import StartResponse
@@ -187,11 +189,17 @@ class ProxyMiddlewareWithLogging:
                         con.send(data)
 
                 resp = con.getresponse()
+            except socket.timeout as ex:
+                log.exception(
+                    f"Got socket.timeout exception while handling path={path} prefix={prefix}"
+                )
+                return BadGateway(
+                    description="Timeout expired while waiting for response from breadbox"
+                )(environ, start_response)
             except OSError as ex:
                 log.exception(
                     f"Got OSError exception while handling path={path} prefix={prefix}"
                 )
-                from werkzeug.exceptions import BadGateway
 
                 return BadGateway()(environ, start_response)
 

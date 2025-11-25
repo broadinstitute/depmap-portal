@@ -120,6 +120,7 @@ def setup_middleware(app, CONFIG):
                     "remove_prefix": True,
                 }
             },
+            timeout=CONFIG.BREADBOX_PROXY_TIMEOUT,
         ),
         Serializer(CONFIG.SECRET_KEY),
         CONFIG.BREADBOX_PROXY_DEFAULT_USER,
