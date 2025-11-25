@@ -1,6 +1,4 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { isContextAll } from "../../utils/context";
-import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
 import {
   correlationMatrix,
   linregress,
@@ -22,6 +20,9 @@ import {
   MatrixDataset,
   SliceQuery,
 } from "@depmap/types";
+import { isContextAll } from "../../utils/context";
+import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
+import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
 import { fetchDatasetIdentifiers } from "./identifiers";
 import { getDimensionDataWithoutLabels } from "./helpers";
 
@@ -427,7 +428,7 @@ export async function fetchPlotDimensions(
       if (
         value_type !== "continuous" &&
         key === "color_property" &&
-        distinct.size > 100
+        distinct.size > MAX_PLOTTABLE_CATEGORIES
       ) {
         window.console.error(extendedMetadata![key]);
         throw new Error("Too many distinct categorical values to plot!");

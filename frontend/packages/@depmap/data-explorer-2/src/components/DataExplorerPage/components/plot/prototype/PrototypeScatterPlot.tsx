@@ -12,6 +12,7 @@ import type {
   PlotSelectionEvent,
 } from "plotly.js";
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
+import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
   calcAnnotationPositions,
   calcAutoscaleShapes,
@@ -31,8 +32,6 @@ import type ExtendedPlotType from "../../../ExtendedPlotType";
 import styles from "../../../styles/ScatterPlot.scss";
 
 type Data = Record<string, any>;
-
-const MAX_POINTS_TO_ANNOTATE = 50;
 
 const truncate = (s: string) => {
   const MAX = 25;
