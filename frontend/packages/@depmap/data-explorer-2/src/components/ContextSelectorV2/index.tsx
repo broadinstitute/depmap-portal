@@ -24,6 +24,7 @@ interface Props {
   swatchColor?: string;
   includeAllInOptions?: boolean;
   hasError?: boolean;
+  selectClassName?: string;
 }
 
 function ContextSelectorV2({
@@ -37,6 +38,7 @@ function ContextSelectorV2({
   swatchColor = undefined,
   includeAllInOptions = false,
   hasError = false,
+  selectClassName = undefined,
 }: Props) {
   const [isLoadingContext, setIsLoadingContext] = useState(false);
 
@@ -72,6 +74,7 @@ function ContextSelectorV2({
         key={`${reactKey}`}
         show
         isClearable
+        className={selectClassName}
         label={resolvedLabel}
         width={300}
         hasError={hasError || evalFailed}

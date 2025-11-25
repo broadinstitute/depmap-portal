@@ -19,6 +19,7 @@ interface Props {
   options: State["sliceTypeOptions"];
   value: string | null | undefined;
   onChange: (nextSliceType: string | SliceTypeNull | undefined) => void;
+  selectClassName?: string;
 }
 
 const useLabel = (
@@ -56,6 +57,7 @@ function SliceTypeSelect({
   options,
   value,
   onChange,
+  selectClassName = undefined,
 }: Props) {
   const [sliceTypeLabel, setSliceTypeLabel] = useState("");
   const label = useLabel(index_type, axis_type, aggregation);
@@ -96,6 +98,7 @@ function SliceTypeSelect({
     <PlotConfigSelect
       show
       isClearable
+      className={selectClassName}
       enable={!isLoading}
       label={label}
       placeholder={placeholder}

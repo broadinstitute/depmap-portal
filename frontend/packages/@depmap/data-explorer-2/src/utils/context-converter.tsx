@@ -187,7 +187,7 @@ export async function convertContextV1toV2(
     }
   }
 
-  if (dimension_type === "compound_v2") {
+  if (context.context_type === "compound_experiment") {
     return {
       name: extractCompoundName(context.name),
       dimension_type,

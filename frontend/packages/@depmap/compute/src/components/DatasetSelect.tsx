@@ -21,6 +21,8 @@ class DatasetSelectProps {
   datasets?: Array<{
     label: string;
     value: string;
+    data_type?: string;
+    priority?: number;
   }>;
 
   onChange?: (newValue: string) => any;
@@ -132,6 +134,40 @@ export class DatasetSelect extends React.Component<
     );
   };
 
+  getDatasetOptions() {
+    if (!this.props.datasets) {
+      return [];
+    }
+
+    if (!isBreadboxOnlyMode) {
+      return this.props.datasets;
+    }
+
+    const datasets = this.props.datasets as {
+      label: string;
+      value: string;
+      data_type: string;
+      priority: number;
+    }[];
+    const groups: Record<string, typeof datasets> = {};
+
+    datasets.forEach((option) => {
+      groups[option.data_type] ||= [];
+      groups[option.data_type].push(option);
+    });
+
+    const groupedOpts = Object.keys(groups).map((dataType) => {
+      return {
+        label: dataType,
+        options: groups[dataType].sort((a, b) => {
+          return a.priority < b.priority ? -1 : 1;
+        }),
+      };
+    });
+
+    return groupedOpts;
+  }
+
   render() {
     const example = "Upload a matrix as a csv, where cell lines are rows";
     return (
@@ -157,7 +193,7 @@ export class DatasetSelect extends React.Component<
                     ? this.state.dropdownDataset
                     : null /* this prop is type SelectNSOption. it seems to work if its just value, but select react types wants it as SelectNSOption */
                 }
-                options={this.props.datasets}
+                options={this.getDatasetOptions()}
                 onChange={(newValue: any) => {
                   this.setState({ dropdownDataset: newValue });
                   this.props.onChange?.(newValue.value);

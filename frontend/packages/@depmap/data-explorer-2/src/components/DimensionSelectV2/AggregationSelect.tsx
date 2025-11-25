@@ -7,9 +7,15 @@ interface Props {
   show: boolean;
   value: string;
   onChange: (nextValue: DataExplorerAggregation) => void;
+  selectClassName?: string;
 }
 
-function AggregationSelect({ show, value, onChange }: Props) {
+function AggregationSelect({
+  show,
+  value,
+  onChange,
+  selectClassName = undefined,
+}: Props) {
   if (!show) {
     return null;
   }
@@ -20,6 +26,7 @@ function AggregationSelect({ show, value, onChange }: Props) {
         show
         enable
         inlineLabel
+        className={selectClassName}
         label="Method"
         placeholder="Choose a method…"
         options={{
