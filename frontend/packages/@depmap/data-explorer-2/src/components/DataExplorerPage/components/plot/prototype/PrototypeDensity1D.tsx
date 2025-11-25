@@ -8,8 +8,9 @@ import type {
   PlotSelectionEvent,
   ViolinData,
 } from "plotly.js";
-import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import seedrandom from "seedrandom";
+import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
+import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import {
   calcAnnotationPositions,
   DataExplorerColorPalette,
@@ -24,8 +25,6 @@ import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
 
 type Data = Record<string, any>;
-
-const MAX_POINTS_TO_ANNOTATE = 50;
 
 interface Props {
   data: Data;

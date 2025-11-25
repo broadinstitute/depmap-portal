@@ -6,6 +6,7 @@ import {
   dataExplorerAPI,
   DataExplorerApiResponse,
 } from "../../../../services/dataExplorerAPI";
+import { MAX_PLOTTABLE_CATEGORIES } from "../../../../constants/plotConstants";
 
 interface Args {
   sliceQuery: SliceQuery;
@@ -83,7 +84,7 @@ export default async function checkPlottable({
 
   if (
     ["categorial", "text"].includes(domain.value_type) &&
-    domain.unique_values.length <= 100
+    domain.unique_values.length <= MAX_PLOTTABLE_CATEGORIES
   ) {
     return true;
   }
