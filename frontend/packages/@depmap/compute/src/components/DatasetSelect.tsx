@@ -10,6 +10,7 @@ import { UploadTask } from "@depmap/user-upload";
 import { isBreadboxOnlyMode } from "@depmap/data-explorer-2";
 import { FileUpload } from "@depmap/compute";
 import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
+import { dataTypeSortComparator } from "@depmap/utils";
 
 import "../styles/DatasetSelect.scss";
 
@@ -156,14 +157,16 @@ export class DatasetSelect extends React.Component<
       groups[option.data_type].push(option);
     });
 
-    const groupedOpts = Object.keys(groups).map((dataType) => {
-      return {
-        label: dataType,
-        options: groups[dataType].sort((a, b) => {
-          return a.priority < b.priority ? -1 : 1;
-        }),
-      };
-    });
+    const groupedOpts = Object.keys(groups)
+      .sort(dataTypeSortComparator)
+      .map((dataType) => {
+        return {
+          label: dataType,
+          options: groups[dataType].sort((a, b) => {
+            return a.priority < b.priority ? -1 : 1;
+          }),
+        };
+      });
 
     return groupedOpts;
   }

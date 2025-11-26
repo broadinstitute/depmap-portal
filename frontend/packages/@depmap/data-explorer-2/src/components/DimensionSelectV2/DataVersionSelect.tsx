@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { dataTypeSortComparator } from "../../utils/misc";
+import { dataTypeSortComparator } from "@depmap/utils";
 import PlotConfigSelect from "../PlotConfigSelect";
 import { fetchDatasetsByIndexType } from "./useDimensionStateManager/utils";
 import { State } from "./useDimensionStateManager/types";
