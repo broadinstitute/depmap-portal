@@ -1,6 +1,13 @@
 #################################################################################
 #
-# Bump the version in pipeline-run-docker/image-name whenever you make a change
+# If you update this Dockerfile and are satisfied with the docker build, then please do the following:
+#   1. Once github action has successfully built and pushed the image, tag it with a static version e.g. v6 with the 
+#      following command:
+#      gcloud artifacts docker tags add \
+#      us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:[Your ga2-build-number-tag] \
+#      us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:[Your static version tag]
+#   2. Update DEFAULT_DOCKER_IMAGE in pipeline/exec.conseq to match the static version tag
+#   3. Update the static version tag in pipeline-run-docker/image-name to match the static version tag
 #
 #################################################################################
 
