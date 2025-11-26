@@ -43,7 +43,7 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
               {featureType === "gene" ? "Gene" : "Compound"}
             </th>
             <th style={{ width: "18%", overflow: "visible" }}>Correlation</th>
-            <th style={{ width: "32%" }}></th>
+            <th style={{ width: "32%" }} />
           </tr>
         </thead>
         <tbody>
