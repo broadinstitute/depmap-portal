@@ -639,11 +639,7 @@ def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
         # TODO: Update when more datasets are available and the legacy db has been
         # updated with the processed versions of older drug datasets.
         compound = CompoundFactory()
-        result = get_corr_analysis_options_if_available(
-            drc_dataset_attribute_to_match="log_auc_dataset_given_id",
-            given_id="PRISMOncologyReferenceLog2AUCMatrix",
-            compound_label=compound.label,
-        )
+        result = get_corr_analysis_options_if_available(compound_label=compound.label)
         assert len(result) >= 1
         matches = [x for x in result if x == expected_corr_analysis_dataset]
         assert len(matches) == 1
@@ -745,9 +741,5 @@ def test_get_corr_analysis_options_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
         compound = CompoundFactory()
-        result = get_corr_analysis_options_if_available(
-            drc_dataset_attribute_to_match="log_auc_dataset_given_id",
-            given_id="PRISMOncologyReferenceLog2AUCMatrix",
-            compound_label=compound.label,
-        )
+        result = get_corr_analysis_options_if_available(compound_label=compound.label)
         assert result == []

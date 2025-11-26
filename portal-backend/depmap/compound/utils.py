@@ -7,9 +7,13 @@ from depmap.compound.models import (
 )
 
 
-def get_compound_dataset_with_name_and_priority(drc_dataset: DRCCompoundDataset):
+def get_compound_dataset_with_name_and_priority(
+    drc_dataset: DRCCompoundDataset, use_logged_auc: bool = False
+):
     auc_dataset_display_name = data_access.get_dataset_label(
         drc_dataset.auc_dataset_given_id
+        if not use_logged_auc
+        else drc_dataset.log_auc_dataset_given_id
     )
     priority = data_access.get_dataset_priority(drc_dataset.auc_dataset_given_id)
     viability_dataset_display_name = data_access.get_dataset_label(

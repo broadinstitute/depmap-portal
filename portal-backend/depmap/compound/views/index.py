@@ -107,8 +107,6 @@ def view_compound(name):
     )
 
     corr_analysis_options = get_corr_analysis_options_if_available(
-        drc_dataset_attribute_to_match="log_auc_dataset_given_id",
-        given_id="PRISMOncologyReferenceLog2AUCMatrix",
         compound_label=compound.label,
     )
 
@@ -306,30 +304,27 @@ def get_heatmap_options_new_tab_if_available(
 
 
 def get_corr_analysis_options_if_available(
-    drc_dataset_attribute_to_match: str, given_id: str, compound_label: str
+    compound_label: str,
 ) -> List[DRCCompoundDataset]:
-    if not current_app.config["ENABLED_FEATURES"].correlation_analysis:
-        return []
+    show_corr_analysis = current_app.config["ENABLED_FEATURES"].correlation_analysis
 
-    # TODO This needs to be updated when Correlation Analysis can support more than just OncRef
-    drc_dataset = find_compound_dataset(
-        drc_compound_datasets, drc_dataset_attribute_to_match, given_id
-    )
+    valid_options = []
+    if show_corr_analysis:
+        for drc_dataset in drc_compound_datasets:
+            if drc_dataset.log_auc_dataset_given_id is not None:
+                does_dataset_exist_with_compound = data_access.dataset_exists(
+                    drc_dataset.log_auc_dataset_given_id
+                ) and data_access.valid_row(
+                    drc_dataset.log_auc_dataset_given_id, compound_label
+                )
 
-    if drc_dataset is None:
-        return []
+                if does_dataset_exist_with_compound:
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset, use_logged_auc=True
+                    )
+                    valid_options.append(complete_option)
 
-    if drc_dataset.log_auc_dataset_given_id is None:
-        return []
-
-    does_dataset_exist_with_compound = data_access.dataset_exists(
-        drc_dataset.log_auc_dataset_given_id
-    ) and data_access.valid_row(drc_dataset.log_auc_dataset_given_id, compound_label)
-
-    if does_dataset_exist_with_compound:
-        return [drc_dataset]
-
-    return []
+    return valid_options
 
 
 @blueprint.route("/compoundUrlRoot")
