@@ -93,6 +93,8 @@ def _lookup_compound(feature_names: str, compounds_taiga_id: str) -> List[str]:
     compound_id_by_sample_id = _get_compound_id_by_sample_id(compound_metadata)
 
     def _lookup(sample_id):
+        if sample_id.startswith("DPC-"):
+            return sample_id
         if (sample_id not in compound_id_by_sample_id) and (
             f"BRD:{sample_id}" in compound_id_by_sample_id
         ):
