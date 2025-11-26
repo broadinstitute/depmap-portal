@@ -1,8 +1,11 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
+import {
+  compareCaseInsensitive,
+  compareDisabledLast,
+  dataTypeSortComparator,
+} from "@depmap/utils";
 import { DimensionType } from "@depmap/types";
 import {
-  dataTypeSortComparator,
   isSampleType,
   pluralize,
   sortDimensionTypes,
