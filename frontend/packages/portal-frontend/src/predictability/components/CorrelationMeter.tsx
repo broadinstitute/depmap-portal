@@ -7,16 +7,25 @@ interface Props {
   correlation: number;
   showLabel?: boolean;
   useGradedColorScheme?: boolean;
+  customWidth?: string;
 }
 const CorrelationMeter = ({
   correlation,
   showLabel = true,
   useGradedColorScheme = false,
+  customWidth = undefined,
 }: Props) => {
   const className = correlation >= 0 ? "positive" : "negative";
 
   return (
-    <span className={style.container}>
+    <span
+      className={style.container}
+      style={
+        customWidth
+          ? ({ "--width": customWidth } as React.CSSProperties)
+          : undefined
+      }
+    >
       <meter className={style.meter} min={-1} max={1} value={correlation} />
       <div
         className={`${style["meter-bar"]} ${style[className]}`}
