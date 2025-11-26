@@ -38,3 +38,26 @@ rule process_celligner_inputs:
 ```
 
 Also, note always specify the image SHA so that we can track which version of the image was used.
+
+## Pipeline Docker image (pipeline-run-docker)
+
+The main preprocessing pipeline runs inside the `depmap-pipeline-run` Docker image, which is built from
+`build-pipeline-docker-images/pipeline-run-docker/Dockerfile`.
+
+When you change this Dockerfile:
+
+- Bump the tag in `build-pipeline-docker-images/pipeline-run-docker/image-name`
+- Update `DEFAULT_DOCKER_IMAGE` in `pipeline/exec.conseq` to the same image (including tag)
+
+To build and push the pipeline-run image manually (using the tag from `image-name`):
+
+```bash
+cd pipeline/build-pipeline-docker-images
+bash build.sh from-image-name
+```
+
+This will:
+
+- Read `DOCKER_IMAGE` from `pipeline-run-docker/image-name`
+- Build the image using `pipeline-run-docker/Dockerfile`
+- Push the resulting image to Artifact Registry

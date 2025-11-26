@@ -1,7 +1,10 @@
 #################################################################################
 #
-# Bump the version in pipeline-run-docker/image-name whenever you make a change
-#
+# If you change this Dockerfile:
+#   1. Bump the version in pipeline-run-docker/image-name
+#   2. Update DEFAULT_DOCKER_IMAGE in pipeline/exec.conseq to match
+#   3. Build and push the image manually using the following command in the pipeline directory:
+#      bash build.sh from-image-name
 #################################################################################
 
 FROM ubuntu:jammy
