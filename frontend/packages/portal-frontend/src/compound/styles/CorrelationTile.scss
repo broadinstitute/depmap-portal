@@ -47,3 +47,15 @@
 .cellStyle {
   padding: 4px;
 }
+
+.TopDatasetDependencies {
+  max-width: 350px;
+  td,
+  th {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+    box-sizing: border-box; // Ensures padding doesn't increase total cell width
+  }
+}

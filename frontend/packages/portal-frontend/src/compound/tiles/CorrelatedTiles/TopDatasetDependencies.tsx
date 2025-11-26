@@ -26,18 +26,24 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
 }) => {
   const urlPrefix = getFullUrlPrefix();
   return (
-    <div>
+    <div className={styles.TopDatasetDependencies}>
       <h3 className={styles.tableDatasetTitle}>{dataType}</h3>
-      <table style={{ width: "90%", tableLayout: "fixed" }}>
+      <table
+        style={{
+          width: "100%",
+          tableLayout: "fixed",
+          borderCollapse: "collapse",
+        }}
+      >
         <thead>
           <tr>
+            <th style={{ width: "12%" }} />
             <th style={{ width: "10%" }} />
-            <th style={{ width: "8%" }} />
-            <th style={{ width: "30%" }}>
+            <th style={{ width: "28%" }}>
               {featureType === "gene" ? "Gene" : "Compound"}
             </th>
-            <th style={{ width: "10%" }}>Correlation</th>
-            <th style={{ width: "30%" }} />
+            <th style={{ width: "18%", overflow: "visible" }}>Correlation</th>
+            <th style={{ width: "32%" }}></th>
           </tr>
         </thead>
         <tbody>
@@ -62,14 +68,13 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                     />
                   )}
                 </td>
-                <td>
+                <td className={styles.ellipsisStyle}>
                   <Tooltip
                     id="correlated-gene-tooltip"
                     content={datasetCor.other_dimension_label}
                     placement="top"
                   >
                     <a
-                      className={styles.ellipsisStyle}
                       href={`${urlPrefix}/${featureType}/${datasetCor.other_dimension_label}`}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -84,6 +89,7 @@ export const TopDatasetDependencies: React.FC<TopDatasetDependencyProps> = ({
                   <CorrelationMeter
                     showLabel={false}
                     correlation={datasetCor.correlation}
+                    customWidth={"95px"}
                     useGradedColorScheme
                   />
                 </td>
