@@ -219,63 +219,6 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
     return enrichment_boxes
 
 
-def format_top_corr_table(compound_experiment_and_datasets):
-    # DEPRECATED: will be replaced/redesigned
-    top_correlations = get_top_correlated_expression(compound_experiment_and_datasets)
-    table = []
-    for _, tc in top_correlations.items():
-        interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2",
-            xDataset=tc["compound_dataset"].values[0],
-            xFeature=tc["compound_label"].values[0],
-            yDataset="expression",
-            yFeature=tc["other_entity_label"].values[0],
-        )
-        gene_url = url_for(
-            "gene.view_gene", gene_symbol=tc["other_entity_label"].values[0]
-        )
-        table.append(
-            {
-                "interactive_url": interactive_url,
-                "gene_url": gene_url,
-                "correlation": tc["correlation"].values[0],
-                "gene_symbol": tc["other_entity_label"].values[0],
-            }
-        )
-    table = sorted(table, key=lambda x: abs(x["correlation"]), reverse=True)
-    return table[:5]
-
-
-def get_top_correlated_expression(compound_experiment_and_datasets):
-    """
-    This takes cues from format_codependencies in depmap/gene/views/executive.py and could be a candidate for a refactor
-    """
-    expression_dataset = BiomarkerDataset.get_dataset_by_name("expression")
-    if expression_dataset is None:
-        return {}
-    top_correlations = {}
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        if dataset is not None:
-            corr_df = get_all_correlations(
-                dataset.matrix_id,
-                compound_experiment.label,
-                max_per_other_dataset=100,
-                other_dataset_ids=[expression_dataset.dataset_id],
-            )
-            for gene in corr_df["other_entity_label"]:
-                curr_row = corr_df.loc[corr_df["other_entity_label"] == gene].copy()
-                curr_row["compound_dataset"] = dataset.name.value
-                curr_row["compound_label"] = compound_experiment.label
-                try:
-                    prev_corr_val = abs(top_correlations[gene]["correlation"].values[0])
-                    curr_corr_val = abs(curr_row["correlation"].values[0])
-                    if curr_corr_val > prev_corr_val:
-                        top_correlations[gene] = curr_row
-                except KeyError:
-                    top_correlations[gene] = curr_row
-    return top_correlations
-
-
 def format_availability_tile(compound: Compound):
     """
     Load high-level information about which datasets the given compound
