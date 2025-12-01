@@ -99,10 +99,10 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
+    dose_curve_options_new = get_drc_options_if_new_tabs_available(
         compound_label=compound.label, compound_id=compound.compound_id
     )
-    heatmap_dataset_options = get_heatmap_options_new_tab_if_available(
+    heatmap_dataset_options = get_drc_options_if_new_tabs_available(
         compound_label=compound.label, compound_id=compound.compound_id
     )
 
@@ -251,56 +251,28 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab_if_available(
+def get_drc_options_if_new_tabs_available(
     compound_label: str, compound_id: str
-):
+) -> List[DRCCompoundDatasetWithNamesAndPriority]:
     """
-    Used for jinja rendering of the dose curve tab
+    Used for jinja rendering of the dose curve and heatmap tab
     """
-    show_new_dose_curves_tab = current_app.config[
+    new_compound_page_tabs = current_app.config[
         "ENABLED_FEATURES"
     ].new_compound_page_tabs
 
     valid_options = []
-    if show_new_dose_curves_tab:
+    if new_compound_page_tabs:
         for drc_dataset in drc_compound_datasets:
             if dataset_exists_with_compound_in_auc_and_rep_datasets(
                 drc_dataset=drc_dataset,
                 compound_label=compound_label,
                 compound_id=compound_id,
             ):
-                if current_app.config[
-                    "ENABLED_FEATURES"
-                ].show_all_new_dose_curve_and_heatmap_tab_datasets:
-                    complete_option = get_compound_dataset_with_name_and_priority(
-                        drc_dataset
-                    )
-                    valid_options.append(complete_option)
-
-    return valid_options
-
-
-def get_heatmap_options_new_tab_if_available(
-    compound_label: str, compound_id: str
-) -> List[DRCCompoundDatasetWithNamesAndPriority]:
-    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
-
-    valid_options = []
-    if show_heatmap_tab:
-        for drc_dataset in drc_compound_datasets:
-            # TODO: Theoretically, we could let the Heatmap load without the dose curve params, but this would involve some frontend changes.
-            if dataset_exists_with_compound_in_auc_and_rep_datasets(
-                drc_dataset=drc_dataset,
-                compound_label=compound_label,
-                compound_id=compound_id,
-            ):
-                if current_app.config[
-                    "ENABLED_FEATURES"
-                ].show_all_new_dose_curve_and_heatmap_tab_datasets:
-                    complete_option = get_compound_dataset_with_name_and_priority(
-                        drc_dataset
-                    )
-                    valid_options.append(complete_option)
+                complete_option = get_compound_dataset_with_name_and_priority(
+                    drc_dataset
+                )
+                valid_options.append(complete_option)
 
     return valid_options
 
