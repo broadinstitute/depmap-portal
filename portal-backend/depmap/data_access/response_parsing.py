@@ -20,15 +20,7 @@ class ParsedBreadboxSliceId:
     feature_id: Optional[str]
 
 
-def parse_breadbox_slice_id(slice_id: str) -> ParsedBreadboxSliceId:
-    """
-    Parse the breadbox dataset ID and feature ID from the given slice ID. If the given 
-    slice ID is malformed, throw a Bad Request error. Slice IDs should be formatted like 
-    'breadbox/<dataset-uuid>/<feature-given-id>' or 'breadbox/<dataset-uuid>'.
-    """
-    match = re.match(BREADBOX_SLICE_ID_REGEX, slice_id)
-    assert match, f"Breadbox slice id '{slice_id}' does not match the expected format."
-    return ParsedBreadboxSliceId(match.group(1), match.group(2))
+# TODO: remove the rest of the stuff in this file, probably
 
 
 def remove_breadbox_prefix(dataset_id: str) -> str:
@@ -49,14 +41,6 @@ def is_breadbox_id_format(id: str):
     """Check if the ID matches eitherbreadbox dataset format (prefixed by "breadbox/")"""
     breadbox_match = re.match(BREADBOX_SLICE_ID_REGEX, id)
     return breadbox_match is not None
-
-
-def get_breadbox_slice_id(dataset_id: str, feature_id: Optional[str] = None):
-    """Construct a correctly formatted breadbox slice ID."""
-    slice_id = f"breadbox/{dataset_id}"
-    if feature_id:
-        slice_id += f"/{feature_id}"
-    return slice_id
 
 
 def parse_matrix_dataset_response(dataset: MatrixDatasetResponse) -> MatrixDataset:

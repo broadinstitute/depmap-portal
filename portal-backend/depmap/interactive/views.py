@@ -1,8 +1,6 @@
 from functools import reduce
 import logging
-from enum import Enum
-from math import isnan
-from typing import List, Tuple
+from typing import Tuple
 
 import flask
 import pandas as pd
@@ -17,24 +15,18 @@ from flask import (
 )
 
 from depmap.interactive import interactive_utils
-from depmap.breadbox_shim import breadbox_shim
 from depmap.celery_task.utils import format_task_status, TaskState
-from depmap.cell_line.models import CellLine
 from depmap.correlation.models import CorrelatedDataset
 from depmap.correlation.utils import get_all_correlations
-from depmap.dataset.models import Dataset, Mutation
-from depmap.enums import BiomarkerEnum
+from depmap.dataset.models import Dataset
 from depmap.extensions import csrf_protect
-from depmap.interactive import common_utils
 from depmap import data_access
-from depmap.interactive.config.categories import CategoryConfig
 from depmap.user_uploads.tasks import upload_transient_csv
 from depmap.user_uploads.utils.task_utils import (
     write_upload_to_local_file,
     write_url_to_local_file,
 )
 from depmap.vector_catalog.trees import InteractiveTree
-from depmap.utilities.data_access_log import log_feature_access
 
 
 log = logging.getLogger(__name__)
@@ -42,14 +34,6 @@ log = logging.getLogger(__name__)
 blueprint = Blueprint(
     "interactive", __name__, url_prefix="/interactive", static_folder="../static"
 )
-
-
-class CellLineInfoFeatures(Enum):
-    # These features don't have a corresponding slice id but
-    # are always needed for Data Explorer tooltips and CSV downloads.
-    primary_disease = "primary_disease"
-    cell_line_display_name = "cell_line_display_name"
-    lineage_display_name = "lineage_display_name"
 
 
 @blueprint.route("/")
@@ -150,24 +134,6 @@ def option_used(optionFeature, optionDataset, dataset_config_key_name=""):
     return True
 
 
-# We don't know how many features will be fed into get-features at one time, so we use this to handle merging an unknown amount
-def merge_multi_row_vals(series_list: List[pd.Series]) -> pd.DataFrame:
-    df_list = [series.to_frame() for series in series_list]
-    df = reduce(
-        lambda x, y: pd.merge(
-            x,
-            y,
-            how="inner",
-            left_index=True,
-            right_index=True,
-            suffixes=(None, "_right"),
-        ),
-        df_list,
-    )
-
-    return df
-
-
 def merge_x_y(xSeries, ySeries):
     df = pd.merge(
         xSeries.to_frame("x"),
@@ -177,31 +143,6 @@ def merge_x_y(xSeries, ySeries):
         right_index=True,
     )
     return df
-
-
-def filter_df(df, filter_dataset, filter_feature):
-    """Deprecated: Not supported for breadbox datasets."""
-    # filter is a binary thing. it is currently only implemented for context
-    assert filter_dataset in {
-        interactive_utils.get_context_dataset(),
-        interactive_utils.get_custom_cell_lines_dataset(),
-    }
-
-    # for both context and custom cellines, get row of values returns a series where all values are the filter_feature, e.g. skin
-    # nas are dropped, so it only returns cell lines for which the value is "true"
-    # thus, we can do the filtering by doing an inner join
-    feature_series = interactive_utils.get_row_of_values(filter_dataset, filter_feature)
-    assert feature_series.isnull().sum() == 0
-
-    filter_df = pd.merge(
-        df,
-        feature_series.to_frame("filter"),
-        how="inner",  # this does the filtering
-        left_index=True,
-        right_index=True,
-    )
-
-    return filter_df
 
 
 # primary_disease and cell_line_display_name are necessary for data explorer hover info,
@@ -223,153 +164,6 @@ def get_dataset_feature_from_id(id: str) -> Tuple[str, str]:
         datasets, feature_labels = InteractiveTree.get_dataset_feature_from_id(id)
 
     return datasets, feature_labels
-
-
-# This was added to support passing multiple features as "get-features" parameters
-def get_df_from_feature_list(
-    datasets: list[str],
-    feature_labels: list[str],
-    feature_ids: list[str],
-    cell_line_info_features: list[str],
-    breadbox_feature_data: list[pd.Series] = [],
-):
-    # Load legacy feature data into a dataframe
-    values = []
-    seen_features_ids = []
-    for i, feature_label in enumerate(feature_labels):
-        if feature_label not in cell_line_info_features:
-            # There is a rare case where the same feature might be selected twice (e.g. for both x and y dropdowns in
-            # data explorer). So if we've already pulled the row values, skip pulling them a 2nd time
-            if feature_ids[i] in seen_features_ids:
-                continue
-
-            # record to the log that a user fetched this column
-            log_feature_access("get_df_from_feature_list", datasets[i], feature_label)
-
-            # Get a Series with name being the feature slice id
-            val = interactive_utils.get_row_of_values(
-                datasets[i], feature_label
-            ).rename(feature_ids[i], inplace=True)
-
-            values.append(val)
-            seen_features_ids.append(feature_ids[i])
-    values.extend(breadbox_feature_data)
-    df = merge_multi_row_vals(values)
-    df.dropna(
-        inplace=True
-    )  # Cannot be plotted if na, even if the other x or y has a value
-    df["depmap_id"] = df.index
-    return df
-
-
-def add_cell_line_features_to_df(df: pd.DataFrame):
-    # These features don't have a corresponding slice id but
-    # are always needed for Data Explorer tooltips and CSV downloads.
-    if "primary_disease" in df.columns:
-        del df["primary_disease"]
-    info_to_merge = CellLine.get_cell_line_information_df(df.index)
-    del info_to_merge[
-        "lineage_level"
-    ]  # probably not necesary to delete, but just a precaution to preserve existing behavior
-
-    df = pd.merge(df, info_to_merge, left_index=True, right_index=True)
-    return df
-
-
-@blueprint.route("/api/get-features")
-def get_features():
-    """
-    Returns ingredients necessary for typescript to derive json object of x and y coordinates to plot. feature_ids are values of cells from the specified database and row
-    """
-    feature_ids = request.args.getlist("features")
-    group_by_id = request.args.get("groupBy")
-    filter_id = request.args.get("filter")
-    compute_linear_fit = request.args.get(
-        "computeLinearFit", default=False, type=lambda v: v.lower() == "true"
-    )
-
-    breadbox_slice_ids = [id for id in feature_ids if id.startswith("breadbox/")]
-    legacy_feature_ids = [id for id in feature_ids if not id.startswith("breadbox/")]
-    if breadbox_slice_ids:
-        (
-            breadbox_feature_values,
-            breadbox_axis_labels,
-            breadbox_feature_labels,
-            breadbox_slice_ids,
-        ) = breadbox_shim.get_features_calculated_value_lists(
-            slice_ids=breadbox_slice_ids
-        )
-
-    else:
-        breadbox_feature_values = []
-        breadbox_axis_labels = []
-        breadbox_feature_labels = []
-
-    # Load legacy metadata
-    legacy_datasets, legacy_feature_labels = [], []
-    if len(legacy_feature_ids) > 0:
-        # Usually, datasets,feature_labels will look similar to this: 'RNAi_merged', 'SOX10'.
-        # Meta data, such as "primary_disease" and "cell_line_display_name" will look like this: '', 'primary_disease'
-        legacy_datasets, legacy_feature_labels = zip(
-            *[get_dataset_feature_from_id(id) for id in legacy_feature_ids]
-        )
-    if len(legacy_feature_labels) < 1 and len(breadbox_slice_ids) < 1:
-        return jsonify(([], [], [], "", []))
-
-    cell_line_info_features = [e.value for e in CellLineInfoFeatures]
-
-    # Load legacy feature values and merge the feature data
-    # so that x_feature, y_feature, primary_diseases, etc.
-    # are all lined up in order by depmap_id.
-    df = get_df_from_feature_list(
-        list(legacy_datasets),
-        list(legacy_feature_labels),
-        legacy_feature_ids,
-        cell_line_info_features,
-        breadbox_feature_values,
-    )
-
-    # Filter the dataframe
-    if filter_id and filter_id.startswith("breadbox/"):
-        filter_series = breadbox_shim.get_feature_data_slice(filter_id)
-        df = df.merge(filter_series, left_index=True, right_index=True)
-    else:
-        filter_dataset, filter_feature = get_dataset_feature_from_id(filter_id)
-        if option_used(filter_feature, filter_dataset, "FILTER_DATASETS"):
-            df = filter_df(df, filter_dataset, filter_feature)
-
-    # Add cell line metadata to result
-    if any(f in cell_line_info_features for f in list(legacy_feature_labels)):
-        df = add_cell_line_features_to_df(df)
-
-    # Read dataset units and labels from config, format into axis labels
-    legacy_axis_labels = []
-    for i in range(len(legacy_feature_ids)):
-        if legacy_feature_labels[i] in cell_line_info_features:
-            legacy_axis_labels.append("")
-        else:
-            legacy_axis_labels.append(
-                common_utils.format_axis_label(
-                    legacy_datasets[i], legacy_feature_labels[i]
-                )
-            )
-
-    # construct feature objects
-    features = common_utils.get_features_from_ungrouped_df(
-        df=df,
-        feature_labels=list(legacy_feature_labels) + breadbox_feature_labels,
-        axis_labels=legacy_axis_labels + breadbox_axis_labels,
-        feature_ids=legacy_feature_ids + breadbox_slice_ids,
-    )
-
-    group_by_dataset = ""
-    if group_by_id and group_by_id.startswith("breadbox/"):
-        # Load the group_by feature and configs from breadbox
-        group_by_category_config = breadbox_shim.get_category_config(group_by_id)
-        group_by_series = breadbox_shim.get_feature_data_slice(group_by_id)
-
-    return {}
-
 
 
 def get_associations_df(matrix_id, x_feature):

@@ -32,7 +32,6 @@ biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVa
 biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
 biomarker_loader.py: error: Argument of type "Literal['LOADER_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 biomarker_loader.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-breadbox_shim.py: error: Argument of type "list[str | None]" cannot be assigned to parameter "feature_ids" of type "list[str]" in function "get_feature_data"
 categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__" (reportArgumentType)
 categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
 categories.py: error: Method "_get_na_value" overrides class "CategoryConfig" in an incompatible manner
@@ -528,7 +527,6 @@ views.py: error: Argument of type "Literal['user_id']" cannot be assigned to par
 views.py: error: Argument of type "Literal['value']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 views.py: error: Argument of type "Unknown | FileStorage" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv" (reportArgumentType)
-views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to parameter "breadbox_feature_data" of type "list[Series]" in function "get_df_from_feature_list"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
 views.py: error: Argument of type "str" cannot be assigned to parameter "__value" of type "_VT@dict" in function "__setitem__"
