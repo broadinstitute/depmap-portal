@@ -10,7 +10,6 @@ from breadbox_client.models import FeatureResponse, FeatureResponseValues
 
 from depmap.compute import analysis_tasks
 from depmap.vector_catalog.models import SliceRowType, SliceSerializer
-from depmap.compute.views import subset_values_by_intersecting_cell_lines
 from depmap.compute.analysis_tasks import run_custom_analysis  # imported to monkeypatch
 from depmap.dataset.models import BiomarkerDataset
 from tests.factories import (
@@ -292,47 +291,6 @@ def test_compute_univariate_associations_intersection_with_minimum_points(
                     assert row[col] is None
                 else:
                     assert isclose(row[col], expected_row[col])
-
-
-def test_subset_values_by_intersecting_cell_lines():
-    series_1 = pd.Series(
-        [3, 5, 4],  # 5 before 4, different order
-        index=[
-            "ACH-000003",
-            "ACH-000005",
-            "ACH-000004",
-        ],  # 5 before 4, different order
-    )  # missing 1
-
-    index_subset = [
-        "ACH-000001",
-        "ACH-000004",
-        "ACH-000005",
-        "ACH-not-in-series",
-    ]  # missing 3
-
-    # test with both provided
-    (indices, values) = subset_values_by_intersecting_cell_lines(series_1, index_subset)
-
-    assert len(indices) == len(values)
-
-    if indices == ["ACH-000004", "ACH-000005"]:
-        index_4 = 0
-        index_5 = 1
-    else:
-        assert indices == ["ACH-000005", "ACH-000004"]
-        index_4 = 1
-        index_5 = 0
-
-    assert values[index_4] == 4
-    assert values[index_5] == 5
-
-    # test without the index subset
-    (indices, values) = subset_values_by_intersecting_cell_lines(series_1, None)
-    assert set(indices) == {"ACH-000003", "ACH-000004", "ACH-000005"}
-    index_to_val = {"ACH-000003": 3, "ACH-000004": 4, "ACH-000005": 5}
-    for index, val in index_to_val.items():
-        assert values[indices.index(index)] == val
 
 
 def test_compute_univariate_associations_with_breadbox_feature(

@@ -1,22 +1,18 @@
 import logging
 
-from flask import Blueprint, render_template, request, current_app
+from flask import abort, Blueprint, render_template, request
 from flask_restplus import Api, Resource
 import pandas as pd
 
-from depmap import data_access
 from depmap.interactive import interactive_utils
 from depmap.breadbox_shim import breadbox_shim
 from depmap.celery_task.utils import (
-    format_task_status,
     format_taskless_error_message,
     task_response_model,
 )
 from depmap.extensions import csrf_protect, restplus_handle_exception
-from depmap.compute import analysis_tasks
 from depmap_compute.models import AnalysisType
 from depmap_compute.slice import slice_id_to_slice_query
-from depmap.user_uploads.utils.task_utils import get_current_result_dir
 
 blueprint = Blueprint(
     "compute", __name__, url_prefix="/compute", static_folder="../static"
@@ -123,7 +119,9 @@ class ComputeUnivariateAssociations(Resource):
             slice_query_is_from_breadbox = False
 
         # Forward requests to breadbox a breadbox dataset is requested
-        if dataset_id.startswith("breadbox/"):
+        if not dataset_id.startswith("breadbox/"):
+            raise ValueError("TODO: return 501 not implemented ")
+        else:
             # If the query slice is from a legacy dataset, load it now and pass the values to breadbox
             # The query_cell_lines parameter needs to be the same order/length as the query_values when passed to breadbox.
             if slice_query and not slice_query_is_from_breadbox:
@@ -160,112 +158,3 @@ class ComputeUnivariateAssociations(Resource):
                 query_cell_lines=query_cell_lines,
                 query_values=query_values,
             )
-
-        dataset_depmap_ids = set(data_access.get_dataset_sample_ids(dataset_id))
-
-        # Two-class comparison case
-        if analysis_type == AnalysisType.two_class:
-            cl_query_vector = query_cell_lines # includes both in group and out group
-            assert all(
-                x in {"in", "out"} for x in query_values
-            ), "Expecting values in {} to be either 'in' or 'out'".format(query_values)
-            value_query_vector = [0 if x == "out" else 1 for x in query_values]
-
-            # Validate that BOTH the in-group and out-group have cell lines present in the dataset
-            in_group_cell_lines = {query_cell_lines[i] for i in range(len(query_values)) if query_values[i] == "in"}
-            out_group_cell_lines = {query_cell_lines[i] for i in range(len(query_values)) if query_values[i] == "out"}
-            if len(in_group_cell_lines.intersection(dataset_depmap_ids)) == 0:
-                return format_taskless_error_message(
-                    "No cell lines in common between in-group and dataset selected"
-                )
-            if len(out_group_cell_lines.intersection(dataset_depmap_ids)) == 0:
-                return format_taskless_error_message(
-                    "No cell lines in common between out-group and dataset selected"
-                )
-
-        # Pearson and association case
-        elif (
-            analysis_type == AnalysisType.pearson
-            or analysis_type == AnalysisType.association
-        ):
-            # association and pearson have the same parameters
-            # 1. main query vector
-            # 2. which is dependent/independent, the matrix or the vector
-            # 3. optionally, a list of cell line depmap ids
-            assert slice_query is not None
-            if slice_query_is_from_breadbox:
-                query_series = data_access.get_slice_data(slice_query)
-            else: 
-                # In this specific case, it's important to avoid the data_access interface because 
-                # breadbox legacy-dataset aliases don't work for lookups by entity_id 
-                # (which is still the slice format used by celfie/genomic associations)
-                query_series = interactive_utils.get_row_of_values_from_slice_id(
-                    query_id
-                )
-            query_series = query_series[~query_series.isna()] # In theory, this line is now redundant
-
-            # cl_query_vector is the intersection of cell lines in both data tracts plus the cell line subset
-            (
-                cl_query_vector,
-                value_query_vector,
-            ) = subset_values_by_intersecting_cell_lines(query_series, query_cell_lines)
-        else:
-            raise ValueError("Unexpected analysis type {}".format(analysis_type))
-
-        # further intersect cell lines with the dataset being used. Get the list of cell lines actually used in computation
-        depmap_ids_filtered = []
-        values_filtered = []
-        for depmap_id, value in zip(cl_query_vector, value_query_vector):
-            if depmap_id in dataset_depmap_ids:
-                depmap_ids_filtered.append(depmap_id)
-                values_filtered.append(value)
-
-        if len(depmap_ids_filtered) == 0:
-            return format_taskless_error_message(
-                "No cell lines in common between query and dataset searched"
-            )
-
-        result_dir = get_current_result_dir()
-
-        # celery requires serialization, and will silently serialize the enum if we don't
-        # everything that gets passed to celery needs to be the string (params, and direct args to the function)
-        analysis_type_name = analysis_type.name
-        parameters = dict(
-            datasetId=dataset_id,
-            query=dict(
-                analysisType=analysis_type_name,  # type is enum
-                queryId=query_id,
-                queryValues=values_filtered,
-                vectorIsDependent=vector_is_dependent,
-                queryCellLines=depmap_ids_filtered,
-            ),
-        )
-
-        from depmap.access_control import get_current_user_for_access_control
-
-        result = analysis_tasks.run_custom_analysis.delay(
-            analysis_type_name,
-            depmap_ids_filtered,
-            values_filtered,
-            vector_is_dependent,
-            parameters,
-            result_dir,
-            get_current_user_for_access_control(),
-            dataset_id,
-        )
-        return format_task_status(result)
-
-
-def subset_values_by_intersecting_cell_lines(query_series, index_subset=None):
-    """
-    Given a query and a list of indices to subset by,
-        return (index list, list of values from query), aligned along the index,
-        representing the intersection of all data tracts
-    :return: (index list, list of query), intersected and aligned
-    """
-    if index_subset is not None:
-        query_series = query_series.loc[
-            set.intersection(set(query_series.index), set(index_subset))
-        ]
-
-    return query_series.index.tolist(), query_series.values.tolist()
