@@ -20,6 +20,7 @@ from depmap.cell_line.models import (
 from depmap.compound.models import (
     Compound,
     CompoundExperiment,
+    drc_compound_datasets,
 )
 from depmap.database import (
     Boolean,
@@ -129,12 +130,8 @@ class Dataset(Model):
         A dose replicate dataset refers to a dataset with per-replicate information for a particular dose. See the CompoundeDoseReplicate entity
         """
         dataset_to_dose_replicate_dataset = {
-            DependencyDataset.DependencyEnum.CTRP_AUC: DependencyDataset.DependencyEnum.CTRP_dose_replicate,
-            DependencyDataset.DependencyEnum.GDSC1_AUC: DependencyDataset.DependencyEnum.GDSC1_dose_replicate,
-            DependencyDataset.DependencyEnum.GDSC2_AUC: DependencyDataset.DependencyEnum.GDSC2_dose_replicate,
-            DependencyDataset.DependencyEnum.Repurposing_secondary_AUC: DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
-            DependencyDataset.DependencyEnum.Prism_oncology_AUC: DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate,
-            DependencyDataset.DependencyEnum.Prism_oncology_seq_AUC: DependencyDataset.DependencyEnum.Prism_oncology_seq_dose_replicate,
+            x.auc_dataset: DependencyDataset.DependencyEnum(x.replicate_dataset)
+            for x in drc_compound_datasets
         }
         if self.name in dataset_to_dose_replicate_dataset:
             return dataset_to_dose_replicate_dataset[self.name]

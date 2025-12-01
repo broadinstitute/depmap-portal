@@ -492,12 +492,8 @@ def dose_table(dataset_name, xref_full):
 
 def get_auc_data(dataset_name, compound_experiment):
     dataset_to_auc = {
-        DependencyEnum.GDSC1_dose_replicate.name: DependencyEnum.GDSC1_AUC,
-        DependencyEnum.GDSC2_dose_replicate.name: DependencyEnum.GDSC2_AUC,
-        DependencyEnum.Repurposing_secondary_dose_replicate.name: DependencyEnum.Repurposing_secondary_AUC,
-        DependencyEnum.CTRP_dose_replicate.name: DependencyEnum.CTRP_AUC,
-        DependencyEnum.Prism_oncology_dose_replicate.name: DependencyEnum.Prism_oncology_AUC,
-        DependencyEnum.Prism_oncology_seq_dose_replicate.name: DependencyEnum.Prism_oncology_seq_AUC,
+        DependencyEnum(x.replicate_dataset).name: x.auc_dataset
+        for x in drc_compound_datasets
     }
     if dataset_name in dataset_to_auc:
         auc_dataset_name = dataset_to_auc[dataset_name].name
