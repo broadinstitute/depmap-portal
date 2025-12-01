@@ -66,7 +66,7 @@ def run_custom_analysis(
     :param user_id: The user id that should be used to verify they have access to see the matrix
     :return:
     """
-    # TODO: delete this entire method now
+    # DEPRECATED: this function is now only being used in tests.
     with assume_user(user_id):
         feature_labels = data_access.get_dataset_feature_labels(dataset_id)
         features = get_features(dataset_id, feature_labels)
