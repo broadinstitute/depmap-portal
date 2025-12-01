@@ -1,21 +1,16 @@
-import re
 import pandas as pd
-from typing import Any, Optional
 
 from breadbox_client.models.compute_response import ComputeResponse
 from breadbox_client.models import (
     FeatureResponse,
 )
 from depmap.data_access.response_parsing import (
-    format_breadbox_task_status,
     get_breadbox_slice_id,
     parse_breadbox_slice_id,
-    remove_breadbox_prefix,
 )
 from depmap.interactive.config.categories import CustomCellLinesConfig
 from depmap.partials.matrix.models import CellLineSeries
 from depmap import extensions
-from depmap_compute.slice import SliceQuery
 
 # Since breadbox and the legacy backend contain different datasets, we need to combine
 # values from each of their responses before returning a value.
@@ -75,16 +70,6 @@ def get_features_calculated_value_lists(
         for feature in breadbox_features
     ]
     return feature_values, axis_labels, feature_labels, slice_ids
-
-
-def get_breadbox_task_status(id: str):
-    """
-    Get the task status for a given breadbox task id.
-    The given id should be formatted like "breadbox/<task-uuid>".
-    """
-    parsed_id = re.sub("^breadbox/", "", id)
-    bb_task_status = extensions.breadbox.client.get_task_status(parsed_id)
-    return format_breadbox_task_status(bb_task_status)
 
 
 def get_category_config(feature_slice_id: str):

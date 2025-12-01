@@ -59,25 +59,6 @@ def get_breadbox_slice_id(dataset_id: str, feature_id: Optional[str] = None):
     return slice_id
 
 
-def format_breadbox_task_status(breadbox_task_status: dict[str, Any]):
-    """
-    Convert a breadbox task status response into a format the portal can handle
-    by pre-pending task ids with the "breadbox" prefix. 
-    """
-    breadbox_task_status["id"] = f"breadbox/{breadbox_task_status['id']}"
-    if breadbox_task_status["state"] == "SUCCESS":
-        assert (
-            breadbox_task_status.get("result") is not None
-        ), "Breadbox task success response does not have a result"
-        assert (
-            breadbox_task_status["result"].get("taskId") is not None
-        ), "Breadbox task result does not have a task ID"
-        breadbox_task_status["result"][
-            "taskId"
-        ] = f"breadbox/{breadbox_task_status['result']['taskId']}"
-    return breadbox_task_status
-
-
 def parse_matrix_dataset_response(dataset: MatrixDatasetResponse) -> MatrixDataset:
     feature_type = (
         dataset.feature_type_name
