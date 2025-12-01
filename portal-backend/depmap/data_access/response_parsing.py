@@ -14,15 +14,6 @@ BREADBOX_DATASET_ID_REGEX = "breadbox/([^/]+)"
 BREADBOX_SLICE_ID_REGEX = f"{BREADBOX_DATASET_ID_REGEX}(?:/([^/]+))?"
 
 
-@dataclass
-class ParsedBreadboxSliceId:
-    dataset_id: str
-    feature_id: Optional[str]
-
-
-# TODO: remove the rest of the stuff in this file, probably
-
-
 def remove_breadbox_prefix(dataset_id: str) -> str:
     """
     If a dataset ID belongs to a breadbox dataset, it either:
