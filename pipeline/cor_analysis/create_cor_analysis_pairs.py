@@ -30,10 +30,10 @@ def main():
         for drug_given_id in [
             "PRISMOncologyReferenceLog2AUCMatrix",
             "Prism_oncology_viability",
-            "REPURPOSING_AUC_collapsed",
-            "CTRP_AUC_collapsed",
-            "GDSC1_AUC_collapsed",
-            "GDSC2_AUC_collapsed",
+            "REPURPOSING_log2AUC_collapsed",
+            "CTRP_log2AUC_collapsed",
+            "GDSC1_log2AUC_collapsed",
+            "GDSC2_log2AUC_collapsed",
         ]:
             for genetic_perturbation_given_id in ["Chronos_Combined", "RNAi_merged"]:
                 yield by_given_id[drug_given_id], by_given_id[
