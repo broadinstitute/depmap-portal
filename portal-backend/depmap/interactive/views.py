@@ -31,13 +31,12 @@ from depmap.extensions import csrf_protect
 from depmap.interactive import common_utils
 from depmap import data_access
 from depmap.interactive.config.categories import CategoryConfig
-from depmap.interactive.models import FeatureGroup, LinRegInfo, PlotFeatures
+from depmap.interactive.models import LinRegInfo
 from depmap.user_uploads.tasks import upload_transient_csv
 from depmap.user_uploads.utils.task_utils import (
     write_upload_to_local_file,
     write_url_to_local_file,
 )
-from depmap.utilities.mobile_utils import is_mobile
 from depmap.vector_catalog.trees import InteractiveTree
 from depmap.utilities.data_access_log import log_feature_access
 
@@ -480,7 +479,7 @@ def get_features():
             *[get_dataset_feature_from_id(id) for id in legacy_feature_ids]
         )
     if len(legacy_feature_labels) < 1 and len(breadbox_slice_ids) < 1:
-        return jsonify(PlotFeatures([], [], [], "", []))
+        return jsonify(([], [], [], "", []))
 
     cell_line_info_features = [e.value for e in CellLineInfoFeatures]
 
@@ -580,31 +579,9 @@ def get_features():
         # we still want to indicate that those groups exist, just that they didn't have regression info
         table = format_regression_info_table(regression_info, all_groups)
         lin_reg_info = common_utils.get_lin_reg_info_list(table)
-    else:
-        regression_info = None
-        table = [[]]
 
-    groups: List[FeatureGroup] = []
-    for group_name, group in df:
-        # Get color category so that custom analysis can properly name in group and out group for 2-class comparison
-        group_label = group_name
+    return {}
 
-        color = list(group["color"])
-        if group_by_id:
-            category = group_by_category_config.get_category(
-                group_name, group_by_feature
-            )
-            group_label = category.legend_label
-            color = category.color
-
-        color_num = color if "color" in group else 0
-        groups.append(FeatureGroup(group_label, list(group["depmap_id"]), color_num))
-
-    plot_features = PlotFeatures(
-        lin_reg_info, depmap_ids, ordered_features, group_by, groups
-    )
-
-    return jsonify(plot_features)
 
 
 def get_associations_df(matrix_id, x_feature):

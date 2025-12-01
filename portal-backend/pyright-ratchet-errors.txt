@@ -404,9 +404,6 @@ test_get_associations.py: error: "parse" is not a known member of module "urllib
 test_get_associations.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_get_associations_csv.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
 test_get_dataset_url.py: error: Argument of type "Sequence" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_url"
-test_get_features.py: error: "__get_config" is unknown import symbol (reportAttributeAccessIssue)
-test_get_features.py: error: Argument of type "list[tuple[Literal['groupBy'], str] | tuple[Literal['filter'], str] | tuple[Literal['computeLinearFit'], Literal[True]]]" cannot be assigned to parameter "__m" of type "Iterable[tuple[_S, str]]" in function "update"
-test_get_features.py: error: No overloads for "update" match the provided arguments (reportCallIssue)
 test_get_sort_key.py: error: Argument of type "LazyAttribute" cannot be assigned to parameter "third_key_display_name" of type "str" in function "__init__"
 test_global_search_loader.py: error: "__load_context_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: "__load_gene_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
@@ -498,8 +495,6 @@ views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "dataset_name" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "get" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "group_by_category_config" is possibly unbound (reportPossiblyUnboundVariable)
-views.py: error: "group_by_feature" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "model_id" is not a known member of "None" (reportOptionalMemberAccess)
@@ -508,7 +503,6 @@ views.py: error: "source_dir" is possibly unbound (reportPossiblyUnboundVariable
 views.py: error: Argument expression after ** must be a mapping with a "str" key type (reportCallIssue)
 views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_file_record"
 views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_release_record"
-views.py: error: Argument of type "Hashable | Unknown | Literal['mutations_prioritized', '']" cannot be assigned to parameter "group_by" of type "str" in function "__init__"
 views.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['CONTACT_EMAIL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['DEBUG']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -535,8 +529,6 @@ views.py: error: Argument of type "Literal['user_id']" cannot be assigned to par
 views.py: error: Argument of type "Literal['value']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 views.py: error: Argument of type "Unknown | FileStorage" cannot be assigned to parameter "filepath_or_buffer" of type "FilePath | ReadCsvBuffer[bytes] | ReadCsvBuffer[str]" in function "read_csv" (reportArgumentType)
-views.py: error: Argument of type "Unknown | Hashable" cannot be assigned to parameter "group_name" of type "str" in function "__init__"
-views.py: error: Argument of type "Unknown | int | list[Unknown]" cannot be assigned to parameter "color_num" of type "str | int" in function "__init__" (reportArgumentType)
 views.py: error: Argument of type "list[CellLineSeries]" cannot be assigned to parameter "breadbox_feature_data" of type "list[Series]" in function "get_df_from_feature_list"
 views.py: error: Argument of type "str | Any" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads" (reportArgumentType)
