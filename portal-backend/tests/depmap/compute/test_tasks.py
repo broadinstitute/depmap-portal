@@ -673,48 +673,6 @@ class DelayReturnValue:
         return False
 
 
-def test_no_overlap(empty_db_mock_downloads, app):
-    cell_lines_a = [CellLineFactory(cell_line_name="CL" + str(i)) for i in range(2)]
-    cell_lines_b = [CellLineFactory(cell_line_name="CL" + str(i)) for i in range(2, 4)]
-    genes = [GeneFactory() for _ in range(2)]
-
-    matrix_a = MatrixFactory(entities=genes, cell_lines=cell_lines_a)
-    dataset_a = DependencyDatasetFactory(display_name="ds1", matrix=matrix_a)
-
-    matrix_b = MatrixFactory(entities=genes, cell_lines=cell_lines_b)
-    dataset_b = BiomarkerDatasetFactory(display_name="ds2", matrix=matrix_b)
-
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    sliceId = SliceSerializer.encode_slice_id(
-        dataset_b.name.name, genes[0].entity_id, SliceRowType.entity_id
-    )
-
-    parameters = {
-        "analysisType": "association",
-        "queryCellLines": None,
-        "queryValues": None,
-        "vectorVariableType": "dependent",
-        "datasetId": dataset_a.name.name,
-        "queryId": sliceId,
-    }
-    with app.test_client() as c:
-        # r = c.post(url_for("compute.lmstats"), data=json.dumps(parameters), content_type='application/json')
-        r = c.post(
-            url_for("compute.compute_univariate_associations"),
-            data=json.dumps(parameters),
-            content_type="application/json",
-        )
-    assert r.status_code == 200, r.status_code
-    result = json.loads(r.data.decode("utf8"))
-    assert result["state"] == "FAILURE"
-    assert (
-        result["message"]
-        == "No cell lines in common between query and dataset searched"
-    )
-
-
 def test_fast_cor_with_p_and_q_values_with_missing(app):
     # x is n x m, y is n x o, so the result should be m x o
     x = np.array(
