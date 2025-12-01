@@ -74,12 +74,21 @@ data_availability_datasets = [
         ],
     ),
     DataAvailabilityDataset(
-        label="OncRef",
+        label="OncRef Lum",
         dose_range="1nM - 10μM",
         assay="PRISM",
         given_ids=[
             "Prism_oncology_AUC_collapsed",
             DependencyEnum.Prism_oncology_AUC.name,
+        ],
+    ),
+    DataAvailabilityDataset(
+        label="OncRef Seq",
+        dose_range="1nM - 10μM",
+        assay="PRISM",
+        given_ids=[
+            "Prism_oncology_seq_AUC_collapsed",
+            DependencyEnum.Prism_oncology_seq_AUC.name,
         ],
     ),
 ]

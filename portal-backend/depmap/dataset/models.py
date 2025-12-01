@@ -134,6 +134,7 @@ class Dataset(Model):
             DependencyDataset.DependencyEnum.GDSC2_AUC: DependencyDataset.DependencyEnum.GDSC2_dose_replicate,
             DependencyDataset.DependencyEnum.Repurposing_secondary_AUC: DependencyDataset.DependencyEnum.Repurposing_secondary_dose_replicate,
             DependencyDataset.DependencyEnum.Prism_oncology_AUC: DependencyDataset.DependencyEnum.Prism_oncology_dose_replicate,
+            DependencyDataset.DependencyEnum.Prism_oncology_seq_AUC: DependencyDataset.DependencyEnum.Prism_oncology_seq_dose_replicate,
         }
         if self.name in dataset_to_dose_replicate_dataset:
             return dataset_to_dose_replicate_dataset[self.name]
