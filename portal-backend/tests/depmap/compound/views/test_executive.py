@@ -4,7 +4,6 @@ from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     format_availability_tile,
     format_dep_dist,
-    format_enrichment_boxes,
     format_top_corr_table,
 )
 from depmap.context_explorer.models import ContextAnalysis
@@ -47,71 +46,18 @@ def test_format_dep_dist(empty_db_mock_downloads):
     dataset_2 = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.CTRP_AUC, matrix=matrix
     )
-    empty_db_mock_downloads.session.flush()    
+    empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
     top_priority_dataset = data_access.get_matrix_dataset(dataset_1.name.name)
 
-    dep_dist = format_dep_dist(compound_experiment_1.compound, top_priority_dataset) # pyright: ignore
+    dep_dist = format_dep_dist(
+        compound_experiment_1.compound, top_priority_dataset
+    )  # pyright: ignore
 
     assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
     assert dep_dist["num_lines"] == 2
     assert_is_svg(dep_dist["svg"])
-
-
-def test_format_enrichment_boxes(empty_db_mock_downloads):
-    """
-    Test that positive t_statistic enrichment is filtered out
-    """
-    model_A = DepmapModelFactory(model_id="cell_line_A", depmap_model_type="context_A")
-    model_B = DepmapModelFactory(model_id="cell_line_B", depmap_model_type="context_b")
-
-    context_A = SubtypeContextFactory(subtype_code="context_A", depmap_model=[model_A])
-    context_B = SubtypeContextFactory(subtype_code="context_B", depmap_model=[model_B])
-    SubtypeNodeFactory(subtype_code="context_A", node_name="display_name_context_A")
-    SubtypeNodeFactory(subtype_code="context_B", node_name="display_name_context_B")
-    entity = CompoundExperimentFactory()
-
-    matrix = MatrixFactory(
-        entities=[entity], cell_lines=[model_A, model_B], using_depmap_model_table=True
-    )
-    dataset = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Rep_all_single_pt, matrix=matrix
-    )
-
-    ContextAnalysisFactory(
-        subtype_context=context_A,
-        entity=entity,
-        dataset=dataset,
-        t_qval=0.03,
-        effect_size=0.26,
-        out_group="All Others",
-    )
-    ContextAnalysisFactory(
-        subtype_context=context_B,
-        entity=entity,
-        dataset=dataset,
-        t_qval=0.03,
-        effect_size=0.26,
-        out_group="All Others",
-    )
-
-    empty_db_mock_downloads.session.flush()
-
-    enrichment_boxes = format_enrichment_boxes([(entity, dataset)])
-
-    # there is more than one enrichment
-    assert (
-        len(
-            ContextAnalysis.query.filter_by(
-                entity_id=entity.entity_id, dependency_dataset_id=dataset.dataset_id
-            ).all()
-        )
-        > 1
-    )
-
-    # only one has a positive t-statistic
-    assert len(enrichment_boxes) == 1
 
 
 def test_format_top_corr_table(tmpdir, empty_db_mock_downloads):

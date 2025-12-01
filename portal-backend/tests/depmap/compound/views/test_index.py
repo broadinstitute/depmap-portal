@@ -1,5 +1,6 @@
 from depmap.compound import new_dose_curves_utils, utils
 from depmap.data_access import breadbox_dao
+from depmap.enums import DependencyEnum
 from depmap.interactive import interactive_utils
 from depmap.settings.settings import TestConfig
 import pandas as pd
@@ -60,6 +61,7 @@ expected_corr_analysis_dataset = DRCCompoundDataset(
     auc_dataset_given_id="Prism_oncology_AUC_collapsed",
     display_name="PRISM OncRef",
     log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
+    auc_dataset=DependencyEnum.Prism_oncology_AUC,
 )
 
 
