@@ -400,7 +400,6 @@ test_executive.py: error: Operator "not in" not supported for types "Literal['sv
 test_factories.py: error: "cell_line_1" is possibly unbound (reportPossiblyUnboundVariable)
 test_get_and_process_data.py: error: "file_path" is not a known member of "None" (reportOptionalMemberAccess)
 test_get_and_process_data.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
-test_get_and_process_data.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_get_associations.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
 test_get_associations.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_get_associations_csv.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)

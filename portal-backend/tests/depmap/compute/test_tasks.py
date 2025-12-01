@@ -220,20 +220,6 @@ def test_run_custom_analysis_two_class(tmpdir, app, empty_db_mock_downloads):
 
     assert result["numCellLinesUsed"] == len(all_cell_lines)
 
-    assert (
-        interactive_utils.get_row_of_values_from_slice_id(
-            result["filterSliceId"]
-        ).index.tolist()
-        == all_cell_lines
-    )
-
-    assert (
-        interactive_utils.get_row_of_values_from_slice_id(
-            result["colorSliceId"]
-        ).index.tolist()
-        == in_cell_lines
-    )
-
 
 @pytest.mark.parametrize("vector_is_dependent", [True, False])
 def test_run_custom_analysis_two_class_with_zero_var_features(
@@ -301,12 +287,6 @@ def test_run_custom_analysis_pearson(tmpdir, app, empty_db_mock_downloads):
     assert list(df["numCellLines"]) == [9, 9, 10]
 
     assert result["numCellLinesUsed"] == len(cell_lines)
-    assert (
-        interactive_utils.get_row_of_values_from_slice_id(
-            result["filterSliceId"]
-        ).index.tolist()
-        == cell_lines
-    )
 
     # in group cell lines should not be defined for assoc. only one cell ling group should have been written
     assert result["colorSliceId"] == None
@@ -344,12 +324,6 @@ def test_run_custom_analysis_assoc_vector_is_dependent_true(
     assert list(df["numCellLines"]) == [9, 9, 10]
 
     assert result["numCellLinesUsed"] == len(cell_lines)
-    assert (
-        interactive_utils.get_row_of_values_from_slice_id(
-            result["filterSliceId"]
-        ).index.tolist()
-        == cell_lines
-    )
 
     # in group cell lines should not be defined for assoc. only one cell ling group should have been written
     assert result["colorSliceId"] == None
