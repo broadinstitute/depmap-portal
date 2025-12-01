@@ -1,6 +1,5 @@
 from functools import reduce
 import logging
-from decimal import Decimal
 from enum import Enum
 from math import isnan
 from typing import List, Tuple
@@ -10,14 +9,12 @@ import pandas as pd
 from flask import (
     Blueprint,
     abort,
-    current_app,
     jsonify,
     redirect,
     render_template,
     request,
     url_for,
 )
-from scipy.stats import linregress, pearsonr, spearmanr
 
 from depmap.interactive import interactive_utils
 from depmap.breadbox_shim import breadbox_shim
@@ -31,7 +28,6 @@ from depmap.extensions import csrf_protect
 from depmap.interactive import common_utils
 from depmap import data_access
 from depmap.interactive.config.categories import CategoryConfig
-from depmap.interactive.models import LinRegInfo
 from depmap.user_uploads.tasks import upload_transient_csv
 from depmap.user_uploads.utils.task_utils import (
     write_upload_to_local_file,
@@ -208,148 +204,6 @@ def filter_df(df, filter_dataset, filter_feature):
     return filter_df
 
 
-def make_one_redundant_group(df):
-    """
-    Put the entire df in one group, so we have the same data structure for future functions to manipulate
-    """
-    df["color"] = 0
-    grouped = df.groupby("color")
-    return grouped
-
-
-def group_df(
-    df: pd.DataFrame, feature_series: pd.Series, category_config: CategoryConfig
-):
-    """
-    Returns a grouped dataframe. The name of each group is the color value of that group.
-    
-    The groupby works because the color values are discrete. But if its accidentally called on continuous values, the groupby will die
-    By this point, color_dataset and color_feature have been validated as legit values by option_used
-    If we want traces to show up even if no points, use pandas categories (http://pandas.pydata.org/pandas-docs/stable/categorical.html#operations)
-
-    Everything here must stay as value. It cannot be converted to label or display name
-    This is because the consumers of this function want to use the value to construct categories to figure out the color (hex or number)
-    """
-    color_df = pd.merge(
-        df,
-        feature_series.to_frame("color"),
-        how="left",
-        left_index=True,
-        right_index=True,
-    )
-    color_df["color"].fillna(category_config.get_na_category().value, inplace=True)
-    grouped = color_df.groupby("color")
-
-    return grouped
-
-
-def regress_two_vars(x, y):
-    """
-    At least three points before we draw a line
-    Returns none for all three attributes if there are less than three points
-    """
-    if len(x) < 3:
-        return {
-            "linear_regression": None,
-            "pearson": None,
-            "spearman": None,
-            "length": len(x),
-        }
-    linear_regression = linregress(x, y)
-    pearson = pearsonr(x, y)
-    spearman = spearmanr(x, y)
-
-    return {
-        "linear_regression": linear_regression,
-        "pearson": pearson,
-        "spearman": spearman,
-        "length": len(x),
-    }
-
-
-def attribute_exists(series, index, attribute_of_series):
-    if index in series:
-        if attribute_of_series in series[index]:
-            if series[index][attribute_of_series] is not None:
-                return True
-    return False
-
-
-def sci_notation_if_not_nan(number):
-    if not isnan(number):
-        return "{0:.2E}".format(Decimal(number))
-    return ""
-
-
-def three_dp_if_not_nan(number):
-    if not isnan(number):
-        return "{0:.3f}".format(number)
-    return ""
-
-
-def format_regression_info_table(
-    regression_info, all_groups, must_have_group_column=False
-):
-    """
-    Pass this through a dict/object phase so less likely to make mistakes in indexing
-    """
-    headers = [
-        "Number of Points",
-        "Pearson",
-        "Spearman",
-        "Slope",
-        "Intercept",
-        "p-value (linregress)",
-    ]
-    if len(all_groups) > 1 or must_have_group_column:
-        headers.insert(0, "Group")
-
-    table = [headers]
-
-    for name in all_groups:
-        if attribute_exists(regression_info, name, "linear_regression"):
-            slope, intercept, r_value, p_value, std_err = regression_info[name][
-                "linear_regression"
-            ]
-        else:
-            slope, intercept, r_value, p_value, std_err = None, None, None, None, None
-            """
-            Variables reused in python loops
-            I don't wanna check 4 times if linear_regression exists, but I also want to be able to unpack slope, intercept etc. into variables so we're not just pointing at indices
-            """
-
-        row_dict = {
-            "Group": name,
-            "Pearson": three_dp_if_not_nan(regression_info[name]["pearson"][0])
-            if attribute_exists(regression_info, name, "pearson")
-            else "",
-            "Spearman": three_dp_if_not_nan(regression_info[name]["spearman"][0])
-            if attribute_exists(regression_info, name, "spearman")
-            else "",
-            "Slope": sci_notation_if_not_nan(slope) if slope is not None else "",
-            "Intercept": sci_notation_if_not_nan(intercept)
-            if intercept is not None
-            else "",
-            "p-value (linregress)": sci_notation_if_not_nan(p_value)
-            if p_value is not None
-            else "",
-            "Number of Points": regression_info[name]["length"]
-            if name in regression_info.index
-            else 0,
-        }
-
-        row_list = [row_dict[col] for col in headers]
-        # table.append(row_list)
-        """
-        insert 1 so insert after header
-        reverse order so appear same order as plot legend
-        there shouldnt be more than 4 groups
-        """
-        table.insert(1, row_list)
-
-    return table
-
-
 # primary_disease and cell_line_display_name are necessary for data explorer hover info,
 # and lineage_display_name is necessary data explorer for CSV Downloads, but these features
 # don't have slice Id's that work the same way as other features. This function was added
@@ -420,25 +274,6 @@ def add_cell_line_features_to_df(df: pd.DataFrame):
 
     df = pd.merge(df, info_to_merge, left_index=True, right_index=True)
     return df
-
-
-def add_mutation_labels(df, mutated_gene, append_mutated_gene=True):
-    """
-    Appends mutation info as labels to the df 
-    """
-    labels_series = Mutation.get_mutation_detail_label(mutated_gene)
-    if append_mutated_gene:
-        labels_series = labels_series.apply(
-            lambda label: mutated_gene + " mutations:|" + label
-        )
-    labeled_df = pd.merge(
-        df,
-        labels_series.to_frame("label"),
-        how="left",
-        left_index=True,
-        right_index=True,
-    )
-    return labeled_df
 
 
 @blueprint.route("/api/get-features")
@@ -526,59 +361,12 @@ def get_features():
         axis_labels=legacy_axis_labels + breadbox_axis_labels,
         feature_ids=legacy_feature_ids + breadbox_slice_ids,
     )
-    depmap_ids = list(df["depmap_id"])
 
-    # Since breadbox features were filtered out and loaded separately, the results may now be out of order.
-    # Re-order the resulting features to match the order in the request.
-    features_by_feature_id = {f.feature_id: f for f in features}
-    ordered_features = [
-        features_by_feature_id[requested_feature_id]
-        for requested_feature_id in feature_ids
-    ]
-
-    group_by = ""
     group_by_dataset = ""
     if group_by_id and group_by_id.startswith("breadbox/"):
         # Load the group_by feature and configs from breadbox
         group_by_category_config = breadbox_shim.get_category_config(group_by_id)
         group_by_series = breadbox_shim.get_feature_data_slice(group_by_id)
-        df = group_df(df, group_by_series, group_by_category_config)
-        group_by = group_by_series.name  # feature label
-        group_by_feature = group_by_series.name
-    elif group_by_id:
-        (
-            group_by_dataset,
-            group_by_feature,
-        ) = InteractiveTree.get_dataset_feature_from_id(group_by_id)
-
-        if group_by_dataset == BiomarkerEnum.mutations_prioritized.name:
-            df = add_mutation_labels(df, group_by_feature)
-
-        group_by_category_config = interactive_utils.get_category_config(
-            group_by_dataset
-        )
-        group_by_series = interactive_utils.get_row_of_values(
-            group_by_dataset, group_by_feature
-        )
-        df = group_df(df, group_by_series, group_by_category_config)
-        group_by = group_by_dataset
-    else:
-        df = make_one_redundant_group(df)
-
-    all_groups = df.groups.keys()
-
-    lin_reg_info: List[LinRegInfo] = []
-
-    if compute_linear_fit and len(feature_ids) > 1:
-        x_key = feature_ids[0]
-        y_key = feature_ids[1]
-        regression_info = df.apply(
-            lambda group: regress_two_vars(group[x_key], group[y_key])
-        )
-        # all_groups is needed because the regression might not return values for some groups
-        # we still want to indicate that those groups exist, just that they didn't have regression info
-        table = format_regression_info_table(regression_info, all_groups)
-        lin_reg_info = common_utils.get_lin_reg_info_list(table)
 
     return {}
 

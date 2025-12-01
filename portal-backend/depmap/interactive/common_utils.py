@@ -5,7 +5,7 @@ import pandas as pd
 
 from depmap.interactive import interactive_utils
 from depmap.dataset.models import BiomarkerDataset
-from depmap.interactive.models import Feature, LinRegInfo
+from depmap.interactive.models import Feature
 
 # index refers to index in matrix
 RowSummary = namedtuple("RowSummary", "index entity_id label")
@@ -28,31 +28,6 @@ def format_features_from_label_aliases(label_aliases_list):
             feature_label = entity_label
         features.append({"label": feature_label, "value": entity_label})
     return features
-
-
-def get_lin_reg_info_list(table: List[List[str]]) -> List[LinRegInfo]:
-    # This will only contain values if there's an x variable and a y variable AND computeLinearFit is True
-    if len(table) < 1:
-        return []
-
-    header = table[0]
-    rows = table[1:]
-
-    def _row_to_lin_reg(row):
-        rec = dict(zip(header, row))
-        return LinRegInfo(
-            rec["Slope"],
-            rec["Intercept"],
-            rec["Number of Points"],
-            rec["Pearson"],
-            rec["Spearman"],
-            rec["p-value (linregress)"],
-            rec.get("Group"),
-        )
-
-    lin_reg_info = [_row_to_lin_reg(row) for row in rows]
-
-    return lin_reg_info
 
 
 def format_axis_label(dataset: str, feature: str) -> str:
