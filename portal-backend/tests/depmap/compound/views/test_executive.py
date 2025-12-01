@@ -1,5 +1,5 @@
 from depmap import data_access
-from depmap.compound.models import Compound
+from depmap.compound.models import Compound, CompoundExperiment
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     format_availability_tile,
@@ -34,6 +34,10 @@ def test_format_dep_dist(empty_db_mock_downloads):
     """
     compound_experiment_1 = CompoundExperimentFactory()
     compound_experiment_2 = CompoundExperimentFactory()
+
+    assert isinstance(compound_experiment_1, CompoundExperiment)
+    assert isinstance(compound_experiment_2, CompoundExperiment)
+
     # multiple cell lines so can plot distplot
     matrix = MatrixFactory(
         [compound_experiment_1, compound_experiment_2],
