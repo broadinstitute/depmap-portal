@@ -11,7 +11,7 @@ interface Props {
   path: (string | number)[];
   domain: { min: number; max: number; isAllIntegers: boolean } | null;
   isLoading: boolean;
-  onClickShowDistribution: () => void;
+  onClickShowSlicePreview: () => void;
 }
 
 function NumberInput({
@@ -19,7 +19,7 @@ function NumberInput({
   path,
   domain,
   isLoading,
-  onClickShowDistribution,
+  onClickShowSlicePreview,
 }: Props) {
   const [value, setValue] = useState<number | null>(expr);
   const { dispatch, shouldShowValidation } = useContextBuilderState();
@@ -52,9 +52,9 @@ function NumberInput({
         <button
           type="button"
           className={styles.detailsButton}
-          onClick={onClickShowDistribution}
+          onClick={onClickShowSlicePreview}
         >
-          details
+          see plot
         </button>
       </div>
       <FormControl

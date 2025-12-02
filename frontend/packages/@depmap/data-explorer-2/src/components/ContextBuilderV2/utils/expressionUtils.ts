@@ -134,6 +134,10 @@ export const makeCompatibleExpression = (
       nextOp = ">=";
     }
 
+    if (!isBinary && !isBinaryish && ["==", "!="].includes(nextOp)) {
+      nextOp = ">";
+    }
+
     if (
       typeof nextValue !== "number" ||
       (isAllIntegers && !Number.isInteger(nextValue))

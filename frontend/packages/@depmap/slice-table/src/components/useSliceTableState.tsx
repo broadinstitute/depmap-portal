@@ -8,10 +8,9 @@ import React, {
 import { Button } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
-import type { RowSelectionState } from "@depmap/react-table";
-import type { SliceQuery } from "@depmap/types";
-import useData from "./useData";
-import type { RowFilters } from "./useData";
+import { RowSelectionState } from "@depmap/react-table";
+import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
+import useData, { RowFilters } from "./useData";
 import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
@@ -21,6 +20,7 @@ interface Props {
   index_type_name: string;
   initialSlices: SliceQuery[];
   viewOnlySlices: Set<SliceQuery>;
+  enableRowSelection: boolean;
   initialRowSelection: RowSelectionState;
   onChangeSlices: (nextSlices: SliceQuery[]) => void;
   downloadFilename: string;
@@ -35,6 +35,7 @@ export function useSliceTableState({
   index_type_name,
   initialSlices,
   viewOnlySlices,
+  enableRowSelection,
   initialRowSelection,
   onChangeSlices,
   downloadFilename,
@@ -95,12 +96,22 @@ export function useSliceTableState({
   const PlotlyLoader = usePlotlyLoader();
 
   const handleClickAddColumn = useCallback(async () => {
-    const newSlice = await chooseDataSlice({ index_type_name, PlotlyLoader });
+    const newSlice = await chooseDataSlice({
+      index_type_name,
+      rowSelection: enableRowSelection ? rowSelection : undefined,
+      PlotlyLoader,
+    });
 
     if (newSlice) {
-      setSlices((prev) => [...prev, newSlice]);
+      setSlices((prev) => {
+        if (prev.find((oldSlice) => areSliceQueriesEqual(oldSlice, newSlice))) {
+          return prev;
+        }
+
+        return [...prev, newSlice];
+      });
     }
-  }, [index_type_name, PlotlyLoader]);
+  }, [enableRowSelection, index_type_name, rowSelection, PlotlyLoader]);
 
   const handleClickEditColumn = useCallback(
     async (column: typeof columns[number]) => {
@@ -123,6 +134,7 @@ export function useSliceTableState({
         initialSource,
         index_type_name,
         PlotlyLoader,
+        rowSelection: enableRowSelection ? rowSelection : undefined,
         onClickRemoveColumn: () => {
           setSlices((prev) => {
             return prev.filter((slice) => slice !== column.meta.sliceQuery);
@@ -138,7 +150,7 @@ export function useSliceTableState({
         );
       }
     },
-    [index_type_name, PlotlyLoader]
+    [enableRowSelection, index_type_name, rowSelection, PlotlyLoader]
   );
 
   const handleClickViewColumn = useCallback(
@@ -147,9 +159,10 @@ export function useSliceTableState({
         index_type_name,
         PlotlyLoader,
         sliceQuery: column.meta.sliceQuery,
+        rowSelection: enableRowSelection ? rowSelection : undefined,
       });
     },
-    [index_type_name, PlotlyLoader]
+    [enableRowSelection, index_type_name, PlotlyLoader, rowSelection]
   );
 
   const columnsWithEditOrViewButton = useMemo(() => {
