@@ -56,6 +56,7 @@ function SliceTable({
     index_type_name,
     initialSlices,
     viewOnlySlices,
+    enableRowSelection,
     initialRowSelection,
     onChangeSlices,
     downloadFilename,

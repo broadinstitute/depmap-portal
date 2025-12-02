@@ -53,16 +53,6 @@
   }
 }
 
-.FilterDescription {
-  display: flex;
-  flex-direction: column;
-  width: 162px;
-
-  p {
-    font-style: italic;
-  }
-}
-
 .preview {
   width: 100%;
 }
@@ -77,4 +67,25 @@
   font-size: 14px;
   height: 500px;
   border: 1px dashed #ccc;
+}
+
+.SlicePreview {
+  min-height: 500px;
+}
+
+.helpText {
+  margin: 5px;
+  font-style: italic;
+  text-align: center;
+}
+
+.continuousFilterContainer {
+  & > div {
+    opacity: 0;
+    transition: opacity 0.3s;
+
+    &:not(:empty) {
+      opacity: 1;
+    }
+  }
 }
