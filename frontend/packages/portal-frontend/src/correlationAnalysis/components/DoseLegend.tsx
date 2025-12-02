@@ -1,4 +1,5 @@
 import * as React from "react";
+import { formatDoseString } from "../utilities/helper";
 import styles from "../styles/CorrelationAnalysis.scss";
 
 interface DoseLegendProps {
@@ -19,7 +20,9 @@ export default function DoseLegend(props: DoseLegendProps) {
               height: "20px",
             }}
           />
-          <p style={{ paddingLeft: "5px" }}>{doseColor.dose}</p>
+          <p style={{ paddingLeft: "5px" }}>
+            {formatDoseString(doseColor.dose)}
+          </p>
         </div>
       ))}
     </div>

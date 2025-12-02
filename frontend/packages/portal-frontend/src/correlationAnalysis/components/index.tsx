@@ -12,6 +12,7 @@ import {
   SortedCorrelations,
   VolcanoDataForCorrelatedDataset,
 } from "../models/CorrelationPlot";
+import { formatDoseString } from "../utilities/helper";
 import { DRCDatasetOptions } from "@depmap/types";
 import { useCallback, useState, useMemo } from "react";
 
@@ -76,7 +77,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const doses = useMemo(() => doseColors.map((doseColor) => doseColor.dose), [
     doseColors,
   ]);
-  console.log("doses", doses);
 
   const onChangeDataset = useCallback(
     (selection: { value: string; label: string } | null) => {
@@ -224,7 +224,9 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                   const label = curRecord[colName];
                   const text =
                     `<b>${label}</b><br>` +
-                    `<b>Dose (uM)</b>: ${curRecord["dose"]}<br>` +
+                    `<b>Dose (uM)</b>: ${formatDoseString(
+                      curRecord["dose"]
+                    )}<br>` +
                     `<b>Correlation:</b> ${curRecord["correlation"].toFixed(
                       4
                     )}<br>` +

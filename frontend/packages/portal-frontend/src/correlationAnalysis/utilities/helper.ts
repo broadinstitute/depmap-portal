@@ -112,3 +112,50 @@ export function createDoseRangeColorScale(
     return { ...colorScale[i], dose };
   });
 }
+
+export function formatDoseString(input: string | undefined): string {
+  if (!input) {
+    return "";
+  }
+
+  if (typeof input !== "string") return String(input);
+
+  // Regex breakdown:
+  // /^(\d*\.?\d+)/   -> Group 1 (the number): Matches a number starting from the beginning of the string.
+  //                     - ^: Start of string
+  //                     - \d*: Zero or more digits (for cases like .5)
+  //                     - \.?: Optional decimal point
+  //                     - \d+: One or more digits after decimal/start
+  // /(.*)$/         -> Group 2 (the units/remainder): Matches the rest of the string until the end.
+  const match = input.match(/^(\d*\.?\d+)\s*(.*)$/);
+
+  if (match) {
+    const rawNumberStr = match[1];
+    const units = match[2];
+
+    // Attempt to parse the number
+    const numberValue = parseFloat(rawNumberStr);
+
+    if (isNaN(numberValue)) {
+      // Should not happen if regex matches, but as a safety fallback
+      return input;
+    }
+
+    // 1. Round to 4 decimal places and get the new string representation
+    // (Wrap toFixed with a parseFloat before convering back toString to avoid trailing zeros. This
+    // is important to maintain consistent with the doses displayed on the Heatmap and Dose Curve tabs (see useDoseViabilityData.ts).)
+    const roundedNumberStr = parseFloat(numberValue.toFixed(4)).toString();
+
+    // 2. Reconstruct the string: rounded number + space (optional) + units
+    if (units.length > 0) {
+      // Add a space only if units are present
+      return `${roundedNumberStr} ${units}`;
+    } else {
+      // No units, just return the rounded number
+      return roundedNumberStr;
+    }
+  } else {
+    // No number found at the start of the string (e.g., "AUC" or "N/A")
+    return input;
+  }
+}
