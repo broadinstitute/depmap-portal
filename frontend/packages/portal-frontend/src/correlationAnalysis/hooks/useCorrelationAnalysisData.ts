@@ -47,6 +47,7 @@ function useCorrelationAnalysisData(
         const compoundDoseFeatures = (
           await bapi.getDatasetFeatures(doseViabilityDataset)
         ).filter((feature) => feature.id.includes(compoundID));
+
         compoundDoseFeatures.forEach((feature) => {
           const dose = feature.id.replace(compoundID, "").trim();
           compoundDoseToDose.set(feature.label, dose); // Must use feature.label to match compoundDoseCorrelates.dimension_label below
@@ -89,10 +90,18 @@ function useCorrelationAnalysisData(
             },
             {} as Record<string, string>
           );
+          const datasetGivenIdLookup = compoundDoseCorrelates.associated_datasets.reduce(
+            (acc, item) => {
+              acc[item.dataset_id] = item.dataset_given_id;
+              return acc;
+            },
+            {} as Record<string, string>
+          );
           const doseAssociationsByFeatureDataset = transformAndGroupByDataset(
             compoundDoseCorrelates.associated_dimensions,
             compoundDoseCorrelates.dimension_label,
             datasetLookup,
+            datasetGivenIdLookup,
             compoundDoseToDose
           );
 
@@ -127,8 +136,11 @@ function useCorrelationAnalysisData(
         // filter out correlated dataset features that match the given featureLabel/compound within the same given dataset (a.k.a features correlated with itself)
         const correlatesDataWithoutSelf = correlatesData.filter(
           (cor) =>
-            cor.feature !== featureLabel && cor.featureDataset !== aucDataset
+            cor.feature !== featureLabel &&
+            cor.featureDatasetGivenId !== aucDataset &&
+            cor.featureDatasetGivenId !== doseViabilityDataset
         );
+
         setCorrelationAnalysisData(correlatesDataWithoutSelf);
       } catch (e) {
         console.error("Error fetching correlation data:", e);
@@ -137,8 +149,7 @@ function useCorrelationAnalysisData(
         setIsLoading(false);
       }
     })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [featureLabel, featureId, selectedDataset]);
+  }, [featureLabel, featureId, selectedDataset, bapi]);
   return {
     correlationAnalysisData,
     correlatedDatasets,

@@ -8,8 +8,9 @@ export function transformAndGroupByDataset(
     other_dimension_given_id: string;
     other_dimension_label: string;
   }[],
-  compoundDoseLabel: string,
+  featureId: string,
   datasetLookup: Record<string, string>,
+  datasetGivenIdLookup: Record<string, string>,
   compoundDoseToDose: Map<string, string>
 ) {
   const grouped: Map<
@@ -41,10 +42,11 @@ export function transformAndGroupByDataset(
       .sort((a, b) => b.correlation - a.correlation)
       .map((item, index: number) => ({
         ...item,
-        id: `${item.other_dataset_id}-${item.other_dimension_label}-${compoundDoseLabel}`, // correlated dataset, correlated feature and given feature dose should be unique
+        id: `${item.other_dataset_id}-${item.other_dimension_label}-${featureId}`, // correlated dataset, correlated feature and given feature dose should be unique
         feature: item.other_dimension_label,
-        dose: compoundDoseToDose.get(compoundDoseLabel),
+        dose: compoundDoseToDose.get(featureId),
         featureDataset: datasetLookup[item.other_dataset_id],
+        featureDatasetGivenId: datasetGivenIdLookup[item.other_dataset_id],
         correlation: item.correlation,
         log10qvalue: item.log10qvalue,
         rank: index + 1,

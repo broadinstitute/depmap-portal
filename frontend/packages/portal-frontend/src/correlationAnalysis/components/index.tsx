@@ -26,6 +26,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
     datasetOptions[0]
   );
+  const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
+    value: string;
+    label: string;
+  }>({
+    value: datasetOptions[0].log_auc_dataset_given_id!,
+    label: datasetOptions[0].display_name,
+  });
 
   const [
     selectedCorrelatedDatasets,
@@ -66,22 +73,24 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     hasError,
   } = useCorrelationAnalysisData(selectedDataset, compoundId, compoundName);
 
-  // memoize datasets and doses passed to CorrelationFilters
-  const datasets = useMemo(() => datasetOptions.map((d) => d.display_name), [
-    datasetOptions,
-  ]);
-
   const doses = useMemo(() => doseColors.map((doseColor) => doseColor.dose), [
     doseColors,
   ]);
+  console.log("doses", doses);
 
   const onChangeDataset = useCallback(
-    (displayName: string) =>
-      setSelectedDataset(
-        datasetOptions.find(
-          (opt: DRCDatasetOptions) => opt.display_name === displayName
-        )!
-      ),
+    (selection: { value: string; label: string } | null) => {
+      if (selection) {
+        setSelectedDataset(
+          datasetOptions.find(
+            (opt: DRCDatasetOptions) =>
+              opt.log_auc_dataset_given_id === selection.value
+          )!
+        );
+        setSelectedDatasetOption(selection);
+        setSelectedDoses([]);
+      }
+    },
     [datasetOptions]
   );
 
@@ -339,7 +348,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     <div className={styles.tabGrid}>
       <div className={styles.tabFilters}>
         <CorrelationFilters
-          datasets={datasets}
+          selectedDatasetOption={selectedDatasetOption}
+          datasetOptions={datasetOptions}
           onChangeDataset={onChangeDataset}
           correlatedDatasets={correlatedDatasets}
           onChangeCorrelatedDatasets={onChangeCorrelatedDatasets}
