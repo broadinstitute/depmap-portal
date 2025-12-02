@@ -118,16 +118,24 @@ def _lookup_compound_dose(
 
     given_id_by_column = {}
     for record in compound_dose_annot.to_dict("records"):
-        compound_id = compound_id_by_sample_id.get("BRD:" + record["SampleID"])
-        if compound_id is None:
-            continue
+        if "CompoundID" in record:
+            compound_id = record["CompoundID"]
+        else:
+            compound_id = compound_id_by_sample_id.get("BRD:" + record["SampleID"])
+            if compound_id is None:
+                continue
         dose = record["Dose"]
         dose_unit = record["DoseUnit"]
         given_id = f"{compound_id} {dose} {dose_unit}"
-        original_column_name = record["Label"]
+        if "index" in record:
+            original_column_name = str(record["index"])
+        else:
+            original_column_name = record["Label"]
         given_id_by_column[original_column_name] = given_id
 
-    assert len(given_id_by_column) > len(compound_dose_annot) * 0.5
+    assert (
+        len(given_id_by_column) > len(compound_dose_annot) * 0.5
+    ), f"We have less then half the expected number of rows: found {len(given_id_by_column)} out of {len(compound_dose_annot)}"
 
     def _lookup(name):
         return given_id_by_column.get(name)
