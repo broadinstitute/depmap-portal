@@ -46,6 +46,7 @@ interface CorrelationFiltersProps {
   correlatedDatasets: any[];
   onChangeCorrelatedDatasets: (correlatedDatasets: string[]) => void;
   doses: string[];
+  selectedDoses: string[];
   onChangeDoses: (doses: string[]) => void;
 }
 
@@ -57,6 +58,7 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
     correlatedDatasets,
     onChangeCorrelatedDatasets,
     doses,
+    selectedDoses,
     onChangeDoses,
   } = props;
 
@@ -88,6 +90,11 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
   const doseOptions = React.useMemo(
     () => doses.map((dose) => ({ label: dose, value: dose })),
     [doses]
+  );
+
+  const formattedSelectedDoses = React.useMemo(
+    () => selectedDoses.map((dose) => ({ label: dose, value: dose })),
+    [selectedDoses]
   );
 
   const datasetSelectOptions = datasetOptions.map(
@@ -126,6 +133,7 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
         placeholder="Select..."
         defaultOptions
         options={doseOptions}
+        value={formattedSelectedDoses || []}
         isMulti
         onChange={handleDosesChange}
         id="corr-analysis-filter-by-dose"

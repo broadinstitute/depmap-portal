@@ -355,7 +355,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           onChangeDataset={onChangeDataset}
           correlatedDatasets={correlatedDatasets}
           onChangeCorrelatedDatasets={onChangeCorrelatedDatasets}
-          doses={doses}
+          doses={doses} // The list of doses allowed for the current selected dataset
+          selectedDoses={selectedDoses} // The list of doses the user has selected to filter on
           onChangeDoses={onChangeDoses}
         />
       </div>
