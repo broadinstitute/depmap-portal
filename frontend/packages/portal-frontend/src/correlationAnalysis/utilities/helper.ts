@@ -70,17 +70,37 @@ export function createDoseRangeColorScale(
   doses: string[]
 ): { hex: string | undefined; dose: string }[] {
   const colorScale = [
-    { hex: "#ADFF2F" }, // Yellow-Green
-    { hex: "#97E34F" },
-    { hex: "#81C76E" },
-    { hex: "#6BAB8D" },
-    { hex: "#559FAC" },
-    { hex: "#4083CC" },
-    { hex: "#3365B6" },
-    { hex: "#26479F" },
-    { hex: "#1A2A89" },
-    { hex: "#4B0082" }, // Dark Purple
+    { hex: "#d8f900ff" },
+    { hex: "#1eff00ff" },
+    { hex: "#3CB371" },
+    { hex: "#00CED1" },
+    { hex: "#1E90FF" },
+    { hex: "#4169E1" },
+    { hex: "#0000CD" },
+    { hex: "#00008B" },
+    { hex: "#191970" },
+    { hex: "#aec7e8" },
+    { hex: "#ffbb78" },
+    { hex: "#98df8a" },
+    { hex: "#ff9896" },
+    { hex: "#c5b0d5" },
+    { hex: "#c49c94" },
+    { hex: "#f7b6d2" },
+    { hex: "#c7c7c7" },
+    { hex: "#dbdb8d" },
+    { hex: "#9edae5" },
+    { hex: "#59a14f" },
+    { hex: "#f28e2c" },
+    { hex: "#4e79a7" },
+    { hex: "#e15759" },
+    { hex: "#76b7b2" },
+    { hex: "#597a7a" },
+    { hex: "#edc948" },
+    { hex: "#b07aa1" },
+    { hex: "#ffc078" },
+    { hex: "#bab0ac" },
   ];
+
   const sortedDoses = doses.sort((a: any, b: any) => {
     return a - b;
   });
