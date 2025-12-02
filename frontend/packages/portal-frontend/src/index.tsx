@@ -429,7 +429,11 @@ export function initCorrelationAnalysisTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis
-        datasetOptions={datasetOptions}
+        datasetOptions={sortByNumberOrNull(
+          datasetOptions,
+          "auc_dataset_priority",
+          "asc"
+        )}
         compoundName={compoundName}
         compoundId={compoundId}
       />
