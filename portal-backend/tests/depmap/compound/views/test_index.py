@@ -53,15 +53,6 @@ expected_oncref_dataset_w_priority = DRCCompoundDatasetWithNamesAndPriority(
     log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
 )
 
-expected_corr_analysis_dataset = DRCCompoundDataset(
-    drc_dataset_label="Prism_oncology_per_curve",
-    viability_dataset_given_id="Prism_oncology_viability",
-    replicate_dataset="Prism_oncology_dose_replicate",
-    auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-    display_name="PRISM OncRef",
-    log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
-)
-
 
 def test_render_view_compound(populated_db, monkeypatch):
     with populated_db.app.test_client() as c:
@@ -628,6 +619,9 @@ def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
         def mock_is_breadbox_id(dataset_id):
             return True
 
+        def mock_get_dataset_priority(dataset):
+            return 1
+
         def mock_get_dataset_label(dataset):
             return "PRISM OncRef"
 
@@ -635,13 +629,15 @@ def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
         monkeypatch.setattr(breadbox_dao, "is_breadbox_id", mock_is_breadbox_id)
         monkeypatch.setattr(interactive_utils, "has_config", mock_has_config)
         monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
+        monkeypatch.setattr(
+            data_access, "get_dataset_priority", mock_get_dataset_priority
+        )
 
-        # TODO: Update when more datasets are available and the legacy db has been
-        # updated with the processed versions of older drug datasets.
         compound = CompoundFactory()
+
         result = get_corr_analysis_options_if_available(compound_label=compound.label)
-        assert len(result) >= 1
-        matches = [x for x in result if x == expected_corr_analysis_dataset]
+        assert len(result) == 5
+        matches = [x for x in result if x == expected_oncref_dataset_w_priority]
         assert len(matches) == 1
 
 
