@@ -136,7 +136,7 @@ export function formatDoseString(input: string | undefined): string {
     // Attempt to parse the number
     const numberValue = parseFloat(rawNumberStr);
 
-    if (isNaN(numberValue)) {
+    if (Number.isNaN(numberValue)) {
       // Should not happen if regex matches, but as a safety fallback
       return input;
     }
@@ -150,12 +150,10 @@ export function formatDoseString(input: string | undefined): string {
     if (units.length > 0) {
       // Add a space only if units are present
       return `${roundedNumberStr} ${units}`;
-    } else {
-      // No units, just return the rounded number
-      return roundedNumberStr;
     }
-  } else {
-    // No number found at the start of the string (e.g., "AUC" or "N/A")
-    return input;
+    // No units, just return the rounded number
+    return roundedNumberStr;
   }
+  // No number found at the start of the string (e.g., "AUC" or "N/A")
+  return input;
 }
