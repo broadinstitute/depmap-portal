@@ -220,6 +220,11 @@ function PrototypeScatterPlot({
     }
   }, [onLoad]);
 
+  useEffect(() => {
+    const plot = ref.current;
+    return () => Plotly.purge(plot as HTMLElement);
+  }, [Plotly]);
+
   // When the columns or underlying data change, we force an autoscale by
   // discarding the stored axes.
   useEffect(() => {
@@ -901,7 +906,7 @@ function PrototypeScatterPlot({
 
     return () => {
       listeners.forEach(([eventName, callback]) =>
-        plot.removeListener(eventName, callback)
+        plot.removeListener?.(eventName, callback)
       );
     };
   }, [
