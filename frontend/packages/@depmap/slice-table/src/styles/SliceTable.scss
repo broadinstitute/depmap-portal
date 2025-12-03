@@ -47,6 +47,14 @@
   align-items: center;
   width: 100%;
   margin-right: 8px;
+
+  & > div:first-child {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4; /* fallback */
+    line-clamp: 4; /* standard */
+  }
 }
 
 .hidden {

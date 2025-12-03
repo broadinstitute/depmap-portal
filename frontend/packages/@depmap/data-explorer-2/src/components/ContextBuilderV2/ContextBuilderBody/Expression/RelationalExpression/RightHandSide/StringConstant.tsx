@@ -11,7 +11,7 @@ interface Props {
   path: (string | number)[];
   domain: { unique_values: string[] } | null;
   isLoading: boolean;
-  onClickShowDistribution: () => void;
+  onClickShowSlicePreview: () => void;
 }
 
 function StringConstant({
@@ -19,7 +19,7 @@ function StringConstant({
   path,
   domain,
   isLoading,
-  onClickShowDistribution,
+  onClickShowSlicePreview,
 }: Props) {
   const { dispatch, shouldShowValidation } = useContextBuilderState();
   const { dimensionType } = useDimensionType();
@@ -61,8 +61,8 @@ function StringConstant({
       renderDetailsButton={
         domain && !isLoading
           ? () => (
-              <button type="button" onClick={onClickShowDistribution}>
-                details
+              <button type="button" onClick={onClickShowSlicePreview}>
+                see plot
               </button>
             )
           : undefined
