@@ -265,6 +265,14 @@ def with_shared_cell_lines(dep_df, biomarker_df):
 from scipy import stats
 
 
+def fdr_correct_column(p):  # p is a single column
+    valid_mask = ~np.isnan(p)
+    q = np.full_like(p, np.nan)
+    q[valid_mask] = stats.false_discovery_control(p[valid_mask])
+
+    return q
+
+
 def _calc_cor_pq_values(n, c):
     # n is the number of pairs of values used to compute the correlation
     # c is the pearson correlation for which we want the p-value
@@ -272,12 +280,16 @@ def _calc_cor_pq_values(n, c):
     dist = stats.beta(n / 2 - 1, n / 2 - 1, loc=-1, scale=2)
     p = 2 * dist.cdf(-abs(c))
 
-    if np.isfinite(p).all():
-        q = stats.false_discovery_control(p, axis=1)
-    else:
-        q = np.array(p)
-        q[np.isfinite(p)] = stats.false_discovery_control(p[np.isfinite(p)])
-    return p, np.asarray(q)
+    # dist.cdf appears to be occasionally returning 1+eplison (epsilon=7e-14) which appears within
+    # rounding error tolerances. However stats.false_discovery_control blows up if anything exceeds [0,1]
+    # so, let's verify that we aren't too far off and then clip
+    assert np.nanmax(p) - 1.0 < 1e-10
+    assert 0 - np.nanmin(p) < 1e-10
+    p = np.clip(p, 0.0, 1.0)
+
+    q = np.apply_along_axis(fdr_correct_column, axis=0, arr=p)
+
+    return p, q
 
 
 def chunk(values, chunksize):
