@@ -24,7 +24,7 @@ def filter_sample_ids(sample_ids: str, brd_ids: Set[str]) -> str:
     return ";".join(sorted(kept_ids))
 
 
-def filter_portal_compounds(df: pd.DataFrame, brd_ids: Set[str],) -> pd.DataFrame:
+def filter_portal_compounds(df: pd.DataFrame, brd_ids: Set[str]) -> pd.DataFrame:
     """
     Filters the portal_compounds DataFrame by keeping only valid SampleIDs according to the
     specified rules. Rows with empty SampleIDs are removed.
@@ -63,6 +63,11 @@ if __name__ == "__main__":
         help="Taiga ID of the PRISMOncologyReferenceLog2AUCMatrix (optional)",
         default=None,
     )
+    parser.add_argument(
+        "--prism_oncology_reference_seq_log2_auc_matrix_taiga_id",
+        help="Taiga ID of the PRISMOncologyReferenceSeqLog2AUCMatrix (optional)",
+        default=None,
+    )
     parser.add_argument("output", help="Path to write the output")
 
     args = parser.parse_args()
@@ -89,11 +94,28 @@ if __name__ == "__main__":
         oncrefauc_matrix = tc.get(args.prism_oncology_reference_auc_matrix_taiga_id)
         assert not oncrefauc_matrix.columns.empty, "oncrefauc_matrix columns are empty"
 
+    if (
+        args.prism_oncology_reference_seq_log2_auc_matrix_taiga_id is None
+        or args.prism_oncology_reference_seq_log2_auc_matrix_taiga_id.startswith(
+            "public"
+        )
+    ):
+        oncref_seq_log2_auc_matrix = pd.DataFrame()
+    else:
+        print("Getting oncref seq log2 AUC matrix data...")
+        oncref_seq_log2_auc_matrix = tc.get(
+            args.prism_oncology_reference_seq_log2_auc_matrix_taiga_id
+        )
+        assert (
+            not oncref_seq_log2_auc_matrix.columns.empty
+        ), "oncref_seq_log2_auc_matrix columns are empty"
+
     print("Computing IDs for filtering...")
     brd_ids = (
         set(repsdrug_matrix.index)
         .union(repsdrug_auc.index)
         .union(["BRD:" + x for x in oncrefauc_matrix.columns])
+        .union(["BRD:" + x for x in oncref_seq_log2_auc_matrix.columns])
     )
 
     print("Filtering portal compounds data...")
