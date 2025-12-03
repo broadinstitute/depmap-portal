@@ -23,6 +23,8 @@ from breadbox.schemas.group import GroupIn, GroupEntryIn
 from pydantic import ValidationError
 from breadbox.service.dataset import add_dimension_type
 import logging
+from datetime import timedelta
+from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 
 import os
 import shutil
@@ -451,3 +453,24 @@ def run_dev_worker():
         _run_worker(["--pool=solo", "-c", "1"])
 
     main_func()
+
+
+@cli.command()
+@click.option("--dryrun", is_flag=True, default=False)
+@click.option("--maxdays", default=60, type=int)
+def delete_expired_datasets(maxdays, dryrun):
+    db = _get_db_connection()
+    settings = get_settings()
+    expired_datasets = find_expired_datasets(db, timedelta(days=maxdays))
+
+    print(f"Found {len(expired_datasets)} expired datasets")
+
+    with transaction(db):
+        for dataset in expired_datasets:
+            dataset_summary = f"{dataset.id} (upload_date={dataset.upload_date}, expiry={dataset.expiry})"
+            if dryrun:
+                print(f"dryrun: Would have deleted {dataset_summary}")
+            else:
+                print(f"Deleting {dataset_summary}")
+                delete_dataset(db, db.user, dataset, settings.filestore_location)
+    print("Done")
