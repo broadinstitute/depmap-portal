@@ -482,6 +482,7 @@ def create_cell_line_group(
                 taiga_id=None,
                 dataset_metadata=None,
                 dataset_md5=None,
+                expiry=None,
             )
             dataset_service.add_matrix_dataset(
                 db,
