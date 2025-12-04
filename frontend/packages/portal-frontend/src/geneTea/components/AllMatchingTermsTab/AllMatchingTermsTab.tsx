@@ -70,36 +70,32 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
     if (rawData?.frequentTerms) {
       rawData.frequentTerms.term.forEach((term, index) => {
         roundedData.push({
-          term,
-          termGroup: termToTermGroupMap.get(term),
-          synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
+          Term: term,
+          "Term Group": termToTermGroupMap.get(term),
+          Synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
+          "Matching Query": rawData.frequentTerms!.matchingGenesInList[index],
+          "n Matching Overall": rawData.frequentTerms!.nMatchingGenesOverall[
             index
           ],
-          nMatchingGenesOverall: rawData.frequentTerms!.nMatchingGenesOverall[
+          "n Matching Query": rawData.frequentTerms!.nMatchingGenesInList[
             index
           ],
-          nMatchingGenesInList: rawData.frequentTerms!.nMatchingGenesInList[
-            index
-          ],
-          fdr: rawData.frequentTerms!.fdr[index].toExponential(5),
-          effectSize: rawData.frequentTerms!.effectSize[index].toFixed(4),
+          FDR: rawData.frequentTerms!.fdr[index].toExponential(5),
+          "Effect Size": rawData.frequentTerms!.effectSize[index].toFixed(4),
         });
         unroundedData.push({
-          term,
-          termGroup: termToTermGroupMap.get(term),
-          synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.frequentTerms!.matchingGenesInList[
+          Term: term,
+          "Term Group": termToTermGroupMap.get(term),
+          Synonyms: rawData.frequentTerms!.synonyms[index].join(";"),
+          "Matching Query": rawData.frequentTerms!.matchingGenesInList[index],
+          "n Matching Overall": rawData.frequentTerms!.nMatchingGenesOverall[
             index
           ],
-          nMatchingGenesOverall: rawData.frequentTerms!.nMatchingGenesOverall[
+          "n Matching Query": rawData.frequentTerms!.nMatchingGenesInList[
             index
           ],
-          nMatchingGenesInList: rawData.frequentTerms!.nMatchingGenesInList[
-            index
-          ],
-          fdr: rawData.frequentTerms!.fdr[index].toExponential(),
-          effectSize: rawData.frequentTerms!.effectSize[index],
+          FDR: rawData.frequentTerms!.fdr[index].toExponential(),
+          "Effect Size": rawData.frequentTerms!.effectSize[index],
         });
       });
     }
