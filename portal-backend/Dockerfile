@@ -22,8 +22,14 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 # Install pyenv
 RUN curl https://pyenv.run | bash
 
-# Install Python 3.9 using pyenv and set as global default
+# Install Python 3.9 with shared library support and set as global default
+# --enable-shared is required so libpython3.9.so.1.0 is built (needed by some packages)
+ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
 RUN pyenv install 3.9 && pyenv global 3.9
+
+# Create a stable symlink for the Python lib directory and set LD_LIBRARY_PATH
+RUN ln -s $PYENV_ROOT/versions/$(pyenv latest 3.9)/lib /python3.9-lib
+ENV LD_LIBRARY_PATH="/python3.9-lib:$LD_LIBRARY_PATH"
 
 # Create python3.9 venv at /python3.9 for compatibility with existing PATH expectations
 RUN python -m venv /python3.9
