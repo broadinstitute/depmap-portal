@@ -176,6 +176,7 @@ function HeatmapBarChart({
     const plotlyHeatmapData: PlotlyData = {
       type: "heatmap",
       ...heatmapData,
+      showscale: doGroupTerms,
       colorscale: greenScale as ColorScale,
       zmin,
       zmax,
@@ -188,8 +189,9 @@ function HeatmapBarChart({
       colorbar: {
         x: -0.25,
         y: -0.45,
-        len: 0.25,
-        thickness: 10,
+        lenmode: "pixels",
+        len: 200,
+        thickness: 12,
         ypad: 0,
         xanchor: "left",
         // These features are undocumented and won't type check properly.
