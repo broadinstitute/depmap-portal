@@ -1,4 +1,5 @@
-import * as React from "react";
+import React, { useMemo } from "react";
+import { formatDoseString, sortDoseColorsByValue } from "../utilities/helper";
 import styles from "../styles/CorrelationAnalysis.scss";
 
 interface DoseLegendProps {
@@ -7,10 +8,14 @@ interface DoseLegendProps {
 
 export default function DoseLegend(props: DoseLegendProps) {
   const { doseColors } = props;
+
+  const sortedDoseColors = useMemo(() => sortDoseColorsByValue(doseColors), [
+    doseColors,
+  ]);
   return (
     <div className={styles.doseLegendContainer}>
       <header>Dose</header>
-      {doseColors.map((doseColor, idx) => (
+      {sortedDoseColors.map((doseColor, idx) => (
         <div key={idx} style={{ display: "flex" }}>
           <div
             style={{
@@ -19,7 +24,9 @@ export default function DoseLegend(props: DoseLegendProps) {
               height: "20px",
             }}
           />
-          <p style={{ paddingLeft: "5px" }}>{doseColor.dose}</p>
+          <p style={{ paddingLeft: "5px" }}>
+            {formatDoseString(doseColor.dose)}
+          </p>
         </div>
       ))}
     </div>

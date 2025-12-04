@@ -99,16 +99,14 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    dose_curve_options_new = format_dose_curve_options_new_tab_if_available(
+    dose_curve_options_new = get_drc_options_if_new_tabs_available(
         compound_label=compound.label, compound_id=compound.compound_id
     )
-    heatmap_dataset_options = get_heatmap_options_new_tab_if_available(
+    heatmap_dataset_options = get_drc_options_if_new_tabs_available(
         compound_label=compound.label, compound_id=compound.compound_id
     )
 
     corr_analysis_options = get_corr_analysis_options_if_available(
-        drc_dataset_attribute_to_match="log_auc_dataset_given_id",
-        given_id="PRISMOncologyReferenceLog2AUCMatrix",
         compound_label=compound.label,
     )
 
@@ -116,11 +114,19 @@ def view_compound(name):
     show_heatmap_tab = len(heatmap_dataset_options) > 0
 
     # TODO: Update when context explorer moves to using compounds instead of compound experiments
-    show_enriched_lineages = legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
-        DependencyEnum.Prism_oncology_AUC.value, compound_experiment_and_datasets
-    ) or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
-        DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
+    show_enriched_lineages = (
+        legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
+            DependencyEnum.Prism_oncology_AUC.value, compound_experiment_and_datasets
+        )
+        or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
+            DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
+        )
+        or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
+            DependencyEnum.Prism_oncology_seq_AUC.value,
+            compound_experiment_and_datasets,
+        )
     )
+
     show_compound_correlation_tiles = current_app.config[
         "ENABLED_FEATURES"
     ].compound_correlation_tiles
@@ -243,93 +249,55 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def format_dose_curve_options_new_tab_if_available(
+def get_drc_options_if_new_tabs_available(
     compound_label: str, compound_id: str
-):
+) -> List[DRCCompoundDatasetWithNamesAndPriority]:
     """
-    Used for jinja rendering of the dose curve tab
+    Used for jinja rendering of the dose curve and heatmap tab
     """
-    show_new_dose_curves_tab = current_app.config[
+    new_compound_page_tabs = current_app.config[
         "ENABLED_FEATURES"
     ].new_compound_page_tabs
 
     valid_options = []
-    if show_new_dose_curves_tab:
+    if new_compound_page_tabs:
         for drc_dataset in drc_compound_datasets:
             if dataset_exists_with_compound_in_auc_and_rep_datasets(
                 drc_dataset=drc_dataset,
                 compound_label=compound_label,
                 compound_id=compound_id,
             ):
-                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
-                if (
-                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
-                    or current_app.config[
-                        "ENABLED_FEATURES"
-                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
-                ):
-                    complete_option = get_compound_dataset_with_name_and_priority(
-                        drc_dataset
-                    )
-                    valid_options.append(complete_option)
-
-    return valid_options
-
-
-def get_heatmap_options_new_tab_if_available(
-    compound_label: str, compound_id: str
-) -> List[DRCCompoundDatasetWithNamesAndPriority]:
-    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].new_compound_page_tabs
-
-    valid_options = []
-    if show_heatmap_tab:
-        for drc_dataset in drc_compound_datasets:
-            # TODO: Theoretically, we could let the Heatmap load without the dose curve params, but this would involve some frontend changes.
-            if dataset_exists_with_compound_in_auc_and_rep_datasets(
-                drc_dataset=drc_dataset,
-                compound_label=compound_label,
-                compound_id=compound_id,
-            ):
-                # TODO: Take this check out once the legacy db old drug datasets are updated to use the processed taiga ids.
-                if (
-                    drc_dataset.auc_dataset_given_id == "Prism_oncology_AUC_collapsed"
-                    or current_app.config[
-                        "ENABLED_FEATURES"
-                    ].show_all_new_dose_curve_and_heatmap_tab_datasets
-                ):
-                    complete_option = get_compound_dataset_with_name_and_priority(
-                        drc_dataset
-                    )
-                    valid_options.append(complete_option)
+                complete_option = get_compound_dataset_with_name_and_priority(
+                    drc_dataset
+                )
+                valid_options.append(complete_option)
 
     return valid_options
 
 
 def get_corr_analysis_options_if_available(
-    drc_dataset_attribute_to_match: str, given_id: str, compound_label: str
+    compound_label: str,
 ) -> List[DRCCompoundDataset]:
-    if not current_app.config["ENABLED_FEATURES"].correlation_analysis:
-        return []
+    show_corr_analysis = current_app.config["ENABLED_FEATURES"].correlation_analysis
 
-    # TODO This needs to be updated when Correlation Analysis can support more than just OncRef
-    drc_dataset = find_compound_dataset(
-        drc_compound_datasets, drc_dataset_attribute_to_match, given_id
-    )
+    valid_options = []
+    if show_corr_analysis:
+        for drc_dataset in drc_compound_datasets:
+            if drc_dataset.log_auc_dataset_given_id is not None:
 
-    if drc_dataset is None:
-        return []
+                does_dataset_exist_with_compound = data_access.dataset_exists(
+                    drc_dataset.log_auc_dataset_given_id
+                ) and data_access.valid_row(
+                    drc_dataset.log_auc_dataset_given_id, compound_label
+                )
 
-    if drc_dataset.log_auc_dataset_given_id is None:
-        return []
+                if does_dataset_exist_with_compound:
+                    complete_option = get_compound_dataset_with_name_and_priority(
+                        drc_dataset, use_logged_auc=True
+                    )
+                    valid_options.append(complete_option)
 
-    does_dataset_exist_with_compound = data_access.dataset_exists(
-        drc_dataset.log_auc_dataset_given_id
-    ) and data_access.valid_row(drc_dataset.log_auc_dataset_given_id, compound_label)
-
-    if does_dataset_exist_with_compound:
-        return [drc_dataset]
-
-    return []
+    return valid_options
 
 
 @blueprint.route("/compoundUrlRoot")
@@ -492,11 +460,8 @@ def dose_table(dataset_name, xref_full):
 
 def get_auc_data(dataset_name, compound_experiment):
     dataset_to_auc = {
-        DependencyEnum.GDSC1_dose_replicate.name: DependencyEnum.GDSC1_AUC,
-        DependencyEnum.GDSC2_dose_replicate.name: DependencyEnum.GDSC2_AUC,
-        DependencyEnum.Repurposing_secondary_dose_replicate.name: DependencyEnum.Repurposing_secondary_AUC,
-        DependencyEnum.CTRP_dose_replicate.name: DependencyEnum.CTRP_AUC,
-        DependencyEnum.Prism_oncology_dose_replicate.name: DependencyEnum.Prism_oncology_AUC,
+        DependencyEnum(x.replicate_dataset).name: x.auc_dataset
+        for x in drc_compound_datasets
     }
     if dataset_name in dataset_to_auc:
         auc_dataset_name = dataset_to_auc[dataset_name].name

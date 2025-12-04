@@ -6,16 +6,11 @@ from flask import current_app, url_for
 from typing import List, Optional
 from mypy_extensions import TypedDict
 from depmap.enums import DataTypeEnum, GeneTileEnum
-from depmap.entity.views.executive import (
-    remove_svg_height_width,
-    format_enrichment_box_for_dataset,
-    format_generic_distribution_plot,
-)
+from depmap.entity.views.executive import remove_svg_height_width
 from depmap.utilities import color_palette
 from depmap.dataset.models import (
     DATASET_NAME_TO_FEATURE_TYPE,
     DependencyDataset,
-    BiomarkerDataset,
     Mutation,
     TabularDataset,
 )
@@ -159,16 +154,6 @@ def get_dependency_distribution(gene, crispr_dataset, rnai_dataset):
             dep_dist["info"]["crispr"] = crispr_dep_dist
 
     return dep_dist
-
-
-# Enriched Lineages - only has crispr data as of 25q2
-def get_enrichment_boxes(gene, crispr_dataset):
-    enrichment_boxes = None
-
-    if crispr_dataset:
-        enrichment_boxes = format_enrichment_boxes(gene, crispr_dataset)
-
-    return enrichment_boxes
 
 
 def format_dep_dist_svg(
@@ -359,20 +344,6 @@ def format_crispr_possible_missing_reason(gene: Gene,) -> Optional[CrisprDepDist
     else:
         # this would occur if other crispr reasons were loaded into the database, or if the default crispr enum is not chronos
         return None
-
-
-def format_enrichment_boxes(gene, crispr_dataset):
-    enrichment_boxes = None
-
-    if crispr_dataset:
-        enrichment_boxes = []
-        crispr_box = format_enrichment_box_for_dataset(
-            gene, crispr_dataset, color_palette.crispr_color
-        )
-        crispr_box["title"] = crispr_dataset.display_name
-        enrichment_boxes.append(crispr_box)
-
-    return enrichment_boxes
 
 
 def plot_mutation_profile(variant_counts):

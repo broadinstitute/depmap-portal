@@ -118,16 +118,24 @@ def _lookup_compound_dose(
 
     given_id_by_column = {}
     for record in compound_dose_annot.to_dict("records"):
-        compound_id = compound_id_by_sample_id.get("BRD:" + record["SampleID"])
-        if compound_id is None:
-            continue
+        if "CompoundID" in record:
+            compound_id = record["CompoundID"]
+        else:
+            compound_id = compound_id_by_sample_id.get("BRD:" + record["SampleID"])
+            if compound_id is None:
+                continue
         dose = record["Dose"]
         dose_unit = record["DoseUnit"]
         given_id = f"{compound_id} {dose} {dose_unit}"
-        original_column_name = record["Label"]
+        if "index" in record:
+            original_column_name = str(record["index"])
+        else:
+            original_column_name = record["Label"]
         given_id_by_column[original_column_name] = given_id
 
-    assert len(given_id_by_column) > len(compound_dose_annot) * 0.5
+    assert (
+        len(given_id_by_column) > len(compound_dose_annot) * 0.5
+    ), f"We have less then half the expected number of rows: found {len(given_id_by_column)} out of {len(compound_dose_annot)}"
 
     def _lookup(name):
         return given_id_by_column.get(name)
@@ -257,6 +265,14 @@ def with_shared_cell_lines(dep_df, biomarker_df):
 from scipy import stats
 
 
+def fdr_correct_column(p):  # p is a single column
+    valid_mask = ~np.isnan(p)
+    q = np.full_like(p, np.nan)
+    q[valid_mask] = stats.false_discovery_control(p[valid_mask])
+
+    return q
+
+
 def _calc_cor_pq_values(n, c):
     # n is the number of pairs of values used to compute the correlation
     # c is the pearson correlation for which we want the p-value
@@ -264,12 +280,16 @@ def _calc_cor_pq_values(n, c):
     dist = stats.beta(n / 2 - 1, n / 2 - 1, loc=-1, scale=2)
     p = 2 * dist.cdf(-abs(c))
 
-    if np.isfinite(p).all():
-        q = stats.false_discovery_control(p, axis=1)
-    else:
-        q = np.array(p)
-        q[np.isfinite(p)] = stats.false_discovery_control(p[np.isfinite(p)])
-    return p, np.asarray(q)
+    # dist.cdf appears to be occasionally returning 1+eplison (epsilon=7e-14) which appears within
+    # rounding error tolerances. However stats.false_discovery_control blows up if anything exceeds [0,1]
+    # so, let's verify that we aren't too far off and then clip
+    assert np.nanmax(p) - 1.0 < 1e-10
+    assert 0 - np.nanmin(p) < 1e-10
+    p = np.clip(p, 0.0, 1.0)
+
+    q = np.apply_along_axis(fdr_correct_column, axis=0, arr=p)
+
+    return p, q
 
 
 def chunk(values, chunksize):

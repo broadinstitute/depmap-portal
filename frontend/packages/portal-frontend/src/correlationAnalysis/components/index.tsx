@@ -12,6 +12,7 @@ import {
   SortedCorrelations,
   VolcanoDataForCorrelatedDataset,
 } from "../models/CorrelationPlot";
+import { formatDoseString } from "../utilities/helper";
 import { DRCDatasetOptions } from "@depmap/types";
 import { useCallback, useState, useMemo } from "react";
 
@@ -26,6 +27,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
     datasetOptions[0]
   );
+  const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
+    value: string;
+    label: string;
+  }>({
+    value: datasetOptions[0].log_auc_dataset_given_id!,
+    label: datasetOptions[0].display_name,
+  });
 
   const [
     selectedCorrelatedDatasets,
@@ -66,22 +74,23 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     hasError,
   } = useCorrelationAnalysisData(selectedDataset, compoundId, compoundName);
 
-  // memoize datasets and doses passed to CorrelationFilters
-  const datasets = useMemo(() => datasetOptions.map((d) => d.display_name), [
-    datasetOptions,
-  ]);
-
   const doses = useMemo(() => doseColors.map((doseColor) => doseColor.dose), [
     doseColors,
   ]);
 
   const onChangeDataset = useCallback(
-    (displayName: string) =>
-      setSelectedDataset(
-        datasetOptions.find(
-          (opt: DRCDatasetOptions) => opt.display_name === displayName
-        )!
-      ),
+    (selection: { value: string; label: string } | null) => {
+      if (selection) {
+        setSelectedDataset(
+          datasetOptions.find(
+            (opt: DRCDatasetOptions) =>
+              opt.log_auc_dataset_given_id === selection.value
+          )!
+        );
+        setSelectedDatasetOption(selection);
+        setSelectedDoses([]);
+      }
+    },
     [datasetOptions]
   );
 
@@ -215,7 +224,9 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                   const label = curRecord[colName];
                   const text =
                     `<b>${label}</b><br>` +
-                    `<b>Dose (uM)</b>: ${curRecord["dose"]}<br>` +
+                    `<b>Dose (uM)</b>: ${formatDoseString(
+                      curRecord["dose"]
+                    )}<br>` +
                     `<b>Correlation:</b> ${curRecord["correlation"].toFixed(
                       4
                     )}<br>` +
@@ -339,11 +350,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     <div className={styles.tabGrid}>
       <div className={styles.tabFilters}>
         <CorrelationFilters
-          datasets={datasets}
+          selectedDatasetOption={selectedDatasetOption}
+          datasetOptions={datasetOptions}
           onChangeDataset={onChangeDataset}
           correlatedDatasets={correlatedDatasets}
           onChangeCorrelatedDatasets={onChangeCorrelatedDatasets}
-          doses={doses}
+          doses={doses} // The list of doses allowed for the current selected dataset
+          selectedDoses={selectedDoses} // The list of doses the user has selected to filter on
           onChangeDoses={onChangeDoses}
         />
       </div>
