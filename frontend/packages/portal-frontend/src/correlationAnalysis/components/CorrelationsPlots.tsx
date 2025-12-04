@@ -46,10 +46,13 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
       if (dosesToFilter.length) {
         const subset: DoseCategoryVolcanoData = {};
         dosesToFilter.forEach((dose) => {
-          subset[dose] = correlatedDatasetVolcanoData[dose];
+          if (Object.keys(correlatedDatasetVolcanoData).includes(dose)) {
+            subset[dose] = correlatedDatasetVolcanoData[dose];
+          }
         });
         return subset;
       }
+
       return correlatedDatasetVolcanoData;
     },
     [dosesToFilter]

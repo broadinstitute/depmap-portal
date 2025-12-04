@@ -377,6 +377,7 @@ def tabular_dataset(
         taiga_id=taiga_id,
         dataset_metadata=dataset_metadata,
         dataset_md5=None,
+        expiry=None,
     )
 
     assert columns_metadata is not None

@@ -9,6 +9,7 @@ import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
@@ -22,16 +23,40 @@ from breadbox.schemas.group import GroupIn, GroupEntryIn
 from pydantic import ValidationError
 from breadbox.service.dataset import add_dimension_type
 import logging
+from datetime import timedelta
+from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 
 import os
 import shutil
 from db_load import upload_example_datasets
 import hashlib
+from datetime import timedelta
 
 
 @click.group()
 def cli():
     pass
+
+
+@cli.command()
+@click.option("--dryrun", is_flag=True, default=False)
+@click.option("--maxdays", default=60, type=int)
+def delete_expired_datasets(maxdays, dryrun):
+    db = _get_db_connection()
+    settings = get_settings()
+    expired_datasets = find_expired_datasets(db, timedelta(days=maxdays))
+
+    print(f"Found {len(expired_datasets)} expired datasets")
+
+    with transaction(db):
+        for dataset in expired_datasets:
+            dataset_summary = f"{dataset.id} (upload_date={dataset.upload_date}, expiry={dataset.expiry})"
+            if dryrun:
+                print(f"dryrun: Would have deleted {dataset_summary}")
+            else:
+                print(f"Deleting {dataset_summary}")
+                delete_dataset(db, db.user, dataset, settings.filestore_location)
+    print("Done")
 
 
 @cli.command()
@@ -191,45 +216,6 @@ def _export_api_spec(export_path: str):
     openapi = _get_openapi_spec()
     with open(export_path, "wt") as fd:
         json.dump(openapi, fd, indent=2, sort_keys=True)
-
-
-@cli.command()
-@click.argument("path")
-def check_api(path: str):
-    """Verify the openapi spec to the given path matches the current spec"""
-
-    def mask_version(spec):
-        # mask out the version number so the comparison is insensitve
-        # to the version changing. There are a few ways the version number
-        # in the spec might be wrong (ie: poetry install was not re-run, the version
-        # number was bumped, but there actually was no spec change, etc) so
-        # make the comparison insensitve to version number.
-        spec["info"]["version"] = "MASKED"
-
-    openapi = _get_openapi_spec()
-    with open(path, "rt") as fd:
-        existing = json.load(fd)
-
-    mask_version(openapi)
-    mask_version(existing)
-
-    openapi_md5 = hashlib.md5(
-        json.dumps(openapi, sort_keys=True).encode("utf8")
-    ).hexdigest()
-    existing_md5 = hashlib.md5(
-        json.dumps(existing, sort_keys=True).encode("utf8")
-    ).hexdigest()
-
-    comparison_message = f"(Generated api spec MD5: {openapi_md5}, last generated client spec MD5: {existing_md5})"
-    assert (
-        existing == openapi
-    ), f"""The openapi spec that was used to generate the
-     breadbox client doesn't match what the latest code generates. The breadbox 
-     client likely needs to be updated. You can do this by running: ./bb update-client
-
-     {comparison_message}
-     """
-    print(comparison_message)
 
 
 @cli.command()

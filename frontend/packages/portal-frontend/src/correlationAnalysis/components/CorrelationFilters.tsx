@@ -1,6 +1,7 @@
 import React from "react";
 import Select from "react-select";
 import styles from "../styles/CorrelationAnalysis.scss";
+import { DRCDatasetOptions } from "@depmap/types";
 
 const customStyles = {
   multiValue: (s: any) => ({
@@ -34,31 +35,32 @@ export interface FilterOption {
 }
 
 interface CorrelationFiltersProps {
-  datasets: any[];
-  onChangeDataset: (dataset: string) => void; // undetermined for now
+  selectedDatasetOption: { value: string; label: string } | null;
+  datasetOptions: DRCDatasetOptions[];
+  onChangeDataset: (
+    selection: {
+      value: string;
+      label: string;
+    } | null
+  ) => void;
   correlatedDatasets: any[];
   onChangeCorrelatedDatasets: (correlatedDatasets: string[]) => void;
   doses: string[];
+  selectedDoses: string[];
   onChangeDoses: (doses: string[]) => void;
 }
 
 function CorrelationFilters(props: CorrelationFiltersProps) {
   const {
-    datasets,
+    selectedDatasetOption,
+    datasetOptions,
     onChangeDataset,
     correlatedDatasets,
     onChangeCorrelatedDatasets,
     doses,
+    selectedDoses,
     onChangeDoses,
   } = props;
-
-  const handleDatasetChange = React.useCallback(
-    (value: any) => {
-      // react-select provides the selected option or null
-      onChangeDataset(value ? value.value : null);
-    },
-    [onChangeDataset]
-  );
 
   const handleDosesChange = React.useCallback(
     (value: any) => {
@@ -76,11 +78,6 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
     [onChangeCorrelatedDatasets]
   );
 
-  const datasetOptions = React.useMemo(
-    () => datasets.map((dataset) => ({ label: dataset, value: dataset })),
-    [datasets]
-  );
-
   const correlatedDatasetOptions = React.useMemo(
     () =>
       correlatedDatasets.map((corrDataset) => ({
@@ -95,14 +92,36 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
     [doses]
   );
 
+  const formattedSelectedDoses = React.useMemo(
+    () => selectedDoses.map((dose) => ({ label: dose, value: dose })),
+    [selectedDoses]
+  );
+
+  const datasetSelectOptions = datasetOptions.map(
+    (compoundDataset: DRCDatasetOptions) => {
+      return {
+        value: compoundDataset.log_auc_dataset_given_id,
+        label: compoundDataset.display_name,
+      };
+    }
+  );
+
   return (
     <div className={styles.FiltersPanel}>
       <h4 className={styles.sectionTitle}>Dataset</h4>
       <Select
         placeholder="Select..."
-        value={datasetOptions[0]}
-        options={datasetOptions}
-        onChange={handleDatasetChange}
+        defaultValue={{
+          label: datasetOptions[0].display_name,
+          value: datasetOptions[0].log_auc_dataset_given_id,
+        }}
+        value={selectedDatasetOption}
+        options={datasetSelectOptions}
+        onChange={(value: any) => {
+          if (value) {
+            onChangeDataset(value);
+          }
+        }}
         id="corr-analysis-dataset-selection"
       />
       <hr className={styles.filtersPanelHr} />
@@ -114,6 +133,7 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
         placeholder="Select..."
         defaultOptions
         options={doseOptions}
+        value={formattedSelectedDoses || []}
         isMulti
         onChange={handleDosesChange}
         id="corr-analysis-filter-by-dose"
