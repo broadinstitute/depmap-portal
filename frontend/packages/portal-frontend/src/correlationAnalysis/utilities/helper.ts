@@ -113,6 +113,50 @@ export function createDoseRangeColorScale(
   });
 }
 
+// Define the core regex pattern for extracting the number part (Group 1)
+// This pattern includes optional sign, decimal point, and scientific notation.
+const NUMERIC_REGEX_PATTERN = /^([+-]?\d*\.?\d+(?:[eE][+-]?\d+)?)/;
+
+// Define the full regex that captures Group 1 (Number) and Group 2 (Units).
+// This is used for unit splitting in formatDoseString.
+const FULL_SPLIT_REGEX = new RegExp(NUMERIC_REGEX_PATTERN.source + "\\s*(.*)$");
+
+/**
+ * Parses a numeric value from a dose string, handling variations like units,
+ * commas for decimals, and mixed formatting.
+ * * @param doseString The dose string (e.g., "0.1 um").
+ * @returns The parsed number, or null if no valid number is found.
+ */
+function parseDoseValue(doseString: string): number | null {
+  if (!doseString) {
+    return null;
+  }
+
+  // Use the defined constant regex to extract the number part.
+  const match = doseString.match(NUMERIC_REGEX_PATTERN);
+
+  if (match) {
+    const rawNumberStr = match[1];
+    const numberValue = parseFloat(rawNumberStr);
+
+    if (Number.isNaN(numberValue)) {
+      return null;
+    }
+    return numberValue;
+  }
+
+  // If no number is found at the start
+  return null;
+}
+
+/**
+ * Extracts a leading number from a string, rounds it to 4 decimal places,
+ * and reattaches the original units/text. If no number is found,
+ * the original string is returned.
+ *
+ * @param input The dose string, e.g., "0.0010005269850663 uM" or "AUC".
+ * @returns The formatted string, e.g., "0.0010 uM" or "AUC".
+ */
 export function formatDoseString(input: string | undefined): string {
   if (!input) {
     return "";
@@ -120,40 +164,73 @@ export function formatDoseString(input: string | undefined): string {
 
   if (typeof input !== "string") return String(input);
 
-  // Regex breakdown:
-  // /^(\d*\.?\d+)/   -> Group 1 (the number): Matches a number starting from the beginning of the string.
-  //                     - ^: Start of string
-  //                     - \d*: Zero or more digits (for cases like .5)
-  //                     - \.?: Optional decimal point
-  //                     - \d+: One or more digits after decimal/start
-  // /(.*)$/         -> Group 2 (the units/remainder): Matches the rest of the string until the end.
-  const match = input.match(/^(\d*\.?\d+)\s*(.*)$/);
+  // Use the single, pre-compiled regex to get the number and units in one pass.
+  const match = input.match(FULL_SPLIT_REGEX);
 
-  if (match) {
-    const rawNumberStr = match[1];
-    const units = match[2];
-
-    // Attempt to parse the number
-    const numberValue = parseFloat(rawNumberStr);
-
-    if (Number.isNaN(numberValue)) {
-      // Should not happen if regex matches, but as a safety fallback
-      return input;
-    }
-
-    // 1. Round to 4 decimal places and get the new string representation
-    // (Wrap toFixed with a parseFloat before convering back toString to avoid trailing zeros. This
-    // is important to maintain consistent with the doses displayed on the Heatmap and Dose Curve tabs (see useDoseViabilityData.ts).)
-    const roundedNumberStr = parseFloat(numberValue.toFixed(4)).toString();
-
-    // 2. Reconstruct the string: rounded number + space (optional) + units
-    if (units.length > 0) {
-      // Add a space only if units are present
-      return `${roundedNumberStr} ${units}`;
-    }
-    // No units, just return the rounded number
-    return roundedNumberStr;
+  if (!match) {
+    // No number found at the start (e.g., "AUC", "N/A")
+    return input;
   }
-  // No number found at the start of the string (e.g., "AUC" or "N/A")
-  return input;
+
+  const rawNumberStr = match[1];
+  const units = match[2];
+
+  const numberValue = parseFloat(rawNumberStr);
+
+  if (Number.isNaN(numberValue)) {
+    // Should not happen if regex matches, but as a safety fallback
+    return input;
+  }
+
+  // Round to 4 decimal places and get the new string representation
+  // Use parseFloat(toFixed(4)).toString() to remove trailing zeros after rounding
+  const roundedNumberStr = parseFloat(numberValue.toFixed(4)).toString();
+
+  // Reconstruct the string: rounded number + space (optional) + units
+  if (units.length > 0 && units.trim().length > 0) {
+    // Add a space only if units are present and non-empty
+    return `${roundedNumberStr} ${units}`;
+  }
+  // No units, just return the rounded number
+  return roundedNumberStr;
+}
+
+/**
+ * Sorts an array of DoseColor objects ascendingly based on the numeric
+ * value extracted from the 'dose' string, prioritizing "AUC" first.
+ *
+ * @param doseColors The array of dose colors to sort.
+ * @returns A new array containing the sorted DoseColor objects.
+ */
+export function sortDoseColorsByValue(
+  doseColors: { hex: string | undefined; dose: string }[]
+): { hex: string | undefined; dose: string }[] {
+  // Always create a shallow copy to maintain immutability (best practice in React/TS)
+  const sortedArray = [...doseColors];
+
+  sortedArray.sort((a, b) => {
+    // 1. Prioritize "AUC" over all other values (numeric or non-numeric)
+    const isAUCA = a.dose === "AUC";
+    const isAUCB = b.dose === "AUC";
+
+    if (isAUCA && !isAUCB) return -1; // A is AUC, A comes first
+    if (!isAUCA && isAUCB) return 1; // B is AUC, B comes first
+    if (isAUCA && isAUCB) return 0; // Both are AUC
+
+    // 2. Fallback to Numeric Sorting (using parsed values)
+    const valueA = parseDoseValue(a.dose);
+    const valueB = parseDoseValue(b.dose);
+
+    // Handle cases where parsing fails (treat nulls as lowest priority/largest number for consistent sorting)
+    if (valueA === null && valueB === null) return 0;
+    if (valueA === null) return 1; // 'a' moves to the end
+    if (valueB === null) return -1; // 'b' moves to the end
+
+    // Ascending numeric sort
+    if (valueA < valueB) return -1;
+    if (valueA > valueB) return 1;
+    return 0;
+  });
+
+  return sortedArray;
 }
