@@ -1,0 +1,19 @@
+.BinaryLegend {
+  display: flex;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  .legendCategory {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    display: flex;
+    flex-direction: column;
+
+    .colorSquare {
+      width: 100px;
+      height: 14px;
+      border: 1px solid #666;
+    }
+  }
+}
