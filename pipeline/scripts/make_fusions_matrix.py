@@ -6,6 +6,7 @@ import re
 from taigapy import create_taiga_client_v3
 from omics_preprocessing_utils import preprocess_omics_dataframe
 
+
 def extract_id(x):
     m = re.match(r"\S+ \(([^.]+)\.\d+\)", x)
     if m is None:
@@ -21,6 +22,9 @@ def main():
     parser.add_argument("fusions_dataset_id")
     parser.add_argument("hgnc_dataset_id")
     parser.add_argument("out_csv")
+
+    # if --rows-per-model flag is provided, then transpose the matrix
+    parser.add_argument("--rows-per-model", action="store_true", default=False)
     args = parser.parse_args()
 
     tc = create_taiga_client_v3()
@@ -39,6 +43,9 @@ def main():
         aggfunc=lambda x: 1,
         fill_value=0,
     )
+
+    if args.rows_per_model:
+        one_hot = one_hot.T
 
     one_hot.to_csv(args.out_csv)
 

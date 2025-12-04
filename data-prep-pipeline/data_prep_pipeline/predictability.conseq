@@ -29,13 +29,13 @@ rule transform_fusion:
     inputs:
         fusion={"type": "fusion"},
         gene={"type": "gene"},
-        script=fileref('../scripts/predictability/transform_fusion.py'),
+        script=fileref('../../pipeline/scripts/make_fusions_matrix.py'),
     outputs:
         {
             "type": "predictability_fusion",
             "filename": {"$filename": "fusion.csv"},
         }
-    run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv"
+    run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv" --rows-per-model
 
 
 rule transform_lineage:
