@@ -170,13 +170,6 @@ add-if-missing {
 # repurposing
 
 add-if-missing {
-    'type': 'dataset-display-name',
-    'display_name': 'PRISM Repurposing Public 24Q2', # Doesn't use config.RELEASE_LABEL bc not part of quarterly virtual release datasets
-    'label': 'Rep_all_single_pt',
-    'dataset_id' : 'repurposing-23q2-a803.3/Repurposing_23Q2_Extended_Primary_Data_Matrix',
-}
-
-add-if-missing {
     'type' : 'repurposing-viability',
     'dataset_id' : 'primary-screen-e5c7.8/primary_replicate_collapsed_logfold_change',
     'treatment_info_dataset_id': 'primary-screen-e5c7.8/primary_replicate_collapsed_treatment_info',
