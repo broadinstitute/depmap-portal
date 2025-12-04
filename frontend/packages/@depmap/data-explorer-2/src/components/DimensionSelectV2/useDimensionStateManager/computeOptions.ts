@@ -356,10 +356,10 @@ async function computeSliceTypeOptions(
       return -1;
     }
 
-    const [sorted] = sortDimensionTypes([
-      a.value.toString(),
-      b.value.toString(),
-    ]);
+    const [sorted] = sortDimensionTypes(
+      [a.value.toString(), b.value.toString()],
+      [a.label, b.label]
+    );
 
     return sorted === a.value ? -1 : 1;
   });

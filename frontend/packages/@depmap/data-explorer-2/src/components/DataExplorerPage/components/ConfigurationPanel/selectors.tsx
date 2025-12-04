@@ -69,44 +69,57 @@ export function PointsSelector({
     setDatasetsByIndexType,
   ] = useState<DatasetsByIndexType | null>(null);
 
+  const [displayNames, setDisplayNames] = useState<string[] | undefined>(
+    undefined
+  );
+
   useEffect(() => {
     (async () => {
       try {
         const data = await dataExplorerAPI.fetchDatasetsByIndexType();
         setDatasetsByIndexType(data);
+
+        if (isBreadboxOnlyMode) {
+          const nextDisplayNames = [] as string[];
+          const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+
+          for (const dimTypeName of Object.keys(data)) {
+            const dimType = dimTypes.find(({ name }) => name === dimTypeName);
+            nextDisplayNames.push(dimType ? dimType.display_name : dimTypeName);
+          }
+
+          setDisplayNames(nextDisplayNames);
+        }
       } catch (e) {
         window.console.error(e);
       }
     })();
   }, []);
 
-  const types = sortDimensionTypes(
-    Object.keys(datasetsByIndexType || {})
-  ).filter((index_type) => {
-    if (
-      index_type === "other" &&
-      value !== "other" &&
-      plot_type === "scatter"
-    ) {
-      return false;
+  const unsortedTypes = Object.keys(datasetsByIndexType || {});
+
+  const sortedTypes = sortDimensionTypes(unsortedTypes, displayNames).filter(
+    (index_type) => {
+      if (
+        index_type === "other" &&
+        value !== "other" &&
+        plot_type === "scatter"
+      ) {
+        return false;
+      }
+
+      return true;
     }
-
-    return true;
-  });
-
-  if (value && !types.includes(value)) {
-    // Also add the currently selected index_type (just in case we're viewing
-    // an old plot that was generated when different options were present).
-    types.push(value);
-  }
-
-  const options = types.reduce(
-    (memo: any, index_type: any) => ({
-      ...memo,
-      [index_type]: capitalize(pluralize(getDimensionTypeLabel(index_type))),
-    }),
-    {}
   );
+
+  const options = {} as Record<string, string>;
+  const displayNameLookup = Object.fromEntries(
+    unsortedTypes.map((type, i) => [type, (displayNames || [])[i]])
+  );
+
+  for (const typeName of sortedTypes) {
+    options[typeName] = pluralize(displayNameLookup[typeName]);
+  }
 
   return (
     <div className={styles.PointsSelector}>
