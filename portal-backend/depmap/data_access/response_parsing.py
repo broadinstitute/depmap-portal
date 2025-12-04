@@ -34,14 +34,6 @@ def is_breadbox_id_format(id: str):
     return breadbox_match is not None
 
 
-def get_breadbox_slice_id(dataset_id: str, feature_id: Optional[str] = None):
-    """Construct a correctly formatted breadbox slice ID."""
-    slice_id = f"breadbox/{dataset_id}"
-    if feature_id:
-        slice_id += f"/{feature_id}"
-    return slice_id
-
-
 def parse_matrix_dataset_response(dataset: MatrixDatasetResponse) -> MatrixDataset:
     feature_type = (
         dataset.feature_type_name
