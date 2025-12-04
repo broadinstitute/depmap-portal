@@ -60,6 +60,7 @@ drc_compound_datasets = [
         replicate_dataset="GDSC2_dose_replicate",
         auc_dataset_given_id="GDSC2_AUC_collapsed",
         display_name="GDSC2",
+        log_auc_dataset_given_id="GDSC2_log2AUC_collapsed",
     ),
     DRCCompoundDataset(
         drc_dataset_label="GDSC1",
@@ -67,6 +68,7 @@ drc_compound_datasets = [
         replicate_dataset="GDSC1_dose_replicate",
         auc_dataset_given_id="GDSC1_AUC_collapsed",
         display_name="GDSC1",
+        log_auc_dataset_given_id="GDSC1_log2AUC_collapsed",
     ),
     DRCCompoundDataset(
         drc_dataset_label="ctd2_per_curve",
@@ -74,6 +76,7 @@ drc_compound_datasets = [
         replicate_dataset="CTRP_dose_replicate",
         auc_dataset_given_id="CTRP_AUC_collapsed",
         display_name="CTD^2",
+        log_auc_dataset_given_id="CTRP_log2AUC_collapsed",
     ),
     DRCCompoundDataset(
         drc_dataset_label="repurposing_per_curve",
@@ -81,6 +84,7 @@ drc_compound_datasets = [
         replicate_dataset="Repurposing_secondary_dose_replicate",
         auc_dataset_given_id="REPURPOSING_AUC_collapsed",
         display_name="PRISM Drug Repurposing",
+        log_auc_dataset_given_id="REPURPOSING_log2AUC_collapsed",
     ),
 ]
 
