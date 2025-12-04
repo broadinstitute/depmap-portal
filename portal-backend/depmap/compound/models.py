@@ -13,6 +13,7 @@ from depmap.database import (
 )
 from depmap.entity.models import Entity, EntityAlias
 from depmap.cell_line.models import CellLine
+from depmap.enums import DependencyEnum
 from depmap.gene.models import Gene
 import pandas as pd
 import re
@@ -28,6 +29,7 @@ class DRCCompoundDataset:
     viability_dataset_given_id: str
     replicate_dataset: str
     auc_dataset_given_id: str
+    auc_dataset: DependencyEnum
     display_name: str
     log_auc_dataset_given_id: Optional[str] = None
 
@@ -51,14 +53,25 @@ drc_compound_datasets = [
         viability_dataset_given_id="Prism_oncology_viability",
         replicate_dataset="Prism_oncology_dose_replicate",
         auc_dataset_given_id="Prism_oncology_AUC_collapsed",
-        display_name="PRISM OncRef",
+        auc_dataset=DependencyEnum.Prism_oncology_AUC,
+        display_name="PRISM OncRef Lum",
         log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
+    ),
+    DRCCompoundDataset(
+        drc_dataset_label="Prism_oncology_seq_per_curve",
+        viability_dataset_given_id="Prism_oncology_seq_viability",
+        replicate_dataset="Prism_oncology_seq_dose_replicate",
+        auc_dataset_given_id="Prism_oncology_seq_AUC_collapsed",
+        auc_dataset=DependencyEnum.Prism_oncology_seq_AUC,
+        display_name="PRISM OncRef Seq",
+        log_auc_dataset_given_id="PRISMOncologyReferenceSeqLog2AUCMatrix",
     ),
     DRCCompoundDataset(
         drc_dataset_label="GDSC2",
         viability_dataset_given_id="GDSC2_Viability",
         replicate_dataset="GDSC2_dose_replicate",
         auc_dataset_given_id="GDSC2_AUC_collapsed",
+        auc_dataset=DependencyEnum.GDSC2_AUC,
         display_name="GDSC2",
         log_auc_dataset_given_id="GDSC2_log2AUC_collapsed",
     ),
@@ -67,6 +80,7 @@ drc_compound_datasets = [
         viability_dataset_given_id="GDSC1_Viability",
         replicate_dataset="GDSC1_dose_replicate",
         auc_dataset_given_id="GDSC1_AUC_collapsed",
+        auc_dataset=DependencyEnum.GDSC1_AUC,
         display_name="GDSC1",
         log_auc_dataset_given_id="GDSC1_log2AUC_collapsed",
     ),
@@ -75,6 +89,7 @@ drc_compound_datasets = [
         viability_dataset_given_id="CTRP_Viability",
         replicate_dataset="CTRP_dose_replicate",
         auc_dataset_given_id="CTRP_AUC_collapsed",
+        auc_dataset=DependencyEnum.CTRP_AUC,
         display_name="CTD^2",
         log_auc_dataset_given_id="CTRP_log2AUC_collapsed",
     ),
@@ -83,6 +98,7 @@ drc_compound_datasets = [
         viability_dataset_given_id="REPURPOSING_Viability",
         replicate_dataset="Repurposing_secondary_dose_replicate",
         auc_dataset_given_id="REPURPOSING_AUC_collapsed",
+        auc_dataset=DependencyEnum.Repurposing_secondary_AUC,
         display_name="PRISM Drug Repurposing",
         log_auc_dataset_given_id="REPURPOSING_log2AUC_collapsed",
     ),

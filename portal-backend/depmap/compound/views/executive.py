@@ -9,10 +9,7 @@ matplotlib.use(
 
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
-from depmap.entity.views.executive import (
-    format_enrichment_box_for_dataset,
-    format_generic_distribution_plot,
-)
+from depmap.entity.views.executive import format_generic_distribution_plot
 from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, CompoundTileEnum
 from depmap.correlation.utils import get_all_correlations
@@ -74,12 +71,21 @@ data_availability_datasets = [
         ],
     ),
     DataAvailabilityDataset(
-        label="OncRef",
+        label="OncRef Lum",
         dose_range="1nM - 10μM",
         assay="PRISM",
         given_ids=[
             "Prism_oncology_AUC_collapsed",
             DependencyEnum.Prism_oncology_AUC.name,
+        ],
+    ),
+    DataAvailabilityDataset(
+        label="OncRef Seq",
+        dose_range="1nM - 10μM",
+        assay="PRISM",
+        given_ids=[
+            "Prism_oncology_seq_AUC_collapsed",
+            DependencyEnum.Prism_oncology_seq_AUC.name,
         ],
     ),
 ]
@@ -201,22 +207,6 @@ def format_dep_dist(compound: Compound, dataset: MatrixDataset):
         "units": units,
         "color": color,
     }
-
-
-def format_enrichment_boxes(compound_experiment_and_datasets):
-    if compound_experiment_and_datasets is None:
-        return None
-    enrichment_boxes = []
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        # compound dataset titles should not be colored
-        enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment, dataset, color_palette.compound_color, "default"
-        )
-        enrichment_box["title"] = "{} {}".format(
-            compound_experiment.label, dataset.display_name
-        )
-        enrichment_boxes.append(enrichment_box)
-    return enrichment_boxes
 
 
 def format_availability_tile(compound: Compound):

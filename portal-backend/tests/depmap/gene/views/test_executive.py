@@ -4,9 +4,7 @@ from depmap.gene.views.executive import (
     format_dep_dist_info,
     format_crispr_possible_missing_reason,
     get_dependency_distribution,
-    get_enrichment_boxes,
     plot_mutation_profile,
-    format_enrichment_boxes,
     format_codependencies,
 )
 from depmap.dataset.models import DependencyDataset
@@ -104,21 +102,6 @@ def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
         gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
     )
 
-    enrichment_boxes = get_enrichment_boxes(gene, crispr_dataset=crispr_dataset)
-
-    if has_chronos:
-        assert enrichment_boxes is not None
-        assert "svg" in dep_dist
-    elif has_rnai:
-        assert enrichment_boxes is None
-        assert "svg" in dep_dist
-    else:
-        assert enrichment_boxes is None
-        if not is_dropped_by_chronos:
-            assert not dep_dist  # dep_dist gates whether the card shows at all
-        else:
-            assert "svg" not in dep_dist
-
     if has_chronos or is_dropped_by_chronos:
         assert "crispr" in dep_dist["info"]
     else:
@@ -198,15 +181,6 @@ def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
     dep_dist = get_dependency_distribution(
         gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
     )
-
-    enrichment_boxes = get_enrichment_boxes(gene, crispr_dataset=crispr_dataset)
-    if has_avana or has_rnai:
-        if has_rnai and not has_avana:
-            assert enrichment_boxes is None
-        assert "svg" in dep_dist
-    else:
-        assert enrichment_boxes is None
-        assert not dep_dist  # dep_dist gates whether the card shows at all
 
     if has_avana:
         assert "crispr" in dep_dist["info"]
@@ -360,17 +334,6 @@ def test_format_enrichment_boxes(empty_db_mock_downloads):
     )
 
     empty_db_mock_downloads.session.flush()
-
-    enrichment_boxes = format_enrichment_boxes(entity, dataset)
-
-    assert len(enrichment_boxes) == 1  # only one dataset
-    assert (
-        len(enrichment_boxes[0]["labels"]) == 2
-    )  # test that no enrichment was filtered out
-    assert enrichment_boxes[0]["units"] == dataset.matrix.units
-    assert enrichment_boxes[0]["color"] == color_palette.crispr_color
-    assert enrichment_boxes[0]["title_color"] == color_palette.crispr_color
-    assert enrichment_boxes[0]["title"] == dataset.display_name
 
 
 def test_plot_mutation_profile():

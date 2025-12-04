@@ -338,14 +338,26 @@ DATASET_METADATA: Dict[
         global_priority=17,
     ),
     DependencyEnum.Prism_oncology_AUC: DepDatasetMeta(
-        display_name="PRISM OncRef log2 AUC",  # display name overridden by dataset display name artifact
+        display_name="PRISM OncRef Lum log2 AUC",  # display name overridden by dataset display name artifact
+        units="log2(AUC)",
+        data_type=DataTypeEnum.drug_screen,
+        nominal_range=(0, 1.1),
+        priority=1,
+    ),
+    DependencyEnum.Prism_oncology_seq_AUC: DepDatasetMeta(
+        display_name="PRISM OncRef Seq log2 AUC",  # display name overridden by dataset display name artifact
         units="log2(AUC)",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
         priority=1,
     ),
     DependencyEnum.Prism_oncology_dose_replicate: DepDatasetMeta(
-        display_name="PRISM OncRef Dose Replicate",
+        display_name="PRISM OncRef Lum Dose Replicate",
+        units="Viability",
+        data_type=DataTypeEnum.drug_screen,
+    ),
+    DependencyEnum.Prism_oncology_seq_dose_replicate: DepDatasetMeta(
+        display_name="PRISM OncRef Seq Dose Replicate",
         units="Viability",
         data_type=DataTypeEnum.drug_screen,
     ),
