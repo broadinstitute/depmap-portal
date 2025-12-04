@@ -209,22 +209,6 @@ def format_dep_dist(compound: Compound, dataset: MatrixDataset):
     }
 
 
-def format_enrichment_boxes(compound_experiment_and_datasets):
-    if compound_experiment_and_datasets is None:
-        return None
-    enrichment_boxes = []
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        # compound dataset titles should not be colored
-        enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment, dataset, color_palette.compound_color, "default"
-        )
-        enrichment_box["title"] = "{} {}".format(
-            compound_experiment.label, dataset.display_name
-        )
-        enrichment_boxes.append(enrichment_box)
-    return enrichment_boxes
-
-
 def format_availability_tile(compound: Compound):
     """
     Load high-level information about which datasets the given compound
