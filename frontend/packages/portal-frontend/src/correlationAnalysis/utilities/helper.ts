@@ -167,11 +167,8 @@ export function formatDoseString(input: string | undefined): string {
 
   if (typeof input !== "string") return String(input);
 
-  // 1. Handle comma replacement (moved from parseDoseValue call)
-  let cleanInput = input.replace(",", ".");
-
   // 2. Use the single, pre-compiled regex to get the number and units in one pass.
-  const match = cleanInput.match(FULL_SPLIT_REGEX);
+  const match = input.match(FULL_SPLIT_REGEX);
 
   if (!match) {
     // No number found at the start (e.g., "AUC", "N/A")
