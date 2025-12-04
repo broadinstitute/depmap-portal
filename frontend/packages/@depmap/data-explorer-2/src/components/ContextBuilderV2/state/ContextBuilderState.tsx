@@ -14,6 +14,7 @@ import {
   DataExplorerContextVariable,
   isValidSliceQuery,
   SliceQuery,
+  TabularDataset,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
 import { Expr, isBoolean, flattenExpr } from "../utils/expressionUtils";
@@ -56,6 +57,7 @@ const ContextBuilderState = createContext({
   replaceExprWithSimpleList: (() => {}) as (ids: string[]) => void,
   isManualSelectMode: false,
   undoManualSelectionMode: (() => {}) as () => void,
+  metadataDataset: undefined as TabularDataset | undefined,
 });
 
 export const useContextBuilderState = () => {
@@ -322,6 +324,7 @@ export const ContextBuilderStateProvider = ({
         isManualSelectMode,
         undoManualSelectionMode,
         dimension_type: contextToEdit.dimension_type as string,
+        metadataDataset,
       }}
     >
       {children}

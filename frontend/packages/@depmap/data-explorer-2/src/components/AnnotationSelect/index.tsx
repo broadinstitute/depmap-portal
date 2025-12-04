@@ -59,7 +59,8 @@ function AnnotationSelect({
     if (
       !annotationDatasets ||
       !dataset_id ||
-      dataset_id === metadataDataset?.id
+      dataset_id === metadataDataset?.id ||
+      dataset_id === metadataDataset?.given_id
     ) {
       return false;
     }
