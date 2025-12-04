@@ -44,7 +44,6 @@ export async function fetchGeneTeaEnrichmentExperimental(
   if (plotSelections) {
     params = { ...params, plot_selections: plotSelections };
   }
-  console.log("For Sanity Checking", params);
 
   interface RawResponse {
     // TODO: Give the user feedback when some genes are invalid.
