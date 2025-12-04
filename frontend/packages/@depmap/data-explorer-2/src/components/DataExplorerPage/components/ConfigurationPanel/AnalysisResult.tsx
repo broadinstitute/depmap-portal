@@ -7,10 +7,7 @@ import { Spinner } from "@depmap/common-components";
 import { ComputeResponseResult, CustomAnalysisResult } from "@depmap/compute";
 import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
-import {
-  DataExplorerPlotConfigDimension,
-  PartialDataExplorerPlotConfig,
-} from "@depmap/types";
+import { PartialDataExplorerPlotConfig } from "@depmap/types";
 import { usePlotlyLoader } from "../../../../contexts/PlotlyLoaderContext";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import Section from "../Section";
@@ -21,15 +18,6 @@ interface Props {
   dispatch: (action: PlotConfigReducerAction) => void;
 }
 
-const labelFromDimension = (dimension: DataExplorerPlotConfigDimension) => {
-  if (typeof dimension?.context?.expr === "object") {
-    const { expr } = dimension.context;
-    return expr?.["=="]?.[1] || null;
-  }
-
-  return null;
-};
-
 function AnalysisResult({ plot, dispatch }: Props) {
   const PlotlyLoader = usePlotlyLoader();
   const [taskId, setTaskId] = useState<string | null>(null);
@@ -38,6 +26,41 @@ function AnalysisResult({ plot, dispatch }: Props) {
   const [status, setStatus] = useState<"loading" | "loaded" | "error">(
     "loading"
   );
+
+  // `controlledLabel` is used to control the selection state of the
+  // AnalysisResult component. Note that it uses label instead of id for
+  // historical reasons.
+  const [controlledLabel, setControlledLabel] = useState("");
+
+  useEffect(() => {
+    if (!result) {
+      return;
+    }
+
+    const dimensionKey = result.analysisType === "two_class" ? "x" : "y";
+    const expr = plot.dimensions?.[dimensionKey]?.context?.expr;
+
+    if (expr !== null && typeof expr === "object" && "==" in expr) {
+      const varExpr = (expr["=="]![0] as unknown) as { var: string };
+      const valueExpr = (expr["=="]![1] as unknown) as string;
+      let label = "";
+
+      if (varExpr?.var === "entity_label") {
+        label = valueExpr;
+      } else {
+        const dataIndex = result.data.findIndex(({ vectorId }) => {
+          const entityId = vectorId.split("/")[2];
+          return entityId === valueExpr;
+        });
+
+        if (dataIndex !== -1) {
+          label = result.data[dataIndex].label;
+        }
+      }
+
+      setControlledLabel(label);
+    }
+  }, [plot.dimensions, result]);
 
   useEffect(() => {
     const params = qs.parse(window.location.search.substr(1));
@@ -145,11 +168,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
               result={result}
               analysisType={result.analysisType}
               queryLimit={1000}
-              controlledLabel={labelFromDimension(
-                plot.dimensions![
-                  dimensionKey
-                ] as DataExplorerPlotConfigDimension
-              )}
+              controlledLabel={controlledLabel}
               onLabelClick={(slice_label) => {
                 let plot_type =
                   dimensionKey === "y" ? "scatter" : plot.plot_type;

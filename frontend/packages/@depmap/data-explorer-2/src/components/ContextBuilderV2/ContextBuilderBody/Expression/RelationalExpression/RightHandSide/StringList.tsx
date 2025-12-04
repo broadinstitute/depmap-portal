@@ -24,7 +24,7 @@ interface Props {
   path: (string | number)[];
   domain: { unique_values: string[] } | null;
   isLoading: boolean;
-  onClickShowDistribution: () => void;
+  onClickShowSlicePreview: () => void;
 }
 
 const selectStyles: ReactSelectProps["styles"] = {
@@ -112,7 +112,7 @@ function StringList({
   path,
   domain,
   isLoading,
-  onClickShowDistribution,
+  onClickShowSlicePreview,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const { dispatch, shouldShowValidation } = useContextBuilderState();
@@ -173,9 +173,9 @@ function StringList({
         <button
           type="button"
           className={styles.detailsButton}
-          onClick={onClickShowDistribution}
+          onClick={onClickShowSlicePreview}
         >
-          details
+          see plot
         </button>
       </div>
       <Select
@@ -253,9 +253,9 @@ function LongListWrapper(props: Props) {
           <button
             type="button"
             className={styles.detailsButton}
-            onClick={props.onClickShowDistribution}
+            onClick={props.onClickShowSlicePreview}
           >
-            details
+            see plot
           </button>
         </div>
         <Tooltip
@@ -268,7 +268,8 @@ function LongListWrapper(props: Props) {
             id="edit-values"
             onClick={() => setShowAll(true)}
           >
-            {numValues.toLocaleString()} values
+            <span />
+            <span>{numValues.toLocaleString()} values</span>
             <i
               className="glyphicon glyphicon-pencil"
               style={{ marginLeft: 5 }}

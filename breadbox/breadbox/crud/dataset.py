@@ -1,5 +1,6 @@
 import logging
 from collections import defaultdict
+from datetime import datetime, timedelta
 from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 from uuid import UUID, uuid4
 
@@ -475,6 +476,35 @@ def update_dataset(
 
     db.flush()
     return dataset
+
+
+def get_current_datetime():
+    # this method only exists to allow us to mock it in tests. Since `datetime` is a built-in we're not able to
+    # mutate it.
+    return datetime.now()
+
+
+def find_expired_datasets(db: SessionWithUser, max_age: timedelta) -> List[Dataset]:
+    """
+    Finds transient datasets which can be deleted (because they've "expired") 
+    Two ways a transient dataset can be expired: 
+    1. the `expiry` field can be explictly set, and that time is in the past
+    2. the upload_date is before now - `max_age`. 
+    """
+
+    now = get_current_datetime()
+    min_upload_date = now - max_age
+
+    expired_datasets = (
+        db.query(Dataset)
+        .filter(
+            Dataset.is_transient == True,
+            or_(Dataset.expiry < now, Dataset.upload_date < min_upload_date,),
+        )
+        .all()
+    )
+
+    return expired_datasets
 
 
 def delete_dataset(

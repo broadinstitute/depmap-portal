@@ -11,6 +11,7 @@ rule filter-portal-compounds:
         repsdrug_auc_matrix={"type": "repsdrug_auc_matrix"},
         portal_compounds={"type": "portal_compounds"},
         prism_oncology_reference_auc_matrix=all{"type"~ "prism_oncology_reference_auc_matrix|stub-artifact"},
+        prism_oncology_reference_seq_log2_auc_matrix=all{"type"~ "prism_oncology_reference_seq_log2_auc_matrix|stub-artifact"},
         script=fileref('../scripts/portal_compounds/filter_portal_compounds.py'),
     outputs:
         {
@@ -25,5 +26,8 @@ rule filter-portal-compounds:
         {{inputs.portal_compounds.dataset_id}} \
         {% if inputs.prism_oncology_reference_auc_matrix|length > 1 %} \
         --prism_oncology_reference_auc_matrix_taiga_id {{(inputs.prism_oncology_reference_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
+        {% endif %} \
+        {% if inputs.prism_oncology_reference_seq_log2_auc_matrix|length > 1 %} \
+        --prism_oncology_reference_seq_log2_auc_matrix_taiga_id {{(inputs.prism_oncology_reference_seq_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
         {% endif %} \
         filtered_portal_compounds.csv"
