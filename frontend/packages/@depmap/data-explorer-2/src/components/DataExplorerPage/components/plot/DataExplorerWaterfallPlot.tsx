@@ -8,7 +8,6 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import {
   LegendKey,
   calcBins,
@@ -177,7 +176,9 @@ function DataExplorerWaterfallPlot({
       return undefined;
     }
 
-    return sortLegendKeysWaterfall(data, catData, plotConfig.sort_by);
+    return sortLegendKeysWaterfall(data, catData, plotConfig.sort_by) as
+      | LegendKey[]
+      | undefined;
   }, [data, plotConfig.sort_by]);
 
   const formattedData: {
@@ -244,10 +245,10 @@ function DataExplorerWaterfallPlot({
 
     const items: { name: string; hexColor: string }[] = [];
 
-    Reflect.ownKeys(colorMap || {}).forEach((key: string | symbol) => {
-      if (!hiddenLegendValues.has(key as LegendKey)) {
+    [...colorMap.keys()].forEach((key) => {
+      if (!hiddenLegendValues.has(key)) {
         const name = categoryToDisplayName(
-          key as LegendKey,
+          key,
           data as DataExplorerPlotResponse,
           continuousBins
         );
@@ -256,7 +257,7 @@ function DataExplorerWaterfallPlot({
 
         items.push({
           name: formattedName,
-          hexColor: colorMap[key],
+          hexColor: colorMap.get(key)!,
         });
       }
     });
@@ -356,23 +357,16 @@ function DataExplorerWaterfallPlot({
               onClickClearSelection={() => {
                 setSelectedLabels(null);
               }}
-              onClickSetSelectionFromContext={
-                // FIXME
-                isBreadboxOnlyMode
-                  ? () => {
-                      window.alert("Not currently supported with Breadbox!");
-                    }
-                  : async () => {
-                      const labels = await promptForSelectionFromContext(data!);
+              onClickSetSelectionFromContext={async () => {
+                const labels = await promptForSelectionFromContext(data!);
 
-                      if (labels === null) {
-                        return;
-                      }
+                if (labels === null) {
+                  return;
+                }
 
-                      setSelectedLabels(labels);
-                      plotElement?.annotateSelected();
-                    }
-              }
+                setSelectedLabels(labels);
+                plotElement?.annotateSelected();
+              }}
             />
           </StackableSection>
           {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (

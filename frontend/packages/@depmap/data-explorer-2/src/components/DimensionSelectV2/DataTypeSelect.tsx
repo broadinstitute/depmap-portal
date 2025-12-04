@@ -10,6 +10,7 @@ interface Props {
   onChange: (nextDataType: string | null) => void;
   isUnknownDataset: boolean;
   hasError?: boolean;
+  selectClassName?: string;
 }
 
 function DataTypeSelect({
@@ -19,6 +20,7 @@ function DataTypeSelect({
   onChange,
   isUnknownDataset,
   hasError = false,
+  selectClassName = undefined,
 }: Props) {
   let placeholder = "Select data type…";
 
@@ -34,6 +36,7 @@ function DataTypeSelect({
     <PlotConfigSelect
       show
       enable={options.length > 1 && !isLoading}
+      className={selectClassName}
       isClearable
       label="Data Type"
       hasError={hasError}

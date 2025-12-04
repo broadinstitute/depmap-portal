@@ -6,11 +6,11 @@ import React, {
   useState,
 } from "react";
 import { Button } from "react-bootstrap";
+import { breadboxAPI, cached } from "@depmap/api";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
-import type { RowSelectionState } from "@depmap/react-table";
-import type { SliceQuery } from "@depmap/types";
-import useData from "./useData";
-import type { RowFilters } from "./useData";
+import { RowSelectionState } from "@depmap/react-table";
+import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
+import useData, { RowFilters } from "./useData";
 import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
@@ -20,6 +20,7 @@ interface Props {
   index_type_name: string;
   initialSlices: SliceQuery[];
   viewOnlySlices: Set<SliceQuery>;
+  enableRowSelection: boolean;
   initialRowSelection: RowSelectionState;
   onChangeSlices: (nextSlices: SliceQuery[]) => void;
   downloadFilename: string;
@@ -34,6 +35,7 @@ export function useSliceTableState({
   index_type_name,
   initialSlices,
   viewOnlySlices,
+  enableRowSelection,
   initialRowSelection,
   onChangeSlices,
   downloadFilename,
@@ -94,21 +96,45 @@ export function useSliceTableState({
   const PlotlyLoader = usePlotlyLoader();
 
   const handleClickAddColumn = useCallback(async () => {
-    const newSlice = await chooseDataSlice({ index_type_name, PlotlyLoader });
+    const newSlice = await chooseDataSlice({
+      index_type_name,
+      rowSelection: enableRowSelection ? rowSelection : undefined,
+      PlotlyLoader,
+    });
 
     if (newSlice) {
-      setSlices((prev) => [...prev, newSlice]);
+      setSlices((prev) => {
+        if (prev.find((oldSlice) => areSliceQueriesEqual(oldSlice, newSlice))) {
+          return prev;
+        }
+
+        return [...prev, newSlice];
+      });
     }
-  }, [index_type_name, PlotlyLoader]);
+  }, [enableRowSelection, index_type_name, rowSelection, PlotlyLoader]);
 
   const handleClickEditColumn = useCallback(
     async (column: typeof columns[number]) => {
       const defaultValue = column.meta.sliceQuery;
 
+      const datasets = await cached(breadboxAPI).getDatasets();
+      const dataset = datasets.find(
+        (d) =>
+          d.id === defaultValue.dataset_id ||
+          d.given_id === defaultValue.dataset_id
+      );
+      const initialSource = ["Annotations", "metadata"].includes(
+        dataset?.data_type || ""
+      )
+        ? "property"
+        : "custom";
+
       const editedSlice = await chooseDataSlice({
         defaultValue,
+        initialSource,
         index_type_name,
         PlotlyLoader,
+        rowSelection: enableRowSelection ? rowSelection : undefined,
         onClickRemoveColumn: () => {
           setSlices((prev) => {
             return prev.filter((slice) => slice !== column.meta.sliceQuery);
@@ -124,7 +150,7 @@ export function useSliceTableState({
         );
       }
     },
-    [index_type_name, PlotlyLoader]
+    [enableRowSelection, index_type_name, rowSelection, PlotlyLoader]
   );
 
   const handleClickViewColumn = useCallback(
@@ -133,9 +159,10 @@ export function useSliceTableState({
         index_type_name,
         PlotlyLoader,
         sliceQuery: column.meta.sliceQuery,
+        rowSelection: enableRowSelection ? rowSelection : undefined,
       });
     },
-    [index_type_name, PlotlyLoader]
+    [enableRowSelection, index_type_name, PlotlyLoader, rowSelection]
   );
 
   const columnsWithEditOrViewButton = useMemo(() => {
@@ -186,14 +213,21 @@ export function useSliceTableState({
 
     // Download as file
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const href = URL.createObjectURL(blob);
+
+    let dlAttr = downloadFilename || `${index_type_name} table`;
+    if (!dlAttr.endsWith(".csv")) {
+      dlAttr += ".csv";
+    }
+
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", downloadFilename);
+    link.setAttribute("href", href);
+    link.setAttribute("download", dlAttr);
+
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [downloadFilename, exportToCsv]);
+  }, [index_type_name, downloadFilename, exportToCsv]);
 
   return {
     data,

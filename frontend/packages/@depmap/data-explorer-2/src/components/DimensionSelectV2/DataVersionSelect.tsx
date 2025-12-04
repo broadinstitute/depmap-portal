@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import cx from "classnames";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
+import { dataTypeSortComparator } from "@depmap/utils";
 import PlotConfigSelect from "../PlotConfigSelect";
 import { fetchDatasetsByIndexType } from "./useDimensionStateManager/utils";
 import { State } from "./useDimensionStateManager/types";
@@ -19,6 +19,7 @@ interface Props {
   showDefaultHint: boolean;
   showNoDefaultHint: boolean;
   onClickShowModal?: () => void;
+  selectClassName?: string;
 }
 
 type GroupedOptions = { label: string; options: Props["options"] }[];
@@ -64,6 +65,7 @@ function DataVersionSelect({
   showDefaultHint,
   showNoDefaultHint,
   onClickShowModal = undefined,
+  selectClassName = undefined,
 }: Props) {
   const [groupedOptions, setGroupedOptions] = useState<GroupedOptions | null>(
     null
@@ -125,10 +127,10 @@ function DataVersionSelect({
       });
 
       const groupedOpts = Object.keys(groups)
-        .sort()
         .map((dataType) => {
           return { label: dataType, options: groups[dataType] };
-        });
+        })
+        .sort((a, b) => dataTypeSortComparator(a.label, b.label));
 
       setGroupedOptions(groupedOpts);
     })();
@@ -170,7 +172,7 @@ function DataVersionSelect({
       isClearable
       hasError={isUnknownDataset}
       show={show}
-      enable={(options.length > 1 || isUnknownDataset) && !isLoading}
+      enable={!isLoading}
       isLoading={isLoading}
       value={displayValue}
       options={optionsToShow}
@@ -179,19 +181,16 @@ function DataVersionSelect({
         const selection = wrappedValue as typeof options[number] | null;
         onChange(selection?.value || null);
       }}
-      label={
-        <span>
-          Data Version
-          {onClickShowModal && (
-            <button
-              type="button"
-              className={styles.detailsButton}
-              onClick={onClickShowModal}
-            >
-              details
-            </button>
-          )}
-        </span>
+      className={selectClassName}
+      label="Data Version"
+      renderDetailsButton={
+        onClickShowModal
+          ? () => (
+              <button type="button" onClick={onClickShowModal}>
+                details
+              </button>
+            )
+          : undefined
       }
       placeholder={(() => {
         if (isLoading) {
@@ -256,22 +255,7 @@ function DataVersionSelect({
           );
         }
 
-        if (context === "value" || !option.isDefault) {
-          return option.label;
-        }
-
-        return (
-          <div>
-            {option.label}
-            <i
-              className={cx(
-                "glyphicon",
-                "glyphicon-star",
-                styles.defaultDataset
-              )}
-            />
-          </div>
-        );
+        return option.label;
       }}
     />
   );

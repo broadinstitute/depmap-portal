@@ -5,14 +5,24 @@ import {
 } from "@depmap/types";
 import { postJson } from "../client";
 
-export function fetchAssociations(
+export async function fetchAssociations(
   sliceQuery: SliceQuery,
   associatedDatasetIds?: string[]
 ) {
-  return postJson<DatasetAssociations>("/temp/associations/query-slice", {
-    slice_query: sliceQuery,
-    association_datasets: associatedDatasetIds,
-  });
+  const result = await postJson<DatasetAssociations>(
+    "/temp/associations/query-slice",
+    {
+      slice_query: sliceQuery,
+      association_datasets: associatedDatasetIds,
+    }
+  );
+
+  if ("detail" in result) {
+    window.console.warn("sliceQuery:", sliceQuery);
+    throw new Error(JSON.stringify(result.detail));
+  }
+
+  return result;
 }
 
 export async function evaluateContext(

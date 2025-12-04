@@ -29,7 +29,7 @@ If you have individual tasks which should run in the cloud, you can mark then as
 ```
 rule process_celligner_inputs:
     executor: dsub {
-       "docker_image": "us.gcr.io/broad-achilles/celligner@sha256:6442129dfc136d0d603e8fbd5b1d469a0bf91cc63286132e45975101edbaffa8",
+       "docker_image": "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/celligner@sha256:6442129dfc136d0d603e8fbd5b1d469a0bf91cc63286132e45975101edbaffa8",
        "min_ram": "50",
        "boot_disk_size": "70",
        "helper_path": "/opt/conseq/bin/conseq-helper" }

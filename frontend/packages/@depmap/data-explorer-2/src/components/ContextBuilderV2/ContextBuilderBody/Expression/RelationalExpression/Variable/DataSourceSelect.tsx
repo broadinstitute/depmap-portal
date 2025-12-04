@@ -2,45 +2,25 @@ import React, { useRef } from "react";
 import { DataExplorerContextVariable } from "@depmap/types";
 import PlotConfigSelect from "../../../../../PlotConfigSelect";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
-import useTabularDatasets from "../../../../hooks/useTabularDatasets";
 import { scrollParentIntoView } from "../../../../utils/domUtils";
 
 interface Props {
   expr: Record<"var", string> | null;
-  path: (string | number)[];
+  onInvalidateVariable: (nextVarName: string) => void;
 }
 
-function DataSourceSelect({ expr, path }: Props) {
+function DataSourceSelect({ expr, onInvalidateVariable }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-  const { dispatch, vars, setVar } = useContextBuilderState();
-  const {
-    metadataDataset,
-    otherTabularDatasets,
-    isLoadingTabularDatasets,
-  } = useTabularDatasets();
+  const { dimension_type, vars, setVar } = useContextBuilderState();
 
   const varName = expr ? expr.var : null;
   const slice = varName ? vars[varName] : null;
   const source = slice?.source || null;
 
-  const options = isLoadingTabularDatasets
-    ? []
-    : [
-        {
-          label: "Annotation",
-          value: "metadata_column",
-          isDisabled: !metadataDataset,
-        },
-        {
-          label: "Tabular Dataset",
-          value: "tabular_dataset",
-          isDisabled: otherTabularDatasets.length === 0,
-        },
-        {
-          label: "Matrix Dataset",
-          value: "matrix_dataset",
-        },
-      ];
+  const options = [
+    { label: "Annotation", value: "property" },
+    { label: "Dataset", value: "custom" },
+  ];
 
   return (
     <PlotConfigSelect
@@ -50,8 +30,11 @@ function DataSourceSelect({ expr, path }: Props) {
       innerRef={ref}
       value={source}
       options={options}
-      isLoading={isLoadingTabularDatasets}
       onChange={(nextSource) => {
+        if (nextSource === source) {
+          return;
+        }
+
         // The name "given_id" has special meaning and is reserved.
         let nextVarName = varName === "given_id" ? null : varName;
 
@@ -60,21 +43,18 @@ function DataSourceSelect({ expr, path }: Props) {
           nextVarName = crypto.randomUUID();
         }
 
-        // Also reset the operator to a neutral value.
-        const nextOp = "==";
-        const outerExpr = { [nextOp]: [{ var: nextVarName }, null] };
-
-        dispatch({
-          type: "update-value",
-          payload: {
-            path: path.slice(0, -2),
-            value: outerExpr,
-          },
-        });
+        // The outer expression may no longer make sense, so make sure it gets
+        // reset.
+        onInvalidateVariable(nextVarName);
 
         // Update the var reference.
         setVar(nextVarName, {
           source: nextSource as DataExplorerContextVariable["source"],
+          dataset_id:
+            nextSource === "property"
+              ? `${dimension_type}_metadata`
+              : undefined,
+          identifier_type: nextSource === "property" ? "column" : undefined,
         });
 
         scrollParentIntoView(ref.current);

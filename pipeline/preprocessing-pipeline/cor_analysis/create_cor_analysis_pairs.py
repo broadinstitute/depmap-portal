@@ -16,10 +16,32 @@ def main():
         print("warning: ignoring input: ", inputs)
         # todo change this so we take the taiga IDs from inputs
 
-    def make_pairs():
+    def make_functional_with_biomarker_pairs():
         for mat_a in inputs["a_set"]:
             for mat_b in inputs["b_set"]:
                 yield mat_a, mat_b
+
+    def make_functional_self_pairs():
+        for mat_a in inputs["a_set"]:
+            yield mat_a, mat_a
+
+    def make_drug_vs_genetic():
+        by_given_id = {artifact["given_id"]: artifact for artifact in inputs["a_set"]}
+        for drug_given_id in [
+            "PRISMOncologyReferenceLog2AUCMatrix",
+            "Prism_oncology_viability",
+            "REPURPOSING_log2AUC_collapsed",
+            "CTRP_log2AUC_collapsed",
+            "GDSC1_log2AUC_collapsed",
+            "GDSC2_log2AUC_collapsed",
+        ]:
+            for genetic_perturbation_given_id in ["Chronos_Combined", "RNAi_merged"]:
+                yield by_given_id[drug_given_id], by_given_id[
+                    genetic_perturbation_given_id
+                ]
+                yield by_given_id[genetic_perturbation_given_id], by_given_id[
+                    drug_given_id
+                ]
 
     def make_artifact(a, b):
         artifact = {"type": "cor_input_pair"}
@@ -42,10 +64,16 @@ def main():
 
         return artifact
 
-    pairs = [make_artifact(*pair) for pair in make_pairs()]
+    pairs = (
+        list(make_functional_with_biomarker_pairs())
+        + list(make_functional_self_pairs())
+        + list(make_drug_vs_genetic())
+    )
+
+    artifacts = [make_artifact(*pair) for pair in pairs]
 
     with open(args.out_filename, "wt") as fd:
-        json.dump({"outputs": pairs}, fd)
+        json.dump({"outputs": artifacts}, fd, indent=2)
 
 
 if __name__ == "__main__":

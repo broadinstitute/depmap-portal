@@ -25,6 +25,13 @@ class FeatureFlags:
 
         return current_app.config["ENV_TYPE"] == "public"
 
+    def is_qa(self):
+        from flask import current_app
+
+        env = current_app.config["ENV"]  # pyright: ignore
+        assert isinstance(env, str)
+        return env.endswith("qa")
+
     def is_skyros(self):
         from flask import current_app
 
@@ -111,6 +118,11 @@ class FeatureFlags:
     def data_page(self):
         return True
 
+    # The pipeline overview is always hidden because it is an unfinished feature
+    @property
+    def pipeline_overview(self):
+        return False
+
     @property
     def context_explorer(self):
         return True
@@ -195,7 +207,7 @@ class FeatureFlags:
     # refers to the portal gene tea tool page.
     @property
     def gene_tea_portal_page(self):
-        return self.is_skyros()
+        return self.is_prerelease_env()
 
     @property
     def anchor_screen_dashboard(self):
@@ -206,8 +218,12 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def show_compound_correlations(self):
-        return self.is_skyros()
+    def compound_correlation_tiles(self):
+        return self.is_qa()
+
+    @property
+    def correlation_analysis(self):
+        return self.is_qa()
 
 
 def make_log_config(log_dir):
@@ -333,6 +349,9 @@ class Config(object):
     # with the expectation that in some environments we'll want to lower this
     MAX_UPLOAD_SIZE = 10 ** 10
     FORUM_API_KEY = os.getenv("FORUM_API_KEY")
+
+    # How long to wait for breadbox before reporting a timeout (in proxy)
+    BREADBOX_PROXY_TIMEOUT = 60
 
 
 class RemoteConfig(Config):

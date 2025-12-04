@@ -31,6 +31,9 @@ def get_vector_labels(dataset_id: str, is_transpose: bool) -> list[str]:
     If is_transpose, then get depmap_ids/sample labels.
     Otherwise, get sample/feature labels.
     """
+    if dataset_id == "Context_Matrix":
+        dataset_id = "subtype_matrix"
+
     if is_transpose:
         return data_access.get_dataset_sample_ids(dataset_id)
 
@@ -93,6 +96,10 @@ def get_series_from_de2_slice_id(slice_id: str) -> pd.Series:
         return get_compound_experiment_compound_instance_series()
     if slice_id.startswith("slice/mutations_prioritized/"):
         return get_mutations_prioritized_series(dataset_id, feature_label)
+    if slice_id.startswith("slice/Context_Matrix/"):
+        return get_series_from_de2_slice_id(
+            slice_id.replace("/Context_Matrix/", "/subtype_matrix/")
+        )
     # HACK: These aren't real dataset IDs, just magic strings
     if dataset_id in ("depmap_model_metadata", "screen_metadata"):
         dimension_type_name = (

@@ -5,10 +5,11 @@ root_package = depmap
 name=The portal backend should use data_access instead of directly referencing interactive_utils
 type=forbidden
 source_modules=
-    depmap.cell_line
+#    refactoring needed before the following can exclude interactive_utils due to 
+#    performance issue
+#    depmap.cell_line
     depmap.data_explorer_2
     depmap.download
-    depmap.predictability
     depmap.tile
     depmap.user_uploads
 forbidden_modules=

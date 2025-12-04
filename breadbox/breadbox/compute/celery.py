@@ -1,15 +1,19 @@
 import psutil
 from celery import Celery, Task, signals
 import os
+import uuid
 from logging import getLogger
 from fastapi import HTTPException
 
 from breadbox.logging import GCPExceptionReporter
 from breadbox.celery_task.utils import check_celery
+from breadbox.utils.debug_event_log import log_event, _get_log_filename
 
+from ..config import Settings, get_settings
+from pydantic import ValidationError
 
-rhost = os.getenv("REDIS_HOST", "localhost")
 breadbox_env = os.getenv("BREADBOX_ENV", "dev")
+
 
 log = getLogger(__name__)
 exception_reporter = GCPExceptionReporter(
@@ -37,8 +41,6 @@ class LogErrorsTask(Task):
 
 app = Celery(
     "breadbox-celery",
-    broker_url="redis://" + rhost,
-    backend="redis://" + rhost,
     include=[
         "breadbox.compute.analysis_tasks",
         "breadbox.compute.download_tasks",
@@ -57,31 +59,56 @@ def _get_rss():
     return process.memory_info().rss
 
 
-# from typing import Optional, Any, Dict
-#
-# @signals.task_prerun.connect
-# def task_prerun_handler(
-#    sender:Optional[Any] =None, task_id : Optional[str] =None, task : Optional[Task]=None, args:Optional[Any]=None, kwargs:Optional[Dict[str, Any]]=None, **extras
-# ):
-#    print(
-#        f"[BEFORE] Running task {sender.name} rss:{_get_rss()} ({task_id}) with args={args}, kwargs={kwargs}"
-#    )
-#
-#
-# @signals.task_postrun.connect
-# def task_postrun_handler(
-#    sender:Optional[Any]=None,
-#    task_id : Optional[str]=None,
-#    task: Optional[Task]=None,
-#    args:Optional[Any] = None,
-#    kwargs:Optional[Dict[str, Any]] =None,
-#    retval:Any = None,
-#    state : Any=None,
-#    **extras,
-# ):
-#    print(
-#        f"[AFTER] Finished task {sender.name} rss:{_get_rss()} ({task_id}) with result={retval}, state={state}"
-#    )
+try:
+    settings = get_settings()
+except ValidationError:
+    log.warning(
+        "Could not load settings used to set up celery, so leaving unconfigured"
+    )
+    settings = None
+
+if settings is not None:
+    if settings.brokerless_celery_for_testing:
+        storage_configuration = dict(
+            broker_url="memory://",
+            result_backend="cache+memory://",
+            task_always_eager=True,
+            task_store_eager_result=True,
+        )
+    else:
+        rhost = os.getenv("REDIS_HOST", "localhost")
+
+        storage_configuration = dict(
+            broker_url="redis://" + rhost, result_backend="redis://" + rhost,
+        )
+    app.conf.update(**storage_configuration)  # pyright: ignore
+
+# Set up task logging using Celery signals
+@signals.task_prerun.connect
+def task_prerun_handler(task_id, task, *args, **kwargs):
+    log_filename = _get_log_filename()
+    if log_filename:
+        # Generate a readable task name
+        task_name = task.name if hasattr(task, "name") else str(task)
+        # Log task start
+        log_event(log_filename, "start", task_id, {"n": f"Task {task_name}"})
+
+
+@signals.task_success.connect
+def task_success_handler(result, **kwargs):
+    log_filename = _get_log_filename()
+    if log_filename:
+        task_id = kwargs["sender"].request.id
+        # Log task success
+        log_event(log_filename, "end", task_id, {"s": "success"})
+
+
+@signals.task_failure.connect
+def task_failure_handler(task_id, exception, **kwargs):
+    log_filename = _get_log_filename()
+    if log_filename:
+        # Log task failure
+        log_event(log_filename, "end", task_id, {"s": "error", "e": str(exception)})
 
 
 if __name__ == "__main__":

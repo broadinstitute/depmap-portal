@@ -173,7 +173,7 @@ add-if-missing {
     'type': 'dataset-display-name',
     'display_name': 'PRISM Repurposing Public 24Q2', # Doesn't use config.RELEASE_LABEL bc not part of quarterly virtual release datasets
     'label': 'Rep_all_single_pt',
-    'dataset_id' : 'repurposing-23q2-a803.3/Repurposing_23Q2_Extended_Primary_Data_Matrix',
+    'dataset_id' : 'repurposing-23q2-a803.4/Repurposing_23Q2_Extended_Primary_Data_Matrix_Per_Compound',
 }
 
 add-if-missing {
@@ -203,7 +203,8 @@ add-if-missing {
   "label": "Repurposing_secondary_AUC",
   "confounders_label": "",
   "conditions_dataset_id": "processed-repurposing-secondary-e3aa.2/REPURPOSINGLog2ViabilityConditions",
-  "sample_id_prefix": "BRD"
+  "sample_id_prefix": "BRD",
+  "units": "AUC"
 }
 
 add-if-missing {
@@ -231,7 +232,8 @@ add-if-missing {
   "label": "CTRP_AUC",
   "confounders_label": "",
   "conditions_dataset_id": "processed-ctd2-c6f3.2/CTRPLog2ViabilityCollapsedConditions",
-  "sample_id_prefix": "CTRP"
+  "sample_id_prefix": "CTRP",
+  "units": "AUC"
 }
 
 add-if-missing {
@@ -258,7 +260,8 @@ add-if-missing {
   "dataset_id": "processed-gdsc-ee73.2/GDSC1AUCMatrix",
   "confounders_label": "",
   "conditions_dataset_id": "processed-gdsc-ee73.2/GDSC1Log2ViabilityCollapsedConditions",
-  "sample_id_prefix": "GDSC1"
+  "sample_id_prefix": "GDSC1",
+  "units": "AUC"
 }
 
 add-if-missing {
@@ -286,7 +289,8 @@ add-if-missing {
   "dataset_id": "processed-gdsc-ee73.2/GDSC2AUCMatrix",
   "confounders_label": "",
   "conditions_dataset_id": "processed-gdsc-ee73.2/GDSC2Log2ViabilityCollapsedConditions",
-  "sample_id_prefix": "GDSC2"
+  "sample_id_prefix": "GDSC2",
+  "units": "AUC"
 }
 
 add-if-missing {

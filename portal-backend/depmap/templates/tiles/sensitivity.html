@@ -1,11 +1,10 @@
-{% if dep_dists and dep_dists | length > 0 %}
+{% if dep_dist %}
 <div class="card_wrapper">
     <div class="card_border">
         <div>
             <h2 class="no_margin cardtitle_text">Sensitive Cell Lines</h2>
         </div>
         <div class="card_padding">
-            {% for dep_dist in dep_dists %}
             <div>
                 <h4>{{ dep_dist.title }}</h4>
                 <h4 style="color: {{ dep_dist.color }}">{{ dep_dist.num_lines }} cell lines shown</h4>
@@ -20,7 +19,6 @@
                 <p class="no_margin plot_label">{{ dep_dist.units }}</p>
             </div>
             <hr class="hr_margin2">
-            {% endfor %}
 
             {% if dep_dist_caption %}
             {{ dep_dist_caption }}

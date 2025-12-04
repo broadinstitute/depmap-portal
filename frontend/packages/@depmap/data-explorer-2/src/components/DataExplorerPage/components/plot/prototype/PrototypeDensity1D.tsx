@@ -8,8 +8,9 @@ import type {
   PlotSelectionEvent,
   ViolinData,
 } from "plotly.js";
-import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import seedrandom from "seedrandom";
+import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
+import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import {
   calcAnnotationPositions,
   DataExplorerColorPalette,
@@ -18,13 +19,12 @@ import {
   hexToRgba,
   isEveryValueNull,
   LEGEND_ALL,
+  LegendKey,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
 
 type Data = Record<string, any>;
-
-const MAX_POINTS_TO_ANNOTATE = 50;
 
 interface Props {
   data: Data;
@@ -32,10 +32,10 @@ interface Props {
   hoverTextKey?: string;
   annotationTextKey?: string;
   height: number | "auto";
-  colorMap: any;
+  colorMap: Map<LegendKey, string>;
   colorData?: any;
   continuousColorKey?: string;
-  legendDisplayNames: any;
+  legendDisplayNames: Partial<Record<LegendKey, string>>;
   legendTitle?: string | null;
   selectedPoints?: Set<number>;
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
@@ -185,6 +185,11 @@ function PrototypeDensity1D({
     }
   }, [onLoad]);
 
+  useEffect(() => {
+    const plot = ref.current;
+    return () => Plotly.purge(plot as HTMLElement);
+  }, [Plotly]);
+
   const [minX, maxX] = useMemo(() => getRange(data[xKey]), [data, xKey]);
 
   // When the type of data changes, we force an autoscale by discarding the
@@ -220,7 +225,7 @@ function PrototypeDensity1D({
 
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
-    const colorKeys = Reflect.ownKeys(colorMap || {});
+    const colorKeys = [...colorMap.keys()];
     const x = data[xKey] as number[];
     const y = calcY(x, colorKeys, colorData, hiddenLegendValues);
     const text = hoverTextKey ? data[hoverTextKey] : null;
@@ -289,10 +294,10 @@ function PrototypeDensity1D({
 
     const colorTraces =
       colorMap && colorData && !contColorData
-        ? [...new Set(Reflect.ownKeys(colorMap))].map((key) =>
+        ? [...colorMap.keys()].map((key) =>
             makeColorTrace(
-              colorMap[key],
-              (i) => colorMap[key] === colorMap[colorData[i]]
+              colorMap.get(key)!,
+              (i) => colorMap.get(key) === colorMap.get(colorData[i])
             )
           )
         : [];
@@ -302,7 +307,7 @@ function PrototypeDensity1D({
       ? {
           ...templateTrace,
           hoverlabel: {
-            bgcolor: colorData.map((key: string | symbol) => colorMap[key]),
+            bgcolor: colorData.map((key: LegendKey) => colorMap.get(key)),
           },
           marker: {
             size: pointSize,
@@ -359,7 +364,7 @@ function PrototypeDensity1D({
     const violinTraces = colorKeys
       .filter((key) => !hiddenLegendValues.has(key))
       .map((legendKey, index) => {
-        let fillcolor = colorMap[legendKey];
+        let fillcolor = colorMap.get(legendKey);
 
         if (useSemiOpaqueViolins) {
           fillcolor += "88";
@@ -414,14 +419,15 @@ function PrototypeDensity1D({
       ] as Partial<PlotData>[]).includes(plotlyData[n]);
     };
 
+    const collapseLeftMargin = violinTraces.length === 1;
+
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,
-      // margin: { t: 30, l: 30, r: 30 },
       margin: {
         t: 30,
-        r: 30,
+        r: 15,
         b: 50 + xAxisFontSize * 2.2,
-        l: 50 + yAxisFontSize * 2.2,
+        l: collapseLeftMargin ? 15 : 50 + yAxisFontSize * 2.2,
       },
       hovermode: "closest",
       hoverlabel: {
@@ -492,10 +498,14 @@ function PrototypeDensity1D({
               return selectedPoints
                 ? [
                     {
+                      x: 0.5,
+                      y: 0.95,
+                      xref: "paper",
+                      yref: "paper",
                       text: [
                         selectedPoints.size,
-                        "selected",
                         selectedPoints.size === 1 ? "point" : "points",
+                        "selected",
                       ].join(" "),
                       arrowcolor: "transparent",
                       bordercolor: "#c7c7c7",
@@ -684,7 +694,7 @@ function PrototypeDensity1D({
       const legendTraces = colorKeys
         .filter((key) => !hiddenLegendValues.has(key))
         .map((legendKey) => {
-          const fillcolor = colorMap[legendKey];
+          const fillcolor = colorMap.get(legendKey);
 
           return {
             type: "violin",
@@ -704,9 +714,8 @@ function PrototypeDensity1D({
           ...plot.layout,
           showlegend: true,
           legend: {
-            title: {
-              text: legendTitle,
-            },
+            title: { text: legendTitle },
+            font: { size: 14 },
           },
         },
       };
@@ -734,7 +743,7 @@ function PrototypeDensity1D({
 
     return () => {
       listeners.forEach(([eventName, callback]) =>
-        plot.removeListener(eventName, callback)
+        plot.removeListener?.(eventName, callback)
       );
     };
   }, [

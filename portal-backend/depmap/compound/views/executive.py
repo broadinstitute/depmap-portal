@@ -6,7 +6,6 @@ import matplotlib
 matplotlib.use(
     "svg", force=True
 )  # this line must come before this import, otherwise matplotlib complains about python not being installed as a framework
-import pandas as pd
 
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
@@ -16,16 +15,6 @@ from depmap.entity.views.executive import (
 )
 from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, CompoundTileEnum
-
-colors = {
-    DependencyEnum.GDSC1_AUC: color_palette.gdsc_color,
-    DependencyEnum.GDSC2_AUC: color_palette.gdsc_color,
-    DependencyEnum.CTRP_AUC: color_palette.ctrp_color,
-    DependencyEnum.Repurposing_secondary_AUC: color_palette.repurp_color,
-    DependencyEnum.Rep1M: color_palette.rep1m_color,
-    DependencyEnum.Rep_all_single_pt: color_palette.rep_all_single_pt_color,
-    DependencyEnum.Prism_oncology_AUC: color_palette.prism_oncology_color,
-}
 from depmap.correlation.utils import get_all_correlations
 
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
@@ -73,13 +62,16 @@ data_availability_datasets = [
         label="Repurposing single point",
         dose_range="2.5μM",
         assay="PRISM",
-        given_ids=["REPURPOSING_AUC_collapsed", DependencyEnum.Rep_all_single_pt.name],
+        given_ids=[DependencyEnum.Rep_all_single_pt.name],
     ),
     DataAvailabilityDataset(
         label="Repurposing multi-dose",
         dose_range="1nM - 10μM",
         assay="PRISM",
-        given_ids=[DependencyEnum.Repurposing_secondary_AUC.name],
+        given_ids=[
+            "REPURPOSING_AUC_collapsed",
+            DependencyEnum.Repurposing_secondary_AUC.name,
+        ],
     ),
     DataAvailabilityDataset(
         label="OncRef",
@@ -93,31 +85,16 @@ data_availability_datasets = [
 ]
 
 
-def format_dep_dist_caption(
-    compound_experiment_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]]
-):
-    # DEPRECATED: will be redesigned/replaced
-    if compound_experiment_and_datasets is None:
-        return None
-
+def format_dep_dist_warnings(dataset: MatrixDataset):
+    dataset_given_id = dataset.given_id if dataset.given_id else dataset.id
     s = ""
-    if any(
-        (
-            dataset.units == "log2(AUC)"
-            for _, dataset in compound_experiment_and_datasets
-        )
-    ):
+    if dataset.units == "log2(AUC)":
         s += "Please note that log2(AUC) values depend on the dose range of the screen and are not comparable across different assays. "
 
-    if any((dataset.units == "AUC" for _, dataset in compound_experiment_and_datasets)):
+    if dataset.units == "AUC":
         s += "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays."
 
-    if any(
-        (
-            dataset.name == DependencyEnum.CTRP_AUC
-            for _, dataset in compound_experiment_and_datasets
-        )
-    ):
+    if "CTRP_AUC" in dataset_given_id:
         s += " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1."
 
     if s != "":
@@ -130,7 +107,7 @@ def get_order(
     has_predictability: bool,
     has_heatmap: bool,
     show_enriched_lineages: bool,
-    show_compound_correlations: bool,
+    show_compound_correlation_tiles: bool,
 ):
     # hardcoded approximate heights of the different cards.  These values are used for sorting cards into columns such that column heights are as close as they can be
     tile_large = 650
@@ -141,14 +118,14 @@ def get_order(
 
     if show_enriched_lineages:
         header_cards[CompoundTileEnum.selectivity.value] = tile_large
-    header_cards[CompoundTileEnum.correlations.value] = tile_small
+    header_cards[CompoundTileEnum.correlated_expression.value] = tile_small
     header_cards[CompoundTileEnum.availability.value] = tile_small
 
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
         CompoundTileEnum.celfie.value: tile_large,
     }
-    if show_compound_correlations:
+    if show_compound_correlation_tiles:
         anywhere_cards[
             CompoundTileEnum.correlated_dependencies.value
         ] = tile_large  # TBD: Actually we want to group with CompoundTileEnum.correlations
@@ -206,35 +183,24 @@ def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
                 return ce_and_d
 
 
-def format_dep_dists(compound_experiment_and_datasets):
-    # DEPRECATED: will be redesigned/replaced
-    if compound_experiment_and_datasets is None:
-        return None
-    dep_dists = []
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        values = [
-            x
-            for x in dataset.matrix.get_values_by_entity(compound_experiment.entity_id)
-            if not isnan(x)  # needed for num_lines, and probably the plot
-        ]
-        color = colors[dataset.name]
+def format_dep_dist(compound: Compound, dataset: MatrixDataset):
+    df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset.id)
+    feature_data = df.loc[compound.label]
+    filtered_feature_data = [x for x in feature_data if not isnan(x)]
 
-        svg = format_generic_distribution_plot(values, color)
+    color = color_palette.compound_color
 
-        units = dataset.matrix.units
+    svg = format_generic_distribution_plot(filtered_feature_data, color)
 
-        dep_dists.append(
-            {
-                "svg": svg,
-                "title": "{} {}".format(
-                    compound_experiment.label, dataset.display_name
-                ),
-                "num_lines": len(values),
-                "units": units,
-                "color": color,
-            }
-        )
-    return dep_dists
+    units = dataset.units
+
+    return {
+        "svg": svg,
+        "title": "{} {}".format(compound.label, dataset.label),
+        "num_lines": len(filtered_feature_data),
+        "units": units,
+        "color": color,
+    }
 
 
 def format_enrichment_boxes(compound_experiment_and_datasets):
@@ -244,70 +210,13 @@ def format_enrichment_boxes(compound_experiment_and_datasets):
     for compound_experiment, dataset in compound_experiment_and_datasets:
         # compound dataset titles should not be colored
         enrichment_box = format_enrichment_box_for_dataset(
-            compound_experiment, dataset, colors[dataset.name], "default"
+            compound_experiment, dataset, color_palette.compound_color, "default"
         )
         enrichment_box["title"] = "{} {}".format(
             compound_experiment.label, dataset.display_name
         )
         enrichment_boxes.append(enrichment_box)
     return enrichment_boxes
-
-
-def format_top_corr_table(compound_experiment_and_datasets):
-    # DEPRECATED: will be replaced/redesigned
-    top_correlations = get_top_correlated_expression(compound_experiment_and_datasets)
-    table = []
-    for _, tc in top_correlations.items():
-        interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2",
-            xDataset=tc["compound_dataset"].values[0],
-            xFeature=tc["compound_label"].values[0],
-            yDataset="expression",
-            yFeature=tc["other_entity_label"].values[0],
-        )
-        gene_url = url_for(
-            "gene.view_gene", gene_symbol=tc["other_entity_label"].values[0]
-        )
-        table.append(
-            {
-                "interactive_url": interactive_url,
-                "gene_url": gene_url,
-                "correlation": tc["correlation"].values[0],
-                "gene_symbol": tc["other_entity_label"].values[0],
-            }
-        )
-    table = sorted(table, key=lambda x: abs(x["correlation"]), reverse=True)
-    return table[:5]
-
-
-def get_top_correlated_expression(compound_experiment_and_datasets):
-    """
-    This takes cues from format_codependencies in depmap/gene/views/executive.py and could be a candidate for a refactor
-    """
-    expression_dataset = BiomarkerDataset.get_dataset_by_name("expression")
-    if expression_dataset is None:
-        return {}
-    top_correlations = {}
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        if dataset is not None:
-            corr_df = get_all_correlations(
-                dataset.matrix_id,
-                compound_experiment.label,
-                max_per_other_dataset=100,
-                other_dataset_ids=[expression_dataset.dataset_id],
-            )
-            for gene in corr_df["other_entity_label"]:
-                curr_row = corr_df.loc[corr_df["other_entity_label"] == gene]
-                curr_row["compound_dataset"] = dataset.name.value
-                curr_row["compound_label"] = compound_experiment.label
-                try:
-                    prev_corr_val = abs(top_correlations[gene]["correlation"].values[0])
-                    curr_corr_val = abs(curr_row["correlation"].values[0])
-                    if curr_corr_val > prev_corr_val:
-                        top_correlations[gene] = curr_row
-                except KeyError:
-                    top_correlations[gene] = curr_row
-    return top_correlations
 
 
 def format_availability_tile(compound: Compound):

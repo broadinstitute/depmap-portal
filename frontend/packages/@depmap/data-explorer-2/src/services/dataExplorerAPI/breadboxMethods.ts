@@ -1,6 +1,4 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { isContextAll } from "../../utils/context";
-import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
 import {
   correlationMatrix,
   linregress,
@@ -9,16 +7,22 @@ import {
 } from "@depmap/statistics";
 import {
   DataExplorerContextV2,
+  DataExplorerContextVariable,
   DataExplorerDatasetDescriptor,
   DataExplorerFilters,
   DataExplorerMetadata,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
   DataExplorerPlotResponseDimension,
+  Dataset,
   FilterKey,
+  isValidSliceQuery,
   MatrixDataset,
   SliceQuery,
 } from "@depmap/types";
+import { isContextAll } from "../../utils/context";
+import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
+import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
 import { fetchDatasetIdentifiers } from "./identifiers";
 import { getDimensionDataWithoutLabels } from "./helpers";
 
@@ -75,21 +79,33 @@ async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
   return `${aggregation} ${units} of ${contextCount} ${context.name} ${entities}`;
 }
 
-async function fetchValueType(dimension?: DataExplorerPlotConfigDimension) {
-  if (!dimension || !isCompleteDimension(dimension)) {
+async function fetchValueType(
+  dimensionOrSliceQuery?: DataExplorerPlotConfigDimension | SliceQuery
+) {
+  if (
+    !dimensionOrSliceQuery ||
+    (!isCompleteDimension(dimensionOrSliceQuery) &&
+      !isValidSliceQuery(dimensionOrSliceQuery))
+  ) {
     return "continuous";
   }
 
-  const dataset = await cached(breadboxAPI).getDataset(dimension.dataset_id);
+  const { dataset_id } = dimensionOrSliceQuery;
+
+  const dataset = await cached(breadboxAPI).getDataset(dataset_id);
 
   if (!dataset) {
-    throw new Error(`Unknown dataset "${dimension.dataset_id}"`);
+    throw new Error(`Unknown dataset "${dataset_id}"`);
   }
 
   if (dataset.format !== "matrix_dataset") {
-    throw new Error(
-      "Dataset is not a matrix! This is not supported for plot dimensions."
-    );
+    if (isCompleteDimension(dimensionOrSliceQuery)) {
+      throw new Error(
+        "Dataset is not a matrix! This is not supported for plot dimensions."
+      );
+    }
+
+    return dataset.columns_metadata[dimensionOrSliceQuery.identifier].col_type;
   }
 
   return dataset.value_type;
@@ -109,12 +125,81 @@ async function fetchDatasetLabel(dataset_id?: string) {
   return dataset ? dataset.name : "(Unknown dataset)";
 }
 
+const isPrimaryMetatadata = (dataset?: Dataset) => {
+  if (dataset?.format !== "tabular_dataset") {
+    return false;
+  }
+
+  return dataset.given_id === `${dataset.index_type_name}_metadata`;
+};
+
+function contextVariablesAsMetadata(filters?: DataExplorerFilters) {
+  const colorMetadata = {} as DataExplorerMetadata;
+  const uniqueVars = new Set<string>();
+
+  for (const filter of Object.values(
+    filters || {}
+  ) as DataExplorerContextV2[]) {
+    Object.values(filter.vars).forEach((variable) => {
+      if (
+        variable.dataset_id === "depmap_model_metadata" &&
+        (variable.identifier === "OncotreeLineage" ||
+          variable.identifier === "OncotreePrimaryDisease")
+      ) {
+        return;
+      }
+
+      uniqueVars.add(JSON.stringify(variable));
+    });
+  }
+
+  [...uniqueVars].forEach((stringVar, i) => {
+    colorMetadata[`context_var_${i}`] = JSON.parse(stringVar);
+  });
+
+  return colorMetadata;
+}
+
+function getExtraMetadata(index_type: string, metadata?: DataExplorerMetadata) {
+  const extraMetadata = {} as DataExplorerMetadata;
+  // HACK: Always include this info about models so we can show it in hover
+  // tips. In the future, we should make it configurable what information is
+  // shown there.
+  if (index_type === "depmap_model") {
+    const color_property = metadata?.color_property as SliceQuery | undefined;
+
+    if (color_property?.identifier !== "OncotreePrimaryDisease") {
+      extraMetadata.extra1 = {
+        dataset_id: "depmap_model_metadata",
+        identifier_type: "column",
+        identifier: "OncotreePrimaryDisease",
+      };
+    }
+
+    if (color_property?.identifier !== "OncotreeLineage") {
+      extraMetadata.extra2 = {
+        dataset_id: "depmap_model_metadata",
+        identifier_type: "column",
+        identifier: "OncotreeLineage",
+      };
+    }
+  }
+
+  return extraMetadata;
+}
+
 export async function fetchPlotDimensions(
   index_type: string,
   dimensions: Record<string, DataExplorerPlotConfigDimension>,
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
+  const extendedMetadata = {
+    ...metadata,
+    ...contextVariablesAsMetadata(filters),
+    ...getExtraMetadata(index_type, metadata),
+  };
+
   // Pre-fetch data we know we'll need below. This only works because
   // postJson() caches the Promises. When we later repeat each fetch with an
   // `await`, we're actually awaiting an inflight promise, effectively making
@@ -132,7 +217,7 @@ export async function fetchPlotDimensions(
 
   // TODO: Recreate this hack when index_type === 'depmap_model'
   // https://github.com/broadinstitute/depmap-portal/blob/5099618/frontend/packages/portal-frontend/src/data-explorer-2/deprecated-api.ts#L412-L435
-  const metadataKeys = Object.keys(metadata || {});
+  const metadataKeys = Object.keys(extendedMetadata || {});
 
   // FIXME: We shouldn't be indexing things by label. We should use id instead.
   // This is just to get things working for now.
@@ -308,8 +393,9 @@ export async function fetchPlotDimensions(
     ...metadataKeys.map(async (key) => {
       const indexed_values: Record<string, string | null> = {};
 
-      const sliceQuery = metadata![key] as SliceQuery;
+      const sliceQuery = extendedMetadata![key] as SliceQuery;
       const data = await getDimensionDataWithoutLabels(sliceQuery);
+      let value_type = await fetchValueType(sliceQuery);
 
       // FIXME: Remove this when we convert everything to use IDs.
       const idToLabelMapping = await (() => {
@@ -320,7 +406,7 @@ export async function fetchPlotDimensions(
           );
       })();
 
-      const uniqueValues = new Set<string>();
+      const distinct = new Set<unknown>();
 
       for (let i = 0; i < data.values.length; i += 1) {
         const id = data.ids[i];
@@ -331,17 +417,34 @@ export async function fetchPlotDimensions(
         indexed_values[indexKey] = indexedValue;
 
         if (indexedValue) {
-          uniqueValues.add(indexedValue);
+          if (Array.isArray(indexedValue)) {
+            indexedValue.forEach((v) => distinct.add(v));
+          } else {
+            distinct.add(indexedValue);
+          }
         }
       }
 
-      if (uniqueValues.size > 100) {
-        window.console.error(metadata![key]);
+      if (
+        value_type !== "continuous" &&
+        key === "color_property" &&
+        distinct.size > MAX_PLOTTABLE_CATEGORIES
+      ) {
+        window.console.error(extendedMetadata![key]);
         throw new Error("Too many distinct categorical values to plot!");
+      }
+
+      const isBinaryish =
+        distinct.size <= 3 &&
+        [...distinct].every((n) => n === 0 || n === 1 || n === 2);
+
+      if (isBinaryish) {
+        value_type = "categorical";
       }
 
       return {
         property: "metadata",
+        value_type,
         indexed_values,
         key,
       };
@@ -363,9 +466,11 @@ export async function fetchPlotDimensions(
       index_display_labels,
       linreg_by_group: [],
       dimensions: {} as DataExplorerPlotResponse["dimensions"],
-      filters: {} as Record<string, unknown>,
-      metadata: {} as Record<string, unknown>,
+      filters: {} as DataExplorerPlotResponse["filters"],
+      metadata: {} as DataExplorerPlotResponse["metadata"],
     };
+
+    const datasets = await cached(breadboxAPI).getDatasets();
 
     const axisLabels = {
       x: await fetchAxisLabel(dimensions?.x),
@@ -397,33 +502,91 @@ export async function fetchPlotDimensions(
       };
 
       if (property === "dimensions") {
+        let value_type = valueTypes[key];
+        const values = out.index_labels.map((label) => {
+          return indexed_values[label] ?? null;
+        }) as number[];
+
+        if (key === "color") {
+          const distinct = new Set(values.filter((v) => v != null));
+
+          const isBinaryish =
+            distinct.size <= 3 &&
+            [...distinct].every((n) => n === 0 || n === 1 || n === 2);
+
+          if (isBinaryish) {
+            value_type = "categorical";
+          }
+        }
+
         out.dimensions[key as keyof DataExplorerPlotResponse["dimensions"]] = {
           slice_type: dimensions[key].slice_type,
           dataset_id: dimensions[key].dataset_id,
           axis_label: axisLabels[key],
           dataset_label: datasetLabels[key] as string,
-          value_type: valueTypes[key],
-          values: out.index_labels.map((label) => {
-            return indexed_values[label] ?? null;
-          }) as number[],
+          value_type,
+          values,
         };
       }
 
       if (property === "filters") {
-        out.filters[key] = {
+        const boolValues = (indexed_values as unknown) as Record<
+          string,
+          boolean
+        >;
+
+        out.filters[key as FilterKey] = {
           name: filters![key as FilterKey]!.name,
           values: out.index_labels.map((label) => {
-            return indexed_values[label] ?? false;
+            return boolValues[label] ?? false;
           }),
         };
       }
+
       if (property === "metadata") {
+        const sliceQuery = extendedMetadata![
+          key
+        ] as DataExplorerContextVariable;
+
+        const dataset = datasets.find((d) => {
+          return (
+            d.id === sliceQuery.dataset_id ||
+            d.given_id === sliceQuery.dataset_id
+          );
+        });
+
+        const units = dataset && "units" in dataset ? dataset.units : undefined;
+        const dataset_label =
+          dataset && !isPrimaryMetatadata(dataset) ? dataset.name : undefined;
+
+        const value_type = (response as any).value_type;
+        const values = out.index_labels.map((label) => {
+          return indexed_values[label] ?? null;
+        });
+
+        // HACK! I never imagined there would be continuous metadata. We'll
+        // fake it too like a color dimension instead.
+        if (key === "color_property" && value_type === "continuous") {
+          out.dimensions.color = ({
+            axis_label: sliceQuery.label || sliceQuery.identifier,
+            dataset_id: sliceQuery.dataset_id,
+            dataset_label,
+            slice_type: null,
+            values,
+            value_type,
+          } as unknown) as DataExplorerPlotResponseDimension;
+
+          return;
+        }
+
         out.metadata[key] = {
-          label: (metadata![key] as SliceQuery).identifier,
+          label: sliceQuery.label || sliceQuery.identifier,
           slice_id: "TODO: remove references to slice_id !",
-          values: out.index_labels.map((label) => {
-            return indexed_values[label] ?? null;
-          }),
+          sliceQuery,
+          value_type,
+          units,
+          dataset_label,
+          values,
         };
       }
     });

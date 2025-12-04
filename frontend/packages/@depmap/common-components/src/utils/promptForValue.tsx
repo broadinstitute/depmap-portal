@@ -66,6 +66,7 @@ function launchModal<T>(
       {(value, onChange, acceptText, setAcceptText) => (
         <Modal
           backdrop="static"
+          dialogClassName="stackableConfirmationModal"
           {...options.modalProps}
           show
           onHide={() => {
@@ -111,7 +112,11 @@ function launchModal<T>(
               </Button>
             )}
             <Button
-              disabled={value === null || value === undefined}
+              disabled={
+                value === null ||
+                value === undefined ||
+                value === options.defaultValue
+              }
               bsStyle="primary"
               onClick={() => {
                 resolve(value);

@@ -308,6 +308,10 @@ def load_predictive_model_csv(
             feature_label = row[f"feature{i}"]
             feature_importance = row[f"feature{i}_importance"]
 
+            if feature_label == "":
+                # may happen if there are fewer then 10 features
+                continue
+
             feature = PredictiveFeature.get(feature_label, must=False)
             assert (
                 feature is not None

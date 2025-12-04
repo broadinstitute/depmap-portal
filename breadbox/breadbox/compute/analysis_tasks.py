@@ -4,18 +4,25 @@ from typing import Any, List, Optional, Tuple, Union
 from uuid import uuid4
 import dataclasses
 import warnings
-
+from typing import cast, Sequence
 import pandas as pd
+from contextlib import contextmanager
 
-from depmap_compute import models
-from depmap_compute import analysis_tasks_interface
-from depmap_compute.analysis_tasks_interface import Feature
+from breadbox.depmap_compute_embed import models, FeaturesExtDataFrame
+from breadbox.depmap_compute_embed import analysis_tasks_interface
+import csv
+from io import StringIO, BytesIO
+import numpy as np
 
 from breadbox.db.session import SessionWithUser
 from breadbox.config import get_settings
 from breadbox.io.data_validation import validate_and_upload_dataset_files
 from breadbox.io.filestore_crud import get_slice
 from breadbox.utils.asserts import index_error_msg
+from breadbox.crud.dimension_ids import (
+    get_dataset_feature_by_given_id,
+    get_matrix_dataset_sample_df,
+)
 
 from breadbox.models.dataset import (
     Dataset,
@@ -29,6 +36,10 @@ from breadbox.schemas.dataset import MatrixDatasetIn
 from breadbox.service import metadata as metadata_service
 
 from ..crud.dimension_types import get_dimension_type
+from ..crud.dimension_ids import (
+    get_matrix_dataset_features_df,
+    get_dataset_feature_by_uuid,
+)
 from ..crud import dataset as dataset_crud
 from ..service import dataset as dataset_service
 from ..crud import group as group_crud
@@ -78,7 +89,7 @@ def get_feature_data_slice_values(
         "get_feature_data_slice_values is deprecated and should only be used by legacy Elara functionality."
     )
 
-    feature = dataset_crud.get_dataset_feature_by_uuid(
+    feature = get_dataset_feature_by_uuid(
         db, user, dataset=dataset, feature_uuid=dataset_feature_id
     )
     assert feature.index is not None, index_error_msg(feature)
@@ -87,46 +98,17 @@ def get_feature_data_slice_values(
     return data_slice
 
 
-def _filter_out_models_not_in_search_dataset(
-    feature_df: pd.DataFrame,
-    model_query_vector: List[str],
-    value_query_vector: Union[List[float], List[int]],
-) -> Tuple[List[str], List[float], pd.DataFrame]:
-    final_model_query_vector = []
-    final_value_query_vector = []
-    transposed_feature_df = feature_df.transpose()
-    for model in list(transposed_feature_df.columns.values):
-        if model in model_query_vector:
-            final_model_query_vector.append(model)
-            if model_query_vector.index(model) < len(value_query_vector):
-                final_value_query_vector.append(
-                    value_query_vector[model_query_vector.index(model)]
-                )
-        else:
-            transposed_feature_df.drop(model, axis=1, inplace=True)
-
-    return (
-        final_model_query_vector,
-        final_value_query_vector,
-        transposed_feature_df.transpose(),
-    )
-
-
-def _get_filtered_dataset_and_query_feature(
+def _get_filtered_query_feature(
+    db: SessionWithUser,
     analysis_type: str,
     dataset: Dataset,  # dataset we're searching
     query_series: Optional[pd.DataFrame],
-    filestore_location: str,
     depmap_model_ids: List[str],
     query_values: Optional[List[str]],
-    feature_indices: List[int],  # indices for the dataset we're searching
-) -> Tuple[List[str], Union[List[int], List[float]], pd.DataFrame]:
+):
 
-    # Get the dataframe of features for the dataset we're searching in
-    feature_df = get_slice(
-        dataset, feature_indices, None, filestore_location, keep_nans=True
-    )
-    dataset_sample_ids = feature_df.index
+    dataset_samples_df = get_matrix_dataset_sample_df(db, dataset, None)
+    dataset_sample_ids_set = set(dataset_samples_df.given_id)
 
     if analysis_type == models.AnalysisType.two_class:
         assert query_values is not None
@@ -147,11 +129,11 @@ def _get_filtered_dataset_and_query_feature(
             for i in range(len(query_values))
             if query_values[i] == "out"
         }
-        if len(in_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
+        if len(in_group_sample_ids.intersection(dataset_sample_ids_set)) == 0:
             raise UserError(
                 "No cell lines in common between in-group and dataset selected"
             )
-        if len(out_group_sample_ids.intersection(set(dataset_sample_ids))) == 0:
+        if len(out_group_sample_ids.intersection(dataset_sample_ids_set)) == 0:
             raise UserError(
                 "No cell lines in common between out-group and dataset selected"
             )
@@ -169,19 +151,16 @@ def _get_filtered_dataset_and_query_feature(
     else:
         raise ValueError(f"Unexpected analysis type {analysis_type}")
 
-    (
-        filtered_model_query_vector,
-        filtered_value_query_vector,
-        filtered_feature_df,
-    ) = _filter_out_models_not_in_search_dataset(
-        feature_df, model_query_vector, value_query_vector
-    )
+    query = pd.Series(value_query_vector, index=model_query_vector)
+    common_models = dataset_sample_ids_set.intersection(query.index)
+    common_models_series = dataset_samples_df.given_id[
+        dataset_samples_df.given_id.isin(cast(Sequence, common_models))
+    ]
+    assert isinstance(common_models_series, pd.Series)
+    common_models_series.sort_index(inplace=True)
+    query = query.loc[common_models_series.to_list()]
 
-    return (
-        filtered_model_query_vector,
-        filtered_value_query_vector,
-        filtered_feature_df,
-    )
+    return query, common_models_series.index, len(dataset_sample_ids_set)
 
 
 # returns a set of features and their indices in the same order such the features[i] corresponds to indices[i]
@@ -190,83 +169,151 @@ def get_features_info_and_dataset(
     user: str,
     dataset_id: str,
     feature_filter_labels: Optional[List[str]] = None,
-) -> Tuple[List[Feature], List[int], Dataset]:
+):
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
+
     if dataset is None:
         raise ResourceNotFoundError(f"Dataset '{dataset_id}' not found.")
-    dataset_features = dataset_crud.get_matrix_dataset_features(db, dataset)
 
-    result_features: List[Feature] = []
+    assert isinstance(dataset, MatrixDataset)
+
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
-        db, user, dataset
+        db, db.user, dataset
     )
-    feature_indices = []
 
-    for dataset_feat in dataset_features:
-        # Custom downloads has an option to filter by feature labels. This filtering takes place
-        # here if the feature_filter_labels list is not None.
-        label = feature_labels_by_id.get(dataset_feat.given_id)
-        has_label = label is not None
-        has_filter = feature_filter_labels is not None
-        if has_label and (
-            (has_filter and label in feature_filter_labels) or (not has_filter)
-        ):
-            # Feature.slice_id is converted to a string so that it can be used as
-            # vectorId in the custom analysis table.
-            slice_id = _format_breadbox_shim_slice_id(
-                dataset_feat.dataset_id, dataset_feat.given_id
-            )
-            result_feature = Feature(label=label, slice_id=slice_id)
-            result_features.append(result_feature)
-            assert dataset_feat.index is not None, index_error_msg(dataset_feat)
-            feature_indices.append(dataset_feat.index)
+    # filter by label if necessary (used by custom downloads)
+    filter_by_feature_given_ids = None
+    if feature_filter_labels is not None:
+        filter_by_feature_given_ids = set()
+        given_id_by_label = {
+            label: given_id for given_id, label in feature_labels_by_id.items()
+        }
+        for label in feature_filter_labels:
+            given_id = given_id_by_label.get(label)
+            if given_id is not None:
+                filter_by_feature_given_ids.add(given_id)
+
+    dataset_features_df = get_matrix_dataset_features_df(
+        db, dataset, filter_by_feature_given_ids
+    )
+
+    # drop any records which don't have a label (indicating the given_id is not registered as valid in the feature type)
+    dataset_features_df = dataset_features_df[
+        dataset_features_df.given_id.isin(feature_labels_by_id)
+    ]
+
+    # populate slice_id and label columns based on given_id
+    dataset_features_df["slice_id"] = [
+        _format_breadbox_shim_slice_id(dataset.id, given_id)
+        for given_id in dataset_features_df.given_id
+    ]
+
+    dataset_features_df["label"] = [
+        feature_labels_by_id[given_id] for given_id in dataset_features_df.given_id
+    ]
 
     # HDF5 indexing requires that when slicing out by index, the indices are sorted. I personally
     # would prefer to handle this inside of our code for reading from HDF5 so we don't have to worry
     # about that -- but we are addressing an issue at the moment and I want to mimize the impact of
     # changes right now. So, we'll sort feature_indices and reorder result_features to match
 
-    reordered_indices = sorted(
-        list(range(len(feature_indices))), key=lambda i: feature_indices[i]
-    )
-
-    result_features = [result_features[i] for i in reordered_indices]
-    feature_indices = [feature_indices[i] for i in reordered_indices]
-
-    assert sorted(feature_indices) == feature_indices
-
-    return result_features, feature_indices, dataset
+    assert isinstance(dataset_features_df, pd.DataFrame)
+    final_features_df = FeaturesExtDataFrame(dataset_features_df.sort_values(["index"]))
+    return final_features_df, dataset
 
 
-def _get_update_message_callback(task):
-    last_state_update = {
-        "start_time": time.time(),
-        "message": "Beginning calculations...",
-    }
+class UpdateMessageCallback:
+    def __init__(self, task):
+        self.task = task
+        self.last_state_update = {
+            "start_time": time.time(),
+            "message": "Beginning calculations...",
+        }
 
     def update_message(
-        message=None, start_time=None, max_time: int = 45, percent_complete=None
+        self, message=None, start_time=None, max_time: int = 45, percent_complete=None
     ):
         """
         :start_time: the presence of this is used to determine whether we show a progress presented
         :max_time: used to calculate to the end of a fake gloating bar
         """
         # remember the value used for the last update_message so that we don't have to pass all the parameters every time.
-        nonlocal last_state_update
 
         if message is not None:
-            last_state_update["message"] = message
+            self.last_state_update["message"] = message
         if start_time is not None:
-            last_state_update["start_time"] = start_time
-        last_state_update["max_time"] = max_time
-        last_state_update["percent_complete"] = percent_complete
+            self.last_state_update["start_time"] = start_time
+        self.last_state_update["max_time"] = max_time
+        self.last_state_update["percent_complete"] = percent_complete
 
-        if not task.request.called_directly:
-            task.update_state(
-                state="PROGRESS", meta=last_state_update,
+        if not self.task.request.called_directly:
+            self.task.update_state(
+                state="PROGRESS", meta=self.last_state_update,
             )
 
-    return update_message
+
+class CustomAnalysisCallbacksImpl:
+    def __init__(
+        self,
+        user,
+        dataset,
+        sample_matrix_indices: List[int],
+        filestore_location: str,
+        update_message_callback: UpdateMessageCallback,
+    ):
+        self.user = user
+        self.sample_matrix_indices = sample_matrix_indices
+        self.dataset = dataset
+        self.filestore_location = filestore_location
+        self.update_message_callback = update_message_callback
+
+    def update_message(
+        self, message=None, start_time=None, max_time: int = 45, percent_complete=None
+    ):
+        self.update_message_callback.update_message(
+            message=message,
+            start_time=start_time,
+            max_time=max_time,
+            percent_complete=percent_complete,
+        )
+
+    def create_cell_line_group(
+        self, model_ids: List[str], use_feature_ids: bool
+    ) -> str:
+        return create_cell_line_group(self.user, model_ids, use_feature_ids)
+
+    def get_dataset_df(self, feature_matrix_indices: List[int]) -> np.ndarray:
+        assert is_increasing(
+            feature_matrix_indices
+        ), "Feature matrix indices out of order"
+        assert is_increasing(
+            self.sample_matrix_indices
+        ), "Sample matrix indices out of order"
+        m = get_slice(
+            self.dataset,
+            feature_matrix_indices,
+            self.sample_matrix_indices,
+            self.filestore_location,
+            keep_nans=True,
+        )
+        m_values = m.values
+        assert m_values.dtype == np.dtype("float64")
+        return m_values
+
+
+def is_increasing(values: Sequence):
+    prev = None
+    for value in values:
+        if prev is not None:
+            if prev >= value:
+                return False
+        prev = value
+    return True
+
+
+@contextmanager
+def no_op_ctx():
+    yield
 
 
 @app.task(base=LogErrorsTask, bind=True)
@@ -287,20 +334,19 @@ def run_custom_analysis(
     depmap_model_ids: List[str] = [],
     query_values: Optional[List[Any]] = None,
 ):
+
+    update_message_callback = UpdateMessageCallback(self)
+
     if self.request.called_directly:
         task_id = "called_directly"
     else:
         task_id = self.request.id
 
-    update_message = _get_update_message_callback(self)
-    update_message("Fetching data")
+    update_message_callback.update_message("Fetching data")
 
     with db_context(user) as db:
-
         # All features and feature_indices for the dataset we're searching in
-        features, feature_indices, dataset = get_features_info_and_dataset(
-            db, user, dataset_id
-        )
+        features_df, dataset = get_features_info_and_dataset(db, user, dataset_id)
         if not isinstance(dataset, MatrixDataset):
             raise UserError(
                 f"Expected a matrix dataset. Unable to run custom analysis for tabular dataset: '{dataset_id}' "
@@ -319,7 +365,7 @@ def run_custom_analysis(
         ):
             if query_feature_id and query_dataset_id:
                 # The query_feature_id is a given ID
-                feature = dataset_crud.get_dataset_feature_by_given_id(
+                feature = get_dataset_feature_by_given_id(
                     db, query_dataset_id, query_feature_id
                 )
                 assert feature.index is not None, index_error_msg(feature)
@@ -337,22 +383,22 @@ def run_custom_analysis(
                 ).to_frame()
 
         (
-            filtered_cell_line_list,
-            filtered_query_values_list,
-            dataset_df,
-        ) = _get_filtered_dataset_and_query_feature(
-            analysis_type,
-            dataset,
-            query_series,
-            filestore_location,
-            depmap_model_ids,
-            query_values,
-            feature_indices,
+            filtered_query,
+            sample_matrix_indices,
+            dataset_sample_count,
+        ) = _get_filtered_query_feature(
+            db, analysis_type, dataset, query_series, depmap_model_ids, query_values,
         )
-        if len(filtered_cell_line_list) == 0:
+        if len(filtered_query) == 0:
             raise UserError(
                 "No cell lines in common between query and dataset searched"
             )
+
+        filtered_query_values_list = filtered_query.to_list()
+        filtered_cell_line_list = filtered_query.index.to_list()
+        features_per_batch = (
+            10 * 1024 ** 2 // (dataset_sample_count * 8)
+        )  # aim for 10MB per batch
 
         parameters = dict(
             datasetId=dataset_id,
@@ -366,33 +412,33 @@ def run_custom_analysis(
             ),
         )
 
-        def wrapped_create_cell_line_group(*args, **kwargs):
-            # this exists so we can add `user` as a parameter
-            return create_cell_line_group(user, *args, **kwargs)
+        callbacks = CustomAnalysisCallbacksImpl(
+            user,
+            dataset,
+            sample_matrix_indices.to_list(),
+            filestore_location,
+            update_message_callback,
+        )
 
         result = analysis_tasks_interface.run_custom_analysis(
             task_id,
-            update_message,
             analysis_type=analysis_type,
             depmap_model_ids=filtered_cell_line_list,
             value_query_vector=filtered_query_values_list,
-            features=features,
+            features_df=features_df,
             feature_type=feature_type_name,
-            dataset=dataset_df.to_numpy().transpose(),
             vector_is_dependent=vector_is_dependent,
             parameters=parameters,
             result_dir=results_dir,
-            create_cell_line_group=wrapped_create_cell_line_group,
+            callbacks=callbacks,
             use_feature_ids=True,
+            features_per_batch=features_per_batch,
         )
 
         return result
 
 
-def _create_csv_file(feature_ids=[], sample_ids=["ACH-1", "ACH-2"], values=[]):
-    import csv
-    from io import StringIO, BytesIO
-    import numpy as np
+def _create_csv_file(feature_ids, sample_ids, values):
 
     buf = StringIO()
     w = csv.writer(buf)

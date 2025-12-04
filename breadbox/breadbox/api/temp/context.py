@@ -1,5 +1,5 @@
 from typing import Annotated
-
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 from fastapi import Body, Depends, HTTPException
 
 from breadbox.api.dependencies import get_db_with_user
@@ -13,7 +13,7 @@ from breadbox.schemas.context import (
 )
 from breadbox.service import slice as slice_service
 
-from depmap_compute.context import ContextEvaluator
+from breadbox.depmap_compute_embed.context import ContextEvaluator
 
 from .router import router
 
@@ -42,9 +42,7 @@ def evaluate_context(
     context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
 
     # Load all dimension labels and ids
-    all_labels_by_id = types_crud.get_dimension_type_labels_by_id(
-        db, context.dimension_type
-    )
+    all_labels_by_id = get_dimension_type_labels_by_id(db, context.dimension_type)
 
     # Evaluate each against the context
     matching_ids = []

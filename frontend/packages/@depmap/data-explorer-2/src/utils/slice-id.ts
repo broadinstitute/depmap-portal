@@ -22,7 +22,13 @@ export function legacyPortalIdToBreadboxGivenId(legacyId: string) {
       return "REPURPOSING_AUC_collapsed";
 
     default:
-      return legacyId.replace("breadbox/", "");
+      return (
+        legacyId
+          // "breadbox/" prefix is no longer relevant
+          .replace("breadbox/", "")
+          // replace any special characters with dashes (as is our convention)
+          .replace(/[^A-Za-z0-9_-]/g, "-")
+      );
   }
 }
 
@@ -44,7 +50,7 @@ export function sliceIdToSliceQuery(
       dataset_id: legacyPortalIdToBreadboxGivenId(dataset_id),
       identifier,
       identifier_type:
-        labelType === "transpose_label" ? "sample_label" : "feature_label",
+        labelType === "transpose_label" ? "sample_id" : "feature_label",
     } as SliceQuery;
   }
 
@@ -129,18 +135,25 @@ export function sliceIdToSliceQuery(
         identifier: "GrowthPattern",
       };
 
+    case "Context_Matrix":
+      return {
+        dataset_id: wellKnownDatasets.subtype_matrix,
+        identifier_type: "feature_label",
+        identifier,
+      };
+
     case "mutations_prioritized":
       return {
         dataset_id: wellKnownDatasets.mutations_prioritized,
-        identifier,
         identifier_type: "feature_label",
+        identifier,
       };
 
     case "mutation_protein_change_by_gene":
       return {
         dataset_id: wellKnownDatasets.mutation_protein_change,
-        identifier,
         identifier_type: "feature_label",
+        identifier,
       };
 
     case "msi-0584.6/msi":
@@ -164,8 +177,12 @@ export function sliceIdToSliceQuery(
         identifier: "selectivity",
       };
 
-    // TODO: Spport these special cases
-    // case "prism-pools-4441.2/coded_prism_pools":
+    case "prism-pools-4441.2/coded_prism_pools":
+      return {
+        dataset_id: wellKnownDatasets.legacy_prism_pools,
+        identifier_type: "feature_label",
+        identifier,
+      };
 
     default:
       if (identifier === "all") {

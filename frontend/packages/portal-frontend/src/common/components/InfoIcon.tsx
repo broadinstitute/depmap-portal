@@ -1,11 +1,14 @@
-import * as React from "react";
+import React, { useRef } from "react";
 import { OverlayTrigger, Popover } from "react-bootstrap";
 import { toStaticUrl } from "@depmap/globals";
 
 export type TriggerType = "click" | "hover" | "focus";
 
 interface Props {
-  popoverContent: React.ReactNode;
+  popoverContent:
+    | React.ReactNode
+    // Provide a function that returns a ReactNode to get access to a dismiss callback
+    | ((dismiss: () => void) => React.ReactNode);
   popoverId: string;
   target?: React.ReactNode;
   popoverTitle?: string;
@@ -36,13 +39,29 @@ const InfoIcon = ({
   placement = "right",
   className = "",
 }: Props) => {
+  const overlayRef = useRef<{
+    show: () => void;
+    hide: () => void;
+    toggle: () => void;
+  }>(null);
+
+  const forceClose = () => {
+    if (overlayRef.current) {
+      overlayRef.current.hide();
+    }
+  };
+
   const popover = (
     <Popover id={popoverId} title={popoverTitle} className={className}>
-      {popoverContent}
+      {typeof popoverContent === "function"
+        ? popoverContent(forceClose)
+        : popoverContent}
     </Popover>
   );
+
   return (
     <OverlayTrigger
+      ref={(overlayRef as unknown) as React.LegacyRef<OverlayTrigger>}
       trigger={trigger}
       placement={placement}
       overlay={popover}

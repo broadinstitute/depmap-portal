@@ -1,0 +1,14 @@
+// We use css to hide Plotly's toolbar (instead of configuring it not to have
+// one) so we can still dispatch clicks on its buttons (the only way to trigger
+// a zoom).
+.VolcanoPlot :global .modebar {
+  display: none;
+}
+
+// Ensure the plot container has an explicit height so Plotly can calculate
+// the correct drawing area. Without an explicit height, Plotly may measure
+// incorrectly and render outside of its parent when the layout changes.
+.VolcanoPlot {
+  width: 100%;
+  height: 390px;
+}

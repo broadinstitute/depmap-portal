@@ -11,6 +11,10 @@ export function getDimensionTypes() {
 }
 
 export function getDimensionType(name: string) {
+  if (!name) {
+    throw new Error("Must supply a dimension type name!");
+  }
+
   return getJson<DimensionType>(uri`/types/dimensions/${name}`);
 }
 

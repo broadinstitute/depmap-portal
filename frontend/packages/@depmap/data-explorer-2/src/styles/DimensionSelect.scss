@@ -32,7 +32,6 @@
 }
 
 .disabledOption {
-  display: inline-flex;
   cursor: not-allowed;
 }
 
@@ -112,7 +111,7 @@
   margin-left: 15px;
   padding: 0 20px;
   min-height: 300px;
-  height: 369px;
+  max-height: calc(100vh - 208px);
   overflow: auto;
 }
 
@@ -121,30 +120,13 @@
   justify-content: center;
   align-items: center;
   width: 100%;
+  min-height: 300px;
   font-size: 20px;
   font-weight: 300;
 
   :global .glyphicon {
     font-size: 24px;
     margin-right: 5px;
-  }
-}
-
-.detailsButton {
-  all: unset;
-  cursor: pointer;
-  color: #337ab7;
-  cursor: pointer;
-  margin-left: 50px;
-
-  &:hover,
-  &:focus {
-    color: #23527c;
-  }
-
-  &:focus-visible {
-    outline: 5px auto -webkit-focus-ring-color;
-    outline-offset: 3px;
   }
 }
 

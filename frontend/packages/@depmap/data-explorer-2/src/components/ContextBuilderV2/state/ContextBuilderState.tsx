@@ -21,7 +21,7 @@ import simplifyVarNames from "../utils/simplifyVarNames";
 import useInitializer from "./useInitializer";
 import expressionReducer, { ExprReducerAction } from "./expressionReducer";
 
-const DEFAULT_EMPTY_EXPR = { and: [{ "==": [null, null] }] };
+export const DEFAULT_EMPTY_EXPR = { and: [{ "==": [null, null] }] };
 
 const ContextBuilderState = createContext({
   name: "",
@@ -42,6 +42,7 @@ const ContextBuilderState = createContext({
   onClickSave: () => {},
   shouldShowValidation: false,
   isInitializing: false,
+  initializationError: false,
   isEmptyExpression: false,
   showTableView: false,
   setShowTableView: (() => {}) as React.Dispatch<React.SetStateAction<boolean>>,
@@ -52,6 +53,9 @@ const ContextBuilderState = createContext({
   uniqueVariableSlices: [] as SliceQuery[],
   isReadyToSave: false,
   setIsReadyToSave: (() => {}) as React.Dispatch<React.SetStateAction<boolean>>,
+  replaceExprWithSimpleList: (() => {}) as (ids: string[]) => void,
+  isManualSelectMode: false,
+  undoManualSelectionMode: (() => {}) as () => void,
 });
 
 export const useContextBuilderState = () => {
@@ -89,7 +93,12 @@ export const ContextBuilderStateProvider = ({
     []
   );
 
-  const isInitializing = useInitializer(
+  const {
+    isInitializing,
+    initializationError,
+    metadataDataset,
+    metadataIdColumn,
+  } = useInitializer(
     mainExpr,
     contextToEdit.dimension_type!,
     vars,
@@ -149,22 +158,36 @@ export const ContextBuilderStateProvider = ({
     return false;
   }, [mainExpr]);
 
-  const lastValidExpressionRef = useRef<Expr | null>(null);
+  const lastValidExpressionRef = useRef<Expr>(DEFAULT_EMPTY_EXPR);
+  const lastValidVars = useRef<typeof vars>({});
 
   useEffect(() => {
     if (isCompleteExpression(mainExpr)) {
       lastValidExpressionRef.current = mainExpr;
+    } else if (mainExpr?.and?.length === 0 || mainExpr?.or?.length === 0) {
+      lastValidExpressionRef.current = DEFAULT_EMPTY_EXPR;
     }
   }, [mainExpr]);
+
+  useEffect(() => {
+    if (
+      Object.keys(vars).length > 0 &&
+      Object.keys(vars).every((varName) => fullySpecifiedVars.has(varName))
+    ) {
+      lastValidVars.current = vars;
+    }
+  }, [vars, fullySpecifiedVars]);
 
   const [showTableView, setShowTableView] = useState(false);
   const [tableOnlySlices, setTableOnlySlices] = useState<SliceQuery[]>([]);
 
+  // When switching to table view, thow out any incomplete rules.
   useEffect(() => {
     if (
       showTableView &&
       !isCompleteExpression(mainExpr) &&
-      lastValidExpressionRef.current
+      lastValidExpressionRef.current &&
+      lastValidVars.current
     ) {
       dispatch({
         type: "update-value",
@@ -173,6 +196,8 @@ export const ContextBuilderStateProvider = ({
           value: lastValidExpressionRef.current as Expr,
         },
       });
+
+      setVars(lastValidVars.current);
     }
   }, [mainExpr, showTableView]);
 
@@ -191,6 +216,85 @@ export const ContextBuilderStateProvider = ({
 
   const [isReadyToSave, setIsReadyToSave] = useState(false);
 
+  const manualModeRestorePoint = useRef({
+    expr: null as Expr | null,
+    prevVars: null as typeof vars | null,
+    prevTableOnlySlices: tableOnlySlices,
+  });
+
+  const replaceExprWithSimpleList = useCallback(
+    (ids: string[]) => {
+      // Create a single manual list if one does not already exists...
+      if (
+        !("list" in vars) ||
+        Object.keys(vars).length > 1 ||
+        vars.list.identifier !== metadataIdColumn
+      ) {
+        setTableOnlySlices((prev) => {
+          manualModeRestorePoint.current = {
+            expr: lastValidExpressionRef.current,
+            prevVars: lastValidVars.current,
+            prevTableOnlySlices: prev,
+          };
+
+          const combined = new Set([...prev, ...uniqueVariableSlices]);
+          return [...combined];
+        });
+
+        dispatch({
+          type: "update-value",
+          payload: {
+            path: [],
+            value: { and: [{ in: [{ var: "list" }, ids] }] },
+          },
+        });
+
+        setVars({
+          list: {
+            dataset_id: metadataDataset!.given_id || metadataDataset!.id,
+            identifier_type: "column",
+            identifier: metadataIdColumn,
+            source: "property",
+          },
+        });
+        // ...otherwise update it
+      } else {
+        dispatch({
+          type: "update-value",
+          payload: {
+            path: ["and", 0, "in", 1],
+            value: ids,
+          },
+        });
+      }
+    },
+    [metadataDataset, metadataIdColumn, setVars, uniqueVariableSlices, vars]
+  );
+
+  const isManualSelectMode =
+    "list" in vars &&
+    Object.keys(vars).length === 1 &&
+    vars.list.identifier === metadataIdColumn &&
+    Boolean(
+      manualModeRestorePoint.current.expr &&
+        manualModeRestorePoint.current.expr !== DEFAULT_EMPTY_EXPR
+    );
+
+  const undoManualSelectionMode = useCallback(() => {
+    const {
+      expr,
+      prevVars,
+      prevTableOnlySlices,
+    } = manualModeRestorePoint.current;
+
+    if (expr && prevVars) {
+      dispatch({ type: "update-value", payload: { path: [], value: expr } });
+      setVars(prevVars);
+    }
+
+    setTableOnlySlices(prevTableOnlySlices);
+  }, []);
+
   return (
     <ContextBuilderState.Provider
       value={{
@@ -205,6 +309,7 @@ export const ContextBuilderStateProvider = ({
         shouldShowValidation,
         onClickSave,
         isInitializing,
+        initializationError,
         isEmptyExpression,
         showTableView,
         setShowTableView,
@@ -213,6 +318,9 @@ export const ContextBuilderStateProvider = ({
         uniqueVariableSlices,
         isReadyToSave,
         setIsReadyToSave,
+        replaceExprWithSimpleList,
+        isManualSelectMode,
+        undoManualSelectionMode,
         dimension_type: contextToEdit.dimension_type as string,
       }}
     >

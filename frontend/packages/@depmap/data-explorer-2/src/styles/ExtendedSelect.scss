@@ -12,17 +12,52 @@
   }
 }
 
+.WrappedSelect {
+  display: inline-block;
+  width: 162px;
+  font-size: 12px;
+
+  &.withSwatch {
+    & > div {
+      border-radius: 0 4px 4px 0;
+    }
+  }
+}
+
 .selectorLabel {
   text-align: start;
   font-size: 12px;
 
-  label {
-    margin-right: 6px;
+  &:not(.inlineLabel) {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
   }
 
   &.inlineLabel {
     font-size: 13px;
+    margin-right: 6px;
     display: inline-block;
+  }
+}
+
+.detailsButtonContainer {
+  button {
+    all: unset;
+    cursor: pointer;
+    color: #337ab7;
+    cursor: pointer;
+    font-weight: bold;
+
+    &:hover,
+    &:focus {
+      color: #23527c;
+    }
+
+    &:focus-visible {
+      outline: 5px auto -webkit-focus-ring-color;
+      outline-offset: 3px;
+    }
   }
 }
 
@@ -40,18 +75,6 @@
   border: 1px solid #ccc;
   border-right: none;
   border-radius: 4px 0 0 4px;
-}
-
-.Select {
-  display: inline-block;
-  width: 162px;
-  font-size: 12px;
-
-  &.withSwatch {
-    & > div {
-      border-radius: 0 4px 4px 0;
-    }
-  }
 }
 
 .ContentEditableDivInput {

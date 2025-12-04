@@ -1,8 +1,12 @@
 import WideTable from "@depmap/wide-table";
 import React, { useMemo } from "react";
 import { SortedCorrelations } from "../models/CorrelationPlot";
+import PlotSpinner from "src/plot/components/PlotSpinner";
+import styles from "../styles/CorrelationAnalysis.scss";
 
 interface CorrelationsTableProps {
+  isLoading: boolean;
+  hasError: boolean;
   data: SortedCorrelations[];
   selectedRows: Set<string>;
   onChangeSelections: (selections: any[]) => void;
@@ -10,7 +14,14 @@ interface CorrelationsTableProps {
 }
 
 export default function CorrelationsTable(props: CorrelationsTableProps) {
-  const { data, selectedRows, onChangeSelections, compound } = props;
+  const {
+    data,
+    selectedRows,
+    onChangeSelections,
+    compound,
+    isLoading,
+    hasError,
+  } = props;
 
   // round numerical data to 4 digits in table
   const tableData = useMemo(() => {
@@ -23,25 +34,90 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
     });
   }, [data]);
 
-  return (
-    <div>
-      <WideTable
-        columns={[
-          { accessor: "feature", Header: "Feature" },
-          { accessor: "featureDataset", Header: "Correlated Dataset" },
-          { accessor: "dose", Header: `${compound} Dose` },
-          { accessor: "correlation", Header: "Correlation" },
-          { accessor: "log10qvalue", Header: "log10(q value)" },
-          { accessor: "rank", Header: "Rank" },
-        ]}
-        data={tableData}
-        rowHeight={40}
-        allowDownloadFromTableData
-        idProp="id"
-        onChangeSelections={onChangeSelections}
-        selectedTableLabels={selectedRows}
-        hideSelectAllCheckbox
+  const renderFilterPlaceholder = ({
+    column: { filterValue, setFilter },
+  }: any) => {
+    return (
+      <input
+        type="text"
+        placeholder={`Search...`}
+        value={filterValue || ""}
+        onChange={(event) => setFilter(event.target.value || undefined)}
+        style={{ width: "90%", fontSize: "12px" }}
       />
-    </div>
-  );
+    );
+  };
+  let tableContent;
+  if (hasError) {
+    tableContent = (
+      <div className={styles.errorMessage}>Error loading table data.</div>
+    );
+  } else if (isLoading) {
+    tableContent = (
+      <div className={styles.tableSpinnerContainer}>
+        <PlotSpinner />
+      </div>
+    );
+  } else {
+    tableContent = (
+      <div>
+        <WideTable
+          columns={[
+            {
+              accessor: "feature",
+              maxWidth: 200,
+              minWidth: 150,
+              Header: "Feature",
+              customFilter: renderFilterPlaceholder,
+            },
+            {
+              accessor: "featureDataset",
+              maxWidth: 200,
+              minWidth: 150,
+              Header: "Correlated Dataset",
+              customFilter: renderFilterPlaceholder,
+            },
+            {
+              accessor: "dose",
+              maxWidth: 200,
+              minWidth: 150,
+              Header: `${compound} Dose`,
+              customFilter: renderFilterPlaceholder,
+            },
+            {
+              accessor: "correlation",
+              maxWidth: 200,
+              minWidth: 150,
+              Header: "Correlation",
+              customFilter: renderFilterPlaceholder,
+            },
+            {
+              accessor: "log10qvalue",
+              maxWidth: 200,
+              minWidth: 150,
+              Header: "log10(q value)",
+              customFilter: renderFilterPlaceholder,
+            },
+            {
+              accessor: "rank",
+              maxWidth: 200,
+              minWidth: 150,
+              Header: "Rank",
+              customFilter: renderFilterPlaceholder,
+            },
+          ]}
+          data={tableData}
+          rowHeight={28}
+          fixedHeight={500}
+          idProp="id"
+          onChangeSelections={onChangeSelections}
+          selectedTableLabels={selectedRows}
+          hideSelectAllCheckbox
+          allowDownloadFromTableDataWithMenu
+        />
+      </div>
+    );
+  }
+
+  return <>{tableContent}</>;
 }

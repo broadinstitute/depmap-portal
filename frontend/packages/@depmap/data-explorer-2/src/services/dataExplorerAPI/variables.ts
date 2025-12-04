@@ -1,6 +1,7 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { AnnotationType, DataExplorerContextVariable } from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
+import wellKnownDatasets from "../../constants/wellKnownDatasets";
 import { getDimensionDataWithoutLabels } from "./helpers";
 
 export async function fetchVariableDomain(
@@ -68,6 +69,8 @@ export async function fetchVariableDomain(
   if (value_type === "continuous") {
     let min = Infinity;
     let max = -Infinity;
+    let isAllIntegers = true;
+    const distinct = new Set<number>();
 
     for (let i = 0; i < data.values.length; i += 1) {
       const value = data.values[i];
@@ -80,10 +83,33 @@ export async function fetchVariableDomain(
         if (value > max) {
           max = value;
         }
+
+        // eslint-disable-next-line no-bitwise
+        if (value !== (value | 0)) {
+          isAllIntegers = false;
+        }
+
+        distinct.add(value);
       }
     }
 
-    return Promise.resolve({ min, max, value_type });
+    const isBinary =
+      distinct.size <= 2 && [...distinct].every((n) => n === 0 || n === 1);
+
+    const isBinaryish =
+      distinct.size === 3 &&
+      distinct.has(0) &&
+      distinct.has(1) &&
+      distinct.has(2);
+
+    return Promise.resolve({
+      min,
+      max,
+      isBinary,
+      isBinaryish,
+      isAllIntegers,
+      value_type,
+    });
   }
 
   if (value_type === "list_strings") {
@@ -97,8 +123,30 @@ export async function fetchVariableDomain(
       }
     }
 
+    const unique_values = [...stringValues];
+
+    // HACK: Special case for this one dataset which Katie wants sorted by
+    // frequency.
+    if (dataset_id === wellKnownDatasets.mutation_protein_change) {
+      const freq: Record<string, number> = {};
+
+      for (let i = 0; i < data.values.length; i += 1) {
+        const value = data.values[i];
+
+        ((value || []) as string[]).forEach((s) => {
+          if (s) {
+            freq[s] = (freq[s] || 0) + 1;
+          }
+        });
+      }
+
+      unique_values.sort((a, b) => freq[b] - freq[a]);
+    } else {
+      unique_values.sort(compareCaseInsensitive);
+    }
+
     return Promise.resolve({
-      unique_values: [...stringValues].sort(compareCaseInsensitive),
+      unique_values,
       value_type,
     });
   }

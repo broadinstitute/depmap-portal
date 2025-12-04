@@ -129,6 +129,7 @@
 }
 
 .singleExprMatches {
+  margin-left: 8px;
   margin-bottom: 8px;
   font-variant-numeric: tabular-nums;
 }
@@ -157,14 +158,6 @@
   }
 }
 
-.spacerWidth300 {
-  width: 300px;
-}
-
-.spacerWidth400 {
-  width: 400px;
-}
-
 .Operator {
   margin-top: 22px;
   max-width: 108px;
@@ -188,11 +181,39 @@
   }
 }
 
+.detailsButton {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+
+  &:hover,
+  &:focus {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
+
+.unblockable {
+  display: block !important;
+}
+
 .NumberInput {
+  & > div {
+    display: flex;
+    justify-content: space-between;
+  }
+
   input {
-    width: 160px;
+    width: 162px;
     height: 38px;
-    margin-top: 2px;
+    margin-top: 5px;
 
     &.invalidNumber {
       border: 1px solid #a94442;
@@ -210,6 +231,40 @@
 
 .ListSelect {
   min-width: 452px;
+  margin-top: -3px;
+
+  & > div:first-of-type {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  label {
+    font-size: 12px;
+  }
+}
+
+.LongListWrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 162px;
+
+  & > div {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  label {
+    font-size: 12px;
+    margin-bottom: 5px;
+  }
+
+  .showAllValuesButton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    height: 38px;
+  }
 }
 
 .invalidSelect {
@@ -227,6 +282,25 @@
 .ContextBuilderTableView {
   height: calc(100vh - 273px);
   min-height: 300px;
+
+  .spinner > div {
+    top: 50%;
+    margin: 0;
+  }
+
+  .manualSelectionControls {
+    color: #444;
+
+    body:has(div[id="confirmation-modal-container"]) & {
+      display: none;
+    }
+
+    button {
+      margin-left: 5px;
+      font-size: 12px;
+      padding-top: 5px;
+    }
+  }
 
   .customTableControls {
     display: flex;

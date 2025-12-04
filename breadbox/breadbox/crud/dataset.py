@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 from uuid import UUID, uuid4
-import warnings
 
 import pandas as pd
 from sqlalchemy import and_, func, or_, select, true
@@ -22,9 +21,6 @@ from ..schemas.custom_http_exception import (
     DatasetAccessError,
     ResourceNotFoundError,
     UserError,
-    DatasetNotFoundError,
-    FeatureNotFoundError,
-    SampleNotFoundError,
 )
 from breadbox.crud.access_control import user_has_access_to_group
 from breadbox.models.dataset import (
@@ -64,7 +60,10 @@ def get_dataset_filter_clauses(db, user):
     groups = get_groups_with_visible_contents(db, user)  # TODO: update
     group_ids = [group.id for group in groups]
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
+
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
 
@@ -99,7 +98,9 @@ def get_datasets(
     # Include columns for MatrixDataset, TabularDataset
     dataset_poly = with_polymorphic(Dataset, [MatrixDataset, TabularDataset])
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
 
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == False)
@@ -434,210 +435,6 @@ def get_dataset_dimension_search_index_entries(
     return group_entries
 
 
-def get_dataset_feature_dimensions(db: SessionWithUser, user: str, dataset_id: str):
-    dataset = get_dataset(db, user, dataset_id)
-
-    assert_user_has_access_to_dataset(dataset, user)
-
-    dimensions = (
-        db.query(Dimension)
-        .filter(
-            and_(Dimension.dataset_id == dataset_id, DimensionType.axis == "feature")
-        )
-        .order_by(Dimension.id)
-        .all()
-    )
-
-    return dimensions
-
-
-def get_matrix_dataset_features(
-    db: SessionWithUser, dataset: MatrixDataset
-) -> list[DatasetFeature]:
-    assert_user_has_access_to_dataset(dataset, db.user)
-
-    dataset_features = (
-        db.query(DatasetFeature)
-        .filter(DatasetFeature.dataset_id == dataset.id)
-        .order_by(DatasetFeature.given_id)
-        .all()
-    )
-
-    return dataset_features
-
-
-def get_matrix_dataset_samples(
-    db: SessionWithUser, dataset: MatrixDataset
-) -> list[DatasetSample]:
-    assert_user_has_access_to_dataset(dataset, db.user)
-
-    dataset_samples = (
-        db.query(DatasetSample)
-        .filter(DatasetSample.dataset_id == dataset.id)
-        .order_by(DatasetSample.given_id)
-        .all()
-    )
-
-    return dataset_samples
-
-
-def get_matrix_dataset_given_ids(
-    db: SessionWithUser, dataset: Dataset, axis: str
-) -> List[str]:
-    assert_user_has_access_to_dataset(dataset, db.user)
-
-    if axis == "feature":
-        dimension_class = DatasetFeature
-    elif axis == "sample":
-        dimension_class = DatasetSample
-    else:
-        raise ValueError(f"Invalid axis: {axis}")
-
-    given_ids = (
-        db.query(dimension_class.given_id)
-        .filter(dimension_class.dataset_id == dataset.id)
-        .order_by(dimension_class.given_id)
-        .all()
-    )
-
-    return [given_id for (given_id,) in given_ids]
-
-
-def get_tabular_dataset_index_given_ids(
-    db: SessionWithUser, dataset: TabularDataset
-) -> list[str]:
-    """
-    Get all row given IDs belonging to a tabular dataset.
-    This can be used for joining the metadata that's relevant for this particular dataset.
-    Warning: this may contain given IDs that do not exist in the metadata.
-    """
-    dimension_type = (
-        db.query(DimensionType).filter_by(name=dataset.index_type_name).one_or_none()
-    )
-    assert dimension_type is not None
-
-    id_col_name = dimension_type.id_column
-    cells_in_id_column = (
-        db.query(TabularCell)
-        .join(TabularColumn)
-        .filter(
-            and_(
-                TabularColumn.dataset_id == dataset.id,
-                TabularColumn.given_id == id_col_name,
-            )
-        )
-        .all()
-    )
-    return [cell.dimension_given_id for cell in cells_in_id_column]
-
-
-def get_matching_feature_metadata_labels(
-    db: SessionWithUser, feature_labels: List[str]
-) -> set[str]:
-    """
-    DEPRECATED: this method should be removed when the old data_slicer functionality is replaced.
-    Return the subset of the given list which matches any feature metadata label
-    Use case-insensitive matching, but return a list of properly-cased labels.
-    """
-    lowercase_input_labels = [label.lower() for label in feature_labels]
-
-    # Get all matching labels that exist in feature metadata
-    matching_label_results = (
-        db.query(DimensionType)
-        .join(TabularDataset, DimensionType.dataset)
-        .join(TabularColumn, TabularDataset.dimensions)
-        .join(TabularCell, TabularColumn.tabular_cells)
-        .filter(
-            DimensionType.axis == "feature",
-            TabularColumn.given_id == "label",
-            func.lower(TabularCell.value).in_(lowercase_input_labels),
-        )
-        .with_entities(TabularCell.value)
-        .all()
-    )
-
-    return {label for (label,) in matching_label_results}
-
-
-def _get_indexes_by_given_id(
-    db: SessionWithUser,
-    user: str,
-    dataset: Dataset,
-    axis: Type[Union[DatasetFeature, DatasetSample]],
-    given_ids: List[str],
-) -> Tuple[List[int], List[str]]:
-    assert_user_has_access_to_dataset(dataset, user)
-
-    unique_given_ids = set(given_ids)
-    assert len(given_ids) == len(unique_given_ids), "Duplicate IDs present"
-
-    results = (
-        db.query(axis)
-        .filter(and_(axis.dataset_id == dataset.id, axis.given_id.in_(given_ids),))
-        .with_entities(axis.given_id, axis.index)
-        .order_by(axis.index)
-        .all()
-    )
-
-    # Convert SQLAlchemy Row objects to a dict, filtering out None indices
-    given_id_to_index = {}
-    for row in results:
-        given_id, index = row
-        if index is not None:
-            given_id_to_index[given_id] = index
-
-    return (
-        list(given_id_to_index.values()),
-        list(unique_given_ids.difference(given_id_to_index.keys())),
-    )
-
-
-def get_feature_indexes_by_given_ids(
-    db: SessionWithUser, user: str, dataset: Dataset, given_ids: List[str]
-):
-    return _get_indexes_by_given_id(db, user, dataset, DatasetFeature, given_ids)
-
-
-def get_dataset_feature_by_uuid(
-    db: SessionWithUser, user: str, dataset: Dataset, feature_uuid: str
-) -> DatasetFeature:
-    warnings.warn(
-        "get_dataset_feature_by_uuid is deprecated and should only be used by legacy Elara functionality."
-    )
-    assert_user_has_access_to_dataset(dataset, user)
-
-    feature = (
-        db.query(DatasetFeature).filter(DatasetFeature.id == feature_uuid).one_or_none()
-    )
-    if feature is None:
-        raise ResourceNotFoundError(
-            f"Feature id '{feature_uuid}' not found in dataset '{dataset.id}' features."
-        )
-    assert feature.dataset_id == dataset.id
-
-    return feature
-
-
-def get_all_sample_indexes(
-    db: SessionWithUser, user: str, dataset: Dataset
-) -> List[int]:
-    assert_user_has_access_to_dataset(dataset, user)
-
-    return [
-        index
-        for (index,) in db.query(DatasetSample.index)
-        .filter(DatasetSample.dataset_id == dataset.id)
-        .order_by(DatasetSample.index)
-        .all()
-    ]
-
-
-def get_sample_indexes_by_given_ids(
-    db: SessionWithUser, user: str, dataset: Dataset, given_ids: List[str]
-):
-    return _get_indexes_by_given_id(db, user, dataset, DatasetSample, given_ids)
-
-
 def get_dataset_data_type_priorities(db: SessionWithUser):
     data_type_tuples = (
         db.query(Dataset)
@@ -712,56 +509,6 @@ def delete_dataset(
 
     log.info("delete_dataset %s complete", dataset.id)
     return True
-
-
-def get_dataset_feature_by_given_id(
-    db: SessionWithUser, dataset_id: str, feature_given_id: str,
-) -> DatasetFeature:
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    feature = (
-        db.query(DatasetFeature)
-        .filter(
-            DatasetFeature.given_id == feature_given_id,
-            DatasetFeature.dataset_id == dataset.id,
-        )
-        .one_or_none()
-    )
-
-    if feature is None:
-        raise FeatureNotFoundError(
-            f"Feature given ID '{feature_given_id}' not found in dataset '{dataset_id}'."
-        )
-    return feature
-
-
-def get_dataset_sample_by_given_id(
-    db: SessionWithUser, dataset_id: str, sample_given_id: str,
-) -> DatasetSample:
-    dataset = get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found.")
-    assert_user_has_access_to_dataset(dataset, db.user)
-    assert isinstance(dataset, MatrixDataset)
-
-    sample = (
-        db.query(DatasetSample)
-        .filter(
-            DatasetSample.given_id == sample_given_id,
-            DatasetSample.dataset_id == dataset.id,
-        )
-        .one_or_none()
-    )
-
-    if sample is None:
-        raise SampleNotFoundError(
-            f"Sample given ID '{sample_given_id}' not found in dataset '{dataset_id}'."
-        )
-    return sample
 
 
 def get_subset_of_tabular_data_as_df(

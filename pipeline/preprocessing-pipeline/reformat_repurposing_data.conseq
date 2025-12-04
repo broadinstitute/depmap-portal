@@ -7,6 +7,7 @@ rule reformat_repurposing_single_pt_data:
         "label": "{{ inputs.data.label }}",
         "confounders_label": "repallsinglept-confounders",
         "filename": {"$filename": "{{inputs.data.label}}.hdf5" },
-        "orig_dataset_id": "{{inputs.data.dataset_id}}"
+        "orig_dataset_id": "{{inputs.data.dataset_id}}",
+        "units": "{{inputs.data.units}}"
     }
     run "python3 {{ inputs.script.filename }} {{ inputs.data.dataset_id }} {{inputs.data.label}}.hdf5"

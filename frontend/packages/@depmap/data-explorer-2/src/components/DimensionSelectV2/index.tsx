@@ -13,6 +13,9 @@ export interface Props {
   /** optionally add a classname to the container div */
   className?: string;
 
+  /** optionally to all the react-select components */
+  selectClassName?: string;
+
   /**
    * Controls whether you can select a single sample/feature, a context, or
    * either one.
@@ -77,6 +80,7 @@ function DimensionSelectV2({
   value,
   onChange,
   className = undefined,
+  selectClassName = undefined,
   mode = "entity-or-context",
   allowTextValueType = false,
   allowCategoricalValueType = false,
@@ -140,6 +144,7 @@ function DimensionSelectV2({
       mode={mode}
       state={state}
       className={className}
+      selectClassName={selectClassName}
       index_type={index_type}
       isModalVersion={false}
       removeWrapperDiv={removeWrapperDiv}

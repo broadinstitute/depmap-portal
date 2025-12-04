@@ -9,11 +9,18 @@ import styles from "../../../../../../styles/ContextBuilderV2.scss";
 interface Props {
   expr: number | null;
   path: (string | number)[];
-  domain: { min: number; max: number } | null;
+  domain: { min: number; max: number; isAllIntegers: boolean } | null;
   isLoading: boolean;
+  onClickShowSlicePreview: () => void;
 }
 
-function NumberInput({ expr, path, domain, isLoading }: Props) {
+function NumberInput({
+  expr,
+  path,
+  domain,
+  isLoading,
+  onClickShowSlicePreview,
+}: Props) {
   const [value, setValue] = useState<number | null>(expr);
   const { dispatch, shouldShowValidation } = useContextBuilderState();
 
@@ -21,7 +28,7 @@ function NumberInput({ expr, path, domain, isLoading }: Props) {
 
   const min = domain ? domain.min : -Infinity;
   const max = domain ? domain.max : Infinity;
-  const step = ceil(max - min) / 100;
+  const step = domain?.isAllIntegers ? 1 : ceil(max - min) / 100;
   const pathAsString = JSON.stringify(path);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -40,7 +47,16 @@ function NumberInput({ expr, path, domain, isLoading }: Props) {
 
   return (
     <div className={styles.NumberInput}>
-      <label htmlFor={`number-input-${path}`}>Value</label>
+      <div>
+        <label htmlFor={`number-input-${path}`}>Value</label>
+        <button
+          type="button"
+          className={styles.detailsButton}
+          onClick={onClickShowSlicePreview}
+        >
+          see plot
+        </button>
+      </div>
       <FormControl
         className={cx({
           [styles.invalidNumber]:

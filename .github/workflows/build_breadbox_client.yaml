@@ -1,0 +1,60 @@
+---
+name: Build breadbox client
+
+on:
+  push:
+    paths:
+      - "breadbox/**"
+      - "breadbox-client/**"
+      - ".github/workflows/build_breadbox_client.yaml"
+
+env:
+  ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox
+  DOCKER_TAG: ga2-build-${{ github.run_number }}
+
+jobs:
+  build-breadbox-client:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Check out"
+        uses: actions/checkout@v3
+        with:
+          token: "${{ secrets.GITHUB_TOKEN }}"
+          fetch-depth: 0
+
+      - name: Prepare breadbox client
+        uses: ./.github/actions/prepare-breadbox-client # checks out and generates breadbox client code
+
+      - name: "Authenticate to Google Cloud"
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.DEPMAP_ARTIFACTS_SVC_ACCT }}"
+
+      - name: "Set up authentication for publishing breadbox client"
+        working-directory: "./breadbox-client"
+        run: |
+          poetry self add keyrings.google-artifactregistry-auth
+          poetry config repositories.public-python https://us-central1-python.pkg.dev/cds-artifacts/public-python/
+        shell: bash
+
+      - name: "Install breadbox and dependencies"
+        working-directory: ./breadbox
+        run: "poetry install"
+
+      - name: "Install breadbox_client and dependencies"
+        working-directory: ./breadbox-client
+        run: "poetry install"
+
+      - name: Running pyright
+        working-directory: ./breadbox-client
+        run: "poetry run pyright breadbox_facade"
+
+      - name: Running pytest
+        working-directory: ./breadbox-client
+        run: "poetry run pytest"
+
+      - name: Bump version and publish
+        working-directory: ./breadbox-client
+        run: "python bump_version_and_publish.py --dry-run-if-not-branch master"

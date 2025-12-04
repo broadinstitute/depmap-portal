@@ -25,6 +25,7 @@ import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
+import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -38,7 +39,15 @@ const CorrelatedDependenciesTile = React.lazy(
   () =>
     import(
       /* webpackChunkName: "CorrelatedDependenciesTile" */
-      "./compound/tiles/CorrelatedDependenciesTile/CorrelatedDependenciesTile"
+      "./compound/tiles/CorrelatedTiles/CorrelatedDependenciesTile"
+    )
+);
+
+const CorrelatedExpressionTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "CorrelatedExpressionTile" */
+      "./compound/tiles/CorrelatedTiles/CorrelatedExpressionTile"
     )
 );
 
@@ -285,13 +294,50 @@ export function initHeatmapTile(
   );
 }
 
-export function initCorrelatedDependenciesTile(
+export async function initCorrelatedExpressionTile(
   elementId: string,
-  entityLabel: string
-) {
+  compoundName: string,
+  compoundID: string
+): Promise<void> {
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelatedDependenciesTile entityLabel={entityLabel} />
+      <CorrelatedExpressionTile
+        entityLabel={compoundName}
+        datasetID={highestPriorityGivenId!}
+        associationDatasetId={"expression"}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export async function initCorrelatedDependenciesTile(
+  elementId: string,
+  compoundName: string,
+  compoundID: string
+): Promise<void> {
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return;
+  }
+
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelatedDependenciesTile
+        entityLabel={compoundName}
+        datasetID={highestPriorityGivenId!}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -309,20 +355,29 @@ export function initStructureAndDetailTile(
   );
 }
 
-export function initRelatedCompoundsTile(
+export async function initRelatedCompoundsTile(
   elementId: string,
-  entityLabel: string
-) {
+  entityLabel: string,
+  compoundID: string
+): Promise<void> {
   const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
     Chronos_Combined: "CRISPR",
     RNAi_merged: "RNAi",
   };
 
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <RelatedCompoundsTile
         entityLabel={entityLabel}
-        datasetId="Prism_oncology_AUC_collapsed"
+        datasetId={highestPriorityGivenId}
         datasetToDataTypeMap={datasetToDataTypeMap}
       />
     </React.Suspense>,
@@ -367,11 +422,17 @@ export function initDoseResponseTab(
 
 export function initCorrelationAnalysisTab(
   elementId: string,
-  compoundName: string
+  compoundName: string,
+  compoundId: string,
+  datasetOptions: Array<any>
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelationAnalysis compound={compoundName} />
+      <CorrelationAnalysis
+        datasetOptions={datasetOptions}
+        compoundName={compoundName}
+        compoundId={compoundId}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

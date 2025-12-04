@@ -69,19 +69,15 @@ function DataVersionSelect({
       value={isLoading ? null : normalizedValue}
       options={options}
       onChange={onChange}
-      label={
-        <span>
-          Data Version
-          {onClickShowModal && (
-            <button
-              type="button"
-              className={styles.detailsButton}
-              onClick={onClickShowModal}
-            >
-              details
-            </button>
-          )}
-        </span>
+      label="Data Version"
+      renderDetailsButton={
+        onClickShowModal
+          ? () => (
+              <button type="button" onClick={onClickShowModal}>
+                details
+              </button>
+            )
+          : undefined
       }
       placeholder={(() => {
         if (isLoading) {

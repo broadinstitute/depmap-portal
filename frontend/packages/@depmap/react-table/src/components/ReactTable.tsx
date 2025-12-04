@@ -1,4 +1,5 @@
 import React from "react";
+import cx from "classnames";
 import type {
   RowData,
   ColumnDef,
@@ -15,6 +16,9 @@ type TableProps<TData extends RowData> = {
   // built-in functionality that can sort `undefined` values last but no
   // equivalent functionality for nulls.
   data: TData[];
+
+  // Adds a custom class to the container <div>.
+  className?: string;
   // Set the height in pixels, or allow the table to grow to 100% of its parent
   // height. Useful when the parent container already has a height defined,
   // e.g., inside:
@@ -51,6 +55,7 @@ type TableProps<TData extends RowData> = {
 function ReactTable<TData extends RowData>({
   columns,
   data,
+  className = undefined,
   height = 400,
   enableRowSelection = false,
   enableMultiRowSelection = true,
@@ -98,7 +103,7 @@ function ReactTable<TData extends RowData>({
   );
 
   return (
-    <div ref={containerRef} className={styles.tableContainer}>
+    <div ref={containerRef} className={cx(styles.tableContainer, className)}>
       <div ref={headerScrollRef} className={styles.headerScrollContainer}>
         <table className={styles.table} style={{ width: tableWidth }}>
           <TableHeader table={table} stickyColumnsInfo={stickyColumnsInfo} />

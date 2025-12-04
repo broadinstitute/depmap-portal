@@ -12,6 +12,7 @@ import type {
   PlotSelectionEvent,
 } from "plotly.js";
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
+import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
   calcAnnotationPositions,
   calcAutoscaleShapes,
@@ -32,7 +33,10 @@ import styles from "../../../styles/ScatterPlot.scss";
 
 type Data = Record<string, any>;
 
-const MAX_POINTS_TO_ANNOTATE = 50;
+const truncate = (s: string) => {
+  const MAX = 25;
+  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
+};
 
 interface LegendInfo {
   title: string;
@@ -61,7 +65,7 @@ interface Props {
   categoricalColorKey?: string;
   continuousColorKey?: string;
   contLegendKeys?: LegendKey[] | null;
-  colorMap?: Record<string | symbol, string>;
+  colorMap: Map<LegendKey, string>;
   selectedPoints?: Set<number>;
   // Special case. Set to false to avoid outlining the VERY densely packed Waterfall plot points.
   outlineUnselectedPoints?: boolean;
@@ -215,6 +219,11 @@ function PrototypeScatterPlot({
       onLoad(ref.current);
     }
   }, [onLoad]);
+
+  useEffect(() => {
+    const plot = ref.current;
+    return () => Plotly.purge(plot as HTMLElement);
+  }, [Plotly]);
 
   // When the columns or underlying data change, we force an autoscale by
   // discarding the stored axes.
@@ -385,16 +394,22 @@ function PrototypeScatterPlot({
 
       categoricalColorTraces =
         catCardinality < 75
-          ? Object.keys(colorMap)
+          ? [...colorMap.keys()]
               .sort(byValueCountOf(catColorValueCounts))
               .map((key) =>
-                makeColorTrace(colorMap[key], (i) => key === catColorData[i])
+                makeColorTrace(
+                  colorMap.get(key)!,
+                  (i) => key === catColorData[i]
+                )
               )
           : // WORKAROUND: If there's a large number of categories,
             // make a trace for each color instead. This is worse
             // for the stacking order but better for performance.
-            [...new Set(Object.values(colorMap))].map((color) =>
-              makeColorTrace(color, (i) => color === colorMap[catColorData[i]])
+            [...new Set(colorMap.values())].map((color) =>
+              makeColorTrace(
+                color!,
+                (i) => color === colorMap.get(catColorData[i])
+              )
             );
     }
 
@@ -418,7 +433,7 @@ function PrototypeScatterPlot({
       const sortedAnnotationText: string[] = [];
       const remappedSelectedPoints: number[] = [];
 
-      const sortedBins = Reflect.ownKeys(colorMap || {})
+      const sortedBins = [...colorMap.keys()]
         .sort(byValueCountOf(contColorValueCounts))
         .reverse();
 
@@ -450,7 +465,7 @@ function PrototypeScatterPlot({
           sortedX.push(templateTrace.x[origIndex]);
           sortedY.push(templateTrace.y[origIndex]);
           sortedColor.push(contColorData[origIndex]);
-          hoverColor.push(colorMap![contLegendKeys[origIndex]]);
+          hoverColor.push(colorMap.get(contLegendKeys[origIndex])!);
           sortedText.push(text[origIndex]);
           sortedAnnotationText.push(annotationText[origIndex]);
           if (selectedPoints?.has(origIndex)) {
@@ -837,10 +852,14 @@ function PrototypeScatterPlot({
           // prevents a rare bug where these dummy traces interfere with the
           // real ones and some points don't get rendered.
           type: "indicator",
-          name,
+          name: truncate(name),
           x: [null], // Data doesn't matter but can't be completely empty
           y: [null],
-          marker: { ...templateTrace.marker, color: hexColor },
+          marker: {
+            ...templateTrace.marker,
+            color: hexColor,
+            line: { color: hexColor, width: 2 },
+          },
         };
       });
 
@@ -857,9 +876,8 @@ function PrototypeScatterPlot({
           ),
           showlegend: true,
           legend: {
-            title: {
-              text: legendForDownload.title,
-            },
+            title: { text: legendForDownload.title },
+            font: { size: 14 },
           },
         },
       };
@@ -888,7 +906,7 @@ function PrototypeScatterPlot({
 
     return () => {
       listeners.forEach(([eventName, callback]) =>
-        plot.removeListener(eventName, callback)
+        plot.removeListener?.(eventName, callback)
       );
     };
   }, [

@@ -2,7 +2,7 @@ import os
 import numpy as np
 from typing import List, Optional
 
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.associations import (
     Associations,
@@ -17,7 +17,7 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.service import slice as slice_service
 import logging
-from breadbox.crud.dimension_types import get_dimension_type_labels_by_id
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 
 import packed_cor_tables
 

@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 
 from breadbox.db.session import SessionWithUser
-from breadbox.crud.dataset import (
-    get_dataset,
+from breadbox.crud.dimension_ids import (
     get_dataset_feature_by_given_id,
     get_tabular_dataset_index_given_ids,
+)
+from breadbox.crud.dataset import (
+    get_dataset,
     get_datasets,
     get_unique_dimension_ids_from_datasets,
 )
@@ -225,9 +227,14 @@ def test_get_datasets_by_dimension_types(minimal_db, settings):
         minimal_db, minimal_db.user, sample_type="depmap_model"
     )
 
-    assert len(datasets_with_sample_type) == 3
+    depmap_model_metadata = get_dataset(
+        minimal_db, minimal_db.user, "depmap_model_metadata"
+    )
+    assert depmap_model_metadata
+    assert len(datasets_with_sample_type) == 4
     for dataset in datasets_with_sample_type:
         assert dataset.id in [
+            depmap_model_metadata.id,
             matrix_dataset_1.id,
             matrix_dataset_2.id,
             tabular_dataset_with_sample_type.id,

@@ -189,16 +189,30 @@ export function findCategoricalSlice(data: DataExplorerPlotResponse | null) {
 
   const colorDim = data.dimensions?.color;
 
-  if (colorDim && colorDim.value_type === "categorical") {
+  if (colorDim && ["text", "categorical"].includes(colorDim.value_type)) {
     return {
       label: colorDim.axis_label,
       dataset_id: colorDim.dataset_id,
-      values: colorDim.values,
+      values: colorDim.values.map((v) => v?.toString() || null),
       value_type: colorDim.value_type,
     };
   }
 
-  return data?.metadata?.color_property || null;
+  const color_property = data?.metadata?.color_property;
+
+  if (
+    color_property &&
+    ["text", "categorical"].includes(color_property.value_type)
+  ) {
+    return {
+      label: color_property.label,
+      dataset_id: color_property.sliceQuery?.dataset_id,
+      values: color_property.values.map((v) => v?.toString() || null),
+      value_type: color_property.value_type,
+    };
+  }
+
+  return null;
 }
 
 export function findContinuousColorSlice(
@@ -209,8 +223,20 @@ export function findContinuousColorSlice(
   if (colorDim?.value_type === "continuous") {
     return {
       label: colorDim.axis_label,
+      dataset_id: colorDim.dataset_id,
       values: colorDim.values,
       value_type: colorDim.value_type,
+    };
+  }
+
+  const color_property = data?.metadata?.color_property;
+
+  if (color_property?.value_type === "continuous") {
+    return {
+      label: color_property.label,
+      dataset_id: color_property.sliceQuery?.dataset_id,
+      values: color_property.values as number[],
+      value_type: color_property.value_type,
     };
   }
 
@@ -296,9 +322,12 @@ export function formatDataForScatterPlot(
       }
 
       if (contValues && contValues[i] !== null) {
+        const truncate = (s: string) =>
+          s.length > 30 ? s.slice(0, 30) + "…" : s;
+
         colorInfo.push(
           [
-            `<b>${data.dimensions.color!.axis_label}</b>`,
+            `<b>${truncate(contSlice!.label)}</b>`,
             round(contValues[i] as number),
           ].join(": ")
         );
@@ -315,11 +344,19 @@ export function formatDataForScatterPlot(
           : [`<b>${formattedLabel}</b>`, ...colorInfo];
 
       Object.keys(data.metadata || {}).forEach((key) => {
-        const { label: hoverLabel, values, value_type } = data.metadata[key]!;
+        let { label: hoverLabel } = data.metadata[key]!;
+        const { values, value_type, dataset_label } = data.metadata[key]!;
+
+        if (dataset_label) {
+          hoverLabel += " " + dataset_label;
+        }
+
+        hoverLabel =
+          hoverLabel.length > 25 ? `${hoverLabel.substr(0, 25)}…` : hoverLabel;
 
         const nullValueLabel =
           value_type === "categorical" ? "<b>N/A</b>" : "Other";
-        let val = values[i] != null ? values[i].toString() : nullValueLabel;
+        let val = values[i] != null ? values[i]!.toString() : nullValueLabel;
         val = val.length > 40 ? `${val.substr(0, 40)}…` : val;
 
         formattedLines.push(`${hoverLabel}: ${val}`);
@@ -717,8 +754,11 @@ export function getLegendKeysWithNoData(data: any, continuousBins: any) {
 
     for (let i = 0; i < catData.values.length; i += 1) {
       const category = catData.values[i];
-      counts[category] = counts[category] || 0;
-      counts[category] += visible.values[i] ? 1 : 0;
+
+      if (category) {
+        counts[category] = counts[category] || 0;
+        counts[category] += visible.values[i] ? 1 : 0;
+      }
     }
 
     Object.keys(counts).forEach((category) => {
@@ -730,7 +770,7 @@ export function getLegendKeysWithNoData(data: any, continuousBins: any) {
     return unusedKeys as Set<LegendKey>;
   }
 
-  const contData = data?.dimensions?.color;
+  const contData = findContinuousColorSlice(data);
 
   if (!contData || !continuousBins) {
     return null;
@@ -929,11 +969,12 @@ function makeCategoricalColorMap(
   metadata: DataExplorerMetadata | null,
   palette: DataExplorerColorPalette
 ) {
+  const out: Map<LegendKey, string> = new Map();
+
   if (!values) {
-    return null;
+    return out;
   }
 
-  const out: Partial<Record<LegendKey, string>> = {};
   const visible = filters?.visible?.values || Array(values.length).fill(true);
   const counts = categoricalDataToValueCounts(values, visible);
 
@@ -963,10 +1004,12 @@ function makeCategoricalColorMap(
     };
 
     keys.forEach((key) => {
-      out[key] =
+      out.set(
+        key,
         key in fixedColors
           ? fixedColors[key as keyof typeof fixedColors]
-          : palette.other;
+          : palette.other
+      );
     });
   } else {
     const colors =
@@ -975,12 +1018,12 @@ function makeCategoricalColorMap(
         : palette.qualitativeMany;
 
     keys.forEach((key, i) => {
-      out[key] = colors[i % colors.length];
+      out.set(key, colors[i % colors.length]);
     });
   }
 
   if (hasPlottableNulls(values, dimensions, visible)) {
-    out[LEGEND_OTHER] = palette.other;
+    out.set(LEGEND_OTHER, palette.other);
   }
 
   return out;
@@ -991,20 +1034,12 @@ export function getColorMap(
   plotConfig: any,
   palette: DataExplorerColorPalette,
   sortedLegendKeys?: any
-) {
-  if (!data) {
-    return {
-      [LEGEND_ALL]: palette.all,
-    };
+): Map<LegendKey, string> {
+  if (!data || data.dimensions?.color?.values?.length === 0) {
+    return new Map([[LEGEND_ALL, palette.all]]);
   }
 
-  if (data.dimensions?.color?.values?.length === 0) {
-    return {
-      [LEGEND_ALL]: palette.all,
-    };
-  }
-
-  let colorMap: Partial<Record<LegendKey, string>> = {};
+  let colorMap: Map<LegendKey, string> = new Map();
 
   const catSlice = findCategoricalSlice(data);
   const contSlice = findContinuousColorSlice(data);
@@ -1016,22 +1051,23 @@ export function getColorMap(
       data.filters,
       data.metadata,
       palette
-    ) as any;
+    );
   }
 
   if (contSlice) {
-    colorMap = {
-      [LEGEND_RANGE_1]: palette.sequentialScale[0][1],
-      [LEGEND_RANGE_2]: palette.sequentialScale[1][1],
-      [LEGEND_RANGE_3]: palette.sequentialScale[2][1],
-      [LEGEND_RANGE_4]: palette.sequentialScale[3][1],
-      [LEGEND_RANGE_5]: palette.sequentialScale[4][1],
-      [LEGEND_RANGE_6]: palette.sequentialScale[5][1],
-      [LEGEND_RANGE_7]: palette.sequentialScale[6][1],
-      [LEGEND_RANGE_8]: palette.sequentialScale[7][1],
-      [LEGEND_RANGE_9]: palette.sequentialScale[8][1],
-      [LEGEND_RANGE_10]: palette.sequentialScale[9][1],
-    };
+    const entries = [
+      [LEGEND_RANGE_1, palette.sequentialScale[0][1]],
+      [LEGEND_RANGE_2, palette.sequentialScale[1][1]],
+      [LEGEND_RANGE_3, palette.sequentialScale[2][1]],
+      [LEGEND_RANGE_4, palette.sequentialScale[3][1]],
+      [LEGEND_RANGE_5, palette.sequentialScale[4][1]],
+      [LEGEND_RANGE_6, palette.sequentialScale[5][1]],
+      [LEGEND_RANGE_7, palette.sequentialScale[6][1]],
+      [LEGEND_RANGE_8, palette.sequentialScale[7][1]],
+      [LEGEND_RANGE_9, palette.sequentialScale[8][1]],
+      [LEGEND_RANGE_10, palette.sequentialScale[9][1]],
+    ] as [LegendKey, string][];
+    colorMap = new Map(entries);
   }
 
   if (data.filters?.color1) {
@@ -1042,7 +1078,7 @@ export function getColorMap(
       )
     ) {
       const { name } = data.filters.color1;
-      colorMap[name] = palette.compare1;
+      colorMap.set(name, palette.compare1);
     }
   }
 
@@ -1054,7 +1090,7 @@ export function getColorMap(
       )
     ) {
       const { name } = data.filters.color2;
-      colorMap[name] = palette.compare2;
+      colorMap.set(name, palette.compare2);
     }
   }
 
@@ -1066,7 +1102,7 @@ export function getColorMap(
       data.filters.color2.values
     )
   ) {
-    colorMap[LEGEND_BOTH] = palette.compareBoth;
+    colorMap.set(LEGEND_BOTH, palette.compareBoth);
   }
 
   if (data.filters?.color1 || data.filters?.color2) {
@@ -1077,29 +1113,29 @@ export function getColorMap(
         data.dimensions
       )
     ) {
-      colorMap[LEGEND_OTHER] = palette.other;
+      colorMap.set(LEGEND_OTHER, palette.other);
     }
   }
 
   if (
-    contSlice &&
+    data.dimensions.color &&
     hasSomeNullValuesUniqueToDimension(data.dimensions, "color")
   ) {
-    colorMap[LEGEND_OTHER] = palette.other;
+    colorMap.set(LEGEND_OTHER, palette.other);
   }
 
-  if (Reflect.ownKeys(colorMap).length === 0) {
-    colorMap[LEGEND_ALL] = palette.all;
+  if (colorMap.size === 0) {
+    colorMap.set(LEGEND_ALL, palette.all);
   }
 
   if (sortedLegendKeys) {
-    const sortedColorMap: any = {};
+    const sortedColorMap: typeof colorMap = new Map();
 
     sortedLegendKeys.forEach((key: LegendKey) => {
-      sortedColorMap[key] = colorMap[key];
+      sortedColorMap.set(key, colorMap.get(key)!);
     });
 
-    return sortedColorMap;
+    colorMap = sortedColorMap;
   }
 
   return colorMap;
@@ -1220,30 +1256,38 @@ const sortLegendKeys = (
   dimensionValues: (number | null)[],
   visibleValues: boolean[] | null,
   catData: any,
-  sort_by: string | undefined
+  sort_by: string = "alphabetical"
 ) => {
   if (sort_by === "mean_values_asc" || sort_by === "mean_values_desc") {
-    const meansByCategory: any = {};
+    const meansByCategory: Map<LegendKey, [number, number]> = new Map();
 
     for (let i = 0; i < catData.values.length; i += 1) {
       const key = catData.values[i];
       const legendKey = key === null ? LEGEND_OTHER : key;
-      const mean = meansByCategory[legendKey];
+      const mean = meansByCategory.get(legendKey);
       const value = dimensionValues[i];
 
       if (value !== null && (!visibleValues || visibleValues[i])) {
         if (!mean) {
-          meansByCategory[legendKey] = [value, 1];
+          meansByCategory.set(legendKey, [value, 1]);
         } else {
           const [sum, divisor] = mean;
-          meansByCategory[legendKey] = [sum + value, divisor + 1];
+          meansByCategory.set(legendKey, [sum + value, divisor + 1]);
         }
       }
     }
 
-    return Reflect.ownKeys(meansByCategory).sort((keyA, keyB) => {
-      const [sumA, divisorA] = meansByCategory[keyA];
-      const [sumB, divisorB] = meansByCategory[keyB];
+    return [...meansByCategory.keys()].sort((keyA, keyB) => {
+      if (keyA === LEGEND_OTHER) {
+        return 1;
+      }
+
+      if (keyB === LEGEND_OTHER) {
+        return -1;
+      }
+
+      const [sumA, divisorA] = meansByCategory.get(keyA)!;
+      const [sumB, divisorB] = meansByCategory.get(keyB)!;
       const a = sumA / divisorA;
       const b = sumB / divisorB;
 
@@ -1252,7 +1296,7 @@ const sortLegendKeys = (
   }
 
   if (sort_by === "alphabetical") {
-    const valuesByCategory: any = {};
+    const representedKeys = new Set<string>();
 
     for (let i = 0; i < catData.values.length; i += 1) {
       const key = catData.values[i];
@@ -1260,15 +1304,15 @@ const sortLegendKeys = (
       const value = dimensionValues[i];
 
       if (value !== null && (!visibleValues || visibleValues[i])) {
-        valuesByCategory[legendKey] = legendKey;
+        representedKeys.add(legendKey);
       }
     }
 
-    return Reflect.ownKeys(valuesByCategory).sort(compareLegendKeys);
+    return [...representedKeys].sort(compareLegendKeys);
   }
 
   if (sort_by === "num_points") {
-    const numPointsByCategory: any = {};
+    const numPointsByCategory = new Map<LegendKey, number>();
     const meansByCategory: any = {};
 
     for (let i = 0; i < catData.values.length; i += 1) {
@@ -1278,8 +1322,8 @@ const sortLegendKeys = (
       const value = dimensionValues[i];
 
       if (value !== null && (!visibleValues || visibleValues[i])) {
-        numPointsByCategory[legendKey] ||= 0;
-        numPointsByCategory[legendKey]++;
+        const prev = numPointsByCategory.get(legendKey) || 0;
+        numPointsByCategory.set(legendKey, prev + 1);
 
         if (!mean) {
           meansByCategory[legendKey] = [value, 1];
@@ -1290,9 +1334,17 @@ const sortLegendKeys = (
       }
     }
 
-    return Reflect.ownKeys(numPointsByCategory).sort((keyA, keyB) => {
-      const a = numPointsByCategory[keyA];
-      const b = numPointsByCategory[keyB];
+    return [...numPointsByCategory.keys()].sort((keyA, keyB) => {
+      if (keyA === LEGEND_OTHER) {
+        return 1;
+      }
+
+      if (keyB === LEGEND_OTHER) {
+        return -1;
+      }
+
+      const a = numPointsByCategory.get(keyA)!;
+      const b = numPointsByCategory.get(keyB)!;
 
       if (a === b) {
         // use mean to break ties
@@ -1308,12 +1360,12 @@ const sortLegendKeys = (
     });
   }
 
-  const valuesByCategory: any = {};
+  const valuesByCategory = new Map<LegendKey, number>();
 
   for (let i = 0; i < catData.values.length; i += 1) {
     const key = catData.values[i];
     const legendKey = key === null ? LEGEND_OTHER : key;
-    const minOrMax = valuesByCategory[legendKey];
+    const minOrMax = valuesByCategory.get(legendKey);
     const value = dimensionValues[i];
 
     if (value !== null && (!visibleValues || visibleValues[i])) {
@@ -1322,14 +1374,22 @@ const sortLegendKeys = (
         (sort_by === "min_values" && value < minOrMax) ||
         (sort_by === "max_values" && value > minOrMax)
       ) {
-        valuesByCategory[legendKey] = value;
+        valuesByCategory.set(legendKey, value);
       }
     }
   }
 
-  return Reflect.ownKeys(valuesByCategory).sort((keyA, keyB) => {
-    const a = valuesByCategory[keyA];
-    const b = valuesByCategory[keyB];
+  return [...valuesByCategory.keys()].sort((keyA, keyB) => {
+    if (keyA === LEGEND_OTHER) {
+      return 1;
+    }
+
+    if (keyB === LEGEND_OTHER) {
+      return -1;
+    }
+
+    const a = valuesByCategory.get(keyA)!;
+    const b = valuesByCategory.get(keyB)!;
 
     return sort_by === "min_values" ? a - b : b - a;
   });
@@ -1371,7 +1431,8 @@ export const sortLegendKeysWaterfall = (
 
 export function continuousValuesToLegendKeySeries(
   contValues: (number | null)[],
-  continuousBins: ContinuousBins
+  continuousBins: ContinuousBins,
+  visible?: boolean[]
 ) {
   const series: any = [];
   const len = contValues.length;
@@ -1380,6 +1441,7 @@ export function continuousValuesToLegendKeySeries(
 
   for (let i = 0; i < len; i += 1) {
     const value = contValues[i];
+    const isVisible = !visible || visible[i];
     let found = false;
 
     if (value === null) {
@@ -1395,6 +1457,7 @@ export function continuousValuesToLegendKeySeries(
       if (
         !found &&
         value !== null &&
+        isVisible &&
         value >= binStart &&
         (value < binEnd || (isLastBin && value === binEnd))
       ) {
@@ -1456,9 +1519,12 @@ export function calcDensityStats(
     if (visible) {
       for (let i = 0; i < catData.values.length; i += 1) {
         const category = catData.values[i];
-        counts[category] = counts[category] || 0;
-        counts[category] +=
-          visible.values[i] && data.dimensions.x.values[i] !== null ? 1 : 0;
+
+        if (category) {
+          counts[category] = counts[category] || 0;
+          counts[category] +=
+            visible.values[i] && data.dimensions.x.values[i] !== null ? 1 : 0;
+        }
       }
 
       Object.keys(counts).forEach((category) => {
@@ -1478,7 +1544,8 @@ export function calcDensityStats(
   if (contData) {
     const [series, unusedKeys] = continuousValuesToLegendKeySeries(
       contData.values,
-      continuousBins
+      continuousBins,
+      data.filters?.visible?.values
     );
 
     return [series, unusedKeys];

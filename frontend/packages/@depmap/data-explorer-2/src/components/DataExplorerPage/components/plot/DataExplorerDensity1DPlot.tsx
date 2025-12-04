@@ -9,7 +9,6 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import {
   LegendKey,
   calcBins,
@@ -191,19 +190,18 @@ function DataExplorerDensity1DPlot({
     handleClickHideAll,
   } = useLegendState(plotConfig, legendKeysWithNoData);
 
-  const colorMap = useMemo(
-    () => getColorMap(data, plotConfig, palette, sortedLegendKeys),
-    [data, plotConfig, palette, sortedLegendKeys]
-  );
+  const colorMap = useMemo(() => {
+    return getColorMap(data, plotConfig, palette, sortedLegendKeys);
+  }, [data, plotConfig, palette, sortedLegendKeys]);
 
   const legendDisplayNames = useMemo(() => {
-    const out: any = {};
+    const out: Partial<Record<LegendKey, string>> = {};
 
     if (!data) {
       return out;
     }
 
-    (Reflect.ownKeys(colorMap || {}) as LegendKey[]).forEach((key) => {
+    [...colorMap.keys()].forEach((key) => {
       const name = categoryToDisplayName(key, data, continuousBins);
       out[key] = typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
     });
@@ -219,6 +217,10 @@ function DataExplorerDensity1DPlot({
 
   if (data?.metadata?.color_property) {
     legendTitle = data.metadata.color_property.label;
+
+    if (data.metadata.dataset_label) {
+      legendTitle += `<br>${data.metadata.dataset_label}`;
+    }
   }
 
   const pointVisibility = useMemo(
@@ -312,23 +314,16 @@ function DataExplorerDensity1DPlot({
               onClickClearSelection={() => {
                 setSelectedLabels(null);
               }}
-              onClickSetSelectionFromContext={
-                // FIXME
-                isBreadboxOnlyMode
-                  ? () => {
-                      window.alert("Not currently supported with Breadbox!");
-                    }
-                  : async () => {
-                      const labels = await promptForSelectionFromContext(data!);
+              onClickSetSelectionFromContext={async () => {
+                const labels = await promptForSelectionFromContext(data!);
 
-                      if (labels === null) {
-                        return;
-                      }
+                if (labels === null) {
+                  return;
+                }
 
-                      setSelectedLabels(labels);
-                      plotElement?.annotateSelected();
-                    }
-              }
+                setSelectedLabels(labels);
+                plotElement?.annotateSelected();
+              }}
             />
           </StackableSection>
           {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (

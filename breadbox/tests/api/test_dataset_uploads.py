@@ -1282,12 +1282,11 @@ def test_end_to_end_with_mismatched_metadata(
         json={"features": ["FID-1", "FID-2", "FID-3"], "feature_identifier": "id",},
     )
     assert_status_ok(result)
-    # two points in this response that I'm not sure about:
-    # 1. since we requested FID-2, should this response include a FID-2 with no values?
-    # 2. this is returning samples (SID-X) which are not included in the metadata. Should breadbox filter these out before returning the result?
+    # We requested FID-2, but there's no values in breadbox so it's omitted from the response.
+    # Also sample (SID-X) is not included in the metadata, so breadbox does not return values for this sample
     assert result.json() == {
-        "FID-1": {"SID-1": 6.0, "SID-X": 5.0, "SID-3": 4.0},
-        "FID-3": {"SID-1": 3.0, "SID-X": 2.0, "SID-3": 1.0},
+        "FID-1": {"SID-1": 6.0, "SID-3": 4.0},
+        "FID-3": {"SID-1": 3.0, "SID-3": 1.0},
     }
 
     result = client.post(
@@ -1295,10 +1294,7 @@ def test_end_to_end_with_mismatched_metadata(
         json={"features": ["FID-1", "FID-2", "FID-3"], "feature_identifier": "id",},
     )
     assert_status_ok(result)
-    # two points in this response that I'm not sure about:
-    # 1. since we requested FID-2, should this response include a FID-2 with no values?
-    # 2. this is returning samples (SID-X) which are not included in the metadata. Should breadbox filter these out before returning the result?
     assert result.json() == {
-        "FID-1": {"SID-1": 6.0, "SID-X": 5.0, "SID-3": 4.0},
-        "FID-3": {"SID-1": 3.0, "SID-X": 2.0, "SID-3": 1.0},
+        "FID-1": {"SID-1": 6.0, "SID-3": 4.0},
+        "FID-3": {"SID-1": 3.0, "SID-3": 1.0},
     }

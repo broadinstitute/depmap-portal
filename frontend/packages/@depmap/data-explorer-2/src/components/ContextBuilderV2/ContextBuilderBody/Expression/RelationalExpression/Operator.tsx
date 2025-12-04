@@ -17,10 +17,18 @@ interface Props {
   varName: string | null;
   // FIXME: Use `keyof typeof AnnotationType` for this after "binary" is removed
   value_type: "continuous" | "categorical" | "text" | "list_strings" | null;
+  isAllIntegers: boolean;
   isLoading: boolean;
 }
 
-function Operator({ expr, path, varName, value_type, isLoading }: Props) {
+function Operator({
+  expr,
+  path,
+  varName,
+  value_type,
+  isAllIntegers,
+  isLoading,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const { dispatch, fullySpecifiedVars } = useContextBuilderState();
 
@@ -28,9 +36,28 @@ function Operator({ expr, path, varName, value_type, isLoading }: Props) {
 
   const options = value_type
     ? Object.fromEntries(
-        Object.entries(opLabels).filter(([key]) => {
-          return operatorsByValueType[value_type].has(key);
-        })
+        Object.entries(opLabels)
+          .filter(([key]) => {
+            return operatorsByValueType[value_type].has(key);
+          })
+          .filter(([key]) => {
+            if (value_type !== "continuous" || isAllIntegers) {
+              return true;
+            }
+
+            return key !== "==" && key !== "!=";
+          })
+          .map(([val, label]) => {
+            if (value_type === "continuous" && val === "==") {
+              return [val, "＝"];
+            }
+
+            if (value_type === "continuous" && val === "!=") {
+              return [val, "≠"];
+            }
+
+            return [val, label];
+          })
       )
     : opLabels;
 

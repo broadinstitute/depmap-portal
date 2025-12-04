@@ -9,6 +9,7 @@ import {
 import StringConstant from "./StringConstant";
 import StringList from "./StringList";
 import NumberInput from "./NumberInput";
+import useSlicePreview from "./useSlicePreview";
 
 interface Props {
   op: OperatorType;
@@ -32,6 +33,13 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
     }
   }, [dispatch, expr, path, variable]);
 
+  const { handleClickShowSlicePreview } = useSlicePreview({
+    expr,
+    op,
+    path,
+    variable,
+  });
+
   if (isListOperator(op)) {
     return (
       <StringList
@@ -39,6 +47,7 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
         path={path}
         domain={domain as { unique_values: string[] } | null}
         isLoading={isLoading}
+        onClickShowSlicePreview={handleClickShowSlicePreview}
       />
     );
   }
@@ -50,6 +59,7 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
         path={path}
         domain={domain}
         isLoading={isLoading}
+        onClickShowSlicePreview={handleClickShowSlicePreview}
       />
     );
   }
@@ -60,6 +70,7 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
       path={path}
       domain={domain}
       isLoading={isLoading}
+      onClickShowSlicePreview={handleClickShowSlicePreview}
     />
   );
 }

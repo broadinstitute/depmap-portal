@@ -201,9 +201,14 @@ export async function convertDimensionToSliceQuery(
     throw new Error("Malformed context expression.");
   }
 
+  const varExpr = expr["=="][0] as Record<string, unknown>;
   const identifier = expr["=="][1];
-  const identifier_type =
-    dimType?.axis === "sample" ? "sample_id" : "feature_id";
+
+  const axis = dimType?.axis || "sample";
+  const idOrLabel =
+    "var" in varExpr && varExpr.var === "entity_label" ? "label" : "id";
+
+  const identifier_type = `${axis}_${idOrLabel}` as const;
 
   return {
     identifier,
@@ -265,25 +270,31 @@ export const sortDimensionTypes = (types: string[]) => {
         ![
           "depmap_model",
           "gene",
-          "gene pair",
-          "compound",
+          "gene_pair",
+          "compound_v2",
+          "compound_dose",
+          "compound_sample",
           "compound_experiment",
           "other",
           "custom",
+          "(dataset specific)",
         ].includes(type)
     )
     .sort(Intl.Collator("en").compare);
 
   // prioritize { depmap_model, gene, etc... }
-  // and stick { other, custom } last
+  // and stick { other, custom, etc... } last
   return [
     set.has("depmap_model") ? "depmap_model" : null,
     set.has("gene") ? "gene" : null,
-    set.has("gene pair") ? "gene pair" : null,
-    set.has("compound") ? "compound" : null,
+    set.has("gene_pair") ? "gene_pair" : null,
+    set.has("compound_v2") ? "compound_v2" : null,
+    set.has("compound_dose") ? "compound_dose" : null,
+    set.has("compound_sample") ? "compound_sample" : null,
     set.has("compound_experiment") ? "compound_experiment" : null,
     ...middle,
     set.has("other") ? "other" : null,
     set.has("custom") ? "custom" : null,
+    set.has("(dataset specific)") ? "(dataset specific)" : null,
   ].filter(Boolean) as string[];
 };

@@ -8,6 +8,7 @@ import Plotly, {
 } from "plotly.js";
 import { formatLayout } from "../utilities/volcanoPlotUtils";
 import { VolcanoPlotPoint } from "../models/VolcanoPlot";
+import styles from "../styles/VolcanoPlot.scss";
 
 type VolcanoPlotProps = {
   volcanoTrace: Partial<PlotData>[];
@@ -21,8 +22,14 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
     const plot = plotRef.current;
 
     if (!plot) return undefined;
-
-    const layout: Partial<Layout> = formatLayout();
+    // Gather all x values from all traces (more performant)
+    const allX = volcanoTrace.flatMap((trace) =>
+      Array.isArray(trace.x) ? (trace.x as number[]) : []
+    );
+    // Always include 0 in the range
+    const xMin = Math.min(...allX, 0);
+    const xMax = Math.max(...allX, 0);
+    const layout: Partial<Layout> = formatLayout(xMin - 0.1, xMax + 0.1);
 
     const config: Partial<Config> = {
       responsive: true,
@@ -52,12 +59,11 @@ function VolcanoPlot({ volcanoTrace, onPointClick }: VolcanoPlotProps) {
 
     // cleanup listeners
     return () => {
-      console.log("Cleanup plot listeners");
       plot?.removeAllListeners("plotly_click");
     };
   }, [volcanoTrace, onPointClick]);
 
-  return <div ref={plotRef} />;
+  return <div className={styles.VolcanoPlot} ref={plotRef} />;
 }
 
 export default VolcanoPlot;

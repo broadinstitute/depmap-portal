@@ -12,23 +12,19 @@ import {
   SortedCorrelations,
   VolcanoDataForCorrelatedDataset,
 } from "../models/CorrelationPlot";
+import { DRCDatasetOptions } from "@depmap/types";
+import { useCallback, useState, useMemo } from "react";
 
 interface CorrelationAnalysisProps {
-  compound: string;
+  datasetOptions: DRCDatasetOptions[];
+  compoundId: string;
+  compoundName: string;
 }
 
-const datasetMap: Record<string, { auc: string; viability: string }> = {
-  OncRef: {
-    auc: "Prism_oncology_AUC_collapsed",
-    viability: "Prism_oncology_viability",
-  },
-  // TBD: Add more after correlations are generated
-};
-
 export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
-  const { compound } = props;
-  const [selectedDataset, setSelectedDataset] = React.useState<string>(
-    "OncRef"
+  const { compoundId, compoundName, datasetOptions } = props;
+  const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
+    datasetOptions[0]
   );
 
   const [
@@ -39,14 +35,28 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   const [allSelectedLabels, setAllSelectedLabels] = React.useState<{
     [key: string]: string[];
   }>({});
-  const [selectedRows, setSelectedRows] = React.useState<Set<string>>(
-    new Set()
-  );
 
   const [
     filteredTableCorrelationAnalysisData,
     setFilteredTableCorrelationAnalysisData,
   ] = React.useState<SortedCorrelations[]>([]);
+
+  const selectedRows = useMemo(() => {
+    if (
+      !filteredTableCorrelationAnalysisData ||
+      !Object.keys(allSelectedLabels).length
+    ) {
+      return new Set<string>();
+    }
+    const ids = filteredTableCorrelationAnalysisData
+      .filter(
+        (d) =>
+          d["featureDataset"] in allSelectedLabels &&
+          (allSelectedLabels[d["featureDataset"]] || []).includes(d["feature"])
+      )
+      .map((d) => d.id);
+    return new Set(ids);
+  }, [filteredTableCorrelationAnalysisData, allSelectedLabels]);
 
   const {
     correlationAnalysisData,
@@ -54,13 +64,43 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     doseColors,
     isLoading,
     hasError,
-  } = useCorrelationAnalysisData(
-    selectedDataset,
-    compound,
-    "compound_v2",
-    ["CompoundID"],
-    datasetMap[selectedDataset]
+  } = useCorrelationAnalysisData(selectedDataset, compoundId, compoundName);
+
+  // memoize datasets and doses passed to CorrelationFilters
+  const datasets = useMemo(() => datasetOptions.map((d) => d.display_name), [
+    datasetOptions,
+  ]);
+
+  const doses = useMemo(() => doseColors.map((doseColor) => doseColor.dose), [
+    doseColors,
+  ]);
+
+  const onChangeDataset = useCallback(
+    (displayName: string) =>
+      setSelectedDataset(
+        datasetOptions.find(
+          (opt: DRCDatasetOptions) => opt.display_name === displayName
+        )!
+      ),
+    [datasetOptions]
   );
+
+  const onChangeCorrelatedDatasets = useCallback(
+    (newCorrelatedDatasets: string[] | null) =>
+      setSelectedCorrelatedDatasets(
+        newCorrelatedDatasets !== null ? newCorrelatedDatasets : []
+      ),
+    []
+  );
+
+  const onChangeDoses = useCallback((newDoses: string[] | undefined) => {
+    setSelectedDoses(newDoses || []);
+  }, []);
+
+  const handleUnselectAll = useCallback(() => {
+    // Clear selected labels; selectedRows is derived from filtered data and will become empty
+    setAllSelectedLabels({});
+  }, []);
 
   React.useEffect(() => {
     // if no filter applied, show all correlation analysis data
@@ -118,10 +158,6 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         }
         return a["feature"].localeCompare(b["feature"]); // otherwise sort by type
       });
-      const selectedIds = selectedDataWithLabelFront.map((data) => {
-        return data.id;
-      });
-      setSelectedRows(new Set(selectedIds));
 
       // move selected features from plot or table up to front of data list
       setFilteredTableCorrelationAnalysisData(
@@ -133,7 +169,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     selectedDoses,
     allSelectedLabels,
     correlationAnalysisData,
-    compound,
+    compoundId,
   ]);
 
   const volcanoDataForCorrelatedDataset = React.useMemo(() => {
@@ -204,6 +240,74 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     return {};
   }, [correlationAnalysisData, doseColors]);
 
+  const correlatedDatasetsToShow = useMemo(() => {
+    return selectedCorrelatedDatasets.length
+      ? selectedCorrelatedDatasets
+      : Object.keys(volcanoDataForCorrelatedDataset);
+  }, [selectedCorrelatedDatasets, volcanoDataForCorrelatedDataset]);
+
+  const forwardSelectedLabels = useCallback(
+    (correlatedDataset: string, newSelectedLabels: string[]) => {
+      setAllSelectedLabels((prev) => ({
+        ...prev,
+        [correlatedDataset]: newSelectedLabels,
+      }));
+    },
+    []
+  );
+
+  const handleChangeTableSelections = useCallback(
+    (selections: any[]) => {
+      const prevSelections = Array.from(selectedRows);
+      // if selections size decreases then a row was deselected. Deselect all selected features for that feature type
+      if (selections.length < prevSelections.length) {
+        // should only be one unselected at a time
+        const unselectedId = prevSelections.filter(
+          (x) => !selections.includes(x)
+        )[0];
+        const correlatedDatasetFeatureToRemove = filteredTableCorrelationAnalysisData.find(
+          (data) => data.id === unselectedId
+        );
+        if (correlatedDatasetFeatureToRemove) {
+          const feature = correlatedDatasetFeatureToRemove.feature;
+          const correlatedDataset =
+            correlatedDatasetFeatureToRemove.featureDataset;
+          setAllSelectedLabels((prevAllSelectedLabels) => ({
+            ...prevAllSelectedLabels,
+            [correlatedDataset]: (
+              prevAllSelectedLabels[correlatedDataset] || []
+            ).filter((label) => label !== feature),
+          }));
+        }
+      }
+      // if selections size increases then a row was selected and all doses for the selected feature type's feature should be selected
+      else {
+        // should only be one new selected at a time
+        const newSelectedId = selections.filter(
+          (x) => !prevSelections.includes(x)
+        )[0];
+        const correlatedDatasetFeatureToAdd = filteredTableCorrelationAnalysisData.find(
+          (data) => data.id === newSelectedId
+        );
+        if (correlatedDatasetFeatureToAdd) {
+          const featureCorrelatedDataset =
+            correlatedDatasetFeatureToAdd.featureDataset;
+          const feature = correlatedDatasetFeatureToAdd.feature;
+          setAllSelectedLabels((prev) => {
+            const existing = prev[featureCorrelatedDataset]
+              ? [...prev[featureCorrelatedDataset]]
+              : [];
+            return {
+              ...prev,
+              [featureCorrelatedDataset]: existing.concat(feature),
+            };
+          });
+        }
+      }
+    },
+    [filteredTableCorrelationAnalysisData, selectedRows]
+  );
+
   let content;
 
   if (isLoading) {
@@ -214,161 +318,86 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     );
   } else if (hasError) {
     content = (
-      <div
-        style={{
-          display: "grid",
-          placeItems: "center",
-          height: "500px",
-          color: "red",
-        }}
-      >
+      <div className={styles.errorMessage}>
         Failed to load correlation data.
       </div>
     );
   } else {
     content = (
       <CorrelationsPlots
-        correlatedDatasetsToShow={
-          selectedCorrelatedDatasets.length
-            ? selectedCorrelatedDatasets
-            : Object.keys(volcanoDataForCorrelatedDataset)
-        }
+        correlatedDatasetsToShow={correlatedDatasetsToShow}
         dosesToFilter={selectedDoses}
         doseColors={doseColors}
         volcanoDataForCorrelatedDatasets={volcanoDataForCorrelatedDataset}
         correlatedDatasetSelectedLabels={allSelectedLabels}
-        forwardSelectedLabels={(
-          correlatedDataset: string,
-          newSelectedLabels: string[]
-        ) => {
-          setAllSelectedLabels({
-            ...allSelectedLabels,
-            [correlatedDataset]: newSelectedLabels,
-          });
-        }}
+        forwardSelectedLabels={forwardSelectedLabels}
       />
     );
   }
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 7fr",
-        gridAutoRows: "auto auto",
-        gridTemplateAreas: "'a b b b b b b b''a c c c c c c c'",
-        gap: "2rem",
-        // marginBottom: "50px",
-      }}
-    >
-      <div
-        style={{
-          gridArea: "a",
-        }}
-      >
+    <div className={styles.tabGrid}>
+      <div className={styles.tabFilters}>
         <CorrelationFilters
-          datasets={Object.keys(datasetMap)}
-          onChangeDataset={(dataset: string) => setSelectedDataset(dataset)}
+          datasets={datasets}
+          onChangeDataset={onChangeDataset}
           correlatedDatasets={correlatedDatasets}
-          onChangeCorrelatedDatasets={(newCorrelatedDatasets: string[]) =>
-            setSelectedCorrelatedDatasets(
-              newCorrelatedDatasets !== null ? newCorrelatedDatasets : []
-            )
-          }
-          doses={doseColors.map((doseColor) => doseColor.dose)}
-          onChangeDoses={(newDoses) => setSelectedDoses(newDoses || [])}
-          compoundName={compound}
+          onChangeCorrelatedDatasets={onChangeCorrelatedDatasets}
+          doses={doses}
+          onChangeDoses={onChangeDoses}
         />
       </div>
 
-      <div style={{ gridArea: "b" }}>
-        <h2>Correlation Analysis</h2>
-        <p>
-          Univariate associations between sensitivity profiles and the genomic
-          features or genetic dependencies are presented in the table and
-          plots.Click on a plot to enlarge it. Hover over plot points for
-          tooltip information.
-        </p>
-        <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
-        {content}
-      </div>
-
-      <div style={{ gridArea: "c" }}>
-        <h2>Associated Features</h2>
-        <p>Clicking on rows highlights features in the plots above</p>
-        <div style={{ height: "20px" }}>
-          {selectedRows.size ? (
-            <button
-              className={styles.linkButton}
-              type="button"
-              onClick={() => {
-                setSelectedRows(new Set());
-                setAllSelectedLabels({});
-              }}
-            >
-              Unselect all
-            </button>
-          ) : null}
+      <div className={styles.tabMain}>
+        <div className={styles.mainContentContainer}>
+          <div className={styles.mainContentHeader}>
+            <h3>Correlation Analysis</h3>
+            <p>
+              Univariate associations between sensitivity profiles and the
+              genomic features or genetic dependencies are presented in the
+              table and plots. Hover over plot points for tooltip information.
+            </p>
+          </div>
+          <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
+          <div className={styles.mainContentGrid}>
+            {" "}
+            <div className={styles.plotArea}>{content}</div>
+          </div>
+          <div>
+            <hr className={styles.mainContentHr} />
+            <div className={styles.mainContentCellLines}>
+              <h3>Associated Features</h3>
+              <p>Clicking on rows highlights features in the plots above</p>
+              <div style={{ height: "10px" }}>
+                {selectedRows.size ? (
+                  <button
+                    className={styles.linkButton}
+                    type="button"
+                    onClick={handleUnselectAll}
+                  >
+                    Unselect all
+                  </button>
+                ) : null}
+              </div>
+            </div>
+            <div>
+              <CorrelationsTable
+                isLoading={isLoading}
+                hasError={hasError}
+                data={filteredTableCorrelationAnalysisData}
+                compound={compoundName}
+                selectedRows={selectedRows}
+                onChangeSelections={handleChangeTableSelections}
+              />
+            </div>
+            {!isLoading && !hasError && (
+              <p>
+                Showing {filteredTableCorrelationAnalysisData.length} of{" "}
+                {correlationAnalysisData.length} entries
+              </p>
+            )}
+          </div>
         </div>
-
-        <CorrelationsTable
-          data={filteredTableCorrelationAnalysisData}
-          compound={compound}
-          selectedRows={selectedRows}
-          onChangeSelections={(selections: any[]) => {
-            const prevSelections = Array.from(selectedRows);
-            // if selections size decreases then a row was deselected. Deselect all selected features for that feature type
-            if (selections.length < prevSelections.length) {
-              // should only be one unselected at a time
-              const unselectedId = prevSelections.filter(
-                (x) => !selections.includes(x)
-              )[0];
-              const correlatedDatasetFeatureToRemove = filteredTableCorrelationAnalysisData.find(
-                (data) => data.id === unselectedId
-              );
-              if (correlatedDatasetFeatureToRemove) {
-                const feature = correlatedDatasetFeatureToRemove.feature;
-                const correlatedDataset =
-                  correlatedDatasetFeatureToRemove.featureDataset;
-                setAllSelectedLabels({
-                  ...allSelectedLabels,
-                  [correlatedDataset]: allSelectedLabels[
-                    correlatedDataset
-                  ].filter((label) => label !== feature),
-                });
-              }
-            }
-            // if selections size increases then a row was selected and all doses for the selected feature type's feature should be selected
-            else {
-              // should only be one new selected at a time
-              const newSelectedId = selections.filter(
-                (x) => !prevSelections.includes(x)
-              )[0];
-              const correlatedDatasetFeatureToAdd = filteredTableCorrelationAnalysisData.find(
-                (data) => data.id === newSelectedId
-              );
-              if (correlatedDatasetFeatureToAdd) {
-                const featureCorrelatedDataset =
-                  correlatedDatasetFeatureToAdd.featureDataset;
-                const feature = correlatedDatasetFeatureToAdd.feature;
-                const newSelectedLabels =
-                  featureCorrelatedDataset in allSelectedLabels
-                    ? [...allSelectedLabels[featureCorrelatedDataset]].concat(
-                        feature
-                      )
-                    : [feature];
-                setAllSelectedLabels({
-                  ...allSelectedLabels,
-                  [featureCorrelatedDataset]: newSelectedLabels,
-                });
-              }
-            }
-          }}
-        />
-        <p>
-          Showing {filteredTableCorrelationAnalysisData.length} of{" "}
-          {correlationAnalysisData.length} entries
-        </p>
       </div>
     </div>
   );

@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 import pandas as pd
+from sqlalchemy import insert
+
 from ..crud.metadata import cast_tabular_cell_value_type
 from ..crud import dimension_types as types_crud
 
@@ -33,11 +35,18 @@ class PropertyValuePair:
 class MetadataCacheEntry:
     properties_to_index_df: pd.DataFrame
     columns_metadata: Dict[str, ColumnMetadata]
-    label_by_given_id: Dict[str, str]
-    rows_by_index: Dict[str, Dict[str, str]]
+
+    def get_label_for_given_id(self, given_id):
+        try:
+            return self.properties_to_index_df.loc[given_id, "label"]
+        except KeyError:
+            return None
 
     def get_properties_dict(self, given_id: str):
-        return self.rows_by_index.get(given_id)
+        try:
+            return self.properties_to_index_df.loc[given_id].to_dict()
+        except KeyError:
+            return None
 
 
 class MetadataCache:
@@ -74,10 +83,6 @@ class MetadataCache:
 
                 columns_metadata = dict(dimension_type.dataset.columns_metadata)
 
-                label_by_given_id = get_dimension_type_metadata_col(
-                    self.db, dimension_type_name=dimension_type.name, col_name="label"
-                )
-
             rows_by_index = {}
             for record in properties_to_index_df.to_records():
                 rows_by_index[record.index] = record
@@ -85,8 +90,6 @@ class MetadataCache:
             entry = MetadataCacheEntry(
                 properties_to_index_df=properties_to_index_df,
                 columns_metadata=columns_metadata,
-                label_by_given_id=label_by_given_id,
-                rows_by_index=rows_by_index,
             )
             self.cache[dimension_type_name] = entry
 
@@ -99,6 +102,10 @@ def populate_search_index_after_update(
     """
     Update the search index for all dimension_types impacted by `dimension_type` changing in some way.
     """
+    from breadbox.crud.dimension_ids import _populate_dimension_type_labels
+
+    _populate_dimension_type_labels(db, dimension_type.name)
+
     impacted_dimension_types = _get_datatypes_referencing(db, dimension_type.name)
 
     md = MetadataCache(db)
@@ -140,36 +147,46 @@ def refresh_search_index_for_dimension_type(
         _delete_search_index_records(db, dimension_type)
         log.info("_delete_search_index_records complete")
 
-    dimension_search_index_rows = []
-
     cache_entry = metadata_cache.get(dimension_type.name)
 
-    for given_id in cache_entry.properties_to_index_df.index:
-        for record in get_property_value_pairs_for_given_id(
-            db=db,
-            dimension_type_name=dimension_type.name,
-            given_id=given_id,
-            metadata_cache=metadata_cache,
-        ):
-            # if given_id in cache_entry.dimension_id_by_given_id:
-            dimension_search_index_rows.append(
-                DimensionSearchIndex(
-                    # dimension_id=cache_entry.dimension_id_by_given_id[given_id],
+    def row_generator():
+        for given_id in cache_entry.properties_to_index_df.index:
+            for record in get_property_value_pairs_for_given_id(
+                db=db,
+                dimension_type_name=dimension_type.name,
+                given_id=given_id,
+                metadata_cache=metadata_cache,
+            ):
+                # if given_id in cache_entry.dimension_id_by_given_id:
+                yield dict(
                     property=record.property,
                     value=record.value,
                     group_id=dimension_type.dataset.group_id,
                     dimension_type_name=dimension_type.name,
                     dimension_given_id=given_id,
-                    label=cache_entry.label_by_given_id[given_id],
+                    label=cache_entry.get_label_for_given_id(given_id),
                 )
-            )
+
+    dimension_search_index_row_count = 0
+    for batch in _make_batches(row_generator(), batch_size=1000):
+        db.execute(insert(DimensionSearchIndex), batch)
+        dimension_search_index_row_count += len(batch)
+        f"Wrote batch of {len(batch)} search index records for {dimension_type_name}"
 
     log.info(
-        f"refresh_search_index_for_dimension_type generated {len(dimension_search_index_rows)} search index records for {len(cache_entry.properties_to_index_df.index)} rows in {dimension_type_name}. Writing..."
+        f"Finished writing all {(dimension_search_index_row_count)} search index records for {len(cache_entry.properties_to_index_df.index)} rows in {dimension_type_name}"
     )
 
-    db.bulk_save_objects(dimension_search_index_rows)
-    log.info("refresh_search_index_for_dimension_type complete")
+
+def _make_batches(iterable, batch_size):
+    batch = []
+    for item in iterable:
+        batch.append(item)
+        if len(batch) >= batch_size:
+            yield batch
+            batch = []
+    if len(batch) > 0:
+        yield batch
 
 
 def _get_datatypes_referencing(db, dimension_type_name):

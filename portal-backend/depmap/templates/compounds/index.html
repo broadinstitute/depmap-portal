@@ -10,6 +10,7 @@ endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
 show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
 show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
+show_corr_analysis = corr_analysis_options | length > 0 %} {% set
 show_heatmap_tab = show_heatmap_tab %} {% set show_enriched_lineages =
 show_enriched_lineages %} {% set show_celfie_tab = has_celfie %} {% set
 show_aliases = compound_aliases|length > 0 %} {% block content %}
@@ -93,8 +94,7 @@ active_tab_set = False %}
       >Genomic Associations</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %}
-  {% if show_compound_correlations %}
+  {% set active_tab_set = True %} {% endif %} {% if show_corr_analysis %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
       href="#corr_analysis"
@@ -274,6 +274,8 @@ active_tab_set = False %}
         DepMap.initCorrelationAnalysisTab(
           "correlations-analysis-tab-content",
           {{name | tojson}},
+          {{ compound_id | tojson }},
+          {{ corr_analysis_options | tojson }},
         );
       }
       loadedTabs[target] = true;

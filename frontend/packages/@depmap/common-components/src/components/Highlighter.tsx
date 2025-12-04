@@ -66,21 +66,29 @@ function Highlighter({
   };
 
   return (
-    <>
-      {parts.map((part, i) =>
-        terms.some((term) => part.toLowerCase() === term.toLowerCase()) ? (
-          <span
-            // eslint-disable-next-line react/no-array-index-key
-            key={`${i}-h`}
-            style={{ ...style, backgroundColor: getColor(part) }}
-          >
-            <WordBreaker text={part} />
-          </span>
-        ) : (
-          part
-        )
-      )}
-    </>
+    <span style={{ whiteSpace: "pre-wrap" }}>
+      {parts.map((part, i) => {
+        // Skip undefined or empty strings
+        if (!part) {
+          return null;
+        }
+
+        const isHighlighted = terms.some(
+          (term) => part.toLowerCase() === term.toLowerCase()
+        );
+
+        if (isHighlighted) {
+          return (
+            <span key={i} style={{ ...style, backgroundColor: getColor(part) }}>
+              <WordBreaker text={part} />
+            </span>
+          );
+        }
+
+        // Don't use WordBreaker for non-highlighted parts
+        return <React.Fragment key={i}>{part}</React.Fragment>;
+      })}
+    </span>
   );
 }
 

@@ -75,6 +75,25 @@ class DimensionType(Base):
     )
 
 
+class DimensionTypeLabel(Base):
+    __tablename__ = "dimension_type_label"
+
+    __table_args__ = (
+        Index("idx_dim_type_label_1", "dimension_type_name"),
+        Index("idx_dim_type_label_2", "label", "dimension_type_name"),
+        Index("idx_dim_type_label_3", "given_id", "dimension_type_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    dimension_type_name: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False,
+    )
+    dimension_type = relationship("DimensionType", foreign_keys=[dimension_type_name])
+    label: Mapped[str] = mapped_column(String, nullable=False)
+    given_id: Mapped[str] = mapped_column(String, nullable=False)
+
+
 class Dataset(Base, UUIDMixin, GroupMixin):
     __tablename__ = "dataset"
     __table_args__ = (

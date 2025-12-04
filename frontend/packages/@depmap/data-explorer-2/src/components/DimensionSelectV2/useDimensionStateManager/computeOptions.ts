@@ -1,5 +1,9 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { compareCaseInsensitive, compareDisabledLast } from "@depmap/utils";
+import {
+  compareCaseInsensitive,
+  compareDisabledLast,
+  dataTypeSortComparator,
+} from "@depmap/utils";
 import { DimensionType } from "@depmap/types";
 import {
   isSampleType,
@@ -35,7 +39,7 @@ async function fetchIndexCompatibleDatasets(
   );
 
   if (datasets.length === 0) {
-    throw new Error(`Unknown dimension type "${index_type}".`);
+    throw new Error(`Unknown or unpopulated dimension type "${index_type}".`);
   }
 
   return datasets.filter((d) => {
@@ -50,24 +54,28 @@ async function fetchIndexCompatibleDatasets(
 }
 
 async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
-  if (!dimension.context) {
-    return null;
+  if (dimension.slice_type === undefined) {
+    return cached(breadboxAPI).getDatasets();
   }
-
-  const expr = dimension.context.expr;
 
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const axis = dimensionTypes.find((dt) => dt.name === dimension.slice_type)
     ?.axis;
 
-  if (dimension.axis_type === "aggregated_slice") {
-    // HACK: It would be difficult to compute what datasets match the context
-    // so just return them all.
-    return cached(breadboxAPI).getDatasets({
-      [axis === "sample" ? "sample_type" : "feature_type"]: dimension.context
-        .dimension_type,
-    });
+  if (!dimension.context || dimension.axis_type === "aggregated_slice") {
+    const prop = axis === "sample" ? "sample_type_name" : "feature_type_name";
+
+    return cached(breadboxAPI)
+      .getDatasets()
+      .then((datasets) =>
+        datasets.filter(
+          (d) =>
+            d.format === "matrix_dataset" && d[prop] === dimension.slice_type
+        )
+      );
   }
+
+  const expr = dimension.context.expr;
 
   if (!(typeof expr === "object") || !("==" in expr)) {
     throw new Error("Malformed context expression");
@@ -78,11 +86,11 @@ async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
 
   const property = (() => {
     if (varName === "given_id") {
-      return "id";
+      return axis + "_id";
     }
 
     if (varName === "entity_label") {
-      return "label";
+      return axis + "_label";
     }
 
     if (varName in (dimension.context.vars || {})) {
@@ -131,7 +139,7 @@ async function fetchContextCompatibleDatasetIds(dimension: State["dimension"]) {
   const datasets = await fetchContextCompatibleDatasets(dimension);
 
   if (!datasets) {
-    return null;
+    return new Set<string>();
   }
 
   return new Set(datasets.map(({ id }) => id));
@@ -204,61 +212,64 @@ async function computeDataTypeOptions(
     });
   }
 
-  return dataTypes
-    .map((dataType) => {
-      let isDisabled = false;
-      let disabledReason = "";
+  const options = dataTypes.map((dataType) => {
+    let isDisabled = false;
+    let disabledReason = "";
 
-      const isCompatibleWithSliceType =
-        !dimension.slice_type ||
-        datasets.find((dataset) => {
-          return (
-            dataset.data_type === dataType &&
-            dataset.slice_type === dimension.slice_type
-          );
-        }) !== undefined;
+    const isCompatibleWithSliceType =
+      !dimension.slice_type ||
+      datasets.find((dataset) => {
+        return (
+          dataset.data_type === dataType &&
+          dataset.slice_type === dimension.slice_type
+        );
+      }) !== undefined;
 
-      if (!isCompatibleWithSliceType) {
-        isDisabled = true;
+    if (!isCompatibleWithSliceType) {
+      isDisabled = true;
 
+      disabledReason = [
+        "The",
+        isSampleType(dimension.slice_type, dimensionTypes)
+          ? "sample type"
+          : "feature type",
+        `“${sliceDisplayName}”`,
+        "is incompatible with this data type",
+      ].join(" ");
+    } else if (
+      dimension.slice_type !== null &&
+      contextCompatibleDataTypes &&
+      !contextCompatibleDataTypes.has(dataType)
+    ) {
+      isDisabled = true;
+
+      const dimensionLabel = dimension.context?.name;
+
+      if (dimension.axis_type === "aggregated_slice") {
         disabledReason = [
-          "The",
-          isSampleType(dimension.slice_type, dimensionTypes)
-            ? "sample type"
-            : "feature type",
-          `“${sliceDisplayName}”`,
-          "is incompatible with this data type",
+          `The context “${dimensionLabel}”`,
+          `has no ${pluralize(
+            sliceDisplayName as string
+          )} associated with this type`,
         ].join(" ");
-      } else if (
-        contextCompatibleDataTypes &&
-        !contextCompatibleDataTypes.has(dataType)
-      ) {
-        isDisabled = true;
-
-        const dimensionLabel = dimension.context!.name;
-
-        if (dimension.axis_type === "aggregated_slice") {
-          disabledReason = [
-            `The context “${dimensionLabel}”`,
-            `has no ${pluralize(
-              sliceDisplayName as string
-            )} associated with this type`,
-          ].join(" ");
-        } else {
-          disabledReason = [
-            `The ${sliceDisplayName} “${dimensionLabel}”`,
-            "is not found in any data versions associated with this type",
-          ].join(" ");
-        }
+      } else {
+        disabledReason = [
+          `The ${sliceDisplayName} “${dimensionLabel}”`,
+          "is not found in any data versions associated with this type",
+        ].join(" ");
       }
+    }
 
-      return {
-        label: dataType,
-        value: dataType,
-        isDisabled,
-        disabledReason,
-      };
-    })
+    return {
+      label: dataType,
+      value: dataType,
+      isDisabled,
+      disabledReason,
+    };
+  });
+
+  return options
+    .sort((a, b) => dataTypeSortComparator(a.value, b.value))
     .sort(compareDisabledLast);
 }
 
@@ -272,16 +283,8 @@ async function computeSliceTypeOptions(
 ) {
   const sliceTypeOptions: State["sliceTypeOptions"] = [];
   const seen = new Set<string>();
-  let selectedUnitsMatchNullSliceType = false;
 
   datasets.forEach((dataset) => {
-    if (
-      dataset.units === selectedUnits &&
-      dataset.slice_type === SLICE_TYPE_NULL
-    ) {
-      selectedUnitsMatchNullSliceType = true;
-    }
-
     if (dataset.slice_type === SLICE_TYPE_NULL) {
       return;
     }
@@ -330,21 +333,12 @@ async function computeSliceTypeOptions(
   });
 
   if (
-    // If this datatype has any datasets with a `null`
-    // feature type...
-    Boolean(
-      selectedDataType &&
-        datasets.some(
-          (d) =>
-            d.data_type === selectedDataType && d.slice_type === SLICE_TYPE_NULL
-        )
-    ) ||
-    // ... or we've already inferred the slice_type is null...
-    dimension.slice_type === null ||
-    // ... or this special case
-    selectedUnitsMatchNullSliceType
+    datasets.some(
+      (d) =>
+        (!selectedDataType || selectedDataType === d.data_type) &&
+        d.slice_type === SLICE_TYPE_NULL
+    )
   ) {
-    // ... then make sure a corresponding option exists.
     sliceTypeOptions.unshift({
       label: SLICE_TYPE_NULL.toString(),
       value: SLICE_TYPE_NULL,
@@ -385,6 +379,12 @@ async function computeDataVersionOptions(
   );
 
   let foundDefault = false;
+
+  const priorities: Record<string, number> = {};
+
+  for (const d of datasets) {
+    priorities[d.id] = d.priority as number;
+  }
 
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
@@ -498,7 +498,7 @@ async function computeDataVersionOptions(
         isDefault,
       };
     })
-    .sort((a, b) => compareCaseInsensitive(a.label, b.label))
+    .sort((a, b) => priorities[a.value] - priorities[b.value])
     .sort(compareDisabledLast);
 }
 
