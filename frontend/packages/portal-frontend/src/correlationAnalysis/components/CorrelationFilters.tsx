@@ -2,6 +2,7 @@ import React from "react";
 import Select from "react-select";
 import styles from "../styles/CorrelationAnalysis.scss";
 import { DRCDatasetOptions } from "@depmap/types";
+import { sortDoseColorsByValue, formatDoseString } from "../utilities/helper";
 
 const customStyles = {
   multiValue: (s: any) => ({
@@ -87,10 +88,21 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
     [correlatedDatasets]
   );
 
-  const doseOptions = React.useMemo(
-    () => doses.map((dose) => ({ label: dose, value: dose })),
-    [doses]
-  );
+  const doseOptions = React.useMemo(() => {
+    const sortedDoses = sortDoseColorsByValue(
+      doses.map((doseValue: string) => {
+        return { hex: undefined, dose: doseValue };
+      })
+    );
+
+    return sortedDoses.map((doseAndColor) => {
+      const doseStr = formatDoseString(doseAndColor.dose);
+      return {
+        label: doseStr,
+        value: doseStr,
+      };
+    });
+  }, [doses]);
 
   const formattedSelectedDoses = React.useMemo(
     () => selectedDoses.map((dose) => ({ label: dose, value: dose })),
