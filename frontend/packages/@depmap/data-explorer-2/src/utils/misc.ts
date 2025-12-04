@@ -261,12 +261,22 @@ export const pluralize = (str: string) => {
   return `${str.replace(/y$/, "ie")}s`;
 };
 
-export const sortDimensionTypes = (types: string[]) => {
-  const set = new Set(types);
+export const sortDimensionTypes = (
+  typeNames: string[],
+  displayNames?: string[]
+) => {
+  const set = new Set(typeNames);
 
-  const middle = types
+  const mapping = Object.fromEntries(
+    typeNames.map((name, i) => [
+      name,
+      (displayNames ? displayNames[i] : typeNames[i]).toLowerCase(),
+    ])
+  );
+
+  const middle = typeNames
     .filter(
-      (type) =>
+      (name) =>
         ![
           "depmap_model",
           "gene",
@@ -278,9 +288,9 @@ export const sortDimensionTypes = (types: string[]) => {
           "other",
           "custom",
           "(dataset specific)",
-        ].includes(type)
+        ].includes(name)
     )
-    .sort(Intl.Collator("en").compare);
+    .sort((a, b) => (mapping[a] < mapping[b] ? -1 : 1));
 
   // prioritize { depmap_model, gene, etc... }
   // and stick { other, custom, etc... } last

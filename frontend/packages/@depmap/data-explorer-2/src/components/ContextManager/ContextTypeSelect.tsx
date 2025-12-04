@@ -35,7 +35,8 @@ function ContextTypeSelect({
         if (useContextBuilderV2) {
           const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
           const sorted = sortDimensionTypes(
-            dimensionTypes.map(({ name }) => name)
+            dimensionTypes.map(({ name }) => name),
+            dimensionTypes.map(({ display_name }) => display_name)
           );
 
           const populatedTypes = new Set<string>();
