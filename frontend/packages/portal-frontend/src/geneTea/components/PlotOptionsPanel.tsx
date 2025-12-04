@@ -1,13 +1,20 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import ToggleSwitch from "@depmap/common-components/src/components/ToggleSwitch";
-import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
+import {
+  useGeneTeaFiltersContext,
+  NUMERIC_FILTER_DEFAULTS,
+} from "../context/GeneTeaFiltersContext";
 import styles from "../styles/GeneTea.scss";
 import PurpleHelpIcon from "./PurpleHelpIcon";
+import NumberInput from "./NumberInput";
+import debounce from "lodash.debounce";
 
 const PlotOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
 
   const {
+    maxTopTerms,
+    handleSetMaxTopTerms,
     doClusterTerms,
     handleSetDoClusterTerms,
     doClusterGenes,
@@ -15,6 +22,23 @@ const PlotOptionsPanel: React.FC = () => {
     doGroupTerms,
     handleSetDoGroupTerms,
   } = useGeneTeaFiltersContext();
+
+  const [localMaxTopTerms, setLocalMaxTopTerms] = useState<number>(
+    maxTopTerms ?? NUMERIC_FILTER_DEFAULTS.maxTopTerms
+  );
+
+  const debouncedSetMaxTerms = useMemo(
+    () => debounce((maxTerms_) => handleSetMaxTopTerms(maxTerms_), 800),
+    [handleSetMaxTopTerms]
+  );
+
+  const updateMaxTerms = useCallback(
+    (numTerms: number) => {
+      setLocalMaxTopTerms(numTerms);
+      debouncedSetMaxTerms(numTerms);
+    },
+    [debouncedSetMaxTerms]
+  );
 
   return (
     <div ref={ref} style={{ backgroundColor: "#ffffff" }}>
@@ -87,6 +111,22 @@ const PlotOptionsPanel: React.FC = () => {
           />
         </div>
       </div>
+      <NumberInput
+        name="maxTopTerms"
+        label="Max. n Terms/Term Groups"
+        purpleHelpIcon={
+          <PurpleHelpIcon
+            tooltipText="Limits the maximum number of terms or term groups in the y-axis of the plot."
+            popoverId="maxTopTerms-help"
+          />
+        }
+        min={1}
+        max={25}
+        step={1}
+        value={localMaxTopTerms}
+        setValue={updateMaxTerms}
+        defaultValue={NUMERIC_FILTER_DEFAULTS.maxTopTerms}
+      />
     </div>
   );
 };
