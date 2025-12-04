@@ -124,7 +124,7 @@ const FULL_SPLIT_REGEX = new RegExp(NUMERIC_REGEX_PATTERN.source + "\\s*(.*)$");
 /**
  * Parses a numeric value from a dose string, handling variations like units,
  * commas for decimals, and mixed formatting.
- * * @param doseString The dose string (e.g., "0.1 um", "0,1 s").
+ * * @param doseString The dose string (e.g., "0.1 um").
  * @returns The parsed number, or null if no valid number is found.
  */
 function parseDoseValue(doseString: string): number | null {
@@ -132,17 +132,14 @@ function parseDoseValue(doseString: string): number | null {
     return null;
   }
 
-  // 1. Replace comma decimal separators with period decimal separators
-  let cleanString = doseString.replace(",", ".");
-
-  // 2. Use the defined constant regex to extract the number part.
-  const match = cleanString.match(NUMERIC_REGEX_PATTERN);
+  // Use the defined constant regex to extract the number part.
+  const match = doseString.match(NUMERIC_REGEX_PATTERN);
 
   if (match) {
     const rawNumberStr = match[1];
     const numberValue = parseFloat(rawNumberStr);
 
-    if (isNaN(numberValue)) {
+    if (Number.isNaN(numberValue)) {
       return null;
     }
     return numberValue;
@@ -167,7 +164,7 @@ export function formatDoseString(input: string | undefined): string {
 
   if (typeof input !== "string") return String(input);
 
-  // 2. Use the single, pre-compiled regex to get the number and units in one pass.
+  // Use the single, pre-compiled regex to get the number and units in one pass.
   const match = input.match(FULL_SPLIT_REGEX);
 
   if (!match) {
@@ -185,11 +182,11 @@ export function formatDoseString(input: string | undefined): string {
     return input;
   }
 
-  // 1. Round to 4 decimal places and get the new string representation
+  // Round to 4 decimal places and get the new string representation
   // Use parseFloat(toFixed(4)).toString() to remove trailing zeros after rounding
   const roundedNumberStr = parseFloat(numberValue.toFixed(4)).toString();
 
-  // 2. Reconstruct the string: rounded number + space (optional) + units
+  // Reconstruct the string: rounded number + space (optional) + units
   if (units.length > 0 && units.trim().length > 0) {
     // Add a space only if units are present and non-empty
     return `${roundedNumberStr} ${units}`;
