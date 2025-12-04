@@ -160,9 +160,7 @@ def get_feature_data(
 ):
     """
     Load data for each of the given dataset_id, feature_id pairs.
-    This differs from the /get-features endpoint in the type of ID it
-    accepts as input and the format of the response. This endpoint also
-    does not do any filtering or grouping of feature values.
+    This endpoint does not do any filtering or grouping of feature values.
     """
     if len(dataset_ids) != len(feature_ids):
         raise UserError(
