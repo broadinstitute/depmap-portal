@@ -47,7 +47,6 @@ from .get_and_process_data import (
     get_dataset_sample_labels_by_id,
     get_matrix,  # downloads: check dataset size
     get_row_of_values,  # very heavily used
-    get_row_of_values_from_slice_id,  # used by custom analysis, DE2, vector catalog, tests
     get_subsetted_df,  # 19 uses: custom analysis, cell line view, compound view, etc.
     get_subsetted_df_by_ids,  # Used by custom downloads and context explorer
     get_subsetted_df_by_labels,
