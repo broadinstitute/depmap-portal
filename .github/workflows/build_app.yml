@@ -61,6 +61,8 @@ jobs:
           password: ${{ secrets.DEPMAP_DEPLOY_SVC_ACCT }}
       - name: Build Docker image
         run: cd portal-backend && bash build-docker-image.sh ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }}
+      - name: Push Docker image
+        run: docker push ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }}
       - name: Run pyright-ratchet
         run: docker run -e HOME=/install/pyright ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }} pyright-ratchet
       - name: Run import linter
