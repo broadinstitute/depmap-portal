@@ -9,10 +9,31 @@ import {
   SliceQuery,
 } from "@depmap/types";
 import { isV2Context } from "./context";
+import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
+
+// HACK: Stash a reference to `dimensionTypes`
+// so these utils can be call synchronously.
+let dimensionTypes = null as DimensionType[] | null;
+
+if (isBreadboxOnlyMode) {
+  cached(breadboxAPI)
+    .getDimensionTypes()
+    .then((result) => {
+      dimensionTypes = result;
+    });
+}
 
 export function getDimensionTypeLabel(dimension_type?: string) {
   if (!dimension_type) {
     return "";
+  }
+
+  const dimType = (dimensionTypes || []).find(
+    ({ name }) => name === dimension_type
+  );
+
+  if (dimType?.display_name) {
+    return dimType.display_name;
   }
 
   if (dimension_type === "depmap_model") {
@@ -109,11 +130,9 @@ export const urlLibEncode = (s: string) => {
   );
 };
 
-export const isSampleType = (
-  dimensionTypeName: string | null | undefined,
-  // FIXME: this second arg is optional to support some legacy code. Once we
-  // move all data to Breadbox, this should become required.
-  dimensionTypes?: DimensionType[]
+// Deprecated: It's preferred to use the async `isSampleType` version below.
+export const isSampleTypeSync = (
+  dimensionTypeName: string | null | undefined
 ) => {
   if (!dimensionTypeName) {
     return false;
@@ -139,6 +158,26 @@ export const isSampleType = (
   ].includes(dimensionTypeName);
 };
 
+export const isSampleType = (dimensionTypeName: string | null) => {
+  if (dimensionTypeName === null) {
+    // Datasets can never have a null sample type (only a null feature type).
+    return false;
+  }
+
+  return cached(breadboxAPI)
+    .getDimensionTypes()
+    .then((dimTypes) => {
+      const dimensionType = dimTypes.find((d) => d.name === dimensionTypeName);
+
+      if (!dimensionType) {
+        throw new Error(`Unknown dimension type "${dimensionTypeName}"`);
+      }
+
+      return dimensionType.axis === "sample";
+    });
+};
+
+// TODO: Remove this. It only exists to support custom analysis in legacy mode.
 export function convertDimensionToSliceId(
   dimension: Partial<
     DataExplorerPlotConfigDimension | DataExplorerPlotConfigDimensionV2
@@ -152,12 +191,6 @@ export function convertDimensionToSliceId(
     throw new Error("Cannot convert a context to a slice ID!");
   }
 
-  if (isSampleType(dimension.slice_type)) {
-    throw new Error(
-      "Cannot convert a sample to a slice ID! Only features are supported."
-    );
-  }
-
   const expr = dimension.context.expr as { "==": [object, string] };
   const feature = expr["=="][1];
 
@@ -165,7 +198,7 @@ export function convertDimensionToSliceId(
     "slice",
     urlLibEncode(dimension.dataset_id),
     urlLibEncode(feature),
-    "label",
+    isSampleTypeSync(dimension.slice_type) ? "transpose_label" : "label",
   ].join("/");
 }
 
@@ -188,8 +221,8 @@ export async function convertDimensionToSliceQuery(
     );
   }
 
-  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
-  const dimType = dimensionTypes.find((t) => t.name === dimension.slice_type);
+  const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+  const dimType = dimTypes.find((t) => t.name === dimension.slice_type);
 
   if (dimension.slice_type !== null && !dimType) {
     throw new Error(`Unrecognized dimension type "${dimension.slice_type}"!`);
@@ -244,34 +277,41 @@ export const capitalize = (str: string) => {
   return str && str.replace(/\b[a-z]/g, (c: string) => c.toUpperCase());
 };
 
+export const uncapitalize = (str: string) => {
+  return str && str.replace(/\b[A-Z]/g, (c: string) => c.toLowerCase());
+};
+
 // FIXME: This is a rather naive implementation.
 export const pluralize = (str: string) => {
   if (!str) {
     return "";
   }
 
-  if (
-    str.toLowerCase() === "other" ||
-    str.endsWith("s") ||
-    str.toLowerCase().endsWith("metadata")
-  ) {
+  if (str.endsWith("s") || str.toLowerCase().endsWith("metadata")) {
     return str;
+  }
+
+  // Special case: there are both multiple compounds and
+  // multiple doses per compound, so pluralize both words.
+  if (str === "Compound at dose") {
+    return "Compounds at doses";
   }
 
   return `${str.replace(/y$/, "ie")}s`;
 };
 
-export const sortDimensionTypes = (
-  typeNames: string[],
-  displayNames?: string[]
-) => {
+export const sortDimensionTypes = (typeNames: string[]) => {
   const set = new Set(typeNames);
 
-  const mapping = Object.fromEntries(
-    typeNames.map((name, i) => [
+  const displayNameMap = Object.fromEntries(
+    typeNames.map((name) => [
       name,
-      (displayNames ? displayNames[i] : typeNames[i]).toLowerCase(),
+      (dimensionTypes || []).find((t) => t.name === name)?.display_name ?? name,
     ])
+  );
+
+  const sortMapping = Object.fromEntries(
+    typeNames.map((name) => [name, displayNameMap[name].toLowerCase()])
   );
 
   const middle = typeNames
@@ -290,7 +330,7 @@ export const sortDimensionTypes = (
           "(dataset specific)",
         ].includes(name)
     )
-    .sort((a, b) => (mapping[a] < mapping[b] ? -1 : 1));
+    .sort((a, b) => (sortMapping[a] < sortMapping[b] ? -1 : 1));
 
   // prioritize { depmap_model, gene, etc... }
   // and stick { other, custom, etc... } last

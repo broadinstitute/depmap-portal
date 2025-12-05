@@ -226,8 +226,6 @@ export async function fetchPlotDimensions(
   // HACK: For now we'll reverse the relationship of id and label for models.
   const cellLineIdMapping = {} as Record<string, string>;
 
-  const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
-
   async function fetchRawDimension(key: string) {
     const { context, dataset_id, slice_type } = dimensions[key];
 
@@ -245,16 +243,14 @@ export async function fetchPlotDimensions(
       "=="
     ];
 
+    const sliceTypeIsSampleType = await isSampleType(slice_type);
+
     const identifier_type = (() => {
       if (variable.var === "entity_label" && slice_type !== "depmap_model") {
-        return isSampleType(slice_type, dimensionTypes)
-          ? "sample_label"
-          : "feature_label";
+        return sliceTypeIsSampleType ? "sample_label" : "feature_label";
       }
 
-      return isSampleType(slice_type, dimensionTypes)
-        ? "sample_id"
-        : "feature_id";
+      return sliceTypeIsSampleType ? "sample_id" : "feature_id";
     })();
 
     return getDimensionDataWithoutLabels({
@@ -298,7 +294,7 @@ export async function fetchPlotDimensions(
       );
     }
 
-    const aggregate_by = isSampleType(slice_type, dimensionTypes)
+    const aggregate_by = (await isSampleType(slice_type))
       ? "samples"
       : "features";
 
@@ -668,6 +664,8 @@ export const fetchDatasetsByIndexType = memoize(async () => {
         ...commonProperties,
         index_type: sample_type_name,
         slice_type: feature_type_name,
+        sample_type_name,
+        feature_type_name,
       },
     ];
 
@@ -677,6 +675,8 @@ export const fetchDatasetsByIndexType = memoize(async () => {
         ...commonProperties,
         index_type: feature_type_name,
         slice_type: sample_type_name,
+        sample_type_name,
+        feature_type_name,
       },
     ];
   });
@@ -826,8 +826,7 @@ const correlateDimension = memoize(
       ];
     }
 
-    const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
-    const correlate_by = isSampleType(slice_type, dimensionTypes)
+    const correlate_by = (await isSampleType(slice_type))
       ? "samples"
       : "features";
 
