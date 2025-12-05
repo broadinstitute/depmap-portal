@@ -237,7 +237,8 @@ export async function convertDimensionToSliceQuery(
   const varExpr = expr["=="][0] as Record<string, unknown>;
   const identifier = expr["=="][1];
 
-  const axis = dimType?.axis || "sample";
+  const axis =
+    dimension.slice_type === null ? "feature" : dimType?.axis || "sample";
   const idOrLabel =
     "var" in varExpr && varExpr.var === "entity_label" ? "label" : "id";
 

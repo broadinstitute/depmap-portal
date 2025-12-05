@@ -16,6 +16,7 @@ interface Props {
   onHide: () => void;
   backdrop?: "static" | boolean;
   isExistingContext?: boolean;
+  startInTableView?: boolean;
 }
 
 function ContextBuilderV2({
@@ -25,6 +26,7 @@ function ContextBuilderV2({
   onHide,
   backdrop = "static",
   isExistingContext = false,
+  startInTableView = false,
 }: Props) {
   useModalContainer();
 
@@ -78,6 +80,7 @@ function ContextBuilderV2({
       backdrop={backdrop}
       context={contextToEdit}
       isExistingContext={isExistingContext}
+      startInTableView={startInTableView}
     />
   );
 }
