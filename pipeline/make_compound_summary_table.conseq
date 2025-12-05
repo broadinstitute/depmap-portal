@@ -9,14 +9,14 @@ rule get_rep_all_single_pt_compound_doses:
     run "python3 {{ inputs.script.filename }} {{ inputs.treatment_metadata.dataset_id }} rep_all_single_pt_compound_doses.csv"
 
 rule get_oncref_compound_doses:
-    inputs: treatment_metadata={'type' : 'raw-treatment_metadata', 'label' : 'Prism_oncology_AUC'},
+    inputs: treatment_metadata={'type' : 'raw-treatment_metadata', 'label' ~ 'Prism_oncology.*AUC'},
         script=fileref("scripts/oncref_cpd_doses_from_treatment_metadata.py")
     outputs: {
         'type': 'dataset-compound-doses',
-        'dataset': 'Prism_oncology_AUC',
-        'filename': {'$filename': 'oncref_compound_doses.csv'},
+        'dataset': '{{ inputs.treatment_metadata.label }}',
+        'filename': {'$filename': '{{inputs.treatment_metadata.label }}_compound_doses.csv'},
     }
-    run "python3 {{ inputs.script.filename }} {{ inputs.treatment_metadata.dataset_id }} oncref_compound_doses.csv"
+    run "python3 {{ inputs.script.filename }} {{ inputs.treatment_metadata.dataset_id }} {{inputs.treatment_metadata.label }}_compound_doses.csv"
 
 rule expand_drug_metadata:
     inputs: drug_metadata={'type': 'drug-metadata', 'name': 'merged-drugs'},
