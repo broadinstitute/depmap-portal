@@ -9,6 +9,10 @@ import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 import PlotSection from "./PlotSection";
 import PlotSelections from "./PlotSelections";
 import PurpleHelpIcon from "../PurpleHelpIcon";
+import GenesMatchingTermPanel from "./GenesMatchingTermPanel";
+import SectionStack, {
+  StackableSection,
+} from "../collapsibleOptions/SectionStack";
 
 interface TopTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
@@ -147,15 +151,27 @@ function TopTermsTab({
               />
             </div>
             <div className={styles.selectionsArea}>
-              <PlotSelections
-                isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
-                selectedIds={new Set(selectedPlotGenes)}
-                selectedLabels={new Set(selectedPlotGenes)}
-                onClickSaveSelectionAsContext={
-                  handleClickSavePlotSelectionAsContext
-                }
-                onClickClearSelection={handleClearPlotSelection}
-              />
+              <div className={styles.test}>
+                <SectionStack>
+                  <PlotSelections
+                    isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
+                    selectedIds={new Set(selectedPlotGenes)}
+                    selectedLabels={new Set(selectedPlotGenes)}
+                    onClickSaveSelectionAsContext={
+                      handleClickSavePlotSelectionAsContext
+                    }
+                    onClickClearSelection={handleClearPlotSelection}
+                  />
+
+                  <StackableSection
+                    title="Matching Terms"
+                    minHeight={150}
+                    usePlotStyles={true}
+                  >
+                    <GenesMatchingTermPanel />
+                  </StackableSection>
+                </SectionStack>
+              </div>
             </div>
           </div>
         </div>

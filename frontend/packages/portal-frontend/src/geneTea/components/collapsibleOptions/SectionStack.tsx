@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import Section from "./Section";
 import styles from "./styles.scss";
+import plotStyles from "./plotSectionStyles.scss";
 
 export const SectionStackContext = React.createContext({
   sectionHeights: [0, 0, 0] as number[],
@@ -14,6 +15,7 @@ export const SectionStackContext = React.createContext({
 
 interface StackableSectionProps extends React.ComponentProps<typeof Section> {
   minHeight: number;
+  usePlotStyles: boolean;
 }
 
 interface SectionInfo {
@@ -24,6 +26,7 @@ interface SectionInfo {
 
 interface InternalProps extends StackableSectionProps {
   onRender: (info: SectionInfo) => void;
+  usePlotStyles: boolean;
 }
 
 export const StackableSection = (props: StackableSectionProps) => {
@@ -33,6 +36,7 @@ export const StackableSection = (props: StackableSectionProps) => {
     onOpen,
     onClose,
     minHeight,
+    usePlotStyles,
   } = props as InternalProps;
 
   const ref = useRef<HTMLDivElement>(null);
