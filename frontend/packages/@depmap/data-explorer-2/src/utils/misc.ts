@@ -15,7 +15,7 @@ import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 // so these utils can be call synchronously.
 let dimensionTypes = null as DimensionType[] | null;
 
-if (isBreadboxOnlyMode) {
+if (isBreadboxOnlyMode && !process.env.JEST_WORKER_ID) {
   cached(breadboxAPI)
     .getDimensionTypes()
     .then((result) => {
