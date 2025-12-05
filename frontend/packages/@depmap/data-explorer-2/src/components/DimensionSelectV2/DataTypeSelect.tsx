@@ -35,7 +35,7 @@ function DataTypeSelect({
   return (
     <PlotConfigSelect
       show
-      enable={options.length > 1 && !isLoading}
+      enable={!isLoading}
       className={selectClassName}
       isClearable
       label="Data Type"

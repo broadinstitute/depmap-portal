@@ -1,6 +1,6 @@
 import { get_operator, get_values } from "json-logic-js";
 import { DataExplorerContext } from "@depmap/types";
-import { isSampleType, urlLibEncode } from "../../utils/misc";
+import { isSampleTypeSync, urlLibEncode } from "../../utils/misc";
 
 export const opLabels = {
   "==": "is",
@@ -59,7 +59,9 @@ export const makeSliceId = (
   dataset_id: string,
   feature: string
 ) => {
-  const featureType = isSampleType(slice_type) ? "transpose_label" : "label";
+  const featureType = isSampleTypeSync(slice_type)
+    ? "transpose_label"
+    : "label";
 
   return [
     "slice",
