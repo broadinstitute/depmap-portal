@@ -3,7 +3,8 @@ FROM debian:trixie
 
 # Set environment variables to avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
-ENV PYENV_ROOT="/root/.pyenv"
+# Use /opt/pyenv instead of /root/.pyenv so all users can access it
+ENV PYENV_ROOT="/opt/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
 # Install base packages and pyenv build dependencies
@@ -19,11 +20,18 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
     uuid-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pyenv
+# Install pyenv to /opt/pyenv
 RUN curl https://pyenv.run | bash
 
-# Install Python 3.9 using pyenv and set as global default
+# Install Python 3.9 with shared library support (required by some packages)
+ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
 RUN pyenv install 3.9 && pyenv global 3.9
+
+# Make libpython3.9.so available system-wide (needed by packages like pyright)
+RUN cp -P $PYENV_ROOT/versions/3.9.*/lib/libpython3.9*.so* /usr/local/lib/ && ldconfig
+
+# Make pyenv accessible to all users
+RUN chmod -R a+rX $PYENV_ROOT
 
 # Create python3.9 venv at /python3.9 for compatibility with existing PATH expectations
 RUN python -m venv /python3.9
