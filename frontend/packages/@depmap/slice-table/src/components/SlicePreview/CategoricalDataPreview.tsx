@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { useDataExplorerSettings } from "@depmap/data-explorer-2";
 import BarChart from "./BarChart";
 import shouldUseLogScale from "./shouldUseLogScale";
 import styles from "../../styles/AddColumnModal.scss";
@@ -13,7 +12,6 @@ interface Props {
     initialSelectedValues: Set<string | number>;
     onChangeSelectedValues: (nextSelectedValues: Set<string | number>) => void;
   };
-  selectionMask?: boolean[];
 }
 
 function CategoricalDataPreview({
@@ -21,9 +19,7 @@ function CategoricalDataPreview({
   xAxisTitle,
   hoverLabel,
   getCategoricalFilterProps = undefined,
-  selectionMask = undefined,
 }: Props) {
-  const settings = useDataExplorerSettings();
   const filterProps = getCategoricalFilterProps?.();
   const withFilter = !!filterProps;
 
@@ -37,69 +33,32 @@ function CategoricalDataPreview({
 
   const plotData = useMemo(() => {
     if (!dataValues) {
-      return { x: [], ySelected: [], yUnselected: [] };
+      return { x: [] as string[], y: [] as number[] };
     }
 
-    const countsByValue = new Map<
-      string | number,
-      { selected: number; unselected: number }
-    >();
+    const countsByValue = new Map<string, number>();
 
-    dataValues.flat().forEach((val, idx) => {
+    dataValues.flat().forEach((val: string | number | undefined) => {
+      // TODO: Add an option to show NAs instead of always ignoring them.
       if (val !== undefined) {
-        const current = countsByValue.get(val) || {
-          selected: 0,
-          unselected: 0,
-        };
-        if (selectionMask?.[idx]) {
-          current.selected++;
-        } else {
-          current.unselected++;
-        }
-        countsByValue.set(val, current);
+        const stringVal = `${val}`;
+        countsByValue.set(stringVal, (countsByValue.get(stringVal) ?? 0) + 1);
       }
     });
 
-    const entries = Array.from(countsByValue.entries()).sort((a, b) => {
-      return (
-        b[1].selected + b[1].unselected - (a[1].selected + a[1].unselected)
-      );
-    });
+    // Convert to array and sort by counts descending
+    const entries = Array.from(countsByValue.entries()).sort(
+      (a, b) => b[1] - a[1]
+    );
 
     return {
       x: entries.map(([value]) => value),
-      ySelected: entries.map(([, counts]) => counts.selected),
-      yUnselected: entries.map(([, counts]) => counts.unselected),
+      y: entries.map(([, count]) => count),
     };
-  }, [dataValues, selectionMask]);
-
-  const groupedData = useMemo(() => {
-    if (!selectionMask) {
-      return [
-        {
-          y: plotData.yUnselected,
-          name: "count",
-          color: "#1f77b4",
-        },
-      ];
-    }
-
-    return [
-      {
-        y: plotData.ySelected,
-        name: "Selected",
-        color: "#1f77b4",
-      },
-      {
-        y: plotData.yUnselected,
-        name: "Unselected",
-        color: settings.plotStyles.palette.other,
-      },
-    ];
-  }, [plotData, selectionMask, settings.plotStyles]);
+  }, [dataValues]);
 
   const useLogScale = useMemo(() => {
-    return shouldUseLogScale([...plotData.ySelected, ...plotData.yUnselected]);
+    return shouldUseLogScale(plotData.y);
   }, [plotData]);
 
   const selectedPoints = useMemo(() => {
@@ -135,10 +94,9 @@ function CategoricalDataPreview({
   );
 
   return (
-    <div>
+    <div className={styles.CategoricalDataPreview}>
       <BarChart
-        x={plotData.x}
-        groupedData={groupedData}
+        data={plotData}
         xAxisTitle={xAxisTitle}
         hoverLabel={hoverLabel}
         useLogScale={useLogScale}

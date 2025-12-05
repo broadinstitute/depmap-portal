@@ -19,6 +19,8 @@ import styles from "../../../../../../styles/ContextBuilderV2.scss";
 
 const Select = (WindowedSelect as unknown) as typeof ReactSelect;
 
+const MAX_LENGTH_BEFORE_HIDE = 50;
+
 interface Props {
   expr: string[] | null;
   path: (string | number)[];
@@ -113,7 +115,10 @@ function StringList({
   domain,
   isLoading,
   onClickShowSlicePreview,
-}: Props) {
+  setShowAll,
+}: Props & {
+  setShowAll: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const { dispatch, shouldShowValidation } = useContextBuilderState();
 
@@ -170,13 +175,27 @@ function StringList({
     >
       <div>
         <label htmlFor="list-values">Values</label>
-        <button
-          type="button"
-          className={styles.detailsButton}
-          onClick={onClickShowSlicePreview}
-        >
-          see plot
-        </button>
+        {Array.isArray(expr) && expr.length > MAX_LENGTH_BEFORE_HIDE ? (
+          <button
+            type="button"
+            className={styles.hideLongListButton}
+            onClick={() => setShowAll(false)}
+          >
+            hide list
+            <i
+              className="glyphicon glyphicon-eye-close"
+              style={{ marginLeft: 5 }}
+            />
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.detailsButton}
+            onClick={onClickShowSlicePreview}
+          >
+            see plot
+          </button>
+        )}
       </div>
       <Select
         id="list-values"
@@ -231,21 +250,22 @@ function StringList({
 }
 
 function LongListWrapper(props: Props) {
-  const MAX = 50;
-
   const [showAll, setShowAll] = useState(false);
   const numValues = props.expr?.length || 0;
   const prevNumValues = useRef(numValues);
 
   useEffect(() => {
-    if (numValues > MAX && prevNumValues.current === MAX) {
+    if (
+      numValues > MAX_LENGTH_BEFORE_HIDE &&
+      prevNumValues.current === MAX_LENGTH_BEFORE_HIDE
+    ) {
       setShowAll(true);
     }
 
     prevNumValues.current = numValues;
   }, [numValues]);
 
-  if (!showAll && numValues > MAX) {
+  if (!showAll && numValues > MAX_LENGTH_BEFORE_HIDE) {
     return (
       <div className={styles.LongListWrapper}>
         <div>
@@ -268,8 +288,7 @@ function LongListWrapper(props: Props) {
             id="edit-values"
             onClick={() => setShowAll(true)}
           >
-            <span />
-            <span>{numValues.toLocaleString()} values</span>
+            <span>({numValues.toLocaleString()} values)</span>
             <i
               className="glyphicon glyphicon-pencil"
               style={{ marginLeft: 5 }}
@@ -280,7 +299,7 @@ function LongListWrapper(props: Props) {
     );
   }
 
-  return <StringList {...props} />;
+  return <StringList {...props} setShowAll={setShowAll} />;
 }
 
 export default LongListWrapper;
