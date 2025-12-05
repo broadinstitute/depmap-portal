@@ -4,11 +4,13 @@ rule oncref_context_analysis:
         subtype_tree_taiga_id={"type":"subtype_tree"},
         context_matrix_taiga_id={"type":"subtype_context_matrix"},
         oncref_auc_taiga_id={"type":"prism_oncology_reference_auc_matrix"},
+        oncref_table_path={"type":"compound-summary", "dataset":"Prism_oncology_AUC"}
     outputs:
         {"type": "context_analysis_for_dataset", "dataset": "oncref"}
     run """ python {{ inputs.script.filename }} \
-              {{ inputs.subtype_tree_taiga_id.taiga_id }} \
-              {{ inputs.context_matrix_taiga_id.taiga_id }} \
+              oncref_context_analysis \
+              {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+              {{ inputs.context_matrix_taiga_id.dataset_id }} \
               {{ inputs.oncref_auc_taiga_id.dataset_id }} \
               {{ inputs.oncref_table_path.filename }} \
               context_analysis.csv """
@@ -18,16 +20,18 @@ rule repurposing_context_analysis:
         script=fileref("./get_context_analysis.py"),
         subtype_tree_taiga_id={"type":"subtype_tree"},
         context_matrix_taiga_id={"type":"subtype_context_matrix"},
-        repurposing_matrix_taiga_id={"type": "repurposing_matrix_taiga_id"}
-        compound_summary_repurposing={"type": "compound-summary", "dataset": "Rep_all_single_pt"},
+        repurposing_matrix_taiga_id={"type": "repurposing_matrix_taiga_id"},
+        repurposing_list_taiga_id={"type":"repurposing_list_taiga_id"},
+        repurposing_table_path={"type": "compound-summary", "dataset": "Rep_all_single_pt"}
     outputs:
         {"type": "context_analysis_for_dataset", "dataset": "repurposing"}
     run """ python {{ inputs.script.filename }} \
-              {{ inputs.subtype_tree_taiga_id.taiga_id }} \
-              {{ inputs.context_matrix_taiga_id.taiga_id }} \
-              {{ inputs.repurposing_matrix_taiga_id.taiga_id }}  \
-              {{ inputs.repurposing_list_taiga_id.taiga_id }} \
-              {{ inputs.repurposing_table_path.taiga_id }} \
+              repurposing_context_analysis \
+              {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+              {{ inputs.context_matrix_taiga_id.dataset_id }} \
+              {{ inputs.repurposing_matrix_taiga_id.dataset_id }}  \
+              {{ inputs.repurposing_list_taiga_id.dataset_id }} \
+              {{ inputs.repurposing_table_path.filename }} \
               context_analysis.csv """
 
 rule crispr_context_analysis:
@@ -37,14 +41,16 @@ rule crispr_context_analysis:
         context_matrix_taiga_id={"type":"subtype_context_matrix"},
         gene_effect_taiga_id={"type":"raw-dep-matrix", "label": 'Chronos_Combined'},
         gene_dependency_taiga_id={"type":"raw-dep-prob-matrix", "label": 'Chronos_Combined'},
+        tda_table={"type":"tda-table"}
     outputs:
         {"type": "context_analysis_for_dataset", "dataset": "crispr"}
     run """ python {{ inputs.script.filename }} \
-              {{ inputs.subtype_tree_taiga_id.taiga_id }} \
-              {{ inputs.context_matrix_taiga_id.taiga_id }} \
-              {{ inputs.gene_effect_taiga_id.taiga_id }}  \
-              {{ inputs.gene_dependency_taiga_id.taiga_id }}  \
-              {{ inputs.tda_table_path.taiga_id }}  \
+              crispr_context_analysis \
+              {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+              {{ inputs.context_matrix_taiga_id.dataset_id }} \
+              {{ inputs.gene_effect_taiga_id.dataset_id }}  \
+              {{ inputs.gene_dependency_taiga_id.dataset_id }}  \
+              {{ inputs.tda_table.filename }}  \
               context_analysis.csv """
 
 rule merge_context_analysis_tables:
@@ -52,7 +58,7 @@ rule merge_context_analysis_tables:
         script=fileref("./concat_csvs.py"),
         csvs=all {"type": "context_analysis_for_dataset"}
     outputs:
-        {"type": "", "filename": fileref("context_analysis.csv")}
+        {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
     run """
        cat > inputs.json <<EOF
        {{ inputs.csvs }}

@@ -6,6 +6,7 @@ import argparse
 import json
 
 from taigapy import create_taiga_client_v3
+from tqdm import tqdm
 
 MIN_GROUP_SIZE = 5
 
@@ -217,15 +218,13 @@ def compute_context_results(
             print(
                 f"Skipping {ds_name} for {ctx} (n={len(ds_in_group)}) vs. {out_label} (n={len(ds_out_group)})"
             )
-        return pd.DataFrame(columns=col_order)
+        return None
 
     ds_res = compute_selective_deps_for(ds_in_group, ds_out_group, ds).assign(
         subtype_code=ctx, out_group=out_label, dataset=ds_name
     )
 
     ds_res = add_extra_columns(ds_res, ds_in_group, ds_out_group)
-
-    add_extra_columns(ds_res, ds_in_group, ds_out_group)
 
     return ds_res
 
@@ -247,7 +246,7 @@ def compute_in_out_groups(subtype_tree, context_matrix, ds_name, ds, add_extra_c
 
     all_results = []
 
-    for idx, ctx_row in subtype_tree.iterrows():
+    for idx, ctx_row in tqdm(list(subtype_tree.iterrows())):
         ctx_code = names_to_codes[ctx_row.NodeName]
         ctx_in = context_matrix[context_matrix[ctx_code] == True].index
 
@@ -300,7 +299,11 @@ def compute_in_out_groups(subtype_tree, context_matrix, ds_name, ds, add_extra_c
                 )
             )
 
-    return pd.concat(all_results).loc[:, col_order].copy()
+    df = pd.concat([x for x in all_results if x is not None]).loc[:, col_order].copy()
+
+    # add_extra_columns(df, ds_name, ds_name)
+
+    return df
 
 
 def get_id_or_file_name(possible_id, id_key="dataset_id"):
@@ -414,14 +417,18 @@ def add_commands(subparsers, functions):
 
     for function in functions:
         sig = signature(function)
-        param_names = set(sig.parameters.keys()).difference(
-            ["tc", "subtype_tree", "context_matrix"]
-        )
+        param_names = [
+            x
+            for x in sig.parameters.keys()
+            if x not in ["tc", "subtype_tree", "context_matrix"]
+        ]
         parser = subparsers.add_parser(function.__name__)
+        parser.add_argument("subtype_tree_taiga_id")
+        parser.add_argument("context_matrix_taiga_id")
         for param_name in param_names:
             parser.add_argument(param_name)
-            parser.add_argument("out_filename")
             parser.set_defaults(func=make_function_runner(function, param_names))
+        parser.add_argument("out_filename")
 
 
 def make_function_runner(function, param_names):
@@ -437,7 +444,7 @@ def make_function_runner(function, param_names):
             "context_matrix": context_matrix,
         }
         for param_name in param_names:
-            kwargs[param_name] = args[param_name]
+            kwargs[param_name] = getattr(args, param_name)
 
         # run the function
         results = function(**kwargs)
@@ -450,12 +457,19 @@ def make_function_runner(function, param_names):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.set_defaults(func=None)
     subparsers = parser.add_subparsers()
     add_commands(
         subparsers,
-        [calc_oncref_enrichment, calc_repurposing_enrichment, calc_crispr_enrichment],
+        [
+            oncref_context_analysis,
+            repurposing_context_analysis,
+            crispr_context_analysis,
+        ],
     )
 
     args = parser.parse_args()
-
-    args.func(args)
+    if args.func is None:
+        parser.print_help()
+    else:
+        args.func(args)
