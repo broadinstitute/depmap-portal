@@ -308,7 +308,7 @@ def get_id_or_file_name(possible_id, id_key="dataset_id"):
 
 
 ##### Entry points into this code. Each calc_..._enrichment function is invokable from the command line
-def calc_oncref_enrichment(
+def oncref_context_analysis(
     tc, subtype_tree, context_matrix, oncref_auc_taiga_id, oncref_table_path
 ):
     oncref_table = pd.read_csv(oncref_table_path)
@@ -347,7 +347,7 @@ def calc_oncref_enrichment(
     )
 
 
-def calc_repurposing_enrichment(
+def repurposing_context_analysis(
     tc,
     subtype_tree,
     context_matrix,
@@ -382,7 +382,7 @@ def calc_repurposing_enrichment(
     )
 
 
-def calc_crispr_enrichment(
+def crispr_context_analysis(
     tc,
     subtype_tree,
     context_matrix,
