@@ -41,12 +41,10 @@ const PlotOptionsPanel: React.FC = () => {
   );
 
   return (
-    <div ref={ref} style={{ backgroundColor: "#ffffff" }}>
-      <p style={{ fontWeight: 600, marginBottom: 18 }}>
-        Use toggles to group and cluster.
-      </p>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
+    <div ref={ref} className={styles.PlotOptionsPanel}>
+      <p className={styles.sectionLabel}>Use toggles to group and cluster.</p>
+      <div className={styles.sectionItemWrapper}>
+        <div className={styles.sectionItem}>
           <span>
             Use term clustering.{" "}
             <span>
@@ -67,8 +65,8 @@ const PlotOptionsPanel: React.FC = () => {
           />
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
+      <div className={styles.sectionItemWrapper}>
+        <div className={styles.sectionItem}>
           <span>
             Use gene clustering.{" "}
             <span>
@@ -89,8 +87,8 @@ const PlotOptionsPanel: React.FC = () => {
           />
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
+      <div className={styles.sectionItemWrapper}>
+        <div className={styles.sectionItem}>
           <span>
             Group terms when possible.{" "}
             <span>
@@ -111,22 +109,29 @@ const PlotOptionsPanel: React.FC = () => {
           />
         </div>
       </div>
-      <NumberInput
-        name="maxTopTerms"
-        label="Max. n Terms/Term Groups"
-        purpleHelpIcon={
-          <PurpleHelpIcon
-            tooltipText="Limits the maximum number of terms or term groups in the y-axis of the plot."
-            popoverId="maxTopTerms-help"
-          />
-        }
-        min={1}
-        max={25}
-        step={1}
-        value={localMaxTopTerms}
-        setValue={updateMaxTerms}
-        defaultValue={NUMERIC_FILTER_DEFAULTS.maxTopTerms}
-      />
+      <hr className={styles.hrSectionDivider} />
+      <p className={styles.sectionLabel}>
+        Choose the number of terms or term groups to plot.
+      </p>
+      <div className={styles.sectionItemWrapper}>
+        <NumberInput
+          width={"50%"}
+          name="maxTopTerms"
+          label="Max. n Terms/Term Groups"
+          purpleHelpIcon={
+            <PurpleHelpIcon
+              tooltipText="Limits the maximum number of terms or term groups in the y-axis of the plot."
+              popoverId="maxTopTerms-help"
+            />
+          }
+          min={1}
+          max={25}
+          step={1}
+          value={localMaxTopTerms}
+          setValue={updateMaxTerms}
+          defaultValue={NUMERIC_FILTER_DEFAULTS.maxTopTerms}
+        />
+      </div>
     </div>
   );
 };
