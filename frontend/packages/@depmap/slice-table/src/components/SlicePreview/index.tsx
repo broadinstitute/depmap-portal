@@ -29,7 +29,6 @@ interface Props {
     initialSelectedValues: Set<string | number>;
     onChangeSelectedValues: (nextSelectedValues: Set<string | number>) => void;
   };
-  rowSelection?: Record<string, boolean>;
 }
 
 function SlicePreview({
@@ -38,7 +37,6 @@ function SlicePreview({
   PlotlyLoader,
   getContinuousFilterProps = undefined,
   getCategoricalFilterProps = undefined,
-  rowSelection = undefined,
 }: Props) {
   const slices = useMemo(() => (value ? [value] : []), [value]);
 
@@ -102,9 +100,6 @@ function SlicePreview({
   const values = previewData.map((row) => row[column.id]);
   const { idLabel, units, datasetName } = column.meta;
   const xAxisTitle = `${idLabel} ${units}<br>${datasetName}`;
-  const selectionMask = rowSelection
-    ? previewData.map((row) => row.id! in rowSelection)
-    : undefined;
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
@@ -115,7 +110,6 @@ function SlicePreview({
               values={values as number[]}
               hoverText={previewData.map(({ label }) => label) as string[]}
               xAxisTitle={xAxisTitle}
-              selectionMask={selectionMask}
               getContinuousFilterProps={getContinuousFilterProps}
             />
           ) : (
@@ -123,7 +117,6 @@ function SlicePreview({
               dataValues={values as (number | string | string[])[]}
               xAxisTitle={xAxisTitle}
               hoverLabel={idLabel}
-              selectionMask={selectionMask}
               getCategoricalFilterProps={getCategoricalFilterProps}
             />
           )}

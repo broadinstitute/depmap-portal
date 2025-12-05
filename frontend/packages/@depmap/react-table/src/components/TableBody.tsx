@@ -54,6 +54,14 @@ export function TableBody<T>({
     onScroll(e.currentTarget.scrollLeft);
   };
 
+  if (totalSize === 0) {
+    return (
+      <div className={styles.emptyState} style={{ height }}>
+        There are no rows to display.
+      </div>
+    );
+  }
+
   return (
     <div
       ref={parentRef}
@@ -93,7 +101,7 @@ export function TableBody<T>({
                       index={index}
                       stickyColumnsInfo={stickyColumnsInfo}
                       isTruncated={cell.id === truncatedCellId}
-                      onMouseEnter={(e) => handleMouseEnter(e, cell.id)}
+                      onMouseEnterOrMove={(e) => handleMouseEnter(e, cell.id)}
                     />
                   ))}
                 </tr>

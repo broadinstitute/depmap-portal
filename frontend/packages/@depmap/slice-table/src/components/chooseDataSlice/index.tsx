@@ -15,7 +15,6 @@ interface Props {
   defaultValue?: SliceQuery | null;
   initialSource?: "property" | "custom";
   onClickRemoveColumn?: () => void;
-  rowSelection?: Record<string, boolean>;
 }
 
 function chooseDataSlice({
@@ -24,7 +23,6 @@ function chooseDataSlice({
   defaultValue = null,
   initialSource = "property",
   onClickRemoveColumn = () => {},
-  rowSelection = undefined,
 }: Props) {
   const isEditMode = defaultValue !== null;
 
@@ -53,7 +51,6 @@ function chooseDataSlice({
               index_type_name={index_type_name}
               value={value}
               PlotlyLoader={PlotlyLoader}
-              rowSelection={rowSelection}
             />
           </div>
         </div>

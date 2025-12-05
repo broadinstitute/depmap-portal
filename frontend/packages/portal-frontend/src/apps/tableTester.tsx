@@ -108,7 +108,7 @@ const App = () => {
           <SliceTable
             key={key}
             index_type_name={indexTypeName}
-            initialSlices={initialSlices}
+            getInitialState={() => ({ initialSlices })}
             onChangeSlices={handleChangeSlices}
           />
         </div>

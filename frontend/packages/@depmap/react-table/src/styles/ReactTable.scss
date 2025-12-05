@@ -65,6 +65,14 @@
   color: black;
 }
 
+.emptyState {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 18px;
+  font-style: italic;
+}
+
 .virtualScroll {
   overflow-y: auto;
   overflow-x: auto;
@@ -131,6 +139,7 @@
   justify-content: space-between;
   align-items: center;
   position: relative;
+  user-select: none;
 }
 
 .cellAsListTooltip {

@@ -72,10 +72,12 @@ const toTopLevelBooleanExpr = (expr: DataExplorerContextV2["expr"]) => {
 export const ContextBuilderStateProvider = ({
   contextToEdit,
   onChangeContext,
+  startInTableView,
   children,
 }: {
   contextToEdit: Partial<DataExplorerContextV2>;
   onChangeContext: (nextContext: DataExplorerContextV2) => void;
+  startInTableView: boolean;
   children: React.ReactNode;
 }) => {
   const [name, onChangeName] = useState(contextToEdit.name || "");
@@ -180,7 +182,7 @@ export const ContextBuilderStateProvider = ({
     }
   }, [vars, fullySpecifiedVars]);
 
-  const [showTableView, setShowTableView] = useState(false);
+  const [showTableView, setShowTableView] = useState(startInTableView);
   const [tableOnlySlices, setTableOnlySlices] = useState<SliceQuery[]>([]);
 
   // When switching to table view, thow out any incomplete rules.
@@ -205,11 +207,22 @@ export const ContextBuilderStateProvider = ({
 
   const uniqueVariableSlices = useMemo(() => {
     const jsonSlices = [...fullySpecifiedVars].map((varName) => {
-      const { dataset_id, identifier, identifier_type } = vars[varName];
+      const { dataset_id, identifier, identifier_type, slice_type } = vars[
+        varName
+      ];
+
+      let resolvedIdType = identifier_type;
+
+      // Edge case: for `null` feature types, the id and label are the
+      // same so we want to consider the slices to be equivalent as well.
+      if (slice_type === null) {
+        resolvedIdType = "feature_id";
+      }
+
       return JSON.stringify({
         dataset_id,
         identifier,
-        identifier_type,
+        identifier_type: resolvedIdType,
       });
     });
 

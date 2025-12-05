@@ -73,6 +73,22 @@
   min-height: 500px;
 }
 
+.fadein {
+  opacity: 0;
+  transition: opacity 0.3s;
+
+  &:not(:empty) {
+    opacity: 1;
+  }
+}
+
+.CategoricalDataPreview {
+  & > div:first-child {
+    min-height: 500px;
+    @extend .fadein;
+  }
+}
+
 .helpText {
   margin: 5px;
   font-style: italic;
@@ -80,12 +96,9 @@
 }
 
 .continuousFilterContainer {
-  & > div {
-    opacity: 0;
-    transition: opacity 0.3s;
+  margin-left: 15px;
 
-    &:not(:empty) {
-      opacity: 1;
-    }
+  & > div {
+    @extend .fadein;
   }
 }

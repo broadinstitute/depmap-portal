@@ -1,5 +1,5 @@
 import React from "react";
-import { Tooltip } from "@depmap/common-components";
+import { Tooltip, WordBreaker } from "@depmap/common-components";
 import styles from "../styles/ReactTable.scss";
 
 type CellTooltipWrapperProps = {
@@ -41,7 +41,11 @@ export function CellTooltipWrapper({
     return <>{children}</>;
   }
 
-  const content = formatTooltipContent(cell.getValue());
+  let content = formatTooltipContent(cell.getValue());
+
+  if (typeof content === "string") {
+    content = <WordBreaker text={content} />;
+  }
 
   return (
     <Tooltip id="truncated-cell" content={content} placement="top">

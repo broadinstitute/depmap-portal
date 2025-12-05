@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
 import type { RowSelectionState } from "@depmap/react-table";
@@ -10,37 +10,69 @@ import styles from "../styles/SliceTable.scss";
 
 interface Props {
   index_type_name: string;
-  initialSlices?: SliceQuery[];
-  viewOnlySlices?: Set<SliceQuery>;
+  getInitialState?: () => {
+    initialSlices?: SliceQuery[];
+    // Should be a subset of `initialSlices`
+    viewOnlySlices?: Set<SliceQuery>;
+    initialRowSelection?: RowSelectionState;
+  };
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
-  initialRowSelection?: RowSelectionState;
   enableRowSelection?: boolean;
   onChangeRowSelection?: (nextRowSelection: Record<string, boolean>) => void;
   renderCustomControls?: () => React.ReactNode;
   renderCustomActions?: () => React.ReactNode;
   downloadFilename?: string;
+  sliceTableRef?: React.RefObject<{
+    // Use this to force `getInitialState()` to be called.
+    forceInitialize: () => void;
+  }>;
 }
 
 const getRowId = (row: Record<string, string | number | undefined>) => {
   return row.id as string;
 };
 
-const EMPTY_SET = new Set<SliceQuery>();
-const EMPTY_OBJECT = {};
 const NOOP = () => {};
 
 function SliceTable({
   index_type_name,
-  initialSlices = [],
-  viewOnlySlices = EMPTY_SET,
+  getInitialState = () => ({}),
   onChangeSlices = NOOP,
-  initialRowSelection = EMPTY_OBJECT,
   enableRowSelection = false,
   onChangeRowSelection = NOOP,
   renderCustomControls = () => null,
   renderCustomActions = () => null,
   downloadFilename = "",
+  sliceTableRef = undefined,
 }: Props) {
+  const [revision, setRevision] = useState(1);
+
+  const { initialSlices, viewOnlySlices, initialRowSelection } = useMemo(() => {
+    return {
+      // defaults
+      initialSlices: [] as SliceQuery[],
+      viewOnlySlices: new Set<SliceQuery>(),
+      initialRowSelection: {},
+      // explicit state
+      ...getInitialState(),
+    };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revision]);
+
+  React.useImperativeHandle(
+    sliceTableRef,
+    () => ({ forceInitialize: () => setRevision((r) => r + 1) }),
+    []
+  );
+
+  // Currently unused.
+  const tableRef = useRef<{
+    resetColumnResizing: () => void;
+    manuallyResizedColumns: Set<string>;
+    resetSort: () => void;
+  }>(null);
+
   const {
     data,
     error,
@@ -52,6 +84,7 @@ function SliceTable({
     handleClickAddColumn,
     handleClickFilterButton,
     shouldShowLabelColumn,
+    numFiltersApplied,
   } = useSliceTableState({
     index_type_name,
     initialSlices,
@@ -63,7 +96,13 @@ function SliceTable({
   });
 
   useEffect(() => {
-    if (rowSelection !== initialRowSelection) {
+    const keysA = Object.keys(rowSelection);
+    const keysB = new Set(Object.keys(initialRowSelection));
+
+    const hasSelectionChanges =
+      keysA.length !== keysB.size || keysA.some((k) => !keysB.has(k));
+
+    if (hasSelectionChanges) {
       onChangeRowSelection(rowSelection);
     }
   }, [rowSelection, initialRowSelection, onChangeRowSelection]);
@@ -76,6 +115,7 @@ function SliceTable({
         onClickFilterButton={handleClickFilterButton}
         onClickDownload={handleClickDownload}
         renderCustomControls={renderCustomControls}
+        numFiltersApplied={numFiltersApplied}
       />
       {loading && (
         <div className={styles.loadingContainer}>
@@ -89,6 +129,7 @@ function SliceTable({
         </div>
       )}
       <ReactTable
+        tableRef={tableRef}
         className={loading ? styles.hidden : ""}
         height="100%"
         data={data}
