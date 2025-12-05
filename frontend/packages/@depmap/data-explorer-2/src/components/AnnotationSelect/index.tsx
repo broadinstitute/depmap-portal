@@ -7,7 +7,7 @@ interface Props {
   dimension_type: string;
   dataset_id: string | null;
   identifier: string | null;
-  identifierLabel: string | null;
+  identifierDisplayLabel: string | null;
   onChangeSourceDataset: (
     dataset_id: string,
     identifier_type: "column" | "sample_id" | "feature_id"
@@ -39,7 +39,7 @@ function AnnotationSelect({
   dimension_type,
   dataset_id,
   identifier,
-  identifierLabel,
+  identifierDisplayLabel,
   onChangeSourceDataset,
   onChangeAnnotationSlice,
   isClearable = false,
@@ -90,7 +90,9 @@ function AnnotationSelect({
         annotationDatasets={annotationDatasets}
         dataset_id={dataset_id}
         value={
-          isUnknownDataset && identifierLabel ? identifierLabel : identifier
+          isUnknownDataset && identifierDisplayLabel
+            ? identifierDisplayLabel
+            : identifier
         }
         onChange={onChangeAnnotationSlice}
         menuPortalTarget={menuPortalTarget}

@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { isSampleType, pluralize, useDimensionType } from "../../utils/misc";
+import {
+  isSampleTypeSync,
+  pluralize,
+  useDimensionType,
+} from "../../utils/misc";
 import {
   State,
   SLICE_TYPE_NULL,
@@ -64,11 +68,11 @@ function SliceTypeSelect({
 
   let placeholder = isLoading
     ? "Loading…"
-    : `Select ${isSampleType(index_type) ? "feature" : "sample"} type…`;
+    : `Select ${isSampleTypeSync(index_type) ? "feature" : "sample"} type…`;
 
   if (isUnknownDataset) {
     placeholder = `(Unknown ${
-      isSampleType(index_type) ? "feature" : "sample"
+      isSampleTypeSync(index_type) ? "feature" : "sample"
     } type)`;
   }
 

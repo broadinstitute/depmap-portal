@@ -12,7 +12,6 @@ import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
 import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import {
-  capitalize,
   getDimensionTypeLabel,
   pluralize,
   sortDimensionTypes,
@@ -69,27 +68,11 @@ export function PointsSelector({
     setDatasetsByIndexType,
   ] = useState<DatasetsByIndexType | null>(null);
 
-  const [displayNames, setDisplayNames] = useState<string[] | undefined>(
-    undefined
-  );
-
   useEffect(() => {
     (async () => {
       try {
         const data = await dataExplorerAPI.fetchDatasetsByIndexType();
         setDatasetsByIndexType(data);
-
-        if (isBreadboxOnlyMode) {
-          const nextDisplayNames = [] as string[];
-          const dimTypes = await cached(breadboxAPI).getDimensionTypes();
-
-          for (const dimTypeName of Object.keys(data)) {
-            const dimType = dimTypes.find(({ name }) => name === dimTypeName);
-            nextDisplayNames.push(dimType ? dimType.display_name : dimTypeName);
-          }
-
-          setDisplayNames(nextDisplayNames);
-        }
       } catch (e) {
         window.console.error(e);
       }
@@ -98,8 +81,13 @@ export function PointsSelector({
 
   const unsortedTypes = Object.keys(datasetsByIndexType || {});
 
-  const sortedTypes = sortDimensionTypes(unsortedTypes, displayNames).filter(
-    (index_type) => {
+  if (value && !unsortedTypes.includes(value)) {
+    unsortedTypes.push(value);
+  }
+
+  const sortedTypes = sortDimensionTypes(unsortedTypes)
+    // TODO: Remove this filter. It's only relevant to legacy mode.
+    .filter((index_type) => {
       if (
         index_type === "other" &&
         value !== "other" &&
@@ -109,17 +97,19 @@ export function PointsSelector({
       }
 
       return true;
-    }
-  );
+    });
 
-  const options = {} as Record<string, string>;
-  const displayNameLookup = Object.fromEntries(
-    unsortedTypes.map((type, i) => [type, (displayNames || [])[i]])
-  );
+  const isLoading = !datasetsByIndexType;
 
-  for (const typeName of sortedTypes) {
-    options[typeName] = pluralize(displayNameLookup[typeName]);
-  }
+  const options = isLoading
+    ? { [value]: "Loading..." }
+    : sortedTypes.reduce(
+        (memo, index_type) => ({
+          ...memo,
+          [index_type]: pluralize(getDimensionTypeLabel(index_type)),
+        }),
+        {}
+      );
 
   return (
     <div className={styles.PointsSelector}>
@@ -141,9 +131,9 @@ export function PointsSelector({
         placeholder="Select points…"
         options={options}
         show={show}
-        enable={enable}
+        enable={enable && !isLoading}
         value={value}
-        isLoading={!datasetsByIndexType}
+        isLoading={isLoading}
         onChange={onChange}
       />
     </div>
@@ -166,7 +156,9 @@ export function ColorByTypeSelector({
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const sliceTypeLabel = capitalize(getDimensionTypeLabel(slice_type));
+  const [sliceTypeLabel, setSliceTypeLabel] = useState(
+    getDimensionTypeLabel(slice_type)
+  );
   const [hasLegacyColorProperty, setHasLegacyColorProperty] = useState(false);
 
   useEffect(() => {
@@ -179,6 +171,15 @@ export function ColorByTypeSelector({
         setHasLegacyColorProperty(
           slices.some((slice) => !slice.isHighCardinality)
         );
+      } else {
+        cached(breadboxAPI)
+          .getDimensionTypes()
+          // HACK: `getDimensionTypeLabel` is synchronous when it should be async.
+          // This is to keep some legacy code working. It falls back to using the type `name`
+          // instead of `display_name` until `getDimensionTypes()` has been cached.
+          .then(() => {
+            setSliceTypeLabel(getDimensionTypeLabel(slice_type));
+          });
       }
     })();
   }, [slice_type]);
