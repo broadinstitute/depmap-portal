@@ -1,9 +1,8 @@
-import re
 from typing import List, Optional, Iterable, Dict
 
 from dataclasses import dataclass
 from depmap.cell_line.models_new import DepmapModel
-from depmap.context.models_new import SubtypeContext, SubtypeNode
+from depmap.context.models_new import SubtypeContext
 from depmap.gene.models import GeneExecutiveInfo
 import pandas as pd
 
@@ -13,10 +12,8 @@ from depmap.dataset.models import (
     BiomarkerDataset,
     Mutation,
 )
-from depmap.entity.models import Entity
 from depmap.compute.models import CustomCellLineGroup
 from depmap.interactive import interactive_utils
-from depmap.vector_catalog.models import SliceSerializer, SliceRowType
 from depmap.interactive.common_utils import sort_insensitive
 from depmap.interactive.config.utils import (
     get_context_dataset,
@@ -415,19 +412,6 @@ def get_row_of_values(dataset_id, feature):
     if not isinstance(series, CellLineSeries):
         series = CellLineSeries(series)
 
-    return series
-
-
-def get_row_of_values_from_slice_id(id):
-    """
-    Wrapper around get_row_of_values, to take in slice id
-    """
-    dataset_id, row, row_type = SliceSerializer.decode_slice_id(id)
-
-    if row_type == SliceRowType.entity_id:
-        row = Entity.get_by_id(row).label
-
-    series = get_row_of_values(dataset_id, row)
     return series
 
 

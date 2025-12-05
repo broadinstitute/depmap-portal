@@ -3,7 +3,6 @@ import pandas as pd
 import pytest
 from numpy import isnan
 
-from depmap.vector_catalog.models import SliceSerializer, SliceRowType
 from depmap.dataset.models import TabularDataset, BiomarkerDataset, DependencyDataset
 from depmap.cell_line.models import CellLine
 from depmap.interactive import interactive_utils
@@ -16,8 +15,6 @@ from tests.depmap.interactive.fixtures import *
 from tests.utilities.override_fixture import override
 from tests.utilities import interactive_test_utils
 from tests.factories import (
-    GeneFactory,
-    DatasetFactory,
     DependencyDatasetFactory,
     MatrixFactory,
     NonstandardMatrixFactory,
@@ -301,32 +298,6 @@ def test_get_row_of_values_drops_nas(interactive_db_mock_downloads):
 # This is a tombstone marker for devs looking for the test. Please do not remove
 # def test_get_row_of_values_maps_categoricals_with_a_mapping(empty_db_mock_downloads):
 # test is located in separate file, test_get_row_of_values_maps_categoricals_with_a_mapping.py
-
-
-def test_get_row_of_values_from_slice_id(empty_db_mock_downloads):
-    cell_line = CellLineFactory()
-    gene = GeneFactory()
-
-    matrix = MatrixFactory(entities=[gene], cell_lines=[cell_line])
-    dataset = DependencyDatasetFactory(matrix=matrix)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    expected_series = interactive_utils.get_row_of_values(dataset.name.name, gene.label)
-    assert expected_series.equals(
-        interactive_utils.get_row_of_values_from_slice_id(
-            SliceSerializer.encode_slice_id(
-                dataset.name.name, gene.label, SliceRowType.label
-            )
-        )
-    )
-    assert expected_series.equals(
-        interactive_utils.get_row_of_values_from_slice_id(
-            SliceSerializer.encode_slice_id(
-                dataset.name.name, gene.entity_id, SliceRowType.entity_id
-            )
-        )
-    )
 
 
 def test_get_category_config(interactive_db_mock_downloads):

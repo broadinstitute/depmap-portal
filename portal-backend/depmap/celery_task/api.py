@@ -1,6 +1,5 @@
 from celery.result import AsyncResult
 from flask_restplus import Namespace, Resource
-from depmap.breadbox_shim import breadbox_shim
 from depmap.compute.celery import app
 from depmap.celery_task.utils import format_task_status, task_response_model
 
@@ -20,9 +19,6 @@ class Task(
         Get the status and outcome of a task
         """
         # This is the common endpoint that should be used for polling the status of all celery tasks
-
-        if id.startswith("breadbox/"):
-            return breadbox_shim.get_breadbox_task_status(id)
 
         # get the task by creating an AsyncResult with the task id
         task = AsyncResult(id, app=app)
