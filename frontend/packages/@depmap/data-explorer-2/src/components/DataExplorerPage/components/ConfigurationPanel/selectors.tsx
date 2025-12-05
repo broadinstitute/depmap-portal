@@ -178,7 +178,9 @@ export function ColorByTypeSelector({
           // This is to keep some legacy code working. It falls back to using the type `name`
           // instead of `display_name` until `getDimensionTypes()` has been cached.
           .then(() => {
-            setSliceTypeLabel(getDimensionTypeLabel(slice_type));
+            setTimeout(() => {
+              setSliceTypeLabel(getDimensionTypeLabel(slice_type));
+            });
           });
       }
     })();
