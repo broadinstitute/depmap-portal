@@ -2,7 +2,6 @@ import pandas as pd
 import scipy.stats as stats
 import numpy as np
 import statsmodels.api as sm
-import warnings
 import argparse
 import json
 
@@ -287,79 +286,114 @@ def add_crispr_columns(ds_res, gene_dependency, in_group, out_group):
     return ds_res
 
 
+col_order = [
+    "subtype_code",
+    "out_group",
+    "entity_id",
+    "dataset",
+    "t_pval",
+    "t_qval",
+    "t_qval_log",
+    "mean_in",
+    "mean_out",
+    "effect_size",
+    "selectivity_val",
+    "n_dep_in",
+    "n_dep_out",
+    "frac_dep_in",
+    "frac_dep_out",
+]
+
 ### ----- CONTEXT TYPE RESULTS ----- ###
 def compute_context_results(
     ctx,
     in_group,
     out_group,
     out_label,
-    datasets_to_test,
-    data_for_extra_cols,
+    ds_name,
+    ds,
+    add_extra_columns,
+    *,
     verbose=False,
 ):
 
-    col_order = [
-        "subtype_code",
-        "out_group",
-        "entity_id",
-        "dataset",
-        "t_pval",
-        "t_qval",
-        "t_qval_log",
-        "mean_in",
-        "mean_out",
-        "effect_size",
-        "selectivity_val",
-        "n_dep_in",
-        "n_dep_out",
-        "frac_dep_in",
-        "frac_dep_out",
-    ]
+    return _calc(
+        ctx,
+        in_group,
+        out_group,
+        out_label,
+        ds_name,
+        ds,
+        add_extra_columns,
+        verbose=verbose,
+    )
 
-    ctx_res_dfs = []
-    for ds_name, ds in datasets_to_test.items():
-        ds_in_group = list(set(in_group).intersection(set(ds.index.values)))
-        ds_out_group = list(set(out_group).intersection(set(ds.index.values)))
 
-        if len(ds_in_group) < MIN_GROUP_SIZE or len(ds_out_group) < MIN_GROUP_SIZE:
-            if verbose:
-                print(
-                    f"Skipping {ds_name} for {ctx} (n={len(ds_in_group)}) vs. {out_label} (n={len(ds_out_group)})"
-                )
-            ctx_res_dfs.append(pd.DataFrame(columns=col_order))
-            continue
+def _calc(
+    ctx,
+    in_group,
+    out_group,
+    out_label,
+    ds_name,
+    ds,
+    add_extra_columns,
+    *,
+    verbose=False,
+):
 
-        ds_res = compute_selective_deps_for(ds_in_group, ds_out_group, ds).assign(
-            subtype_code=ctx, out_group=out_label, dataset=ds_name
+    ds_in_group = list(set(in_group).intersection(set(ds.index.values)))
+    ds_out_group = list(set(out_group).intersection(set(ds.index.values)))
+
+    if len(ds_in_group) < MIN_GROUP_SIZE or len(ds_out_group) < MIN_GROUP_SIZE:
+        if verbose:
+            print(
+                f"Skipping {ds_name} for {ctx} (n={len(ds_in_group)}) vs. {out_label} (n={len(ds_out_group)})"
+            )
+        return pd.DataFrame(columns=col_order)
+
+    ds_res = compute_selective_deps_for(ds_in_group, ds_out_group, ds).assign(
+        subtype_code=ctx, out_group=out_label, dataset=ds_name
+    )
+
+    ds_res = add_extra_columns(ds_res, ds_in_group, ds_out_group)
+
+    add_extra_columns(ds_res, ds_in_group, ds_out_group)
+
+    return ds_res
+
+
+def get_add_extra_columns(ds_name, data_for_extra_cols):
+    def crispr_add_extra_columns(ds_res, ds_in_group, ds_out_group):
+        return add_crispr_columns(
+            ds_res, data_for_extra_cols["gene_dependency"], ds_in_group, ds_out_group,
+        ).reset_index(names="entity_id")
+
+    def prism_onc_ref_add_extra_columns(ds_res, ds_in_group, ds_out_group):
+        ds_res = ds_res.copy()
+
+        # replace mean_in, mean_out, and effect size with non-logged versions
+        ds_res["mean_in"] = data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
+        ds_res["mean_out"] = data_for_extra_cols["oncref_aucs"].loc[ds_out_group].mean()
+
+        ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
+
+        return prism_add_extra_columns(ds_res, ds_in_group, ds_out_group)
+
+    def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
+        return ds_res.reset_index(names="entity_id").merge(
+            data_for_extra_cols["selectivity_vals"]
         )
 
-        if ds_name == "CRISPR":
-            ds_res = add_crispr_columns(
-                ds_res,
-                data_for_extra_cols["gene_dependency"],
-                ds_in_group,
-                ds_out_group,
-            ).reset_index(names="entity_id")
+    if ds_name == "CRISPR":
+        add_extra_columns = crispr_add_extra_columns
+    elif ds_name == "PRISMOncRef":
+        add_extra_columns = prism_onc_ref_add_extra_columns
+    elif ds_name == "PRISMRepurposing":
+        add_extra_columns = prism_add_extra_columns
+    else:
+        add_extra_columns = lambda ds_res, ds_in_group, ds_out_group: ds_res
 
-        elif ds_name == "PRISMOncRef":
-            # replace mean_in, mean_out, and effect size with non-logged versions
-            ds_res["mean_in"] = (
-                data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
-            )
-            ds_res["mean_out"] = (
-                data_for_extra_cols["oncref_aucs"].loc[ds_out_group].mean()
-            )
-            ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
-
-        if ds_name in ["PRISMRepurposing", "PRISMOncRef"]:
-            # merge with selectivity vals
-            ds_res = ds_res.reset_index(names="entity_id").merge(
-                data_for_extra_cols["selectivity_vals"]
-            )
-
-        ctx_res_dfs.append(ds_res)
-
-    return pd.concat(ctx_res_dfs).loc[:, col_order].copy()
+    return add_extra_columns
 
 
 def compute_in_out_groups(
@@ -380,69 +414,78 @@ def compute_in_out_groups(
     names_to_codes = {**name_to_code_onco, **name_to_code_gs}
 
     all_results = []
-    for idx, ctx_row in subtype_tree.iterrows():
-        ctx_code = names_to_codes[ctx_row.NodeName]
-        ctx_in = context_matrix[context_matrix[ctx_code] == True].index
 
-        if len(ctx_in) < MIN_GROUP_SIZE:
-            continue
+    for ds_name, ds in datasets_to_test.items():
+        add_extra_columns = get_add_extra_columns(ds_name, data_for_extra_cols)
 
-        # Compute vs. All Others
-        ctx_out = context_matrix[context_matrix[ctx_code] != True].index
-        all_results.append(
-            compute_context_results(
-                ctx_code,
-                ctx_in,
-                ctx_out,
-                "All Others",
-                datasets_to_test,
-                data_for_extra_cols,
-            )
-        )
+        for idx, ctx_row in subtype_tree.iterrows():
 
-        # Compute vs. Other Heme, if applicable
-        if ctx_row.Level0 in ["Myeloid", "Lymphoid"]:
-            ctx_out = context_matrix[
-                (context_matrix[ctx_code] != True)
-                & (
-                    (context_matrix["MYELOID"] == True)
-                    | (context_matrix["LYMPH"] == True)
-                )
-            ].index
+            ctx_code = names_to_codes[ctx_row.NodeName]
+            ctx_in = context_matrix[context_matrix[ctx_code] == True].index
+
+            if len(ctx_in) < MIN_GROUP_SIZE:
+                continue
+
+            # Compute vs. All Others
+            ctx_out = context_matrix[context_matrix[ctx_code] != True].index
             all_results.append(
                 compute_context_results(
                     ctx_code,
                     ctx_in,
                     ctx_out,
-                    "Other Heme",
-                    datasets_to_test,
-                    data_for_extra_cols,
+                    "All Others",
+                    ds_name,
+                    ds,
+                    add_extra_columns,
                 )
             )
 
-        # Loop through all parents
-        lvls_to_compare = ctx_row[
-            ctx_row.index.str.contains("^Level") & (ctx_row != ctx_row.NodeName)
-        ].dropna()
-        for out_name in lvls_to_compare:
-            out_code = names_to_codes[out_name]
-
-            ctx_out = context_matrix[
-                (context_matrix[ctx_code] != True) & (context_matrix[out_code] == True)
-            ].index
-
-            all_results.append(
-                compute_context_results(
-                    ctx_code,
-                    ctx_in,
-                    ctx_out,
-                    out_code,
-                    datasets_to_test,
-                    data_for_extra_cols,
+            # Compute vs. Other Heme, if applicable
+            if ctx_row.Level0 in ["Myeloid", "Lymphoid"]:
+                ctx_out = context_matrix[
+                    (context_matrix[ctx_code] != True)
+                    & (
+                        (context_matrix["MYELOID"] == True)
+                        | (context_matrix["LYMPH"] == True)
+                    )
+                ].index
+                all_results.append(
+                    compute_context_results(
+                        ctx_code,
+                        ctx_in,
+                        ctx_out,
+                        "Other Heme",
+                        ds_name,
+                        ds,
+                        add_extra_columns,
+                    )
                 )
-            )
 
-    return pd.concat(all_results)
+            # Loop through all parents
+            lvls_to_compare = ctx_row[
+                ctx_row.index.str.contains("^Level") & (ctx_row != ctx_row.NodeName)
+            ].dropna()
+            for out_name in lvls_to_compare:
+                out_code = names_to_codes[out_name]
+
+                ctx_out = context_matrix[
+                    (context_matrix[ctx_code] != True)
+                    & (context_matrix[out_code] == True)
+                ].index
+
+                all_results.append(
+                    compute_context_results(
+                        ctx_code,
+                        ctx_in,
+                        ctx_out,
+                        out_code,
+                        ds_name,
+                        ds,
+                        add_extra_columns,
+                    )
+                )
+
+    return pd.concat(all_results).loc[:, col_order].copy()
 
 
 def get_id_or_file_name(possible_id, id_key="dataset_id"):
