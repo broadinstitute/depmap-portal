@@ -11,7 +11,6 @@ interface Props {
   values: number[];
   hoverText: string[];
   xAxisTitle: string;
-  selectionMask?: boolean[];
   getContinuousFilterProps?: () => {
     hasFixedMin: boolean;
     hasFixedMax: boolean;
@@ -50,7 +49,6 @@ function ContinuousDataPreview({
   values,
   hoverText,
   xAxisTitle,
-  selectionMask = undefined,
   getContinuousFilterProps = undefined,
 }: Props) {
   const filterProps = getContinuousFilterProps?.();
@@ -165,12 +163,6 @@ function ContinuousDataPreview({
     }
   };
 
-  const colorData = useMemo(() => {
-    return selectionMask
-      ? selectionMask.map((selected) => (selected ? "Selected" : "Unselected"))
-      : undefined;
-  }, [selectionMask]);
-
   const settings = useDataExplorerSettings();
   const plotStyles = {
     ...settings.plotStyles,
@@ -194,17 +186,9 @@ function ContinuousDataPreview({
       <DensityPlot
         height={480}
         data={plotData}
-        colorData={colorData}
         xKey="x"
         hoverTextKey="hoverText"
-        colorMap={
-          selectionMask
-            ? new Map([
-                ["Selected", plotStyles.palette.all],
-                ["Unselected", plotStyles.palette.other],
-              ])
-            : new Map([[LEGEND_ALL, plotStyles.palette.all]])
-        }
+        colorMap={new Map([[LEGEND_ALL, plotStyles.palette.all]])}
         legendDisplayNames={{ Selected: "Selected", Unselected: "Unselected" }}
         selectedPoints={selectedPoints}
         onClickPoint={withFilter ? handleClickPoint : undefined}
@@ -215,10 +199,7 @@ function ContinuousDataPreview({
         <div className={styles.helpText}>{helpText}</div>
       )}
       {withFilter && !isSingleValueMode && validInitialRange && onChangeRange && (
-        <div
-          className={styles.continuousFilterContainer}
-          style={{ marginLeft: selectionMask ? 75 : 15 }}
-        >
+        <div className={styles.continuousFilterContainer}>
           <ContinuousFilter
             data={plotData}
             colorMap={new Map([[LEGEND_ALL, plotStyles.palette.all]])}

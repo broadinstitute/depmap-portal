@@ -20,7 +20,10 @@ import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import { initializeDevContexts } from "@depmap/data-explorer-2";
+import {
+  initializeDevContexts,
+  isBreadboxOnlyMode,
+} from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
@@ -175,13 +178,6 @@ export function launchContextManagerModal(options?: {
   );
 }
 
-export function launchCellLineSelectorModal() {
-  launchContextManagerModal({
-    initialContextType: "depmap_model",
-    showHelpText: true,
-  });
-}
-
 export function editContext(
   context: DataExplorerContext | DataExplorerContextV2,
   hash: string
@@ -200,7 +196,8 @@ export function editContext(
 }
 
 export function repairContext(
-  context: DataExplorerContextV2
+  context: DataExplorerContextV2,
+  startInTableView?: boolean
 ): Promise<DataExplorerContextV2 | null> {
   const container = document.getElementById("cell_line_selector_modal");
 
@@ -221,6 +218,7 @@ export function repairContext(
       <StandaloneContextEditor
         context={context}
         hash={null}
+        startInTableView={startInTableView}
         onSave={(nextContext: DataExplorerContextV2) => {
           resolve(nextContext);
         }}
@@ -239,7 +237,8 @@ export function repairContext(
 export function saveNewContext(
   context: DataExplorerContext | DataExplorerContextV2,
   onHide?: () => void,
-  onSave?: (context: DataExplorerContext, hash: string) => void
+  onSave?: (context: DataExplorerContext, hash: string) => void,
+  startInTableView?: boolean
 ) {
   const container = document.getElementById("modal-container");
   const unmount = () =>
@@ -251,6 +250,7 @@ export function saveNewContext(
       <StandaloneContextEditor
         context={context}
         hash={null}
+        startInTableView={startInTableView}
         onSave={onSave}
         onHide={() => {
           if (onHide) {
@@ -263,6 +263,38 @@ export function saveNewContext(
     </React.Suspense>,
     container
   );
+}
+
+export function launchCellLineSelectorModal() {
+  if (!isBreadboxOnlyMode) {
+    launchContextManagerModal({
+      initialContextType: "depmap_model",
+      showHelpText: true,
+    });
+  } else {
+    saveNewContext(
+      ({
+        dimension_type: "depmap_model",
+        // These are unreferenced so they will be normalized away on save.
+        // They are just here to add more info to the table.
+        vars: {
+          oncotree1: {
+            dataset_id: "depmap_model_metadata",
+            identifier_type: "column",
+            identifier: "OncotreeLineage",
+          },
+          oncotree2: {
+            dataset_id: "depmap_model_metadata",
+            identifier_type: "column",
+            identifier: "OncotreeSubtype",
+          },
+        },
+      } as unknown) as DataExplorerContextV2,
+      () => {},
+      () => {},
+      true
+    );
+  }
 }
 
 export function initEnrichmentTile(
