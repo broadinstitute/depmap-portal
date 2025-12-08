@@ -101,13 +101,6 @@ def get_dataset_priority(dataset_id):
     return __get_config().get(dataset_id).priority
 
 
-def get_feature_name(dataset_id):
-    """
-    Returns feature name of dataset
-    """
-    return __get_config().get(dataset_id).feature_name
-
-
 def get_feature_example(dataset_id):
     """
     Returns feature example of dataset

@@ -13,7 +13,6 @@ def test_getters(interactive_db_mock_downloads):
     Test the following methods for both axes and color datasets:
     get_dataset_label
     get_dataset_units (not applicable for color)
-    get_feature_name
     get_taiga_id
     """
     interactive_config = InteractiveConfigFakeMutationsDownload()
@@ -36,10 +35,6 @@ def test_getters(interactive_db_mock_downloads):
         == interactive_config.get(avana_id)["priority"]
     )
     assert (
-        interactive_utils.get_feature_name(avana_id)
-        == interactive_config.get(avana_id)["feature_name"]
-    )
-    assert (
         interactive_utils.get_taiga_id(avana_id)
         == interactive_config.get(avana_id)["taiga_id"]
     )
@@ -53,11 +48,6 @@ def test_getters(interactive_db_mock_downloads):
         interactive_utils.get_dataset_label(mutation_id)
         == interactive_config.get(mutation_id)["label"]
     )
-    assert (
-        interactive_utils.get_feature_name(mutation_id)
-        == interactive_config.get(mutation_id)["feature_name"]
-    )
-
     assert (
         interactive_utils.get_taiga_id(nonstandard_aliased_dataset_id)
         == nonstandard_aliased_dataset_id

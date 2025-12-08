@@ -51,15 +51,3 @@ from depmap.interactive.config.utils import (
     get_original_taiga_id,  # used in loader and tests
     get_feature_example,  # used in tests
 )
-
-#######################################
-# METHODS USED ONLY BY VECTOR CATALOG #
-#######################################
-
-from .config_groups import (
-    get_noncustom_continuous_datasets_not_gene_or_compound,
-    get_nonstandard_categorical_datasets,
-    is_custom,
-)
-
-from depmap.interactive.config.utils import get_feature_name
