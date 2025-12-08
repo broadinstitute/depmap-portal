@@ -61,10 +61,6 @@ check_download_data.py: error: No overloads for "__getitem__" match the provided
 check_download_data.py: error: Object of type "list[str]" is not callable (reportCallIssue)
 check_nonstandard_datasets.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 check_nonstandard_datasets.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-cloud_correlate.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
-cloud_correlate.py: error: Argument of type "() -> tuple[int, ndarray[Any, dtype[float64]]]" cannot be assigned to parameter "get_matrix_callback" of type "() -> Tuple[DataFrame, ndarray[Unknown, Unknown]]" in function "submit"
-cloud_correlate.py: error: Argument of type "Literal[b"Content-Disposition"]" cannot be assigned to parameter "key" of type "str" in function "__getitem__"
-cloud_correlate.py: error: Argument of type "dict[str, NDArray[Any]]" cannot be assigned to parameter "files" of type "_Files | None" in function "post"
 compat.py: error: "basestring" is not defined (reportUndefinedVariable)
 compat.py: error: "unicode" is not defined (reportUndefinedVariable)
 compound_dose_replicate_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
