@@ -78,6 +78,6 @@ def expressions_are_equivalent(boolean_value, json_logic_expr):
     # These expressions don't use variables (just pure logic)
     var_name = "dummy variable"
     get_slice_data_mock = lambda _: {}
-    result = ContextEvaluator(context, get_slice_data_mock).is_match(var_name)
+    result = ContextEvaluator(context, get_slice_data_mock).is_match(var_name) # pyright: ignore
 
     return result == boolean_value
