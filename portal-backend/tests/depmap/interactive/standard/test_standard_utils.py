@@ -80,22 +80,3 @@ def test_get_label_aliases_starting_with(interactive_db_mock_downloads, prefix):
     for label_aliases, expected in zip(label_aliases_list, expected_list):
         assert label_aliases[0] == expected[0]
         assert set(label_aliases[1]) == expected[1]
-
-
-def test_get_all_row_names(app, empty_db_mock_downloads):
-    """
-    Test on two test datasets that have prepopulate True
-    We do want to make sure that these are sorted alphabetically, case insentitive
-    """
-    dataset = BiomarkerDatasetFactory(
-        matrix=MatrixFactory(
-            entities=[GeneFactory(label="abc"), GeneFactory(label="def")],
-            cell_lines=[CellLineFactory()],
-        ),
-        name=BiomarkerDataset.BiomarkerEnum.expression,
-    )
-
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    assert standard_utils.get_all_row_names(dataset.name.name) == ["abc", "def"]

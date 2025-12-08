@@ -56,7 +56,6 @@ from depmap.interactive.config.utils import (
 # METHODS USED ONLY BY VECTOR CATALOG #
 #######################################
 from .get_and_process_data import (
-    get_all_rows,
     get_matching_row_entity_ids,
     get_matching_rows,
     is_prepopulate,

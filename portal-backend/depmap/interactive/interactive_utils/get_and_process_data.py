@@ -13,8 +13,6 @@ from depmap.dataset.models import (
     Mutation,
 )
 from depmap.compute.models import CustomCellLineGroup
-from depmap.interactive import interactive_utils
-from depmap.interactive.common_utils import sort_insensitive
 from depmap.interactive.config.utils import (
     get_context_dataset,
     get_lineage_dataset,
@@ -85,25 +83,6 @@ def get_matching_row_entity_ids(dataset_id, prefix, max=10) -> Iterable[int]:
         return standard_utils.get_matching_row_entity_ids(dataset_id, prefix, max)
     else:
         return nonstandard_utils.get_matching_row_entity_ids(dataset_id, prefix, max)
-
-
-def get_all_rows(dataset_id) -> List[Dict]:
-    if dataset_id == get_context_dataset():
-        row_names = [context.subtype_code for context in SubtypeContext.query.all()]
-        rows = [{"label": name, "value": name} for name in sort_insensitive(row_names)]
-    elif dataset_id == get_custom_cell_lines_dataset():
-        # keeping this as an if else to highlight that this is this dataset's implementation of this func
-        assert (
-            False
-        ), "Rows in custom cell lines dataset are uuids and should not be listable, this should not have been called"
-    else:
-        assert is_prepopulate(dataset_id)
-        if is_standard(dataset_id):
-            row_names = standard_utils.get_all_row_names(dataset_id)
-        else:
-            row_names = nonstandard_utils.get_all_row_names(dataset_id)
-        rows = [{"label": row, "value": row} for row in row_names]
-    return rows
 
 
 def get_all_row_indices_labels_entity_ids(dataset_id) -> List[RowSummary]:

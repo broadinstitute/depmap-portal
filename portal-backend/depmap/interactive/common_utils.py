@@ -1,15 +1,7 @@
 from collections import namedtuple
 
-from depmap.interactive import interactive_utils
-from depmap.dataset.models import BiomarkerDataset
-
 # index refers to index in matrix
 RowSummary = namedtuple("RowSummary", "index entity_id label")
-
-
-def sort_insensitive(value_list):
-    return sorted(value_list, key=lambda x: x.casefold())
-
 
 def format_features_from_value(value_list):
     return [{"label": x, "value": x} for x in value_list]

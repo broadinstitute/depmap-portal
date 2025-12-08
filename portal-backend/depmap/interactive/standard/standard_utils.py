@@ -6,7 +6,6 @@ import itertools
 from typing import List, Iterable
 from depmap.interactive.common_utils import (
     RowSummary,
-    sort_insensitive,
     format_features_from_value,
     format_features_from_label_aliases,
 )
@@ -126,31 +125,6 @@ def _find_entities_by_label_prefix(dataset_id, prefix, max=10) -> List[Entity]:
     )
     entities = sorted(entities, key=lambda entity: entity.label.casefold())
     return entities[:max]
-
-
-def get_all_row_names(dataset_id):
-    """
-    Currently this standard dataset version is NOT USED
-
-    ORDERED SORTED BY ROW_NAME
-    This should only be used for datasets that want all possible dropdowns to be prepopulated
-    I.e. when the dataset has a limited number of rows and all options are enumerated in the dropdown, not searched on demand.
-    Max is currently set to 80, as a threshold that you wouldn't want to render more than 80 dropdowns
-    If you are calling this method and want more than the max, reconsider if this is the correct method to use. You might want to be searching a prefix on ajax demand instead. Use get_matching_rows instead.
-    """
-    matrix_id = get_matrix_id(dataset_id)
-    assert_max = 80
-    entities = (
-        Entity.query.join(RowMatrixIndex)
-        .filter(RowMatrixIndex.matrix_id == matrix_id)
-        .all()
-    )
-    row_names = [entity.label for entity in entities]
-
-    assert (
-        len(row_names) <= assert_max
-    ), "Attempt to get all rows for a dataset with more than {} rows".format(assert_max)
-    return sort_insensitive(row_names)
 
 
 def get_all_row_indices_labels_entity_ids(dataset_id):

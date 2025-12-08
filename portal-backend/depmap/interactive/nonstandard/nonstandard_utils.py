@@ -8,7 +8,6 @@ from typing import List, Dict, Tuple, Iterable
 from depmap.database import db
 from depmap.interactive.common_utils import (
     RowSummary,
-    sort_insensitive,
     format_features_from_value,
     format_features_from_label_aliases,
 )
@@ -244,51 +243,6 @@ def get_row_of_values(dataset_id, feature):
 _all_col_names_cache: Dict[
     str, Tuple[List[str], List[int]]
 ] = {}  # possible memory leak source
-
-
-def get_random_row_name(dataset_id):
-    """
-    Returns an arbitrary row name. This function exists as a hack to work around a regression
-    which got introduced with the DE2 addition. Basically, to generate a link to DE2 we need
-    the name of some feature. `get_all_row_names` refuses to run if the dataset has a lot of features
-    and the reality is, we only need one, and we don't care which, so adding this specially purpose
-    function for just that case, and basing it on `get_all_row_names`.
-    """
-    row_list_of_tuples = (
-        RowNonstandardMatrix.query.join(NonstandardMatrix)
-        .filter(NonstandardMatrix.nonstandard_dataset_id == dataset_id)
-        .with_entities(RowNonstandardMatrix.row_name)
-        .limit(1)
-        .all()
-    )
-    assert len(row_list_of_tuples) == 1
-    row_names = [row[0] for row in row_list_of_tuples]
-    return row_names[0]
-
-
-def get_all_row_names(dataset_id):
-    """
-    ORDERED SORTED BY ROW_NAME
-    Unlike get_all_col_names, this should only be used for datasets that want all possible dropdowns to be prepopulated
-    I.e. when the dataset has a limited number of rows and all options are enumerated in the dropdown, not searched on demand.
-    Max is currently set to 1000, as a threshold that you wouldn't want to render more than 80 dropdowns
-    If you are calling this method and want more than the max, reconsider if this is the correct method to use. You might want
-    to be searching a prefix on ajax demand instead. Use get_matching_rows instead.
-    Currently only used for
-    1) MSI (5 options)
-    """
-    assert_max = 1000
-    row_list_of_tuples = (
-        RowNonstandardMatrix.query.join(NonstandardMatrix)
-        .filter(NonstandardMatrix.nonstandard_dataset_id == dataset_id)
-        .with_entities(RowNonstandardMatrix.row_name)
-        .all()
-    )
-    assert (
-        len(row_list_of_tuples) <= assert_max
-    ), "Attempt to get all rows for a dataset with more than {} rows".format(assert_max)
-    row_names = [row[0] for row in row_list_of_tuples]
-    return sort_insensitive(row_names)
 
 
 def get_all_row_indices_labels_entity_ids(dataset_id):

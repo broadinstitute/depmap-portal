@@ -91,26 +91,6 @@ def test_get_matching_rows(interactive_db_mock_downloads, dataset_id, prefix, ex
         ) == format_features_from_value(expected)
 
 
-def test_get_all_rows(interactive_db_mock_downloads):
-    # correctness of the nonstandard utils path is handled in test_nonstandard_utils/test_get_all_row_names
-    # and parallel for the standard utils path
-    assert interactive_utils.get_all_rows(interactive_utils.get_context_dataset()) == [
-        {"label": "ALKHotspot", "value": "ALKHotspot"},
-        {"label": "BONE", "value": "BONE"},
-        {"label": "EGFR", "value": "EGFR"},
-        {"label": "ES", "value": "ES"},
-        {"label": "LUAD", "value": "LUAD"},
-        {"label": "LUNG", "value": "LUNG"},
-        {"label": "LUSC", "value": "LUSC"},
-        {"label": "MCC", "value": "MCC"},
-        {"label": "MEL", "value": "MEL"},
-        {"label": "NSCLC", "value": "NSCLC"},
-        {"label": "OS", "value": "OS"},
-        {"label": "PNS", "value": "PNS"},
-        {"label": "SKIN", "value": "SKIN"},
-    ]
-
-
 @pytest.mark.parametrize(
     "dataset_id, row_name, is_valid",
     [
