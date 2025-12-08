@@ -211,15 +211,6 @@ def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     return interactive_utils.get_dataset_feature_labels(dataset_id)
 
 
-def get_dataset_feature_ids(dataset_id: str) -> list[str]:
-    """
-    Get a list of all feature/entity given_ids for the given dataset.
-    """
-    if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_dataset_feature_ids(dataset_id)
-    return interactive_utils.get_dataset_feature_ids(dataset_id)
-
-
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     """
     Get a list of all sample ids (ex. depmap ids) for the given dataset.

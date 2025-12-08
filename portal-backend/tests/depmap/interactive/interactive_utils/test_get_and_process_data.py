@@ -7,6 +7,7 @@ from depmap.dataset.models import TabularDataset, BiomarkerDataset, DependencyDa
 from depmap.cell_line.models import CellLine
 from depmap.interactive import interactive_utils
 from depmap.interactive.config.categories import CategoryConfig
+from depmap.interactive.interactive_utils.get_and_process_data import get_category_config
 from depmap.interactive.nonstandard.models import NonstandardMatrix
 from depmap.interactive.common_utils import format_features_from_value
 from depmap.settings.settings import TestConfig
@@ -308,7 +309,7 @@ def test_get_category_config(interactive_db_mock_downloads):
         custom_cell_line_group_dataset_id,
     ]:
         assert isinstance(
-            interactive_utils.get_category_config(dataset), CategoryConfig
+            get_category_config(dataset), CategoryConfig
         )
 
 

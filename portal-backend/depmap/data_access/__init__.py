@@ -3,7 +3,6 @@ from .interface import (
     add_matrix_dataset_to_breadbox,
     get_all_matrix_datasets,
     get_matrix_dataset,
-    get_dataset_feature_ids,
     get_dataset_feature_labels_by_id,
     get_dataset_feature_labels,
     get_dataset_sample_ids,

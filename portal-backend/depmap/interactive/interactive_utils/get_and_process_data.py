@@ -140,14 +140,6 @@ def get_dataset_sample_labels_by_id(dataset_id: str) -> dict[str, str]:
     }
 
 
-def get_dataset_feature_ids(dataset_id: str) -> list[str]:
-    """
-    Get a list of all feature/entity given_ids for the given dataset.
-    """
-    row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-    return [str(row.entity_id) for row in row_summaries]
-
-
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     """
     Get a list of all feature/entity labels for the given dataset.
