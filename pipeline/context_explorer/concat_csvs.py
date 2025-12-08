@@ -29,7 +29,7 @@ def main():
 
     # read the list of filenames
     with open(args.input_json) as f:
-        filenames = json.load(f)
+        filenames = [x["filename"] for x in json.load(f)]
 
     # read the csvs
     dfs = []

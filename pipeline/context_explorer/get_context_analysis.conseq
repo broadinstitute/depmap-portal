@@ -6,7 +6,7 @@ rule oncref_context_analysis:
         oncref_auc_taiga_id={"type":"prism_oncology_reference_auc_matrix"},
         oncref_table_path={"type":"compound-summary", "dataset":"Prism_oncology_AUC"}
     outputs:
-        {"type": "context_analysis_for_dataset", "dataset": "oncref"}
+        {"type": "context_analysis_for_dataset", "dataset": "oncref", "filename": {"$filename": "context_analysis.csv"}}
     run """ python {{ inputs.script.filename }} \
               oncref_context_analysis \
               {{ inputs.subtype_tree_taiga_id.dataset_id }} \
@@ -24,7 +24,7 @@ rule repurposing_context_analysis:
         repurposing_list_taiga_id={"type":"repurposing_list_taiga_id"},
         repurposing_table_path={"type": "compound-summary", "dataset": "Rep_all_single_pt"}
     outputs:
-        {"type": "context_analysis_for_dataset", "dataset": "repurposing"}
+        {"type": "context_analysis_for_dataset", "dataset": "repurposing", "filename": {"$filename": "context_analysis.csv"}}
     run """ python {{ inputs.script.filename }} \
               repurposing_context_analysis \
               {{ inputs.subtype_tree_taiga_id.dataset_id }} \
@@ -43,7 +43,7 @@ rule crispr_context_analysis:
         gene_dependency_taiga_id={"type":"raw-dep-prob-matrix", "label": 'Chronos_Combined'},
         tda_table={"type":"tda-table"}
     outputs:
-        {"type": "context_analysis_for_dataset", "dataset": "crispr"}
+        {"type": "context_analysis_for_dataset", "dataset": "crispr", "filename": {"$filename": "context_analysis.csv"}}
     run """ python {{ inputs.script.filename }} \
               crispr_context_analysis \
               {{ inputs.subtype_tree_taiga_id.dataset_id }} \
@@ -59,9 +59,9 @@ rule merge_context_analysis_tables:
         csvs=all {"type": "context_analysis_for_dataset"}
     outputs:
         {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
-    run """
-       cat > inputs.json <<EOF
-       {{ inputs.csvs }}
-       EOF
-       """
+    run "bash" with """
+        cat > inputs.json <<EOF
+        {{ inputs.csvs | quoted }}
+        EOF
+"""
     run """ python {{ inputs.script.filename }} inputs.json context_analysis.csv """
