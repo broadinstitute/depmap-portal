@@ -230,57 +230,6 @@ def get_subsetted_df_by_labels(
         raise NotImplementedError
 
 
-def get_subsetted_df_by_ids(
-    dataset_id: str,
-    entity_ids: Optional[List[int]],
-    cell_line_ids: Optional[List[str]],
-):
-    """
-    Load a dataframe contianing a subset of the data belonging to the dataset. 
-    Index the subset using entity/cell line ids instead of row/column indices (as is done in get_subsetted_df)
-    :param dataset_id:  id of dataset to subset
-    :param entity_ids: entity ids of entities to return.  If None, return all entities
-    :param cell_line_ids: depmap ids of cell lines to return.  If None, return all cell lines
-    :return: dataframe where rows are entities (indexed by label) and columns are cell lines (indexed by ID)
-    """
-    row_index_to_entity_label = {}
-    col_index_to_depmap_id = {}
-    entity_ids_set = set(entity_ids) if entity_ids else set()
-
-    row_indices = []
-    row_summaries = interactive_utils.get_all_row_indices_labels_entity_ids(dataset_id)
-    for row in row_summaries:
-        if entity_ids and row.entity_id in entity_ids_set or entity_ids is None:
-            row_indices.append(row.index)
-            row_index_to_entity_label[row.index] = row.label
-
-    col_indices = []
-    matrix = get_matrix(dataset_id)
-    depmap_id_to_matrix_index = {}
-    for i in matrix.col_index:
-        depmap_id_to_matrix_index[i.cell_line.depmap_id] = i.index
-
-    if cell_line_ids:
-        for cl in cell_line_ids:
-            if cl in depmap_id_to_matrix_index:
-                index = depmap_id_to_matrix_index[cl]
-                col_indices.append(index)
-                col_index_to_depmap_id[index] = cl
-    else:
-        col_indices = list(depmap_id_to_matrix_index.values())
-        col_index_to_depmap_id = dict(
-            [(value, key) for key, value in depmap_id_to_matrix_index.items()]
-        )
-
-    if is_continuous(dataset_id):
-        subsetted_df = get_subsetted_df(dataset_id, row_indices, col_indices)
-        subsetted_df.rename(index=row_index_to_entity_label, inplace=True)
-        subsetted_df.rename(columns=col_index_to_depmap_id, inplace=True)
-        return subsetted_df
-    else:
-        raise NotImplementedError
-
-
 def get_subsetted_df(dataset_id, row_indices, col_indices):
     """
     Thus far, this is only used in the compute module, for computing custom analyses
