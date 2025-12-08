@@ -456,7 +456,6 @@ util.py: error: No overloads for "__getitem__" match the provided arguments (rep
 utils.py: error: "abs_dest_path" is possibly unbound (reportPossiblyUnboundVariable)
 utils.py: error: "base_name" is possibly unbound (reportPossiblyUnboundVariable)
 utils.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
-utils.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
 utils.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 utils.py: error: "reset_index" is not a known member of "None" (reportOptionalMemberAccess)
 utils.py: error: Argument of type "Literal['ALLOW_CUSTOM_DOWNLOAD_WITH_TAIGA_URL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -465,14 +464,11 @@ utils.py: error: Argument of type "Literal['OAUTH_SIGNATURE_KEY']" cannot be ass
 utils.py: error: Argument of type "Literal['TAIGA_CACHE_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
-utils.py: error: Cannot access member "encode" for type "bytes"
 utils.py: error: Cannot access member "get" for type "list[str]"
 utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
 utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 utils.py: error: No overloads for "quote" match the provided arguments (reportCallIssue)
-utils.py: error: Second argument to "isinstance" must be a class or tuple of classes
-views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
@@ -484,11 +480,8 @@ views.py: error: "model_id" is not a known member of "None" (reportOptionalMembe
 views.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "source_dir" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: Argument expression after ** must be a mapping with a "str" key type (reportCallIssue)
-views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_file_record"
-views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_release_record"
 views.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['CONTACT_EMAIL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "Literal['DEBUG']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['DMC_SYMPOSIA_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['DOCUMENTATION_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -528,5 +521,4 @@ views.py: error: Expression of type "None" cannot be assigned to parameter of ty
 views.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "read_csv" match the provided arguments (reportCallIssue)
 views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-views.py: error: Object of type "list[str]" is not callable (reportCallIssue)
 views.py: error: Variable not allowed in type expression (reportInvalidTypeForm)
