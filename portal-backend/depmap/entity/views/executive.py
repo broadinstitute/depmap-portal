@@ -300,11 +300,11 @@ def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]
             color = color_palette.rep_all_single_pt_color
         elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_AUC:
             dataset_type = "prism_onc_ref"
-            label = "PRISM OncRef Lum log2(AUC)"
+            label = "PRISM OncRef log2(AUC) Lum"
             color = color_palette.prism_oncology_color
         elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_seq_AUC:
             dataset_type = "prism_onc_seq_ref"
-            label = "PRISM OncRef Seq log2(AUC)"
+            label = "PRISM OncRef log2(AUC) Seq"
             color = color_palette.prism_oncology_color
         else:
             # TODO: Figure out how to not hardcode above code
