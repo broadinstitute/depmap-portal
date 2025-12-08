@@ -310,26 +310,3 @@ class SummarizedExperiment:
 
     def validate(self):
         assert self.values.shape == [self.samples.shape[0], self.features.shape[0]]
-
-
-def get_summarized_experiment(
-    dataset_id: str, sample_ids: Optional[List[str]], entity_id: Optional[List[str]]
-) -> SummarizedExperiment:
-    """
-    extracts a slice of data from dataset_id for the specified samples and features. If either is None,
-    returns it for all features/samples
-
-    Examples:
-        getting all data in a dataset
-        se = get_summarized_experiment(dataset_id, None, None)
-
-        get all features in a dataset
-        get_summarized_experiment(dataset_id, [], None).features
-
-        get all samples in a dataset
-        get_summarized_experiment(dataset_id, None, []).samples
-
-        get a single sample's worth of data
-        get_summarized_experiment(dataset_id, [sample_id], None).values
-    """
-    raise NotImplementedError()
