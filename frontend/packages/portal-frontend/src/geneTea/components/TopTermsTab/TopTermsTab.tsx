@@ -28,6 +28,7 @@ interface TopTermsTabProps {
     customdata: string[];
   };
   heatmapXAxisLabel: string;
+  geneSymbolSelections: Set<string>;
 }
 
 function TopTermsTab({
@@ -35,6 +36,7 @@ function TopTermsTab({
   heatmapData,
   barChartData,
   heatmapXAxisLabel,
+  geneSymbolSelections,
 }: TopTermsTabProps) {
   const {
     selectedTopTermsTableRows: selectedTableRows,
@@ -166,9 +168,13 @@ function TopTermsTab({
                   <StackableSection
                     title="Matching Terms"
                     minHeight={150}
-                    usePlotStyles={true}
+                    usePlotStyles
                   >
-                    <GenesMatchingTermPanel />
+                    <GenesMatchingTermPanel
+                      validTerms={rawData?.allEnrichedTerms?.term || []}
+                      queryGenes={Array.from(geneSymbolSelections)}
+                      termToMatchingGenesMap={termToMatchingGenesMap}
+                    />
                   </StackableSection>
                 </SectionStack>
               </div>

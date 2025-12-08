@@ -26,7 +26,6 @@ interface SectionInfo {
 
 interface InternalProps extends StackableSectionProps {
   onRender: (info: SectionInfo) => void;
-  usePlotStyles: boolean;
 }
 
 export const StackableSection = (props: StackableSectionProps) => {
@@ -76,6 +75,7 @@ export const StackableSection = (props: StackableSectionProps) => {
         }
       }}
       {...props}
+      usePlotStyles={usePlotStyles}
     />
   );
 };

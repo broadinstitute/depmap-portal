@@ -48,10 +48,18 @@ function SearchOptionsContainer() {
             <LoadFromGeneContextSection />
           </div>
           <SectionStack>
-            <StackableSection title="Plot Options" minHeight={132}>
+            <StackableSection
+              title="Plot Options"
+              minHeight={132}
+              usePlotStyles={false}
+            >
               <PlotOptionsPanel />
             </StackableSection>
-            <StackableSection title="Term Options" minHeight={132}>
+            <StackableSection
+              title="Term Options"
+              minHeight={132}
+              usePlotStyles={false}
+            >
               <TermOptionsPanel />
             </StackableSection>
           </SectionStack>
