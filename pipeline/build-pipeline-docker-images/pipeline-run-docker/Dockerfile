@@ -55,7 +55,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 # install conseq in virtual environment
 COPY conseq-settings /root/.conseq
 RUN virtualenv --python=python3.9 /install/conseq && \
-     /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/releases/download/v2.0.3/conseq-2.0.3.tar.gz && \
+     /install/conseq/bin/pip install --extra-index-url https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/ conseq==2.1.3 && \
     ln -s /install/conseq/bin/conseq /root/.local/bin
 
 # copy the conseq helper into known location

@@ -11,7 +11,12 @@ interface Props {
 
 function DataSourceSelect({ expr, onInvalidateVariable }: Props) {
   const ref = useRef<HTMLDivElement>(null);
-  const { dimension_type, vars, setVar } = useContextBuilderState();
+  const {
+    dimension_type,
+    metadataDataset,
+    vars,
+    setVar,
+  } = useContextBuilderState();
 
   const varName = expr ? expr.var : null;
   const slice = varName ? vars[varName] : null;
@@ -52,7 +57,7 @@ function DataSourceSelect({ expr, onInvalidateVariable }: Props) {
           source: nextSource as DataExplorerContextVariable["source"],
           dataset_id:
             nextSource === "property"
-              ? `${dimension_type}_metadata`
+              ? metadataDataset?.given_id || `${dimension_type}_metadata`
               : undefined,
           identifier_type: nextSource === "property" ? "column" : undefined,
         });

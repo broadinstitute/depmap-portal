@@ -47,6 +47,12 @@ function AnnotationSourceSelect({
     ];
   }, [annotationDatasets, axis, metadataDataset]);
 
+  let displayValue = value as string | null | { value: string; label: string };
+
+  if (isLoadingAnnotationDatasets) {
+    displayValue = { value: value as string, label: "Loading..." };
+  }
+
   return (
     <PlotConfigSelect
       show
@@ -62,7 +68,7 @@ function AnnotationSourceSelect({
           details
         </button>
       )}
-      value={value}
+      value={displayValue}
       enable={!isLoadingAnnotationDatasets}
       isLoading={isLoadingAnnotationDatasets}
       options={annotationSourceOptions}

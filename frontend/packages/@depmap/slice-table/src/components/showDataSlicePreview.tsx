@@ -7,14 +7,12 @@ interface Props {
   index_type_name: string;
   PlotlyLoader: any;
   sliceQuery: SliceQuery;
-  rowSelection?: Record<string, boolean>;
 }
 
 function showDataSlicePreview({
   index_type_name,
   PlotlyLoader,
   sliceQuery,
-  rowSelection,
 }: Props) {
   showInfoModal({
     title: "View column",
@@ -23,7 +21,6 @@ function showDataSlicePreview({
         value={sliceQuery}
         index_type_name={index_type_name}
         PlotlyLoader={PlotlyLoader}
-        rowSelection={rowSelection}
       />
     ),
   });

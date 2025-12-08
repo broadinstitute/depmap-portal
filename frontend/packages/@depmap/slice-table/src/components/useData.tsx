@@ -289,7 +289,10 @@ function applyRowFilters(
         if (key === "id" || key === "label") {
           return false;
         }
-        return value === undefined;
+
+        return (
+          value === undefined || (Array.isArray(value) && value.length === 0)
+        );
       });
 
       if (hasUndefinedValues) {
@@ -718,6 +721,8 @@ export default function useAlignedData({
           error: null,
         }));
       } catch (error) {
+        window.console.error(error);
+
         if (!isCancelled) {
           const errorMessage =
             error instanceof Error ? error.message : "Unknown error occurred";

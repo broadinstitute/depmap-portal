@@ -432,6 +432,10 @@ export function useTableInstance<TData extends RowData>(
   // Calculate table width: just use the table's natural width since all columns have explicit sizes
   const tableWidth = table.getCenterTotalSize();
 
+  const resetSort = useCallback(() => {
+    setSorting([]);
+  }, []);
+
   return {
     table,
     parentRef,
@@ -450,5 +454,8 @@ export function useTableInstance<TData extends RowData>(
     syncScroll,
     // Export sticky columns info
     stickyColumnsInfo,
+    // Imperative method to force sorting to be reinitialized.
+    // This will also trigger the `defaultSort` calback.
+    resetSort,
   };
 }

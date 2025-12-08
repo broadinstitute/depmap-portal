@@ -8,7 +8,7 @@ import React, {
 import { SortOption } from "../types";
 
 // TODO organize this file a little better...
-export const TERM_OPTIONS_FILTER_DEFAULTS = {
+export const NUMERIC_FILTER_DEFAULTS = {
   sortBy: "Effect Size",
   maxTopTerms: 10,
   maxFDR: 0.05,
@@ -120,7 +120,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [sortBy, setSortBy] = useState<SortOption>(
-    TERM_OPTIONS_FILTER_DEFAULTS.sortBy as SortOption
+    NUMERIC_FILTER_DEFAULTS.sortBy as SortOption
   );
   const handleSetSortBy = useCallback((v: SortOption) => setSortBy(v), []);
 
@@ -190,7 +190,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.effectSizeThreshold
+    NUMERIC_FILTER_DEFAULTS.effectSizeThreshold
   );
   const handleSetEffectSizeThreshold = useCallback(
     (v: any) => {
@@ -210,7 +210,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [minMatchingQuery, setMinMatchingQuery] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
+    NUMERIC_FILTER_DEFAULTS.minMatchingQuery
   );
   const handleSetMinMatchingQuery = useCallback(
     (v: any) => {
@@ -230,7 +230,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [maxMatchingOverall, setMaxMatchingOverall] = useState<number | null>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
+    NUMERIC_FILTER_DEFAULTS.maxMatchingOverall
   );
   const handleSetMaxMatchingOverall = useCallback(
     (v: any) => {
@@ -250,7 +250,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [maxTopTerms, setMaxTopTerms] = useState<number | null>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms
+    NUMERIC_FILTER_DEFAULTS.maxTopTerms
   );
   const handleSetMaxTopTerms = useCallback(
     (v: any) => {
@@ -269,9 +269,7 @@ export function GeneTeaFiltersContextProvider({
     [handleClearSelectedTopTermsTableRows]
   );
 
-  const [maxFDR, setMaxFDR] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxFDR
-  );
+  const [maxFDR, setMaxFDR] = useState<number>(NUMERIC_FILTER_DEFAULTS.maxFDR);
   const handleSetMaxFDR = useCallback((v: number) => setMaxFDR(v), []);
 
   return (

@@ -44,7 +44,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
 
   const tableColumns = [
     {
-      accessor: "term",
+      accessor: "Term",
       Header: "Term",
       tooltipText:
         "The '~' prefix indicates a synonym set, with sub-terms defined in the ‘Synonyms’ column.",
@@ -75,7 +75,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
       ),
     },
     {
-      accessor: "termGroup",
+      accessor: "Term Group",
       Header: "Term Group",
       tooltipText:
         "The '++' suffix indicates the term is a member of a group. All terms in a group share the same value in this column.",
@@ -85,7 +85,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "fdr",
+      accessor: "FDR",
       Header: "FDR",
       tooltipText:
         "False discovery rate value, from Benjamini-Hochberg correction of hypergeometric test p-values.",
@@ -95,8 +95,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "effectSize",
-      id: "effectSize",
+      accessor: "Effect Size",
       Header: "Effect Size",
       tooltipText:
         "Sum of tf-idf across query genes. This measures the total information encoded by this term for the query, and approximates its specificity.",
@@ -106,8 +105,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "matchingGenesInList",
-      id: "matchingGenesInList",
+      accessor: "Matching Query",
       Header: "Matching Query",
       tooltipText: "Genes in query whose descriptions contain the term.",
       minWidth: 180,
@@ -116,8 +114,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "nMatchingGenesInList",
-      id: "nMatchingGenesInList",
+      accessor: "n Matching Query",
       Header: "n Matching Query",
       tooltipText:
         "Number of genes in query whose descriptions contain the term.",
@@ -127,8 +124,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "nMatchingGenesOverall",
-      id: "nMatchingGenesOverall",
+      accessor: "n Matching Overall",
       Header: "n Matching Overall",
       tooltipText:
         "Number of genes in background whose descriptions contain the term. This defines how common a term is.",
@@ -138,8 +134,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
       customFilter: renderFilterPlaceholder,
     },
     {
-      accessor: "synonyms",
-      id: "synonyms",
+      accessor: "Synonyms",
       Header: "Synonyms",
       tooltipText: "Semicolon-separated list of terms making up a synonym set.",
       minWidth: 180,
@@ -164,7 +159,7 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
     tableContent = (
       <div style={{ minWidth: 0, overflow: "hidden" }}>
         <WideTable
-          idProp="term"
+          idProp="Term"
           rowHeight={32}
           fixedHeight={500}
           data={tableData || []}

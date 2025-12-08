@@ -13,6 +13,7 @@ interface Props {
   isExistingContext: boolean;
   onClickSave: (newContext: DataExplorerContextV2) => void;
   onHide: () => void;
+  startInTableView: boolean;
 }
 
 function ContextBuilderModal({
@@ -21,11 +22,13 @@ function ContextBuilderModal({
   isExistingContext,
   onClickSave,
   onHide,
+  startInTableView,
 }: Props) {
   return (
     <ContextBuilderStateProvider
       contextToEdit={context}
       onChangeContext={onClickSave}
+      startInTableView={startInTableView}
     >
       <Modal
         show
