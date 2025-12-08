@@ -36,12 +36,8 @@ from .get_and_process_data import (
     get_dataset_feature_labels,
     get_dataset_sample_ids,
     get_dataset_sample_labels_by_id,
-    get_matrix,  # downloads: check dataset size
-    get_row_of_values,  # very heavily used
-    get_subsetted_df,  # 19 uses: custom analysis, cell line view, compound view, etc.
+    get_row_of_values,
     get_subsetted_df_by_labels,
-    # Used by /api/get-features (DE1), /api/assocations (pre-computed correlations), and /api/associations-csv
-    # The places that use this aren't using the best approach to validation and should probably be changed
     valid_row,
 )
 
