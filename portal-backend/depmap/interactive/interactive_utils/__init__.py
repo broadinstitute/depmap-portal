@@ -55,15 +55,6 @@ from depmap.interactive.config.utils import (
 #######################################
 # METHODS USED ONLY BY VECTOR CATALOG #
 #######################################
-from .get_and_process_data import (
-    # TODO: delete more of these
-    get_tumor_type_dataset,
-    get_disease_subtype_dataset,
-    get_gender_dataset,
-    get_growth_pattern_dataset,
-    get_lineage_dataset,
-    get_primary_disease_dataset,
-)
 
 from .config_groups import (
     get_noncustom_continuous_datasets_not_gene_or_compound,
