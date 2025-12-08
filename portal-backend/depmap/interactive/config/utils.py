@@ -250,14 +250,6 @@ def is_continuous(dataset_id):
     return has_config(dataset_id) and __get_config().get(dataset_id).is_continuous
 
 
-def is_filter(dataset_id):
-    filter_datasets = {
-        get_context_dataset(),
-        get_custom_cell_lines_dataset(),
-    }
-    return dataset_id in filter_datasets
-
-
 def is_custom(dataset_id):
     config = __get_config()
     return has_config(dataset_id) and config.get(dataset_id).is_custom

@@ -4,7 +4,6 @@ from depmap.dataset.models import TabularDataset
 from depmap.interactive import interactive_utils
 from tests.conftest import InteractiveConfigFakeMutationsDownload
 from tests.depmap.interactive.fixtures import *
-from tests.depmap.utilities.test_url_utils import assert_url_contains_parts
 from tests.factories import DependencyDatasetFactory, TaigaAliasFactory
 from tests.utilities import interactive_test_utils
 
@@ -88,19 +87,6 @@ def test_get_feature_example(interactive_db_mock_downloads, dataset, expected):
 )
 def test_is_continuous(interactive_db_mock_downloads, dataset_id, expected):
     assert interactive_utils.is_continuous(dataset_id) == expected, dataset_id
-
-
-@pytest.mark.parametrize(
-    "dataset_id, expected",
-    [
-        (TabularDataset.TabularEnum.mutation.name, False),
-        ("invalid_dataset", False),
-        (context_dataset_id, True),
-        (custom_cell_line_group_dataset_id, True),
-    ],
-)
-def test_is_filter(interactive_db_mock_downloads, dataset_id, expected):
-    assert interactive_utils.is_filter(dataset_id) == expected, dataset_id
 
 
 def test_get_all_original_taiga_ids(empty_db_mock_downloads):

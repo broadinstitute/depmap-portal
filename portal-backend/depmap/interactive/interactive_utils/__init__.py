@@ -23,7 +23,6 @@ from depmap.interactive.config.utils import (
     get_entity_type,
     get_taiga_id,
     # the functions listed below should eventually be removed from this interface
-    is_filter,  # only used in associations
     get_entity_class,  # only used in InteractiveTree, which is only used for associations
     get_matrix_id,  # only used in old compound page functionality
 )
