@@ -11,22 +11,21 @@
 ########################################################
 
 from .config_groups import (
-    get_all_dataset_ids,  # Used by downloads, DE2, custom analysis
+    get_all_dataset_ids,
 )
 
 from depmap.interactive.config.utils import (
-    get_dataset_data_type,  # 2 uses: only DE2
-    get_dataset_label,  # used by DE2, vector catalog, downloads
-    get_dataset_priority,  # 1 use: only DE2
-    get_dataset_units,  # used by DE2, interactive
-    get_dataset_url,  # 15 uses: vector catalog, downloads
-    get_entity_class,  # 1 use in downloads, 4 uses in vector catalog
-    legacy_get_entity_class_name,
-    get_entity_type,  # used in: DE2, downloads, vector catalog
-    get_matrix_id,  # 4 uses: cell line view, associations: pre-calculated pearson correlation query, etc.
-    get_taiga_id,  # 1 use: downloads: get dataset url
-    has_opaque_features,  # only used to set DE1 axis labels to "" for custom cell line groups
-    is_filter,  # 1 use: only used in DE1 associations "valid_dataset" check
+    get_dataset_data_type,
+    get_dataset_label,
+    get_dataset_priority,
+    get_dataset_units,
+    get_dataset_url,
+    get_entity_type,
+    get_taiga_id,
+    # the functions listed below should eventually be removed from this interface
+    is_filter,  # only used in associations
+    get_entity_class,  # only used in InteractiveTree, which is only used for associations
+    get_matrix_id,  # only used in old compound page functionality
 )
 
 from .get_and_process_data import (

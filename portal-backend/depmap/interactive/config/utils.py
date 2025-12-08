@@ -273,10 +273,6 @@ def is_categorical(dataset_id):
     return has_config(dataset_id) and __get_config().get(dataset_id).is_categorical
 
 
-def has_opaque_features(dataset_id):
-    return __get_config().get(dataset_id).has_opaque_features
-
-
 def get_all_original_taiga_ids():
     """
     Warning: This is getting the /original/ taiga ids. The web app should use the .taiga_id property, which gets canonical
