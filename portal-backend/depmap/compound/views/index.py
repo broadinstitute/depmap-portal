@@ -99,10 +99,10 @@ def view_compound(name):
             entity_label=name, dependency_datasets=celfie_dataset_options
         )
 
-    dose_curve_options_new = get_drc_options_if_new_tabs_available(
+    dose_curve_options_new = get_new_dose_curves_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
     )
-    heatmap_dataset_options = get_drc_options_if_new_tabs_available(
+    heatmap_dataset_options = get_heatmap_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
     )
 
@@ -249,18 +249,42 @@ def format_dose_curve_option(dataset, compound_experiment, label):
     return option
 
 
-def get_drc_options_if_new_tabs_available(
+def get_heatmap_tab_drc_options(
     compound_label: str, compound_id: str
 ) -> List[DRCCompoundDatasetWithNamesAndPriority]:
     """
-    Used for jinja rendering of the dose curve and heatmap tab
+    Used for jinja rendering of heatmap tab
     """
-    new_compound_page_tabs = current_app.config[
-        "ENABLED_FEATURES"
-    ].new_compound_page_tabs
+    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].heatmap_tab
 
     valid_options = []
-    if new_compound_page_tabs:
+    if show_heatmap_tab:
+        for drc_dataset in drc_compound_datasets:
+            if dataset_exists_with_compound_in_auc_and_rep_datasets(
+                drc_dataset=drc_dataset,
+                compound_label=compound_label,
+                compound_id=compound_id,
+            ):
+                complete_option = get_compound_dataset_with_name_and_priority(
+                    drc_dataset
+                )
+                valid_options.append(complete_option)
+
+    return valid_options
+
+
+def get_new_dose_curves_tab_drc_options(
+    compound_label: str, compound_id: str
+) -> List[DRCCompoundDatasetWithNamesAndPriority]:
+    """
+    Used for jinja rendering of the dose curve tab
+    """
+    show_new_dose_curves_tab = current_app.config[
+        "ENABLED_FEATURES"
+    ].new_dose_curves_tab
+
+    valid_options = []
+    if show_new_dose_curves_tab:
         for drc_dataset in drc_compound_datasets:
             if dataset_exists_with_compound_in_auc_and_rep_datasets(
                 drc_dataset=drc_dataset,

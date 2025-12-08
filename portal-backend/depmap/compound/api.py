@@ -1,7 +1,7 @@
 import dataclasses
 from depmap import data_access
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
-from depmap.compound.views.index import get_drc_options_if_new_tabs_available
+from depmap.compound.views.index import get_new_dose_curves_tab_drc_options
 from flask_restplus import Namespace, Resource
 from flask import request
 
@@ -30,7 +30,7 @@ class PrioritizedDataset(Resource):
         compound_label = request.args.get("compound_label")
         compound_id = request.args.get("compound_id")
 
-        dataset_options = get_drc_options_if_new_tabs_available(
+        dataset_options = get_new_dose_curves_tab_drc_options(
             compound_label=compound_label, compound_id=compound_id
         )
 
