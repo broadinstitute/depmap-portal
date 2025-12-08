@@ -279,7 +279,6 @@ models.py: error: Expression of type "None" cannot be assigned to parameter of t
 models.py: error: Expression of type "Unknown | ReleaseTerms | MockTerms" cannot be assigned to return type "ReleaseTerms"
 models.py: error: Method "get_dataset_by_name" overrides class "Dataset" in an incompatible manner
 models.py: error: Method "get_description" overrides class "_Compound" in an incompatible manner
-models.py: error: Method "get_label_aliases" overrides class "Entity" in an incompatible manner
 models.py: error: Method "has_cell_line" overrides class "Dataset" in an incompatible manner
 models.py: error: Method "has_entity" overrides class "Dataset" in an incompatible manner
 models.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
