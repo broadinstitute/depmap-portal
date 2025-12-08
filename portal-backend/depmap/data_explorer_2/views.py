@@ -18,12 +18,6 @@ from depmap.extensions import csrf_protect
 from depmap.access_control import is_current_user_an_admin
 from depmap.data_explorer_2.links import get_plot_link, get_tutorial_link
 
-from depmap.data_explorer_2.datasets import get_datasets_matching_context_with_details
-
-from depmap.data_explorer_2.datatypes import (
-    get_hardcoded_metadata_slices,
-    is_hardcoded_binarylike_slice,
-)
 
 # TODO: delete things only imported here
 
