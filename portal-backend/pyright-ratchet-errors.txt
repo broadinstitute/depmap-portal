@@ -386,9 +386,6 @@ test_executive.py: error: Object of type "None" is not subscriptable (reportOpti
 test_factories.py: error: "cell_line_1" is possibly unbound (reportPossiblyUnboundVariable)
 test_get_and_process_data.py: error: "file_path" is not a known member of "None" (reportOptionalMemberAccess)
 test_get_and_process_data.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
-test_get_associations.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
-test_get_associations.py: error: Cannot access member "entity_id" for type "GeneFactory"
-test_get_associations_csv.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
 test_get_dataset_url.py: error: Argument of type "Sequence" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_url"
 test_global_search_loader.py: error: "__load_context_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: "__load_gene_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
