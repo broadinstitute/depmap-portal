@@ -2,6 +2,7 @@ import pytest
 
 from depmap.dataset.models import TabularDataset
 from depmap.interactive import interactive_utils
+from depmap.interactive.config.utils import get_gender_dataset
 from tests.conftest import InteractiveConfigFakeMutationsDownload
 from tests.depmap.interactive.fixtures import *
 from tests.factories import DependencyDatasetFactory, TaigaAliasFactory
@@ -86,7 +87,7 @@ def test_get_all_original_taiga_ids(empty_db_mock_downloads):
         filters out nones
     """
     # assert set up
-    dataset_with_no_taiga_id = interactive_utils.get_gender_dataset()
+    dataset_with_no_taiga_id = get_gender_dataset()
     assert interactive_utils.get_taiga_id(dataset_with_no_taiga_id) == None
 
     # set up dep dataset
