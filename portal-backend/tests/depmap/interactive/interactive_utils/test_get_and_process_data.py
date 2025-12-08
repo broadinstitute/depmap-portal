@@ -9,7 +9,6 @@ from depmap.interactive import interactive_utils
 from depmap.interactive.config.categories import CategoryConfig
 from depmap.interactive.interactive_utils.get_and_process_data import get_category_config
 from depmap.interactive.nonstandard.models import NonstandardMatrix
-from depmap.interactive.common_utils import format_features_from_value
 from depmap.settings.settings import TestConfig
 from depmap.utilities import hdf5_utils
 from tests.depmap.interactive.fixtures import *
@@ -47,48 +46,6 @@ def config(request):
         GET_NONSTANDARD_DATASETS = get_nonstandard_datasets
 
     return TestVersionConfig
-
-
-# just test that it does delegate to nonstandard, which has 3 results.
-# nonstandard with aliases, and standard with aliases are respectively tested in test_nonstandard_utils and test_standard_utils. The alias tests also need global search to be loaded
-@pytest.mark.parametrize(
-    "dataset_id, prefix, expected",
-    [
-        (
-            nonstandard_nonaliased_dataset_id,
-            "met",  # nonstandard, no aliases
-            [
-                "MET",
-                "METAP1",
-                "METAP1D",
-                "METAP2",
-                "METRN",
-                "METRNL",
-                "METTL1",
-                "METTL10",
-                "METTL11B",
-                "METTL12",
-            ],
-        ),
-        (standard_aliased_dataset_id, "invalid_prefix", []),
-        ("context", "l", "error"),
-        ("invalid_dataset", "l", "error"),
-    ],
-)
-def test_get_matching_rows(interactive_db_mock_downloads, dataset_id, prefix, expected):
-    """
-    Axes datasets are tested in test_standard_utils
-    Also test case insensitivity
-    Implicitly tests standard_utils.get_matching_rows when testing Avana (standard axes dataset)
-    Uses nonstandard_nonaliased_dataset_id instead of the entity one, so that it doesn't have to deal with aliases and not being able to use format_features_from_value
-    """
-    if expected == "error":
-        with pytest.raises(ValueError):
-            interactive_utils.get_matching_rows(dataset_id, prefix)
-    else:
-        assert interactive_utils.get_matching_rows(
-            dataset_id, prefix
-        ) == format_features_from_value(expected)
 
 
 @pytest.mark.parametrize(

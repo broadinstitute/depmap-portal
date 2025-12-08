@@ -8,21 +8,17 @@ from typing import List, Dict, Tuple, Iterable
 from depmap.database import db
 from depmap.interactive.common_utils import (
     RowSummary,
-    format_features_from_value,
-    format_features_from_label_aliases,
 )
 from depmap.interactive.config.utils import (
     get_entity_class,
     is_prepopulate,
     is_transpose,
-    get_entity_type,
 )
 from depmap.interactive.nonstandard.models import (
     NonstandardMatrix,
     RowNonstandardMatrix,
     ColNonstandardMatrix,
 )
-from depmap.cell_line.models import CellLine
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.gene.models import Gene
 from depmap.proteomics.models import Protein
@@ -33,140 +29,6 @@ from depmap.entity.models import Entity
 
 def get_matrix(dataset_id):
     return NonstandardMatrix.get(dataset_id)
-
-
-def get_matching_rows(dataset, prefix, max=1000000):
-    assert not is_prepopulate(
-        dataset
-    ), "Attempt to get matching features for {} despite configuration to initially prepopulate all options.".format(
-        dataset
-    )
-
-    if get_entity_class(dataset) is not None:
-        label_aliases_list = _get_label_aliases_starting_with(dataset, prefix, max)
-        features = format_features_from_label_aliases(label_aliases_list)  # fixme
-    else:
-        values = get_rows_starting_with(dataset, prefix, max)
-        features = format_features_from_value(values)
-
-    return features
-
-
-def get_matching_row_entity_ids(dataset_id, prefix, max=10) -> Iterable[int]:
-    assert get_entity_type(dataset_id) is not None
-    entity_ids = _find_entity_ids_by_label_alias_prefix(dataset_id, prefix, max)
-    return entity_ids
-
-
-def _get_label_aliases_starting_with(dataset_id, prefix, max=10):
-    """
-    Different function than get_row_starting_with because this returns a list of entity label, entity aliases tuples
-    :return: Appropriately sorted list of entity label, [entity aliases] tuples with labels or aliases that start with prefix, up to max number of matches
-    """
-    entity_ids = _find_entity_ids_by_label_alias_prefix(dataset_id, prefix, max)
-
-    entity_class = get_entity_class(dataset_id)
-    assert entity_class is not None
-    list_of_label_aliases = []
-    for entity_id in entity_ids:
-        # calling on the entity_class enforces that we only get objects of the correct entity subclass
-        list_of_label_aliases.append(entity_class.get_label_aliases(entity_id))
-
-    return list_of_label_aliases
-
-
-def _find_entity_ids_by_label_alias_prefix(dataset_id, prefix, max=10) -> Iterable[int]:
-    # enforce_cache_row_col_names(dataset_id)
-    entity_class = get_entity_class(dataset_id)
-    if entity_class == Gene:
-        generator = _find_gene_ids_by_label_alias_prefix(dataset_id, prefix)
-    elif entity_class == Protein:
-        generator = _find_protein_ids_by_label_alias_prefix(dataset_id, prefix)
-    else:
-        # To implement a generic entity label search, _find_entities_by_label_prefix in standard_utils.py is an example (but for standard datasets)
-        raise NotImplementedError(
-            "Attempt to search entities for dataset {} with unimplemented entity_class {}. ".format(
-                dataset_id, entity_class
-            )
-        )
-
-    entity_ids = itertools.islice(generator, max)
-    return entity_ids
-
-
-def _find_gene_ids_by_label_alias_prefix(dataset_id, prefix):
-    """
-    # sqlite appears to not handle the "OR" subquery well, so execute two queries and compute the union ourselves
-    Need to put symbol and alias on equal footing, so that order_by orders with exact matches first whether the exact match is a symbol or alias
-    entity_ids_seen prevents a entity from being yielded twice
-    """
-    indices = (
-        GlobalSearchIndex.query.join(
-            RowNonstandardMatrix,
-            RowNonstandardMatrix.entity_id == GlobalSearchIndex.entity_id,
-        )
-        .join(NonstandardMatrix)
-        .filter(
-            (GlobalSearchIndex.type == "gene")
-            | (GlobalSearchIndex.type == "gene_alias"),
-            GlobalSearchIndex.label.startswith(prefix),
-            NonstandardMatrix.nonstandard_dataset_id == dataset_id,
-        )
-        .order_by(GlobalSearchIndex.label)
-    )
-
-    gene_ids_seen = set()
-
-    for index in indices:
-        gene_id = index.entity_id
-        if gene_id not in gene_ids_seen:
-            gene_ids_seen.add(gene_id)
-            yield gene_id
-
-
-def _find_protein_ids_by_label_alias_prefix(dataset_id, prefix):
-    indices = (
-        Protein.query.filter(
-            sa.or_(
-                Protein.label.startswith(prefix), Protein.uniprot_id.startswith(prefix)
-            )
-        )
-    ).order_by(Protein.label)
-
-    protein_ids_seen = set()
-
-    for index in indices:
-        protein_id = index.entity_id
-        if protein_id not in protein_ids_seen:
-            protein_ids_seen.add(protein_id)
-            yield protein_id
-
-
-def get_rows_starting_with(dataset_id, prefix, max=10):
-    """
-    :return: Appropriately sorted list of row names in dataset_id that start with prefix, up to max number of matches
-    """
-    # enforce_cache_row_col_names(dataset_id)
-
-    entity_class = get_entity_class(dataset_id)
-    assert (
-        entity_class is None
-    ), "Attempt to directly search row names for dataset {} which has entity set".format(
-        dataset_id
-    )
-    dataset_row_indices = (
-        RowNonstandardMatrix.query.join(NonstandardMatrix)
-        .filter(
-            NonstandardMatrix.nonstandard_dataset_id == dataset_id,
-            RowNonstandardMatrix.row_name.startswith(prefix),
-        )
-        # we sort and take limit in the query, to short circuit and avoid the database access control check for every additional row retrieved
-        .order_by(RowNonstandardMatrix.row_name)
-        .limit(max)
-        .all()
-    )
-    row_names = [row_index.row_name for row_index in dataset_row_indices]
-    return row_names
 
 
 def valid_row(dataset_id, row_name):

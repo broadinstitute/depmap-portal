@@ -56,8 +56,6 @@ from depmap.interactive.config.utils import (
 # METHODS USED ONLY BY VECTOR CATALOG #
 #######################################
 from .get_and_process_data import (
-    get_matching_row_entity_ids,
-    get_matching_rows,
     is_prepopulate,
     # methods which return the name of a dataset
     get_tumor_type_dataset,

@@ -49,34 +49,3 @@ def test_get_all_row_indices_labels_entity_ids(empty_db_mock_downloads, app):
         standard_utils.get_all_row_indices_labels_entity_ids(dataset.name.name)
         == expected
     )
-
-
-# standard without aliases is tested in test_interactive_utils
-
-
-@pytest.mark.parametrize("prefix", [("s"), ("S")])
-def test_get_label_aliases_starting_with(interactive_db_mock_downloads, prefix):
-    """
-    Tests path that looks up aliases using global search index
-    Test for:
-    Exact match for label or alias appears before partial matches
-    i.e. for the search mettl2, SWI5 appears before SOX10 despite SOX10 being first in alphabetical sort order, because SAE3 (alias of SWI5) is an alphabetically prior match
-    Case insensitivity
-    Alias order doesn't matter
-    """
-    global_search_loader.load_global_search_index()  # the query uses the global search index
-    interactive_db_mock_downloads.session.flush()
-
-    # THIS ORDER IS IMPORTANT. Be wary of changing the order; a change in order likely indicates that some functionality is broken
-    expected_list = [
-        ("SWI5", {"bA395P17.9", "SAE3", "C9orf119"}),
-        ("SOX10", {"DOM", "WS2E", "WS4"}),
-    ]
-    label_aliases_list = standard_utils._get_label_aliases_starting_with(
-        "Avana", prefix, "gene"
-    )
-    assert len(label_aliases_list) == len(expected_list)
-    print(label_aliases_list)
-    for label_aliases, expected in zip(label_aliases_list, expected_list):
-        assert label_aliases[0] == expected[0]
-        assert set(label_aliases[1]) == expected[1]

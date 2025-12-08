@@ -1,4 +1,4 @@
-from typing import List, Optional, Iterable, Dict
+from typing import List, Optional, Dict
 
 from dataclasses import dataclass
 from depmap.cell_line.models_new import DepmapModel
@@ -48,41 +48,6 @@ def get_matrix(dataset_id):
             return nonstandard_utils.get_matrix(dataset_id)
     else:
         raise NotImplementedError
-
-
-def get_matching_rows(dataset_id, prefix, max=10) -> List[Dict]:
-    if dataset_id == get_custom_cell_lines_dataset():
-        # keeping this as an if else to highlight that this is this dataset's implementation of this func
-        assert (
-            False
-        ), "Rows in custom cell lines dataset are uuids and should not be listable, this should not have been called"
-    # this stands as a more specific check because thus far, the only nonstandard categorical dataset we have is prepopulate
-    elif (
-        is_continuous(dataset_id)
-        or dataset_id == BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name
-    ):
-        if is_standard(dataset_id):
-            return standard_utils.get_matching_rows(dataset_id, prefix, max)
-        else:
-            return nonstandard_utils.get_matching_rows(dataset_id, prefix, max)
-    else:
-        raise ValueError(
-            "Invalid dataset " + dataset_id + " is not a continuous dataset"
-        )
-
-
-def get_matching_row_entity_ids(dataset_id, prefix, max=10) -> Iterable[int]:
-    """
-    This was only written for the entity branch of the "Other" branch of the vector catalog continuous tree (i.e. OtherGenericEntityDatasetRowNonPrepopulateNodeFactory)
-    """
-    if get_entity_type(dataset_id) is None:
-        raise NotImplementedError(
-            "No idea what should be done here; this isn't meant to be called on datasets that don't use entities!"
-        )
-    if is_standard(dataset_id):
-        return standard_utils.get_matching_row_entity_ids(dataset_id, prefix, max)
-    else:
-        return nonstandard_utils.get_matching_row_entity_ids(dataset_id, prefix, max)
 
 
 def get_all_row_indices_labels_entity_ids(dataset_id) -> List[RowSummary]:
