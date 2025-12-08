@@ -1,28 +1,50 @@
 import styles from "../styles/GeneTea.scss";
 import React, { useMemo, useState } from "react";
-import GeneTeaContextModal from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaContextModal";
 import Select from "react-select";
 import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
+import MatchingTermsModal from "./MatchingTermsModal";
+import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 
 interface GenesMatchingTermPanelProps {
-  validTerms: string[];
+  rawData: GeneTeaEnrichedTerms | null;
+  termGroupToTermMapping: Map<string, string>;
   queryGenes: string[];
   termToMatchingGenesMap: Map<string, string[]>;
+  groupByTerms: boolean;
 }
 
 const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
-  validTerms,
+  rawData,
+  termGroupToTermMapping,
   queryGenes,
   termToMatchingGenesMap,
+  groupByTerms,
 }) => {
   const { allAvailableGenes } = useGeneTeaFiltersContext();
 
   const [selectedTerm, setSelectedTerm] = useState<any>(null);
 
-  const termSelectOptions = validTerms.map((term: string) => {
+  const termsFromTermGroups = useMemo(() => {
+    if (!rawData || !rawData.allEnrichedTerms) return [];
+
+    return rawData?.groupby === "Term"
+      ? rawData?.allEnrichedTerms?.term
+      : rawData?.allEnrichedTerms?.termGroup.map((termGroup) => {
+          const val = termGroupToTermMapping.get(termGroup);
+          if (val) {
+            return val;
+          }
+          return termGroup;
+        });
+  }, [rawData, termGroupToTermMapping]);
+
+  const termSelectOptions = Array.from(
+    new Set(rawData?.allEnrichedTerms?.termGroup)
+  ).map((termGroup: string) => {
+    const term = termGroupToTermMapping.get(termGroup);
     return {
       value: term,
-      label: term,
+      label: rawData.groupby === "Term" ? term : termGroup,
     };
   });
 
@@ -58,13 +80,14 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
           }}
         />
       </div>
-      <GeneTeaContextModal
+      <MatchingTermsModal
         show={Boolean(selectedTerm?.value)}
         term={selectedTerm?.value || ""}
         synonyms={[]}
         coincident={[]}
         matchingGenes={matchingGenes}
         onClose={() => setSelectedTerm(null)}
+        groupByTerms={groupByTerms}
       />
     </div>
   );

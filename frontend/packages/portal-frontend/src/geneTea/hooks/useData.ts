@@ -414,6 +414,22 @@ function useData(
     return { x: [], y: [], customdata: [] };
   }, [data, heatmapData.y]);
 
+  const termGroupToTermMapping = useMemo(() => {
+    if (data && data.allEnrichedTerms) {
+      const termGroupToTermMap = new Map<string, string>();
+      const terms = data.allEnrichedTerms.term;
+      const termGroups = data.allEnrichedTerms.termGroup;
+
+      for (let i = 0; i < termGroups.length; i++) {
+        termGroupToTermMap.set(termGroups[i], terms[i]);
+      }
+
+      return termGroupToTermMap;
+    }
+
+    return new Map<string, string>();
+  }, [data]);
+
   const heatmapXAxisLabel = useMemo(() => {
     if (data && data.termToEntity) {
       return `Matching Genes in List n=(${
@@ -498,6 +514,7 @@ function useData(
     barChartData,
     heatmapXAxisLabel,
     allTermsScatterPlotData,
+    termGroupToTermMapping,
   };
 }
 

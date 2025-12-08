@@ -60,6 +60,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
     barChartData,
     heatmapXAxisLabel,
     allTermsScatterPlotData,
+    termGroupToTermMapping,
   } = useData(
     topTermsPlotSelections,
     specialCaseInvalidGenes,
@@ -103,6 +104,7 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
               heatmapXAxisLabel={heatmapXAxisLabel}
               rawData={rawData}
               geneSymbolSelections={geneSymbolSelections}
+              termGroupToTermMapping={termGroupToTermMapping}
             />
           )}
         </>
