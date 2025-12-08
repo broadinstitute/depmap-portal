@@ -472,7 +472,6 @@ utils.py: error: Expression of type "None" cannot be assigned to return type "Da
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 utils.py: error: No overloads for "quote" match the provided arguments (reportCallIssue)
 utils.py: error: Second argument to "isinstance" must be a class or tuple of classes
-views.py: error: "IGNORECASE" is not a known member of module "natsort" (reportAttributeAccessIssue)
 views.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 views.py: error: "csv_path" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
@@ -484,11 +483,8 @@ views.py: error: "model_id" is not a known member of "None" (reportOptionalMembe
 views.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "source_dir" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: Argument expression after ** must be a mapping with a "str" key type (reportCallIssue)
-views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_file_record"
-views.py: error: Argument of type "DownloadRelease | None" cannot be assigned to parameter "release" of type "DownloadRelease" in function "get_release_record"
 views.py: error: Argument of type "Literal['COMPUTE_RESULTS_ROOT']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['CONTACT_EMAIL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-views.py: error: Argument of type "Literal['DEBUG']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['DMC_SYMPOSIA_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['DOCUMENTATION_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 views.py: error: Argument of type "Literal['DOWNLOADS_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -528,5 +524,4 @@ views.py: error: Expression of type "None" cannot be assigned to parameter of ty
 views.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "read_csv" match the provided arguments (reportCallIssue)
 views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-views.py: error: Object of type "list[str]" is not callable (reportCallIssue)
 views.py: error: Variable not allowed in type expression (reportInvalidTypeForm)
