@@ -219,11 +219,11 @@ class FeatureFlags:
 
     @property
     def compound_correlation_tiles(self):
-        return self.is_qa()
+        return self.is_prerelease_env()
 
     @property
     def correlation_analysis(self):
-        return self.is_qa()
+        return self.is_prerelease_env()
 
 
 def make_log_config(log_dir):
