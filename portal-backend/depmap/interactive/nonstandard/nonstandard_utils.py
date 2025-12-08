@@ -1,9 +1,7 @@
-import itertools
 import flask
 import pandas as pd
-import sqlalchemy as sa
 
-from typing import List, Dict, Tuple, Iterable
+from typing import List, Dict, Tuple
 
 from depmap.database import db
 from depmap.interactive.common_utils import (
@@ -11,7 +9,6 @@ from depmap.interactive.common_utils import (
 )
 from depmap.interactive.config.utils import (
     get_entity_class,
-    is_prepopulate,
     is_transpose,
 )
 from depmap.interactive.nonstandard.models import (
@@ -20,9 +17,6 @@ from depmap.interactive.nonstandard.models import (
     ColNonstandardMatrix,
 )
 from depmap.partials.matrix.models import CellLineSeries
-from depmap.gene.models import Gene
-from depmap.proteomics.models import Protein
-from depmap.global_search.models import GlobalSearchIndex
 from depmap.utilities.hdf5_utils import open_hdf5_file
 from depmap.entity.models import Entity
 

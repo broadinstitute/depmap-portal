@@ -2,12 +2,10 @@ import pytest
 from depmap.dataset.models import BiomarkerDataset
 from depmap.interactive.standard import standard_utils
 from depmap.interactive.common_utils import RowSummary
-from loader import global_search_loader
 from tests.factories import (
     GeneFactory,
     BiomarkerDatasetFactory,
     MatrixFactory,
-    CellLineFactory,
 )
 from tests.utilities import interactive_test_utils
 

@@ -238,14 +238,6 @@ def is_transpose(dataset_id):
     return __get_config().get(dataset_id).transpose
 
 
-def is_prepopulate(dataset_id):
-    """
-    Returns whether prepopulate is True for a given dataset
-    Wraps checking for the presence of the prepopulate key and that the value is True
-    """
-    return __get_config().get(dataset_id)["prepopulate"]
-
-
 def is_continuous(dataset_id):
     return has_config(dataset_id) and __get_config().get(dataset_id).is_continuous
 

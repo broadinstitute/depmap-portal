@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Union
+from typing import Literal, Optional, Union
 import pandas as pd
 
 from depmap_compute.slice import SliceQuery
@@ -6,8 +6,6 @@ from depmap.data_access import breadbox_dao
 from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
 from depmap.interactive import interactive_utils
-from depmap.interactive.common_utils import RowSummary
-from depmap.interactive.config.models import Config
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.compound import legacy_utils as legacy_compound_utils
 

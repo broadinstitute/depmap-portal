@@ -9,7 +9,6 @@ import pandas as pd
 from depmap.database import db
 from depmap.cell_line.models import CellLine
 from depmap.dataset.models import (
-    BiomarkerDataset,
     Mutation,
 )
 from depmap.compute.models import CustomCellLineGroup
@@ -19,13 +18,11 @@ from depmap.interactive.config.utils import (
     get_primary_disease_dataset,
     get_disease_subtype_dataset,
     get_tumor_type_dataset,
-    get_entity_type,
     get_gender_dataset,
     get_growth_pattern_dataset,
     get_custom_cell_lines_dataset,
     __get_config,
     has_config,
-    is_prepopulate,
     is_continuous,
     is_categorical,
     is_standard,

@@ -9,8 +9,6 @@ import pytest
 from depmap.interactive.nonstandard import nonstandard_utils
 from depmap.gene.models import Gene
 from tests.depmap.interactive.fixtures import *
-from loader import nonstandard_loader, global_search_loader
-from depmap.access_control import PUBLIC_ACCESS_GROUP
 
 # nonstandard get_matrix is tested in tests/.../interactive_utils
 

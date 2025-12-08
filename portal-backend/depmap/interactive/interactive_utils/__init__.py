@@ -56,8 +56,7 @@ from depmap.interactive.config.utils import (
 # METHODS USED ONLY BY VECTOR CATALOG #
 #######################################
 from .get_and_process_data import (
-    is_prepopulate,
-    # methods which return the name of a dataset
+    # TODO: delete more of these
     get_tumor_type_dataset,
     get_disease_subtype_dataset,
     get_gender_dataset,
