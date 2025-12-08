@@ -38,13 +38,13 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
         });
   }, [rawData, termGroupToTermMapping]);
 
-  const termSelectOptions = Array.from(
+  const termGroupSelectOptions = Array.from(
     new Set(rawData?.allEnrichedTerms?.termGroup)
   ).map((termGroup: string) => {
     const term = termGroupToTermMapping.get(termGroup);
     return {
       value: term,
-      label: rawData.groupby === "Term" ? term : termGroup,
+      label: termGroup,
     };
   });
 
