@@ -1,9 +1,6 @@
-from functools import reduce
 import logging
-from typing import Tuple
 
 import flask
-import pandas as pd
 from flask import (
     Blueprint,
     abort,
@@ -14,11 +11,7 @@ from flask import (
     url_for,
 )
 
-from depmap.interactive import interactive_utils
 from depmap.celery_task.utils import format_task_status, TaskState
-from depmap.correlation.models import CorrelatedDataset
-from depmap.correlation.utils import get_all_correlations
-from depmap.dataset.models import Dataset
 from depmap.extensions import csrf_protect
 from depmap import data_access
 from depmap.user_uploads.tasks import upload_transient_csv
