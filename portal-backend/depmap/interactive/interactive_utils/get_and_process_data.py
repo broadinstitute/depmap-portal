@@ -73,11 +73,6 @@ def get_matching_rows(dataset_id, prefix, max=10) -> List[Dict]:
         )
 
 
-def get_all_entity_ids(dataset_id: str) -> list[int]:
-    row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-    return get_row_summary_entity_ids(row_summaries)
-
-
 def get_matching_row_entity_ids(dataset_id, prefix, max=10) -> Iterable[int]:
     """
     This was only written for the entity branch of the "Other" branch of the vector catalog continuous tree (i.e. OtherGenericEntityDatasetRowNonPrepopulateNodeFactory)
@@ -181,10 +176,6 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
         return standard_utils.get_dataset_sample_ids(dataset_id)
     else:
         return nonstandard_utils.get_dataset_sample_ids(dataset_id)
-
-
-def get_row_summary_entity_ids(row_summaries: List[RowSummary]):
-    return [row.entity_id for row in row_summaries]
 
 
 def get_depmap_id_to_col_index_map(dataset_id) -> dict[str, int]:

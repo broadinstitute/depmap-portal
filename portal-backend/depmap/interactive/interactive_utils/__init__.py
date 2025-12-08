@@ -23,16 +23,14 @@ from depmap.interactive.config.utils import (
     get_entity_type,
     get_taiga_id,
     # the functions listed below should eventually be removed from this interface
-    get_entity_class,  # only used in InteractiveTree, which is only used for associations
-    get_matrix_id,  # only used in old compound page functionality
+    get_entity_class,  # only used in InteractiveTree, which is only used in constellation/celfie
+    get_matrix_id,  # only used in old compound page functionality which is no longer needed
 )
 
 from .get_and_process_data import (
-    is_categorical,  # used by get-features and get_assocations (pre-computed correlations)
-    is_continuous,  # heavily used
-    is_standard,  # 4 uses: associations, downloads, and vector catalog
-    has_config,  # 2 uses: compound tiles, "check_nonstandard_datasets" command
-    get_all_entity_ids,  # not currently used
+    is_categorical,
+    is_continuous,
+    has_config,
     get_all_row_indices_labels_entity_ids,  # 9 uses: custom analysis, cell line view, compound views, downloads
     get_category_config,  # used only by get-features calls which involve custom analysis two class comparisons
     get_context_dataset,  # 6 uses, mostly vector catalog, also predictability
