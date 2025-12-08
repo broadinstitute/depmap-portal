@@ -334,7 +334,7 @@ DATASET_METADATA: Dict[
         units="log2 fold change",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
-        priority=2,
+        priority=102,
         global_priority=17,
     ),
     DependencyEnum.Prism_oncology_AUC: DepDatasetMeta(
@@ -349,7 +349,7 @@ DATASET_METADATA: Dict[
         units="log2(AUC)",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
-        priority=1,
+        priority=2,
     ),
     DependencyEnum.Prism_oncology_dose_replicate: DepDatasetMeta(
         display_name="PRISM OncRef Lum Dose Replicate",

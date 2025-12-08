@@ -24,6 +24,7 @@ rule expand_drug_metadata:
     outputs: {
         'type': 'expanded-drug-metadata',
         'name': 'merged-drugs',
+        'dataset_id': '{{ inputs.drug_metadata.dataset_id }}',
         'filename': {'$filename': 'expand_drug_metadata.csv'}
     }
     run "python3 {{ inputs.script.filename }} {{ inputs.drug_metadata.filename }} expand_drug_metadata.csv"
