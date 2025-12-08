@@ -180,24 +180,6 @@ def add_crispr_columns(ds_res, gene_dependency, in_group, out_group):
     return ds_res
 
 
-col_order = [
-    "subtype_code",
-    "out_group",
-    "entity_id",
-    "dataset",
-    "t_pval",
-    "t_qval",
-    "t_qval_log",
-    "mean_in",
-    "mean_out",
-    "effect_size",
-    "selectivity_val",
-    "n_dep_in",
-    "n_dep_out",
-    "frac_dep_in",
-    "frac_dep_out",
-]
-
 ### ----- CONTEXT TYPE RESULTS ----- ###
 def compute_context_results(
     ctx,
@@ -299,9 +281,7 @@ def compute_in_out_groups(subtype_tree, context_matrix, ds_name, ds, add_extra_c
                 )
             )
 
-    df = pd.concat([x for x in all_results if x is not None]).loc[:, col_order].copy()
-
-    # add_extra_columns(df, ds_name, ds_name)
+    df = pd.concat([x for x in all_results if x is not None])
 
     return df
 
@@ -341,7 +321,7 @@ def oncref_context_analysis(
 
         return ds_res.reset_index(names="entity_id").merge(oncref_selectivity)
 
-    compute_in_out_groups(
+    return compute_in_out_groups(
         subtype_tree,
         context_matrix,
         "PRISMOncRef",
@@ -376,7 +356,7 @@ def repurposing_context_analysis(
     def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
         return ds_res.reset_index(names="entity_id").merge(repurposing_selectivity)
 
-    compute_in_out_groups(
+    return compute_in_out_groups(
         subtype_tree,
         context_matrix,
         "PRISMRepurposing",
@@ -406,7 +386,7 @@ def crispr_context_analysis(
             ds_res, gene_dependency, ds_in_group, ds_out_group,
         ).reset_index(names="entity_id")
 
-    compute_in_out_groups(
+    return compute_in_out_groups(
         subtype_tree, context_matrix, "CRISPR", gene_effect, crispr_add_extra_columns
     )
 
