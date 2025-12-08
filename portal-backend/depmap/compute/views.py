@@ -1,11 +1,9 @@
 import logging
 
-from flask import Blueprint, render_template, request
-from flask_restplus import Api, Resource
+from flask import Blueprint, render_template
+from flask_restplus import Api
 
-from depmap.celery_task.utils import task_response_model
 from depmap.extensions import csrf_protect, restplus_handle_exception
-from depmap_compute.models import AnalysisType
 
 blueprint = Blueprint(
     "compute", __name__, url_prefix="/compute", static_folder="../static"

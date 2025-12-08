@@ -61,10 +61,6 @@ check_download_data.py: error: No overloads for "__getitem__" match the provided
 check_download_data.py: error: Object of type "list[str]" is not callable (reportCallIssue)
 check_nonstandard_datasets.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 check_nonstandard_datasets.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-cloud_correlate.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
-cloud_correlate.py: error: Argument of type "() -> tuple[int, ndarray[Any, dtype[float64]]]" cannot be assigned to parameter "get_matrix_callback" of type "() -> Tuple[DataFrame, ndarray[Unknown, Unknown]]" in function "submit"
-cloud_correlate.py: error: Argument of type "Literal[b"Content-Disposition"]" cannot be assigned to parameter "key" of type "str" in function "__getitem__"
-cloud_correlate.py: error: Argument of type "dict[str, NDArray[Any]]" cannot be assigned to parameter "files" of type "_Files | None" in function "post"
 compat.py: error: "basestring" is not defined (reportUndefinedVariable)
 compat.py: error: "unicode" is not defined (reportUndefinedVariable)
 compound_dose_replicate_loader.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
@@ -444,9 +440,6 @@ test_predictability_loader.py: error: "dataset_id" is not a known member of "Non
 test_predictability_loader.py: error: "entity_id" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: Argument of type "Literal[DependencyEnum.Chronos_Combined]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
-test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "depmap_model_ids" of type "List[str]" in function "_run_custom_analysis"
-test_run_custom_analysis_missing_row_matrix_index.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "sample_col_ids" of type "list[str] | None" in function "get_subsetted_df_by_labels"
-test_tasks.py: error: Argument missing for parameter "self" (reportCallIssue)
 test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_trees.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_utils.py: error: "__get_taiga_id_to_download_url" is unknown import symbol (reportAttributeAccessIssue)
