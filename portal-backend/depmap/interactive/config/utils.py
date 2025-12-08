@@ -4,15 +4,9 @@ from flask import current_app
 
 from depmap.entity.models import Entity
 from depmap.enums import DataTypeEnum
-from depmap.dataset.models import Dataset
-from depmap.download.utils import get_download_url
 from depmap.interactive.config.models import (
     InteractiveConfig,
 )
-from depmap.predictability.utilities import (
-    get_predictability_input_files_downloads_link,
-)
-from depmap.taiga_id import utils as taiga_utils
 from depmap.utilities import entity_utils
 from depmap.utilities.exception import InteractiveDatasetNotFound
 
@@ -159,58 +153,6 @@ def get_entity_class(dataset_id) -> Optional[Entity]:
         return entity_utils.get_entity_class_by_name(entity_class_name)
 
 
-def get_dataset_url(dataset_id: str) -> Optional[str]:
-    """Get the relative URL for the dataset's download entry, if it exists
-
-    Args:
-        dataset_id (str): The `dataset_name` field on Datasets (Dependency and
-        Biomarker), or id for other datasets (Nonstandard, Private)
-    """
-
-    taiga_id = get_taiga_id(dataset_id)
-    # taiga id, not original, needs to be used for getting download url
-    download_url = get_download_url(taiga_id)
-
-    dataset = Dataset.get_dataset_by_name(dataset_id, must=False)
-
-    if download_url is not None:
-        # end up here as long as there is a download entry. links to the download entry
-        return download_url
-    elif taiga_id is not None and taiga_id.startswith("derived-data:"):
-        return None  # Derived datasets don't necessarily have download links/files
-    elif dataset is not None and dataset.is_predictability_feature:
-        return get_predictability_input_files_downloads_link()
-    elif (
-        dataset_id == "context"
-        or dataset_id == "lineage"
-        or dataset_id == __get_config().custom_cell_lines_dataset
-    ):
-        # temporary stopgap for that categorical (color) having taiga_id none
-        return None
-    elif taiga_id is not None and "prism-pools-4441" in taiga_id:
-        # The prism-pools dataset was added in advance of the ADC screens in PRISM per Mustafa's request.
-        # the pools are needed to visualize potential confounders, but this is intended as a short term solution
-        # as we are migrating non-standard datasets to Breadbox. Regardless, we don't have a download to offer for
-        # this dataset.
-        return None
-    elif (
-        taiga_id is not None
-        and current_app.config["ALLOW_CUSTOM_DOWNLOAD_WITH_TAIGA_URL"]
-    ):
-        # for custom taiga datasets (don't have downloads), and nonstandard datasetes that may not have downloads.
-        # SHOW_TAIGA_IN_DOWNLOADS only, just in case other things other things we don't think about fall into here
-        # uses original taiga id, because we are linking directly to taiga. this should be the only use of calling interactive's get_original_taiga_id
-        return taiga_utils.get_taiga_url(get_original_taiga_id(dataset_id))
-    elif is_custom(dataset_id) or is_private(dataset_id):
-        # for custom csv datasets or private datasets, these are the only datasets allowed to not have a download entry
-        return None
-    else:
-        # nonstandard datasets that are public may fall in and get caught here
-        raise ValueError(
-            "Unexpected dataset " + dataset_id + " without a download entry"
-        )
-
-
 def has_config(dataset_id):
     try:
         __get_config().get(dataset_id)
@@ -238,11 +180,6 @@ def is_continuous(dataset_id):
 def is_custom(dataset_id):
     config = __get_config()
     return has_config(dataset_id) and config.get(dataset_id).is_custom
-
-
-def is_private(dataset_id):
-    config = __get_config()
-    return has_config(dataset_id) and config.get(dataset_id).is_private
 
 
 def is_categorical(dataset_id):

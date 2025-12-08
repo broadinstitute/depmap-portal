@@ -19,7 +19,6 @@ from depmap.interactive.config.utils import (
     get_dataset_label,
     get_dataset_priority,
     get_dataset_units,
-    get_dataset_url,
     get_entity_type,
     get_taiga_id,
     # the functions listed below should eventually be removed from this interface
