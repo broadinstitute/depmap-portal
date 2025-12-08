@@ -1,21 +1,13 @@
 import re
-import gzip
+from typing import Any
 import functools
 import numpy as np
 import pandas as pd
-from typing import Any, Optional
-from collections import defaultdict
 from logging import getLogger
-from flask import json, make_response
 
-from depmap_compute.context import (
-    ContextEvaluator,
-    LegacyContextEvaluator,
-)
 from depmap_compute.slice import decode_slice_id
 from depmap import data_access
 from depmap.data_access.models import MatrixDataset
-from depmap.settings.download_settings import get_download_list
 from depmap.data_explorer_2.datatypes import blocked_dimension_types
 
 
@@ -52,29 +44,6 @@ def get_dimension_labels_of_dataset(dimension_type: str, dataset: MatrixDataset)
 
     labels = get_vector_labels(dataset.id, is_transpose)
     return set(labels)
-
-
-def get_reoriented_df(
-    dataset_id: str,
-    row_labels: Optional[list[str]],
-    col_labels: Optional[list[str]],
-    is_transpose: bool,
-) -> pd.DataFrame:
-    """
-    Load a dataframe with values filtered by the given labels. Transform if applicable.
-    The given labels given specify the rows/columns of the output (after the dataset is transposed).
-    """
-    if is_transpose:
-        # Load the subsetted DF (with flipped row/column arguments), then transpose
-        return data_access.get_subsetted_df_by_labels(
-            dataset_id=dataset_id,
-            feature_row_labels=col_labels,
-            sample_col_ids=row_labels,
-        ).transpose()
-
-    return data_access.get_subsetted_df_by_labels(
-        dataset_id=dataset_id, feature_row_labels=row_labels, sample_col_ids=col_labels,
-    )
 
 
 # There are also several bespoke slice IDs here that don't correlate with real
@@ -143,50 +112,6 @@ def slice_to_dict(slice_id: str) -> dict[str, Any]:
     return get_series_from_de2_slice_id(slice_id).replace({np.nan: None}).to_dict()
 
 
-# based on https://github.com/hmallen/numpyencoder/blob/f8199a6/numpyencoder/numpyencoder.py
-def to_serializable_numpy_number(obj):
-    if isinstance(
-        obj,
-        (
-            np.int_,
-            np.intc,
-            np.intp,
-            np.int8,
-            np.int16,
-            np.int32,
-            np.int64,
-            np.uint8,
-            np.uint16,
-            np.uint32,
-            np.uint64,
-        ),
-    ):
-        return int(obj)
-
-    if isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
-        return float(obj)
-
-    if isinstance(obj, (np.complex_, np.complex64, np.complex128)):
-        return {"real": obj.real, "imag": obj.imag}
-
-    return obj
-
-
-# This is not really needed. It's just an experimental optimization.
-# This should really happen at the Nginx level.
-# https://app.asana.com/0/0/1201078871707042/f
-def make_gzipped_json_response(obj):
-    content_as_json = json.dumps(obj, ensure_ascii=False).encode("utf8")
-    content = gzip.compress(content_as_json)
-
-    response = make_response(content)
-    response.headers["Content-length"] = len(content)
-    response.headers["Content-Type"] = "application/json; charset=utf-8"
-    response.headers["Content-Encoding"] = "gzip"
-
-    return response
-
-
 def get_compound_experiment_compound_name_series():
     dictionary = {}
     labels = get_dimension_labels_across_datasets("compound_experiment")
@@ -234,112 +159,6 @@ def get_dimension_labels_across_datasets(dimension_type):
     return sorted(list(all_labels))
 
 
-def get_all_dimension_labels_by_id(dimension_type: str) -> dict[str, str]:
-    """Get all dimension labels and IDs across datasets."""
-    all_labels_by_id = {}
-    # For each dataset, if it has the dimension type, get its IDs and labels
-    for dataset in get_all_supported_continuous_datasets():
-        if dimension_type == dataset.sample_type:
-            dataset_labels_by_id = data_access.get_dataset_sample_labels_by_id(
-                dataset.id
-            )
-        elif dimension_type == dataset.feature_type:
-            dataset_labels_by_id = data_access.get_dataset_feature_labels_by_id(
-                dataset.id
-            )
-        else:
-            dataset_labels_by_id = {}
-
-        all_labels_by_id.update(dataset_labels_by_id)
-
-    return all_labels_by_id
-
-
-def get_dimension_labels_to_datasets_mapping(dimension_type: str):
-    """
-    Takes a `dimension_type` and returns a dictionary like:
-    {
-      "dataset_ids": [
-        "copy_number_absolute",
-        "Chronos_Combined",
-        "expression"
-      ],
-
-      given_ids: [
-        "copy_number_absolute",
-        "Chronos_Combined",
-        "expression"
-      ],
-
-      # Order matches "datset_ids" above.
-      "dataset_labels": [
-        "Copy Number (Absolute)",
-        "CRISPR (DepMap Internal 23Q4+Score, Chronos)",
-        "Expression Internal 23Q4"
-      ],
-
-      # Each label maps to a list of integers that correspond to indices into
-      # the "dataset_ids" array. This can be used to to determine which
-      # datasets a given label can be found in.
-      "dimension_labels": {
-        "ANOS1":  [1, 2],
-        "HNF1B":  [0, 1, 2],
-        "KDM7A":  [0, 1, 2],
-        "MAP4K4": [0, 1, 2],
-        "MED1":   [0, 1, 2],
-        "NRAS":   [0, 1, 2],
-        "SOX10":  [0, 1, 2],
-        "SWI5":   [0, 1, 2]
-      },
-
-      # Same format as "dimension_labels" above. Answers the question
-      # "which datasets are part of a given data type?"
-      "data_types": {
-        "CN": [0],
-        "CRISPR": [1],
-        "Expression": [2]
-      },
-
-      # Same idea as above.
-      "units": {
-        "Copy Number": [0],
-        "Gene Effect (Chronos)": [1],
-        "log2(TPM+1)": [2]
-      }
-    }
-    """
-    all_labels = defaultdict(list)
-    data_types = defaultdict(list)
-    units = defaultdict(list)
-    dataset_ids = []
-    given_ids = []
-    dataset_labels = []
-
-    for dataset in get_all_supported_continuous_datasets():
-        if dimension_type not in (dataset.feature_type, dataset.sample_type):
-            continue
-
-        index = len(dataset_ids)
-        dataset_ids.append(dataset.id)
-        given_ids.append(dataset.given_id)
-        dataset_labels.append(dataset.label)
-        data_types[dataset.data_type].append(index)
-        units[dataset.units].append(index)
-
-        for label in get_dimension_labels_of_dataset(dimension_type, dataset):
-            all_labels[label].append(index)
-
-    sorted_labels = {key: all_labels[key] for key in sorted(all_labels.keys())}
-
-    return {
-        "units": units,
-        "dimension_labels": sorted_labels,
-        "data_types": data_types,
-        "dataset_ids": dataset_ids,
-        "given_ids": given_ids,
-        "dataset_labels": dataset_labels,
-    }
-
 
 def get_datasets_from_dimension_type(dimension_type: str) -> list[MatrixDataset]:
     datasets = []
@@ -386,110 +205,5 @@ def get_all_supported_continuous_datasets() -> list[MatrixDataset]:
     return out
 
 
-def get_file_and_release_from_dataset(dataset: MatrixDataset):
-    downloads = get_download_list()
-    taiga_id = dataset.taiga_id
-
-    if taiga_id is not None:
-        for release in downloads:
-            for file in release.all_files:
-                if file.name != "README.txt" and file.taiga_id == taiga_id:
-                    return file, release
-
-    return None, None
-
-
-def get_index_display_labels(dimension_type, labels):
-    if dimension_type != "depmap_model":
-        return labels
-
-    index_display_labels = []
-    values_by_label = slice_to_dict("slice/cell_line_display_name/all/label")
-
-    for label in labels:
-        index_display_labels.append(values_by_label.get(label, None))
-
-    return index_display_labels
-
-
-def pluralize(dimension_type: str):
-    return re.sub(r"y$", "ie", dimension_type) + "s"
-
-
-def to_display_name(dimension_type: str):
-    if dimension_type == "depmap_model":
-        return "model"
-
-    if dimension_type == "compound_experiment":
-        return "compound"
-
-    if dimension_type == "msigdb_gene_set":
-        return "MSigDB gene set"
-
-    if dimension_type == "other":
-        return "point"
-
-    return re.sub(r"_", " ", dimension_type)
-
-
-def get_union_of_index_labels(index_type, dataset_ids):
-    # one dimension might have fewer index values (points)
-    union_of_labels = set()
-
-    for dataset_id in dataset_ids:
-        feature_type = data_access.get_dataset_feature_type(dataset_id)
-        sample_type = data_access.get_dataset_sample_type(dataset_id)
-
-        if index_type not in (sample_type, feature_type):
-            raise ValueError(
-                f"Dataset '{dataset_id}' is not indexable by '{index_type}'! "
-                f"Its feature_type is '{feature_type}' and sample_type is '{sample_type}'."
-            )
-
-        is_transpose = feature_type == index_type
-        labels = get_vector_labels(dataset_id, not is_transpose)
-        union_of_labels = union_of_labels.union(labels)
-
-    return sorted(list(union_of_labels))
-
-
 def clear_cache():
     get_vector_labels.cache_clear()
-
-
-def get_ids_and_labels_matching_context(context: dict) -> tuple[list[str], list[str]]:
-    """
-    For a given context, load all matching IDs and labels.
-    Both context versions are supported here. 
-    """
-    # Identify which type of context has been provided
-    # Legacy contexts use the "context_type" field name, while newer contexts use "dimension_type"
-    is_legacy_context = context.get("context_type") is not None
-    if is_legacy_context:
-        dimension_type = context.get("context_type")
-        context_evaluator = LegacyContextEvaluator(context, slice_to_dict)
-    else:
-        dimension_type = context.get("dimension_type")
-        context_evaluator = ContextEvaluator(context, data_access.get_slice_data)
-
-    if dimension_type is None:
-        raise ValueError("Context requests must specify a dimension type.")
-    # Load all dimension labels and ids
-    all_labels_by_id = get_all_dimension_labels_by_id(dimension_type)
-
-    # Evaluate each against the context
-    ids_matching_context = []
-    labels_matching_context = []
-    for given_id, label in all_labels_by_id.items():
-        if is_legacy_context and dimension_type != "depmap_model":
-            # Legacy contexts do feature lookups by label
-            is_match = context_evaluator.is_match(label)
-
-        else:
-            is_match = context_evaluator.is_match(given_id)
-
-        if is_match:
-            ids_matching_context.append(given_id)
-            labels_matching_context.append(label)
-
-    return ids_matching_context, labels_matching_context
