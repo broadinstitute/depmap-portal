@@ -1,14 +1,7 @@
-import re
-from typing import Any
 import functools
-import numpy as np
-import pandas as pd
 from logging import getLogger
 
-from depmap_compute.slice import decode_slice_id
 from depmap import data_access
-from depmap.data_access.models import MatrixDataset
-from depmap.data_explorer_2.datatypes import blocked_dimension_types
 
 
 log = getLogger(__name__)
