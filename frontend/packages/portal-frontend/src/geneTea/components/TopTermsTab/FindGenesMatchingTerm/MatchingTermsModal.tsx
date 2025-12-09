@@ -10,7 +10,7 @@ interface Props {
   termsWithinSelectedGroup: string[] | null;
   termToMatchingGenesMap: Map<string, string[]>;
   onClose: () => void;
-  groupByTerms: boolean;
+  useTerms: boolean;
 }
 
 function MatchingTermsModal({
@@ -18,19 +18,14 @@ function MatchingTermsModal({
   termsWithinSelectedGroup,
   termToMatchingGenesMap,
   onClose,
-  groupByTerms,
+  useTerms,
 }: Props) {
   const [show, setShow] = useState(true);
 
-  const handleClickCreateContext = useCallback(() => {
+  const handleClickCreateTermContext = useCallback(() => {
     setShow(false);
 
-    // If the user is grouping terms, we want to look at all the matching genes across all terms within the selected term group
-    const matchingGenes = groupByTerms
-      ? termsWithinSelectedGroup?.flatMap(
-          (term) => termToMatchingGenesMap.get(term) || []
-        )
-      : termToMatchingGenesMap.get(termOrTermGroup) || [];
+    const matchingGenes = termToMatchingGenesMap.get(termOrTermGroup) || [];
 
     DepMap.saveNewContext(
       {
@@ -42,9 +37,32 @@ function MatchingTermsModal({
     );
   }, [termOrTermGroup, termToMatchingGenesMap]);
 
-  const modalBody = groupByTerms ? (
+  const handleClickCreateTermGroupContext = useCallback(() => {
+    setShow(false);
+
+    // If the user is grouping terms, we want to look at all the matching genes across all terms within the selected term group
+    const matchingGenes = Array.from(
+      new Set(
+        termsWithinSelectedGroup?.flatMap(
+          (term) => termToMatchingGenesMap.get(term) || []
+        )
+      )
+    );
+
+    DepMap.saveNewContext(
+      {
+        name: termOrTermGroup,
+        context_type: "gene",
+        expr: { in: [{ var: "entity_label" }, matchingGenes] },
+      },
+      () => setShow(true)
+    );
+  }, [termOrTermGroup, termToMatchingGenesMap]);
+
+  const modalBody = useTerms ? (
     <>
       <ExcerptTable
+        useTerms={useTerms}
         term={termOrTermGroup}
         termToMatchingGenesMap={termToMatchingGenesMap}
       />
@@ -59,6 +77,7 @@ function MatchingTermsModal({
         {termsWithinSelectedGroup!.map((term) => (
           <Tab eventKey={term} title={term} key={term}>
             <ExcerptTable
+              useTerms={useTerms}
               term={term}
               termToMatchingGenesMap={termToMatchingGenesMap}
             />
@@ -76,8 +95,17 @@ function MatchingTermsModal({
       <Modal.Body className={styles.GeneTeaModal}>{modalBody}</Modal.Body>
       <Modal.Footer>
         <Button onClick={onClose}>Close</Button>
-        <Button bsStyle="primary" onClick={handleClickCreateContext}>
-          Save as Gene Context
+        <Button
+          bsStyle="primary"
+          onClick={
+            useTerms
+              ? handleClickCreateTermContext
+              : handleClickCreateTermGroupContext
+          }
+        >
+          {useTerms
+            ? "Save as Gene Context"
+            : "Save Term Group Matching Genes as Gene Context"}
         </Button>
       </Modal.Footer>
     </Modal>

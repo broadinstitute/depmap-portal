@@ -177,7 +177,7 @@ function TopTermsTab({
                       termGroupToTermsMapping={termGroupToTermsMapping}
                       queryGenes={Array.from(geneSymbolSelections)}
                       termToMatchingGenesMap={termToMatchingGenesMap}
-                      groupByTerms={rawData?.groupby === "Term"}
+                      useTerms={rawData?.groupby === "Term"}
                     />
                   </StackableSection>
                 </SectionStack>

@@ -1,15 +1,19 @@
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
 import GeneTeaTerm from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaTerm";
+import { Button } from "react-bootstrap";
+import { DepMap } from "@depmap/globals";
 
 interface ExcerptTableProps {
+  useTerms: boolean;
   term: string;
   termToMatchingGenesMap: Map<string, string[]>;
 }
 
 const ExcerptTable: React.FC<ExcerptTableProps> = ({
+  useTerms,
   term,
   termToMatchingGenesMap,
 }) => {
@@ -37,8 +41,16 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     })();
   }, [term, matchingGenes]);
 
+  const handleClickCreateTermContext = useCallback(() => {
+    DepMap.saveNewContext({
+      name: term,
+      context_type: "gene",
+      expr: { in: [{ var: "entity_label" }, matchingGenes] },
+    });
+  }, [term, termToMatchingGenesMap]);
+
   return (
-    <div>
+    <div style={{ paddingTop: "20px" }}>
       {" "}
       <p>
         The term “
@@ -49,6 +61,21 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         />
         ” is associated with {matchingGenes.length} of the selected genes.
       </p>
+      {/* If the user is grouping terms (i.e. using Term Groups instead of just Terms),
+      the excerpt table will render inside a tab for a particular term. We need this button to
+      differentiate creating a Gene Context from TERM matching genes from
+      the button for creating a Gene Context from TERM GROUP matching genes (located outside the tabs and ExcerptTable)  */}
+      {!useTerms && (
+        <div style={{ paddingBottom: "20px" }}>
+          <Button
+            bsStyle="primary"
+            bsSize="small"
+            onClick={handleClickCreateTermContext}
+          >
+            Save as Gene Context
+          </Button>
+        </div>
+      )}
       <table className="table">
         <thead>
           <tr>

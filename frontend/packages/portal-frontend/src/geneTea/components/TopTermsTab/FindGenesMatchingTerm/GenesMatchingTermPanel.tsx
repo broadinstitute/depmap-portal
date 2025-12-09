@@ -10,7 +10,7 @@ interface GenesMatchingTermPanelProps {
   termGroupToTermsMapping: Map<string, string[]>;
   queryGenes: string[];
   termToMatchingGenesMap: Map<string, string[]>;
-  groupByTerms: boolean;
+  useTerms: boolean;
 }
 
 const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
@@ -18,14 +18,14 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
   termGroupToTermsMapping,
   queryGenes,
   termToMatchingGenesMap,
-  groupByTerms,
+  useTerms,
 }) => {
   const { allAvailableGenes } = useGeneTeaFiltersContext();
 
   const [selectedTerm, setSelectedTerm] = useState<any>(null);
 
   const termOrGroupSelectOptions = useMemo(() => {
-    const options = groupByTerms
+    const options = useTerms
       ? Array.from(new Set(rawData?.allEnrichedTerms?.term)).map(
           (term: string) => {
             return {
@@ -44,7 +44,7 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
         );
 
     return options;
-  }, [rawData, groupByTerms, termGroupToTermsMapping]);
+  }, [rawData, useTerms, termGroupToTermsMapping]);
 
   return (
     <div
@@ -77,13 +77,13 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
         show={Boolean(selectedTerm?.value)}
         termOrTermGroup={selectedTerm?.value || ""}
         termsWithinSelectedGroup={
-          groupByTerms || !selectedTerm
+          useTerms || !selectedTerm
             ? null
             : termGroupToTermsMapping.get(selectedTerm.value) || null
         }
         termToMatchingGenesMap={termToMatchingGenesMap}
         onClose={() => setSelectedTerm(null)}
-        groupByTerms={groupByTerms}
+        useTerms={useTerms}
       />
     </div>
   );
