@@ -29,6 +29,7 @@ def main():
         by_given_id = {artifact["given_id"]: artifact for artifact in inputs["a_set"]}
         for drug_given_id in [
             "PRISMOncologyReferenceLog2AUCMatrix",
+            "PRISMOncologyReferenceSeqLog2AUCMatrix",
             "Prism_oncology_viability",
             "REPURPOSING_log2AUC_collapsed",
             "CTRP_log2AUC_collapsed",
