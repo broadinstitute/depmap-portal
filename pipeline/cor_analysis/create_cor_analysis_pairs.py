@@ -30,7 +30,7 @@ def main():
         for drug_given_id in [
             "PRISMOncologyReferenceLog2AUCMatrix",
             "PRISMOncologyReferenceSeqLog2AUCMatrix",
-            "Prism_oncology_viability",
+            "Prism_oncology_seq_viability",
             "REPURPOSING_log2AUC_collapsed",
             "CTRP_log2AUC_collapsed",
             "GDSC1_log2AUC_collapsed",
