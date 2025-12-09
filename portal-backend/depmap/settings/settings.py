@@ -107,8 +107,12 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
-    def new_compound_page_tabs(self):
+    def heatmap_tab(self):
         return self.is_prerelease_env()
+
+    @property
+    def new_dose_curves_tab(self):
+        return True
 
     @property
     def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
