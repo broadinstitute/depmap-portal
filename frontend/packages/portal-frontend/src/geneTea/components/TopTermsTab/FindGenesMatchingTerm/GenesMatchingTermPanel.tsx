@@ -7,7 +7,7 @@ import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 
 interface GenesMatchingTermPanelProps {
   rawData: GeneTeaEnrichedTerms | null;
-  termGroupToTermMapping: Map<string, string>;
+  termGroupToTermsMapping: Map<string, string[]>;
   queryGenes: string[];
   termToMatchingGenesMap: Map<string, string[]>;
   groupByTerms: boolean;
@@ -15,7 +15,7 @@ interface GenesMatchingTermPanelProps {
 
 const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
   rawData,
-  termGroupToTermMapping,
+  termGroupToTermsMapping,
   queryGenes,
   termToMatchingGenesMap,
   groupByTerms,
@@ -24,34 +24,27 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
 
   const [selectedTerm, setSelectedTerm] = useState<any>(null);
 
-  const termsFromTermGroups = useMemo(() => {
-    if (!rawData || !rawData.allEnrichedTerms) return [];
-
-    return rawData?.groupby === "Term"
-      ? rawData?.allEnrichedTerms?.term
-      : rawData?.allEnrichedTerms?.termGroup.map((termGroup) => {
-          const val = termGroupToTermMapping.get(termGroup);
-          if (val) {
-            return val;
+  const termOrGroupSelectOptions = useMemo(() => {
+    const options = groupByTerms
+      ? Array.from(new Set(rawData?.allEnrichedTerms?.term)).map(
+          (term: string) => {
+            return {
+              value: term,
+              label: term,
+            };
           }
-          return termGroup;
-        });
-  }, [rawData, termGroupToTermMapping]);
+        )
+      : Array.from(new Set(rawData?.allEnrichedTerms?.termGroup)).map(
+          (termGroup: string) => {
+            return {
+              value: termGroup,
+              label: termGroup,
+            };
+          }
+        );
 
-  const termGroupSelectOptions = Array.from(
-    new Set(rawData?.allEnrichedTerms?.termGroup)
-  ).map((termGroup: string) => {
-    const term = termGroupToTermMapping.get(termGroup);
-    return {
-      value: term,
-      label: termGroup,
-    };
-  });
-
-  const matchingGenes = useMemo(
-    () => termToMatchingGenesMap.get(selectedTerm?.value) || [],
-    [selectedTerm, termToMatchingGenesMap]
-  );
+    return options;
+  }, [rawData, groupByTerms, termGroupToTermsMapping]);
 
   return (
     <div
@@ -65,16 +58,16 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
         <Select
           value={
             selectedTerm
-              ? { value: selectedTerm.term, label: selectedTerm.term }
+              ? { value: selectedTerm.value, label: selectedTerm.label }
               : null
           }
-          isDisabled={termSelectOptions.length === 0}
-          options={termSelectOptions}
+          isDisabled={termOrGroupSelectOptions.length === 0}
+          options={termOrGroupSelectOptions}
           onChange={(selection: any) => {
             if (selection) {
               setSelectedTerm({
                 value: selection.value,
-                label: selection.value,
+                label: selection.label,
               });
             }
           }}
@@ -82,10 +75,13 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
       </div>
       <MatchingTermsModal
         show={Boolean(selectedTerm?.value)}
-        term={selectedTerm?.value || ""}
-        synonyms={[]}
-        coincident={[]}
-        matchingGenes={matchingGenes}
+        termOrTermGroup={selectedTerm?.value || ""}
+        termsWithinSelectedGroup={
+          groupByTerms || !selectedTerm
+            ? null
+            : termGroupToTermsMapping.get(selectedTerm.value) || null
+        }
+        termToMatchingGenesMap={termToMatchingGenesMap}
         onClose={() => setSelectedTerm(null)}
         groupByTerms={groupByTerms}
       />

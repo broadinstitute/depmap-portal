@@ -1,33 +1,22 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { Button, Modal } from "react-bootstrap";
+import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
+import React, { useEffect, useState } from "react";
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
-import { DepMap } from "@depmap/globals";
-import renderConditionally from "@depmap/data-explorer-2/src/utils/render-conditionally";
 import GeneTeaTerm from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaTerm";
-import styles from "../../../../styles/DataExplorer2.scss";
 
-interface Props {
+interface ExcerptTableProps {
   term: string;
-  synonyms: string[];
-  coincident: string[];
-  matchingGenes: string[];
-  onClose: () => void;
-  groupByTerms: boolean;
+  termToMatchingGenesMap: Map<string, string[]>;
 }
 
-function MatchingTermsModal({
+const ExcerptTable: React.FC<ExcerptTableProps> = ({
   term,
-  synonyms,
-  coincident,
-  matchingGenes,
-  onClose,
-  groupByTerms,
-}: Props) {
-  const [show, setShow] = useState(true);
+  termToMatchingGenesMap,
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Record<string, string> | null>(null);
   const [error, setError] = useState(false);
+  const matchingGenes = termToMatchingGenesMap.get(term) || [];
 
   useEffect(() => {
     (async () => {
@@ -37,7 +26,7 @@ function MatchingTermsModal({
       try {
         const fetchedData = await cached(
           legacyPortalAPI
-        ).fetchGeneTeaTermContext(term, matchingGenes);
+        ).fetchGeneTeaTermContext(term, matchingGenes || []);
         setData(fetchedData);
       } catch (e) {
         setError(true);
@@ -48,25 +37,17 @@ function MatchingTermsModal({
     })();
   }, [term, matchingGenes]);
 
-  const handleClickCreateContext = useCallback(() => {
-    setShow(false);
-
-    DepMap.saveNewContext(
-      {
-        name: term,
-        context_type: "gene",
-        expr: { in: [{ var: "entity_label" }, matchingGenes] },
-      },
-      () => setShow(true)
-    );
-  }, [term, matchingGenes]);
-
-  const modalBody = groupByTerms ? (
-    <>
+  return (
+    <div>
+      {" "}
       <p>
         The term “
-        <GeneTeaTerm term={term} synonyms={synonyms} coincident={coincident} />”
-        is associated with {matchingGenes.length} of the selected genes.
+        <GeneTeaTerm
+          term={term}
+          synonyms={[]} // TODO: ask Bella if we need to use synonyms and coincident this for anything. Reusing data explorer's GeneTeaTerm, and this doesn't seem like something we need.
+          coincident={[]}
+        />
+        ” is associated with {matchingGenes.length} of the selected genes.
       </p>
       <table className="table">
         <thead>
@@ -116,32 +97,8 @@ function MatchingTermsModal({
       {data && Object.keys(data).length === 0 && (
         <h2>Hmm, the context for this term seems to have gone missing 🤔</h2>
       )}
-    </>
-  ) : (
-    <>
-      {" "}
-      <Tabs
-        className={styles.termGroupTabs}
-        defaultActiveKey={1}
-        id="gene_tea_term_group_terms_tabs"
-      ></Tabs>{" "}
-    </>
+    </div>
   );
+};
 
-  return (
-    <Modal show={show} bsSize="large" onHide={onClose}>
-      <Modal.Header closeButton>
-        <Modal.Title>Context for “{term}”</Modal.Title>
-      </Modal.Header>
-      <Modal.Body className={styles.GeneTeaModal}>{modalBody}</Modal.Body>
-      <Modal.Footer>
-        <Button onClick={onClose}>Close</Button>
-        <Button bsStyle="primary" onClick={handleClickCreateContext}>
-          Save as Gene Context
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-}
-
-export default renderConditionally(MatchingTermsModal);
+export default ExcerptTable;

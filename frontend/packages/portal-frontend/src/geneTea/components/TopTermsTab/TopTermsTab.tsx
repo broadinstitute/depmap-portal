@@ -9,7 +9,7 @@ import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 import PlotSection from "./PlotSection";
 import PlotSelections from "./PlotSelections";
 import PurpleHelpIcon from "../PurpleHelpIcon";
-import GenesMatchingTermPanel from "./GenesMatchingTermPanel";
+import GenesMatchingTermPanel from "./FindGenesMatchingTerm/GenesMatchingTermPanel";
 import SectionStack, {
   StackableSection,
 } from "../collapsibleOptions/SectionStack";
@@ -29,7 +29,7 @@ interface TopTermsTabProps {
   };
   heatmapXAxisLabel: string;
   geneSymbolSelections: Set<string>;
-  termGroupToTermMapping: Map<string, string>;
+  termGroupToTermsMapping: Map<string, string[]>;
 }
 
 function TopTermsTab({
@@ -38,7 +38,7 @@ function TopTermsTab({
   barChartData,
   heatmapXAxisLabel,
   geneSymbolSelections,
-  termGroupToTermMapping,
+  termGroupToTermsMapping,
 }: TopTermsTabProps) {
   const {
     selectedTopTermsTableRows: selectedTableRows,
@@ -117,20 +117,6 @@ function TopTermsTab({
     return lookup;
   }, [rawData?.allEnrichedTerms]);
 
-  const termsFromTermGroups = useMemo(() => {
-    if (!rawData || !rawData.allEnrichedTerms) return [];
-
-    return rawData?.groupby === "Term"
-      ? rawData?.allEnrichedTerms?.term
-      : rawData?.allEnrichedTerms?.termGroup.map((termGroup) => {
-          const val = termGroupToTermMapping.get(termGroup);
-          if (val) {
-            return val;
-          }
-          return termGroup;
-        });
-  }, [rawData, termGroupToTermMapping]);
-
   // Default: Top Tea Terms main content
   return (
     <div className={styles.mainContentContainer}>
@@ -187,7 +173,8 @@ function TopTermsTab({
                     usePlotStyles
                   >
                     <GenesMatchingTermPanel
-                      validTerms={termsFromTermGroups}
+                      rawData={rawData}
+                      termGroupToTermsMapping={termGroupToTermsMapping}
                       queryGenes={Array.from(geneSymbolSelections)}
                       termToMatchingGenesMap={termToMatchingGenesMap}
                       groupByTerms={rawData?.groupby === "Term"}
