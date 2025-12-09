@@ -16,15 +16,10 @@ interface Props {
   onChange: any;
 }
 
-// TODO: move this into a utility somewhere
 async function convertSliceQueryToDataExplorerDimension(
   sliceQuery: SliceQuery
 ) {
   const { dataset_id, identifier, identifier_type } = sliceQuery;
-
-  if (!["feature_id", "sample_id"].includes(identifier_type)) {
-    throw new Error(`Unsupported identifier_type "${identifier_type}"!`);
-  }
 
   const datasets = await cached(breadboxAPI).getDatasets();
   const dataset = datasets.find(
@@ -37,15 +32,17 @@ async function convertSliceQueryToDataExplorerDimension(
 
   let slice_type = "";
   let name = "";
+  const idOrLabel = identifier_type.split("_")[1] as "id" | "label";
 
-  if (identifier_type === "feature_id") {
+  if (identifier_type.startsWith("feature")) {
     slice_type = dataset.feature_type_name;
     const features = await cached(breadboxAPI).getDatasetFeatures(dataset_id);
-    name = features.find((f) => f.id === identifier)?.label || "unknown";
+    name =
+      features.find((f) => f[idOrLabel] === identifier)?.label || "unknown";
   } else {
     slice_type = dataset.sample_type_name;
     const samples = await cached(breadboxAPI).getDatasetSamples(dataset_id);
-    name = samples.find((f) => f.id === identifier)?.label || "unknown";
+    name = samples.find((f) => f[idOrLabel] === identifier)?.label || "unknown";
   }
 
   return {

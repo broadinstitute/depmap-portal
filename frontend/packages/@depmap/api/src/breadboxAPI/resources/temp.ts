@@ -4,6 +4,8 @@ import {
   SliceQuery,
 } from "@depmap/types";
 import { postJson } from "../client";
+import { getTabularDatasetData } from "./datasets";
+import { getDimensionTypeIdentifiers } from "./types";
 
 export async function fetchAssociations(
   sliceQuery: SliceQuery,
@@ -28,6 +30,45 @@ export async function fetchAssociations(
 export async function evaluateContext(
   context: Omit<DataExplorerContextV2, "name">
 ) {
+  // Optimization: Try to evaluate trivial expressions using cached data
+  // (assuming this function is being called through the `cached()` helper).
+  // TODO: There are many more types of expressions we could optimize this way.
+  // This is is just a first pass to support the case where someone is editing
+  // a long list of feature IDs).
+  if (typeof context.expr !== "boolean" && "in" in context.expr) {
+    const slice = Object.values(context.vars)[0];
+
+    if (slice.identifier_type === "column") {
+      const [colData, identifiers] = await Promise.all([
+        getTabularDatasetData(slice.dataset_id, {
+          columns: [slice.identifier],
+        }),
+        getDimensionTypeIdentifiers(context.dimension_type),
+      ]);
+
+      const labelMap: Record<string, string> = {};
+
+      for (const { id, label } of identifiers) {
+        labelMap[id] = label;
+      }
+
+      const valuesToMatch = new Set(context.expr.in[1]);
+      const idValuePairs = Object.entries(colData[slice.identifier]);
+
+      const ids = [] as string[];
+      const labels = [] as string[];
+
+      for (const [id, value] of idValuePairs) {
+        if (valuesToMatch.has(value)) {
+          ids.push(id);
+          labels.push(labelMap[id]);
+        }
+      }
+
+      return { ids, labels, num_candidates: idValuePairs.length };
+    }
+  }
+
   const varsAsSliceQueries = Object.fromEntries(
     Object.entries(context.vars).map(([varName, variable]) => [
       varName,
@@ -42,10 +83,7 @@ export async function evaluateContext(
     ])
   );
 
-  const contextToEval = {
-    ...context,
-    vars: varsAsSliceQueries,
-  };
+  const contextToEval = { ...context, vars: varsAsSliceQueries };
 
   const response = await postJson<
     | {

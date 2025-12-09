@@ -49,6 +49,7 @@ export {
   isCompleteExpression,
   isPartialSliceId,
   isSampleType,
+  isSampleTypeSync,
   pluralize,
   sortDimensionTypes,
   urlLibEncode,

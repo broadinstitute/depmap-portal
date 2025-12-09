@@ -194,6 +194,10 @@ export interface DataExplorerDatasetDescriptor {
   priority: number | null;
   slice_type: string;
   units: string;
+  // These will only be present if loaded by Breadbox
+  // (the legacy API did not include them).
+  sample_type_name?: string;
+  feature_type_name?: string;
 }
 
 export type StoredContexts = Record<

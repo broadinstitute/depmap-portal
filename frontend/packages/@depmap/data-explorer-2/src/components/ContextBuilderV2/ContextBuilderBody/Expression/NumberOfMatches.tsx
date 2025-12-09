@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { pluralize } from "../../../../utils/misc";
+import { pluralize, uncapitalize } from "../../../../utils/misc";
 import { Expr } from "../../utils/expressionUtils";
 import useDimensionType from "../../hooks/useDimensionType";
 import useMatches from "../../hooks/useMatches";
@@ -56,12 +56,16 @@ function NumberOfMatches({
     );
   }
 
-  if (numCandidates === null) {
-    return null;
-  }
-
   const entity = dimensionType?.display_name || "";
-  const entities = entity ? pluralize(entity) : "";
+  const entities = entity ? uncapitalize(pluralize(entity)) : "";
+
+  if (numCandidates === null) {
+    return isLoading ? (
+      <div className={className}>
+        <LoadingAnimation /> {entities}
+      </div>
+    ) : null;
+  }
 
   return (
     <div className={className}>

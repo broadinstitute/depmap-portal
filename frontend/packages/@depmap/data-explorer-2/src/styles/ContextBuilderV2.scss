@@ -200,6 +200,10 @@
   }
 }
 
+.hideLongListButton {
+  @extend .detailsButton;
+}
+
 .unblockable {
   display: block !important;
 }

@@ -15,11 +15,16 @@ from depmap import data_access
 from depmap.access_control import assume_user
 from depmap.cell_line.models import CellLine, Lineage
 from depmap.compute.celery import app
-from depmap.compute.analysis_tasks import make_result_task_directory
 from depmap.utilities.exception import UserError
 from depmap.utilities.iter import chunk_iter
 
 log = logging.getLogger(__name__)
+
+
+def _make_result_task_directory(result_dir: str, task_id: str):
+    result_task_dir = os.path.join(result_dir, task_id)
+    os.makedirs(result_task_dir)
+    return result_task_dir
 
 
 def _progress_callback(task, percentage, message="Fetching data"):
@@ -150,7 +155,7 @@ def export_merged_datasets(
     _progress_callback(self, 0)
 
     with assume_user(user_id):
-        result_path = make_result_task_directory(result_dir, task_id)
+        result_path = _make_result_task_directory(result_dir, task_id)
         entity_labels_lists: list[list[str]] = []
 
         for dataset_id in dataset_ids:
@@ -230,7 +235,7 @@ def export_mutation_table_subset(
     _progress_callback(self, 0)
 
     with assume_user(user_id):
-        result_path = make_result_task_directory(result_dir, task_id)
+        result_path = _make_result_task_directory(result_dir, task_id)
 
         entity_ids = []
         if entity_labels:
@@ -275,7 +280,7 @@ def export_dataset(
         task_id = self.request.id
     _progress_callback(self, 0)
     with assume_user(user_id):
-        result_path = make_result_task_directory(result_dir, task_id)
+        result_path = _make_result_task_directory(result_dir, task_id)
         if not entity_labels:
             entity_labels = data_access.get_dataset_feature_labels(dataset_id)
 

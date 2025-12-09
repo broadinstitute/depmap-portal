@@ -98,7 +98,6 @@ export function useSliceTableState({
   const handleClickAddColumn = useCallback(async () => {
     const newSlice = await chooseDataSlice({
       index_type_name,
-      rowSelection: enableRowSelection ? rowSelection : undefined,
       PlotlyLoader,
     });
 
@@ -111,7 +110,7 @@ export function useSliceTableState({
         return [...prev, newSlice];
       });
     }
-  }, [enableRowSelection, index_type_name, rowSelection, PlotlyLoader]);
+  }, [index_type_name, PlotlyLoader]);
 
   const handleClickEditColumn = useCallback(
     async (column: typeof columns[number]) => {
@@ -134,7 +133,6 @@ export function useSliceTableState({
         initialSource,
         index_type_name,
         PlotlyLoader,
-        rowSelection: enableRowSelection ? rowSelection : undefined,
         onClickRemoveColumn: () => {
           setSlices((prev) => {
             return prev.filter((slice) => slice !== column.meta.sliceQuery);
@@ -150,7 +148,7 @@ export function useSliceTableState({
         );
       }
     },
-    [enableRowSelection, index_type_name, rowSelection, PlotlyLoader]
+    [index_type_name, PlotlyLoader]
   );
 
   const handleClickViewColumn = useCallback(
@@ -159,10 +157,9 @@ export function useSliceTableState({
         index_type_name,
         PlotlyLoader,
         sliceQuery: column.meta.sliceQuery,
-        rowSelection: enableRowSelection ? rowSelection : undefined,
       });
     },
-    [enableRowSelection, index_type_name, PlotlyLoader, rowSelection]
+    [index_type_name, PlotlyLoader]
   );
 
   const columnsWithEditOrViewButton = useMemo(() => {
@@ -201,12 +198,12 @@ export function useSliceTableState({
   }, [columns, handleClickEditColumn, handleClickViewColumn]);
 
   const handleClickFilterButton = useCallback(async () => {
-    const result = await chooseFilters({ rowFilters });
+    const result = await chooseFilters({ enableRowSelection, rowFilters });
 
     if (result) {
       setRowFilters(result);
     }
-  }, [rowFilters]);
+  }, [enableRowSelection, rowFilters]);
 
   const handleClickDownload = useCallback(() => {
     const csvString = exportToCsv();
@@ -240,5 +237,6 @@ export function useSliceTableState({
     rowSelection,
     setRowSelection,
     shouldShowLabelColumn,
+    numFiltersApplied: Object.values(rowFilters).filter(Boolean).length,
   };
 }

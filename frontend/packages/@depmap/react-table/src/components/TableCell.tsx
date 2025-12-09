@@ -15,7 +15,7 @@ type TableCellProps<T> = {
   index: number;
   stickyColumnsInfo: StickyColumnsInfo;
   isTruncated: boolean;
-  onMouseEnter: (e: React.MouseEvent<HTMLTableDataCellElement>) => void;
+  onMouseEnterOrMove: (e: React.MouseEvent<HTMLTableDataCellElement>) => void;
 };
 
 type StickyPositionResult = {
@@ -60,7 +60,7 @@ export function TableCell<T>({
   index,
   stickyColumnsInfo,
   isTruncated,
-  onMouseEnter,
+  onMouseEnterOrMove,
 }: TableCellProps<T>) {
   const {
     selectColumnWidth,
@@ -91,7 +91,8 @@ export function TableCell<T>({
     <CellTooltipWrapper cell={cell} shouldShow={isTruncated}>
       <td
         className={isSticky ? styles.stickyCell : undefined}
-        onMouseEnter={onMouseEnter}
+        onMouseEnter={onMouseEnterOrMove}
+        onMouseMove={onMouseEnterOrMove}
         style={cellStyle}
       >
         {flexRender(cell.column.columnDef.cell, cell.getContext())}
