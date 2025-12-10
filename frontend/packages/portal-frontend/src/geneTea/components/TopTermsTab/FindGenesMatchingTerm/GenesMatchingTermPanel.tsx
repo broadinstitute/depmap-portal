@@ -4,11 +4,11 @@ import Select from "react-select";
 import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
 import MatchingTermsModal from "./MatchingTermsModal";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
+import { Radio } from "react-bootstrap";
 
 interface GenesMatchingTermPanelProps {
   rawData: GeneTeaEnrichedTerms | null;
   termGroupToTermsMapping: Map<string, string[]>;
-  queryGenes: string[];
   termToMatchingGenesMap: Map<string, string[]>;
   useTerms: boolean;
 }
@@ -16,13 +16,11 @@ interface GenesMatchingTermPanelProps {
 const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
   rawData,
   termGroupToTermsMapping,
-  queryGenes,
   termToMatchingGenesMap,
   useTerms,
 }) => {
-  const { allAvailableGenes } = useGeneTeaFiltersContext();
-
   const [selectedTerm, setSelectedTerm] = useState<any>(null);
+  const [useAllGenes, setUseAllGenes] = useState<boolean>(false);
 
   const termOrGroupSelectOptions = useMemo(() => {
     const options = useTerms
@@ -49,6 +47,28 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
   return (
     <div className={styles.GeneTeaMatchingTermPanel}>
       <div>
+        <Radio
+          style={{ marginBottom: "3px" }}
+          name="radioGroup"
+          checked={useAllGenes}
+          onChange={() => {
+            setUseAllGenes(true);
+          }}
+          inline
+        >
+          All Genes
+        </Radio>
+        <Radio
+          style={{ marginBottom: "3px" }}
+          name="radioGroup"
+          checked={!useAllGenes}
+          onChange={() => {
+            setUseAllGenes(false);
+          }}
+          inline
+        >
+          Query Genes
+        </Radio>
         <Select
           value={
             selectedTerm
@@ -78,6 +98,7 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
         termToMatchingGenesMap={termToMatchingGenesMap}
         onClose={() => setSelectedTerm(null)}
         useTerms={useTerms}
+        useAllGenes={useAllGenes}
       />
     </div>
   );

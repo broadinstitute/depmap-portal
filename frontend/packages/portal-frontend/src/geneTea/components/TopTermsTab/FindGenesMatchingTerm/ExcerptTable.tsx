@@ -10,16 +10,19 @@ interface ExcerptTableProps {
   useTerms: boolean;
   term: string;
   termToMatchingGenesMap: Map<string, string[]>;
+  useAllGenes: boolean;
 }
 
 const ExcerptTable: React.FC<ExcerptTableProps> = ({
   useTerms,
   term,
   termToMatchingGenesMap,
+  useAllGenes,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Record<string, string> | null>(null);
   const [error, setError] = useState(false);
+  const [allGenes, setAllGenes] = useState<string[]>([]);
 
   const matchingGenes = useMemo(() => termToMatchingGenesMap.get(term) || [], [
     termToMatchingGenesMap,
@@ -32,9 +35,20 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
       setError(false);
 
       try {
+        let allAvailableGenes: string[] = [];
+        if (useAllGenes) {
+          const genesMatchingTermsData = await cached(
+            legacyPortalAPI
+          ).fetchGeneTeaGenesMatchingTermExperimental([term], []);
+          allAvailableGenes = genesMatchingTermsData[term].split(" ");
+          setAllGenes(allAvailableGenes);
+        }
         const fetchedData = await cached(
           legacyPortalAPI
-        ).fetchGeneTeaTermContext(term, matchingGenes || []);
+        ).fetchGeneTeaTermContext(
+          term,
+          useAllGenes ? allAvailableGenes : matchingGenes || []
+        );
         setData(fetchedData);
       } catch (e) {
         setError(true);
@@ -49,9 +63,11 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     DepMap.saveNewContext({
       name: term,
       context_type: "gene",
-      expr: { in: [{ var: "entity_label" }, matchingGenes] },
+      expr: {
+        in: [{ var: "entity_label" }, useAllGenes ? allGenes : matchingGenes],
+      },
     });
-  }, [term, matchingGenes]);
+  }, [term, matchingGenes, allGenes]);
 
   return (
     <div style={{ paddingTop: "20px" }}>
@@ -63,7 +79,9 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           synonyms={[]} // TODO: ask Bella if we need to use synonyms and coincident this for anything. Reusing data explorer's GeneTeaTerm, and this doesn't seem like something we need.
           coincident={[]}
         />
-        ” is associated with {matchingGenes.length} of the selected genes.
+        ” is associated with{" "}
+        {useAllGenes ? allGenes.length : matchingGenes.length} of the selected
+        genes.
       </p>
       {/* If the user is grouping terms (i.e. using Term Groups instead of just Terms),
       the excerpt table will render inside a tab for a particular term. We need this button to

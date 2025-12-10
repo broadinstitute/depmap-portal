@@ -4,6 +4,7 @@ import { DepMap } from "@depmap/globals";
 import renderConditionally from "@depmap/data-explorer-2/src/utils/render-conditionally";
 import styles from "../../../styles/GeneTea.scss";
 import ExcerptTable from "./ExcerptTable";
+import { cached, legacyPortalAPI } from "@depmap/api";
 
 interface Props {
   termOrTermGroup: string;
@@ -11,6 +12,7 @@ interface Props {
   termToMatchingGenesMap: Map<string, string[]>;
   onClose: () => void;
   useTerms: boolean;
+  useAllGenes: boolean;
 }
 
 function MatchingTermsModal({
@@ -19,44 +21,103 @@ function MatchingTermsModal({
   termToMatchingGenesMap,
   onClose,
   useTerms,
+  useAllGenes,
 }: Props) {
   const [show, setShow] = useState(true);
 
-  const handleClickCreateTermContext = useCallback(() => {
+  const handleClickCreateTermContext = useCallback(async () => {
     setShow(false);
 
-    const matchingGenes = termToMatchingGenesMap.get(termOrTermGroup) || [];
+    if (useAllGenes) {
+      const allGenes = await cached(
+        legacyPortalAPI
+      ).fetchGeneTeaGenesMatchingTermExperimental(
+        useTerms ? [termOrTermGroup] : termsWithinSelectedGroup || [],
+        []
+      );
 
-    DepMap.saveNewContext(
-      {
-        name: termOrTermGroup,
-        context_type: "gene",
-        expr: { in: [{ var: "entity_label" }, matchingGenes] },
-      },
-      () => setShow(true)
-    );
+      DepMap.saveNewContext(
+        {
+          name: termOrTermGroup,
+          context_type: "gene",
+          expr: {
+            in: [
+              { var: "entity_label" },
+              Object.keys(allGenes).length > 0
+                ? Object.keys(allGenes).flatMap(
+                    (term) => allGenes[term].split(" ") || []
+                  )
+                : [],
+            ],
+          },
+        },
+        () => setShow(true)
+      );
+    } else {
+      const matchingGenes = termToMatchingGenesMap.get(termOrTermGroup) || [];
+      DepMap.saveNewContext(
+        {
+          name: termOrTermGroup,
+          context_type: "gene",
+          expr: {
+            in: [{ var: "entity_label" }, matchingGenes],
+          },
+        },
+        () => setShow(true)
+      );
+    }
   }, [termOrTermGroup, termToMatchingGenesMap]);
 
-  const handleClickCreateTermGroupContext = useCallback(() => {
+  const handleClickCreateTermGroupContext = useCallback(async () => {
     setShow(false);
 
-    // If the user is grouping terms, we want to look at all the matching genes across all terms within the selected term group
-    const matchingGenes = Array.from(
-      new Set(
-        termsWithinSelectedGroup?.flatMap(
-          (term) => termToMatchingGenesMap.get(term) || []
-        )
-      )
-    );
+    if (useAllGenes) {
+      const allGenes = termsWithinSelectedGroup
+        ? await cached(
+            legacyPortalAPI
+          ).fetchGeneTeaGenesMatchingTermExperimental(
+            termsWithinSelectedGroup,
+            []
+          )
+        : {};
 
-    DepMap.saveNewContext(
-      {
-        name: termOrTermGroup,
-        context_type: "gene",
-        expr: { in: [{ var: "entity_label" }, matchingGenes] },
-      },
-      () => setShow(true)
-    );
+      DepMap.saveNewContext(
+        {
+          name: termOrTermGroup,
+          context_type: "gene",
+          expr: {
+            in: [
+              { var: "entity_label" },
+              Object.keys(allGenes).length > 0
+                ? Object.keys(allGenes).flatMap(
+                    (term) => allGenes[term].split(" ") || []
+                  )
+                : [],
+            ],
+          },
+        },
+        () => setShow(true)
+      );
+    } else {
+      // If the user is grouping terms, we want to look at all the matching genes across all terms within the selected term group
+      const matchingGenes = Array.from(
+        new Set(
+          termsWithinSelectedGroup?.flatMap(
+            (term) => termToMatchingGenesMap.get(term) || []
+          )
+        )
+      );
+      DepMap.saveNewContext(
+        {
+          name: termOrTermGroup,
+          context_type: "gene",
+          expr: {
+            in: [{ var: "entity_label" }, matchingGenes],
+          },
+        },
+        () => setShow(true)
+      );
+    }
   }, [termOrTermGroup, termToMatchingGenesMap, termsWithinSelectedGroup]);
 
   const modalBody = useTerms ? (
@@ -65,6 +126,7 @@ function MatchingTermsModal({
         useTerms={useTerms}
         term={termOrTermGroup}
         termToMatchingGenesMap={termToMatchingGenesMap}
+        useAllGenes={useAllGenes}
       />
     </>
   ) : (
@@ -80,6 +142,7 @@ function MatchingTermsModal({
               useTerms={useTerms}
               term={term}
               termToMatchingGenesMap={termToMatchingGenesMap}
+              useAllGenes={useAllGenes}
             />
           </Tab>
         ))}
