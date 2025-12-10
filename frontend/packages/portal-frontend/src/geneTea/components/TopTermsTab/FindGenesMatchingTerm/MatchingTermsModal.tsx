@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import { Button, Modal, Tab, Tabs } from "react-bootstrap";
 import { DepMap } from "@depmap/globals";
 import renderConditionally from "@depmap/data-explorer-2/src/utils/render-conditionally";
-import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
+import styles from "../../../styles/GeneTea.scss";
 import ExcerptTable from "./ExcerptTable";
 
 interface Props {
@@ -57,7 +57,7 @@ function MatchingTermsModal({
       },
       () => setShow(true)
     );
-  }, [termOrTermGroup, termToMatchingGenesMap]);
+  }, [termOrTermGroup, termToMatchingGenesMap, termsWithinSelectedGroup]);
 
   const modalBody = useTerms ? (
     <>

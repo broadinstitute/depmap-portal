@@ -1,5 +1,5 @@
-import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
-import React, { useCallback, useEffect, useState } from "react";
+import styles from "../../../styles/GeneTea.scss";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
 import GeneTeaTerm from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaTerm";
@@ -20,7 +20,11 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [data, setData] = useState<Record<string, string> | null>(null);
   const [error, setError] = useState(false);
-  const matchingGenes = termToMatchingGenesMap.get(term) || [];
+
+  const matchingGenes = useMemo(() => termToMatchingGenesMap.get(term) || [], [
+    termToMatchingGenesMap,
+    term,
+  ]);
 
   useEffect(() => {
     (async () => {
@@ -47,7 +51,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
       context_type: "gene",
       expr: { in: [{ var: "entity_label" }, matchingGenes] },
     });
-  }, [term, termToMatchingGenesMap]);
+  }, [term, matchingGenes]);
 
   return (
     <div style={{ paddingTop: "20px" }}>

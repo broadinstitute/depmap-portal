@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import Section from "./Section";
 import styles from "./styles.scss";
-import plotStyles from "./plotSectionStyles.scss";
 
 export const SectionStackContext = React.createContext({
   sectionHeights: [0, 0, 0] as number[],

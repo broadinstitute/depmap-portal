@@ -1,4 +1,4 @@
-import styles from "../styles/GeneTea.scss";
+import styles from "../../../styles/GeneTea.scss";
 import React, { useMemo, useState } from "react";
 import Select from "react-select";
 import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
@@ -44,16 +44,10 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
         );
 
     return options;
-  }, [rawData, useTerms, termGroupToTermsMapping]);
+  }, [rawData, useTerms]);
 
   return (
-    <div
-      style={{
-        minWidth: 0,
-        overflow: "visible",
-        zIndex: "9999",
-      }}
-    >
+    <div className={styles.GeneTeaMatchingTermPanel}>
       <div>
         <Select
           value={

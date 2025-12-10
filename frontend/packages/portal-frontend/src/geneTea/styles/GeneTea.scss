@@ -73,9 +73,57 @@
   }
 }
 
+.GeneTeaMatchingTermPanel {
+  min-width: 0;
+  overflow: visible;
+  z-index: 9999;
+}
+
 .GeneTeaModal {
-  @media screen and (min-height: 510px) {
-    height: 100px;
+  max-height: 68vh;
+  overflow: hidden;
+
+  mark {
+    background-color: #ffe3d1;
+  }
+
+  table {
+    display: block;
+    border: 1px solid #4a87ab;
+    max-height: calc(68vh - 239px);
+    overflow-y: auto;
+    margin-bottom: 0;
+
+    thead th {
+      border: none;
+      color: #fff;
+      background-color: #5392b6;
+      font-weight: normal;
+      font-size: 13px;
+      padding: 4px 10px;
+      position: sticky;
+      top: 0;
+    }
+
+    tbody td {
+      border: none;
+    }
+
+    td,
+    th {
+      &:first-child {
+        min-width: 68px;
+        border-right: 1px solid #4a87ab;
+      }
+
+      &:nth-child(2) {
+        width: 100%;
+      }
+    }
+
+    tr:nth-child(even) td {
+      background-color: rgba(29, 105, 150, 0.1);
+    }
   }
 }
 
