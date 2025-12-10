@@ -261,7 +261,9 @@ class PredictiveFeature(Model):
         if not self._get_feature_is_loaded():
             return None
 
-        dep_dataset_values = data_access.get_row_of_values(
+        # For now, the line below must use interactive utils because some of the same
+        # dataset IDs are used in breadbox but are indexed by compound. 
+        dep_dataset_values = interactive_utils.get_row_of_values(
             dep_dataset.name.name, entity.label
         )
         if self.dataset_id == "context":
