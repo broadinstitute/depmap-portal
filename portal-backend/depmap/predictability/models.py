@@ -25,6 +25,7 @@ from depmap.dataset.models import (
 )
 from depmap.entity.models import Entity
 from depmap.gene.models import Gene
+from depmap.compound.models import CompoundExperiment
 from depmap.match_related.models import RelatedEntityIndex
 from depmap.cell_line.models import Lineage
 
@@ -211,13 +212,24 @@ class PredictiveFeature(Model):
     def get_interactive_url_for_entity(
         self, dep_dataset: DependencyDataset, entity: Entity
     ) -> Optional[str]:
+        """
+        Used to generate links from the predictability tab/tile to data explorer.
+        DEPRECATED: this does not map to breadbox datasets/data in the way we'd like.
+        """
         if not self._get_feature_is_loaded():
             return None
+        
+        dataset_id = dep_dataset.name.name
 
+        # Special workaround to prevent broken links in data explorer
+        # This same dataset exists in breadbox but is indexed by compound, not compound experiment.
+        if dataset_id == "Prism_oncology_seq_AUC" and entity.get_entity_type() == "compound_experiment":
+            entity = entity.compound
+        
         if self.dataset_id == "context":
             return url_for(
                 "data_explorer_2.view_data_explorer_2",
-                xDataset=dep_dataset.name.name,
+                xDataset=dataset_id,
                 xFeature=entity.label,
                 color1=json_dumps(
                     {
@@ -237,7 +249,7 @@ class PredictiveFeature(Model):
 
         return url_for(
             "data_explorer_2.view_data_explorer_2",
-            xDataset=dep_dataset.name.name,
+            xDataset=dataset_id,
             xFeature=entity.label,
             yDataset=self.dataset_id,
             yFeature=self.feature_name,
