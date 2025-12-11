@@ -2,7 +2,7 @@ import React, { useCallback, useState, useMemo } from "react";
 import { Button, Modal } from "react-bootstrap";
 import renderConditionally from "@depmap/data-explorer-2/src/utils/render-conditionally";
 import styles from "../../../../styles/GeneTea.scss";
-import ExcerptTable from "./ExcerptTable";
+import ExcerptTable from "./ExcerptTable/ExcerptTable";
 import TermGroupTabs from "./TermGroupTabs";
 import { useGeneContextCreation } from "../../../../hooks/useCreateGeneContext";
 

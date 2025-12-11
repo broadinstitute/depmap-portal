@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import styles from "../../../../../styles/GeneTea.scss";
-import ExcerptTable from "../ExcerptTable";
+import ExcerptTable from "../ExcerptTable/ExcerptTable";
 import { Tab, Tabs } from "react-bootstrap";
 
 interface SmallTermGroupProps {

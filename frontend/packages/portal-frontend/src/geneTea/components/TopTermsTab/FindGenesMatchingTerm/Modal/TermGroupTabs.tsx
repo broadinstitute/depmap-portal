@@ -2,7 +2,7 @@ import React from "react";
 import LargeTermGroup from "./TabTypes/LargeTermGroup";
 import SmallTermGroup from "./TabTypes/SmallTermGroup";
 
-const TERM_THRESHOLD = 2;
+const TERM_THRESHOLD = 10;
 
 interface TermGroupTabsProps {
   termGroup: string;

@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import Select from "react-select";
 import styles from "../../../../../styles/GeneTea.scss";
-import ExcerptTable from "../ExcerptTable";
+import ExcerptTable from "../ExcerptTable/ExcerptTable";
 
 interface LargeTermGroupProps {
   termGroup: string;
