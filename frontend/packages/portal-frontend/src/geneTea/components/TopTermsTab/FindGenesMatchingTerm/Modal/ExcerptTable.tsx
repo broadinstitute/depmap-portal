@@ -1,9 +1,9 @@
-import styles from "../../../styles/GeneTea.scss";
+import styles from "../../../../styles/GeneTea.scss";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
 import GeneTeaTerm from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaTerm";
-import { Button } from "react-bootstrap";
+import { Alert, Button } from "react-bootstrap";
 import { DepMap } from "@depmap/globals";
 
 interface ExcerptTableProps {
@@ -57,7 +57,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         setIsLoading(false);
       }
     })();
-  }, [term, matchingGenes]);
+  }, [term, matchingGenes, useAllGenes]);
 
   const handleClickCreateTermContext = useCallback(() => {
     DepMap.saveNewContext({
@@ -67,21 +67,16 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         in: [{ var: "entity_label" }, useAllGenes ? allGenes : matchingGenes],
       },
     });
-  }, [term, matchingGenes, allGenes]);
+  }, [term, matchingGenes, allGenes, useAllGenes]);
 
   return (
     <div style={{ paddingTop: "20px" }}>
       {" "}
       <p>
         The term “
-        <GeneTeaTerm
-          term={term}
-          synonyms={[]} // TODO: ask Bella if we need to use synonyms and coincident this for anything. Reusing data explorer's GeneTeaTerm, and this doesn't seem like something we need.
-          coincident={[]}
-        />
-        ” is associated with{" "}
-        {useAllGenes ? allGenes.length : matchingGenes.length} of the selected
-        genes.
+        <GeneTeaTerm term={term} synonyms={[]} coincident={[]} />” is associated
+        with {useAllGenes ? allGenes.length : matchingGenes.length} of the
+        selected genes.
       </p>
       {/* If the user is grouping terms (i.e. using Term Groups instead of just Terms),
       the excerpt table will render inside a tab for a particular term. We need this button to
@@ -94,7 +89,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
             bsSize="small"
             onClick={handleClickCreateTermContext}
           >
-            Save as Gene Context
+            Save Term as Gene Context
           </Button>
         </div>
       )}
@@ -102,7 +97,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         <thead>
           <tr>
             <th>Gene</th>
-            <th>Context</th>
+            <th>Excerpt</th>
           </tr>
         </thead>
         {data && (
@@ -139,12 +134,15 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         </div>
       )}
       {error && (
-        <h2>
-          Sorry, there was a problem retrieving the context for this term 😭
-        </h2>
+        <Alert bsStyle="danger">
+          There was a problem retrieving the excerpt for this term. Please try
+          again!
+        </Alert>
       )}
       {data && Object.keys(data).length === 0 && (
-        <h2>Hmm, the context for this term seems to have gone missing 🤔</h2>
+        <Alert bsStyle="danger">
+          Error loading excerpt. Could not find an excerpt for this term.{" "}
+        </Alert>
       )}
     </div>
   );

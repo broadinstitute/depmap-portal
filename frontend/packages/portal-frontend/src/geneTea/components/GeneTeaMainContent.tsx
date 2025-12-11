@@ -103,7 +103,6 @@ function GeneTeaMainContent({ tab }: GeneTeaMainContentProps) {
               barChartData={barChartData}
               heatmapXAxisLabel={heatmapXAxisLabel}
               rawData={rawData}
-              geneSymbolSelections={geneSymbolSelections}
               termGroupToTermsMapping={termGroupToTermsMapping}
             />
           )}

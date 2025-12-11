@@ -1,25 +1,27 @@
 import styles from "../../../styles/GeneTea.scss";
 import React, { useMemo, useState } from "react";
 import Select from "react-select";
-import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
-import MatchingTermsModal from "./MatchingTermsModal";
+import MatchingTermsModal from "./Modal/MatchingTermsModal";
 import { GeneTeaEnrichedTerms } from "@depmap/types/src/experimental_genetea";
 import { Radio } from "react-bootstrap";
 
-interface GenesMatchingTermPanelProps {
+interface GenesMatchingTermSearchPanelProps {
   rawData: GeneTeaEnrichedTerms | null;
   termGroupToTermsMapping: Map<string, string[]>;
   termToMatchingGenesMap: Map<string, string[]>;
   useTerms: boolean;
 }
 
-const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
+const GenesMatchingTermSearchPanel: React.FC<GenesMatchingTermSearchPanelProps> = ({
   rawData,
   termGroupToTermsMapping,
   termToMatchingGenesMap,
   useTerms,
 }) => {
-  const [selectedTerm, setSelectedTerm] = useState<any>(null);
+  const [selectedTerm, setSelectedTerm] = useState<{
+    value: string;
+    label: string;
+  } | null>(null);
   const [useAllGenes, setUseAllGenes] = useState<boolean>(false);
 
   const termOrGroupSelectOptions = useMemo(() => {
@@ -47,28 +49,31 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
   return (
     <div className={styles.GeneTeaMatchingTermPanel}>
       <div>
-        <Radio
-          style={{ marginBottom: "3px" }}
-          name="radioGroup"
-          checked={useAllGenes}
-          onChange={() => {
-            setUseAllGenes(true);
-          }}
-          inline
-        >
-          All Genes
-        </Radio>
-        <Radio
-          style={{ marginBottom: "3px" }}
-          name="radioGroup"
-          checked={!useAllGenes}
-          onChange={() => {
-            setUseAllGenes(false);
-          }}
-          inline
-        >
-          Query Genes
-        </Radio>
+        <div className={styles.matchingTermsSearchSection}>
+          <h4 className={styles.matchingTermsSearchLabel}>Search in:</h4>
+          <Radio
+            style={{ marginBottom: "3px" }}
+            name="radioGroup"
+            checked={useAllGenes}
+            onChange={() => {
+              setUseAllGenes(true);
+            }}
+            inline
+          >
+            All Genes
+          </Radio>
+          <Radio
+            style={{ marginBottom: "3px" }}
+            name="radioGroup"
+            checked={!useAllGenes}
+            onChange={() => {
+              setUseAllGenes(false);
+            }}
+            inline
+          >
+            Query Genes
+          </Radio>
+        </div>
         <Select
           value={
             selectedTerm
@@ -104,4 +109,4 @@ const GenesMatchingTermPanel: React.FC<GenesMatchingTermPanelProps> = ({
   );
 };
 
-export default GenesMatchingTermPanel;
+export default GenesMatchingTermSearchPanel;

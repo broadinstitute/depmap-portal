@@ -3,6 +3,7 @@
 @import "./PlotSection.scss";
 @import "./PlotSelections.scss";
 @import "./PlotOptionsPanel.scss";
+@import "../../../../@depmap/data-explorer-2/src/styles/mixins.scss";
 
 .header {
   padding-left: 20px;
@@ -80,7 +81,7 @@
 }
 
 .GeneTeaModal {
-  max-height: 68vh;
+  max-height: 90vh;
   overflow: hidden;
 
   mark {
@@ -88,6 +89,7 @@
   }
 
   table {
+    @include scroll-shadow;
     display: block;
     border: 1px solid #4a87ab;
     max-height: calc(68vh - 239px);

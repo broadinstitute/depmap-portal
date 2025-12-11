@@ -9,7 +9,7 @@ import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 import PlotSection from "./PlotSection";
 import PlotSelections from "./PlotSelections";
 import PurpleHelpIcon from "../PurpleHelpIcon";
-import GenesMatchingTermPanel from "./FindGenesMatchingTerm/GenesMatchingTermPanel";
+import GenesMatchingTermSearchPanel from "./FindGenesMatchingTerm/GenesMatchingTermSearchPanel";
 import SectionStack, {
   StackableSection,
 } from "../collapsibleOptions/SectionStack";
@@ -28,7 +28,6 @@ interface TopTermsTabProps {
     customdata: string[];
   };
   heatmapXAxisLabel: string;
-  geneSymbolSelections: Set<string>;
   termGroupToTermsMapping: Map<string, string[]>;
 }
 
@@ -37,7 +36,6 @@ function TopTermsTab({
   heatmapData,
   barChartData,
   heatmapXAxisLabel,
-  geneSymbolSelections,
   termGroupToTermsMapping,
 }: TopTermsTabProps) {
   const {
@@ -172,10 +170,9 @@ function TopTermsTab({
                     minHeight={150}
                     usePlotStyles
                   >
-                    <GenesMatchingTermPanel
+                    <GenesMatchingTermSearchPanel
                       rawData={rawData}
                       termGroupToTermsMapping={termGroupToTermsMapping}
-                      queryGenes={Array.from(geneSymbolSelections)}
                       termToMatchingGenesMap={termToMatchingGenesMap}
                       useTerms={rawData?.groupby === "Term"}
                     />
