@@ -33,17 +33,16 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
   // Total number of pages
   const totalPages = Math.ceil(allGenesList.length / PAGE_SIZE);
 
-  // Determine the full list of genes based on props (local map or API fetch)
-  const localMatchingGenes = useMemo(
-    () => termToMatchingGenesMap.get(term) || [],
-    [termToMatchingGenesMap, term]
-  );
+  const matchingGenes = useMemo(() => termToMatchingGenesMap.get(term) || [], [
+    termToMatchingGenesMap,
+    term,
+  ]);
 
   // --- 1. Initial Gene List Fetch (Runs once per term) ---
   useEffect(() => {
     // If not using all genes, the list is already available locally
     if (!useAllGenes) {
-      setAllGenesList(localMatchingGenes);
+      setAllGenesList(matchingGenes);
       setCurrentPage(0);
       return;
     }
@@ -70,7 +69,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         setIsLoading(false);
       }
     })();
-  }, [term, useAllGenes, localMatchingGenes]);
+  }, [term, useAllGenes, matchingGenes]);
 
   // --- 2. Excerpt Data Fetch (Runs on term change and page change) ---
   useEffect(() => {
@@ -101,7 +100,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         setIsLoading(false);
       }
     })();
-  }, [term, allGenesList, currentPage]); // Depends on term, full list, and current page
+  }, [term, allGenesList, currentPage]);
 
   // --- Context Creation Handler (Uses the full list) ---
   const handleClickCreateTermContext = useCallback(() => {
@@ -131,7 +130,6 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
 
   return (
     <div className={styles.tableWrapper}>
-      {" "}
       <p className={styles.tableParagraph}>
         The term “
         <GeneTeaTerm term={term} synonyms={[]} coincident={[]} />” is associated

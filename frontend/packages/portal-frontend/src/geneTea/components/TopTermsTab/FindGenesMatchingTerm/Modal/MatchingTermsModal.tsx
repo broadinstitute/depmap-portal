@@ -30,11 +30,7 @@ function MatchingTermsModal({
   // --- 1. SINGLE TERM CONTEXT CREATION ---
   const handleClickCreateTermContext = useGeneContextCreation({
     name: termOrTermGroup,
-    terms: useTerms
-      ? [termOrTermGroup]
-      : [
-          /* Assuming single selected tab term here if tabs were controlled */
-        ],
+    terms: useTerms ? [termOrTermGroup] : [],
     termToMatchingGenesMap,
     useAllGenes,
     onComplete: handleContextSaveComplete,
