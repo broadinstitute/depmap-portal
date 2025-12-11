@@ -12,42 +12,6 @@ from depmap.taiga_id.models import TaigaAlias
 from depmap.utilities.exception import InteractiveDatasetNotFound
 
 
-class DatasetSortFirstKey(enum.Enum):
-    custom_or_private = 0
-    standard_or_standard_related = 1
-    other_nonstandard = 2
-
-
-class DatasetSortKey(NamedTuple):
-    """
-    Sorting aims for the following goals
-        1) Custom and private datasets are the most important and should appear first
-        2) Generally, standard datasets appear before nonstandard
-        3) Some standard datasets are more important than others. These should appear before the other standard datasets
-        4) The nonstandard PR (gene_dependency) datasets should appear next to the standard gene_effect datasets (these are Chronos_Combined, etc DependencyDatasets that use the gene_effect file from taiga).
-        5) Finally, we can have the rest of the nonstandard datasets
-
-    first key:
-        DatasetSortFirstKey.custom_or_private = 0
-        DatasetSortFirstKey.standard_or_standard_related = 1
-        DatasetSortFirstKey.other_nonstandard = 2
-    second key:
-        numerical prioritization within those where first key = standard_or_standard_related
-            nonstandard datasets related to standard ones have the same second key as the standard dataset they are related to
-        0 if not standard_or_standard_related
-    third key:
-        display name
-
-    These keys are kept a separate keys because
-        1) keys for private and custom datasets are dynamic, or at least, should not be cached/made available without appropriate permissions on a per-request basis
-        2) it can be useful to other modules to know the key values, for instance vector catolog gene_nodes.py it looks at the first key to determine whether the dataset should be under "Latest" or "Other"
-    """
-
-    first_key: int
-    second_key: int
-    third_key_display_name: str
-
-
 def _format_common_dataset_metadata(dataset):
     entity_type = dataset.entity_type
     kwargs = {

@@ -46,31 +46,6 @@ def test_get_stable_id_type(stable_id, expected):
     assert get_stable_id_type(stable_id) == expected
 
 
-def test_get_label_aliases(empty_db_mock_downloads):
-    """
-    Test that:
-    output as expected
-    fails when calling on an entity_id that is not a gene
-    """
-    gene = GeneFactory(
-        entity_alias=[
-            EntityAliasFactory(alias="FAKEGENE1a"),
-            EntityAliasFactory(alias="FAKEGENE1b"),
-        ],
-        label="FAKEGENE1",
-    )
-    compound_entity_id = CompoundFactory().entity_id
-    empty_db_mock_downloads.session.flush()
-
-    assert Gene.get_label_aliases(gene.entity_id) == (
-        "FAKEGENE1",
-        ["FAKEGENE1a", "FAKEGENE1b"],
-    )
-
-    with pytest.raises(AssertionError):
-        Gene.get_label_aliases(compound_entity_id)
-
-
 def test_get_all_confidence_evidence_scores(empty_db_mock_downloads):
     GeneScoreConfidenceFactory.create_batch(5)
     # this needs to be a commit and not just a flush because the tested function uses pd.read_sqli

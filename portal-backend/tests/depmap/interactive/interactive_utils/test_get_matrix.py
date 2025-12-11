@@ -2,6 +2,7 @@ import pytest
 from depmap.dataset.models import DependencyDataset
 from depmap.settings.settings import TestConfig
 from depmap.interactive import interactive_utils
+from depmap.interactive.interactive_utils.get_and_process_data import get_matrix
 from tests.factories import (
     MatrixFactory,
     DependencyDatasetFactory,
@@ -65,14 +66,14 @@ def test_get_matrix(app, empty_db_mock_downloads):
     interactive_test_utils.reload_interactive_config()
 
     assert (
-        interactive_utils.get_matrix(standard_dataset.name.name)
+        get_matrix(standard_dataset.name.name)
         == standard_dataset.matrix
     )
-    assert interactive_utils.get_matrix(nonstandard_continuous) == nonstandard_matrix
+    assert get_matrix(nonstandard_continuous) == nonstandard_matrix
 
     with pytest.raises(NotImplementedError):
-        interactive_utils.get_matrix(nonstandard_categorical)
+        get_matrix(nonstandard_categorical)
 
     # standard categorical
     with pytest.raises(NotImplementedError):
-        interactive_utils.get_matrix(interactive_utils.get_context_dataset())
+        get_matrix(interactive_utils.get_context_dataset())

@@ -279,7 +279,6 @@ models.py: error: Expression of type "None" cannot be assigned to parameter of t
 models.py: error: Expression of type "Unknown | ReleaseTerms | MockTerms" cannot be assigned to return type "ReleaseTerms"
 models.py: error: Method "get_dataset_by_name" overrides class "Dataset" in an incompatible manner
 models.py: error: Method "get_description" overrides class "_Compound" in an incompatible manner
-models.py: error: Method "get_label_aliases" overrides class "Entity" in an incompatible manner
 models.py: error: Method "has_cell_line" overrides class "Dataset" in an incompatible manner
 models.py: error: Method "has_entity" overrides class "Dataset" in an incompatible manner
 models.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
@@ -386,11 +385,6 @@ test_executive.py: error: Object of type "None" is not subscriptable (reportOpti
 test_factories.py: error: "cell_line_1" is possibly unbound (reportPossiblyUnboundVariable)
 test_get_and_process_data.py: error: "file_path" is not a known member of "None" (reportOptionalMemberAccess)
 test_get_and_process_data.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
-test_get_associations.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
-test_get_associations.py: error: Cannot access member "entity_id" for type "GeneFactory"
-test_get_associations_csv.py: error: "parse" is not a known member of module "urllib" (reportAttributeAccessIssue)
-test_get_dataset_url.py: error: Argument of type "Sequence" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_url"
-test_get_sort_key.py: error: Argument of type "LazyAttribute" cannot be assigned to parameter "third_key_display_name" of type "str" in function "__init__"
 test_global_search_loader.py: error: "__load_context_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: "__load_gene_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
 test_global_search_loader.py: error: Cannot access member "entity_id" for type "CompoundFactory"
@@ -458,14 +452,12 @@ utils.py: error: "base_name" is possibly unbound (reportPossiblyUnboundVariable)
 utils.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
 utils.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 utils.py: error: "reset_index" is not a known member of "None" (reportOptionalMemberAccess)
-utils.py: error: Argument of type "Literal['ALLOW_CUSTOM_DOWNLOAD_WITH_TAIGA_URL']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Literal['ANNOUNCEMENTS_FILE_PATH']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Literal['OAUTH_SIGNATURE_KEY']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Literal['TAIGA_CACHE_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Literal['WEBAPP_DATA_DIR']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
 utils.py: error: Cannot access member "get" for type "list[str]"
-utils.py: error: Expression of type "Dict[str, DatasetSortKey] | Any" cannot be assigned to return type "DefaultDict[str, DatasetSortKey]"
 utils.py: error: Expression of type "None" cannot be assigned to return type "DataFrame"
 utils.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 utils.py: error: No overloads for "quote" match the provided arguments (reportCallIssue)

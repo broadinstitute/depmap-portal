@@ -3,7 +3,6 @@ from .interface import (
     add_matrix_dataset_to_breadbox,
     get_all_matrix_datasets,
     get_matrix_dataset,
-    get_dataset_feature_ids,
     get_dataset_feature_labels_by_id,
     get_dataset_feature_labels,
     get_dataset_sample_ids,
@@ -20,18 +19,12 @@ from .interface import (
     is_categorical,
     is_continuous,
     dataset_exists,
+    get_row_of_values,
+    valid_row,
     # compound-specific methods
     get_all_datasets_containing_compound,
     get_subsetted_df_by_labels_compound_friendly,
-    # methods that will be supported with modified contracts
-    get_row_of_values,
-    get_subsetted_df,
-    get_subsetted_df_by_ids,
-    valid_row,
     # methods that will be replaced/removed
-    get_all_row_indices_labels_entity_ids,
     get_context_dataset,
-    get_custom_cell_lines_dataset,
     get_metadata_dataset_id,
-    has_config,
 )
