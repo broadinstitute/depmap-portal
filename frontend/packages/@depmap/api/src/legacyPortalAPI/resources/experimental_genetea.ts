@@ -241,7 +241,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
   };
 }
 
-export async function fetchGeneTeaTermContextExperimental(
+export async function fetchGeneTeaTermExcerptExperimental(
   term: string,
   genes: string[]
 ): Promise<Record<string, string>> {
@@ -249,7 +249,7 @@ export async function fetchGeneTeaTermContextExperimental(
     throw new Error("GeneTea is not supported in this environment!");
   }
 
-  const geneTeaUrl = "genetea-api/context";
+  const geneTeaUrl = "genetea-api/excerpts";
 
   const params = {
     term,

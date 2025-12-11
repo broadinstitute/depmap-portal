@@ -43,9 +43,10 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           allAvailableGenes = genesMatchingTermsData[term].split(" ");
           setAllGenes(allAvailableGenes);
         }
+
         const fetchedData = await cached(
           legacyPortalAPI
-        ).fetchGeneTeaTermContext(
+        ).fetchGeneTeaTermExcerptExperimental(
           term,
           useAllGenes ? allAvailableGenes : matchingGenes || []
         );
