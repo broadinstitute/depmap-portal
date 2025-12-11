@@ -6,6 +6,9 @@ import GeneTeaTerm from "@depmap/data-explorer-2/src/components/DataExplorerPage
 import { Alert, Button } from "react-bootstrap";
 import { DepMap } from "@depmap/globals";
 
+// Define the pagination limit
+const PAGE_SIZE = 150;
+
 interface ExcerptTableProps {
   useTerms: boolean;
   term: string;
@@ -20,71 +23,122 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
   useAllGenes,
 }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<Record<string, string> | null>(null);
   const [error, setError] = useState(false);
-  const [allGenes, setAllGenes] = useState<string[]>([]);
+  const [pageData, setPageData] = useState<Record<string, string> | null>(null);
 
-  const matchingGenes = useMemo(() => termToMatchingGenesMap.get(term) || [], [
-    termToMatchingGenesMap,
-    term,
-  ]);
+  // State for pagination
+  const [allGenesList, setAllGenesList] = useState<string[]>([]); // The full list of genes
+  const [currentPage, setCurrentPage] = useState(0); // Current page index (0-based)
 
+  // Total number of pages
+  const totalPages = Math.ceil(allGenesList.length / PAGE_SIZE);
+
+  // Determine the full list of genes based on props (local map or API fetch)
+  const localMatchingGenes = useMemo(
+    () => termToMatchingGenesMap.get(term) || [],
+    [termToMatchingGenesMap, term]
+  );
+
+  // --- 1. Initial Gene List Fetch (Runs once per term) ---
   useEffect(() => {
+    // If not using all genes, the list is already available locally
+    if (!useAllGenes) {
+      setAllGenesList(localMatchingGenes);
+      setCurrentPage(0);
+      return;
+    }
+
+    // If using all genes, fetch the complete list (without excerpts)
     (async () => {
       setIsLoading(true);
       setError(false);
-
       try {
-        let allAvailableGenes: string[] = [];
-        if (useAllGenes) {
-          const genesMatchingTermsData = await cached(
-            legacyPortalAPI
-          ).fetchGeneTeaGenesMatchingTermExperimental([term], []);
-          allAvailableGenes = genesMatchingTermsData[term].split(" ");
-          setAllGenes(allAvailableGenes);
-        }
-
-        const fetchedData = await cached(
+        const genesMatchingTermsData = await cached(
           legacyPortalAPI
-        ).fetchGeneTeaTermExcerptExperimental(
-          term,
-          useAllGenes ? allAvailableGenes : matchingGenes || []
-        );
-        setData(fetchedData);
+        ).fetchGeneTeaGenesMatchingTermExperimental([term], []);
+
+        const fullList = genesMatchingTermsData[term]?.split(" ") || [];
+
+        setAllGenesList(fullList);
+        setCurrentPage(0); // Always reset to the first page on new term
+        setPageData(null);
       } catch (e) {
         setError(true);
-        window.console.error(e);
+        setPageData(null);
+        window.console.error("Error fetching initial gene list:", e);
       } finally {
         setIsLoading(false);
       }
     })();
-  }, [term, matchingGenes, useAllGenes]);
+  }, [term, useAllGenes, localMatchingGenes]);
 
+  // --- 2. Excerpt Data Fetch (Runs on term change and page change) ---
+  useEffect(() => {
+    // Only run if we have a list of genes and the list is not empty
+    if (!allGenesList || allGenesList.length === 0) {
+      setPageData(null);
+      return;
+    }
+
+    // Calculate the subset of genes for the current page
+    const start = currentPage * PAGE_SIZE;
+    const end = start + PAGE_SIZE;
+    const genesForPage = allGenesList.slice(start, end);
+
+    (async () => {
+      setIsLoading(true);
+      setError(false);
+      try {
+        const fetchedData = await cached(
+          legacyPortalAPI
+        ).fetchGeneTeaTermExcerptExperimental(term, genesForPage);
+
+        setPageData(fetchedData);
+      } catch (e) {
+        setError(true);
+        window.console.error("Error fetching excerpt data:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    })();
+  }, [term, allGenesList, currentPage]); // Depends on term, full list, and current page
+
+  // --- Context Creation Handler (Uses the full list) ---
   const handleClickCreateTermContext = useCallback(() => {
     DepMap.saveNewContext({
       name: term,
       context_type: "gene",
       expr: {
-        in: [{ var: "entity_label" }, useAllGenes ? allGenes : matchingGenes],
+        in: [{ var: "entity_label" }, allGenesList],
       },
     });
-  }, [term, matchingGenes, allGenes, useAllGenes]);
+  }, [term, allGenesList]);
+
+  // --- Pagination Handlers ---
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  }, [currentPage, totalPages]);
+
+  const handlePrevPage = useCallback(() => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  }, [currentPage]);
+
+  const totalMatchingGenes = allGenesList.length;
 
   return (
-    <div style={{ paddingTop: "20px" }}>
+    <div className={styles.tableWrapper}>
       {" "}
       <p>
         The term “
         <GeneTeaTerm term={term} synonyms={[]} coincident={[]} />” is associated
-        with {useAllGenes ? allGenes.length : matchingGenes.length} of the
-        selected genes.
+        with {totalMatchingGenes} of the selected genes.
       </p>
-      {/* If the user is grouping terms (i.e. using Term Groups instead of just Terms),
-      the excerpt table will render inside a tab for a particular term. We need this button to
-      differentiate creating a Gene Context from TERM matching genes from
-      the button for creating a Gene Context from TERM GROUP matching genes (located outside the tabs and ExcerptTable)  */}
       {!useTerms && (
-        <div style={{ paddingBottom: "20px" }}>
+        <div className={styles.saveAsContextButton}>
           <Button
             bsStyle="primary"
             bsSize="small"
@@ -101,9 +155,9 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
             <th>Excerpt</th>
           </tr>
         </thead>
-        {data && (
+        {pageData && !error && !isLoading && (
           <tbody>
-            {Object.entries(data).map(([gene, context]) => {
+            {Object.entries(pageData).map(([gene, context]) => {
               const html = context
                 .replace(/<a href/g, '<a target="_blank" href')
                 .replace(/ \| /g, "<br/><br/>");
@@ -129,6 +183,36 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           </tbody>
         )}
       </table>
+      {/* Pagination Controls */}
+      {totalMatchingGenes > PAGE_SIZE && !error && !isLoading && (
+        <div className={styles.paginationControls}>
+          <Button
+            onClick={handlePrevPage}
+            disabled={currentPage === 0 || isLoading}
+            bsSize="small"
+            className={styles.paginationButton}
+          >
+            Previous Page
+          </Button>
+          <span>
+            Page {currentPage + 1} of {totalPages}
+          </span>
+          <Button
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages - 1 || isLoading}
+            bsSize="small"
+            className={styles.paginationButton}
+          >
+            Next Page
+          </Button>
+          <p className={styles.pageCountLabel}>
+            Displaying genes{" "}
+            {Math.min(currentPage * PAGE_SIZE + 1, totalMatchingGenes)} to{" "}
+            {Math.min((currentPage + 1) * PAGE_SIZE, totalMatchingGenes)}
+          </p>
+        </div>
+      )}
+      {/* Loading/Error States */}
       {isLoading && (
         <div className={styles.geneTeaModalSpinner}>
           <Spinner left="0px" position="static" />
@@ -140,9 +224,9 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           again!
         </Alert>
       )}
-      {data && Object.keys(data).length === 0 && (
+      {pageData && Object.keys(pageData).length === 0 && (
         <Alert bsStyle="danger">
-          Error loading excerpt. Could not find an excerpt for this term.{" "}
+          Could not find an excerpt for any gene on this page.{" "}
         </Alert>
       )}
     </div>

@@ -262,7 +262,7 @@ export async function fetchGeneTeaTermExcerptExperimental(
         valid_genes: string[];
         invalid_genes: string[];
         remapped_genes: Record<string, string>;
-        context: Record<string, string>;
+        excerpts: Record<string, string>;
       }
     | { message: string }; // error message
 
@@ -279,7 +279,7 @@ export async function fetchGeneTeaTermExcerptExperimental(
     throw new Error(body.message);
   }
 
-  return body.context;
+  return body.excerpts;
 }
 
 export async function fetchGeneTeaGenesMatchingTermExperimental(

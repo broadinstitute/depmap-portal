@@ -51,7 +51,7 @@ function MatchingTermsModal({
 
   const modalBody = useMemo(() => {
     // If not grouping terms
-    if (useTerms) {
+    if (useTerms || termsWithinSelectedGroup?.length === 1) {
       return (
         <ExcerptTable
           useTerms={useTerms}

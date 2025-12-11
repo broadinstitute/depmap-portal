@@ -84,8 +84,38 @@
   max-height: 90vh;
   overflow: hidden;
 
+  .geneTeaModalSpinner {
+    margin-top: -1px;
+    border: 1px solid #4a87ab;
+    border-top: 1px solid #fff;
+  }
+
   mark {
     background-color: #ffe3d1;
+  }
+
+  .tableWrapper {
+    padding-top: 20px;
+  }
+
+  .saveAsContextButton {
+    padding-bottom: 20px;
+  }
+
+  .paginationControls {
+    margin-bottom: 15px;
+    margin-top: 15px;
+    text-align: center;
+
+    .pageCountLabel {
+      margin-top: 5px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .paginationButton {
+      margin-left: 10px;
+    }
   }
 
   table {
