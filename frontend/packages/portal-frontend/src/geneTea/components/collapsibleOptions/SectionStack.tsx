@@ -14,6 +14,7 @@ export const SectionStackContext = React.createContext({
 
 interface StackableSectionProps extends React.ComponentProps<typeof Section> {
   minHeight: number;
+  usePlotStyles: boolean;
 }
 
 interface SectionInfo {
@@ -33,6 +34,7 @@ export const StackableSection = (props: StackableSectionProps) => {
     onOpen,
     onClose,
     minHeight,
+    usePlotStyles,
   } = props as InternalProps;
 
   const ref = useRef<HTMLDivElement>(null);
@@ -72,6 +74,7 @@ export const StackableSection = (props: StackableSectionProps) => {
         }
       }}
       {...props}
+      usePlotStyles={usePlotStyles}
     />
   );
 };

@@ -9,6 +9,10 @@ import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 import PlotSection from "./PlotSection";
 import PlotSelections from "./PlotSelections";
 import PurpleHelpIcon from "../PurpleHelpIcon";
+import GenesMatchingTermSearchPanel from "./FindGenesMatchingTerm/GenesMatchingTermSearchPanel";
+import SectionStack, {
+  StackableSection,
+} from "../collapsibleOptions/SectionStack";
 
 interface TopTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
@@ -24,6 +28,7 @@ interface TopTermsTabProps {
     customdata: string[];
   };
   heatmapXAxisLabel: string;
+  termGroupToTermsMapping: Map<string, string[]>;
 }
 
 function TopTermsTab({
@@ -31,6 +36,7 @@ function TopTermsTab({
   heatmapData,
   barChartData,
   heatmapXAxisLabel,
+  termGroupToTermsMapping,
 }: TopTermsTabProps) {
   const {
     selectedTopTermsTableRows: selectedTableRows,
@@ -147,15 +153,32 @@ function TopTermsTab({
               />
             </div>
             <div className={styles.selectionsArea}>
-              <PlotSelections
-                isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
-                selectedIds={new Set(selectedPlotGenes)}
-                selectedLabels={new Set(selectedPlotGenes)}
-                onClickSaveSelectionAsContext={
-                  handleClickSavePlotSelectionAsContext
-                }
-                onClickClearSelection={handleClearPlotSelection}
-              />
+              <div className={styles.test}>
+                <SectionStack>
+                  <PlotSelections
+                    isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
+                    selectedIds={new Set(selectedPlotGenes)}
+                    selectedLabels={new Set(selectedPlotGenes)}
+                    onClickSaveSelectionAsContext={
+                      handleClickSavePlotSelectionAsContext
+                    }
+                    onClickClearSelection={handleClearPlotSelection}
+                  />
+
+                  <StackableSection
+                    title="Matching Terms"
+                    minHeight={150}
+                    usePlotStyles
+                  >
+                    <GenesMatchingTermSearchPanel
+                      rawData={rawData}
+                      termGroupToTermsMapping={termGroupToTermsMapping}
+                      termToMatchingGenesMap={termToMatchingGenesMap}
+                      useTerms={rawData?.groupby === "Term"}
+                    />
+                  </StackableSection>
+                </SectionStack>
+              </div>
             </div>
           </div>
         </div>
