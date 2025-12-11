@@ -34,6 +34,10 @@
   font-weight: 600;
 }
 
+.tableParagraph {
+  padding-top: 15px;
+}
+
 .tableSpinnerContainer {
   padding: 24px;
   text-align: center;
@@ -84,6 +88,9 @@
   max-height: 90vh;
   overflow: hidden;
 
+  .tabContent {
+    min-height: 500px;
+  }
   .geneTeaModalSpinner {
     margin-top: -1px;
     border: 1px solid #4a87ab;
@@ -92,10 +99,6 @@
 
   mark {
     background-color: #ffe3d1;
-  }
-
-  .tableWrapper {
-    padding-top: 20px;
   }
 
   .saveAsContextButton {
@@ -113,7 +116,11 @@
       color: #666;
     }
 
-    .paginationButton {
+    .paginationPrevButton {
+      margin-right: 10px;
+    }
+
+    .paginationNextButton {
       margin-left: 10px;
     }
   }
@@ -178,4 +185,9 @@
     outline: 5px auto -webkit-focus-ring-color;
     outline-offset: 3px;
   }
+}
+
+.termSelector {
+  margin-bottom: 15px;
+  width: 300px;
 }

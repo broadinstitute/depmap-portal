@@ -7,7 +7,7 @@ import { Alert, Button } from "react-bootstrap";
 import { DepMap } from "@depmap/globals";
 
 // Define the pagination limit
-const PAGE_SIZE = 150;
+const PAGE_SIZE = 80;
 
 interface ExcerptTableProps {
   useTerms: boolean;
@@ -132,7 +132,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
   return (
     <div className={styles.tableWrapper}>
       {" "}
-      <p>
+      <p className={styles.tableParagraph}>
         The term “
         <GeneTeaTerm term={term} synonyms={[]} coincident={[]} />” is associated
         with {totalMatchingGenes} of the selected genes.
@@ -183,14 +183,31 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           </tbody>
         )}
       </table>
+      {/* Loading/Error States */}
+      {isLoading && (
+        <div className={styles.geneTeaModalSpinner}>
+          <Spinner left="0px" position="static" />
+        </div>
+      )}
+      {error && (
+        <Alert bsStyle="danger">
+          There was a problem retrieving the excerpt(s) for this term/page.
+          Please try again!
+        </Alert>
+      )}
+      {pageData && Object.keys(pageData).length === 0 && (
+        <Alert bsStyle="danger">
+          Could not find an excerpt for any gene on this page.{" "}
+        </Alert>
+      )}
       {/* Pagination Controls */}
-      {totalMatchingGenes > PAGE_SIZE && !error && !isLoading && (
+      {totalMatchingGenes > PAGE_SIZE && !isLoading && (
         <div className={styles.paginationControls}>
           <Button
             onClick={handlePrevPage}
             disabled={currentPage === 0 || isLoading}
             bsSize="small"
-            className={styles.paginationButton}
+            className={styles.paginationPrevButton}
           >
             Previous Page
           </Button>
@@ -201,7 +218,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
             onClick={handleNextPage}
             disabled={currentPage === totalPages - 1 || isLoading}
             bsSize="small"
-            className={styles.paginationButton}
+            className={styles.paginationNextButton}
           >
             Next Page
           </Button>
@@ -211,23 +228,6 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
             {Math.min((currentPage + 1) * PAGE_SIZE, totalMatchingGenes)}
           </p>
         </div>
-      )}
-      {/* Loading/Error States */}
-      {isLoading && (
-        <div className={styles.geneTeaModalSpinner}>
-          <Spinner left="0px" position="static" />
-        </div>
-      )}
-      {error && (
-        <Alert bsStyle="danger">
-          There was a problem retrieving the excerpt for this term. Please try
-          again!
-        </Alert>
-      )}
-      {pageData && Object.keys(pageData).length === 0 && (
-        <Alert bsStyle="danger">
-          Could not find an excerpt for any gene on this page.{" "}
-        </Alert>
       )}
     </div>
   );

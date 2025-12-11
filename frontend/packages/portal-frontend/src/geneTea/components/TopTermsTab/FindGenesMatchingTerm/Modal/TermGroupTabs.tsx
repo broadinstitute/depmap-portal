@@ -7,12 +7,14 @@ import ExcerptTable from "./ExcerptTable";
 const TERM_THRESHOLD = 10;
 
 interface TermGroupTabsProps {
+  termGroup: string;
   termsWithinSelectedGroup: string[];
   termToMatchingGenesMap: Map<string, string[]>;
   useAllGenes: boolean;
 }
 
 const TermGroupTabs: React.FC<TermGroupTabsProps> = ({
+  termGroup,
   termsWithinSelectedGroup,
   termToMatchingGenesMap,
   useAllGenes,
@@ -40,7 +42,11 @@ const TermGroupTabs: React.FC<TermGroupTabsProps> = ({
     return (
       <div className={styles.largeGroupContainer}>
         {/* 3. Dropdown (Never Hidden) */}
-        <div style={{ marginBottom: "15px" }}>
+        <h4>
+          There are {termSelectOptions.length} terms within {termGroup}. Choose
+          a term to load the gene excerpts.
+        </h4>
+        <div className={styles.termSelector}>
           <Select
             options={termSelectOptions}
             value={
@@ -61,6 +67,7 @@ const TermGroupTabs: React.FC<TermGroupTabsProps> = ({
             styles={{ control: (base) => ({ ...base, minWidth: "300px" }) }}
           />
         </div>
+        <hr />
 
         {/* 4. Excerpt Table for the selected term */}
         {selectedTerm && (
@@ -97,15 +104,17 @@ const TermGroupTabs: React.FC<TermGroupTabsProps> = ({
         >
           {termsWithinSelectedGroup.map((term) => (
             <Tab eventKey={term} title={term} key={term}>
-              {selectedTerm.value === term && (
-                <ExcerptTable
-                  key={term}
-                  useTerms={false}
-                  term={term}
-                  termToMatchingGenesMap={termToMatchingGenesMap}
-                  useAllGenes={useAllGenes}
-                />
-              )}
+              <div className={styles.tabContent}>
+                {selectedTerm.value === term && (
+                  <ExcerptTable
+                    key={term}
+                    useTerms={false}
+                    term={term}
+                    termToMatchingGenesMap={termToMatchingGenesMap}
+                    useAllGenes={useAllGenes}
+                  />
+                )}
+              </div>
             </Tab>
           ))}
         </Tabs>

@@ -69,6 +69,7 @@ function MatchingTermsModal({
 
     return (
       <TermGroupTabs
+        termGroup={termOrTermGroup}
         termsWithinSelectedGroup={termsWithinSelectedGroup}
         termToMatchingGenesMap={termToMatchingGenesMap}
         useAllGenes={useAllGenes}
