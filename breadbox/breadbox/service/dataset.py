@@ -29,7 +29,11 @@ from breadbox.crud.group import (
     get_transient_group,
 )
 
-from ..crud.dataset import add_tabular_dimensions, add_matrix_dataset_dimensions
+from ..crud.dataset import (
+    add_tabular_dimensions,
+    add_matrix_dataset_dimensions,
+    get_current_datetime,
+)
 from ..crud.dimension_types import (
     set_properties_to_index,
     add_metadata_dimensions,
@@ -354,6 +358,7 @@ def add_tabular_dataset(
         index_type_name=dataset_in.index_type_name,
         data_type=dataset_in.data_type,
         is_transient=dataset_in.is_transient,
+        expiry=dataset_in.expiry,
         group_id=group.id,
         priority=dataset_in.priority,
         taiga_id=dataset_in.taiga_id,
@@ -362,6 +367,7 @@ def add_tabular_dataset(
         short_name=short_name,
         version=version,
         description=description,
+        upload_date=get_current_datetime(),
     )
     db.add(dataset)
     db.flush()
@@ -421,6 +427,7 @@ def add_matrix_dataset(
         sample_type_name=dataset_in.sample_type_name,
         data_type=dataset_in.data_type,
         is_transient=dataset_in.is_transient,
+        expiry=dataset_in.expiry,
         group_id=group.id,
         value_type=dataset_in.value_type,
         priority=dataset_in.priority,
@@ -431,6 +438,7 @@ def add_matrix_dataset(
         short_name=short_name,
         description=description,
         version=version,
+        upload_date=get_current_datetime(),
     )
     db.add(dataset)
     db.flush()
@@ -500,6 +508,7 @@ def add_dimension_type(
             priority=None,
             dataset_metadata=None,
             dataset_md5=None,  # This may change!
+            expiry=None,
         )
 
         check_id_mapping_is_valid(db, reference_column_mappings)
