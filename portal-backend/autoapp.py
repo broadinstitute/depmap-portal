@@ -16,9 +16,6 @@ def get_config(env_name, config_path=None):
     config = read_config(env_name, config_path)
     assert config.SECRET_KEY is not None
 
-    print("Using environment: {}".format(env_name))
-    print("Using Breadbox proxy address: {}".format(config.BREADBOX_PROXY_TARGET))
-
     override_file = os.getenv("DEPMAP_OVERRIDES")
     if override_file is not None:
         with open(override_file, "rt") as fd:
@@ -29,6 +26,9 @@ def get_config(env_name, config_path=None):
         for name, value in vars.items():
             if name.upper() == name:
                 setattr(config, name, value)
+
+    print("Using environment: {}".format(env_name))
+    print("Using Breadbox proxy address: {}".format(config.BREADBOX_PROXY_TARGET))
 
     return config
 
@@ -83,6 +83,7 @@ class UserOverrideMiddleware:
                 # if we don't have a cookie set with which user to use, then the value that we
                 # have on the this instance, configured on startup
                 user_override = self.user_override
+            user_override = "anonymous"
 
             if user_override is not None:
                 # if the two methods to find the override don't actually yield a valid value
