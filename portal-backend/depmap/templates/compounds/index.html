@@ -84,16 +84,6 @@ active_tab_set = False %}
       >Predictability</a
     >
   </li>
-  {% set active_tab_set = True %} {% endif %} {% if show_celfie_tab %}
-  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
-    <a
-      href="#genomic_assoc"
-      aria-controls="genomic_assoc"
-      role="tab"
-      data-toggle="tab"
-      >Genomic Associations</a
-    >
-  </li>
   {% set active_tab_set = True %} {% endif %} {% if show_corr_analysis %}
   <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
     <a
@@ -174,16 +164,6 @@ active_tab_set = False %}
   >
     <div id="predictive-tab-root">Loading...</div>
     {% set active_tab_set = True %}
-  </div>
-  {% endif %} {% if show_celfie_tab %}
-  <div
-    role="tabpanel"
-    class="tab-pane {% if not active_tab_set %}active{% endif %}"
-    id="genomic_assoc"
-  >
-    {% import "entities/celfie.html" as celfie_pg with context %} {{
-    celfie_pg.celfie_page("compound_celfie_tab", celfie, true)}} {% set
-    active_tab_set = True %}
   </div>
   {% endif %}
   <div
