@@ -2,6 +2,8 @@ from typing import Optional
 from aiocache import Cache, BaseCache
 from aiocache.serializers import PickleSerializer
 import json
+import hashlib
+from aiocache.backends.redis import RedisCache
 
 
 class CachingCaller:
@@ -20,6 +22,9 @@ class CachingCaller:
         """
 
         cache_key = json.dumps(depends_on, sort_keys=True)
+        # I worry that there's a length limit on keys, but `depends_on` could result in an arbitrarily long
+        # string. So, use sha256 to get a hash that's a reasonable size
+        cache_key = hashlib.sha256(cache_key.encode("utf-8")).hexdigest()
         if ttl is None:
             ttl = self.ttl
 
@@ -41,8 +46,8 @@ def create_caching_caller(redis_host: Optional[str]):
         cache = None
     else:
         endpoint, port = redis_host.split(":")
-        cache = Cache.REDIS(
-            endpoint=endpoint,
+        cache = RedisCache(
+            endpoint=endpoint,  # pyright: ignore
             port=int(port),
             namespace="breadbox-cache",
             serializer=PickleSerializer(),
