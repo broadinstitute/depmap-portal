@@ -31,6 +31,9 @@ class Settings(BaseSettings):
 
     LEGACY_CAS_BUCKET: Optional[str] = os.environ.get("LEGACY_CAS_BUCKET")
 
+    # the host:port to use for connecting to redis (used by caching)
+    redis_host: Optional[str] = os.getenv("REDIS_HOST")
+
     model_config = SettingsConfigDict(
         env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),
     )

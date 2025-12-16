@@ -18,6 +18,10 @@ from breadbox.crud.access_control import get_read_access_group_ids
 
 class SessionWithUser(Session):
     _user: Optional[str] = None
+
+    # a references to the sessionmaker used to create this. Needed for create_session_for_anonymous_user
+    _sessionmaker = None
+
     read_group_ids: Optional[list] = None
 
     # Determines whether groups will be cached for the length of this database session
@@ -33,11 +37,22 @@ class SessionWithUser(Session):
         assert self._user is not None, "User is not yet set on the database session"
         return self._user
 
-    def set_user(self, user: str):
+    def set_user(self, user: str, sessionmaker):
         assert (
-            self._user is None
-        ), "The session user cannot not be updated once it's set. For changing users in tests, use reset_user."
+            self._user is None and self._sessionmaker is None
+        ), "The session user or sessionmaker cannot not be updated once it's set. For changing users in tests, use reset_user."
         self._user = user
+        self._sessionmaker = sessionmaker
+
+    def create_session_for_anonymous_user(self) -> "SessionWithUser":
+        """
+        Creates a new session not tied to the current user, but instead a user named "anonymous". This
+        is primarily useful for times when we want to make a DB call that we're going to cache, so we
+        want to make sure it cannot see any private data.
+        """
+        session = self._sessionmaker()
+        session.set_user("anonymous", self._sessionmaker)
+        return session
 
     def get_read_group_ids(self):
         # If the group_ids haven't been set yet or caching is off
@@ -102,5 +117,5 @@ def SessionLocalWithUser(user: str) -> SessionWithUser:
         future=True,  # In SQLAlchemy 2.0, autocommit is deprecated
     )
     session = l()
-    session.set_user(user)
+    session.set_user(user, l)
     return session
