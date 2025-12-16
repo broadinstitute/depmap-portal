@@ -20,6 +20,8 @@ from depmap.context_explorer.models import (
     EnrichedLineagesTileData,
 )
 from depmap.context.models_new import SubtypeNode, TreeType
+from depmap.extensions import cache
+
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
 
@@ -625,6 +627,92 @@ class ContextNodeName(
         return node.node_name
 
 
+@cache.memoize()
+def _get_enriched_lineages_tile_with_caching(tree_type, entity_label, entity_type):
+    entity_id_and_dataset_name = (
+        box_plot_utils.get_gene_enriched_lineages_entity_id_and_dataset_name(
+            entity_label=entity_label
+        )
+        if entity_type == "gene"
+        else box_plot_utils.get_compound_enriched_lineages_entity_id_and_dataset_name(
+            entity_label=entity_label
+        )
+    )
+
+    if entity_id_and_dataset_name is None:
+        return None
+
+    entity_id = entity_id_and_dataset_name["entity_id"]
+    dataset_name = entity_id_and_dataset_name["dataset_name"]
+    dataset_display_name = entity_id_and_dataset_name["dataset_display_name"]
+
+    if entity_type == "compound":
+        entity_label = entity_id_and_dataset_name["compound_experiment_label"]
+
+    sig_contexts = box_plot_utils.get_sig_context_dataframe(
+        tree_type=tree_type,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        dataset_name=dataset_name,
+        use_enrichment_tile_filters=True,
+    )
+
+    # If no contexts are signficant, we only want to show Other Solid and Other Heme box plots. This
+    # requires its own utility function since box_plot_utils.get_organized_contexts requires and is highly
+    # dependent on the "selected_subtype_code".
+    #
+    # When there are signficant contexts, "selected_subtype_code" is set to the most significant level_0 code. The
+    # concept of this being a "selected_subtype_code" is a little weird because the user isn't actually selecting anything
+    # for the enrichment tile; however, "selected_subtype_code" is a necessary requirment for reusing Context Explorer's
+    # CollapsibleBoxPlot. "selected_subtype_code" is how the component decides which collapsible accordion to display on top
+    # and open by default.
+    if sig_contexts.empty:
+        return box_plot_utils.get_data_to_show_if_no_contexts_significant(
+            entity_type=entity_type,
+            entity_label=entity_label,
+            tree_type=tree_type,
+            dataset_name=dataset_name,
+        )
+
+    # "sig_contexts" includes a column for "level_0" and a column for "subtype_code". This is necessary
+    # so that the collapsible box plots on the EnrichedLineagesTile can be organized from most signficant
+    # level_0 subtype_code to least signficant level_0 subtype_code, while also providing the information
+    # necessary to sort the child subtype_codes underneath each level_0 by signficance.
+    selected_subtype_code = sig_contexts["level_0"].tolist()[0]
+    top_context = SubtypeNode.get_by_code(selected_subtype_code)
+    assert top_context is not None
+    top_context_name_info = ContextNameInfo(
+        name=top_context.node_name, subtype_code=selected_subtype_code, node_level=0
+    )
+
+    context_box_plot_data = box_plot_utils.get_organized_contexts(
+        selected_subtype_code=selected_subtype_code,
+        entity_type=entity_type,
+        entity_label=entity_label,
+        dataset_name=dataset_name,
+        sig_contexts=sig_contexts,
+        tree_type=tree_type,
+    )
+
+    if context_box_plot_data is None:
+        return None
+
+    tile_data = EnrichedLineagesTileData(
+        box_plot_data=context_box_plot_data,
+        top_context_name_info=top_context_name_info,
+        selected_context_name_info=top_context_name_info,
+        # top_context_name_info is repeated here on purpose. As described above, "selected context" is inherited from the Context Explorer page version of the box plots
+        dataset_name=dataset_name,
+        # for the frontend to determine the tab of context_explorer to link to: "oncref", "repurposing", or "geneDependency"
+        dataset_display_name=dataset_display_name,
+        context_explorer_url=url_for(
+            "context_explorer.view_context_explorer"
+        ),  # for linking the boxplot y-axis labels
+    )
+
+    return dataclasses.asdict(tile_data)
+
+
 @namespace.route("/enriched_lineages_tile")
 class EnrichedLineagesTile(
     Resource
@@ -636,83 +724,6 @@ class EnrichedLineagesTile(
         entity_label = request.args.get("entity_label")
         entity_type = request.args.get("entity_type")
 
-        entity_id_and_dataset_name = (
-            box_plot_utils.get_gene_enriched_lineages_entity_id_and_dataset_name(
-                entity_label=entity_label
-            )
-            if entity_type == "gene"
-            else box_plot_utils.get_compound_enriched_lineages_entity_id_and_dataset_name(
-                entity_label=entity_label
-            )
+        return _get_enriched_lineages_tile_with_caching(
+            tree_type, entity_label, entity_type
         )
-
-        if entity_id_and_dataset_name is None:
-            return None
-
-        entity_id = entity_id_and_dataset_name["entity_id"]
-        dataset_name = entity_id_and_dataset_name["dataset_name"]
-        dataset_display_name = entity_id_and_dataset_name["dataset_display_name"]
-
-        if entity_type == "compound":
-            entity_label = entity_id_and_dataset_name["compound_experiment_label"]
-
-        sig_contexts = box_plot_utils.get_sig_context_dataframe(
-            tree_type=tree_type,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            dataset_name=dataset_name,
-            use_enrichment_tile_filters=True,
-        )
-
-        # If no contexts are signficant, we only want to show Other Solid and Other Heme box plots. This
-        # requires its own utility function since box_plot_utils.get_organized_contexts requires and is highly
-        # dependent on the "selected_subtype_code".
-        #
-        # When there are signficant contexts, "selected_subtype_code" is set to the most significant level_0 code. The
-        # concept of this being a "selected_subtype_code" is a little weird because the user isn't actually selecting anything
-        # for the enrichment tile; however, "selected_subtype_code" is a necessary requirment for reusing Context Explorer's
-        # CollapsibleBoxPlot. "selected_subtype_code" is how the component decides which collapsible accordion to display on top
-        # and open by default.
-        if sig_contexts.empty:
-            return box_plot_utils.get_data_to_show_if_no_contexts_significant(
-                entity_type=entity_type,
-                entity_label=entity_label,
-                tree_type=tree_type,
-                dataset_name=dataset_name,
-            )
-
-        # "sig_contexts" includes a column for "level_0" and a column for "subtype_code". This is necessary
-        # so that the collapsible box plots on the EnrichedLineagesTile can be organized from most signficant
-        # level_0 subtype_code to least signficant level_0 subtype_code, while also providing the information
-        # necessary to sort the child subtype_codes underneath each level_0 by signficance.
-        selected_subtype_code = sig_contexts["level_0"].tolist()[0]
-        top_context = SubtypeNode.get_by_code(selected_subtype_code)
-        assert top_context is not None
-        top_context_name_info = ContextNameInfo(
-            name=top_context.node_name, subtype_code=selected_subtype_code, node_level=0
-        )
-
-        context_box_plot_data = box_plot_utils.get_organized_contexts(
-            selected_subtype_code=selected_subtype_code,
-            entity_type=entity_type,
-            entity_label=entity_label,
-            dataset_name=dataset_name,
-            sig_contexts=sig_contexts,
-            tree_type=tree_type,
-        )
-
-        if context_box_plot_data is None:
-            return None
-
-        tile_data = EnrichedLineagesTileData(
-            box_plot_data=context_box_plot_data,
-            top_context_name_info=top_context_name_info,
-            selected_context_name_info=top_context_name_info,  # top_context_name_info is repeated here on purpose. As described above, "selected context" is inherited from the Context Explorer page version of the box plots
-            dataset_name=dataset_name,  # for the frontend to determine the tab of context_explorer to link to: "oncref", "repurposing", or "geneDependency"
-            dataset_display_name=dataset_display_name,
-            context_explorer_url=url_for(
-                "context_explorer.view_context_explorer"
-            ),  # for linking the boxplot y-axis labels
-        )
-
-        return dataclasses.asdict(tile_data)
