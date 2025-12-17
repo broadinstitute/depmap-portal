@@ -1,7 +1,6 @@
 from typing import Literal, Optional, Union
 import pandas as pd
 
-from depmap_compute.slice import SliceQuery
 from depmap.data_access import breadbox_dao
 from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
@@ -254,60 +253,6 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     if breadbox_dao.is_breadbox_id(dataset_id):
         return breadbox_dao.valid_row(dataset_id, row_name)
     return interactive_utils.valid_row(dataset_id, row_name)
-
-
-def get_slice_data(slice_query: SliceQuery) -> pd.Series:
-    """
-    Loads data for the given slice query. 
-    The result will be a pandas series indexed by sample/feature ID 
-    (regardless of the identifier_type used in the query).
-    """
-    dataset_id = slice_query.dataset_id
-
-    if slice_query.identifier_type == "feature_id":
-        feature_labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
-        query_feature_label = feature_labels_by_id[slice_query.identifier]
-        values_by_sample_id = get_subsetted_df_by_labels(
-            slice_query.dataset_id, feature_row_labels=[query_feature_label]
-        ).squeeze()
-        result_series = values_by_sample_id
-
-    elif slice_query.identifier_type == "feature_label":
-        values_by_sample_id = get_subsetted_df_by_labels(
-            slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
-        ).squeeze()
-        result_series = values_by_sample_id
-
-    elif slice_query.identifier_type == "sample_id":
-        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
-            slice_query.dataset_id, sample_col_ids=[slice_query.identifier]
-        ).squeeze()
-        feature_ids_by_label = get_dataset_dimension_ids_by_label(
-            dataset_id, axis="feature"
-        )
-        result_series = values_by_feature_label.rename(feature_ids_by_label)
-
-    elif slice_query.identifier_type == "sample_label":
-        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
-        query_sample_id = ids_by_label[slice_query.identifier]
-
-        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
-            slice_query.dataset_id, sample_col_ids=[query_sample_id]
-        ).squeeze()
-        feature_ids_by_label = get_dataset_dimension_ids_by_label(
-            dataset_id, axis="feature"
-        )
-        result_series = values_by_feature_label.rename(feature_ids_by_label)
-
-    elif slice_query.identifier_type == "column":
-        result_series = get_tabular_dataset_column(dataset_id, slice_query.identifier)
-
-    else:
-        raise Exception("Unrecognized slice query identifier type")
-
-    # remove missing entries
-    result_series = result_series.dropna()
-    return result_series
 
 
 ###############################################################

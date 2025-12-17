@@ -15,7 +15,6 @@ from .interface import (
     get_dataset_taiga_id,
     get_dataset_units,
     get_subsetted_df_by_labels,
-    get_slice_data,
     is_categorical,
     is_continuous,
     dataset_exists,
