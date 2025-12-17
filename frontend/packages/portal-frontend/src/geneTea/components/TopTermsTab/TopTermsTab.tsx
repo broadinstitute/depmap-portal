@@ -13,6 +13,7 @@ import GenesMatchingTermSearchPanel from "./FindGenesMatchingTerm/GenesMatchingT
 import SectionStack, {
   StackableSection,
 } from "../collapsibleOptions/SectionStack";
+import { enabledFeatures } from "@depmap/globals";
 
 interface TopTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
@@ -153,32 +154,44 @@ function TopTermsTab({
               />
             </div>
             <div className={styles.selectionsArea}>
-              <div className={styles.test}>
-                <SectionStack>
-                  <PlotSelections
-                    isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
-                    selectedIds={new Set(selectedPlotGenes)}
-                    selectedLabels={new Set(selectedPlotGenes)}
-                    onClickSaveSelectionAsContext={
-                      handleClickSavePlotSelectionAsContext
-                    }
-                    onClickClearSelection={handleClearPlotSelection}
-                  />
-
-                  <StackableSection
-                    title="Matching Terms"
-                    minHeight={150}
-                    usePlotStyles
-                  >
-                    <GenesMatchingTermSearchPanel
-                      rawData={rawData}
-                      termGroupToTermsMapping={termGroupToTermsMapping}
-                      termToMatchingGenesMap={termToMatchingGenesMap}
-                      useTerms={rawData?.groupby === "Term"}
+              {enabledFeatures.gene_tea_matching_terms_panel ? (
+                <div className={styles.test}>
+                  <SectionStack>
+                    <PlotSelections
+                      isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
+                      selectedIds={new Set(selectedPlotGenes)}
+                      selectedLabels={new Set(selectedPlotGenes)}
+                      onClickSaveSelectionAsContext={
+                        handleClickSavePlotSelectionAsContext
+                      }
+                      onClickClearSelection={handleClearPlotSelection}
                     />
-                  </StackableSection>
-                </SectionStack>
-              </div>
+
+                    <StackableSection
+                      title="Matching Terms"
+                      minHeight={150}
+                      usePlotStyles
+                    >
+                      <GenesMatchingTermSearchPanel
+                        rawData={rawData}
+                        termGroupToTermsMapping={termGroupToTermsMapping}
+                        termToMatchingGenesMap={termToMatchingGenesMap}
+                        useTerms={rawData?.groupby === "Term"}
+                      />
+                    </StackableSection>
+                  </SectionStack>
+                </div>
+              ) : (
+                <PlotSelections
+                  isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
+                  selectedIds={new Set(selectedPlotGenes)}
+                  selectedLabels={new Set(selectedPlotGenes)}
+                  onClickSaveSelectionAsContext={
+                    handleClickSavePlotSelectionAsContext
+                  }
+                  onClickClearSelection={handleClearPlotSelection}
+                />
+              )}
             </div>
           </div>
         </div>
