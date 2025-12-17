@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Optional
 from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request
@@ -8,6 +8,7 @@ from breadbox.db.session import SessionLocalWithUser, SessionWithUser
 from breadbox.config import get_settings
 from breadbox.schemas.custom_http_exception import DatasetNotFoundError
 import os
+from breadbox.utils.caching import create_caching_caller
 
 
 def get_db_with_user(request: Request):
@@ -64,3 +65,8 @@ def get_dataset(
         raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
 
     return dataset
+
+
+def get_cache():
+    settings = get_settings()
+    return create_caching_caller(settings.redis_host)

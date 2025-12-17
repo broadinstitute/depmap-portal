@@ -115,7 +115,7 @@ def _get_db_connection():
         autocommit=False, autoflush=False, bind=engine, class_=SessionWithUser
     )
     db: SessionWithUser = SessionLocal()
-    db.set_user(settings.admin_users[0])
+    db.set_user(settings.admin_users[0], SessionLocal)
     return db
 
 
