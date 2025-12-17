@@ -41,9 +41,15 @@ class ContextEvaluator:
     ):
         """
         A `context` dict should have:
-            - a `dimension_type` such as "depmap_model" (which is not used in this evaluator)
             - an `expr` such as { "==": [ { "var": "var1" }, "Breast" ] }
-            - a set of `vars`, each of which assigns a name to a slice query
+            - a dictionary of `vars` which assigns names to slice queries, such as
+              {
+                  "var1": {
+                      "dataset_id": "depmap_model_metadata",
+                      "identifier": "OncotreeLineage",
+                      "identifier_type": "column"
+                  }
+              }
         """
         self.expr = _encode_dots_in_vars(context["expr"])
         self.slice_query_vars = _escape_dots(context.get("vars", {}))
@@ -52,8 +58,8 @@ class ContextEvaluator:
         self.get_slice_data = get_slice_data
 
         # The cache is used so that slice values only need to be looked up once per context.
-        # - The keys in this dictionary are slice queries encoded as a tuple
-        #   (ex. `("Chronos_combined", "SOX10", "feature_label")`).
+        # - The keys in this dictionary match the values of an any { "var": "<var_name>" }
+        # expressions (and therefore should also match the keys of context["vars"]).
         # - The values are each an entire dictionary of slice values (indexed by given ID)
         self.cache = {}
 
@@ -135,104 +141,13 @@ class _JsonLogicVarLookup(dict):
         return True
 
 
-class LegacyContextEvaluator:
-    """
-    DEPRECATED: Use `ContextEvaluator` for future development.
-    This older version has a few differences from the new one:
-    - Slices are specified using string slice IDs instead of slice queries
-    - Matching on index is done with a field called "entity_label". For features, 
-    this is expected to match the feature label. For samples, this matches on sample ID (not label).
-    This confusing behavior is part of why we're deprecating the old version. 
-    - the field "context_type" is used to specify the dimension type
-    """
-
-    def __init__(self, context: dict, get_slice_data: Callable[[str], dict[str, Any]]):
-        """
-        A `context` dict should have:
-            - a `context_type` such as "depmap_model"
-            - an `expr` such as { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
-        """
-        self.context_type = context["context_type"]
-        self.expr = _encode_dots_in_vars(context["expr"])
-        # Cache is keyed by Slice ID. Each value is an entire dictionary of slice values.
-        self.cache = {}
-        self.get_slice_data = get_slice_data
-
-    def is_match(self, dimension_label: str):
-        """
-        This evaluates `expr` against a given `dimension_label`. It returns
-        True/False depending on if `dimension_label` satifies the conditions of
-        the expression, including any variables ("var" subexpressions) which
-        are bound by using a magic dict that does lookups lazily.
-        """
-        dictionary_override = _LegacyLazyContextDict(
-            self.context_type, dimension_label, self.cache, self.get_slice_data
-        )
-
-        try:
-            return jsonLogic(self.expr, dictionary_override)
-        except (TypeError, ValueError) as e:
-            print("Exception evaluating", self.expr, "against", dimension_label)
-            print(e)
-            return False
-
-
-class _LegacyLazyContextDict(dict):
-    """
-    The JsonLogic library wants to be passed a dictionary of values. However, we need to 
-    inject our own special cases and caching, so we override the dictionary class with 
-    special functionality. Interesting thread on overriding the Dict class:
-    https://stackoverflow.com/questions/3387691/how-to-perfectly-override-a-dict
-    But we don't need to "perfectly" override it; just well enough to trick the JsonLogic library.
-
-    This implementation uses and updates the cache that's been passed in to the constructor.
-    """
-
-    def __init__(
-        self,
-        context_type: str,
-        dimension_label: str,
-        cache: dict,
-        get_slice_data: Callable[[str], dict[str, Any]],
-    ):
-        self.context_type = context_type
-        self.dimension_label = dimension_label
-        self.cache = cache
-        self.get_slice_data = get_slice_data
-
-    def __getitem__(self, prop):
-        """
-        Given a slice ID, get the slice value which corresponds to the 
-        "dimension_label" that's already been passed into the constructor of this class.
-        """
-        # Handle trivial case where we're just looking up a dimension's own
-        # label. Note that this is called "entity_label" for historical
-        # reasons.
-        if prop == "entity_label":
-            return self.dimension_label
-
-        if prop.startswith("slice/"):
-            if prop not in self.cache:
-                self.cache[prop] = self.get_slice_data(prop)
-
-            return self.cache[prop][self.dimension_label]
-
-        raise LookupError(
-            f"Unable to find context property '{prop}'. Are you sure a corresponding "
-            f"dataset exists and can be looked up by {self.context_type}?"
-        )
-
-    # We don't want our virtual dictionary to appear empty.
-    # Otherwise, the JsonLogic library will stomp it out with an empty default dict:
-    # https://github.com/nadirizr/json-logic-py/blob/master/json_logic/__init__.py#L180
-    def __bool__(self):
-        return True
-
 
 def _encode_dots_in_vars(expr: dict):
     """
     URL-encode any dots in variables. Otherwise, JsonLogic thinks they are property lookups.
-    Example expression: { "==": [ { "var": "slice/lineage/1/label" }, "Breast" ] }
+    This was important back when we would use slice IDs as var names. Example:
+    { "var": "slice/msi-0584.6%2Fmsi/CCLE (NGS)/label" }
+    This is no longer much of an issue because the UI now generates simplified var names.
     """
 
     def walk(node, key):
@@ -249,7 +164,11 @@ def _encode_dots_in_vars(expr: dict):
 
 
 def _escape_dots(d: dict) -> dict:
-    """Return a new dict with all dots in keys replaced by %2E."""
+    """
+    Return a new dict with all dots in keys replaced by %2E. This is the complement to
+    _encode_dots_in_vars, ensuring entries in the `slice_query_vars` dict will match
+    those found in { "var": "..." } expressions.
+    """
     return {
         (k.replace(".", "%2E") if isinstance(k, str) else k): v for k, v in d.items()
     }
