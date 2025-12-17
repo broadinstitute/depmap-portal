@@ -10,6 +10,30 @@ interface GeneContextCreationParams {
   onComplete: () => void;
 }
 
+export const fetchGeneList = async (
+  terms: string[],
+  termToMatchingGenesMap: Map<string, string[]>,
+  useAllGenes: boolean
+): Promise<string[]> => {
+  if (useAllGenes) {
+    const allGenesData = await cached(
+      legacyPortalAPI
+    ).fetchGeneTeaGenesMatchingTermExperimental(terms, []);
+
+    return Object.keys(allGenesData).flatMap(
+      (term) => allGenesData[term]?.split(" ") || []
+    );
+  }
+
+  if (terms.length === 1) {
+    return termToMatchingGenesMap.get(terms[0]) || [];
+  }
+
+  return Array.from(
+    new Set(terms.flatMap((term) => termToMatchingGenesMap.get(term) || []))
+  );
+};
+
 /**
  * Utility function to consolidate gene fetching and context saving logic.
  */
@@ -36,26 +60,11 @@ export const useGeneContextCreation = ({
   onComplete,
 }: GeneContextCreationParams) => {
   return useCallback(async () => {
-    let finalGenes: string[] = [];
-
-    if (useAllGenes) {
-      // 1. Fetch genes from API
-      const allGenesData = await cached(
-        legacyPortalAPI
-      ).fetchGeneTeaGenesMatchingTermExperimental(terms, []);
-
-      // 2. Process fetched genes
-      finalGenes = Object.keys(allGenesData).flatMap(
-        (term) => allGenesData[term]?.split(" ") || []
-      );
-    } else if (terms.length === 1) {
-      finalGenes = termToMatchingGenesMap.get(terms[0]) || [];
-    } else {
-      // 2. If grouping terms
-      finalGenes = Array.from(
-        new Set(terms.flatMap((term) => termToMatchingGenesMap.get(term) || []))
-      );
-    }
+    const finalGenes = await fetchGeneList(
+      terms,
+      termToMatchingGenesMap,
+      useAllGenes
+    );
 
     // 3. Save the context
     await saveContext(name, finalGenes, onComplete);

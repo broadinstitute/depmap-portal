@@ -1,10 +1,14 @@
-import React, { useCallback, useState, useMemo } from "react";
+import React, { useCallback, useState, useMemo, useEffect } from "react";
 import { Button, Modal } from "react-bootstrap";
 import renderConditionally from "@depmap/data-explorer-2/src/utils/render-conditionally";
 import styles from "../../../../styles/GeneTea.scss";
 import ExcerptTable from "./ExcerptTable/ExcerptTable";
 import TermGroupTabs from "./TermGroupTabs";
-import { useGeneContextCreation } from "../../../../hooks/useCreateGeneContext";
+import {
+  fetchGeneList,
+  useGeneContextCreation,
+} from "../../../../hooks/useCreateGeneContext";
+import CopyListButton from "./CopyListButton";
 
 interface Props {
   termOrTermGroup: string;
@@ -24,6 +28,37 @@ function MatchingTermsModal({
   useAllGenes,
 }: Props) {
   const [show, setShow] = useState(true);
+  const [geneList, setGeneList] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Effect for "Copy Genes" button.
+  useEffect(() => {
+    const loadGenes = async () => {
+      const terms = useTerms ? [termOrTermGroup] : termsWithinSelectedGroup;
+
+      setIsLoading(true);
+      try {
+        const finalGenes = await fetchGeneList(
+          terms || [],
+          termToMatchingGenesMap,
+          useAllGenes
+        );
+        setGeneList(finalGenes);
+      } catch (error) {
+        console.error("Failed to fetch genes:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadGenes();
+  }, [
+    termToMatchingGenesMap,
+    termsWithinSelectedGroup,
+    useTerms,
+    termOrTermGroup,
+    useAllGenes,
+  ]);
 
   const handleContextSaveComplete = useCallback(() => setShow(true), []);
 
@@ -85,7 +120,7 @@ function MatchingTermsModal({
         <Modal.Title>Excerpts for “{termOrTermGroup}”</Modal.Title>
       </Modal.Header>
       <Modal.Body className={styles.GeneTeaModal}>{modalBody}</Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className={styles.modalFooterRow}>
         <Button onClick={onClose}>Close</Button>
         <Button
           bsStyle="primary"
@@ -99,6 +134,7 @@ function MatchingTermsModal({
             ? "Save as Gene Context"
             : `Save Term Group as Gene Context`}
         </Button>
+        <CopyListButton items={geneList} title={"Copy Gene List"} />
       </Modal.Footer>
     </Modal>
   );
