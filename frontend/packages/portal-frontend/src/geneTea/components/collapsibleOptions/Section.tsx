@@ -27,7 +27,7 @@ function Section({
   const [open, setOpen] = useState<boolean>(defaultOpen);
 
   const currentStyles = usePlotStyles ? plotStyles : styles;
-  console.log("usePlotStyles", usePlotStyles);
+
   return (
     <div
       className={cx(currentStyles.Section, className)}
