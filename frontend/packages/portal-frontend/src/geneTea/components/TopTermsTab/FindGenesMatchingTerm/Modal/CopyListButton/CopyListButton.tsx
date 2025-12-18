@@ -57,7 +57,7 @@ const CopyListButton: React.FC<CopyButtonProps> = ({
             strokeLinejoin="round"
             style={{ marginRight: "4px" }}
           >
-            <polyline points="20 6 9 17 4 12"></polyline>
+            <polyline points="20 6 9 17 4 12" />
           </svg>
           Copied genes to clipboard!
         </span>

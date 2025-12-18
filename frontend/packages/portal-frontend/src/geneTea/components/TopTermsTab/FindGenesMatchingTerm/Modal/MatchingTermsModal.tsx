@@ -48,8 +48,8 @@ function MatchingTermsModal({
 
   const handleClickCreateContext = useGeneContextCreation({
     name: termOrTermGroup,
-    termsKey: termsKey,
-    termToMatchingGenesObj: termToMatchingGenesObj,
+    termsKey,
+    termToMatchingGenesObj,
     useAllGenes,
     onComplete: handleContextSaveComplete,
   });
@@ -99,11 +99,7 @@ function MatchingTermsModal({
           disabled={isLoading}
           onClick={handleClickCreateContext}
         >
-          {isLoading
-            ? "Loading..."
-            : useTerms
-            ? "Save as Gene Context"
-            : "Save Group as Gene Context"}
+          {useTerms ? "Save as Gene Context" : "Save Group as Gene Context"}
         </Button>
         <CopyListButton
           items={geneList}
