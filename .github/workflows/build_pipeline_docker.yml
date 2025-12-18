@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "master"
+      - "pipeline-image-upgrade-25q4"
     paths:
       - "pipeline/build-pipeline-docker-images/pipeline-run-docker/**"
       - "pipeline/build-pipeline-docker-images/build.sh"
