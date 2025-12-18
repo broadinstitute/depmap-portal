@@ -5,7 +5,7 @@ import { Alert, Button } from "react-bootstrap";
 import { useExcerptData } from "../../../../../hooks/useExcerptData";
 import PaginationControls from "./PaginationControls";
 import styles from "../../../../../styles/GeneTea.scss";
-import CopyListButton from "../CopyListButton";
+import CopyListButton from "../CopyListButton/CopyListButton";
 import { useFetchGeneList } from "src/geneTea/hooks/useFetchGeneList";
 
 interface ExcerptTableProps {

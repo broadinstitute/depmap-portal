@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
+import styles from "./CopyListButton.scss";
 
 interface CopyButtonProps {
   items: string[];
@@ -32,26 +33,18 @@ const CopyListButton: React.FC<CopyButtonProps> = ({
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+    <div className={styles.CopyListButton}>
       <Button
         onClick={handleCopy}
         bsStyle={"secondary"}
-        style={{ cursor: "pointer" }}
+        className={styles.copyButton}
         disabled={disabled}
       >
         {title}
       </Button>
 
       {showSuccess && (
-        <span
-          style={{
-            color: "#2e7d32",
-            display: "flex",
-            alignItems: "center",
-            fontSize: "14px",
-            fontWeight: "500",
-          }}
-        >
+        <span className={styles.successMessage}>
           {/* Green Check Mark SVG */}
           <svg
             width="18"

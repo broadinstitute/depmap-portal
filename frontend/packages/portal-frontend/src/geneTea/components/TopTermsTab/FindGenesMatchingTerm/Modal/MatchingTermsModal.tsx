@@ -5,7 +5,7 @@ import styles from "../../../../styles/GeneTea.scss";
 import ExcerptTable from "./ExcerptTable/ExcerptTable";
 import TermGroupTabs from "./TermGroupTabs";
 import { useGeneContextCreation } from "../../../../hooks/useCreateGeneContext";
-import CopyListButton from "./CopyListButton";
+import CopyListButton from "./CopyListButton/CopyListButton";
 import { useFetchGeneList } from "src/geneTea/hooks/useFetchGeneList";
 
 interface Props {
