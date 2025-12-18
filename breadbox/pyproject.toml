@@ -33,7 +33,7 @@ sqlitedict="^2.1.0"
 google-cloud-storage = "^3.1.0"
 packed-cor-tables = {version = "^0.2.0", source = "public-python"}
 orjson = "^3.10.16"
-pypatch-and-run = {version = "^0.4.1", source = "public-python"}
+pypatch-and-run = {version = "^1.0.0", source = "public-python"}
 python-multipart = "^0.0.20" # fastapi 0.115.12 needs this
 psutil = "^7.1.0"
 #attrs = ">=21.3.0"
