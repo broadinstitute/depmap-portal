@@ -26,6 +26,7 @@ RUN mkdir -p /install
 ADD dist/additional-files.tar.gz /install
 
 COPY --chown=depmap:cds-service . /install/portal-backend
+COPY git-sha /install/git-sha
 RUN cd /install/portal-backend && poetry install
 
 # Reposition this directory. Might decide on a new location for configs 
