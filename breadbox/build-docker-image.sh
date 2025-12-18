@@ -6,7 +6,7 @@ if [ "$1" = "" ]; then
 fi
 IMAGE_TAG="$1"
 
-if [ -e .git ] ; then
+if [ ! -e .git ] ; then
   echo "This command only works when  run from the root of the git checkout. Change directory before running this command"
   exit 1
 fi
