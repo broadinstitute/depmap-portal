@@ -210,6 +210,10 @@ class FeatureFlags:
         return self.is_prerelease_env()
 
     @property
+    def gene_tea_matching_terms_panel(self):
+        return self.is_qa()
+
+    @property
     def anchor_screen_dashboard(self):
         return self.is_dmc_like()
 

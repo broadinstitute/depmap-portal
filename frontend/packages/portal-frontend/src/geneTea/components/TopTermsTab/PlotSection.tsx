@@ -14,6 +14,7 @@ import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersCont
 import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 
 import HeatmapBarChart from "src/geneTea/plots/HeatmapBarChart";
+import BinaryLegend from "./BinaryLegend/BinaryLegend";
 
 interface PlotSectionProps {
   isLoading: boolean;
@@ -211,6 +212,7 @@ function PlotSection({
               zmin={zmin}
               doGroupTerms={doGroupTerms}
             />
+            {!doGroupTerms && <BinaryLegend />}
           </div>
         )}
       </div>

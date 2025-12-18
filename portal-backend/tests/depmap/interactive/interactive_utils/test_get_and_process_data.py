@@ -3,21 +3,18 @@ import pandas as pd
 import pytest
 from numpy import isnan
 
-from depmap.vector_catalog.models import SliceSerializer, SliceRowType
 from depmap.dataset.models import TabularDataset, BiomarkerDataset, DependencyDataset
 from depmap.cell_line.models import CellLine
 from depmap.interactive import interactive_utils
 from depmap.interactive.config.categories import CategoryConfig
+from depmap.interactive.interactive_utils.get_and_process_data import get_category_config
 from depmap.interactive.nonstandard.models import NonstandardMatrix
-from depmap.interactive.common_utils import format_features_from_value
 from depmap.settings.settings import TestConfig
 from depmap.utilities import hdf5_utils
 from tests.depmap.interactive.fixtures import *
 from tests.utilities.override_fixture import override
 from tests.utilities import interactive_test_utils
 from tests.factories import (
-    GeneFactory,
-    DatasetFactory,
     DependencyDatasetFactory,
     MatrixFactory,
     NonstandardMatrixFactory,
@@ -49,68 +46,6 @@ def config(request):
         GET_NONSTANDARD_DATASETS = get_nonstandard_datasets
 
     return TestVersionConfig
-
-
-# just test that it does delegate to nonstandard, which has 3 results.
-# nonstandard with aliases, and standard with aliases are respectively tested in test_nonstandard_utils and test_standard_utils. The alias tests also need global search to be loaded
-@pytest.mark.parametrize(
-    "dataset_id, prefix, expected",
-    [
-        (
-            nonstandard_nonaliased_dataset_id,
-            "met",  # nonstandard, no aliases
-            [
-                "MET",
-                "METAP1",
-                "METAP1D",
-                "METAP2",
-                "METRN",
-                "METRNL",
-                "METTL1",
-                "METTL10",
-                "METTL11B",
-                "METTL12",
-            ],
-        ),
-        (standard_aliased_dataset_id, "invalid_prefix", []),
-        ("context", "l", "error"),
-        ("invalid_dataset", "l", "error"),
-    ],
-)
-def test_get_matching_rows(interactive_db_mock_downloads, dataset_id, prefix, expected):
-    """
-    Axes datasets are tested in test_standard_utils
-    Also test case insensitivity
-    Implicitly tests standard_utils.get_matching_rows when testing Avana (standard axes dataset)
-    Uses nonstandard_nonaliased_dataset_id instead of the entity one, so that it doesn't have to deal with aliases and not being able to use format_features_from_value
-    """
-    if expected == "error":
-        with pytest.raises(ValueError):
-            interactive_utils.get_matching_rows(dataset_id, prefix)
-    else:
-        assert interactive_utils.get_matching_rows(
-            dataset_id, prefix
-        ) == format_features_from_value(expected)
-
-
-def test_get_all_rows(interactive_db_mock_downloads):
-    # correctness of the nonstandard utils path is handled in test_nonstandard_utils/test_get_all_row_names
-    # and parallel for the standard utils path
-    assert interactive_utils.get_all_rows(interactive_utils.get_context_dataset()) == [
-        {"label": "ALKHotspot", "value": "ALKHotspot"},
-        {"label": "BONE", "value": "BONE"},
-        {"label": "EGFR", "value": "EGFR"},
-        {"label": "ES", "value": "ES"},
-        {"label": "LUAD", "value": "LUAD"},
-        {"label": "LUNG", "value": "LUNG"},
-        {"label": "LUSC", "value": "LUSC"},
-        {"label": "MCC", "value": "MCC"},
-        {"label": "MEL", "value": "MEL"},
-        {"label": "NSCLC", "value": "NSCLC"},
-        {"label": "OS", "value": "OS"},
-        {"label": "PNS", "value": "PNS"},
-        {"label": "SKIN", "value": "SKIN"},
-    ]
 
 
 @pytest.mark.parametrize(
@@ -303,32 +238,6 @@ def test_get_row_of_values_drops_nas(interactive_db_mock_downloads):
 # test is located in separate file, test_get_row_of_values_maps_categoricals_with_a_mapping.py
 
 
-def test_get_row_of_values_from_slice_id(empty_db_mock_downloads):
-    cell_line = CellLineFactory()
-    gene = GeneFactory()
-
-    matrix = MatrixFactory(entities=[gene], cell_lines=[cell_line])
-    dataset = DependencyDatasetFactory(matrix=matrix)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    expected_series = interactive_utils.get_row_of_values(dataset.name.name, gene.label)
-    assert expected_series.equals(
-        interactive_utils.get_row_of_values_from_slice_id(
-            SliceSerializer.encode_slice_id(
-                dataset.name.name, gene.label, SliceRowType.label
-            )
-        )
-    )
-    assert expected_series.equals(
-        interactive_utils.get_row_of_values_from_slice_id(
-            SliceSerializer.encode_slice_id(
-                dataset.name.name, gene.entity_id, SliceRowType.entity_id
-            )
-        )
-    )
-
-
 def test_get_category_config(interactive_db_mock_downloads):
     for dataset in [
         context_dataset_id,
@@ -337,7 +246,7 @@ def test_get_category_config(interactive_db_mock_downloads):
         custom_cell_line_group_dataset_id,
     ]:
         assert isinstance(
-            interactive_utils.get_category_config(dataset), CategoryConfig
+            get_category_config(dataset), CategoryConfig
         )
 
 

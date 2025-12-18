@@ -450,6 +450,8 @@
 }
 
 .GeneTeaModal {
+  max-height: 68vh;
+  overflow: hidden;
   @media screen and (min-height: 510px) {
     min-height: 329px;
   }
@@ -461,8 +463,8 @@
   table {
     display: block;
     border: 1px solid #4a87ab;
-    max-height: calc(100vh - 239px);
-    overflow: auto;
+    max-height: calc(68vh - 239px);
+    overflow-y: auto;
     margin-bottom: 0;
 
     @include scroll-shadow;

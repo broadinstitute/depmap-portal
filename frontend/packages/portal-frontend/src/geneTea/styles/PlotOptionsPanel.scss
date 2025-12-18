@@ -1,0 +1,25 @@
+.PlotOptionsPanel {
+  background-color: #ffffff;
+
+  .sectionLabel {
+    font-weight: 600;
+    margin-bottom: 18;
+  }
+
+  .sectionItemWrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .sectionItem {
+      align-items: center;
+      height: 32px;
+      margin-bottom: 20px;
+    }
+  }
+
+  .hrSectionDivider {
+    border-top: 1px solid #8888883d;
+    margin-top: 28px;
+  }
+}

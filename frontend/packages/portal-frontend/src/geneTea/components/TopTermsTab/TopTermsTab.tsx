@@ -9,6 +9,11 @@ import { useTopTermsContext } from "src/geneTea/context/TopTermsContext";
 import PlotSection from "./PlotSection";
 import PlotSelections from "./PlotSelections";
 import PurpleHelpIcon from "../PurpleHelpIcon";
+import GenesMatchingTermSearchPanel from "./FindGenesMatchingTerm/GenesMatchingTermSearchPanel";
+import SectionStack, {
+  StackableSection,
+} from "../collapsibleOptions/SectionStack";
+import { enabledFeatures } from "@depmap/globals";
 
 interface TopTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
@@ -24,6 +29,7 @@ interface TopTermsTabProps {
     customdata: string[];
   };
   heatmapXAxisLabel: string;
+  termGroupToTermsMapping: Map<string, string[]>;
 }
 
 function TopTermsTab({
@@ -31,6 +37,7 @@ function TopTermsTab({
   heatmapData,
   barChartData,
   heatmapXAxisLabel,
+  termGroupToTermsMapping,
 }: TopTermsTabProps) {
   const {
     selectedTopTermsTableRows: selectedTableRows,
@@ -59,34 +66,36 @@ function TopTermsTab({
     if (rawData?.allEnrichedTerms) {
       rawData.allEnrichedTerms.term.forEach((term, index) => {
         roundedData.push({
-          term,
-          termGroup: rawData.allEnrichedTerms!.termGroup[index],
-          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
+          Term: term,
+          "Term Group": rawData.allEnrichedTerms!.termGroup[index],
+          Synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
+          "Matching Query": rawData.allEnrichedTerms!.matchingGenesInList[
             index
           ],
-          nMatchingGenesOverall: rawData.allEnrichedTerms!
-            .nMatchingGenesOverall[index],
-          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
+          "n Matching Overall": rawData.allEnrichedTerms!.nMatchingGenesOverall[
             index
           ],
-          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(5),
-          effectSize: rawData.allEnrichedTerms!.effectSize[index].toFixed(4),
+          "n Matching Query": rawData.allEnrichedTerms!.nMatchingGenesInList[
+            index
+          ],
+          FDR: rawData.allEnrichedTerms!.fdr[index].toExponential(5),
+          "Effect Size": rawData.allEnrichedTerms!.effectSize[index].toFixed(4),
         });
         unroundedData.push({
-          term,
-          termGroup: rawData.allEnrichedTerms!.termGroup[index],
-          synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
-          matchingGenesInList: rawData.allEnrichedTerms!.matchingGenesInList[
+          Term: term,
+          "Term Group": rawData.allEnrichedTerms!.termGroup[index],
+          Synonyms: rawData.allEnrichedTerms!.synonyms[index].join(";"),
+          "Matching Query": rawData.allEnrichedTerms!.matchingGenesInList[
             index
           ],
-          nMatchingGenesOverall: rawData.allEnrichedTerms!
-            .nMatchingGenesOverall[index],
-          nMatchingGenesInList: rawData.allEnrichedTerms!.nMatchingGenesInList[
+          "n Matching Overall": rawData.allEnrichedTerms!.nMatchingGenesOverall[
             index
           ],
-          fdr: rawData.allEnrichedTerms!.fdr[index].toExponential(),
-          effectSize: rawData.allEnrichedTerms!.effectSize[index],
+          "n Matching Query": rawData.allEnrichedTerms!.nMatchingGenesInList[
+            index
+          ],
+          FDR: rawData.allEnrichedTerms!.fdr[index].toExponential(),
+          "Effect Size": rawData.allEnrichedTerms!.effectSize[index],
         });
       });
     }
@@ -145,15 +154,44 @@ function TopTermsTab({
               />
             </div>
             <div className={styles.selectionsArea}>
-              <PlotSelections
-                isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
-                selectedIds={new Set(selectedPlotGenes)}
-                selectedLabels={new Set(selectedPlotGenes)}
-                onClickSaveSelectionAsContext={
-                  handleClickSavePlotSelectionAsContext
-                }
-                onClickClearSelection={handleClearPlotSelection}
-              />
+              {enabledFeatures.gene_tea_matching_terms_panel ? (
+                <div className={styles.test}>
+                  <SectionStack>
+                    <PlotSelections
+                      isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
+                      selectedIds={new Set(selectedPlotGenes)}
+                      selectedLabels={new Set(selectedPlotGenes)}
+                      onClickSaveSelectionAsContext={
+                        handleClickSavePlotSelectionAsContext
+                      }
+                      onClickClearSelection={handleClearPlotSelection}
+                    />
+
+                    <StackableSection
+                      title="Matching Terms"
+                      minHeight={150}
+                      usePlotStyles
+                    >
+                      <GenesMatchingTermSearchPanel
+                        rawData={rawData}
+                        termGroupToTermsMapping={termGroupToTermsMapping}
+                        termToMatchingGenesMap={termToMatchingGenesMap}
+                        useTerms={rawData?.groupby === "Term"}
+                      />
+                    </StackableSection>
+                  </SectionStack>
+                </div>
+              ) : (
+                <PlotSelections
+                  isPlotDataVisible={!isLoading && heatmapData.z.length > 0}
+                  selectedIds={new Set(selectedPlotGenes)}
+                  selectedLabels={new Set(selectedPlotGenes)}
+                  onClickSaveSelectionAsContext={
+                    handleClickSavePlotSelectionAsContext
+                  }
+                  onClickClearSelection={handleClearPlotSelection}
+                />
+              )}
             </div>
           </div>
         </div>

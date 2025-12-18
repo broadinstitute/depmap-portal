@@ -99,13 +99,17 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
       const doseStr = formatDoseString(doseAndColor.dose);
       return {
         label: doseStr,
-        value: doseStr,
+        value: doseAndColor.dose,
       };
     });
   }, [doses]);
 
   const formattedSelectedDoses = React.useMemo(
-    () => selectedDoses.map((dose) => ({ label: dose, value: dose })),
+    () =>
+      selectedDoses.map((dose) => ({
+        label: formatDoseString(dose),
+        value: dose,
+      })),
     [selectedDoses]
   );
 

@@ -2,6 +2,8 @@
 @import "./GeneTeaTabLayout.scss";
 @import "./PlotSection.scss";
 @import "./PlotSelections.scss";
+@import "./PlotOptionsPanel.scss";
+@import "../../../../@depmap/data-explorer-2/src/styles/mixins.scss";
 
 .header {
   padding-left: 20px;
@@ -30,6 +32,10 @@
   text-align: center;
   color: #b00020;
   font-weight: 600;
+}
+
+.tableParagraph {
+  padding-top: 15px;
 }
 
 .tableSpinnerContainer {
@@ -72,9 +78,91 @@
   }
 }
 
+.GeneTeaMatchingTermPanel {
+  min-width: 0;
+  overflow: visible;
+  z-index: 9999;
+}
+
 .GeneTeaModal {
-  @media screen and (min-height: 510px) {
-    height: 100px;
+  max-height: 90vh;
+  overflow: hidden;
+
+  .tabContent {
+    min-height: 500px;
+  }
+  .geneTeaModalSpinner {
+    margin-top: -1px;
+    border: 1px solid #4a87ab;
+    border-top: 1px solid #fff;
+  }
+
+  mark {
+    background-color: #ffe3d1;
+  }
+
+  .saveAsContextButton {
+    padding-bottom: 20px;
+  }
+
+  .paginationControls {
+    margin-bottom: 15px;
+    margin-top: 15px;
+    text-align: center;
+
+    .pageCountLabel {
+      margin-top: 5px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .paginationPrevButton {
+      margin-right: 10px;
+    }
+
+    .paginationNextButton {
+      margin-left: 10px;
+    }
+  }
+
+  table {
+    @include scroll-shadow;
+    display: block;
+    border: 1px solid #4a87ab;
+    max-height: calc(68vh - 239px);
+    overflow-y: auto;
+    margin-bottom: 0;
+
+    thead th {
+      border: none;
+      color: #fff;
+      background-color: #5392b6;
+      font-weight: normal;
+      font-size: 13px;
+      padding: 4px 10px;
+      position: sticky;
+      top: 0;
+    }
+
+    tbody td {
+      border: none;
+    }
+
+    td,
+    th {
+      &:first-child {
+        min-width: 68px;
+        border-right: 1px solid #4a87ab;
+      }
+
+      &:nth-child(2) {
+        width: 100%;
+      }
+    }
+
+    tr:nth-child(even) td {
+      background-color: rgba(29, 105, 150, 0.1);
+    }
   }
 }
 
@@ -97,4 +185,9 @@
     outline: 5px auto -webkit-focus-ring-color;
     outline-offset: 3px;
   }
+}
+
+.termSelector {
+  margin-bottom: 15px;
+  width: 300px;
 }
