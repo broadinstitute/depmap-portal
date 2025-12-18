@@ -4,9 +4,14 @@ import { Button } from "react-bootstrap";
 interface CopyButtonProps {
   items: string[];
   title: string;
+  disabled: boolean;
 }
 
-const CopyListButton: React.FC<CopyButtonProps> = ({ items }) => {
+const CopyListButton: React.FC<CopyButtonProps> = ({
+  items,
+  title,
+  disabled,
+}) => {
   const [showSuccess, setShowSuccess] = useState(false);
 
   const handleCopy = async () => {
@@ -32,8 +37,9 @@ const CopyListButton: React.FC<CopyButtonProps> = ({ items }) => {
         onClick={handleCopy}
         bsStyle={"secondary"}
         style={{ cursor: "pointer" }}
+        disabled={disabled}
       >
-        Copy List
+        {title}
       </Button>
 
       {showSuccess && (

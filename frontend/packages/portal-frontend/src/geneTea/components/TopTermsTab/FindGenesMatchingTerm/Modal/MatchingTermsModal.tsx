@@ -1,14 +1,12 @@
-import React, { useCallback, useState, useMemo, useEffect } from "react";
+import React, { useCallback, useState, useMemo } from "react";
 import { Button, Modal } from "react-bootstrap";
 import renderConditionally from "@depmap/data-explorer-2/src/utils/render-conditionally";
 import styles from "../../../../styles/GeneTea.scss";
 import ExcerptTable from "./ExcerptTable/ExcerptTable";
 import TermGroupTabs from "./TermGroupTabs";
-import {
-  fetchGeneList,
-  useGeneContextCreation,
-} from "../../../../hooks/useCreateGeneContext";
+import { useGeneContextCreation } from "../../../../hooks/useCreateGeneContext";
 import CopyListButton from "./CopyListButton";
+import { useFetchGeneList } from "src/geneTea/hooks/useFetchGeneList";
 
 interface Props {
   termOrTermGroup: string;
@@ -28,60 +26,35 @@ function MatchingTermsModal({
   useAllGenes,
 }: Props) {
   const [show, setShow] = useState(true);
-  const [geneList, setGeneList] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Effect for "Copy Genes" button.
-  useEffect(() => {
-    const loadGenes = async () => {
-      const terms = useTerms ? [termOrTermGroup] : termsWithinSelectedGroup;
+  const termToMatchingGenesObj = useMemo(() => {
+    return Object.fromEntries(termToMatchingGenesMap);
+  }, [termToMatchingGenesMap]);
 
-      setIsLoading(true);
-      try {
-        const finalGenes = await fetchGeneList(
-          terms || [],
-          termToMatchingGenesMap,
-          useAllGenes
-        );
-        setGeneList(finalGenes);
-      } catch (error) {
-        console.error("Failed to fetch genes:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const termsKey = useMemo(() => {
+    const terms = useTerms ? [termOrTermGroup] : termsWithinSelectedGroup || [];
+    return terms.join(",");
+  }, [useTerms, termOrTermGroup, termsWithinSelectedGroup]);
 
-    loadGenes();
-  }, [
-    termToMatchingGenesMap,
-    termsWithinSelectedGroup,
+  const { geneList, isLoading } = useFetchGeneList(
     useTerms,
     termOrTermGroup,
-    useAllGenes,
-  ]);
+    termsWithinSelectedGroup,
+    termToMatchingGenesObj,
+    useAllGenes
+  );
 
   const handleContextSaveComplete = useCallback(() => setShow(true), []);
 
-  // --- 1. SINGLE TERM CONTEXT CREATION ---
-  const handleClickCreateTermContext = useGeneContextCreation({
+  const handleClickCreateContext = useGeneContextCreation({
     name: termOrTermGroup,
-    terms: useTerms ? [termOrTermGroup] : [],
-    termToMatchingGenesMap,
-    useAllGenes,
-    onComplete: handleContextSaveComplete,
-  });
-
-  // --- 2. TERM GROUP CONTEXT CREATION ---
-  const handleClickCreateTermGroupContext = useGeneContextCreation({
-    name: termOrTermGroup,
-    terms: termsWithinSelectedGroup || [], // Pass all terms in the group
-    termToMatchingGenesMap,
+    termsKey: termsKey,
+    termToMatchingGenesObj: termToMatchingGenesObj,
     useAllGenes,
     onComplete: handleContextSaveComplete,
   });
 
   const modalBody = useMemo(() => {
-    // If not grouping terms
     if (useTerms || termsWithinSelectedGroup?.length === 1) {
       return (
         <ExcerptTable
@@ -93,7 +66,6 @@ function MatchingTermsModal({
       );
     }
 
-    // If grouping terms
     if (!termsWithinSelectedGroup || termsWithinSelectedGroup.length === 0) {
       return <div>No terms found for this group.</div>;
     }
@@ -124,17 +96,20 @@ function MatchingTermsModal({
         <Button onClick={onClose}>Close</Button>
         <Button
           bsStyle="primary"
-          onClick={
-            useTerms
-              ? handleClickCreateTermContext
-              : handleClickCreateTermGroupContext
-          }
+          disabled={isLoading}
+          onClick={handleClickCreateContext}
         >
-          {useTerms
+          {isLoading
+            ? "Loading..."
+            : useTerms
             ? "Save as Gene Context"
-            : `Save Term Group as Gene Context`}
+            : "Save Group as Gene Context"}
         </Button>
-        <CopyListButton items={geneList} title={"Copy Gene List"} />
+        <CopyListButton
+          items={geneList}
+          title={"Copy Gene List"}
+          disabled={isLoading}
+        />
       </Modal.Footer>
     </Modal>
   );
