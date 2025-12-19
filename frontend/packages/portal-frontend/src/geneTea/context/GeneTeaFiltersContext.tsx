@@ -147,7 +147,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
-    new Set(["CAD", "UMPS", "ADSL", "DHODH"])
+    new Set()
   );
   const handleSetGeneSymbolSelections = useCallback(
     (v: any) => {

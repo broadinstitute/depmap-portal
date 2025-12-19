@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -15,8 +15,24 @@ import { GlossaryItem } from "src/common/components/Glossary/types";
 import Tutorial from "./Tutorial/Tutorial";
 
 function GeneTea() {
-  const { handleSetAllAvailableGenes } = useGeneTeaFiltersContext();
-  const showTutorial = true;
+  const {
+    handleSetAllAvailableGenes,
+    geneSymbolSelections,
+  } = useGeneTeaFiltersContext();
+
+  const [hasEverSearched, setHasEverSearched] = useState(false);
+
+  useEffect(() => {
+    if (geneSymbolSelections && geneSymbolSelections.size > 0) {
+      setHasEverSearched(true);
+    }
+  }, [geneSymbolSelections]);
+
+  // Show tutorial only if no genes are selected AND user hasn't searched yet
+  const showTutorialAsMain =
+    !hasEverSearched &&
+    (!geneSymbolSelections || geneSymbolSelections.size === 0);
+
   useEffect(() => {
     (async () => {
       const geneMetadata = await fetchMetadata<any>(
@@ -48,7 +64,7 @@ function GeneTea() {
             <SearchOptionsContainer />
           </div>
           <div className={styles.geneTeaTabsWrapper}>
-            {showTutorial ? (
+            {showTutorialAsMain ? (
               <div className={styles.tutorialContainer}>
                 <Tutorial />
               </div>
@@ -57,12 +73,9 @@ function GeneTea() {
                 className={styles.Tabs}
                 isManual
                 isLazy
-                defaultId="tutorial"
+                defaultId="top-tea-terms"
               >
                 <TabList className={styles.TabList}>
-                  <Tab id="tutorial" className={styles.Tab}>
-                    Tutorial
-                  </Tab>
                   <Tab id="top-tea-terms" className={styles.Tab}>
                     Top Tea Terms
                   </Tab>
