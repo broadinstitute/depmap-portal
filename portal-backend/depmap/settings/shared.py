@@ -186,6 +186,13 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.confounders,
         priority=3,
     ),
+    BiomarkerEnum.oncref_seq_confounders: DatasetLabel(
+        display_name="PRISM OncRef Seq confounders",
+        units="",
+        s3_json_name="oncref_seq-confounders",
+        data_type=DataTypeEnum.confounders,
+        priority=103,
+    ),
     BiomarkerEnum.rep_all_single_pt_confounders: DatasetLabel(
         display_name="Repurposing Primary Extended confounders",
         units="",
@@ -334,18 +341,18 @@ DATASET_METADATA: Dict[
         units="log2 fold change",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
-        priority=2,
+        priority=102,
         global_priority=17,
     ),
     DependencyEnum.Prism_oncology_AUC: DepDatasetMeta(
-        display_name="PRISM OncRef Lum log2 AUC",  # display name overridden by dataset display name artifact
+        display_name="PRISM OncRef log2(AUC) Lum",
         units="log2(AUC)",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
-        priority=1,
+        priority=2,
     ),
     DependencyEnum.Prism_oncology_seq_AUC: DepDatasetMeta(
-        display_name="PRISM OncRef Seq log2 AUC",  # display name overridden by dataset display name artifact
+        display_name="PRISM OncRef log2(AUC) Seq",
         units="log2(AUC)",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),

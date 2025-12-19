@@ -6,11 +6,18 @@ if [ "$1" = "" ]; then
 fi
 IMAGE_TAG="$1"
 
+if [ ! -e .git ] ; then
+  echo "This command only works when  run from the root of the git checkout. Change directory before running this command"
+  exit 1
+fi
+
 set -ex
+
+# save the current sha to help track what we built this docker image from
+git rev-parse HEAD > breadbox/git-sha
 
 # Build Docker image
 export DOCKER_BUILDKIT=1
-#docker buildx build --platform=linux/amd64 \
 docker build \
  breadbox \
  -t "$IMAGE_TAG" \
