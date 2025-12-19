@@ -31,6 +31,10 @@ class Settings(BaseSettings):
 
     LEGACY_CAS_BUCKET: Optional[str] = os.environ.get("LEGACY_CAS_BUCKET")
 
+    # the url for the Payload CMS which is used by the "cms" endpoints
+    payload_url: str = ""
+    payload_api_key: str = ""
+
     model_config = SettingsConfigDict(
         env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),
     )

@@ -64,3 +64,9 @@ def get_dataset(
         raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
 
     return dataset
+
+
+def get_cms_client(settings=Depends(get_settings),):
+    from ..service import cms
+
+    return cms.PayloadClient(settings.payload_url, settings.payload_api_key)
