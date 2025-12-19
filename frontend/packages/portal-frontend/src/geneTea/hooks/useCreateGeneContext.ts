@@ -1,18 +1,15 @@
 import { useCallback } from "react";
 import { DepMap } from "@depmap/globals";
-import { cached, legacyPortalAPI } from "@depmap/api";
+import { fetchGeneList } from "./utils";
 
 interface GeneContextCreationParams {
-  name: string; // termOrTermGroup
-  terms: string[]; // List of terms to fetch genes for
-  termToMatchingGenesMap: Map<string, string[]>;
+  name: string;
+  termsKey: string; // "term1,term2,term3"
+  termToMatchingGenesObj: Record<string, string[]>;
   useAllGenes: boolean;
   onComplete: () => void;
 }
 
-/**
- * Utility function to consolidate gene fetching and context saving logic.
- */
 const saveContext = async (
   contextName: string,
   geneList: string[],
@@ -30,34 +27,22 @@ const saveContext = async (
 
 export const useGeneContextCreation = ({
   name,
-  terms,
-  termToMatchingGenesMap,
+  termsKey,
+  termToMatchingGenesObj,
   useAllGenes,
   onComplete,
 }: GeneContextCreationParams) => {
   return useCallback(async () => {
-    let finalGenes: string[] = [];
+    const finalGenes = await fetchGeneList(
+      termsKey,
+      termToMatchingGenesObj,
+      useAllGenes
+    );
 
-    if (useAllGenes) {
-      // 1. Fetch genes from API
-      const allGenesData = await cached(
-        legacyPortalAPI
-      ).fetchGeneTeaGenesMatchingTermExperimental(terms, []);
-
-      // 2. Process fetched genes
-      finalGenes = Object.keys(allGenesData).flatMap(
-        (term) => allGenesData[term]?.split(" ") || []
-      );
-    } else if (terms.length === 1) {
-      finalGenes = termToMatchingGenesMap.get(terms[0]) || [];
-    } else {
-      // 2. If grouping terms
-      finalGenes = Array.from(
-        new Set(terms.flatMap((term) => termToMatchingGenesMap.get(term) || []))
-      );
+    if (finalGenes.length > 0) {
+      await saveContext(name, finalGenes, onComplete);
     }
 
-    // 3. Save the context
-    await saveContext(name, finalGenes, onComplete);
-  }, [name, terms, termToMatchingGenesMap, useAllGenes, onComplete]);
+    return finalGenes;
+  }, [name, termsKey, termToMatchingGenesObj, useAllGenes, onComplete]);
 };
