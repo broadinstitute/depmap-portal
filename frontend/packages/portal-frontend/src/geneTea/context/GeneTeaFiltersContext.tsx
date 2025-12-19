@@ -3,9 +3,12 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 import { SortOption } from "../types";
+import { setQueryStringListWithoutPageReload } from "@depmap/utils/src/url";
+import { getGenesFromUrl } from "../utils";
 
 // TODO organize this file a little better...
 export const NUMERIC_FILTER_DEFAULTS = {
@@ -147,15 +150,26 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
-    new Set()
+    () => {
+      const genes = getGenesFromUrl();
+      return new Set(genes);
+    }
   );
+
+  useEffect(() => {
+    // This will fire every single time geneSymbolSelections changes,
+    // no matter how it was changed (pasted, deleted, cleared).
+    const geneList = Array.from(geneSymbolSelections);
+    setQueryStringListWithoutPageReload("genes", geneList, true);
+  }, [geneSymbolSelections]);
+
   const handleSetGeneSymbolSelections = useCallback(
     (v: any) => {
       setGeneSymbolSelections((prevVal: Set<string>) => {
         const nextState = typeof v === "function" ? v(prevVal) : v;
+
         if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
+          // 1. Invalidate table selections
           handleClearSelectedTopTermsTableRows();
         }
 

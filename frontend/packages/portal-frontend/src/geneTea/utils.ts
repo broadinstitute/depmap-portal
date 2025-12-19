@@ -1,5 +1,32 @@
 import { breadboxAPI, cached } from "@depmap/api";
 
+import { Buffer } from "buffer";
+
+export const getGenesFromUrl = (): string[] => {
+  const params = new URLSearchParams(window.location.search);
+
+  // 1. Check for compressed list
+  const compressed = params.get("glist");
+  if (compressed) {
+    try {
+      const decoded = Buffer.from(compressed, "base64").toString("utf-8");
+
+      return decoded
+        .split(",")
+        .map((g) => g.trim())
+        .filter(Boolean);
+    } catch (e) {
+      console.error("Failed to decode glist", e);
+    }
+  }
+
+  // 2. Fallback to standard multi-param list (?genes=SOX10&genes=KRAS)
+  return params
+    .getAll("genes")
+    .map((g) => g.trim())
+    .filter(Boolean);
+};
+
 export function groupStringsByCondition(
   strings: string[],
   condition: (str: string) => boolean

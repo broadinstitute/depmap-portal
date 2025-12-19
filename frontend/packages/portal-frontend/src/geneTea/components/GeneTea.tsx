@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -20,19 +20,16 @@ function GeneTea() {
     geneSymbolSelections,
   } = useGeneTeaFiltersContext();
 
-  const [hasEverSearched, setHasEverSearched] = useState(false);
+  const hasInteracted = useRef(geneSymbolSelections.size > 0);
 
-  useEffect(() => {
-    if (geneSymbolSelections && geneSymbolSelections.size > 0) {
-      setHasEverSearched(true);
-    }
-  }, [geneSymbolSelections]);
+  // Update the ref if genes are added
+  if (geneSymbolSelections.size > 0) {
+    hasInteracted.current = true;
+  }
 
-  // Show tutorial only if no genes are selected AND user hasn't searched yet
+  // Show tutorial as main only if they've NEVER searched and current selection is empty
   const showTutorialAsMain =
-    !hasEverSearched &&
-    (!geneSymbolSelections || geneSymbolSelections.size === 0);
-
+    !hasInteracted.current && geneSymbolSelections.size === 0;
   useEffect(() => {
     (async () => {
       const geneMetadata = await fetchMetadata<any>(
