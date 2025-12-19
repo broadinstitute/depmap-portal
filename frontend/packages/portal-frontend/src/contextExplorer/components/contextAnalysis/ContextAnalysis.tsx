@@ -759,7 +759,7 @@ function ContextAnalysis({
               {datasetId === ContextExplorerDatasets.Prism_oncology_AUC && (
                 <>
                   <h2>
-                    OncRef sensitivies enriched in{" "}
+                    OncRef Lum sensitivies enriched in{" "}
                     {selectedContextNameInfo.name}
                   </h2>
                   <h4>

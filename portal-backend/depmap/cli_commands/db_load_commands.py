@@ -785,6 +785,7 @@ def _load_real_data(
             )
 
     associations = gcsc_depmap.read_json("metadata/correlations.json")["in"]
+    associations = []
     for association in associations:
         with checkpoint(
             "association-cor-{}-{}".format(
@@ -1260,35 +1261,35 @@ def load_sample_data(
         get_assoc_db_file = lambda x: os.path.join(
             loader_data_dir, "association/{}.db".format(x)
         )
-        for file_name_root, enum_name in association_deps:
-            if enum_name not in [
-                DependencyDataset.DependencyEnum.Chronos_Achilles.name,
-                DependencyDataset.DependencyEnum.GDSC1_AUC.name,
-                DependencyDataset.DependencyEnum.GDSC2_AUC.name,
-                DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
-            ]:
-                association_loader.load_dep_dep_correlation(
-                    get_assoc_db_file("{}_dep_cor".format(file_name_root)), enum_name
-                )
-
-        for dep_file_name_root, dep_enum_name in association_deps:
-            for (biom_file_name_root, biom_enum_name,) in association_bioms:
-                if dep_enum_name not in [
-                    DependencyDataset.DependencyEnum.Chronos_Achilles.name,
-                    DependencyDataset.DependencyEnum.GDSC1_AUC.name,
-                    DependencyDataset.DependencyEnum.GDSC2_AUC.name,
-                    DependencyDataset.DependencyEnum.CTRP_AUC.name,
-                    DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
-                ]:
-                    association_loader.load_dep_biom_correlation(
-                        get_assoc_db_file(
-                            "{}_{}_cor".format(dep_file_name_root, biom_file_name_root)
-                        ),
-                        dep_enum_name,
-                        biom_enum_name,
-                    )
-
+        # for file_name_root, enum_name in association_deps:
+        #     if enum_name not in [
+        #         DependencyDataset.DependencyEnum.Chronos_Achilles.name,
+        #         DependencyDataset.DependencyEnum.GDSC1_AUC.name,
+        #         DependencyDataset.DependencyEnum.GDSC2_AUC.name,
+        #         DependencyDataset.DependencyEnum.CTRP_AUC.name,
+        #         DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
+        #     ]:
+        #         association_loader.load_dep_dep_correlation(
+        #             get_assoc_db_file("{}_dep_cor".format(file_name_root)), enum_name
+        #         )
+        #
+        # for dep_file_name_root, dep_enum_name in association_deps:
+        #     for (biom_file_name_root, biom_enum_name,) in association_bioms:
+        #         if dep_enum_name not in [
+        #             DependencyDataset.DependencyEnum.Chronos_Achilles.name,
+        #             DependencyDataset.DependencyEnum.GDSC1_AUC.name,
+        #             DependencyDataset.DependencyEnum.GDSC2_AUC.name,
+        #             DependencyDataset.DependencyEnum.CTRP_AUC.name,
+        #             DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
+        #         ]:
+        #             association_loader.load_dep_biom_correlation(
+        #                 get_assoc_db_file(
+        #                     "{}_{}_cor".format(dep_file_name_root, biom_file_name_root)
+        #                 ),
+        #                 dep_enum_name,
+        #                 biom_enum_name,
+        #             )
+        #
         ensure_all_max_min_loaded()
 
         if load_taiga_dependencies and load_nonstandard:

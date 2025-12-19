@@ -34,6 +34,9 @@ RUN pyenv install ${PYTHON_VERSION} && \
 # Create the installation directory
 RUN mkdir -p /install/breadbox
 
+# Copy in a file containing the git SHA (created in build-docker-image.sh) 
+COPY git-sha /install/git-sha
+
 # Copy files:
 COPY . /install/breadbox
 WORKDIR /install/breadbox

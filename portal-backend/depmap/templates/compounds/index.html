@@ -8,12 +8,12 @@ output="public/css/view_entity.css", "css/entities/view_entity.scss",
 {% endassets %} {% endblock %} {% block content_class %}container-fluid{%
 endblock content_class %} {% set show_sensitivity_tab = summary is not none %}
 {% set show_predictability_tab = has_datasets and has_predictability %} {% set
-show_dose_curve_tab = dose_curve_options | length > 0 %} {% set
-show_dose_curve_tab_new = dose_curve_options_new | length > 0 %} {% set
-show_corr_analysis = corr_analysis_options | length > 0 %} {% set
-show_heatmap_tab = show_heatmap_tab %} {% set show_enriched_lineages =
-show_enriched_lineages %} {% set show_celfie_tab = has_celfie %} {% set
-show_aliases = compound_aliases|length > 0 %} {% block content %}
+show_dose_curve_tab = false %} {% set show_dose_curve_tab_new =
+dose_curve_options_new | length > 0 %} {% set show_corr_analysis =
+corr_analysis_options | length > 0 %} {% set show_heatmap_tab = show_heatmap_tab
+%} {% set show_enriched_lineages = show_enriched_lineages %} {% set
+show_celfie_tab = has_celfie %} {% set show_aliases = compound_aliases|length >
+0 %} {% block content %}
 <br />
 <div class="header">
   <div>
@@ -64,7 +64,7 @@ active_tab_set = False %}
       aria-controls="dose-curves-new"
       role="tab"
       data-toggle="tab"
-      >Dose curves NEW</a
+      >Dose curves</a
     >
   </li>
   {% if show_heatmap_tab %}
@@ -82,16 +82,6 @@ active_tab_set = False %}
       role="tab"
       data-toggle="tab"
       >Predictability</a
-    >
-  </li>
-  {% set active_tab_set = True %} {% endif %} {% if show_celfie_tab %}
-  <li role="presentation" class="{% if not active_tab_set %}active{% endif %}">
-    <a
-      href="#genomic_assoc"
-      aria-controls="genomic_assoc"
-      role="tab"
-      data-toggle="tab"
-      >Genomic Associations</a
     >
   </li>
   {% set active_tab_set = True %} {% endif %} {% if show_corr_analysis %}
@@ -174,16 +164,6 @@ active_tab_set = False %}
   >
     <div id="predictive-tab-root">Loading...</div>
     {% set active_tab_set = True %}
-  </div>
-  {% endif %} {% if show_celfie_tab %}
-  <div
-    role="tabpanel"
-    class="tab-pane {% if not active_tab_set %}active{% endif %}"
-    id="genomic_assoc"
-  >
-    {% import "entities/celfie.html" as celfie_pg with context %} {{
-    celfie_pg.celfie_page("compound_celfie_tab", celfie, true)}} {% set
-    active_tab_set = True %}
   </div>
   {% endif %}
   <div
