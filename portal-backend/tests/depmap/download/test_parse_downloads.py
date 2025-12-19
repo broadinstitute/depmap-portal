@@ -199,16 +199,60 @@ def test_parse_download_file(
             assert_files_are_equal(expected_file, [observed_downloads_release], i, j)
 
 
-expected_path_list = [
-    "tests/depmap/download/test_a.yaml",
-    "tests/depmap/download/test_b.yaml",
-    "tests/depmap/download/test_c.yaml",
-    "tests/depmap/download/test_d.yaml",
-]
-
 # test getting a list of paths from an index.yaml file: index_file_path = f"{downloads_path}/index.yaml"
 def test_get_list_of_file_paths(app):
     downloads_path = "tests/depmap/download"
     with app.app_context():
         path_list = get_list_of_file_paths([downloads_path])
+
+        expected_path_list = [
+            "tests/depmap/download/test_first.yaml",
+            "tests/depmap/download/test_a.yaml",
+            "tests/depmap/download/test_b.yaml",
+            "tests/depmap/download/test_c.yaml",
+            "tests/depmap/download/test_d.yaml",
+        ]
+
         assert expected_path_list == [path for path in path_list]
+
+
+def test_get_list_of_file_paths_with_complex_ordering(app):
+    # make sure that if we don't specify any priorities, then make sure we respect the order of entries in the files
+    with app.app_context():
+        path_list = get_list_of_file_paths(
+            ["tests/depmap/download/dir-1", "tests/depmap/download/dir-2"]
+        )
+
+        expected_path_list = [
+            "dir1_a.yaml",
+            "dir1_b.yaml",
+            "dir1_c.yaml",
+            "dir1_d.yaml",
+            "dir2_a.yaml",
+            "dir2_b.yaml",
+            "dir2_c.yaml",
+            "dir2_d.yaml",
+        ]
+
+        def _simplify(items):
+            return [x.split("/")[-1] for x in items]
+
+        assert expected_path_list == _simplify(path_list)
+
+        # now flip the file order and make sure the files flip
+        path_list = get_list_of_file_paths(
+            ["tests/depmap/download/dir-2", "tests/depmap/download/dir-1"]
+        )
+
+        expected_path_list = [
+            "dir2_a.yaml",
+            "dir2_b.yaml",
+            "dir2_c.yaml",
+            "dir2_d.yaml",
+            "dir1_a.yaml",
+            "dir1_b.yaml",
+            "dir1_c.yaml",
+            "dir1_d.yaml",
+        ]
+
+        assert expected_path_list == _simplify(path_list)
