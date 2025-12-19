@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Spinner } from "@depmap/common-components";
 import GeneTeaTerm from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaTerm";
 import { Alert, Button } from "react-bootstrap";
@@ -19,6 +19,11 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
   termToMatchingGenesMap,
   useAllGenes,
 }: ExcerptTableProps) => {
+  // We memoize this so the object reference remains stable
+  // unless the underlying Map actually changes.
+  const termToMatchingGenesObj = useMemo(() => {
+    return Object.fromEntries(termToMatchingGenesMap);
+  }, [termToMatchingGenesMap]);
   const {
     isLoading,
     error,
@@ -30,7 +35,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     handleClickCreateTermContext,
     totalMatchingGenes,
     pageSize,
-  } = useExcerptData(term, termToMatchingGenesMap, useAllGenes);
+  } = useExcerptData(term, termToMatchingGenesObj, useAllGenes);
 
   const isContentReady = pageData && !error && !isLoading;
   const isTableVisible = isContentReady && Object.keys(pageData!).length > 0;

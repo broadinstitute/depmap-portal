@@ -5,7 +5,7 @@ import { cached, legacyPortalAPI } from "@depmap/api";
 interface GeneContextCreationParams {
   name: string; // termOrTermGroup
   terms: string[]; // List of terms to fetch genes for
-  termToMatchingGenesMap: Map<string, string[]>;
+  termToMatchingGenesMap: Map<string, string[]> | null; // Can be null if useAllGenes
   useAllGenes: boolean;
   onComplete: () => void;
 }
@@ -48,12 +48,14 @@ export const useGeneContextCreation = ({
       finalGenes = Object.keys(allGenesData).flatMap(
         (term) => allGenesData[term]?.split(" ") || []
       );
-    } else if (terms.length === 1) {
+    } else if (terms.length === 1 && termToMatchingGenesMap) {
       finalGenes = termToMatchingGenesMap.get(terms[0]) || [];
     } else {
       // 2. If grouping terms
       finalGenes = Array.from(
-        new Set(terms.flatMap((term) => termToMatchingGenesMap.get(term) || []))
+        new Set(
+          terms.flatMap((term) => termToMatchingGenesMap!.get(term) || [])
+        )
       );
     }
 

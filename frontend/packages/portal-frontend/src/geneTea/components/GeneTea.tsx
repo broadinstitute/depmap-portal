@@ -12,9 +12,11 @@ import { fetchMetadata } from "../utils";
 import glossary from "src/geneTea/json/glossary.json";
 import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
+import Tutorial from "./Tutorial/Tutorial";
 
 function GeneTea() {
   const { handleSetAllAvailableGenes } = useGeneTeaFiltersContext();
+  const showTutorial = true;
   useEffect(() => {
     (async () => {
       const geneMetadata = await fetchMetadata<any>(
@@ -46,24 +48,38 @@ function GeneTea() {
             <SearchOptionsContainer />
           </div>
           <div className={styles.geneTeaTabsWrapper}>
-            <TabsWithHistory className={styles.Tabs} isManual isLazy>
-              <TabList className={styles.TabList}>
-                <Tab id="top-tea-terms" className={styles.Tab}>
-                  Top Tea Terms
-                </Tab>
-                <Tab id="all-matching-terms" className={styles.Tab}>
-                  All Matching Terms
-                </Tab>
-              </TabList>
-              <TabPanels className={styles.TabPanels}>
-                <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent tab="top-tea-terms" />
-                </TabPanel>
-                <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent tab="all-matching-terms" />
-                </TabPanel>
-              </TabPanels>
-            </TabsWithHistory>
+            {showTutorial ? (
+              <div className={styles.tutorialContainer}>
+                <Tutorial />
+              </div>
+            ) : (
+              <TabsWithHistory
+                className={styles.Tabs}
+                isManual
+                isLazy
+                defaultId="tutorial"
+              >
+                <TabList className={styles.TabList}>
+                  <Tab id="tutorial" className={styles.Tab}>
+                    Tutorial
+                  </Tab>
+                  <Tab id="top-tea-terms" className={styles.Tab}>
+                    Top Tea Terms
+                  </Tab>
+                  <Tab id="all-matching-terms" className={styles.Tab}>
+                    All Matching Terms
+                  </Tab>
+                </TabList>
+                <TabPanels className={styles.TabPanels}>
+                  <TabPanel className={styles.TabPanel}>
+                    <GeneTeaMainContent tab="top-tea-terms" />
+                  </TabPanel>
+                  <TabPanel className={styles.TabPanel}>
+                    <GeneTeaMainContent tab="all-matching-terms" />
+                  </TabPanel>
+                </TabPanels>
+              </TabsWithHistory>
+            )}
           </div>
         </div>
         <Glossary
