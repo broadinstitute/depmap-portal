@@ -1,0 +1,20 @@
+rule create_biomarker_matrix_contexts: 
+    inputs:
+        in={'type': 'cell_line_metadata'},
+        subtype_context_taiga_id={'type': 'subtype_context_matrix'},
+        subtype_tree_taiga_id={'type': 'subtype_tree'},
+        script=fileref('scripts/make_biomarker_matrix_contexts.py'),
+        cleanup_script=fileref('scripts/cleanup_hdf5.py')
+    outputs: {
+      'type': 'context-matrix',
+      'hdf5_filename': {"$filename": "contexts.hdf5"},
+      'csv_filename': {"$filename": "out.csv"},
+      'dataset_id': '{{inputs.in.sample_info_id}}',
+    },
+    { 'type': 'biomarker-matrix',
+      'source_dataset_id': '{{inputs.in.sample_info_id}}',
+      'category': 'context',
+      'filename': {'$filename': 'contexts.hdf5'},
+    }
+    run "python {{ inputs.script.filename }} {{ inputs.subtype_context_taiga_id.dataset_id }} {{ inputs.subtype_tree_taiga_id.dataset_id }} temp-out.hdf5 out.csv"
+    run "python3 {{inputs.cleanup_script.filename}} temp-out.hdf5 contexts.hdf5 --add-arxspan-to-cols -m {{inputs.in.filename}}"

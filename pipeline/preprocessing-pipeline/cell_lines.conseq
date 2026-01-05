@@ -1,0 +1,69 @@
+rule format_cell_line_metadata:
+     inputs:
+         sample_info={
+             "type": "sample_info_dataset_id"
+         },
+         images={
+             "type": "cell-line-images"
+         },
+        script=fileref('scripts/format_cell_lines.py')
+    outputs: {
+        "type": "cell_line_metadata",
+        "filename": {"$filename": "out.csv"},
+        "image_map_id": "{{ inputs.images.dataset_id }}",
+        "sample_info_id": "{{inputs.sample_info.dataset_id}}",
+    }
+    run """python {{ inputs.script.filename }} \
+     {{ inputs.sample_info.dataset_id }} \
+     {{ inputs.images.dataset_id }} \
+     out.csv
+     """
+
+# a duplicate of the rule above so that we can graft in the new file without re-running the whole pipeline
+# just adds two additional "legacy" columns that the rest of the pipeline doesn't care about.
+# If this works out, we should remove the rule above and just make the below the new rule which outputs 
+# type=cell_line_metadata 
+rule format_cell_lines_v2:
+     inputs:
+         sample_info={
+             "type": "sample_info_dataset_id"
+         },
+         images={
+             "type": "cell-line-images"
+         },
+        script=fileref('scripts/format_cell_lines_v2.py')
+    outputs: {
+        "type": "cell_line_metadata_v2",
+        "filename": {"$filename": "out.csv"},
+        "image_map_id": "{{ inputs.images.dataset_id }}",
+        "sample_info_id": "{{inputs.sample_info.dataset_id}}",
+    }
+    run """python {{ inputs.script.filename }} \
+     {{ inputs.sample_info.dataset_id }} \
+     {{ inputs.images.dataset_id }} \
+     out.csv
+     """
+
+# 
+rule format_models:
+     inputs:
+         sample_info={
+             "type": "sample_info_dataset_id"
+         },
+         images={
+             "type": "cell-line-images"
+         },
+        script=fileref('scripts/format_models.py')
+    outputs: {
+        "type": "models_metadata",
+        "filename": {"$filename": "out.csv"},
+        "image_map_id": "{{ inputs.images.dataset_id }}",
+        "sample_info_id": "{{inputs.sample_info.dataset_id}}",
+    }
+    run """python {{ inputs.script.filename }} \
+     {{ inputs.sample_info.dataset_id }} \
+     {{ inputs.images.dataset_id }} \
+     out.csv
+     """
+
+

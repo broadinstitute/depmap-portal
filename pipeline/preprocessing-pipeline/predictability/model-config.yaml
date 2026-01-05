@@ -1,0 +1,76 @@
+---
+Core_omics:
+  Features:
+    - RNAseq
+    # - ssGSEA
+    - CN
+    - MutDam
+    - MutHot
+    - Fusion
+    - Lin
+  Required:
+    - Confounders
+    - RNAseq
+    - Lin
+  Relation: All
+  Jobs: 10
+
+Extended_omics:
+  Features:
+    - RNAseq
+    # - ssGSEA
+    - CN
+    - MutDam
+    - MutHot
+    - Fusion
+    - Lin
+    - RPPA
+    - metabolomics
+    - Confounders
+  Required:
+    - RNAseq
+    # - ssGSEA
+    - CN
+    - MutDam
+    - MutHot
+    - Fusion
+    - Lin
+    - RPPA
+    - metabolomics
+    - Confounders
+  Relation: All
+  Jobs: 10
+
+Related:
+  Features:
+    - RNAseq
+    # - ssGSEA
+    - CN
+    - MutDam
+    - MutHot
+    - Fusion
+    - Lin
+  Required:
+    - Confounders
+    - RNAseq
+    - Lin
+  Relation: MatchRelated
+  Related: MatchRelated
+  Exempt:
+    - Confounders
+    - Lin
+  Jobs: 10
+
+DNA_based:
+  Features:
+    - CN
+    - MutDam
+    - MutHot
+    - Fusion
+    - Lin
+  Required:
+    - Confounders
+    - MutDam
+    - Lin
+  Relation: All
+  Jobs: 10

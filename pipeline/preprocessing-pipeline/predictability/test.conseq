@@ -1,0 +1,7 @@
+let testpred="true"
+
+include "test-artifacts.conseq"
+include "../exec.conseq"
+include "../reformat_deps.conseq"
+include "predictability.conseq"
+

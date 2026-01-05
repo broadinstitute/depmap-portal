@@ -1,0 +1,242 @@
+rule generate_tda_table:
+    inputs:
+        crispr_lrt={"type": "lrt-scores", "label": "Chronos_Combined"},
+        rnai_lrt={"type": "lrt-scores", "label": "RNAi_merged"},
+        crispr_ce={"type": "common-essentials", "label": "Chronos_Combined"},
+        rnai_ce={"type": "common-essentials", "label": "RNAi_merged"},
+        crispr_gene_effect={"type": "dep-matrix-csv", "label": "Chronos_Combined"},
+        rnai_gene_effect={"type": "dep-matrix-csv", "label": "RNAi_merged"},
+        crispr_rnai_probs=all{"type": "raw-dep-prob-matrix"},
+        crispr_predictive_accuracy={"type": "pred-models-csv", "dataset": "Chronos_Combined"},
+        rnai_predictive_accuracy={"type": "pred-models-csv", "dataset": "RNAi_merged"},
+        gene_dep_summary={"type": "gene-dep-summary"},
+        count_dep_lines=fileref("scripts/count_dep_lines.py"),
+    outputs:
+        {
+            "type": "tda-table",
+            "filename": {"$filename": "tda_table.csv"},
+        }
+        
+    run "python3" with """
+        import json
+        with open("probs.json", "wt") as fd:
+            fd.write(json.dumps( {{ inputs.crispr_rnai_probs }} ))
+    """
+    # This gets us the depcl fraction later where the probability threshold for depcl count is 0.5 by default
+    run "python3 {{ inputs.count_dep_lines.filename }} probs.json depcounts_50.csv"
+
+    # This gets us the strong depcl count where > 0.9 is the probability threshold
+    run "python3 {{ inputs.count_dep_lines.filename }} probs.json depcounts_90.csv 0.9"
+
+    run "python3" with """
+        import pandas as pd
+        #######################################################################################
+        #                                      LRT                                            #
+        #######################################################################################
+
+        crispr_lrt_df = pd.read_csv("{{ inputs.crispr_lrt.filename }}")
+        crispr_lrt_df = crispr_lrt_df.rename(columns={'LRT': 'CRISPR_LRT'})
+        
+        rnai_lrt_df = pd.read_csv("{{ inputs.rnai_lrt.filename }}")
+        rnai_lrt_df = rnai_lrt_df.rename(columns={'LRT': 'RNAi_LRT'})
+
+        print(f"Crispr_LRT: {len(crispr_lrt_df)}, RNAi_LRT: {len(rnai_lrt_df)}")
+
+        lrt_df = pd.merge(crispr_lrt_df, rnai_lrt_df, on='Row.name', how='outer')
+        print(f"Combined_LRT: {len(lrt_df)}")
+
+        ########################################################################################
+        #                                       CE                                             #
+        ########################################################################################
+
+        common_essentials_crispr_df = pd.read_csv("{{ inputs.crispr_ce.filename }}")
+        common_essentials_crispr_df = common_essentials_crispr_df.rename(columns={'Common_Essential': 'CRISPR_PanDependency'})
+
+        common_essentials_rnai_df = pd.read_csv("{{ inputs.rnai_ce.filename }}")
+        common_essentials_rnai_df = common_essentials_rnai_df.drop("CE_percentile", axis=1)
+        common_essentials_rnai_df = common_essentials_rnai_df.rename(columns={'Common_Essential': 'RNAi_PanDependency'})
+
+        print(f"Crispr_CE: {len(common_essentials_crispr_df)}, RNAi_CE: {len(common_essentials_rnai_df)}")
+        
+        combined_ce_df = pd.merge(common_essentials_crispr_df, common_essentials_rnai_df, on='Row.name', how='outer')
+        print(f"Combined_CE: {len(combined_ce_df)}")
+
+        combined_df = pd.merge(lrt_df, combined_ce_df, on='Row.name', how='outer')
+
+        ########################################################################################
+        #           Min_Gene_Effect, Min_Gene_Effect_Zscore, Mean, Variance, Skewness          #
+        ########################################################################################
+
+        crispr_deps_df = pd.read_csv("{{ inputs.crispr_gene_effect.filename }}")
+        crispr_min_values = crispr_deps_df.min(numeric_only=True)
+        crispr_mean_values = crispr_deps_df.mean(numeric_only=True)
+        crispr_sd_values = crispr_deps_df.std(numeric_only=True)
+        crispr_variance_values = crispr_sd_values ** 2
+        crispr_skew_values = crispr_deps_df.skew(numeric_only=True)
+        crispr_kurt_values = crispr_deps_df.kurtosis(numeric_only=True)
+        crispr_n = (1-crispr_kurt_values.isna()).sum()
+        crispr_bimodality_values = (crispr_skew_values**2+1)/(crispr_kurt_values + 3*(crispr_n-1)**2/((crispr_n-2)*(crispr_n-3)))
+        crispr_ks_values = crispr_skew_values*crispr_kurt_values
+        crispr_zscore_values = (crispr_min_values - crispr_mean_values) / crispr_sd_values
+        crispr_temp_df = pd.DataFrame({
+            'CRISPR_min_gene_effect': crispr_min_values, 
+            'CRISPR_min_gene_effect_zscore': crispr_zscore_values,
+            'CRISPR_Mean': crispr_mean_values, 
+            'CRISPR_Variance': crispr_variance_values,
+            'CRISPR_Skewness': crispr_skew_values,
+            'CRISPR_Kurtosis': crispr_kurt_values,
+            'CRISPR_KS_score': crispr_ks_values,
+            'CRISPR_Bimodality': crispr_bimodality_values
+            })
+        crispr_temp_df = crispr_temp_df.rename_axis('Row.name')
+        crispr_sorted_df = crispr_temp_df.sort_index().reset_index()
+
+        rnai_deps_df = pd.read_csv("{{ inputs.rnai_gene_effect.filename }}")
+        rnai_min_values = rnai_deps_df.min(numeric_only=True)
+        rnai_mean_values = rnai_deps_df.mean(numeric_only=True)
+        rnai_sd_values = rnai_deps_df.std(numeric_only=True)
+        rnai_variance_values = rnai_sd_values ** 2
+        rnai_skew_values = rnai_deps_df.skew(numeric_only=True)
+        rnai_kurt_values = rnai_deps_df.kurtosis(numeric_only=True)
+        rnai_n = (1-rnai_kurt_values.isna()).sum()
+        rnai_bimodality_values = (rnai_n**2+1)/(rnai_n + 3*(rnai_n-1)**2/((rnai_n-2)*(rnai_n-3)))
+        rnai_ks_values = rnai_skew_values*rnai_kurt_values
+        rnai_zscore_values = (rnai_min_values - rnai_mean_values) / rnai_sd_values
+        rnai_temp_df = pd.DataFrame({
+            'RNAi_min_gene_effect': rnai_min_values,
+            'RNAi_min_gene_effect_zscore': rnai_zscore_values,
+            'RNAi_Mean': rnai_mean_values,
+            'RNAi_Variance': rnai_variance_values,
+            'RNAi_Skewness': rnai_skew_values,
+            'RNAi_Kurtosis': rnai_kurt_values,
+            'RNAi_KS_score': rnai_ks_values,
+            'RNAi_Bimodality': rnai_bimodality_values
+            })
+        rnai_temp_df = rnai_temp_df.rename_axis('Row.name')
+        rnai_sorted_df = rnai_temp_df.sort_index().reset_index()
+
+        print(f"Crispr_deps: {len(crispr_sorted_df)}, RNAi_gene_effect: {len(rnai_sorted_df)}")
+
+        combined_deps_df = pd.merge(crispr_sorted_df, rnai_sorted_df, on='Row.name', how='outer')
+        print(f"Combined_deps: {len(combined_deps_df)}")
+
+        combined_df = pd.merge(combined_df, combined_deps_df, on='Row.name', how='outer')
+
+        ########################################################################################
+        #                 Dependent Cell Line Fraction, Strong DepCL Count                     #
+        ########################################################################################
+
+        depcounts_90_df = pd.read_csv('depcounts_90.csv')
+        depcounts_50_df = pd.read_csv('depcounts_50.csv')
+        depcounts_50_df['depCL_frac'] = depcounts_50_df['dep_lines'] / depcounts_50_df['lines_with_data']
+
+        crispr_group_90 = depcounts_90_df[depcounts_90_df['label'] == 'Chronos_Combined']
+        crispr_strong_depCL_count = crispr_group_90['dep_lines']
+        crispr_group_50 = depcounts_50_df[depcounts_50_df['label'] == 'Chronos_Combined']
+        crispr_depCL_frac = crispr_group_50['depCL_frac']
+        crispr_deps_temp_df = pd.DataFrame({
+            'Row.name': crispr_group_90['gene'],
+            'CRISPR_strong_depCL_count': crispr_strong_depCL_count,
+            'CRISPR_depCL_frac': crispr_depCL_frac
+            })
+        
+        rnai_group_90 = depcounts_90_df[depcounts_90_df['label'] == 'RNAi_merged']
+        rnai_strong_depCL_count = rnai_group_90['dep_lines']
+        rnai_group_50 = depcounts_50_df[depcounts_50_df['label'] == 'RNAi_merged']
+        rnai_depCL_frac = rnai_group_50['depCL_frac']
+        rnai_deps_temp_df = pd.DataFrame({
+            'Row.name': rnai_group_90['gene'],
+            'RNAi_strong_depCL_count': rnai_strong_depCL_count,
+            'RNAi_depCL_frac': rnai_depCL_frac
+            })
+
+        print(f"Crispr_depcl: {len(crispr_deps_temp_df)}, RNAi_depcl: {len(rnai_deps_temp_df)}")
+
+        combined_depcl_df = pd.merge(crispr_deps_temp_df, rnai_deps_temp_df, on='Row.name', how='outer')
+        print(f"Combined_depcl: {len(combined_depcl_df)}")
+
+        combined_df = pd.merge(combined_df, combined_depcl_df, on='Row.name', how='outer')
+
+        ########################################################################################
+        #                                   Predictive Accuracy                                #
+        ########################################################################################
+
+        crispr_preds_df = pd.read_csv("{{ inputs.crispr_predictive_accuracy.filename }}")
+        crispr_preds_df = crispr_preds_df[crispr_preds_df['best'] == True] # Taking only the best prediction
+        crispr_preds_temp_df = pd.DataFrame({
+            'Row.name': crispr_preds_df['gene'],
+            'CRISPR_Predictive_Accuracy': crispr_preds_df['pearson']
+            })
+
+        rnai_preds_df = pd.read_csv("{{ inputs.rnai_predictive_accuracy.filename }}")
+        rnai_preds_df_best = rnai_preds_df[rnai_preds_df['best'] == True]
+        rnai_preds_temp_df = pd.DataFrame({
+            'Row.name': rnai_preds_df_best['gene'],
+            'RNAi_Predictive_Accuracy': rnai_preds_df_best['pearson']
+            })
+
+        print(f"Crispr_preds: {len(crispr_preds_temp_df)}, RNAi_preds: {len(rnai_preds_temp_df)}")
+
+        combined_preds_df = pd.merge(crispr_preds_temp_df, rnai_preds_temp_df, on='Row.name', how='outer')
+        print(f"Combined_preds: {len(combined_preds_df)}")
+
+        combined_df = pd.merge(combined_df, combined_preds_df, on='Row.name', how='outer')
+
+        # ########################################################################################
+        # #               Get Entrez ID and Hugo Symbol out of Row.Name Column                   #
+        # ########################################################################################
+
+        # Extract the symbol and entrez_id from the Row.name
+        # Handle cases where either part may contain "&" characters
+        combined_df[['symbol', 'entrez_id']] = combined_df['Row.name'].str.extract(r'^(.*?)\s*\((.*?)\)$')
+        # Drop the Row.name column
+        combined_df = combined_df.drop(columns=['Row.name'], axis=1)
+
+        ########################################################################################
+        #                                   Gene Dependency Summary                            #
+        ########################################################################################
+        # Merging the gene dependecy summary after separating the entrez_id and symbol
+        # Because the gene dependency summary has the entrez_id column as gene_id e.g. 1, 2, 3, etc.
+        # as opposed to the Row.name column which has the symbol and entrez_id e.g. A1BG (1), A1BG (2), A1BG (3), etc.
+        gene_dep_summary_df = pd.read_csv("{{ inputs.gene_dep_summary.filename }}")
+        
+        # Create separate dataframes for CRISPR and RNAi data
+        crispr_summary = gene_dep_summary_df[gene_dep_summary_df['label'] == 'Chronos_Combined']
+        rnai_summary = gene_dep_summary_df[gene_dep_summary_df['label'] == 'RNAi_merged']
+        
+        # Create new dataframes with just gene_id and is_strongly_selective columns
+        crispr_selective = crispr_summary[['gene_id', 'is_strongly_selective']].rename(
+            columns={'is_strongly_selective': 'CRISPR_StronglySelective'})
+        rnai_selective = rnai_summary[['gene_id', 'is_strongly_selective']].rename(
+            columns={'is_strongly_selective': 'RNAi_StronglySelective'})
+        
+        strongly_selective_df = pd.merge(crispr_selective, rnai_selective, on='gene_id', how='outer')
+        strongly_selective_df = strongly_selective_df.rename(columns={'gene_id': 'entrez_id'})
+        
+        combined_df = pd.merge(combined_df, strongly_selective_df, on='entrez_id', how='outer')
+
+        ########################################################################################
+        #                                   Finalize the TDA table                             #
+        ########################################################################################
+
+        # Drop all the rows with "&" in the entrez_id
+        # First convert entrez_id to string and handle NaN values
+        combined_df['entrez_id'] = combined_df['entrez_id'].astype(str)
+        combined_df = combined_df[~combined_df['entrez_id'].str.contains('&', na=False)]
+        print(f"Combined: {len(combined_df)}")
+
+        # Reorder the columns
+        combined_df = combined_df.reindex(columns=[
+            'entrez_id', 'symbol', 'CRISPR_depCL_frac',
+            'CRISPR_strong_depCL_count', 'RNAi_depCL_frac',
+            'RNAi_strong_depCL_count', 'CRISPR_min_gene_effect',
+            'CRISPR_min_gene_effect_zscore', 'RNAi_min_gene_effect',
+            'RNAi_min_gene_effect_zscore', 'CRISPR_Mean', 'CRISPR_Variance',
+            'CRISPR_Skewness', 'CRISPR_Kurtosis', 'CRISPR_KS_score', 'CRISPR_Bimodality', 'RNAi_Mean', 'RNAi_Variance', 'RNAi_Skewness',
+            'RNAi_Kurtosis', 'RNAi_KS_score', 'RNAi_Bimodality', 'CRISPR_PanDependency', 'RNAi_PanDependency','CRISPR_LRT', 'RNAi_LRT',
+            'CRISPR_Predictive_Accuracy',
+            'RNAi_Predictive_Accuracy', 
+            'CRISPR_StronglySelective', 'RNAi_StronglySelective'
+        ])
+        combined_df.to_csv("tda_table.csv", index=False)
+    """

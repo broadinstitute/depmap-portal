@@ -1,0 +1,11 @@
+[config]
+default_url_prefix=gs://dpp-sparkles/depmap-pipeline
+project=depmap-portal-pipeline
+default_image=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/tda-pipeline:v2
+region=us-central1
+machine_type=n2-highmem-2
+account=856306709302-compute@developer.gserviceaccount.com
+boot_volume_in_gb=40
+mount_1_type=pd-standard
+mount_1_size_in_gb=50
+sparklesworker_image=us-central1-docker.pkg.dev/cds-docker-containers/docker/sparklesworker:5.0.0-alpha3

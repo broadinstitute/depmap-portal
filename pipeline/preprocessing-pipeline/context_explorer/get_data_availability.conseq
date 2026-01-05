@@ -1,0 +1,48 @@
+# due to a bug in conseq's handling of `all` which can prevent a rule from being run if 
+# the query returns zero results, work around this by instead matching the artifacts with a single
+# input variable. We know at least _one_ value will be in that collection, so the bug
+# won't manifest. Then, use the type field on each artifact to map it to the name the script is expecting
+
+rule get_data_availability:
+    inputs:
+        script=fileref("./get_data_availability.py"),
+        artifacts=all {"type" ~ "sample_info_dataset_id|crispr-screen-sequence-map|omics_profiles|repurposing_matrix_taiga_id|prism_oncology_reference_auc_matrix|rnai_cell_lines_taiga_id|subtype_context_matrix"},
+#        model_taiga_id=all {"type": "sample_info_dataset_id"},
+#        screen_sequence_map_taiga_id=all {"type": "crispr-screen-sequence-map"},        
+#        omics_profiles_taiga_id=all {"type": "omics_profiles"},
+#        repurposing_matrix_taiga_id=all {"type": "repurposing_matrix_taiga_id"},
+#        oncref_auc_taiga_id=all {"type":"prism_oncology_reference_auc_matrix"}
+#        rnai_cell_lines_taiga_id=all {"type": "rnai_cell_lines_taiga_id"}
+#        subtype_context_matrix_taiga_id=all {"type": "subtype_context_matrix"}
+    outputs:
+        {"type": "data-avail", "filename": { "$filename": "data-avail.csv"} }
+    run "python3" with """
+        import json
+    
+        artifacts = {{ inputs.artifacts }}
+
+        transformed = {
+            # handle the ones that couldn't uniquely be identified by type specially
+            "script": {{ inputs.script }}            
+        }
+
+
+        by_type = { artifact['type'] : artifact for artifact in artifacts }
+        assert len(by_type) == len(artifacts), "Some type was duplicated?"
+
+        # now unpack those inputs into ids the script was using
+        for dest_name, type_name in [
+                ('model_taiga_id','sample_info_dataset_id'), 
+                ('screen_sequence_map_taiga_id', 'crispr-screen-sequence-map'), 
+                ('omics_profiles_taiga_id', 'omics_profiles'), 
+                ('repurposing_matrix_taiga_id', 'repurposing_matrix_taiga_id'), 
+                ('oncref_auc_taiga_id', 'prism_oncology_reference_auc_matrix'), 
+                ('rnai_cell_lines_taiga_id', 'rnai_cell_lines_taiga_id'),
+                ('subtype_context_matrix_taiga_id', 'subtype_context_matrix')]:
+            artifact = by_type.get(type_name)
+            transformed[dest_name] = [ artifact ] if artifact is not None else []
+
+        with open("inputs.json", "wt") as fd:
+            fd.write(json.dumps(transformed, indent=2))
+    """
+    run """ python {{ inputs.script.filename }} inputs.json data-avail.csv """

@@ -1,0 +1,21 @@
+add-if-missing {
+    "type": "release_taiga_id",
+    "dataset_id": "public-23q2-19de.101"
+}
+
+add-if-missing {
+    "type": "rnai_cell_lines_taiga_id",
+    "dataset_id": "demeter2-combined-dc9c.19/CL_data_comb"
+}
+
+add-if-missing {
+    "type": "repurposing_matrix_taiga_id",
+    "dataset_id": "repurposing-23q2-a803.3/Repurposing_23Q2_Extended_Primary_Data_Matrix"
+}
+add-if-missing {
+    "type": "repurposing_list_taiga_id",
+    "dataset_id": "repurposing-23q2-a803.3/Repurposing_23Q2_Extended_Primary_Compound_List"
+}
+
+include "get_data_availability.conseq"
+include "get_context_analysis.conseq"

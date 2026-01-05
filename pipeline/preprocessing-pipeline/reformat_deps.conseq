@@ -1,0 +1,41 @@
+rule reformat_deps:
+    inputs: 
+        dep={'type': 'raw-dep-matrix'}, 
+        cleanup_script=fileref('scripts/cleanup_hdf5.py'),
+        meta={'type': 'cell_line_metadata'}
+    outputs: {'type': 'dep-matrix', 
+              "label": "{{inputs.dep.label}}",
+              "orig_dataset_id": "{{inputs.dep.dataset_id}}",
+              'filename': {'$filename': 'deps-c.hdf5'},
+              'confounders_label': "{{inputs.dep.confounders_label | default('missing') }}"
+              }
+    run "python3" with """
+        from taigapy import create_taiga_client_v3
+        import pandas as pd
+        import h5py
+        import os
+
+        tc = create_taiga_client_v3()
+        m = tc.get("{{inputs.dep.dataset_id}}")
+
+        d0 = m.index.tolist()
+        d1 = m.columns.tolist()
+
+        if "{{inputs.dep.rows}}" == "cell-lines":
+            m = m.transpose()
+            d0, d1 = d1, d0
+
+        # Check if the matrix is oriented correctly
+        assert m.shape[0] > m.shape[1] or (m.shape[0] + m.shape[1] < 5000), "Matrix not oriented correctly"
+
+        output_file = "deps.hdf5"
+        if os.path.exists(output_file):
+            os.remove(output_file)
+
+        with h5py.File(output_file, 'w') as f:
+            f.create_dataset("data", data=m.to_numpy())
+            f.create_dataset("dim_0", data=d0, dtype=h5py.string_dtype())
+            f.create_dataset("dim_1", data=d1, dtype=h5py.string_dtype())
+
+    """
+    run "python3 {{inputs.cleanup_script.filename}} deps.hdf5 deps-c.hdf5 --add-arxspan-to-cols -m {{inputs.meta.filename}}"
