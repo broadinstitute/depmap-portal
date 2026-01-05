@@ -1,0 +1,74 @@
+# Default paths
+defaults:
+  taiga_dir: /data2/depmap-pipeline-taiga
+  creds_dir: /etc/depmap-pipeline-runner-creds
+
+# Required credential files (relative to creds_dir)
+credentials:
+  required_files:
+    - broad-paquitas
+    - sparkles
+    - depmap-pipeline-runner.json
+
+# Docker configuration
+docker:
+  # Volume mount paths inside container
+  volumes:
+    work_dir: /work
+    aws_keys: /aws-keys/broad-paquitas
+    sparkles_cache: /root/.sparkles-cache
+    google_creds: /etc/google_default_creds.json
+    taiga: /root/.taiga
+
+  # Docker run options (keyed by directory name)
+  options:
+    preprocessing-pipeline:
+      security_opt: seccomp=unconfined
+    data-prep-pipeline: {} # No special options
+
+  # Environment variables to set in container
+  env_vars:
+    GOOGLE_APPLICATION_CREDENTIALS: /etc/google_default_creds.json
+
+# Conseq configuration
+conseq:
+  sparkles_path: /install/sparkles/bin/sparkles
+  max_fail: 20
+  common_args:
+    - --no-reattach
+    - --remove-unknown-artifacts
+  gc_enabled: true
+
+# Pipeline-specific configuration
+pipelines:
+  preprocessing:
+    state_path: pipeline/preprocessing-pipeline/state
+    log_destination: preprocess-logs
+    working_dir: /work/pipeline/preprocessing-pipeline
+
+    # Environment name mapping
+    env_mapping:
+      qa: iqa
+      external: external
+      dqa: dqa
+      internal: internal
+      test-prefix: iqa # Any env starting with "test-" maps to this
+
+  data_prep:
+    state_path: pipeline/data-prep-pipeline/state
+    log_destination: data-prep-logs
+    working_dir: /work/pipeline/data-prep-pipeline
+
+    # Template files for external/internal runs
+    templates:
+      external:
+        input: release_inputs_external.template
+        output: release_inputs_external-DO-NOT-EDIT-ME
+      internal:
+        input: release_inputs_internal.template
+        output: release_inputs_internal-DO-NOT-EDIT-ME
+
+    # Conseq files
+    conseq_files:
+      external: data_prep_pipeline/run_external.conseq
+      internal: data_prep_pipeline/run_internal.conseq

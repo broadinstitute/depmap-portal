@@ -1,0 +1,4 @@
+# Three Steps:
+# 1. Generate a daintree input config file for each model and screen
+# 2. Run the model fitting
+# 3. Combine the output config files

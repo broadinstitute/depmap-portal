@@ -1,0 +1,16 @@
+rule validate_biomarker_matrix:
+    inputs:
+        data={'type': 'biomarker-matrix'},
+        hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py')
+    run "python3" with """
+        import pandas as pd
+        from hdf5_utils import read_hdf5
+
+        pd.set_option("mode.use_inf_as_na", True)
+
+        df = read_hdf5("{{ inputs.data.filename }}")
+        for x in df.columns:
+            assert x.startswith("ACH-"), f"{x} does not start with ach. biomarker-matrix hdf5 files assume cell lines are columns. rows={ list(df.index)[:5] }.., cols={ list(df.columns)[:5] }..."
+        with open("results.json", "wt") as fd:
+            fd.write("{\"outputs\":[]}")
+    """

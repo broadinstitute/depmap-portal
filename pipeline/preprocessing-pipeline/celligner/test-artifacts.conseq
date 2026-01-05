@@ -1,0 +1,36 @@
+# SET_TAIGA_PREPROCESSOR virtual_dataset_id "internal-23q4-ac2b.65"
+
+add-if-missing {
+    "type": "biomarker-matrix",
+    "category": "context",
+    "source_dataset_id": "internal-25q3-b129.101/Model"
+}
+
+
+add-if-missing {
+  "type": "config-file",
+  "name": "taiga-token",
+  "filename": {"$filename": "{{config.ENV['HOME']}}/.taiga/token"}
+}
+
+
+# biomarker-matrix
+add-if-missing {
+  'type': 'raw-expr-matrix-profile',
+  'dataset_id' : "internal-25q3-b129.107/OmicsExpressionTPMLogp1HumanAllGenes",
+  'category' : 'expression',
+}
+
+# profile-map
+add-if-missing {
+  'type': 'profile-map',
+  'dataset_id' : "internal-25q3-b129.74/OmicsProfiles",
+  'category' : 'mapping',
+}
+
+# model-condition
+add-if-missing {
+  'type': 'model-condition',
+  'dataset_id' : "internal-25q3-b129.101/ModelCondition",
+  'category' : 'mapping',
+}

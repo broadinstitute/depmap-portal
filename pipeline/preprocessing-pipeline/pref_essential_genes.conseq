@@ -1,0 +1,22 @@
+rule pref_essential_genes_rnai:
+    inputs: 
+        script=fileref("scripts/pref_essential_genes_to_csv.py"),
+        data={'type': 'dep-matrix', 'label': 'RNAi_merged'}
+    outputs: {
+        "type": 'preferentially_essential_genes',
+        "label": "{{ inputs.data.label }}", # matched in db
+        "orig_dataset_id": "{{ inputs.data.orig_dataset_id }}",
+        "filename": {"$filename": "pref_essential_genes_rnai_merged.csv"} }
+    run "python3 {{inputs.script.filename}} {{inputs.data.filename}} pref_essential_genes_rnai_merged.csv"
+
+
+rule pref_essential_genes_crispr:
+    inputs: 
+        script=fileref("scripts/pref_essential_genes_to_csv.py"),
+        data={'type': 'dep-matrix', 'label': "Chronos_Combined"} # The default crispr enum
+    outputs: {
+        "type": 'preferentially_essential_genes',
+        "label": "{{ inputs.data.label }}", # matched in db
+        "orig_dataset_id": "{{ inputs.data.orig_dataset_id }}",
+        "filename": {"$filename": "pref_essential_genes_crispr.csv"} }
+    run "python3 {{inputs.script.filename}} {{inputs.data.filename}} pref_essential_genes_crispr.csv"

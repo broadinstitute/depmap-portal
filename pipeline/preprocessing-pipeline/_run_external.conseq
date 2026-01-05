@@ -1,0 +1,10 @@
+let deploy_env = "external"
+
+include "_run_common.conseq"
+
+eval """
+import subprocess
+subprocess.check_call(["python", "preprocess_taiga_ids.py", "xrefs-external.template", "xrefs-external-DO-NOT-EDIT-ME"])
+"""
+
+include "xrefs-external-DO-NOT-EDIT-ME"

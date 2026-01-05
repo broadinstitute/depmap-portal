@@ -1,0 +1,45 @@
+rule get_rep_all_single_pt_compound_doses:
+    inputs: treatment_metadata={'type' : 'raw-treatment_metadata', 'label' : 'Rep_all_single_pt'},
+        script=fileref("scripts/rep_all_single_pt_cpd_doses_from_treatment_metadata.py")
+    outputs: {
+        'type': 'dataset-compound-doses',
+        'dataset': 'Rep_all_single_pt',
+        'filename': {'$filename': 'rep_all_single_pt_compound_doses.csv'},
+    }
+    run "python3 {{ inputs.script.filename }} {{ inputs.treatment_metadata.dataset_id }} rep_all_single_pt_compound_doses.csv"
+
+rule get_oncref_compound_doses:
+    inputs: treatment_metadata={'type' : 'raw-treatment_metadata', 'label' : 'Prism_oncology_AUC'},
+        script=fileref("scripts/oncref_cpd_doses_from_treatment_metadata.py")
+    outputs: {
+        'type': 'dataset-compound-doses',
+        'dataset': 'Prism_oncology_AUC',
+        'filename': {'$filename': 'oncref_compound_doses.csv'},
+    }
+    run "python3 {{ inputs.script.filename }} {{ inputs.treatment_metadata.dataset_id }} oncref_compound_doses.csv"
+
+rule expand_drug_metadata:
+    inputs: drug_metadata={'type': 'drug-metadata', 'name': 'merged-drugs'},
+        script=fileref('scripts/expand_drug_metadata.py')
+    outputs: {
+        'type': 'expanded-drug-metadata',
+        'name': 'merged-drugs',
+        'filename': {'$filename': 'expand_drug_metadata.csv'}
+    }
+    run "python3 {{ inputs.script.filename }} {{ inputs.drug_metadata.filename }} expand_drug_metadata.csv"
+
+rule merge_predictability_into_compound_summary:
+    inputs: predictions={'type': 'pred-models-csv', 'dataset': dataset}, #'[Prism_oncology_AUC, Rep_all_single_pt, RNAi_merged, Chronos_Combined] where only first 2 are compound-related'
+        dataset_matrix={'type': 'dep-matrix', 'label': dataset}, # originally {'type':'raw-compound-summary', 'dataset': dataset'} where dataset is ['Rep_all_single_pt']
+        dataset_for_compound_dashboard={'type': 'needs-compound-dashboard', 'dataset': dataset},    # The number of times this rule is run is limited by this artifact type's datasets
+        drug_metadata={'type': 'expanded-drug-metadata', 'name': 'merged-drugs'},
+        dose_data={'type': 'dataset-compound-doses', 'dataset': dataset},
+        script=fileref("scripts/compound_summary_merge.py"),
+        hdf5_utils=fileref('scripts/hdf5_utils.py')
+    outputs: {
+        'type': 'compound-summary',
+        'dataset': "{{ inputs.predictions.dataset }}",
+        'filename': {"$filename": "compound_summary_table.csv"}
+    }
+     run "cp {{ inputs.hdf5_utils.filename }} hdf5_utils.py"
+     run "python3 {{ inputs.script.filename }} {{ inputs.predictions.filename }} {{ inputs.dataset_matrix.filename }} '{{inputs.dataset_matrix.units}}' {{ inputs.drug_metadata.filename }} {{ inputs.dose_data.filename }} compound_summary_table.csv"
