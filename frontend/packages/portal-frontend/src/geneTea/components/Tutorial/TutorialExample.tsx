@@ -1,6 +1,7 @@
-import React, { useRef } from "react";
+import React, { useCallback, useRef } from "react";
 
 import styles from "../../styles/GeneTea.scss";
+import { useGeneTeaFiltersContext } from "src/geneTea/context/GeneTeaFiltersContext";
 
 interface Props {
   imgSrc: string;
@@ -11,8 +12,11 @@ interface Props {
 
 function TutorialExample({ imgSrc, title, description, geneList }: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
-  console.log(geneList);
-  const handleClick = async () => {};
+  const { handleSetGeneSymbolSelections } = useGeneTeaFiltersContext();
+
+  const handleClick = useCallback(async () => {
+    handleSetGeneSymbolSelections(geneList);
+  }, [geneList, handleSetGeneSymbolSelections]);
 
   return (
     <div ref={ref} className={styles.TutorialExample}>

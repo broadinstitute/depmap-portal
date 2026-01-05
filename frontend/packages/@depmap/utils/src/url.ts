@@ -1,5 +1,3 @@
-import { Buffer } from "buffer";
-
 export function setQueryStringWithoutPageReload(
   key: string,
   value: any,
@@ -20,7 +18,7 @@ export function setQueryStringWithoutPageReload(
  * Updates the URL without a page reload.
  * For large lists, it uses a single compressed 'glist' param.
  */
-export function setQueryStringListWithoutPageReload(
+export function setQueryStringList(
   key: string,
   value: string | string[],
   replace = false
@@ -40,8 +38,10 @@ export function setQueryStringListWithoutPageReload(
     );
 
     if (estimatedLength > URL_LIMIT) {
-      // COMPRESSION: Base64 encode for very long lists
-      const compressed = Buffer.from(value.join(",")).toString("base64");
+      // Use btoa for browser-native Base64 encoding
+      // unescape(encodeURIComponent()) handles potential UTF-8 characters safely
+      const rawString = value.join(",");
+      const compressed = btoa(encodeURIComponent(rawString));
       url.searchParams.set("glist", compressed);
     } else {
       // STANDARD: Repeats key for each item: ?genes=SOX10&genes=KRAS

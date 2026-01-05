@@ -1,7 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
 
-import { Buffer } from "buffer";
-
 export const getGenesFromUrl = (): string[] => {
   const params = new URLSearchParams(window.location.search);
 
@@ -9,7 +7,9 @@ export const getGenesFromUrl = (): string[] => {
   const compressed = params.get("glist");
   if (compressed) {
     try {
-      const decoded = Buffer.from(compressed, "base64").toString("utf-8");
+      // Decode Base64, then handle URI components to support UTF-8 characters
+      const binaryString = atob(compressed);
+      const decoded = decodeURIComponent(binaryString);
 
       return decoded
         .split(",")
@@ -20,7 +20,6 @@ export const getGenesFromUrl = (): string[] => {
     }
   }
 
-  // 2. Fallback to standard multi-param list (?genes=SOX10&genes=KRAS)
   return params
     .getAll("genes")
     .map((g) => g.trim())

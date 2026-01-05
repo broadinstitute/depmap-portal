@@ -22,7 +22,7 @@ export const useExcerptData = (
     const requestKey = `${term}-${useAllGenes}-${currentPage}`;
 
     // 1. Skip if this exact request is already handled
-    if (lastRequestKey.current === requestKey) return;
+    if (lastRequestKey.current === requestKey) return () => {};
 
     const fetchData = async () => {
       setIsLoading(true);
@@ -71,7 +71,7 @@ export const useExcerptData = (
 
     fetchData();
 
-    () => {
+    return () => {
       isCurrent = false;
     };
   }, [term, useAllGenes, termToMatchingGenesObj, currentPage]);
@@ -87,6 +87,6 @@ export const useExcerptData = (
     handlePrevPage: () => setCurrentPage((p) => p - 1),
     totalMatchingGenes: allGenesList.length,
     pageSize: PAGE_SIZE,
-    handleClickCreateTermContext: () => {}, // existing logic
+    handleClickCreateTermContext: () => {},
   };
 };

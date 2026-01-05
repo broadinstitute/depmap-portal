@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -22,14 +22,16 @@ function GeneTea() {
 
   const hasInteracted = useRef(geneSymbolSelections.size > 0);
 
-  // Update the ref if genes are added
-  if (geneSymbolSelections.size > 0) {
+  // Only ever set it to true. Never set it to false. We never want to re-show the tutorial after the initial interaction.
+  if (geneSymbolSelections.size > 0 && !hasInteracted.current) {
     hasInteracted.current = true;
   }
 
-  // Show tutorial as main only if they've NEVER searched and current selection is empty
+  // Show tutorial ONLY if they have never interacted
+  // AND the current search is empty.
   const showTutorialAsMain =
     !hasInteracted.current && geneSymbolSelections.size === 0;
+
   useEffect(() => {
     (async () => {
       const geneMetadata = await fetchMetadata<any>(
@@ -71,6 +73,7 @@ function GeneTea() {
                 isManual
                 isLazy
                 defaultId="top-tea-terms"
+                qsParseOptions={{ arrayFormat: "repeat" }}
               >
                 <TabList className={styles.TabList}>
                   <Tab id="top-tea-terms" className={styles.Tab}>

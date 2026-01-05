@@ -7,7 +7,10 @@ import React, {
   useState,
 } from "react";
 import { SortOption } from "../types";
-import { setQueryStringListWithoutPageReload } from "@depmap/utils/src/url";
+import {
+  deleteSpecificQueryParams,
+  setQueryStringList,
+} from "@depmap/utils/src/url";
 import { getGenesFromUrl } from "../utils";
 
 // TODO organize this file a little better...
@@ -157,10 +160,9 @@ export function GeneTeaFiltersContextProvider({
   );
 
   useEffect(() => {
-    // This will fire every single time geneSymbolSelections changes,
-    // no matter how it was changed (pasted, deleted, cleared).
     const geneList = Array.from(geneSymbolSelections);
-    setQueryStringListWithoutPageReload("genes", geneList, true);
+    deleteSpecificQueryParams(["genes", "gList"]);
+    setQueryStringList("genes", geneList, true);
   }, [geneSymbolSelections]);
 
   const handleSetGeneSymbolSelections = useCallback(
