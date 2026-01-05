@@ -1,6 +1,7 @@
 import os
 import numpy as np
 from typing import List, Optional
+from breadbox.crud.dimension_ids import get_dimension_type_label_mapping_df
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
 from breadbox.db.session import SessionWithUser
@@ -22,6 +23,7 @@ from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 import packed_cor_tables
 
 log = logging.getLogger(__name__)
+from breadbox.utils.profiling import profiled_region
 
 
 def get_associations(
@@ -32,34 +34,20 @@ def get_associations(
 ) -> Associations:
     dataset_id = slice_query.dataset_id
 
-    dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
-    if dataset is None:
-        raise ResourceNotFoundError(f"Could not find dataset {dataset_id}")
+    with profiled_region("in get_associations: get dataset"):
+        dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
+        if dataset is None:
+            raise ResourceNotFoundError(f"Could not find dataset {dataset_id}")
 
-    precomputed_assoc_tables = associations_crud.get_association_tables(
-        db, dataset.id, association_datasets
-    )
+    with profiled_region("in get_associations: get_association_tables"):
+        precomputed_assoc_tables = associations_crud.get_association_tables(
+            db, dataset.id, association_datasets
+        )
     datasets = []
     associated_dimensions = []
 
-    resolved_slice = slice_service.resolve_slice_to_components(db, slice_query,)
-
-    dim_label_cache = {}
-
-    def _get_dimension_label(dimension_type, given_id):
-        # if the dimension type is None, we use the dataset's dimension given_id as the label
-        if not dimension_type:
-            return given_id
-        if dimension_type not in dim_label_cache:
-            dim_label_cache[dimension_type] = get_dimension_type_labels_by_id(
-                db, dimension_type
-            )
-        labels_by_id = dim_label_cache[dimension_type]
-        if given_id in labels_by_id:
-            return labels_by_id[given_id]
-        else:
-            # there is a dimension type, and all valid given_ids are defined in that dimension type. If given_id is not included in the dimension type, we want act like that dimension doesn't exist
-            return None
+    with profiled_region("in get_associations: resolve_slice_to_components"):
+        resolved_slice = slice_service.resolve_slice_to_components(db, slice_query,)
 
     for precomputed_assoc_table in precomputed_assoc_tables:
         assert precomputed_assoc_table.dataset_1_id == dataset.id
@@ -85,38 +73,49 @@ def get_associations(
             filestore_location, precomputed_assoc_table.filename
         )
 
-        correlation_df = packed_cor_tables.read_cor_for_given_id(
-            precomputed_assoc_table_path, resolved_slice.given_id
+        with profiled_region("in get_associations: read_cor_for_given_id"):
+            correlation_df = packed_cor_tables.read_cor_for_given_id(
+                precomputed_assoc_table_path, resolved_slice.given_id
+            )
+
+        # look up all labels with a single query to produce a map that we'll use a little later.
+        label_id_mapping_df = get_dimension_type_label_mapping_df(
+            db,
+            other_dimension_type,
+            given_ids=correlation_df["feature_given_id_1"].tolist(),
         )
+        label_by_given_id = {
+            row["given_id"]: row["label"]
+            for row in label_id_mapping_df.reset_index(drop=True).to_records()
+        }
 
-        for row in correlation_df.to_records():
-            other_dimension_given_id = row["feature_given_id_1"]
-            associated_label = _get_dimension_label(
-                other_dimension_type, other_dimension_given_id
-            )
-            if associated_label is None:
-                log.warning(
-                    f"Could not find {other_dimension_type} with id {other_dimension_given_id}"
+        with profiled_region("in get_associations: create Association records"):
+            for row in correlation_df.to_records():
+                other_dimension_given_id = row["feature_given_id_1"]
+                associated_label = label_by_given_id.get(other_dimension_given_id)
+                if associated_label is None:
+                    log.warning(
+                        f"Could not find {other_dimension_type} with id {other_dimension_given_id}"
+                    )
+                    continue
+
+                log10qvalue = row["log10qvalue"]
+
+                # if correlation is 1 then the qvalue can be 0 which results in log10 qvalue to be -inf
+                # if we see this, bound it at -1e100 to avoid json serialization error
+                if np.isinf(log10qvalue):
+                    log10qvalue = -1e100
+
+                associated_dimensions.append(
+                    Association(
+                        correlation=row["cor"],
+                        log10qvalue=log10qvalue,
+                        other_dataset_id=other_dataset.id,
+                        other_dataset_given_id=other_dataset.given_id,
+                        other_dimension_given_id=other_dimension_given_id,
+                        other_dimension_label=associated_label,
+                    )
                 )
-                continue
-
-            log10qvalue = row["log10qvalue"]
-
-            # if correlation is 1 then the qvalue can be 0 which results in log10 qvalue to be -inf
-            # if we see this, bound it at -1e100 to avoid json serialization error
-            if np.isinf(log10qvalue):
-                log10qvalue = -1e100
-
-            associated_dimensions.append(
-                Association(
-                    correlation=row["cor"],
-                    log10qvalue=log10qvalue,
-                    other_dataset_id=other_dataset.id,
-                    other_dataset_given_id=other_dataset.given_id,
-                    other_dimension_given_id=other_dimension_given_id,
-                    other_dimension_label=associated_label,
-                )
-            )
 
     return Associations(
         dataset_name=dataset.name,

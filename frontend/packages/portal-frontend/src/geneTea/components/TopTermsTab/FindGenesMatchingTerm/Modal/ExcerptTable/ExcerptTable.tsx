@@ -5,6 +5,8 @@ import { Alert, Button } from "react-bootstrap";
 import { useExcerptData } from "../../../../../hooks/useExcerptData";
 import PaginationControls from "./PaginationControls";
 import styles from "../../../../../styles/GeneTea.scss";
+import CopyListButton from "../CopyListButton/CopyListButton";
+import { useFetchGeneList } from "src/geneTea/hooks/useFetchGeneList";
 
 interface ExcerptTableProps {
   useTerms: boolean;
@@ -19,13 +21,12 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
   termToMatchingGenesMap,
   useAllGenes,
 }: ExcerptTableProps) => {
-  // We memoize this so the object reference remains stable
-  // unless the underlying Map actually changes.
   const termToMatchingGenesObj = useMemo(() => {
     return Object.fromEntries(termToMatchingGenesMap);
   }, [termToMatchingGenesMap]);
+
   const {
-    isLoading,
+    isLoading: isDataLoading,
     error,
     pageData,
     totalPages,
@@ -37,8 +38,15 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     pageSize,
   } = useExcerptData(term, termToMatchingGenesObj, useAllGenes);
 
-  const isContentReady = pageData && !error && !isLoading;
-  const isTableVisible = isContentReady && Object.keys(pageData!).length > 0;
+  const { geneList, isLoading: isListLoading } = useFetchGeneList(
+    useTerms,
+    term,
+    [term],
+    termToMatchingGenesObj,
+    useAllGenes
+  );
+
+  const isLoading = isDataLoading || isListLoading;
 
   const renderTableBody = () => {
     if (!pageData) return null;
@@ -81,10 +89,17 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           <Button
             bsStyle="primary"
             bsSize="small"
+            disabled={isLoading}
             onClick={handleClickCreateTermContext}
           >
-            Save Term as Gene Context
+            {isLoading ? "Loading..." : "Save Term as Gene Context"}
           </Button>
+          <CopyListButton
+            key="excerpt-table-copy-button"
+            items={geneList}
+            title={"Copy Gene List"}
+            disabled={isLoading || geneList.length === 0}
+          />
         </div>
       )}
 
@@ -95,7 +110,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
             <th>Excerpt</th>
           </tr>
         </thead>
-        {isTableVisible && renderTableBody()}
+        {renderTableBody()}
       </table>
 
       {isLoading && (
