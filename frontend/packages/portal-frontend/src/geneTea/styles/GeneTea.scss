@@ -215,6 +215,13 @@
       font-size: 14px;
       max-width: 85ch;
     }
+
+    .termSearch {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      max-width: 500px;
+    }
   }
 
   .gettingStarted {

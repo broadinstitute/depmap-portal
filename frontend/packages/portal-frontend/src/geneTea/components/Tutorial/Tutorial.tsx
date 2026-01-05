@@ -28,14 +28,7 @@ const Tutorial = () => {
           set database.
         </p>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            marginBottom: "20px",
-            maxWidth: "500px",
-          }}
-        >
+        <div className={styles.termSearch}>
           <FormControl
             type="text"
             placeholder="Type term"
