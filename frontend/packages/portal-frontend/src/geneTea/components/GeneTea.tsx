@@ -13,6 +13,7 @@ import glossary from "src/geneTea/json/glossary.json";
 import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
 import Tutorial from "./Tutorial/Tutorial";
+import { enabledFeatures } from "@depmap/globals";
 
 function GeneTea() {
   const {
@@ -63,7 +64,7 @@ function GeneTea() {
             <SearchOptionsContainer />
           </div>
           <div className={styles.geneTeaTabsWrapper}>
-            {showTutorialAsMain ? (
+            {showTutorialAsMain && enabledFeatures.gene_tea_tutorial_page ? (
               <div className={styles.tutorialContainer}>
                 <Tutorial />
               </div>

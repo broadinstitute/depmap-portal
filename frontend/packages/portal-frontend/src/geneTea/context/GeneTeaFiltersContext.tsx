@@ -12,6 +12,7 @@ import {
   setQueryStringList,
 } from "@depmap/utils/src/url";
 import { getGenesFromUrl } from "../utils";
+import { enabledFeatures } from "@depmap/globals";
 
 // TODO organize this file a little better...
 export const NUMERIC_FILTER_DEFAULTS = {
@@ -155,6 +156,10 @@ export function GeneTeaFiltersContextProvider({
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
     () => {
       const genes = getGenesFromUrl();
+
+      if (!enabledFeatures.gene_tea_tutorial_page && genes.length === 0) {
+        return new Set(["CAD", "UMPS", "ADSL", "DHODH"]);
+      }
       return new Set(genes);
     }
   );
