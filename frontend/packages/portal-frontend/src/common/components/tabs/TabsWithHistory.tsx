@@ -14,6 +14,11 @@ type TabsWithHistoryProps = {
    */
   queryParamName?: string;
   /**
+   * Usually undefined. Use this to set custom qs parse options like { arrayFormat: "repeat" }
+   *  @default undefined
+   */
+  qsParseOptions?: qs.IStringifyOptions | undefined;
+  /**
    * An optional handler if you need custom behavior when the current tab
    * changes. This cannot be used to control the component.
    */
@@ -68,6 +73,7 @@ function getInitialTabIndex(
 export const TabsWithHistory = ({
   children,
   queryParamName = "tab",
+  qsParseOptions = undefined,
   onChange = () => {},
   onSetInitialIndex = undefined,
   defaultId = undefined,
@@ -122,14 +128,17 @@ export const TabsWithHistory = ({
     // tab.
     const existingParams = qs.parse(window.location.search.substr(1));
     if (!existingParams[queryParamName]) {
-      const queryString = qs.stringify({
-        ...existingParams,
-        [queryParamName]: defaultId || tabIndexMap.current[0],
-      });
+      const queryString = qs.stringify(
+        {
+          ...existingParams,
+          [queryParamName]: defaultId || tabIndexMap.current[0],
+        },
+        qsParseOptions
+      );
 
       window.history.replaceState({}, "", `?${queryString}`);
     }
-  }, [children, queryParamName, defaultId]);
+  }, [children, queryParamName, defaultId, qsParseOptions]);
 
   // When the tab index changes, store that in local state and also reflect the
   // change in the browser's history.
@@ -139,10 +148,13 @@ export const TabsWithHistory = ({
       onChange(nextIndex);
 
       const existingParams = qs.parse(window.location.search.substr(1));
-      const queryString = qs.stringify({
-        ...existingParams,
-        [queryParamName]: tabIndexMap.current[nextIndex],
-      });
+      const queryString = qs.stringify(
+        {
+          ...existingParams,
+          [queryParamName]: tabIndexMap.current[nextIndex],
+        },
+        qsParseOptions
+      );
 
       window.history.pushState({}, "", `?${queryString}`);
 
@@ -155,7 +167,7 @@ export const TabsWithHistory = ({
         new CustomEvent(`changeTab:${tabIndexMap.current[nextIndex]}`)
       );
     },
-    [setIndex, onChange, queryParamName]
+    [setIndex, onChange, queryParamName, qsParseOptions]
   );
 
   // Set up a listener for a custom "clickTab" event and update local state

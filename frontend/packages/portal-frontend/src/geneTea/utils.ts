@@ -1,5 +1,31 @@
 import { breadboxAPI, cached } from "@depmap/api";
 
+export const getGenesFromUrl = (): string[] => {
+  const params = new URLSearchParams(window.location.search);
+
+  // 1. Check for compressed list
+  const compressed = params.get("glist");
+  if (compressed) {
+    try {
+      // Decode Base64, then handle URI components to support UTF-8 characters
+      const binaryString = atob(compressed);
+      const decoded = decodeURIComponent(binaryString);
+
+      return decoded
+        .split(",")
+        .map((g) => g.trim())
+        .filter(Boolean);
+    } catch (e) {
+      console.error("Failed to decode glist", e);
+    }
+  }
+
+  return params
+    .getAll("genes")
+    .map((g) => g.trim())
+    .filter(Boolean);
+};
+
 export function groupStringsByCondition(
   strings: string[],
   condition: (str: string) => boolean

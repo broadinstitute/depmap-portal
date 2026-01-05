@@ -196,12 +196,133 @@
   width: 300px;
 }
 
+.tutorialContainer {
+  min-height: 400px;
+  padding-left: 15px;
+  padding-right: 20px;
+  padding-top: 0px;
+
+  .tutorialHeader {
+    .tutorialTitle {
+      font-family: "Lato";
+      font-weight: 700;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      font-family: "Lato";
+      font-weight: 400;
+      font-size: 14px;
+      max-width: 85ch;
+    }
+
+    .termSearch {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      max-width: 500px;
+    }
+  }
+
+  .gettingStarted {
+    div {
+      p {
+        font-weight: 400;
+        font-size: 14px;
+        max-width: 85ch;
+      }
+    }
+  }
+}
+
+.TutorialExamples {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 25px 10px;
+}
+
+.TutorialExample {
+  width: 30%;
+
+  span:hover {
+    figure {
+      border: 1px solid #4479b2;
+      outline: 2px solid #4479b2;
+    }
+
+    dt button {
+      color: #23527c;
+    }
+  }
+
+  figure {
+    display: flex;
+    justify-content: center;
+    border: 1px solid #132041;
+    border-radius: 4px;
+    margin-top: 10px;
+    max-width: 100%;
+    aspect-ratio: 6/4;
+    overflow: hidden;
+    background-color: #fff;
+
+    button {
+      all: unset;
+      cursor: pointer;
+    }
+
+    img {
+      width: 99%;
+      border-radius: 4px;
+    }
+  }
+
+  dt {
+    max-width: 200px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    button {
+      @extend .pseudoLink;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  }
+
+  dd p {
+    &:last-child {
+      margin: 0;
+    }
+  }
+}
+
+@media (max-width: 1300px) {
+  .TutorialExample {
+    width: 45%;
+  }
+}
+
+@media (max-width: 1000px) {
+  .TutorialExample {
+    width: 100%;
+  }
+}
+
 .modalFooterRow {
   display: flex !important;
   flex-direction: row;
   justify-content: flex-end;
   gap: 10px;
   align-items: center;
+}
+
+.saveAsContextButton {
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
 .inverseButton {

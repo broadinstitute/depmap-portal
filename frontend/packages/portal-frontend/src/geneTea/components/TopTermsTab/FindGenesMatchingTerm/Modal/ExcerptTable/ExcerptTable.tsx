@@ -36,7 +36,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     handleClickCreateTermContext,
     totalMatchingGenes,
     pageSize,
-  } = useExcerptData(term, termToMatchingGenesMap, useAllGenes);
+  } = useExcerptData(term, termToMatchingGenesObj, useAllGenes);
 
   const { geneList, isLoading: isListLoading } = useFetchGeneList(
     useTerms,
