@@ -66,4 +66,3 @@ rule run_cor_analysis_pair_v2:
         default_url_prefix=$(awk -F "=" '/default_url_prefix/ {print $2}' "{{ inputs.sparkles_config.filename }}")
         gsutil -m cp ${default_url_prefix}/{{inputs.pair.job_name}}/1/{{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor .
         """
-

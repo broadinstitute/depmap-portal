@@ -133,10 +133,7 @@ class PipelineRunner(ABC):
             with open(version_file, "r") as f:
                 content = f.read()
                 assert content, f"Version file is empty: {version_file}"
-
-                release_pattern = (
-                    r'"type":\s*"release_taiga_id"[^}]*"dataset_id":\s*"([^"]+)"'
-                )
+                release_pattern = r'let RELEASE_TAIGA_ID="([^"]+)"'
                 match = re.search(release_pattern, content, re.DOTALL)
 
                 if match:
@@ -325,6 +322,8 @@ class PipelineRunner(ABC):
             cmd_parts.append(f"-D S3_STAGING_URL={config['s3_staging_url']}")
         if config.get("publish_dest"):
             cmd_parts.append(f"-D publish_dest={config['publish_dest']}")
+        if config.get("publish_data_prep"):
+            cmd_parts.append("-D publish_data_prep=True")
 
         conseq_args = config.get("conseq_args", [])
         cmd_parts.extend([config["conseq_file"], " ".join(conseq_args)])

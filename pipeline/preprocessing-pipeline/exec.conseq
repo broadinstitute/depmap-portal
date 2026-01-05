@@ -1,5 +1,5 @@
 let STAGING_URL = "gs://preprocessing-pipeline-outputs/conseq/depmap"
-let DEFAULT_DOCKER_IMAGE = "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:ga2-build-23"
+let DEFAULT_DOCKER_IMAGE = "us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:v7"
 let DEFAULT_GCP_PROJECT = "depmap-portal-pipeline"
 let DEFAULT_GCP_ZONE = "us-central*"
 let DSUB_EXE_PATH="dsub"
@@ -42,8 +42,3 @@ executor-template dsub {
     --status '*' --full && \
     gsutil cat {{ config.STAGING_URL }}/logs/{{ parameters.UUID }}/{{ JOB_ID }}.log"""
 }
-
-
-
-
-

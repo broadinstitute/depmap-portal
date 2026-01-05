@@ -23,6 +23,11 @@ class DataPrepPipelineRunner(PipelineRunner):
             action="store_true",
             help="Run external pipeline (default is internal)",
         )
+        parser.add_argument(
+            "--publish",
+            action="store_true",
+            help="Publish data-prep-pipeline generated files to Taiga",
+        )
         return parser
 
     def get_pipeline_config(self, args):
@@ -30,6 +35,7 @@ class DataPrepPipelineRunner(PipelineRunner):
         config = self.build_common_config(args, "data_prep")
         # Add data-prep-specific config
         config["is_external"] = args.external
+        config["publish_data_prep"] = args.publish
 
         return config
 
