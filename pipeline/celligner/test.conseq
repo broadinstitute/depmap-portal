@@ -1,3 +1,0 @@
-include "test-artifacts.conseq"
-include "celligner.conseq"
-include "../exec.conseq"

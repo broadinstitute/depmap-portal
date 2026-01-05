@@ -262,7 +262,7 @@ def get_omics_summary(tc, omics_taiga_id):
     # if the case is wrong on Datatype, fix it (the new capitalization was introduced 25Q2)
     OmicsProfiles.rename(columns={"DataType": "Datatype"}, inplace=True)
 
-    if "Source" not in OmicsProfiles:
+    if "SourceModelCondition" not in OmicsProfiles:
         omics_summary = OmicsProfiles[["ModelID", "Datatype"]].drop_duplicates()
 
         omics_summary = pd.pivot(
@@ -283,7 +283,7 @@ def get_omics_summary(tc, omics_taiga_id):
         )
     else:
         OmicsProfiles["Datatype"][OmicsProfiles["Datatype"] == "wes"] = (
-            OmicsProfiles.Source + "_" + OmicsProfiles.Datatype
+            OmicsProfiles.SourceModelCondition + "_" + OmicsProfiles.Datatype
         )
 
         # RNA (Broad), WGS (Broad), WES (Broad)
@@ -474,7 +474,7 @@ def main(
         taiga_ids = json.load(input_json)
 
     # taiga ids
-    release_taiga_id = get_taiga_id(taiga_ids["release_taiga_id"])
+    depmap_data_taiga_id = get_taiga_id(taiga_ids["depmap_data_taiga_id"])
     depmap_oncref_taiga_id = get_taiga_id(taiga_ids["oncref_taiga_id"])
     rnai_drive_taiga_id = get_taiga_id(taiga_ids["rnai_drive_taiga_id"])
     repurposing_matrix_taiga_id = get_taiga_id(taiga_ids["repurposing_matrix_taiga_id"])
@@ -498,7 +498,7 @@ def main(
     )
 
     tc = create_taiga_client_v3()
-    Model = tc.get(f"{release_taiga_id[0]}/Model")
+    Model = tc.get(f"{depmap_data_taiga_id[0]}/Model")
     assert Model is not None
 
     ####################
@@ -591,7 +591,7 @@ def main(
 
     # WES (Broad), WES (Sanger), WGS (Broad), RNA (Broad)
     omics_summary = get_omics_summary(
-        tc=tc, omics_taiga_id=f"{release_taiga_id[0]}/OmicsProfiles"
+        tc=tc, omics_taiga_id=f"{depmap_data_taiga_id[0]}/OmicsProfiles"
     )
     assert omics_summary.index.is_unique
 

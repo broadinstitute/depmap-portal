@@ -35,10 +35,14 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             variable_name = m.group(1)
             value = m.group(2)
             vars[variable_name] = value
-            # Export a variable for downstream consumers as RELEASE_PERMANAME when the variable is the release permaname
-            if variable_name == "virtual_permaname":
-                vars["RELEASE_PERMANAME"] = value
-                fd.write(f'let RELEASE_PERMANAME="{value}"\n')
+            continue
+
+        m = re.match("(.*)PREPROCESS_VAR\\(([^)]+)\\)(.*)", line, re.DOTALL)
+        if m is not None:
+            line_prefix = m.group(1)
+            var_name = m.group(2)
+            line_suffix = m.group(3)
+            line = line_prefix + '"' + vars[var_name] + '"' + line_suffix
 
         m = re.match("(.*)PREPROCESS_FORMAT_STR\\(([^ ,]+)\\)(.*)", line, re.DOTALL)
         if m is not None:
