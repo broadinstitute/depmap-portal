@@ -299,33 +299,42 @@
 @media (max-width: 1000px) {
   .TutorialExample {
     width: 100%;
-    .modalFooterRow {
-      display: flex !important;
-      flex-direction: row;
-      justify-content: flex-end;
-      gap: 10px;
-      align-items: center;
-    }
+  }
+}
 
-    .inverseButton {
-      background-color: transparent;
-      color: #337ab7;
-      border: 1px solid #337ab7;
-      padding: 6px 12px;
-      border-radius: 4px;
-      font-weight: 400;
-      transition: all 0.2s ease-in-out;
+.modalFooterRow {
+  display: flex !important;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
 
-      &:hover {
-        background-color: #337ab7;
-        color: #ffffff;
-        text-decoration: none;
-      }
+.saveAsContextButton {
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
 
-      &:active {
-        background-color: white;
-        border-color: #0056b3;
-      }
-    }
+.inverseButton {
+  background-color: transparent;
+  color: #337ab7;
+  border: 1px solid #337ab7;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 400;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    background-color: #337ab7;
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  &:active {
+    background-color: white;
+    border-color: #0056b3;
   }
 }
