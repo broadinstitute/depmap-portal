@@ -138,7 +138,7 @@ export const TabsWithHistory = ({
 
       window.history.replaceState({}, "", `?${queryString}`);
     }
-  }, [children, queryParamName, defaultId]);
+  }, [children, queryParamName, defaultId, qsParseOptions]);
 
   // When the tab index changes, store that in local state and also reflect the
   // change in the browser's history.
@@ -167,7 +167,7 @@ export const TabsWithHistory = ({
         new CustomEvent(`changeTab:${tabIndexMap.current[nextIndex]}`)
       );
     },
-    [setIndex, onChange, queryParamName]
+    [setIndex, onChange, queryParamName, qsParseOptions]
   );
 
   // Set up a listener for a custom "clickTab" event and update local state

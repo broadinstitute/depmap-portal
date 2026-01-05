@@ -41,6 +41,11 @@ const Tutorial = () => {
             placeholder="Type term"
             value={inputValue}
             onChange={(e: any) => setInputValue(e.target.value)}
+            onKeyDown={(e: any) => {
+              if (e.key === "Enter" && inputValue.trim()) {
+                handleSelect();
+              }
+            }}
           />
           <Button
             bsStyle="primary"
