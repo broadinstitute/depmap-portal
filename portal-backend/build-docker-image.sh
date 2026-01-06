@@ -46,6 +46,7 @@ python3 ../depmap-shared/generate-py ../depmap-shared/color_palette.json depmap/
 # (Dockerfiles can only reference subdirectories of
 # the context directory)
 mkdir -p dist
+git rev-parse HEAD > dist/git-sha
 ( cd .. && tar -czf portal-backend/dist/additional-files.tar.gz config)
 
 # Build Docker image

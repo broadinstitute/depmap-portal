@@ -24,7 +24,7 @@ RUN pip install poetry==1.5.1 && poetry config virtualenvs.in-project true
 
 RUN mkdir -p /install
 ADD dist/additional-files.tar.gz /install
-
+COPY dist/git-sha /install/git-sha
 COPY --chown=depmap:cds-service . /install/portal-backend
 RUN cd /install/portal-backend && poetry install
 
