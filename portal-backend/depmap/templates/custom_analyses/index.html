@@ -1,0 +1,22 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    Custom Analyses | DepMap Portal
+{% endblock %}
+
+{% block meta_description %}
+    Explore and analyze DepMap data interactively by comparing genes, cell
+    lines, or other features to discover meaningful relationships, patterns,
+    and insights across diverse datasets.
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="custom_analyses"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('custom_analyses.js') }}"></script>
+{% endblock %}

@@ -106,11 +106,15 @@ function PlotConfigSelect({
     }
 
     if (value != null && value !== "") {
-      return { value, label: flattenedOptions[value] || value };
+      const optionLabel = otherProps.isLoading
+        ? ""
+        : flattenedOptions[value] || value;
+
+      return { value, label: optionLabel };
     }
 
     return null;
-  }, [value, flattenedOptions]);
+  }, [value, flattenedOptions, otherProps.isLoading]);
 
   const noOptionForValue = useMemo(() => {
     if (Object.keys(flattenedOptions).length === 0) {

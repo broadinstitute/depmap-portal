@@ -91,6 +91,7 @@ from depmap.gene_tea.views import blueprint as gene_tea_blueprint
 from flask_hunter_profile.flask_blueprint import (
     flask_hunter_profile as flask_hunter_profile_blueprint,
 )
+from depmap.custom_analyses.views import blueprint as custom_analyses_blueprint
 
 log = logging.getLogger(__name__)
 
@@ -341,6 +342,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(flask_hunter_profile_blueprint)
     app.register_blueprint(anchor_screen_dashboard_blueprint)
     app.register_blueprint(gene_tea_blueprint)
+    app.register_blueprint(custom_analyses_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)

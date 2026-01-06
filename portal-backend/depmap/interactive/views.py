@@ -44,9 +44,10 @@ def view_interactive():
 @blueprint.route("/custom_analysis")
 def view_custom_analysis():
     """
-    Entry point for Custom Analysis section
+    Former Entry point for /interactive/custom_analysis.
+    Now redirects to a dedicated Custom Analyses view.
     """
-    return render_template("interactive/index.html")
+    return redirect(url_for("custom_analyses.view_custom_analyses"))
 
 
 ## Cell line url root. This is a weird endpoint, unsure where else to put it ##

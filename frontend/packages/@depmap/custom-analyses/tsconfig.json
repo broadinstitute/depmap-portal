@@ -2,9 +2,11 @@
   "extends": "../../tsconfig.base.json",
   "references": [
     { "path": "../api" },
-    { "path": "../cell-line-selector" },
     { "path": "../common-components" },
-    { "path": "../compute" },
-    { "path": "../globals" }
+    { "path": "../data-explorer-2" },
+    { "path": "../globals" },
+    { "path": "../types" },
+    { "path": "../user-upload" },
+    { "path": "../utils" }
   ]
 }

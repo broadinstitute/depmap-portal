@@ -576,7 +576,7 @@ of your page.
 
 #### Step #1: Create a Jinja template
 
-In `depmap/portal-backend/depmap/templates/MY_APP/` create a new `index.html`
+In `./portal-backend/depmap/templates/MY_APP/` create a new `index.html`
 file. Its contents should look like this.
 
 ```jinja
@@ -614,7 +614,7 @@ file. Its contents should look like this.
 
 #### Step #2: Set up the routing in Flask
 
-In `depmap/portal-backend/depmap/MY_APP/` create a new `views.py` file. Its
+In `./portal-backend/depmap/MY_APP/` create a new `views.py` file. Its
 contents should look like this.
 
 ```python
@@ -643,7 +643,7 @@ and
 
 #### Step #3: Create a new React app
 
-In `depmap/frontend/packages/portal-frontend/src/apps/` create a new
+In `./frontend/packages/portal-frontend/src/apps/` create a new
 `MY_APP.tsx` file. Its contents should look like this.
 
 ```tsx

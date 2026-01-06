@@ -8,20 +8,19 @@
   },
   "dependencies": {
     "@depmap/api": "1.0.0",
-    "@depmap/cell-line-selector": "1.0.0",
-    "@depmap/common-components": "1.0.0",
     "@depmap/compute": "1.0.0",
+    "@depmap/common-components": "1.0.0",
     "@depmap/data-explorer-2": "1.0.0",
     "@depmap/globals": "1.0.0",
-    "json-stable-stringify": "^1.0.2",
-    "qs": "^6.11.0",
+    "@depmap/types": "1.0.0",
+    "@depmap/user-upload": "1.0.0",
+    "@depmap/utils": "1.0.0",
+    "classnames": "^2.3.1",
     "react-bootstrap": "^0.32.3",
-    "react-router-dom": "6.3.0"
+    "qs": "^6.11.0"
   },
   "devDependencies": {
-    "@types/json-stable-stringify": "^1.0.34",
-    "@types/react-bootstrap": "^0.32.24",
-    "@types/react-router-dom": "^5.3.3"
+    "@types/react-bootstrap": "^0.32.24"
   },
   "peerDependencies": {
     "react": "^16.9.35"
