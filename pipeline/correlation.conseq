@@ -20,7 +20,7 @@ rule dep_dep_correlation:
         -u {{ inputs.script.filename }}:cor.py \
         -u {{ inputs.hdf5_utils.filename }}:hdf5_utils.py \
         --len 10 \
-        dep-dep-correlation \
+        dep-dep-correlation-v2 \
         -o job-hash.txt
     """
         
@@ -37,7 +37,7 @@ rule dep_dep_correlation:
         -u {{ inputs.hdf5_utils.filename }}:hdf5_utils.py \
         --skipifexists \
         -n correlation_${HASH} \
-        python ./cor.py dep.hdf5 dep.hdf5 dep_dep_cor.db --label0 {{ inputs.dep.label }} --label1 {{ inputs.dep.label }}
+        python ./cor.py dep.hdf5 dep.hdf5 dep_dep_cor.db --label0 {{ inputs.dep.label }} --label1 {{ inputs.dep.label }} {% if inputs.dep.label == 'Chronos_Combined'%} --drop-sparse-columns 200 {% endif %}
     """
     run "bash" with """
         set -ex

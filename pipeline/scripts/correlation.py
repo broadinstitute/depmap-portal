@@ -8,6 +8,7 @@ sys.path.append(".")
 from hdf5_utils import read_hdf5
 
 LIMIT = 100
+MIN_NUMBER_OF_POINTS = 30
 
 
 def main():
@@ -17,9 +18,11 @@ def main():
     parser.add_argument("--label0")
     parser.add_argument("--label1")
     parser.add_argument("--batchsize", type=int, default=500)
+    parser.add_argument("--drop-sparse-columns", type=int, default=None)
     parser.add_argument("output_file")
 
     args = parser.parse_args()
+
     in_hdf5_0_df = read_hdf5(args.in_hdf5_0)
     in_hdf5_1_df = read_hdf5(args.in_hdf5_1)
 
@@ -28,6 +31,11 @@ def main():
 
     in_hdf5_0_df = in_hdf5_0_df.transpose()
     in_hdf5_1_df = in_hdf5_1_df.transpose()  # initially, cell lines are columns
+
+    if args.drop_sparse_columns is not None:
+        # drop any columns where we don't have a sufficient number of non NA values
+        in_hdf5_0_df = drop_sparse_columns(in_hdf5_0_df, args.drop_sparse_columns)
+        in_hdf5_1_df = drop_sparse_columns(in_hdf5_1_df, args.drop_sparse_columns)
 
     in_hdf5_0_df, in_hdf5_1_df = with_shared_cell_lines(in_hdf5_0_df, in_hdf5_1_df)
     correlations_df = create_correlations_df(in_hdf5_0_df, in_hdf5_1_df, args.batchsize)
@@ -68,6 +76,15 @@ def main():
     rec = c.fetchone()
     assert rec[0] == 0, "Found {} dups".format(rec[0])
     c.close()
+
+
+def drop_sparse_columns(df, min_samples):
+    # drop any columns which have fewer than min_samples with non-NA values
+    col_mask = (~df.isna()).apply(sum) > min_samples
+    print(
+        f"dropping {col_mask[~col_mask].index} columns which have < {min_samples} non-NA samples"
+    )
+    return ge25q3.loc[:, col_mask].copy()
 
 
 def labels_to_df(labels):
@@ -139,9 +156,6 @@ def top_ranked_indexes_per_row_and_col(matrix):
     col_indexes = np.tile(range(num_cols), limit_per_col)
 
     return top_ranked_cols_per_row, top_ranked_rows_per_col, row_indexes, col_indexes
-
-
-MIN_NUMBER_OF_POINTS = 30
 
 
 def fast_cor_with_missing(x, y):
