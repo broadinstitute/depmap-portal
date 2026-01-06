@@ -262,28 +262,25 @@ def add_dataset(
     if dataset_metadata is not None:
         dataset_metadata_ = dataset_metadata.dataset_metadata
 
-    try:
-        r = utils.cast_celery_task(run_upload_dataset).apply(
-            args=[
-                name,
-                units,
-                feature_type,
-                sample_type,
-                data_type,
-                data_file_dict,
-                value_type,
-                priority,
-                taiga_id,
-                allowed_values,
-                is_transient,
-                user,
-                group_id,
-                dataset_metadata_,
-                "csv",
-            ]
-        )
-    except PermissionError as e:
-        raise HTTPException(404, detail=str(e))
+    r = utils.cast_celery_task(run_upload_dataset).apply(
+        args=[
+            name,
+            units,
+            feature_type,
+            sample_type,
+            data_type,
+            data_file_dict,
+            value_type,
+            priority,
+            taiga_id,
+            allowed_values,
+            is_transient,
+            user,
+            group_id,
+            dataset_metadata_,
+            "csv",
+        ]
+    )
 
     response = utils.format_task_status(r)
 
