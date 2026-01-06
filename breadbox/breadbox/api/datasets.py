@@ -203,11 +203,20 @@ def get_feature_data(
     return feature_data
 
 
-from pydantic import Json
+from pydantic import Json, BaseModel
+from fastapi import status
+
+
+class ErrorResponse(BaseModel):
+    detail: str
+    status_code: str
 
 
 @router.post(
-    "/", operation_id="add_dataset", response_model=AddDatasetResponse,
+    "/",
+    operation_id="add_dataset",
+    response_model=AddDatasetResponse,
+    responses={status.HTTP_400_BAD_REQUEST: {"model": ErrorResponse}},
 )
 def add_dataset(
     name: str = Form(..., description="Name of dataset, used for display"),
