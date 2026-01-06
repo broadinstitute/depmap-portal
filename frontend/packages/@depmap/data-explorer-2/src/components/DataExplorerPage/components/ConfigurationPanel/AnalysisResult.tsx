@@ -115,7 +115,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
 
   const clearAnalysis = useCallback(() => {
     const params = qs.parse(window.location.search.substr(1));
-    const queryString = qs.stringify(omit(params, "task"));
+    const queryString = qs.stringify(omit(params, "task", "analysis"));
     window.history.pushState({}, "", `?${queryString}`);
     setTaskId(null);
   }, []);
