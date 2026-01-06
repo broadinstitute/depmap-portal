@@ -2,6 +2,8 @@ from enum import Enum
 import click
 from flask.cli import with_appcontext
 from flask import current_app
+
+from depmap.data_access import breadbox_dao
 from depmap.interactive import interactive_utils
 from depmap.interactive.nonstandard.models import NonstandardMatrix
 from depmap.access_control import all_records_visible
@@ -80,3 +82,41 @@ def _get_nonstandard_dataset_issues():
                 ),
             )
     return issues
+
+
+@click.command("check_legacy_db_mirrors_breadbox")
+@with_appcontext
+def check_legacy_db_mirrors_breadbox():
+    """
+    Check that datasets in the legacy database use the same taiga IDs as their corresponding breadbox datasets.
+    Any datasets where the legacy dataset ID matches the breadbox given ID should also have matching taiga IDs.
+    This ensures that the data versions are used in both places - even though they're configured separately.
+    At this point, we also expect that all legacy dataset IDs exist in the breadbox database.
+    """
+    legacy_dataset_ids = interactive_utils.get_all_dataset_ids()
+    all_breadbox_given_ids = breadbox_dao.get_breadbox_given_ids()
+
+    issues = []
+    for legacy_dataset_id in legacy_dataset_ids:
+        # if the legacy dataset ID is also a breadbox given ID, check that the taiga IDs match
+        if legacy_dataset_id in all_breadbox_given_ids:
+            legacy_taiga_id = interactive_utils.get_taiga_id(legacy_dataset_id)
+            breadbox_taiga_id = breadbox_dao.get_dataset_taiga_id(legacy_dataset_id)
+
+            if legacy_taiga_id != breadbox_taiga_id:
+                issues.append(
+                    "Mismatch in taiga IDs for dataset '{}': legacy db taiga ID is '{}', breadbox taiga ID is '{}'".format(
+                        legacy_dataset_id, legacy_taiga_id, breadbox_taiga_id
+                    )
+                )
+        else:
+            issues.append(
+                "Legacy dataset ID '{}' not found in breadbox given IDs".format(
+                    legacy_dataset_id
+                )
+            )
+    if issues:
+        issue_text = "Unexpected mismatches detected between the legacy DB and breadbox DB:\n"
+        for issue in issues:
+            issue_text += "\n\t{}".format(issue)
+        raise AssertionError(issue_text)

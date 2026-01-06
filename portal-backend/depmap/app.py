@@ -428,6 +428,7 @@ def register_commands(app: Flask):
     app.cli.add_command(post_deploy_commands.check_data_issues)
     app.cli.add_command(post_deploy_commands.check_download_data)
     app.cli.add_command(post_deploy_commands.check_nonstandard_datasets)
+    app.cli.add_command(post_deploy_commands.check_legacy_db_mirrors_breadbox)
     app.cli.add_command(spawn_commands.run_worker)
     app.cli.add_command(spawn_commands.run_dev_worker)
     app.cli.add_command(spawn_commands.webpack)
