@@ -10,7 +10,7 @@ import { SortedCorrelations } from "../models/CorrelationPlot";
 type FeatureType = "compound" | "gene";
 
 function useCorrelationAnalysisData(
-  selectedDataset: any, // Compound: object with IDs | Gene: { displayName, datasetId }
+  selectedDataset: any, //  DRCDatasetOptions | GeneCorrelationDatasetOption,
   featureId: string,
   featureName: string,
   featureType: FeatureType
@@ -37,7 +37,6 @@ function useCorrelationAnalysisData(
         setIsLoading(true);
         setHasError(false);
 
-        // --- PATH A: GENE LOGIC ---
         if (featureType === "gene") {
           const res = await bapi.fetchAssociations({
             dataset_id: selectedDataset.datasetId,
@@ -91,10 +90,7 @@ function useCorrelationAnalysisData(
           setCorrelatedDatasets(Object.keys(featureDatasetCorrelates));
           setCorrelationAnalysisData(filtered);
           setDoseColors([]); // No dose colors for genes
-        }
-
-        // --- PATH B: COMPOUND LOGIC (UNCHANGED) ---
-        else {
+        } else {
           const aucDataset = selectedDataset.log_auc_dataset_given_id!;
           const doseViabilityDataset =
             selectedDataset.viability_dataset_given_id;
