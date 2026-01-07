@@ -18,7 +18,6 @@ def main():
     parser.add_argument("--label0")
     parser.add_argument("--label1")
     parser.add_argument("--batchsize", type=int, default=500)
-    parser.add_argument("--drop-sparse-columns", type=int, default=None)
     parser.add_argument("output_file")
 
     args = parser.parse_args()
@@ -32,10 +31,9 @@ def main():
     in_hdf5_0_df = in_hdf5_0_df.transpose()
     in_hdf5_1_df = in_hdf5_1_df.transpose()  # initially, cell lines are columns
 
-    if args.drop_sparse_columns is not None:
-        # drop any columns where we don't have a sufficient number of non NA values
-        in_hdf5_0_df = drop_sparse_columns(in_hdf5_0_df, args.drop_sparse_columns)
-        in_hdf5_1_df = drop_sparse_columns(in_hdf5_1_df, args.drop_sparse_columns)
+    # drop any columns where we don't have a sufficient number of non NA values
+    in_hdf5_0_df = drop_sparse_columns(in_hdf5_0_df, args.label0)
+    in_hdf5_1_df = drop_sparse_columns(in_hdf5_1_df, args.label1)
 
     in_hdf5_0_df, in_hdf5_1_df = with_shared_cell_lines(in_hdf5_0_df, in_hdf5_1_df)
     correlations_df = create_correlations_df(in_hdf5_0_df, in_hdf5_1_df, args.batchsize)
@@ -78,13 +76,36 @@ def main():
     c.close()
 
 
-def drop_sparse_columns(df, min_samples):
+def _as_comma_delimited(values):
+    return ", ".join([str(v) for v in values])
+
+
+def _list_summary(values):
+    if len(values) > 20:
+        l_as_str = (
+            _as_comma_delimited(values[:5]) + " ... " + _as_comma_delimited(values[-5:])
+        )
+    else:
+        l_as_str = _as_comma_delimited(values)
+    return "[{}] ({})".format(l_as_str, len(values))
+
+
+def drop_sparse_columns(df, label):
+    # Require that we have at least 90% of the median number of samples represented in order to keep a column
+    samples_per_column = (~df.isna()).apply(sum)
+    min_samples = samples_per_column.median() * 0.10
+
     # drop any columns which have fewer than min_samples with non-NA values
-    col_mask = (~df.isna()).apply(sum) > min_samples
+    col_mask = samples_per_column > min_samples
     print(
-        f"dropping {col_mask[~col_mask].index} columns which have < {min_samples} non-NA samples"
+        "dropping {} columns out of {} columns from {} which have < {} non-NA samples".format(
+            _list_summary(list(col_mask[~col_mask].index)),
+            len(col_mask),
+            label,
+            min_samples,
+        )
     )
-    return ge25q3.loc[:, col_mask].copy()
+    return df.loc[:, col_mask].copy()
 
 
 def labels_to_df(labels):
