@@ -83,7 +83,6 @@ class UserOverrideMiddleware:
                 # if we don't have a cookie set with which user to use, then the value that we
                 # have on the this instance, configured on startup
                 user_override = self.user_override
-            user_override = "anonymous"
 
             if user_override is not None:
                 # if the two methods to find the override don't actually yield a valid value
