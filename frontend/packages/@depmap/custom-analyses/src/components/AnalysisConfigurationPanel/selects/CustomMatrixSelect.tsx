@@ -161,7 +161,7 @@ function CustomMatrixSelect({
         <div style={{ paddingRight: "10px" }}>
           Upload a csv with the format:
         </div>
-        <table className="custom_csv_example_table">
+        <table className={styles.custom_csv_example_table}>
           <tbody>
             <tr>
               <td>{entity} 1</td>
@@ -198,7 +198,7 @@ function CustomMatrixSelect({
       {callToAction}
       <FileUpload onChange={handleFileChange} />
       {uploadState.isLoading && <span className="Select-loading" />}
-      <div className="has-error">{uploadState.messageWarning || ""}</div>
+      <div className={styles.has_error}>{uploadState.messageWarning || ""}</div>
       <div>{uploadState.messageDetail || ""}</div>
     </div>
   );
