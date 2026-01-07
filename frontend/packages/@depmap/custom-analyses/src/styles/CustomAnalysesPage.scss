@@ -1,0 +1,187 @@
+.CustomAnalysesPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100vw;
+
+  & > div {
+    width: 100%;
+    max-width: 1920px;
+  }
+}
+
+.CustomAnalysesTitle {
+  h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: bold;
+    color: #333;
+  }
+}
+
+.AnalysisConfigurationPanel {
+  display: flex;
+  width: 100%;
+  border: 1px solid black;
+  margin-top: 30px;
+}
+
+.AnalysisConfigLayout {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(2, auto);
+  width: 100%;
+  height: auto;
+  counter-reset: grid-counter -1;
+
+  > * {
+    min-width: 0; // Prevents overflow issues
+    min-height: 200px;
+    padding: 1rem;
+    position: relative;
+    counter-increment: grid-counter;
+
+    // Add the number pseudo-element
+    &::before {
+      content: counter(grid-counter);
+      position: absolute;
+      top: 16.5px;
+      left: 15px;
+      background-color: #333;
+      color: white;
+      width: 1.5rem;
+      height: 1.5rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.875rem;
+      font-weight: bold;
+    }
+
+    &:first-child::before,
+    &:empty::before {
+      display: none;
+    }
+
+    &:nth-child(odd) {
+      border-right: 1px solid black;
+    }
+
+    &:nth-child(1),
+    &:nth-child(2) {
+      border-bottom: 1px solid black;
+    }
+  }
+}
+
+.AnalysisConfigSection {
+  padding: 25px;
+  padding-top: 15px;
+
+  .title {
+    margin-bottom: 14px;
+  }
+
+  &:not(:first-child) {
+    .title {
+      margin-left: 12px;
+    }
+  }
+}
+
+.labeledRadio {
+  label {
+    font-weight: normal;
+    cursor: pointer;
+  }
+
+  span,
+  strong {
+    margin-left: 5px;
+  }
+}
+
+.datasetDisplayName {
+  width: 300px;
+  padding: 8px 30px 8px 15px;
+  color: #777;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #fff;
+}
+
+.AnalysisKindSelect {
+  @extend .labeledRadio;
+}
+
+.AnalysisSourceSelect {
+  .inset {
+    margin-left: 19px;
+    margin-bottom: 10px;
+  }
+}
+
+.AnalysisDimensionSelectContainer {
+  & > div > span {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+.AnalysisDimensionSelect {
+  width: 100%;
+}
+
+.AnalysisContextSelectContainer {
+  & > div > div > span {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+.AnalysisContextSelect {
+  width: 100%;
+}
+
+.CustomAnalysesControls {
+  display: flex;
+  padding: 15px 0;
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.modal {
+  :global .progress {
+    transition: opacity 1200ms ease-out;
+    opacity: 1;
+  }
+
+  &.success {
+    :global .progress {
+      opacity: 0;
+    }
+  }
+}
+
+.result {
+  text-align: center;
+  opacity: 0;
+  transition: opacity 300ms ease-in;
+
+  &.fadeIn {
+    opacity: 1;
+  }
+
+  span {
+    width: 100%;
+    color: #5cb85c;
+    font-size: 100px;
+  }
+
+  p {
+    margin: 30px 0 20px 0;
+    font-size: 18px;
+  }
+}
