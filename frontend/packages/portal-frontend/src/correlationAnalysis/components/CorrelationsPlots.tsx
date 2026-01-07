@@ -9,6 +9,7 @@ import {
 } from "../models/CorrelationPlot";
 
 interface CorrelationsPlotsProps {
+  featureType: "compound" | "gene";
   correlatedDatasetsToShow: string[];
   dosesToFilter: string[];
   doseColors: { hex: string | undefined; dose: string }[];
@@ -22,6 +23,7 @@ interface CorrelationsPlotsProps {
 
 export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
   const {
+    featureType,
     correlatedDatasetsToShow,
     dosesToFilter,
     doseColors,
@@ -93,9 +95,11 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
                 correlatedDatasetName={correlatedDataset}
                 data={
                   Object.values(
-                    filteredDosesForCorrelatedDatasetVolcanoData(
-                      volcanoDataForCorrelatedDatasets[correlatedDataset]
-                    )
+                    featureType === "gene"
+                      ? volcanoDataForCorrelatedDatasets[correlatedDataset]
+                      : filteredDosesForCorrelatedDatasetVolcanoData(
+                          volcanoDataForCorrelatedDatasets[correlatedDataset]
+                        )
                   ) as VolcanoPlotData[]
                 }
                 selectedFeatures={

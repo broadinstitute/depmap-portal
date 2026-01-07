@@ -3,6 +3,7 @@ import Select from "react-select";
 import styles from "../styles/CorrelationAnalysis.scss";
 import { DRCDatasetOptions } from "@depmap/types";
 import { sortDoseColorsByValue, formatDoseString } from "../utilities/helper";
+import { GeneCorrelationDatasetOption } from "../types";
 
 const customStyles = {
   multiValue: (s: any) => ({
@@ -37,7 +38,8 @@ export interface FilterOption {
 
 interface CorrelationFiltersProps {
   selectedDatasetOption: { value: string; label: string } | null;
-  datasetOptions: DRCDatasetOptions[];
+  compoundDatasetOptions: DRCDatasetOptions[];
+  geneDatasetOptions: GeneCorrelationDatasetOption[];
   onChangeDataset: (
     selection: {
       value: string;
@@ -49,18 +51,21 @@ interface CorrelationFiltersProps {
   doses: string[];
   selectedDoses: string[];
   onChangeDoses: (doses: string[]) => void;
+  featureType: "gene" | "compound";
 }
 
 function CorrelationFilters(props: CorrelationFiltersProps) {
   const {
     selectedDatasetOption,
-    datasetOptions,
+    compoundDatasetOptions,
+    geneDatasetOptions,
     onChangeDataset,
     correlatedDatasets,
     onChangeCorrelatedDatasets,
     doses,
     selectedDoses,
     onChangeDoses,
+    featureType,
   } = props;
 
   const handleDosesChange = React.useCallback(
@@ -113,7 +118,7 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
     [selectedDoses]
   );
 
-  const datasetSelectOptions = datasetOptions.map(
+  const compoundDatasetSelectOptions = compoundDatasetOptions.map(
     (compoundDataset: DRCDatasetOptions) => {
       return {
         value: compoundDataset.log_auc_dataset_given_id,
@@ -122,14 +127,34 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
     }
   );
 
+  const geneDatasetSelectOptions = geneDatasetOptions.map(
+    (geneDataset: GeneCorrelationDatasetOption) => {
+      return {
+        value: geneDataset.datasetId,
+        label: geneDataset.displayName,
+      };
+    }
+  );
+
+  const datasetSelectOptions =
+    featureType === "compound"
+      ? compoundDatasetSelectOptions
+      : geneDatasetSelectOptions;
+
   return (
     <div className={styles.FiltersPanel}>
       <h4 className={styles.sectionTitle}>Dataset</h4>
       <Select
         placeholder="Select..."
         defaultValue={{
-          label: datasetOptions[0].display_name,
-          value: datasetOptions[0].log_auc_dataset_given_id,
+          label:
+            featureType === "compound"
+              ? compoundDatasetOptions[0].display_name
+              : geneDatasetOptions[0].displayName,
+          value:
+            featureType === "compound"
+              ? compoundDatasetOptions[0].log_auc_dataset_given_id
+              : geneDatasetOptions[0].datasetId,
         }}
         value={selectedDatasetOption}
         options={datasetSelectOptions}
@@ -144,16 +169,20 @@ function CorrelationFilters(props: CorrelationFiltersProps) {
       <h4 className={styles.sectionTitle} style={{ paddingBottom: "4px" }}>
         Filters
       </h4>
-      <h4>Dose</h4>
-      <Select
-        placeholder="Select..."
-        defaultOptions
-        options={doseOptions}
-        value={formattedSelectedDoses || []}
-        isMulti
-        onChange={handleDosesChange}
-        id="corr-analysis-filter-by-dose"
-      />
+      {featureType === "compound" && (
+        <>
+          <h4>Dose</h4>
+          <Select
+            placeholder="Select..."
+            defaultOptions
+            options={doseOptions}
+            value={formattedSelectedDoses || []}
+            isMulti
+            onChange={handleDosesChange}
+            id="corr-analysis-filter-by-dose"
+          />
+        </>
+      )}
       <h4>Correlated Dataset</h4>
       <Select
         placeholder="Select..."

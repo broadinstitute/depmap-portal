@@ -15,31 +15,51 @@ import {
 import { formatDoseString } from "../utilities/helper";
 import { DRCDatasetOptions } from "@depmap/types";
 import { useCallback, useState, useMemo } from "react";
+import { GeneCorrelationDatasetOption } from "../types";
 
 interface CorrelationAnalysisProps {
-  datasetOptions: DRCDatasetOptions[];
-  compoundId: string;
-  compoundName: string;
+  compoundDatasetOptions: DRCDatasetOptions[];
+  geneDatasetOptions: GeneCorrelationDatasetOption[];
+  featureId: string;
+  featureName: string;
+  featureType: "gene" | "compound";
 }
 
 export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
-  const { compoundId, compoundName, datasetOptions } = props;
-  const [selectedDataset, setSelectedDataset] = useState<DRCDatasetOptions>(
-    datasetOptions[0]
+  const {
+    featureId,
+    featureName,
+    compoundDatasetOptions,
+    geneDatasetOptions,
+    featureType,
+  } = props;
+  const [selectedDataset, setSelectedDataset] = useState<any>(
+    featureType === "compound"
+      ? compoundDatasetOptions[0]
+      : geneDatasetOptions[0]
   );
   const [selectedDatasetOption, setSelectedDatasetOption] = useState<{
     value: string;
     label: string;
   }>({
-    value: datasetOptions[0].log_auc_dataset_given_id!,
-    label: datasetOptions[0].display_name,
+    value:
+      featureType === "compound"
+        ? compoundDatasetOptions[0].log_auc_dataset_given_id!
+        : geneDatasetOptions[0].datasetId,
+    label:
+      featureType === "compound"
+        ? compoundDatasetOptions[0].display_name
+        : geneDatasetOptions[0].displayName,
   });
 
   const [
     selectedCorrelatedDatasets,
     setSelectedCorrelatedDatasets,
   ] = React.useState<string[]>([]);
+
+  // Only relevant if featureType is "compound"
   const [selectedDoses, setSelectedDoses] = React.useState<string[]>([]);
+
   const [allSelectedLabels, setAllSelectedLabels] = React.useState<{
     [key: string]: string[];
   }>({});
@@ -72,7 +92,12 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     doseColors,
     isLoading,
     hasError,
-  } = useCorrelationAnalysisData(selectedDataset, compoundId, compoundName);
+  } = useCorrelationAnalysisData(
+    selectedDataset,
+    featureId,
+    featureName,
+    featureType
+  );
 
   const doses = useMemo(() => doseColors.map((doseColor) => doseColor.dose), [
     doseColors,
@@ -82,16 +107,21 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     (selection: { value: string; label: string } | null) => {
       if (selection) {
         setSelectedDataset(
-          datasetOptions.find(
-            (opt: DRCDatasetOptions) =>
-              opt.log_auc_dataset_given_id === selection.value
-          )!
+          featureType === "compound"
+            ? compoundDatasetOptions.find(
+                (opt: DRCDatasetOptions) =>
+                  opt.log_auc_dataset_given_id === selection.value
+              )!
+            : geneDatasetOptions.find(
+                (opt: GeneCorrelationDatasetOption) =>
+                  opt.datasetId === selection.value
+              )
         );
         setSelectedDatasetOption(selection);
         setSelectedDoses([]);
       }
     },
-    [datasetOptions]
+    [compoundDatasetOptions, geneDatasetOptions, featureType]
   );
 
   const onChangeCorrelatedDatasets = useCallback(
@@ -112,63 +142,58 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
   }, []);
 
   React.useEffect(() => {
-    // if no filter applied, show all correlation analysis data
-    if (
+    const isGene = featureType === "gene";
+
+    // Determine if we should show the full list immediately
+    // If it's a gene, we only check if datasets or specific labels are filtered
+    const noFiltersApplied =
+      (isGene || selectedDoses.length === 0) &&
       selectedCorrelatedDatasets.length === 0 &&
-      selectedDoses.length === 0 &&
-      Object.keys(allSelectedLabels).length === 0
-    ) {
+      Object.keys(allSelectedLabels).length === 0;
+
+    if (noFiltersApplied) {
       setFilteredTableCorrelationAnalysisData(correlationAnalysisData);
     } else {
-      // keep list of all selected plot or table features
       const selectedDataWithLabelFront: any[] = [];
 
-      // keep only selected feature types and selected doses and unselected features in plot or table
       const filtered = correlationAnalysisData.filter((data) => {
-        let keepCondition;
-        // We want to keep data where feature type and dose is selected
-        if (selectedCorrelatedDatasets.length && selectedDoses.length) {
-          keepCondition =
-            selectedCorrelatedDatasets.includes(data["featureDataset"]) &&
-            typeof data["dose"] === "string" &&
-            selectedDoses.includes(data["dose"]);
-        }
-        // keep data where feature type is selected
-        else if (selectedCorrelatedDatasets.length) {
-          keepCondition = selectedCorrelatedDatasets.includes(
-            data["featureDataset"]
-          );
-        }
-        // keep data where dose is selected
-        else if (selectedDoses.length) {
-          keepCondition =
-            typeof data["dose"] === "string" &&
-            selectedDoses.includes(data["dose"]);
-        } else {
-          keepCondition = data !== null;
-        }
+        // If it's a gene, we ignore the dose filter (always true).
+        // If it's a compound, we check if doses are selected and if this item matches.
+        const matchesDose =
+          isGene ||
+          selectedDoses.length === 0 ||
+          (typeof data["dose"] === "string" &&
+            selectedDoses.includes(data["dose"]));
 
-        // We also want to remove features that are selected so that we can move those data to front of list later
-        const removeCondition =
+        const matchesDataset =
+          selectedCorrelatedDatasets.length === 0 ||
+          selectedCorrelatedDatasets.includes(data["featureDataset"]);
+
+        const keepCondition = matchesDose && matchesDataset;
+
+        const isSelectedInUI =
           data["featureDataset"] in allSelectedLabels &&
           allSelectedLabels[data["featureDataset"]].includes(data["feature"]);
-        // data that should be moved to front must additionally be filtered
-        if (removeCondition && keepCondition) {
+
+        if (isSelectedInUI && keepCondition) {
           selectedDataWithLabelFront.push(data);
         }
 
-        return keepCondition && !removeCondition;
+        return keepCondition && !isSelectedInUI;
       });
 
-      // Sort by feature label first, then by dose
+      // 2. Sort selected items: by feature label, then dose (if applicable)
       selectedDataWithLabelFront.sort((a, b) => {
         if (a["feature"] === b["feature"]) {
-          return a["dose"] - b["dose"]; // sort by dose within the same feature
+          // Only sort by dose if doses exist and we aren't in a gene context
+          if (!isGene && a["dose"] !== b["dose"]) {
+            return (a["dose"] || "").localeCompare(b["dose"] || "");
+          }
+          return 0;
         }
-        return a["feature"].localeCompare(b["feature"]); // otherwise sort by type
+        return a["feature"].localeCompare(b["feature"]);
       });
 
-      // move selected features from plot or table up to front of data list
       setFilteredTableCorrelationAnalysisData(
         selectedDataWithLabelFront.concat(filtered)
       );
@@ -178,10 +203,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
     selectedDoses,
     allSelectedLabels,
     correlationAnalysisData,
-    compoundId,
+    featureId,
+    featureType,
   ]);
 
   const volcanoDataForCorrelatedDataset = React.useMemo(() => {
+    const isGene = featureType === "gene";
+
     if (correlationAnalysisData.length) {
       return correlationAnalysisData.reduce(
         (acc: VolcanoDataForCorrelatedDataset, curRecord) => {
@@ -189,7 +217,11 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
           if (!acc[key]) {
             acc[key] = {};
           }
-          const doseCategory = curRecord.dose;
+
+          // For genes, we use a single static category since there are no doses.
+          // For compounds, we fall back to the record's dose.
+          const doseCategory = isGene ? "Correlation" : curRecord.dose;
+
           if (doseCategory) {
             if (!(doseCategory in acc[key])) {
               acc[key][doseCategory] = {
@@ -199,11 +231,13 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                 text: [],
                 isSignificant: [],
                 name: doseCategory,
-                color: doseColors.find(
-                  (doseColor) => doseColor.dose === doseCategory
-                )?.hex,
+                // Genes don't have doseColors, so we provide a default color
+                color: isGene
+                  ? "#337ab7"
+                  : doseColors.find((d) => d.dose === doseCategory)?.hex,
               };
             }
+
             const columnNamesToPlotVariables: Record<
               string,
               keyof typeof acc[string][string]
@@ -217,26 +251,35 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
               ([colName, volcanoDataProp]) => {
                 const value = curRecord[colName];
                 const prop = volcanoDataProp as keyof typeof acc[string][string];
+
                 if (colName === "log10qvalue") {
                   const val = -(value as number);
                   (acc[key][doseCategory][prop] as number[]).push(val);
                 } else if (colName === "feature") {
                   const label = curRecord[colName];
-                  const text =
-                    `<b>${label}</b><br>` +
-                    `<b>Dose (uM)</b>: ${formatDoseString(
+
+                  // Construct tooltip text
+                  let text = `<b>${label}</b><br>`;
+
+                  // Only add Dose info if this is NOT a gene
+                  if (!isGene) {
+                    text += `<b>Dose (uM)</b>: ${formatDoseString(
                       curRecord["dose"]
-                    )}<br>` +
+                    )}<br>`;
+                  }
+
+                  text +=
                     `<b>Correlation:</b> ${curRecord["correlation"].toFixed(
                       4
                     )}<br>` +
                     `<b>-log10(q value):</b> ${curRecord["log10qvalue"].toFixed(
                       4
                     )}<br>`;
+
                   (acc[key][doseCategory][prop] as string[]).push(text);
                   acc[key][doseCategory]["label"].push(label);
                 } else {
-                  (acc[key][doseCategory][prop] as number[]).push(value);
+                  (acc[key][doseCategory][prop] as any[]).push(value);
                 }
               }
             );
@@ -249,7 +292,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       );
     }
     return {};
-  }, [correlationAnalysisData, doseColors]);
+  }, [correlationAnalysisData, doseColors, featureType]); // Added featureType to dependencies
 
   const correlatedDatasetsToShow = useMemo(() => {
     return selectedCorrelatedDatasets.length
@@ -342,6 +385,7 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
         volcanoDataForCorrelatedDatasets={volcanoDataForCorrelatedDataset}
         correlatedDatasetSelectedLabels={allSelectedLabels}
         forwardSelectedLabels={forwardSelectedLabels}
+        featureType={featureType}
       />
     );
   }
@@ -351,13 +395,15 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
       <div className={styles.tabFilters}>
         <CorrelationFilters
           selectedDatasetOption={selectedDatasetOption}
-          datasetOptions={datasetOptions}
+          compoundDatasetOptions={compoundDatasetOptions}
+          geneDatasetOptions={geneDatasetOptions}
           onChangeDataset={onChangeDataset}
           correlatedDatasets={correlatedDatasets}
           onChangeCorrelatedDatasets={onChangeCorrelatedDatasets}
           doses={doses} // The list of doses allowed for the current selected dataset
           selectedDoses={selectedDoses} // The list of doses the user has selected to filter on
           onChangeDoses={onChangeDoses}
+          featureType={featureType}
         />
       </div>
 
@@ -398,7 +444,8 @@ export default function CorrelationAnalysis(props: CorrelationAnalysisProps) {
                 isLoading={isLoading}
                 hasError={hasError}
                 data={filteredTableCorrelationAnalysisData}
-                compound={compoundName}
+                featureName={featureName}
+                featureType={featureType}
                 selectedRows={selectedRows}
                 onChangeSelections={handleChangeTableSelections}
               />
