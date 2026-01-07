@@ -144,7 +144,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
     const baseUrl = isElara ? "../elara/custom_analysis" : "../custom_analyses";
 
     // The Custom Analyses page embeds an encoded version of all its
-    // into the query string so it can be easily re-run.
+    // parameters into the query string so it can be easily re-run.
     const params = new URLSearchParams(window.location.search);
     const base64EncodedQs = params.get("analysis");
     const queryString = base64EncodedQs ? atob(base64EncodedQs) : "";
