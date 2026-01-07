@@ -32,8 +32,8 @@ def main():
     in_hdf5_1_df = in_hdf5_1_df.transpose()  # initially, cell lines are columns
 
     # drop any columns where we don't have a sufficient number of non NA values
-    in_hdf5_0_df = drop_sparse_columns(in_hdf5_0_df, args.label0)
-    in_hdf5_1_df = drop_sparse_columns(in_hdf5_1_df, args.label1)
+    in_hdf5_0_df = mask_sparse_columns(in_hdf5_0_df, args.label0)
+    in_hdf5_1_df = mask_sparse_columns(in_hdf5_1_df, args.label1)
 
     in_hdf5_0_df, in_hdf5_1_df = with_shared_cell_lines(in_hdf5_0_df, in_hdf5_1_df)
     correlations_df = create_correlations_df(in_hdf5_0_df, in_hdf5_1_df, args.batchsize)
@@ -90,7 +90,7 @@ def _list_summary(values):
     return "[{}] ({})".format(l_as_str, len(values))
 
 
-def drop_sparse_columns(df, label):
+def mask_sparse_columns(df, label):
     # Require that we have at least 90% of the median number of samples represented in order to keep a column
     samples_per_column = (~df.isna()).apply(sum)
     min_samples = samples_per_column.median() * 0.10
@@ -105,7 +105,15 @@ def drop_sparse_columns(df, label):
             min_samples,
         )
     )
-    return df.loc[:, col_mask].copy()
+    # sanity check that we're dropping a minority of the columns
+    assert sum(col_mask) > sum(~col_mask)
+
+    # instead of literally dropping the column, NA all the values in the column
+    # because I think there's code which assumes the indices of the matrix will not
+    # change from what was read from the original HDF5 file.
+    df = df.copy()
+    df.loc[:, ~col_mask] = np.nan
+    return df
 
 
 def labels_to_df(labels):
