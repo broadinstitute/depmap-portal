@@ -92,6 +92,7 @@ export class CustomOrCatalogVectorSelect extends React.Component<
           selectClassName={styles.AnalysisDimensionSelect}
           mode="entity-only"
           index_type="depmap_model"
+          allowNullFeatureType
           value={
             this.state.selectedDimension as DataExplorerPlotConfigDimensionV2
           }
