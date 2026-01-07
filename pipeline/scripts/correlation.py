@@ -8,6 +8,7 @@ sys.path.append(".")
 from hdf5_utils import read_hdf5
 
 LIMIT = 100
+MIN_NUMBER_OF_POINTS = 30
 
 
 def main():
@@ -20,6 +21,7 @@ def main():
     parser.add_argument("output_file")
 
     args = parser.parse_args()
+
     in_hdf5_0_df = read_hdf5(args.in_hdf5_0)
     in_hdf5_1_df = read_hdf5(args.in_hdf5_1)
 
@@ -28,6 +30,10 @@ def main():
 
     in_hdf5_0_df = in_hdf5_0_df.transpose()
     in_hdf5_1_df = in_hdf5_1_df.transpose()  # initially, cell lines are columns
+
+    # drop any columns where we don't have a sufficient number of non NA values
+    in_hdf5_0_df = mask_sparse_columns(in_hdf5_0_df, args.label0)
+    in_hdf5_1_df = mask_sparse_columns(in_hdf5_1_df, args.label1)
 
     in_hdf5_0_df, in_hdf5_1_df = with_shared_cell_lines(in_hdf5_0_df, in_hdf5_1_df)
     correlations_df = create_correlations_df(in_hdf5_0_df, in_hdf5_1_df, args.batchsize)
@@ -68,6 +74,46 @@ def main():
     rec = c.fetchone()
     assert rec[0] == 0, "Found {} dups".format(rec[0])
     c.close()
+
+
+def _as_comma_delimited(values):
+    return ", ".join([str(v) for v in values])
+
+
+def _list_summary(values):
+    if len(values) > 20:
+        l_as_str = (
+            _as_comma_delimited(values[:5]) + " ... " + _as_comma_delimited(values[-5:])
+        )
+    else:
+        l_as_str = _as_comma_delimited(values)
+    return "[{}] ({})".format(l_as_str, len(values))
+
+
+def mask_sparse_columns(df, label):
+    # Require that we have at least 90% of the median number of samples represented in order to keep a column
+    samples_per_column = (~df.isna()).apply(sum)
+    min_samples = samples_per_column.median() * 0.10
+
+    # drop any columns which have fewer than min_samples with non-NA values
+    col_mask = samples_per_column > min_samples
+    print(
+        "dropping {} columns out of {} columns from {} which have < {} non-NA samples".format(
+            _list_summary(list(col_mask[~col_mask].index)),
+            len(col_mask),
+            label,
+            min_samples,
+        )
+    )
+    # sanity check that we're dropping a minority of the columns
+    assert sum(col_mask) > sum(~col_mask)
+
+    # instead of literally dropping the column, NA all the values in the column
+    # because I think there's code which assumes the indices of the matrix will not
+    # change from what was read from the original HDF5 file.
+    df = df.copy()
+    df.loc[:, ~col_mask] = np.nan
+    return df
 
 
 def labels_to_df(labels):
@@ -139,9 +185,6 @@ def top_ranked_indexes_per_row_and_col(matrix):
     col_indexes = np.tile(range(num_cols), limit_per_col)
 
     return top_ranked_cols_per_row, top_ranked_rows_per_col, row_indexes, col_indexes
-
-
-MIN_NUMBER_OF_POINTS = 30
 
 
 def fast_cor_with_missing(x, y):
