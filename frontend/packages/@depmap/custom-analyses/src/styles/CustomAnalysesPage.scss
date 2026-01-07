@@ -185,3 +185,16 @@
     font-size: 18px;
   }
 }
+
+.custom_csv_example_table {
+  display: inline;
+  font-size: 12px;
+  td {
+    padding: 2px;
+    border: 1px solid #ddd;
+  }
+}
+
+.has_error {
+  color: #a94442;
+}

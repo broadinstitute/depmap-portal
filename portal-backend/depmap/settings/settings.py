@@ -144,10 +144,6 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
-    def linear_association(self):
-        return self.is_skyros()
-
-    @property
     def extra_dmc_pages(self):
         return self.is_only_dmc_and_i_have_a_good_reason()
 
