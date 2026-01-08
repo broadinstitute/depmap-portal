@@ -2,7 +2,6 @@ import React, { useMemo } from "react";
 import { CompoundFilters } from "./CompoundFilters";
 import { GeneFilters } from "./GeneFilters";
 import { CorrelationFiltersProps } from "./types";
-import { useCorrelationContext } from "src/correlationAnalysis/context/useCorrelationContext";
 
 export function CorrelationFilters(props: CorrelationFiltersProps) {
   const {
@@ -12,7 +11,6 @@ export function CorrelationFilters(props: CorrelationFiltersProps) {
     featureType,
   } = props;
 
-  const { handleCorrelatedDatasetsChange } = useCorrelationContext();
   const correlatedOptions = useMemo(
     () => correlatedDatasets.map((d) => ({ label: d, value: d })),
     [correlatedDatasets]

@@ -45,8 +45,3 @@ interface CompoundFiltersProps extends CommonFiltersProps {
 }
 
 export type CorrelationFiltersProps = GeneFiltersProps | CompoundFiltersProps;
-
-export interface SelectOption {
-  value: string;
-  label: string;
-}
