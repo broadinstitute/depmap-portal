@@ -3,13 +3,13 @@ import Select from "react-select";
 import { GeneCorrelationDatasetOption } from "../../types";
 import styles from "../../styles/CorrelationAnalysis.scss";
 import { customFilterStyles } from "./types";
+import { useCorrelationContext } from "src/correlationAnalysis/context/useCorrelationContext";
 
 interface GeneFiltersProps {
   geneDatasetOptions: GeneCorrelationDatasetOption[];
   selectedDatasetOption: { value: string; label: string } | null;
   onChangeDataset: (selection: any) => void;
   correlatedDatasetOptions: { value: string; label: string }[];
-  onCorrelatedDatasetsChange: (value: any) => void;
 }
 
 export function GeneFilters({
@@ -17,8 +17,9 @@ export function GeneFilters({
   selectedDatasetOption,
   onChangeDataset,
   correlatedDatasetOptions,
-  onCorrelatedDatasetsChange,
 }: GeneFiltersProps) {
+  const { handleCorrelatedDatasetsChange } = useCorrelationContext();
+
   const options = geneDatasetOptions.map((d) => ({
     value: d.datasetId,
     label: d.displayName,
@@ -38,7 +39,7 @@ export function GeneFilters({
       <Select
         isMulti
         options={correlatedDatasetOptions}
-        onChange={onCorrelatedDatasetsChange}
+        onChange={handleCorrelatedDatasetsChange}
         styles={customFilterStyles}
       />
     </div>

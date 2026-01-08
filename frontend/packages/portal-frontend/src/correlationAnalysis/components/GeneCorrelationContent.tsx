@@ -68,7 +68,11 @@ export function GeneCorrelationContent({
         <div className={styles.mainContentContainer}>
           <div className={styles.mainContentHeader}>
             <h3>Correlation Analysis</h3>
-            <p>Univariate associations for genetic dependencies.</p>
+            <p>
+              {" "}
+              Univariate associations between dependency profiles. Hover over
+              plot points for tooltip information.
+            </p>
           </div>
           <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
 

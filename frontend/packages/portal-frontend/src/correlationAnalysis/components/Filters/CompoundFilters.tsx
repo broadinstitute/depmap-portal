@@ -7,16 +7,14 @@ import {
   formatDoseString,
   sortDoseColorsByValue,
 } from "src/correlationAnalysis/utilities/helper";
+import { useCorrelationContext } from "src/correlationAnalysis/context/useCorrelationContext";
 
 interface CompoundFiltersProps {
   compoundDatasetOptions: DRCDatasetOptions[];
   selectedDatasetOption: { value: string; label: string } | null;
   onChangeDataset: (selection: any) => void;
   correlatedDatasetOptions: { value: string; label: string }[];
-  onCorrelatedDatasetsChange: (value: any) => void;
   doses: string[];
-  selectedDoses: string[];
-  onDosesChange: (value: any) => void;
 }
 
 export function CompoundFilters({
@@ -24,11 +22,14 @@ export function CompoundFilters({
   selectedDatasetOption,
   onChangeDataset,
   correlatedDatasetOptions,
-  onCorrelatedDatasetsChange,
   doses,
-  selectedDoses,
-  onDosesChange,
 }: CompoundFiltersProps) {
+  const {
+    handleCorrelatedDatasetsChange,
+    handleDosesChange,
+    selectedDoses,
+  } = useCorrelationContext();
+
   const datasetOptions = compoundDatasetOptions.map((d) => ({
     value: d.log_auc_dataset_given_id,
     label: d.display_name,
@@ -64,13 +65,13 @@ export function CompoundFilters({
         isMulti
         options={doseOptions}
         value={formattedSelectedDoses}
-        onChange={onDosesChange}
+        onChange={handleDosesChange}
       />
       <h4>Correlated Dataset</h4>
       <Select
         isMulti
         options={correlatedDatasetOptions}
-        onChange={onCorrelatedDatasetsChange}
+        onChange={handleCorrelatedDatasetsChange}
         styles={customFilterStyles}
       />
     </div>

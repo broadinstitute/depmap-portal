@@ -5,8 +5,8 @@ interface CorrelationContextType {
   selectedCorrelatedDatasets: string[];
   selectedDoses: string[];
   allSelectedLabels: Record<string, string[]>;
-  handleCorrelatedDatasetsChange: (datasets: SelectOption[] | null) => void;
-  handleDosesChange: (doses: string[] | undefined) => void;
+  handleCorrelatedDatasetsChange: (datasets: any) => void;
+  handleDosesChange: (doses: any) => void;
   handleLabelSelection: (ds: string, labels: string[]) => void;
   handleTableSelectionUpdate: (
     selections: string[],
@@ -33,15 +33,10 @@ export function CorrelationProvider({ children }: CorrelationProviderProps) {
     Record<string, string[]>
   >({});
 
-  const handleCorrelatedDatasetsChange = useCallback(
-    (datasets: SelectOption[] | null) => {
-      const datasetSelections = datasets?.map(
-        ({ value }: SelectOption) => value
-      );
-      setSelectedCorrelatedDatasets(datasetSelections || []);
-    },
-    []
-  );
+  const handleCorrelatedDatasetsChange = useCallback((datasets: any) => {
+    const datasetSelections = datasets?.map(({ value }: SelectOption) => value);
+    setSelectedCorrelatedDatasets(datasetSelections || []);
+  }, []);
 
   const handleDosesChange = useCallback((doses: string[] | undefined) => {
     setSelectedDoses(doses || []);

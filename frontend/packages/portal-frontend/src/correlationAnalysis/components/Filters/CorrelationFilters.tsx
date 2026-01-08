@@ -25,7 +25,6 @@ export function CorrelationFilters(props: CorrelationFiltersProps) {
         selectedDatasetOption={selectedDatasetOption}
         onChangeDataset={onChangeDataset}
         correlatedDatasetOptions={correlatedOptions}
-        onCorrelatedDatasetsChange={handleCorrelatedDatasetsChange}
       />
     );
   }
@@ -36,10 +35,7 @@ export function CorrelationFilters(props: CorrelationFiltersProps) {
       selectedDatasetOption={selectedDatasetOption}
       onChangeDataset={onChangeDataset}
       correlatedDatasetOptions={correlatedOptions}
-      onCorrelatedDatasetsChange={handleCorrelatedDatasetsChange}
       doses={props.doses}
-      selectedDoses={props.selectedDoses}
-      onDosesChange={props.onChangeDoses}
     />
   );
 }

@@ -79,7 +79,9 @@ export function CompoundCorrelationContent({
           <div className={styles.mainContentHeader}>
             <h3>Correlation Analysis</h3>
             <p>
-              Univariate associations for sensitivity profiles (Dose-Response).
+              Univariate associations between sensitivity profiles and the
+              genomic features or genetic dependencies are presented in the
+              table and plots. Hover over plot points for tooltip information.
             </p>
           </div>
           <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
