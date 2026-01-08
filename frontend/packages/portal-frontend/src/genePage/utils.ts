@@ -32,7 +32,7 @@ export async function getCorrelationDatasetsForEntity(
   const formattedDatasetOptions = sorted.map((dataset: Dataset) => {
     const geneDatasetOption = {
       displayName: dataset.name,
-      datasetId: dataset.id,
+      datasetId: dataset.given_id || dataset.id,
     };
 
     return geneDatasetOption;

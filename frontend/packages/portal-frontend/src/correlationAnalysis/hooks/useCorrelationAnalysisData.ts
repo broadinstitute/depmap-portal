@@ -71,6 +71,7 @@ export function useGeneCorrelationData(
         });
 
         const rawCorrelates = getAllCorrelates(featureDatasetCorrelates);
+
         const filtered = rawCorrelates.filter(
           (cor: SortedCorrelations) =>
             cor.feature !== featureName &&
