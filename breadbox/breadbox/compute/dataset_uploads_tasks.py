@@ -166,6 +166,7 @@ def dataset_upload(
             dataset_id,
             df_wrapper,
             dataset_params.value_type,
+            dataset_params.allowed_values,
             settings.filestore_location,
         )
 

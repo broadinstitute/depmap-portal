@@ -96,7 +96,7 @@ def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
 
     # override batch size to force multiple batches
     write_hdf5_file(
-        path=str(output_h5), df_wrapper=wrapper, dtype="float", batch_size=1000
+        path=str(output_h5), df_wrapper=wrapper, hdf5_dtype="float", batch_size=1000
     )
 
     # Verify output
@@ -136,7 +136,7 @@ def test_write_parquet_nulls_to_hdf5(tmpdir):
 
     # override batch size to force multiple batches
     write_hdf5_file(
-        path=str(output_h5), df_wrapper=wrapper, dtype="float", batch_size=1000
+        path=str(output_h5), df_wrapper=wrapper, hdf5_dtype="float", batch_size=1000
     )
 
     # Verify output

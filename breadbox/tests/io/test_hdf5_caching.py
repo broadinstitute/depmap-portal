@@ -36,7 +36,7 @@ def test_hdf5_cache_correctness(tmpdir):
 
     expected_df = create_sample_data(100, 200)
     ref_path = str(tmpdir.join("ref"))
-    write_hdf5_file(ref_path, PandasDataFrameWrapper(expected_df), dtype="float")
+    write_hdf5_file(ref_path, PandasDataFrameWrapper(expected_df), hdf5_dtype="float")
 
     df = read_hdf5_file(ref_path)
     assert_frame_equal(df, expected_df)
@@ -92,7 +92,7 @@ def perf_test(dest_dir, rows, columns):
     expected_df = create_sample_data(rows, columns)
     ref_path = f"{dest_dir}/ref-{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
     print(f"Creating {ref_path}")
-    write_hdf5_file(ref_path, PandasDataFrameWrapper(expected_df), dtype="float")
+    write_hdf5_file(ref_path, PandasDataFrameWrapper(expected_df), hdf5_dtype="float")
     for cache_strategy in [None, DUPLICATE_STORAGE, CHUNKED_STORAGE]:
         # benchmark(f"cache_strategy={cache_strategy}: read full", lambda: read_hdf5_file(ref_path, feature_indexes=None, sample_indexes=None, keep_nans=True, cache_strategy=cache_strategy))
 

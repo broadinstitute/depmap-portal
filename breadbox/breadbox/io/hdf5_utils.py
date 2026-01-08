@@ -1,6 +1,8 @@
 import os.path
 import tempfile
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Callable
+
+
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     LargeDatasetReadError,
@@ -9,13 +11,48 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from breadbox.io.data_validation import DataFrameWrapper, PandasDataFrameWrapper
+from breadbox.io.data_validation import (
+    DataFrameWrapper,
+    PandasDataFrameWrapper,
+    column_batch_iterator,
+)
 
 # This is the Object dtype with metadata for HDF5 to parse it as (variable-length)
 # string. The metadata is not used for checking equality.
 # See https://docs.h5py.org/en/3.2.1/strings.html
 STR_DTYPE = h5py.string_dtype()
 MAX_HDF5_READ_IN_BYTES = 1024 * 1024 * 1024
+
+
+def categorical_to_int_encoded_df_or_raise(
+    df: pd.DataFrame, allowed_values: List
+) -> pd.DataFrame:
+    """Given a dataframe of strings, creates a dataframe of integers by looking up the index of each string in allowed_values. If the string isn't in allowed_Values than a FileValidationError is raised"""
+    # NOTE: Boolean values turned to string
+    lower_allowed_values = [str(x).lower() for x in allowed_values if x is not None] + [
+        None
+    ]  # Data values can include missing values
+
+    lower_df = df.applymap(lambda x: None if pd.isna(x) else str(x).lower())
+
+    present_values = set(lower_df.values.flatten())
+    unexpected_values = present_values.difference(lower_allowed_values)
+    if len(unexpected_values) > 0:
+        sorted_unexpected_values = sorted(unexpected_values)
+        examples = ", ".join([repr(x) for x in sorted_unexpected_values[:10]])
+        if len(sorted_unexpected_values) > 10:
+            examples += ", ..."
+        raise FileValidationError(
+            f"Found values (examples: {examples}) not in list of allowed values: {allowed_values}"
+        )
+
+    # Convert categories to ints for more efficient storage
+    lower_allowed_values_map = {x: i for i, x in enumerate(lower_allowed_values)}
+    int_df = lower_df.applymap(lambda x: lower_allowed_values_map[x])
+
+    int_df = int_df.astype(int)
+
+    return int_df
 
 
 def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
@@ -28,25 +65,34 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
     )
 
 
+def is_sparse_df(df: pd.DataFrame) -> bool:
+    total_nulls = df.apply(lambda x: x.isna().sum()).sum()
+    # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
+    is_sparse = total_nulls / df.size > 0.6
+    return is_sparse
+
+
 def write_hdf5_file(
     path: str,
     df_wrapper: DataFrameWrapper,
-    dtype: Literal["float", "str"],
+    hdf5_dtype: Literal["float", "str"],
+    map_values: Callable[[pd.DataFrame], pd.DataFrame],
     batch_size: int = 5000,  # Adjust batch size as needed
 ):
     f = h5py.File(path, mode="w")
     try:
         if isinstance(df_wrapper, PandasDataFrameWrapper):
             df = df_wrapper.get_df()
+            df = map_values(df)
             # Convert to float type so hdf5 can store it as float64
-            if dtype == "float":
+            if hdf5_dtype == "float":
                 df = df.astype(np.float64)
             # If the DataFrame is sparse, we need to store only
-            if df_wrapper.is_sparse():
+            if is_sparse_df(df):
                 dataset = f.create_dataset(
                     "data",
                     shape=df.shape,
-                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    dtype=h5py.string_dtype() if hdf5_dtype == "str" else np.float64,
                     chunks=(
                         1,
                         1,
@@ -56,14 +102,14 @@ def write_hdf5_file(
                 for row_idx, col_idx in df_wrapper.get_nonnull_indices():
                     dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
             else:
-                if dtype == "str":
+                if hdf5_dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     df = df.fillna("")
                 # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
                 dataset = f.create_dataset(
                     "data",
                     shape=df.shape,
-                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    dtype=h5py.string_dtype() if hdf5_dtype == "str" else np.float64,
                     data=df.values,
                 )
         else:
@@ -75,19 +121,15 @@ def write_hdf5_file(
             dataset = f.create_dataset(
                 "data",
                 shape=shape,
-                dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                dtype=h5py.string_dtype() if hdf5_dtype == "str" else np.float64,
             )
 
-            for i in range(0, len(cols), batch_size):
-                # Find the correct column slice to write
-                end_col = i + batch_size
+            for start_col_index, end_col_index, chunk_df in column_batch_iterator(
+                df_wrapper, batch_size=batch_size
+            ):
+                chunk_df = map_values(chunk_df)
 
-                col_batch = cols[i:end_col]
-
-                # Read the chunk of data from the Parquet file
-                chunk_df = df_wrapper.read_columns(col_batch)
-
-                if dtype == "str":
+                if hdf5_dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     chunk_df = chunk_df.fillna("")
                 else:
@@ -95,10 +137,10 @@ def write_hdf5_file(
 
                 values = chunk_df.values
                 try:
-                    dataset[:, i:end_col] = values
+                    dataset[:, start_col_index:end_col_index] = values
                 except Exception as e:
                     raise FileValidationError(
-                        f"Failed to update {i}:{end_col} of hdf5 file {path} with {values}"
+                        f"Failed to update {start_col_index}:{end_col_index} of hdf5 file {path} with {values}"
                     ) from e
 
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))

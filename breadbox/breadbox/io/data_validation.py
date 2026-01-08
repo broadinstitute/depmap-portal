@@ -28,6 +28,7 @@ from breadbox.schemas.dataframe_wrapper import (
     PandasDataFrameWrapper,
     ParquetDataFrameWrapper,
     HDF5DataFrameWrapper,
+    column_batch_iterator,
 )
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
@@ -35,7 +36,7 @@ from breadbox.schemas.custom_http_exception import (
 )
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
-
+from .hdf5_utils import categorical_to_int_encoded_df_or_raise
 
 pd.set_option("mode.use_inf_as_na", True)
 
@@ -165,49 +166,24 @@ def _validate_data_value_type(
 ):
     # NOTE: We're making an assumption here that large parquet files are always numeric so smaller parquet files are ok to convert to df
     if value_type == ValueType.categorical:
-        df = dfw.get_df()
         assert (
             allowed_values
         ), "Allowed values must be specified for categorical datasets."
         # Either string or boolean values allowed
-        if not all(
-            [
-                is_string_dtype((df[col].dtypes) or is_bool_dtype(df[col].dtypes))
-                for col in df.columns
-            ]
-        ):
+        if not dfw.is_string_cols():
             raise FileValidationError(
                 "All values must be strings or booleans for categorical datasets."
             )
-        # to make it not case-sensitive, convert all to lower case
 
-        lower_df = df.applymap(lambda x: None if pd.isna(x) else str(x).lower())
+        # Fairly inefficient, but allows us to keep the structure of the code:
+        # parse the file twice, once here where we throw away the result, and
+        # once when we're loading it for real. Since the parsing is deterministic
+        # we can assume the second pass won't encounter any parsing issues
+        assert allowed_values is not None
+        for i, end_col, chunk_df in column_batch_iterator(dfw, batch_size=500):
+            categorical_to_int_encoded_df_or_raise(chunk_df, allowed_values)
+        return dfw
 
-        # NOTE: Boolean values turned to string
-
-        lower_allowed_values = [
-            str(x).lower() for x in allowed_values if x is not None
-        ] + [
-            None
-        ]  # Data values can include missing values
-
-        present_values = set(lower_df.values.flatten())
-        unexpected_values = present_values.difference(lower_allowed_values)
-        if len(unexpected_values) > 0:
-            sorted_unexpected_values = sorted(unexpected_values)
-            examples = ", ".join([repr(x) for x in sorted_unexpected_values[:10]])
-            if len(sorted_unexpected_values) > 10:
-                examples += ", ..."
-            raise FileValidationError(
-                f"Found values (examples: {examples}) not in list of allowed values: {allowed_values}"
-            )
-
-        # Convert categories to ints for more optimal storage
-        lower_allowed_values_map = {x: i for i, x in enumerate(lower_allowed_values)}
-        int_df = lower_df.applymap(lambda x: lower_allowed_values_map[x])
-
-        int_df = int_df.astype(int)
-        return PandasDataFrameWrapper(int_df)
     elif value_type == ValueType.list_strings:
         df = dfw.get_df()
 
@@ -484,7 +460,9 @@ def validate_and_upload_dataset_files(
     # TODO: Move save function to api layer. Need to make sure the db save is successful first
     from breadbox.io.filestore_crud import save_dataset_file
 
-    save_dataset_file(dataset_id, data_dfw, value_type, filestore_location)
+    save_dataset_file(
+        dataset_id, data_dfw, value_type, allowed_values, filestore_location
+    )
 
     return dataframe_validated_dimensions
 

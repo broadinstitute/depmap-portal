@@ -7,7 +7,11 @@ import pandas as pd
 
 from ..schemas.dataframe_wrapper import DataFrameWrapper
 from ..models.dataset import Dataset, MatrixDataset, ValueType
-from .hdf5_utils import write_hdf5_file, read_hdf5_file
+from .hdf5_utils import (
+    write_hdf5_file,
+    read_hdf5_file,
+    categorical_to_int_encoded_df_or_raise,
+)
 from breadbox.schemas.custom_http_exception import (
     SampleNotFoundError,
     FeatureNotFoundError,
@@ -20,6 +24,7 @@ def save_dataset_file(
     dataset_id: str,
     df_wrapper: DataFrameWrapper,
     value_type: ValueType,
+    allowed_values: Optional[List[str]],
     filestore_location: str,
 ):
     base_path = os.path.join(filestore_location, dataset_id)
@@ -30,8 +35,19 @@ def save_dataset_file(
     else:
         dtype = "float"
 
+    if value_type == ValueType.categorical:
+        map_values = lambda df: categorical_to_int_encoded_df_or_raise(
+            df, allowed_values
+        )
+    else:
+        map_values = lambda df: df
+
+    assert dtype in ["str", "float"]
     write_hdf5_file(
-        get_file_location(dataset_id, filestore_location, DATA_FILE), df_wrapper, dtype
+        get_file_location(dataset_id, filestore_location, DATA_FILE),
+        df_wrapper,
+        dtype,
+        map_values,
     )
 
 
@@ -107,7 +123,7 @@ def get_df_by_value_type(
     if value_type == ValueType.categorical:
         assert dataset_allowed_values
         dataset_allowed_values.append(None)
-        # Convert numerical values back to origincal categorical value
+        # Convert numerical values back to original categorical value
         df = df.astype(int)
         df = df.applymap(lambda x: dataset_allowed_values[x])
     elif value_type == ValueType.list_strings:
