@@ -70,30 +70,6 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
     return hasOtherCorrDatasetSelectedFeatures;
   };
 
-  const getPlotData = useCallback(
-    (correlatedDataset: string) => {
-      console.log("correlatedDataset", correlatedDataset);
-      console.log(
-        "volcanoDataForCorrelatedDatasets",
-        volcanoDataForCorrelatedDatasets
-      );
-
-      const obj =
-        featureType === "gene"
-          ? volcanoDataForCorrelatedDatasets[correlatedDataset]
-          : filteredDosesForCorrelatedDatasetVolcanoData(
-              volcanoDataForCorrelatedDatasets[correlatedDataset]
-            );
-      console.log("obj", obj);
-      return Object.values(obj) as VolcanoPlotData[];
-    },
-    [
-      filteredDosesForCorrelatedDatasetVolcanoData,
-      volcanoDataForCorrelatedDatasets,
-      featureType,
-    ]
-  );
-
   return (
     <div className={styles.plotContent} key={key}>
       <div className={styles.plotContainer}>
@@ -117,7 +93,15 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
               </div>
               <CorrelationsPlot
                 correlatedDatasetName={correlatedDataset}
-                data={getPlotData(correlatedDataset)}
+                data={
+                  Object.values(
+                    featureType === "gene"
+                      ? volcanoDataForCorrelatedDatasets[correlatedDataset]
+                      : filteredDosesForCorrelatedDatasetVolcanoData(
+                          volcanoDataForCorrelatedDatasets[correlatedDataset]
+                        )
+                  ) as VolcanoPlotData[]
+                }
                 selectedFeatures={
                   correlatedDataset in correlatedDatasetSelectedLabels
                     ? correlatedDatasetSelectedLabels[correlatedDataset]
