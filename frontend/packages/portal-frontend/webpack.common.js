@@ -13,7 +13,6 @@ module.exports = {
     },
     cellLine: "./src/apps/cellLine.tsx",
     celligner: "./src/apps/celligner.tsx",
-    customAnalysis: "./src/apps/customAnalysis.tsx",
     datasetManager: "./src/apps/datasetManager.tsx",
     groupsManager: "./src/apps/groupsManager.tsx",
     tdaSummary: "./src/apps/tdaSummary.tsx",
@@ -29,6 +28,7 @@ module.exports = {
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
     doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
     geneTea: "./src/apps/geneTea.tsx",
+    custom_analyses: "./src/apps/custom_analyses.tsx",
   },
 
   plugins: [

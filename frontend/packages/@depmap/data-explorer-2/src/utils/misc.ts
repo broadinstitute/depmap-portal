@@ -8,11 +8,10 @@ import {
   PartialDataExplorerPlotConfigDimensionV2,
   SliceQuery,
 } from "@depmap/types";
-import { isV2Context } from "./context";
 import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 
 // HACK: Stash a reference to `dimensionTypes`
-// so these utils can be call synchronously.
+// so these utils can be called synchronously.
 let dimensionTypes = null as DimensionType[] | null;
 
 if (isBreadboxOnlyMode && !process.env.JEST_WORKER_ID) {
@@ -206,19 +205,13 @@ export async function convertDimensionToSliceQuery(
   dimension: Partial<
     DataExplorerPlotConfigDimension | DataExplorerPlotConfigDimensionV2
   >
-): Promise<SliceQuery | null> {
+): Promise<SliceQuery | undefined> {
   if (!isCompleteDimension(dimension)) {
-    return null;
+    return undefined;
   }
 
   if (dimension.axis_type !== "raw_slice") {
     throw new Error("Cannot convert a context to a slice ID!");
-  }
-
-  if (!isV2Context(dimension.context) && isSampleType(dimension.slice_type)) {
-    throw new Error(
-      "Cannot convert a sample to a slice ID! Only features are supported."
-    );
   }
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();

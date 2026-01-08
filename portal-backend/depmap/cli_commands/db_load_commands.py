@@ -6,11 +6,8 @@ from dataclasses import asdict
 from operator import itemgetter
 from typing import Callable, List
 from dataclasses import dataclass
-import time
-import httpx
 
 from depmap.cell_line.models import CellLine
-from depmap.dataset.models import TabularDataset
 
 import click
 import pandas as pd
@@ -64,19 +61,14 @@ from loader.predictability_loader import (
     load_predictive_model_csv,
 )
 from loader.gcs import GCSCache
-import subprocess
 
 log = logging.getLogger(__name__)
 
 pd.set_option("mode.use_inf_as_na", True)
 
-from depmap.enums import DataTypeEnum
-from depmap.extensions import breadbox
 from depmap.cell_line.models_new import DepmapModel
-from depmap.gene.models import Gene
 from depmap.public.resources import refresh_all_category_topics, read_forum_api_key
 from depmap.discourse.client import DiscourseClient
-from breadbox_facade import BBClient, BreadboxException, ColumnMetadata, AnnotationType
 from depmap.compound.models import drc_compound_datasets
 
 
@@ -156,40 +148,6 @@ def recreate_dev_db(
                 load_full_constellation=load_full_constellation,
                 load_tda_predictability=load_tda_predictability,
             )
-
-        # now set up the breadbox. Assumes breadbox isn't running already
-        # first, tell breadbox to create an empty database
-        subprocess.run(
-            ["poetry", "run", "./bb", "recreate-dev-db"], check=True, cwd="../breadbox"
-        )
-
-    # run the sync'ing process to make sure the breadbox metadata matches
-    # what's in the portal's DB.
-
-    sync_metadata_to_breadbox_with_retry(5)
-
-    # now shutdown the breadbox process
-
-
-def sync_metadata_to_breadbox_with_retry(max_attempts):
-    sync_attempt = 0
-    while True:
-        try:
-            sync_metadata_to_breadbox()
-            break
-        except httpx.ConnectError as ex:
-            # Now, this might fail a few times while BB comes up, but don't sweat
-            # and just try, try again.
-            sync_attempt += 1
-            if sync_attempt > max_attempts:
-                raise Exception(
-                    "Too many attempts to sync_metadata_to_breadbox() failed"
-                ) from ex
-
-            print(
-                f"Got exception trying to sync_metadata_to_breadbox(), but will retry: {ex}"
-            )
-            time.sleep(2)
 
 
 def assert_depmap_models_match_cell_lines():
@@ -1506,147 +1464,6 @@ class SyncedMetadataType:
     id_column: str
     label_column: str
     axis: str
-
-
-def sync_metadata_to_breadbox():
-    from depmap.access_control import assume_user
-
-    # the sync process must be run with a user with admin access
-    with assume_user("admin"):
-        _sync_metadata_to_breadbox()
-
-
-def _sync_metadata_to_breadbox():
-    """
-    Check if breadbox metadata is in sync with the portal's database. If not,
-    overwrite breadbox's metadata with values from the legacy database.
-    If the taiga id is defined in the portal, use that to compare (more efficient). Otherwise use a hash of the data.
-    """
-    metadata_data_type = "User upload"
-
-    synced_dimension_types = [
-        SyncedMetadataType(
-            type_name="depmap_model",
-            portal_data_model=DepmapModel,
-            id_column="depmap_id",
-            label_column="cell_line_name",
-            axis="sample",
-        ),
-        SyncedMetadataType(
-            type_name="gene",
-            portal_data_model=Gene,
-            id_column="entrez_id",
-            label_column="label",
-            axis="feature",
-        ),
-    ]
-
-    data_types = breadbox.client.get_data_types()
-    if metadata_data_type not in [x.name for x in data_types]:
-        breadbox.client.add_data_type(metadata_data_type)
-
-    dim_type_by_name = {
-        dim_type.name: dim_type for dim_type in breadbox.client.get_dimension_types()
-    }
-
-    for dimension_type in synced_dimension_types:
-        # Load info about the dimension from both the portal and breadbox
-        portal_metadata_info = TabularDataset.get_by_name(
-            dimension_type.type_name, must=False
-        )
-        breadbox_taiga_id = None
-
-        dim_type = dim_type_by_name.get(dimension_type.type_name)
-        if dim_type is not None:
-            metadata_dataset_id = dim_type.metadata_dataset_id
-            assert (
-                metadata_dataset_id
-            ), f"Dimension type {dimension_type.type_name} has no metadata dataset."
-            metadata_dataset = breadbox.client.get_dataset(metadata_dataset_id)
-            breadbox_taiga_id = metadata_dataset.taiga_id
-
-        # If the portal taiga id exists and matches what's in breadbox, skip to the next metadata type
-        portal_taiga_id = (
-            portal_metadata_info.taiga_id if portal_metadata_info else None
-        )
-        if portal_taiga_id and portal_taiga_id == breadbox_taiga_id:
-            log.info(
-                f"Breadbox {dimension_type.type_name} taiga_id already up-to-date. Skipping metadata sync."
-            )
-        else:
-            # load the data from the portal
-            all_entities = dimension_type.portal_data_model.query.all()
-
-            metadata_df = pd.DataFrame(
-                {
-                    dimension_type.id_column: [
-                        str(getattr(entity, dimension_type.id_column))
-                        if getattr(entity, dimension_type.id_column)
-                        else None
-                        for entity in all_entities
-                    ],
-                    "label": [
-                        getattr(entity, dimension_type.label_column)
-                        for entity in all_entities
-                    ],
-                }
-            )
-            # Filter out rows which have null ids or labels (ex. some genes have null entrez ids)
-            metadata_df = metadata_df.dropna()
-
-            if not dim_type:
-                # if the type does not exist, create it
-                breadbox.client.add_dimension_type(
-                    name=dimension_type.type_name,
-                    display_name=dimension_type.type_name,
-                    id_column=dimension_type.id_column,
-                    axis=dimension_type.axis,
-                )
-
-            log.info(
-                f"Updating {dimension_type.type_name} metadata type in breadbox..."
-            )
-
-            _add_dimension_type_metadata(
-                breadbox.client,
-                dimension_type.id_column,
-                dimension_type.type_name,
-                metadata_data_type,
-                metadata_df,
-            )
-
-
-def _add_dimension_type_metadata(
-    client, id_column_name, name, data_type, df, taiga_id=None
-):
-    # print("head of table")
-    # print(df.head)
-
-    columns_metadata = {
-        "label": ColumnMetadata(col_type=AnnotationType("text")),
-        id_column_name: ColumnMetadata(col_type=AnnotationType("text")),
-    }
-
-    assert columns_metadata is not None
-
-    # now that we have a feature type, we can create a table indexed by that feature type
-    result = client.add_table_dataset(
-        name=f"{name} metadata",
-        group_id=client.PUBLIC_GROUP_ID,
-        index_type=name,
-        data_df=df,
-        data_type=data_type,
-        columns_metadata=columns_metadata,
-        taiga_id=taiga_id,
-    )
-
-    # todo: fix client to not return a dict
-    dataset_id = result["datasetId"]
-
-    # now associate the data table with the dimension type
-    client.update_dimension_type(
-        name=name, metadata_dataset_id=dataset_id, properties_to_index=["label"],
-    )
 
 
 @click.command("reload_resources")

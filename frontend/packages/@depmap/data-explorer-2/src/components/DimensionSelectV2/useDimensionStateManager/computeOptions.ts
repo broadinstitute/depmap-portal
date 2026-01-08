@@ -195,7 +195,7 @@ async function computeDataTypeOptions(
         d.id === dimension.dataset_id || d.given_id === dimension.dataset_id
     )?.data_type;
 
-    return dataTypes.map((dataType) => {
+    const options = dataTypes.map((dataType) => {
       let isDisabled = false;
       let disabledReason = "";
 
@@ -211,6 +211,10 @@ async function computeDataTypeOptions(
         disabledReason,
       };
     });
+
+    return options
+      .sort((a, b) => dataTypeSortComparator(a.value, b.value))
+      .sort(compareDisabledLast);
   }
 
   const options = dataTypes.map((dataType) => {
@@ -470,16 +474,17 @@ async function computeDataVersionOptions(
         !contextCompatibleDatasetIds.has(dataset.id)
       ) {
         isDisabled = true;
+        const name = dimension.context?.name || "unknonwn";
 
         if (dimension.axis_type === "aggregated_slice") {
           disabledReason = [
-            `The context “${dimension.context!.name}”`,
+            `The context “${name}”`,
             `has no ${pluralize(sliceDisplayName as string)}`,
             "found in this version",
           ].join(" ");
         } else {
           disabledReason = [
-            `The ${sliceDisplayName} “${dimension.context!.name}”`,
+            `The ${sliceDisplayName} “${name}”`,
             "is not found in this version",
           ].join(" ");
         }

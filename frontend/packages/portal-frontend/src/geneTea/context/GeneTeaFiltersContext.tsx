@@ -3,9 +3,16 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 import { SortOption } from "../types";
+import {
+  deleteSpecificQueryParams,
+  setQueryStringList,
+} from "@depmap/utils/src/url";
+import { getGenesFromUrl } from "../utils";
+import { enabledFeatures } from "@depmap/globals";
 
 // TODO organize this file a little better...
 export const NUMERIC_FILTER_DEFAULTS = {
@@ -147,15 +154,29 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
-    new Set(["CAD", "UMPS", "ADSL", "DHODH"])
+    () => {
+      const genes = getGenesFromUrl();
+
+      if (!enabledFeatures.gene_tea_tutorial_page && genes.length === 0) {
+        return new Set(["CAD", "UMPS", "ADSL", "DHODH"]);
+      }
+      return new Set(genes);
+    }
   );
+
+  useEffect(() => {
+    const geneList = Array.from(geneSymbolSelections);
+    deleteSpecificQueryParams(["genes", "gList"]);
+    setQueryStringList("genes", geneList, true);
+  }, [geneSymbolSelections]);
+
   const handleSetGeneSymbolSelections = useCallback(
     (v: any) => {
       setGeneSymbolSelections((prevVal: Set<string>) => {
         const nextState = typeof v === "function" ? v(prevVal) : v;
+
         if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
+          // 1. Invalidate table selections
           handleClearSelectedTopTermsTableRows();
         }
 

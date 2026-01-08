@@ -5,6 +5,7 @@ import { Button } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
 import { ComputeResponseResult, CustomAnalysisResult } from "@depmap/compute";
+import { isElara } from "@depmap/globals";
 import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
@@ -114,7 +115,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
 
   const clearAnalysis = useCallback(() => {
     const params = qs.parse(window.location.search.substr(1));
-    const queryString = qs.stringify(omit(params, "task"));
+    const queryString = qs.stringify(omit(params, "task", "analysis"));
     window.history.pushState({}, "", `?${queryString}`);
     setTaskId(null);
   }, []);
@@ -132,18 +133,34 @@ function AnalysisResult({ plot, dispatch }: Props) {
   }
 
   if (!result) {
+    if (status === "error") {
+      return (
+        <Section title="Analysis Result">
+          <p>Sorry, there was an error retrieving the analysis result.</p>
+        </Section>
+      );
+    }
+
+    const baseUrl = isElara ? "../elara/custom_analysis" : "../custom_analyses";
+
+    // The Custom Analyses page embeds an encoded version of all its
+    // parameters into the query string so it can be easily re-run.
+    const params = new URLSearchParams(window.location.search);
+    const base64EncodedQs = params.get("analysis");
+    const queryString = base64EncodedQs ? atob(base64EncodedQs) : "";
+
     return (
       <Section title="Analysis Result">
-        {status === "error" ? (
-          <p>Sorry, there was an error retrieving the analysis result.</p>
-        ) : (
-          <p>Sorry, this analysis is no longer available.</p>
-        )}
-        <p>
-          Try <a href="../interactive/custom_analysis">running it again</a>.
-        </p>
-        <Button bsStyle="primary" onClick={clearAnalysis}>
+        <p>Sorry, this analysis is no longer available.</p>
+        <Button bsStyle="default" onClick={clearAnalysis}>
           Dismiss
+        </Button>
+        <Button
+          href={`${baseUrl}?${queryString}`}
+          style={{ marginLeft: 10 }}
+          bsStyle="primary"
+        >
+          Re-run analysis
         </Button>
       </Section>
     );
