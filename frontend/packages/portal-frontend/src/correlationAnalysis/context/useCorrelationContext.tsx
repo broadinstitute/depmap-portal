@@ -38,9 +38,12 @@ export function CorrelationProvider({ children }: CorrelationProviderProps) {
     setSelectedCorrelatedDatasets(datasetSelections || []);
   }, []);
 
-  const handleDosesChange = useCallback((doses: string[] | undefined) => {
-    setSelectedDoses(doses || []);
-  }, []);
+  const handleDosesChange = useCallback(
+    (doses: { label: string; value: string }[] | undefined) => {
+      setSelectedDoses(doses?.map((dose) => dose.value) || []);
+    },
+    []
+  );
 
   const handleLabelSelection = useCallback((ds: string, labels: string[]) => {
     setAllSelectedLabels((prev) => ({ ...prev, [ds]: labels }));
