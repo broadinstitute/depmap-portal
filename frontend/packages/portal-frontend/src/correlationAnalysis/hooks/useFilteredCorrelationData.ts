@@ -1,54 +1,89 @@
 import { useEffect, useState } from "react";
 import { SortedCorrelations } from "../models/CorrelationPlot";
+import { useCorrelationContext } from "../context/useCorrelationContext";
 
 export function useFilteredCorrelationData(
   correlationAnalysisData: SortedCorrelations[],
-  selectedCorrelatedDatasets: string[],
-  selectedDoses: string[],
-  allSelectedLabels: Record<string, string[]>,
   featureType: "gene" | "compound"
 ) {
+  const {
+    selectedCorrelatedDatasets,
+    selectedDoses,
+    allSelectedLabels,
+  } = useCorrelationContext();
   const [filteredData, setFilteredData] = useState<SortedCorrelations[]>([]);
 
   useEffect(() => {
-    const isGene = featureType === "gene";
-    const noFilters =
-      (isGene || selectedDoses.length === 0) &&
-      selectedCorrelatedDatasets.length === 0 &&
-      Object.keys(allSelectedLabels).length === 0;
+    const selectedFront: SortedCorrelations[] = [];
 
-    if (noFilters) {
-      setFilteredData(correlationAnalysisData);
+    // --- GENE SPECIFIC ---
+    if (featureType === "gene") {
+      const noGeneFilters =
+        selectedCorrelatedDatasets.length === 0 &&
+        Object.keys(allSelectedLabels).length === 0;
+
+      if (noGeneFilters) {
+        setFilteredData(correlationAnalysisData);
+        return;
+      }
+
+      const filtered = correlationAnalysisData.filter((data) => {
+        const matchesDS =
+          selectedCorrelatedDatasets.length === 0 ||
+          selectedCorrelatedDatasets.includes(data.featureDataset);
+
+        const isSelected = allSelectedLabels[data.featureDataset]?.includes(
+          data.feature
+        );
+
+        if (isSelected && matchesDS) selectedFront.push(data);
+        return matchesDS && !isSelected;
+      });
+
+      selectedFront.sort((a, b) => a.feature.localeCompare(b.feature));
+      setFilteredData([...selectedFront, ...filtered]);
       return;
     }
 
-    const selectedFront: SortedCorrelations[] = [];
-    const filtered = correlationAnalysisData.filter((data) => {
-      const matchesDose =
-        isGene ||
-        selectedDoses.length === 0 ||
-        (typeof data.dose === "string" && selectedDoses.includes(data.dose));
-      const matchesDS =
-        selectedCorrelatedDatasets.length === 0 ||
-        selectedCorrelatedDatasets.includes(data.featureDataset);
+    // --- COMPOUND SPECIFIC BLOCK ---
+    if (featureType === "compound") {
+      const noCompoundFilters =
+        selectedDoses.length === 0 &&
+        selectedCorrelatedDatasets.length === 0 &&
+        Object.keys(allSelectedLabels).length === 0;
 
-      const keep = matchesDose && matchesDS;
-      const isSelected = allSelectedLabels[data.featureDataset]?.includes(
-        data.feature
-      );
-
-      if (isSelected && keep) selectedFront.push(data);
-      return keep && !isSelected;
-    });
-
-    selectedFront.sort((a, b) => {
-      if (a.feature === b.feature && !isGene) {
-        return (a.dose || "").localeCompare(b.dose || "");
+      if (noCompoundFilters) {
+        setFilteredData(correlationAnalysisData);
+        return;
       }
-      return a.feature.localeCompare(b.feature);
-    });
 
-    setFilteredData([...selectedFront, ...filtered]);
+      const filtered = correlationAnalysisData.filter((data) => {
+        const matchesDose =
+          selectedDoses.length === 0 ||
+          (typeof data.dose === "string" && selectedDoses.includes(data.dose));
+
+        const matchesDS =
+          selectedCorrelatedDatasets.length === 0 ||
+          selectedCorrelatedDatasets.includes(data.featureDataset);
+
+        const keep = matchesDose && matchesDS;
+        const isSelected = allSelectedLabels[data.featureDataset]?.includes(
+          data.feature
+        );
+
+        if (isSelected && keep) selectedFront.push(data);
+        return keep && !isSelected;
+      });
+
+      selectedFront.sort((a, b) => {
+        if (a.feature === b.feature) {
+          return (a.dose || "").localeCompare(b.dose || "");
+        }
+        return a.feature.localeCompare(b.feature);
+      });
+
+      setFilteredData([...selectedFront, ...filtered]);
+    }
   }, [
     correlationAnalysisData,
     selectedCorrelatedDatasets,

@@ -9,17 +9,10 @@ export function useCorrelationUIState(
   doseColors: { hex: string | undefined; dose: string }[],
   featureType: "gene" | "compound"
 ) {
-  const {
-    selectedCorrelatedDatasets,
-    selectedDoses,
-    allSelectedLabels,
-  } = useCorrelationContext();
+  const { allSelectedLabels } = useCorrelationContext();
 
   const filteredTableData = useFilteredCorrelationData(
     correlationAnalysisData,
-    selectedCorrelatedDatasets,
-    selectedDoses,
-    allSelectedLabels,
     featureType
   );
 
