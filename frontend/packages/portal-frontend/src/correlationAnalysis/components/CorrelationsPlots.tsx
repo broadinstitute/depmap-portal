@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import CorrelationsPlot from "./CorrelationPlot";
 import DoseLegend from "./DoseLegend";
 import { VolcanoPlotData } from "../models/VolcanoPlot";
@@ -45,6 +45,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
 
   const filteredDosesForCorrelatedDatasetVolcanoData = React.useCallback(
     (correlatedDatasetVolcanoData: DoseCategoryVolcanoData) => {
+      console.log("ENTERED COMPOUND SPACE!!!!!");
       if (dosesToFilter.length) {
         const subset: DoseCategoryVolcanoData = {};
         dosesToFilter.forEach((dose) => {
@@ -70,6 +71,30 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
     return hasOtherCorrDatasetSelectedFeatures;
   };
 
+  const getPlotData = useCallback(
+    (correlatedDataset: string) => {
+      console.log("correlatedDataset", correlatedDataset);
+      console.log(
+        "volcanoDataForCorrelatedDatasets",
+        volcanoDataForCorrelatedDatasets
+      );
+
+      const obj =
+        featureType === "gene"
+          ? volcanoDataForCorrelatedDatasets[correlatedDataset]
+          : filteredDosesForCorrelatedDatasetVolcanoData(
+              volcanoDataForCorrelatedDatasets[correlatedDataset]
+            );
+      console.log("obj", obj);
+      return Object.values(obj) as VolcanoPlotData[];
+    },
+    [
+      filteredDosesForCorrelatedDatasetVolcanoData,
+      volcanoDataForCorrelatedDatasets,
+      featureType,
+    ]
+  );
+
   return (
     <div className={styles.plotContent} key={key}>
       <div className={styles.plotContainer}>
@@ -93,15 +118,7 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
               </div>
               <CorrelationsPlot
                 correlatedDatasetName={correlatedDataset}
-                data={
-                  Object.values(
-                    featureType === "gene"
-                      ? volcanoDataForCorrelatedDatasets[correlatedDataset]
-                      : filteredDosesForCorrelatedDatasetVolcanoData(
-                          volcanoDataForCorrelatedDatasets[correlatedDataset]
-                        )
-                  ) as VolcanoPlotData[]
-                }
+                data={getPlotData(correlatedDataset)}
                 selectedFeatures={
                   correlatedDataset in correlatedDatasetSelectedLabels
                     ? correlatedDatasetSelectedLabels[correlatedDataset]

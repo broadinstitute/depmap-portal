@@ -39,8 +39,9 @@ export function useVolcanoPlotData(
       label.push(cur.feature);
 
       let tooltip = `<b>${cur.feature}</b><br>`;
-      if (!isGene)
+      if (!isGene) {
         tooltip += `<b>Dose (uM)</b>: ${formatDoseString(cur.dose)}<br>`;
+      }
       tooltip += `<b>Corr:</b> ${cur.correlation.toFixed(
         4
       )}<br><b>-log10(q):</b> ${cur.log10qvalue.toFixed(4)}`;
