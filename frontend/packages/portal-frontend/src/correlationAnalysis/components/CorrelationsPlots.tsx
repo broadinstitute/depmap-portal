@@ -45,7 +45,6 @@ export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
 
   const filteredDosesForCorrelatedDatasetVolcanoData = React.useCallback(
     (correlatedDatasetVolcanoData: DoseCategoryVolcanoData) => {
-      console.log("ENTERED COMPOUND SPACE!!!!!");
       if (dosesToFilter.length) {
         const subset: DoseCategoryVolcanoData = {};
         dosesToFilter.forEach((dose) => {
