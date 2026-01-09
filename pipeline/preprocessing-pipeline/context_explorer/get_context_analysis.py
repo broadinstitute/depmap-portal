@@ -10,6 +10,7 @@ import re
 # need to add ../pipeline/ to the sys path in order to import from scripts
 import sys
 from pathlib import Path
+
 sys.path.append(str(Path().resolve().parents[0]))
 from scripts.calculate_bimodality_coefficient import (
     bimodality_coefficient_for_cpd_viabilities,
@@ -18,9 +19,9 @@ from taigapy import create_taiga_client_v3
 
 MIN_GROUP_SIZE = 5
 
-CRISPR_DATASET_NAME = 'Chronos_Combined'
-REPURPOSING_DATASET_NAME = 'REPURPOSING_primary_collapsed'
-ONCREF_DATASET_NAME = 'PRISMOncologyReferenceLog2AUCMatrix'
+CRISPR_DATASET_NAME = "Chronos_Combined"
+REPURPOSING_DATASET_NAME = "REPURPOSING_primary_collapsed"
+ONCREF_DATASET_NAME = "PRISMOncologyReferenceLog2AUCMatrix"
 
 ### ----- LOAD DATA FROM TAIGA ----- ###
 def load_subtype_tree(tc, subtype_tree_taiga_id, context_matrix_taiga_id):
@@ -61,81 +62,75 @@ def load_crispr_data(
 
 
 def strip_brd_prefix(sample_id):
-    brd_prefix_pattern = '(BRD[:-]{1})+'
+    brd_prefix_pattern = "(BRD[:-]{1})+"
 
-    brd_prefix_match = re.search(
-        brd_prefix_pattern,
-        sample_id
-    )
+    brd_prefix_match = re.search(brd_prefix_pattern, sample_id)
 
     if brd_prefix_match:
-        new_sample_id = sample_id[brd_prefix_match.span()[1]:]
+        new_sample_id = sample_id[brd_prefix_match.span()[1] :]
         return new_sample_id
-    
+
     return sample_id
+
 
 def load_SampleID_to_CompoundID_mapping(tc, portal_compounds_taiga_id):
     portal_compounds = tc.get(portal_compounds_taiga_id)
-    portal_compounds['sample_id_list'] = [i.split(';') for i in portal_compounds.SampleIDs]
+    portal_compounds["sample_id_list"] = [
+        i.split(";") for i in portal_compounds.SampleIDs
+    ]
 
-    exploded_portal_compounds = portal_compounds.explode('sample_id_list')
-    exploded_portal_compounds['sample_id_clean'] = exploded_portal_compounds.sample_id_list.apply(
-        strip_brd_prefix
+    exploded_portal_compounds = portal_compounds.explode("sample_id_list")
+    exploded_portal_compounds[
+        "sample_id_clean"
+    ] = exploded_portal_compounds.sample_id_list.apply(strip_brd_prefix)
+
+    sample_id_to_compound_id = dict(
+        zip(
+            exploded_portal_compounds.sample_id_clean,
+            exploded_portal_compounds.CompoundID,
+        )
     )
-
-    sample_id_to_compound_id = dict(zip(
-        exploded_portal_compounds.sample_id_clean,
-        exploded_portal_compounds.CompoundID
-    ))
 
     return sample_id_to_compound_id
 
 
 def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taiga_id):
-    #construct the mapping of stripped compound sample IDs to compound IDs
+    # construct the mapping of stripped compound sample IDs to compound IDs
     sample_id_to_compound_id_map = load_SampleID_to_CompoundID_mapping(
         tc, portal_compounds_taiga_id
     )
 
     repurposing_matrix_samples = tc.get(repurposing_matrix_taiga_id).T
 
-    #strip BRD prefixes from the compound sample IDs
+    # strip BRD prefixes from the compound sample IDs
     repurposing_matrix_samples.columns = [
         strip_brd_prefix(i) for i in repurposing_matrix_samples.columns
     ]
-    
-    #assert that the columns are compound-sample IDs
-    assert(
-        set(repurposing_matrix_samples.columns).issubset(
-            sample_id_to_compound_id_map.keys()
-        )
+
+    # assert that the columns are compound-sample IDs
+    assert set(repurposing_matrix_samples.columns).issubset(
+        sample_id_to_compound_id_map.keys()
     )
 
     repurposing_matrix = repurposing_matrix_samples.rename(
         columns=sample_id_to_compound_id_map
     )
 
-    #verify that all the columns are now compound IDs
-    assert(
-        set(repurposing_matrix.columns).issubset(
-            sample_id_to_compound_id_map.values()
-        )
+    # verify that all the columns are now compound IDs
+    assert set(repurposing_matrix.columns).issubset(
+        sample_id_to_compound_id_map.values()
     )
-    #verify that there are no duplicates per compound ID
-    assert (
-        repurposing_matrix.columns.nunique() == repurposing_matrix.shape[1]
-    )
+    # verify that there are no duplicates per compound ID
+    assert repurposing_matrix.columns.nunique() == repurposing_matrix.shape[1]
 
     # filter PRISM data --> Restrict analysis to drugs that are sens in min. 1
     #                       cell line and toxic to < 75% of cell lines.
 
-    #First we have to define sensitive and non-sensitive
+    # First we have to define sensitive and non-sensitive
     repurposing_discrete = repurposing_matrix < np.log2(0.3)
-    repurposing_discrete = repurposing_discrete.mask(
-        repurposing_matrix.isnull()
-    )
+    repurposing_discrete = repurposing_discrete.mask(repurposing_matrix.isnull())
 
-    #Then define our list of valid drugs
+    # Then define our list of valid drugs
     perc_sens_lines = repurposing_discrete.mean()
     n_sens_lines = repurposing_discrete.sum()
     incl_drugs = pd.Index(
@@ -144,7 +139,7 @@ def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taig
         )
     )
 
-    #Finally, filter the matrix to only the drugs that we'll test
+    # Finally, filter the matrix to only the drugs that we'll test
     drug_sensitivity = repurposing_matrix.loc[:, incl_drugs]
 
     return drug_sensitivity
@@ -157,18 +152,16 @@ def load_oncref_data(tc, oncref_auc_taiga_id, portal_compounds_taiga_id):
         tc, portal_compounds_taiga_id
     )
 
-    #map sample IDs to compound IDs
+    # map sample IDs to compound IDs
     log_auc_matrix_compounds = log_auc_matrix_samples.rename(
         columns=sample_id_to_compound_id_map
     )
 
-    #verify that all columns are compound IDs
-    assert(
-        set(log_auc_matrix_compounds.columns).issubset(
-            set(sample_id_to_compound_id_map.values())
-        )
+    # verify that all columns are compound IDs
+    assert set(log_auc_matrix_compounds.columns).issubset(
+        set(sample_id_to_compound_id_map.values())
     )
-    #verify that there are no duplicates per compound ID
+    # verify that there are no duplicates per compound ID
     assert (
         log_auc_matrix_compounds.columns.nunique() == log_auc_matrix_compounds.shape[1]
     )
@@ -184,14 +177,11 @@ def load_oncref_data(tc, oncref_auc_taiga_id, portal_compounds_taiga_id):
 def format_selectivity_vals(drug_data_dict):
     selectivity_vals_by_dataset = []
     for dataset_label, dataset in drug_data_dict.items():
-        bimodality_results = dataset.apply(
-            bimodality_coefficient_for_cpd_viabilities
-        ).reset_index(
-            name='selectivity_val'
-        ).rename(
-            columns={'index':'feature_id'}
-        ).assign(
-            dataset=dataset_label
+        bimodality_results = (
+            dataset.apply(bimodality_coefficient_for_cpd_viabilities)
+            .reset_index(name="selectivity_val")
+            .rename(columns={"index": "feature_id"})
+            .assign(dataset=dataset_label)
         )
 
         selectivity_vals_by_dataset.append(bimodality_results)
@@ -251,7 +241,7 @@ def load_all_data(
     # OncRef will be None on the public portal
     if oncref_auc_taiga_id is not None:
         oncref_aucs, oncref_log_aucs = load_oncref_data(
-            tc=tc, 
+            tc=tc,
             oncref_auc_taiga_id=oncref_auc_taiga_id,
             portal_compounds_taiga_id=portal_compounds_taiga_id,
         )
@@ -267,9 +257,7 @@ def load_all_data(
         # compute_context_results function.
         data_for_extra_cols["oncref_aucs"] = oncref_aucs
 
-    selectivity_vals = format_selectivity_vals(
-        datasets_to_calculate_bimodality
-    )
+    selectivity_vals = format_selectivity_vals(datasets_to_calculate_bimodality)
     data_for_extra_cols["selectivity_vals"] = selectivity_vals
 
     all_data_dict["datasets_to_test"] = datasets_to_test
@@ -420,7 +408,8 @@ def compute_context_results(
             # merge with selectivity vals
             ds_res = ds_res.reset_index(names="feature_id").merge(
                 data_for_extra_cols["selectivity_vals"],
-                on=['feature_id', 'dataset'], how='left'
+                on=["feature_id", "dataset"],
+                how="left",
             )
 
         ctx_res_dfs.append(ds_res)
