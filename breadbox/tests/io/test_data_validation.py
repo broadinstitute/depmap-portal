@@ -2,8 +2,8 @@ from typing import List, Optional
 import pandas as pd
 
 from breadbox.io.hdf5_value_mapping import (
-    get_hdf5_to_value_mapping,
-    get_value_to_hdf5_mapping,
+    get_decoder_function,
+    get_encoder_function,
 )
 from breadbox.schemas.dataframe_wrapper import PandasDataFrameWrapper
 from breadbox.io.data_validation import (
@@ -76,7 +76,7 @@ def read_and_validate_matrix_df_helper(
     allowed_values: Optional[List[str]],
     data_file_format: str,
 ):
-    value_mapping = get_value_to_hdf5_mapping(value_type, allowed_values)
+    value_mapping = get_encoder_function(value_type, allowed_values)
     original_df = read_and_validate_matrix_df(
         file_path, value_type, value_mapping, data_file_format
     ).get_df()

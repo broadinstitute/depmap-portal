@@ -11,7 +11,7 @@ from .hdf5_utils import (
     write_hdf5_file,
     read_hdf5_file,
 )
-from .hdf5_value_mapping import get_hdf5_to_value_mapping
+from .hdf5_value_mapping import get_decoder_function
 from breadbox.schemas.custom_http_exception import (
     SampleNotFoundError,
     FeatureNotFoundError,
@@ -74,7 +74,7 @@ def get_slice(
     )
 
     value_mapping = _identity_if_none(
-        get_hdf5_to_value_mapping(dataset.value_type, dataset.allowed_values)
+        get_decoder_function(dataset.value_type, dataset.allowed_values)
     )
 
     return value_mapping(df)
@@ -95,7 +95,7 @@ def get_feature_slice(
     )
 
     value_mapping = _identity_if_none(
-        get_hdf5_to_value_mapping(dataset.value_type, dataset.allowed_values)
+        get_decoder_function(dataset.value_type, dataset.allowed_values)
     )
 
     return value_mapping(df)
@@ -116,7 +116,7 @@ def get_sample_slice(
     )
 
     value_mapping = _identity_if_none(
-        get_hdf5_to_value_mapping(dataset.value_type, dataset.allowed_values)
+        get_decoder_function(dataset.value_type, dataset.allowed_values)
     )
 
     return value_mapping(df)

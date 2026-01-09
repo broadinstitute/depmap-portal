@@ -12,7 +12,7 @@ from fastapi import UploadFile
 from sqlalchemy import and_, or_
 import logging
 
-from .hdf5_value_mapping import get_value_to_hdf5_mapping
+from .hdf5_value_mapping import get_encoder_function
 
 log = logging.getLogger(__name__)
 
@@ -417,7 +417,7 @@ def validate_and_upload_dataset_files(
             f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
         )
 
-    value_mapping = get_value_to_hdf5_mapping(value_type, allowed_values)
+    value_mapping = get_encoder_function(value_type, allowed_values)
 
     _validate_data_file(unchecked_dfw, value_type, value_mapping)
 
