@@ -454,20 +454,22 @@ export function initDoseResponseTab(
 
 export function initCorrelationAnalysisTab(
   elementId: string,
-  compoundName: string,
-  compoundId: string,
+  featureName: string,
+  featureId: string,
   datasetOptions: Array<any>
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <CorrelationAnalysis
-        datasetOptions={sortByNumberOrNull(
+        compoundDatasetOptions={sortByNumberOrNull(
           datasetOptions,
           "auc_dataset_priority",
           "asc"
         )}
-        compoundName={compoundName}
-        compoundId={compoundId}
+        geneDatasetOptions={[]}
+        featureName={featureName}
+        featureId={featureId}
+        featureType={"compound"}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

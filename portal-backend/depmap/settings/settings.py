@@ -238,6 +238,10 @@ class FeatureFlags:
     def correlation_analysis(self):
         return self.is_prerelease_env()
 
+    @property
+    def gene_page_correlation_analysis(self):
+        return self.is_qa()
+
 
 def make_log_config(log_dir):
     return {

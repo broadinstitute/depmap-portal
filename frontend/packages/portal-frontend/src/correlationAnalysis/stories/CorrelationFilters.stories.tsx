@@ -1,5 +1,5 @@
 import * as React from "react";
-import CorrelationFilters from "../components/CorrelationFilters";
+import CorrelationFilters from "../components/Filters/CorrelationFilters";
 
 export default {
   title: "Components/CorrelationAnalysis/CorrelationFilters",
