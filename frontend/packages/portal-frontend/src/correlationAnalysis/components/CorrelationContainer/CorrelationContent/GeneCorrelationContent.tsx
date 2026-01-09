@@ -3,13 +3,13 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import {
   SortedCorrelations,
   VolcanoDataForCorrelatedDataset,
-} from "../models/CorrelationPlot";
-import { GeneCorrelationDatasetOption, SelectOption } from "../types";
-import { useCorrelationContext } from "../context/useCorrelationContext";
-import CorrelationsTable from "./CorrelationsTable";
-import CorrelationsPlots from "./CorrelationsPlots";
-import styles from "../styles/CorrelationAnalysis.scss";
-import { CorrelationFilters } from "./Filters/CorrelationFilters";
+} from "../../../models/CorrelationPlot";
+import { GeneCorrelationDatasetOption, SelectOption } from "../../../types";
+import { useCorrelationContext } from "../../../context/useCorrelationContext";
+import CorrelationsTable from "../../CorrelationsTable";
+import CorrelationsPlots from "../../CorrelationsPlots";
+import styles from "../../../styles/CorrelationAnalysis.scss";
+import { CorrelationFilters } from "../../Filters/CorrelationFilters";
 
 interface GeneCorrelationContentProps {
   isLoading: boolean;

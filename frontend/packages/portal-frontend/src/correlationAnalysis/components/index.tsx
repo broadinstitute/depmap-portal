@@ -2,8 +2,8 @@
 import * as React from "react";
 import { DRCDatasetOptions } from "@depmap/types";
 import { GeneCorrelationDatasetOption } from "../types";
-import { GeneCorrelationContainer } from "./GeneCorrelationContainer";
-import { CompoundCorrelationContainer } from "./CompoundCorrelationContainer";
+import { GeneCorrelationContainer } from "./CorrelationContainer/GeneCorrelationContainer";
+import { CompoundCorrelationContainer } from "./CorrelationContainer/CompoundCorrelationContainer";
 import { CorrelationProvider } from "../context/useCorrelationContext";
 
 interface CorrelationAnalysisProps {

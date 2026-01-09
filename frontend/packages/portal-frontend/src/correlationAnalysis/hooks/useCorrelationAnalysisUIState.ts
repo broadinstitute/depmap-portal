@@ -5,6 +5,7 @@ import { useVolcanoPlotData } from "./useVolcanoPlotData";
 import { useCorrelationContext } from "../context/useCorrelationContext";
 
 export function useCorrelationUIState(
+  selectedDatasetGivenId: string,
   correlationAnalysisData: SortedCorrelations[],
   doseColors: { hex: string | undefined; dose: string }[],
   featureType: "gene" | "compound"
@@ -19,7 +20,8 @@ export function useCorrelationUIState(
   const volcanoData = useVolcanoPlotData(
     correlationAnalysisData,
     doseColors,
-    featureType
+    featureType,
+    selectedDatasetGivenId
   );
 
   const selectedRows = useMemo(() => {

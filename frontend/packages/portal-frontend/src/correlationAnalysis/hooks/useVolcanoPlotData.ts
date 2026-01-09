@@ -8,10 +8,13 @@ import { formatDoseString } from "../utilities/helper";
 export function useVolcanoPlotData(
   data: SortedCorrelations[],
   doseColors: { dose: string; hex: string | undefined }[],
-  featureType: "gene" | "compound"
+  featureType: "gene" | "compound",
+  selectedDatasetGivenId: string
 ) {
   return useMemo(() => {
     const isGene = featureType === "gene";
+    const geneColor =
+      selectedDatasetGivenId === "Chronos_Combined" ? "#337ab7" : "#532e8c";
     return data.reduce((acc: VolcanoDataForCorrelatedDataset, cur) => {
       const key = cur.featureDataset;
       if (!acc[key]) acc[key] = {};
@@ -28,7 +31,7 @@ export function useVolcanoPlotData(
           isSignificant: [],
           name: cat,
           color: isGene
-            ? "#337ab7"
+            ? geneColor
             : doseColors.find((d) => d.dose === cat)?.hex,
         };
       }
@@ -49,5 +52,5 @@ export function useVolcanoPlotData(
 
       return acc;
     }, {});
-  }, [data, doseColors, featureType]);
+  }, [data, doseColors, featureType, selectedDatasetGivenId]);
 }

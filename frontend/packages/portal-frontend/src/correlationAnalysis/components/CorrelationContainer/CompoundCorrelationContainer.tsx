@@ -1,10 +1,11 @@
 import { DRCDatasetOptions } from "@depmap/types";
-import { useCompoundCorrelationData } from "../hooks/useCorrelationAnalysisData";
+
 import React, { useCallback, useMemo, useState } from "react";
-import { SelectOption } from "../types";
-import { useCorrelationUIState } from "../hooks/useCorrelationAnalysisUIState";
-import { useCorrelationContext } from "../context/useCorrelationContext";
-import { CompoundCorrelationContent } from "./CompoundCorrelationContent";
+import { useCorrelationContext } from "src/correlationAnalysis/context/useCorrelationContext";
+import { useCorrelationUIState } from "src/correlationAnalysis/hooks/useCorrelationAnalysisUIState";
+import { SelectOption } from "src/correlationAnalysis/types";
+import { CompoundCorrelationContent } from "./CorrelationContent/CompoundCorrelationContent";
+import { useCompoundCorrelationData } from "src/correlationAnalysis/hooks/useCorrelationAnalysisData";
 
 interface CompoundCorrelationContainerProps {
   compoundDatasetOptions: DRCDatasetOptions[];
@@ -34,7 +35,12 @@ export function CompoundCorrelationContainer({
     filteredTableData,
     volcanoData,
     selectedRows,
-  } = useCorrelationUIState(correlationAnalysisData, doseColors, "compound");
+  } = useCorrelationUIState(
+    selectedDataset.log_auc_dataset_given_id || "",
+    correlationAnalysisData,
+    doseColors,
+    "compound"
+  );
 
   const selectedDatasetOption = useMemo(
     () => ({

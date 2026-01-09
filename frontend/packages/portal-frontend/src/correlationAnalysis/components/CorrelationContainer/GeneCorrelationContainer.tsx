@@ -1,9 +1,12 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { useGeneCorrelationData } from "../hooks/useCorrelationAnalysisData";
-import { GeneCorrelationDatasetOption, SelectOption } from "../types";
-import { useCorrelationUIState } from "../hooks/useCorrelationAnalysisUIState";
-import { useCorrelationContext } from "../context/useCorrelationContext";
-import { GeneCorrelationContent } from "./GeneCorrelationContent";
+import { useCorrelationContext } from "src/correlationAnalysis/context/useCorrelationContext";
+import { useGeneCorrelationData } from "src/correlationAnalysis/hooks/useCorrelationAnalysisData";
+import { useCorrelationUIState } from "src/correlationAnalysis/hooks/useCorrelationAnalysisUIState";
+import {
+  GeneCorrelationDatasetOption,
+  SelectOption,
+} from "src/correlationAnalysis/types";
+import { GeneCorrelationContent } from "./CorrelationContent/GeneCorrelationContent";
 
 interface GeneCorrelationContainerProps {
   geneDatasetOptions: GeneCorrelationDatasetOption[];
@@ -34,7 +37,12 @@ export function GeneCorrelationContainer({
     filteredTableData,
     volcanoData,
     selectedRows,
-  } = useCorrelationUIState(correlationAnalysisData, [], "gene");
+  } = useCorrelationUIState(
+    selectedDataset.datasetId,
+    correlationAnalysisData,
+    [],
+    "gene"
+  );
 
   const selectedDatasetOption = useMemo(
     () => ({
