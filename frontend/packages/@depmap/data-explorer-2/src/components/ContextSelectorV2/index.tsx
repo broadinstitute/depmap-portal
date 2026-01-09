@@ -40,6 +40,10 @@ function ContextSelectorV2({
   hasError = false,
   selectClassName = undefined,
 }: Props) {
+  if (!context_type) {
+    throw new Error("`context_type` is required!");
+  }
+
   const [isLoadingContext, setIsLoadingContext] = useState(false);
 
   const {

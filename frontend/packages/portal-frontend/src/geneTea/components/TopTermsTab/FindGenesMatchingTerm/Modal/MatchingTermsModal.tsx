@@ -5,6 +5,8 @@ import styles from "../../../../styles/GeneTea.scss";
 import ExcerptTable from "./ExcerptTable/ExcerptTable";
 import TermGroupTabs from "./TermGroupTabs";
 import { useGeneContextCreation } from "../../../../hooks/useCreateGeneContext";
+import CopyListButton from "./CopyListButton/CopyListButton";
+import { useFetchGeneList } from "src/geneTea/hooks/useFetchGeneList";
 
 interface Props {
   termOrTermGroup: string;
@@ -25,28 +27,34 @@ function MatchingTermsModal({
 }: Props) {
   const [show, setShow] = useState(true);
 
+  const termToMatchingGenesObj = useMemo(() => {
+    return Object.fromEntries(termToMatchingGenesMap);
+  }, [termToMatchingGenesMap]);
+
+  const termsKey = useMemo(() => {
+    const terms = useTerms ? [termOrTermGroup] : termsWithinSelectedGroup || [];
+    return terms.join(",");
+  }, [useTerms, termOrTermGroup, termsWithinSelectedGroup]);
+
+  const { geneList, isLoading } = useFetchGeneList(
+    useTerms,
+    termOrTermGroup,
+    termsWithinSelectedGroup,
+    termToMatchingGenesObj,
+    useAllGenes
+  );
+
   const handleContextSaveComplete = useCallback(() => setShow(true), []);
 
-  // --- 1. SINGLE TERM CONTEXT CREATION ---
-  const handleClickCreateTermContext = useGeneContextCreation({
+  const handleClickCreateContext = useGeneContextCreation({
     name: termOrTermGroup,
-    terms: useTerms ? [termOrTermGroup] : [],
-    termToMatchingGenesMap,
-    useAllGenes,
-    onComplete: handleContextSaveComplete,
-  });
-
-  // --- 2. TERM GROUP CONTEXT CREATION ---
-  const handleClickCreateTermGroupContext = useGeneContextCreation({
-    name: termOrTermGroup,
-    terms: termsWithinSelectedGroup || [], // Pass all terms in the group
-    termToMatchingGenesMap,
+    termsKey,
+    termToMatchingGenesObj,
     useAllGenes,
     onComplete: handleContextSaveComplete,
   });
 
   const modalBody = useMemo(() => {
-    // If not grouping terms
     if (useTerms || termsWithinSelectedGroup?.length === 1) {
       return (
         <ExcerptTable
@@ -58,7 +66,6 @@ function MatchingTermsModal({
       );
     }
 
-    // If grouping terms
     if (!termsWithinSelectedGroup || termsWithinSelectedGroup.length === 0) {
       return <div>No terms found for this group.</div>;
     }
@@ -85,20 +92,20 @@ function MatchingTermsModal({
         <Modal.Title>Excerpts for “{termOrTermGroup}”</Modal.Title>
       </Modal.Header>
       <Modal.Body className={styles.GeneTeaModal}>{modalBody}</Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className={styles.modalFooterRow}>
         <Button onClick={onClose}>Close</Button>
         <Button
           bsStyle="primary"
-          onClick={
-            useTerms
-              ? handleClickCreateTermContext
-              : handleClickCreateTermGroupContext
-          }
+          disabled={isLoading}
+          onClick={handleClickCreateContext}
         >
-          {useTerms
-            ? "Save as Gene Context"
-            : `Save Term Group as Gene Context`}
+          {useTerms ? "Save as Gene Context" : "Save Group as Gene Context"}
         </Button>
+        <CopyListButton
+          items={geneList}
+          title={"Copy Gene List"}
+          disabled={isLoading}
+        />
       </Modal.Footer>
     </Modal>
   );

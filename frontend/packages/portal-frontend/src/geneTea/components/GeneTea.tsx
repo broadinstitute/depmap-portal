@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
@@ -12,9 +12,27 @@ import { fetchMetadata } from "../utils";
 import glossary from "src/geneTea/json/glossary.json";
 import Glossary from "src/common/components/Glossary";
 import { GlossaryItem } from "src/common/components/Glossary/types";
+import Tutorial from "./Tutorial/Tutorial";
+import { enabledFeatures } from "@depmap/globals";
 
 function GeneTea() {
-  const { handleSetAllAvailableGenes } = useGeneTeaFiltersContext();
+  const {
+    handleSetAllAvailableGenes,
+    geneSymbolSelections,
+  } = useGeneTeaFiltersContext();
+
+  const hasInteracted = useRef(geneSymbolSelections.size > 0);
+
+  // Only ever set it to true. Never set it to false. We never want to re-show the tutorial after the initial interaction.
+  if (geneSymbolSelections.size > 0 && !hasInteracted.current) {
+    hasInteracted.current = true;
+  }
+
+  // Show tutorial ONLY if they have never interacted
+  // AND the current search is empty.
+  const showTutorialAsMain =
+    !hasInteracted.current && geneSymbolSelections.size === 0;
+
   useEffect(() => {
     (async () => {
       const geneMetadata = await fetchMetadata<any>(
@@ -46,24 +64,36 @@ function GeneTea() {
             <SearchOptionsContainer />
           </div>
           <div className={styles.geneTeaTabsWrapper}>
-            <TabsWithHistory className={styles.Tabs} isManual isLazy>
-              <TabList className={styles.TabList}>
-                <Tab id="top-tea-terms" className={styles.Tab}>
-                  Top Tea Terms
-                </Tab>
-                <Tab id="all-matching-terms" className={styles.Tab}>
-                  All Matching Terms
-                </Tab>
-              </TabList>
-              <TabPanels className={styles.TabPanels}>
-                <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent tab="top-tea-terms" />
-                </TabPanel>
-                <TabPanel className={styles.TabPanel}>
-                  <GeneTeaMainContent tab="all-matching-terms" />
-                </TabPanel>
-              </TabPanels>
-            </TabsWithHistory>
+            {showTutorialAsMain && enabledFeatures.gene_tea_tutorial_page ? (
+              <div className={styles.tutorialContainer}>
+                <Tutorial />
+              </div>
+            ) : (
+              <TabsWithHistory
+                className={styles.Tabs}
+                isManual
+                isLazy
+                defaultId="top-tea-terms"
+                qsParseOptions={{ arrayFormat: "repeat" }}
+              >
+                <TabList className={styles.TabList}>
+                  <Tab id="top-tea-terms" className={styles.Tab}>
+                    Top Tea Terms
+                  </Tab>
+                  <Tab id="all-matching-terms" className={styles.Tab}>
+                    All Matching Terms
+                  </Tab>
+                </TabList>
+                <TabPanels className={styles.TabPanels}>
+                  <TabPanel className={styles.TabPanel}>
+                    <GeneTeaMainContent tab="top-tea-terms" />
+                  </TabPanel>
+                  <TabPanel className={styles.TabPanel}>
+                    <GeneTeaMainContent tab="all-matching-terms" />
+                  </TabPanel>
+                </TabPanels>
+              </TabsWithHistory>
+            )}
           </div>
         </div>
         <Glossary
