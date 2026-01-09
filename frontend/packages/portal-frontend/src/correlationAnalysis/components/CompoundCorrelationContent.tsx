@@ -45,7 +45,6 @@ export function CompoundCorrelationContent({
     selectedCorrelatedDatasets,
     selectedDoses,
     allSelectedLabels,
-    handleDosesChange,
     handleLabelSelection,
     handleTableSelectionUpdate,
     resetAllLabels,
@@ -66,8 +65,6 @@ export function CompoundCorrelationContent({
           featureType="compound"
           compoundDatasetOptions={compoundDatasetOptions}
           doses={doses}
-          selectedDoses={selectedDoses}
-          onChangeDoses={handleDosesChange}
           selectedDatasetOption={selectedDatasetOption}
           onChangeDataset={onChangeDataset}
           correlatedDatasets={correlatedDatasets}

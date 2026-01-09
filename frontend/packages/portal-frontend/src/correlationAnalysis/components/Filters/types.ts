@@ -40,8 +40,6 @@ interface CompoundFiltersProps extends CommonFiltersProps {
   featureType: "compound";
   compoundDatasetOptions: DRCDatasetOptions[];
   doses: string[];
-  selectedDoses: string[];
-  onChangeDoses: (doses: string[]) => void;
 }
 
 export type CorrelationFiltersProps = GeneFiltersProps | CompoundFiltersProps;

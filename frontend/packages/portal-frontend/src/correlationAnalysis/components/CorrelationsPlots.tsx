@@ -21,13 +21,30 @@ interface CorrelationsPlotsProps {
   ) => void;
 }
 
-const PlotItemWrapper = ({
-  datasetName,
-  children,
-}: {
+interface CompoundCorrelationsProps {
+  correlatedDatasetsToShow: string[];
+  dosesToFilter: string[];
+  doseColors: { hex: string | undefined; dose: string }[];
+  volcanoDataForCorrelatedDatasets: VolcanoDataForCorrelatedDataset;
+  correlatedDatasetSelectedLabels: { [key: string]: string[] };
+  forwardSelectedLabels: (ds: string, labels: string[]) => void;
+  otherCorrelatedDatasetsHasSelected: (ds: string) => boolean;
+}
+
+interface GeneCorrelationsProps {
+  correlatedDatasetsToShow: string[];
+  volcanoDataForCorrelatedDatasets: VolcanoDataForCorrelatedDataset;
+  correlatedDatasetSelectedLabels: { [key: string]: string[] };
+  forwardSelectedLabels: (ds: string, labels: string[]) => void;
+  otherCorrelatedDatasetsHasSelected: (ds: string) => boolean;
+}
+
+interface PlotItemWrapperProps {
   datasetName: string;
   children: ReactNode;
-}) => (
+}
+
+const PlotItemWrapper = ({ datasetName, children }: PlotItemWrapperProps) => (
   <div className={styles.plotItem}>
     <div
       style={{
@@ -52,13 +69,7 @@ function GeneCorrelationsPlots({
   correlatedDatasetSelectedLabels,
   forwardSelectedLabels,
   otherCorrelatedDatasetsHasSelected,
-}: {
-  correlatedDatasetsToShow: string[];
-  volcanoDataForCorrelatedDatasets: VolcanoDataForCorrelatedDataset;
-  correlatedDatasetSelectedLabels: { [key: string]: string[] };
-  forwardSelectedLabels: (ds: string, labels: string[]) => void;
-  otherCorrelatedDatasetsHasSelected: (ds: string) => boolean;
-}) {
+}: GeneCorrelationsProps) {
   return (
     <div className={styles.plotContainer}>
       {correlatedDatasetsToShow.map((datasetName) => {
@@ -101,15 +112,7 @@ function CompoundCorrelationsPlots({
   correlatedDatasetSelectedLabels,
   forwardSelectedLabels,
   otherCorrelatedDatasetsHasSelected,
-}: {
-  correlatedDatasetsToShow: string[];
-  dosesToFilter: string[];
-  doseColors: { hex: string | undefined; dose: string }[];
-  volcanoDataForCorrelatedDatasets: VolcanoDataForCorrelatedDataset;
-  correlatedDatasetSelectedLabels: { [key: string]: string[] };
-  forwardSelectedLabels: (ds: string, labels: string[]) => void;
-  otherCorrelatedDatasetsHasSelected: (ds: string) => boolean;
-}) {
+}: CompoundCorrelationsProps) {
   return (
     <>
       <div className={styles.plotContainer}>

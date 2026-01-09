@@ -25,6 +25,9 @@ export function GeneFilters({
     label: d.displayName,
   }));
 
+  const filteredCorrelatedDatasetOptions = correlatedDatasetOptions.filter(
+    (opt) => opt.value !== selectedDatasetOption?.value
+  );
   return (
     <div className={styles.FiltersPanel}>
       <h4 className={styles.sectionTitle}>Dataset</h4>
@@ -38,7 +41,7 @@ export function GeneFilters({
       <h4>Correlated Dataset</h4>
       <Select
         isMulti
-        options={correlatedDatasetOptions}
+        options={filteredCorrelatedDatasetOptions}
         onChange={handleCorrelatedDatasetsChange}
         styles={customFilterStyles}
       />

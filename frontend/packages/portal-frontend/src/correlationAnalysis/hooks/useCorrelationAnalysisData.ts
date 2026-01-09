@@ -48,9 +48,12 @@ export function useGeneCorrelationData(
 
         const datasetLookup: Record<string, string> = {};
         const datasetGivenIdLookup: Record<string, string> = {};
+        const datasetNameToGivenIdLookup: Record<string, string> = {}; // For filtering the selected dataset out of the Correlate Datasets dropdown options
+
         res.associated_datasets.forEach((ds: any) => {
           datasetLookup[ds.dataset_id] = ds.name;
           datasetGivenIdLookup[ds.dataset_id] = ds.dataset_given_id;
+          datasetNameToGivenIdLookup[ds.name] = ds.dataset_given_id;
         });
 
         const dummyDoseMap = new Map([[res.dimension_label, ""]]);
@@ -80,7 +83,11 @@ export function useGeneCorrelationData(
 
         setState({
           correlationAnalysisData: filtered,
-          correlatedDatasets: Object.keys(featureDatasetCorrelates),
+          correlatedDatasets: Object.keys(featureDatasetCorrelates).filter(
+            (datasetName) =>
+              selectedDataset.datasetId !==
+              datasetNameToGivenIdLookup[datasetName]
+          ),
           doseColors: [],
           isLoading: false,
           hasError: false,
@@ -146,10 +153,10 @@ export function useCompoundCorrelationData(
         compoundDoseToDose.set(featureName, "AUC");
 
         const allRes = await Promise.all(
-          fetchTasks.map(([f, d]) =>
+          fetchTasks.map(([feature_id, dataset_id]) =>
             bapi.fetchAssociations({
-              dataset_id: d,
-              identifier: f,
+              dataset_id,
+              identifier: feature_id,
               identifier_type: "feature_id",
             })
           )
@@ -161,12 +168,20 @@ export function useCompoundCorrelationData(
           string,
           Record<string, SortedCorrelations[]>
         > = {};
+
+        const datasetNameToGivenIdLookup: Record<string, string> = {}; // For filtering the selected dataset out of the Correlate Datasets dropdown options
         allRes.forEach((correlates: any) => {
           const dsLookup: Record<string, string> = {};
           const dsGivenIdLookup: Record<string, string> = {};
+
           correlates.associated_datasets.forEach((item: any) => {
             dsLookup[item.dataset_id] = item.name;
             dsGivenIdLookup[item.dataset_id] = item.dataset_given_id;
+
+            // Only add to the lookup if the key doesn't already exist
+            if (!(item.name in datasetNameToGivenIdLookup)) {
+              datasetNameToGivenIdLookup[item.name] = item.dataset_given_id;
+            }
           });
 
           const grouped = transformAndGroupByDataset(
@@ -198,7 +213,11 @@ export function useCompoundCorrelationData(
 
         setState({
           correlationAnalysisData: finalData,
-          correlatedDatasets: Object.keys(featureDatasetDoseCorrelates),
+          correlatedDatasets: Object.keys(featureDatasetDoseCorrelates).filter(
+            (datasetLabel) =>
+              datasetNameToGivenIdLookup[datasetLabel] !== aucId &&
+              datasetNameToGivenIdLookup[datasetLabel] !== doseId
+          ),
           doseColors: colors,
           isLoading: false,
           hasError: false,

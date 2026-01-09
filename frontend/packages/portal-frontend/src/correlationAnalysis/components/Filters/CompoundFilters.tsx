@@ -50,6 +50,10 @@ export function CompoundFilters({
     [selectedDoses]
   );
 
+  const filteredCorrelatedDatasetOptions = correlatedDatasetOptions.filter(
+    (opt) => opt.value !== selectedDatasetOption?.value
+  );
+
   return (
     <div className={styles.FiltersPanel}>
       <h4 className={styles.sectionTitle}>Dataset</h4>
@@ -70,7 +74,7 @@ export function CompoundFilters({
       <h4>Correlated Dataset</h4>
       <Select
         isMulti
-        options={correlatedDatasetOptions}
+        options={filteredCorrelatedDatasetOptions}
         onChange={handleCorrelatedDatasetsChange}
         styles={customFilterStyles}
       />
