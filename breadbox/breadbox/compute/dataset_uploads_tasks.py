@@ -20,6 +20,7 @@ from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import DimensionType
 from fastapi import HTTPException
 from breadbox.io.filestore_crud import save_dataset_file
+from ..io.hdf5_value_mapping import get_value_to_hdf5_mapping
 from ..service import dataset as dataset_service
 from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
@@ -99,10 +100,14 @@ def dataset_upload(
         )
         sample_type = _get_dimension_type(db, dataset_params.sample_type, "sample")
 
+        value_mapping = get_value_to_hdf5_mapping(
+            dataset_params.value_type, dataset_params.allowed_values
+        )
+
         df_wrapper = read_and_validate_matrix_df(
             file_path,
             dataset_params.value_type,
-            dataset_params.allowed_values,
+            value_mapping,
             dataset_params.data_file_format,
         )
 
@@ -166,7 +171,7 @@ def dataset_upload(
             dataset_id,
             df_wrapper,
             dataset_params.value_type,
-            dataset_params.allowed_values,
+            value_mapping,
             settings.filestore_location,
         )
 

@@ -36,7 +36,7 @@ def test_hdf5_cache_correctness(tmpdir):
 
     expected_df = create_sample_data(100, 200)
     ref_path = str(tmpdir.join("ref"))
-    write_hdf5_file(ref_path, PandasDataFrameWrapper(expected_df), hdf5_dtype="float")
+    write_hdf5_file(ref_path, PandasDataFrameWrapper(expected_df), "float", lambda x: x)
 
     df = read_hdf5_file(ref_path)
     assert_frame_equal(df, expected_df)

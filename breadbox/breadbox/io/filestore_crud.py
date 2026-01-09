@@ -1,7 +1,7 @@
 import os
 import shutil
 import json
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Union, Callable
 
 import pandas as pd
 
@@ -10,8 +10,8 @@ from ..models.dataset import Dataset, MatrixDataset, ValueType
 from .hdf5_utils import (
     write_hdf5_file,
     read_hdf5_file,
-    categorical_to_int_encoded_df_or_raise,
 )
+from .hdf5_value_mapping import get_hdf5_to_value_mapping
 from breadbox.schemas.custom_http_exception import (
     SampleNotFoundError,
     FeatureNotFoundError,
@@ -24,7 +24,7 @@ def save_dataset_file(
     dataset_id: str,
     df_wrapper: DataFrameWrapper,
     value_type: ValueType,
-    allowed_values: Optional[List[str]],
+    map_values: Optional[Callable[[pd.DataFrame], pd.DataFrame]],
     filestore_location: str,
 ):
     base_path = os.path.join(filestore_location, dataset_id)
@@ -35,19 +35,11 @@ def save_dataset_file(
     else:
         dtype = "float"
 
-    if value_type == ValueType.categorical:
-        map_values = lambda df: categorical_to_int_encoded_df_or_raise(
-            df, allowed_values
-        )
-    else:
-        map_values = lambda df: df
-
-    assert dtype in ["str", "float"]
     write_hdf5_file(
         get_file_location(dataset_id, filestore_location, DATA_FILE),
         df_wrapper,
         dtype,
-        map_values,
+        map_values if map_values is not None else lambda x: x,
     )
 
 
@@ -59,8 +51,14 @@ def get_file_location(
     return os.path.join(filestore_location, dataset.id, file_name)
 
 
+def _identity_if_none(transform: Optional[Callable[[pd.DataFrame], pd.DataFrame]]):
+    if transform is None:
+        return lambda x: x
+    return transform
+
+
 def get_slice(
-    dataset: Dataset,
+    dataset: MatrixDataset,
     feature_indexes: Optional[List[int]],
     sample_indexes: Optional[List[int]],
     filestore_location: str,
@@ -75,9 +73,11 @@ def get_slice(
         indices_as_index=indices_as_index,
     )
 
-    df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
+    value_mapping = _identity_if_none(
+        get_hdf5_to_value_mapping(dataset.value_type, dataset.allowed_values)
+    )
 
-    return df
+    return value_mapping(df)
 
 
 def get_feature_slice(
@@ -93,9 +93,12 @@ def get_feature_slice(
     df = read_hdf5_file(
         get_file_location(dataset, filestore_location), feature_indexes=feature_indexes,
     )
-    df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
 
-    return df
+    value_mapping = _identity_if_none(
+        get_hdf5_to_value_mapping(dataset.value_type, dataset.allowed_values)
+    )
+
+    return value_mapping(df)
 
 
 def get_sample_slice(
@@ -111,26 +114,12 @@ def get_sample_slice(
     df = read_hdf5_file(
         get_file_location(dataset, filestore_location), sample_indexes=sample_indexes,
     )
-    df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
-    return df
 
+    value_mapping = _identity_if_none(
+        get_hdf5_to_value_mapping(dataset.value_type, dataset.allowed_values)
+    )
 
-def get_df_by_value_type(
-    df: pd.DataFrame,
-    value_type: Optional[ValueType],
-    dataset_allowed_values: Optional[Any],
-):
-    if value_type == ValueType.categorical:
-        assert dataset_allowed_values
-        dataset_allowed_values.append(None)
-        # Convert numerical values back to original categorical value
-        df = df.astype(int)
-        df = df.applymap(lambda x: dataset_allowed_values[x])
-    elif value_type == ValueType.list_strings:
-        # NOTE: String data in HDF5 datasets is read as bytes by default
-        # len of byte encoded empty string should be 0
-        df = df.applymap(lambda x: json.loads(x) if len(x) != 0 else None)
-    return df
+    return value_mapping(df)
 
 
 def delete_data_files(dataset_id: str, filestore_location: str):

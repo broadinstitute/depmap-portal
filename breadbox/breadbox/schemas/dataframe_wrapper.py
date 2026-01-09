@@ -7,6 +7,7 @@ import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pyarrow
+from pandas.core.dtypes.common import is_bool_dtype
 
 from breadbox.schemas.custom_http_exception import FileValidationError
 
@@ -131,7 +132,7 @@ class ParquetDataFrameWrapper(DataFrameWrapper):
         self.col_type = self._determine_col_type()
 
     def _determine_col_type(self):
-        """Will either return 'float' or 'str' or throw an exception if the column types are inconsistent."""
+        """Will either return 'float', 'str' or 'mixed'"""
 
         float_columns = 0
         str_columns = 0
@@ -156,9 +157,7 @@ class ParquetDataFrameWrapper(DataFrameWrapper):
         if str_columns == 0 and other_columns == 0 and float_columns > 0:
             return "float"
 
-        raise FileValidationError(
-            f"Invalid mix of column types. Must be all (ignoring the first column, which is treated as the index) float or all str but observed: str_columns={str_columns}, other_columns={other_columns} and float_columns={float_columns}"
-        )
+        return "mixed"
 
     def get_index_names(self) -> List[str]:
         index_col = self.schema.names[0]
@@ -202,7 +201,7 @@ class PandasDataFrameWrapper:
 
         for col in self.df.columns:
             col_dtype = self.df[col].dtypes
-            if is_numeric_dtype(col_dtype):
+            if is_numeric_dtype(col_dtype) or is_bool_dtype(col_dtype):
                 float_columns += 1
             elif is_string_dtype(col_dtype):
                 str_columns += 1
@@ -215,9 +214,7 @@ class PandasDataFrameWrapper:
         if str_columns == 0 and other_columns == 0 and float_columns > 0:
             return "float"
 
-        raise FileValidationError(
-            f"Invalid mix of column types. Must be all (ignoring the first column, which is treated as the index) float or all str but observed: str_columns={str_columns}, other_columns={other_columns} and float_columns={float_columns}"
-        )
+        return "mixed"
 
     def get_index_names(self) -> List[str]:
         return self.df.index.to_list()
