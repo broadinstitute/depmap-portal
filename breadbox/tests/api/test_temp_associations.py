@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from ..utils import assert_status_ok, assert_status_not_ok, upload_and_get_file_ids
+from ..util import assert_status_ok, assert_status_not_ok, upload_and_get_file_ids
 from typing import Literal
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import AnnotationType

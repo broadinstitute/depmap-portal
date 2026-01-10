@@ -6,7 +6,7 @@ from breadbox.compute import dataset_tasks
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from breadbox.crud.group import delete_group_entry, add_group, add_group_entry
 from breadbox.schemas.group import GroupEntryIn, GroupIn, AccessType
-from ..utils import assert_status_ok, assert_status_not_ok
+from ..util import assert_status_ok, assert_status_not_ok
 
 from tests import factories
 

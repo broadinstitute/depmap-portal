@@ -7,7 +7,7 @@ import json
 
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.types import AnnotationTypeMap
-from ..utils import assert_status_ok, assert_status_not_ok
+from ..util import assert_status_ok, assert_status_not_ok
 
 
 class TestGet:

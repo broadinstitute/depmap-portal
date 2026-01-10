@@ -1,7 +1,7 @@
 import json
 import numpy as np
 import pandas as pd
-from ..utils import assert_status_ok, assert_status_not_ok
+from ..util import assert_status_ok, assert_status_not_ok
 
 from fastapi.testclient import TestClient
 
