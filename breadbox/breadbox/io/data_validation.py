@@ -13,6 +13,7 @@ from sqlalchemy import and_, or_
 import logging
 
 from .hdf5_value_mapping import get_encoder_function
+from .hdf5_value_mapping import _parse_list_strings
 
 log = logging.getLogger(__name__)
 
@@ -577,9 +578,6 @@ def _validate_tabular_dimensions(
                 raise FileValidationError(
                     f"The column '{column_name}' references '{column_metadata.references}' which is not an existing dimension type"
                 )
-
-
-from .hdf5_value_mapping import _parse_list_strings
 
 
 def _validate_tabular_df_schema(
