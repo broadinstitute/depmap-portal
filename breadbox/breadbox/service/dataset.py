@@ -22,7 +22,7 @@ from ..schemas.custom_http_exception import (
     FeatureNotFoundError,
     SampleNotFoundError,
 )
-from breadbox.models.dataset import MatrixDataset
+from breadbox.models.dataset import MatrixDataset, Dataset
 from breadbox.crud.group import (
     get_group,
     TRANSIENT_GROUP_ID,
@@ -30,7 +30,9 @@ from breadbox.crud.group import (
 )
 
 from ..crud.dataset import (
-    add_tabular_dimensions, add_matrix_dataset_dimensions,     get_current_datetime,
+    add_tabular_dimensions,
+    add_matrix_dataset_dimensions,
+    get_current_datetime,
 )
 from ..crud.dimension_ids import (
     IndexedGivenIDDataFrame,

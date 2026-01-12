@@ -25,7 +25,7 @@ from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
 from ..crud import data_type as data_type_crud
 from ..crud import dataset as dataset_crud
-from .dataset_tasks import db_context
+from ..db import util as db_util
 from ..api.uploads import construct_file_from_ids
 from ..io.data_validation import (
     read_and_validate_matrix_df,
@@ -41,44 +41,53 @@ from ..config import get_settings
 def run_dataset_upload(
     self: celery.Task, dataset_params: Dict, user: str,
 ):
-    with db_context(user, commit=True) as db:
-        if dataset_params["format"] == "matrix":
-            params: DatasetParams = MatrixDatasetParams(**dataset_params)
-        else:
-            params: DatasetParams = TableDatasetParams(**dataset_params)
+    with db_util.db_context(user, commit=True) as db:
+        run_dataset_with_db(db, dataset_params)
 
-        upload_dataset_response = dataset_upload(db, params, user)
 
-        # because celery is going to want to serialize the response,
-        # convert it to a json dict before returning it
-        # also, using the hack described at https://stackoverflow.com/questions/65622045/pydantic-convert-to-jsonable-dict-not-full-json-string
-        return json.loads(upload_dataset_response.json())
+def run_dataset_with_db(db: SessionWithUser, dataset_params: Dict):
+    if dataset_params["format"] == "matrix":
+        params: DatasetParams = MatrixDatasetParams(**dataset_params)
+    else:
+        params: DatasetParams = TableDatasetParams(**dataset_params)
+
+    settings = get_settings()
+
+    serializer = URLSafeSerializer(settings.breadbox_secret)
+
+    file_path = construct_file_from_ids(
+        params.file_ids,
+        params.dataset_md5,
+        serializer,
+        settings.compute_results_location,
+    )
+
+    upload_dataset_response = dataset_upload(
+        db, params, file_path, settings.filestore_location
+    )
+
+    # because celery is going to want to serialize the response,
+    # convert it to a json dict before returning it
+    # also, using the hack described at https://stackoverflow.com/questions/65622045/pydantic-convert-to-jsonable-dict-not-full-json-string
+    return json.loads(upload_dataset_response.model_dump_json())
 
 
 def dataset_upload(
-    db: SessionWithUser, dataset_params: DatasetParams, user: str,
+    db: SessionWithUser,
+    dataset_params: DatasetParams,
+    file_path: str,
+    filestore_location: str,
 ):
-    settings = get_settings()
-
     # NOTE: We make this check in the dataset_crud.add_dataset function too, because we
     # want to have access checks at the crud layer. But we also want to check this before we
     # do any work validating the dataset.
-    _validate_group(db, user, dataset_params.group_id)
+    _validate_group(db, db.user, dataset_params.group_id)
     _validate_data_type(db, dataset_params.data_type)
 
     given_id = parse_and_validate_dataset_given_id(
         db=db,
         dataset_given_id=dataset_params.given_id,
         dataset_metadata=dataset_params.dataset_metadata,
-    )
-
-    serializer = URLSafeSerializer(settings.breadbox_secret)
-
-    file_path = construct_file_from_ids(
-        dataset_params.file_ids,
-        dataset_params.dataset_md5,
-        serializer,
-        settings.compute_results_location,
     )
 
     dataset_id = str(uuid4())
@@ -152,7 +161,7 @@ def dataset_upload(
 
         added_dataset = dataset_service.add_matrix_dataset(
             db,
-            user,
+            db.user,
             dataset_in,
             feature_labels_and_warnings.given_id_to_index,
             sample_labels_and_warnings.given_id_to_index,
@@ -163,10 +172,7 @@ def dataset_upload(
             dataset_params.description,
         )
         save_dataset_file(
-            dataset_id,
-            df_wrapper,
-            dataset_params.value_type,
-            settings.filestore_location,
+            dataset_id, df_wrapper, dataset_params.value_type, filestore_location,
         )
 
     else:
@@ -203,7 +209,7 @@ def dataset_upload(
         )
         added_dataset = dataset_service.add_tabular_dataset(
             db,
-            user,
+            db.user,
             dataset_in,
             data_df,
             dataset_params.columns_metadata,

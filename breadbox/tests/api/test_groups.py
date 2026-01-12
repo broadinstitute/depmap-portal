@@ -9,6 +9,7 @@ from breadbox.schemas.group import GroupEntryIn, GroupIn, AccessType
 from ..utils import assert_status_ok, assert_status_not_ok
 
 from tests import factories
+from ..utils import upload_and_get_file_ids
 
 
 class TestGet:
@@ -205,6 +206,7 @@ class TestDelete:
         minimal_db,
         monkeypatch,
         celery_app,
+        mock_celery,
     ):
         @contextmanager
         def mock_db_context(user, **kwargs):
@@ -215,13 +217,8 @@ class TestDelete:
 
         # The endpoint uses celery, and needs monkeypatching to replace db_context and get_settings,
         # which are not passed in as params due to the limits of redis serialization.
-        monkeypatch.setattr(dataset_tasks, "db_context", mock_db_context)
-        monkeypatch.setattr(dataset_tasks, "get_settings", get_test_settings)
-        monkeypatch.setattr(
-            dataset_tasks,
-            "run_upload_dataset",
-            celery_app.task(bind=True)(dataset_tasks.run_upload_dataset),
-        )
+        monkeypatch.setattr("breadbox.db.util.db_context", mock_db_context)
+        monkeypatch.setattr("breadbox.config._get_settings", get_test_settings)
 
         nongroup_user_header = {"X-Forwarded-User": "random@group.com"}
         admin_user = settings.admin_users[0]
@@ -240,25 +237,32 @@ class TestDelete:
         assert owner_group in owner_groups
 
         # Add dataset to group
-        with open(f"tests/sample_data/chronos_combined_score.csv", "rb") as f:
-            post_data = client.post(
-                "/datasets/",
-                data={
-                    "name": "a dataset",
-                    "units": "a unit",
-                    "feature_type": "generic",
-                    "sample_type": "depmap_model",
-                    "data_type": "User upload",
-                    "is_transient": "false",
-                    "group_id": owner_group["id"],
-                    "value_type": "continuous",
-                },
-                files={"data_file": ("data.csv", f, "text/csv",),},
-                headers=admin_headers,
-            )
-        assert_status_ok(post_data)
-        dataset = post_data.json()
-        minimal_db.commit()
+        file_ids, expected_md5 = upload_and_get_file_ids(
+            client, filename="tests/sample_data/chronos_combined_score.csv"
+        )
+
+        matrix_dataset = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": owner_group["id"],
+                "value_type": "continuous",
+                "allowed_values": None,
+                "data_file_format": "csv",
+            },
+            headers=admin_headers,
+        )
+        assert_status_ok(matrix_dataset)
+        assert matrix_dataset.status_code == 202
+        assert matrix_dataset.json()["state"] == "SUCCESS"
+        dataset_id = matrix_dataset.json()["result"]["datasetId"]
 
         # Test group deleted for nongroup member
         nongroup_user_delete = client.delete(
@@ -275,9 +279,8 @@ class TestDelete:
         owner_groups = r_get.json()
         assert len(owner_groups) == 2
         # Test successful group delete
-        r = client.delete(
-            f"/datasets/{dataset['result']['datasetId']}", headers=admin_headers,
-        )
+        breakpoint()
+        r = client.delete(f"/datasets/{dataset_id}", headers=admin_headers,)
         assert_status_ok(r)
         owner_delete = client.delete(
             f"/groups/{owner_group['id']}", headers=admin_headers

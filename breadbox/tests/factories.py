@@ -1,8 +1,12 @@
+import tempfile
 from typing import Any, List, Optional, Union
 
 import typing
+from unittest.mock import MagicMock
+
 from breadbox.api.groups import add_group
 import breadbox.api.dimension_types as types_api
+from breadbox.main import celery
 from breadbox.service.dataset import add_dimension_type, add_tabular_dataset
 from breadbox.crud.data_type import add_data_type
 from breadbox.crud import dataset as dataset_crud
@@ -25,8 +29,8 @@ from breadbox import config
 from breadbox.config import Settings as realSettings
 from breadbox.schemas.types import AnnotationTypeMap, IdMapping, AnnotationType
 
-from breadbox.compute import dataset_tasks
-from breadbox.schemas.dataset import ColumnMetadata, AnnotationType
+from breadbox.compute import dataset_uploads_tasks
+from breadbox.schemas.dataset import ColumnMetadata, AnnotationType, MatrixDatasetParams
 from breadbox.schemas.dataset import TabularDatasetIn
 import uuid
 import breadbox.crud.dimension_types as types_crud
@@ -418,11 +422,11 @@ def matrix_dataset(
 ) -> Union[Dataset, Any]:
     if dataset_name is None:
         dataset_name = unique_name("upload")
-    data_upload_file = create_upload_file(
-        filename=dataset_name,
-        file=_handle_call_if_omitted(data_file),
-        content_type="text/csv",
-    )
+    # data_upload_file = create_upload_file(
+    #     filename=dataset_name,
+    #     file=_handle_call_if_omitted(data_file),
+    #     content_type="text/csv",
+    # )
 
     if group is None:
         if is_transient:
@@ -430,25 +434,35 @@ def matrix_dataset(
         else:
             group = PUBLIC_GROUP_ID
 
-    r = dataset_tasks.upload_dataset(
-        db=db,
-        settings=settings,
-        name=dataset_name,
-        units="units",
-        feature_type=feature_type,
-        sample_type=sample_type,
-        data_type=data_type,
-        data_file=data_upload_file,
-        is_transient=is_transient,
-        group_id=group,
-        given_id=given_id,
-        value_type=ValueType(value_type),
-        priority=priority,
-        taiga_id=taiga_id,
-        allowed_values=allowed_values,
-        user=_handle_call_if_omitted(user, settings),
-        data_file_format="csv",
-    )
+    assert db.user == _handle_call_if_omitted(user, settings)
+
+    with tempfile.NamedTemporaryFile() as temp_file:
+        temp_file.write(_handle_call_if_omitted(data_file).read())
+        temp_file.flush()
+
+        r = dataset_uploads_tasks.dataset_upload(
+            db,
+            MatrixDatasetParams(
+                format="matrix",
+                name=dataset_name,
+                file_ids=["ignored"],
+                dataset_md5="00000000000000000000000000000000",  # ignored
+                data_type=data_type,
+                group_id=group,
+                given_id=given_id,
+                priority=priority,
+                taiga_id=taiga_id,
+                is_transient=is_transient,
+                units="units",
+                feature_type=feature_type,
+                sample_type=sample_type,
+                value_type=ValueType(value_type),
+                allowed_values=allowed_values,
+                data_file_format="csv",
+            ),
+            temp_file.name,
+            settings.filestore_location,
+        )
 
     return dataset_crud.get_dataset(
         db=db, user=_handle_call_if_omitted(user, settings), dataset_id=r.datasetId

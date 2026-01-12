@@ -19,9 +19,10 @@ from breadbox.schemas.dataset import (
     TableDatasetParams,
     ColumnMetadata,
     AnnotationType,
+    UploadDatasetResponseV2,
 )
 from breadbox.schemas.custom_http_exception import FileValidationError
-from breadbox.compute.dataset_uploads_tasks import dataset_upload
+from breadbox.compute.dataset_uploads_tasks import dataset_upload, run_dataset_with_db
 
 from tests import factories
 
@@ -64,7 +65,10 @@ def test_matrix_dataset_uploads(
         **_default_params
     )
     user = settings.admin_users[0]
-    matrix_dataset_w_simple_metadata = dataset_upload(minimal_db, matrix_params, user)
+    assert user == minimal_db.user
+    matrix_dataset_w_simple_metadata = UploadDatasetResponseV2(
+        **run_dataset_with_db(minimal_db, matrix_params.model_dump())
+    )
     assert matrix_dataset_w_simple_metadata.datasetId
     dataset_id = matrix_dataset_w_simple_metadata.datasetId
 
@@ -82,7 +86,7 @@ def test_matrix_dataset_uploads(
     assert len(feature_indexes) == 3  # Number of feaures should be 3
     assert len(sample_indexes) == 2  # Number of feaures should be 2
 
-    matrix_params_only_sample_type = MatrixDatasetParams(
+    matrix_params_only_sample_type = dict(
         format="matrix",
         name="a dataset",
         units="a unit",
@@ -98,8 +102,8 @@ def test_matrix_dataset_uploads(
         dataset_metadata={"yah": "nah"},
         **_default_params
     )
-    matrix_only_sample_type = dataset_upload(
-        minimal_db, matrix_params_only_sample_type, settings.admin_users[0]
+    matrix_only_sample_type = UploadDatasetResponseV2(
+        **run_dataset_with_db(minimal_db, matrix_params_only_sample_type)
     )
     assert matrix_only_sample_type.datasetId
     dataset_id = matrix_only_sample_type.datasetId
@@ -150,7 +154,7 @@ def test_tabular_uploads(
     tabular_file_ids, hash = factories.file_ids_and_md5_hash(client, tabular_data_file)
 
     assert len(tabular_file_ids) == 3
-    tabular_params = TableDatasetParams(
+    tabular_params = dict(
         format="tabular",
         name="a table dataset",
         index_type="depmap_model",
@@ -173,8 +177,9 @@ def test_tabular_uploads(
         },
         **_default_params
     )
-    user = settings.admin_users[0]
-    tabular_dataset = dataset_upload(minimal_db, tabular_params, user)
+    tabular_dataset = UploadDatasetResponseV2(
+        **run_dataset_with_db(minimal_db, tabular_params)
+    )
     assert tabular_dataset.datasetId
     tabular_dataset_id = tabular_dataset.datasetId
     dataset = minimal_db.query(Dataset).filter(Dataset.id == tabular_dataset_id).one()
@@ -235,7 +240,7 @@ def test_tabular_bad_list_str_col(minimal_db, client, settings, private_group):
             bad_list_strings_file_ids,
             bad_list_strings_hash,
         ) = factories.file_ids_and_md5_hash(client, tabular_data_file_bad_list_strings)
-        bad_list_str_params = TableDatasetParams(
+        bad_list_str_params = dict(
             format="tabular",
             name="a table dataset2",
             index_type="depmap_model",
@@ -261,7 +266,7 @@ def test_tabular_bad_list_str_col(minimal_db, client, settings, private_group):
             },
             **_default_params
         )
-        dataset_upload(minimal_db, bad_list_str_params, settings.admin_users[0])
+        run_dataset_with_db(minimal_db, bad_list_str_params)
 
 
 def test_tabular_dup_ids_failure(client, private_group, minimal_db, settings):
@@ -273,7 +278,7 @@ def test_tabular_dup_ids_failure(client, private_group, minimal_db, settings):
         repeated_ids_file_ids, repeated_ids_hash = factories.file_ids_and_md5_hash(
             client, repeated_ids_file
         )
-        repeated_ids_params = TableDatasetParams(
+        repeated_ids_params = dict(
             format="tabular",
             name="a table dataset2",
             index_type="depmap_model",
@@ -299,4 +304,4 @@ def test_tabular_dup_ids_failure(client, private_group, minimal_db, settings):
             },
             **_default_params
         )
-        dataset_upload(minimal_db, repeated_ids_params, settings.admin_users[0])
+        run_dataset_with_db(minimal_db, repeated_ids_params)

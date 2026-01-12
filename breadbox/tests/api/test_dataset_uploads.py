@@ -233,11 +233,11 @@ class TestPost:
             client, tabular_data_file_bad_list_strings
         )
 
-        def mock_failed_task_result(db, params, user):
+        def mock_failed_task_result(*args, **kwargs):
             return {"result": "Column 'attr1' failed validator"}
 
         monkeypatch.setattr(
-            dataset_uploads_tasks, "dataset_upload", mock_failed_task_result,
+            dataset_uploads_tasks, "run_dataset_with_db", mock_failed_task_result,
         )
 
         def mock_return_failed_task(result):

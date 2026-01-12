@@ -235,21 +235,19 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
 
     # The endpoint uses celery, and needs monkeypatching to replace db_context and get_settings,
     # which are not passed in as params due to the limits of redis serialization.
-    monkeypatch.setattr(dataset_tasks, "db_context", mock_db_context)
-    monkeypatch.setattr(dataset_tasks, "get_settings", get_test_settings)
-    monkeypatch.setattr(
-        dataset_tasks,
-        "run_upload_dataset",
-        celery_app.task(bind=True)(dataset_tasks.run_upload_dataset),
-    )
+    monkeypatch.setattr("breadbox.db.util.db_context", mock_db_context)
+    monkeypatch.setattr("breadbox.config._get_settings", get_test_settings)
+    # monkeypatch.setattr(
+    #     dataset_tasks,
+    #     "run_upload_dataset",
+    #     celery_app.task(bind=True)(dataset_tasks.run_upload_dataset),
+    # )
 
     def mock_run_dataset_upload_task(dataset_params, user):
-        if dataset_params["format"] == "matrix":
-            params = MatrixDatasetParams(**dataset_params)
-        else:
-            params = TableDatasetParams(**dataset_params)
         minimal_db.reset_user(user)
-        return dataset_uploads_tasks.dataset_upload(minimal_db, params, user)
+        result = dataset_uploads_tasks.run_dataset_with_db(minimal_db, dataset_params)
+        minimal_db.commit()
+        return result
 
     def mock_return_task(result):
         from celery.result import EagerResult
@@ -260,6 +258,8 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
 
         if hasattr(result, "model_dump"):
             result_json = result.model_dump()
+        elif isinstance(result, dict):
+            result_json = result
         elif isinstance(result, HTTPException):
             state = "FAILURE"
             result_json = {"detail": result.detail, "status_code": result.status_code}
@@ -267,7 +267,7 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
             state = "FAILURE"
             result_json = {"detail": result.args[0], "status_code": 500}
         else:
-            raise NotImplementedError()
+            raise NotImplementedError(f"unknown result type: {result}")
 
         return AddDatasetResponse(
             id="123",
