@@ -1,21 +1,44 @@
-from typing import Callable, Tuple, Any, Union, Iterator, Iterable, List, Type, Sequence
+from pyexpat import features
+from typing import (
+    Callable,
+    Tuple,
+    Any,
+    Union,
+    Iterator,
+    Iterable,
+    List,
+    Type,
+    Sequence,
+    Dict,
+)
 
 from apsw.ext import get_column_names
 
 from breadbox.db.session import SessionWithUser
-from ...schemas.dataset import AnnotationType
+from ...schemas.dataset import (
+    AnnotationType,
+    MatrixDimensionsInfo,
+    FeatureSampleIdentifier,
+)
 from ...crud import dataset as crud_dataset
 from ...crud import dimension_types as crud_dimension_types
+from ...crud import dimension_ids as crud_dimension_ids
 from ...models.dataset import (
     MatrixDataset,
     TabularDataset,
-    Dataset,
-    DimensionType,
     DatasetFeature,
     DatasetSample,
 )
+import re
+import bisect
 
 import apsw
+from .schema import assign_names, SchemaNames
+from breadbox.utils.profiling import profiled_region
+
+import sqlglot
+import csv
+import io
 
 SQLiteValue = Any
 
@@ -49,7 +72,6 @@ class Module:
             raise ValueError(
                 f"Too many parameters: parameters accepted are {' '.join(self.parameters)}"
             )
-        import re
 
         def to_python(arg):
             "Consume sqlite values and parse them as python values"
@@ -192,9 +214,6 @@ def make_virtual_module(
     )
 
 
-from .schema import assign_names, SchemaNames
-
-
 def add_matrix_dataset(connection, dataset: MatrixDataset, schema: SchemaNames):
     table_name = schema.get_dataset_table_name(dataset.id)
     connection.execute(
@@ -215,8 +234,42 @@ def add_tabular_dataset(connection, dataset: TabularDataset, schema: SchemaNames
     )
 
 
-def query_matrix_dataset(db, dataset_id):
-    raise NotImplementedError()
+from .. import dataset as dataset_service
+
+
+def query_matrix_dataset(db, filestore_location, dataset_id, **constraints):
+    matrix_dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
+    assert isinstance(matrix_dataset, MatrixDataset)
+
+    if "feature_id" in constraints:
+        # fetch values by feature
+        matrix_dimensions_info = MatrixDimensionsInfo(
+            feature_identifier=FeatureSampleIdentifier.id,
+            sample_identifier=FeatureSampleIdentifier.id,
+            features=[constraints["feature_id"]],
+        )
+    elif "sample_id" in constraints:
+        # fetch values by sample
+        matrix_dimensions_info = MatrixDimensionsInfo(
+            feature_identifier=FeatureSampleIdentifier.id,
+            sample_identifier=FeatureSampleIdentifier.id,
+            samples=[constraints["sample_id"]],
+        )
+    else:
+        # return everything
+        matrix_dimensions_info = MatrixDimensionsInfo(
+            feature_identifier=FeatureSampleIdentifier.id,
+            sample_identifier=FeatureSampleIdentifier.id,
+        )
+
+    df = dataset_service.get_subsetted_matrix_dataset_df(
+        db, matrix_dataset, matrix_dimensions_info, filestore_location,
+    )
+
+    for sample_id in df.index:
+        for feature_id in df.columns:
+            value = df.loc[sample_id, feature_id]
+            yield (sample_id, feature_id, value)
 
 
 def _query_matrix_dataset_dimension(
@@ -231,11 +284,27 @@ def _query_matrix_dataset_dimension(
         assert dimension_subtype_cls == DatasetSample
         dimension_type = matrix_dataset.sample_type
 
-    id_and_labels = crud_dataset.get_metadata_used_in_matrix_dataset(
-        db, dimension_type, matrix_dataset, dimension_subtype_cls, metadata_col_name,
-    )
+    if dimension_type is None:
+        # special case: Arises when feature type is None. Return the list of given_ids
+        assert dimension_subtype_cls == DatasetFeature
+        return sorted(
+            [
+                x.given_id
+                for x in crud_dimension_ids.get_matrix_dataset_features(
+                    db, matrix_dataset
+                )
+            ]
+        )
+    else:
+        id_and_labels = crud_dataset.get_metadata_used_in_matrix_dataset(
+            db,
+            dimension_type,
+            matrix_dataset,
+            dimension_subtype_cls,
+            metadata_col_name,
+        )
 
-    return sorted(id_and_labels.keys())
+        return sorted(id_and_labels.keys())
 
 
 def query_matrix_dataset_samples(db, index_cache, dataset_id, **constraints):
@@ -250,9 +319,6 @@ def query_matrix_dataset_features(db, index_cache, dataset_id, **constraints):
     )
 
 
-import bisect
-
-
 def sorted_list_contains(haystack, needle):
     i = bisect.bisect_left(haystack, needle)
     return i < len(haystack) and haystack[i] == needle
@@ -261,6 +327,7 @@ def sorted_list_contains(haystack, needle):
 def _query_matrix_dataset_samples(
     db, index_cache, dataset_id, dim_id_type, **constraints
 ):
+    print(f"Querying {dim_id_type} dimensions with constraints ({constraints})")
     dataset_key = f"dataset:{dataset_id}"
     if dataset_key not in index_cache:
         matrix_dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
@@ -272,7 +339,11 @@ def _query_matrix_dataset_samples(
 
     samples_key = f"{dim_id_type}:{dataset_id}"
     if samples_key not in index_cache:
-        dim_ids = _query_matrix_dataset_dimension(db, matrix_dataset, DatasetSample)
+        dim_ids = _query_matrix_dataset_dimension(
+            db,
+            matrix_dataset,
+            {"sample_id": DatasetSample, "feature_id": DatasetFeature}[dim_id_type],
+        )
         index_cache[samples_key] = dim_ids
     else:
         dim_ids = index_cache[samples_key]
@@ -280,14 +351,61 @@ def _query_matrix_dataset_samples(
     if len(constraints) > 0:
         # if there's any constraint, we can assume it's on dim_id_type
         dim_id = constraints[dim_id_type]
+        print(f"Searching for {dim_id} among {dim_ids}")
         if sorted_list_contains(dim_ids, dim_id):
-            yield dim_id
+            print("found")
+            yield (dim_id,)
+        else:
+            print("not found")
     else:
+        print("found ids", dim_ids)
         for dim_id in dim_ids:
             yield (dim_id,)
 
 
-import time
+import pandas as pd
+
+
+def _fix_continuous_column_types(
+    df: pd.DataFrame, dataset: TabularDataset
+) -> pd.DataFrame:
+    df = df.copy()
+    for col_name, column_metadata in dataset.columns_metadata.items():
+        if column_metadata.col_type == AnnotationType.continuous:
+            df[col_name] = df[col_name].astype(float)
+    return df
+
+
+def _build_indexed_version_of_tabular_data(
+    db: SessionWithUser,
+    dataset: TabularDataset,
+    constraint_columns,
+    constraints: Dict[str, Any],
+):
+    # build indexed version of table
+    # print(f"e {time.time() - start:.2f} seconds")
+    # start = time.time()
+    df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
+    df = _fix_continuous_column_types(df, dataset)
+
+    extra_columns = set(constraints.keys()).difference(df.columns)
+    assert (
+        len(extra_columns) == 0
+    ), f"Constraints provided for {extra_columns} but the columns were {df.columns}"
+
+    # print(f"f {time.time() - start:.2f} seconds")
+    # start = time.time()
+    by_key = {}
+    for rec in df.to_records():
+        key = tuple(
+            [rec[constraint_column] for constraint_column in constraint_columns]
+        )
+        if key not in by_key:
+            by_key[key] = [rec]
+        else:
+            by_key[key].append(rec)
+
+    return by_key
 
 
 def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
@@ -301,74 +419,35 @@ def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
         index_cache[dataset_key] = dataset
     else:
         dataset = index_cache[dataset_key]
-    # print(f"a {time.time() - start:.2f} seconds")
 
-    # print("dataset", dataset.name)
-    start = time.time()
     if len(constraints) > 0:
         # construct an index to avoid slow lookups. If we need to look up via a particular key,
         # we'll probably need to use that combo again (if it's due to a join), so cache the table indexed that way.
         constraint_columns = sorted(constraints.keys())
         index_key = tuple(["idx", dataset_id] + constraint_columns)
         if index_key not in index_cache:
-            # build indexed version of table
-            # print(f"e {time.time() - start:.2f} seconds")
-            # start = time.time()
-            df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
+            index_cache[index_key] = _build_indexed_version_of_tabular_data(
+                db, dataset, constraint_columns, constraints
+            )
 
-            extra_columns = set(constraints.keys()).difference(df.columns)
-            assert (
-                len(extra_columns) == 0
-            ), f"Constraints provided for {extra_columns} but the columns were {df.columns}"
-
-            # print(f"f {time.time() - start:.2f} seconds")
-            # start = time.time()
-            by_key = {}
-            for rec in df.to_records():
-                key = tuple(
-                    [rec[constraint_column] for constraint_column in constraint_columns]
-                )
-                if key not in by_key:
-                    by_key[key] = [rec]
-                else:
-                    by_key[key].append(rec)
-            # print(f"g {time.time() - start:.2f} seconds")
-            start = time.time()
-            index_cache[index_key] = by_key
-            # print(f"h {time.time() - start:.2f} seconds")
-            start = time.time()
-
-        recs = index_cache[index_key].get(
-            tuple(
-                [
-                    constraints[constraint_column]
-                    for constraint_column in constraint_columns
-                ]
-            ),
-            [],
+        # extract out the records with this key
+        records_key = tuple(
+            [constraints[constraint_column] for constraint_column in constraint_columns]
         )
-        # print(f"d {time.time() - start:.2f} seconds")
-        # start = time.time()
-    else:
-        # print(f"c {time.time() - start:.2f} seconds")
-        # start = time.time()
-        df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
-        recs = df.to_records()
-    # print(f"b {time.time() - start:.2f} seconds")
 
+        recs = index_cache[index_key].get(records_key, [],)
+    else:
+        # if we weren't given a constraint, just fetch the whole table and return all the rows
+        df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
+        df2 = _fix_continuous_column_types(df, dataset)
+        recs = df2.to_records()
+
+    # return the rows that were fetched
     for row in recs:
         yield [row[column] for column in columns]
 
-    # # apply constraints
-    # for column_name, column_value in constraints.items():
-    #     df = df[df[column_name] == column_value]
-    #
-    # # return rows
-    # for row in df.to_records():
-    #     yield [row[column] for column in columns]
 
-
-def create_db_with_virtual_schema(db: SessionWithUser):
+def create_db_with_virtual_schema(db: SessionWithUser, filestore_location: str):
     datasets = crud_dataset.get_datasets(db, db.user)
     dim_types = crud_dimension_types.get_dimension_types(db)
 
@@ -391,7 +470,7 @@ def create_db_with_virtual_schema(db: SessionWithUser):
     make_virtual_module(
         connection,
         "query_matrix_dataset",
-        lambda **args: query_matrix_dataset(db, **args),
+        lambda **args: query_matrix_dataset(db, filestore_location, **args),
         lambda **args: ("sample_id", "feature_id", "value"),
         ("dataset_id",),
     )
@@ -437,14 +516,8 @@ def create_db_with_virtual_schema(db: SessionWithUser):
     return connection
 
 
-from breadbox.utils.profiling import profiled_region
-
-import sqlglot
-import csv
-import io
-
-
 def assert_single_select(sql: str):
+    # TODO: replace with throwing a helpful 400 message
     parsed = sqlglot.parse(sql, dialect="sqlite")
     assert len(parsed) == 1
     assert isinstance(parsed[0], sqlglot.expressions.Select)
@@ -481,12 +554,16 @@ def stream_cursor_as_csv(cursor, cleanup_callback):
         cleanup_callback()
 
 
-def execute_sql_in_virtual_db(db: SessionWithUser, sql_statement: str):
+def execute_sql_in_virtual_db(
+    db: SessionWithUser, filestore_location: str, sql_statement: str
+):
     with profiled_region("execute_sql_in_virtual_db"):
         assert_single_select(sql_statement)
 
         with profiled_region("create_db_with_virtual_schema"):
-            virtual_db_connection = create_db_with_virtual_schema(db)
+            virtual_db_connection = create_db_with_virtual_schema(
+                db, filestore_location
+            )
             cursor = virtual_db_connection.cursor()
 
         # qd = apsw.ext.query_info(

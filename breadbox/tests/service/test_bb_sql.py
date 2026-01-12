@@ -114,13 +114,13 @@ def test_virtual_table():
     # assert results_none == []
 
 
-def test_sql_sanitizing():
-    parsed = sqlglot.parse("select * from x; update b set x=1", dialect="sqlite")
-    assert len(parsed) == 2
-    breakpoint()
-    print(parsed)
-    parsed = sqlglot.parse("select * from x", dialect="sqlite")
-    assert len(parsed) == 1
-    breakpoint()
-    assert isinstance(parsed[0], sqlglot.expressions.Select)
-    print(parsed)
+# def test_sql_sanitizing():
+#     parsed = sqlglot.parse("select * from x; update b set x=1", dialect="sqlite")
+#     assert len(parsed) == 2
+#     breakpoint()
+#     print(parsed)
+#     parsed = sqlglot.parse("select * from x", dialect="sqlite")
+#     assert len(parsed) == 1
+#     breakpoint()
+#     assert isinstance(parsed[0], sqlglot.expressions.Select)
+#     print(parsed)

@@ -127,21 +127,24 @@ def _get_create_table_for_matrix(dataset: MatrixDataset, schema: SchemaNames) ->
     sample_metadata_table = schema.get_dataset_table_name(sample_type_metadata_id)
     sample_metadata_pk = schema.get_tabular_dataset_pk(sample_type_metadata_id)
     clauses.append(
-        f'CONSTRAINT {_fk_constraint_name(table_name, sample_id_column)} ({sample_id_column}) REFERENCES "{sample_metadata_table}" ("{sample_metadata_pk}")'
+        f'CONSTRAINT {_fk_constraint_name(table_name, sample_id_column)} FOREIGN KEY ({sample_id_column}) REFERENCES "{sample_metadata_table}" ("{sample_metadata_pk}")'
     )
-    if dataset.feature_type_name is not None:
+    if (
+        dataset.feature_type_name is not None
+        and dataset.feature_type.dataset is not None
+    ):
         feature_type_metadata_id = dataset.feature_type.dataset.id
         feature_metadata_table = schema.get_dataset_table_name(feature_type_metadata_id)
         feature_metadata_pk = schema.get_tabular_dataset_pk(feature_type_metadata_id)
         clauses.append(
-            f'CONSTRAINT {_fk_constraint_name(table_name, feature_id_column)} ({feature_id_column}) REFERENCES "{feature_metadata_table}" ("{feature_metadata_pk}")'
+            f'CONSTRAINT {_fk_constraint_name(table_name, feature_id_column)} FOREIGN KEY ({feature_id_column}) REFERENCES "{feature_metadata_table}" ("{feature_metadata_pk}")'
         )
     # trying to make it clear that there's a link between the sample/feature tables, but I'm not sure that this is useful. Perhaps it should be removed?
     clauses.append(
-        f'CONSTRAINT {_fk_constraint_name(table_name, feature_id_column)}_2 ({feature_id_column}) REFERENCES "{table_name}_feature" ("{feature_id_column}")'
+        f'CONSTRAINT {_fk_constraint_name(table_name, feature_id_column)}_2 FOREIGN KEY ({feature_id_column}) REFERENCES "{table_name}_feature" ("{feature_id_column}")'
     )
     clauses.append(
-        f'CONSTRAINT {_fk_constraint_name(table_name, sample_id_column)}_2 ({sample_id_column}) REFERENCES "{table_name}_sample" ("{sample_id_column}")'
+        f'CONSTRAINT {_fk_constraint_name(table_name, sample_id_column)}_2 FOREIGN KEY ({sample_id_column}) REFERENCES "{table_name}_sample" ("{sample_id_column}")'
     )
 
     # add some leading space to make it more readable
