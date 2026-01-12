@@ -109,6 +109,12 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def handle_special_features(self, config):
         """Handle START_WITH functionality for preprocessing pipeline."""
+        if config["publish_dest"]:
+            print(
+                f"Forgetting previous publish executions (publish_dest changed to: {config['publish_dest']})"
+            )
+            self.run_via_container("conseq forget --regex 'publish.*'", config)
+
         if config["start_with"]:
             print(f"Starting with existing export: {config['start_with']}")
             subprocess.run(
