@@ -24,5 +24,11 @@ def get_sql_schema(db: SessionWithUser = Depends(get_db_with_user),):
 def get_sql_schema(
     query: SqlQuery, db: SessionWithUser = Depends(get_db_with_user),
 ):
-    streaming_result = execute_sql_in_virtual_db(db, query.sql)
-    return StreamingResponse(streaming_result, media_type="text/csv")
+    import apsw.ext
+    import sys
+
+    try:
+        streaming_result = execute_sql_in_virtual_db(db, query.sql)
+        return StreamingResponse(streaming_result, media_type="text/csv")
+    except Exception as exc:
+        apsw.ext.print_augmented_traceback(*sys.exc_info())

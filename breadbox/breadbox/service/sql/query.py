@@ -1,4 +1,4 @@
-from typing import Callable, Tuple, Any, Union, Iterator, Iterable, List, Type
+from typing import Callable, Tuple, Any, Union, Iterator, Iterable, List, Type, Sequence
 
 from apsw.ext import get_column_names
 
@@ -73,35 +73,41 @@ class Table:
         self.columns = columns
         self.param_values = param_values
 
-    def BestIndexObject(self, o: apsw.IndexInfo) -> bool:
-        print(f"BestIndexObject {self.param_values} {o.nConstraint} constraints")
+    def BestIndex(
+        self,
+        constraints: Sequence[tuple[int, int]],
+        orderbys: Sequence[tuple[int, int]],
+    ):
+        #        print(f"BestIndex {self.param_values} {constraints}")
         idx_str: list[str] = []
-        # param_start = len(self.module.columns)
-        for c in range(o.nConstraint):
-            constrained_column = self.columns[o.get_aConstraint_iColumn(c)]
+        constraints_used = []
+        for constrained_col_index, constrained_op in constraints:
+            constrained_column = self.columns[constrained_col_index]
 
-            if not o.get_aConstraint_usable(c):
+            if constrained_op != apsw.SQLITE_INDEX_CONSTRAINT_EQ:
+                #                print(f"Cannot use {constrained_op} constraint on {constrained_column}. Skipping")
+                constraints_used.append(None)
                 continue
 
-            if o.get_aConstraint_op(c) != apsw.SQLITE_INDEX_CONSTRAINT_EQ:
-                print(f"Skipped constraint on {constrained_column}")
-                continue
-
-            print(f"{constrained_column} is constrained by ==")
-            o.set_aConstraintUsage_argvIndex(c, len(idx_str) + 1)
-            o.set_aConstraintUsage_omit(c, True)
+            #            print(f"{constrained_column} is constrained by ==")
 
             assert constrained_column not in idx_str
+            constraints_used.append(len(idx_str))
             idx_str.append(constrained_column)
 
-        print(f"list of constrained columns: {idx_str}")
-        o.idxStr = ",".join(idx_str)
-        if len(idx_str) > 0:
-            o.estimatedRows = 1
+        #        print(f"list of constrained columns: {constraints_used} {idx_str}")
+
+        if len(idx_str) == 0:
+            # no filters is more expensive than any filter
+            cost = 1000000
         else:
-            # say there are a huge number of rows so the query planner avoids us
-            o.estimatedRows = 2147483647
-        return True
+            cost = 100
+
+        result = (tuple(constraints_used), 0, ",".join(idx_str), False, cost)
+        #        print(f"BestIndex returning {result}")
+        return result
+
+    #        return [constraints_used, 0, ",".join(idx_str), False, cost]
 
     def Open(self):
         return Cursor(self.callable, self.param_values)
@@ -121,9 +127,10 @@ class Cursor:
         print(f"Cursor.__init__: {(self.param_values)}")
 
     def Filter(self, idx_num: int, idx_str: str, args: tuple[SQLiteValue]) -> None:
-        print(f"{(self.param_values)} Filter({idx_str}, {args})")
+        #        print(f"Filter({idx_str}, {args}) (func params={self.param_values})")
         params: dict[str, SQLiteValue] = self.param_values.copy()
-        params.update(zip(idx_str.split(","), args))
+        if idx_str is not None:
+            params.update(zip(idx_str.split(","), args))
         self.iterating = iter(self.callable(**params))
         # proactively advance so we can tell if eof
         self.Next()
@@ -179,7 +186,6 @@ def make_virtual_module(
     db.create_module(
         name,
         mod,  # type: ignore[arg-type]
-        use_bestindex_object=True,
         eponymous=eponymous,
         eponymous_only=eponymous_only,
         read_only=True,
@@ -232,47 +238,82 @@ def _query_matrix_dataset_dimension(
     return sorted(id_and_labels.keys())
 
 
-def query_matrix_dataset_samples(db, dataset_id):
-    matrix_dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
+def query_matrix_dataset_samples(db, index_cache, dataset_id, **constraints):
+    return _query_matrix_dataset_samples(
+        db, index_cache, dataset_id, "sample_id", **constraints
+    )
+
+
+def query_matrix_dataset_features(db, index_cache, dataset_id, **constraints):
+    return _query_matrix_dataset_samples(
+        db, index_cache, dataset_id, "feature_id", **constraints
+    )
+
+
+import bisect
+
+
+def sorted_list_contains(haystack, needle):
+    i = bisect.bisect_left(haystack, needle)
+    return i < len(haystack) and haystack[i] == needle
+
+
+def _query_matrix_dataset_samples(
+    db, index_cache, dataset_id, dim_id_type, **constraints
+):
+    dataset_key = f"dataset:{dataset_id}"
+    if dataset_key not in index_cache:
+        matrix_dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
+        index_cache[dataset_key] = matrix_dataset
+    else:
+        matrix_dataset = index_cache[dataset_key]
+
     assert isinstance(matrix_dataset, MatrixDataset)
 
-    for dim_id in _query_matrix_dataset_dimension(db, matrix_dataset, DatasetSample):
-        yield (dim_id,)
+    samples_key = f"{dim_id_type}:{dataset_id}"
+    if samples_key not in index_cache:
+        dim_ids = _query_matrix_dataset_dimension(db, matrix_dataset, DatasetSample)
+        index_cache[samples_key] = dim_ids
+    else:
+        dim_ids = index_cache[samples_key]
 
-
-def query_matrix_dataset_features(db, dataset_id):
-    matrix_dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
-    assert isinstance(matrix_dataset, MatrixDataset)
-
-    for dim_id in _query_matrix_dataset_dimension(db, matrix_dataset, DatasetFeature):
-        yield (dim_id,)
+    if len(constraints) > 0:
+        # if there's any constraint, we can assume it's on dim_id_type
+        dim_id = constraints[dim_id_type]
+        if sorted_list_contains(dim_ids, dim_id):
+            yield dim_id
+    else:
+        for dim_id in dim_ids:
+            yield (dim_id,)
 
 
 import time
 
 
 def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
-    print("dataset_id", dataset_id, constraints)
-    start = time.time()
+    # print("dataset_id", dataset_id, constraints)
+    # start = time.time()
     # not efficient, but first goal is something that works:
-    if dataset_id not in index_cache:
+    dataset_key = f"dataset:{dataset_id}"
+    if dataset_key not in index_cache:
         dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
         assert isinstance(dataset, TabularDataset)
+        index_cache[dataset_key] = dataset
     else:
-        dataset = index_cache[dataset_id]
-    print(f"a {time.time() - start:.2f} seconds")
+        dataset = index_cache[dataset_key]
+    # print(f"a {time.time() - start:.2f} seconds")
 
-    print("dataset", dataset.name)
+    # print("dataset", dataset.name)
     start = time.time()
     if len(constraints) > 0:
         # construct an index to avoid slow lookups. If we need to look up via a particular key,
         # we'll probably need to use that combo again (if it's due to a join), so cache the table indexed that way.
         constraint_columns = sorted(constraints.keys())
-        index_key = tuple([dataset_id] + constraint_columns)
+        index_key = tuple(["idx", dataset_id] + constraint_columns)
         if index_key not in index_cache:
             # build indexed version of table
-            print(f"e {time.time() - start:.2f} seconds")
-            start = time.time()
+            # print(f"e {time.time() - start:.2f} seconds")
+            # start = time.time()
             df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
 
             extra_columns = set(constraints.keys()).difference(df.columns)
@@ -280,8 +321,8 @@ def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
                 len(extra_columns) == 0
             ), f"Constraints provided for {extra_columns} but the columns were {df.columns}"
 
-            print(f"f {time.time() - start:.2f} seconds")
-            start = time.time()
+            # print(f"f {time.time() - start:.2f} seconds")
+            # start = time.time()
             by_key = {}
             for rec in df.to_records():
                 key = tuple(
@@ -291,10 +332,10 @@ def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
                     by_key[key] = [rec]
                 else:
                     by_key[key].append(rec)
-            print(f"g {time.time() - start:.2f} seconds")
+            # print(f"g {time.time() - start:.2f} seconds")
             start = time.time()
             index_cache[index_key] = by_key
-            print(f"h {time.time() - start:.2f} seconds")
+            # print(f"h {time.time() - start:.2f} seconds")
             start = time.time()
 
         recs = index_cache[index_key].get(
@@ -306,14 +347,14 @@ def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
             ),
             [],
         )
-        print(f"d {time.time() - start:.2f} seconds")
-        start = time.time()
+        # print(f"d {time.time() - start:.2f} seconds")
+        # start = time.time()
     else:
-        print(f"c {time.time() - start:.2f} seconds")
-        start = time.time()
+        # print(f"c {time.time() - start:.2f} seconds")
+        # start = time.time()
         df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
         recs = df.to_records()
-    print(f"b {time.time() - start:.2f} seconds")
+    # print(f"b {time.time() - start:.2f} seconds")
 
     for row in recs:
         yield [row[column] for column in columns]
@@ -358,7 +399,7 @@ def create_db_with_virtual_schema(db: SessionWithUser):
     make_virtual_module(
         connection,
         "query_matrix_dataset_samples",
-        lambda **args: query_matrix_dataset_samples(db, **args),
+        lambda **args: query_matrix_dataset_samples(db, index_cache, **args),
         lambda **args: ("sample_id",),
         ("dataset_id",),
     )
@@ -366,7 +407,7 @@ def create_db_with_virtual_schema(db: SessionWithUser):
     make_virtual_module(
         connection,
         "query_matrix_dataset_features",
-        lambda **args: query_matrix_dataset_features(db, **args),
+        lambda **args: query_matrix_dataset_features(db, index_cache, **args),
         lambda **args: ("feature_id",),
         ("dataset_id",),
     )
@@ -448,40 +489,39 @@ def execute_sql_in_virtual_db(db: SessionWithUser, sql_statement: str):
             virtual_db_connection = create_db_with_virtual_schema(db)
             cursor = virtual_db_connection.cursor()
 
-        qd = apsw.ext.query_info(
-            virtual_db_connection,
-            sql_statement,
-            actions=True,  # which tables/views etc and how they are accessed
-            explain=True,  # shows low level VDBE
-            explain_query_plan=True,  # how SQLite solves the query
-        )
-
-        from pprint import pprint
-
-        print("query", qd.query)
-        print("\nbindings_count", qd.bindings_count)
-        print("\nbindings_names", qd.bindings_names)
-        print("\nexpanded_sql", qd.expanded_sql)
-        print("\nfirst_query", qd.first_query)
-        print("\nquery_remaining", qd.query_remaining)
-        print("\nis_explain", qd.is_explain)
-        print("\nis_readonly", qd.is_readonly)
-        print("\ndescription")
-        pprint(qd.description)
-        if hasattr(qd, "description_full"):
-            print("\ndescription_full")
-            pprint(qd.description_full)
-
-        print("\nquery_plan")
-        pprint(qd.query_plan)
-        print("\nFirst 5 actions")
-        pprint(qd.actions[:5])
-        print("\nFirst 5 explain")
-        pprint(qd.explain[:5])
+        # qd = apsw.ext.query_info(
+        #     virtual_db_connection,
+        #     sql_statement,
+        #     actions=True,  # which tables/views etc and how they are accessed
+        #     explain=True,  # shows low level VDBE
+        #     explain_query_plan=True,  # how SQLite solves the query
+        # )
+        #
+        # from pprint import pprint
+        #
+        # print("query", qd.query)
+        # print("\nbindings_count", qd.bindings_count)
+        # print("\nbindings_names", qd.bindings_names)
+        # print("\nexpanded_sql", qd.expanded_sql)
+        # print("\nfirst_query", qd.first_query)
+        # print("\nquery_remaining", qd.query_remaining)
+        # print("\nis_explain", qd.is_explain)
+        # print("\nis_readonly", qd.is_readonly)
+        # print("\ndescription")
+        # pprint(qd.description)
+        # if hasattr(qd, "description_full"):
+        #     print("\ndescription_full")
+        #     pprint(qd.description_full)
+        #
+        # print("\nquery_plan")
+        # pprint(qd.query_plan)
+        # print("\nFirst 5 actions")
+        # pprint(qd.actions[:5])
+        # print("\nFirst 5 explain")
+        # pprint(qd.explain[:5])
 
         with profiled_region("execute statement"):
-            cursor.execute("select 1")
-        #            cursor.execute(sql_statement)
+            cursor.execute(sql_statement)
 
         def cleanup_callback():
             # this might all automatically get cleaned up by the GC, but let's clean it up like we're supposed to
