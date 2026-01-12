@@ -148,6 +148,7 @@ def _run_lm(
     log.warning(f"in _run_lm 2, df.columns\n{df.columns}")
 
     log.warning(f"in _run_lm 2, df:\n{df[['Index', 'label', 'QValue']]}")
+    log.warning(f"after add:\n{df.iloc[[1,6064,11463,19151,12735],:]}")
 
     # Clean up dataframe
     del df["Index"]
