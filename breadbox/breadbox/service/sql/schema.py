@@ -1,13 +1,14 @@
 from __future__ import annotations
 from typing import Callable, Iterator, Any, Union, List, Tuple, Dict
 
-import apsw
-import pytest
 
 from dataclasses import dataclass
 
 from breadbox.db.session import SessionWithUser
-from ..schemas.dataset import AnnotationType
+from ...schemas.dataset import AnnotationType
+from ...crud import dataset as crud_dataset
+from ...crud import dimension_types as crud_dimension_types
+from ...models.dataset import MatrixDataset, TabularDataset, Dataset, DimensionType
 
 
 @dataclass(frozen=True)
@@ -70,163 +71,6 @@ def sanitize_names(names: List[str]) -> Dict[str, str]:
     return name_to_sanitized
 
 
-def make_virtual_module(
-    db: apsw.Connection,
-    name: str,
-    callable: Callable,
-    columns: Tuple[str],
-    parameters: Tuple[str],
-    *,
-    eponymous: bool = True,
-    eponymous_only: bool = False,
-    repr_invalid: bool = False,
-) -> None:
-    """
-    Registers a read-only virtual table module with *db* based on
-    *callable*.  Heavily based on `apsw.ext.make_virtual_module()`
-
-    If sqlite wants to filter table with an equality clause, function will
-    be called passing in the constraints as parameters
-    """
-
-    class Module:
-        def __init__(
-            self,
-            callable: Callable,
-            columns: tuple[str],
-            parameters: tuple[str],
-            repr_invalid: bool,
-        ):
-            self.columns = columns
-            self.callable: Callable = callable
-            self.repr_invalid = repr_invalid
-            self.parameters = parameters
-
-            column_defs = ""
-            for i, c in enumerate(self.columns):
-                if column_defs:
-                    column_defs += ", "
-                column_defs += f"[{c}]"
-
-            self.schema = f"CREATE TABLE ignored({column_defs})"
-
-        def Create(
-            self, db, modulename, dbname, tablename, *args: apsw.SQLiteValue
-        ) -> tuple[str, apsw.VTTable]:
-            if len(args) > len(self.parameters):
-                raise ValueError(
-                    f"Too many parameters: parameters accepted are {' '.join(self.parameters)}"
-                )
-
-            param_values = dict(zip(self.parameters, args))
-            print(f"schema={self.schema}")
-            print(f"param_values={param_values}")
-            return self.schema, self.Table(self, param_values)  # type: ignore[return-value]
-
-        Connect = Create
-
-        class Table:
-            def __init__(self, module, param_values: dict[str, apsw.SQLiteValue]):
-                self.module = module
-                self.param_values = param_values
-                print(f"Table.__init__: {(self.param_values)}")
-
-            def BestIndexObject(self, o: apsw.IndexInfo) -> bool:
-                idx_str: list[str] = []
-                # param_start = len(self.module.columns)
-                for c in range(o.nConstraint):
-                    constrained_column = self.module.columns[
-                        o.get_aConstraint_iColumn(c)
-                    ]
-
-                    if not o.get_aConstraint_usable(c):
-                        continue
-
-                    if o.get_aConstraint_op(c) != apsw.SQLITE_INDEX_CONSTRAINT_EQ:
-                        return False
-
-                    o.set_aConstraintUsage_argvIndex(c, len(idx_str) + 1)
-                    o.set_aConstraintUsage_omit(c, True)
-
-                    assert constrained_column not in idx_str
-                    idx_str.append(constrained_column)
-
-                o.idxStr = ",".join(idx_str)
-                # say there are a huge number of rows so the query planner avoids us
-                o.estimatedRows = 2147483647
-                return True
-
-            def Open(self):
-                return self.module.Cursor(self.module, self.param_values)
-
-            def Disconnect(self) -> None:
-                pass
-
-            Destroy = Disconnect
-
-        class Cursor:
-            def __init__(self, module, param_values: dict[str, apsw.SQLiteValue]):
-                self.module = module
-                self.param_values = param_values
-                self.iterating: Union[Iterator[apsw.SQLiteValues], None] = None
-                self.current_row: Any = None
-                self.columns = module.columns
-                self.repr_invalid = module.repr_invalid
-                self.num_columns = len(self.columns)
-                print(f"Cursor.__init__: {(self.param_values)}")
-
-            def Filter(
-                self, idx_num: int, idx_str: str, args: tuple[apsw.SQLiteValue]
-            ) -> None:
-                params: dict[str, apsw.SQLiteValue] = self.param_values.copy()
-                params.update(zip(idx_str.split(","), args))
-                self.iterating = iter(self.module.callable(**params))
-                # proactively advance so we can tell if eof
-                self.Next()
-
-            def Eof(self) -> bool:
-                return self.iterating is None
-
-            def Close(self) -> None:
-                if self.iterating:
-                    if hasattr(self.iterating, "close"):
-                        self.iterating.close()
-                    self.iterating = None
-
-            def Column(self, which: int) -> apsw.SQLiteValue:
-                v = self.current_row[which]
-                return v  # type: ignore[no-any-return]
-
-            def Next(self) -> None:
-                try:
-                    self.current_row = next(self.iterating)  # type: ignore[arg-type]
-                except StopIteration:
-                    if hasattr(self.iterating, "close"):
-                        self.iterating.close()  # type: ignore[union-attr]
-                    self.iterating = None
-
-            def Rowid(self):
-                return id(self.current_row)
-
-    mod = Module(callable, columns, parameters, repr_invalid,)
-
-    # unregister any existing first
-    db.create_module(name, None)
-    db.create_module(
-        name,
-        mod,  # type: ignore[arg-type]
-        use_bestindex_object=True,
-        eponymous=eponymous,
-        eponymous_only=eponymous_only,
-        read_only=True,
-    )
-
-
-from ..crud import dataset as crud_dataset
-from ..crud import dimension_types as crud_dimension_types
-from ..models.dataset import MatrixDataset, TabularDataset, Dataset, DimensionType
-
-
 def _fk_constraint_name(table_name, sample_id_column):
     return f"fk_{table_name}_{sample_id_column}"
 
@@ -241,6 +85,10 @@ class SchemaNames:
         self.table_name_by_dataset_id = table_name_by_dataset_id
         self.table_pk_by_dataset_id = table_pk_by_dataset_id
         self.metadata_dataset_id_by_type = metadata_dataset_id_by_type
+        self.type_name_by_dataset_id = {
+            type_name: dataset_id
+            for dataset_id, type_name in table_pk_by_dataset_id.items()
+        }
 
     def get_dataset_table_name(self, dataset_id: str):
         return self.table_name_by_dataset_id[dataset_id]
@@ -250,6 +98,9 @@ class SchemaNames:
 
     def get_metadata_dataset_id_for_type(self, type_name: str):
         return self.metadata_dataset_id_by_type[type_name]
+
+    def get_type_name_using_dataset_id(self, dataset_id: str):
+        return self.type_name_by_dataset_id.get(dataset_id)
 
 
 def _get_create_table_for_matrix(dataset: MatrixDataset, schema: SchemaNames) -> str:
@@ -274,23 +125,49 @@ def _get_create_table_for_matrix(dataset: MatrixDataset, schema: SchemaNames) ->
     # add KFs
     sample_type_metadata_id = dataset.sample_type.dataset.id
     sample_metadata_table = schema.get_dataset_table_name(sample_type_metadata_id)
-    sample_metadata_pk = schema.get_tabular_dataset_pk(dataset.sample_type_name)
+    sample_metadata_pk = schema.get_tabular_dataset_pk(sample_type_metadata_id)
     clauses.append(
         f'CONSTRAINT {_fk_constraint_name(table_name, sample_id_column)} ({sample_id_column}) REFERENCES "{sample_metadata_table}" ("{sample_metadata_pk}")'
     )
     if dataset.feature_type_name is not None:
         feature_type_metadata_id = dataset.feature_type.dataset.id
         feature_metadata_table = schema.get_dataset_table_name(feature_type_metadata_id)
-        feature_metadata_pk = schema.get_tabular_dataset_pk(dataset.feature_type_name)
+        feature_metadata_pk = schema.get_tabular_dataset_pk(feature_type_metadata_id)
         clauses.append(
             f'CONSTRAINT {_fk_constraint_name(table_name, feature_id_column)} ({feature_id_column}) REFERENCES "{feature_metadata_table}" ("{feature_metadata_pk}")'
         )
+    # trying to make it clear that there's a link between the sample/feature tables, but I'm not sure that this is useful. Perhaps it should be removed?
+    clauses.append(
+        f'CONSTRAINT {_fk_constraint_name(table_name, feature_id_column)}_2 ({feature_id_column}) REFERENCES "{table_name}_feature" ("{feature_id_column}")'
+    )
+    clauses.append(
+        f'CONSTRAINT {_fk_constraint_name(table_name, sample_id_column)}_2 ({sample_id_column}) REFERENCES "{table_name}_sample" ("{sample_id_column}")'
+    )
 
     # add some leading space to make it more readable
     clauses = [f"    {x}" for x in clauses]
+    clauses_str = ",\n".join(clauses)
 
-    return f"""CREATE TABLE \"{table_name}\" (
-{",".join(clauses)}
+    return f"""
+CREATE TABLE \"{table_name}_sample\" (
+    /*
+    List of sample_ids in {table_name}.
+    */
+    \"{sample_id_column}\" VARCHAR NOT NULL,
+);
+
+CREATE TABLE \"{table_name}_feature\" (
+    /*
+    List of feature_ids in {table_name}. 
+    */
+    \"{feature_id_column}\" VARCHAR NOT NULL,
+);
+
+CREATE TABLE \"{table_name}\" (
+    /* 
+    Table definition for matrix dataset \"{dataset.name}\" (id={dataset.id}, given_id={dataset.given_id})
+    */    
+{clauses_str}
 );
 """
 
@@ -309,16 +186,22 @@ def _get_create_table_for_tabular(dataset: TabularDataset, schema: SchemaNames) 
     table_name = schema.get_dataset_table_name(dataset.id)
     pk_column = schema.get_tabular_dataset_pk(dataset.id)
 
+    has_label = False
+
     # add columns
-    for column_name, column_metadata in dataset.columns_metadata.items():
+    for column_name, column_metadata in sorted(dataset.columns_metadata.items()):
         sql_type = annotation_type_to_sql_type[column_metadata.col_type]
-        if column_name == pk_column:
+        if column_name == pk_column or column_name == "label":
             clauses.append(f'"{column_name}" {sql_type} NOT NULL')
+            if column_name == "label":
+                has_label = True
         else:
             clauses.append(f'"{column_name}" {sql_type}')
 
     # add PK
     clauses.append(f"CONSTRAINT pk_{table_name} PRIMARY KEY ({pk_column})")
+    if has_label:
+        clauses.append(f"CONSTRAINT uk_{table_name}_label UNIQUE (label)")
 
     # add KFs
     for column_name, column_metadata in dataset.columns_metadata.items():
@@ -336,7 +219,16 @@ def _get_create_table_for_tabular(dataset: TabularDataset, schema: SchemaNames) 
     clauses = [f"    {x}" for x in clauses]
     clauses_str = ",\n".join(clauses)
 
+    type_name = schema.get_type_name_using_dataset_id(dataset.id)
+    if type_name is None:
+        used_by_comment = ""
+    else:
+        used_by_comment = f'(contains the primary annotations for "{type_name}")'
+
     return f"""CREATE TABLE \"{table_name}\" (
+    /*
+    Table definition for tabular dataset \"{dataset.name}\" (id={dataset.id}, given_id={dataset.given_id})" {used_by_comment}
+    */
 {clauses_str}
 );
 """
