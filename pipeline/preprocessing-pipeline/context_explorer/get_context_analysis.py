@@ -6,11 +6,11 @@ import argparse
 import json
 import re
 
-# need to add ../pipeline/ to the sys path in order to import from scripts
+# need to add the preprocessing-pipeline directory to sys.path in order to import from scripts
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path().resolve().parents[0]))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 from scripts.calculate_bimodality_coefficient import (
     bimodality_coefficient_for_cpd_viabilities,
 )
