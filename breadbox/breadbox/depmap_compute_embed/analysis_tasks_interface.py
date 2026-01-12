@@ -13,6 +13,7 @@ from .lin_associations import lin_associations_wrapper
 from scipy import stats
 from ..crud.dimension_ids import IndexedGivenIDDataFrame
 
+import pandera as pa
 
 log = logging.getLogger(__name__)
 
@@ -132,18 +133,19 @@ def _run_lm(
     # Merge in label, vectorId and numCellLines
     num_cell_lines_used_in_calc = count_num_non_nan_per_row(dataset.transpose())
 
+    log.warning(f"in _run_lm, df:\n{df}")
+    log.warning(f"in _run_lm, features_df:\n{features_df}")
+
     # Add metadata
     df["label"] = features_df.label.iloc[df["Index"]]
     df["vectorId"] = features_df.slice_id.iloc[df["Index"]]
     df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
 
+    log.warning(f"in _run_lm 2, df\n{df}")
+
     # Clean up dataframe
     del df["Index"]
-
     return df
-
-
-import pandera as pa
 
 
 def write_custom_analysis_table(df, result_task_dir, effect_size_column):
