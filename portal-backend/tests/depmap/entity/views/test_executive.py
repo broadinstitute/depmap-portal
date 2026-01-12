@@ -6,10 +6,8 @@ from numpy import NaN
 import pandas as pd
 
 from depmap.entity.views.executive import (
-    format_enrichments_for_svg,
     remove_svg_height_width,
     format_generic_distribution_plot,
-    format_enrichment_box_for_dataset,
     format_overall_top_model,
     format_top_three_models_top_feature,
     format_predictability_tile,
@@ -68,109 +66,6 @@ def test_format_generic_distribution_plot():
 def test_format_generic_distribution_plot_with_single_value():
     svg = format_generic_distribution_plot([1.0, 1.0, 1.0, 1.0], "#ffffff")
     assert "All values are 1.0" in svg
-
-
-def test_format_enrichment_box_for_dataset(empty_db_mock_downloads):
-    entity = GeneFactory()
-    dataset = DependencyDatasetFactory(
-        matrix=MatrixFactory(entities=[entity], cell_lines=[CellLineFactory()])
-    )
-    empty_db_mock_downloads.session.flush()
-
-    enrichment_box = format_enrichment_box_for_dataset(
-        entity, dataset, "test_color", "test_override"
-    )
-
-    assert enrichment_box.keys() == {
-        "context_explorer_dataset_tab",
-        "most_selective_code",
-        "svg",
-        "labels",
-        "units",
-        "color",
-        "title_color",
-    }
-    assert enrichment_box["context_explorer_dataset_tab"] == "overview"
-    assert enrichment_box["most_selective_code"] == ""
-
-    assert_is_svg(enrichment_box["svg"])
-    assert "labels" in enrichment_box
-    assert enrichment_box["units"] == dataset.matrix.units
-    assert enrichment_box["color"] == "test_color"
-    assert enrichment_box["title_color"] == "test_override"
-
-
-def test_format_enrichments_for_svg(empty_db_mock_downloads):
-    subtype_nodeA = SubtypeNodeFactory(
-        subtype_code="context_A",
-        node_name="Context A",
-        node_level=0,
-        level_0="context_A",
-    )
-    subtype_nodeB = SubtypeNodeFactory(
-        subtype_code="context_B",
-        node_name="Context B",
-        node_level=0,
-        level_0="context_B",
-    )
-    subtype_nodeC = SubtypeNodeFactory(
-        subtype_code="context_C",
-        node_name="Context C",
-        node_level=0,
-        level_0="context_C",
-    )
-
-    enriched_contexts = pd.DataFrame(
-        {
-            "q_value": [1e-5, 1e-5, 1e-5],
-            "effect_size": [0.5, 0.5, 0.5],
-            "cell_line": [
-                ["cell_line_A1", "cell_line_AB2"],
-                ["cell_line_AB2", "cell_line_B3", "cell_line_NaN"],
-                ["cell_line_C4"],
-            ],
-        },
-        index=["context_A", "context_B", "context_C"],
-        columns=["cell_line", "q_value", "effect_size"],
-    )
-
-    all_values_series = pd.Series(
-        [
-            11,
-            122,
-            23,
-            44,
-            NaN,
-        ],  # for easy verification A=1, B=2, etc converting to digits
-        index=[
-            "cell_line_A1",
-            "cell_line_AB2",
-            "cell_line_B3",
-            "cell_line_C4",
-            "cell_line_NaN",
-        ],
-    )
-
-    expected_enriched_text_labels = [
-        "Context A (context_A) (1.00e-05) n=2",
-        "Context B (context_B) (1.00e-05) n=2",
-        "Context C (context_C) (1.00e-05) n=1",
-    ]
-    expected_enriched_values = [[11, 122], [122, 23], [44]]
-    expected_svg_all_box_positions = [4, 3, 2, 1]
-    expected_svg_all_box_numeric_labels = ["All", 1, 2, 3]
-
-    (
-        enriched_text_labels,
-        enriched_values,
-        svg_all_box_positions,
-        svg_all_box_numeric_labels,
-    ) = format_enrichments_for_svg(enriched_contexts, all_values_series)
-
-    assert expected_enriched_text_labels == enriched_text_labels
-    assert expected_enriched_values == enriched_values
-    assert expected_svg_all_box_positions == list(svg_all_box_positions)
-    assert expected_svg_all_box_numeric_labels == list(svg_all_box_numeric_labels)
 
 
 def test_get_percentile():

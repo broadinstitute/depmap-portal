@@ -8,10 +8,9 @@ import React, {
 import { Button } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
-import type { RowSelectionState } from "@depmap/react-table";
-import type { SliceQuery } from "@depmap/types";
-import useData from "./useData";
-import type { RowFilters } from "./useData";
+import { RowSelectionState } from "@depmap/react-table";
+import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
+import useData, { RowFilters } from "./useData";
 import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
@@ -21,6 +20,7 @@ interface Props {
   index_type_name: string;
   initialSlices: SliceQuery[];
   viewOnlySlices: Set<SliceQuery>;
+  enableRowSelection: boolean;
   initialRowSelection: RowSelectionState;
   onChangeSlices: (nextSlices: SliceQuery[]) => void;
   downloadFilename: string;
@@ -35,6 +35,7 @@ export function useSliceTableState({
   index_type_name,
   initialSlices,
   viewOnlySlices,
+  enableRowSelection,
   initialRowSelection,
   onChangeSlices,
   downloadFilename,
@@ -95,10 +96,19 @@ export function useSliceTableState({
   const PlotlyLoader = usePlotlyLoader();
 
   const handleClickAddColumn = useCallback(async () => {
-    const newSlice = await chooseDataSlice({ index_type_name, PlotlyLoader });
+    const newSlice = await chooseDataSlice({
+      index_type_name,
+      PlotlyLoader,
+    });
 
     if (newSlice) {
-      setSlices((prev) => [...prev, newSlice]);
+      setSlices((prev) => {
+        if (prev.find((oldSlice) => areSliceQueriesEqual(oldSlice, newSlice))) {
+          return prev;
+        }
+
+        return [...prev, newSlice];
+      });
     }
   }, [index_type_name, PlotlyLoader]);
 
@@ -188,12 +198,12 @@ export function useSliceTableState({
   }, [columns, handleClickEditColumn, handleClickViewColumn]);
 
   const handleClickFilterButton = useCallback(async () => {
-    const result = await chooseFilters({ rowFilters });
+    const result = await chooseFilters({ enableRowSelection, rowFilters });
 
     if (result) {
       setRowFilters(result);
     }
-  }, [rowFilters]);
+  }, [enableRowSelection, rowFilters]);
 
   const handleClickDownload = useCallback(() => {
     const csvString = exportToCsv();
@@ -227,5 +237,6 @@ export function useSliceTableState({
     rowSelection,
     setRowSelection,
     shouldShowLabelColumn,
+    numFiltersApplied: Object.values(rowFilters).filter(Boolean).length,
   };
 }

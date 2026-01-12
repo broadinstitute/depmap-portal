@@ -8,8 +8,10 @@ from breadbox.db.session import SessionWithUser
 from breadbox.compute.analysis_tasks import get_features_info_and_dataset
 from breadbox.io.filestore_crud import get_slice
 from breadbox.schemas.custom_http_exception import UserError
-from breadbox.crud.dataset import get_sample_indexes_by_given_ids
-from breadbox.crud.dataset import get_all_sample_indexes
+from breadbox.crud.dimension_ids import (
+    get_sample_indexes_by_given_ids,
+    get_all_sample_indexes,
+)
 from breadbox.crud.partial import get_cell_line_selector_lines
 from ..config import get_settings
 from ..models.dataset import (
@@ -315,14 +317,14 @@ def get_feature_and_sample_indices_per_merged_dataset(
     feature_indices_per_dataset: List[List[int]] = []
     datasets: List[Dataset] = []
     for dataset_id in dataset_ids:
-        _, feature_indices, dataset = get_features_info_and_dataset(
+        feature_indices, dataset = get_features_info_and_dataset(
             db, user, dataset_id, feature_labels
         )
 
-        feature_indices_per_dataset.append(feature_indices)
+        feature_indices_per_dataset.append(feature_indices.index.to_list())
         datasets.append(dataset)
 
-    sample_indices: List[int] = []
+    sample_indices: List[int]
     if given_ids:
         sample_indices, missing_samples = get_sample_indexes_by_given_ids(
             db=db, user=user, dataset=datasets[0], given_ids=given_ids
@@ -446,7 +448,7 @@ def export_dataset(
         settings = get_settings()
 
         # Get feature_indices using feature_labels as a filter
-        _, feature_indices, dataset = get_features_info_and_dataset(
+        feature_indices, dataset = get_features_info_and_dataset(
             db, user, dataset_id, feature_labels
         )
 
@@ -459,7 +461,7 @@ def export_dataset(
             db=db,
             dataset=dataset,
             filestore_location=settings.filestore_location,
-            feature_indices=feature_indices,
+            feature_indices=feature_indices.index.to_list(),
             sample_indices=sample_indices,
             progress_callback=progress_callback,
             user=user,

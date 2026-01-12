@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import jsonBeautify from "json-beautify";
-import { isValidSliceQuery } from "@depmap/types";
+import { showInfoModal } from "@depmap/common-components";
+import { DataExplorerContextV2, isValidSliceQuery } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
 import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../state/ContextBuilderState";
@@ -8,8 +9,24 @@ import styles from "../../../styles/ContextBuilderV2.scss";
 
 const SHOW_DEBUG_INFO = false;
 
+type PartialDeep<T> = { [P in keyof T]?: PartialDeep<T[P]> };
+
+async function copyToClipboard(context: PartialDeep<DataExplorerContextV2>) {
+  const text = jsonBeautify(context, null!, 2, 80);
+
+  try {
+    await navigator.clipboard.writeText(text);
+    showInfoModal({
+      title: "Success!",
+      content: `Context “${context.name || "(untitled)"}” copied to clipboard.`,
+    });
+  } catch (err) {
+    window.console.error("Failed to copy text:", err);
+  }
+}
+
 const DebugInfo = () => {
-  const { mainExpr, vars } = useContextBuilderState();
+  const { mainExpr, vars, dimension_type, name } = useContextBuilderState();
   const [varDomains, setVarDomains] = useState<object>({});
 
   useEffect(() => {
@@ -69,8 +86,26 @@ const DebugInfo = () => {
       </pre>
       <h5>var domains</h5>
       <pre className={styles.debugVarDomains}>
-        <code>{jsonBeautify(varDomains, null!, 2, 80)}</code>
+        <code>
+          {jsonBeautify(varDomains, null!, 2, 80).replace(
+            /"(…and \d+ more)"/g,
+            "$1"
+          )}
+        </code>
       </pre>
+      <button
+        type="button"
+        onClick={() => {
+          copyToClipboard({
+            name,
+            dimension_type,
+            expr: mainExpr as DataExplorerContextV2["expr"],
+            vars,
+          });
+        }}
+      >
+        copy to clipboard
+      </button>
     </details>
   );
 };

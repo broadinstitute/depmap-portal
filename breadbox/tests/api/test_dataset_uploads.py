@@ -1,4 +1,5 @@
 import io
+from datetime import datetime
 
 from fastapi.testclient import TestClient
 
@@ -6,14 +7,24 @@ from breadbox.db.session import SessionWithUser, SessionLocalWithUser
 from breadbox.schemas.dataset import AddDatasetResponse
 from breadbox.compute import dataset_uploads_tasks
 from breadbox.celery_task import utils
-from breadbox.models.dataset import TabularDataset, TabularCell, TabularColumn
+from breadbox.models.dataset import TabularDataset, TabularCell, TabularColumn, Dataset
 from sqlalchemy import and_
+from datetime import timedelta
 
 from typing import Dict
-from ..utils import assert_status_ok
 import pytest
 import numpy as np
 from ..utils import upload_and_get_file_ids
+import json
+import pandas as pd
+from breadbox.models.dataset import AnnotationType
+from fastapi.testclient import TestClient
+from breadbox.schemas.dataset import ColumnMetadata
+from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
+from tests import factories
+from ..utils import assert_status_not_ok, assert_status_ok
+from breadbox.crud import dataset as dataset_crud
+from breadbox.service import dataset as dataset_service
 
 
 class TestPost:
@@ -1166,13 +1177,94 @@ class TestPost:
         assert tabular_dataset.status_code == 400
 
 
-import json
-import pandas as pd
-from breadbox.models.dataset import AnnotationType
-from fastapi.testclient import TestClient
-from breadbox.schemas.dataset import ColumnMetadata
-from breadbox.crud.access_control import PUBLIC_GROUP_ID
-from tests import factories
+def test_dataset_with_expiry(
+    client: TestClient, minimal_db: SessionWithUser, mock_celery, settings, monkeypatch
+):
+    user = settings.admin_users[0]
+    headers = {"X-Forwarded-User": user}
+    one_day_in_seconds = 60 * 60 * 24
+
+    file = factories.continuous_matrix_csv_file()
+
+    factories.feature_type(minimal_db, minimal_db.user, "feature_name")
+    factories.sample_type(minimal_db, minimal_db.user, "sample_name")
+
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
+    def override_time(m, mock_now):
+        m.setattr(dataset_crud, "get_current_datetime", lambda: mock_now)
+        m.setattr(dataset_service, "get_current_datetime", lambda: mock_now)
+
+    with monkeypatch.context() as m:
+        override_time(m, datetime(year=2025, month=1, day=1))
+        response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "feature_name",
+                "sample_type": "sample_name",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "expiry_in_seconds": one_day_in_seconds,
+                "group_id": TRANSIENT_GROUP_ID,
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=headers,
+        )
+
+        # verify we can't specify expiry on a non-transient dataset
+        assert_status_not_ok(response)
+
+        # try again with transient = True
+        response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "feature_name",
+                "sample_type": "sample_name",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": True,
+                "expiry_in_seconds": one_day_in_seconds,
+                "group_id": TRANSIENT_GROUP_ID,
+                "value_type": "continuous",
+                "allowed_values": None,
+            },
+            headers=headers,
+        )
+
+    # now this should work and we should see the expiry having been set
+    assert_status_ok(response)
+    dataset_id = response.json()["result"]["datasetId"]
+    dataset = minimal_db.query(Dataset).filter(Dataset.id == dataset_id).one()
+    assert dataset.expiry == datetime(year=2025, month=1, day=2)
+
+    # now let's try a few dates to make sure we recognize when this is expired
+    # first, make sure that nothing is found before the expiration date
+    with monkeypatch.context() as m:
+        override_time(m, datetime(year=2025, month=1, day=1, hour=1))
+        expired = dataset_crud.find_expired_datasets(minimal_db, timedelta(days=1000))
+        assert len(expired) == 0
+
+    # now make sure that we honor max_age when looking for expired data
+    with monkeypatch.context() as m:
+        override_time(m, datetime(year=2025, month=1, day=1, hour=1))
+        expired = dataset_crud.find_expired_datasets(minimal_db, timedelta(minutes=1))
+        assert len(expired) == 1
+
+    # okay, now make sure that we honor the expiration
+    with monkeypatch.context() as m:
+        override_time(m, datetime(year=2025, month=1, day=2, hour=1))
+        expired = dataset_crud.find_expired_datasets(minimal_db, timedelta(days=1000))
+        assert len(expired) == 1
 
 
 def test_end_to_end_with_mismatched_metadata(
@@ -1282,12 +1374,11 @@ def test_end_to_end_with_mismatched_metadata(
         json={"features": ["FID-1", "FID-2", "FID-3"], "feature_identifier": "id",},
     )
     assert_status_ok(result)
-    # two points in this response that I'm not sure about:
-    # 1. since we requested FID-2, should this response include a FID-2 with no values?
-    # 2. this is returning samples (SID-X) which are not included in the metadata. Should breadbox filter these out before returning the result?
+    # We requested FID-2, but there's no values in breadbox so it's omitted from the response.
+    # Also sample (SID-X) is not included in the metadata, so breadbox does not return values for this sample
     assert result.json() == {
-        "FID-1": {"SID-1": 6.0, "SID-X": 5.0, "SID-3": 4.0},
-        "FID-3": {"SID-1": 3.0, "SID-X": 2.0, "SID-3": 1.0},
+        "FID-1": {"SID-1": 6.0, "SID-3": 4.0},
+        "FID-3": {"SID-1": 3.0, "SID-3": 1.0},
     }
 
     result = client.post(
@@ -1295,10 +1386,7 @@ def test_end_to_end_with_mismatched_metadata(
         json={"features": ["FID-1", "FID-2", "FID-3"], "feature_identifier": "id",},
     )
     assert_status_ok(result)
-    # two points in this response that I'm not sure about:
-    # 1. since we requested FID-2, should this response include a FID-2 with no values?
-    # 2. this is returning samples (SID-X) which are not included in the metadata. Should breadbox filter these out before returning the result?
     assert result.json() == {
-        "FID-1": {"SID-1": 6.0, "SID-X": 5.0, "SID-3": 4.0},
-        "FID-3": {"SID-1": 3.0, "SID-X": 2.0, "SID-3": 1.0},
+        "FID-1": {"SID-1": 6.0, "SID-3": 4.0},
+        "FID-3": {"SID-1": 3.0, "SID-3": 1.0},
     }

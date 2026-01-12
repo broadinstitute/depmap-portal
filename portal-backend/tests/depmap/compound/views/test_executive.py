@@ -1,27 +1,24 @@
-from depmap.compound.models import Compound
+from depmap import data_access
+from depmap.compound.models import Compound, CompoundExperiment
 from depmap.compound.views.executive import (
     determine_compound_experiment_and_dataset,
     format_availability_tile,
-    format_dep_dists,
-    format_top_corr_table,
+    format_dep_dist,
 )
 from depmap.dataset.models import DependencyDataset
-from depmap.enums import BiomarkerEnum
 from tests.depmap.utilities.test_svg_utils import assert_is_svg
 from tests.factories import (
-    BiomarkerDatasetFactory,
     CompoundExperimentFactory,
     CompoundFactory,
-    CorrelationFactory,
     DependencyDatasetFactory,
     DepmapModelFactory,
-    GeneFactory,
     MatrixFactory,
 )
+import typing
 from tests.utilities import interactive_test_utils
 
 
-def test_format_dep_dists(empty_db_mock_downloads):
+def test_format_dep_dist(empty_db_mock_downloads):
     """
     test that
         one element for every compound experiment, dataset
@@ -29,6 +26,10 @@ def test_format_dep_dists(empty_db_mock_downloads):
     """
     compound_experiment_1 = CompoundExperimentFactory()
     compound_experiment_2 = CompoundExperimentFactory()
+
+    assert isinstance(compound_experiment_1, CompoundExperiment)
+    assert isinstance(compound_experiment_2, CompoundExperiment)
+
     # multiple cell lines so can plot distplot
     matrix = MatrixFactory(
         [compound_experiment_1, compound_experiment_2],
@@ -41,55 +42,18 @@ def test_format_dep_dists(empty_db_mock_downloads):
     dataset_2 = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.CTRP_AUC, matrix=matrix
     )
-    compound_experiment_and_datasets = [
-        (compound_experiment_1, dataset_1),
-        (compound_experiment_2, dataset_1),
-        (compound_experiment_1, dataset_2),
-        (compound_experiment_2, dataset_2),
-    ]
     empty_db_mock_downloads.session.flush()
+    interactive_test_utils.reload_interactive_config()
 
-    dep_dists = format_dep_dists(compound_experiment_and_datasets)
+    top_priority_dataset = data_access.get_matrix_dataset(dataset_1.name.name)
 
-    assert len(dep_dists) == 4
-    for dep_dist in dep_dists:
-        assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
-        assert dep_dist["num_lines"] == 2
-        assert_is_svg(dep_dist["svg"])
-
-
-def test_format_top_corr_table(tmpdir, empty_db_mock_downloads):
-    gene = GeneFactory(label="G")
-    compound_experiment = CompoundExperimentFactory(label="C")
-
-    matrix = MatrixFactory(entities=[compound_experiment])
-    dataset = DependencyDatasetFactory(
-        display_name="avana", name=DependencyDataset.DependencyEnum.Avana, matrix=matrix
+    dep_dist = format_dep_dist(
+        typing.cast(Compound, compound_experiment_1.compound), top_priority_dataset
     )
 
-    expr_matrix = MatrixFactory(entities=[gene])
-    expression_dataset = BiomarkerDatasetFactory(
-        name=BiomarkerEnum.expression, matrix=expr_matrix
-    )
-    CorrelationFactory(
-        expression_dataset,
-        dataset,
-        str(tmpdir.join("cors.sqlite3")),
-        cor_values=[[0.5]],
-    )
-
-    empty_db_mock_downloads.session.flush()
-
-    table = format_top_corr_table([(compound_experiment, dataset)])
-    assert len(table) == 1
-    entry = table[0]
-    assert (
-        entry["interactive_url"]
-        == "/data_explorer_2/?xDataset=Avana&xFeature=C&yDataset=expression&yFeature=G"
-    )
-    assert entry["gene_url"] == "/gene/G"
-    assert entry["correlation"] == 0.5
-    assert entry["gene_symbol"] == "G"
+    assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
+    assert dep_dist["num_lines"] == 2
+    assert_is_svg(dep_dist["svg"])
 
 
 def test_format_availability_tile(empty_db_mock_downloads):

@@ -37,10 +37,16 @@ class MetadataCacheEntry:
     columns_metadata: Dict[str, ColumnMetadata]
 
     def get_label_for_given_id(self, given_id):
-        return self.properties_to_index_df.loc[given_id, "label"]
+        try:
+            return self.properties_to_index_df.loc[given_id, "label"]
+        except KeyError:
+            return None
 
     def get_properties_dict(self, given_id: str):
-        return self.properties_to_index_df.loc[given_id].to_dict()
+        try:
+            return self.properties_to_index_df.loc[given_id].to_dict()
+        except KeyError:
+            return None
 
 
 class MetadataCache:
@@ -96,6 +102,10 @@ def populate_search_index_after_update(
     """
     Update the search index for all dimension_types impacted by `dimension_type` changing in some way.
     """
+    from breadbox.crud.dimension_ids import _populate_dimension_type_labels
+
+    _populate_dimension_type_labels(db, dimension_type.name)
+
     impacted_dimension_types = _get_datatypes_referencing(db, dimension_type.name)
 
     md = MetadataCache(db)
@@ -147,6 +157,12 @@ def refresh_search_index_for_dimension_type(
                 given_id=given_id,
                 metadata_cache=metadata_cache,
             ):
+                label = cache_entry.get_label_for_given_id(given_id)
+                if label is None:
+                    # if we don't have a label, this given_id didn't exist
+                    # in metadata, so move on
+                    continue
+
                 # if given_id in cache_entry.dimension_id_by_given_id:
                 yield dict(
                     property=record.property,
@@ -154,7 +170,7 @@ def refresh_search_index_for_dimension_type(
                     group_id=dimension_type.dataset.group_id,
                     dimension_type_name=dimension_type.name,
                     dimension_given_id=given_id,
-                    label=cache_entry.get_label_for_given_id(given_id),
+                    label=label,
                 )
 
     dimension_search_index_row_count = 0

@@ -242,6 +242,7 @@ def _load_predictive_features(
             BiomarkerDataset.BiomarkerEnum.rnai_confounders,
             BiomarkerDataset.BiomarkerEnum.rep1m_confounders,
             BiomarkerDataset.BiomarkerEnum.oncref_confounders,
+            BiomarkerDataset.BiomarkerEnum.oncref_seq_confounders,
             BiomarkerDataset.BiomarkerEnum.rep_all_single_pt_confounders,
         ]:
             if GenericEntity.get_by_label(feature_name, must=False) is not None:

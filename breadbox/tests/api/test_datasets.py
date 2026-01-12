@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 
 from breadbox.crud.dimension_types import get_dimension_type
+from ..factories import feature_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
-from sqlalchemy import and_
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
@@ -2177,8 +2177,17 @@ class TestPost:
     def test_get_matrix_dataset_data_by_given_id(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
+        factories.sample_type(
+            minimal_db, settings.admin_users[0], "model", given_ids=["ACH-1", "ACH-2"]
+        )
         given_id = "dataset_given_id"
-        factories.matrix_dataset(minimal_db, settings, given_id=given_id)
+        factories.matrix_dataset(
+            minimal_db,
+            settings,
+            feature_type=None,
+            sample_type="model",
+            given_id=given_id,
+        )
         # TODO: Delete after deprecated endpoint is deleted
         response = client.post(f"/datasets/data/{given_id}",)
         assert_status_ok(response)
@@ -2198,7 +2207,12 @@ class TestPost:
     def test_get_matrix_dataset_data_no_filters(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
-        dataset = factories.matrix_dataset(minimal_db, settings)
+        factories.sample_type(
+            minimal_db, settings.admin_users[0], "model", given_ids=["ACH-1", "ACH-2"]
+        )
+        dataset = factories.matrix_dataset(
+            minimal_db, settings, feature_type=None, sample_type="model",
+        )
         # TODO: Delete after deprecated endpoint is deleted
         response = client.post(f"/datasets/data/{dataset.id}",)
         assert response.json() == {
@@ -2216,7 +2230,12 @@ class TestPost:
     def test_get_matrix_dataset_data_generic_feature_type_labels(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
-        dataset = factories.matrix_dataset(minimal_db, settings, feature_type=None)
+        factories.sample_type(
+            minimal_db, settings.admin_users[0], "model", given_ids=["ACH-1", "ACH-2"]
+        )
+        dataset = factories.matrix_dataset(
+            minimal_db, settings, feature_type=None, sample_type="model"
+        )
         # TODO: Delete after deprecated endpoint is deleted
         response = client.post(
             f"/datasets/data/{dataset.id}",
@@ -2277,7 +2296,12 @@ class TestPost:
     def test_get_matrix_dataset_data_by_ids(
         self, client: TestClient, minimal_db: SessionWithUser, settings, mock_celery
     ):
-        dataset = factories.matrix_dataset(minimal_db, settings)
+        factories.sample_type(
+            minimal_db, settings.admin_users[0], "model", given_ids=["ACH-1", "ACH-2"]
+        )
+        dataset = factories.matrix_dataset(
+            minimal_db, settings, feature_type=None, sample_type="model"
+        )
         # TODO: Delete after deprecated endpoint is deleted
         response = client.post(
             f"/datasets/data/{dataset.id}",
@@ -2438,6 +2462,10 @@ class TestPost:
             sample_ids=["sampleID1", "sampleID2", "sampleID3"],
             values=np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]]),
         )
+        #             featureID1  featureID2  featureID3
+        #   sampleID1          1           2           3
+        #   sampleID2          4           5           6
+        #   sampleID3          7           8           9
         matrix_dataset = factories.matrix_dataset(
             minimal_db,
             settings,
@@ -2495,6 +2523,12 @@ class TestPost:
         public_group,
         tmpdir,
     ):
+        factories.sample_type(
+            minimal_db,
+            settings.admin_users[0],
+            "model",
+            given_ids=["Id1", "Id2", "Id3"],
+        )
         data_path = str(tmpdir.join("dataset.csv"))
         pd.DataFrame(
             {"A": [1, 2, 3], "B": [3, 4, pd.NA], "C": [4, 3, 2]},
@@ -2516,8 +2550,7 @@ class TestPost:
                 "format": "matrix",
                 "name": "Test Aggregation dataset",
                 "units": "a unit",
-                "feature_type": "generic",
-                "sample_type": "depmap_model",
+                "sample_type": "model",
                 "data_type": "User upload",
                 "file_ids": file_ids,
                 "dataset_md5": expected_md5,
@@ -3463,6 +3496,15 @@ class TestDelete:
     def test_delete_sample_type_and_feature_type(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
+
+        orig_dataset_count = minimal_db.query(Dataset).count()
+        orig_tabular_column_count = minimal_db.query(TabularColumn).count()
+        orig_tabular_cell_count = minimal_db.query(TabularCell).count()
+        orig_property_to_index_count = minimal_db.query(PropertyToIndex).count()
+        orig_dimension_search_index_count = minimal_db.query(
+            DimensionSearchIndex
+        ).count()
+
         admin_user = settings.admin_users[0]
         admin_headers = {"X-Forwarded-Email": admin_user}
         r_feature_metadata = client.post(
@@ -3522,12 +3564,16 @@ class TestDelete:
             f"/types/feature/gene", headers=admin_headers
         )
         assert_status_ok(r_delete_feature_type)
-        assert len(minimal_db.query(Dataset).all()) == 0
-        assert len(minimal_db.query(TabularDataset).all()) == 0
-        assert len(minimal_db.query(TabularColumn).all()) == 0
-        assert len(minimal_db.query(TabularCell).all()) == 0
-        assert len(minimal_db.query(PropertyToIndex).all()) == 0
-        assert len(minimal_db.query(DimensionSearchIndex).all()) == 0
+        assert len(minimal_db.query(Dataset).all()) == orig_dataset_count
+        assert len(minimal_db.query(TabularColumn).all()) == orig_tabular_column_count
+        assert len(minimal_db.query(TabularCell).all()) == orig_tabular_cell_count
+        assert (
+            len(minimal_db.query(PropertyToIndex).all()) == orig_property_to_index_count
+        )
+        assert (
+            len(minimal_db.query(DimensionSearchIndex).all())
+            == orig_dimension_search_index_count
+        )
 
 
 def test_get_feature_data(minimal_db, settings, client: TestClient):

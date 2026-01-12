@@ -2,6 +2,7 @@ import React from "react";
 import styles from "../../styles/CorrelationTile.scss";
 import { CorrelationBar } from "../CorrelationBar";
 import { Tooltip } from "@depmap/common-components";
+import { getFullUrlPrefix } from "src/compound/utils";
 
 interface TopRelatedCompoundsProps {
   entityLabel: string;
@@ -20,7 +21,7 @@ export const TopRelatedCompounds = ({
   topCompoundCorrelates,
   targetCorrelationData,
 }: TopRelatedCompoundsProps) => {
-  const urlPrefix = window.location.origin;
+  const urlPrefix = getFullUrlPrefix();
   return (
     <div>
       <h3 className={styles.tileDatasetTitle}>{datasetName}</h3>

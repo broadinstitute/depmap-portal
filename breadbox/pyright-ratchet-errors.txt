@@ -1,8 +1,13 @@
 __init__.py: error: Type "tuple[str, stat_result | None]" is not assignable to return type "Tuple[str, stat_result]"
+base_class.py: error: "Mapped" is unknown import symbol (reportAttributeAccessIssue)
+base_class.py: error: "mapped_column" is unknown import symbol (reportAttributeAccessIssue)
 common.py: error: Cannot access attribute "__fields__" for class "type[ResponseMixin]*"
 conftest.py: error: Argument of type "Literal['read']" cannot be assigned to parameter "access_type" of type "AccessType" in function "__init__"
+data_type.py: error: "Mapped" is unknown import symbol (reportAttributeAccessIssue)
+data_type.py: error: "mapped_column" is unknown import symbol (reportAttributeAccessIssue)
 data_validation.py: error: Cannot access attribute "any" for class "ExtensionArray"
-dataset.py: error: "value" is not a known attribute of "None" (reportOptionalMemberAccess)
+dataset.py: error: "Mapped" is unknown import symbol (reportAttributeAccessIssue)
+dataset.py: error: "mapped_column" is unknown import symbol (reportAttributeAccessIssue)
 dataset_tasks.py: error: Type "None" is not assignable to declared type "List[Unknown]"
 download_tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas"
 download_tasks.py: error: Cannot access attribute "merge" for class "NDArray[Unknown]"
@@ -15,11 +20,20 @@ factories.py: error: Argument of type "Unknown | None" cannot be assigned to par
 factories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "properties_to_index" of type "List[str]" in function "add_sample_type"
 factories.py: error: Argument of type "_CallIfOmitted | Unknown" cannot be assigned to parameter "file" of type "BytesIO" in function "create_upload_file"
 factories.py: error: Argument of type "_CallIfOmitted | Unknown" cannot be assigned to parameter "user" of type "str" in function "add_sample_type"
+group.py: error: "Mapped" is unknown import symbol (reportAttributeAccessIssue)
 group.py: error: "group_entries" is not a known attribute of "None" (reportOptionalMemberAccess)
+group.py: error: "mapped_column" is unknown import symbol (reportAttributeAccessIssue)
 hdf5_utils.py: error: "Datatype" is not iterable
 hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
+hdf5_utils.py: error: Cannot access attribute "dtype" for class "Group"
+hdf5_utils.py: error: Cannot access attribute "shape" for class "Datatype"
+hdf5_utils.py: error: Cannot access attribute "shape" for class "Group"
+metadata.py: error: "ColumnElement" is unknown import symbol (reportAttributeAccessIssue)
 metadata.py: error: Cannot access attribute "value" for class "NDArray[Unknown]"
 metadata.py: error: Cannot access attribute "value" for class "ndarray[Any, Unknown]"
 proxy.py: error: Argument of type "bytes" cannot be assigned to parameter "data" of type "RequestData | None" in function "post"
+search.py: error: Argument of type "type[DimensionSearchIndex]" cannot be assigned to parameter "table" of type "str | Selectable" in function "__init__"
 test_compute.py: error: Argument missing for parameter "self" (reportCallIssue)
+test_hdf5_caching.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
+test_hdf5_caching.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_types.py: error: Cannot access attribute "id" for class "str"

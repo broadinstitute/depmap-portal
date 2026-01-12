@@ -6,6 +6,7 @@ import pandas as pd
 from flask import url_for, current_app
 
 from depmap import data_access
+from depmap.interactive import interactive_utils
 from depmap.compound.models import Compound
 from depmap.database import (
     Column,
@@ -213,10 +214,21 @@ class PredictiveFeature(Model):
         if not self._get_feature_is_loaded():
             return None
 
+        dataset_id = dep_dataset.name.name
+        if (
+            dataset_id in ["Prism_oncology_AUC", "Prism_oncology_seq_AUC"]
+            and entity.get_entity_type() == "compound_experiment"
+        ):
+            entity = entity.compound
+            if dataset_id == "Prism_oncology_seq_AUC":
+                dataset_id = "Prism_oncology_seq_AUC_collapsed"
+        else:
+            pass
+
         if self.dataset_id == "context":
             return url_for(
                 "data_explorer_2.view_data_explorer_2",
-                xDataset=dep_dataset.name.name,
+                xDataset=dataset_id,
                 xFeature=entity.label,
                 color1=json_dumps(
                     {
@@ -236,7 +248,7 @@ class PredictiveFeature(Model):
 
         return url_for(
             "data_explorer_2.view_data_explorer_2",
-            xDataset=dep_dataset.name.name,
+            xDataset=dataset_id,
             xFeature=entity.label,
             yDataset=self.dataset_id,
             yFeature=self.feature_name,
@@ -263,7 +275,13 @@ class PredictiveFeature(Model):
                 dtype=int,
             )
         else:
-            self_values = data_access.get_row_of_values(
+            # For now, this one method call should continue to use the legacy interactive_utils
+            # interface for performance reasons. This get_correlation_for_entity method is used
+            # to load data for the predictability tab - and is sometimes called 60+ times in a row
+            # to load data for various features. Breadbox is not currently equipped to handle this
+            # many subsequent requests in a performant way. That's fine because predictability is not
+            # breadbox-friendly at the moment anyway.
+            self_values = interactive_utils.get_row_of_values(
                 self.dataset_id, self.feature_name
             )
         cor = dep_dataset_values.corr(self_values)

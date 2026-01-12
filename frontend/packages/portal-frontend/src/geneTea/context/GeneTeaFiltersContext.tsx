@@ -3,12 +3,19 @@ import React, {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 import { SortOption } from "../types";
+import {
+  deleteSpecificQueryParams,
+  setQueryStringList,
+} from "@depmap/utils/src/url";
+import { getGenesFromUrl } from "../utils";
+import { enabledFeatures } from "@depmap/globals";
 
 // TODO organize this file a little better...
-export const TERM_OPTIONS_FILTER_DEFAULTS = {
+export const NUMERIC_FILTER_DEFAULTS = {
   sortBy: "Effect Size",
   maxTopTerms: 10,
   maxFDR: 0.05,
@@ -120,7 +127,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [sortBy, setSortBy] = useState<SortOption>(
-    TERM_OPTIONS_FILTER_DEFAULTS.sortBy as SortOption
+    NUMERIC_FILTER_DEFAULTS.sortBy as SortOption
   );
   const handleSetSortBy = useCallback((v: SortOption) => setSortBy(v), []);
 
@@ -147,15 +154,29 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [geneSymbolSelections, setGeneSymbolSelections] = useState<Set<string>>(
-    new Set(["CAD", "UMPS", "ADSL", "DHODH"])
+    () => {
+      const genes = getGenesFromUrl();
+
+      if (!enabledFeatures.gene_tea_tutorial_page && genes.length === 0) {
+        return new Set(["CAD", "UMPS", "ADSL", "DHODH"]);
+      }
+      return new Set(genes);
+    }
   );
+
+  useEffect(() => {
+    const geneList = Array.from(geneSymbolSelections);
+    deleteSpecificQueryParams(["genes", "gList"]);
+    setQueryStringList("genes", geneList, true);
+  }, [geneSymbolSelections]);
+
   const handleSetGeneSymbolSelections = useCallback(
     (v: any) => {
       setGeneSymbolSelections((prevVal: Set<string>) => {
         const nextState = typeof v === "function" ? v(prevVal) : v;
+
         if (prevVal !== nextState) {
-          // Invalidate the table selections if the user searches on a different list
-          // of gene symbols.
+          // 1. Invalidate table selections
           handleClearSelectedTopTermsTableRows();
         }
 
@@ -190,7 +211,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [effectSizeThreshold, setEffectSizeThreshold] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.effectSizeThreshold
+    NUMERIC_FILTER_DEFAULTS.effectSizeThreshold
   );
   const handleSetEffectSizeThreshold = useCallback(
     (v: any) => {
@@ -210,7 +231,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [minMatchingQuery, setMinMatchingQuery] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.minMatchingQuery
+    NUMERIC_FILTER_DEFAULTS.minMatchingQuery
   );
   const handleSetMinMatchingQuery = useCallback(
     (v: any) => {
@@ -230,7 +251,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [maxMatchingOverall, setMaxMatchingOverall] = useState<number | null>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxMatchingOverall
+    NUMERIC_FILTER_DEFAULTS.maxMatchingOverall
   );
   const handleSetMaxMatchingOverall = useCallback(
     (v: any) => {
@@ -250,7 +271,7 @@ export function GeneTeaFiltersContextProvider({
   );
 
   const [maxTopTerms, setMaxTopTerms] = useState<number | null>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxTopTerms
+    NUMERIC_FILTER_DEFAULTS.maxTopTerms
   );
   const handleSetMaxTopTerms = useCallback(
     (v: any) => {
@@ -269,9 +290,7 @@ export function GeneTeaFiltersContextProvider({
     [handleClearSelectedTopTermsTableRows]
   );
 
-  const [maxFDR, setMaxFDR] = useState<number>(
-    TERM_OPTIONS_FILTER_DEFAULTS.maxFDR
-  );
+  const [maxFDR, setMaxFDR] = useState<number>(NUMERIC_FILTER_DEFAULTS.maxFDR);
   const handleSetMaxFDR = useCallback((v: number) => setMaxFDR(v), []);
 
   return (

@@ -360,7 +360,7 @@ export default function extendReactSelect(
               }
               menuPosition="fixed"
               menuPortalTarget={menuPortalTarget}
-              className={cx(styles.Select, props.className, {
+              className={cx(styles.WrappedSelect, props.className, {
                 [styles.selectError]: hasError,
                 [styles.withSwatch]: Boolean(swatchColor),
               })}

@@ -19,12 +19,6 @@ export const compareDisabledLast = (
   return 0;
 };
 
-export const getSortProp = <T>(key: keyof T) => {
-  return (compare: (x: string, y: string) => number) => {
-    return (a: T, b: T): number => compare(String(a[key]), String(b[key]));
-  };
-};
-
 export function sortByNumberOrNull<T>(
   arr: T[],
   property: keyof T,
@@ -52,3 +46,45 @@ export function sortByNumberOrNull<T>(
     return (valB as number) - (valA as number);
   });
 }
+
+const dataTypePriorityOrder = [
+  "CRISPR",
+  "RNAi",
+  "CN",
+  "Expression",
+  "Gene accessibility",
+  "Methylation",
+  "Mutations",
+  "Drug screen",
+  "Combo Drug screen",
+];
+
+const bottomPriorityOrder = ["Annotations", "Deprecated"];
+
+export const dataTypeSortComparator = (a: string, b: string) => {
+  const aBottom = bottomPriorityOrder.indexOf(a);
+  const bBottom = bottomPriorityOrder.indexOf(b);
+
+  // If both are in bottom priority list, sort by their order in that list
+  if (aBottom !== -1 && bBottom !== -1) {
+    return aBottom - bBottom;
+  }
+
+  // If only one is in bottom priority list, it goes after the other
+  if (aBottom !== -1) return 1;
+  if (bBottom !== -1) return -1;
+
+  // Neither are in bottom list, proceed with normal logic
+  const ai = dataTypePriorityOrder.indexOf(a);
+  const bi = dataTypePriorityOrder.indexOf(b);
+
+  if (ai !== -1 && bi !== -1) {
+    // both are in priority list — sort by their order in that list
+    return ai - bi;
+  }
+  if (ai !== -1) return -1; // a is priority, b is not
+  if (bi !== -1) return 1; // b is priority, a is not
+
+  // neither are priority — sort alphabetically
+  return compareCaseInsensitive(a, b);
+};

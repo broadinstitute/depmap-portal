@@ -10,23 +10,23 @@ from ..crud import metadata as metadata_crud
 router = APIRouter(prefix="/metadata", tags=["metadata"])
 
 
-@router.get(
-    "/", response_model=metadata_crud.MetadataResponse, operation_id="get_metadata",
-)
-def get_metadata(
-    label_or_id: str, db: SessionWithUser = Depends(get_db_with_user)
-) -> metadata_crud.MetadataResponse:
-    """
-    Provide either a feature/sample id or label and return all metadata for that feature/sample
-    """
-    try:
-        metadata = metadata_crud.get_metadata_list_for_dimension_label(
-            db=db, label_or_id=label_or_id
-        )
-    except ValueError as e:
-        raise HTTPException(400, detail=str(e))
-
-    return metadata
+# @router.get(
+#     "/", response_model=metadata_crud.MetadataResponse, operation_id="get_metadata",
+# )
+# def get_metadata(
+#     label_or_id: str, db: SessionWithUser = Depends(get_db_with_user)
+# ) -> metadata_crud.MetadataResponse:
+#     """
+#     Provide either a feature/sample id or label and return all metadata for that feature/sample
+#     """
+#     try:
+#         metadata = metadata_crud.get_metadata_list_for_dimension_label(
+#             db=db, label_or_id=label_or_id
+#         )
+#     except ValueError as e:
+#         raise HTTPException(400, detail=str(e))
+#
+#     return metadata
 
 
 class SearchResponse(BaseModel):

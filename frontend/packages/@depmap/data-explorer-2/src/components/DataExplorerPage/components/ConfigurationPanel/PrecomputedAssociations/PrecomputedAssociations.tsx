@@ -7,6 +7,7 @@ import { isCompleteDimension } from "../../../../../utils/misc";
 import usePrecomputedAssocationData from "../../../hooks/usePrecomputedAssocationData";
 import useScrollOnLoad from "./useScrollOnLoad";
 import AssociationsTable from "./AssociationsTable";
+import useLabelToIdMap from "./useLabelToIdMap";
 import styles from "../../../styles/PrecomputedAssociations.scss";
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 function PrecomputedAssociations({ plot, onSelectY, sectionRef }: Props) {
   const staticContentRef = useRef<HTMLDivElement>(null);
   const [hiddenDatasets, setHiddenDatasets] = useState<Set<string>>(new Set());
+  const labelToIdMap = useLabelToIdMap(plot.dimensions?.y?.slice_type);
   const [sortByAbsoluteValue, setSortByAbsoluteValue] = useState(true);
   const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
   const [sortColumn, setSortColumn] = useState<"correlation" | "log10qvalue">(
@@ -64,7 +66,15 @@ function PrecomputedAssociations({ plot, onSelectY, sectionRef }: Props) {
     const expr = plot.dimensions.y.context?.expr;
 
     if (expr !== null && typeof expr === "object" && "==" in expr) {
-      yDimensionId = (expr["=="]![1] as unknown) as string;
+      const varExpr = (expr["=="]![0] as unknown) as { var: string };
+      const valueExpr = (expr["=="]![1] as unknown) as string;
+
+      if (varExpr?.var === "entity_label") {
+        // edge case
+        yDimensionId = labelToIdMap[valueExpr];
+      } else {
+        yDimensionId = valueExpr;
+      }
     }
   }
 

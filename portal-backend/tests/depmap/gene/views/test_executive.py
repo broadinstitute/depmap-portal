@@ -5,12 +5,10 @@ from depmap.gene.views.executive import (
     format_crispr_possible_missing_reason,
     get_dependency_distribution,
     plot_mutation_profile,
-    format_enrichment_boxes,
     format_codependencies,
 )
 from depmap.dataset.models import DependencyDataset
-from depmap.utilities import color_palette
-from depmap.enums import DependencyEnum, BiomarkerEnum
+from depmap.enums import DependencyEnum
 from tests.factories import (
     ContextAnalysisFactory,
     DepmapModelFactory,
@@ -18,8 +16,6 @@ from tests.factories import (
     GeneExecutiveInfoFactory,
     MatrixFactory,
     DependencyDatasetFactory,
-    BiomarkerDatasetFactory,
-    CellLineFactory,
     SubtypeContextFactory,
     SubtypeNodeFactory,
 )

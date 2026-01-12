@@ -1,0 +1,2 @@
+export const MAX_PLOTTABLE_CATEGORIES = 300;
+export const MAX_POINTS_TO_ANNOTATE = 50;

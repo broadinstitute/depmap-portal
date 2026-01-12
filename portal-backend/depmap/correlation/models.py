@@ -39,35 +39,6 @@ class CorrelatedDataset(Model):
     filename = Column(String, nullable=False)
 
     @classmethod
-    def get_correlated_dataset_display_names(cls, matrix_id):
-        """
-        Must be able to:
-        Detect self-correlations
-        Select from either dataset column
-        Take uniques (union)
-        """
-        dataset_id = (
-            Dataset.query.filter_by(matrix_id=matrix_id)
-            .with_entities(Dataset.dataset_id)
-            .one()[0]
-        )
-
-        q1 = (
-            cls.query.filter_by(dataset_1_id=dataset_id)
-            .join(Dataset, Dataset.dataset_id == cls.dataset_2_id)
-            .with_entities(Dataset.display_name)
-        )
-        q2 = (
-            cls.query.filter_by(dataset_2_id=dataset_id)
-            .join(Dataset, Dataset.dataset_id == cls.dataset_1_id)
-            .with_entities(Dataset.display_name)
-        )
-
-        display_names = [x[0] for x in q1.union(q2).all()]
-
-        return display_names
-
-    @classmethod
     def _find_correlated_datasets(cls, matrix_id):
         dataset_ids = set(
             [

@@ -5,6 +5,7 @@ import {
   DataExplorerContext,
   DataExplorerContextV2,
   DataExplorerContextVariable,
+  MatrixDataset,
 } from "@depmap/types";
 import wellKnownDatasets from "../constants/wellKnownDatasets";
 import { sliceIdToSliceQuery } from "./slice-id";
@@ -38,6 +39,42 @@ const rewriteCompoundExpr = (expr: object) => {
     return value;
   });
 };
+
+function simplifyVarNames(context: DataExplorerContextV2) {
+  const nextVars: Record<string, DataExplorerContextVariable> = {};
+  let i = 0;
+
+  const nextExpr = JSON.parse(
+    JSON.stringify(context.expr, (key, value) => {
+      if (key === "var") {
+        const isSpecialVarName =
+          value === "entity_label" || value === "given_id";
+        // Only change the variable name if it's
+        // not a name with special significance.
+        let newVarName = isSpecialVarName ? value : `${i++}`;
+
+        // Edge case: featureless data should never use "entity_label".
+        if (context.dimension_type === null && value === "entity_label") {
+          newVarName = "given_id";
+        }
+
+        if (newVarName !== "given_id") {
+          nextVars[newVarName] = context.vars[value];
+        }
+
+        return newVarName;
+      }
+
+      return value;
+    })
+  );
+
+  return {
+    ...context,
+    expr: nextExpr,
+    vars: nextVars,
+  } as DataExplorerContextV2;
+}
 
 export async function convertContextV1toV2(
   context: DataExplorerContext
@@ -124,12 +161,14 @@ export async function convertContextV1toV2(
 
   for (const varName of Object.keys(varTypes)) {
     if (varName === "entity_label") {
-      vars[varName] = {
-        dataset_id: `${context_type}_metadata`,
-        identifier_type: "column",
-        identifier: "label",
-        source: "property",
-      };
+      if (dimension_type !== null) {
+        vars[varName] = {
+          dataset_id: `${dimension_type}_metadata`,
+          identifier_type: "column",
+          identifier: dimension_type === "depmap_model" ? "depmap_id" : "label",
+          source: "property",
+        };
+      }
     } else {
       const sliceQuery = sliceIdToSliceQuery(
         varName,
@@ -161,33 +200,54 @@ export async function convertContextV1toV2(
     }
   }
 
-  // Do a pass over the dataset IDs and make sure they're valid. By convention,
-  // a given_id formatted as "<DIM_TYPE_NAME>_metadata" should exist (and that
-  // stable identifier is usually preferred) but if it doesn't we'll fall back
-  // to the metadata dataset's regular ID.
-  if (Object.values(vars).some((v) => v.dataset_id.endsWith("_metadata"))) {
-    const datasets = await cached(breadboxAPI).getDatasets();
+  const datasets = await cached(breadboxAPI).getDatasets();
 
-    for (const varName of Object.keys(vars)) {
-      const variable = vars[varName];
+  for (const varName of Object.keys(vars)) {
+    const variable = vars[varName];
 
-      if (variable.dataset_id.endsWith("_metadata")) {
-        const dimTypeName = variable.dataset_id.replace(/_metadata$/, "");
-        const dimType = dimTypes.find((dt) => dt.name === dimTypeName);
+    // Do a pass over the dataset IDs and make sure they're valid. By convention,
+    // a given_id formatted as "<DIM_TYPE_NAME>_metadata" should exist (and that
+    // stable identifier is usually preferred) but if it doesn't we'll fall back
+    // to the metadata dataset's regular ID.
+    if (variable.dataset_id.endsWith("_metadata")) {
+      const dimTypeName = variable.dataset_id.replace(/_metadata$/, "");
+      const dimType = dimTypes.find((dt) => dt.name === dimTypeName);
 
-        if (dimType?.metadata_dataset_id) {
-          const regularId = dimType.metadata_dataset_id;
-          const dataset = datasets.find((d) => d.id === regularId);
+      if (dimType?.metadata_dataset_id) {
+        const regularId = dimType.metadata_dataset_id;
+        const dataset = datasets.find((d) => d.id === regularId);
 
-          if (dataset && dataset.given_id !== variable.dataset_id) {
-            vars[varName].dataset_id = regularId;
-          }
+        if (dataset && dataset.given_id !== variable.dataset_id) {
+          vars[varName].dataset_id = regularId;
         }
       }
     }
+
+    // Also make sure all matrix slices have a slice_type.
+    if (
+      variable.identifier_type === "feature_id" ||
+      variable.identifier_type === "feature_label"
+    ) {
+      const dataset = datasets.find((d) =>
+        [d.id, d.given_id].includes(variable.dataset_id)
+      );
+      const slice_type = (dataset as MatrixDataset)?.feature_type_name || null;
+      vars[varName].slice_type = slice_type;
+    }
+
+    if (
+      variable.identifier_type === "sample_id" ||
+      variable.identifier_type === "sample_label"
+    ) {
+      const dataset = datasets.find((d) =>
+        [d.id, d.given_id].includes(variable.dataset_id)
+      );
+      const slice_type = (dataset as MatrixDataset)?.sample_type_name || null;
+      vars[varName].slice_type = slice_type;
+    }
   }
 
-  if (dimension_type === "compound_v2") {
+  if (context.context_type === "compound_experiment") {
     return {
       name: extractCompoundName(context.name),
       dimension_type,
@@ -195,7 +255,7 @@ export async function convertContextV1toV2(
     } as DataExplorerContextV2;
   }
 
-  return {
+  return simplifyVarNames({
     name: context.name,
     dimension_type:
       context.context_type === "custom" ? null : context.context_type,
@@ -203,5 +263,5 @@ export async function convertContextV1toV2(
     // IDs now act as variable names (i.e. keys into the `vars` object).
     expr: context.expr,
     vars,
-  } as DataExplorerContextV2;
+  } as DataExplorerContextV2);
 }

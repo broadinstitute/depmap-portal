@@ -1,4 +1,4 @@
-import { isCompleteExpression, isSampleType } from "../../utils/misc";
+import { isCompleteExpression, isSampleTypeSync } from "../../utils/misc";
 import { legacyPortalIdToBreadboxGivenId } from "../../utils/slice-id";
 import {
   DataExplorerContext,
@@ -94,12 +94,16 @@ const makeSampleParser = (dimensionKey: DimensionKey) => (
   let dataset: Datasets[string][number] | undefined;
 
   Object.keys(datasets).forEach((index_type) => {
-    if (isSampleType(index_type)) {
-      const matchingDs = findDataset(dataset_id, datasets[index_type]);
+    const matchingDataset = findDataset(dataset_id, datasets[index_type]);
 
-      if (matchingDs) {
-        dataset = matchingDs;
-      }
+    const isSampleType =
+      (matchingDataset?.sample_type_name !== undefined &&
+        matchingDataset.sample_type_name === matchingDataset.index_type) ||
+      // TODO: Remove this. For legacy support only.
+      isSampleTypeSync(index_type);
+
+    if (matchingDataset && isSampleType) {
+      dataset = matchingDataset;
     }
   });
 

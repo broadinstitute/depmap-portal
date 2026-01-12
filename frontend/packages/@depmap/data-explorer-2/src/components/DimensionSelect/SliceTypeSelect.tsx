@@ -3,7 +3,7 @@ import { Tooltip, WordBreaker } from "@depmap/common-components";
 import {
   capitalize,
   getDimensionTypeLabel,
-  isSampleType,
+  isSampleTypeSync,
   pluralize,
 } from "../../utils/misc";
 import PlotConfigSelect from "../PlotConfigSelect";
@@ -30,9 +30,9 @@ function SliceTypeSelect({
 }: Props) {
   const placeholder = isLoading
     ? "Loading…"
-    : `Select ${isSampleType(index_type) ? "feature" : "sample"} type…`;
+    : `Select ${isSampleTypeSync(index_type) ? "feature" : "sample"} type…`;
 
-  let selectLabel = isSampleType(index_type) ? "Feature" : "Sample";
+  let selectLabel = isSampleTypeSync(index_type) ? "Feature" : "Sample";
 
   if (axis_type === "aggregated_slice") {
     selectLabel = `${pluralize(selectLabel)} to ${

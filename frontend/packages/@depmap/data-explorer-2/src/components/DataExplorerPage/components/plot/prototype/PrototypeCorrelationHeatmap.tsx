@@ -120,6 +120,11 @@ function PrototypeCorrelationHeatmap({
   }, [onLoad]);
 
   useEffect(() => {
+    const plot = ref.current;
+    return () => Plotly.purge(plot as HTMLElement);
+  }, [Plotly]);
+
+  useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
     const x = data[xKey];
     const y = data[yKey];
@@ -366,7 +371,7 @@ function PrototypeCorrelationHeatmap({
 
     return () => {
       listeners.forEach(([eventName, callback]) =>
-        plot.removeListener(eventName, callback)
+        plot.removeListener?.(eventName, callback)
       );
     };
   }, [

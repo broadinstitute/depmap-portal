@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { DataExplorerContextV2, DimensionType } from "@depmap/types";
-import { isV2Context } from "../../utils/context";
 import renderConditionally from "../../utils/render-conditionally";
 import PlotConfigSelect from "../PlotConfigSelect";
 import useGlobalEvents from "./useGlobalEvents";
@@ -25,6 +24,7 @@ interface Props {
   swatchColor?: string;
   includeAllInOptions?: boolean;
   hasError?: boolean;
+  selectClassName?: string;
 }
 
 function ContextSelectorV2({
@@ -38,9 +38,10 @@ function ContextSelectorV2({
   swatchColor = undefined,
   includeAllInOptions = false,
   hasError = false,
+  selectClassName = undefined,
 }: Props) {
-  if (value && !isV2Context(value)) {
-    throw new Error("ContextSelectorV2 does not support legacy contexts");
+  if (!context_type) {
+    throw new Error("`context_type` is required!");
   }
 
   const [isLoadingContext, setIsLoadingContext] = useState(false);
@@ -77,6 +78,7 @@ function ContextSelectorV2({
         key={`${reactKey}`}
         show
         isClearable
+        className={selectClassName}
         label={resolvedLabel}
         width={300}
         hasError={hasError || evalFailed}

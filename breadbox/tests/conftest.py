@@ -33,6 +33,7 @@ from fastapi import FastAPI, Request
 
 from breadbox.compute import dataset_uploads_tasks
 from breadbox.celery_task import utils
+from . import factories
 
 pytest_plugins = ("celery.contrib.pytest",)
 
@@ -172,6 +173,7 @@ def private_group(client: TestClient, settings: Settings):
 def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_group):
     "A database which has the public group and one feature type and one sample type defined"
     admin_user = settings.admin_users[0]
+    add_data_type(db, "User upload")
     add_dimension_type(
         db,
         settings,
@@ -181,16 +183,15 @@ def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_
         id_column="label",
         axis="feature",
     )
-    add_dimension_type(
+    factories.sample_type(
         db,
-        settings,
-        user=admin_user,
-        name="depmap_model",
+        admin_user,
+        "depmap_model",
         display_name="Depmap Model",
         id_column="depmap_id",
-        axis="sample",
+        given_ids=["ACH-1", "ACH-2"],
+        metadata_given_id="depmap_model_metadata",
     )
-    add_data_type(db, "User upload")
     db.commit()
     db.flush()
     return db

@@ -63,14 +63,14 @@ export function TableHeader<T>({
                       ? { left: stickyLeft }
                       : {}),
                   }}
+                  onClick={
+                    !isSelectColumn
+                      ? header.column.getToggleSortingHandler()
+                      : undefined
+                  }
                 >
                   <div
                     className={styles.thContent}
-                    onClick={
-                      !isSelectColumn
-                        ? header.column.getToggleSortingHandler()
-                        : undefined
-                    }
                     style={{
                       cursor:
                         !isSelectColumn && header.column.getCanSort()

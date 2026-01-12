@@ -75,6 +75,25 @@ class DimensionType(Base):
     )
 
 
+class DimensionTypeLabel(Base):
+    __tablename__ = "dimension_type_label"
+
+    __table_args__ = (
+        Index("idx_dim_type_label_1", "dimension_type_name"),
+        Index("idx_dim_type_label_2", "label", "dimension_type_name"),
+        Index("idx_dim_type_label_3", "given_id", "dimension_type_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    dimension_type_name: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False,
+    )
+    dimension_type = relationship("DimensionType", foreign_keys=[dimension_type_name])
+    label: Mapped[str] = mapped_column(String, nullable=False)
+    given_id: Mapped[str] = mapped_column(String, nullable=False)
+
+
 class Dataset(Base, UUIDMixin, GroupMixin):
     __tablename__ = "dataset"
     __table_args__ = (
@@ -93,7 +112,13 @@ class Dataset(Base, UUIDMixin, GroupMixin):
     data_type: Mapped[str] = mapped_column(
         String, ForeignKey(DataType.data_type), nullable=False
     )
+
     is_transient: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    # only meaningful for datasets where is_transient==True. Indicates when a transient dataset
+    # should be deleted.
+    expiry: Mapped[Optional[DateTime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     priority: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)

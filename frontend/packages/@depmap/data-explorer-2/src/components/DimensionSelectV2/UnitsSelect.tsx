@@ -1,24 +1,33 @@
 import React from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
+import renderConditionally from "../../utils/render-conditionally";
 import PlotConfigSelect from "../PlotConfigSelect";
 import styles from "../../styles/DimensionSelect.scss";
 
 interface Props {
-  show: boolean;
   isLoading: boolean;
   options: { label: string; value: string; isDisabled: boolean }[];
   value: string | null;
   onChange: (nextDataType: string | null) => void;
+  selectClassName?: string;
 }
 
-function UnitsSelect({ show, isLoading, options, value, onChange }: Props) {
+function UnitsSelect({
+  isLoading,
+  options,
+  value,
+  onChange,
+
+  selectClassName = undefined,
+}: Props) {
   const placeholder = isLoading ? "Loading…" : "Select measure…";
 
   return (
     <PlotConfigSelect
-      show={show}
+      show
       enable
       isClearable
+      className={selectClassName}
       label="Measure (optional)"
       placeholder={placeholder}
       isLoading={isLoading}
@@ -49,4 +58,4 @@ function UnitsSelect({ show, isLoading, options, value, onChange }: Props) {
   );
 }
 
-export default UnitsSelect;
+export default renderConditionally(UnitsSelect);

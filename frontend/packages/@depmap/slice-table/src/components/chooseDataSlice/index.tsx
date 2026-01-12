@@ -4,7 +4,7 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
-import type { SliceQuery } from "@depmap/types";
+import { SliceQuery } from "@depmap/types";
 import SlicePreview from "../SlicePreview";
 import DataSliceSelect from "./DataSliceSelect";
 import styles from "../../styles/AddColumnModal.scss";

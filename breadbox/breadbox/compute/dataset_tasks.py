@@ -262,6 +262,7 @@ def upload_dataset(
         allowed_values=valid_fields.valid_allowed_values,
         dataset_metadata=dataset_metadata,
         dataset_md5=None,
+        expiry=None,
     )
 
     added_dataset = dataset_service.add_matrix_dataset(

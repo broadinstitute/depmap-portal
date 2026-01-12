@@ -19,6 +19,7 @@ export interface SortedCorrelations {
   feature: string;
   dose: string | undefined;
   featureDataset: string;
+  featureDatasetGivenId: string;
   correlation: number;
   log10qvalue: number;
   rank: number;

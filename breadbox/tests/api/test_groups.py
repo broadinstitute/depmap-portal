@@ -1,5 +1,6 @@
 from contextlib import contextmanager
 from fastapi.testclient import TestClient
+from collections import defaultdict
 from breadbox.config import Settings
 from breadbox.compute import dataset_tasks
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
@@ -84,6 +85,16 @@ class TestGet:
         private_group_user = "user@IhaveAccess.org"
         unknown_user = "NoAccessHere@noaccess.org"
 
+        orig_count_per_group = defaultdict(lambda: 0)
+
+        response = client.get(f"/groups/", headers={"X-Forwarded-User": admin_user})
+        assert_status_ok(response)
+        response_groups = response.json()
+        assert len(response_groups) == 1  # public group only
+        # metadata datasets are part of conftest, so remember these
+        for group in response_groups:
+            orig_count_per_group[group["id"]] = len(group["datasets"])
+
         # Make the private group
         private_group = add_group(
             minimal_db, admin_user, group_in=GroupIn(name="private_group")
@@ -112,7 +123,10 @@ class TestGet:
         assert len(response_groups) == 2  # public and private groups
         for group in response_groups:
             assert group.get("datasets") is not None
-            assert len(group.get("datasets")) == 1
+            if private_group.id == group["id"]:
+                assert len(group["datasets"]) == 1
+            else:
+                assert len(group["datasets"]) == orig_count_per_group[group["id"]]
 
         # When the admin is removed from the group, they should still be able to see the group
         # but not any datasets within the group.

@@ -8,10 +8,11 @@ import type { RowFilters } from "./useData";
 import styles from "../styles/FilterModal.scss";
 
 interface Props {
+  enableRowSelection: boolean;
   rowFilters: RowFilters;
 }
 
-function chooseFilters({ rowFilters }: Props) {
+function chooseFilters({ enableRowSelection, rowFilters }: Props) {
   return promptForValue({
     defaultValue: rowFilters,
     title: "Filter the table",
@@ -25,17 +26,19 @@ function chooseFilters({ rowFilters }: Props) {
         <div className={styles.content}>
           <FormGroup>
             <ControlLabel>Row-based filters</ControlLabel>
-            <Checkbox
-              checked={value.hideUnselectedRows}
-              onChange={() => {
-                onChange((prev) => ({
-                  ...prev,
-                  hideUnselectedRows: !prev.hideUnselectedRows,
-                }));
-              }}
-            >
-              Hide unselected rows
-            </Checkbox>
+            {enableRowSelection && (
+              <Checkbox
+                checked={value.hideUnselectedRows}
+                onChange={() => {
+                  onChange((prev) => ({
+                    ...prev,
+                    hideUnselectedRows: !prev.hideUnselectedRows,
+                  }));
+                }}
+              >
+                Hide unselected rows
+              </Checkbox>
+            )}
             <Checkbox
               checked={value.hideIncompleteRows}
               onChange={() => {

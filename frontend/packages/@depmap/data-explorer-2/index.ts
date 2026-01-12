@@ -1,4 +1,5 @@
 export { default as ContextSelector } from "./src/components/ContextSelector";
+export { default as ContextSelectorV2 } from "./src/components/ContextSelectorV2";
 export { default as SliceLabelSelector } from "./src/components/SliceLabelSelector";
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
@@ -49,8 +50,10 @@ export {
   isCompleteExpression,
   isPartialSliceId,
   isSampleType,
+  isSampleTypeSync,
   pluralize,
   sortDimensionTypes,
+  uncapitalize,
   urlLibEncode,
 } from "./src/utils/misc";
 
@@ -69,6 +72,7 @@ export {
   DEFAULT_PALETTE,
   LEGEND_ALL,
   LEGEND_BOTH,
+  LEGEND_OTHER,
   LEGEND_RANGE_1,
   LEGEND_RANGE_2,
   LEGEND_RANGE_3,

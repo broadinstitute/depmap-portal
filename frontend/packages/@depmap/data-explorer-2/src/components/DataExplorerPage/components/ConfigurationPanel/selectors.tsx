@@ -12,7 +12,6 @@ import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
 import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import {
-  capitalize,
   getDimensionTypeLabel,
   pluralize,
   sortDimensionTypes,
@@ -80,33 +79,37 @@ export function PointsSelector({
     })();
   }, []);
 
-  const types = sortDimensionTypes(
-    Object.keys(datasetsByIndexType || {})
-  ).filter((index_type) => {
-    if (
-      index_type === "other" &&
-      value !== "other" &&
-      plot_type === "scatter"
-    ) {
-      return false;
-    }
+  const unsortedTypes = Object.keys(datasetsByIndexType || {});
 
-    return true;
-  });
-
-  if (value && !types.includes(value)) {
-    // Also add the currently selected index_type (just in case we're viewing
-    // an old plot that was generated when different options were present).
-    types.push(value);
+  if (value && !unsortedTypes.includes(value)) {
+    unsortedTypes.push(value);
   }
 
-  const options = types.reduce(
-    (memo: any, index_type: any) => ({
-      ...memo,
-      [index_type]: capitalize(pluralize(getDimensionTypeLabel(index_type))),
-    }),
-    {}
-  );
+  const sortedTypes = sortDimensionTypes(unsortedTypes)
+    // TODO: Remove this filter. It's only relevant to legacy mode.
+    .filter((index_type) => {
+      if (
+        index_type === "other" &&
+        value !== "other" &&
+        plot_type === "scatter"
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+  const isLoading = !datasetsByIndexType;
+
+  const options = isLoading
+    ? { [value]: "Loading..." }
+    : sortedTypes.reduce(
+        (memo, index_type) => ({
+          ...memo,
+          [index_type]: pluralize(getDimensionTypeLabel(index_type)),
+        }),
+        {}
+      );
 
   return (
     <div className={styles.PointsSelector}>
@@ -128,9 +131,9 @@ export function PointsSelector({
         placeholder="Select points…"
         options={options}
         show={show}
-        enable={enable}
+        enable={enable && !isLoading}
         value={value}
-        isLoading={!datasetsByIndexType}
+        isLoading={isLoading}
         onChange={onChange}
       />
     </div>
@@ -153,7 +156,9 @@ export function ColorByTypeSelector({
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const sliceTypeLabel = capitalize(getDimensionTypeLabel(slice_type));
+  const [sliceTypeLabel, setSliceTypeLabel] = useState(
+    getDimensionTypeLabel(slice_type)
+  );
   const [hasLegacyColorProperty, setHasLegacyColorProperty] = useState(false);
 
   useEffect(() => {
@@ -166,6 +171,17 @@ export function ColorByTypeSelector({
         setHasLegacyColorProperty(
           slices.some((slice) => !slice.isHighCardinality)
         );
+      } else {
+        cached(breadboxAPI)
+          .getDimensionTypes()
+          // HACK: `getDimensionTypeLabel` is synchronous when it should be async.
+          // This is to keep some legacy code working. It falls back to using the type `name`
+          // instead of `display_name` until `getDimensionTypes()` has been cached.
+          .then(() => {
+            setTimeout(() => {
+              setSliceTypeLabel(getDimensionTypeLabel(slice_type));
+            });
+          });
       }
     })();
   }, [slice_type]);

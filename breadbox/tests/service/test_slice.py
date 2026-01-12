@@ -6,7 +6,7 @@ from breadbox.service.slice import get_slice_data
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
 
-from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 
 from tests import factories
 

@@ -782,7 +782,7 @@ function ContextAnalysis({
                 ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                 <>
                   <h2>
-                    OncRef sensitivies enriched in{" "}
+                    OncRef Lum sensitivies enriched in{" "}
                     {selectedContextNameInfo.name}
                   </h2>
                   <h4>

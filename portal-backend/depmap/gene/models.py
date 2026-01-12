@@ -126,45 +126,6 @@ class Gene(Entity):
         else:
             return q.one_or_none()
 
-    @staticmethod
-    def get_label_aliases(gene_id):
-        """
-        :return: label, [aliases]
-        """
-        gene_label_aliases_map = getattr(
-            flask.current_app, "_gene_label_aliases_map", None
-        )
-        if gene_label_aliases_map is None:
-            id_and_labels = db.session.query(Gene.entity_id, Gene.label).all()
-            id_and_aliases = (
-                db.session.query(EntityAlias.entity_id, EntityAlias.alias)
-                .join(Gene)
-                .all()
-            )
-
-            aliases_grouped_by_id = itertools.groupby(id_and_aliases, lambda x: x[0])
-            id_aliases_map = {
-                key: [label_or_alias for id, label_or_alias in group]
-                for key, group in aliases_grouped_by_id
-            }
-
-            gene_label_aliases_map = {
-                id: {
-                    "label": label,
-                    "aliases": id_aliases_map[id] if id in id_aliases_map else [],
-                }
-                for id, label in id_and_labels
-            }
-            flask.current_app._gene_label_aliases_map = gene_label_aliases_map
-
-        assert (
-            gene_id in gene_label_aliases_map
-        ), "could not find gene with id {}".format(gene_id)
-        return (
-            gene_label_aliases_map[gene_id]["label"],
-            gene_label_aliases_map[gene_id]["aliases"],
-        )
-
 
 def get_stable_id_type(stable_id):
     """

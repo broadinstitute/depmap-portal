@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
@@ -46,9 +40,6 @@ function ContextBuilderTableView() {
     }
   }, [mainExpr]);
 
-  const viewOnlySlices = useRef<Set<SliceQuery>>(new Set(uniqueVariableSlices));
-  const initialSlices = useRef([...viewOnlySlices.current, ...tableOnlySlices]);
-
   useEffect(() => {
     if (isLoading) {
       setIsReadyToSave(false);
@@ -62,17 +53,6 @@ function ContextBuilderTableView() {
 
     wasLoading.current = isLoading;
   }, [isLoading, matchingIds, setIsReadyToSave]);
-
-  const initialRowSelection = useMemo(() => {
-    const rowSelection: Record<string, boolean> = {};
-    matchingIds.forEach((id) => {
-      rowSelection[id] = true;
-    });
-
-    return rowSelection;
-    // We only want to set the initialRowSelection on initialization.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isViewInitialized]);
 
   const handleChangeSlices = useCallback(
     (updatedSlices: SliceQuery[]) => {
@@ -101,18 +81,30 @@ function ContextBuilderTableView() {
     [replaceExprWithSimpleList]
   );
 
+  const sliceTableRef = useRef<{ forceInitialize: () => void }>(null);
+  const shouldInitTable = useRef(false);
+
   useEffect(() => {
     if (isManualSelectMode && shouldConfirmRowSelection.current) {
       shouldConfirmRowSelection.current = false;
+      sliceTableRef.current?.forceInitialize();
 
       confirmManualSelectMode().then((confirmed) => {
         if (!confirmed) {
+          shouldInitTable.current = true;
           setIsViewInitialized(false);
           undoManualSelectionMode();
         }
       });
     }
   }, [isManualSelectMode, undoManualSelectionMode]);
+
+  useEffect(() => {
+    if (shouldInitTable.current) {
+      shouldInitTable.current = false;
+      sliceTableRef.current?.forceInitialize();
+    }
+  }, [isManualSelectMode]);
 
   if (!isViewInitialized) {
     return (
@@ -127,14 +119,21 @@ function ContextBuilderTableView() {
   return (
     <div className={styles.ContextBuilderTableView}>
       <SliceTable
+        sliceTableRef={sliceTableRef}
+        getInitialState={() => {
+          return {
+            initialSlices: [...uniqueVariableSlices, ...tableOnlySlices],
+            viewOnlySlices: new Set(uniqueVariableSlices),
+            initialRowSelection: Object.fromEntries(
+              matchingIds.map((id) => [id, true])
+            ),
+          };
+        }}
         downloadFilename={name}
         index_type_name={dimension_type}
-        initialSlices={initialSlices.current}
         onChangeSlices={handleChangeSlices}
-        viewOnlySlices={viewOnlySlices.current}
         enableRowSelection
         onChangeRowSelection={handleChangeRowSelection}
-        initialRowSelection={initialRowSelection}
         renderCustomControls={() => {
           return isManualSelectMode ? (
             <div className={styles.manualSelectionControls}>
@@ -142,6 +141,7 @@ function ContextBuilderTableView() {
               <Button
                 bsStyle="info"
                 onClick={() => {
+                  shouldInitTable.current = true;
                   setIsViewInitialized(false);
                   undoManualSelectionMode();
                 }}

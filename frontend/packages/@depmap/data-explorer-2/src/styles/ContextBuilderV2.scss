@@ -129,6 +129,7 @@
 }
 
 .singleExprMatches {
+  margin-left: 8px;
   margin-bottom: 8px;
   font-variant-numeric: tabular-nums;
 }
@@ -199,6 +200,14 @@
   }
 }
 
+.hideLongListButton {
+  @extend .detailsButton;
+}
+
+.unblockable {
+  display: block !important;
+}
+
 .NumberInput {
   & > div {
     display: flex;
@@ -254,6 +263,9 @@
   }
 
   .showAllValuesButton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-size: 12px;
     height: 38px;
   }

@@ -2,9 +2,9 @@ import pytest
 
 from depmap.dataset.models import TabularDataset
 from depmap.interactive import interactive_utils
+from depmap.interactive.config.utils import get_gender_dataset
 from tests.conftest import InteractiveConfigFakeMutationsDownload
 from tests.depmap.interactive.fixtures import *
-from tests.depmap.utilities.test_url_utils import assert_url_contains_parts
 from tests.factories import DependencyDatasetFactory, TaigaAliasFactory
 from tests.utilities import interactive_test_utils
 
@@ -14,7 +14,6 @@ def test_getters(interactive_db_mock_downloads):
     Test the following methods for both axes and color datasets:
     get_dataset_label
     get_dataset_units (not applicable for color)
-    get_feature_name
     get_taiga_id
     """
     interactive_config = InteractiveConfigFakeMutationsDownload()
@@ -37,10 +36,6 @@ def test_getters(interactive_db_mock_downloads):
         == interactive_config.get(avana_id)["priority"]
     )
     assert (
-        interactive_utils.get_feature_name(avana_id)
-        == interactive_config.get(avana_id)["feature_name"]
-    )
-    assert (
         interactive_utils.get_taiga_id(avana_id)
         == interactive_config.get(avana_id)["taiga_id"]
     )
@@ -54,11 +49,6 @@ def test_getters(interactive_db_mock_downloads):
         interactive_utils.get_dataset_label(mutation_id)
         == interactive_config.get(mutation_id)["label"]
     )
-    assert (
-        interactive_utils.get_feature_name(mutation_id)
-        == interactive_config.get(mutation_id)["feature_name"]
-    )
-
     assert (
         interactive_utils.get_taiga_id(nonstandard_aliased_dataset_id)
         == nonstandard_aliased_dataset_id
@@ -90,19 +80,6 @@ def test_is_continuous(interactive_db_mock_downloads, dataset_id, expected):
     assert interactive_utils.is_continuous(dataset_id) == expected, dataset_id
 
 
-@pytest.mark.parametrize(
-    "dataset_id, expected",
-    [
-        (TabularDataset.TabularEnum.mutation.name, False),
-        ("invalid_dataset", False),
-        (context_dataset_id, True),
-        (custom_cell_line_group_dataset_id, True),
-    ],
-)
-def test_is_filter(interactive_db_mock_downloads, dataset_id, expected):
-    assert interactive_utils.is_filter(dataset_id) == expected, dataset_id
-
-
 def test_get_all_original_taiga_ids(empty_db_mock_downloads):
     """
     Test that
@@ -110,7 +87,7 @@ def test_get_all_original_taiga_ids(empty_db_mock_downloads):
         filters out nones
     """
     # assert set up
-    dataset_with_no_taiga_id = interactive_utils.get_gender_dataset()
+    dataset_with_no_taiga_id = get_gender_dataset()
     assert interactive_utils.get_taiga_id(dataset_with_no_taiga_id) == None
 
     # set up dep dataset

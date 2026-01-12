@@ -31,6 +31,10 @@ interface Props {
 
   // Only called on save.
   onSave?: (context: any, hash: string) => void;
+
+  // Use this to default to the Table View instead of the Rules View
+  // (useful for mimicking Cell Line Selector).
+  startInTableView?: boolean;
 }
 
 function StandaloneContextEditor({
@@ -38,6 +42,7 @@ function StandaloneContextEditor({
   hash,
   onHide,
   onSave = () => {},
+  startInTableView = false,
 }: Props) {
   if (!context) {
     window.console.warn("StandaloneContextEditor launched without a context!");
@@ -74,6 +79,8 @@ function StandaloneContextEditor({
         isExistingContext={Boolean(hash)}
         onClickSave={onClickSave}
         onHide={onHide}
+        // only supported by ContextBuilderV2
+        {...{ startInTableView }}
       />
     </PlotlyLoaderProvider>
   );

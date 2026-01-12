@@ -25,6 +25,13 @@ class FeatureFlags:
 
         return current_app.config["ENV_TYPE"] == "public"
 
+    def is_qa(self):
+        from flask import current_app
+
+        env = current_app.config["ENV"]  # pyright: ignore
+        assert isinstance(env, str)
+        return env.endswith("qa")
+
     def is_skyros(self):
         from flask import current_app
 
@@ -100,8 +107,12 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
-    def new_compound_page_tabs(self):
+    def heatmap_tab(self):
         return self.is_prerelease_env()
+
+    @property
+    def new_dose_curves_tab(self):
+        return True
 
     @property
     def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
@@ -130,10 +141,6 @@ class FeatureFlags:
 
     @property
     def cell_line_mapping(self):
-        return self.is_skyros()
-
-    @property
-    def linear_association(self):
         return self.is_skyros()
 
     @property
@@ -200,7 +207,20 @@ class FeatureFlags:
     # refers to the portal gene tea tool page.
     @property
     def gene_tea_portal_page(self):
-        return self.is_skyros()
+        return self.is_prerelease_env()
+
+    @property
+    def gene_tea_matching_terms_panel(self):
+        return self.is_qa()
+
+    # TODO: Remove this feature flag once demo is approved. This is used in 2 places:
+    # (1) frontend/packages/portal-frontend/src/geneTea/context/GeneTeaFiltersContext.tsx (on enabling this feature
+    # delete all code in the if block that checks enabledFeatures.gene_tea_tutorial_page)
+    # (2) frontend/packages/portal-frontend/src/geneTea/components/GeneTea.tsx
+
+    @property
+    def gene_tea_tutorial_page(self):
+        return self.is_qa()
 
     @property
     def anchor_screen_dashboard(self):
@@ -211,8 +231,16 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def show_compound_correlations(self):
-        return False
+    def compound_correlation_tiles(self):
+        return self.is_prerelease_env()
+
+    @property
+    def correlation_analysis(self):
+        return self.is_prerelease_env()
+
+    @property
+    def gene_page_correlation_analysis(self):
+        return self.is_qa()
 
 
 def make_log_config(log_dir):
@@ -338,6 +366,9 @@ class Config(object):
     # with the expectation that in some environments we'll want to lower this
     MAX_UPLOAD_SIZE = 10 ** 10
     FORUM_API_KEY = os.getenv("FORUM_API_KEY")
+
+    # How long to wait for breadbox before reporting a timeout (in proxy)
+    BREADBOX_PROXY_TIMEOUT = 60
 
 
 class RemoteConfig(Config):

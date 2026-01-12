@@ -16,7 +16,7 @@ function VariableAnnotationSelect({ varName, onInvalidateVariable }: Props) {
       dimension_type={dimension_type}
       dataset_id={variable?.dataset_id || null}
       identifier={variable?.identifier || null}
-      identifierLabel={variable?.label || null}
+      identifierDisplayLabel={variable?.label || null}
       onChangeSourceDataset={(dataset_id, identifier_type) => {
         onInvalidateVariable(varName);
 

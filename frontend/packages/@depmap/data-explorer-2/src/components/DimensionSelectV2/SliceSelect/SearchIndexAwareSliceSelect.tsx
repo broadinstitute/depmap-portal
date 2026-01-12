@@ -24,6 +24,7 @@ interface Props {
   isLoading: boolean;
   //  units: string | null;
   swatchColor?: string;
+  selectClassName?: string;
 }
 
 function SearchIndexAwareSliceSelect({
@@ -35,6 +36,7 @@ function SearchIndexAwareSliceSelect({
   onChange,
   isLoading,
   swatchColor = undefined,
+  selectClassName = undefined,
 }: Props) {
   const searchQuery = useRef("");
 
@@ -86,6 +88,7 @@ function SearchIndexAwareSliceSelect({
   return (
     <AsyncSelect
       label={!swatchColor ? label : null}
+      className={selectClassName}
       value={displayValue}
       hasError={invalidValue}
       onChange={(option) =>

@@ -7,10 +7,7 @@ import pandas as pd
 import numpy as np
 
 from breadbox.db.session import SessionWithUser
-from breadbox.schemas.custom_http_exception import (
-    ResourceNotFoundError,
-    DimensionTypeNotFoundError,
-)
+from breadbox.schemas.custom_http_exception import DimensionTypeNotFoundError
 from breadbox.schemas.dataset import TabularDatasetIn
 from breadbox.models.dataset import (
     AnnotationType,
@@ -21,6 +18,7 @@ from breadbox.models.dataset import (
     DatasetFeature,
     DimensionType,
     PropertyToIndex,
+    DimensionTypeLabel,
 )
 
 
@@ -251,17 +249,6 @@ def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
     db.delete(dimension_type)
     db.flush()
     return True
-
-
-def get_dimension_type_labels_by_id(
-    db: SessionWithUser, dimension_type_name: str, limit: Optional[int] = None
-) -> dict[str, str]:
-    """
-    For a given dimension, get all IDs and labels that exist in the metadata.
-    """
-    return get_dimension_type_metadata_col(
-        db, dimension_type_name, col_name="label", limit=limit
-    )
 
 
 def get_dimension_type_metadata_col(

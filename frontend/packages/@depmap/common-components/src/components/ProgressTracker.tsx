@@ -141,18 +141,17 @@ export default class ProgressTracker extends React.Component<
   };
 
   renderLoadingAnimation = (runStatus?: CeleryTaskState) => {
-    const className = !runStatus
-      ? null
-      : runStatus == "PROGRESS"
-      ? "running"
-      : runStatus.toLowerCase();
+    const className = !runStatus ? null : styles[runStatus.toLowerCase()];
+    const percentComplete = this.state.lastResponse?.percentComplete;
 
     return (
       <div
-        className={cx(
-          styles.loadingAnimationCommon,
-          className && styles[className]
-        )}
+        className={cx(styles.loadingAnimationCommon, className)}
+        style={
+          percentComplete != null
+            ? ({ "--p": percentComplete } as React.CSSProperties)
+            : undefined
+        }
       />
     );
   };

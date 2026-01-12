@@ -65,7 +65,7 @@ export class CustomAnalysisResult extends React.Component<
 
   componentWillReceiveProps(nextProps: Readonly<CustomAnalysisResultProps>) {
     if (
-      nextProps.controlledLabel &&
+      nextProps.controlledLabel != null &&
       this.state.selectedLabel !== nextProps.controlledLabel
     ) {
       this.setState({

@@ -217,6 +217,10 @@ function DataExplorerDensity1DPlot({
 
   if (data?.metadata?.color_property) {
     legendTitle = data.metadata.color_property.label;
+
+    if (data.metadata.dataset_label) {
+      legendTitle += `<br>${data.metadata.dataset_label}`;
+    }
   }
 
   const pointVisibility = useMemo(

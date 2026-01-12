@@ -17,6 +17,7 @@ from breadbox.models.dataset import AnnotationType, ValueType
 from breadbox.compute.download_tasks import _get_all_sample_indices
 from breadbox.schemas.custom_http_exception import UserError
 from tests import factories
+from pandas.testing import assert_frame_equal
 
 
 def _create_dataset(db, settings, features, samples, data):
@@ -58,7 +59,7 @@ def test_get_processed_df(minimal_db, settings):
     # Query as the default user
     user = settings.default_user
     minimal_db.reset_user(user)
-    _, feature_indices, dataset = get_features_info_and_dataset(
+    feature_indices, dataset = get_features_info_and_dataset(
         db=minimal_db,
         user=user,
         dataset_id=created_dataset.id,
@@ -79,7 +80,7 @@ def test_get_processed_df(minimal_db, settings):
         db=minimal_db,
         dataset=dataset,
         filestore_location=settings.filestore_location,
-        feature_indices=feature_indices,
+        feature_indices=feature_indices.index.to_list(),
         sample_indices=sample_indices,
         progress_callback=progress_callback,
         user=user,
@@ -296,8 +297,6 @@ def test_get_merged_processed_df_datasets_without_entities(minimal_db, settings)
 
     compound_features = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
 
-    df = pd.concat([df_single.transpose(), df_single.transpose(), pd.DataFrame()])
-
     # Insert data as the admin
     admin_user = settings.admin_users[0]
     factories.feature_type(minimal_db, admin_user, "gene")
@@ -366,6 +365,7 @@ def test_get_merged_processed_df_datasets_without_entities(minimal_db, settings)
         chunk_size=2,
     )
 
+    df = pd.concat([df_single.transpose(), df_single.transpose(), pd.DataFrame()])
     expected_df = df.transpose()
 
     expected_column_list = [
@@ -373,7 +373,7 @@ def test_get_merged_processed_df_datasets_without_entities(minimal_db, settings)
     ] + [f"{dataset_achilles.name} {feature}" for feature in features]
     expected_df.columns = expected_column_list
     expected_df.index = samples
-    assert processed_df.equals(expected_df)
+    assert_frame_equal(processed_df, expected_df)
     assert recorded_progress == [18, 27, 36, 45, 54, 62, 72, 81, 90, 90]
 
 

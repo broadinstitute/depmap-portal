@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { dataTypeSortComparator } from "../../utils/misc";
+import { dataTypeSortComparator } from "@depmap/utils";
 import PlotConfigSelect from "../PlotConfigSelect";
 import { fetchDatasetsByIndexType } from "./useDimensionStateManager/utils";
 import { State } from "./useDimensionStateManager/types";
@@ -19,6 +19,7 @@ interface Props {
   showDefaultHint: boolean;
   showNoDefaultHint: boolean;
   onClickShowModal?: () => void;
+  selectClassName?: string;
 }
 
 type GroupedOptions = { label: string; options: Props["options"] }[];
@@ -64,6 +65,7 @@ function DataVersionSelect({
   showDefaultHint,
   showNoDefaultHint,
   onClickShowModal = undefined,
+  selectClassName = undefined,
 }: Props) {
   const [groupedOptions, setGroupedOptions] = useState<GroupedOptions | null>(
     null
@@ -179,6 +181,7 @@ function DataVersionSelect({
         const selection = wrappedValue as typeof options[number] | null;
         onChange(selection?.value || null);
       }}
+      className={selectClassName}
       label="Data Version"
       renderDetailsButton={
         onClickShowModal

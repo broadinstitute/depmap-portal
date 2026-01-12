@@ -32,7 +32,7 @@ function AddColumnAnnotationSelect({
       dimension_type={index_type_name}
       dataset_id={tempPartialValue.dataset_id || null}
       identifier={tempPartialValue.identifier || null}
-      identifierLabel={null}
+      identifierDisplayLabel={null}
       onChangeSourceDataset={(dataset_id, identifier_type) => {
         onChange(null);
         setTempPartialValue({ dataset_id, identifier_type });

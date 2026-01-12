@@ -4,7 +4,7 @@ from breadbox.crud.dimension_types import get_dimension_type
 from breadbox.schemas.types import IdMapping
 from fastapi.testclient import TestClient
 from sqlalchemy import and_
-from breadbox.models.dataset import DimensionType, Dataset
+from breadbox.models.dataset import DimensionType, Dataset, TabularDataset
 from breadbox.models.dataset import (
     Dimension,
     TabularColumn,
@@ -475,9 +475,9 @@ def test_get_dimension_type_dimension_identifiers(
     )
     assert res.json() == []
 
-    # Test case if data type is metadata and show only dimensions in datasets is True when 
-    # there is a dataset of data type metadata with requested dimension type but is not used 
-    # as a dimension types's metadata. 
+    # Test case if data type is metadata and show only dimensions in datasets is True when
+    # there is a dataset of data type metadata with requested dimension type but is not used
+    # as a dimension types's metadata.
     # The result should still filter out identifiers that are not found in the dimension type's metadata.
     matrix_values = factories.matrix_csv_data_file_with_values(
         feature_ids=["feature-1", "feature-2", "feature-3"],
@@ -499,10 +499,10 @@ def test_get_dimension_type_dimension_identifiers(
         {"id": "sample-1", "label": "Sample 1"},
     ]
 
-    # Test case if data type is metadata and show only dimensions in datasets is False when 
-    # there is a dataset of data type metadata with requested dimension type but is not used 
-    # as a dimension types's metadata. 
-    # This should return dimension identifiers from both datasets but should still filter out 
+    # Test case if data type is metadata and show only dimensions in datasets is False when
+    # there is a dataset of data type metadata with requested dimension type but is not used
+    # as a dimension types's metadata.
+    # This should return dimension identifiers from both datasets but should still filter out
     # identifiers that are not found in the dimension type's metadata.
     res = client.get(
         f"types/dimensions/{dim_type_fields['name']}/identifiers?data_type=metadata",
@@ -604,6 +604,8 @@ def test_add_sample_type_with_taiga_id_no_dataset(client: TestClient, settings):
 def test_add_sample_type_with_metadata(
     client: TestClient, minimal_db, public_group, settings
 ):
+    orig_cell_count = minimal_db.query(TabularCell).count()
+
     user = settings.admin_users[0]
     admin_headers = {"X-Forwarded-Email": user}
     # Missing annotation type should throw error
@@ -699,10 +701,7 @@ def test_add_sample_type_with_metadata(
         )
         == 3
     )
-    # This only works bc we don't expect anything else in this table with minimal db but a more complex query is unnecessary here
-    assert (
-        len(minimal_db.query(TabularCell).join(TabularCell.tabular_column).all()) == 6
-    )
+    assert minimal_db.query(TabularCell).count() == 6 + orig_cell_count
 
 
 def test_update_ref_col_map(client: TestClient, settings, minimal_db):
@@ -814,6 +813,8 @@ def test_add_feature_types(client: TestClient, settings):
 def test_add_feature_type_with_metadata(
     client: TestClient, minimal_db, public_group, settings
 ):
+    orig_cell_count = minimal_db.query(TabularCell).count()
+
     user = settings.admin_users[0]
     admin_headers = {"X-Forwarded-Email": user}
     response_with_metadata = client.post(
@@ -865,10 +866,7 @@ def test_add_feature_type_with_metadata(
         )
         == 3
     )
-    # This only works bc we don't expect anything else in this table with minimal db but a more complex query is unnecessary here
-    assert (
-        len(minimal_db.query(TabularCell).join(TabularCell.tabular_column).all()) == 6
-    )
+    assert minimal_db.query(TabularCell).count() == 6 + orig_cell_count
 
 
 def test_add_existing_feature_type(client: TestClient, settings):
@@ -1055,57 +1053,66 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
     r_update_sample_1 = r_update_sample_1.json()
     other_sample_dataset_id = r_update_sample_1["dataset"]["id"]
     assert other_sample_dataset_id is not None
+
+    def assert_metadata_row_counts(
+        other_sample_dataset_id: str,
+        expected_name: str,
+        expected_rows,
+        expected_cols,
+        expected_NAs,
+    ):
+        assert (
+            minimal_db.query(Dimension)
+            .filter_by(dataset_id=other_sample_dataset_id)
+            .count()
+            == expected_cols
+        )
+        assert (
+            minimal_db.query(TabularColumn)
+            .filter_by(dataset_id=other_sample_dataset_id)
+            .count()
+            == expected_cols
+        )
+        columns_within_dataset_query = (
+            minimal_db.query(TabularColumn)
+            .join(TabularDataset)
+            .filter(TabularDataset.id == other_sample_dataset_id)
+        )
+        cells_within_dataset_query = (
+            minimal_db.query(TabularCell)
+            .join(TabularColumn)
+            .join(TabularDataset)
+            .filter(TabularDataset.id == other_sample_dataset_id)
+        )
+        label_metadata_column = columns_within_dataset_query.filter(
+            TabularColumn.given_id == "label"
+        ).one()
+        assert label_metadata_column
+        assert cells_within_dataset_query.count() == expected_cols * expected_rows
+        assert (
+            cells_within_dataset_query.filter(
+                TabularCell.tabular_column_id == label_metadata_column.id
+            ).count()
+            == expected_rows
+        )
+        updated_dataset = (
+            minimal_db.query(Dataset)
+            .filter(Dataset.id == other_sample_dataset_id)
+            .one()
+        )
+        assert updated_dataset.name == expected_name
+
     updated_sample_1 = (
         minimal_db.query(DimensionType)
         .filter_by(name="other_sample", axis="sample")
         .one()
     )
+
     assert (
         updated_sample_1.dataset is not None
         and updated_sample_1.dataset.name == "sample_metadata"
     )
-    assert (
-        len(
-            minimal_db.query(Dimension)
-            .filter_by(dataset_id=other_sample_dataset_id)
-            .all()
-        )
-        == 3
-    )
-    assert (
-        len(
-            minimal_db.query(TabularColumn)
-            .filter_by(dataset_id=other_sample_dataset_id)
-            .all()
-        )
-        == 3
-    )
-    label_metadata_column = (
-        minimal_db.query(TabularColumn).filter(TabularColumn.given_id == "label").one()
-    )
-    assert label_metadata_column
-    # This only works bc we don't expect anything else in this table with minimal db but a more complex query is unnecessary here
-    assert len(minimal_db.query(TabularCell).all()) == 6
-    assert (
-        len(
-            minimal_db.query(TabularCell)
-            .filter(TabularCell.tabular_column_id == label_metadata_column.id)
-            .all()
-        )
-        == 2
-    )
-    assert (
-        len(
-            minimal_db.query(TabularColumn)
-            .filter(TabularColumn.dataset_id == other_sample_dataset_id)
-            .all()
-        )
-        == 3  # one for each for each annotation
-    )
-    updated_dataset = (
-        minimal_db.query(Dataset).filter(Dataset.id == other_sample_dataset_id).one()
-    )
-    assert updated_dataset.name == "sample_metadata"
+    assert_metadata_row_counts(other_sample_dataset_id, "sample_metadata", 2, 3, 1)
 
     # Test update/overwrite metadata with new metadata
     r_update_sample_2 = client.patch(
@@ -1149,54 +1156,7 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
         updated_sample_2.dataset is not None
         and updated_sample_2.dataset.name == "sample_metadata_2"
     )
-    assert (
-        len(
-            minimal_db.query(Dimension)
-            .filter_by(dataset_id=other_sample_dataset_id)
-            .all()
-        )
-        == 3
-    )
-    assert (
-        len(
-            minimal_db.query(TabularColumn)
-            .filter_by(dataset_id=other_sample_dataset_id)
-            .all()
-        )
-        == 3
-    )
-    # This only works bc we don't expect anything else in this table with minimal db but a more complex query is unnecessary here
-    assert len(minimal_db.query(TabularCell).all()) == 6
-    assert (
-        minimal_db.query(TabularColumn)
-        .filter(TabularColumn.given_id == "attr1")
-        .one_or_none()
-        is None
-    )
-    label_column = (
-        minimal_db.query(TabularColumn).filter(TabularColumn.given_id == "label").one()
-    )
-    assert label_column
-    assert (
-        len(
-            minimal_db.query(TabularCell)
-            .filter(TabularCell.tabular_column_id == label_metadata_column.id)
-            .all()
-        )
-        == 0
-    )
-    assert (
-        len(
-            minimal_db.query(TabularCell)
-            .filter(TabularCell.tabular_column_id == label_column.id)
-            .all()
-        )
-        == 2
-    )
-    updated_dataset = (
-        minimal_db.query(Dataset).filter(Dataset.id == other_sample_dataset_id).one()
-    )
-    assert updated_dataset.name == "sample_metadata_2"
+    assert_metadata_row_counts(other_sample_dataset_id, "sample_metadata_2", 2, 3, 1)
 
     factories.feature_type(minimal_db, settings.admin_users[0], "other_feature")
     r_update_feature_1 = client.patch(
@@ -1227,54 +1187,7 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
     )
     assert_status_ok(r_update_feature_1), r_update_feature_1.status_code == 200
     other_feature_metadata_id = r_update_feature_1.json()["dataset"]["id"]
-    assert (
-        len(
-            minimal_db.query(Dimension)
-            .filter_by(dataset_id=other_feature_metadata_id)
-            .all()
-        )
-        == 3
-    )
-    assert (
-        len(
-            minimal_db.query(TabularColumn)
-            .filter_by(dataset_id=other_feature_metadata_id)
-            .all()
-        )
-        == 3
-    )
-    label_metadata_column = (
-        minimal_db.query(TabularColumn)
-        .filter(
-            and_(
-                TabularColumn.given_id == "label",
-                TabularColumn.dataset_id == other_feature_metadata_id,
-            )
-        )
-        .one()
-    )
-    assert label_metadata_column
-    assert (
-        len(
-            minimal_db.query(TabularCell)
-            .join(TabularColumn)
-            .filter_by(dataset_id=other_feature_metadata_id)
-            .all()
-        )
-        == 6
-    )
-    assert (
-        len(
-            minimal_db.query(TabularCell)
-            .filter(TabularCell.tabular_column_id == label_metadata_column.id)
-            .all()
-        )
-        == 2
-    )
-    updated_dataset = (
-        minimal_db.query(Dataset).filter(Dataset.id == other_feature_metadata_id).one()
-    )
-    assert updated_dataset.name == "feature_metadata"
+    assert_metadata_row_counts(other_feature_metadata_id, "feature_metadata", 2, 3, 1)
 
     r_update_feature_2 = client.patch(
         "/types/feature/other_feature/metadata",
@@ -1298,54 +1211,9 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
     )
     assert_status_ok(r_update_feature_2), r_update_feature_2.status_code == 200
     other_feature_metadata_id = r_update_feature_2.json()["dataset"]["id"]
-    assert (
-        len(
-            minimal_db.query(Dimension)
-            .filter_by(dataset_id=other_feature_metadata_id)
-            .all()
-        )
-        == 2
+    assert_metadata_row_counts(
+        other_feature_metadata_id, "new_feature_metadata", 3, 2, 0
     )
-    assert (
-        len(
-            minimal_db.query(TabularColumn)
-            .filter_by(dataset_id=other_feature_metadata_id)
-            .all()
-        )
-        == 2
-    )
-    label_metadata_column = (
-        minimal_db.query(TabularColumn)
-        .filter(
-            and_(
-                TabularColumn.given_id == "label",
-                TabularColumn.dataset_id == other_feature_metadata_id,
-            )
-        )
-        .one()
-    )
-    assert label_metadata_column
-    # This only works bc we don't expect anything else in this table with minimal db but a more complex query is unnecessary here
-    assert (
-        len(
-            minimal_db.query(TabularCell)
-            .filter(TabularCell.tabular_column_id == label_metadata_column.id)
-            .all()
-        )
-        == 3
-    )
-    assert (
-        len(
-            minimal_db.query(TabularColumn)
-            .filter(TabularColumn.dataset_id == other_feature_metadata_id)
-            .all()
-        )
-        == 2  # one for each annotation ("label" and "id")
-    )
-    updated_dataset = (
-        minimal_db.query(Dataset).filter(Dataset.id == other_feature_metadata_id).one()
-    )
-    assert updated_dataset.name == "new_feature_metadata"
 
     r_update_generic_feature = client.patch(
         "/types/feature/generic/metadata",

@@ -13,6 +13,7 @@ import AllSelectsContainer from "./AllSelectsContainer";
 
 interface Props {
   className?: string | undefined;
+  selectClassName?: string | undefined;
   includeAllInContextOptions: boolean;
   index_type: string | null;
   isModalVersion: boolean;
@@ -37,6 +38,7 @@ function AllSelects({
   state,
   onClickShowModal = undefined,
   className = undefined,
+  selectClassName = undefined,
   onHeightChange = undefined,
   removeWrapperDiv = false,
   includeAllInContextOptions,
@@ -76,6 +78,7 @@ function AllSelects({
         isLoading={isLoading}
         hasError={noMatchingContexts && !isUnknownDataset}
         isUnknownDataset={isUnknownDataset}
+        selectClassName={selectClassName}
       />
       <SliceTypeSelect
         index_type={index_type}
@@ -86,6 +89,7 @@ function AllSelects({
         onChange={onChangeSliceType}
         isLoading={isLoading}
         isUnknownDataset={isUnknownDataset}
+        selectClassName={selectClassName}
       />
       <AxisTypeToggle
         show={
@@ -107,6 +111,7 @@ function AllSelects({
         onChange={onChangeContext}
         isUnknownDataset={isUnknownDataset}
         isLoading={isLoading}
+        selectClassName={selectClassName}
       />
       <ContextSelectorV2
         enable
@@ -124,11 +129,13 @@ function AllSelects({
         includeAllInOptions={includeAllInContextOptions}
         onClickCreateContext={onClickCreateContext}
         onClickSaveAsContext={onClickSaveAsContext}
+        selectClassName={selectClassName}
       />
       <AggregationSelect
         show={axis_type === "aggregated_slice" && aggregation !== "correlation"}
         value={aggregation as string}
         onChange={onChangeAggregation}
+        selectClassName={selectClassName}
       />
       <UnitsSelect
         show={isModalVersion}
@@ -136,6 +143,7 @@ function AllSelects({
         options={unitsOptions}
         onChange={onChangeUnits}
         isLoading={isLoading}
+        selectClassName={selectClassName}
       />
       <DataVersionSelect
         show
@@ -153,6 +161,7 @@ function AllSelects({
         }
         showNoDefaultHint={dataVersionOptions.every((o) => !o.isDefault)}
         onClickShowModal={onClickShowModal}
+        selectClassName={selectClassName}
       />
     </AllSelectsContainer>
   );

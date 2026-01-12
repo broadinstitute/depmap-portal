@@ -49,6 +49,7 @@ type TableProps<TData extends RowData> = {
   tableRef?: React.RefObject<{
     resetColumnResizing: () => void;
     manuallyResizedColumns: Set<string>;
+    resetSort: () => void;
   }>;
 };
 
@@ -80,6 +81,7 @@ function ReactTable<TData extends RowData>({
     headerScrollRef,
     syncScroll,
     stickyColumnsInfo,
+    resetSort,
   } = useTableInstance(columns, data, {
     enableRowSelection,
     enableMultiRowSelection,
@@ -98,8 +100,9 @@ function ReactTable<TData extends RowData>({
     () => ({
       resetColumnResizing,
       manuallyResizedColumns,
+      resetSort,
     }),
-    [resetColumnResizing, manuallyResizedColumns]
+    [resetColumnResizing, manuallyResizedColumns, resetSort]
   );
 
   return (

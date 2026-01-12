@@ -2,7 +2,6 @@ import pandas as pd
 import scipy.stats as stats
 import numpy as np
 import statsmodels.api as sm
-import warnings
 import argparse
 import json
 import re
@@ -16,6 +15,7 @@ from scripts.calculate_bimodality_coefficient import (
     bimodality_coefficient_for_cpd_viabilities,
 )
 from taigapy import create_taiga_client_v3
+from tqdm import tqdm
 
 MIN_GROUP_SIZE = 5
 
@@ -23,12 +23,24 @@ CRISPR_DATASET_NAME = "Chronos_Combined"
 REPURPOSING_DATASET_NAME = "REPURPOSING_primary_collapsed"
 ONCREF_DATASET_NAME = "PRISMOncologyReferenceLog2AUCMatrix"
 
-### ----- LOAD DATA FROM TAIGA ----- ###
-def load_subtype_tree(tc, subtype_tree_taiga_id, context_matrix_taiga_id):
-    subtype_tree = tc.get(subtype_tree_taiga_id)
-    context_matrix = tc.get(context_matrix_taiga_id)
 
-    return subtype_tree, context_matrix
+def format_selectivity_vals(drug_data_dict):
+    selectivity_vals_by_dataset = []
+    for dataset_label, dataset in drug_data_dict.items():
+        bimodality_results = (
+            dataset.apply(bimodality_coefficient_for_cpd_viabilities)
+            .reset_index(name="selectivity_val")
+            .rename(columns={"index": "feature_id"})
+            .assign(dataset=dataset_label)
+        )
+
+        selectivity_vals_by_dataset.append(bimodality_results)
+
+    selectivity_vals = pd.concat(selectivity_vals_by_dataset)
+    return selectivity_vals
+
+
+### ----- LOAD DATA FROM TAIGA ----- ###
 
 
 def load_crispr_data(
@@ -174,98 +186,6 @@ def load_oncref_data(tc, oncref_auc_taiga_id, portal_compounds_taiga_id):
     return auc_matrix, log_auc_matrix_compounds
 
 
-def format_selectivity_vals(drug_data_dict):
-    selectivity_vals_by_dataset = []
-    for dataset_label, dataset in drug_data_dict.items():
-        bimodality_results = (
-            dataset.apply(bimodality_coefficient_for_cpd_viabilities)
-            .reset_index(name="selectivity_val")
-            .rename(columns={"index": "feature_id"})
-            .assign(dataset=dataset_label)
-        )
-
-        selectivity_vals_by_dataset.append(bimodality_results)
-
-    selectivity_vals = pd.concat(selectivity_vals_by_dataset)
-    return selectivity_vals
-
-
-def load_all_data(
-    subtype_tree_taiga_id,
-    context_matrix_taiga_id,
-    gene_effect_taiga_id,
-    gene_dependency_taiga_id,
-    repurposing_matrix_taiga_id,
-    oncref_auc_taiga_id,
-    tda_table_path,
-    portal_compounds_taiga_id,
-):
-
-    all_data_dict = dict()
-
-    # dictionary for the dataframes that we will actually perform t-tests on
-    datasets_to_test = dict()
-
-    # dictionary for dataframes used to add extra information to the results
-    data_for_extra_cols = dict()
-
-    # dictionary for dataframes where we need to calculate bimodality coeffecients
-    datasets_to_calculate_bimodality = dict()
-
-    tc = create_taiga_client_v3()
-    subtype_tree, context_matrix = load_subtype_tree(
-        tc=tc,
-        subtype_tree_taiga_id=subtype_tree_taiga_id,
-        context_matrix_taiga_id=context_matrix_taiga_id,
-    )
-    all_data_dict["subtype_tree"] = subtype_tree
-    all_data_dict["context_matrix"] = context_matrix
-
-    gene_effect, gene_dependency = load_crispr_data(
-        tc=tc,
-        gene_effect_taiga_id=gene_effect_taiga_id,
-        gene_dependency_taiga_id=gene_dependency_taiga_id,
-        tda_table_path=tda_table_path,
-    )
-    datasets_to_test[CRISPR_DATASET_NAME] = gene_effect
-    data_for_extra_cols["gene_dependency"] = gene_dependency
-
-    rep_sensitivity = load_repurposing_data(
-        tc=tc,
-        repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
-        portal_compounds_taiga_id=portal_compounds_taiga_id,
-    )
-    datasets_to_test[REPURPOSING_DATASET_NAME] = rep_sensitivity
-    datasets_to_calculate_bimodality[REPURPOSING_DATASET_NAME] = rep_sensitivity
-
-    # OncRef will be None on the public portal
-    if oncref_auc_taiga_id is not None:
-        oncref_aucs, oncref_log_aucs = load_oncref_data(
-            tc=tc,
-            oncref_auc_taiga_id=oncref_auc_taiga_id,
-            portal_compounds_taiga_id=portal_compounds_taiga_id,
-        )
-        datasets_to_test[ONCREF_DATASET_NAME] = oncref_log_aucs
-        datasets_to_calculate_bimodality[ONCREF_DATASET_NAME] = oncref_log_aucs
-
-        # for OncRef we compute the t-test on the logged AUCs,
-        # but want to set the mean_in and mean_out columns based on
-        # un-logged AUCs. Therefore the un-logged AUC matrix is a
-        # dataset used for "extra columns". In order to handle the
-        # possibility of OncRef being None, these dataframes are in a
-        # dictionary rather than expected named inputs to the
-        # compute_context_results function.
-        data_for_extra_cols["oncref_aucs"] = oncref_aucs
-
-    selectivity_vals = format_selectivity_vals(datasets_to_calculate_bimodality)
-    data_for_extra_cols["selectivity_vals"] = selectivity_vals
-
-    all_data_dict["datasets_to_test"] = datasets_to_test
-    all_data_dict["data_for_extra_cols"] = data_for_extra_cols
-
-    return all_data_dict
-
-
 ### ----- CONTEXT ENRICHMENT FUNCTIONS ----- ###
 def compute_selective_deps_for(in_group, out_group, data):
     in_group = list(set(in_group).intersection(set(data.index.values)))
@@ -346,80 +266,32 @@ def compute_context_results(
     in_group,
     out_group,
     out_label,
-    datasets_to_test,
-    data_for_extra_cols,
+    ds_name,
+    ds,
+    add_extra_columns,
+    *,
     verbose=False,
 ):
+    ds_in_group = list(set(in_group).intersection(set(ds.index.values)))
+    ds_out_group = list(set(out_group).intersection(set(ds.index.values)))
 
-    col_order = [
-        "subtype_code",
-        "out_group",
-        "feature_id",
-        "dataset",
-        "t_pval",
-        "t_qval",
-        "t_qval_log",
-        "mean_in",
-        "mean_out",
-        "effect_size",
-        "selectivity_val",
-        "n_dep_in",
-        "n_dep_out",
-        "frac_dep_in",
-        "frac_dep_out",
-    ]
-
-    ctx_res_dfs = []
-    for ds_name, ds in datasets_to_test.items():
-        ds_in_group = list(set(in_group).intersection(set(ds.index.values)))
-        ds_out_group = list(set(out_group).intersection(set(ds.index.values)))
-
-        if len(ds_in_group) < MIN_GROUP_SIZE or len(ds_out_group) < MIN_GROUP_SIZE:
-            if verbose:
-                print(
-                    f"Skipping {ds_name} for {ctx} (n={len(ds_in_group)}) vs. {out_label} (n={len(ds_out_group)})"
-                )
-            ctx_res_dfs.append(pd.DataFrame(columns=col_order))
-            continue
-
-        ds_res = compute_selective_deps_for(ds_in_group, ds_out_group, ds).assign(
-            subtype_code=ctx, out_group=out_label, dataset=ds_name
-        )
-
-        if ds_name == CRISPR_DATASET_NAME:
-            ds_res = add_crispr_columns(
-                ds_res,
-                data_for_extra_cols["gene_dependency"],
-                ds_in_group,
-                ds_out_group,
-            ).reset_index(names="feature_id")
-
-        elif ds_name == ONCREF_DATASET_NAME:
-            # replace mean_in, mean_out, and effect size with non-logged versions
-            ds_res["mean_in"] = (
-                data_for_extra_cols["oncref_aucs"].loc[ds_in_group].mean()
+    if len(ds_in_group) < MIN_GROUP_SIZE or len(ds_out_group) < MIN_GROUP_SIZE:
+        if verbose:
+            print(
+                f"Skipping {ds_name} for {ctx} (n={len(ds_in_group)}) vs. {out_label} (n={len(ds_out_group)})"
             )
-            ds_res["mean_out"] = (
-                data_for_extra_cols["oncref_aucs"].loc[ds_out_group].mean()
-            )
-            ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
+        return None
 
-        if ds_name in [REPURPOSING_DATASET_NAME, ONCREF_DATASET_NAME]:
-            # merge with selectivity vals
-            ds_res = ds_res.reset_index(names="feature_id").merge(
-                data_for_extra_cols["selectivity_vals"],
-                on=["feature_id", "dataset"],
-                how="left",
-            )
+    ds_res = compute_selective_deps_for(ds_in_group, ds_out_group, ds).assign(
+        subtype_code=ctx, out_group=out_label, dataset=ds_name
+    )
 
-        ctx_res_dfs.append(ds_res)
+    ds_res = add_extra_columns(ds_res, ds_in_group, ds_out_group)
 
-    return pd.concat(ctx_res_dfs).loc[:, col_order].copy()
+    return ds_res
 
 
-def compute_in_out_groups(
-    subtype_tree, context_matrix, datasets_to_test, data_for_extra_cols
-):
+def compute_in_out_groups(subtype_tree, context_matrix, ds_name, ds, add_extra_columns):
     name_to_code_onco = dict(
         zip(
             subtype_tree.dropna(subset=["DepmapModelType"]).NodeName,
@@ -435,7 +307,8 @@ def compute_in_out_groups(
     names_to_codes = {**name_to_code_onco, **name_to_code_gs}
 
     all_results = []
-    for idx, ctx_row in subtype_tree.iterrows():
+
+    for idx, ctx_row in tqdm(list(subtype_tree.iterrows())):
         ctx_code = names_to_codes[ctx_row.NodeName]
         ctx_in = context_matrix[context_matrix[ctx_code] == True].index
 
@@ -446,12 +319,7 @@ def compute_in_out_groups(
         ctx_out = context_matrix[context_matrix[ctx_code] != True].index
         all_results.append(
             compute_context_results(
-                ctx_code,
-                ctx_in,
-                ctx_out,
-                "All Others",
-                datasets_to_test,
-                data_for_extra_cols,
+                ctx_code, ctx_in, ctx_out, "All Others", ds_name, ds, add_extra_columns,
             )
         )
 
@@ -470,8 +338,9 @@ def compute_in_out_groups(
                     ctx_in,
                     ctx_out,
                     "Other Heme",
-                    datasets_to_test,
-                    data_for_extra_cols,
+                    ds_name,
+                    ds,
+                    add_extra_columns,
                 )
             )
 
@@ -488,78 +357,174 @@ def compute_in_out_groups(
 
             all_results.append(
                 compute_context_results(
-                    ctx_code,
-                    ctx_in,
-                    ctx_out,
-                    out_code,
-                    datasets_to_test,
-                    data_for_extra_cols,
+                    ctx_code, ctx_in, ctx_out, out_code, ds_name, ds, add_extra_columns,
                 )
             )
 
-    return pd.concat(all_results)
+    df = pd.concat([x for x in all_results if x is not None])
+
+    return df
 
 
 def get_id_or_file_name(possible_id, id_key="dataset_id"):
     return None if len(possible_id) == 0 else possible_id[0][id_key]
 
 
-### ----- MAIN ----- ###
-def compute_context_explorer_results(inputs, out_filename):
-    with open(inputs, "rt") as input_json:
-        taiga_ids_or_file_name = json.load(input_json)
-
-    subtype_tree_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["subtype_tree_taiga_id"]
-    )
-    context_matrix_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["context_matrix_taiga_id"]
-    )
-    gene_effect_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["gene_effect_taiga_id"]
-    )
-    gene_dependency_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["gene_dependency_taiga_id"]
-    )
-    repurposing_matrix_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["repurposing_matrix_taiga_id"]
-    )
-    oncref_auc_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["oncref_auc_taiga_id"]
+##### Entry points into this code. Each calc_..._enrichment function is invokable from the command line
+def oncref_context_analysis(
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id
+):
+    # for OncRef we compute the t-test on the logged AUCs,
+    # but want to set the mean_in and mean_out columns based on
+    # un-logged AUCs. Therefore the un-logged AUC matrix is a
+    # dataset used for "extra columns". In order to handle the
+    # possibility of OncRef being None, these dataframes are in a
+    # dictionary rather than expected named inputs to the
+    # compute_context_results function.
+    oncref_aucs, oncref_log_aucs = load_oncref_data(
+        tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
     )
 
-    tda_table_path = get_id_or_file_name(
-        taiga_ids_or_file_name["tda_table"], id_key="filename"
+    datasets_to_calculate_bimodality = {ONCREF_DATASET_NAME: oncref_log_aucs}
+    oncref_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
+
+    def prism_onc_ref_add_extra_columns(ds_res, ds_in_group, ds_out_group):
+        ds_res = ds_res.copy()
+
+        # replace mean_in, mean_out, and effect size with non-logged versions
+        ds_res["mean_in"] = oncref_aucs.loc[ds_in_group].mean()
+        ds_res["mean_out"] = oncref_aucs.loc[ds_out_group].mean()
+
+        ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
+
+        return ds_res.reset_index(names="entity_id").merge(oncref_selectivity)
+
+    return compute_in_out_groups(
+        subtype_tree,
+        context_matrix,
+        ONCREF_DATASET_NAME,
+        oncref_log_aucs,
+        prism_onc_ref_add_extra_columns,
     )
 
-    portal_compounds_taiga_id = get_id_or_file_name(
-        taiga_ids_or_file_name["portal_compounds_taiga_id"]
+
+def repurposing_context_analysis(
+    tc,
+    subtype_tree,
+    context_matrix,
+    repurposing_matrix_taiga_id,
+    repurposing_list_taiga_id,
+):
+    rep_sensitivity = load_repurposing_data(
+        tc=tc,
+        repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
+        repurposing_list_taiga_id=repurposing_list_taiga_id,
     )
 
-    ### ---- LOAD DATA ---- ###
-    data_dict = load_all_data(
-        subtype_tree_taiga_id=subtype_tree_taiga_id,
-        context_matrix_taiga_id=context_matrix_taiga_id,
+    datasets_to_calculate_bimodality = {REPURPOSING_DATASET_NAME: rep_sensitivity}
+    repurposing_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
+
+    def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
+        return ds_res.reset_index(names="entity_id").merge(repurposing_selectivity)
+
+    return compute_in_out_groups(
+        subtype_tree,
+        context_matrix,
+        REPURPOSING_DATASET_NAME,
+        rep_sensitivity,
+        prism_add_extra_columns,
+    )
+
+
+def crispr_context_analysis(
+    tc,
+    subtype_tree,
+    context_matrix,
+    gene_effect_taiga_id,
+    gene_dependency_taiga_id,
+    tda_table_path,
+):
+
+    gene_effect, gene_dependency = load_crispr_data(
+        tc=tc,
         gene_effect_taiga_id=gene_effect_taiga_id,
         gene_dependency_taiga_id=gene_dependency_taiga_id,
-        repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
-        oncref_auc_taiga_id=oncref_auc_taiga_id,
         tda_table_path=tda_table_path,
-        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
-    context_explorer_results = compute_in_out_groups(**data_dict)
-    context_explorer_results.to_csv(out_filename, index=False)
+    def crispr_add_extra_columns(ds_res, ds_in_group, ds_out_group):
+        return add_crispr_columns(
+            ds_res, gene_dependency, ds_in_group, ds_out_group,
+        ).reset_index(names="entity_id")
 
-    return
+    return compute_in_out_groups(
+        subtype_tree,
+        context_matrix,
+        CRISPR_DATASET_NAME,
+        gene_effect,
+        crispr_add_extra_columns,
+    )
+
+
+# a little glue to allow us to automatically define a command per function
+def add_commands(subparsers, functions):
+    from inspect import signature
+
+    for function in functions:
+        sig = signature(function)
+        param_names = [
+            x
+            for x in sig.parameters.keys()
+            if x not in ["tc", "subtype_tree", "context_matrix"]
+        ]
+        parser = subparsers.add_parser(function.__name__)
+        parser.add_argument("subtype_tree_taiga_id")
+        parser.add_argument("context_matrix_taiga_id")
+        for param_name in param_names:
+            parser.add_argument(param_name)
+            parser.set_defaults(func=make_function_runner(function, param_names))
+        parser.add_argument("out_filename")
+
+
+def make_function_runner(function, param_names):
+    def run_function(args):
+        # shared code all functions need
+        tc = create_taiga_client_v3()
+        subtype_tree = tc.get(args.subtype_tree_taiga_id)
+        context_matrix = tc.get(args.context_matrix_taiga_id)
+
+        kwargs = {
+            "tc": tc,
+            "subtype_tree": subtype_tree,
+            "context_matrix": context_matrix,
+        }
+        for param_name in param_names:
+            kwargs[param_name] = getattr(args, param_name)
+
+        # run the function
+        results = function(**kwargs)
+
+        # write out the outputs
+        results.to_csv(args.out_filename, index=False)
+
+    return run_function
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("inputs")
-    parser.add_argument("out_filename")
-    args = parser.parse_args()
-
-    compute_context_explorer_results(
-        args.inputs, args.out_filename,
+    parser.set_defaults(func=None)
+    subparsers = parser.add_subparsers()
+    add_commands(
+        subparsers,
+        [
+            oncref_context_analysis,
+            repurposing_context_analysis,
+            crispr_context_analysis,
+        ],
     )
+
+    args = parser.parse_args()
+    if args.func is None:
+        parser.print_help()
+    else:
+        args.func(args)

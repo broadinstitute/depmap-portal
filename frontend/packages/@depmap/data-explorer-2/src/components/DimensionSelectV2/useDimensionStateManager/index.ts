@@ -110,9 +110,10 @@ export default function useDimensionStateManager({
       return;
     }
 
+    const context = state.dimension.context;
     const dataset_id = state.dimension.dataset_id;
 
-    if (state.dataType === null && dataset_id !== undefined) {
+    if (state.dataType == null && context != null && dataset_id != null) {
       findDataType(index_type, dataset_id).then((dataType) => {
         if (dataType) {
           // HACK: We must also update dataset_id or this causes an infinte
@@ -126,6 +127,7 @@ export default function useDimensionStateManager({
   }, [
     index_type,
     state.dataType,
+    state.dimension.context,
     state.dimension.dataset_id,
     state.isUnknownDataset,
     update,

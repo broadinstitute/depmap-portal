@@ -12,6 +12,18 @@
   }
 }
 
+.WrappedSelect {
+  display: inline-block;
+  width: 162px;
+  font-size: 12px;
+
+  &.withSwatch {
+    & > div {
+      border-radius: 0 4px 4px 0;
+    }
+  }
+}
+
 .selectorLabel {
   text-align: start;
   font-size: 12px;
@@ -63,18 +75,6 @@
   border: 1px solid #ccc;
   border-right: none;
   border-radius: 4px 0 0 4px;
-}
-
-.Select {
-  display: inline-block;
-  width: 162px;
-  font-size: 12px;
-
-  &.withSwatch {
-    & > div {
-      border-radius: 0 4px 4px 0;
-    }
-  }
 }
 
 .ContentEditableDivInput {

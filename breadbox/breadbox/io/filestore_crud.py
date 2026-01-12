@@ -49,12 +49,14 @@ def get_slice(
     sample_indexes: Optional[List[int]],
     filestore_location: str,
     keep_nans: Optional[bool] = False,
+    indices_as_index: bool = False,
 ):
     df = read_hdf5_file(
         get_file_location(dataset, filestore_location),
         feature_indexes=feature_indexes,
         sample_indexes=sample_indexes,
         keep_nans=keep_nans,
+        indices_as_index=indices_as_index,
     )
 
     df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)

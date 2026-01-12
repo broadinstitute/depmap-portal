@@ -1,6 +1,8 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { DatasetAssociations } from "@depmap/types/src/Dataset";
 import { useEffect, useState } from "react";
+import { fetchMetadata } from "../fetchDataHelpers";
+import { mapEntrezIdToSymbols } from "../utils";
 
 interface TargetCorrelatedCompound {
   gene: string;
@@ -109,11 +111,24 @@ function useRelatedCompoundsData(
             compoundDimType.metadata_dataset_id,
             {
               identifier: "label",
-              columns: ["CompoundID", "GeneSymbolOfTargets"],
+              columns: ["CompoundID", "EntrezIDsOfTargets"],
             }
           );
-          const targetGenes: string[] =
-            allCompoundMetadata.GeneSymbolOfTargets[compoundLabel] || [];
+          const targetEntrezIDs: string[] =
+            allCompoundMetadata.EntrezIDsOfTargets[compoundLabel] || [];
+
+          const geneMetadata = await fetchMetadata<any>(
+            "gene",
+            null,
+            ["label"],
+            breadboxAPI,
+            "id"
+          );
+
+          const targetGenes = mapEntrezIdToSymbols(
+            targetEntrezIDs,
+            geneMetadata
+          );
 
           // make a list of datasets to correlate and gene target pairs to query by (ex: {dataset1, gene1}, {dataset2, gene1}, {dataset1, gene2}, {dataset2, gene2})
           const datasetGenePairs = Object.keys(

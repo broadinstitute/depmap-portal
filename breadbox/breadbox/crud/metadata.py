@@ -24,7 +24,10 @@ def _get_dataset_filter_clauses(
     groups = get_groups_with_visible_contents(db, user)
     group_ids = [group.id for group in groups]
 
-    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)]
+    # fmt: off
+    filter_clauses: List[ColumnElement[bool]] = [Dataset.group_id.in_(group_ids)] # pyright: ignore
+    # fmt: on
+
     # Don't return transient datasets
     filter_clauses.append(Dataset.is_transient == false())
 
@@ -71,6 +74,8 @@ def _get_metadata_as_name_value_list(df: pd.DataFrame):
                 }
             )
 
+    given_ids = [x["given_id"] for x in formatted_metadata]
+    assert len(set(given_ids)) == len(given_ids)
     return formatted_metadata
 
 
@@ -81,42 +86,42 @@ def _get_metadata_as_name_value_list(df: pd.DataFrame):
 # 2             CADOES1_BONE            ACH-000210        cell_line_name        AnnotationType.text
 # 3                     KCLB            ACH-000210                source        AnnotationType.text
 # 4                CVCL_0698            ACH-000210                  rrid        AnnotationType.text
-def _get_feature_or_sample_metadata_df(
-    db: SessionWithUser, label_or_id: str
-) -> pd.DataFrame:
-    """DEPRECATED: Remove after Elara metadata support is updated."""
-    query = (
-        db.query(TabularCell)
-        .join(TabularColumn)
-        .filter(
-            or_(
-                TabularCell.dimension_given_id == label_or_id,
-                and_(
-                    TabularColumn.given_id == "label", TabularCell.value == label_or_id,
-                ),
-            )
-        )
-        .with_entities(
-            TabularCell.value,
-            TabularCell.dimension_given_id,
-            TabularColumn.given_id,
-            TabularColumn.annotation_type,
-        )
-    )
+# def _get_feature_or_sample_metadata_df(
+#     db: SessionWithUser, label_or_id: str
+# ) -> pd.DataFrame:
+#     """DEPRECATED: Remove after Elara metadata support is updated."""
+#     query = (
+#         db.query(TabularCell)
+#         .join(TabularColumn)
+#         .filter(
+#             or_(
+#                 TabularCell.dimension_given_id == label_or_id,
+#                 and_(
+#                     TabularColumn.given_id == "label", TabularCell.value == label_or_id,
+#                 ),
+#             )
+#         )
+#         .with_entities(
+#             TabularCell.value,
+#             TabularCell.dimension_given_id,
+#             TabularColumn.given_id,
+#             TabularColumn.annotation_type,
+#         ).distinct()
+#     )
+#
+#     metadata_df = pd.read_sql(query.statement, query.session.connection())
+#
+#     return metadata_df
 
-    metadata_df = pd.read_sql(query.statement, query.session.connection())
 
-    return metadata_df
-
-
-def format_feature_or_sample_metadata(metadata_df: pd.DataFrame, label_or_id: str):
-    # TODO: Having more than one row signifies there are multiple features or samples with same label. Not sure if this needs to be accounted for yet...
-    formatted_metadata = _get_metadata_as_name_value_list(metadata_df)
-    # TODO: Is this right behavior? Return label as the label_or_id that was given in query
-    labeled_metadata = MetadataResponse(
-        label=label_or_id, metadata=[FormattedMetadata(**x) for x in formatted_metadata]
-    )
-    return labeled_metadata
+# def format_feature_or_sample_metadata(metadata_df: pd.DataFrame, label_or_id: str):
+#     # TODO: Having more than one row signifies there are multiple features or samples with same label. Not sure if this needs to be accounted for yet...
+#     formatted_metadata = _get_metadata_as_name_value_list(metadata_df)
+#     # TODO: Is this right behavior? Return label as the label_or_id that was given in query
+#     labeled_metadata = MetadataResponse(
+#         label=label_or_id, metadata=[FormattedMetadata(**x) for x in formatted_metadata]
+#     )
+#     return labeled_metadata
 
 
 def get_metadata_search_options(db: SessionWithUser, user: str, text: str):
@@ -155,10 +160,10 @@ def get_metadata_search_options(db: SessionWithUser, user: str, text: str):
     return names_list
 
 
-# Get list of metadata for a given feature or sample label to load into dropdown on Elara Metadata Page.
-def get_metadata_list_for_dimension_label(
-    db: SessionWithUser, label_or_id: str
-) -> MetadataResponse:
-    """DEPRECATED: Remove after Elara metadata support is updated."""
-    metadata_df = _get_feature_or_sample_metadata_df(db, label_or_id)
-    return format_feature_or_sample_metadata(metadata_df, label_or_id)
+# # Get list of metadata for a given feature or sample label to load into dropdown on Elara Metadata Page.
+# def get_metadata_list_for_dimension_label(
+#     db: SessionWithUser, label_or_id: str
+# ) -> MetadataResponse:
+#     """DEPRECATED: Remove after Elara metadata support is updated."""
+#     metadata_df = _get_feature_or_sample_metadata_df(db, label_or_id)
+#     return format_feature_or_sample_metadata(metadata_df, label_or_id)

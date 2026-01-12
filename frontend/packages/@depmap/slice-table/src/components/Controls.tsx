@@ -8,6 +8,7 @@ interface Props {
   onClickFilterButton: () => void;
   onClickDownload: () => void;
   renderCustomControls: () => React.ReactNode;
+  numFiltersApplied: number;
 }
 
 function Controls({
@@ -16,6 +17,7 @@ function Controls({
   onClickFilterButton,
   onClickDownload,
   renderCustomControls,
+  numFiltersApplied,
 }: Props) {
   return (
     <div className={styles.Controls}>
@@ -28,6 +30,9 @@ function Controls({
         >
           <i className="glyphicon glyphicon-filter" />
           <span> Filters</span>
+          {numFiltersApplied > 0 && (
+            <span className={styles.filterBadge}>{numFiltersApplied}</span>
+          )}
         </Button>
         <Button
           onClick={onClickDownload}

@@ -6,164 +6,232 @@ import {
   getAllCorrelates,
 } from "../utilities/helper";
 import { SortedCorrelations } from "../models/CorrelationPlot";
+import { DRCDatasetOptions } from "@depmap/types";
+import { GeneCorrelationDatasetOption } from "../types";
 
-// we separate this out into a hook. In the future, we may want to reuse this hook for correlation analysis in gene page
-function useCorrelationAnalysisData(
-  selectedDataset: string,
-  featureLabel: string,
-  featureType: string,
-  featureMetadataCols: string[],
-  featureDatasets: { auc: string; viability: string }
-) {
-  const bapi = cached(breadboxAPI);
-
-  const [hasError, setHasError] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [correlatedDatasets, setCorrelatedDatasets] = useState<string[]>([]);
-  const [correlationAnalysisData, setCorrelationAnalysisData] = useState<
-    SortedCorrelations[]
-  >([]);
-  const [doseColors, setDoseColors] = useState<
-    { hex: string | undefined; dose: string }[]
-  >([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setIsLoading(true);
-
-        // get compound id by label
-        const featureDimType = await bapi.getDimensionType(featureType);
-        const idColumn = featureDimType.id_column;
-        if (featureDimType.metadata_dataset_id) {
-          const allCompoundMetadata = await bapi.getTabularDatasetData(
-            featureDimType.metadata_dataset_id,
-            {
-              identifier: "label",
-              columns: featureMetadataCols,
-            }
-          );
-          const compoundID = allCompoundMetadata[idColumn][featureLabel];
-
-          // get selected datasets
-          const aucDataset = featureDatasets.auc;
-          const doseViabilityDataset = featureDatasets.viability;
-
-          // map compound dose features to their dose measurement
-          const compoundDoseToDose = new Map();
-          // Map compound dose features to their dataets for fetching later
-          const compoundDoseDatasets: [string, string][] = [
-            [compoundID, aucDataset], // auc dataset uses compound id as the feature
-          ];
-          // For viability dataset, get dose features that contain given feature id and extract the dose info from feature
-          const compoundDoseFeatures = (
-            await bapi.getDatasetFeatures(doseViabilityDataset)
-          ).filter((feature) => feature.id.includes(compoundID));
-          compoundDoseFeatures.forEach((feature) => {
-            const dose = feature.id.replace(compoundID, "").trim();
-            compoundDoseToDose.set(feature.id, dose);
-            compoundDoseDatasets.push([feature.id, doseViabilityDataset]);
-          });
-
-          // assign colors to dose
-          const dosesAndColors: { hex: string | undefined; dose: string }[] = [
-            { hex: "#CC4778", dose: "AUC" }, // Handle AUC color specially
-            ...createDoseRangeColorScale(
-              // viability doses will have a color range assigned to them
-              Array.from(compoundDoseToDose.values())
-            ),
-          ];
-          setDoseColors(dosesAndColors);
-          // NOTE: Order matters here. After assign viability colors add feature mapping for auc dose feature
-          compoundDoseToDose.set(featureLabel, "AUC");
-
-          // Fetching the correlation data for the given dataset and compound dose features
-          const allCorrelatesForFeatureDataset = await Promise.all(
-            compoundDoseDatasets.map(([feature, dataset]) =>
-              bapi.fetchAssociations({
-                dataset_id: dataset,
-                identifier: feature,
-                identifier_type: "feature_id",
-              })
-            )
-          );
-
-          // transform correlation data to map of correlated dataset to their associations
-          const featureDatasetDoseCorrelates: Record<
-            string,
-            Record<string, SortedCorrelations[]>
-          > = {};
-          allCorrelatesForFeatureDataset.forEach((compoundDoseCorrelates) => {
-            const datasetLookup = compoundDoseCorrelates.associated_datasets.reduce(
-              (acc, item) => {
-                acc[item.dataset_id] = item.name;
-                return acc;
-              },
-              {} as Record<string, string>
-            );
-            const doseAssociationsByFeatureDataset = transformAndGroupByDataset(
-              compoundDoseCorrelates.associated_dimensions,
-              compoundDoseCorrelates.dimension_label,
-              datasetLookup,
-              compoundDoseToDose
-            );
-            Object.entries(doseAssociationsByFeatureDataset).forEach(
-              ([featureDataset, associations]) => {
-                if (featureDataset in featureDatasetDoseCorrelates) {
-                  if (
-                    compoundDoseCorrelates.dimension_label in
-                    featureDatasetDoseCorrelates[featureDataset]
-                  ) {
-                    featureDatasetDoseCorrelates[featureDataset][
-                      compoundDoseCorrelates.dimension_label
-                    ] = featureDatasetDoseCorrelates[featureDataset][
-                      compoundDoseCorrelates.dimension_label
-                    ].concat(associations);
-                  } else {
-                    featureDatasetDoseCorrelates[featureDataset][
-                      compoundDoseCorrelates.dimension_label
-                    ] = associations;
-                  }
-                } else {
-                  featureDatasetDoseCorrelates[featureDataset] = {
-                    [compoundDoseCorrelates.dimension_label]: associations,
-                  };
-                }
-              }
-            );
-          });
-          setCorrelatedDatasets(Object.keys(featureDatasetDoseCorrelates));
-          const correlatesData = getAllCorrelates(featureDatasetDoseCorrelates);
-
-          // filter out correlated dataset features that match the given featureLabel/compound within the same given dataset (a.k.a features correlated with itself)
-          const correlatesDataWithoutSelf = correlatesData.filter(
-            (cor) =>
-              cor.feature !== featureLabel && cor.featureDataset !== aucDataset
-          );
-          setCorrelationAnalysisData(correlatesDataWithoutSelf);
-        } else {
-          console.error(
-            "Compound dimension type does not have a metadata dataset ID."
-          );
-          setHasError(true);
-        }
-      } catch (e) {
-        console.error("Error fetching correlation data:", e);
-        setHasError(true);
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [featureLabel, selectedDataset]);
-  return {
-    correlationAnalysisData,
-    correlatedDatasets,
-    doseColors,
-    isLoading,
-    hasError,
-  };
+interface CorrelationResult {
+  correlationAnalysisData: SortedCorrelations[];
+  correlatedDatasets: string[];
+  doseColors: { hex: string | undefined; dose: string }[];
+  isLoading: boolean;
+  hasError: boolean;
 }
 
-export default useCorrelationAnalysisData;
+export function useGeneCorrelationData(
+  selectedDataset: GeneCorrelationDatasetOption,
+  featureId: string,
+  featureName: string
+) {
+  const bapi = cached(breadboxAPI);
+  const [state, setState] = useState<CorrelationResult>({
+    correlationAnalysisData: [],
+    correlatedDatasets: [],
+    doseColors: [],
+    isLoading: true,
+    hasError: false,
+  });
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    (async () => {
+      try {
+        setState((s) => ({ ...s, isLoading: true, hasError: false }));
+
+        const res = await bapi.fetchAssociations({
+          dataset_id: selectedDataset.datasetId,
+          identifier: String(featureId),
+          identifier_type: "feature_id",
+        });
+
+        if (!isCurrent) return;
+
+        const datasetLookup: Record<string, string> = {};
+        const datasetGivenIdLookup: Record<string, string> = {};
+        const datasetNameToGivenIdLookup: Record<string, string> = {}; // For filtering the selected dataset out of the Correlate Datasets dropdown options
+
+        res.associated_datasets.forEach((ds: any) => {
+          datasetLookup[ds.dataset_id] = ds.name;
+          datasetGivenIdLookup[ds.dataset_id] = ds.dataset_given_id;
+          datasetNameToGivenIdLookup[ds.name] = ds.dataset_given_id;
+        });
+
+        const dummyDoseMap = new Map([[res.dimension_label, ""]]);
+        const associationsByDataset = transformAndGroupByDataset(
+          res.associated_dimensions,
+          res.dimension_label,
+          datasetLookup,
+          datasetGivenIdLookup,
+          dummyDoseMap
+        );
+
+        const featureDatasetCorrelates: Record<
+          string,
+          Record<string, SortedCorrelations[]>
+        > = {};
+        Object.entries(associationsByDataset).forEach(([ds, assoc]) => {
+          featureDatasetCorrelates[ds] = { [res.dimension_label]: assoc };
+        });
+
+        const rawCorrelates = getAllCorrelates(featureDatasetCorrelates);
+
+        const filtered = rawCorrelates.filter(
+          (cor: SortedCorrelations) =>
+            cor.feature !== featureName &&
+            cor.featureDatasetGivenId !== selectedDataset.datasetId
+        );
+
+        setState({
+          correlationAnalysisData: filtered,
+          correlatedDatasets: Object.keys(featureDatasetCorrelates).filter(
+            (datasetName) =>
+              selectedDataset.datasetId !==
+              datasetNameToGivenIdLookup[datasetName]
+          ),
+          doseColors: [],
+          isLoading: false,
+          hasError: false,
+        });
+      } catch (e) {
+        if (isCurrent) {
+          console.error(e);
+          setState((s) => ({ ...s, isLoading: false, hasError: true }));
+        }
+      }
+    })();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [selectedDataset, featureId, featureName, bapi]);
+
+  return { ...state };
+}
+
+export function useCompoundCorrelationData(
+  selectedDataset: DRCDatasetOptions,
+  featureId: string,
+  featureName: string
+): CorrelationResult {
+  const bapi = cached(breadboxAPI);
+  const [state, setState] = useState<CorrelationResult>({
+    correlationAnalysisData: [],
+    correlatedDatasets: [],
+    doseColors: [],
+    isLoading: true,
+    hasError: false,
+  });
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    (async () => {
+      try {
+        setState((s) => ({ ...s, isLoading: true, hasError: false }));
+
+        const aucId = selectedDataset.log_auc_dataset_given_id!;
+        const doseId = selectedDataset.viability_dataset_given_id;
+
+        const compoundDoseToDose = new Map<string, string>();
+        const fetchTasks: [string, string][] = [[featureId, aucId]];
+
+        const features = await bapi.getDatasetFeatures(doseId);
+        features
+          .filter((f: any) => f.id.includes(featureId))
+          .forEach((f: any) => {
+            const dose = f.id.replace(featureId, "").trim();
+            compoundDoseToDose.set(f.label, dose);
+            fetchTasks.push([f.id, doseId]);
+          });
+
+        const colors = [
+          { hex: "#CC4778", dose: "AUC" },
+          ...createDoseRangeColorScale(Array.from(compoundDoseToDose.values())),
+        ];
+
+        if (!isCurrent) return;
+        compoundDoseToDose.set(featureName, "AUC");
+
+        const allRes = await Promise.all(
+          fetchTasks.map(([feature_id, dataset_id]) =>
+            bapi.fetchAssociations({
+              dataset_id,
+              identifier: feature_id,
+              identifier_type: "feature_id",
+            })
+          )
+        );
+
+        if (!isCurrent) return;
+
+        const featureDatasetDoseCorrelates: Record<
+          string,
+          Record<string, SortedCorrelations[]>
+        > = {};
+
+        const datasetNameToGivenIdLookup: Record<string, string> = {}; // For filtering the selected dataset out of the Correlate Datasets dropdown options
+        allRes.forEach((correlates: any) => {
+          const dsLookup: Record<string, string> = {};
+          const dsGivenIdLookup: Record<string, string> = {};
+
+          correlates.associated_datasets.forEach((item: any) => {
+            dsLookup[item.dataset_id] = item.name;
+            dsGivenIdLookup[item.dataset_id] = item.dataset_given_id;
+
+            // Only add to the lookup if the key doesn't already exist
+            if (!(item.name in datasetNameToGivenIdLookup)) {
+              datasetNameToGivenIdLookup[item.name] = item.dataset_given_id;
+            }
+          });
+
+          const grouped = transformAndGroupByDataset(
+            correlates.associated_dimensions,
+            correlates.dimension_label,
+            dsLookup,
+            dsGivenIdLookup,
+            compoundDoseToDose
+          );
+
+          Object.entries(grouped).forEach(([ds, associations]) => {
+            if (!featureDatasetDoseCorrelates[ds]) {
+              featureDatasetDoseCorrelates[ds] = {};
+            }
+
+            const label = correlates.dimension_label;
+            featureDatasetDoseCorrelates[ds][label] = (
+              featureDatasetDoseCorrelates[ds][label] || []
+            ).concat(associations);
+          });
+        });
+
+        const finalData = getAllCorrelates(featureDatasetDoseCorrelates).filter(
+          (cor: SortedCorrelations) =>
+            cor.feature !== featureName &&
+            cor.featureDatasetGivenId !== aucId &&
+            cor.featureDatasetGivenId !== doseId
+        );
+
+        setState({
+          correlationAnalysisData: finalData,
+          correlatedDatasets: Object.keys(featureDatasetDoseCorrelates).filter(
+            (datasetLabel) =>
+              datasetNameToGivenIdLookup[datasetLabel] !== aucId &&
+              datasetNameToGivenIdLookup[datasetLabel] !== doseId
+          ),
+          doseColors: colors,
+          isLoading: false,
+          hasError: false,
+        });
+      } catch (e) {
+        if (isCurrent) {
+          setState((s) => ({ ...s, isLoading: false, hasError: true }));
+        }
+      }
+    })();
+    return () => {
+      isCurrent = false;
+    };
+  }, [selectedDataset, featureId, featureName, bapi]);
+
+  return state;
+}

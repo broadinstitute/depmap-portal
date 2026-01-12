@@ -20,11 +20,15 @@ import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import { initializeDevContexts } from "@depmap/data-explorer-2";
+import {
+  initializeDevContexts,
+  isBreadboxOnlyMode,
+} from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
+import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -38,7 +42,15 @@ const CorrelatedDependenciesTile = React.lazy(
   () =>
     import(
       /* webpackChunkName: "CorrelatedDependenciesTile" */
-      "./compound/tiles/CorrelatedDependenciesTile/CorrelatedDependenciesTile"
+      "./compound/tiles/CorrelatedTiles/CorrelatedDependenciesTile"
+    )
+);
+
+const CorrelatedExpressionTile = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "CorrelatedExpressionTile" */
+      "./compound/tiles/CorrelatedTiles/CorrelatedExpressionTile"
     )
 );
 
@@ -166,13 +178,6 @@ export function launchContextManagerModal(options?: {
   );
 }
 
-export function launchCellLineSelectorModal() {
-  launchContextManagerModal({
-    initialContextType: "depmap_model",
-    showHelpText: true,
-  });
-}
-
 export function editContext(
   context: DataExplorerContext | DataExplorerContextV2,
   hash: string
@@ -191,7 +196,8 @@ export function editContext(
 }
 
 export function repairContext(
-  context: DataExplorerContextV2
+  context: DataExplorerContextV2,
+  startInTableView?: boolean
 ): Promise<DataExplorerContextV2 | null> {
   const container = document.getElementById("cell_line_selector_modal");
 
@@ -212,6 +218,7 @@ export function repairContext(
       <StandaloneContextEditor
         context={context}
         hash={null}
+        startInTableView={startInTableView}
         onSave={(nextContext: DataExplorerContextV2) => {
           resolve(nextContext);
         }}
@@ -230,7 +237,8 @@ export function repairContext(
 export function saveNewContext(
   context: DataExplorerContext | DataExplorerContextV2,
   onHide?: () => void,
-  onSave?: (context: DataExplorerContext, hash: string) => void
+  onSave?: (context: DataExplorerContext, hash: string) => void,
+  startInTableView?: boolean
 ) {
   const container = document.getElementById("modal-container");
   const unmount = () =>
@@ -242,6 +250,7 @@ export function saveNewContext(
       <StandaloneContextEditor
         context={context}
         hash={null}
+        startInTableView={startInTableView}
         onSave={onSave}
         onHide={() => {
           if (onHide) {
@@ -254,6 +263,38 @@ export function saveNewContext(
     </React.Suspense>,
     container
   );
+}
+
+export function launchCellLineSelectorModal() {
+  if (!isBreadboxOnlyMode) {
+    launchContextManagerModal({
+      initialContextType: "depmap_model",
+      showHelpText: true,
+    });
+  } else {
+    saveNewContext(
+      ({
+        dimension_type: "depmap_model",
+        // These are unreferenced so they will be normalized away on save.
+        // They are just here to add more info to the table.
+        vars: {
+          oncotree1: {
+            dataset_id: "depmap_model_metadata",
+            identifier_type: "column",
+            identifier: "OncotreeLineage",
+          },
+          oncotree2: {
+            dataset_id: "depmap_model_metadata",
+            identifier_type: "column",
+            identifier: "OncotreeSubtype",
+          },
+        },
+      } as unknown) as DataExplorerContextV2,
+      () => {},
+      () => {},
+      true
+    );
+  }
 }
 
 export function initEnrichmentTile(
@@ -285,13 +326,50 @@ export function initHeatmapTile(
   );
 }
 
-export function initCorrelatedDependenciesTile(
+export async function initCorrelatedExpressionTile(
   elementId: string,
-  entityLabel: string
-) {
+  compoundName: string,
+  compoundID: string
+): Promise<void> {
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelatedDependenciesTile entityLabel={entityLabel} />
+      <CorrelatedExpressionTile
+        entityLabel={compoundName}
+        datasetID={highestPriorityGivenId!}
+        associationDatasetId={"expression"}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export async function initCorrelatedDependenciesTile(
+  elementId: string,
+  compoundName: string,
+  compoundID: string
+): Promise<void> {
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return;
+  }
+
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <CorrelatedDependenciesTile
+        entityLabel={compoundName}
+        datasetID={highestPriorityGivenId!}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
@@ -309,20 +387,29 @@ export function initStructureAndDetailTile(
   );
 }
 
-export function initRelatedCompoundsTile(
+export async function initRelatedCompoundsTile(
   elementId: string,
-  entityLabel: string
-) {
+  entityLabel: string,
+  compoundID: string
+): Promise<void> {
   const datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi"> = {
     Chronos_Combined: "CRISPR",
     RNAi_merged: "RNAi",
   };
 
+  const highestPriorityGivenId = await getHighestPriorityCorrelationDatasetForEntity(
+    compoundID
+  );
+
+  if (highestPriorityGivenId === null) {
+    return;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <RelatedCompoundsTile
         entityLabel={entityLabel}
-        datasetId="Prism_oncology_AUC_collapsed"
+        datasetId={highestPriorityGivenId}
         datasetToDataTypeMap={datasetToDataTypeMap}
       />
     </React.Suspense>,
@@ -367,11 +454,23 @@ export function initDoseResponseTab(
 
 export function initCorrelationAnalysisTab(
   elementId: string,
-  compoundName: string
+  featureName: string,
+  featureId: string,
+  datasetOptions: Array<any>
 ) {
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelationAnalysis compound={compoundName} />
+      <CorrelationAnalysis
+        compoundDatasetOptions={sortByNumberOrNull(
+          datasetOptions,
+          "auc_dataset_priority",
+          "asc"
+        )}
+        geneDatasetOptions={[]}
+        featureName={featureName}
+        featureId={featureId}
+        featureType={"compound"}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

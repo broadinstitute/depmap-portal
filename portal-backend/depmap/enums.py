@@ -46,6 +46,9 @@ class DependencyEnum(DatasetEnum):
     Prism_oncology_AUC = "Prism_oncology_AUC"
     Prism_oncology_dose_replicate = "Prism_oncology_dose_replicate"
 
+    Prism_oncology_seq_AUC = "Prism_oncology_seq_AUC"
+    Prism_oncology_seq_dose_replicate = "Prism_oncology_seq_dose_replicate"
+
     @staticmethod
     def values():
         return {x.value for x in DependencyEnum}
@@ -64,6 +67,7 @@ class DependencyEnum(DatasetEnum):
             DependencyEnum.Rep1M,
             DependencyEnum.Rep_all_single_pt,
             DependencyEnum.Prism_oncology_AUC,
+            DependencyEnum.Prism_oncology_seq_AUC,
         }
 
 
@@ -87,6 +91,7 @@ class BiomarkerEnum(DatasetEnum):
     crispr_confounders = "crispr_confounders"
     rnai_confounders = "rnai_confounders"
     oncref_confounders = "oncref_confounders"
+    oncref_seq_confounders = "oncref_seq_confounders"
     rep_all_single_pt_confounders = "rep_all_single_pt_confounders"
     rep1m_confounders = "rep1m_confounders"
     CRISPRGeneDependency = "CRISPRGeneDependency"
@@ -135,12 +140,12 @@ class CompoundTileEnum(enum.Enum):
     predictability = "predictability"
     description = "description"
     sensitivity = "sensitivity"
-    correlations = "correlations"
     availability = "availability"
     celfie = "celfie"
     heatmap = "heatmap"
     correlated_dependencies = "correlated_dependencies"
     related_compounds = "related_compounds"
+    correlated_expression = "correlated_expression"
 
 
 class DataTypeEnum(enum.Enum):

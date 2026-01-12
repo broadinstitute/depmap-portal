@@ -65,4 +65,5 @@ export interface DRCDatasetOptions {
   replicate_dataset: string;
   auc_dataset_given_id: string;
   drc_dataset_label: string;
+  log_auc_dataset_given_id?: string;
 }

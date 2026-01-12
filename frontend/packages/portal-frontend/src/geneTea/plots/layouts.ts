@@ -15,7 +15,7 @@ export const getLayout = (
   // Parts of the layout that are different for screen sizes less than 1250
   const gridRows = useStackedLayout ? 2 : 1;
   const gridColumns = useStackedLayout ? 1 : 2;
-  const margin = useStackedLayout ? { t: 0, b: 25 } : { t: 25, b: 25 };
+  const margin = useStackedLayout ? { t: 0, b: 35 } : { t: 25, b: 35 };
   const xDomain = useStackedLayout ? [0, 1] : [0, 0.7];
   const x2Domain = useStackedLayout ? [0, 1] : [0.73, 1];
   const showY2Axis = useStackedLayout;
@@ -40,7 +40,6 @@ export const getLayout = (
       anchor: "x",
       automargin: true,
       domain: xDomain,
-
       showgrid: false,
       title: {
         text: heatmapXAxisTitle,

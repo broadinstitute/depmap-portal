@@ -3569,13 +3569,13 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pypatch-and-run"
-version = "0.3.1"
+version = "1.0.2"
 description = ""
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "pypatch_and_run-0.3.1-py3-none-any.whl", hash = "sha256:d03929214bad4f916bd063679e19ad26d6e69eb80fcfd6fcf674f4c2a7797fec"},
-    {file = "pypatch_and_run-0.3.1.tar.gz", hash = "sha256:c84a0f220a99839055716fd067e7803adb3999ae5e6fdeb155f61770cc5f55ab"},
+    {file = "pypatch_and_run-1.0.2-py3-none-any.whl", hash = "sha256:177044339a5d77207ed484d5af05eb4c376d898640db5ce6f5d323331bed0f73"},
+    {file = "pypatch_and_run-1.0.2.tar.gz", hash = "sha256:0367c8c5e13aa1bd8ca8bf799a38da48442f843774657b47fdbb8ae51ceeb02e"},
 ]
 
 [package.source]
@@ -4977,4 +4977,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "6b9217399590fbd565e21ab384bcc1f1c534ec6ba4cdba0b38c6f4159694ce69"
+content-hash = "cba1c20a8fdd752c7a19b5d3e36ef81c8f92a3e99d7f69aae33e4ecd37cf670c"

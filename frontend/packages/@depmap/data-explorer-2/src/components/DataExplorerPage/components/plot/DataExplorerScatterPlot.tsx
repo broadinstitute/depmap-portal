@@ -233,6 +233,10 @@ function DataExplorerScatterPlot({
 
     if (data?.metadata?.color_property) {
       title = data.metadata.color_property.label;
+
+      if (data.metadata.dataset_label) {
+        title += `<br>${data.metadata.dataset_label}`;
+      }
     }
 
     const items: { name: string; hexColor: string }[] = [];

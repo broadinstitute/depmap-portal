@@ -95,21 +95,23 @@ function ContextTypeSelect({
     })();
   }, [hideUnpopulatedTypes, useContextBuilderV2]);
 
+  const isLoading = options.length === 0;
+
   return (
     <PlotConfigSelect
       show
-      enable
-      label={<div style={{ fontSize: 13 }}>{title}</div>}
+      enable={!isLoading}
+      value={isLoading ? { value, label: "Loading..." } : value}
+      options={options}
+      onChange={onChange as (nextValue: string | null) => void}
+      isLoading={isLoading}
+      className={styles.ContextTypeSelect}
       inlineLabel
+      label={<div style={{ fontSize: 13 }}>{title}</div>}
       styles={{
         control: (base: any) => ({ ...base, fontSize: 14 }),
         menu: (base: any) => ({ ...base, fontSize: 14, width: 400 }),
       }}
-      className={styles.ContextTypeSelect}
-      options={options}
-      value={value}
-      onChange={onChange as (nextValue: string | null) => void}
-      isLoading={options.length === 0}
     />
   );
 }

@@ -1,8 +1,12 @@
 import React from "react";
-import { getConfirmation } from "@depmap/common-components";
+import { getConfirmation, showInfoModal } from "@depmap/common-components";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContextV2, SliceQuery } from "@depmap/types";
-import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
+import {
+  dataExplorerAPI,
+  DataExplorerApiResponse,
+} from "../../../../services/dataExplorerAPI";
+import { MAX_PLOTTABLE_CATEGORIES } from "../../../../constants/plotConstants";
 
 interface Args {
   sliceQuery: SliceQuery;
@@ -53,17 +57,34 @@ export default async function checkPlottable({
   dimension_type,
   onConvertToColorContext,
 }: Args) {
-  window.dispatchEvent(new Event("dx2_start_load_event"));
-  const domain = await dataExplorerAPI.fetchVariableDomain(sliceQuery);
-  window.dispatchEvent(new Event("dx2_end_load_event"));
+  let domain: DataExplorerApiResponse["fetchVariableDomain"];
+
+  try {
+    window.dispatchEvent(new Event("dx2_start_load_event"));
+    domain = await dataExplorerAPI.fetchVariableDomain(sliceQuery);
+  } catch (e) {
+    showInfoModal({
+      title: "Error loading data",
+      content: (
+        <div>
+          <p>An unexpected error occurred while loading the annonation data.</p>
+          <details>{JSON.stringify(e)}</details>
+        </div>
+      ),
+    });
+
+    return false;
+  } finally {
+    window.dispatchEvent(new Event("dx2_end_load_event"));
+  }
 
   if (domain.value_type === "continuous") {
     return true;
   }
 
   if (
-    domain.value_type !== "list_strings" &&
-    domain.unique_values.length <= 100
+    ["categorial", "text"].includes(domain.value_type) &&
+    domain.unique_values.length <= MAX_PLOTTABLE_CATEGORIES
   ) {
     return true;
   }

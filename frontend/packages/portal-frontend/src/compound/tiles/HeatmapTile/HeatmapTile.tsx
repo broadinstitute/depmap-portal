@@ -46,13 +46,16 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
     return url.pathname + url.search;
   })();
 
-  // TODO: Always show InfoIcon once we have content for the popoverContent
-  const showInfoIcon = false;
   const customInfoImg = (
     <img
+      style={{
+        height: "13px",
+        margin: "1px 3px 4px 3px",
+        cursor: "pointer",
+      }}
       src={toStaticUrl("img/gene_overview/info_purple.svg")}
-      alt="heatmap info tip"
-      className={styles.infoImage}
+      alt="description of term"
+      className="icon"
     />
   );
 
@@ -67,14 +70,18 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">
           Compound Viability
-          {showInfoIcon && (
-            <InfoIcon
-              target={customInfoImg}
-              popoverContent={<p>{"This is a tooltip"}</p>}
-              popoverId={`struc-detail-popover`}
-              trigger={["hover", "focus"]}
-            />
-          )}
+          <InfoIcon
+            target={customInfoImg}
+            popoverContent={
+              <p>
+                {
+                  "This tile shows a miniature version of the figure shown on the 'Heatmap' tab. Each column represents a cell line and each row represents dose, starting with the highest dose. Red indicates loss of viability in that cell line at that dose. An interactive version of this figure can be found on the 'Heatmap' tab."
+                }
+              </p>
+            }
+            popoverId={`compound-viability-popover`}
+            trigger={["hover", "focus"]}
+          />
         </h2>
         <div className="card_padding">
           {tableFormattedData && (

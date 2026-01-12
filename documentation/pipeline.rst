@@ -39,5 +39,5 @@ Pulling the conseq docker image for local dev
 ---------------------------------------------
 ::
 	gcloud docker --authorize-only
-	docker pull us.gcr.io/broad-achilles/conseq
+	docker pull us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/conseq
 

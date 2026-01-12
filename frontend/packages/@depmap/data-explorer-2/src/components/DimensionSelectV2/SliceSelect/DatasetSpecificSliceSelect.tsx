@@ -12,9 +12,15 @@ interface Props {
   dataset_id: string | null;
   value: DataExplorerContextV2 | null;
   onChange: (context: DataExplorerContextV2 | null) => void;
+  selectClassName?: string;
 }
 
-function DatasetSpecificSliceSelect({ dataset_id, value, onChange }: Props) {
+function DatasetSpecificSliceSelect({
+  dataset_id,
+  value,
+  onChange,
+  selectClassName = undefined,
+}: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<Option[]>([]);
 
@@ -56,6 +62,7 @@ function DatasetSpecificSliceSelect({ dataset_id, value, onChange }: Props) {
       enable
       isClearable
       label="Feature"
+      className={selectClassName}
       placeholder="Select a feature…"
       menuWidth={310}
       isLoading={isLoading}

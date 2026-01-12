@@ -8,8 +8,9 @@ import type {
   PlotSelectionEvent,
   ViolinData,
 } from "plotly.js";
-import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import seedrandom from "seedrandom";
+import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
+import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import {
   calcAnnotationPositions,
   DataExplorerColorPalette,
@@ -25,8 +26,6 @@ import type ExtendedPlotType from "../../../ExtendedPlotType";
 
 type Data = Record<string, any>;
 
-const MAX_POINTS_TO_ANNOTATE = 50;
-
 interface Props {
   data: Data;
   xKey: string;
@@ -36,7 +35,7 @@ interface Props {
   colorMap: Map<LegendKey, string>;
   colorData?: any;
   continuousColorKey?: string;
-  legendDisplayNames: any;
+  legendDisplayNames: Partial<Record<LegendKey, string>>;
   legendTitle?: string | null;
   selectedPoints?: Set<number>;
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
@@ -185,6 +184,11 @@ function PrototypeDensity1D({
       onLoad(ref.current);
     }
   }, [onLoad]);
+
+  useEffect(() => {
+    const plot = ref.current;
+    return () => Plotly.purge(plot as HTMLElement);
+  }, [Plotly]);
 
   const [minX, maxX] = useMemo(() => getRange(data[xKey]), [data, xKey]);
 
@@ -415,14 +419,15 @@ function PrototypeDensity1D({
       ] as Partial<PlotData>[]).includes(plotlyData[n]);
     };
 
+    const collapseLeftMargin = violinTraces.length === 1;
+
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,
-      // margin: { t: 30, l: 30, r: 30 },
       margin: {
         t: 30,
-        r: 30,
+        r: 15,
         b: 50 + xAxisFontSize * 2.2,
-        l: 50 + yAxisFontSize * 2.2,
+        l: collapseLeftMargin ? 15 : 50 + yAxisFontSize * 2.2,
       },
       hovermode: "closest",
       hoverlabel: {
@@ -493,10 +498,14 @@ function PrototypeDensity1D({
               return selectedPoints
                 ? [
                     {
+                      x: 0.5,
+                      y: 0.95,
+                      xref: "paper",
+                      yref: "paper",
                       text: [
                         selectedPoints.size,
-                        "selected",
                         selectedPoints.size === 1 ? "point" : "points",
+                        "selected",
                       ].join(" "),
                       arrowcolor: "transparent",
                       bordercolor: "#c7c7c7",
@@ -705,9 +714,8 @@ function PrototypeDensity1D({
           ...plot.layout,
           showlegend: true,
           legend: {
-            title: {
-              text: legendTitle,
-            },
+            title: { text: legendTitle },
+            font: { size: 14 },
           },
         },
       };
@@ -735,7 +743,7 @@ function PrototypeDensity1D({
 
     return () => {
       listeners.forEach(([eventName, callback]) =>
-        plot.removeListener(eventName, callback)
+        plot.removeListener?.(eventName, callback)
       );
     };
   }, [

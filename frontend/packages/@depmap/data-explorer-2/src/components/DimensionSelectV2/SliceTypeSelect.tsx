@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { isSampleType, pluralize, useDimensionType } from "../../utils/misc";
+import {
+  isSampleTypeSync,
+  pluralize,
+  useDimensionType,
+} from "../../utils/misc";
 import {
   State,
   SLICE_TYPE_NULL,
@@ -19,6 +23,7 @@ interface Props {
   options: State["sliceTypeOptions"];
   value: string | null | undefined;
   onChange: (nextSliceType: string | SliceTypeNull | undefined) => void;
+  selectClassName?: string;
 }
 
 const useLabel = (
@@ -56,17 +61,18 @@ function SliceTypeSelect({
   options,
   value,
   onChange,
+  selectClassName = undefined,
 }: Props) {
   const [sliceTypeLabel, setSliceTypeLabel] = useState("");
   const label = useLabel(index_type, axis_type, aggregation);
 
   let placeholder = isLoading
     ? "Loading…"
-    : `Select ${isSampleType(index_type) ? "feature" : "sample"} type…`;
+    : `Select ${isSampleTypeSync(index_type) ? "feature" : "sample"} type…`;
 
   if (isUnknownDataset) {
     placeholder = `(Unknown ${
-      isSampleType(index_type) ? "feature" : "sample"
+      isSampleTypeSync(index_type) ? "feature" : "sample"
     } type)`;
   }
 
@@ -96,6 +102,7 @@ function SliceTypeSelect({
     <PlotConfigSelect
       show
       isClearable
+      className={selectClassName}
       enable={!isLoading}
       label={label}
       placeholder={placeholder}

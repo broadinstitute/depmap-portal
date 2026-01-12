@@ -236,6 +236,20 @@ async function resolveNextState(
     dataset_id = options.dataVersionOptions[0].value;
   }
 
+  if ("index_type" in changes && shouldCalcOptions) {
+    const enabledOpts = options.dataTypeOptions.filter((o) => !o.isDisabled);
+    if (enabledOpts.length === 1) {
+      dataType = enabledOpts[0].value;
+    }
+  }
+
+  if ("index_type" in changes && shouldCalcOptions) {
+    const enabledOpts = options.sliceTypeOptions.filter((o) => !o.isDisabled);
+    if (enabledOpts.length === 1) {
+      slice_type = enabledOpts[0].value.valueOf();
+    }
+  }
+
   if (!prev.dimension.context && context && !dataset_id) {
     const enabledOpts = options.dataVersionOptions.filter((o) => !o.isDisabled);
     if (enabledOpts.length === 1) {

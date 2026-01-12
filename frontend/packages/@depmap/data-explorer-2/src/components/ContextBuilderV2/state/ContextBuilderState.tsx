@@ -14,6 +14,7 @@ import {
   DataExplorerContextVariable,
   isValidSliceQuery,
   SliceQuery,
+  TabularDataset,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
 import { Expr, isBoolean, flattenExpr } from "../utils/expressionUtils";
@@ -56,6 +57,7 @@ const ContextBuilderState = createContext({
   replaceExprWithSimpleList: (() => {}) as (ids: string[]) => void,
   isManualSelectMode: false,
   undoManualSelectionMode: (() => {}) as () => void,
+  metadataDataset: undefined as TabularDataset | undefined,
 });
 
 export const useContextBuilderState = () => {
@@ -70,10 +72,12 @@ const toTopLevelBooleanExpr = (expr: DataExplorerContextV2["expr"]) => {
 export const ContextBuilderStateProvider = ({
   contextToEdit,
   onChangeContext,
+  startInTableView,
   children,
 }: {
   contextToEdit: Partial<DataExplorerContextV2>;
   onChangeContext: (nextContext: DataExplorerContextV2) => void;
+  startInTableView: boolean;
   children: React.ReactNode;
 }) => {
   const [name, onChangeName] = useState(contextToEdit.name || "");
@@ -178,7 +182,7 @@ export const ContextBuilderStateProvider = ({
     }
   }, [vars, fullySpecifiedVars]);
 
-  const [showTableView, setShowTableView] = useState(false);
+  const [showTableView, setShowTableView] = useState(startInTableView);
   const [tableOnlySlices, setTableOnlySlices] = useState<SliceQuery[]>([]);
 
   // When switching to table view, thow out any incomplete rules.
@@ -203,11 +207,22 @@ export const ContextBuilderStateProvider = ({
 
   const uniqueVariableSlices = useMemo(() => {
     const jsonSlices = [...fullySpecifiedVars].map((varName) => {
-      const { dataset_id, identifier, identifier_type } = vars[varName];
+      const { dataset_id, identifier, identifier_type, slice_type } = vars[
+        varName
+      ];
+
+      let resolvedIdType = identifier_type;
+
+      // Edge case: for `null` feature types, the id and label are the
+      // same so we want to consider the slices to be equivalent as well.
+      if (slice_type === null) {
+        resolvedIdType = "feature_id";
+      }
+
       return JSON.stringify({
         dataset_id,
         identifier,
-        identifier_type,
+        identifier_type: resolvedIdType,
       });
     });
 
@@ -322,6 +337,7 @@ export const ContextBuilderStateProvider = ({
         isManualSelectMode,
         undoManualSelectionMode,
         dimension_type: contextToEdit.dimension_type as string,
+        metadataDataset,
       }}
     >
       {children}

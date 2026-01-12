@@ -8,9 +8,15 @@ interface Props {
   index_type: string | null;
   value: DataExplorerContextV2 | null;
   onChange: (context: DataExplorerContextV2 | null) => void;
+  selectClassName?: string;
 }
 
-function FallbackSliceSelect({ index_type, value, onChange }: Props) {
+function FallbackSliceSelect({
+  index_type,
+  value,
+  onChange,
+  selectClassName = undefined,
+}: Props) {
   const label = useLabel(index_type);
 
   const displayValue = !value
@@ -29,6 +35,7 @@ function FallbackSliceSelect({ index_type, value, onChange }: Props) {
         }
       }}
       label={label}
+      className={selectClassName}
       value={displayValue}
       options={displayValue ? [displayValue] : []}
     />

@@ -126,7 +126,7 @@ const ContextExplorerTabs = ({
         </Tab>
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <Tab id="oncref" className={styles.Tab}>
-            OncRef Sensitivity
+            OncRef Lum Sensitivity
           </Tab>
         )}
         <Tab id="repurposing" className={styles.Tab}>

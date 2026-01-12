@@ -9,6 +9,7 @@ import json
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 from breadbox.db.session import SessionWithUser
 from breadbox.config import Settings, get_settings
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
@@ -16,21 +17,46 @@ from breadbox.crud import group as group_crud
 from breadbox.crud import dimension_types as types_crud
 from breadbox.crud import data_type as data_type_crud
 from breadbox.db.util import transaction
+from breadbox.models.dataset import DimensionTypeLabel
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
 from pydantic import ValidationError
 from breadbox.service.dataset import add_dimension_type
 import logging
+from datetime import timedelta
+from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 
 import os
 import shutil
 from db_load import upload_example_datasets
 import hashlib
+from datetime import timedelta
 
 
 @click.group()
 def cli():
     pass
+
+
+@cli.command()
+@click.option("--dryrun", is_flag=True, default=False)
+@click.option("--maxdays", default=60, type=int)
+def delete_expired_datasets(maxdays, dryrun):
+    db = _get_db_connection()
+    settings = get_settings()
+    expired_datasets = find_expired_datasets(db, timedelta(days=maxdays))
+
+    print(f"Found {len(expired_datasets)} expired datasets")
+
+    with transaction(db):
+        for dataset in expired_datasets:
+            dataset_summary = f"{dataset.id} (upload_date={dataset.upload_date}, expiry={dataset.expiry})"
+            if dryrun:
+                print(f"dryrun: Would have deleted {dataset_summary}")
+            else:
+                print(f"Deleting {dataset_summary}")
+                delete_dataset(db, db.user, dataset, settings.filestore_location)
+    print("Done")
 
 
 @cli.command()
@@ -112,6 +138,20 @@ def _regenerate_entire_search_index(db: SessionWithUser):
             db.expunge_all()
 
 
+def _regenerate_all_dim_type_labels(db: SessionWithUser):
+    from breadbox.crud.dimension_types import get_dimension_types, get_dimension_type
+    from breadbox.crud.dimension_ids import _populate_dimension_type_labels
+
+    dimension_type_names = [x.name for x in get_dimension_types(db)]
+    # re-look up each dimension_type by name to make sure the instance of dimension_type we have is associated with
+    # the session after we clear it each loop. If we were looping over instances of dimension_types, the call to expunge_all
+    # could cause problems, because the next instance would be in a "detached" state.
+    with transaction(db):
+        for dimension_type_name in dimension_type_names:
+            print(dimension_type_name)
+            _populate_dimension_type_labels(db, dimension_type_name)
+
+
 def _post_alembic_upgrade(db: SessionWithUser):
     """This method is called after we apply alembic schema migrations. Alembic migrations are great for cases which are
     simple enough that they can be achieved with SQL or a small amount of Python. However, we can't use any
@@ -130,6 +170,11 @@ def _post_alembic_upgrade(db: SessionWithUser):
         )
         _regenerate_entire_search_index(db)
         print("The search index is regenerated")
+
+    if db.query(DimensionTypeLabel).count() == 0:
+        print("No entries in DimensionTypeLabel -- proceeding to regenerate")
+        _regenerate_all_dim_type_labels(db)
+        print("The dimension type labels are regenerated")
 
 
 def _upgrade_db():
@@ -171,45 +216,6 @@ def _export_api_spec(export_path: str):
     openapi = _get_openapi_spec()
     with open(export_path, "wt") as fd:
         json.dump(openapi, fd, indent=2, sort_keys=True)
-
-
-@cli.command()
-@click.argument("path")
-def check_api(path: str):
-    """Verify the openapi spec to the given path matches the current spec"""
-
-    def mask_version(spec):
-        # mask out the version number so the comparison is insensitve
-        # to the version changing. There are a few ways the version number
-        # in the spec might be wrong (ie: poetry install was not re-run, the version
-        # number was bumped, but there actually was no spec change, etc) so
-        # make the comparison insensitve to version number.
-        spec["info"]["version"] = "MASKED"
-
-    openapi = _get_openapi_spec()
-    with open(path, "rt") as fd:
-        existing = json.load(fd)
-
-    mask_version(openapi)
-    mask_version(existing)
-
-    openapi_md5 = hashlib.md5(
-        json.dumps(openapi, sort_keys=True).encode("utf8")
-    ).hexdigest()
-    existing_md5 = hashlib.md5(
-        json.dumps(existing, sort_keys=True).encode("utf8")
-    ).hexdigest()
-
-    comparison_message = f"(Generated api spec MD5: {openapi_md5}, last generated client spec MD5: {existing_md5})"
-    assert (
-        existing == openapi
-    ), f"""The openapi spec that was used to generate the
-     breadbox client doesn't match what the latest code generates. The breadbox 
-     client likely needs to be updated. You can do this by running: ./bb update-client
-
-     {comparison_message}
-     """
-    print(comparison_message)
 
 
 @cli.command()

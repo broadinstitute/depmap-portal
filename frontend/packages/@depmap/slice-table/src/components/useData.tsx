@@ -95,13 +95,23 @@ async function extractColumnRenames(
       .replace(/^renames\s*=\s*/, "")
       .replace(/'/g, '"');
 
-    const renames = JSON.parse(renamesString);
+    let renames = JSON.parse(renamesString);
 
     // Invert the mapping: renames typically maps old_name -> new_name,
     // but we want new_name -> old_name for display purposes
-    return Object.fromEntries(
+    renames = Object.fromEntries(
       Object.entries(renames).map(([key, value]) => [value, key])
     );
+
+    // HACK: Account for transforms to the label column. At least in the case
+    // of compound_dose (where a UpdateCompoundDoseLabels transform is applied)
+    // it could be unsafe to assume the label column is redundant.
+    // FIXME: This is a pretty weak test. We could compare values instead.
+    if (/Update.*Labels/i.test(preprocess)) {
+      delete renames.label;
+    }
+
+    return renames;
   } catch (error) {
     window.console.warn("Failed to extract column renames:", error);
     return {};
@@ -279,7 +289,10 @@ function applyRowFilters(
         if (key === "id" || key === "label") {
           return false;
         }
-        return value === undefined;
+
+        return (
+          value === undefined || (Array.isArray(value) && value.length === 0)
+        );
       });
 
       if (hasUndefinedValues) {
@@ -482,15 +495,22 @@ function transformToTableData(
         }) => {
           const value = getValue();
 
-          return value != null ? (
+          return value == null ? (
+            <></>
+          ) : (
             toDetailPageLink(
               getValue() as string,
               idToLabelMappings[references!][value as string],
               references as string
             )
-          ) : (
-            <></>
           );
+        },
+      }),
+      // Add a custom cell renderer for string lists.
+      ...(value_type === "list_strings" && {
+        cell: ({ getValue }: { getValue: () => unknown }) => {
+          const value = getValue();
+          return value == null ? <></> : (value as string[]).join(", ");
         },
       }),
     };
@@ -701,6 +721,8 @@ export default function useAlignedData({
           error: null,
         }));
       } catch (error) {
+        window.console.error(error);
+
         if (!isCancelled) {
           const errorMessage =
             error instanceof Error ? error.message : "Unknown error occurred";

@@ -6,7 +6,7 @@ import { sliceLabelFromContext } from "../../../utils/context";
 import {
   capitalize,
   getDimensionTypeLabel,
-  isSampleType,
+  isSampleTypeSync,
   pluralize,
   sortDimensionTypes,
 } from "../../../utils/misc";
@@ -207,7 +207,7 @@ export function computeOptions(
 
         disabledReason = [
           "The",
-          isSampleType(selectedSliceType) ? "sample type" : "feature type",
+          isSampleTypeSync(selectedSliceType) ? "sample type" : "feature type",
           `“${capitalize(getDimensionTypeLabel(selectedSliceType as string))}”`,
           "is incompatible with this data type",
         ].join(" ");
@@ -244,7 +244,7 @@ export function computeOptions(
           "The data type",
           `“${selectedDataType}”`,
           "is incompatible with this",
-          isSampleType(selectedSliceType) ? "sample type" : "feature type",
+          isSampleTypeSync(selectedSliceType) ? "sample type" : "feature type",
         ].join(" "),
       };
     })
@@ -306,13 +306,13 @@ export function computeOptions(
         if (compatibleTypes.length === 1) {
           disabledReason = [
             "This measure is only compatible with",
-            isSampleType(selectedSliceType) ? "sample" : "feature",
+            isSampleTypeSync(selectedSliceType) ? "sample" : "feature",
             `type ${compatibleTypes[0]}`,
           ].join(" ");
         } else {
           disabledReason = [
             "This measure is only compatible with the following",
-            isSampleType(selectedSliceType) ? "sample" : "feature",
+            isSampleTypeSync(selectedSliceType) ? "sample" : "feature",
             `types: ${compatibleTypes.join(", ")}`,
           ].join(" ");
         }
@@ -373,7 +373,7 @@ export function computeOptions(
 
         disabledReason = [
           "This version is only compatible with",
-          isSampleType(selectedSliceType) ? "sample" : "feature",
+          isSampleTypeSync(selectedSliceType) ? "sample" : "feature",
           `type “${capitalize(entity)}”`,
         ].join(" ");
       }
