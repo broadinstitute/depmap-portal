@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import String, MetaData
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column
 
 # It has been a pain point encountering unnamed constraints when migrating since you can't drop unnamed constraints. These conventions will be used when the sqlalchemy model has constraints that are unnamed
