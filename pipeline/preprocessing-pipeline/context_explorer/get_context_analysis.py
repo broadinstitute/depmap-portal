@@ -382,7 +382,9 @@ def oncref_context_analysis(
     # dictionary rather than expected named inputs to the
     # compute_context_results function.
     oncref_aucs, oncref_log_aucs = load_oncref_data(
-        tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
+        tc=tc,
+        oncref_auc_taiga_id=oncref_auc_taiga_id,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
     datasets_to_calculate_bimodality = {ONCREF_DATASET_NAME: oncref_log_aucs}
@@ -413,12 +415,12 @@ def repurposing_context_analysis(
     subtype_tree,
     context_matrix,
     repurposing_matrix_taiga_id,
-    repurposing_list_taiga_id,
+    portal_compounds_taiga_id,
 ):
     rep_sensitivity = load_repurposing_data(
         tc=tc,
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
-        repurposing_list_taiga_id=repurposing_list_taiga_id,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
     datasets_to_calculate_bimodality = {REPURPOSING_DATASET_NAME: rep_sensitivity}
