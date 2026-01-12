@@ -27,7 +27,6 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       "window.enabledFeatures": JSON.stringify({
-        linear_association: false,
         use_taiga_urls: false,
         elara: true,
       }),

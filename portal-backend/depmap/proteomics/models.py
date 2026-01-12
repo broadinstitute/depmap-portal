@@ -30,12 +30,6 @@ class Protein(Entity):
             return q.one_or_none()
 
     @staticmethod
-    def get_label_aliases(protein_id):
-        q = Protein.query.filter(Protein.entity_id == protein_id)
-        protein = q.one()
-        return protein.label, []
-
-    @staticmethod
     def get_from_gene_symbol(gene_symbol):
         protein_objects = (
             Protein.query.join(Gene, Protein.gene)

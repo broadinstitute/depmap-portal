@@ -10,7 +10,6 @@ export interface CurveParams {
 export interface DoseCurveData {
   in_group_curve_params: CurveParams[];
   out_group_curve_params: CurveParams[];
-  dose_curve_metadata: any[];
   min_dose: number;
   max_dose: number;
 }

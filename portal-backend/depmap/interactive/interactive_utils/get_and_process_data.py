@@ -1,36 +1,28 @@
-import re
-from typing import List, Optional, Iterable, Dict
+from typing import List, Optional, Dict
 
 from dataclasses import dataclass
 from depmap.cell_line.models_new import DepmapModel
-from depmap.context.models_new import SubtypeContext, SubtypeNode
+from depmap.context.models_new import SubtypeContext
 from depmap.gene.models import GeneExecutiveInfo
 import pandas as pd
 
 from depmap.database import db
 from depmap.cell_line.models import CellLine
 from depmap.dataset.models import (
-    BiomarkerDataset,
     Mutation,
 )
-from depmap.entity.models import Entity
 from depmap.compute.models import CustomCellLineGroup
-from depmap.interactive import interactive_utils
-from depmap.vector_catalog.models import SliceSerializer, SliceRowType
-from depmap.interactive.common_utils import sort_insensitive
 from depmap.interactive.config.utils import (
     get_context_dataset,
     get_lineage_dataset,
     get_primary_disease_dataset,
     get_disease_subtype_dataset,
     get_tumor_type_dataset,
-    get_entity_type,
     get_gender_dataset,
     get_growth_pattern_dataset,
     get_custom_cell_lines_dataset,
     __get_config,
     has_config,
-    is_prepopulate,
     is_continuous,
     is_categorical,
     is_standard,
@@ -53,65 +45,6 @@ def get_matrix(dataset_id):
             return nonstandard_utils.get_matrix(dataset_id)
     else:
         raise NotImplementedError
-
-
-def get_matching_rows(dataset_id, prefix, max=10) -> List[Dict]:
-    if dataset_id == get_custom_cell_lines_dataset():
-        # keeping this as an if else to highlight that this is this dataset's implementation of this func
-        assert (
-            False
-        ), "Rows in custom cell lines dataset are uuids and should not be listable, this should not have been called"
-    # this stands as a more specific check because thus far, the only nonstandard categorical dataset we have is prepopulate
-    elif (
-        is_continuous(dataset_id)
-        or dataset_id == BiomarkerDataset.BiomarkerEnum.mutations_prioritized.name
-    ):
-        if is_standard(dataset_id):
-            return standard_utils.get_matching_rows(dataset_id, prefix, max)
-        else:
-            return nonstandard_utils.get_matching_rows(dataset_id, prefix, max)
-    else:
-        raise ValueError(
-            "Invalid dataset " + dataset_id + " is not a continuous dataset"
-        )
-
-
-def get_all_entity_ids(dataset_id: str) -> list[int]:
-    row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-    return get_row_summary_entity_ids(row_summaries)
-
-
-def get_matching_row_entity_ids(dataset_id, prefix, max=10) -> Iterable[int]:
-    """
-    This was only written for the entity branch of the "Other" branch of the vector catalog continuous tree (i.e. OtherGenericEntityDatasetRowNonPrepopulateNodeFactory)
-    """
-    if get_entity_type(dataset_id) is None:
-        raise NotImplementedError(
-            "No idea what should be done here; this isn't meant to be called on datasets that don't use entities!"
-        )
-    if is_standard(dataset_id):
-        return standard_utils.get_matching_row_entity_ids(dataset_id, prefix, max)
-    else:
-        return nonstandard_utils.get_matching_row_entity_ids(dataset_id, prefix, max)
-
-
-def get_all_rows(dataset_id) -> List[Dict]:
-    if dataset_id == get_context_dataset():
-        row_names = [context.subtype_code for context in SubtypeContext.query.all()]
-        rows = [{"label": name, "value": name} for name in sort_insensitive(row_names)]
-    elif dataset_id == get_custom_cell_lines_dataset():
-        # keeping this as an if else to highlight that this is this dataset's implementation of this func
-        assert (
-            False
-        ), "Rows in custom cell lines dataset are uuids and should not be listable, this should not have been called"
-    else:
-        assert is_prepopulate(dataset_id)
-        if is_standard(dataset_id):
-            row_names = standard_utils.get_all_row_names(dataset_id)
-        else:
-            row_names = nonstandard_utils.get_all_row_names(dataset_id)
-        rows = [{"label": row, "value": row} for row in row_names]
-    return rows
 
 
 def get_all_row_indices_labels_entity_ids(dataset_id) -> List[RowSummary]:
@@ -148,14 +81,6 @@ def get_dataset_sample_labels_by_id(dataset_id: str) -> dict[str, str]:
     }
 
 
-def get_dataset_feature_ids(dataset_id: str) -> list[str]:
-    """
-    Get a list of all feature/entity given_ids for the given dataset.
-    """
-    row_summaries = get_all_row_indices_labels_entity_ids(dataset_id)
-    return [str(row.entity_id) for row in row_summaries]
-
-
 def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     """
     Get a list of all feature/entity labels for the given dataset.
@@ -184,10 +109,6 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
         return standard_utils.get_dataset_sample_ids(dataset_id)
     else:
         return nonstandard_utils.get_dataset_sample_ids(dataset_id)
-
-
-def get_row_summary_entity_ids(row_summaries: List[RowSummary]):
-    return [row.entity_id for row in row_summaries]
 
 
 def get_depmap_id_to_col_index_map(dataset_id) -> dict[str, int]:
@@ -233,57 +154,6 @@ def get_subsetted_df_by_labels(
         )
 
     # Load the dataframe and set the index to use labels
-    if is_continuous(dataset_id):
-        subsetted_df = get_subsetted_df(dataset_id, row_indices, col_indices)
-        subsetted_df.rename(index=row_index_to_entity_label, inplace=True)
-        subsetted_df.rename(columns=col_index_to_depmap_id, inplace=True)
-        return subsetted_df
-    else:
-        raise NotImplementedError
-
-
-def get_subsetted_df_by_ids(
-    dataset_id: str,
-    entity_ids: Optional[List[int]],
-    cell_line_ids: Optional[List[str]],
-):
-    """
-    Load a dataframe contianing a subset of the data belonging to the dataset. 
-    Index the subset using entity/cell line ids instead of row/column indices (as is done in get_subsetted_df)
-    :param dataset_id:  id of dataset to subset
-    :param entity_ids: entity ids of entities to return.  If None, return all entities
-    :param cell_line_ids: depmap ids of cell lines to return.  If None, return all cell lines
-    :return: dataframe where rows are entities (indexed by label) and columns are cell lines (indexed by ID)
-    """
-    row_index_to_entity_label = {}
-    col_index_to_depmap_id = {}
-    entity_ids_set = set(entity_ids) if entity_ids else set()
-
-    row_indices = []
-    row_summaries = interactive_utils.get_all_row_indices_labels_entity_ids(dataset_id)
-    for row in row_summaries:
-        if entity_ids and row.entity_id in entity_ids_set or entity_ids is None:
-            row_indices.append(row.index)
-            row_index_to_entity_label[row.index] = row.label
-
-    col_indices = []
-    matrix = get_matrix(dataset_id)
-    depmap_id_to_matrix_index = {}
-    for i in matrix.col_index:
-        depmap_id_to_matrix_index[i.cell_line.depmap_id] = i.index
-
-    if cell_line_ids:
-        for cl in cell_line_ids:
-            if cl in depmap_id_to_matrix_index:
-                index = depmap_id_to_matrix_index[cl]
-                col_indices.append(index)
-                col_index_to_depmap_id[index] = cl
-    else:
-        col_indices = list(depmap_id_to_matrix_index.values())
-        col_index_to_depmap_id = dict(
-            [(value, key) for key, value in depmap_id_to_matrix_index.items()]
-        )
-
     if is_continuous(dataset_id):
         subsetted_df = get_subsetted_df(dataset_id, row_indices, col_indices)
         subsetted_df.rename(index=row_index_to_entity_label, inplace=True)
@@ -418,19 +288,6 @@ def get_row_of_values(dataset_id, feature):
     return series
 
 
-def get_row_of_values_from_slice_id(id):
-    """
-    Wrapper around get_row_of_values, to take in slice id
-    """
-    dataset_id, row, row_type = SliceSerializer.decode_slice_id(id)
-
-    if row_type == SliceRowType.entity_id:
-        row = Entity.get_by_id(row).label
-
-    series = get_row_of_values(dataset_id, row)
-    return series
-
-
 def get_category_config(color_dataset):
     category_config = __get_config().get(color_dataset)["categories"]
     return category_config
@@ -453,26 +310,3 @@ class SummarizedExperiment:
 
     def validate(self):
         assert self.values.shape == [self.samples.shape[0], self.features.shape[0]]
-
-
-def get_summarized_experiment(
-    dataset_id: str, sample_ids: Optional[List[str]], entity_id: Optional[List[str]]
-) -> SummarizedExperiment:
-    """
-    extracts a slice of data from dataset_id for the specified samples and features. If either is None,
-    returns it for all features/samples
-
-    Examples:
-        getting all data in a dataset
-        se = get_summarized_experiment(dataset_id, None, None)
-
-        get all features in a dataset
-        get_summarized_experiment(dataset_id, [], None).features
-
-        get all samples in a dataset
-        get_summarized_experiment(dataset_id, None, []).samples
-
-        get a single sample's worth of data
-        get_summarized_experiment(dataset_id, [sample_id], None).values
-    """
-    raise NotImplementedError()

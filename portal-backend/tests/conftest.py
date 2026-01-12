@@ -13,7 +13,6 @@ from dataclasses import asdict
 from depmap.access_control import PUBLIC_ACCESS_GROUP
 from depmap.app import create_app
 
-from depmap.data_explorer_2.utils import clear_cache
 from depmap.database import db as _db
 from depmap.database import transaction
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset, TabularDataset
@@ -82,9 +81,6 @@ def app(tmpdir, config, monkeypatch, mock_breadbox_client):
     yield _app
 
     ctx.pop()
-
-    # clear the data explorer 2 cache, which uses functools instead of flask
-    clear_cache()
 
 
 @pytest.fixture(scope="function")

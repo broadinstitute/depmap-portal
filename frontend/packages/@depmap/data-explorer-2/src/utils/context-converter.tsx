@@ -51,9 +51,17 @@ function simplifyVarNames(context: DataExplorerContextV2) {
           value === "entity_label" || value === "given_id";
         // Only change the variable name if it's
         // not a name with special significance.
-        const newVarName = isSpecialVarName ? value : `${i++}`;
+        let newVarName = isSpecialVarName ? value : `${i++}`;
 
-        nextVars[newVarName] = context.vars[value];
+        // Edge case: featureless data should never use "entity_label".
+        if (context.dimension_type === null && value === "entity_label") {
+          newVarName = "given_id";
+        }
+
+        if (newVarName !== "given_id") {
+          nextVars[newVarName] = context.vars[value];
+        }
+
         return newVarName;
       }
 
@@ -153,12 +161,14 @@ export async function convertContextV1toV2(
 
   for (const varName of Object.keys(varTypes)) {
     if (varName === "entity_label") {
-      vars[varName] = {
-        dataset_id: `${context_type}_metadata`,
-        identifier_type: "column",
-        identifier: context_type === "depmap_model" ? "depmap_id" : "label",
-        source: "property",
-      };
+      if (dimension_type !== null) {
+        vars[varName] = {
+          dataset_id: `${dimension_type}_metadata`,
+          identifier_type: "column",
+          identifier: dimension_type === "depmap_model" ? "depmap_id" : "label",
+          source: "property",
+        };
+      }
     } else {
       const sliceQuery = sliceIdToSliceQuery(
         varName,
