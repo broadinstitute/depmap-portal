@@ -22,14 +22,9 @@ from fastapi import (
 from breadbox.db.session import SessionWithUser
 from breadbox.celery_task import utils
 
-from breadbox.compute.dataset_tasks import (
-    get_file_dict,
-    run_upload_dataset,
-)
 from ..schemas.custom_http_exception import UserError, DatasetNotFoundError
 
 from ..config import Settings, get_settings
-from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from ..crud import dataset as dataset_crud
 from ..crud import dimension_types as type_crud
 from ..crud.dimension_ids import get_dataset_feature_by_given_id

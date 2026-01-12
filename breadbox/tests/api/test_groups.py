@@ -279,7 +279,6 @@ class TestDelete:
         owner_groups = r_get.json()
         assert len(owner_groups) == 2
         # Test successful group delete
-        breakpoint()
         r = client.delete(f"/datasets/{dataset_id}", headers=admin_headers,)
         assert_status_ok(r)
         owner_delete = client.delete(
