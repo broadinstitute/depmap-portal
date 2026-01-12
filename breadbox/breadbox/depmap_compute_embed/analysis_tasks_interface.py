@@ -139,7 +139,7 @@ def _run_lm(
         f"in _run_lm, features_df with na label:\n{features_df[features_df.label.isna()]}"
     )
     log.warning(f"before add df:\n{df[['Index', 'QValue']]}")
-
+    log.warning(f"missing:\n{features_df.iloc[[1,6064,11463,19151,12735],:]}")
     # Add metadata
     df["label"] = features_df.label.iloc[df["Index"]]
     df["vectorId"] = features_df.slice_id.iloc[df["Index"]]
