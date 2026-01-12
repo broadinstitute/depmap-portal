@@ -38,19 +38,6 @@ class Entity(Model):
     )
     __mapper_args__ = {"polymorphic_identity": "entity", "polymorphic_on": type}
 
-    @staticmethod
-    def get_gene_compound_related_entity_types():
-        return {
-            "gene",
-            "compound",
-            "antibody",
-            "transcription_start_site",
-            "compound_experiment",
-            "compound_dose",
-            "compound_dose_replicate",
-            "protein",
-        }
-
     @classmethod
     def get_entity_type(cls):
         return cls.__mapper_args__["polymorphic_identity"]
@@ -82,18 +69,6 @@ class Entity(Model):
         In other words, given that entity labels are not unique there is no use case for accessing an entity by label alone.
         This must be done in conjunction with another piece of information, in which case reconsider whether your use case is better served by a function that more directly gets to your use case, with a function put on that other piece of information.
         """
-        raise NotImplementedError
-
-    @staticmethod
-    def get_entity_class_by_type(entity_type):
-        """
-        This method requires importing Gene, Antibody, etc.
-        Thus, this is implemented on entity_utils and not here
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    def get_label_aliases(entity_id):
         raise NotImplementedError
 
     @classmethod

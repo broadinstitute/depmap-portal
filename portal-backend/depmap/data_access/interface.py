@@ -1,13 +1,10 @@
-from typing import Any, Literal, Optional, Union
+from typing import Literal, Optional, Union
 import pandas as pd
 
-from depmap_compute.slice import SliceQuery
 from depmap.data_access import breadbox_dao
 from depmap.data_access.breadbox_dao import is_breadbox_id
 from depmap.data_access.models import MatrixDataset
 from depmap.interactive import interactive_utils
-from depmap.interactive.common_utils import RowSummary
-from depmap.interactive.config.models import Config
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.compound import legacy_utils as legacy_compound_utils
 
@@ -211,15 +208,6 @@ def get_dataset_feature_labels(dataset_id: str) -> list[str]:
     return interactive_utils.get_dataset_feature_labels(dataset_id)
 
 
-def get_dataset_feature_ids(dataset_id: str) -> list[str]:
-    """
-    Get a list of all feature/entity given_ids for the given dataset.
-    """
-    if is_breadbox_id(dataset_id):
-        return breadbox_dao.get_dataset_feature_ids(dataset_id)
-    return interactive_utils.get_dataset_feature_ids(dataset_id)
-
-
 def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     """
     Get a list of all sample ids (ex. depmap ids) for the given dataset.
@@ -265,60 +253,6 @@ def valid_row(dataset_id: str, row_name: str) -> bool:
     if breadbox_dao.is_breadbox_id(dataset_id):
         return breadbox_dao.valid_row(dataset_id, row_name)
     return interactive_utils.valid_row(dataset_id, row_name)
-
-
-def get_slice_data(slice_query: SliceQuery) -> pd.Series:
-    """
-    Loads data for the given slice query. 
-    The result will be a pandas series indexed by sample/feature ID 
-    (regardless of the identifier_type used in the query).
-    """
-    dataset_id = slice_query.dataset_id
-
-    if slice_query.identifier_type == "feature_id":
-        feature_labels_by_id = get_dataset_feature_labels_by_id(dataset_id)
-        query_feature_label = feature_labels_by_id[slice_query.identifier]
-        values_by_sample_id = get_subsetted_df_by_labels(
-            slice_query.dataset_id, feature_row_labels=[query_feature_label]
-        ).squeeze()
-        result_series = values_by_sample_id
-
-    elif slice_query.identifier_type == "feature_label":
-        values_by_sample_id = get_subsetted_df_by_labels(
-            slice_query.dataset_id, feature_row_labels=[slice_query.identifier]
-        ).squeeze()
-        result_series = values_by_sample_id
-
-    elif slice_query.identifier_type == "sample_id":
-        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
-            slice_query.dataset_id, sample_col_ids=[slice_query.identifier]
-        ).squeeze()
-        feature_ids_by_label = get_dataset_dimension_ids_by_label(
-            dataset_id, axis="feature"
-        )
-        result_series = values_by_feature_label.rename(feature_ids_by_label)
-
-    elif slice_query.identifier_type == "sample_label":
-        ids_by_label = get_dataset_dimension_ids_by_label(dataset_id, axis="sample")
-        query_sample_id = ids_by_label[slice_query.identifier]
-
-        values_by_feature_label: pd.Series = get_subsetted_df_by_labels(
-            slice_query.dataset_id, sample_col_ids=[query_sample_id]
-        ).squeeze()
-        feature_ids_by_label = get_dataset_dimension_ids_by_label(
-            dataset_id, axis="feature"
-        )
-        result_series = values_by_feature_label.rename(feature_ids_by_label)
-
-    elif slice_query.identifier_type == "column":
-        result_series = get_tabular_dataset_column(dataset_id, slice_query.identifier)
-
-    else:
-        raise Exception("Unrecognized slice query identifier type")
-
-    # remove missing entries
-    result_series = result_series.dropna()
-    return result_series
 
 
 ###############################################################
@@ -420,53 +354,9 @@ def add_matrix_dataset_to_breadbox(
     )
 
 
-######################################################################
-# METHODS BELOW NEED UPDATED CONTRACTS TO BE SUPPORTABLE BY BREADBOX #
-######################################################################
-
-
-def get_subsetted_df(
-    dataset_id: str, row_indices: Optional[list[int]], col_indices: Optional[list[int]]
-) -> pd.DataFrame:
-    """
-    Load a dataframe with only the specified rows and columns.
-    If no row/column indices are specified, all values will be returned
-    including values without sample/entity metadata. 
-    """
-    return interactive_utils.get_subsetted_df(
-        dataset_id=dataset_id, row_indices=row_indices, col_indices=col_indices
-    )
-
-
-def get_subsetted_df_by_ids(
-    dataset_id: str,
-    entity_ids: Optional[list[int]] = None,
-    cell_line_ids: Optional[list[str]] = None,
-) -> pd.DataFrame:
-    """
-    Load a dataframe contianing a subset of the data belonging to the dataset. 
-    Index the subset using entity/cell line ids instead of row/column indices (as is done in get_subsetted_df).
-    If no entity ids or cell line ids are given, all values will be returned
-    including values without sample/entity metadata.
-    """
-
-    return interactive_utils.get_subsetted_df_by_ids(
-        dataset_id=dataset_id, entity_ids=entity_ids, cell_line_ids=cell_line_ids,
-    )
-
-
 ##########################################################
 # METHODS BELOW ARE COMPLETELY UNSUPPORTABLE BY BREADBOX #
 ##########################################################
-
-
-# only used in cell line page
-def get_all_row_indices_labels_entity_ids(dataset_id: str) -> list[RowSummary]:
-    """
-    Gets RowSummary objects: including index, entity ID, and label for each row.
-    Entity id may be none in the case of nonstandard datasets that use label only.
-    """
-    return interactive_utils.get_all_row_indices_labels_entity_ids(dataset_id)
 
 
 def get_context_dataset() -> str:
@@ -474,21 +364,6 @@ def get_context_dataset() -> str:
     Get the id of the context dataset.
     """
     return interactive_utils.get_context_dataset()
-
-
-# Only used in DE1 and custom analysis
-def get_custom_cell_lines_dataset() -> str:
-    """
-    Get the id of the custom cell lines dataset.
-    """
-    return interactive_utils.get_custom_cell_lines_dataset()
-
-
-def has_config(dataset_id: str) -> bool:
-    """
-    Check whether the given dataset exists in interactive config
-    """
-    return interactive_utils.has_config(dataset_id)
 
 
 def _get_visible_legacy_dataset_ids():

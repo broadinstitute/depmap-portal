@@ -1,0 +1,83 @@
+from breadbox.depmap_compute_embed.context import ContextEvaluator
+
+# Our ContextEvaluator makes heavy use of an extension to the 3rd party library: json_logic
+# These tests ensure that behavior is continuing to work as expected. 
+
+def test_operator__not_in():
+    assert expressions_are_equivalent(
+        # python
+        "a" not in [],
+        # JsonLogic
+        {"!in": ["a", []]},
+    )
+
+    assert expressions_are_equivalent(
+        # python
+        "a" not in ["b", "c"],
+        # JsonLogic
+        {"!in": ["a", ["b", "c"]]},
+    )
+
+    assert expressions_are_equivalent(
+        # python
+        "b" not in ["b", "c"],
+        # JsonLogic
+        {"!in": ["b", ["b", "c"]]},
+    )
+
+
+def test_operator__has_any():
+    assert expressions_are_equivalent(
+        # python
+        bool({"a", "b"} & {"a", "b"}),
+        # JsonLogic
+        {"has_any": [["a", "b"], ["a", "b"]]},
+    )
+
+    assert expressions_are_equivalent(
+        # python
+        bool({"a", "b"} & {"b", "c"}),
+        # JsonLogic
+        {"has_any": [["a", "b"], ["b", "c"]]},
+    )
+
+    assert expressions_are_equivalent(
+        # python
+        bool({"a", "b"} & {"c", "d"}),
+        # JsonLogic
+        {"has_any": [["a", "b"], ["c", "d"]]},
+    )
+
+
+def test_operator__not_has_any():
+    assert expressions_are_equivalent(
+        # python
+        not ({"a", "b"} & {"a", "b"}),
+        # JsonLogic
+        {"!has_any": [["a", "b"], ["a", "b"]]},
+    )
+
+    assert expressions_are_equivalent(
+        # python
+        not ({"a", "b"} & {"b", "c"}),
+        # JsonLogic
+        {"!has_any": [["a", "b"], ["b", "c"]]},
+    )
+
+    assert expressions_are_equivalent(
+        # python
+        not ({"a", "b"} & {"c", "d"}),
+        # JsonLogic
+        {"!has_any": [["a", "b"], ["c", "d"]]},
+    )
+
+
+def expressions_are_equivalent(boolean_value, json_logic_expr):
+    context = {"context_type": "don't care", "expr": json_logic_expr}
+
+    # These expressions don't use variables (just pure logic)
+    var_name = "dummy variable"
+    get_slice_data_mock = lambda _: {}
+    result = ContextEvaluator(context, get_slice_data_mock).is_match(var_name) # pyright: ignore
+
+    return result == boolean_value

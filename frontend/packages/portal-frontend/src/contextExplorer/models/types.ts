@@ -129,7 +129,7 @@ export interface ContextAnalysisPlotData {
 }
 
 export interface ContextAnalysisTableRow {
-  entity: string;
+  feature: string;
   tTestQVal: number;
   inContextMean: number;
   outGroupMean: number;

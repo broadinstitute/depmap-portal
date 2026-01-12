@@ -1,4 +1,5 @@
 export { default as ContextSelector } from "./src/components/ContextSelector";
+export { default as ContextSelectorV2 } from "./src/components/ContextSelectorV2";
 export { default as SliceLabelSelector } from "./src/components/SliceLabelSelector";
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
@@ -52,6 +53,7 @@ export {
   isSampleTypeSync,
   pluralize,
   sortDimensionTypes,
+  uncapitalize,
   urlLibEncode,
 } from "./src/utils/misc";
 

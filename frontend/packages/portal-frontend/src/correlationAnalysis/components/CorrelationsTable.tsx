@@ -10,7 +10,8 @@ interface CorrelationsTableProps {
   data: SortedCorrelations[];
   selectedRows: Set<string>;
   onChangeSelections: (selections: any[]) => void;
-  compound: string;
+  featureName: string;
+  featureType: string;
 }
 
 export default function CorrelationsTable(props: CorrelationsTableProps) {
@@ -18,7 +19,8 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
     data,
     selectedRows,
     onChangeSelections,
-    compound,
+    featureName,
+    featureType,
     isLoading,
     hasError,
   } = props;
@@ -47,6 +49,55 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
       />
     );
   };
+
+  const columns = [
+    {
+      accessor: "feature",
+      maxWidth: 200,
+      minWidth: 150,
+      Header: "Feature",
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "featureDataset",
+      maxWidth: 200,
+      minWidth: 150,
+      Header: "Correlated Dataset",
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "correlation",
+      maxWidth: 200,
+      minWidth: 150,
+      Header: "Correlation",
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "log10qvalue",
+      maxWidth: 200,
+      minWidth: 150,
+      Header: "log10(q value)",
+      customFilter: renderFilterPlaceholder,
+    },
+    {
+      accessor: "rank",
+      maxWidth: 200,
+      minWidth: 150,
+      Header: "Rank",
+      customFilter: renderFilterPlaceholder,
+    },
+  ];
+
+  if (featureType === "compound") {
+    columns.push({
+      accessor: "dose",
+      maxWidth: 200,
+      minWidth: 150,
+      Header: `${featureName} Dose`,
+      customFilter: renderFilterPlaceholder,
+    });
+  }
+
   let tableContent;
   if (hasError) {
     tableContent = (
@@ -62,50 +113,7 @@ export default function CorrelationsTable(props: CorrelationsTableProps) {
     tableContent = (
       <div>
         <WideTable
-          columns={[
-            {
-              accessor: "feature",
-              maxWidth: 200,
-              minWidth: 150,
-              Header: "Feature",
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "featureDataset",
-              maxWidth: 200,
-              minWidth: 150,
-              Header: "Correlated Dataset",
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "dose",
-              maxWidth: 200,
-              minWidth: 150,
-              Header: `${compound} Dose`,
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "correlation",
-              maxWidth: 200,
-              minWidth: 150,
-              Header: "Correlation",
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "log10qvalue",
-              maxWidth: 200,
-              minWidth: 150,
-              Header: "log10(q value)",
-              customFilter: renderFilterPlaceholder,
-            },
-            {
-              accessor: "rank",
-              maxWidth: 200,
-              minWidth: 150,
-              Header: "Rank",
-              customFilter: renderFilterPlaceholder,
-            },
-          ]}
+          columns={columns}
           data={tableData}
           rowHeight={28}
           fixedHeight={500}

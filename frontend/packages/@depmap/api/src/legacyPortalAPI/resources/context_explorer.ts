@@ -93,14 +93,14 @@ export async function getContextDataAvailability(tree_type: string) {
 export function getContextExplorerAnalysisData(
   in_group_code: string,
   out_group_type: string,
-  entity_type: string,
-  dataset_name: ContextExplorerDatasets
+  feature_type: string,
+  dataset_given_id: ContextExplorerDatasets
 ) {
   const params = {
     in_group: in_group_code,
     out_group_type,
-    entity_type,
-    dataset_name,
+    feature_type,
+    dataset_given_id,
   };
 
   return getJson<ContextAnalysisTableType>(
@@ -112,9 +112,9 @@ export function getContextExplorerAnalysisData(
 export function getContextExplorerBoxPlotData(
   selected_subtype_code: string,
   tree_type: string,
-  dataset_name: ContextExplorerDatasets,
-  entity_type: string,
-  entity_full_label: string,
+  dataset_given_id: ContextExplorerDatasets,
+  feature_type: string,
+  feature_id: string,
   max_fdr: number,
   min_abs_effect_size: number,
   min_frac_dep_in: number,
@@ -125,10 +125,10 @@ export function getContextExplorerBoxPlotData(
     {
       selected_subtype_code,
       tree_type,
-      dataset_name,
+      dataset_given_id,
       out_group: "All Others",
-      entity_type,
-      entity_full_label,
+      feature_type,
+      feature_id,
       max_fdr,
       min_abs_effect_size,
       min_frac_dep_in,
@@ -144,17 +144,17 @@ export function getContextExplorerContextInfo(subtypeCode: string) {
 }
 
 export function getContextExplorerDoseResponsePoints(
-  datasetName: string,
+  datasetGivenId: string,
   subtypeCode: string,
   outGroupType: string,
-  compoundLabel: string,
+  featureId: string,
   selectedLevel: number,
   treeType: string
 ) {
   return getJson<DoseCurveData>("/api/context_explorer/context_dose_curves", {
-    dataset_name: datasetName,
+    dataset_given_id: datasetGivenId,
     subtype_code: subtypeCode,
-    entity_full_label: compoundLabel,
+    feature_id: featureId,
     level: selectedLevel,
     out_group_type: outGroupType,
     tree_type: treeType,
@@ -174,16 +174,16 @@ export function getContextSearchOptions() {
 }
 
 export function getEnrichmentTileData(
-  tree_type: string,
-  entity_type: string,
-  entity_label: string
+  treeType: string,
+  featureType: string,
+  featureId: string
 ) {
   return getJson<EnrichedLineagesTileData>(
     "/api/context_explorer/enriched_lineages_tile",
     {
-      tree_type,
-      entity_type,
-      entity_label,
+      tree_type: treeType,
+      feature_type: featureType,
+      feature_id: featureId,
     }
   );
 }
