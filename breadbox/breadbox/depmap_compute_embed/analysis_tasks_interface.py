@@ -138,14 +138,16 @@ def _run_lm(
     log.warning(
         f"in _run_lm, features_df with na label:\n{features_df[features_df.label.isna()]}"
     )
+    log.warning(f"before add df:\n{df[['Index', 'QValue']]}")
 
     # Add metadata
     df["label"] = features_df.label.iloc[df["Index"]]
-
     df["vectorId"] = features_df.slice_id.iloc[df["Index"]]
     df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
 
-    log.warning(f"in _run_lm 2, df\n{df}")
+    log.warning(f"in _run_lm 2, df.columns\n{df.columns}")
+
+    log.warning(f"in _run_lm 2, df:\n{df[['Index', 'label', 'QValue']]}")
 
     # Clean up dataframe
     del df["Index"]
