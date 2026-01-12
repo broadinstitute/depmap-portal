@@ -504,11 +504,17 @@ class TestPost:
                 ["Thing1", "Thing2", "Thing3", "Thing4"],
                 202,
             ),  # allowed values have a value (Thing4) not in dataset. This is acceptable
+            ("categorical", None, 422,),  # allowed_values is required for categorical
             (
                 "categorical",
                 ["Thing1", "Thing2"],
                 400,
             ),  # missing allowed value/dataset have value not in allowed values
+            (
+                "categorical",
+                ["Thing1", "Thing2", "Thing1"],
+                400,
+            ),  # repeated allowed values
             (
                 "categorical",
                 ["Thing1", "thing1", "Thing2", "Thing3"],
@@ -557,6 +563,113 @@ class TestPost:
             headers=headers,
         )
         assert categorical_matrix_dataset.status_code == status_code
+
+    def test_add_dataset_with_priority_and_nested_metadata(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+    ):
+        user = "someone@private-group.com"
+        headers = {"X-Forwarded-User": user}
+
+        file = factories.continuous_matrix_csv_file()
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+        dataset_given_id = "priority-and-nested-metadata-dataset"
+
+        nested_metadata = {
+            "level1": {"level2": "some_value"},
+            "other_key": "other_value",
+        }
+
+        response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "given_id": dataset_given_id,
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "is_transient": False,
+                "group_id": private_group["id"],
+                "value_type": "continuous",
+                "priority": 10,
+                "dataset_metadata": nested_metadata,
+            },
+            headers=headers,
+        )
+        assert_status_ok(response)
+        assert response.status_code == 202
+        assert response.json()["state"] == "SUCCESS"
+        dataset_id = response.json()["result"]["datasetId"]
+
+        dataset = minimal_db.query(Dataset).filter(Dataset.id == dataset_id).one()
+        assert dataset.priority == 10
+        assert dataset.dataset_metadata == nested_metadata
+
+    def test_add_dataset_no_write_access(
+        self,
+        client: TestClient,
+        minimal_db: SessionWithUser,
+        private_group: Dict,
+        mock_celery,
+    ):
+        user = "someone-else@public.com"  # This user is not in private_group
+        headers = {"X-Forwarded-User": user}
+
+        file = factories.continuous_matrix_csv_file()
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
+        response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "group_id": private_group["id"],
+                "value_type": "continuous",
+            },
+            headers=headers,
+        )
+        assert response.status_code == 404
+
+    def test_add_dataset_nonexistent_group(
+        self, client: TestClient, minimal_db: SessionWithUser, mock_celery,
+    ):
+        user = "test-user@email.com"
+        headers = {"X-Forwarded-User": user}
+
+        file = factories.continuous_matrix_csv_file()
+        file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
+        response = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+                "group_id": "5b705c4a-f422-4ac7-90ae-130c66e4e8e2",  # non-existent-group-id
+                "value_type": "continuous",
+            },
+            headers=headers,
+        )
+        breakpoint()
+        assert response.status_code == 404
 
     def _setup_types(self, client, admin_headers):
         r_feature_metadata = client.post(
