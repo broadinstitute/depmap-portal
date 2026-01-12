@@ -452,6 +452,7 @@ def log_data_issues():
 
 def _get_issues_for_dataset_axis(db: SessionWithUser, dataset: MatrixDataset, axis: Literal["feature", "sample"]) -> list[str]:
     issues = []
+    dataset_identifier = dataset.given_id if dataset.given_id else dataset.name
 
     # Get the cutoffs configured for this particular dataset
     dataset_configs = dataset.dataset_metadata
@@ -469,18 +470,16 @@ def _get_issues_for_dataset_axis(db: SessionWithUser, dataset: MatrixDataset, ax
     dataset_ids_not_in_metadata = set(dataset_given_ids).difference(set(metadata_given_ids))
     percent_ids_not_in_metadata = len(dataset_ids_not_in_metadata) / len(dataset_given_ids)
 
-    # Append a warning when a given matrix dataset has a large number of features or samples with no metadata (>5%).
-    if percent_ids_not_in_metadata > 0.1:
-        dataset_ids_not_in_metadata[:5]
-        # TODO: log some examples
-        issue = f"\tDataset {dataset.given_id} has {len(dataset_ids_not_in_metadata)} given IDs ({percent_ids_not_in_metadata:.2%}) with no metadata including: {list(dataset_ids_not_in_metadata)[:5]}."
+    # Append a warning when a given matrix dataset has a large number of features or samples with no metadata.
+    if percent_ids_not_in_metadata > 0.01:
+        issue = f"\tDataset {dataset_identifier} has {len(dataset_ids_not_in_metadata)} given IDs ({percent_ids_not_in_metadata:.2%}) with no metadata including: {list(dataset_ids_not_in_metadata)[:5]}."
         issues.append(issue)
 
     
     metadata_ids_not_in_dataset = set(metadata_given_ids).difference(set(dataset_given_ids))
-    if len(metadata_ids_not_in_dataset) / len(metadata_given_ids) > (1 - min_percent_feature_metadata_used / 100):
-        dataset_identifier = dataset.given_id if dataset.given_id else dataset.name
-        issue = f"\tDataset '{dataset_identifier}' has {len(metadata_ids_not_in_dataset)} metadata records not referenced by any {axis}s in the dataset."
+    percent_metadata_ids_not_in_dataset = len(metadata_ids_not_in_dataset) / len(metadata_given_ids)
+    if percent_metadata_ids_not_in_dataset > (1 - min_percent_feature_metadata_used / 100) and axis == "feature":
+        issue = f"\tDataset '{dataset_identifier}' has {percent_metadata_ids_not_in_dataset:.2%}% of metadata records not referenced by any {axis}s in the dataset."
         issues.append(issue)
 
     return issues
