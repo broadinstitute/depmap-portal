@@ -4,11 +4,41 @@ import numpy as np
 import statsmodels.api as sm
 import argparse
 import json
+import re
 
+# need to add ../pipeline/ to the sys path in order to import from scripts
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path().resolve().parents[0]))
+from scripts.calculate_bimodality_coefficient import (
+    bimodality_coefficient_for_cpd_viabilities,
+)
 from taigapy import create_taiga_client_v3
 from tqdm import tqdm
 
 MIN_GROUP_SIZE = 5
+
+CRISPR_DATASET_NAME = "Chronos_Combined"
+REPURPOSING_DATASET_NAME = "REPURPOSING_primary_collapsed"
+ONCREF_DATASET_NAME = "PRISMOncologyReferenceLog2AUCMatrix"
+
+
+def format_selectivity_vals(drug_data_dict):
+    selectivity_vals_by_dataset = []
+    for dataset_label, dataset in drug_data_dict.items():
+        bimodality_results = (
+            dataset.apply(bimodality_coefficient_for_cpd_viabilities)
+            .reset_index(name="selectivity_val")
+            .rename(columns={"index": "feature_id"})
+            .assign(dataset=dataset_label)
+        )
+
+        selectivity_vals_by_dataset.append(bimodality_results)
+
+    selectivity_vals = pd.concat(selectivity_vals_by_dataset)
+    return selectivity_vals
+
 
 ### ----- LOAD DATA FROM TAIGA ----- ###
 
@@ -43,67 +73,117 @@ def load_crispr_data(
     return gene_effect, gene_dependency
 
 
-def load_prism_data(tc, repurposing_matrix_taiga_id, repurposing_list_taiga_id):
-    Extended_Primary_Compound_List = tc.get(repurposing_list_taiga_id)
-    Extended_Primary_Data_Matrix = tc.get(repurposing_matrix_taiga_id).T
-    Data_Matrix_Discrete = Extended_Primary_Data_Matrix < np.log2(0.3)
-    Data_Matrix_Discrete = Data_Matrix_Discrete.mask(
-        Extended_Primary_Data_Matrix.isnull()
+def strip_brd_prefix(sample_id):
+    brd_prefix_pattern = "(BRD[:-]{1})+"
+
+    brd_prefix_match = re.search(brd_prefix_pattern, sample_id)
+
+    if brd_prefix_match:
+        new_sample_id = sample_id[brd_prefix_match.span()[1] :]
+        return new_sample_id
+
+    return sample_id
+
+
+def load_SampleID_to_CompoundID_mapping(tc, portal_compounds_taiga_id):
+    portal_compounds = tc.get(portal_compounds_taiga_id)
+    portal_compounds["sample_id_list"] = [
+        i.split(";") for i in portal_compounds.SampleIDs
+    ]
+
+    exploded_portal_compounds = portal_compounds.explode("sample_id_list")
+    exploded_portal_compounds[
+        "sample_id_clean"
+    ] = exploded_portal_compounds.sample_id_list.apply(strip_brd_prefix)
+
+    sample_id_to_compound_id = dict(
+        zip(
+            exploded_portal_compounds.sample_id_clean,
+            exploded_portal_compounds.CompoundID,
+        )
     )
+
+    return sample_id_to_compound_id
+
+
+def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taiga_id):
+    # construct the mapping of stripped compound sample IDs to compound IDs
+    sample_id_to_compound_id_map = load_SampleID_to_CompoundID_mapping(
+        tc, portal_compounds_taiga_id
+    )
+
+    repurposing_matrix_samples = tc.get(repurposing_matrix_taiga_id).T
+
+    # strip BRD prefixes from the compound sample IDs
+    repurposing_matrix_samples.columns = [
+        strip_brd_prefix(i) for i in repurposing_matrix_samples.columns
+    ]
+
+    # assert that the columns are compound-sample IDs
+    assert set(repurposing_matrix_samples.columns).issubset(
+        sample_id_to_compound_id_map.keys()
+    )
+
+    repurposing_matrix = repurposing_matrix_samples.rename(
+        columns=sample_id_to_compound_id_map
+    )
+
+    # verify that all the columns are now compound IDs
+    assert set(repurposing_matrix.columns).issubset(
+        sample_id_to_compound_id_map.values()
+    )
+    # verify that there are no duplicates per compound ID
+    assert repurposing_matrix.columns.nunique() == repurposing_matrix.shape[1]
 
     # filter PRISM data --> Restrict analysis to drugs that are sens in min. 1
     #                       cell line and toxic to < 75% of cell lines.
-    #                       Additionally, retain only the compounds tested at 2.5ul
-    perc_sens_lines = Data_Matrix_Discrete.mean()
-    n_sens_lines = Data_Matrix_Discrete.sum()
+
+    # First we have to define sensitive and non-sensitive
+    repurposing_discrete = repurposing_matrix < np.log2(0.3)
+    repurposing_discrete = repurposing_discrete.mask(repurposing_matrix.isnull())
+
+    # Then define our list of valid drugs
+    perc_sens_lines = repurposing_discrete.mean()
+    n_sens_lines = repurposing_discrete.sum()
     incl_drugs = pd.Index(
         set(perc_sens_lines[perc_sens_lines < 0.75].index).intersection(
             set(n_sens_lines[n_sens_lines > 1].index),
-            set(
-                Extended_Primary_Compound_List[
-                    Extended_Primary_Compound_List.dose == 2.5
-                ].IDs
-            ),
         )
     )
 
-    compound_list = Extended_Primary_Compound_List[
-        Extended_Primary_Compound_List.IDs.isin(incl_drugs)
-    ].reindex()
-    drug_sensitivity = Extended_Primary_Data_Matrix.loc[:, incl_drugs].reindex()
-
-    # identify duplicate drug IDs (same drug and screen, but diff. batch),
-    # and only keep the ID with the greatest number of finite values
-    dup_idx = compound_list[["Drug.Name", "screen"]].duplicated(keep=False)
-    dup = compound_list[dup_idx].sort_values("Drug.Name")
-    dup_drugs = list(set(zip(dup["Drug.Name"], dup.screen)))
-
-    drop_ids = pd.Index([])
-    for drug_info in dup_drugs:
-        drug_ids = compound_list[
-            (compound_list["Drug.Name"] == drug_info[0])
-            & (compound_list.screen == drug_info[1])
-        ].IDs
-
-        drug_drop_ids = (
-            drug_sensitivity[drug_ids].count().sort_values(ascending=False).index[1:]
-        )
-        drop_ids = drop_ids.append(drug_drop_ids)
-
-    drug_sensitivity.drop(drop_ids, axis=1, inplace=True)
+    # Finally, filter the matrix to only the drugs that we'll test
+    drug_sensitivity = repurposing_matrix.loc[:, incl_drugs]
 
     return drug_sensitivity
 
 
-def load_oncref_data(tc, oncref_auc_taiga_id):
-    log_auc_matrix = tc.get(oncref_auc_taiga_id)
+def load_oncref_data(tc, oncref_auc_taiga_id, portal_compounds_taiga_id):
+    log_auc_matrix_samples = tc.get(oncref_auc_taiga_id)
 
-    auc_matrix = 2 ** log_auc_matrix
+    sample_id_to_compound_id_map = load_SampleID_to_CompoundID_mapping(
+        tc, portal_compounds_taiga_id
+    )
+
+    # map sample IDs to compound IDs
+    log_auc_matrix_compounds = log_auc_matrix_samples.rename(
+        columns=sample_id_to_compound_id_map
+    )
+
+    # verify that all columns are compound IDs
+    assert set(log_auc_matrix_compounds.columns).issubset(
+        set(sample_id_to_compound_id_map.values())
+    )
+    # verify that there are no duplicates per compound ID
+    assert (
+        log_auc_matrix_compounds.columns.nunique() == log_auc_matrix_compounds.shape[1]
+    )
+
+    auc_matrix = 2 ** log_auc_matrix_compounds
 
     # verify that the NaNs are the same between the two matrices
-    assert (log_auc_matrix.isna() != auc_matrix.isna()).sum().sum() == 0
+    assert (log_auc_matrix_compounds.isna() != auc_matrix.isna()).sum().sum() == 0
 
-    return auc_matrix, log_auc_matrix
+    return auc_matrix, log_auc_matrix_compounds
 
 
 ### ----- CONTEXT ENRICHMENT FUNCTIONS ----- ###
@@ -292,13 +372,8 @@ def get_id_or_file_name(possible_id, id_key="dataset_id"):
 
 ##### Entry points into this code. Each calc_..._enrichment function is invokable from the command line
 def oncref_context_analysis(
-    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, oncref_table_path
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id
 ):
-    oncref_table = pd.read_csv(oncref_table_path)
-    oncref_selectivity = oncref_table.rename(
-        columns={"BroadID": "entity_id", "BimodalityCoefficient": "selectivity_val"}
-    )[["entity_id", "selectivity_val"]]
-
     # for OncRef we compute the t-test on the logged AUCs,
     # but want to set the mean_in and mean_out columns based on
     # un-logged AUCs. Therefore the un-logged AUC matrix is a
@@ -309,6 +384,9 @@ def oncref_context_analysis(
     oncref_aucs, oncref_log_aucs = load_oncref_data(
         tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
     )
+
+    datasets_to_calculate_bimodality = {ONCREF_DATASET_NAME: oncref_log_aucs}
+    oncref_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
 
     def prism_onc_ref_add_extra_columns(ds_res, ds_in_group, ds_out_group):
         ds_res = ds_res.copy()
@@ -324,7 +402,7 @@ def oncref_context_analysis(
     return compute_in_out_groups(
         subtype_tree,
         context_matrix,
-        "PRISMOncRef",
+        ONCREF_DATASET_NAME,
         oncref_log_aucs,
         prism_onc_ref_add_extra_columns,
     )
@@ -336,22 +414,15 @@ def repurposing_context_analysis(
     context_matrix,
     repurposing_matrix_taiga_id,
     repurposing_list_taiga_id,
-    repurposing_table_path,
 ):
-    # reformat repurposing compounds
-    repurposing_table = pd.read_csv(repurposing_table_path)
-    repurposing_table["entity_id"] = repurposing_table.apply(
-        lambda x: f"BRD:{x.BroadID}", axis=1
-    )
-    repurposing_selectivity = repurposing_table.rename(
-        columns={"BimodalityCoefficient": "selectivity_val"}
-    )[["entity_id", "selectivity_val"]]
-
-    rep_sensitivity = load_prism_data(
+    rep_sensitivity = load_repurposing_data(
         tc=tc,
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
         repurposing_list_taiga_id=repurposing_list_taiga_id,
     )
+
+    datasets_to_calculate_bimodality = {REPURPOSING_DATASET_NAME: rep_sensitivity}
+    repurposing_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
 
     def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
         return ds_res.reset_index(names="entity_id").merge(repurposing_selectivity)
@@ -359,7 +430,7 @@ def repurposing_context_analysis(
     return compute_in_out_groups(
         subtype_tree,
         context_matrix,
-        "PRISMRepurposing",
+        REPURPOSING_DATASET_NAME,
         rep_sensitivity,
         prism_add_extra_columns,
     )
@@ -387,7 +458,11 @@ def crispr_context_analysis(
         ).reset_index(names="entity_id")
 
     return compute_in_out_groups(
-        subtype_tree, context_matrix, "CRISPR", gene_effect, crispr_add_extra_columns
+        subtype_tree,
+        context_matrix,
+        CRISPR_DATASET_NAME,
+        gene_effect,
+        crispr_add_extra_columns,
     )
 
 

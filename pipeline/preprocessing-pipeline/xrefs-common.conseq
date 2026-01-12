@@ -188,6 +188,13 @@ add-if-missing {
     'dataset_id': 'harmonized-proteomics-datasets-754a.20/harmonized_RPPA_CCLE',
 }
 
+### NOTE if this changes it will also affect Context Explorer!
+add-if-missing {
+  "type": "rep-primary-collapsed-taiga-id",
+  "dataset_id": "repurposing-23q2-a803.4/Repurposing_23Q2_Extended_Primary_Data_Matrix_Per_Compound",
+  "label": "REPURPOSING_primary_collapsed",
+}
+
 ####### Repurposing secondary screen
 
 add-if-missing {

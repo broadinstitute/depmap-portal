@@ -5,18 +5,19 @@ import PlotSpinner from "src/plot/components/PlotSpinner";
 import DoseCurvesPlot from "./DoseCurvesPlot";
 
 interface DoseCurvesTileProps {
+  selectedFeatureId: string | null;
   selectedDrugLabel: string | null;
   selectedContextName: string;
   subtypeCode: string;
   selectedLevel: number;
   selectedOutGroupType: string;
-  datasetName: string;
+  datasetGivenId: string;
   selectedTreeType: string;
   getContextExplorerDoseResponsePoints: (
     datasetName: string,
     subtypeCode: string,
     outGroupType: string,
-    compoundLabel: string,
+    featureId: string,
     selectedLevel: number,
     treeType: string
   ) => Promise<DoseCurveData>;
@@ -24,12 +25,13 @@ interface DoseCurvesTileProps {
 
 function DoseCurvesTile(props: DoseCurvesTileProps) {
   const {
+    selectedFeatureId,
     selectedDrugLabel,
     subtypeCode,
     selectedContextName,
     selectedLevel,
     selectedOutGroupType,
-    datasetName,
+    datasetGivenId: datasetName,
     selectedTreeType,
     getContextExplorerDoseResponsePoints,
   } = props;
@@ -41,14 +43,15 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
   const doseCurvesLatestPromise = useRef<Promise<DoseCurveData> | null>(null);
 
   useEffect(() => {
-    if (selectedDrugLabel) {
+    if (selectedDrugLabel && selectedFeatureId) {
       setData(null);
       setIsLoading(true);
+
       const doseCurvesPromise = getContextExplorerDoseResponsePoints(
         datasetName,
         subtypeCode,
         selectedOutGroupType,
-        selectedDrugLabel,
+        selectedFeatureId,
         selectedLevel,
         selectedTreeType
       );
@@ -70,6 +73,7 @@ function DoseCurvesTile(props: DoseCurvesTileProps) {
         .finally(() => setIsLoading(false));
     }
   }, [
+    selectedFeatureId,
     datasetName,
     subtypeCode,
     selectedDrugLabel,

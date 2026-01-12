@@ -69,9 +69,15 @@ export function GeneCorrelationContent({
           <div className={styles.mainContentHeader}>
             <h3>Correlation Analysis</h3>
             <p>
-              {" "}
-              Univariate associations between dependency profiles. Hover over
-              plot points for tooltip information.
+              Univariate associations between the gene effect and the genomic
+              features or other perturbations are presented in the table and
+              plots. Each dataset is represented in a scatter plot. In each
+              plot, the Pearson correlations (x-axis) is plotted agains the
+              -log10 q value (y-axis) for that correlation. The 250 most
+              significant negatively correlated and positively correlated
+              features (based on correlation) in each condition are included in
+              the plots. Associations with q-values above 0.1 are omitted from
+              both plot and table.
             </p>
           </div>
           <hr style={{ borderTop: "1px solid black", marginBottom: "40px" }} />
