@@ -1,11 +1,9 @@
-import sys
 import os
 
-import re
-from typing import List, Optional
 import click
 import subprocess
 import json
+from typing import Literal
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -16,20 +14,19 @@ from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
 from breadbox.crud import group as group_crud
 from breadbox.crud import dimension_types as types_crud
 from breadbox.crud import data_type as data_type_crud
+from breadbox.crud import dataset as dataset_crud
+from breadbox.crud.dimension_ids import get_matrix_dataset_given_ids, get_tabular_dataset_index_given_ids
 from breadbox.db.util import transaction
-from breadbox.models.dataset import DimensionTypeLabel
+from breadbox.models.dataset import DimensionTypeLabel, MatrixDataset
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
 from pydantic import ValidationError
 from breadbox.service.dataset import add_dimension_type
 import logging
 from datetime import timedelta
-from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 
 import os
-import shutil
 from db_load import upload_example_datasets
-import hashlib
 from datetime import timedelta
 
 
@@ -414,3 +411,46 @@ def run_dev_worker():
         _run_worker(["--pool=solo", "-c", "1"])
 
     main_func()
+
+@cli.command("log_data_issues")
+def log_data_issues():
+    """
+    Identify places where dataset features are missing metadata and log them as data issues.
+    Specifically, flag places where either:
+    1. A given matrix dataset has a large number of features or samples with no metadata (>5%).
+    2. A specific given_id is referenced frequently in matrix datasets but has no metadata associated with it. 
+    TODO: consider also logging issues when there are metadata records that are not referenced by any matrix datasets. 
+    """
+    db = _get_db_connection()
+
+    all_datasets = dataset_crud.get_datasets(db=db, user=db.user)
+    matrix_datasets: list[MatrixDataset] = [d for d in all_datasets if d.format == "matrix_dataset"]
+
+    issues = []
+    for dataset in matrix_datasets:
+        feature_issues = _get_issues_for_dataset_axis(db=db, dataset=dataset, axis="feature")
+        sample_issues = _get_issues_for_dataset_axis(db=db, dataset=dataset, axis="sample")
+
+        issues.extend(feature_issues)
+        issues.extend(sample_issues)
+    
+    for issue in issues:
+        print(issue)
+
+def _get_issues_for_dataset_axis(db: SessionWithUser, dataset: MatrixDataset, axis: Literal["feature", "sample"]) -> list[str]:
+    issues = []
+
+    dataset_given_ids = get_matrix_dataset_given_ids(db=db, dataset=dataset, axis=axis)
+
+    # Get all given IDs belonging to the metadata 
+    dimension_type = dataset.feature_type if axis == "feature" else dataset.sample_type
+    metadata_dataset = dataset_crud.get_dataset(db=db, user=db.user, dataset_id=dimension_type.dataset_id)
+    metadata_given_ids = get_tabular_dataset_index_given_ids(db=db, dataset=metadata_dataset)
+
+    # Compare dataset given IDs to metadata given IDs
+    ids_missing_metadata = set(dataset_given_ids).difference(set(metadata_given_ids))
+    if len(ids_missing_metadata) / len(dataset_given_ids) > 0.05:
+        # TODO: log some examples
+        issue = f"Dataset {dataset.given_id} has {len(ids_missing_metadata)} features ({len(ids_missing_metadata) / len(dataset_given_ids):.2%}) with missing metadata."
+        issues.append(issue)
+        # TODO: store list of IDs missing metadata for use later. 
