@@ -2897,6 +2897,21 @@ pymysql = ["pymysql"]
 sqlcipher = ["sqlcipher3_binary"]
 
 [[package]]
+name = "sqlglot"
+version = "28.5.0"
+description = "An easily customizable SQL parser and transpiler"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "sqlglot-28.5.0-py3-none-any.whl", hash = "sha256:5798bfdb6e9bc36c964e6c64d7222624d98b2631cc20f44628a82eba7cf7b4bf"},
+    {file = "sqlglot-28.5.0.tar.gz", hash = "sha256:b3213b3e867dcc306074f1c90480aeee89a0e635cf0dfe70eb4a3af7b61972e6"},
+]
+
+[package.extras]
+dev = ["duckdb (>=0.6)", "maturin (>=1.4,<2.0)", "mypy", "pandas", "pandas-stubs", "pdoc", "pre-commit", "pyperf", "python-dateutil", "pytz", "ruff (==0.7.2)", "types-python-dateutil", "types-pytz", "typing_extensions"]
+rs = ["sqlglotrs (==0.10.0)"]
+
+[[package]]
 name = "sqlite-shelve"
 version = "2.2.1"
 description = "A SQLite implementation of the Python Shelf interface"
@@ -3299,4 +3314,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "489267e991c23f4b719d98066f4ce825052230ebfbeff3df8d6bec818fb40769"
+content-hash = "410e98b23526a1994f4db8eff3bab996f1272b73e3b78a20e242daefc8c470a8"

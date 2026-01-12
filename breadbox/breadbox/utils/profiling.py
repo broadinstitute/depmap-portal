@@ -4,7 +4,7 @@ import contextvars
 
 profile_depth = contextvars.ContextVar("profile_depth", default=1)
 
-PRINT_PROFILE = False
+PRINT_PROFILE = True
 
 
 @contextmanager
