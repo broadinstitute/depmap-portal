@@ -16,9 +16,15 @@ from tests.factories import (
     CellLineFactory,
     LineageFactory,
     CompoundExperimentFactory,
+    CompoundFactory,
 )
 from tests.utilities import interactive_test_utils
 from tests.utilities.df_test_utils import dfs_equal_ignoring_column_order
+
+
+def make_compound_experiment():
+    compound = CompoundFactory()
+    return CompoundExperimentFactory(label=compound.label, compound=compound)
 
 
 @pytest.mark.parametrize(
@@ -26,7 +32,7 @@ from tests.utilities.df_test_utils import dfs_equal_ignoring_column_order
     [
         (GeneFactory, DependencyDataset.DependencyEnum.Avana, True),
         (GeneFactory, DependencyDataset.DependencyEnum.RNAi_Ach, True),
-        (CompoundExperimentFactory, DependencyDataset.DependencyEnum.GDSC1_AUC, False),
+        (make_compound_experiment, DependencyDataset.DependencyEnum.GDSC1_AUC, False),
     ],
 )
 def test_integrate_dep_data(
@@ -53,7 +59,7 @@ def test_integrate_dep_data(
 
     expected_srs = dataset.matrix.get_cell_line_values_and_depmap_ids(entity.entity_id)
 
-    # Since compound datasets will be indexed by compound going forward, 
+    # Since compound datasets will be indexed by compound going forward,
     # the integrate_dep_data function expects to be called by compound, even
     # when the underlying dataset is indexed by compound experiment.
     if entity.type == "compound_experiment":
@@ -62,7 +68,9 @@ def test_integrate_dep_data(
         entity_label = entity.label
 
     feature_data_srs = models.get_feature_data(dep_enum.name, entity_label)
-    metadata = models.get_entity_summary_metadata(dep_enum.name, feature_data_srs, entity_label)
+    metadata = models.get_entity_summary_metadata(
+        dep_enum.name, feature_data_srs, entity_label
+    )
 
     assert feature_data_srs.equals(expected_srs)
 
@@ -84,7 +92,7 @@ def test_integrate_cell_line_information(empty_db_mock_downloads):
     cell_line_1 = CellLineFactory()
     cell_line_na = CellLineFactory()
     cell_line_3 = CellLineFactory()
-    gene: Gene = GeneFactory() # pyright: ignore
+    gene: Gene = GeneFactory()  # pyright: ignore
 
     cell_line_objs = [
         cell_line_3,
@@ -102,9 +110,10 @@ def test_integrate_cell_line_information(empty_db_mock_downloads):
 
     dataset_id = dep_dataset.name.name
     feature_data_srs = models.get_feature_data(dataset_id, gene.label)
-    metadata = models.get_entity_summary_metadata(dataset_id, feature_data_srs, gene.label)
+    metadata = models.get_entity_summary_metadata(
+        dataset_id, feature_data_srs, gene.label
+    )
 
-    
     df = models.integrate_cell_line_information(feature_data_srs)
 
     assert df.shape == (
@@ -482,14 +491,13 @@ def test_format_strip_plot(empty_db_mock_downloads):
     assert models.format_strip_plot(test_df) == expected
 
 
-
 def test_get_download_data(app, empty_db_mock_downloads):
     """
     Tests that endpoint outputs a csv, that can be then read by pandas
     The expected filename should be the gene with the dependency dataset name
     """
     cell_line = CellLineFactory()
-    gene: Gene = GeneFactory() # pyright: ignore
+    gene: Gene = GeneFactory()  # pyright: ignore
 
     expression_matrix = MatrixFactory(entities=[gene], cell_lines=[cell_line])
 
@@ -500,7 +508,6 @@ def test_get_download_data(app, empty_db_mock_downloads):
     interactive_test_utils.reload_interactive_config()
 
     dataset_enum_name = BiomarkerDataset.BiomarkerEnum.expression.name
-
 
     result = models.get_download_data(
         dataset_id=dataset_enum_name,
