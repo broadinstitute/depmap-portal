@@ -135,9 +135,13 @@ def _run_lm(
 
     log.warning(f"in _run_lm, df:\n{df}")
     log.warning(f"in _run_lm, features_df:\n{features_df}")
+    log.warning(
+        f"in _run_lm, features_df with na label:\n{features_df[features_df.label.isna()]}"
+    )
 
     # Add metadata
     df["label"] = features_df.label.iloc[df["Index"]]
+
     df["vectorId"] = features_df.slice_id.iloc[df["Index"]]
     df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
 
