@@ -417,9 +417,7 @@ def repurposing_context_analysis(
     repurposing_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
 
     def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
-        return ds_res.merge(
-            repurposing_selectivity, left_index=True, right_on="entity_id", how="left"
-        )
+        return ds_res.reset_index(names="entity_id").merge(repurposing_selectivity)
 
     return compute_in_out_groups(
         subtype_tree,
