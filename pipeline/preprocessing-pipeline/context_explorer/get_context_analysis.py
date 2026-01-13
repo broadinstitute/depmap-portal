@@ -411,10 +411,12 @@ def repurposing_context_analysis(
         tc=tc,
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
         portal_compounds_taiga_id=portal_compounds_taiga_id,
-    )
+    ).astype("float32")
 
     datasets_to_calculate_bimodality = {REPURPOSING_DATASET_NAME: rep_sensitivity}
-    repurposing_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
+    repurposing_selectivity = format_selectivity_vals(
+        datasets_to_calculate_bimodality
+    ).astype("float32")
 
     def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
         return ds_res.reset_index(names="entity_id").merge(repurposing_selectivity)
