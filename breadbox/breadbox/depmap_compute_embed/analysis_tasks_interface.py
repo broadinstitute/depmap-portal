@@ -68,10 +68,21 @@ def _run_lm(
     update_message("Running two class comparison...")
 
     dataset = callbacks.get_dataset_df(features_df.index.to_list())
+    original_dataset_column_count = dataset.shape[1]
+    num_cell_lines_used_in_calc = count_num_non_nan_per_row(dataset.transpose())
+    assert original_dataset_column_count == len(num_cell_lines_used_in_calc)
 
+    # calculate lin associations
     df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
-    # at this point df['Index'] refers to the column indices of the ndarray `dataset`. So map df['Index'] to the original
-    # indices from features_df so we can join on the original metadata
+    # add a numCellLines column by looking up the value for each record in df. At this point "Index"
+    # refers to the column index of `of the ndarray `dataset`.
+    df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
+    assert original_dataset_column_count >= len(
+        df
+    ), "Output of lin_associations_wrapper should always be same size or smaller then number of columns in the fetched dataset"
+
+    # Now, we want to minimize the amount of code which relies on the shape of `dataset`, so map df['Index']
+    # back to the original indices that are on features_df. We can then use this to join in the other feature metadata
     df["Index"] = features_df.index[df["Index"]]
 
     df_from_lin_assoc = df.copy()
@@ -127,16 +138,12 @@ def _run_lm(
         columns={"PosteriorMean": "EffectSize", "p.val": "PValue", "qvalue": "QValue",},
     )
 
-    # sort by descending absolute
-    df = df.reindex(df.EffectSize.abs().sort_values(ascending=False).index)
-
     # Note that the df returned for pearson may have a different number rows from the df returned from the linear model
     # The df may also have fewer indices than row indices
     # Edge cases that caused these may be one-point rows, two-point rows, vector with no variance
     # (This is just a warning, unclear which of these situations cause dropping rows. no variance vector definitely does))#
 
     # Merge in label, vectorId and numCellLines
-    num_cell_lines_used_in_calc = count_num_non_nan_per_row(dataset.transpose())
 
     dump_to_disk(
         "run_lm.pickle",
@@ -155,10 +162,9 @@ def _run_lm(
     )
     log.warning(f"before add df:\n{df[['Index', 'QValue']]}")
     log.warning(f"missing:\n{features_df.iloc[[1,6064,11463,19151,12735],:]}")
-    # Add metadata
-    df["label"] = features_df.label.iloc[df["Index"]]
-    df["vectorId"] = features_df.slice_id.iloc[df["Index"]]
-    df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
+    # Merge in metadata
+    df = pd.merge(df, features_df, how="left", left_on="Index", right_index=True)
+    df.rename(columns={"slice_id": "vectorId"}, inplace=True)
 
     log.warning(f"in _run_lm 2, df.columns\n{df.columns}")
 
@@ -167,6 +173,9 @@ def _run_lm(
 
     # Clean up dataframe
     del df["Index"]
+
+    # sort by descending absolute
+    df = df.reindex(df.EffectSize.abs().sort_values(ascending=False).index)
     return df
 
 
