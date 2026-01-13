@@ -399,8 +399,10 @@ def oncref_context_analysis(
 
         ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
-        return ds_res.reset_index(names="entity_id").merge(
-            oncref_selectivity, left_on="entity_id", right_on="feature_id"
+        return (
+            ds_res.reset_index()
+            .rename(columns={"index": "feature_id"})
+            .merge(oncref_selectivity, left_on="feature_id")
         )
 
     return compute_in_out_groups(
@@ -429,8 +431,10 @@ def repurposing_context_analysis(
     repurposing_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
 
     def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
-        return ds_res.reset_index(names="entity_id").merge(
-            repurposing_selectivity, left_on="entity_id", right_on="feature_id"
+        return (
+            ds_res.reset_index()
+            .rename(columns={"index": "feature_id"})
+            .merge(repurposing_selectivity, left_on="feature_id")
         )
 
     return compute_in_out_groups(
@@ -459,9 +463,11 @@ def crispr_context_analysis(
     )
 
     def crispr_add_extra_columns(ds_res, ds_in_group, ds_out_group):
-        return add_crispr_columns(
-            ds_res, gene_dependency, ds_in_group, ds_out_group,
-        ).reset_index(names="entity_id")
+        return (
+            add_crispr_columns(ds_res, gene_dependency, ds_in_group, ds_out_group,)
+            .reset_index()
+            .rename(columns={"index": "feature_id"})
+        )
 
     return compute_in_out_groups(
         subtype_tree,
