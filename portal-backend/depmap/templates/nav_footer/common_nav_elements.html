@@ -31,7 +31,7 @@
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Tools <i class="fas fa-caret-down" aria-hidden="true"></i></a>
           <ul class="dropdown-menu">
               <li><a href="{{ url_for('data_explorer_2.view_data_explorer_2')}}">Data Explorer</a></li>
-              <li><a href="{{ url_for('interactive.view_custom_analysis') }}">Custom Analyses</a></li>
+              <li><a href="{{ url_for('custom_analyses.view_custom_analyses') }}">Custom Analyses</a></li>
               <li><a href="{{ url_for('celligner.view_celligner') }}">Celligner</a></li>
             {% if config.ENABLED_FEATURES.morpheus %}
               <li><a href="{{ url_for('experimental.morpheus') }}">Morpheus <i class="alpha-tag"><b>Alpha</b></i></a></li>

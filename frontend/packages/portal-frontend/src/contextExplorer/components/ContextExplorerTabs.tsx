@@ -126,7 +126,7 @@ const ContextExplorerTabs = ({
         </Tab>
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <Tab id="oncref" className={styles.Tab}>
-            OncRef Sensitivity
+            OncRef Lum Sensitivity
           </Tab>
         )}
         <Tab id="repurposing" className={styles.Tab}>
@@ -177,7 +177,7 @@ const ContextExplorerTabs = ({
               selectedContextNameInfo={selectedContextNameInfo}
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
-              entityType={"gene"}
+              featureType={"gene"}
               datasetId={ContextExplorerDatasets.Chronos_Combined}
               customInfoImg={customInfoImg}
             />
@@ -192,8 +192,10 @@ const ContextExplorerTabs = ({
                 selectedContextNameInfo={selectedContextNameInfo}
                 topContextNameInfo={topContextNameInfo}
                 treeType={treeType}
-                entityType={"compound"}
-                datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
+                featureType={"compound"}
+                datasetId={
+                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+                }
                 customInfoImg={customInfoImg}
               />
             )}
@@ -207,8 +209,8 @@ const ContextExplorerTabs = ({
               selectedContextNameInfo={selectedContextNameInfo}
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
-              entityType={"compound"}
-              datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+              featureType={"compound"}
+              datasetId={ContextExplorerDatasets.REPURPOSING_primary_collapsed}
               customInfoImg={customInfoImg}
             />
           )}

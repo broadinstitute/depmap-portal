@@ -135,7 +135,10 @@ def get_order(
         anywhere_cards[
             CompoundTileEnum.correlated_dependencies.value
         ] = tile_large  # TBD: Actually we want to group with CompoundTileEnum.correlations
-        anywhere_cards[CompoundTileEnum.related_compounds.value] = tile_medium
+
+        # Commenting out in 25Q4: This tile appears to have some incorrect behavior in how
+        # it chooses which compounds are "related". Disabling for now.
+        # anywhere_cards[CompoundTileEnum.related_compounds.value] = tile_medium
 
     if has_heatmap:
         anywhere_cards[CompoundTileEnum.heatmap.value] = tile_medium

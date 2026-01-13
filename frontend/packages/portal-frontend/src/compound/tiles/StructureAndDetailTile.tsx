@@ -127,19 +127,9 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
               metadata.GeneSymbolOfTargets[compoundId]!.length > 0 && (
                 <div className={styles.metadataLine}>
                   <h4 className={styles.metadataLineLabel}>Target: </h4>
-                  {metadata.GeneSymbolOfTargets[compoundId]?.map(
-                    (gene: string, i: number) =>
-                      i <
-                      metadata.GeneSymbolOfTargets[compoundId]!.length - 1 ? (
-                        <a
-                          href={getGenePageUrl(gene)}
-                          target="_blank"
-                          rel="noreferrer"
-                          key={i}
-                        >
-                          {gene},
-                        </a>
-                      ) : (
+                  <div>
+                    {metadata.GeneSymbolOfTargets[compoundId]?.map(
+                      (gene: string, i: number) => (
                         <a
                           href={getGenePageUrl(gene)}
                           target="_blank"
@@ -147,9 +137,13 @@ export const StructureAndDetailTile: React.FC<StructureAndDetailTileProps> = ({
                           key={i}
                         >
                           {gene}
+                          {i <
+                            metadata.GeneSymbolOfTargets[compoundId]!.length -
+                              1 && ", "}
                         </a>
                       )
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
           </div>

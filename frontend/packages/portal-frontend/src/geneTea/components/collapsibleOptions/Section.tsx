@@ -1,11 +1,13 @@
 import React, { useState, ReactNode } from "react";
 import cx from "classnames";
 import styles from "./styles.scss";
+import plotStyles from "./plotSectionStyles.scss";
 
 interface Props {
   title: string;
   className?: string;
   children: ReactNode;
+  usePlotStyles: boolean;
   defaultOpen?: boolean;
   onOpen?: () => void;
   onClose?: () => void;
@@ -15,6 +17,7 @@ interface Props {
 function Section({
   title,
   children,
+  usePlotStyles = false,
   className = undefined,
   defaultOpen = true,
   onOpen = () => {},
@@ -23,13 +26,15 @@ function Section({
 }: Props) {
   const [open, setOpen] = useState<boolean>(defaultOpen);
 
+  const currentStyles = usePlotStyles ? plotStyles : styles;
+
   return (
     <div
-      className={cx(styles.Section, className)}
+      className={cx(currentStyles.Section, className)}
       ref={innerRef}
       data-open={open || undefined}
     >
-      <label className={styles.sectionTitle}>
+      <label className={currentStyles.sectionTitle}>
         <span>{title}</span>
         <button
           type="button"
@@ -47,7 +52,7 @@ function Section({
           {open ? "—" : "+"}
         </button>
       </label>
-      {open && <div className={styles.sectionContent}>{children}</div>}
+      {open && <div className={currentStyles.sectionContent}>{children}</div>}
     </div>
   );
 }

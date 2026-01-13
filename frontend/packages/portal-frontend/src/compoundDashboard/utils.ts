@@ -4,7 +4,11 @@ export const getDatasetLabelFromId = (datasetId: string) => {
   }
 
   if (datasetId === "Prism_oncology_AUC") {
-    return "OncRef";
+    return "OncRef Lum";
+  }
+
+  if (datasetId === "Prism_oncology_seq_AUC") {
+    return "OncRef Seq";
   }
 
   return "Unknown";
@@ -15,7 +19,11 @@ export const getDatasetIdFromLabel = (datasetLabel: string) => {
     return "Rep_all_single_pt";
   }
 
-  if (datasetLabel === "OncRef") {
+  if (datasetLabel === "OncRef Seq") {
+    return "Prism_oncology_seq_AUC";
+  }
+
+  if (datasetLabel === "OncRef Lum") {
     return "Prism_oncology_AUC";
   }
 
@@ -25,4 +33,5 @@ export const getDatasetIdFromLabel = (datasetLabel: string) => {
 export const COMPOUND_DASHBOARD_DATASET_IDS = [
   "Rep_all_single_pt",
   "Prism_oncology_AUC",
+  "Prism_oncology_seq_AUC",
 ];

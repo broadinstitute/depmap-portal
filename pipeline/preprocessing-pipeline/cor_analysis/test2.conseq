@@ -1,0 +1,41 @@
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'oncref-viability',
+ 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2ViabilityCollapsedMatrix',
+ 'feature_id_format': 'compound+dose',
+ 'features_taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2ViabilityCollapsedConditions',
+ 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+ }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'oncref-auc',
+ 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceAUCMatrix',
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+ }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'oncref-ic50',
+ 'taiga_id': 'internal-24q4-8c04.117/PRISMOncologyReferenceLog2IC50Matrix',
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': 'internal-24q4-8c04.117/PortalCompounds'
+ }
+
+add-if-missing {
+'type': 'cor-analysis-a',
+'given_id': 'crispr',
+'taiga_id': 'internal-24q4-8c04.117/CRISPRGeneEffect',
+'feature_id_format': 'gene'
+}
+
+add-if-missing {
+'type': 'cor-analysis-b',
+'given_id': 'RPPA500',
+'taiga_id': 'tcpa-rppa-mdanderson-c699.2/TCPA_CCLE_RPPA500_with_ModelID',
+'feature_id_format': 'rppa'
+}
+
+include "cor_analysis.conseq"

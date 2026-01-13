@@ -95,6 +95,10 @@ class EntitySummary extends React.Component<Props, State> {
     };
   }
 
+  isProblematicColoring() {
+    return this.props.color == "mutations_prioritized";
+  }
+
   componentDidMount() {
     this.fetchEntitySummary(this.state.selectedDataset);
   }
@@ -115,12 +119,13 @@ class EntitySummary extends React.Component<Props, State> {
   }
 
   fetchEntitySummary(selectedDataset: DatasetOption) {
+    let color = this.isProblematicColoring() ? "none" : this.props.color;
     legacyPortalAPI
       .getEntitySummary(
         selectedDataset.entity,
         selectedDataset.dataset,
         this.props.size_biom_enum_name,
-        this.props.color
+        color
       )
       .then((datasetEntitySummary: EntitySummaryResponse) => {
         this.setState({
@@ -176,7 +181,14 @@ class EntitySummary extends React.Component<Props, State> {
       ? this.state.datasetEntitySummary.legend
       : null;
     let mutationsLegend = null;
-    if (!!legend && !!legend.mutation) {
+    if (this.isProblematicColoring()) {
+      mutationsLegend = (
+        <div>
+          Warning: Coloring by mutation has been disabled temporarily until
+          we've resolved a performance issue.
+        </div>
+      );
+    } else if (!!legend && !!legend.mutation) {
       const mutationPopover = (
         <Popover id="mutation-info-popover">
           &quot;Hotspot&quot; refers to mutations that are hotspots in TCGA

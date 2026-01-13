@@ -13,6 +13,7 @@ DATASET_LABEL_TO_ENUM = {
     "rnai-confounders": BiomarkerEnum.rnai_confounders,
     "crispr-confounders": BiomarkerEnum.crispr_confounders,
     "oncref-confounders": BiomarkerEnum.oncref_confounders,
+    "oncref_seq-confounders": BiomarkerEnum.oncref_seq_confounders,
     "repallsinglept-confounders": BiomarkerEnum.rep_all_single_pt_confounders,
     "rep1m-confounders": BiomarkerEnum.rep1m_confounders,
     "Fusion": BiomarkerEnum.fusions,

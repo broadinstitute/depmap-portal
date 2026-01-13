@@ -157,6 +157,12 @@ def refresh_search_index_for_dimension_type(
                 given_id=given_id,
                 metadata_cache=metadata_cache,
             ):
+                label = cache_entry.get_label_for_given_id(given_id)
+                if label is None:
+                    # if we don't have a label, this given_id didn't exist
+                    # in metadata, so move on
+                    continue
+
                 # if given_id in cache_entry.dimension_id_by_given_id:
                 yield dict(
                     property=record.property,
@@ -164,7 +170,7 @@ def refresh_search_index_for_dimension_type(
                     group_id=dimension_type.dataset.group_id,
                     dimension_type_name=dimension_type.name,
                     dimension_given_id=given_id,
-                    label=cache_entry.get_label_for_given_id(given_id),
+                    label=label,
                 )
 
     dimension_search_index_row_count = 0

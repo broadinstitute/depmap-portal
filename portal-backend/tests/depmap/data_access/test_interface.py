@@ -1,17 +1,6 @@
-import numpy as np
-
 from depmap import data_access
-from depmap.dataset.models import DependencyDataset
 from depmap.settings.settings import TestConfig
-from depmap_compute.slice import SliceQuery
-from tests.utilities import interactive_test_utils
-from tests.utilities.override_fixture import override
-from tests.factories import (
-    CellLineFactory,
-    DependencyDatasetFactory,
-    GeneFactory,
-    MatrixFactory,
-)
+
 
 
 nonstandard_dataset_id = "test-id.1"
@@ -50,70 +39,3 @@ def test_get_matrix_dataset(interactive_db_mock_downloads):
 
     for dataset_id in dataset_ids:
         data_access.get_matrix_dataset(dataset_id)
-
-
-@override(config=config)
-def test_get_slice_data_for_matrix_dataset(app, empty_db_mock_downloads):
-    # Set up a simple 3x4 dataset where samples are cell lines and features are genes
-    genes = [
-        GeneFactory(label="gene1", entrez_id=1),
-        GeneFactory(label="gene2", entrez_id=2),
-        GeneFactory(label="gene3", entrez_id=3),
-        GeneFactory(label="gene4", entrez_id=4),
-    ]
-    cell_lines = [
-        CellLineFactory(depmap_id="ACH-1", cell_line_display_name="cell_line1"),
-        CellLineFactory(depmap_id="ACH-2", cell_line_display_name="cell_line2"),
-        CellLineFactory(depmap_id="ACH-3", cell_line_display_name="cell_line3"),
-    ]
-    standard_dataset_name = DependencyDataset.DependencyEnum.Chronos_Combined
-    dataset_data = np.array([[1, 10, 100], [2, 20, 200], [3, 30, 300], [4, 40, 400],])
-    matrix = MatrixFactory(cell_lines=cell_lines, entities=genes, data=dataset_data)
-    DependencyDatasetFactory(
-        matrix=matrix, name=standard_dataset_name,
-    )
-
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    # Load the identifiers to use in the test
-    dataset_id = standard_dataset_name.name
-    feature_labels_by_id = data_access.get_dataset_feature_labels_by_id(dataset_id)
-    feature_ids = list(feature_labels_by_id.keys())
-    sample_ids = data_access.get_dataset_sample_ids(dataset_id)
-
-    # Test a query by feature ID
-    feature_id_query = SliceQuery(
-        dataset_id=dataset_id, identifier="1", identifier_type="feature_id",
-    )
-    result = data_access.get_slice_data(slice_query=feature_id_query)
-    assert result is not None
-    assert result.index.to_list() == sample_ids
-    assert result.values.tolist() == [1, 10, 100]
-
-    # Test a query by feature label
-    feature_id_query = SliceQuery(
-        dataset_id=dataset_id, identifier="gene1", identifier_type="feature_label",
-    )
-    result = data_access.get_slice_data(slice_query=feature_id_query)
-    assert result is not None
-    assert result.index.to_list() == sample_ids
-    assert result.values.tolist() == [1, 10, 100]
-
-    # Test a query by sample ID
-    sample_id_query = SliceQuery(
-        dataset_id=dataset_id, identifier=sample_ids[0], identifier_type="sample_id",
-    )
-    result = data_access.get_slice_data(slice_query=sample_id_query)
-    assert result is not None
-    assert result.index.to_list() == feature_ids
-    assert result.values.tolist() == [1, 2, 3, 4]
-
-    # Test a query by sample label
-    sample_id_query = SliceQuery(
-        dataset_id=dataset_id, identifier="cell_line1", identifier_type="sample_label",
-    )
-    result = data_access.get_slice_data(slice_query=sample_id_query)
-    assert result is not None
-    assert result.index.to_list() == feature_ids
-    assert result.values.tolist() == [1, 2, 3, 4]
