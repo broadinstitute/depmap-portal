@@ -35,7 +35,11 @@ export async function evaluateContext(
   // TODO: There are many more types of expressions we could optimize this way.
   // This is is just a first pass to support the case where someone is editing
   // a long list of feature IDs).
-  if (typeof context.expr !== "boolean" && "in" in context.expr) {
+  if (
+    typeof context.expr !== "boolean" &&
+    "in" in context.expr &&
+    Object.keys(context.vars).length > 0
+  ) {
     const slice = Object.values(context.vars)[0];
 
     if (slice.identifier_type === "column") {

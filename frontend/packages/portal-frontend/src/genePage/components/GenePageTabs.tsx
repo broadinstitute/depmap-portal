@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { legacyPortalAPI } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
-import { toStaticUrl } from "@depmap/globals";
+import { enabledFeatures, toStaticUrl } from "@depmap/globals";
 import {
   TabsWithHistory,
   TabList,
@@ -18,6 +18,8 @@ import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageOverview, { TileTypeEnum } from "./GenePageOverview";
 import GeneCharacterizationPanel from "./GeneCharacterizationPanel";
 import styles from "../styles/GenePage.scss";
+import { getCorrelationDatasetsForEntity } from "../utils";
+import { GeneCorrelationDatasetOption } from "src/correlationAnalysis/types";
 
 // Many of the gene page tiles make calls to a global `clickTab` function. Here
 // we're defining it to dispatch a custom "clickTab" event that is caught by
@@ -57,6 +59,14 @@ const PredictabilityTab = React.lazy(
     )
 );
 
+const CorrelationAnalysis = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "CorrelationAnalysis" */
+      "src/correlationAnalysis/components/index"
+    )
+);
+
 interface Props {
   symbol: string;
   showDependencyTab: boolean;
@@ -69,6 +79,7 @@ interface Props {
   order: [TileTypeEnum, number][][];
   isMobile: boolean;
   entityId: string;
+  entrezId: string;
   customDownloadsLink: string;
   methodologyLink: string;
   similarityOptions: Array<Option<string>>;
@@ -99,7 +110,8 @@ const GenePageTabs = ({
   hasDatasets,
   order,
   isMobile,
-  entityId,
+  entityId: legacyEntityId,
+  entrezId,
   customDownloadsLink,
   methodologyLink,
   similarityOptions,
@@ -135,6 +147,38 @@ const GenePageTabs = ({
 
     initialSelectedDataset = firstSelectedDataset;
   }
+
+  const [
+    geneCorrelationAnalysisOptions,
+    setGeneCorrelationAnalysisOptions,
+  ] = useState<GeneCorrelationDatasetOption[]>([]);
+  const [isLoadingGeneOptions, setIsLoadingGeneOptions] = useState<boolean>(
+    true
+  );
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    const fetchOptions = async () => {
+      try {
+        const options = await getCorrelationDatasetsForEntity(entrezId);
+
+        if (isCurrent) {
+          setGeneCorrelationAnalysisOptions(options);
+          setIsLoadingGeneOptions(false);
+        }
+      } catch (e) {
+        console.error("Failed to fetch correlation analysis options", e);
+        setIsLoadingGeneOptions(false);
+      }
+    };
+
+    fetchOptions();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [entrezId]);
 
   return (
     <div>
@@ -176,6 +220,9 @@ const GenePageTabs = ({
             )}
             {showPredictabilityTab && (
               <Tab id="predictability">Predictability</Tab>
+            )}
+            {enabledFeatures.gene_page_correlation_analysis && (
+              <Tab id="correlation_analysis">Correlation Analysis</Tab>
             )}
           </TabList>
 
@@ -223,7 +270,7 @@ const GenePageTabs = ({
               <TabPanel className={styles.TabPanel}>
                 <GeneCharacterizationPanel
                   symbol={symbol}
-                  entityId={entityId}
+                  entityId={legacyEntityId}
                   selectedCellLineList={selectedCellLineList}
                   onListSelect={setSelectedCellLineList}
                 />
@@ -274,7 +321,7 @@ const GenePageTabs = ({
                 <React.Suspense fallback={<div>loading...</div>}>
                   <div id="predictive-tab-root">
                     <PredictabilityTab
-                      entityIdOrLabel={entityId}
+                      entityIdOrLabel={legacyEntityId}
                       entityLabel={symbol}
                       entityType={EntityType.Gene}
                       customDownloadsLink={customDownloadsLink}
@@ -284,6 +331,20 @@ const GenePageTabs = ({
                 </React.Suspense>
               </TabPanel>
             )}
+            {enabledFeatures.gene_page_correlation_analysis &&
+              !isLoadingGeneOptions && (
+                <TabPanel className={styles.TabPanel}>
+                  <React.Suspense fallback={<div>Loading...</div>}>
+                    <CorrelationAnalysis
+                      compoundDatasetOptions={[]}
+                      geneDatasetOptions={geneCorrelationAnalysisOptions}
+                      featureName={symbol}
+                      featureId={entrezId}
+                      featureType={"gene"}
+                    />
+                  </React.Suspense>
+                </TabPanel>
+              )}
           </TabPanels>
         </TabsWithHistory>
       )}

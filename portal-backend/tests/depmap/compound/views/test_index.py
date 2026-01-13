@@ -18,7 +18,8 @@ from depmap.compound.models import (
 )
 from depmap.compound.views.index import (
     get_corr_analysis_options_if_available,
-    get_drc_options_if_new_tabs_available,
+    get_heatmap_tab_drc_options,
+    get_new_dose_curves_tab_drc_options,
     get_sensitivity_tab_info,
     format_summary_option,
     format_dose_curve_options,
@@ -544,11 +545,15 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         )
 
         compound = CompoundFactory()
-        result = get_drc_options_if_new_tabs_available(
+        dose_curves_result = get_new_dose_curves_tab_drc_options(
+            compound.label, compound.compound_id
+        )
+        heatmap_result = get_heatmap_tab_drc_options(
             compound.label, compound.compound_id
         )
 
-        assert result == [expected_oncref_dataset_w_priority]
+        assert dose_curves_result == [expected_oncref_dataset_w_priority]
+        assert heatmap_result == [expected_oncref_dataset_w_priority]
 
 
 def corr_analysis_config(request):
@@ -599,7 +604,7 @@ def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
 
 def config(request):
     class TestFeatureFlags:
-        def new_compound_page_tabs(self):
+        def new_dose_curves_tab(self):
             return True
 
         def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
@@ -649,7 +654,7 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
         )
 
         compound = CompoundFactory()
-        result = get_drc_options_if_new_tabs_available(
+        result = get_new_dose_curves_tab_drc_options(
             compound.label, compound.compound_id
         )
         assert isinstance(result, list)
@@ -669,13 +674,11 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
         ]
 
 
-def test_format_dose_curve_options_new_tab_if_available_false(app):
+def test_get_heatmap_tab_drc_options_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
         compound = CompoundFactory()
-        result = get_drc_options_if_new_tabs_available(
-            compound.label, compound.compound_id
-        )
+        result = get_heatmap_tab_drc_options(compound.label, compound.compound_id)
         assert result == []
 
 

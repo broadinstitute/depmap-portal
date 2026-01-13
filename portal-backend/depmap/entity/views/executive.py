@@ -300,11 +300,11 @@ def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]
             color = color_palette.rep_all_single_pt_color
         elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_AUC:
             dataset_type = "prism_onc_ref"
-            label = "PRISM OncRef Lum log2(AUC)"
+            label = "PRISM OncRef log2(AUC) Lum"
             color = color_palette.prism_oncology_color
         elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_seq_AUC:
             dataset_type = "prism_onc_seq_ref"
-            label = "PRISM OncRef Seq log2(AUC)"
+            label = "PRISM OncRef log2(AUC) Seq"
             color = color_palette.prism_oncology_color
         else:
             # TODO: Figure out how to not hardcode above code
@@ -398,16 +398,8 @@ def format_predictability_plot(plot_params, sorted_df):
 
     if plot_param["type"] == "crispr" or plot_param["type"] == "rnai":
         ylim_top = 4
-    elif plot_param["type"] == "repurp":
-        ylim_top = 7  # 6 looks sufficient in dev, but on remote it needs 7. seems like dev is not a perfect reflection
-    elif plot_param["type"] == "rep1m":
-        ylim_top = 7
-    elif plot_param["type"] == "rep_all_single_pt":
-        ylim_top = 7
-    elif plot_param["type"] == "prism_onc_ref":
-        ylim_top = 7
     else:
-        raise NotImplementedError
+        ylim_top = 7
 
     ax.set_ylim(
         bottom=0, top=ylim_top

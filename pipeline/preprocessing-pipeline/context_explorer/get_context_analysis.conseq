@@ -1,0 +1,65 @@
+rule oncref_context_analysis:
+    inputs:
+        script=fileref("./get_context_analysis.py"),
+        subtype_tree_taiga_id={"type":"subtype_tree"},
+        context_matrix_taiga_id={"type":"subtype_context_matrix"},
+        oncref_auc_taiga_id={"type":"prism_oncology_reference_auc_matrix"},
+        portal_compounds={"type": "drug-metadata", "name": "merged-drugs"},
+    outputs:
+        {"type": "context_analysis_for_dataset", "dataset": "oncref", "filename": {"$filename": "context_analysis.csv"}}
+    run """ python {{ inputs.script.filename }} \
+              oncref_context_analysis \
+              {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+              {{ inputs.context_matrix_taiga_id.dataset_id }} \
+              {{ inputs.oncref_auc_taiga_id.dataset_id }} \
+              {{ inputs.portal_compounds.dataset_id }} \
+              context_analysis.csv """
+
+rule repurposing_context_analysis:
+    inputs:
+        script=fileref("./get_context_analysis.py"),
+        subtype_tree_taiga_id={"type":"subtype_tree"},
+        context_matrix_taiga_id={"type":"subtype_context_matrix"},
+        repurposing_matrix_taiga_id={"type": "rep-primary-collapsed-taiga-id", "label": "REPURPOSING_primary_collapsed"},
+        portal_compounds={"type": "drug-metadata", "name": "merged-drugs"},
+    outputs:
+        {"type": "context_analysis_for_dataset", "dataset": "repurposing", "filename": {"$filename": "context_analysis.csv"}}
+    run """ python {{ inputs.script.filename }} \
+              repurposing_context_analysis \
+              {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+              {{ inputs.context_matrix_taiga_id.dataset_id }} \
+              {{ inputs.repurposing_matrix_taiga_id.dataset_id }}  \
+              {{ inputs.portal_compounds.dataset_id }} \
+              context_analysis.csv """
+
+rule crispr_context_analysis:
+    inputs:
+        script=fileref("./get_context_analysis.py"),
+        subtype_tree_taiga_id={"type":"subtype_tree"},
+        context_matrix_taiga_id={"type":"subtype_context_matrix"},
+        gene_effect_taiga_id={"type":"raw-dep-matrix", "label": 'Chronos_Combined'},
+        gene_dependency_taiga_id={"type":"raw-dep-prob-matrix", "label": 'Chronos_Combined'},
+        tda_table={"type":"tda-table"}
+    outputs:
+        {"type": "context_analysis_for_dataset", "dataset": "crispr", "filename": {"$filename": "context_analysis.csv"}}
+    run """ python {{ inputs.script.filename }} \
+              crispr_context_analysis \
+              {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+              {{ inputs.context_matrix_taiga_id.dataset_id }} \
+              {{ inputs.gene_effect_taiga_id.dataset_id }}  \
+              {{ inputs.gene_dependency_taiga_id.dataset_id }}  \
+              {{ inputs.tda_table.filename }}  \
+              context_analysis.csv """
+
+rule merge_context_analysis_tables:
+    inputs:
+        script=fileref("./concat_csvs.py"),
+        csvs=all {"type": "context_analysis_for_dataset"}
+    outputs:
+        {"type": "context_analysis", "filename": { "$filename": "context_analysis.csv"} }
+    run "bash" with """
+        cat > inputs.json <<EOF
+        {{ inputs.csvs | quoted }}
+        EOF
+"""
+    run """ python {{ inputs.script.filename }} inputs.json context_analysis.csv """

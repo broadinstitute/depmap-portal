@@ -3,7 +3,7 @@ import urllib.parse
 from enum import Enum
 
 # This file only contains legacy slice ID parsing utilities. 
-# For newer slice ID parsing methods, see: depmap-compute/depmap_compute/slice.py
+# For newer slice ID parsing methods, see breadbox
 
 
 # Used for IDs which represent terminal ids

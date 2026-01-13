@@ -107,8 +107,12 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
-    def new_compound_page_tabs(self):
+    def heatmap_tab(self):
         return self.is_prerelease_env()
+
+    @property
+    def new_dose_curves_tab(self):
+        return True
 
     @property
     def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
@@ -137,10 +141,6 @@ class FeatureFlags:
 
     @property
     def cell_line_mapping(self):
-        return self.is_skyros()
-
-    @property
-    def linear_association(self):
         return self.is_skyros()
 
     @property
@@ -210,6 +210,19 @@ class FeatureFlags:
         return self.is_prerelease_env()
 
     @property
+    def gene_tea_matching_terms_panel(self):
+        return self.is_qa()
+
+    # TODO: Remove this feature flag once demo is approved. This is used in 2 places:
+    # (1) frontend/packages/portal-frontend/src/geneTea/context/GeneTeaFiltersContext.tsx (on enabling this feature
+    # delete all code in the if block that checks enabledFeatures.gene_tea_tutorial_page)
+    # (2) frontend/packages/portal-frontend/src/geneTea/components/GeneTea.tsx
+
+    @property
+    def gene_tea_tutorial_page(self):
+        return self.is_qa()
+
+    @property
     def anchor_screen_dashboard(self):
         return self.is_dmc_like()
 
@@ -219,10 +232,14 @@ class FeatureFlags:
 
     @property
     def compound_correlation_tiles(self):
-        return self.is_qa()
+        return self.is_prerelease_env()
 
     @property
     def correlation_analysis(self):
+        return self.is_prerelease_env()
+
+    @property
+    def gene_page_correlation_analysis(self):
         return self.is_qa()
 
 
