@@ -17,6 +17,7 @@ import random
 def test_run_lin_associations_on_feature_subset():
     in_group_size = 20
     out_group_size = 300
+    n_features = 50
     features_path = (
         "tests/compute/test_run_lin_associations_on_feature_subset/features.csv"
     )
@@ -39,7 +40,6 @@ def test_run_lin_associations_on_feature_subset():
         # they were generated in case we ever want to change them/make similar new ones. This code
         # is expected to not actually run as part of the test.
         print("Regenerating reference files")
-        n_features = 50
         feature_given_ids = []
         feature_columns = {}
         for i in range(n_features):
@@ -58,7 +58,7 @@ def test_run_lin_associations_on_feature_subset():
                 )
             else:
                 feature_values = np.random.normal(
-                    loc=-1, scale=2.0, size=in_group_size + out_group_size
+                    loc=-1, scale=0.5, size=in_group_size + out_group_size
                 )
             # add this column
             feature_columns[feature_given_id] = feature_values
@@ -107,3 +107,11 @@ def test_run_lin_associations_on_feature_subset():
     strong_diff_row = strong_diff_rows[0]
     # and make sure that's feature 10
     assert strong_diff_row["given_id"] == "feature_10"
+
+    # all other rows should have a diff close to zero
+    no_diff_rows = result_df[abs(result_df["PosteriorMean"] - (0)) < 0.5].to_records(
+        index=False
+    )
+    assert len(no_diff_rows) == (
+        n_features - 1 - 2
+    )  # remove the two features which are missing metadata and the one row with a strong effect size
