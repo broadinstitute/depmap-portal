@@ -70,6 +70,7 @@ def _run_lm(
     dataset = callbacks.get_dataset_df(features_df.index.to_list())
 
     df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
+    df_from_lin_assoc = df.copy()
     df = df[
         [
             "betahat",
@@ -138,6 +139,9 @@ def _run_lm(
         num_cell_lines_used_in_calc=num_cell_lines_used_in_calc,
         df=df,
         features_df=features_df,
+        dataset=dataset,
+        value_query_vector=value_query_vector,
+        df_from_lin_assoc=df_from_lin_assoc,
     )
 
     log.warning(f"in _run_lm, df:\n{df}")
