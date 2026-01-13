@@ -70,6 +70,10 @@ def _run_lm(
     dataset = callbacks.get_dataset_df(features_df.index.to_list())
 
     df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
+    # at this point df['Index'] refers to the column indices of the ndarray `dataset`. So map df['Index'] to the original
+    # indices from features_df so we can join on the original metadata
+    df["Index"] = features_df.index[df["Index"]]
+
     df_from_lin_assoc = df.copy()
     df = df[
         [
