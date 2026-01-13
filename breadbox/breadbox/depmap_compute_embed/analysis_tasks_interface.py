@@ -12,7 +12,6 @@ from dataclasses import dataclass
 from .lin_associations import lin_associations_wrapper
 from scipy import stats
 from ..crud.dimension_ids import IndexedGivenIDDataFrame
-from breadbox.utils.profiling import dump_to_disk
 import pandera as pa
 
 from ..schemas.custom_http_exception import UserError
@@ -109,8 +108,6 @@ def run_lin_associations_on_feature_subset(
         }
     )
 
-    dump_to_disk("merged_df.pickle", merged_df=merged_df)
-
     merged_df = schema.validate(merged_df)
 
     return merged_df
@@ -142,13 +139,6 @@ def _run_lm(
     )
     df = df[["EffectSize", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
     assert isinstance(df, pd.DataFrame)
-
-    dump_to_disk(
-        "run_lm.pickle",
-        df=df,
-        features_df=features_df,
-        value_query_vector=value_query_vector,
-    )
 
     # sort by descending absolute
     df = df.reindex(df.EffectSize.abs().sort_values(ascending=False).index)
