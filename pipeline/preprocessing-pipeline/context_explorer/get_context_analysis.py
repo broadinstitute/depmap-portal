@@ -26,17 +26,20 @@ ONCREF_DATASET_NAME = "PRISMOncologyReferenceLog2AUCMatrix"
 
 def format_selectivity_vals(drug_data_dict):
     selectivity_vals_by_dataset = []
-    for dataset_label, dataset in drug_data_dict.items():
-        bimodality_results = (
-            dataset.apply(bimodality_coefficient_for_cpd_viabilities)
-            .reset_index(name="selectivity_val")
-            .rename(columns={"index": "feature_id"})
-            .assign(dataset=dataset_label)
+
+    for _, dataset in drug_data_dict.items():
+        res_series = dataset.apply(bimodality_coefficient_for_cpd_viabilities).rename(
+            "selectivity_val"
         )
 
-        selectivity_vals_by_dataset.append(bimodality_results)
+        selectivity_vals_by_dataset.append(res_series)
 
-    selectivity_vals = pd.concat(selectivity_vals_by_dataset)
+    selectivity_vals = pd.concat(
+        selectivity_vals_by_dataset,
+        keys=drug_data_dict.keys(),
+        names=["dataset", "feature_id"],
+    ).reset_index()
+
     return selectivity_vals
 
 
