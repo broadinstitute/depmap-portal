@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from ..util import assert_status_ok, assert_status_not_ok
+from ..utils import assert_status_ok, assert_status_not_ok
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import AnnotationType

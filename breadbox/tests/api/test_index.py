@@ -6,7 +6,7 @@ from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
 import pytest
 import time
-from ..util import assert_status_ok
+from ..utils import assert_status_ok
 
 
 @pytest.mark.slow

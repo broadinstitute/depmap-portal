@@ -3,11 +3,10 @@ from breadbox.models.dataset import ValueType
 from breadbox.schemas.types import AnnotationType
 from tests import factories
 from fastapi.testclient import TestClient
-import json
 
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.types import AnnotationTypeMap
-from ..util import assert_status_ok, assert_status_not_ok
+from ..utils import assert_status_ok, assert_status_not_ok
 
 
 class TestGet:

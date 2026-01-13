@@ -14,7 +14,7 @@ from datetime import timedelta
 from typing import Dict
 import pytest
 import numpy as np
-from ..util import upload_and_get_file_ids
+from ..utils import upload_and_get_file_ids, assert_status_not_ok, assert_status_ok
 import json
 import pandas as pd
 from breadbox.models.dataset import AnnotationType
@@ -22,7 +22,6 @@ from fastapi.testclient import TestClient
 from breadbox.schemas.dataset import ColumnMetadata
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
 from tests import factories
-from ..util import assert_status_not_ok, assert_status_ok
 from breadbox.crud import dataset as dataset_crud
 from breadbox.service import dataset as dataset_service
 

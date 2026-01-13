@@ -4,6 +4,7 @@ import numpy as np
 import json
 
 from breadbox.db.session import SessionWithUser
+from ..utils import assert_status_ok
 
 
 class TestGet:
@@ -73,7 +74,6 @@ class TestGet:
             },
             headers={"X-Forwarded-Email": settings.admin_users[0]},
         )
-        from ..util import assert_status_ok
 
         assert_status_ok(res_update_sample_type)
         assert res_update_sample_type.status_code == 200

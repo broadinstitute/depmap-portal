@@ -20,6 +20,7 @@ from breadbox.schemas.dataset import AnnotationType, ValueType
 
 def get_encoder_function(value_type: ValueType, allowed_values: Optional[List[str]]):
     if value_type == ValueType.categorical:
+        assert allowed_values is not None
         return lambda df: encode_categorical_df(df, allowed_values)
     elif value_type == ValueType.continuous:
         return None
@@ -31,6 +32,7 @@ def get_encoder_function(value_type: ValueType, allowed_values: Optional[List[st
 
 def get_decoder_function(value_type: ValueType, allowed_values: Optional[List[str]]):
     if value_type == ValueType.categorical:
+        assert allowed_values is not None
         return lambda df: decode_categorical_df(df, allowed_values)
     elif value_type == ValueType.continuous:
         return None

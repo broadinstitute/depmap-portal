@@ -3,7 +3,7 @@ import os
 from fastapi.testclient import TestClient
 
 from tests import factories
-from ..util import assert_status_ok
+from ..utils import assert_status_ok
 import json
 import pytest
 

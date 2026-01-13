@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 
 from breadbox.crud.dimension_types import get_dimension_type
-from ..factories import feature_type
-from ..util import assert_status_not_ok, assert_status_ok, assert_task_failure
+from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
 
 from breadbox.db.session import SessionWithUser
@@ -34,7 +33,7 @@ from breadbox.schemas.dataset import ColumnMetadata
 from tests import factories
 from breadbox.config import Settings
 from typing import Dict
-from ..util import upload_and_get_file_ids
+from ..utils import upload_and_get_file_ids
 
 
 def assert_dimensions_response_matches(a, b):

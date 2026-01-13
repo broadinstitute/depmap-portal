@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from breadbox.crud.dimension_types import get_dimension_type
 from breadbox.schemas.types import IdMapping
 from fastapi.testclient import TestClient
@@ -19,7 +17,7 @@ from breadbox.models.dataset import DimensionSearchIndex
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
 import pandas as pd
-from ..util import assert_status_ok, assert_status_not_ok
+from ..utils import assert_status_ok, assert_status_not_ok
 from breadbox.service.search import _get_datatypes_referencing
 
 

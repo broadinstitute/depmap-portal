@@ -4,7 +4,7 @@ from breadbox.db.session import SessionWithUser
 from breadbox.models.data_type import DataType
 from breadbox.models.dataset import Dataset
 from tests import factories
-from tests.util import assert_status_ok, assert_status_not_ok
+from tests.utils import assert_status_ok, assert_status_not_ok
 
 
 class TestGet:
