@@ -76,10 +76,10 @@ if settings is not None:
             task_store_eager_result=True,
         )
     else:
-        rhost = os.getenv("REDIS_HOST", "localhost")
+        redis_host = os.getenv("REDIS_HOST", "localhost:6379")
 
         storage_configuration = dict(
-            broker_url="redis://" + rhost, result_backend="redis://" + rhost,
+            broker_url="redis://" + redis_host, result_backend="redis://" + redis_host,
         )
     app.conf.update(**storage_configuration)  # pyright: ignore
 

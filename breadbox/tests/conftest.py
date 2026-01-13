@@ -81,7 +81,7 @@ def db(tmpdir, db_path, settings):
 
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
-    db.set_user(settings.admin_users[0])
+    db.set_user(settings.admin_users[0], TestingSessionLocal)
     db.is_test_db_session = True
     yield db
     db.close()
