@@ -1,7 +1,15 @@
 import uuid
-
+import typing
 from sqlalchemy import String, MetaData
-from sqlalchemy.orm import declarative_base
+
+if typing.TYPE_CHECKING:
+    # pyright complains '"declarative_base" is unknown import symbol (reportAttributeAccessIssue)'
+    # but its what sqlalchemy says we should use, and it clearly works at runtime, so while type
+    # checking is being applied use this stub to fool the typechecker
+    declarative_base: typing.Callable = lambda metadata: object
+else:
+    from sqlalchemy.orm import declarative_base
+
 from sqlalchemy.orm import Mapped, mapped_column
 
 # It has been a pain point encountering unnamed constraints when migrating since you can't drop unnamed constraints. These conventions will be used when the sqlalchemy model has constraints that are unnamed

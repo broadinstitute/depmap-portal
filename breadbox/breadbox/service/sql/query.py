@@ -58,7 +58,7 @@ class Module:
     def __init__(
         self,
         callable: Callable,
-        get_columns: Callable[[Any], Iterable[str]],
+        get_columns: Callable,
         parameters: tuple[str],
         repr_invalid: bool,
     ):
@@ -163,7 +163,10 @@ class Cursor:
     def Close(self) -> None:
         if self.iterating:
             if hasattr(self.iterating, "close"):
-                self.iterating.close()
+                # fmt: off
+                # pyright isn't smart enough to see we just checked for the attribute
+                self.iterating.close() # pyright: ignore
+                # fmt: on
             self.iterating = None
 
     def Column(self, which: int) -> SQLiteValue:
@@ -186,7 +189,7 @@ def make_virtual_module(
     db: apsw.Connection,
     name: str,
     callable: Callable,
-    get_columns: Callable[[Any], Iterable[str]],
+    get_columns: Callable,
     parameters: Tuple[str],
     *,
     eponymous: bool = True,
@@ -278,15 +281,15 @@ def _query_matrix_dataset_dimension(
     dimension_subtype_cls: Union[Type[DatasetFeature], Type[DatasetSample]],
 ):
     metadata_col_name = "label"
-    if dimension_subtype_cls == DatasetFeature:
+    if dimension_subtype_cls is DatasetFeature:
         dimension_type = matrix_dataset.feature_type
     else:
-        assert dimension_subtype_cls == DatasetSample
+        assert dimension_subtype_cls is DatasetSample
         dimension_type = matrix_dataset.sample_type
 
     if dimension_type is None:
         # special case: Arises when feature type is None. Return the list of given_ids
-        assert dimension_subtype_cls == DatasetFeature
+        assert dimension_subtype_cls is DatasetFeature
         return sorted(
             [
                 x.given_id

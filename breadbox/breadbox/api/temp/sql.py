@@ -22,18 +22,12 @@ def get_sql_schema(db: SessionWithUser = Depends(get_db_with_user),):
 
 
 @router.post("/sql/query", operation_id="query_sql")
-def get_sql_schema(
+def query_sql(
     query: SqlQuery,
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
-    import apsw.ext
-    import sys
-
-    try:
-        streaming_result = execute_sql_in_virtual_db(
-            db, settings.filestore_location, query.sql
-        )
-        return StreamingResponse(streaming_result, media_type="text/csv")
-    except Exception as exc:
-        apsw.ext.print_augmented_traceback(*sys.exc_info())
+    streaming_result = execute_sql_in_virtual_db(
+        db, settings.filestore_location, query.sql
+    )
+    return StreamingResponse(streaming_result, media_type="text/csv")
