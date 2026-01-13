@@ -12,8 +12,6 @@ from typing import (
     Dict,
 )
 
-from apsw.ext import get_column_names
-
 from breadbox.db.session import SessionWithUser
 from ...schemas.dataset import (
     AnnotationType,
@@ -37,6 +35,7 @@ from .schema import assign_names, SchemaNames
 from breadbox.utils.profiling import profiled_region
 
 import sqlglot
+import sqlglot.expressions
 import csv
 import io
 
