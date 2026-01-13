@@ -72,11 +72,6 @@ class SessionWithUser(Session):
             .execution_options(filter_group_ids=self.get_read_group_ids())
         )
 
-    def get(self, class_, id):
-        # For some reason, pyright doesn't think `get()` exists on Session, so
-        # add this method and insist it's fine.
-        return super().get(class_, id)  # # pyright: ignore [reportAttributeAccessIssue]
-
 
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
