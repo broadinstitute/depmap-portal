@@ -20,6 +20,7 @@ from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from breadbox.models.dataset import DimensionType
 from fastapi import HTTPException
 from breadbox.io.filestore_crud import save_dataset_file
+from ..io.hdf5_value_mapping import get_encoder_function
 from ..service import dataset as dataset_service
 from ..crud import dimension_types as type_crud
 from ..crud import group as group_crud
@@ -36,23 +37,27 @@ from .celery import app, LogErrorsTask
 import celery
 from ..config import get_settings
 
+from breadbox.utils.profiling import profiled_region
+
 
 @app.task(base=LogErrorsTask, bind=True)
 def run_dataset_upload(
     self: celery.Task, dataset_params: Dict, user: str,
 ):
-    with db_context(user, commit=True) as db:
-        if dataset_params["format"] == "matrix":
-            params: DatasetParams = MatrixDatasetParams(**dataset_params)
-        else:
-            params: DatasetParams = TableDatasetParams(**dataset_params)
+    with profiled_region("run_dataset_upload"):
+        with db_context(user, commit=True) as db:
+            if dataset_params["format"] == "matrix":
+                params: DatasetParams = MatrixDatasetParams(**dataset_params)
+            else:
+                params: DatasetParams = TableDatasetParams(**dataset_params)
 
-        upload_dataset_response = dataset_upload(db, params, user)
+            with profiled_region("dataset_upload"):
+                upload_dataset_response = dataset_upload(db, params, user)
 
-        # because celery is going to want to serialize the response,
-        # convert it to a json dict before returning it
-        # also, using the hack described at https://stackoverflow.com/questions/65622045/pydantic-convert-to-jsonable-dict-not-full-json-string
-        return json.loads(upload_dataset_response.json())
+            # because celery is going to want to serialize the response,
+            # convert it to a json dict before returning it
+            # also, using the hack described at https://stackoverflow.com/questions/65622045/pydantic-convert-to-jsonable-dict-not-full-json-string
+            return json.loads(upload_dataset_response.json())
 
 
 def dataset_upload(
@@ -99,10 +104,14 @@ def dataset_upload(
         )
         sample_type = _get_dimension_type(db, dataset_params.sample_type, "sample")
 
+        value_mapping = get_encoder_function(
+            dataset_params.value_type, dataset_params.allowed_values
+        )
+
         df_wrapper = read_and_validate_matrix_df(
             file_path,
             dataset_params.value_type,
-            dataset_params.allowed_values,
+            value_mapping,
             dataset_params.data_file_format,
         )
 
@@ -166,6 +175,7 @@ def dataset_upload(
             dataset_id,
             df_wrapper,
             dataset_params.value_type,
+            value_mapping,
             settings.filestore_location,
         )
 
