@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from .lin_associations import lin_associations_wrapper
 from scipy import stats
 from ..crud.dimension_ids import IndexedGivenIDDataFrame
-
+from breadbox.utils.profiling import dump_to_disk
 import pandera as pa
 
 log = logging.getLogger(__name__)
@@ -132,6 +132,13 @@ def _run_lm(
 
     # Merge in label, vectorId and numCellLines
     num_cell_lines_used_in_calc = count_num_non_nan_per_row(dataset.transpose())
+
+    dump_to_disk(
+        "run_lm.pickle",
+        num_cell_lines_used_in_calc=num_cell_lines_used_in_calc,
+        df=df,
+        features_df=features_df,
+    )
 
     log.warning(f"in _run_lm, df:\n{df}")
     log.warning(f"in _run_lm, features_df:\n{features_df}")
