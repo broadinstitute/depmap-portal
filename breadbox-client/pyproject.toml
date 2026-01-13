@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox-client"
-version = "4.3.21"
+version = "4.3.20"
 description = "A client library for accessing Breadbox"
 
 authors = []
@@ -51,3 +51,4 @@ exclude = '''
 [tool.isort]
 line_length = 120
 profile = "black"
+
