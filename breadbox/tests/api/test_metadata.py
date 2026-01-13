@@ -3,7 +3,6 @@ from breadbox.models.dataset import ValueType
 from breadbox.schemas.types import AnnotationType
 from tests import factories
 from fastapi.testclient import TestClient
-import json
 
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.types import AnnotationTypeMap
