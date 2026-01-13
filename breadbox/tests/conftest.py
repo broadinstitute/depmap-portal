@@ -62,6 +62,7 @@ def settings(tmpdir, db_path, monkeypatch):
         default_user="test@sample.com",
         breadbox_secret="secret",
         use_depmap_proxy=False,
+        sql_endpoints_enabled=True,
     )
 
     import breadbox.config

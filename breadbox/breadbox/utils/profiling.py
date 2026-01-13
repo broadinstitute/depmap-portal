@@ -7,7 +7,7 @@ _profile_stack: contextvars.ContextVar[Optional[List]] = contextvars.ContextVar(
     "profile_stack", default=None
 )
 
-PRINT_PROFILE = True
+PRINT_PROFILE = False
 
 from dataclasses import dataclass
 import resource

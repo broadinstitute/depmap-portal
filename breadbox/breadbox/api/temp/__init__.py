@@ -4,5 +4,6 @@ from .router import router
 import breadbox.api.temp.cas
 import breadbox.api.temp.context
 import breadbox.api.temp.associations
+import breadbox.api.temp.sql
 
 __all__ = ["router"]
