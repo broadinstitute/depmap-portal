@@ -69,8 +69,10 @@ def run_lin_associations_on_feature_subset(
 
     # calculate lin associations
     df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
+
     # add a numCellLines column by looking up the value for each record in df. At this point "Index"
-    # refers to the column index of `of the ndarray `dataset`.
+    # refers to the column index of `of the ndarray `dataset`, so use Index to skip over the elements in
+    # num_cell_lines_used_in_calc and get the values that line up with df
     df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
     assert original_dataset_column_count >= len(
         df
@@ -107,7 +109,7 @@ def run_lin_associations_on_feature_subset(
         }
     )
 
-    dump_to_disk("run_lm.pickle", merged_df=merged_df)
+    dump_to_disk("merged_df.pickle", merged_df=merged_df)
 
     merged_df = schema.validate(merged_df)
 
@@ -138,7 +140,7 @@ def _run_lm(
     df = df.rename(
         columns={"PosteriorMean": "EffectSize", "p.val": "PValue", "qvalue": "QValue",},
     )
-    df = df[["PosteriorMean", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
+    df = df[["EffectSize", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
     assert isinstance(df, pd.DataFrame)
 
     dump_to_disk(
