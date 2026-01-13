@@ -16,7 +16,13 @@ class SqlQuery(BaseModel):
 @router.get(
     "/sql/schema", operation_id="get_sql_schema", response_class=PlainTextResponse
 )
-def get_sql_schema(db: SessionWithUser = Depends(get_db_with_user),):
+def get_sql_schema(
+    db: SessionWithUser = Depends(get_db_with_user),
+    settings: Settings = Depends(get_settings),
+):
+    if not settings.sql_endpoints_enabled:
+        raise HTTPException(403, "SQL endpoints not enabled in this environment")
+
     schema_text = generate_simulated_schema(db)
     return schema_text
 
@@ -27,6 +33,9 @@ def query_sql(
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
+    if not settings.sql_endpoints_enabled:
+        raise HTTPException(403, "SQL endpoints not enabled in this environment")
+
     streaming_result = execute_sql_in_virtual_db(
         db, settings.filestore_location, query.sql
     )
