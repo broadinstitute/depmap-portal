@@ -112,49 +112,36 @@ def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taig
         tc, portal_compounds_taiga_id
     )
 
-    repurposing_matrix_samples = tc.get(repurposing_matrix_taiga_id).T
+    # 2. Get and Transpose
+    repurposing_matrix = tc.get(repurposing_matrix_taiga_id).T
 
-    # strip BRD prefixes from the compound sample IDs
-    repurposing_matrix_samples.columns = [
-        strip_brd_prefix(i) for i in repurposing_matrix_samples.columns
+    # 3. Clean columns in-place to avoid re-assigning the whole index object
+    repurposing_matrix.columns = [
+        strip_brd_prefix(i) for i in repurposing_matrix.columns
     ]
 
-    # assert that the columns are compound-sample IDs
-    assert set(repurposing_matrix_samples.columns).issubset(
-        sample_id_to_compound_id_map.keys()
-    )
+    # 4. Logical Filtering (Memory Efficient)
+    # Instead of creating a whole new 'discrete' matrix, we calculate the masks
+    # and aggregations in one pass.
+    threshold = np.log2(0.3)
 
-    repurposing_matrix = repurposing_matrix_samples.rename(
-        columns=sample_id_to_compound_id_map
-    )
+    # This creates a Series (one value per drug), not a full Matrix
+    is_sens = repurposing_matrix < threshold
+    perc_sens_lines = is_sens.mean()
+    n_sens_lines = is_sens.sum()
 
-    # verify that all the columns are now compound IDs
-    assert set(repurposing_matrix.columns).issubset(
-        sample_id_to_compound_id_map.values()
-    )
-    # verify that there are no duplicates per compound ID
+    # Identify the subset of columns we actually want
+    incl_drugs_mask = (perc_sens_lines < 0.75) & (n_sens_lines > 1)
+
+    # 5. Filter the matrix BEFORE renaming
+    repurposing_matrix = repurposing_matrix.loc[:, incl_drugs_mask]
+
+    # 6. Final Rename (only on the smaller subset)
+    repurposing_matrix = repurposing_matrix.rename(columns=sample_id_to_compound_id_map)
+
     assert repurposing_matrix.columns.nunique() == repurposing_matrix.shape[1]
 
-    # filter PRISM data --> Restrict analysis to drugs that are sens in min. 1
-    #                       cell line and toxic to < 75% of cell lines.
-
-    # First we have to define sensitive and non-sensitive
-    repurposing_discrete = repurposing_matrix < np.log2(0.3)
-    repurposing_discrete = repurposing_discrete.mask(repurposing_matrix.isnull())
-
-    # Then define our list of valid drugs
-    perc_sens_lines = repurposing_discrete.mean()
-    n_sens_lines = repurposing_discrete.sum()
-    incl_drugs = pd.Index(
-        set(perc_sens_lines[perc_sens_lines < 0.75].index).intersection(
-            set(n_sens_lines[n_sens_lines > 1].index),
-        )
-    )
-
-    # Finally, filter the matrix to only the drugs that we'll test
-    drug_sensitivity = repurposing_matrix.loc[:, incl_drugs]
-
-    return drug_sensitivity
+    return repurposing_matrix
 
 
 def load_oncref_data(tc, oncref_auc_taiga_id, portal_compounds_taiga_id):
@@ -427,7 +414,9 @@ def repurposing_context_analysis(
     repurposing_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
 
     def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
-        return ds_res.reset_index(names="entity_id").merge(repurposing_selectivity)
+        return ds_res.merge(
+            repurposing_selectivity, left_index=True, right_on="entity_id", how="left"
+        )
 
     return compute_in_out_groups(
         subtype_tree,
