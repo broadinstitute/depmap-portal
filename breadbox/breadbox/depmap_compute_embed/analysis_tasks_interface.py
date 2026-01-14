@@ -67,16 +67,49 @@ def _compute_lm_associations(
     # calculate lin associations
     df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
 
-    # add a numCellLines column
-    df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
-
     # rename Index to make it clear it's a column index from the input matrix
     df.rename(columns={"Index": "matrix_col_index"}, inplace=True)
+
+    # add a numCellLines column
+    df["numCellLines"] = num_cell_lines_used_in_calc[df["matrix_col_index"]]
 
     return df
 
 
-def _run_lm(
+def run_pearson_correlations(
+    callbacks: CustomAnalysisCallbacks,
+    value_query_vector: Union[List[int], List[float]],
+    features_df: FeaturesExtDataFrame,
+    features_per_batch: int,
+) -> pd.DataFrame:
+
+    assert np.isnan(value_query_vector).sum() == 0
+
+    callbacks.update_message("Running Pearson correlation...")
+
+    vector_for_pearson = np.asarray([value_query_vector], dtype=float).transpose()
+
+    def process_batch(batch):
+        dataset = callbacks.get_dataset_df(batch)
+        batch_result_df = run_pearson(vector_for_pearson, dataset)
+        batch_result_df.index = batch
+        return batch_result_df
+
+    results_df = _process_features_in_batches(
+        features_df,
+        features_per_batch,
+        _make_progress_callback(callbacks, "Running Pearson correlation..."),
+        process_batch,
+    )
+
+    results_df = results_df[["Cor", "PValue", "numCellLines"]]
+
+    sorted_df = _post_process_results(results_df, features_df, "Cor")
+
+    return sorted_df
+
+
+def run_linear_model_fits(
     callbacks: CustomAnalysisCallbacks,
     value_query_vector: Union[List[int], List[float]],
     features_df: FeaturesExtDataFrame,
@@ -112,18 +145,8 @@ def _run_lm(
         process_batch,
     )
 
-    # recompute the q-value since that needs information across all batches
-    results_df["qvalue"] = stats.false_discovery_control(results_df["p.val"])
-
-    if len(results_df) == 0:
-        # specific error to report back to the user
-        raise UserError("Error: Running this analysis returned no results")
-
-    # join in the feature metadata
-    full_df = results_df.join(features_df)
-
     # rename columns
-    full_df = full_df.rename(
+    results_df = results_df.rename(
         columns={
             "PosteriorMean": "EffectSize",
             "p.val": "PValue",
@@ -133,14 +156,14 @@ def _run_lm(
     )
 
     # drop all columns except these
-    full_df = full_df[
-        ["EffectSize", "PValue", "QValue", "label", "vectorId", "numCellLines"]
-    ]
+    results_df = results_df[["EffectSize", "PValue", "numCellLines"]]
 
-    # sort by descending absolute
-    sorted_df = full_df.reindex(
-        full_df.EffectSize.abs().sort_values(ascending=False).index
-    )
+    sorted_df = _post_process_results(results_df, features_df, "EffectSize")
+
+    if len(results_df) == 0:
+        # specific error to report back to the user
+        raise UserError("Error: Running this analysis returned no results")
+
     return sorted_df
 
 
@@ -184,10 +207,13 @@ def _process_features_in_batches(
 
         batch_result_df = process_batch(batch)
 
+        # the index of each row should match up with the indices in batch. (They might be a subset if process_batch does not return a row for each feature, but there should never be any extra)
+        assert set(batch_result_df.index).issubset(batch)
+
         results.append(batch_result_df)
 
-    # combine the tables from each batch
-    results_df = pd.concat(results, ignore_index=True)
+    # combine the tables from each batch.
+    results_df = pd.concat(results)
     return results_df
 
 
@@ -207,31 +233,10 @@ def _make_progress_callback(callbacks: CustomAnalysisCallbacks, message: str):
     return progress_callback
 
 
-def _run_pearson(
-    callbacks: CustomAnalysisCallbacks,
-    value_query_vector: Union[List[int], List[float]],
-    features_df: FeaturesExtDataFrame,
-    features_per_batch: int,
-) -> pd.DataFrame:
-
-    assert np.isnan(value_query_vector).sum() == 0
-
-    callbacks.update_message("Running Pearson correlation...")
-
-    vector_for_pearson = np.asarray([value_query_vector], dtype=float).transpose()
-
-    def process_batch(batch):
-        dataset = callbacks.get_dataset_df(batch)
-        batch_result_df = run_pearson(vector_for_pearson, dataset)
-        batch_result_df.index = batch
-        return batch_result_df
-
-    results_df = _process_features_in_batches(
-        features_df,
-        features_per_batch,
-        _make_progress_callback(callbacks, "Running Pearson correlation..."),
-        process_batch,
-    )
+def _post_process_results(
+    results_df: pd.DataFrame, features_df: FeaturesExtDataFrame, effect_size_column: str
+):
+    # update QValue and sort by effect size
 
     # now that we have all the results, correct the p-values
     q_vals = np.full(len(results_df), np.nan)
@@ -242,12 +247,12 @@ def _run_pearson(
 
     # join in the feature metadata
     full_df = results_df.join(features_df)
+    full_df = full_df.rename(columns={"slice_id": "vectorId"})
 
     # sort by descending absolute
-    sorted_df = full_df.reindex(full_df.Cor.abs().sort_values(ascending=False).index)
-
-    sorted_df = sorted_df.rename(columns={"slice_id": "vectorId"})
-    return sorted_df[["Cor", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
+    return full_df.reindex(
+        full_df[effect_size_column].abs().sort_values(ascending=False).index
+    )
 
 
 def _make_result_task_directory(result_dir, task_id):
@@ -295,13 +300,13 @@ def run_custom_analysis(
     )
 
     if analysis_type == AnalysisType.pearson:
-        df = _run_pearson(
+        df = run_pearson_correlations(
             callbacks, value_query_vector, features_df, features_per_batch,
         )
         effect_size_column = "Cor"
     else:
         assert vector_is_dependent is not None
-        df = _run_lm(
+        df = run_linear_model_fits(
             callbacks,
             value_query_vector,
             features_df,
@@ -388,9 +393,6 @@ def count_num_non_nan_per_row(matrix):
 
 
 def run_pearson(vector, matrix_subsetted):
-    """
-    Just runs python, no call to R. The "for_run_custom_analysis" in the name just refers to where it is used, in the _run_custom_analysis
-    """
     (pearson_cor, p_vals, values_used_in_calc,) = fast_cor_with_p_values_with_missing(
         vector, matrix_subsetted
     )
@@ -472,7 +474,5 @@ def np_pearson_cor(x, y):
     yv = y - y.mean(axis=0)
     xvss = (xv * xv).sum(axis=0)
     yvss = (yv * yv).sum(axis=0)
-    # print(xvss, yvss)
-    # print(np.matmul(xv.transpose(), yv) , np.sqrt(np.outer(xvss, yvss)))
     result = np.matmul(xv.transpose(), yv) / np.sqrt(np.outer(xvss, yvss))
     return np.maximum(np.minimum(result, 1.0), -1.0)

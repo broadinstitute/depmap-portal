@@ -1,4 +1,3 @@
-import unittest.mock
 from typing import List
 import os
 import numpy as np
@@ -6,8 +5,8 @@ import numpy as np
 from breadbox.depmap_compute_embed.analysis_tasks_interface import (
     FeaturesExtDataFrame,
     CustomAnalysisCallbacks,
-    _run_pearson,
-    _run_lm,
+    run_pearson_correlations,
+    run_linear_model_fits,
 )
 import pandas as pd
 import random
@@ -90,7 +89,7 @@ def test_run_lm_effect_size():
 
     callbacks = MockCustomAnalysisCallbacks(dataset_df.values)
 
-    result_df = _run_lm(
+    result_df = run_linear_model_fits(
         callbacks,
         value_query_vector=value_query_vector,
         features_df=features_df,
@@ -134,6 +133,29 @@ class MockCustomAnalysisCallbacks(CustomAnalysisCallbacks):
         pass
 
 
+def test_run_lin_associations_simple():
+    # first column: zero variance
+    # second column: perfect linear correlation
+    # third: random
+    # four:
+    dataset_df = pd.DataFrame([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]])
+    features_df = FeaturesExtDataFrame(
+        {"given_id": [], "label": [], "slice_id": []}, index=[]
+    )
+    value_query_vector = list(pd.read_csv(query_vector_path).iloc[:, 0])
+
+    vector_is_dependent = True
+    callbacks = MockCustomAnalysisCallbacks(dataset_df.values)
+
+    one_batch_df = run_linear_model_fits(
+        callbacks,
+        value_query_vector,
+        features_df,
+        vector_is_dependent,
+        features_per_batch=1000,
+    )
+
+
 def test_run_lin_associations_consistency():
     # make sure that we get the same results whether run on a single batch or multiple batches
     ensure_datafiles_exist()
@@ -145,7 +167,7 @@ def test_run_lin_associations_consistency():
     vector_is_dependent = True
     callbacks = MockCustomAnalysisCallbacks(dataset_df.values)
 
-    one_batch_df = _run_lm(
+    one_batch_df = run_linear_model_fits(
         callbacks,
         value_query_vector,
         features_df,
@@ -153,7 +175,7 @@ def test_run_lin_associations_consistency():
         features_per_batch=1000,
     )
 
-    many_batches_df = _run_lm(
+    many_batches_df = run_linear_model_fits(
         callbacks,
         value_query_vector,
         features_df,
@@ -162,6 +184,18 @@ def test_run_lin_associations_consistency():
     )
 
     pd.testing.assert_frame_equal(one_batch_df, many_batches_df)
+
+    assert sorted(one_batch_df.columns) == sorted(
+        [
+            "EffectSize",
+            "PValue",
+            "QValue",
+            "given_id",
+            "label",
+            "vectorId",
+            "numCellLines",
+        ]
+    )
 
 
 def test_run_pearson_consistency():
@@ -176,12 +210,16 @@ def test_run_pearson_consistency():
     vector_is_dependent = True
     callbacks = MockCustomAnalysisCallbacks(dataset_df.values)
 
-    one_batch_df = _run_pearson(
+    one_batch_df = run_pearson_correlations(
         callbacks, value_query_vector, features_df, features_per_batch=1000,
     )
 
-    many_batches_df = _run_pearson(
+    many_batches_df = run_pearson_correlations(
         callbacks, value_query_vector, features_df, features_per_batch=2,
     )
 
     pd.testing.assert_frame_equal(one_batch_df, many_batches_df)
+
+    assert sorted(one_batch_df.columns) == sorted(
+        ["Cor", "PValue", "QValue", "given_id", "label", "vectorId", "numCellLines"]
+    )
