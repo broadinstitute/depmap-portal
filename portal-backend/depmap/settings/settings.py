@@ -240,7 +240,7 @@ class FeatureFlags:
 
     @property
     def gene_page_correlation_analysis(self):
-        return self.is_qa()
+        return self.is_skyros()
 
 
 def make_log_config(log_dir):
