@@ -28,7 +28,7 @@ def _get_node_entity_data(
     feature_id_and_label = utils.get_feature_id_from_full_label(
         feature_type=feature_type, feature_id=feature_id
     )
-    breakpoint()
+
     feature_id = feature_id_and_label["feature_id"]
     label = feature_id_and_label["label"]
     entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
