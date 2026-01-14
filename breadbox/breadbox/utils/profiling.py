@@ -2,6 +2,13 @@ from contextlib import contextmanager
 import time
 import contextvars
 from typing import List, Optional
+from breadbox.config import get_settings
+from dataclasses import dataclass
+import resource
+import sys
+import logging
+import os
+import pickle
 
 _profile_stack: contextvars.ContextVar[Optional[List]] = contextvars.ContextVar(
     "profile_stack", default=None
@@ -9,9 +16,7 @@ _profile_stack: contextvars.ContextVar[Optional[List]] = contextvars.ContextVar(
 
 PRINT_PROFILE = False
 
-from dataclasses import dataclass
-import resource
-import sys
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -69,3 +74,14 @@ def profiled_region(msg):
         print_profile_span(span)
 
     _profile_stack.set(cur_child_spans)
+
+
+def dump_to_disk(dest_name, **vars):
+    settings = get_settings()
+
+    full_dest_name = os.path.join(settings.compute_results_location, "dump", dest_name)
+    os.makedirs(os.path.dirname(full_dest_name), exist_ok=True)
+    log.warning(f"Dumping {list(vars)} to {full_dest_name}")
+    with open(full_dest_name, "wb") as f:
+        pickle.dump(vars, f)
+    log.warning("Done")

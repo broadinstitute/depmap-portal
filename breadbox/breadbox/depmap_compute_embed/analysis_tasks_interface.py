@@ -12,7 +12,9 @@ from dataclasses import dataclass
 from .lin_associations import lin_associations_wrapper
 from scipy import stats
 from ..crud.dimension_ids import IndexedGivenIDDataFrame
+import pandera as pa
 
+from ..schemas.custom_http_exception import UserError
 
 log = logging.getLogger(__name__)
 
@@ -53,6 +55,64 @@ class CustomAnalysisResult:
     total_rows: int
 
 
+def run_lin_associations_on_feature_subset(
+    features_df: FeaturesExtDataFrame,
+    callbacks: CustomAnalysisCallbacks,
+    value_query_vector: Union[List[int], List[float]],
+    vector_is_dependent: bool,
+):
+    dataset = callbacks.get_dataset_df(features_df.index.to_list())
+    original_dataset_column_count = dataset.shape[1]
+    num_cell_lines_used_in_calc = count_num_non_nan_per_row(dataset.transpose())
+    assert original_dataset_column_count == len(num_cell_lines_used_in_calc)
+
+    # calculate lin associations
+    df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
+
+    # add a numCellLines column by looking up the value for each record in df. At this point "Index"
+    # refers to the column index of `of the ndarray `dataset`, so use Index to skip over the elements in
+    # num_cell_lines_used_in_calc and get the values that line up with df
+    df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
+    assert original_dataset_column_count >= len(
+        df
+    ), "Output of lin_associations_wrapper should always be same size or smaller then number of columns in the fetched dataset"
+
+    # Now, we want to minimize the amount of code which relies on the shape of `dataset`, so map df['Index']
+    # back to the original indices that are on features_df. We can then use this to join in the other feature metadata
+    df["Index"] = features_df.index[df["Index"]]
+
+    # Merge in metadata about each feature
+    merged_df = pd.merge(df, features_df, how="left", left_on="Index", right_index=True)
+    merged_df.rename(columns={"slice_id": "vectorId"}, inplace=True)
+
+    # this is the format of the data frame we're expecting at this point
+    schema = pa.DataFrameSchema(
+        {
+            "betahat": pa.Column(float, nullable=True),
+            "sebetahat": pa.Column(float, nullable=True),
+            "NegativeProb": pa.Column(float, nullable=True),
+            "PositiveProb": pa.Column(float, nullable=True),
+            "lfsr": pa.Column(float, nullable=True),
+            "svalue": pa.Column(float, nullable=True),
+            "lfdr": pa.Column(float, nullable=True),
+            "qvalue": pa.Column(float, nullable=True),
+            "PosteriorMean": pa.Column(float, nullable=True),
+            "PosteriorSD": pa.Column(float, nullable=True),
+            "dep.var": pa.Column(float, nullable=True),
+            "ind.var": pa.Column(float, nullable=True),
+            "p.val": pa.Column(float, nullable=True),
+            "Index": pa.Column(int, nullable=False),
+            "given_id": pa.Column(str, nullable=False),
+            "label": pa.Column(str, nullable=False),
+            "vectorId": pa.Column(str, nullable=False),
+        }
+    )
+
+    merged_df = schema.validate(merged_df)
+
+    return merged_df
+
+
 def _run_lm(
     update_message: Callable[[str], None],
     callbacks: CustomAnalysisCallbacks,
@@ -66,84 +126,23 @@ def _run_lm(
 
     update_message("Running two class comparison...")
 
-    dataset = callbacks.get_dataset_df(features_df.index.to_list())
-
-    df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
-    df = df[
-        [
-            "betahat",
-            "sebetahat",
-            "NegativeProb",
-            "PositiveProb",
-            "lfsr",
-            "svalue",
-            "lfdr",
-            "qvalue",
-            "PosteriorMean",
-            "PosteriorSD",
-            "dep.var",
-            "ind.var",
-            "p.val",
-            "Index",
-        ]
-    ]
+    df = run_lin_associations_on_feature_subset(
+        features_df, callbacks, value_query_vector, vector_is_dependent
+    )
 
     if len(df) == 0:
         # specific error to report back to the user
-        raise Exception("Error: Running this analysis returned no results")
+        raise UserError("Error: Running this analysis returned no results")
 
-    # rows in the df are entities in the matrix
-
-    expected_columns = [
-        "betahat",
-        "sebetahat",
-        "NegativeProb",
-        "PositiveProb",
-        "lfsr",
-        "svalue",
-        "lfdr",
-        "qvalue",
-        "PosteriorMean",
-        "PosteriorSD",
-        "dep.var",
-        "ind.var",
-        "p.val",
-        "Index",
-    ]
-    assert isinstance(df, pd.DataFrame)
-    assert list(df.columns) == expected_columns, "columns not expected: {}".format(
-        df.columns
-    )
-
-    df = df[["Index", "PosteriorMean", "p.val", "qvalue",]]
-    assert isinstance(df, pd.DataFrame)
     df = df.rename(
         columns={"PosteriorMean": "EffectSize", "p.val": "PValue", "qvalue": "QValue",},
     )
+    df = df[["EffectSize", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
+    assert isinstance(df, pd.DataFrame)
 
     # sort by descending absolute
     df = df.reindex(df.EffectSize.abs().sort_values(ascending=False).index)
-
-    # Note that the df returned for pearson may have a different number rows from the df returned from the linear model
-    # The df may also have fewer indices than row indices
-    # Edge cases that caused these may be one-point rows, two-point rows, vector with no variance
-    # (This is just a warning, unclear which of these situations cause dropping rows. no variance vector definitely does))#
-
-    # Merge in label, vectorId and numCellLines
-    num_cell_lines_used_in_calc = count_num_non_nan_per_row(dataset.transpose())
-
-    # Add metadata
-    df["label"] = features_df.label.iloc[df["Index"]]
-    df["vectorId"] = features_df.slice_id.iloc[df["Index"]]
-    df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
-
-    # Clean up dataframe
-    del df["Index"]
-
     return df
-
-
-import pandera as pa
 
 
 def write_custom_analysis_table(df, result_task_dir, effect_size_column):
