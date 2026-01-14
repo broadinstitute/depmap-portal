@@ -7,6 +7,7 @@ from depmap.compound.models import Compound
 from depmap.context_explorer.models import (
     BoxCardData,
     ContextAnalysis,
+    ContextExplorerDatasets,
     EnrichedLineagesTileData,
     GroupedOtherBoxPlotData,
 )
@@ -527,23 +528,24 @@ def get_organized_contexts(
 ################################################################################
 
 
-def get_gene_enriched_lineages_entity_id_and_dataset_name(
+def get_gene_enriched_lineages_feature_dataset_metadata(
     feature_id: str,
 ) -> Optional[dict]:
     gene = Gene.get_gene_by_entrez(int(feature_id))
 
     assert gene is not None
 
-    dataset = get_dependency_dataset_for_entity(
-        DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.entity_id
+    dataset = data_access.get_matrix_dataset(
+        ContextExplorerDatasets.Chronos_Combined.value
     )
     if dataset is None:
         return None
-    dataset_name = dataset.name.name
-    dataset_display_name = dataset.display_name
+
+    dataset_name = dataset.given_id
+    dataset_display_name = dataset.label
 
     return {
-        "feature_id": gene.entrez_id,
+        "feature_id": feature_id,
         "dataset_given_id": dataset_name,
         "label": gene.label,
         "dataset_display_name": dataset_display_name,

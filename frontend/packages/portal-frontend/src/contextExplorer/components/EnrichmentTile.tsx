@@ -19,9 +19,9 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
   featureLabel,
   featureType,
 }) => {
-  const contextExplorerHref = window.location.href
-    .split(encodeURIComponent(featureLabel))[0]
-    .replace(featureType, "context_explorer");
+  const contextExplorerHref = `${
+    window.location.href.split(encodeURIComponent(featureType))[0]
+  }context_explorer`;
 
   const [tileData, setTileData] = useState<EnrichedLineagesTileData | null>(
     null

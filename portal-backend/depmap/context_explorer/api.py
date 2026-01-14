@@ -609,7 +609,7 @@ class EnrichedLineagesTile(
         feature_type = request.args.get("feature_type")
 
         feature_id_and_dataset_given_id = (
-            box_plot_utils.get_gene_enriched_lineages_entity_id_and_dataset_name(
+            box_plot_utils.get_gene_enriched_lineages_feature_dataset_metadata(
                 feature_id=feature_id
             )
             if feature_type == "gene"
@@ -624,8 +624,6 @@ class EnrichedLineagesTile(
         feature_id = feature_id_and_dataset_given_id["feature_id"]
         dataset_given_id = feature_id_and_dataset_given_id["dataset_given_id"]
         dataset_display_name = feature_id_and_dataset_given_id["dataset_display_name"]
-
-        feature_label = feature_id_and_dataset_given_id["label"]
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,
