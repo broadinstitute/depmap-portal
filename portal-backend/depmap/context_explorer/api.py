@@ -3,10 +3,7 @@ from typing import Any, Dict, List, Literal, Tuple, Union
 import os
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import Compound
-from depmap.context_explorer.utils import (
-    get_feature_id_from_full_label,
-    get_path_to_node,
-)
+from depmap.context_explorer.utils import get_path_to_node
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
@@ -550,9 +547,6 @@ class ContextBoxPlotData(Resource):
         show_positive_effect_sizes = request.args.get("show_positive_effect_sizes")
 
         show_positive_effect_sizes = show_positive_effect_sizes == "true"
-        feature_id_and_label = get_feature_id_from_full_label(
-            feature_type=feature_type, feature_id=feature_id,
-        )
 
         sig_contexts = box_plot_utils.get_sig_context_dataframe(
             tree_type=tree_type,

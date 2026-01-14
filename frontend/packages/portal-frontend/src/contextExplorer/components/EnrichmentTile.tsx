@@ -66,7 +66,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
 
     if (
       datasetName ===
-      ContextExplorerDatasets.REPURPOSING_primary_collapsed.toString()
+      ContextExplorerDatasets.Rep_all_single_pt_per_compound.toString()
     ) {
       return "repurposing";
     }

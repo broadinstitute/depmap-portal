@@ -15,7 +15,7 @@ export interface ContextInfo {
 
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
-  REPURPOSING_primary_collapsed = "REPURPOSING_primary_collapsed",
+  Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound",
   PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix",
 }
 

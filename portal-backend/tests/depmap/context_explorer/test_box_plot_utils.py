@@ -290,7 +290,9 @@ def get_context_explorer_box_plot_filters(dataset_given_id: str):
     ):
         max_fdr = 0.1
         min_abs_effect_size = 0.1
-    elif dataset_given_id == ContextExplorerDatasets.REPURPOSING_primary_collapsed.name:
+    elif (
+        dataset_given_id == ContextExplorerDatasets.Rep_all_single_pt_per_compound.name
+    ):
         max_fdr = 0.1
         min_abs_effect_size = 0.5
 
@@ -302,8 +304,8 @@ def get_context_explorer_box_plot_filters(dataset_given_id: str):
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
@@ -346,8 +348,8 @@ def test_get_sig_context_dataframe_level_0_significant(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
@@ -417,7 +419,7 @@ def test_get_enrichment_tile_filters():
         min_frac_dep_in,
     ) = enrichment_tile_filters.get_enrichment_tile_filters(
         feature_type="compound",
-        dataset_given_id=ContextExplorerDatasets.REPURPOSING_primary_collapsed.name,
+        dataset_given_id=ContextExplorerDatasets.Rep_all_single_pt_per_compound.name,
     )
 
     assert max_fdr == 0.1
@@ -429,8 +431,8 @@ def test_get_enrichment_tile_filters():
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
@@ -484,8 +486,8 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
@@ -526,8 +528,8 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
@@ -665,8 +667,8 @@ def test_get_context_plot_data(
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("REPURPOSING_primary_collapsed", "compound", "Lineage"),
-        ("REPURPOSING_primary_collapsed", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],

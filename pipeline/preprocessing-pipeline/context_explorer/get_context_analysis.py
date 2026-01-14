@@ -20,7 +20,7 @@ from tqdm import tqdm
 MIN_GROUP_SIZE = 5
 
 CRISPR_DATASET_NAME = "Chronos_Combined"
-REPURPOSING_DATASET_NAME = "REPURPOSING_primary_collapsed"
+REPURPOSING_DATASET_NAME = "Rep_all_single_pt_per_compound"
 ONCREF_DATASET_NAME = "PRISMOncologyReferenceLog2AUCMatrix"
 
 

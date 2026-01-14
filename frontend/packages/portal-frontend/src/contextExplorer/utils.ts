@@ -788,7 +788,7 @@ export function getDetailPanelTooltip(datasetId: ContextExplorerDatasets) {
     return ONC_DETAIL_TOOLTIP;
   }
 
-  if (datasetId === ContextExplorerDatasets.REPURPOSING_primary_collapsed) {
+  if (datasetId === ContextExplorerDatasets.Rep_all_single_pt_per_compound) {
     return REP_DETAIL_TOOLTIP;
   }
 

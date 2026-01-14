@@ -22,7 +22,7 @@ from depmap.database import (
 
 
 class ContextExplorerDatasets(enum.Enum):
-    REPURPOSING_primary_collapsed = "REPURPOSING_primary_collapsed"
+    Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound"
     PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix"
     Chronos_Combined = "Chronos_Combined"
 
