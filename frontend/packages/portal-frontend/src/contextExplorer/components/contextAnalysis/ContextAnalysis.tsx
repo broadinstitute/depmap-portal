@@ -1110,7 +1110,7 @@ function ContextAnalysis({
             {boxPlotData && (
               <a
                 href={toPortalLink(
-                  `/${featureType}/${boxPlotData.entity_overview_page_label}`
+                  `/${featureType}/${boxPlotData.feature_label}`
                 )}
                 target="_blank"
                 rel="noreferrer"

@@ -63,8 +63,8 @@ export interface ContextPlotBoxData {
   insignificant_heme_data: BoxData;
   insignificant_solid_data: BoxData;
   drug_dotted_line: number;
-  entity_label: string;
-  entity_overview_page_label: string;
+  feature_label: string;
+  feature_overview_page_label: string;
   dataset_units: string;
 }
 
