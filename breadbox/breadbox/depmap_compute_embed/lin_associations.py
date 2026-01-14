@@ -160,5 +160,4 @@ def robust_linear_model(X, y):
         "PosteriorSD": beta_se.data,
         "mask": outmask,
     }
-    breakpoint()
     return pd.DataFrame.from_dict(out)
