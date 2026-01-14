@@ -5,7 +5,7 @@ import json
 col_order = [
     "subtype_code",
     "out_group",
-    "entity_id",
+    "feature_id",
     "dataset",
     "t_pval",
     "t_qval",
