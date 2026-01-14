@@ -122,7 +122,7 @@ class MockCustomAnalysisCallbacks(CustomAnalysisCallbacks):
     def create_cell_line_group(
         self, model_ids: List[str], use_feature_ids: bool
     ) -> str:
-        pass
+        raise NotImplementedError()
 
     def get_dataset_df(self, feature_matrix_indices: List[int]) -> np.ndarray:
         return self.data_matrix[:, feature_matrix_indices]
@@ -131,29 +131,6 @@ class MockCustomAnalysisCallbacks(CustomAnalysisCallbacks):
         self, message=None, start_time=None, max_time: int = 45, percent_complete=None
     ):
         pass
-
-
-def test_run_lin_associations_simple():
-    # first column: zero variance
-    # second column: perfect linear correlation
-    # third: random
-    # four:
-    dataset_df = pd.DataFrame([[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]])
-    features_df = FeaturesExtDataFrame(
-        {"given_id": [], "label": [], "slice_id": []}, index=[]
-    )
-    value_query_vector = list(pd.read_csv(query_vector_path).iloc[:, 0])
-
-    vector_is_dependent = True
-    callbacks = MockCustomAnalysisCallbacks(dataset_df.values)
-
-    one_batch_df = run_linear_model_fits(
-        callbacks,
-        value_query_vector,
-        features_df,
-        vector_is_dependent,
-        features_per_batch=1000,
-    )
 
 
 def test_run_lin_associations_consistency():

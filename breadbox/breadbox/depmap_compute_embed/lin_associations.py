@@ -4,7 +4,7 @@ import numpy.ma as ma
 import pandas as pd
 
 
-def lin_associations_wrapper(features, profile, profile_is_dependent):
+def lin_associations_wrapper(features, profile, profile_is_dependent) -> pd.DataFrame:
     """
     Wraps the linear association functions and performs various indexing tasks
     @param features: (numpy array or Pandas DataFrame) Set of features (generally biomarkers) for fitting. Shape: (n,m). NaN allowed.
@@ -33,6 +33,7 @@ def lin_associations_wrapper(features, profile, profile_is_dependent):
     df["Index"] = df.index
     df["dep.var"] = np.nan
     df["ind.var"] = np.nan
+    assert isinstance(df, pd.DataFrame)  # for typechecker
     return df
 
 
@@ -159,4 +160,5 @@ def robust_linear_model(X, y):
         "PosteriorSD": beta_se.data,
         "mask": outmask,
     }
+    breakpoint()
     return pd.DataFrame.from_dict(out)

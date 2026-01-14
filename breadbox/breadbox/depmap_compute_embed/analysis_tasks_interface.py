@@ -104,6 +104,7 @@ def run_pearson_correlations(
 
     results_df = results_df[["Cor", "PValue", "numCellLines"]]
 
+    assert isinstance(results_df, pd.DataFrame)  # for pyright
     sorted_df = _post_process_results(results_df, features_df, "Cor")
 
     return sorted_df
@@ -158,6 +159,7 @@ def run_linear_model_fits(
     # drop all columns except these
     results_df = results_df[["EffectSize", "PValue", "numCellLines"]]
 
+    assert isinstance(results_df, pd.DataFrame)  # for pyright
     sorted_df = _post_process_results(results_df, features_df, "EffectSize")
 
     if len(results_df) == 0:
@@ -235,7 +237,7 @@ def _make_progress_callback(callbacks: CustomAnalysisCallbacks, message: str):
 
 def _post_process_results(
     results_df: pd.DataFrame, features_df: FeaturesExtDataFrame, effect_size_column: str
-):
+) -> pd.DataFrame:
     # update QValue and sort by effect size
 
     # now that we have all the results, correct the p-values
@@ -250,9 +252,7 @@ def _post_process_results(
     full_df = full_df.rename(columns={"slice_id": "vectorId"})
 
     # sort by descending absolute
-    return full_df.reindex(
-        full_df[effect_size_column].abs().sort_values(ascending=False).index
-    )
+    return full_df.sort_values(by="cor", key=abs, ascending=False)
 
 
 def _make_result_task_directory(result_dir, task_id):
