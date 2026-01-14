@@ -238,11 +238,14 @@ class BoxPlotTypes(enum.Enum):
 
 class ContextAnalysis(Model):
     __table_args__ = (
-        db.Index("context_analysis_idx_1", "feature_id", "out_group"),
+        db.Index(
+            "context_analysis_idx_1", "feature_id", "out_group", "dataset_given_id"
+        ),
         db.UniqueConstraint(
             "subtype_code",
             "out_group",
             "feature_id",
+            "dataset_given_id",
             name="uc_context_outgroup_entity",
         ),
     )
