@@ -402,7 +402,7 @@ def oncref_context_analysis(
         return (
             ds_res.reset_index()
             .rename(columns={"index": "feature_id"})
-            .merge(oncref_selectivity, left_on="feature_id", right_on="feature_id")
+            .merge(oncref_selectivity, on=["feature_id", "dataset"])
         )
 
     return compute_in_out_groups(
@@ -434,7 +434,7 @@ def repurposing_context_analysis(
         return (
             ds_res.reset_index()
             .rename(columns={"index": "feature_id"})
-            .merge(repurposing_selectivity, left_on="feature_id", right_on="feature_id")
+            .merge(repurposing_selectivity, on=["feature_id", "dataset"])
         )
 
     return compute_in_out_groups(
