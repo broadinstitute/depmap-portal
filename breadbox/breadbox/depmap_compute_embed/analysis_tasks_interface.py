@@ -252,7 +252,7 @@ def _post_process_results(
     full_df = full_df.rename(columns={"slice_id": "vectorId"})
 
     # sort by descending absolute
-    return full_df.sort_values(by="cor", key=abs, ascending=False)
+    return full_df.sort_values(by=effect_size_column, key=abs, ascending=False)
 
 
 def _make_result_task_directory(result_dir, task_id):
