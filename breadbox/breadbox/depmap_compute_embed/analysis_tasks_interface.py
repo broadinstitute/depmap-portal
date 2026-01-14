@@ -114,21 +114,35 @@ def run_lin_associations_on_feature_subset(
 
 
 def _run_lm(
-    update_message: Callable[[str], None],
     callbacks: CustomAnalysisCallbacks,
     value_query_vector: Union[List[int], List[float]],
     features_df: FeaturesExtDataFrame,
     vector_is_dependent: bool,
+    features_per_batch: int,
 ):
+    # only supporting AnalysisType.two_class
     assert vector_is_dependent is not None
 
-    # only supporting AnalysisType.two_class
+    update_message = callbacks.update_message
 
     update_message("Running two class comparison...")
 
-    df = run_lin_associations_on_feature_subset(
-        features_df, callbacks, value_query_vector, vector_is_dependent
+    def process_batch(batch):
+        batch_features_df = features_df.loc[batch, :]
+        result = run_lin_associations_on_feature_subset(
+            batch_features_df, callbacks, value_query_vector, vector_is_dependent
+        )
+        return result
+
+    df = _process_features_in_batches(
+        features_df,
+        features_per_batch,
+        _make_progress_callback(callbacks),
+        process_batch,
     )
+
+    # recompute the q-value since that needs information across all batches
+    df["qvalue"] = stats.false_discovery_control(df["p.val"])
 
     if len(df) == 0:
         # specific error to report back to the user
@@ -137,8 +151,8 @@ def _run_lm(
     df = df.rename(
         columns={"PosteriorMean": "EffectSize", "p.val": "PValue", "qvalue": "QValue",},
     )
+    # drop all columns except these
     df = df[["EffectSize", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
-    assert isinstance(df, pd.DataFrame)
 
     # sort by descending absolute
     df = df.reindex(df.EffectSize.abs().sort_values(ascending=False).index)
@@ -168,17 +182,31 @@ def write_custom_analysis_table(df, result_task_dir, effect_size_column):
     return data_json_file_path
 
 
-def _local_run_pearson(
-    callbacks: CustomAnalysisCallbacks,
-    value_query_vector: Union[List[int], List[float]],
+def _process_features_in_batches(
     features_df: FeaturesExtDataFrame,
     features_per_batch: int,
-) -> pd.DataFrame:
+    progress_callback: Callable[[float], None],
+    process_batch: Callable[[List[int]], pd.DataFrame],
+):
+    batches = []
+    for batch_start in range(0, len(features_df), features_per_batch):
+        batch_end = min(batch_start + features_per_batch, len(features_df))
+        batches.append(features_df.index[batch_start:batch_end])
 
-    assert np.isnan(value_query_vector).sum() == 0
+    results = []
+    for i, batch in enumerate(batches):
+        progress_callback(i / len(batches))
 
-    callbacks.update_message("Running Pearson correlation...")
+        batch_result_df = process_batch(batch)
 
+        results.append(batch_result_df)
+
+    # combine the tables from each batch
+    results_df = pd.concat(results, ignore_index=True)
+    return results_df
+
+
+def _make_progress_callback(callbacks: CustomAnalysisCallbacks):
     def progress_callback(fraction_complete):
         # assuming 10% of time is before computing correlations
         # and assume 10% of time is packaging results up
@@ -192,27 +220,34 @@ def _local_run_pearson(
             percent_complete=((fraction_complete * 0.8 + 0.1) * 100),
         )
 
-    batches = []
-    for batch_start in range(0, len(features_df), features_per_batch):
-        batch_end = min(batch_start + features_per_batch, len(features_df))
-        batches.append(features_df.index[batch_start:batch_end])
+    return progress_callback
+
+
+def _local_run_pearson(
+    callbacks: CustomAnalysisCallbacks,
+    value_query_vector: Union[List[int], List[float]],
+    features_df: FeaturesExtDataFrame,
+    features_per_batch: int,
+) -> pd.DataFrame:
+
+    assert np.isnan(value_query_vector).sum() == 0
+
+    callbacks.update_message("Running Pearson correlation...")
 
     vector_for_pearson = np.asarray([value_query_vector], dtype=float).transpose()
 
-    results = []
-    for i, batch in enumerate(batches):
-        progress_callback(i / len(batches))
-
+    def process_batch(batch):
         dataset = callbacks.get_dataset_df(batch)
-
         batch_result_df = run_pearson(vector_for_pearson, dataset)
-
         batch_result_df.index = batch
+        return batch_result_df
 
-        results.append(batch_result_df)
-
-    # combine the tables from each batch
-    results_df = pd.concat(results)
+    results_df = _process_features_in_batches(
+        features_df,
+        features_per_batch,
+        _make_progress_callback(callbacks),
+        process_batch,
+    )
 
     # now that we have all the results, correct the p-values
     q_vals = np.full(len(results_df), np.nan)
@@ -282,11 +317,11 @@ def run_custom_analysis(
     else:
         assert vector_is_dependent is not None
         df = _run_lm(
-            update_message,
             callbacks,
             value_query_vector,
             features_df,
             vector_is_dependent,
+            features_per_batch,
         )
         effect_size_column = "EffectSize"
 
