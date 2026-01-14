@@ -1,15 +1,12 @@
-import math
 import unittest.mock
 from typing import List
-from unittest.mock import MagicMock
 import os
 import numpy as np
 
 from breadbox.depmap_compute_embed.analysis_tasks_interface import (
-    run_lin_associations_on_feature_subset,
     FeaturesExtDataFrame,
     CustomAnalysisCallbacks,
-    _local_run_pearson,
+    _run_pearson,
     _run_lm,
 )
 import pandas as pd
@@ -83,7 +80,7 @@ def ensure_datafiles_exist():
     feature_df.to_csv(features_path, index=True)
 
 
-def test_run_lin_associations_on_feature_subset():
+def test_run_lm_effect_size():
     ensure_datafiles_exist()
 
     # read the reference files
@@ -91,32 +88,27 @@ def test_run_lin_associations_on_feature_subset():
     dataset_df = pd.read_csv(dataset_path)
     value_query_vector = list(pd.read_csv(query_vector_path).iloc[:, 0])
 
-    def mock_get_dataset_df(feature_matrix_indices: List[int]):
-        values = dataset_df.iloc[:, feature_matrix_indices].values
-        assert isinstance(values, np.ndarray)
-        return values
+    callbacks = MockCustomAnalysisCallbacks(dataset_df.values)
 
-    callbacks = unittest.mock.create_autospec(CustomAnalysisCallbacks)
-    callbacks.get_dataset_df.side_effect = mock_get_dataset_df
-
-    result_df = run_lin_associations_on_feature_subset(
-        features_df,
+    result_df = _run_lm(
         callbacks,
         value_query_vector=value_query_vector,
+        features_df=features_df,
         vector_is_dependent=False,
+        features_per_batch=1000,  # run in one batch
     )
 
     # only one feature should be very close to having a difference of -5 between the two groups
-    strong_diff_rows = result_df[
-        abs(result_df["PosteriorMean"] - (-5)) < 0.5
-    ].to_records(index=False)
+    strong_diff_rows = result_df[abs(result_df["EffectSize"] - (-5)) < 0.5].to_records(
+        index=False
+    )
     assert len(strong_diff_rows) == 1
     strong_diff_row = strong_diff_rows[0]
     # and make sure that's feature 10
-    assert strong_diff_row["given_id"] == "feature_10"
+    assert strong_diff_row["label"] == "feature_10 label"
 
     # all other rows should have a diff close to zero
-    no_diff_rows = result_df[abs(result_df["PosteriorMean"] - (0)) < 0.5].to_records(
+    no_diff_rows = result_df[abs(result_df["EffectSize"] - (0)) < 0.5].to_records(
         index=False
     )
     assert len(no_diff_rows) == (
@@ -184,11 +176,11 @@ def test_run_pearson_consistency():
     vector_is_dependent = True
     callbacks = MockCustomAnalysisCallbacks(dataset_df.values)
 
-    one_batch_df = _local_run_pearson(
+    one_batch_df = _run_pearson(
         callbacks, value_query_vector, features_df, features_per_batch=1000,
     )
 
-    many_batches_df = _local_run_pearson(
+    many_batches_df = _run_pearson(
         callbacks, value_query_vector, features_df, features_per_batch=2,
     )
 

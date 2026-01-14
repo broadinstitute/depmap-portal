@@ -55,13 +55,11 @@ class CustomAnalysisResult:
     total_rows: int
 
 
-def run_lin_associations_on_feature_subset(
-    features_df: FeaturesExtDataFrame,
-    callbacks: CustomAnalysisCallbacks,
+def _compute_lm_associations(
+    dataset: np.ndarray,
     value_query_vector: Union[List[int], List[float]],
     vector_is_dependent: bool,
-):
-    dataset = callbacks.get_dataset_df(features_df.index.to_list())
+) -> pd.DataFrame:
     original_dataset_column_count = dataset.shape[1]
     num_cell_lines_used_in_calc = count_num_non_nan_per_row(dataset.transpose())
     assert original_dataset_column_count == len(num_cell_lines_used_in_calc)
@@ -69,48 +67,13 @@ def run_lin_associations_on_feature_subset(
     # calculate lin associations
     df = lin_associations_wrapper(dataset, value_query_vector, vector_is_dependent)
 
-    # add a numCellLines column by looking up the value for each record in df. At this point "Index"
-    # refers to the column index of `of the ndarray `dataset`, so use Index to skip over the elements in
-    # num_cell_lines_used_in_calc and get the values that line up with df
+    # add a numCellLines column
     df["numCellLines"] = num_cell_lines_used_in_calc[df["Index"]]
-    assert original_dataset_column_count >= len(
-        df
-    ), "Output of lin_associations_wrapper should always be same size or smaller then number of columns in the fetched dataset"
 
-    # Now, we want to minimize the amount of code which relies on the shape of `dataset`, so map df['Index']
-    # back to the original indices that are on features_df. We can then use this to join in the other feature metadata
-    df["Index"] = features_df.index[df["Index"]]
+    # rename Index to make it clear it's a column index from the input matrix
+    df.rename(columns={"Index": "matrix_col_index"}, inplace=True)
 
-    # Merge in metadata about each feature
-    merged_df = pd.merge(df, features_df, how="left", left_on="Index", right_index=True)
-    merged_df.rename(columns={"slice_id": "vectorId"}, inplace=True)
-
-    # this is the format of the data frame we're expecting at this point
-    schema = pa.DataFrameSchema(
-        {
-            "betahat": pa.Column(float, nullable=True),
-            "sebetahat": pa.Column(float, nullable=True),
-            "NegativeProb": pa.Column(float, nullable=True),
-            "PositiveProb": pa.Column(float, nullable=True),
-            "lfsr": pa.Column(float, nullable=True),
-            "svalue": pa.Column(float, nullable=True),
-            "lfdr": pa.Column(float, nullable=True),
-            "qvalue": pa.Column(float, nullable=True),
-            "PosteriorMean": pa.Column(float, nullable=True),
-            "PosteriorSD": pa.Column(float, nullable=True),
-            "dep.var": pa.Column(float, nullable=True),
-            "ind.var": pa.Column(float, nullable=True),
-            "p.val": pa.Column(float, nullable=True),
-            "Index": pa.Column(int, nullable=False),
-            "given_id": pa.Column(str, nullable=False),
-            "label": pa.Column(str, nullable=False),
-            "vectorId": pa.Column(str, nullable=False),
-        }
-    )
-
-    merged_df = schema.validate(merged_df)
-
-    return merged_df
+    return df
 
 
 def _run_lm(
@@ -128,35 +91,57 @@ def _run_lm(
     update_message("Running two class comparison...")
 
     def process_batch(batch):
-        batch_features_df = features_df.loc[batch, :]
-        result = run_lin_associations_on_feature_subset(
-            batch_features_df, callbacks, value_query_vector, vector_is_dependent
-        )
-        return result
+        dataset = callbacks.get_dataset_df(batch)
 
-    df = _process_features_in_batches(
+        batch_result_df = _compute_lm_associations(
+            dataset, value_query_vector, vector_is_dependent
+        )
+
+        # map matrix column index back to feature index from features_df
+        batch_indices = pd.Series(batch)
+        batch_result_df.index = batch_indices.iloc[
+            batch_result_df["matrix_col_index"]
+        ].values
+
+        return batch_result_df.drop(columns=["matrix_col_index"])
+
+    results_df = _process_features_in_batches(
         features_df,
         features_per_batch,
-        _make_progress_callback(callbacks),
+        _make_progress_callback(callbacks, "Running linear model..."),
         process_batch,
     )
 
     # recompute the q-value since that needs information across all batches
-    df["qvalue"] = stats.false_discovery_control(df["p.val"])
+    results_df["qvalue"] = stats.false_discovery_control(results_df["p.val"])
 
-    if len(df) == 0:
+    if len(results_df) == 0:
         # specific error to report back to the user
         raise UserError("Error: Running this analysis returned no results")
 
-    df = df.rename(
-        columns={"PosteriorMean": "EffectSize", "p.val": "PValue", "qvalue": "QValue",},
+    # join in the feature metadata
+    full_df = results_df.join(features_df)
+
+    # rename columns
+    full_df = full_df.rename(
+        columns={
+            "PosteriorMean": "EffectSize",
+            "p.val": "PValue",
+            "qvalue": "QValue",
+            "slice_id": "vectorId",
+        }
     )
+
     # drop all columns except these
-    df = df[["EffectSize", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
+    full_df = full_df[
+        ["EffectSize", "PValue", "QValue", "label", "vectorId", "numCellLines"]
+    ]
 
     # sort by descending absolute
-    df = df.reindex(df.EffectSize.abs().sort_values(ascending=False).index)
-    return df
+    sorted_df = full_df.reindex(
+        full_df.EffectSize.abs().sort_values(ascending=False).index
+    )
+    return sorted_df
 
 
 def write_custom_analysis_table(df, result_task_dir, effect_size_column):
@@ -206,7 +191,7 @@ def _process_features_in_batches(
     return results_df
 
 
-def _make_progress_callback(callbacks: CustomAnalysisCallbacks):
+def _make_progress_callback(callbacks: CustomAnalysisCallbacks, message: str):
     def progress_callback(fraction_complete):
         # assuming 10% of time is before computing correlations
         # and assume 10% of time is packaging results up
@@ -216,14 +201,13 @@ def _make_progress_callback(callbacks: CustomAnalysisCallbacks):
                 fraction_complete,
             )
         callbacks.update_message(
-            "Running Pearson correlation...",
-            percent_complete=((fraction_complete * 0.8 + 0.1) * 100),
+            message, percent_complete=((fraction_complete * 0.8 + 0.1) * 100),
         )
 
     return progress_callback
 
 
-def _local_run_pearson(
+def _run_pearson(
     callbacks: CustomAnalysisCallbacks,
     value_query_vector: Union[List[int], List[float]],
     features_df: FeaturesExtDataFrame,
@@ -245,7 +229,7 @@ def _local_run_pearson(
     results_df = _process_features_in_batches(
         features_df,
         features_per_batch,
-        _make_progress_callback(callbacks),
+        _make_progress_callback(callbacks, "Running Pearson correlation..."),
         process_batch,
     )
 
@@ -262,7 +246,8 @@ def _local_run_pearson(
     # sort by descending absolute
     sorted_df = full_df.reindex(full_df.Cor.abs().sort_values(ascending=False).index)
 
-    return sorted_df.rename(columns={"slice_id": "vectorId"}).drop(columns=["given_id"])
+    sorted_df = sorted_df.rename(columns={"slice_id": "vectorId"})
+    return sorted_df[["Cor", "PValue", "QValue", "label", "vectorId", "numCellLines"]]
 
 
 def _make_result_task_directory(result_dir, task_id):
@@ -310,7 +295,7 @@ def run_custom_analysis(
     )
 
     if analysis_type == AnalysisType.pearson:
-        df = _local_run_pearson(
+        df = _run_pearson(
             callbacks, value_query_vector, features_df, features_per_batch,
         )
         effect_size_column = "Cor"
