@@ -44,7 +44,8 @@ export type DataExplorerAggregation =
   | "mean"
   | "median"
   | "25%tile"
-  | "75%tile";
+  | "75%tile"
+  | "stddev";
 
 export type DimensionKey = "x" | "y" | "color";
 export type FilterKey =

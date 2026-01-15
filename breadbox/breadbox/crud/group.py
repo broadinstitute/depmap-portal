@@ -98,7 +98,7 @@ def get_group(
     if isinstance(group_id, UUID):
         group_id = str(group_id)
 
-    group = db.query(Group).get(group_id)
+    group = db.get(Group, group_id)
     if group is None:
         return None
 

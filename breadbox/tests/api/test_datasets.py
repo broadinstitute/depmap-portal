@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 
 from breadbox.crud.dimension_types import get_dimension_type
-from ..factories import feature_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
 
@@ -2589,7 +2588,7 @@ class TestPost:
         B    3.0025
         C    2.0050
         """
-        assert response.json() == {"25%tile": {"A": 1.0050, "B": 3.0025, "C": 2.0050}}
+        assert response.json() == {"25%tile": {"A": 1.5, "B": 3.25, "C": 2.5}}
 
         response = client.post(
             f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",

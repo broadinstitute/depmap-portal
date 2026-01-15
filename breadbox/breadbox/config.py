@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     use_depmap_proxy: bool
     default_user: Optional[str]
     host_scheme_override: Optional[str] = None
+    sql_endpoints_enabled: bool = False
     breadbox_env: str = "dev"
     # prefix all routes with api_prefix if it's not an empty string
     api_prefix: str = ""
@@ -30,6 +31,9 @@ class Settings(BaseSettings):
     brokerless_celery_for_testing: bool = False
 
     LEGACY_CAS_BUCKET: Optional[str] = os.environ.get("LEGACY_CAS_BUCKET")
+
+    # the host:port to use for connecting to redis (used by caching)
+    redis_host: Optional[str] = os.getenv("REDIS_HOST")
 
     model_config = SettingsConfigDict(
         env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),

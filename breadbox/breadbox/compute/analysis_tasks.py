@@ -8,7 +8,7 @@ from typing import cast, Sequence
 import pandas as pd
 from contextlib import contextmanager
 
-from breadbox.depmap_compute_embed import models, FeaturesExtDataFrame
+from breadbox.depmap_compute_embed import models, FeaturesExtDataFrame, AnalysisType
 from breadbox.depmap_compute_embed import analysis_tasks_interface
 import csv
 from io import StringIO, BytesIO
@@ -297,7 +297,9 @@ class CustomAnalysisCallbacksImpl:
             keep_nans=True,
         )
         m_values = m.values
-        assert m_values.dtype == np.dtype("float64")
+        assert m_values.dtype == np.dtype(
+            "float64"
+        ), f"Cannot use this method with a non-numeric dataset {self.dataset}"
         return m_values
 
 

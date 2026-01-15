@@ -3,7 +3,7 @@ FROM debian:trixie
 
 # Set environment variables to avoid interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
-# Use /opt/pyenv instead of /root/.pyenv so all users can access it
+# Using /opt/pyenv instead of /root/.pyenv so all users can access it
 ENV PYENV_ROOT="/opt/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
@@ -54,7 +54,7 @@ RUN pip install poetry==1.5.1 && poetry config virtualenvs.in-project true
 
 RUN mkdir -p /install
 ADD dist/additional-files.tar.gz /install
-
+COPY dist/git-sha /install/git-sha
 COPY --chown=depmap:cds-service . /install/portal-backend
 RUN cd /install/portal-backend && poetry install
 
@@ -70,4 +70,5 @@ USER depmap
 RUN echo "breadbox_required=true" > /install/deploy_variables
 ENV PATH="/install/portal-backend/.venv/bin:${ORIG_PATH}"
 
-CMD gunicorn -b 0.0.0.0:5001 autoapp:app --access-logfile -
+# The JSON form ensures gunicorn receives OS signals directly. Else we get a warning during docker build. 
+CMD ["gunicorn", "-b", "0.0.0.0:5001", "autoapp:app", "--access-logfile", "-"]
