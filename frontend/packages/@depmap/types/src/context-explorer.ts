@@ -15,8 +15,8 @@ export interface ContextInfo {
 
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
-  Rep_all_single_pt = "Rep_all_single_pt",
-  Prism_oncology_AUC = "Prism_oncology_AUC",
+  Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound",
+  PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix",
 }
 
 export interface ContextPathInfo {
@@ -25,7 +25,8 @@ export interface ContextPathInfo {
 }
 
 export type ContextAnalysisTableType = {
-  entity: string[];
+  feature_id: string[];
+  feature: string[];
   t_pval: number[];
   mean_in: number[];
   mean_out: number[];
@@ -62,8 +63,8 @@ export interface ContextPlotBoxData {
   insignificant_heme_data: BoxData;
   insignificant_solid_data: BoxData;
   drug_dotted_line: number;
-  entity_label: string;
-  entity_overview_page_label: string;
+  feature_label: string;
+  feature_overview_page_label: string;
   dataset_units: string;
 }
 

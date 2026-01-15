@@ -2,11 +2,12 @@ from typing import Protocol, List, Optional, Any
 
 import h5py
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
+from pandas.api.types import is_numeric_dtype, is_string_dtype
 import numpy as np
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pyarrow
+from pandas.core.dtypes.common import is_bool_dtype
 
 from breadbox.schemas.custom_http_exception import FileValidationError
 
@@ -26,13 +27,13 @@ class DataFrameWrapper(Protocol):
     def read_columns(self, columns: list[str]) -> pd.DataFrame:
         ...
 
-    def is_sparse(self) -> bool:
-        ...
-
     def get_df(self) -> pd.DataFrame:
         ...
 
     def is_numeric_cols(self) -> bool:
+        ...
+
+    def is_string_cols(self) -> bool:
         ...
 
 
@@ -100,10 +101,6 @@ class HDF5DataFrameWrapper(DataFrameWrapper):
             df_columns, columns=columns, index=self.get_index_names()  # pyright: ignore
         )
 
-    def is_sparse(self) -> bool:
-        # For now, we bypass checking sparsity for hdf5 files to keep things simple
-        return False
-
     def get_df(self) -> pd.DataFrame:
         if len(self.get_column_names()) > MAX_COLUMNS_FETCHED:
             raise Exception(
@@ -114,6 +111,9 @@ class HDF5DataFrameWrapper(DataFrameWrapper):
     def is_numeric_cols(self) -> bool:
         # assuming all hdf5 files are numeric
         return True
+
+    def is_string_cols(self) -> bool:
+        return False
 
 
 class ParquetDataFrameWrapper(DataFrameWrapper):
@@ -129,6 +129,36 @@ class ParquetDataFrameWrapper(DataFrameWrapper):
                 f"Make sure the first column in the parquet file is the index and is of type string."
             )
 
+        self.col_type = self._determine_col_type()
+
+    def _determine_col_type(self):
+        """Will either return 'float', 'str' or 'mixed'"""
+
+        float_columns = 0
+        str_columns = 0
+        other_columns = 0
+
+        for i, field in enumerate(self.schema):
+            arrow_type = field.type
+
+            if i == 0:  # Skip the index column
+                continue
+
+            if pa.types.is_integer(arrow_type) or pa.types.is_floating(arrow_type):
+                float_columns += 1
+            elif pyarrow.types.is_string(arrow_type):
+                str_columns += 1
+            else:
+                other_columns += 1
+
+        if float_columns == 0 and other_columns == 0 and str_columns > 0:
+            return "str"
+
+        if str_columns == 0 and other_columns == 0 and float_columns > 0:
+            return "float"
+
+        return "mixed"
+
     def get_index_names(self) -> List[str]:
         index_col = self.schema.names[0]
         index_names = self.file.read(columns=[index_col]).column(index_col).to_pylist()
@@ -139,14 +169,7 @@ class ParquetDataFrameWrapper(DataFrameWrapper):
         return col_names
 
     def read_columns(self, columns: list[str]) -> pd.DataFrame:
-        # NOTE: It appears that pd.read_parquet() by default uses pyarrow. However, for some reason
-        #  when reading a file with 20k columns, the memory usage balloons
-        # to > 30GB and would take down breadbox. However, using fastparquet seems to avoid this problem.
         return self.file.read(columns=columns).to_pandas()
-
-    def is_sparse(self) -> bool:
-        # For now, we bypass checking sparsity for Parquet files to reduce complexity.
-        return False
 
     def get_df(self) -> pd.DataFrame:
         if len(self.get_column_names()) > MAX_COLUMNS_FETCHED:
@@ -158,25 +181,40 @@ class ParquetDataFrameWrapper(DataFrameWrapper):
         df.drop(columns=[df.columns[0]], inplace=True)
         return df
 
+    def is_string_cols(self) -> bool:
+        return self.col_type == "str"
+
     def is_numeric_cols(self) -> bool:
-        for i, field in enumerate(self.schema):
-            arrow_type = field.type
-
-            if i == 0:  # Skip the index column
-                continue
-
-            if not (
-                pa.types.is_integer(arrow_type) or pa.types.is_floating(arrow_type)
-            ):
-                return False
-
-        return True
+        return self.col_type == "float"
 
 
 class PandasDataFrameWrapper:
     def __init__(self, df: pd.DataFrame):
         self.df = df
         self.nonnull_indices = None
+        self.col_type = self._determine_col_type()
+
+    def _determine_col_type(self):
+        float_columns = 0
+        str_columns = 0
+        other_columns = 0
+
+        for col in self.df.columns:
+            col_dtype = self.df[col].dtypes
+            if is_numeric_dtype(col_dtype) or is_bool_dtype(col_dtype):
+                float_columns += 1
+            elif is_string_dtype(col_dtype):
+                str_columns += 1
+            else:
+                other_columns += 1
+
+        if float_columns == 0 and other_columns == 0 and str_columns > 0:
+            return "str"
+
+        if str_columns == 0 and other_columns == 0 and float_columns > 0:
+            return "float"
+
+        return "mixed"
 
     def get_index_names(self) -> List[str]:
         return self.df.index.to_list()
@@ -194,15 +232,24 @@ class PandasDataFrameWrapper:
             self.nonnull_indices = list(zip(rows_idx, cols_idx))
         return self.nonnull_indices
 
-    def is_sparse(self) -> bool:
-        total_nulls = self.df.size - len(self.get_nonnull_indices())
-        # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
-        is_sparse = total_nulls / self.df.size > 0.6
-        return is_sparse
-
     def get_df(self) -> pd.DataFrame:
         return self.df
 
+    def is_string_cols(self) -> bool:
+        return self.col_type == "str"
+
     def is_numeric_cols(self) -> bool:
-        df = self.get_df()
-        return all([is_numeric_dtype(df[col].dtypes) for col in df.columns])
+        return self.col_type == "float"
+
+
+def column_batch_iterator(dfw: DataFrameWrapper, batch_size: int):
+    cols = dfw.get_column_names()
+    for start_column_index in range(0, len(cols), batch_size):
+        # Find the correct column slice to write
+        end_column_index = min(start_column_index + batch_size, len(cols))
+
+        col_batch = cols[start_column_index:end_column_index]
+
+        # Read the chunk of data from the Parquet file
+        chunk_df = dfw.read_columns(col_batch)
+        yield start_column_index, end_column_index, chunk_df

@@ -30,7 +30,9 @@ from breadbox.crud.group import (
 )
 
 from ..crud.dataset import (
-    add_tabular_dimensions, add_matrix_dataset_dimensions,     get_current_datetime,
+    add_tabular_dimensions,
+    add_matrix_dataset_dimensions,
+    get_current_datetime,
 )
 from ..crud.dimension_ids import (
     IndexedGivenIDDataFrame,
@@ -273,8 +275,8 @@ def _aggregate_matrix_df(
     enum_to_agg_method = {
         AggregationMethod.mean: "mean",
         AggregationMethod.median: "median",
-        AggregationMethod.per25: lambda x: np.nanpercentile(x, q=0.25),
-        AggregationMethod.per75: lambda x: np.nanpercentile(x, q=0.75),
+        AggregationMethod.per25: lambda x: np.nanpercentile(x, q=25),
+        AggregationMethod.per75: lambda x: np.nanpercentile(x, q=75),
         AggregationMethod.stddev: lambda x: np.nanstd(x, ddof=1),
     }
 

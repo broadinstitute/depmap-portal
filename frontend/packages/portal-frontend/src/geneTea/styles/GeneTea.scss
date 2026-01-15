@@ -2,6 +2,8 @@
 @import "./GeneTeaTabLayout.scss";
 @import "./PlotSection.scss";
 @import "./PlotSelections.scss";
+@import "./PlotOptionsPanel.scss";
+@import "../../../../@depmap/data-explorer-2/src/styles/mixins.scss";
 
 .header {
   padding-left: 20px;
@@ -30,6 +32,10 @@
   text-align: center;
   color: #b00020;
   font-weight: 600;
+}
+
+.tableParagraph {
+  padding-top: 15px;
 }
 
 .tableSpinnerContainer {
@@ -72,9 +78,95 @@
   }
 }
 
+.GeneTeaMatchingTermPanel {
+  min-width: 0;
+  overflow: visible;
+  z-index: 9999;
+}
+
 .GeneTeaModal {
-  @media screen and (min-height: 510px) {
-    height: 100px;
+  max-height: 90vh;
+  overflow: hidden;
+
+  .tabContent {
+    min-height: 500px;
+  }
+  .geneTeaModalSpinner {
+    margin-top: -1px;
+    border: 1px solid #4a87ab;
+    border-top: 1px solid #fff;
+  }
+
+  mark {
+    background-color: #ffe3d1;
+  }
+
+  .saveAsContextButton {
+    padding-bottom: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .paginationControls {
+    margin-bottom: 15px;
+    margin-top: 15px;
+    text-align: center;
+
+    .pageCountLabel {
+      margin-top: 5px;
+      font-size: 12px;
+      color: #666;
+    }
+
+    .paginationPrevButton {
+      margin-right: 10px;
+    }
+
+    .paginationNextButton {
+      margin-left: 10px;
+    }
+  }
+
+  table {
+    @include scroll-shadow;
+    display: block;
+    border: 1px solid #4a87ab;
+    max-height: calc(68vh - 239px);
+    overflow-y: auto;
+    margin-bottom: 0;
+
+    thead th {
+      border: none;
+      color: #fff;
+      background-color: #5392b6;
+      font-weight: normal;
+      font-size: 13px;
+      padding: 4px 10px;
+      position: sticky;
+      top: 0;
+    }
+
+    tbody td {
+      border: none;
+    }
+
+    td,
+    th {
+      &:first-child {
+        min-width: 68px;
+        border-right: 1px solid #4a87ab;
+      }
+
+      &:nth-child(2) {
+        width: 100%;
+      }
+    }
+
+    tr:nth-child(even) td {
+      background-color: rgba(29, 105, 150, 0.1);
+    }
   }
 }
 
@@ -96,5 +188,160 @@
   &:focus-visible {
     outline: 5px auto -webkit-focus-ring-color;
     outline-offset: 3px;
+  }
+}
+
+.termSelector {
+  margin-bottom: 15px;
+  width: 300px;
+}
+
+.tutorialContainer {
+  min-height: 400px;
+  padding-left: 15px;
+  padding-right: 20px;
+  padding-top: 0px;
+
+  .tutorialHeader {
+    .tutorialTitle {
+      font-family: "Lato";
+      font-weight: 700;
+      font-size: 24px;
+    }
+
+    .subtitle {
+      font-family: "Lato";
+      font-weight: 400;
+      font-size: 14px;
+      max-width: 85ch;
+    }
+
+    .termSearch {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      max-width: 500px;
+    }
+  }
+
+  .gettingStarted {
+    div {
+      p {
+        font-weight: 400;
+        font-size: 14px;
+        max-width: 85ch;
+      }
+    }
+  }
+}
+
+.TutorialExamples {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 25px 10px;
+}
+
+.TutorialExample {
+  width: 30%;
+
+  span:hover {
+    figure {
+      border: 1px solid #4479b2;
+      outline: 2px solid #4479b2;
+    }
+
+    dt button {
+      color: #23527c;
+    }
+  }
+
+  figure {
+    display: flex;
+    justify-content: center;
+    border: 1px solid #132041;
+    border-radius: 4px;
+    margin-top: 10px;
+    max-width: 100%;
+    aspect-ratio: 6/4;
+    overflow: hidden;
+    background-color: #fff;
+
+    button {
+      all: unset;
+      cursor: pointer;
+    }
+
+    img {
+      width: 99%;
+      border-radius: 4px;
+    }
+  }
+
+  dt {
+    max-width: 200px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+
+    button {
+      @extend .pseudoLink;
+      font-size: 16px;
+      font-weight: bold;
+    }
+  }
+
+  dd p {
+    &:last-child {
+      margin: 0;
+    }
+  }
+}
+
+@media (max-width: 1300px) {
+  .TutorialExample {
+    width: 45%;
+  }
+}
+
+@media (max-width: 1000px) {
+  .TutorialExample {
+    width: 100%;
+  }
+}
+
+.modalFooterRow {
+  display: flex !important;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 10px;
+  align-items: center;
+}
+
+.saveAsContextButton {
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.inverseButton {
+  background-color: transparent;
+  color: #337ab7;
+  border: 1px solid #337ab7;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 400;
+  transition: all 0.2s ease-in-out;
+
+  &:hover {
+    background-color: #337ab7;
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  &:active {
+    background-color: white;
+    border-color: #0056b3;
   }
 }

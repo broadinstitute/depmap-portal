@@ -37,16 +37,6 @@ task_response_model = {
 }
 
 
-def format_taskless_error_message(message):
-    """
-    Formats an error message which has the same contract as format_task_status and is used by the ProgressTracker front end
-        but with no task information
-    This should be used when one encounters a UserError in the endpoint for submission of a celery task, before the task is kicked off
-        E.g., if the submission task does some input validation prior to kicking off the celery task
-    """
-    return {"state": TaskState.FAILURE.name, "message": message}
-
-
 def format_task_status(task):
     """
     This is split out from the common status endpoint because the submission endpoints also call this to return the standardized contract

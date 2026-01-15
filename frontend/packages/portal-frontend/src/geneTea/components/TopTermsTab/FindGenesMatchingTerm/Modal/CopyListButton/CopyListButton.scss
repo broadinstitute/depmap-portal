@@ -1,0 +1,17 @@
+.CopyListButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .copyButton {
+    cursor: pointer;
+  }
+
+  .successMessage {
+    color: #2e7d32;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}

@@ -14,6 +14,9 @@ from breadbox.schemas.types import IdMapping, AnnotationTypeMap
 import os
 from typing import Protocol, Any
 import typing
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class CeleryTask(Protocol):
@@ -227,11 +230,24 @@ def upload_example_datasets(db, settings):
     preset_data_types = set(
         [dt.value for dt in DataTypeEnum if dt.value not in existing_data_type_names]
     )
-
+    # adding some debugging information because we are getting spurious failures when
+    # recreate_dev_db is run from github actions build. Specifically, it will randomly fail with:
+    # sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: data_type.data_type
+    # [SQL: INSERT INTO data_type (data_type) VALUES (?)]
+    # [parameters: [('User upload',), ('metadata',), ('User upload',)]]
+    # so, let's put a flush before this loop to make sure everything is in the db, so `get_data_type` can't be
+    # mislead. Also, let's log what it's trying to add to make sure there are no dups there (which should be
+    # impossible because `preset_data_types` is a set()
+    db.flush()
+    log.warning(f"Attempting to add {preset_data_types}")
     for preset_dt_name in preset_data_types:
         if get_data_type(db, preset_dt_name) is None:
             add_data_type(db, preset_dt_name)
+            log.warning(f"added data type: {preset_dt_name}")
             db.flush()
+        else:
+            log.warning(f"Found existing data type: {preset_dt_name}")
+    log.warning(f"finished adding data types")
 
     for m in example_metadata_datasets:
         validate_metadata_upload_and_add_to_db(db, settings, m)

@@ -177,7 +177,7 @@ const ContextExplorerTabs = ({
               selectedContextNameInfo={selectedContextNameInfo}
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
-              entityType={"gene"}
+              featureType={"gene"}
               datasetId={ContextExplorerDatasets.Chronos_Combined}
               customInfoImg={customInfoImg}
             />
@@ -192,8 +192,10 @@ const ContextExplorerTabs = ({
                 selectedContextNameInfo={selectedContextNameInfo}
                 topContextNameInfo={topContextNameInfo}
                 treeType={treeType}
-                entityType={"compound"}
-                datasetId={ContextExplorerDatasets.Prism_oncology_AUC}
+                featureType={"compound"}
+                datasetId={
+                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+                }
                 customInfoImg={customInfoImg}
               />
             )}
@@ -207,8 +209,8 @@ const ContextExplorerTabs = ({
               selectedContextNameInfo={selectedContextNameInfo}
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
-              entityType={"compound"}
-              datasetId={ContextExplorerDatasets.Rep_all_single_pt}
+              featureType={"compound"}
+              datasetId={ContextExplorerDatasets.Rep_all_single_pt_per_compound}
               customInfoImg={customInfoImg}
             />
           )}

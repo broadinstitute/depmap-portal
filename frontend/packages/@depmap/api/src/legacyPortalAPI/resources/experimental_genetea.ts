@@ -24,7 +24,7 @@ export async function fetchGeneTeaEnrichmentExperimental(
   minMatchingQuery: number
   // effectSizeThreshold: number,
 ): Promise<GeneTeaEnrichedTerms> {
-  if (!enabledFeatures.gene_tea) {
+  if (!enabledFeatures.gene_tea_portal_page) {
     throw new Error("GeneTea is not supported in this environment!");
   }
 
@@ -44,7 +44,6 @@ export async function fetchGeneTeaEnrichmentExperimental(
   if (plotSelections) {
     params = { ...params, plot_selections: plotSelections };
   }
-  console.log("For Sanity Checking", params);
 
   interface RawResponse {
     // TODO: Give the user feedback when some genes are invalid.
@@ -242,15 +241,15 @@ export async function fetchGeneTeaEnrichmentExperimental(
   };
 }
 
-export async function fetchGeneTeaTermContextExperimental(
+export async function fetchGeneTeaTermExcerptExperimental(
   term: string,
   genes: string[]
 ): Promise<Record<string, string>> {
-  if (!enabledFeatures.gene_tea) {
+  if (!enabledFeatures.gene_tea_portal_page) {
     throw new Error("GeneTea is not supported in this environment!");
   }
 
-  const geneTeaUrl = "genetea-api/context";
+  const geneTeaUrl = "genetea-api/excerpts";
 
   const params = {
     term,
@@ -263,7 +262,7 @@ export async function fetchGeneTeaTermContextExperimental(
         valid_genes: string[];
         invalid_genes: string[];
         remapped_genes: Record<string, string>;
-        context: Record<string, string>;
+        excerpts: Record<string, string>;
       }
     | { message: string }; // error message
 
@@ -280,5 +279,47 @@ export async function fetchGeneTeaTermContextExperimental(
     throw new Error(body.message);
   }
 
-  return body.context;
+  return body.excerpts;
+}
+
+export async function fetchGeneTeaGenesMatchingTermExperimental(
+  terms: string[],
+  genes: string[]
+): Promise<Record<string, string>> {
+  if (!enabledFeatures.gene_tea_portal_page) {
+    throw new Error("GeneTea is not supported in this environment!");
+  }
+
+  const geneTeaUrl = "genetea-api/genes-matching-term";
+
+  const params = {
+    term_list: terms,
+    gene_list: genes,
+  };
+
+  type RawResponse =
+    | {
+        valid_terms: string[];
+        invalid_terms: string[];
+        valid_genes: string[];
+        invalid_genes: string[];
+        remapped_genes: Record<string, string>;
+        matching_genes: Record<string, string>;
+      }
+    | { message: string }; // error message
+
+  const body =
+    process.env.NODE_ENV === "development"
+      ? await getJson<RawResponse>(
+          toCorsProxyUrl(geneTeaUrl, params),
+          undefined,
+          { credentials: "omit" }
+        )
+      : await getJson<RawResponse>(`/../../${geneTeaUrl}/`, params);
+
+  if ("message" in body) {
+    throw new Error(body.message);
+  }
+
+  return body.matching_genes;
 }

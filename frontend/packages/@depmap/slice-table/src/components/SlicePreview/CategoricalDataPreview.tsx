@@ -31,18 +31,20 @@ function CategoricalDataPreview({
 
   const [selectedValues, setSelectedValues] = useState(initialSelectedValues);
 
-  const plotData = useMemo(() => {
+  const { plotData, valueToOriginal } = useMemo(() => {
     if (!dataValues) {
-      return { x: [] as string[], y: [] as number[] };
+      return {
+        plotData: { x: [] as string[], y: [] as number[] },
+        valueToOriginal: new Map<string, string | number>(),
+      };
     }
 
-    const countsByValue = new Map<string, number>();
+    const countsByValue = new Map<string | number, number>();
 
     dataValues.flat().forEach((val: string | number | undefined) => {
       // TODO: Add an option to show NAs instead of always ignoring them.
       if (val !== undefined) {
-        const stringVal = `${val}`;
-        countsByValue.set(stringVal, (countsByValue.get(stringVal) ?? 0) + 1);
+        countsByValue.set(val, (countsByValue.get(val) ?? 0) + 1);
       }
     });
 
@@ -51,9 +53,18 @@ function CategoricalDataPreview({
       (a, b) => b[1] - a[1]
     );
 
+    // Map string keys back to original values (preserves number vs string)
+    const valToOrig = new Map<string, string | number>();
+    entries.forEach(([value]) => {
+      valToOrig.set(`${value}`, value);
+    });
+
     return {
-      x: entries.map(([value]) => value),
-      y: entries.map(([, count]) => count),
+      plotData: {
+        x: entries.map(([value]) => `${value}`), // strings for Plotly
+        y: entries.map(([, count]) => count),
+      },
+      valueToOriginal: valToOrig,
     };
   }, [dataValues]);
 
@@ -68,14 +79,15 @@ function CategoricalDataPreview({
 
     const points = new Set<number>();
     for (let i = 0; i < plotData.x.length; i += 1) {
-      const val = plotData.x[i];
-      if (selectedValues.has(val)) {
+      const stringVal = plotData.x[i];
+      const originalVal = valueToOriginal.get(stringVal);
+      if (originalVal !== undefined && selectedValues.has(originalVal)) {
         points.add(i);
       }
     }
 
     return points;
-  }, [withFilter, selectedValues, plotData.x]);
+  }, [withFilter, selectedValues, plotData.x, valueToOriginal]);
 
   const handleSelect = useCallback(
     (pointIndices: number[]) => {
@@ -84,13 +96,16 @@ function CategoricalDataPreview({
       const nextSelectedValues = new Set<string | number>();
 
       pointIndices.forEach((i: number) => {
-        nextSelectedValues.add(plotData.x[i]);
+        const originalVal = valueToOriginal.get(plotData.x[i]);
+        if (originalVal !== undefined) {
+          nextSelectedValues.add(originalVal);
+        }
       });
 
       setSelectedValues(nextSelectedValues);
       onChangeSelectedValues(nextSelectedValues);
     },
-    [onChangeSelectedValues, plotData]
+    [onChangeSelectedValues, plotData.x, valueToOriginal]
   );
 
   return (

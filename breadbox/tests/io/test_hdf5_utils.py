@@ -14,13 +14,23 @@ import h5py
 TEST_COLUMN_COUNT = 20
 
 
-@pytest.fixture
-def test_dataframe(row_length: int = 500, col_length: int = TEST_COLUMN_COUNT):
+def create_test_dataframe(
+    row_length: int = 500, col_length: int = TEST_COLUMN_COUNT, dtype="float"
+):
     cols = [f"Col-{i}" for i in range(col_length)]
     rows = [f"Row-{i}" for i in range(row_length)]
-    data = np.round(np.random.uniform(0.0, 10.0, size=(row_length, col_length)), 6)
+    if dtype == "float":
+        data = np.round(np.random.uniform(0.0, 10.0, size=(row_length, col_length)), 6)
+    else:
+        assert dtype == "str"
+        data = "x"
     test_df = pd.DataFrame(data, columns=cols, index=rows)
     return test_df
+
+
+@pytest.fixture
+def test_dataframe(row_length: int = 500, col_length: int = TEST_COLUMN_COUNT):
+    return create_test_dataframe(row_length, col_length)
 
 
 @pytest.fixture
@@ -55,8 +65,15 @@ def test_hdf5_wrapper(tmpdir, test_dataframe):
         )
 
 
-def test_parquet_wrapper(tmpdir, test_dataframe, test_parquet_file, monkeypatch):
+@pytest.mark.parametrize("dtype", ["float", "str"])
+def test_parquet_wrapper(tmpdir, dtype, monkeypatch):
     import breadbox.schemas.dataframe_wrapper
+
+    test_dataframe = create_test_dataframe(dtype=dtype)
+
+    path = tmpdir.join("test.parquet")
+    test_dataframe.reset_index().to_parquet(path, index=False)
+    test_parquet_file = str(path)
 
     parquet_wrapper = ParquetDataFrameWrapper(parquet_path=test_parquet_file)
     assert parquet_wrapper.get_index_names() == test_dataframe.index.to_list()
@@ -65,8 +82,14 @@ def test_parquet_wrapper(tmpdir, test_dataframe, test_parquet_file, monkeypatch)
         len(test_dataframe),
         2,
     )
-    assert parquet_wrapper.is_sparse() == False
-    assert parquet_wrapper.is_numeric_cols() == True
+    if dtype == "str":
+        assert not parquet_wrapper.is_numeric_cols()
+        assert parquet_wrapper.is_string_cols()
+    elif dtype == "float":
+        assert parquet_wrapper.is_numeric_cols()
+        assert not parquet_wrapper.is_string_cols()
+    else:
+        raise Exception("Unsupported dtype")
 
     # this should work fine
     parquet_wrapper.get_df()
@@ -77,7 +100,9 @@ def test_parquet_wrapper(tmpdir, test_dataframe, test_parquet_file, monkeypatch)
         parquet_wrapper.get_df()
 
 
-def test_pandas_wrapper(tmpdir, test_dataframe):
+@pytest.mark.parametrize("dtype", ["float", "str"])
+def test_pandas_wrapper(tmpdir, dtype):
+    test_dataframe = create_test_dataframe(dtype=dtype)
     pandas_wrapper = PandasDataFrameWrapper(test_dataframe)
     assert pandas_wrapper.get_index_names() == test_dataframe.index.to_list()
     assert pandas_wrapper.get_column_names() == test_dataframe.columns.to_list()
@@ -85,9 +110,15 @@ def test_pandas_wrapper(tmpdir, test_dataframe):
         len(test_dataframe),
         2,
     )
-    assert pandas_wrapper.is_sparse() == False
     assert pandas_wrapper.get_df().equals(test_dataframe)
-    assert pandas_wrapper.is_numeric_cols() == True
+    if dtype == "float":
+        assert pandas_wrapper.is_numeric_cols()
+        assert not pandas_wrapper.is_string_cols()
+    elif dtype == "str":
+        assert pandas_wrapper.is_string_cols()
+        assert not pandas_wrapper.is_numeric_cols()
+    else:
+        raise Exception("unknown dtype")
 
 
 def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
@@ -96,7 +127,11 @@ def test_write_parquet_to_hdf5(tmpdir, test_dataframe, test_parquet_file):
 
     # override batch size to force multiple batches
     write_hdf5_file(
-        path=str(output_h5), df_wrapper=wrapper, dtype="float", batch_size=1000
+        path=str(output_h5),
+        df_wrapper=wrapper,
+        map_values=lambda x: x,
+        hdf5_dtype="float",
+        batch_size=1000,
     )
 
     # Verify output
@@ -136,7 +171,11 @@ def test_write_parquet_nulls_to_hdf5(tmpdir):
 
     # override batch size to force multiple batches
     write_hdf5_file(
-        path=str(output_h5), df_wrapper=wrapper, dtype="float", batch_size=1000
+        path=str(output_h5),
+        df_wrapper=wrapper,
+        map_values=lambda x: x,
+        hdf5_dtype="float",
+        batch_size=1000,
     )
 
     # Verify output

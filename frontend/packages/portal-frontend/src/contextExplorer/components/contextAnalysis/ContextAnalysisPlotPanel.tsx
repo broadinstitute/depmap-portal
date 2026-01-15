@@ -22,7 +22,7 @@ interface Props {
   selectedPlotLabels: Set<string> | null;
   colorScale: string[][] | undefined;
   isLoading: boolean;
-  entityType: string;
+  featureType: string;
   showYEqualXLine: boolean;
 }
 function ContextAnalysisPlotPanel({
@@ -36,7 +36,7 @@ function ContextAnalysisPlotPanel({
   selectedPlotLabels,
   colorScale,
   isLoading,
-  entityType,
+  featureType,
   showYEqualXLine,
 }: Props) {
   const formattedPlotData = useMemo(() => {
@@ -51,7 +51,7 @@ function ContextAnalysisPlotPanel({
         xLabel: plotTypeData.x.axisLabel,
         yLabel: plotTypeData.y.axisLabel,
         hoverText:
-          entityType === "gene"
+          featureType === "gene"
             ? data.indexLabels.map((label: string) => {
                 return [`<b>${label}</b>`].join("<br>");
               })
@@ -71,7 +71,7 @@ function ContextAnalysisPlotPanel({
       yLabel: "",
       hoverText: "",
     };
-  }, [data, plotType, isLoading, entityType]);
+  }, [data, plotType, isLoading, featureType]);
 
   return (
     <div className={styles.scatterPlotContainer}>

@@ -1,13 +1,20 @@
-import React, { useRef } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import ToggleSwitch from "@depmap/common-components/src/components/ToggleSwitch";
-import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
+import {
+  useGeneTeaFiltersContext,
+  NUMERIC_FILTER_DEFAULTS,
+} from "../context/GeneTeaFiltersContext";
 import styles from "../styles/GeneTea.scss";
 import PurpleHelpIcon from "./PurpleHelpIcon";
+import NumberInput from "./NumberInput";
+import debounce from "lodash.debounce";
 
 const PlotOptionsPanel: React.FC = () => {
   const ref = useRef<HTMLTableElement>(null);
 
   const {
+    maxTopTerms,
+    handleSetMaxTopTerms,
     doClusterTerms,
     handleSetDoClusterTerms,
     doClusterGenes,
@@ -16,13 +23,28 @@ const PlotOptionsPanel: React.FC = () => {
     handleSetDoGroupTerms,
   } = useGeneTeaFiltersContext();
 
+  const [localMaxTopTerms, setLocalMaxTopTerms] = useState<number>(
+    maxTopTerms ?? NUMERIC_FILTER_DEFAULTS.maxTopTerms
+  );
+
+  const debouncedSetMaxTerms = useMemo(
+    () => debounce((maxTerms_) => handleSetMaxTopTerms(maxTerms_), 800),
+    [handleSetMaxTopTerms]
+  );
+
+  const updateMaxTerms = useCallback(
+    (numTerms: number) => {
+      setLocalMaxTopTerms(numTerms);
+      debouncedSetMaxTerms(numTerms);
+    },
+    [debouncedSetMaxTerms]
+  );
+
   return (
-    <div ref={ref} style={{ backgroundColor: "#ffffff" }}>
-      <p style={{ fontWeight: 600, marginBottom: 18 }}>
-        Use toggles to group and cluster.
-      </p>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
+    <div ref={ref} className={styles.PlotOptionsPanel}>
+      <p className={styles.sectionLabel}>Use toggles to group and cluster.</p>
+      <div className={styles.sectionItemWrapper}>
+        <div className={styles.sectionItem}>
           <span>
             Use term clustering.{" "}
             <span>
@@ -43,8 +65,8 @@ const PlotOptionsPanel: React.FC = () => {
           />
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
+      <div className={styles.sectionItemWrapper}>
+        <div className={styles.sectionItem}>
           <span>
             Use gene clustering.{" "}
             <span>
@@ -65,8 +87,8 @@ const PlotOptionsPanel: React.FC = () => {
           />
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
-        <div style={{ alignItems: "center", height: 32, marginBottom: 20 }}>
+      <div className={styles.sectionItemWrapper}>
+        <div className={styles.sectionItem}>
           <span>
             Group terms when possible.{" "}
             <span>
@@ -86,6 +108,29 @@ const PlotOptionsPanel: React.FC = () => {
             ]}
           />
         </div>
+      </div>
+      <hr className={styles.hrSectionDivider} />
+      <p className={styles.sectionLabel}>
+        Choose the number of terms or term groups to plot.
+      </p>
+      <div className={styles.sectionItemWrapper}>
+        <NumberInput
+          width={"50%"}
+          name="maxTopTerms"
+          label="Max. n Terms/Term Groups"
+          purpleHelpIcon={
+            <PurpleHelpIcon
+              tooltipText="Limits the maximum number of terms or term groups in the y-axis of the plot."
+              popoverId="maxTopTerms-help"
+            />
+          }
+          min={1}
+          max={25}
+          step={1}
+          value={localMaxTopTerms}
+          setValue={updateMaxTerms}
+          defaultValue={NUMERIC_FILTER_DEFAULTS.maxTopTerms}
+        />
       </div>
     </div>
   );

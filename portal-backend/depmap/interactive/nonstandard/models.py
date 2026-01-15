@@ -64,17 +64,6 @@ class NonstandardMatrix(Model):
         else:
             return q.one_or_none()
 
-    @staticmethod
-    def get_by_nonstandard_matrix_id(id, must=True) -> Optional["NonstandardMatrix"]:
-        """
-        matrix id, vs dataset id above
-        """
-        q = NonstandardMatrix.query.filter_by(nonstandard_matrix_id=id)
-        if must:
-            return q.one()
-        else:
-            return q.one_or_none()
-
     def get_subsetted_df(self, row_indices, col_indices, is_transpose=False):
         df = hdf5_utils.get_df_of_values(
             current_app.config["NONSTANDARD_DATA_DIR"],
@@ -84,18 +73,6 @@ class NonstandardMatrix(Model):
             is_transpose,
         )
         return df
-
-    @staticmethod
-    def find_dataset_ids_with_entity_ids(entity_ids):
-        return [
-            x[0]
-            for x in RowNonstandardMatrix.query.filter(
-                RowNonstandardMatrix.entity_id.in_(entity_ids)
-            )
-            .join(NonstandardMatrix)
-            .with_entities(NonstandardMatrix.nonstandard_dataset_id)
-            .all()
-        ]
 
     @staticmethod
     def read_file_and_add_dataset_index(
@@ -305,13 +282,6 @@ class RowNonstandardMatrix(Model):
         Integer, ForeignKey("nonstandard_matrix.nonstandard_matrix_id"), nullable=False,
     )
     owner_id = Column(Integer, nullable=False)
-
-    @staticmethod
-    def get_rows_by_matrix_id(matrix_id):
-        rows = RowNonstandardMatrix.query.filter_by(
-            nonstandard_matrix_id=matrix_id
-        ).all()
-        return rows
 
 
 class ColNonstandardMatrix(Model):

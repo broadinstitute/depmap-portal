@@ -100,6 +100,7 @@ const GenePage = ({
         order={order}
         isMobile={isMobile}
         entityId={entityId}
+        entrezId={entrezId}
         customDownloadsLink={customDownloadsLink}
         methodologyLink={methodologyLink}
         similarityOptions={similarityOptions}

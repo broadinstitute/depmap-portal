@@ -38,6 +38,7 @@ from ..models.dataset import (
     Dataset as DatasetModel,
     ValueType,
     MatrixDataset,
+    TabularDataset,
 )
 
 from ..io.filestore_crud import get_feature_slice
@@ -60,7 +61,9 @@ from breadbox.service import dataset as dataset_service
 from breadbox.service import metadata as metadata_service
 from breadbox.service import slice as slice_service
 from .dependencies import get_dataset as get_dataset_dep
-from .dependencies import get_db_with_user, get_user
+from .dependencies import get_db_with_user, get_user, get_cache
+from breadbox.utils.caching import CachingCaller
+
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
 
@@ -160,9 +163,7 @@ def get_feature_data(
 ):
     """
     Load data for each of the given dataset_id, feature_id pairs.
-    This differs from the /get-features endpoint in the type of ID it
-    accepts as input and the format of the response. This endpoint also
-    does not do any filtering or grouping of feature values.
+    This endpoint does not do any filtering or grouping of feature values.
     """
     if len(dataset_ids) != len(feature_ids):
         raise UserError(
@@ -337,6 +338,7 @@ def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
+    cache: Annotated[CachingCaller, Depends(get_cache)],
     tabular_dimensions_info: Annotated[
         TabularDimensionsInfo, Body(default_factory=TabularDimensionsInfo)
     ],
@@ -351,13 +353,31 @@ def get_tabular_dataset_data(
         raise UserError(
             "This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead."
         )
+    assert isinstance(dataset, TabularDataset)
+
     try:
-        df = dataset_service.get_subsetted_tabular_dataset_df(
-            db, user, dataset, tabular_dimensions_info, strict
-        )
+        # only allow caching of requests for public datasets
+        if dataset_crud.is_public_dataset(dataset):
+            anon_db = db.create_session_for_anonymous_user()
+
+            df_as_json = cache.memoize(
+                lambda: dataset_service.get_subsetted_tabular_dataset_df(
+                    anon_db, anon_db.user, dataset, tabular_dimensions_info, strict
+                ).to_json(),
+                depends_on=[
+                    str(dataset.id),
+                    tabular_dimensions_info.model_dump(),
+                    strict,
+                ],
+            )
+        else:
+            df_as_json = dataset_service.get_subsetted_tabular_dataset_df(
+                db, user, dataset, tabular_dimensions_info, strict
+            ).to_json()
+
     except UserError as e:
         raise e
-    return Response(df.to_json(), media_type="application/json")
+    return Response(df_as_json, media_type="application/json")
 
 
 @router.post("/data/{dataset_id}", operation_id="get_dataset_data", deprecated=True)

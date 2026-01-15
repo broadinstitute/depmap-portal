@@ -32,7 +32,7 @@ def get_dose_replicate_points(
     return points
 
 
-def _get_replicate_dataset_matrix(replicate_dataset_name: str) -> Matrix:
+def get_replicate_dataset_matrix(replicate_dataset_name: str) -> Matrix:
     # Get the replicate dataset, including viabilities. Do NOT use data_access here. data_access would not find the
     # legacy replicate datasets that have been filtered out of other places in the portal UI.
     replicate_dataset = Dataset.get_dataset_by_name(replicate_dataset_name)
@@ -66,7 +66,7 @@ def _get_model_map(valid_depmap_ids: set) -> dict:
     return model_map
 
 
-def _get_curve_params_for_model_ids(
+def get_curve_params_for_model_ids(
     compound_id: str,
     drc_dataset_label: str,
     compound_dose_replicates: list,
@@ -83,7 +83,7 @@ def _get_curve_params_for_model_ids(
         compound_id=compound_id, drc_dataset_label=drc_dataset_label
     )
 
-    replicate_dataset_matrix = _get_replicate_dataset_matrix(
+    replicate_dataset_matrix = get_replicate_dataset_matrix(
         replicate_dataset_name=replicate_dataset_name
     )
 
@@ -189,7 +189,7 @@ def get_dose_response_curves_per_model(
         drc_dataset_label=drc_dataset_label,
         replicate_dataset_name=replicate_dataset_name,
     )
-    curve_params_and_points = _get_curve_params_for_model_ids(
+    curve_params_and_points = get_curve_params_for_model_ids(
         compound_id=compound_id,
         drc_dataset_label=drc_dataset_label,
         compound_dose_replicates=compound_dose_replicates,

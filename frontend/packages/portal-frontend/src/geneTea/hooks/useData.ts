@@ -414,6 +414,40 @@ function useData(
     return { x: [], y: [], customdata: [] };
   }, [data, heatmapData.y]);
 
+  const termGroupToTermsMapping = useMemo(() => {
+    if (!data?.allEnrichedTerms) {
+      return new Map<string, string[]>();
+    }
+
+    const terms: string[] = data.allEnrichedTerms.term;
+    const termGroups: string[] = data.allEnrichedTerms.termGroup;
+
+    // 1. Create a combined array that's easier to iterate functionally
+    const combinedData = terms.map((term, index) => ({
+      term,
+      termGroup: termGroups[index],
+    }));
+
+    // 2. Use reduce to build the Map immutably
+    const termGroupToTermsMap = combinedData.reduce(
+      (accMap, currentItem) => {
+        const { term, termGroup } = currentItem;
+
+        // Get the existing array (defaults to empty array)
+        const existingTerms = accMap.get(termGroup) || [];
+
+        // Create a NEW array by spreading the existing terms and adding the new term
+        const newTerms = [...existingTerms, term];
+
+        // Return a NEW Map instance using the old map's entries plus the updated entry
+        return new Map(accMap).set(termGroup, newTerms);
+      },
+      new Map<string, string[]>() // Initial value is an empty Map
+    );
+
+    return termGroupToTermsMap;
+  }, [data]);
+
   const heatmapXAxisLabel = useMemo(() => {
     if (data && data.termToEntity) {
       return `Matching Genes in List n=(${
@@ -498,6 +532,7 @@ function useData(
     barChartData,
     heatmapXAxisLabel,
     allTermsScatterPlotData,
+    termGroupToTermsMapping,
   };
 }
 

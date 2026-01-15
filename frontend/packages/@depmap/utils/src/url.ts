@@ -14,6 +14,57 @@ export function setQueryStringWithoutPageReload(
   }
 }
 
+/**
+ * Updates the URL without a page reload.
+ * For large lists, it uses a single compressed 'glist' param.
+ */
+export function setQueryStringList(
+  key: string,
+  value: string | string[],
+  replace = false
+) {
+  const url = new URL(window.location.href);
+  const URL_LIMIT = 1800; // Leave buffer for domain and other params
+
+  // 1. Clear existing list-related keys to start fresh
+  url.searchParams.delete(key);
+  url.searchParams.delete("glist");
+
+  if (Array.isArray(value) && value.length > 0) {
+    // Determine if we should compress based on total length
+    const estimatedLength = value.reduce(
+      (acc, g) => acc + g.length + key.length + 2,
+      0
+    );
+
+    if (estimatedLength > URL_LIMIT) {
+      // Use btoa for browser-native Base64 encoding
+      // unescape(encodeURIComponent()) handles potential UTF-8 characters safely
+      const rawString = value.join(",");
+      const compressed = btoa(encodeURIComponent(rawString));
+      url.searchParams.set("glist", compressed);
+    } else {
+      // STANDARD: Repeats key for each item: ?genes=SOX10&genes=KRAS
+      value.forEach((item) => {
+        if (item && item.trim()) {
+          url.searchParams.append(key, item.trim());
+        }
+      });
+    }
+  } else if (typeof value === "string" && value.trim()) {
+    // Handle single string input
+    url.searchParams.set(key, value.trim());
+  }
+
+  // 2. Update the browser history
+  const state = { path: url.href };
+  if (replace) {
+    window.history.replaceState(state, "", url.href);
+  } else {
+    window.history.pushState(state, "", url.href);
+  }
+}
+
 // So far, just used to set the query params for the AllDownloads modal urls
 export function setQueryStringsWithoutPageReload(
   keyVal: [string, string][],
