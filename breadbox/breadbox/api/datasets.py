@@ -108,9 +108,9 @@ def _get_required_dataset(db: SessionWithUser, dataset_id: str):
     return dataset
 
 
-def _get_matrix_dataset_required(db: SessionWithUser, dataset_id: str):
+def _get_required_matrix_dataset(db: SessionWithUser, dataset_id: str):
     """
-        fetches matrix dataset and raises ann exception if dataset is not found or it's the wrong type
+        fetches matrix dataset and raises a user error if dataset is not found or it's the wrong type
     """
     dataset = _get_required_dataset(db, dataset_id)
     if not isinstance(dataset, MatrixDataset):
@@ -118,9 +118,9 @@ def _get_matrix_dataset_required(db: SessionWithUser, dataset_id: str):
     return dataset
 
 
-def _get_tabular_dataset_required(db: SessionWithUser, dataset_id: str):
+def _get_required_tabular_dataset(db: SessionWithUser, dataset_id: str):
     """
-        fetches matrix dataset and raises ann exception if dataset is not found or it's the wrong type
+        fetches matrix dataset and raises a user error if dataset is not found or it's the wrong type
     """
     dataset = _get_required_dataset(db, dataset_id)
     if not isinstance(dataset, TabularDataset):
@@ -139,7 +139,7 @@ def get_dataset_features(
     """
     Get information about each feature belonging to a given dataset.
     """
-    dataset = _get_matrix_dataset_required(db, dataset_id)
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -160,7 +160,7 @@ def get_dataset_samples(
     For example, if the samples are depmap models, then this should
     return depmap_ids as ids and cell line names as labels.
     """
-    dataset = _get_matrix_dataset_required(db, dataset_id)
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -346,7 +346,7 @@ def get_matrix_dataset_data(
         ),
     ] = False,
 ):
-    dataset = _get_matrix_dataset_required(db, dataset_id)
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     df = dataset_service.get_subsetted_matrix_dataset_df(
         db, dataset, matrix_dimensions_info, settings.filestore_location, strict,
@@ -373,7 +373,7 @@ def get_tabular_dataset_data(
         ),
     ] = False,
 ):
-    dataset = _get_tabular_dataset_required(db, dataset_id)
+    dataset = _get_required_tabular_dataset(db, dataset_id)
 
     # only allow caching of requests for public datasets
     if dataset_crud.is_public_dataset(dataset):
@@ -424,7 +424,7 @@ def get_dataset_data(
     ] = None,
 ):
     """Get dataset dataframe subset given the features and samples. Filtering should be possible using either labels (cell line name, gene name, etc.) or ids (depmap_id, entrez_id, etc.). If features or samples are not specified, return all features or samples"""
-    dataset = _get_matrix_dataset_required(db, dataset_id)
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     dim_info = MatrixDimensionsInfo(
         features=features,
