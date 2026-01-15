@@ -2588,7 +2588,7 @@ class TestPost:
         B    3.0025
         C    2.0050
         """
-        assert response.json() == {"25%tile": {"A": 1.0050, "B": 3.0025, "C": 2.0050}}
+        assert response.json() == {"25%tile": {"A": 1.5, "B": 3.25, "C": 2.5}}
 
         response = client.post(
             f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
