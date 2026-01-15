@@ -22,7 +22,6 @@ from breadbox.models.dataset import (
     ValueType,
 )
 from fastapi.testclient import TestClient
-from breadbox.api.dependencies import get_dataset
 from breadbox.io.filestore_crud import get_slice
 from breadbox.models.dataset import DimensionSearchIndex
 from breadbox.service.search import populate_search_index_after_update
@@ -190,6 +189,14 @@ class TestGet:
         )
         assert_status_ok(given_id_response)
         assert given_id_response.json() == response.json()
+
+        tabular_given_id = "tabular"
+        factories.tabular_dataset(minimal_db, settings, given_id=tabular_given_id)
+        response = client.get(
+            f"/datasets/samples/{tabular_given_id}",
+            headers={"X-Forwarded-User": "anyone"},
+        )
+        assert response.status_code == 400
 
     def test_get_dimensions_with_reference_tiny_example(
         self, minimal_db, client: TestClient, settings, public_group

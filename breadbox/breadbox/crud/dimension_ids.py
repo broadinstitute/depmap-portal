@@ -210,36 +210,6 @@ def get_matrix_dataset_features_df(
     )
 
 
-def get_matrix_dataset_features(
-    db: SessionWithUser, dataset: MatrixDataset
-) -> list[DatasetFeature]:
-    assert_user_has_access_to_dataset(dataset, db.user)
-
-    dataset_features = (
-        db.query(DatasetFeature)
-        .filter(DatasetFeature.dataset_id == dataset.id)
-        .order_by(DatasetFeature.given_id)
-        .all()
-    )
-
-    return dataset_features
-
-
-def get_matrix_dataset_samples(
-    db: SessionWithUser, dataset: MatrixDataset
-) -> list[DatasetSample]:
-    assert_user_has_access_to_dataset(dataset, db.user)
-
-    dataset_samples = (
-        db.query(DatasetSample)
-        .filter(DatasetSample.dataset_id == dataset.id)
-        .order_by(DatasetSample.given_id)
-        .all()
-    )
-
-    return dataset_samples
-
-
 def get_matrix_dataset_given_ids(
     db: SessionWithUser, dataset: Dataset, axis: str
 ) -> List[str]:
