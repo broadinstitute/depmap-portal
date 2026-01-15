@@ -2353,13 +2353,13 @@ windows-terminal = ["colorama (>=0.4.6)"]
 
 [[package]]
 name = "pypatch-and-run"
-version = "0.4.1"
+version = "1.0.2"
 description = ""
 optional = false
 python-versions = ">=3.9,<4.0"
 files = [
-    {file = "pypatch_and_run-0.4.1-py3-none-any.whl", hash = "sha256:df0e3ce87c023d4ba5693e6fdf9f2a2fb05a1a73dd0790d150d2470089e21050"},
-    {file = "pypatch_and_run-0.4.1.tar.gz", hash = "sha256:60d54d68c4fce3cb3e8eeae38f4ad8d55ed13263d4e120009edf91fb51676c27"},
+    {file = "pypatch_and_run-1.0.2-py3-none-any.whl", hash = "sha256:177044339a5d77207ed484d5af05eb4c376d898640db5ce6f5d323331bed0f73"},
+    {file = "pypatch_and_run-1.0.2.tar.gz", hash = "sha256:0367c8c5e13aa1bd8ca8bf799a38da48442f843774657b47fdbb8ae51ceeb02e"},
 ]
 
 [package.source]
@@ -3199,4 +3199,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "48be9580dae0b568e1900e405e3dacf3b45137e81993a1e4c789ac6f45656e91"
+content-hash = "fb75e72cea58287512cfd37c7e5fbda29de6ebf040937d256384171af595baaf"

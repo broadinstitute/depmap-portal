@@ -9,7 +9,7 @@ from depmap.entity.models import Entity
 from depmap.dataset.models import Dataset, BiomarkerDataset
 from depmap.cell_line.models import CellLine
 from depmap.utilities import color_utils
-from depmap.compound import legacy_utils 
+from depmap.compound import legacy_utils
 
 
 # abstracted out here so that tests can import it.
@@ -69,7 +69,6 @@ class EntitySummaryExpressionLegend(EntitySummaryLegend):
 
 
 class EntitySummary:
-
     @staticmethod
     def data_for_characterization_partial(
         dataset_enum_name, gene_symbol, gene_id, associated_non_gene_entity=None
@@ -117,17 +116,15 @@ class EntitySummary:
 
 
 def legacy_dataset_contains_entity(legacy_dataset_enum, entity_id: int):
-    # At this point it's assumed anyway that this is either 
+    # At this point it's assumed anyway that this is either
     return legacy_dataset_enum is not None and Dataset.has_entity(
         legacy_dataset_enum, entity_id
     )
 
+
 def get_download_data(
-        dataset_id: str,
-        entity: Entity, 
-        size_dataset_enum, 
-        color_dataset_id,
-    ):
+    dataset_id: str, entity: Entity, size_dataset_enum, color_dataset_id,
+):
     """
     Returns the dataframe for the dependency data.
     This should be compatible with breadbox datasets. 
@@ -156,7 +153,9 @@ def get_download_data(
         )
         df = df.drop(columns=["label", "size"]).rename(
             columns={
-                "expression": Dataset.get_dataset_by_name(size_dataset_enum.name).display_name,
+                "expression": Dataset.get_dataset_by_name(
+                    size_dataset_enum.name
+                ).display_name,
             }
         )
 
@@ -180,14 +179,20 @@ def get_download_data(
 
 
 def get_feature_data(dataset_id: str, feature_label: str) -> pd.Series:
-    dataset_data = data_access.get_subsetted_df_by_labels_compound_friendly(dataset_id)
-    assert feature_label in dataset_data.index, f"Label {feature_label} not found in dataset {dataset_id}. Do the labels match between breadbox and the legacy DB?"
+    dataset_data = data_access.get_subsetted_df_by_labels(
+        dataset_id, feature_row_labels=[feature_label]
+    )
+    assert (
+        feature_label in dataset_data.index
+    ), f"Label {feature_label} not found in dataset {dataset_id}. Do the labels match between breadbox and the legacy DB?"
     data_series = dataset_data.loc[feature_label].dropna()
     data_series.name = "value"
     return data_series
 
 
-def get_entity_summary_metadata(dataset_id: str, feature_data: pd.Series, feature_label: str) -> dict[str, Any]:
+def get_entity_summary_metadata(
+    dataset_id: str, feature_data: pd.Series, feature_label: str
+) -> dict[str, Any]:
     """
     Returns:
         x_range, the range the x axis should be displayed at
@@ -199,19 +204,23 @@ def get_entity_summary_metadata(dataset_id: str, feature_data: pd.Series, featur
     # Temporary workaround while DE2 still indexes by compound experiment
     if dataset.feature_type == "compound_experiment":
         # If it's indexed by compound experiment, assume it's a legacy dataset
-        feature_label = legacy_utils.get_experiment_label_for_compound_label(dataset_id, feature_label) # pyright: ignore
-        assert feature_label is not None, f"Unable to find CompoundExperiment for Compound {feature_label} in dataset {dataset_id}"
+        feature_label = legacy_utils.get_experiment_label_for_compound_label(
+            dataset_id, feature_label
+        )  # pyright: ignore
+        assert (
+            feature_label is not None
+        ), f"Unable to find CompoundExperiment for Compound {feature_label} in dataset {dataset_id}"
 
     metadata = {}
     metadata["x_range"] = _get_x_range(feature_data)
     metadata["x_label"] = dataset.units
     metadata["interactive_url"] = url_for(
-            "data_explorer_2.view_data_explorer_2",
-            xDataset=dataset.id,
-            xFeature=feature_label,
-            yDataset=None,
-            yFeature=None,
-            color_property='slice/lineage/1/label',
+        "data_explorer_2.view_data_explorer_2",
+        xDataset=dataset.id,
+        xFeature=feature_label,
+        yDataset=None,
+        yFeature=None,
+        color_property="slice/lineage/1/label",
     )
 
     if dataset.data_type == DataTypeEnum.crispr.value:
@@ -227,10 +236,11 @@ def get_entity_summary_metadata(dataset_id: str, feature_data: pd.Series, featur
 
 
 def _get_x_range(srs: pd.Series) -> list[float]:
-    series_min = float(pd.to_numeric(srs.min())) 
+    series_min = float(pd.to_numeric(srs.min()))
     series_max = float(pd.to_numeric(srs.max()))
 
     return [series_min - 1, series_max + 1]
+
 
 def integrate_cell_line_information(srs: pd.Series) -> pd.DataFrame:
     info_to_merge = CellLine.get_cell_line_information_df(srs.index, levels=[1, 2])
@@ -239,9 +249,9 @@ def integrate_cell_line_information(srs: pd.Series) -> pd.DataFrame:
 
 
 def integrate_size_and_label_data(
-    df: pd.DataFrame, 
+    df: pd.DataFrame,
     x_label: str,
-    size_dataset_enum, # Assumed to be a dataset that exists outside of breadbox
+    size_dataset_enum,  # Assumed to be a dataset that exists outside of breadbox
     entity_id: int,
 ):
     legend = {}
