@@ -12,9 +12,7 @@ from depmap.context_explorer.models import (
     GroupedOtherBoxPlotData,
 )
 import dataclasses
-from depmap.dataset.models import DependencyDataset
 from depmap.gene.models import Gene
-from depmap.tile.views import get_dependency_dataset_for_entity
 import pandas as pd
 from flask import url_for
 

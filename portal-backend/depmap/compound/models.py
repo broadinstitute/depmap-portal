@@ -218,20 +218,13 @@ class Compound(Entity):
         # Step 3: Get all DoseResponseCurves for these experiments and label
         dose_response_curves = []
         if model_ids:
-            dose_response_curves = (
-                DoseResponseCurve.query.filter(
-                    and_(
-                        DoseResponseCurve.compound_exp_id.in_(experiment_ids),
-                        DoseResponseCurve.depmap_id.in_(model_ids),
-                    )
+            dose_response_curves = DoseResponseCurve.query.filter(
+                and_(
+                    DoseResponseCurve.compound_exp_id.in_(experiment_ids),
+                    DoseResponseCurve.depmap_id.in_(model_ids),
+                    DoseResponseCurve.drc_dataset_label == drc_dataset_label,
                 )
-                .join(
-                    CompoundDoseReplicate,
-                    CompoundDoseReplicate.compound_experiment_id
-                    == DoseResponseCurve.compound_exp_id,
-                )
-                .all()
-            )
+            ).all()
         else:
             dose_response_curves = DoseResponseCurve.query.filter(
                 DoseResponseCurve.compound_exp_id.in_(experiment_ids),
