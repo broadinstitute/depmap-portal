@@ -8,7 +8,7 @@ from typing import cast, Sequence
 import pandas as pd
 from contextlib import contextmanager
 
-from breadbox.depmap_compute_embed import models, FeaturesExtDataFrame
+from breadbox.depmap_compute_embed import models, FeaturesExtDataFrame, AnalysisType
 from breadbox.depmap_compute_embed import analysis_tasks_interface
 import csv
 from io import StringIO, BytesIO
