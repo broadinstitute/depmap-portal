@@ -297,7 +297,9 @@ class CustomAnalysisCallbacksImpl:
             keep_nans=True,
         )
         m_values = m.values
-        assert m_values.dtype == np.dtype("float64")
+        assert m_values.dtype == np.dtype(
+            "float64"
+        ), f"Cannot use this method with a non-numeric dataset {self.dataset}"
         return m_values
 
 
