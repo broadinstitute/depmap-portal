@@ -783,7 +783,8 @@ export const REP_DETAIL_TOOLTIP =
 
 export function getDetailPanelTooltip(datasetId: ContextExplorerDatasets) {
   if (
-    datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+    datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
+    datasetId === ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
   ) {
     return ONC_DETAIL_TOOLTIP;
   }

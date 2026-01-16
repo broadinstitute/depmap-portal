@@ -7,7 +7,7 @@ from depmap.compound.models import CompoundDoseReplicate, CompoundExperiment
 from depmap.context.models_new import TreeType
 from depmap.context_explorer import box_plot_utils
 from depmap.context_explorer.api import _get_analysis_data_table
-from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.context_explorer.models import ContextExplorerDatasets, is_oncref_dataset
 from depmap.partials.matrix.models import CellLineSeries
 import pytest
 from typing import List, Literal, Optional
@@ -465,10 +465,7 @@ def _setup_factories(
         frac_dep_in=90 if use_genes else None,
     )
 
-    if (
-        dataset_given_id
-        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
-    ):
+    if is_oncref_dataset(dataset_given_id):
         _setup_dose_response_curves(
             models=matrix_cell_lines, compound_exps=[compound_exp_a, compound_exp_b]
         )
@@ -515,6 +512,7 @@ def _setup_entities_and_dataset_id(
         "Chronos_Combined",
         "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
+        "PRISMOncologyReferenceSeqLog2AUCMatrix",
     ],
 )
 def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):
@@ -638,6 +636,7 @@ def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
     assert all_in_group == None
 
 
+# TODO: Update to also test OncRef Seq!!!
 def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
     dataset_given_id = "PRISMOncologyReferenceLog2AUCMatrix"
     feature_type = "compound"
@@ -1070,6 +1069,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
         "Chronos_Combined",
         "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
+        "PRISMOncologyReferenceSeqLog2AUCMatrix",
     ],
 )
 def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeypatch):
@@ -1144,6 +1144,7 @@ def _get_box_plot_data(
         "Chronos_Combined",
         "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
+        "PRISMOncologyReferenceSeqLog2AUCMatrix",
     ],
 )
 def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):

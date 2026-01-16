@@ -3,7 +3,7 @@ from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.context_explorer import box_plot_utils, enrichment_tile_filters
-from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.context_explorer.models import ContextExplorerDatasets, is_oncref_dataset
 from depmap.dataset.models import DependencyDataset
 from depmap.gene.models import Gene
 from depmap.partials.matrix.models import CellLineSeries
@@ -284,10 +284,7 @@ def get_context_explorer_box_plot_filters(dataset_given_id: str):
     frac_dep_in = 0.1
     max_fdr = 0.01
     min_abs_effect_size = 0.25
-    if (
-        dataset_given_id
-        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
-    ):
+    if is_oncref_dataset(dataset_given_id):
         max_fdr = 0.1
         min_abs_effect_size = 0.1
     elif (
@@ -308,6 +305,8 @@ def get_context_explorer_box_plot_filters(dataset_given_id: str):
         ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_significant(
@@ -352,6 +351,8 @@ def test_get_sig_context_dataframe_level_0_significant(
         ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_not_significant(
@@ -419,6 +420,17 @@ def test_get_enrichment_tile_filters():
         min_frac_dep_in,
     ) = enrichment_tile_filters.get_enrichment_tile_filters(
         feature_type="compound",
+        dataset_given_id=ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix.name,
+    )
+
+    assert max_fdr == 0.1
+    assert min_abs_effect_size == 0.1
+    (
+        max_fdr,
+        min_abs_effect_size,
+        min_frac_dep_in,
+    ) = enrichment_tile_filters.get_enrichment_tile_filters(
+        feature_type="compound",
         dataset_given_id=ContextExplorerDatasets.Rep_all_single_pt_per_compound.name,
     )
 
@@ -435,6 +447,8 @@ def test_get_enrichment_tile_filters():
         ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_data_frame_show_positive_effect_sizes(
@@ -490,6 +504,8 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
         ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_no_significant_analyses_found(
@@ -532,6 +548,8 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
         ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_context_plot_data(
@@ -671,6 +689,8 @@ def test_get_context_plot_data(
         ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
         ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceSeqLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_data_to_show_if_no_contexts_significant(

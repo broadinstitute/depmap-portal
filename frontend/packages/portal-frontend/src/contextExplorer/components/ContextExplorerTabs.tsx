@@ -86,6 +86,7 @@ const ContextExplorerTabs = ({
       wgs: capitalizeFirstLetter(String(row.wgs)),
       wes: capitalizeFirstLetter(String(row.wes)),
       rna_seq: capitalizeFirstLetter(String(row.rna_seq)),
+      prismOncRefSeq: capitalizeFirstLetter(String(row.oncrefSeq)),
       prismOncRef: capitalizeFirstLetter(String(row.oncref)),
       prismRepurposing: capitalizeFirstLetter(String(row.repurposing)),
     };
@@ -124,6 +125,11 @@ const ContextExplorerTabs = ({
         <Tab id="geneDependency" className={styles.Tab}>
           CRISPR Gene Dependency
         </Tab>
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <Tab id="oncrefSeq" className={styles.Tab}>
+            OncRef Seq Sensitivity
+          </Tab>
+        )}
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <Tab id="oncref" className={styles.Tab}>
             OncRef Lum Sensitivity
@@ -195,6 +201,24 @@ const ContextExplorerTabs = ({
                 featureType={"compound"}
                 datasetId={
                   ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+                }
+                customInfoImg={customInfoImg}
+              />
+            )}
+          </TabPanel>
+        )}
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <TabPanel className={styles.TabPanel}>
+            {" "}
+            {!isLoadingInitialData && (
+              <ContextAnalysis
+                selectedContextNode={selectedContextNode}
+                selectedContextNameInfo={selectedContextNameInfo}
+                topContextNameInfo={topContextNameInfo}
+                treeType={treeType}
+                featureType={"compound"}
+                datasetId={
+                  ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
                 }
                 customInfoImg={customInfoImg}
               />

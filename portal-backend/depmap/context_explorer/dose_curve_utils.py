@@ -1,7 +1,7 @@
 from typing import List
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound import new_dose_curves_utils
-from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.context_explorer.models import ContextExplorerDatasets, is_oncref_dataset
 import pandas as pd
 from depmap.context_explorer import utils
 from depmap.context.models_new import SubtypeNode, SubtypeContext
@@ -172,10 +172,7 @@ def get_context_dose_curves(
     out_group_type: str,
     tree_type: str,
 ):
-    assert (
-        dataset_given_id
-        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
-    )
+    assert is_oncref_dataset(dataset_given_id)
 
     drc_dataset = utils.find_compound_dataset(
         datasets=drc_compound_datasets,
