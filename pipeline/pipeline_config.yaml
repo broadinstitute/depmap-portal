@@ -49,9 +49,16 @@ pipelines:
     # Environment name mapping
     env_mapping:
       qa: iqa
-      external: external
-      dqa: dqa
+      istaging: internal
       internal: internal
+      dqa: dmc
+      dstaging: dmc
+      dmc: dmc
+      pstaging: dmc
+      peddep: dmc
+      xqa: external
+      xstaging: external
+      external: external
       test-prefix: iqa # Any env starting with "test-" maps to this
 
   data_prep:
