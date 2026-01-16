@@ -334,7 +334,7 @@ def get_matrix_dataset_data(
 @router.post(
     "/tabular/{dataset_id}", operation_id="get_tabular_dataset_data",
 )
-def get_tabular_dataset_data(
+async def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
@@ -349,6 +349,7 @@ def get_tabular_dataset_data(
         ),
     ] = False,
 ):
+
     if dataset.format != "tabular_dataset":
         raise UserError(
             "This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead."
@@ -360,7 +361,7 @@ def get_tabular_dataset_data(
         if dataset_crud.is_public_dataset(dataset):
             anon_db = db.create_session_for_anonymous_user()
 
-            df_as_json = cache.memoize(
+            df_as_json = await cache.memoize(
                 lambda: dataset_service.get_subsetted_tabular_dataset_df(
                     anon_db, anon_db.user, dataset, tabular_dimensions_info, strict
                 ).to_json(),
@@ -377,6 +378,7 @@ def get_tabular_dataset_data(
 
     except UserError as e:
         raise e
+
     return Response(df_as_json, media_type="application/json")
 
 
