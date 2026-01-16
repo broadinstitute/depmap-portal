@@ -6,11 +6,12 @@ from dataclasses import dataclass, asdict
 
 from breadbox.models.dataset import MatrixDataset
 
-ISSUES_FILE = "data-issues-ratchet.json"
+ISSUES_FILE = "known-data-issues.json"
 
 
 @dataclass
 class DataIssue:
+    # TODO: key by given ID instead of dataset name
     dataset_name: Optional[str] # None if the issue is not dataset-specific
     issue_type: str
     count_affected: int # number of affected IDs/records
@@ -65,27 +66,38 @@ def check_for_metadata_not_in_dataset(dataset: MatrixDataset, axis: str, dataset
 # and modified to fit this use case.
 
 
-def load_issues() -> dict[str, DataIssue]:
+def load_known_issues() -> dict[str, list[DataIssue]]:
     if not os.path.exists(ISSUES_FILE):
         return {}
         
     with open(ISSUES_FILE, "rt") as fd:
         data = json.load(fd)
-        return {key: DataIssue(**value) for key, value in data.items()}
+        issues = {}
+        for dimension_type, issues_list in data.items():
+            issues[dimension_type] = [DataIssue(**issue_dict) for issue_dict in issues_list]
+    return issues
 
 
-def save_issues(issues: dict[str, DataIssue]) -> int:
+def save_issues(issues: dict[str, list[DataIssue]]) -> int:
     # Convert DataIssue objects to dictionaries for JSON serialization
-    serializable_issues = {key: asdict(issue) for key, issue in issues.items()}
+    serializable_issues = {}
+    for dimension_type, issues_list in issues.items():
+        serializable_issues[dimension_type] = [asdict(issue) for issue in issues_list]
     
     with open(ISSUES_FILE, "wt") as fd:
         json.dump(serializable_issues, fd, indent=2)
     
     return len(issues)
 
-def print_comparison(past_issues: dict[str, DataIssue], new_issues: dict[str, DataIssue]):
+
+def log_issues_for_dimension_type(dimension_type_name: str, issues: list[DataIssue]):
     pass # TODO
-    fixed_issues = []
-    print(f"Fixed {len(fixed_issues)} issues")
 
 
+def get_matching_known_issue(current_issue: DataIssue, known_issues: list[DataIssue]) -> Optional[DataIssue]:
+    # This is an innefficient search, but the number of issues is expected to be small.
+    for known_issue in known_issues:
+        if (current_issue.dataset_name == known_issue.dataset_name and
+            current_issue.issue_type == known_issue.issue_type):
+            return known_issue
+    return None

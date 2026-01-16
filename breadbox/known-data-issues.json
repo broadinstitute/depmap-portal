@@ -1,0 +1,1155 @@
+{
+  "MetMap site": [
+    {
+      "dataset_name": "MetMap 125: Metastatic Potential",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 2,
+      "percent_affected": 0.2857142857142857,
+      "examples": null
+    },
+    {
+      "dataset_name": "MetMap 500: Metastatic Potential",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 1,
+      "percent_affected": 0.14285714285714285,
+      "examples": null
+    },
+    {
+      "dataset_name": "MetMap 500: Penetrance",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 1,
+      "percent_affected": 0.14285714285714285,
+      "examples": null
+    }
+  ],
+  "depmap_model": [
+    {
+      "dataset_name": "Average TSS Methylation (Broad)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0010775862068965517,
+      "examples": [
+        "ACH-001078"
+      ]
+    },
+    {
+      "dataset_name": "Current PRISM Pools",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0011123470522803114,
+      "examples": [
+        "ACH-000010"
+      ]
+    },
+    {
+      "dataset_name": "GDSC1 (AUC)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 2,
+      "percent_affected": 0.002105263157894737,
+      "examples": [
+        "ACH-002194",
+        "ACH-002176"
+      ]
+    },
+    {
+      "dataset_name": "GDSC1 (Viability)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 2,
+      "percent_affected": 0.002105263157894737,
+      "examples": [
+        "ACH-002194",
+        "ACH-002176"
+      ]
+    },
+    {
+      "dataset_name": "GDSC1 (log2 AUC)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 2,
+      "percent_affected": 0.002105263157894737,
+      "examples": [
+        "ACH-002194",
+        "ACH-002176"
+      ]
+    },
+    {
+      "dataset_name": "GDSC2 (AUC)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 2,
+      "percent_affected": 0.002107481559536354,
+      "examples": [
+        "ACH-002194",
+        "ACH-002176"
+      ]
+    },
+    {
+      "dataset_name": "GDSC2 (Viability)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 2,
+      "percent_affected": 0.002107481559536354,
+      "examples": [
+        "ACH-002194",
+        "ACH-002176"
+      ]
+    },
+    {
+      "dataset_name": "GDSC2 (log2 AUC)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 2,
+      "percent_affected": 0.002107481559536354,
+      "examples": [
+        "ACH-002194",
+        "ACH-002176"
+      ]
+    },
+    {
+      "dataset_name": "Global Chromatin Profiling",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0011148272017837235,
+      "examples": [
+        "ACH-001078"
+      ]
+    },
+    {
+      "dataset_name": "Harmonized Broad MS DIA 2023",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.01818181818181818,
+      "examples": [
+        "ACH-002943"
+      ]
+    },
+    {
+      "dataset_name": "Harmonized MS Sanger",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 2,
+      "percent_affected": 0.002127659574468085,
+      "examples": [
+        "ACH-002194",
+        "ACH-002176"
+      ]
+    },
+    {
+      "dataset_name": "Harmonized Olink 2023 Best Dilution",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.006211180124223602,
+      "examples": [
+        "ACH-002943"
+      ]
+    },
+    {
+      "dataset_name": "Harmonized RPPA CCLE",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0011123470522803114,
+      "examples": [
+        "ACH-001078"
+      ]
+    },
+    {
+      "dataset_name": "Metabolomics",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0010775862068965517,
+      "examples": [
+        "ACH-001078"
+      ]
+    },
+    {
+      "dataset_name": "Microsatellite Instability",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 10,
+      "percent_affected": 0.007067137809187279,
+      "examples": [
+        "ACH-002194",
+        "ACH-002260",
+        "ACH-001011",
+        "ACH-002341",
+        "ACH-001108"
+      ]
+    },
+    {
+      "dataset_name": "PRISM OncRef (AUC) Seq Internal 25Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 6,
+      "percent_affected": 0.006550218340611353,
+      "examples": [
+        "ACH-002655",
+        "ACH-002515",
+        "ACH-002649",
+        "ACH-001620",
+        "ACH-001631"
+      ]
+    },
+    {
+      "dataset_name": "PRISM OncRef (Viability) Seq Internal 25Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 6,
+      "percent_affected": 0.006550218340611353,
+      "examples": [
+        "ACH-002655",
+        "ACH-002515",
+        "ACH-002649",
+        "ACH-001620",
+        "ACH-001631"
+      ]
+    },
+    {
+      "dataset_name": "PRISM OncRef Seq confounders Internal 25Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 6,
+      "percent_affected": 0.006417112299465241,
+      "examples": [
+        "ACH-002655",
+        "ACH-002515",
+        "ACH-002649",
+        "ACH-001620",
+        "ACH-001631"
+      ]
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected (AUC) Seq Internal 25Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 6,
+      "percent_affected": 0.006550218340611353,
+      "examples": [
+        "ACH-002655",
+        "ACH-002515",
+        "ACH-002649",
+        "ACH-001620",
+        "ACH-001631"
+      ]
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected (Viability) Seq Internal 25Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 6,
+      "percent_affected": 0.006550218340611353,
+      "examples": [
+        "ACH-002655",
+        "ACH-002515",
+        "ACH-002649",
+        "ACH-001620",
+        "ACH-001631"
+      ]
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected log2(AUC) Seq Internal 25Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 6,
+      "percent_affected": 0.006550218340611353,
+      "examples": [
+        "ACH-002655",
+        "ACH-002515",
+        "ACH-002649",
+        "ACH-001620",
+        "ACH-001631"
+      ]
+    },
+    {
+      "dataset_name": "PRISM OncRef log2(AUC) Seq Internal 25Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 6,
+      "percent_affected": 0.006550218340611353,
+      "examples": [
+        "ACH-002655",
+        "ACH-002515",
+        "ACH-002649",
+        "ACH-001620",
+        "ACH-001631"
+      ]
+    },
+    {
+      "dataset_name": "PRISM Repurposing Primary (Viability) per Compound Sample",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.001088139281828074,
+      "examples": [
+        "ACH-000010"
+      ]
+    },
+    {
+      "dataset_name": "PRISM Repurposing Primary (Viability)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.001088139281828074,
+      "examples": [
+        "ACH-000010"
+      ]
+    },
+    {
+      "dataset_name": "Paralogs 25Q1",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.007407407407407408,
+      "examples": [
+        "MKN\u00ac\u202074.00"
+      ]
+    },
+    {
+      "dataset_name": "Protein Array",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0011123470522803114,
+      "examples": [
+        "ACH-001078"
+      ]
+    },
+    {
+      "dataset_name": "RNAi (Achilles+DRIVE+Marcotte, DEMETER2)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 5,
+      "percent_affected": 0.007022471910112359,
+      "examples": [
+        "ACH-002325",
+        "ACH-001827",
+        "ACH-001120",
+        "ACH-001108",
+        "ACH-002319"
+      ]
+    },
+    {
+      "dataset_name": "RNAi (Combined Broad, Novartis, Marcotte) PR",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 5,
+      "percent_affected": 0.007022471910112359,
+      "examples": [
+        "ACH-002325",
+        "ACH-001827",
+        "ACH-001120",
+        "ACH-001108",
+        "ACH-002319"
+      ]
+    },
+    {
+      "dataset_name": "RNAi confounders",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 5,
+      "percent_affected": 0.007022471910112359,
+      "examples": [
+        "ACH-002325",
+        "ACH-001827",
+        "ACH-001120",
+        "ACH-001108",
+        "ACH-002319"
+      ]
+    },
+    {
+      "dataset_name": "Repurposing Primary Extended confounders",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.001081081081081081,
+      "examples": [
+        "ACH-000010"
+      ]
+    },
+    {
+      "dataset_name": "miRNA Expression",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0010482180293501049,
+      "examples": [
+        "ACH-001078"
+      ]
+    }
+  ],
+  "ModelCondition": [],
+  "Screen metadata": [
+    {
+      "dataset_name": null,
+      "issue_type": "Metadata records not used in any dataset",
+      "count_affected": 73,
+      "percent_affected": 0.03943814154511075,
+      "examples": [
+        "SC-000568.AV01",
+        "SC-002543.AV01",
+        "SC-001050.CD01",
+        "SC-000112.AV01",
+        "SC-003578.CD01"
+      ]
+    }
+  ],
+  "anchor_experiment": [],
+  "gene": [
+    {
+      "dataset_name": "ATAC Pseudobulk Gene Accessibility 23Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1178,
+      "percent_affected": 0.042015907550736524,
+      "examples": [
+        "105377879",
+        "102724434",
+        "100996385",
+        "114004397",
+        "729080"
+      ]
+    },
+    {
+      "dataset_name": "ATAC Pseudobulk Gene Accessibility 23Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 16990,
+      "percent_affected": 0.38746607676343814,
+      "examples": null
+    },
+    {
+      "dataset_name": "Anchor screens Internal 25Q3 Differential Gene Effect",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25690,
+      "percent_affected": 0.585874250267965,
+      "examples": null
+    },
+    {
+      "dataset_name": "Anchor screens Internal 25Q3 Differential Significance",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25690,
+      "percent_affected": 0.585874250267965,
+      "examples": null
+    },
+    {
+      "dataset_name": "Average TSS Methylation (Broad)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 26053,
+      "percent_affected": 0.5941526602659125,
+      "examples": null
+    },
+    {
+      "dataset_name": "Average TSS Methylation (Sanger)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 27014,
+      "percent_affected": 0.6160687815001482,
+      "examples": null
+    },
+    {
+      "dataset_name": "CRISPR (DepMap Internal 25Q3+Score, Chronos)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25414,
+      "percent_affected": 0.5795799220050628,
+      "examples": null
+    },
+    {
+      "dataset_name": "CRISPR Gene Dependency",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25414,
+      "percent_affected": 0.5795799220050628,
+      "examples": null
+    },
+    {
+      "dataset_name": "Copy Number TCGA",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 24661,
+      "percent_affected": 0.5624073525051883,
+      "examples": null
+    },
+    {
+      "dataset_name": "Copy Number WES 25Q2",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 89,
+      "percent_affected": 0.002410486972536699,
+      "examples": [
+        "116933",
+        "100874173",
+        "105378799",
+        "105371226",
+        "401585"
+      ]
+    },
+    {
+      "dataset_name": "Copy Number WES 25Q2",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7016,
+      "percent_affected": 0.1600036488859495,
+      "examples": null
+    },
+    {
+      "dataset_name": "Copy Number WGS Internal 25Q3 (log2)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 531,
+      "percent_affected": 0.027737150020894275,
+      "examples": [
+        "ENSG00000256825",
+        "ENSG00000285708",
+        "ENSG00000259522",
+        "ENSG00000268083",
+        "ENSG00000286264"
+      ]
+    },
+    {
+      "dataset_name": "Copy Number WGS Internal 25Q3 (log2)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25236,
+      "percent_affected": 0.5755205363862346,
+      "examples": null
+    },
+    {
+      "dataset_name": "Copy Number WGS Internal 25Q3",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 589,
+      "percent_affected": 0.02951641192683538,
+      "examples": [
+        "ENSG00000256825",
+        "ENSG00000286228",
+        "ENSG00000285708",
+        "ENSG00000197976_PAR_Y",
+        "ENSG00000259522"
+      ]
+    },
+    {
+      "dataset_name": "Copy Number WGS Internal 25Q3",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 24483,
+      "percent_affected": 0.55834796688636,
+      "examples": null
+    },
+    {
+      "dataset_name": "Damaging Mutations (Internal 25Q3)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 75,
+      "percent_affected": 0.003823409461663948,
+      "examples": [
+        "SERPINA13P (Unknown)",
+        "ACTG1P25 (Unknown)",
+        "CYP2A7P2 (Unknown)",
+        "ZNF781 (Unknown)",
+        "MFSD4A-AS1 (Unknown)"
+      ]
+    },
+    {
+      "dataset_name": "Damaging Mutations (Internal 25Q3)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 24308,
+      "percent_affected": 0.554356997879085,
+      "examples": null
+    },
+    {
+      "dataset_name": "Damaging mutations TCGA",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 673,
+      "percent_affected": 0.0364690581987645,
+      "examples": [
+        "LY6S (Unknown)",
+        "KRT126P (Unknown)",
+        "SOCS5P4 (Unknown)",
+        "TRBV7-1 (Unknown)",
+        "TRBV20OR9-2 (Unknown)"
+      ]
+    },
+    {
+      "dataset_name": "Damaging mutations TCGA",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 26068,
+      "percent_affected": 0.594494743323679,
+      "examples": null
+    },
+    {
+      "dataset_name": "Expression (Short-read) Internal 25Q3",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 24634,
+      "percent_affected": 0.5617916030012087,
+      "examples": null
+    },
+    {
+      "dataset_name": "Expression TCGA",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25433,
+      "percent_affected": 0.580013227211567,
+      "examples": null
+    },
+    {
+      "dataset_name": "Hotspot Mutations (Internal 25Q3)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.00186219739292365,
+      "examples": [
+        "ZNF781 (Unknown)"
+      ]
+    },
+    {
+      "dataset_name": "Hotspot Mutations (Internal 25Q3)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 43313,
+      "percent_affected": 0.9877762320691464,
+      "examples": null
+    },
+    {
+      "dataset_name": "Hotspot mutations TCGA",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 9,
+      "percent_affected": 0.00881488736532811,
+      "examples": [
+        "110354863",
+        "ZNF781 (Unknown)",
+        "112267931",
+        "100506403",
+        "SLCO1B7 (Unknown)"
+      ]
+    },
+    {
+      "dataset_name": "Hotspot mutations TCGA",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 42837,
+      "percent_affected": 0.9769207963693585,
+      "examples": null
+    },
+    {
+      "dataset_name": "Methylation Expression Impact (Broad)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 4,
+      "percent_affected": 0.00026932399676811203,
+      "examples": [
+        "102724023",
+        "102724594",
+        "9220",
+        "102724560"
+      ]
+    },
+    {
+      "dataset_name": "Methylation Expression Impact (Broad)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 29001,
+      "percent_affected": 0.6613833838856075,
+      "examples": null
+    },
+    {
+      "dataset_name": "Methylation Expression Impact (Sanger)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 7,
+      "percent_affected": 0.00043271311120726956,
+      "examples": [
+        "102724594",
+        "102723475",
+        "9220",
+        "102724428",
+        "102724023"
+      ]
+    },
+    {
+      "dataset_name": "Methylation Expression Impact (Sanger)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 27679,
+      "percent_affected": 0.6312344637277931,
+      "examples": null
+    },
+    {
+      "dataset_name": "Omics Absolute CN Gene Internal 24Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 99,
+      "percent_affected": 0.0026975476839237057,
+      "examples": [
+        "116933",
+        "100874173",
+        "105378799",
+        "105371226",
+        "100874235"
+      ]
+    },
+    {
+      "dataset_name": "Omics Absolute CN Gene Internal 24Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7248,
+      "percent_affected": 0.1652945335127369,
+      "examples": null
+    },
+    {
+      "dataset_name": "Omics LoH Internal 24Q4",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 99,
+      "percent_affected": 0.0026975476839237057,
+      "examples": [
+        "116933",
+        "100874173",
+        "105378799",
+        "105371226",
+        "100874235"
+      ]
+    },
+    {
+      "dataset_name": "Omics LoH Internal 24Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7248,
+      "percent_affected": 0.1652945335127369,
+      "examples": null
+    },
+    {
+      "dataset_name": "Organoid Gene Effect v2",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25690,
+      "percent_affected": 0.585874250267965,
+      "examples": null
+    },
+    {
+      "dataset_name": "Prioritized Mutations Internal 25Q3",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.0018975332068311196,
+      "examples": [
+        "ZNF781 (Unknown)"
+      ]
+    },
+    {
+      "dataset_name": "Prioritized Mutations Internal 25Q3",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 43323,
+      "percent_affected": 0.9880042874409907,
+      "examples": null
+    },
+    {
+      "dataset_name": "Protein changes Internal 25Q3",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 24926,
+      "percent_affected": 0.5684508198590618,
+      "examples": null
+    },
+    {
+      "dataset_name": "RNAi (Achilles+DRIVE+Marcotte, DEMETER2)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 185,
+      "percent_affected": 0.01086764965047289,
+      "examples": [
+        "100527950",
+        "107984056",
+        "107984055",
+        "105370099",
+        "103021295"
+      ]
+    },
+    {
+      "dataset_name": "RNAi (Achilles+DRIVE+Marcotte, DEMETER2)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 27011,
+      "percent_affected": 0.616000364888595,
+      "examples": null
+    },
+    {
+      "dataset_name": "RNAi (Combined Broad, Novartis, Marcotte) PR",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 471,
+      "percent_affected": 0.027211277370154253,
+      "examples": [
+        "LOC101928195&LOC101929583&LOC102724580&LOC102724904&LOC105379443&LOC107984066&LOC286297 (101928195&101929583&102724580&102724904&105379443&107984066&286297)",
+        "107984055",
+        "HSFX2&HSFX1 (100130086&100506164)",
+        "729080",
+        "110006322"
+      ]
+    },
+    {
+      "dataset_name": "RNAi (Combined Broad, Novartis, Marcotte) PR",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 27011,
+      "percent_affected": 0.616000364888595,
+      "examples": null
+    },
+    {
+      "dataset_name": "Screen Internal 25Q3",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 25414,
+      "percent_affected": 0.5795799220050628,
+      "examples": null
+    },
+    {
+      "dataset_name": null,
+      "issue_type": "Metadata records not used in any dataset",
+      "count_affected": 3614,
+      "percent_affected": 0.08241921138452417,
+      "examples": [
+        "246112",
+        "100313877",
+        "100189258",
+        "100420889",
+        "107075094"
+      ]
+    }
+  ],
+  "antibody_v2": [],
+  "ccle_proteomics": [],
+  "compound_v2": [
+    {
+      "dataset_name": "CTD^2 (AUC)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.001834862385321101,
+      "examples": [
+        "DPC-004766"
+      ]
+    },
+    {
+      "dataset_name": "CTD^2 (AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 6839,
+      "percent_affected": 0.9263172152241637,
+      "examples": null
+    },
+    {
+      "dataset_name": "CTD^2 (log2 AUC)",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 1,
+      "percent_affected": 0.001834862385321101,
+      "examples": [
+        "DPC-004766"
+      ]
+    },
+    {
+      "dataset_name": "CTD^2 (log2 AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 6839,
+      "percent_affected": 0.9263172152241637,
+      "examples": null
+    },
+    {
+      "dataset_name": "GDSC1 (AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7067,
+      "percent_affected": 0.9571989706081538,
+      "examples": null
+    },
+    {
+      "dataset_name": "GDSC1 (log2 AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7067,
+      "percent_affected": 0.9571989706081538,
+      "examples": null
+    },
+    {
+      "dataset_name": "GDSC2 (AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7097,
+      "percent_affected": 0.9612623594744684,
+      "examples": null
+    },
+    {
+      "dataset_name": "GDSC2 (log2 AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7097,
+      "percent_affected": 0.9612623594744684,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef (AUC) Lum Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 6987,
+      "percent_affected": 0.9463632669646486,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef (AUC) Seq Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7230,
+      "percent_affected": 0.9792767167817961,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected (AUC) Lum Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 6987,
+      "percent_affected": 0.9463632669646486,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected (AUC) Seq Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7230,
+      "percent_affected": 0.9792767167817961,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected log2(AUC) Lum Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 6987,
+      "percent_affected": 0.9463632669646486,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected log2(AUC) Seq Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7230,
+      "percent_affected": 0.9792767167817961,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef log2(AUC) Lum Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 6987,
+      "percent_affected": 0.9463632669646486,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef log2(AUC) Seq Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 7230,
+      "percent_affected": 0.9792767167817961,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM Repurposing Primary (Viability)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 821,
+      "percent_affected": 0.11120140864147365,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM Repurposing Secondary (AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 5901,
+      "percent_affected": 0.7992685900040634,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM Repurposing Secondary (log2 AUC)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 5901,
+      "percent_affected": 0.7992685900040634,
+      "examples": null
+    }
+  ],
+  "compound_dose": [
+    {
+      "dataset_name": "CTD^2 (Viability)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 21109,
+      "percent_affected": 0.70368024534969,
+      "examples": null
+    },
+    {
+      "dataset_name": "GDSC1 (Viability)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 27374,
+      "percent_affected": 0.9125275018334555,
+      "examples": null
+    },
+    {
+      "dataset_name": "GDSC2 (Viability)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 27158,
+      "percent_affected": 0.9053270218014534,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef (Viability) Lum Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 26832,
+      "percent_affected": 0.8944596306420428,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef (Viability) Seq Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 28774,
+      "percent_affected": 0.9591972798186545,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected (Viability) Lum Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 26832,
+      "percent_affected": 0.8944596306420428,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM OncRef Uncorrected (Viability) Seq Internal 25Q4",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 28774,
+      "percent_affected": 0.9591972798186545,
+      "examples": null
+    },
+    {
+      "dataset_name": "PRISM Repurposing Secondary (Viability)",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 18151,
+      "percent_affected": 0.6050736715781052,
+      "examples": null
+    }
+  ],
+  "compound_sample": [
+    {
+      "dataset_name": "PRISM Repurposing Primary (Viability) per Compound Sample",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 1959,
+      "percent_affected": 0.22990259359230136,
+      "examples": null
+    },
+    {
+      "dataset_name": null,
+      "issue_type": "Metadata records not used in any dataset",
+      "count_affected": 1959,
+      "percent_affected": 0.22990259359230136,
+      "examples": [
+        "GDSC1:205",
+        "GDSC2:1627",
+        "BRD:PRC-002079219-279-78",
+        "BRD:BRD-K49456274-001-01-9",
+        "GDSC2:1620"
+      ]
+    }
+  ],
+  "ctd2_sample": [],
+  "gene_pair": [
+    {
+      "dataset_name": "Paralogs 25Q1",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 90,
+      "percent_affected": 0.007393411648730797,
+      "examples": [
+        "MARCHF3",
+        "FAM86C1P",
+        "SEPTIN1",
+        "BMAL1",
+        "HYCC2"
+      ]
+    }
+  ],
+  "molecular_signature": [],
+  "protein_v5": [
+    {
+      "dataset_name": "Harmonized Broad MS DIA 2023",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 5051,
+      "percent_affected": 0.305639598208883,
+      "examples": null
+    },
+    {
+      "dataset_name": "Harmonized MS CCLE Gygi",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 3968,
+      "percent_affected": 0.2401064988502965,
+      "examples": null
+    },
+    {
+      "dataset_name": "Harmonized MS Sanger",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 8070,
+      "percent_affected": 0.4883214328936222,
+      "examples": null
+    },
+    {
+      "dataset_name": "Harmonized Olink 2023 Best Dilution",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 11193,
+      "percent_affected": 0.6772963814595183,
+      "examples": null
+    },
+    {
+      "dataset_name": "Harmonized RPPA CCLE",
+      "issue_type": "Metadata records not used in dataset",
+      "count_affected": 16382,
+      "percent_affected": 0.9912864577030134,
+      "examples": null
+    },
+    {
+      "dataset_name": null,
+      "issue_type": "Metadata records not used in any dataset",
+      "count_affected": 128,
+      "percent_affected": 0.007745370930654726,
+      "examples": [
+        "Q13131_Phospho_T172",
+        "Q9P286_Phospho_S474S602S560",
+        "P40763_Phospho_Y705",
+        "Q9UQB9_Phospho_T288",
+        "P06241_Phospho_Y527"
+      ]
+    }
+  ],
+  "rrbs_metadata_v2": [],
+  "sgdc_compound": [],
+  "sanger_combination_anchor_viability_feature": [],
+  "sanger_combination_combo_fit_feature": [],
+  "sanger_combination_combo_viability_feature": [],
+  "sanger_combination_library_fit_feature": [],
+  "sanger_combination_library_viability_feature": [],
+  "transcript": [
+    {
+      "dataset_name": null,
+      "issue_type": "Metadata records not used in any dataset",
+      "count_affected": 37,
+      "percent_affected": 0.00022831191109410771,
+      "examples": [
+        "ENST00000614336.4",
+        "ENST00000614604.4",
+        "ENST00000616157.1",
+        "ENST00000618686.1",
+        "ENST00000618003.1"
+      ]
+    }
+  ],
+  "tumor": [
+    {
+      "dataset_name": "Copy Number TCGA",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 12,
+      "percent_affected": 0.001124543154343548,
+      "examples": [
+        "TCGA-06-0208-01",
+        "TCGA-BH-A0C1-01",
+        "TCGA-10-0925-01",
+        "TCGA-24-0975-01",
+        "TCGA-68-7757-01"
+      ]
+    },
+    {
+      "dataset_name": "Damaging mutations TCGA",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 11,
+      "percent_affected": 0.0010514242018734468,
+      "examples": [
+        "TCGA-17-Z060-01",
+        "TCGA-17-Z014-01",
+        "TCGA-AG-4009-01",
+        "TCGA-BH-A0C1-01",
+        "TCGA-68-7757-01"
+      ]
+    },
+    {
+      "dataset_name": "Expression TCGA",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 84,
+      "percent_affected": 0.0065106185087583325,
+      "examples": [
+        "TARGET-40-PATUXZ-01A-01R",
+        "TARGET-40-0A4I3S-01A-01R",
+        "TARGET-40-PAPXGT-01A-01R",
+        "TARGET-40-PAMYYJ-01A-01R",
+        "TARGET-40-PATMXR-01A-01R"
+      ]
+    },
+    {
+      "dataset_name": "Fusions TCGA",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 259,
+      "percent_affected": 0.03685783406859257,
+      "examples": [
+        "TCGA-AZ-6605-11",
+        "TCGA-CZ-5451-11",
+        "TCGA-CV-7440-11",
+        "TCGA-55-6969-11",
+        "TCGA-CV-6960-11"
+      ]
+    },
+    {
+      "dataset_name": "Hotspot mutations TCGA",
+      "issue_type": "Dataset give IDs without metadata",
+      "count_affected": 11,
+      "percent_affected": 0.0010514242018734468,
+      "examples": [
+        "TCGA-17-Z060-01",
+        "TCGA-17-Z014-01",
+        "TCGA-AG-4009-01",
+        "TCGA-BH-A0C1-01",
+        "TCGA-68-7757-01"
+      ]
+    },
+    {
+      "dataset_name": null,
+      "issue_type": "Metadata records not used in any dataset",
+      "count_affected": 4162,
+      "percent_affected": 0.23459782424891495,
+      "examples": [
+        "TARGET-10-PARTGW-09",
+        "TARGET-30-PADMGA-01",
+        "TARGET-10-PANHRW-09",
+        "TARGET-10-PAKVKK-09",
+        "TARGET-30-PAIPUD-01"
+      ]
+    }
+  ],
+  "viral_gene": []
+}
