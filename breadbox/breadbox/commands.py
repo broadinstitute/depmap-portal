@@ -23,6 +23,7 @@ from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
 from pydantic import ValidationError
 from breadbox.service.dataset import add_dimension_type
+from breadbox.utils import data_issues
 import logging
 from datetime import timedelta
 
@@ -413,6 +414,7 @@ def run_dev_worker():
 
     main_func()
 
+
 @cli.command("log_data_issues")
 def log_data_issues():
     """
@@ -421,9 +423,23 @@ def log_data_issues():
     1. A matrix dataset has a large number of features or samples with no metadata (>5%).
     2. A matrix dataset has a large number of metadata records not referenced by any features in the dataset (not applicable to samples).
     """
+    issues = _get_data_issues()
+
+    for dimension_type_name, dimension_issues in issues.items():
+        text_color = Fore.RED if dimension_issues else Fore.GREEN
+        print(text_color + f"Dimension type {dimension_type_name} has {len(dimension_issues)} issues.")
+        for issue in dimension_issues:
+            print("\t * " + str(issue))
+
+        print(Style.RESET_ALL)
+
+
+def _get_data_issues() -> dict[str, list[data_issues.DataIssue]]:
     db = _get_db_connection()
 
     all_dimension_types = types_crud.get_dimension_types(db=db)
+
+    all_issues = {}
 
     for dimension_type in all_dimension_types:
         if dimension_type.dataset is None:
@@ -442,69 +458,37 @@ def log_data_issues():
         # For now, only validate matrix datasets
         associated_datasets: list[MatrixDataset] = [d for d in associated_datasets if d.format == "matrix_dataset"]
         
-        missing_metadata_issues = []
-        unused_metadata_issues = []
+        dimension_issues = []
         used_given_ids_across_datasets = set()
         for dataset in associated_datasets:
             dataset_given_ids = get_matrix_dataset_given_ids(db=db, dataset=dataset, axis=dimension_type.axis)
             used_given_ids_across_datasets.update(set(dataset_given_ids))
 
-            missing_metadata_issue = _check_for_dataset_ids_without_metadata(dataset, dataset_given_ids, metadata_given_ids)
+            missing_metadata_issue = data_issues.check_for_dataset_ids_without_metadata(dataset, dataset_given_ids, metadata_given_ids)
             if missing_metadata_issue:
-                missing_metadata_issues.append(missing_metadata_issue)
+                dimension_issues.append(missing_metadata_issue)
             
-            unused_metadata_issue = _check_for_metadata_not_in_dataset(dataset, dimension_type.axis, dataset_given_ids, metadata_given_ids)
+            unused_metadata_issue = data_issues.check_for_metadata_not_in_dataset(dataset, dimension_type.axis, dataset_given_ids, metadata_given_ids)
             if unused_metadata_issue:
-                unused_metadata_issues.append(unused_metadata_issue)
-
-        # Summarize issues for this dimension type:
-        issues = []
-
-        if missing_metadata_issues:
-            issues.append(f"Found {len(missing_metadata_issues)} datasets with records missing metadata:")
-            for issue in missing_metadata_issues:
-                issues.append("\t *" + issue)
-
-        if unused_metadata_issues:
-            issues.append(f"Found {len(unused_metadata_issues)} datasets which reference only a subuset of feature metadata:")
-            for issue in unused_metadata_issues:
-                issues.append("\t *" + issue)
+                dimension_issues.append(unused_metadata_issue)
 
         # Validate overall usage of metadata across all datasets
         if len(associated_datasets) > 0:
             unused_metadata_given_ids = set(metadata_given_ids).difference(used_given_ids_across_datasets)
             percent_unused_metadata_given_ids = len(unused_metadata_given_ids) / len(metadata_given_ids)
             if unused_metadata_given_ids:
-                issues.append(f"Metadata contains {len(unused_metadata_given_ids)} unused records ({percent_unused_metadata_given_ids:.2%}%), including: {list(unused_metadata_given_ids)[:5]}")
-
-        text_color = Fore.RED if issues else Fore.GREEN
-        print(text_color + f"Dimension type {dimension_type.name} (referenced by {len(associated_datasets)} datasets) has {len(issues)} issues.")
-        for issue in issues:
-            print("\t" + issue)
-
-        print(Style.RESET_ALL)
-
-# TODO: move all hard-coded cutoffs to config file or database
-
-def _check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[str]:
-    """
-    Return a warning string if there are a substantial number of features in dataset_given_ids that are not in metadata_given_ids.
-    """
-    dataset_ids_not_in_metadata = set(dataset_given_ids).difference(set(metadata_given_ids))
-    percent_ids_not_in_metadata = len(dataset_ids_not_in_metadata) / len(dataset_given_ids)
-
-    # Append a warning when a given matrix dataset has a large number of features or samples with no metadata.
-    if percent_ids_not_in_metadata > 0.01:
-        return f"'{dataset.name}': {len(dataset_ids_not_in_metadata)} given IDs ({percent_ids_not_in_metadata:.2%}) with no metadata including: {list(dataset_ids_not_in_metadata)[:5]}."
+                issue = data_issues.DataIssue(
+                    dataset_name=None,
+                    issue_type="Metadata records not used in any dataset",
+                    count_affected=len(unused_metadata_given_ids),
+                    percent_affected=percent_unused_metadata_given_ids,
+                    examples=list(unused_metadata_given_ids)[:5],
+                )
+                dimension_issues.append(issue)
 
 
-def _check_for_metadata_not_in_dataset(dataset: MatrixDataset, axis: str, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[str]:
-    # Get the cutoffs configured for this particular dataset
-    dataset_configs = dataset.dataset_metadata
-    min_percent_feature_metadata_used = dataset_configs.get("min_percent_feature_metadata_used", 95)
+        all_issues[dimension_type.name] = dimension_issues
 
-    metadata_ids_not_in_dataset = set(metadata_given_ids).difference(set(dataset_given_ids))
-    percent_metadata_ids_not_in_dataset = len(metadata_ids_not_in_dataset) / len(metadata_given_ids)
-    if percent_metadata_ids_not_in_dataset > (1 - min_percent_feature_metadata_used / 100) and axis == "feature":
-        return f"'{dataset.name}': {percent_metadata_ids_not_in_dataset:.2%}% of metadata not referenced in this dataset."
+    return all_issues
+
     
