@@ -11,6 +11,7 @@ from depmap.compound.utils import (
     dataset_exists_with_compound_in_auc_and_rep_datasets,
 )
 
+from depmap.context_explorer.models import ContextExplorerDatasets
 import numpy as np
 import pandas as pd
 from flask import (
@@ -115,15 +116,18 @@ def view_compound(name):
 
     # TODO: Update when context explorer moves to using compounds instead of compound experiments
     show_enriched_lineages = (
-        legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
-            DependencyEnum.Prism_oncology_AUC.value, compound_experiment_and_datasets
+        data_access.dataset_exists(
+            ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
         )
-        or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
-            DependencyEnum.Rep_all_single_pt.value, compound_experiment_and_datasets
+        and data_access.valid_row(
+            ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name,
+            compound.label,
         )
-        or legacy_utils.does_legacy_dataset_exist_with_compound_experiment(
-            DependencyEnum.Prism_oncology_seq_AUC.value,
-            compound_experiment_and_datasets,
+        or data_access.dataset_exists(
+            ContextExplorerDatasets.Rep_all_single_pt_per_compound.name
+        )
+        and data_access.valid_row(
+            ContextExplorerDatasets.Rep_all_single_pt_per_compound.name, compound.label
         )
     )
 
