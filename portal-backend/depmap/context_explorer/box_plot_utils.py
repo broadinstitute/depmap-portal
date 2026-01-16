@@ -559,9 +559,17 @@ def get_compound_enriched_lineages_feature_id_and_dataset_name(
         compound_id=compound.compound_id
     )
 
-    assert len(possible_datasets) > 0
+    possible_datasets_w_compound = [
+        dataset
+        for dataset in possible_datasets
+        if dataset.given_id is not None
+        and data_access.valid_row(dataset_id=dataset.given_id, row_name=compound.label)
+        and dataset.given_id in ContextExplorerDatasets.values()
+    ]
 
-    priority_dataset = possible_datasets[0]
+    assert len(possible_datasets_w_compound) > 0
+
+    priority_dataset = possible_datasets_w_compound[0]
     dataset_display_name = priority_dataset.label
     dataset_given_id = priority_dataset.given_id
 
