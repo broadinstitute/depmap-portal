@@ -11,18 +11,21 @@ ISSUES_FILE = "known-data-issues.json"
 
 @dataclass
 class DataIssue:
-    # TODO: key by given ID instead of dataset name
+    dataset_id: Optional[str] # None if the issue is not dataset-specific
     dataset_name: Optional[str] # None if the issue is not dataset-specific
     issue_type: str
     count_affected: int # number of affected IDs/records
     percent_affected: float # percentage of affected IDs/records
-    examples: Optional[list[str]] = None # optional list of example affected IDs/records
+    examples: Optional[list[str]] = None # Optional list of example affected IDs/records
 
     # Add a method to format the issue as a string for printing
     def __str__(self) -> str:
         dataset_part = f"'{self.dataset_name}':" if self.dataset_name else ""
         examples_part = f" Examples: {', '.join(self.examples)}." if self.examples else ""
         return f"{dataset_part} {self.issue_type}. Impacted records: {self.count_affected} ({self.percent_affected:.2%}).{examples_part}"
+    
+    def get_key(self) -> str:
+        return f"{self.issue_type}:{self.dataset_id}"
     
 
 def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
@@ -35,6 +38,7 @@ def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dataset_given
     # Append a warning when a given matrix dataset has a large number of features or samples with no metadata.
     if percent_ids_not_in_metadata > 0:
         return DataIssue(
+            dataset_id=dataset.given_id if dataset.given_id else dataset.id,
             dataset_name=dataset.name,
             issue_type="Dataset give IDs without metadata",
             count_affected=len(dataset_ids_not_in_metadata),
@@ -52,6 +56,7 @@ def check_for_metadata_not_in_dataset(dataset: MatrixDataset, axis: str, dataset
     percent_metadata_ids_not_in_dataset = len(metadata_ids_not_in_dataset) / len(metadata_given_ids)
     if percent_metadata_ids_not_in_dataset > (1 - min_percent_feature_metadata_used / 100) and axis == "feature":
         return DataIssue(
+            dataset_id=dataset.given_id if dataset.given_id else dataset.id,
             dataset_name=dataset.name,
             issue_type="Metadata records not used in dataset",
             count_affected=len(metadata_ids_not_in_dataset),
@@ -88,16 +93,3 @@ def save_issues(issues: dict[str, list[DataIssue]]) -> int:
         json.dump(serializable_issues, fd, indent=2)
     
     return len(issues)
-
-
-def log_issues_for_dimension_type(dimension_type_name: str, issues: list[DataIssue]):
-    pass # TODO
-
-
-def get_matching_known_issue(current_issue: DataIssue, known_issues: list[DataIssue]) -> Optional[DataIssue]:
-    # This is an innefficient search, but the number of issues is expected to be small.
-    for known_issue in known_issues:
-        if (current_issue.dataset_name == known_issue.dataset_name and
-            current_issue.issue_type == known_issue.issue_type):
-            return known_issue
-    return None

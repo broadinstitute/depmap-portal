@@ -422,30 +422,52 @@ def run_dev_worker():
     default=False, 
     help="Overwrite the known issues file with the newly detected issues. Only use this option when outstanding issues are not easily fixed and/or cutoffs are not configurable in the breadbox loader."
 )
+# TODO: add an option to log all outstanding issues
+# TODO: consider just storing these to file as one big dictionary. 
+# - we could update the key to include the dimension type. 
+# - Then we could just store this as one big flat dict behind the scenes instead of a nested dict.
 def log_data_issues(accept_worsened_issues: bool):
     """
     Identify places where dataset features are missing metadata and log them as data issues.
     Specifically, flag places where either:
-    1. A matrix dataset has a large number of features or samples with no metadata (>5%).
+    1. A matrix dataset has features or samples with no metadata.
     2. A matrix dataset has a large number of metadata records not referenced by any features in the dataset (not applicable to samples).
+    3. Metadata records are not referenced by any features in any dataset.
+    
+    A given environment (e.g. internal, DMC, public), may only exhibit a subset of the known issues.
+    Therefor, we do not want to overwrite the known issues file with only the currently observed issues.
     """
     current_issues = _get_data_issues()
     known_issues = data_issues.load_known_issues()
 
+    # Keep track of all possible outstanding issues, including:
+    # - The "worse" version of worsened issues
+    # - All known issues that have not changed
+    # - Any new issues
+    all_outstanding_issues = {}
+
     new_or_worsened_issues_count = 0
-    for dimension_type_name, dimension_issues in known_issues.items():
+    for dimension_type_name, current_issues_for_type in current_issues.items():
+
+        known_issues_for_type = known_issues.get(dimension_type_name, [])
+        outstanding_dim_issues_by_key = {issue.get_key(): issue for issue in known_issues_for_type}
+
         # Identify new issues or issues that have gotten worse
         new_or_worsened_issues = []
-        known_issues_for_type = known_issues.get(dimension_type_name, [])
-        for current_issue in dimension_issues: 
-            matching_known_issue = data_issues.get_matching_known_issue(current_issue, known_issues_for_type)
+        for current_issue in current_issues_for_type: 
+            current_issue_key = current_issue.get_key()
+            matching_known_issue = outstanding_dim_issues_by_key.get(current_issue_key, None)
             if matching_known_issue is None:
                 new_or_worsened_issues.append(current_issue)
+                outstanding_dim_issues_by_key[current_issue_key] = current_issue
+
             # Consider it worsened if both the count and percent of affected records have increased
             elif (current_issue.count_affected > matching_known_issue.count_affected) and (current_issue.percent_affected >= matching_known_issue.percent_affected):
                 new_or_worsened_issues.append(current_issue)
-
+                outstanding_dim_issues_by_key[current_issue_key] = current_issue
+            
         new_or_worsened_issues_count += len(new_or_worsened_issues)
+        all_outstanding_issues[dimension_type_name] = list(outstanding_dim_issues_by_key.values())
 
         # Log new or worsened issues
         text_color = Fore.RED if new_or_worsened_issues else Fore.GREEN
@@ -454,14 +476,17 @@ def log_data_issues(accept_worsened_issues: bool):
             print("\t * " + str(issue))
         print(Style.RESET_ALL)
 
-    # If the user has accepted the changes, save the new list of issues to file.
+    # If the user has accepted the changes, save the list of all possible outstanding issues to file.
     if accept_worsened_issues:
-        num_issues_saved = data_issues.save_issues(current_issues)
+        num_issues_saved = data_issues.save_issues(all_outstanding_issues)
         print(f"Overwrote the known issues file with {num_issues_saved} issues.")
+
     # Otherwise, throw an error if there are any new or worsened issues.
     elif new_or_worsened_issues_count > 0:
-        raise Exception("{} New or worsened data issues detected.")
-    # If no new or worsened issues, just print a confirmation and save the current issues to file.
+        raise Exception(f"{new_or_worsened_issues_count} New or worsened data issues detected. See logs above for details.")
+    
+    # If no new or worsened issues, just print a confirmation.
+    # Do not want to overwrite the known issues file when issues improve because issues may differ between environments.
     else:
         print(Fore.GREEN + "No new or worsened data issues detected." + Style.RESET_ALL)
         num_issues_saved = data_issues.save_issues(current_issues)
@@ -512,6 +537,7 @@ def _get_data_issues() -> dict[str, list[data_issues.DataIssue]]:
             percent_unused_metadata_given_ids = len(unused_metadata_given_ids) / len(metadata_given_ids)
             if unused_metadata_given_ids:
                 issue = data_issues.DataIssue(
+                    dataset_id=None,
                     dataset_name=None,
                     issue_type="Metadata records not used in any dataset",
                     count_affected=len(unused_metadata_given_ids),
