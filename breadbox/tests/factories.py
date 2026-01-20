@@ -3,6 +3,7 @@ from typing import Any, List, Optional, Union
 import typing
 from breadbox.api.groups import add_group
 import breadbox.api.dimension_types as types_api
+from breadbox.models.group import Group
 from breadbox.service.dataset import add_dimension_type, add_tabular_dataset
 from breadbox.crud.data_type import add_data_type
 from breadbox.crud import dataset as dataset_crud
@@ -37,7 +38,7 @@ _unique_name_counter = 0
 
 
 class SettingsFactory(Factory):
-    class Meta:
+    class Meta:  # pyright: ignore
         model = config.Settings
 
     sqlalchemy_database_url = "invalid path"
@@ -78,7 +79,7 @@ def group(
     settings: config.Settings,
     name=_CallIfOmitted(lambda: unique_name("group")),
     user=_CallIfOmitted(lambda settings: settings.admin_users[0]),
-) -> str:
+) -> Group:
     group = add_group(
         GroupIn(name=_handle_call_if_omitted(name)),
         db,
@@ -262,6 +263,7 @@ def feature_type_with_metadata(
         user = settings.admin_users[0]
     assert isinstance(user, str)
 
+    assert metadata_file_obj is not None
     metadata_upload_file = create_upload_file(
         filename="feature_metadata_file",
         file=metadata_file_obj,
@@ -273,6 +275,7 @@ def feature_type_with_metadata(
             reference_column_mappings=id_mapping.reference_column_mappings
         )
 
+    assert isinstance(properties_to_index, list)
     r = types_api.add_feature_type(
         db=db,
         name=name,
@@ -280,7 +283,7 @@ def feature_type_with_metadata(
         metadata_file=metadata_upload_file,
         taiga_id=taiga_id,
         annotation_type_mapping=annotation_type_mapping,
-        id_mapping=id_mapping,
+        id_mapping=id_mapping,  # pyright: ignore
         properties_to_index=properties_to_index,
         settings=settings,
         user=user,
@@ -292,14 +295,14 @@ def feature_type_with_metadata(
 def sample_type_with_metadata(
     db: SessionWithUser,
     settings: config.Settings,
+    metadata_file: typing.BinaryIO,
+    user: str,
     name="New Sample Type",
     id_column="depmap_id",
-    metadata_file=_CallIfOmitted(tabular_csv_data_file),
     taiga_id="test_taiga.1",
     annotation_type_mapping=None,
     id_mapping=None,
     properties_to_index=None,
-    user=_CallIfOmitted(lambda settings: settings.admin_users[0]),
 ):
     metadata_upload_file = create_upload_file(
         filename="sample_metadata_file", file=metadata_file, content_type="text/csv"
@@ -312,7 +315,7 @@ def sample_type_with_metadata(
         taiga_id=taiga_id,
         annotation_type_mapping=annotation_type_mapping,
         id_mapping=id_mapping,
-        properties_to_index=properties_to_index,
+        properties_to_index=properties_to_index,  # pyright: ignore
         settings=settings,
         user=user,
     )
