@@ -37,6 +37,7 @@ from ..io.data_validation import validate_and_upload_dataset_files
 from .celery import app, LogErrorsTask
 from ..db.util import db_context
 from breadbox.compute.dataset_uploads_tasks import parse_and_validate_dataset_given_id
+from breadbox.schemas.dataset import MatrixDatasetResponse
 
 log = getLogger(__name__)
 
@@ -281,8 +282,7 @@ def upload_dataset(
     # NOTE: The return value of dataset_crud.add_dataset can be None if the user
     # doesn't have access to write to the group, but we also check for that at the
     # beginning of this function, so it shouldn't be None here.
-    if added_dataset is None:
-        raise HTTPException(500)
+    assert added_dataset is not None
 
     warning = ""
     if (len(sample_warnings) != 0) or (len(feature_warnings) != 0):
@@ -305,8 +305,6 @@ def upload_dataset(
 
     if update_message:
         update_message("Wrapping up upload...")
-
-    from breadbox.schemas.dataset import MatrixDatasetResponse
 
     return UploadDatasetResponse(
         dataset=MatrixDatasetResponse.model_validate(added_dataset),
