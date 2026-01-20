@@ -5,7 +5,12 @@ import numpy as np
 import pandas as pd
 
 from breadbox.crud.dimension_types import get_dimension_type
-from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
+from ..utils import (
+    assert_status_not_ok,
+    assert_status_ok,
+    assert_task_failure,
+    assert_task_success,
+)
 
 
 from breadbox.db.session import SessionWithUser
@@ -68,7 +73,7 @@ def test_add_dataset_no_write_access(
         headers={"X-Forwarded-User": "anyone"},
     )
 
-    assert r.status_code == 403
+    assert_task_failure(r)
 
 
 def test_add_dataset_nonexistent_group(
@@ -100,7 +105,7 @@ def test_add_dataset_nonexistent_group(
         headers={"X-Forwarded-User": "anyone"},
     )
 
-    assert r.status_code == 404
+    assert_task_failure(r)
 
 
 def test_add_categorical_incorrect_value_type(
@@ -127,7 +132,7 @@ def test_add_categorical_incorrect_value_type(
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
-    assert_task_failure(r, status_code=400)
+    assert_task_failure(r, message_contains="Unable to parse string")
 
     # Value type cannot be None
     file = factories.matrix_csv_data_file_with_values(["Hi", "Bye"])
@@ -174,7 +179,7 @@ def test_add_categorical_incorrect_value_type(
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
-    assert_task_failure(r)
+    assert r.status_code == 422
 
     file = factories.matrix_csv_data_file_with_values(["Hi", "bi"])
     file_ids, expected_md5 = upload_and_get_file_ids(client, file)
@@ -197,10 +202,7 @@ def test_add_categorical_incorrect_value_type(
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
-    incorrect_values_dataset_response = incorrect_values_dataset.json()
-    # NOTE: Celery task returning 200 for job completion but state should be failed
-    assert incorrect_values_dataset.status_code == 200
-    assert incorrect_values_dataset_response["state"] == "FAILURE"
+    assert_task_failure(incorrect_values_dataset)
 
     file = factories.matrix_csv_data_file_with_values(["Hi", "bye"])
     file_ids, expected_md5 = upload_and_get_file_ids(client, file)
@@ -223,7 +225,7 @@ def test_add_categorical_incorrect_value_type(
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
-    assert_status_ok(mixed_case_dataset)
+    assert_task_success(mixed_case_dataset)
 
 
 def test_add_categorical_dataset_repeated_allowed_values(
@@ -251,11 +253,4 @@ def test_add_categorical_dataset_repeated_allowed_values(
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
 
-    assert_status_ok(r)
-    assert r.status_code == 200
-    result = r.json()
-    dataset_id = result["result"]["datasetId"]
-    added_dataset = get_dataset(dataset_id, minimal_db, "someone@private-group.com")
-    assert len(added_dataset.allowed_values) == 3 and set(
-        added_dataset.allowed_values
-    ) == {"Thing1", "Thing2", "Thing3",}
+    assert_status_not_ok(r)

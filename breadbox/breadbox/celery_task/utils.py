@@ -19,6 +19,9 @@ from celery.result import AsyncResult, EagerResult
 
 from ..config import get_settings
 from pydantic import BaseModel
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class TaskState(Enum):
@@ -76,7 +79,7 @@ def cast_celery_task(fn: Callable[..., Any]) -> CeleryProxy:
     return cast(CeleryProxy, fn)
 
 
-def _get_failure_message(task_result: Any):
+def _get_failure_message(task_id, task_result: Any):
     if isinstance(task_result, UserError):
         # this is a specific, expected error that we check for
         # return error message for the front to display
@@ -89,9 +92,17 @@ def _get_failure_message(task_result: Any):
         message = f"HTTPException(status_code={task_result.status_code}, detail={task_result.detail})"
     else:
         # This is an unexpected error thrown while the task was running.
+
+        # write out this to the log so we can find out what the exception was before we drop it. We won't have a traceback though --
+        # that will only show up in the celery worker's log.
+        log.error(
+            f"Task {task_id} resulted in an unexpected exception ({type(task_result)}: {task_result}). Check the worker log for the full trace"
+        )
+
         # At this point, the error has already been logged in the celery error reporter
         # and should be visible in the GCS Error Groups.
-        message = "Encountered an unexpected error. Please try again later."
+
+        message = f"Background task {task_id} encountered an unexpected error. Please try again later."
     return message
 
 
@@ -151,6 +162,8 @@ def format_task_status(task):
     message = None
     percent_complete = None
 
+    task_id = task.id
+    assert task_id is not None
     task_state = task.state
     task_result = task.result
 
@@ -159,7 +172,7 @@ def format_task_status(task):
         task_state = TaskState.FAILURE.name
 
     if task_state == TaskState.FAILURE.name:
-        message = _get_failure_message(task_result)
+        message = _get_failure_message(task_id, task_result)
         task_result = None
 
     elif task_state == TaskState.PENDING.name:
@@ -173,6 +186,11 @@ def format_task_status(task):
 
     elif task_state == TaskState.SUCCESS.name:
         # done, return the result payload. If done, we need to have a result
+
+        if isinstance(task_result, BaseModel):
+            # if it's a pydantic type, convert it to a dict before returning it
+            task_result = task_result.model_dump(mode="json")
+
         assert isinstance(task_result, dict) or task_result is None
 
         # if the "data_json_file_path" key is provided in the result payload, this endpoint reads the table and sends it to the front

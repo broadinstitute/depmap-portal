@@ -258,7 +258,7 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
         task_state = TaskState.PENDING.value
         try:
             result = dataset_uploads_tasks.dataset_upload(minimal_db, params, user)
-            task_state = TaskState.SUCCESS
+            task_state = TaskState.SUCCESS.value
         except Exception as e:
             result = e
 

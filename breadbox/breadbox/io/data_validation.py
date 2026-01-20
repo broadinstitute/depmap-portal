@@ -37,6 +37,8 @@ from breadbox.schemas.custom_http_exception import (
     AnnotationValidationError,
     UserError,
 )
+from typing import cast
+
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
 
@@ -197,9 +199,6 @@ def _read_parquet(file) -> ParquetDataFrameWrapper:
     return parquet_wrapper
 
 
-from typing import cast
-
-
 def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
     # When pandas reads non-unique columns from a CSV, it mangles them to make them unique.
     # As a workaround, load and validate the columns first using csv.DictReader.
@@ -224,6 +223,7 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
 
     file.seek(0)
 
+    # may throw a ValueError as well
     df = pd.read_csv(file, dtype=dtypes)  # pyright: ignore
 
     # set the first column as index
@@ -409,19 +409,19 @@ def validate_and_upload_dataset_files(
     data_file_format: str = "csv",
 ) -> DataframeValidatedFile:
 
-    try:
-        if data_file_format == "csv":
+    if data_file_format == "csv":
+        try:
             unchecked_dfw = _read_csv(data_file.file, value_type)
-        elif data_file_format == "parquet":
-            unchecked_dfw = _read_parquet(data_file.file)
-        elif data_file_format == "hdf5":
-            unchecked_dfw = _read_hdf5(data_file.file)
-        else:
-            raise FileValidationError(
-                f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
-            )
-    except ValueError as e:
-        raise FileValidationError(str(e))
+        except ValueError as e:
+            raise FileValidationError(str(e))
+    elif data_file_format == "parquet":
+        unchecked_dfw = _read_parquet(data_file.file)
+    elif data_file_format == "hdf5":
+        unchecked_dfw = _read_hdf5(data_file.file)
+    else:
+        raise FileValidationError(
+            f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
+        )
 
     value_mapping = get_encoder_function(value_type, allowed_values)
 
@@ -527,8 +527,11 @@ def read_and_validate_matrix_df(
     elif data_file_format == "hdf5":
         df_wrapper = _read_hdf5(file_path)
     elif data_file_format == "csv":
-        with open(file_path, "rb") as fd:
-            df_wrapper = _read_csv(fd, value_type)
+        try:
+            with open(file_path, "rb") as fd:
+                df_wrapper = _read_csv(fd, value_type)
+        except ValueError as e:
+            raise FileValidationError(str(e))
     else:
         raise FileValidationError(
             f"data_file_format was unrecognized: {data_file_format}"
