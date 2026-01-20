@@ -182,6 +182,7 @@ def format_task_status(task):
     elif task_state == TaskState.PROGRESS.name:
         # we have started the task. if information about a message and/or start time is available,
         # we pass the message to the front/compute a fake progress bar for the front
+        assert isinstance(task_result, dict) or task_result is None
         message, percent_complete = _get_progress_message(task_result)
 
     elif task_state == TaskState.SUCCESS.name:
