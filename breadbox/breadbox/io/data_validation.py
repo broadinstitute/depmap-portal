@@ -35,6 +35,7 @@ from breadbox.schemas.dataframe_wrapper import (
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     AnnotationValidationError,
+    UserError,
 )
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
@@ -224,6 +225,7 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
     file.seek(0)
 
     df = pd.read_csv(file, dtype=dtypes)  # pyright: ignore
+
     # set the first column as index
     df.set_index(df.columns[0], inplace=True)
 
@@ -407,16 +409,19 @@ def validate_and_upload_dataset_files(
     data_file_format: str = "csv",
 ) -> DataframeValidatedFile:
 
-    if data_file_format == "csv":
-        unchecked_dfw = _read_csv(data_file.file, value_type)
-    elif data_file_format == "parquet":
-        unchecked_dfw = _read_parquet(data_file.file)
-    elif data_file_format == "hdf5":
-        unchecked_dfw = _read_hdf5(data_file.file)
-    else:
-        raise FileValidationError(
-            f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
-        )
+    try:
+        if data_file_format == "csv":
+            unchecked_dfw = _read_csv(data_file.file, value_type)
+        elif data_file_format == "parquet":
+            unchecked_dfw = _read_parquet(data_file.file)
+        elif data_file_format == "hdf5":
+            unchecked_dfw = _read_hdf5(data_file.file)
+        else:
+            raise FileValidationError(
+                f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
+            )
+    except ValueError as e:
+        raise FileValidationError(str(e))
 
     value_mapping = get_encoder_function(value_type, allowed_values)
 
