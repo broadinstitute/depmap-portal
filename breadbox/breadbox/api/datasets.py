@@ -336,7 +336,6 @@ def get_matrix_dataset_data(
 )
 async def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    user: Annotated[str, Depends(get_user)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
     cache: Annotated[CachingCaller, Depends(get_cache)],
     tabular_dimensions_info: Annotated[
@@ -349,35 +348,32 @@ async def get_tabular_dataset_data(
         ),
     ] = False,
 ):
-
     if dataset.format != "tabular_dataset":
         raise UserError(
             "This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead."
         )
+
     assert isinstance(dataset, TabularDataset)
+    # help pyright out a bit by making a new variable at the time we know that `dataset` is
+    # an instance of `TabularDataset`.
+    tabular_dataset = dataset
 
-    try:
-        # only allow caching of requests for public datasets
-        if dataset_crud.is_public_dataset(dataset):
-            anon_db = db.create_session_for_anonymous_user()
+    def fetch_df(db_: SessionWithUser):
+        return dataset_service.get_subsetted_tabular_dataset_df(
+            db_, db_.user, tabular_dataset, tabular_dimensions_info, strict
+        ).to_json()
 
-            df_as_json = await cache.memoize(
-                lambda: dataset_service.get_subsetted_tabular_dataset_df(
-                    anon_db, anon_db.user, dataset, tabular_dimensions_info, strict
-                ).to_json(),
-                depends_on=[
-                    str(dataset.id),
-                    tabular_dimensions_info.model_dump(),
-                    strict,
-                ],
-            )
-        else:
-            df_as_json = dataset_service.get_subsetted_tabular_dataset_df(
-                db, user, dataset, tabular_dimensions_info, strict
-            ).to_json()
-
-    except UserError as e:
-        raise e
+    # only allow caching of requests for public datasets
+    df_as_json = await cache.memoize_db_query(
+        db,
+        lambda: dataset_crud.is_public_dataset(dataset),
+        fetch_df,
+        depends_on=[
+            str(dataset.id),
+            tabular_dimensions_info.model_dump(mode="json"),
+            strict,
+        ],
+    )
 
     return Response(df_as_json, media_type="application/json")
 
@@ -385,7 +381,6 @@ async def get_tabular_dataset_data(
 @router.post("/data/{dataset_id}", operation_id="get_dataset_data", deprecated=True)
 def get_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    user: Annotated[str, Depends(get_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
     features: Annotated[
