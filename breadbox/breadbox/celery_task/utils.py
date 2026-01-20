@@ -9,6 +9,7 @@ from celery.result import AsyncResult
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     LargeDatasetReadError,
+    BaseErrorTypeException,
 )
 from fastapi import HTTPException
 from typing import Any, Optional
@@ -75,6 +76,52 @@ def cast_celery_task(fn: Callable[..., Any]) -> CeleryProxy:
     return cast(CeleryProxy, fn)
 
 
+def _get_failure_message(task_result: Any):
+    if isinstance(task_result, UserError):
+        # this is a specific, expected error that we check for
+        # return error message for the front to display
+        message = task_result.detail
+    elif isinstance(task_result, FileValidationError):
+        message = str(task_result)
+    elif isinstance(task_result, BaseErrorTypeException):
+        message = task_result.detail
+    elif isinstance(task_result, HTTPException):
+        message = f"HTTPException(status_code={task_result.status_code}, detail={task_result.detail})"
+    else:
+        # This is an unexpected error thrown while the task was running.
+        # At this point, the error has already been logged in the celery error reporter
+        # and should be visible in the GCS Error Groups.
+        message = "Encountered an unexpected error. Please try again later."
+    return message
+
+
+def _get_progress_message(task_result: Optional[dict]):
+    percent_complete = None
+    message = None
+
+    # task_result contains any meta={} dict that the task might have passed to a call to update_state
+    # there might have been a point where the task has updated state to PROGRESS, but did not provide any metadata
+    #   at such a point, task_result is None. hence all the if statements check for task_result
+    if task_result:
+        assert isinstance(task_result, dict)
+        if "message" in task_result:
+            message = str(task_result["message"])
+
+        percent_complete = task_result.get("percent_complete")
+        start_time = task_result.get("start_time")
+
+        if percent_complete is None and start_time is not None:
+            # if "start_time" is provided, compute a fake status bar
+            assert "max_time" in task_result
+            max_percent = 95
+            current_runtime = time.time() - task_result["start_time"]
+            percent_complete = (
+                min(current_runtime / task_result["max_time"], 1) * max_percent
+            )
+
+    return message, percent_complete
+
+
 def format_task_status(task):
     """
     This is split out from the common status endpoint because the submission endpoints also call this to return the standardized contract
@@ -103,86 +150,52 @@ def format_task_status(task):
     # depending on the state of the task, report different things back to the front end
     message = None
     percent_complete = None
-    # result is always None until success
-    result = None
-    if task.state == TaskState.FAILURE.name or isinstance(task.result, Exception):
+
+    task_state = task.state
+    task_result = task.result
+
+    if task_state != TaskState.FAILURE.name and isinstance(task_result, Exception):
         # This if block is first, before the others. This is because celery sometimes we'll return an exception in the result while the status is still PROGRESS.
-        if task.state != TaskState.FAILURE.name:
-            # sometimes we get an error while the celery state is still progress
-            task._state = TaskState.FAILURE.name
-            if isinstance(task._result, UserError):
-                message = str(task._result.detail)
-        if isinstance(task.result, UserError):
-            # this is a specific, expected error that we check for
-            # return error message for the front to display
-            message = str(task.result.detail)
-        elif isinstance(task.result, FileValidationError):
-            message = str(task.result)
-        elif isinstance(task.result, LargeDatasetReadError):
-            message = str(task.result.detail["message"])  # type: ignore
-        elif isinstance(task.result, HTTPException):
-            message = {
-                "status_code": str(task.result.status_code),
-                "detail": str(task.result.status_code),
-            }
-        else:
-            # This is an unexpected error thrown while the task was running.
-            # At this point, the error has already been logged in the celery error reporter
-            # and should be visible in the GCS Error Groups.
-            message = "Encountered an unexpected error. Please try again later."
-    elif task.state == TaskState.PENDING.name:
-        # pending means we have not entered the task yet
-        pass
-    elif task.state == TaskState.PROGRESS.name:
-        # we have entered the task. if information about a message and/or start time is available,
-        #   we pass the message to the front/compute a fake progress bar for the front
+        task_state = TaskState.FAILURE.name
 
-        # task.result contains any meta={} dict that the task might have passed to a call to update_state
-        # there might have been a point where the task has updated state to PROGRESS, but did not provide any metadata
-        #   at such a point, task.result is None. hence all the if statements check for task.result
+    if task_state == TaskState.FAILURE.name:
+        message = _get_failure_message(task_result)
+        task_result = None
 
-        if task.result and "message" in task.result:
-            message = task.result["message"]
+    elif task_state == TaskState.PENDING.name:
+        # "pending" means we have not started the task yet
+        assert isinstance(task_result, dict) or task_result is None
 
-        if task.result:
-            percent_complete = task.result.get("percent_complete")
-            start_time = task.result.get("start_time")
+    elif task_state == TaskState.PROGRESS.name:
+        # we have started the task. if information about a message and/or start time is available,
+        # we pass the message to the front/compute a fake progress bar for the front
+        message, percent_complete = _get_progress_message(task_result)
 
-            if percent_complete is None and start_time is not None:
-                # if "start_time" is provided, compute a fake status bar
-                assert "max_time" in task.result
-                max_percent = 95
-                current_runtime = time.time() - task.result["start_time"]
-                percent_complete = (
-                    min(current_runtime / task.result["max_time"], 1) * max_percent
-                )
-
-    elif task.state == TaskState.SUCCESS.name:
-        # done, return the result payload
-        result = task.result
-
-        # NOTE: Celery's workers serialize task response into JSON and the only time this condition seems to be used is for task run_upload_dataset() which does not actually run the task with a celery worker
-        # TODO: Task run_upload_dataset() possibly only seems to be used in test_delete_group() so perhaps we can deprecate our old POST dataset endpoint which still uses this task
-        if not isinstance(result, dict) and isinstance(result, BaseModel):
-            # NOTE: model_dump is a method on a pydantic model instance
-            result = result.model_dump()
+    elif task_state == TaskState.SUCCESS.name:
+        # done, return the result payload. If done, we need to have a result
+        assert isinstance(task_result, dict) or task_result is None
 
         # if the "data_json_file_path" key is provided in the result payload, this endpoint reads the table and sends it to the front
-        if isinstance(result, dict) and "data_json_file_path" in result:
-            with open(result["data_json_file_path"], "rt") as fd:
+        if "data_json_file_path" in task_result:
+            task_result = dict(
+                task_result
+            )  # make a copy to avoid mutating the original from the task
+            with open(task_result["data_json_file_path"], "rt") as fd:
                 data = json.load(fd)
-            result["data"] = data
-            del result["data_json_file_path"]
+            task_result["data"] = data
+            del task_result["data_json_file_path"]
     else:
-        raise ValueError("Unexpected task state {}".format(task.state))
+        raise ValueError("Unexpected task state {}".format(task_state))
+
+    assert task_result is None or isinstance(task_result, dict)
 
     return {  # this dictionary uses the same contract as the front end ProgressTracker component
         "id": task.id,
-        "state": task.state,
+        "state": task_state,
         "message": message,
         "percentComplete": int(percent_complete) if percent_complete else None,
-        "nextPollDelay": 1000,  # units are miliseconds, this says once per second
-        "result": result,
+        "nextPollDelay": 1000,  # units are milliseconds, this says once per second
+        "result": task_result,
     }
 
 

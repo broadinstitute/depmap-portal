@@ -769,11 +769,11 @@ def update_dimension_type_metadata(
             ]
 
         # Delete dataset; cascade deletes annotation dimensions which then deletes all annotation values
-        is_deleted = delete_dataset(
+        successfully_deleted = delete_dataset(
             db, user, dimension_type.dataset, filestore_location
         )
-        if not is_deleted:
-            raise PermissionError("User cannot modify this dataset!")
+        if not successfully_deleted:
+            raise UserError("User cannot modify this dataset!")
 
     dataset_id = str(uuid4())
     dimension_type_metadata = TabularDataset(
