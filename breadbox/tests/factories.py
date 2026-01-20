@@ -275,7 +275,7 @@ def feature_type_with_metadata(
             reference_column_mappings=id_mapping.reference_column_mappings
         )
 
-    assert isinstance(properties_to_index, list)
+    assert isinstance(properties_to_index, list) or properties_to_index is None
     r = types_api.add_feature_type(
         db=db,
         name=name,
