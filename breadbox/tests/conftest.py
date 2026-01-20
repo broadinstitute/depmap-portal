@@ -1,3 +1,4 @@
+import uuid
 from contextlib import contextmanager
 import copy
 import os
@@ -218,6 +219,10 @@ def celery_config():
     }
 
 
+from celery.result import EagerResult
+from breadbox.celery_task.utils import TaskState
+
+
 @pytest.fixture
 def mock_celery(minimal_db, settings, monkeypatch, celery_app):
     @contextmanager
@@ -250,38 +255,45 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
         else:
             params = TableDatasetParams(**dataset_params)
         minimal_db.reset_user(user)
-        return dataset_uploads_tasks.dataset_upload(minimal_db, params, user)
+        task_state = TaskState.PENDING.value
+        try:
+            result = dataset_uploads_tasks.dataset_upload(minimal_db, params, user)
+            task_state = TaskState.SUCCESS
+        except Exception as e:
+            result = e
 
-    def mock_return_task(result):
-        from celery.result import EagerResult
+        return EagerResult(str(uuid.uuid4()), result, state=task_state)
 
-        state = "SUCCESS"
-        if isinstance(result, EagerResult):
-            result = result.result
-
-        if hasattr(result, "model_dump"):
-            result_json = result.model_dump()
-        elif isinstance(result, HTTPException):
-            state = "FAILURE"
-            result_json = {"detail": result.detail, "status_code": result.status_code}
-        elif isinstance(result, AssertionError):
-            state = "FAILURE"
-            result_json = {"detail": result.args[0], "status_code": 500}
-        else:
-            raise NotImplementedError()
-
-        return AddDatasetResponse(
-            id="123",
-            state=state,
-            result=result_json,
-            message=None,
-            percentComplete=None,
-        )
+    # def mock_return_task(result):
+    #     from celery.result import EagerResult
+    #
+    #     state = "SUCCESS"
+    #     if isinstance(result, EagerResult):
+    #         result = result.result
+    #
+    #     if hasattr(result, "model_dump"):
+    #         result_json = result.model_dump()
+    #     elif isinstance(result, HTTPException):
+    #         state = "FAILURE"
+    #         result_json = {"detail": result.detail, "status_code": result.status_code}
+    #     elif isinstance(result, AssertionError):
+    #         state = "FAILURE"
+    #         result_json = {"detail": result.args[0], "status_code": 500}
+    #     else:
+    #         raise NotImplementedError()
+    #
+    #     return AddDatasetResponse(
+    #         id="123",
+    #         state=state,
+    #         result=result_json,
+    #         message=None,
+    #         percentComplete=None,
+    #     )
 
     monkeypatch.setattr(
         dataset_uploads_tasks.run_dataset_upload, "delay", mock_run_dataset_upload_task,
     )
-    monkeypatch.setattr(utils, "format_task_status", mock_return_task)
+    # monkeypatch.setattr(utils, "format_task_status", mock_return_task)
 
     yield
 

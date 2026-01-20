@@ -68,7 +68,7 @@ def test_add_dataset_no_write_access(
         headers={"X-Forwarded-User": "anyone"},
     )
 
-    assert_task_failure(r, status_code=403)
+    assert r.status_code == 403
 
 
 def test_add_dataset_nonexistent_group(
@@ -100,7 +100,7 @@ def test_add_dataset_nonexistent_group(
         headers={"X-Forwarded-User": "anyone"},
     )
 
-    assert_task_failure(r, status_code=404)
+    assert r.status_code == 404
 
 
 def test_add_categorical_incorrect_value_type(
@@ -124,11 +124,10 @@ def test_add_categorical_incorrect_value_type(
             "is_transient": False,
             "group_id": private_group["id"],
             "value_type": "continuous",
-            "allowed_values": ["Hi", "Bye"],
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
-    assert_task_failure(r, status_code=500)
+    assert_task_failure(r, status_code=400)
 
     # Value type cannot be None
     file = factories.matrix_csv_data_file_with_values(["Hi", "Bye"])
