@@ -46,24 +46,24 @@ def test_add_dataset_no_write_access(
     factories.feature_type(minimal_db, settings.default_user, "other_feature")
     factories.sample_type(minimal_db, settings.default_user, "other_sample")
 
+    file = factories.continuous_matrix_csv_file()
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     r = client.post(
-        "/datasets/",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "other_feature",
             "sample_type": "other_sample",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": public_group.id,
             "value_type": "continuous",
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.continuous_matrix_csv_file(),
-                "text/csv",
-            ),
+            "allowed_values": None,
         },
         headers={"X-Forwarded-User": "anyone"},
     )
@@ -78,24 +78,24 @@ def test_add_dataset_nonexistent_group(
     factories.feature_type(minimal_db, settings.default_user, "other_feature")
     factories.sample_type(minimal_db, settings.default_user, "other_sample")
 
+    file = factories.continuous_matrix_csv_file()
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     r = client.post(
-        "/datasets/",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "other_feature",
             "sample_type": "other_sample",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": fake_group_id,
             "value_type": "continuous",
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.continuous_matrix_csv_file(),
-                "text/csv",
-            ),
+            "allowed_values": None,
         },
         headers={"X-Forwarded-User": "anyone"},
     )
@@ -107,96 +107,94 @@ def test_add_categorical_incorrect_value_type(
     client: TestClient, private_group: Dict, mock_celery
 ):
     # Incorrect value type for categorical values
+    file = factories.matrix_csv_data_file_with_values(["Hi", "Bye"])
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     r = client.post(
-        "/datasets/?allowed_values=Hi&allowed_values=Bye",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "generic",
             "sample_type": "depmap_model",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": private_group["id"],
             "value_type": "continuous",
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.matrix_csv_data_file_with_values(["Hi", "Bye"]),
-                "text/csv",
-            ),
+            "allowed_values": ["Hi", "Bye"],
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
     assert_task_failure(r, status_code=500)
 
     # Value type cannot be None
+    file = factories.matrix_csv_data_file_with_values(["Hi", "Bye"])
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     r = client.post(
-        "/datasets/?allowed_values=Hi&allowed_values=Bye",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "generic",
             "sample_type": "depmap_model",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": private_group["id"],
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.matrix_csv_data_file_with_values(["Hi", "Bye"]),
-                "text/csv",
-            ),
+            "allowed_values": ["Hi", "Bye"],
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
     assert r.status_code == 422
 
     # Allowed values not given for categorical datasets
+    file = factories.matrix_csv_data_file_with_values(["Hi", "Bye"])
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     r = client.post(
-        "/datasets/",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "generic",
             "sample_type": "depmap_model",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": private_group["id"],
             "value_type": "categorical",
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.matrix_csv_data_file_with_values(["Hi", "Bye"]),
-                "text/csv",
-            ),
+            "allowed_values": None,
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
     assert_task_failure(r)
 
+    file = factories.matrix_csv_data_file_with_values(["Hi", "bi"])
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     incorrect_values_dataset = client.post(
-        "/datasets/?allowed_values=Hi&allowed_values=Bye",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "generic",
             "sample_type": "depmap_model",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": private_group["id"],
             "value_type": "categorical",
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.matrix_csv_data_file_with_values(
-                    ["Hi", "bi"]
-                ),  # Not in allowed values
-                "text/csv",
-            ),
+            "allowed_values": ["Hi", "Bye"],
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
@@ -205,26 +203,24 @@ def test_add_categorical_incorrect_value_type(
     assert incorrect_values_dataset.status_code == 200
     assert incorrect_values_dataset_response["state"] == "FAILURE"
 
+    file = factories.matrix_csv_data_file_with_values(["Hi", "bye"])
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     mixed_case_dataset = client.post(
-        "/datasets/?allowed_values=Hi&allowed_values=Bye",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "generic",
             "sample_type": "depmap_model",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": private_group["id"],
             "value_type": "categorical",
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.matrix_csv_data_file_with_values(
-                    ["Hi", "bye"]
-                ),  # Not in allowed values
-                "text/csv",
-            ),
+            "allowed_values": ["Hi", "Bye"],
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
@@ -234,24 +230,24 @@ def test_add_categorical_incorrect_value_type(
 def test_add_categorical_dataset_repeated_allowed_values(
     client: TestClient, minimal_db, private_group: Dict, mock_celery
 ):
+    file = factories.matrix_csv_data_file_with_values()
+    file_ids, expected_md5 = upload_and_get_file_ids(client, file)
+
     r = client.post(
-        "/datasets/?allowed_values=Thing1&allowed_values=Thing2&allowed_values=Thing1&allowed_values=Thing3",
-        data={
+        "/dataset-v2/",
+        json={
+            "format": "matrix",
             "name": "a dataset",
             "units": "a unit",
             "feature_type": "generic",
             "sample_type": "depmap_model",
             "data_type": "User upload",
-            "is_transient": "False",
+            "file_ids": file_ids,
+            "dataset_md5": expected_md5,
+            "is_transient": False,
             "group_id": private_group["id"],
             "value_type": "categorical",
-        },
-        files={
-            "data_file": (
-                "data.csv",
-                factories.matrix_csv_data_file_with_values(),
-                "text/csv",
-            ),
+            "allowed_values": ["Thing1", "Thing2", "Thing1", "Thing3"],
         },
         headers={"X-Forwarded-User": "someone@private-group.com"},
     )
