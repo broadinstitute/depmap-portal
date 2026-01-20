@@ -1,9 +1,10 @@
-import time
 from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
+
+from pydantic import Json
 
 from fastapi import (
     APIRouter,
@@ -204,9 +205,6 @@ def get_feature_data(
     return feature_data
 
 
-from pydantic import Json
-
-
 @router.post(
     "/", operation_id="add_dataset", response_model=AddDatasetResponse,
 )
@@ -263,28 +261,25 @@ def add_dataset(
     if dataset_metadata is not None:
         dataset_metadata_ = dataset_metadata.dataset_metadata
 
-    try:
-        r = utils.cast_celery_task(run_upload_dataset).apply(
-            args=[
-                name,
-                units,
-                feature_type,
-                sample_type,
-                data_type,
-                data_file_dict,
-                value_type,
-                priority,
-                taiga_id,
-                allowed_values,
-                is_transient,
-                user,
-                group_id,
-                dataset_metadata_,
-                "csv",
-            ]
-        )
-    except PermissionError as e:
-        raise HTTPException(404, detail=str(e))
+    r = utils.cast_celery_task(run_upload_dataset).apply(
+        args=[
+            name,
+            units,
+            feature_type,
+            sample_type,
+            data_type,
+            data_file_dict,
+            value_type,
+            priority,
+            taiga_id,
+            allowed_values,
+            is_transient,
+            user,
+            group_id,
+            dataset_metadata_,
+            "csv",
+        ]
+    )
 
     response = utils.format_task_status(r)
 
@@ -355,28 +350,21 @@ def get_tabular_dataset_data(
         )
     assert isinstance(dataset, TabularDataset)
 
-    try:
-        # only allow caching of requests for public datasets
-        if dataset_crud.is_public_dataset(dataset):
-            anon_db = db.create_session_for_anonymous_user()
+    # only allow caching of requests for public datasets
+    if dataset_crud.is_public_dataset(dataset):
+        anon_db = db.create_session_for_anonymous_user()
 
-            df_as_json = cache.memoize(
-                lambda: dataset_service.get_subsetted_tabular_dataset_df(
-                    anon_db, anon_db.user, dataset, tabular_dimensions_info, strict
-                ).to_json(),
-                depends_on=[
-                    str(dataset.id),
-                    tabular_dimensions_info.model_dump(),
-                    strict,
-                ],
-            )
-        else:
-            df_as_json = dataset_service.get_subsetted_tabular_dataset_df(
-                db, user, dataset, tabular_dimensions_info, strict
-            ).to_json()
+        df_as_json = cache.memoize(
+            lambda: dataset_service.get_subsetted_tabular_dataset_df(
+                anon_db, anon_db.user, dataset, tabular_dimensions_info, strict
+            ).to_json(),
+            depends_on=[str(dataset.id), tabular_dimensions_info.model_dump(), strict,],
+        )
+    else:
+        df_as_json = dataset_service.get_subsetted_tabular_dataset_df(
+            db, user, dataset, tabular_dimensions_info, strict
+        ).to_json()
 
-    except UserError as e:
-        raise e
     return Response(df_as_json, media_type="application/json")
 
 
@@ -416,15 +404,13 @@ def get_dataset_data(
         raise UserError(
             "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
         )
-    try:
-        dim_info = MatrixDimensionsInfo(
-            features=features,
-            feature_identifier=feature_identifier,
-            samples=samples,
-            sample_identifier=sample_identifier,
-        )
-    except UserError as e:
-        raise e
+
+    dim_info = MatrixDimensionsInfo(
+        features=features,
+        feature_identifier=feature_identifier,
+        samples=samples,
+        sample_identifier=sample_identifier,
+    )
 
     assert isinstance(dataset, MatrixDataset)
     df = dataset_service.get_subsetted_matrix_dataset_df(
