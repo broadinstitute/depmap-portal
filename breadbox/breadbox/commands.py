@@ -429,7 +429,6 @@ def run_dev_worker():
     default=False, 
     help="Overwrite the known issues file with the newly detected issues. Only use this option when outstanding issues are not easily fixed and/or cutoffs are not configurable in the breadbox loader."
 )
-# TODO: log warning or error when given ID is not defined in metadata for a dataset
 def log_data_issues(issues_dir: str, accept_worsened_issues: bool):
     """
     Identify places where dataset features are missing metadata and log them as data issues.
@@ -506,6 +505,8 @@ def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
         
         used_given_ids_across_datasets = set()
         for dataset in associated_datasets:
+            if dataset.given_id is None:
+                print(f"WARNING: dataset {dataset.name} has no given_id. Issues will be logged using the transient dataset ID.")
             dataset_given_ids = get_matrix_dataset_given_ids(db=db, dataset=dataset, axis=dimension_type.axis)
             used_given_ids_across_datasets.update(set(dataset_given_ids))
 
