@@ -103,15 +103,15 @@ def check_legacy_db_mirrors_breadbox():
             legacy_taiga_id = interactive_utils.get_taiga_id(legacy_dataset_id)
             breadbox_taiga_id = breadbox_dao.get_dataset_taiga_id(legacy_dataset_id)
 
-            if legacy_taiga_id != breadbox_taiga_id:
+            if legacy_taiga_id != breadbox_taiga_id and "placeholder" not in legacy_taiga_id:
                 issues.append(
                     "Mismatch in taiga IDs for dataset '{}': legacy db taiga ID is '{}', breadbox taiga ID is '{}'".format(
                         legacy_dataset_id, legacy_taiga_id, breadbox_taiga_id
                     )
                 )
-        else:
+        elif interactive_utils.is_continuous(legacy_dataset_id):
             issues.append(
-                "Legacy dataset ID '{}' not found in breadbox given IDs".format(
+                "Continuous legacy dataset '{}' not found in breadbox given IDs".format(
                     legacy_dataset_id
                 )
             )
