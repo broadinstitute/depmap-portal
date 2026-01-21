@@ -12,6 +12,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "declarationDir": "../node_modules/.cache/depmap",
+    "types": ["jquery"],
     "paths": {
       "react": ["../../node_modules/@types/react"],
       "react-dom": ["../../node_modules/@types/react-dom"]
