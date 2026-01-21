@@ -64,7 +64,6 @@ def _create_cell_line_batch(num_cell_lines: int) -> List[str]:
         ),  # Two-class comparison - vector is independent
     ],
 )
-# @pytest.mark.skip(reason="rpy2.interface has no attribute 'INTSXP")
 def test_compute_univariate_associations(
     tmpdir,
     minimal_db: SessionWithUser,
