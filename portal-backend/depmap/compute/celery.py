@@ -10,7 +10,7 @@ app = Celery(
     "compute",
     broker="redis://" + rhost,
     backend="redis://" + rhost,
-    include=["depmap.compute.analysis_tasks"],
+    include=["depmap.download.tasks"],
 )
 
 if __name__ == "__main__":
