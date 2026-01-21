@@ -68,11 +68,6 @@ def check_for_metadata_not_in_dataset(dataset: MatrixDataset, dimension_type_nam
         )
     return None
 
-# The breadbox log_data_issues ratchets similarly to pyright-ratchet. 
-# Existing issues are logged, and errors are only raised for new issues.
-# Many of the functions below were copied from https://github.com/pgm/pyright-ratchet
-# and modified to fit this use case.
-
 
 def load_known_issues(issues_dir: str) -> dict[str, DataIssue]:
     """Load all known data issues from file"""

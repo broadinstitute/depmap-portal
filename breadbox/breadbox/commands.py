@@ -436,6 +436,8 @@ def log_data_issues(issues_dir: str, accept_worsened_issues: bool):
     1. A matrix dataset has features or samples with no metadata.
     2. A matrix dataset has a large number of metadata records not referenced by any features in the dataset (not applicable to samples).
     3. Metadata records are not referenced by any features in any dataset.
+    The breadbox log_data_issues ratchets similarly to pyright-ratchet to let us reduce the number of issues over time.
+    Known issues are logged, and errors are only raised for new issues.
     """
     known_issues = data_issues.load_known_issues(issues_dir)
     active_issues = _get_active_data_issues()
