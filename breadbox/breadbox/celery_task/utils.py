@@ -192,10 +192,14 @@ def format_task_status(task):
             # if it's a pydantic type, convert it to a dict before returning it
             task_result = task_result.model_dump(mode="json")
 
-        assert isinstance(task_result, dict) or task_result is None
+        assert (
+            isinstance(task_result, str)
+            or isinstance(task_result, dict)
+            or task_result is None
+        ), f"unexpected type for task_result {type(task_result)}: {task_result}"
 
         # if the "data_json_file_path" key is provided in the result payload, this endpoint reads the table and sends it to the front
-        if "data_json_file_path" in task_result:
+        if isinstance(task_result, dict) and "data_json_file_path" in task_result:
             task_result = dict(
                 task_result
             )  # make a copy to avoid mutating the original from the task
@@ -206,7 +210,11 @@ def format_task_status(task):
     else:
         raise ValueError("Unexpected task state {}".format(task_state))
 
-    assert task_result is None or isinstance(task_result, dict)
+    assert (
+        task_result is None
+        or isinstance(task_result, dict)
+        or isinstance(task_result, str)
+    )
 
     return {  # this dictionary uses the same contract as the front end ProgressTracker component
         "id": task.id,
