@@ -6,7 +6,7 @@ from dataclasses import dataclass, asdict
 
 from breadbox.models.dataset import MatrixDataset
 
-ISSUES_FILE = "known-data-issues.json"
+ISSUES_FILE_NAME = "known-data-issues.json"
 
 
 @dataclass
@@ -42,7 +42,7 @@ def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_typ
             dimension_type_name=dimension_type_name,
             dataset_id=dataset.given_id if dataset.given_id else dataset.id,
             dataset_name=dataset.name,
-            issue_type="Dataset give IDs without metadata",
+            issue_type="Dataset given IDs without metadata",
             count_affected=len(dataset_ids_not_in_metadata),
             percent_affected=percent_ids_not_in_metadata,
             examples=list(dataset_ids_not_in_metadata)[:5],
@@ -74,8 +74,10 @@ def check_for_metadata_not_in_dataset(dataset: MatrixDataset, dimension_type_nam
 # and modified to fit this use case.
 
 
-def load_known_issues(issues_filepath: str) -> dict[str, DataIssue]:
+def load_known_issues(issues_dir: str) -> dict[str, DataIssue]:
     """Load all known data issues from file"""
+    issues_filepath = os.path.join(issues_dir, ISSUES_FILE_NAME)
+
     if not os.path.exists(issues_filepath):
         return {}
         
@@ -87,16 +89,20 @@ def load_known_issues(issues_filepath: str) -> dict[str, DataIssue]:
     return issues
 
 
-def save_issues(issues: dict[str, DataIssue], issues_filepath: str) -> int:
+def save_issues(issues: dict[str, DataIssue], issues_dir: str) -> int:
     """
     Save all known data issues to file. If a file already exists at the specified path, 
     store it as a backup by renaming it with a date suffix.
     """
+    # Ensure the issues directory exists
+    os.makedirs(issues_dir, exist_ok=True)
+
+    issues_filepath = os.path.join(issues_dir, ISSUES_FILE_NAME)
     if os.path.exists(issues_filepath):
         # Get the current date as a string in YYYYMMDD format
         date = datetime.now().strftime("%Y%m%d")
         
-        backup_filepath = issues_filepath + date + ".bak"
+        backup_filepath = os.path.join(issues_dir, date + "-" + ISSUES_FILE_NAME + ".bak")
         os.rename(issues_filepath, backup_filepath)
         print(f"Existing issues file renamed to backup: {backup_filepath}")
 

@@ -419,8 +419,9 @@ def run_dev_worker():
 
 @cli.command("log_data_issues")
 @click.option(
-    "--filepath", 
-    default="known-data-issues.json",
+    "--issues-dir", 
+    default="./data_issues",
+    help="Path to the directory where the known data issues file and backups should be stored."
 )
 @click.option(
     "--accept-worsened-issues", 
@@ -429,7 +430,7 @@ def run_dev_worker():
     help="Overwrite the known issues file with the newly detected issues. Only use this option when outstanding issues are not easily fixed and/or cutoffs are not configurable in the breadbox loader."
 )
 # TODO: log warning or error when given ID is not defined in metadata for a dataset
-def log_data_issues(filepath: str, accept_worsened_issues: bool):
+def log_data_issues(issues_dir: str, accept_worsened_issues: bool):
     """
     Identify places where dataset features are missing metadata and log them as data issues.
     Specifically, flag places where either:
@@ -437,7 +438,7 @@ def log_data_issues(filepath: str, accept_worsened_issues: bool):
     2. A matrix dataset has a large number of metadata records not referenced by any features in the dataset (not applicable to samples).
     3. Metadata records are not referenced by any features in any dataset.
     """
-    known_issues = data_issues.load_known_issues(filepath)
+    known_issues = data_issues.load_known_issues(issues_dir)
     active_issues = _get_active_data_issues()
 
     new_or_worsened_issues: dict[str, list[data_issues.DataIssue]] = defaultdict(list)
@@ -470,13 +471,13 @@ def log_data_issues(filepath: str, accept_worsened_issues: bool):
 
     # If the user has accepted the changes, save the list of all possible outstanding issues to file.
     elif total_new_or_worsened_issues > 0 and accept_worsened_issues:
-        num_issues_saved = data_issues.save_issues(active_issues, filepath)
+        num_issues_saved = data_issues.save_issues(active_issues, issues_dir)
         print(f"Overwrote the known issues file with {num_issues_saved} issues, including {total_new_or_worsened_issues} new or worsened issues.")
 
     # If no new or worsened issues, just print a confirmation.
     else:
         print(Fore.GREEN + "No new or worsened data issues detected." + Style.RESET_ALL)
-        num_issues_saved = data_issues.save_issues(active_issues, filepath)
+        num_issues_saved = data_issues.save_issues(active_issues, issues_dir)
         print(f"Updated known issues file with {num_issues_saved} outstanding issues.")
 
 
