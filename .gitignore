@@ -175,6 +175,7 @@ app_datasets/
 breadbox/install
 breadbox/breadbox/static
 breadbox/breadbox/result
+breadbox/known-data-issues.json
 
 # generated files
 portal-backend/depmap/utilities/color_palette.py
