@@ -8,11 +8,14 @@ from breadbox.config import Settings, get_settings
 from breadbox.depmap_compute_embed import models
 
 from breadbox.schemas.custom_http_exception import UserError
+from ..db.session import SessionWithUser
+from ..models.dataset import MatrixDataset
 from ..schemas.compute import ComputeParams, ComputeResponse
 from ..compute import analysis_tasks
-from .dependencies import get_user
+from .dependencies import get_user, get_db_with_user
 from ..celery_task import utils
-
+from ..crud import dataset as crud_dataset
+from ..schemas.dataset import ValueType
 
 router = APIRouter(prefix="/compute", tags=["compute"])
 log = getLogger(__name__)
@@ -31,12 +34,35 @@ def _get_vector_is_dependent(
 
 
 def _validate_parameters(
+    db: SessionWithUser,
+    dataset_id: str,
     analysis_type: str,
     query_feature_id: Optional[str],
     query_dataset_id: Optional[str],
     query_values: Optional[List[str]],
     depmap_model_ids: Optional[List[str]],
 ):
+    dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise UserError(f"dataset {dataset_id} is not found")
+    if not isinstance(dataset, MatrixDataset):
+        raise UserError(f"dataset {dataset_id} is not a matrix")
+    if dataset.value_type != ValueType.continuous:
+        raise UserError(
+            f"Can only perform analysis on datasets with value_type=continuous, but value_type was {dataset.value_type}"
+        )
+
+    if query_dataset_id is not None:
+        query_dataset = crud_dataset.get_dataset(db, db.user, query_dataset_id)
+        if query_dataset is None:
+            raise UserError(f"query dataset {dataset_id} is not found")
+        if not isinstance(query_dataset, MatrixDataset):
+            raise UserError(f"query dataset {dataset_id} is not a matrix")
+        if query_dataset.value_type != ValueType.continuous:
+            raise UserError(
+                f"Can only perform analysis with data slice with value_type=continuous but value_type was {query_dataset.value_type}"
+            )
+
     has_query_identifiers = query_feature_id and query_dataset_id
     if (
         analysis_type == models.AnalysisType.pearson
@@ -63,6 +89,7 @@ def compute_univariate_associations(
     computeParams: ComputeParams,
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
+    db: SessionWithUser = Depends(get_db_with_user),
 ):
     """
     Custom analysis offers three different analysis types: "pearson", "association", and "two_class". 
@@ -85,6 +112,8 @@ def compute_univariate_associations(
 
     assert dataset_id is not None
     _validate_parameters(
+        db,
+        dataset_id=dataset_id,
         analysis_type=analysis_type,
         query_feature_id=computeParams.queryFeatureId,
         query_dataset_id=computeParams.queryDatasetId,
@@ -98,21 +127,18 @@ def compute_univariate_associations(
         resultsDirPrefix, str(datetime.datetime.now().strftime("%Y%m%d")),
     )
 
-    try:
-        result = utils.cast_celery_task(analysis_tasks.run_custom_analysis).delay(
-            user=user,
-            analysis_type=analysis_type,
-            query_feature_id=computeParams.queryFeatureId,
-            query_dataset_id=computeParams.queryDatasetId,
-            filestore_location=settings.filestore_location,
-            dataset_id=dataset_id,
-            depmap_model_ids=depmap_model_ids,  # Use might pick subset of cell lines
-            query_values=query_values,
-            vector_is_dependent=vector_is_dependent,
-            results_dir=results_dir,
-        )
-    except PermissionError as e:
-        raise HTTPException(403, detail=str(e))
+    result = utils.cast_celery_task(analysis_tasks.run_custom_analysis).delay(
+        user=user,
+        analysis_type=analysis_type,
+        query_feature_id=computeParams.queryFeatureId,
+        query_dataset_id=computeParams.queryDatasetId,
+        filestore_location=settings.filestore_location,
+        dataset_id=dataset_id,
+        depmap_model_ids=depmap_model_ids,  # Use might pick subset of cell lines
+        query_values=query_values,
+        vector_is_dependent=vector_is_dependent,
+        results_dir=results_dir,
+    )
 
     return utils.format_task_status(result)
 

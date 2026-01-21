@@ -144,10 +144,6 @@ class FeatureFlags:
         return self.is_skyros()
 
     @property
-    def linear_association(self):
-        return self.is_skyros()
-
-    @property
     def extra_dmc_pages(self):
         return self.is_only_dmc_and_i_have_a_good_reason()
 
@@ -173,7 +169,7 @@ class FeatureFlags:
 
     @property
     def celfie(self):
-        return self.is_prerelease_env()
+        return False
 
     @property
     def celligner_app_v3(self):
@@ -215,16 +211,15 @@ class FeatureFlags:
 
     @property
     def gene_tea_matching_terms_panel(self):
-        return self.is_qa()
+        return self.is_prerelease_env()
 
     # TODO: Remove this feature flag once demo is approved. This is used in 2 places:
     # (1) frontend/packages/portal-frontend/src/geneTea/context/GeneTeaFiltersContext.tsx (on enabling this feature
     # delete all code in the if block that checks enabledFeatures.gene_tea_tutorial_page)
     # (2) frontend/packages/portal-frontend/src/geneTea/components/GeneTea.tsx
-
     @property
     def gene_tea_tutorial_page(self):
-        return self.is_qa()
+        return self.is_prerelease_env()
 
     @property
     def anchor_screen_dashboard(self):
@@ -240,6 +235,10 @@ class FeatureFlags:
 
     @property
     def correlation_analysis(self):
+        return self.is_prerelease_env()
+
+    @property
+    def gene_page_correlation_analysis(self):
         return self.is_prerelease_env()
 
 

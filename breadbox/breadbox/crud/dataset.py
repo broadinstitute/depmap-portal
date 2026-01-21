@@ -23,7 +23,7 @@ from ..schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
 )
-from breadbox.crud.access_control import user_has_access_to_group
+from breadbox.crud.access_control import user_has_access_to_group, PUBLIC_GROUP_ID
 from breadbox.models.dataset import (
     Dataset,
     MatrixDataset,
@@ -657,3 +657,7 @@ def get_metadata_used_in_matrix_dataset(
         .all()
     )
     return {id: val for id, val in metadata_vals_by_id}
+
+
+def is_public_dataset(dataset: Dataset):
+    return dataset.group_id == PUBLIC_GROUP_ID

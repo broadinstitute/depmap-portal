@@ -1,5 +1,10 @@
 from typing import List, Optional
 import pandas as pd
+
+from breadbox.io.hdf5_value_mapping import (
+    get_decoder_function,
+    get_encoder_function,
+)
 from breadbox.schemas.dataframe_wrapper import PandasDataFrameWrapper
 from breadbox.io.data_validation import (
     verify_unique_rows_and_cols,
@@ -71,9 +76,14 @@ def read_and_validate_matrix_df_helper(
     allowed_values: Optional[List[str]],
     data_file_format: str,
 ):
-    return read_and_validate_matrix_df(
-        file_path, value_type, allowed_values, data_file_format
+    value_mapping = get_encoder_function(value_type, allowed_values)
+    original_df = read_and_validate_matrix_df(
+        file_path, value_type, value_mapping, data_file_format
     ).get_df()
+    if value_mapping is None:
+        return original_df
+    else:
+        return value_mapping(original_df)
 
 
 def test_read_and_validate_matrix_df_helper(tmpdir):

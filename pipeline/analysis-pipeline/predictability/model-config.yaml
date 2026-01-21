@@ -1,0 +1,91 @@
+CellContext:
+  Features:
+    - lineage
+    - confounder # Will map to crispr_confounder or rnai_confounder or oncref_confounder based on screen
+  Required:
+    - lineage
+    - confounder
+  Relation: All
+  EstimatedSecondsPerModel: 80
+
+DriverEvents:
+  Features:
+    - lineage
+    - confounder
+    - driver_events
+  Required:
+    - lineage
+    - confounder
+    - driver_events
+  Relation: All
+  EstimatedSecondsPerModel: 95
+
+GeneticDerangement:
+  Features:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+  Required:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+  Relation: All
+  EstimatedSecondsPerModel: 1000
+
+DNA:
+  Features:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+    - loh
+  Required:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+  Relation: All
+  EstimatedSecondsPerModel: 600
+
+RNASeq:
+  Features:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+    - loh
+    - rnaseq
+  Required:
+    - lineage
+    - confounder
+    - driver_events
+    - armlevel_cn
+    - cytoband_cn
+    - genetic_signature
+    - mutations_hotspot
+    - mutations_damaging
+    - gene_cn
+    - rnaseq
+  Relation: All
+  EstimatedSecondsPerModel: 900

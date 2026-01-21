@@ -256,6 +256,8 @@ def _run_custom_analysis_test_wrapper(
     query_dataset_id = query_dataset_id if use_query_id else None
 
     compute._validate_parameters(
+        minimal_db,
+        dataset_id,
         analysis_type=analysis_type,
         query_feature_id=query_feature_id,
         query_dataset_id=query_dataset_id,
@@ -265,7 +267,7 @@ def _run_custom_analysis_test_wrapper(
 
     # columns to search determined by dataset_feature instead of dep_mat_col_indices
     minimal_db.reset_user(settings.default_user)
-    result = run_custom_analysis(
+    result = run_custom_analysis(  # pyright: ignore
         user=settings.default_user,
         analysis_type=analysis_type.name,
         query_feature_id=query_feature_id,
@@ -398,7 +400,7 @@ def test_run_custom_analysis_pearson_with_feature_ids_and_query_values(
     )
 
     minimal_db.reset_user(settings.default_user)
-    result = run_custom_analysis(
+    result = run_custom_analysis(  # pyright: ignore
         user=settings.default_user,
         analysis_type=AnalysisType.pearson.name,
         query_feature_id=None,
@@ -812,3 +814,70 @@ def test_fast_cor_with_p_and_q_values_with_missing():
 
     assert np.allclose(expected_pearson, actual_pearson, rtol=0.01, equal_nan=True)
     assert np.allclose(expected_p, actual_p, rtol=0.01, equal_nan=True)
+
+
+def test_parameter_validation(
+    tmpdir, minimal_db: SessionWithUser, client: TestClient, settings,
+):
+    models = [f"CL{i}" for i in range(3)]
+    user = settings.admin_users[0]
+    headers = {"X-Forwarded-User": settings.admin_users[0]}
+    factories.feature_type(minimal_db, user, "gene")
+    categorical_dataset = factories.matrix_dataset(
+        minimal_db,
+        settings,
+        data_file=factories.matrix_csv_data_file_with_values(
+            feature_ids=["A", "B"], sample_ids=models, values=["X", "Y"]
+        ),
+        value_type=ValueType.categorical,
+        allowed_values=["X", "Y"],
+    )
+
+    continuous_dataset = factories.matrix_dataset(
+        minimal_db,
+        settings,
+        data_file=factories.matrix_csv_data_file_with_values(
+            feature_ids=["A", "B"], sample_ids=models, values=[1.0, 0.0]
+        ),
+        value_type=ValueType.continuous,
+    )
+
+    data = {
+        "user": user,
+        "queryValues": None,
+        "queryCellLines": [],
+        "analysisType": "association",
+        "datasetId": categorical_dataset.id,
+        "queryFeatureId": "A",
+        "queryDatasetId": continuous_dataset.id,
+        "vectorVariableType": "dependent",
+    }
+
+    r = client.post(
+        "/compute/compute_univariate_associations", json=(data), headers=headers,
+    )
+    assert r.status_code == 400
+    assert (
+        "Can only perform analysis on datasets with value_type=continuous"
+        in r.json()["detail"]
+    )
+
+    data = {
+        "user": user,
+        "queryValues": None,
+        "queryCellLines": [],
+        "analysisType": "association",
+        "datasetId": continuous_dataset.id,
+        "queryFeatureId": "A",
+        "queryDatasetId": categorical_dataset.id,
+        "vectorVariableType": "dependent",
+    }
+
+    r = client.post(
+        "/compute/compute_univariate_associations", json=(data), headers=headers,
+    )
+    assert r.status_code == 400
+    assert (
+        "Can only perform analysis with data slice with value_type=continuous"
+        in r.json()["detail"]
+    )

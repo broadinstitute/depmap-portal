@@ -1,15 +1,17 @@
 import dataclasses
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context.models_new import SubtypeContext, SubtypeNode
 from depmap.context_explorer import box_plot_utils, enrichment_tile_filters
-from depmap.context_explorer.utils import get_compound_experiment
+from depmap.context_explorer.models import ContextExplorerDatasets
 from depmap.dataset.models import DependencyDataset
 from depmap.gene.models import Gene
+from depmap.partials.matrix.models import CellLineSeries
 import numpy as np
 import pytest
 from tests.factories import (
     CellLineFactory,
-    CompoundExperimentFactory,
+    CompoundFactory,
     ContextAnalysisFactory,
     DependencyDatasetFactory,
     DepmapModelFactory,
@@ -82,9 +84,10 @@ def make_depmap_model_objects(level_0_code, node_level, number_of_models):
 
 
 def set_up_node_and_context_objects(
+    monkeypatch,
     empty_db_mock_downloads,
-    dataset_name: str,
-    entity_type: str,
+    dataset_given_id: str,
+    feature_type: str,
     make_level_0_significant: bool,
     tree_type: str = "Lineage",
 ):
@@ -180,107 +183,116 @@ def set_up_node_and_context_objects(
         cell_line for context in contexts for cell_line in context.depmap_model
     ]
 
-    entity = GeneFactory() if entity_type == "gene" else CompoundExperimentFactory()
-    matrix = MatrixFactory(
-        entities=[entity],
-        data=np.array([[num for num in range(len(matrix_models))]]),
-        cell_lines=matrix_models,
-        using_depmap_model_table=True,
+    feature_id = (
+        str(GeneFactory(entrez_id=1234).entrez_id)
+        if feature_type == "gene"
+        else CompoundFactory(compound_id="compound_id").compound_id
     )
 
-    dataset = DependencyDatasetFactory(
-        display_name=dataset_name,
-        name=DependencyDataset.DependencyEnum(dataset_name),
-        matrix=matrix,
-        priority=1,
-    )
+    def mock_get_row_of_values(dataset_id, feature, feature_identifier="id"):
+        data_list = [num for num in range(len(matrix_models))]
+        index_list = [cell_line.model_id for cell_line in matrix_models]
+        data_series = pd.Series(data=data_list, index=index_list)
+        return CellLineSeries(data_series)
+
+    monkeypatch.setattr(data_access, "get_row_of_values", mock_get_row_of_values)
+
+    def mock_get_dataset_units(dataset_id):
+        return "Gene Effect"
+
+    monkeypatch.setattr(data_access, "get_dataset_units", mock_get_dataset_units)
 
     if make_level_0_significant:
         ContextAnalysisFactory(
-            dataset=dataset,
+            dataset_given_id=dataset_given_id,
             subtype_context=SubtypeContext.get_by_code(level_0_code),
             out_group="All Others",
-            entity=entity,
+            feature_id=feature_id,
             effect_size=-0.5,  # Make sure this results in an abs_effect_size of 0.05
             t_qval=0.01,
-            frac_dep_in=0.2 if entity_type == "gene" else None,
+            frac_dep_in=0.2 if feature_type == "gene" else None,
         )
     else:
         ContextAnalysisFactory(
-            dataset=dataset,
+            dataset_given_id=dataset_given_id,
             subtype_context=SubtypeContext.get_by_code(level_0_code),
             out_group="All Others",
-            entity=entity,
+            feature_id=feature_id,
             effect_size=1000,
             t_qval=1000,
-            frac_dep_in=0.001 if entity_type == "gene" else None,
+            frac_dep_in=0.001 if feature_type == "gene" else None,
         )
 
     # Make A1, A2A significant
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=SubtypeContext.get_by_code("A1"),
         out_group="All Others",
-        entity=entity,
+        feature_id=feature_id,
         effect_size=-0.5,  # Make sure this results in an abs_effect_size of 0.05
         t_qval=0.01,
-        frac_dep_in=0.2 if entity_type == "gene" else None,
+        frac_dep_in=0.2 if feature_type == "gene" else None,
     )
 
     # Not significant unless show_positive_effect_size filter turned ON
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=SubtypeContext.get_by_code("A2A"),
         out_group="All Others",
-        entity=entity,
+        feature_id=feature_id,
         effect_size=0.5,  # Make sure this results in an abs_effect_size of 0.05
         t_qval=0.01,
-        frac_dep_in=0.2 if entity_type == "gene" else None,
+        frac_dep_in=0.2 if feature_type == "gene" else None,
     )
 
     # Using effect_size, t_qval, and frac_dep_in: Make sure A2, A3, A3A are not significant
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=SubtypeContext.get_by_code("A2"),
         out_group="All Others",
-        entity=entity,
+        feature_id=feature_id,
         effect_size=1000,  # Make sure this results in an abs_effect_size of 0.05
         t_qval=1000,
-        frac_dep_in=0.001 if entity_type == "gene" else None,
+        frac_dep_in=0.001 if feature_type == "gene" else None,
     )
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=SubtypeContext.get_by_code("A3"),
         out_group="All Others",
-        entity=entity,
+        feature_id=feature_id,
         effect_size=1000,  # Make sure this results in an abs_effect_size of 0.05
         t_qval=1000,
-        frac_dep_in=0.001 if entity_type == "gene" else None,
+        frac_dep_in=0.001 if feature_type == "gene" else None,
     )
     ContextAnalysisFactory(
-        dataset=dataset,
+        dataset_given_id=dataset_given_id,
         subtype_context=SubtypeContext.get_by_code("A3A"),
         out_group="All Others",
-        entity=entity,
+        feature_id=feature_id,
         effect_size=1000,  # Make sure this results in an abs_effect_size of 0.05
         t_qval=1000,
-        frac_dep_in=0.001 if entity_type == "gene" else None,
+        frac_dep_in=0.001 if feature_type == "gene" else None,
     )
 
     ### A4 has no models so it shouldn't have any ContextAnalyses
 
-    return entity
+    return feature_id
 
 
 # To match context explorer filters
-def get_context_explorer_box_plot_filters(dataset_name: str):
+def get_context_explorer_box_plot_filters(dataset_given_id: str):
     frac_dep_in = 0.1
     max_fdr = 0.01
     min_abs_effect_size = 0.25
-    if dataset_name == DependencyDataset.DependencyEnum.Prism_oncology_AUC:
+    if (
+        dataset_given_id
+        == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
+    ):
         max_fdr = 0.1
         min_abs_effect_size = 0.1
-    elif dataset_name == DependencyDataset.DependencyEnum.Rep_all_single_pt:
+    elif (
+        dataset_given_id == ContextExplorerDatasets.Rep_all_single_pt_per_compound.name
+    ):
         max_fdr = 0.1
         min_abs_effect_size = 0.5
 
@@ -288,42 +300,40 @@ def get_context_explorer_box_plot_filters(dataset_name: str):
 
 
 @pytest.mark.parametrize(
-    "dataset_name, entity_type, tree_type",
+    "dataset_given_id, feature_type, tree_type",
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_significant(
-    empty_db_mock_downloads, dataset_name, entity_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
-    entity = set_up_node_and_context_objects(
+    feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
         make_level_0_significant=True,
         tree_type=tree_type,
     )
-    entity_id = (
-        Gene.get_by_label(entity.label).entity_id
-        if entity_type == "gene"
-        else get_compound_experiment(entity.label).entity_id
-    )
+    feature_id = str(feature_id)
+
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
-        dataset_name=dataset_name
+        dataset_given_id=dataset_given_id
     )
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -334,42 +344,40 @@ def test_get_sig_context_dataframe_level_0_significant(
 
 
 @pytest.mark.parametrize(
-    "dataset_name, entity_type, tree_type",
+    "dataset_given_id, feature_type, tree_type",
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_level_0_not_significant(
-    empty_db_mock_downloads, dataset_name, entity_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
-    entity = set_up_node_and_context_objects(
+    feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
         make_level_0_significant=False,
         tree_type=tree_type,
     )
-    entity_id = (
-        Gene.get_by_label(entity.label).entity_id
-        if entity_type == "gene"
-        else get_compound_experiment(entity.label).entity_id
-    )
+    feature_id = str(feature_id)
+
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
-        dataset_name=dataset_name
+        dataset_given_id=dataset_given_id
     )
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -385,8 +393,8 @@ def test_get_enrichment_tile_filters():
         min_abs_effect_size,
         min_frac_dep_in,
     ) = enrichment_tile_filters.get_enrichment_tile_filters(
-        entity_type="gene",
-        dataset_name=DependencyDataset.DependencyEnum.Chronos_Combined.name,
+        feature_type="gene",
+        dataset_given_id=ContextExplorerDatasets.Chronos_Combined.name,
     )
 
     assert max_fdr == 0.1
@@ -398,8 +406,8 @@ def test_get_enrichment_tile_filters():
         min_abs_effect_size,
         min_frac_dep_in,
     ) = enrichment_tile_filters.get_enrichment_tile_filters(
-        entity_type="compound",
-        dataset_name=DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
+        feature_type="compound",
+        dataset_given_id=ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name,
     )
 
     assert max_fdr == 0.1
@@ -410,8 +418,8 @@ def test_get_enrichment_tile_filters():
         min_abs_effect_size,
         min_frac_dep_in,
     ) = enrichment_tile_filters.get_enrichment_tile_filters(
-        entity_type="compound",
-        dataset_name=DependencyDataset.DependencyEnum.Rep_all_single_pt.name,
+        feature_type="compound",
+        dataset_given_id=ContextExplorerDatasets.Rep_all_single_pt_per_compound.name,
     )
 
     assert max_fdr == 0.1
@@ -419,42 +427,39 @@ def test_get_enrichment_tile_filters():
 
 
 @pytest.mark.parametrize(
-    "dataset_name, entity_type, tree_type",
+    "dataset_given_id, feature_type, tree_type",
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_data_frame_show_positive_effect_sizes(
-    empty_db_mock_downloads, dataset_name, entity_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
-    entity = set_up_node_and_context_objects(
+    feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
         make_level_0_significant=True,
         tree_type=tree_type,
     )
-    entity_id = (
-        Gene.get_by_label(entity.label).entity_id
-        if entity_type == "gene"
-        else get_compound_experiment(entity.label).entity_id
-    )
+    feature_id = str(feature_id)
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
-        dataset_name=dataset_name
+        dataset_given_id=dataset_given_id
     )
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -465,9 +470,9 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -477,23 +482,24 @@ def test_get_sig_context_data_frame_show_positive_effect_sizes(
 
 
 @pytest.mark.parametrize(
-    "dataset_name, entity_type, tree_type",
+    "dataset_given_id, feature_type, tree_type",
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_sig_context_dataframe_no_significant_analyses_found(
-    empty_db_mock_downloads, dataset_name, entity_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
-    entity = set_up_node_and_context_objects(
+    feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
         make_level_0_significant=True,
         tree_type=tree_type,
     )
@@ -501,14 +507,14 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
     empty_db_mock_downloads.session.flush()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
-        dataset_name=dataset_name
+        dataset_given_id=dataset_given_id
     )
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=9999,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id="9999",
+        dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=1,
         min_frac_dep_in=frac_dep_in,
@@ -518,43 +524,40 @@ def test_get_sig_context_dataframe_no_significant_analyses_found(
 
 
 @pytest.mark.parametrize(
-    "dataset_name, entity_type, tree_type",
+    "dataset_given_id, feature_type, tree_type",
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_context_plot_data(
-    empty_db_mock_downloads, dataset_name, entity_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
-    entity = set_up_node_and_context_objects(
+    feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
         make_level_0_significant=True,
         tree_type=tree_type,
     )
-    entity_id = (
-        Gene.get_by_label(entity.label).entity_id
-        if entity_type == "gene"
-        else get_compound_experiment(entity.label).entity_id
-    )
+    feature_id = str(feature_id)
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
     max_fdr, min_abs_effect_size, frac_dep_in = get_context_explorer_box_plot_filters(
-        dataset_name=dataset_name
+        dataset_given_id=dataset_given_id
     )
 
     sig_contexts = box_plot_utils.get_sig_context_dataframe(
         tree_type=tree_type,
-        entity_type=entity_type,
-        entity_id=entity_id,
-        dataset_name=dataset_name,
+        feature_type=feature_type,
+        feature_id=feature_id,
+        dataset_given_id=dataset_given_id,
         max_fdr=max_fdr,
         min_abs_effect_size=min_abs_effect_size,
         min_frac_dep_in=frac_dep_in,
@@ -563,9 +566,9 @@ def test_get_context_plot_data(
     assert sig_contexts["subtype_code"].values.tolist() == ["A2A", "A1", "A"]
 
     context_plot_box_data = box_plot_utils.get_context_plot_box_data(
-        dataset_name=dataset_name,
-        entity_type=entity_type,
-        entity_label=entity.label,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
+        feature_id=feature_id,
         sig_contexts=sig_contexts,
         level_0="A",
         tree_type=tree_type,
@@ -660,38 +663,44 @@ def test_get_context_plot_data(
 ### Enriched Lineage Tile Specific ###
 ######################################
 @pytest.mark.parametrize(
-    "dataset_name, entity_type, tree_type",
+    "dataset_given_id, feature_type, tree_type",
     [
         ("Chronos_Combined", "gene", "Lineage"),
         ("Chronos_Combined", "gene", "MolecularSubtype"),
-        ("Rep_all_single_pt", "compound", "Lineage"),
-        ("Rep_all_single_pt", "compound", "MolecularSubtype"),
-        ("Prism_oncology_AUC", "compound", "Lineage"),
-        ("Prism_oncology_AUC", "compound", "MolecularSubtype"),
+        ("Rep_all_single_pt_per_compound", "compound", "Lineage"),
+        ("Rep_all_single_pt_per_compound", "compound", "MolecularSubtype"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "Lineage"),
+        ("PRISMOncologyReferenceLog2AUCMatrix", "compound", "MolecularSubtype"),
     ],
 )
 def test_get_data_to_show_if_no_contexts_significant(
-    empty_db_mock_downloads, dataset_name, entity_type, tree_type
+    empty_db_mock_downloads, dataset_given_id, feature_type, tree_type, monkeypatch
 ):
-    entity = set_up_node_and_context_objects(
+    feature_id = set_up_node_and_context_objects(
+        monkeypatch=monkeypatch,
         empty_db_mock_downloads=empty_db_mock_downloads,
-        dataset_name=dataset_name,
-        entity_type=entity_type,
+        dataset_given_id=dataset_given_id,
+        feature_type=feature_type,
         make_level_0_significant=False,
         tree_type=tree_type,
     )
-
+    feature_id = str(feature_id)
     empty_db_mock_downloads.session.flush()
     interactive_test_utils.reload_interactive_config()
 
     # Pretending sig_contexts is empty so we don't need to write a new
     # set_up_node_and_context_objects just to create no contexts significant
 
+    def mock_get_dataset_label(dataset_id):
+        return "CRISPR"
+
+    monkeypatch.setattr(data_access, "get_dataset_label", mock_get_dataset_label)
+
     data = box_plot_utils.get_data_to_show_if_no_contexts_significant(
-        entity_type=entity_type,
-        entity_label=entity.label,
+        feature_type=feature_type,
+        feature_id=feature_id,
         tree_type=tree_type,
-        dataset_name=dataset_name,
+        dataset_given_id=dataset_given_id,
     )
 
     assert len(data["box_plot_data"]["significant_selection"]) == 0

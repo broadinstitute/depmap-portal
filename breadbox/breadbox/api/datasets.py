@@ -1,9 +1,10 @@
-import time
 from typing import List, Optional, Set, Annotated
 from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
+
+from pydantic import Json
 
 from fastapi import (
     APIRouter,
@@ -38,6 +39,7 @@ from ..models.dataset import (
     Dataset as DatasetModel,
     ValueType,
     MatrixDataset,
+    TabularDataset,
 )
 
 from ..io.filestore_crud import get_feature_slice
@@ -60,7 +62,9 @@ from breadbox.service import dataset as dataset_service
 from breadbox.service import metadata as metadata_service
 from breadbox.service import slice as slice_service
 from .dependencies import get_dataset as get_dataset_dep
-from .dependencies import get_db_with_user, get_user
+from .dependencies import get_db_with_user, get_user, get_cache
+from breadbox.utils.caching import CachingCaller
+
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
 
@@ -201,93 +205,6 @@ def get_feature_data(
     return feature_data
 
 
-from pydantic import Json
-
-
-@router.post(
-    "/", operation_id="add_dataset", response_model=AddDatasetResponse,
-)
-def add_dataset(
-    name: str = Form(..., description="Name of dataset, used for display"),
-    units: str = Form(
-        ..., description="Units for the values in the dataset, used for display"
-    ),
-    data_type: str = Form(..., description="Data type grouping for your dataset"),
-    data_file: UploadFile = File(
-        ...,
-        description="CSV file of your dataset with feature ids as columns and sample ids as rows.",
-    ),
-    is_transient: bool = Form(
-        ...,
-        description="Transient datasets can be deleted - should only be set to true for non-public short-term-use datasets like custom analysis results.",
-    ),
-    feature_type: str = Form(
-        None, description="Type of features your dataset contains"
-    ),  # Either feature_type or sample_type must be given
-    sample_type: str = Form(..., description="Type of samples your dataset contains"),
-    group_id: UUID = Form(
-        None,
-        description=f"ID of the group the dataset belongs to. Required for non-transient datasets. The public group is `{PUBLIC_GROUP_ID}`.",
-    ),  # Required for non-transient datasets
-    value_type: ValueType = Form(
-        ...,
-        description="Value 'continuous' if dataset contains numerical values or 'categorical' if dataset contains string categories as values.",
-    ),
-    priority: int = Form(
-        None,
-        description="Numeric value assigned to the dataset with `1` being highest priority within the `data_type`, used for displaying order of datasets to show for a specific `data_type` in UI.",
-    ),
-    taiga_id: str = Form(None, description="Taiga ID the dataset is sourced from."),
-    allowed_values: Set[str] = Query(
-        None,
-        min_length=1,
-        description="Only provide if 'value_type' is 'categorical'. Must contain all possible categorical values",
-    ),
-    dataset_metadata: Optional[Json[DatasetMetadata]] = Form(
-        None,
-        description="Contains a dictionary of additional dataset values that are not already provided above.",
-    ),
-    user: str = Depends(get_user),
-):
-    """
-    Create a new dataset.
-    """
-    data_file_dict = get_file_dict(
-        data_file
-    )  # TODO: Remove after change to file id uploads?
-
-    dataset_metadata_ = None
-    if dataset_metadata is not None:
-        dataset_metadata_ = dataset_metadata.dataset_metadata
-
-    try:
-        r = utils.cast_celery_task(run_upload_dataset).apply(
-            args=[
-                name,
-                units,
-                feature_type,
-                sample_type,
-                data_type,
-                data_file_dict,
-                value_type,
-                priority,
-                taiga_id,
-                allowed_values,
-                is_transient,
-                user,
-                group_id,
-                dataset_metadata_,
-                "csv",
-            ]
-        )
-    except PermissionError as e:
-        raise HTTPException(404, detail=str(e))
-
-    response = utils.format_task_status(r)
-
-    return response
-
-
 @router.get(
     "/{dataset_id}",
     operation_id="get_dataset",
@@ -335,6 +252,7 @@ def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
     dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
+    cache: Annotated[CachingCaller, Depends(get_cache)],
     tabular_dimensions_info: Annotated[
         TabularDimensionsInfo, Body(default_factory=TabularDimensionsInfo)
     ],
@@ -349,13 +267,24 @@ def get_tabular_dataset_data(
         raise UserError(
             "This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead."
         )
-    try:
-        df = dataset_service.get_subsetted_tabular_dataset_df(
-            db, user, dataset, tabular_dimensions_info, strict
+    assert isinstance(dataset, TabularDataset)
+
+    # only allow caching of requests for public datasets
+    if dataset_crud.is_public_dataset(dataset):
+        anon_db = db.create_session_for_anonymous_user()
+
+        df_as_json = cache.memoize(
+            lambda: dataset_service.get_subsetted_tabular_dataset_df(
+                anon_db, anon_db.user, dataset, tabular_dimensions_info, strict
+            ).to_json(),
+            depends_on=[str(dataset.id), tabular_dimensions_info.model_dump(), strict,],
         )
-    except UserError as e:
-        raise e
-    return Response(df.to_json(), media_type="application/json")
+    else:
+        df_as_json = dataset_service.get_subsetted_tabular_dataset_df(
+            db, user, dataset, tabular_dimensions_info, strict
+        ).to_json()
+
+    return Response(df_as_json, media_type="application/json")
 
 
 @router.post("/data/{dataset_id}", operation_id="get_dataset_data", deprecated=True)
@@ -394,15 +323,13 @@ def get_dataset_data(
         raise UserError(
             "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
         )
-    try:
-        dim_info = MatrixDimensionsInfo(
-            features=features,
-            feature_identifier=feature_identifier,
-            samples=samples,
-            sample_identifier=sample_identifier,
-        )
-    except UserError as e:
-        raise e
+
+    dim_info = MatrixDimensionsInfo(
+        features=features,
+        feature_identifier=feature_identifier,
+        samples=samples,
+        sample_identifier=sample_identifier,
+    )
 
     assert isinstance(dataset, MatrixDataset)
     df = dataset_service.get_subsetted_matrix_dataset_df(

@@ -64,7 +64,6 @@ def _create_cell_line_batch(num_cell_lines: int) -> List[str]:
         ),  # Two-class comparison - vector is independent
     ],
 )
-# @pytest.mark.skip(reason="rpy2.interface has no attribute 'INTSXP")
 def test_compute_univariate_associations(
     tmpdir,
     minimal_db: SessionWithUser,
@@ -334,31 +333,28 @@ def test_compute_univariate_associations_intersection_with_minimum_points(
     result = r.json()
     assert result["state"] == "SUCCESS"
 
-    table = result["result"]["data"]
+    table = pd.DataFrame(result["result"]["data"])
 
-    expected_table = [
-        {
-            "EffectSize": -0.2515742782636402,
-            "PValue": 0.39796749567764594,
-            "QValue": 0.8620908186786146,
-            "label": dataset_entity_7_lines,
-            "vectorId": "don't bother testing",
-            "numCellLines": 6,
-        }
-    ]
+    expected_table = pd.DataFrame(
+        [
+            {
+                "EffectSize": -0.2515742782636402,
+                "PValue": 0.39796749567764594,
+                "QValue": 0.39796749567764594,  # only one test could be performed so Q-value should be same as p-value
+                "label": dataset_entity_7_lines,
+                "given_id": dataset_entity_7_lines,
+                "vectorId": "don't bother testing",
+                "numCellLines": 6,
+            }
+        ]
+    )
 
-    for row, expected_row in zip(table, expected_table):
-        assert row["label"] == expected_row["label"]
-        assert row["numCellLines"] == expected_row["numCellLines"]
-        for col in [
-            "EffectSize",
-            "PValue",
-            "QValue",
-        ]:
-            if expected_row[col] is None:
-                assert row[col] is None
-            else:
-                assert isclose(row[col], expected_row[col])
+    expected_table = expected_table[sorted(expected_table.columns)].drop(
+        columns=["vectorId"]
+    )
+    table = table[sorted(table.columns)].drop(columns=["vectorId"])
+
+    pd.testing.assert_frame_equal(table, expected_table)
 
 
 def test_subset_values_by_intersecting_cell_lines():

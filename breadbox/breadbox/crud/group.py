@@ -98,7 +98,7 @@ def get_group(
     if isinstance(group_id, UUID):
         group_id = str(group_id)
 
-    group = db.query(Group).get(group_id)
+    group = db.get(Group, group_id)
     if group is None:
         return None
 
@@ -195,6 +195,7 @@ def delete_group_entry(db: SessionWithUser, user: str, group_entry_id: str):
         raise LookupError("Group entry not found")
 
     group = get_group(db, user, group_entry.group_id)
+    assert group is not None
     if not user_has_access_to_group(group, user, write_access=True):
         raise GroupPermissionError(
             "User does not have write permissions for this group"

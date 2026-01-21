@@ -14,7 +14,13 @@ from datetime import timedelta
 from typing import Dict
 import pytest
 import numpy as np
-from ..utils import upload_and_get_file_ids
+from ..utils import (
+    upload_and_get_file_ids,
+    assert_status_not_ok,
+    assert_status_ok,
+    assert_task_success,
+    assert_task_failure,
+)
 import json
 import pandas as pd
 from breadbox.models.dataset import AnnotationType
@@ -22,7 +28,6 @@ from fastapi.testclient import TestClient
 from breadbox.schemas.dataset import ColumnMetadata
 from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
 from tests import factories
-from ..utils import assert_status_not_ok, assert_status_ok
 from breadbox.crud import dataset as dataset_crud
 from breadbox.service import dataset as dataset_service
 
@@ -130,7 +135,6 @@ class TestPost:
         minimal_db: SessionWithUser,
         private_group: Dict,
         mock_celery,
-        monkeypatch,
     ):
         user = "someone@private-group.com"
         headers = {"X-Forwarded-User": user}
@@ -233,26 +237,6 @@ class TestPost:
             client, tabular_data_file_bad_list_strings
         )
 
-        def mock_failed_task_result(db, params, user):
-            return {"result": "Column 'attr1' failed validator"}
-
-        monkeypatch.setattr(
-            dataset_uploads_tasks, "dataset_upload", mock_failed_task_result,
-        )
-
-        def mock_return_failed_task(result):
-            return AddDatasetResponse(
-                id="123",
-                state="FAILURE",
-                result=result,
-                message=None,
-                percentComplete=None,
-            )
-
-        monkeypatch.setattr(
-            dataset_uploads_tasks, "dataset_upload", mock_failed_task_result,
-        )
-        monkeypatch.setattr(utils, "format_task_status", mock_return_failed_task)
         bad_list_strings_file_ids_dataset = client.post(
             "/dataset-v2/",
             json={
@@ -492,28 +476,32 @@ class TestPost:
         }
 
     @pytest.mark.parametrize(
-        "value_type, allowed_values, status_code",
+        "value_type, allowed_values, expected_response_status, expected_success",
         [
             (
                 "continuous",
                 ["Thing1", "Thing2", "Thing3"],
                 422,
+                False,
             ),  # continuous datasets should not have allowed values
             (
                 "categorical",
                 ["Thing1", "Thing2", "Thing3", "Thing4"],
                 202,
+                True,
             ),  # allowed values have a value (Thing4) not in dataset. This is acceptable
             (
                 "categorical",
                 ["Thing1", "Thing2"],
-                400,
+                202,
+                False,
             ),  # missing allowed value/dataset have value not in allowed values
             (
                 "categorical",
                 ["Thing1", "thing1", "Thing2", "Thing3"],
                 400,
-            ),  # repeated allowed values due to case
+                False,
+            ),  # Even though the case is different, this is a repeat and not allowed
         ],
     )
     def test_incorrect_allowed_values(
@@ -524,7 +512,8 @@ class TestPost:
         mock_celery,
         value_type,
         allowed_values,
-        status_code,
+        expected_response_status,
+        expected_success,
     ):
         user = "someone@private-group.com"
         headers = {"X-Forwarded-User": user}
@@ -556,7 +545,15 @@ class TestPost:
             },
             headers=headers,
         )
-        assert categorical_matrix_dataset.status_code == status_code
+
+        assert categorical_matrix_dataset.status_code == expected_response_status
+        if expected_success:
+            assert_task_success(categorical_matrix_dataset)
+        else:
+            if (
+                expected_response_status == 202
+            ):  # getting task status is successful, but the task is expected to fail
+                assert_task_failure(categorical_matrix_dataset)
 
     def _setup_types(self, client, admin_headers):
         r_feature_metadata = client.post(
@@ -894,7 +891,7 @@ class TestPost:
             },
             headers=admin_headers,
         )
-        assert matrix_dataset_response.status_code == 400
+        assert_task_failure(matrix_dataset_response)
 
         file_with_duplicate_samples = factories.continuous_matrix_csv_file(
             feature_ids=["A", "B", "C"], sample_ids=["A", "B", "A", "C"],
@@ -924,7 +921,7 @@ class TestPost:
             },
             headers=admin_headers,
         )
-        assert matrix_dataset_response.status_code == 400
+        assert_task_failure(matrix_dataset_response)
 
     def test_add_tabular_dataset_with_dim_type_annotations(
         self,
@@ -1174,7 +1171,7 @@ class TestPost:
             },
             headers=admin_headers,
         )
-        assert tabular_dataset.status_code == 400
+        assert_task_failure(tabular_dataset)
 
 
 def test_dataset_with_expiry(

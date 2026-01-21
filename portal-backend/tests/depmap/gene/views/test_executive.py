@@ -1,5 +1,5 @@
+from depmap.context_explorer.models import ContextExplorerDatasets
 import pytest
-import pandas as pd
 from depmap.gene.views.executive import (
     format_dep_dist_info,
     format_crispr_possible_missing_reason,
@@ -8,8 +8,7 @@ from depmap.gene.views.executive import (
     format_codependencies,
 )
 from depmap.dataset.models import DependencyDataset
-from depmap.utilities import color_palette
-from depmap.enums import DependencyEnum, BiomarkerEnum
+from depmap.enums import DependencyEnum
 from tests.factories import (
     ContextAnalysisFactory,
     DepmapModelFactory,
@@ -17,190 +16,12 @@ from tests.factories import (
     GeneExecutiveInfoFactory,
     MatrixFactory,
     DependencyDatasetFactory,
-    BiomarkerDatasetFactory,
-    CellLineFactory,
     SubtypeContextFactory,
     SubtypeNodeFactory,
 )
 from tests.depmap.utilities.test_svg_utils import assert_is_svg
 from depmap.settings.settings import TestConfig
 from tests.utilities.override_fixture import override
-
-
-"""
-        have crispr and rnai
-        only crispr
-        only rnai
-        have rnai, no crispr, have crispr reason for the current default enum
-        have rnai, no crispr, have crispr reason for the wrong crispr enum
-        no rnai, no crispr, have crispr reason for the current default enum
-        no rnai, no crispr, have crispr reason for the wrong crispr enum (should not show anything)
-"""
-
-
-@pytest.mark.parametrize(
-    "has_chronos, has_rnai, is_dropped_by_chronos",
-    [
-        # no dropped by chronos
-        (True, True, False),
-        (True, False, False),
-        (False, True, False),
-        (False, False, False),
-        # dropped by chronos, has rnai
-        (False, True, True),
-        # dropped by chronos, no datasets
-        (False, False, True),
-    ],
-)
-def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_chronos(
-    empty_db_mock_downloads, has_chronos, has_rnai, is_dropped_by_chronos
-):
-    gene = GeneFactory()
-
-    crispr_dataset = None
-    rnai_dataset = None
-
-    if has_chronos:
-        crispr_dataset = DependencyDatasetFactory(
-            matrix=MatrixFactory(
-                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
-            ),
-            name=DependencyEnum.Chronos_Combined,
-            priority=1,
-        )
-        GeneExecutiveInfoFactory(
-            gene=gene, dataset=DependencyEnum.Chronos_Combined,
-        )
-    if has_rnai:
-        rnai_dataset = DependencyDatasetFactory(
-            matrix=MatrixFactory(
-                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
-            ),
-            name=DependencyEnum.RNAi_merged,
-            priority=1,
-        )
-
-        GeneExecutiveInfoFactory(
-            gene=gene, dataset=DependencyEnum.RNAi_merged,
-        )
-
-    if is_dropped_by_chronos:
-        DependencyDatasetFactory(
-            matrix=MatrixFactory(),  # does not contain the gene
-            name=DependencyEnum.Chronos_Combined,
-            priority=1,
-        )
-        GeneExecutiveInfoFactory(
-            gene=gene,
-            dataset=DependencyEnum.Chronos_Combined,
-            is_dropped_by_chronos=True,
-        )
-
-    empty_db_mock_downloads.session.flush()
-
-    dep_dist = get_dependency_distribution(
-        gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
-    )
-
-    if has_chronos or is_dropped_by_chronos:
-        assert "crispr" in dep_dist["info"]
-    else:
-        assert (
-            not dep_dist or "info" not in dep_dist or "crispr" not in dep_dist["info"]
-        )
-
-    if has_rnai:
-        assert "rnai" in dep_dist["info"]
-
-    else:
-        assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
-
-    if is_dropped_by_chronos:
-        assert "should_show_dropped_by_chronos" in dep_dist["info"]["crispr"]
-    else:
-        assert (
-            not dep_dist
-            or "info" not in dep_dist
-            or "crispr" not in dep_dist["info"]
-            or "should_show_dropped_by_chronos" not in dep_dist["info"]["crispr"]
-        )
-
-
-@pytest.mark.parametrize(
-    "has_avana, has_rnai", [(True, True), (False, True), (True, False), (False, False)],
-)
-def test_get_dep_dist_and_enrichment_boxes_default_crispr_enum_not_chronos(
-    empty_db_mock_downloads, has_avana, has_rnai
-):
-    """
-    Load dropped by chronos for every test
-    Should never show dropped by chronos
-    """
-    gene = GeneFactory()
-
-    crispr_dataset = None
-    rnai_dataset = None
-
-    DependencyDatasetFactory(
-        matrix=MatrixFactory(),  # does not contain the gene
-        name=DependencyEnum.Chronos_Combined,
-    )
-
-    if has_avana:
-        crispr_dataset = DependencyDatasetFactory(
-            matrix=MatrixFactory(
-                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
-            ),
-            name=DependencyEnum.Avana,
-            priority=1,
-        )
-        GeneExecutiveInfoFactory(
-            gene=gene, dataset=DependencyEnum.Avana, is_dropped_by_chronos=True,
-        )
-    else:
-        GeneExecutiveInfoFactory(
-            gene=gene,
-            dataset=DependencyEnum.Chronos_Combined,
-            is_dropped_by_chronos=True,
-        )
-
-    if has_rnai:
-        rnai_dataset = DependencyDatasetFactory(
-            matrix=MatrixFactory(
-                entities=[gene], cell_lines=[CellLineFactory(), CellLineFactory()]
-            ),
-            name=DependencyEnum.RNAi_merged,
-            priority=1,
-        )
-        GeneExecutiveInfoFactory(
-            gene=gene, dataset=DependencyEnum.RNAi_merged,
-        )
-
-    empty_db_mock_downloads.session.flush()
-
-    dep_dist = get_dependency_distribution(
-        gene, crispr_dataset=crispr_dataset, rnai_dataset=rnai_dataset
-    )
-
-    if has_avana:
-        assert "crispr" in dep_dist["info"]
-    else:
-        assert (
-            not dep_dist or "info" not in dep_dist or "crispr" not in dep_dist["info"]
-        )
-
-    if has_rnai:
-        assert "rnai" in dep_dist["info"]
-    else:
-        assert not dep_dist or "info" not in dep_dist or "rnai" not in dep_dist["info"]
-
-    # never show dropped by chronos
-    assert (
-        not dep_dist
-        or "info" not in dep_dist
-        or "crispr" not in dep_dist["info"]
-        or "should_show_dropped_by_chronos" not in dep_dist["info"]["crispr"]
-    )
 
 
 def test_format_dep_dist_info(empty_db_mock_downloads):
@@ -285,55 +106,6 @@ def test_format_crispr_possible_missing_reason_chronos(empty_db_mock_downloads,)
     }
 
     assert format_crispr_possible_missing_reason(gene) == expected
-
-
-def test_format_enrichment_boxes(empty_db_mock_downloads):
-    cell_line_A = DepmapModelFactory(
-        model_id="cell_line_A", depmap_model_type="context_A"
-    )
-    cell_line_B = DepmapModelFactory(
-        model_id="cell_line_B", depmap_model_type="context_B"
-    )
-
-    context_A = SubtypeContextFactory(
-        subtype_code="context_A", depmap_model=[cell_line_A]
-    )
-    context_B = SubtypeContextFactory(
-        subtype_code="context_B", depmap_model=[cell_line_B]
-    )
-    SubtypeNodeFactory(subtype_code="context_A", node_name="display_name_context_A")
-    SubtypeNodeFactory(subtype_code="context_B", node_name="display_name_context_B")
-    entity = GeneFactory()
-
-    matrix = MatrixFactory(
-        entities=[entity],
-        cell_lines=[cell_line_A, cell_line_B],
-        using_depmap_model_table=True,
-    )
-    dataset = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Combined, matrix=matrix
-    )
-
-    ContextAnalysisFactory(
-        subtype_context=context_A,
-        entity=entity,
-        dataset=dataset,
-        t_qval=0.05,
-        frac_dep_in=0.1,
-        effect_size=-0.25,
-        out_group="All Others",
-    )
-    b = ContextAnalysisFactory(
-        subtype_context=context_B,
-        entity=entity,
-        dataset=dataset,
-        t_qval=0.05,
-        frac_dep_in=0.1,
-        effect_size=-0.25,
-        out_group="All Others",
-    )
-
-    empty_db_mock_downloads.session.flush()
 
 
 def test_plot_mutation_profile():

@@ -62,7 +62,7 @@ export function getMatrixDatasetData(
     features?: string[] | null;
     aggregate?: {
       aggregate_by: "features" | "samples";
-      aggregation: "mean" | "median" | "25%tile" | "75%tile";
+      aggregation: "mean" | "median" | "25%tile" | "75%tile" | "stddev";
     };
   }
 ) {

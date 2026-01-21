@@ -20,6 +20,7 @@ pytest = "^7.2.0"
 httpx = "^0.23.1"
 uvicorn = "^0.20.0"
 pydantic = {extras = ["email"], version = "^2.7.1"}
+aiocache = {extras = ["redis"], version = "^0.12.3"}
 taigapy = {version = "3.14.0", source = "public-python"}
 SQLAlchemy= "^2.0.40"
 factory-boy = "^3.3.0"
@@ -39,11 +40,12 @@ psutil = "^7.1.0"
 #attrs = ">=21.3.0"
 #python-dateutil = "^2.8.0"
 json-logic = "^0.7.0-alpha"
+apsw = "^3.47.2.0"
+sqlglot = "^28.5.0"
 colorama = "^0.4.6"
 
 
 [tool.poetry.group.dev.dependencies]
-pyright-ratchet = {git = "https://github.com/pgm/pyright-ratchet.git", rev = "v0.3.1"}
 pyright="^1.1.361"
 
 [tool.poetry.scripts]

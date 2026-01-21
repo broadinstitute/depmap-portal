@@ -1,17 +1,19 @@
 import csv
 from dataclasses import dataclass
-from typing import Any, BinaryIO, Dict, List, Optional, Sequence
+from typing import Any, BinaryIO, Dict, List, Optional, Sequence, Callable
 import io
 import json
 
 import numpy as np
 import pandas as pd
-from pandas.api.types import is_numeric_dtype, is_string_dtype, is_bool_dtype
 import pandera as pa
 from pandera.errors import SchemaError, SchemaErrorReason
 from fastapi import UploadFile
 from sqlalchemy import and_, or_
 import logging
+
+from .hdf5_value_mapping import get_encoder_function
+from .hdf5_value_mapping import _parse_list_strings
 
 log = logging.getLogger(__name__)
 
@@ -28,14 +30,17 @@ from breadbox.schemas.dataframe_wrapper import (
     PandasDataFrameWrapper,
     ParquetDataFrameWrapper,
     HDF5DataFrameWrapper,
+    column_batch_iterator,
 )
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     AnnotationValidationError,
+    UserError,
 )
+from typing import cast
+
 from breadbox.schemas.dataset import ColumnMetadata
 from ..crud.dimension_types import get_dimension_type
-
 
 pd.set_option("mode.use_inf_as_na", True)
 
@@ -132,7 +137,7 @@ def _validate_dimension_type_metadata_file(
         raise FileValidationError(f"Make sure all ids in {id_column} are unique.")
 
     # make sure id column have no missing info
-    if df[id_column].isnull().values.any():
+    if df[id_column].isnull().values.any():  # pyright: ignore
         raise FileValidationError(
             f"Make sure there are no missing ids in the {id_column} column."
         )
@@ -140,93 +145,35 @@ def _validate_dimension_type_metadata_file(
     return df
 
 
-def _parse_list_strings(val):
-    example_list_string = '["x", "y"]'
-    try:
-        deserialized_str_list = json.loads(val)
-    except Exception as e:
-        raise FileValidationError(
-            f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
-        ) from e
-
-    if not isinstance(deserialized_str_list, list):
-        raise FileValidationError(
-            f"Value: {val} must be able to be deserialized into a list. Please make sure values for columns of type list_strings are a stringified list (ex: {example_list_string})"
-        )
-
-    if not all(isinstance(x, str) for x in deserialized_str_list):
-        raise FileValidationError(
-            f"All values in {deserialized_str_list} must be a string (ex: {example_list_string})"
-        )
-
-
 def _validate_data_value_type(
-    dfw: DataFrameWrapper, value_type: ValueType, allowed_values: Optional[List]
+    dfw: DataFrameWrapper,
+    value_type: ValueType,
+    value_mapping: Optional[Callable[[pd.DataFrame], pd.DataFrame]],
+    batch_size=500,
 ):
-    # NOTE: We're making an assumption here that large parquet files are always numeric so smaller parquet files are ok to convert to df
+    """
+    value_mapping function should convert a dataframe to the format that should be stored in the final HDF5 file
+    or raise a format exception if there is any data issues with the values.
+    """
     if value_type == ValueType.categorical:
-        df = dfw.get_df()
-        assert (
-            allowed_values
-        ), "Allowed values must be specified for categorical datasets."
-        # Either string or boolean values allowed
-        if not all(
-            [
-                is_string_dtype((df[col].dtypes) or is_bool_dtype(df[col].dtypes))
-                for col in df.columns
-            ]
-        ):
+        if not dfw.is_string_cols():
             raise FileValidationError(
-                "All values must be strings or booleans for categorical datasets."
-            )
-        # to make it not case-sensitive, convert all to lower case
-
-        lower_df = df.applymap(lambda x: None if pd.isna(x) else str(x).lower())
-
-        # NOTE: Boolean values turned to string
-
-        lower_allowed_values = [
-            str(x).lower() for x in allowed_values if x is not None
-        ] + [
-            None
-        ]  # Data values can include missing values
-
-        present_values = set(lower_df.values.flatten())
-        unexpected_values = present_values.difference(lower_allowed_values)
-        if len(unexpected_values) > 0:
-            sorted_unexpected_values = sorted(unexpected_values)
-            examples = ", ".join([repr(x) for x in sorted_unexpected_values[:10]])
-            if len(sorted_unexpected_values) > 10:
-                examples += ", ..."
-            raise FileValidationError(
-                f"Found values (examples: {examples}) not in list of allowed values: {allowed_values}"
+                "All values must be strings for categorical datasets."
             )
 
-        # Convert categories to ints for more optimal storage
-        lower_allowed_values_map = {x: i for i, x in enumerate(lower_allowed_values)}
-        int_df = lower_df.applymap(lambda x: lower_allowed_values_map[x])
-
-        int_df = int_df.astype(int)
-        return PandasDataFrameWrapper(int_df)
-    elif value_type == ValueType.list_strings:
-        df = dfw.get_df()
-
-        def validate_list_strings(val):
-            if not pd.isnull(val):
-                _parse_list_strings(val)
-                return val
-            else:
-                return pd.NA
-
-        df = df.applymap(validate_list_strings)
-        # astype(str) will stringify 'None' or '<NA>'. Using pd.StringDtype() will preserve <NA>
-        return PandasDataFrameWrapper(df.astype(pd.StringDtype()))
-    else:
+    if value_type == ValueType.continuous:
         if not dfw.is_numeric_cols():
             raise FileValidationError(
                 "All values must be numeric for continuous datasets."
             )
-        return dfw
+
+    if value_mapping is not None:
+        # Fairly inefficient, but allows us to keep the structure of the code:
+        # parse the file twice, once here where we throw away the result, and
+        # once when we're loading it for real. Since the parsing is deterministic
+        # we can assume the second pass won't encounter any parsing issues
+        for i, end_col, chunk_df in column_batch_iterator(dfw, batch_size=batch_size):
+            value_mapping(chunk_df)
 
 
 def _check_for_unique_col_row_names(dfw):
@@ -250,9 +197,6 @@ def _read_parquet(file) -> ParquetDataFrameWrapper:
     parquet_wrapper = ParquetDataFrameWrapper(file)
     _check_for_unique_col_row_names(parquet_wrapper)
     return parquet_wrapper
-
-
-from typing import cast
 
 
 def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
@@ -279,7 +223,9 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
 
     file.seek(0)
 
+    # may throw a ValueError as well
     df = pd.read_csv(file, dtype=dtypes)  # pyright: ignore
+
     # set the first column as index
     df.set_index(df.columns[0], inplace=True)
 
@@ -287,17 +233,17 @@ def _read_csv(file: BinaryIO, value_type: ValueType) -> PandasDataFrameWrapper:
 
 
 def _validate_data_file(
-    dfw: DataFrameWrapper, value_type: ValueType, allowed_values: Optional[List[str]],
-) -> DataFrameWrapper:
+    dfw: DataFrameWrapper,
+    value_type: ValueType,
+    value_mapping: Optional[Callable[[pd.DataFrame], pd.DataFrame]],
+):
     """
     Validates the data values against it's given value_type.
     Checks if all features and samples in dataset are unique.
     """
     # make sure all the values in df conform to value_type
-    dfw = _validate_data_value_type(dfw, value_type, allowed_values)
+    _validate_data_value_type(dfw, value_type, value_mapping)
     verify_unique_rows_and_cols(dfw)
-
-    return dfw
 
 
 def verify_unique_rows_and_cols(dfw: DataFrameWrapper):
@@ -399,15 +345,14 @@ def _get_dimension_labels_and_warnings(
 # TODO:Remove and replace with above
 def _validate_dataset_dimensions(
     db: SessionWithUser,
-    dfw: DataFrameWrapper,
+    indices,
+    columns,
     feature_type: Optional[DimensionType],
     sample_type: DimensionType,
 ) -> DataframeValidatedFile:
-    indices = dfw.get_index_names()
     sample_given_id_to_index = pd.DataFrame(
         {"index": range(len(indices)), "given_id": indices}
     )
-    columns = dfw.get_column_names()
     feature_given_id_to_index = pd.DataFrame(
         {"index": range(len(columns)), "given_id": columns}
     )
@@ -465,7 +410,10 @@ def validate_and_upload_dataset_files(
 ) -> DataframeValidatedFile:
 
     if data_file_format == "csv":
-        unchecked_dfw = _read_csv(data_file.file, value_type)
+        try:
+            unchecked_dfw = _read_csv(data_file.file, value_type)
+        except ValueError as e:
+            raise FileValidationError(str(e))
     elif data_file_format == "parquet":
         unchecked_dfw = _read_parquet(data_file.file)
     elif data_file_format == "hdf5":
@@ -475,16 +423,24 @@ def validate_and_upload_dataset_files(
             f'data file format must either be "csv" or "parquet" but was "{data_file_format}"'
         )
 
-    data_dfw = _validate_data_file(unchecked_dfw, value_type, allowed_values,)
+    value_mapping = get_encoder_function(value_type, allowed_values)
+
+    _validate_data_file(unchecked_dfw, value_type, value_mapping)
 
     dataframe_validated_dimensions = _validate_dataset_dimensions(
-        db, data_dfw, feature_type, sample_type
+        db,
+        unchecked_dfw.get_index_names(),
+        unchecked_dfw.get_column_names(),
+        feature_type,
+        sample_type,
     )
 
     # TODO: Move save function to api layer. Need to make sure the db save is successful first
     from breadbox.io.filestore_crud import save_dataset_file
 
-    save_dataset_file(dataset_id, data_dfw, value_type, filestore_location)
+    save_dataset_file(
+        dataset_id, unchecked_dfw, value_type, value_mapping, filestore_location
+    )
 
     return dataframe_validated_dimensions
 
@@ -506,7 +462,7 @@ def validate_dimension_type_metadata(
         )
     if not metadata_df["label"].is_unique:
         raise FileValidationError("Make sure all labels are unique.")
-    if metadata_df["label"].isnull().values.any():
+    if metadata_df["label"].isnull().values.any():  # pyright: ignore
         raise FileValidationError(
             f"Make sure there are no missing labels in the 'label' column."
         )
@@ -559,13 +515,10 @@ def process_annotation_list_values(
 ##### NEW DATASET UPLOAD FUNCTIONS #####
 
 
-# class DataFrameWrapper
-
-
 def read_and_validate_matrix_df(
     file_path: str,
     value_type: ValueType,
-    allowed_values: Optional[List[str]],
+    value_mapping: Optional[Callable[[pd.DataFrame], pd.DataFrame]],
     data_file_format: str,
 ) -> DataFrameWrapper:
 
@@ -574,15 +527,17 @@ def read_and_validate_matrix_df(
     elif data_file_format == "hdf5":
         df_wrapper = _read_hdf5(file_path)
     elif data_file_format == "csv":
-        with open(file_path, "rb") as fd:
-            df_wrapper = _read_csv(fd, value_type)
+        try:
+            with open(file_path, "rb") as fd:
+                df_wrapper = _read_csv(fd, value_type)
+        except ValueError as e:
+            raise FileValidationError(str(e))
     else:
         raise FileValidationError(
             f"data_file_format was unrecognized: {data_file_format}"
         )
 
-    # for categorical values, this will map strings to integers (representing the index into allowed_values)
-    df_wrapper = _validate_data_value_type(df_wrapper, value_type, allowed_values)
+    _validate_data_value_type(df_wrapper, value_type, value_mapping)
     verify_unique_rows_and_cols(df_wrapper)
 
     return df_wrapper

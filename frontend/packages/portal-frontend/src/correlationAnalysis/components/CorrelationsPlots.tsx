@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback, ReactNode } from "react";
 import CorrelationsPlot from "./CorrelationPlot";
 import DoseLegend from "./DoseLegend";
 import { VolcanoPlotData } from "../models/VolcanoPlot";
@@ -9,6 +9,7 @@ import {
 } from "../models/CorrelationPlot";
 
 interface CorrelationsPlotsProps {
+  featureType: "compound" | "gene";
   correlatedDatasetsToShow: string[];
   dosesToFilter: string[];
   doseColors: { hex: string | undefined; dose: string }[];
@@ -20,104 +21,200 @@ interface CorrelationsPlotsProps {
   ) => void;
 }
 
-export default function CorrelationsPlots(props: CorrelationsPlotsProps) {
-  const {
-    correlatedDatasetsToShow,
-    dosesToFilter,
-    doseColors,
-    volcanoDataForCorrelatedDatasets,
-    correlatedDatasetSelectedLabels,
-    forwardSelectedLabels,
-  } = props;
+interface CompoundCorrelationsProps {
+  correlatedDatasetsToShow: string[];
+  dosesToFilter: string[];
+  doseColors: { hex: string | undefined; dose: string }[];
+  volcanoDataForCorrelatedDatasets: VolcanoDataForCorrelatedDataset;
+  correlatedDatasetSelectedLabels: { [key: string]: string[] };
+  forwardSelectedLabels: (ds: string, labels: string[]) => void;
+  otherCorrelatedDatasetsHasSelected: (ds: string) => boolean;
+}
 
-  // HACK: so that Plotly will resize the plot when the user switches to this tab.
-  // Without this hack, if the plot loads while this tab is inactive, Plotly does not
-  // properly calculate plot size, and this can cause the plot to drastically overflow its bounds.
-  const [key, setKey] = React.useState(0);
+interface GeneCorrelationsProps {
+  correlatedDatasetsToShow: string[];
+  volcanoDataForCorrelatedDatasets: VolcanoDataForCorrelatedDataset;
+  correlatedDatasetSelectedLabels: { [key: string]: string[] };
+  forwardSelectedLabels: (ds: string, labels: string[]) => void;
+  otherCorrelatedDatasetsHasSelected: (ds: string) => boolean;
+}
 
-  React.useEffect(() => {
+interface PlotItemWrapperProps {
+  datasetName: string;
+  children: ReactNode;
+}
+
+const PlotItemWrapper = ({ datasetName, children }: PlotItemWrapperProps) => (
+  <div className={styles.plotItem}>
+    <div
+      style={{
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "16px",
+        backgroundColor: "#eee",
+        overflowWrap: "break-word",
+        display: "flex",
+        flexGrow: 1,
+      }}
+    >
+      <header style={{ textAlign: "center" }}>{datasetName}</header>
+    </div>
+    {children}
+  </div>
+);
+
+function GeneCorrelationsPlots({
+  correlatedDatasetsToShow,
+  volcanoDataForCorrelatedDatasets,
+  correlatedDatasetSelectedLabels,
+  forwardSelectedLabels,
+  otherCorrelatedDatasetsHasSelected,
+}: GeneCorrelationsProps) {
+  return (
+    <div className={styles.plotContainer}>
+      {correlatedDatasetsToShow.map((datasetName) => {
+        const rawData = volcanoDataForCorrelatedDatasets[datasetName] || {};
+        const plotData: VolcanoPlotData[] = Object.values(rawData).map(
+          (val) => ({
+            ...val,
+            color: val.color || "#333",
+          })
+        );
+
+        return (
+          <PlotItemWrapper
+            key={`${datasetName}-plot`}
+            datasetName={datasetName}
+          >
+            <CorrelationsPlot
+              correlatedDatasetName={datasetName}
+              data={plotData}
+              selectedFeatures={
+                correlatedDatasetSelectedLabels[datasetName] || []
+              }
+              forwardPlotSelectedFeatures={forwardSelectedLabels}
+              hasOtherSelectedCorrelatedDatasetFeatures={otherCorrelatedDatasetsHasSelected(
+                datasetName
+              )}
+            />
+          </PlotItemWrapper>
+        );
+      })}
+    </div>
+  );
+}
+
+function CompoundCorrelationsPlots({
+  correlatedDatasetsToShow,
+  dosesToFilter,
+  doseColors,
+  volcanoDataForCorrelatedDatasets,
+  correlatedDatasetSelectedLabels,
+  forwardSelectedLabels,
+  otherCorrelatedDatasetsHasSelected,
+}: CompoundCorrelationsProps) {
+  return (
+    <>
+      <div className={styles.plotContainer}>
+        {correlatedDatasetsToShow.map((datasetName) => {
+          const rawData: DoseCategoryVolcanoData =
+            volcanoDataForCorrelatedDatasets[datasetName] || {};
+          const targetDoses =
+            dosesToFilter.length > 0 ? dosesToFilter : Object.keys(rawData);
+
+          const plotData: VolcanoPlotData[] = targetDoses.reduce(
+            (acc: VolcanoPlotData[], dose) => {
+              const entry = rawData[dose];
+              if (entry) {
+                acc.push({
+                  ...entry,
+                  color: entry.color || "#777",
+                });
+              }
+              return acc;
+            },
+            []
+          );
+
+          return (
+            <PlotItemWrapper
+              key={`${datasetName}-plot`}
+              datasetName={datasetName}
+            >
+              <CorrelationsPlot
+                correlatedDatasetName={datasetName}
+                data={plotData}
+                selectedFeatures={
+                  correlatedDatasetSelectedLabels[datasetName] || []
+                }
+                forwardPlotSelectedFeatures={forwardSelectedLabels}
+                hasOtherSelectedCorrelatedDatasetFeatures={otherCorrelatedDatasetsHasSelected(
+                  datasetName
+                )}
+              />
+            </PlotItemWrapper>
+          );
+        })}
+      </div>
+      {doseColors.length > 0 && (
+        <div className={styles.legendWrapper}>
+          <DoseLegend doseColors={doseColors} />
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function CorrelationsPlots({
+  featureType,
+  correlatedDatasetsToShow,
+  dosesToFilter,
+  doseColors,
+  volcanoDataForCorrelatedDatasets,
+  correlatedDatasetSelectedLabels,
+  forwardSelectedLabels,
+}: CorrelationsPlotsProps) {
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
     const handler = () => setKey((k) => k + 1);
     window.addEventListener("changeTab:corr_analysis", handler);
     return () => window.removeEventListener("changeTab:corr_analysis", handler);
   }, []);
 
-  const filteredDosesForCorrelatedDatasetVolcanoData = React.useCallback(
-    (correlatedDatasetVolcanoData: DoseCategoryVolcanoData) => {
-      if (dosesToFilter.length) {
-        const subset: DoseCategoryVolcanoData = {};
-        dosesToFilter.forEach((dose) => {
-          if (Object.keys(correlatedDatasetVolcanoData).includes(dose)) {
-            subset[dose] = correlatedDatasetVolcanoData[dose];
-          }
-        });
-        return subset;
-      }
-
-      return correlatedDatasetVolcanoData;
+  const otherCorrelatedDatasetsHasSelected = useCallback(
+    (datasetName: string): boolean => {
+      return Object.entries(correlatedDatasetSelectedLabels).some(
+        ([k, v]) => k !== datasetName && v.length > 0
+      );
     },
-    [dosesToFilter]
+    [correlatedDatasetSelectedLabels]
   );
-
-  const otherCorrelatedDatasetsHasSelected = (
-    correlatedDataset: string
-  ): boolean => {
-    const hasOtherCorrDatasetSelectedFeatures = Object.entries(
-      correlatedDatasetSelectedLabels
-    ).some(([k, v]) => k !== correlatedDataset && v.length > 0);
-
-    return hasOtherCorrDatasetSelectedFeatures;
-  };
 
   return (
     <div className={styles.plotContent} key={key}>
-      <div className={styles.plotContainer}>
-        {correlatedDatasetsToShow.map((correlatedDataset) => {
-          return (
-            <div key={correlatedDataset + "-plot"} className={styles.plotItem}>
-              <div
-                style={{
-                  alignItems: "center", // vertical centering
-                  justifyContent: "center", // horizontal centering
-                  fontSize: "16px",
-                  backgroundColor: "#eee",
-                  overflowWrap: "break-word",
-                  display: "flex",
-                  flexGrow: 1, // makes sure header height fills rest of div height
-                }}
-              >
-                <header style={{ textAlign: "center" }}>
-                  {correlatedDataset}
-                </header>
-              </div>
-              <CorrelationsPlot
-                correlatedDatasetName={correlatedDataset}
-                data={
-                  Object.values(
-                    filteredDosesForCorrelatedDatasetVolcanoData(
-                      volcanoDataForCorrelatedDatasets[correlatedDataset]
-                    )
-                  ) as VolcanoPlotData[]
-                }
-                selectedFeatures={
-                  correlatedDataset in correlatedDatasetSelectedLabels
-                    ? correlatedDatasetSelectedLabels[correlatedDataset]
-                    : []
-                }
-                forwardPlotSelectedFeatures={forwardSelectedLabels}
-                hasOtherSelectedCorrelatedDatasetFeatures={otherCorrelatedDatasetsHasSelected(
-                  correlatedDataset
-                )}
-              />
-            </div>
-          );
-        })}
-      </div>
-      {doseColors.length ? (
-        <div>
-          <DoseLegend doseColors={doseColors} />
-        </div>
+      {featureType === "gene" ? (
+        <GeneCorrelationsPlots
+          correlatedDatasetsToShow={correlatedDatasetsToShow}
+          volcanoDataForCorrelatedDatasets={volcanoDataForCorrelatedDatasets}
+          correlatedDatasetSelectedLabels={correlatedDatasetSelectedLabels}
+          forwardSelectedLabels={forwardSelectedLabels}
+          otherCorrelatedDatasetsHasSelected={
+            otherCorrelatedDatasetsHasSelected
+          }
+        />
       ) : (
-        <div />
+        <CompoundCorrelationsPlots
+          correlatedDatasetsToShow={correlatedDatasetsToShow}
+          dosesToFilter={dosesToFilter}
+          doseColors={doseColors}
+          volcanoDataForCorrelatedDatasets={volcanoDataForCorrelatedDatasets}
+          correlatedDatasetSelectedLabels={correlatedDatasetSelectedLabels}
+          forwardSelectedLabels={forwardSelectedLabels}
+          otherCorrelatedDatasetsHasSelected={
+            otherCorrelatedDatasetsHasSelected
+          }
+        />
       )}
     </div>
   );

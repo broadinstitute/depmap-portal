@@ -1,6 +1,8 @@
 import os.path
 import tempfile
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Callable
+
+
 from breadbox.schemas.custom_http_exception import (
     FileValidationError,
     LargeDatasetReadError,
@@ -9,7 +11,11 @@ import h5py
 import numpy as np
 import pandas as pd
 
-from breadbox.io.data_validation import DataFrameWrapper, PandasDataFrameWrapper
+from breadbox.io.data_validation import (
+    DataFrameWrapper,
+    PandasDataFrameWrapper,
+    column_batch_iterator,
+)
 
 # This is the Object dtype with metadata for HDF5 to parse it as (variable-length)
 # string. The metadata is not used for checking equality.
@@ -28,25 +34,34 @@ def create_index_dataset(f: h5py.File, key: str, idx: pd.Index):
     )
 
 
+def is_sparse_df(df: pd.DataFrame) -> bool:
+    total_nulls = df.apply(lambda x: x.isna().sum()).sum()
+    # Determine whether matrix is considered sparse (~2/3 elements are null). Use chunked storage for sparse matrices for more optimal storage
+    is_sparse = total_nulls / df.size > 0.6
+    return is_sparse
+
+
 def write_hdf5_file(
     path: str,
     df_wrapper: DataFrameWrapper,
-    dtype: Literal["float", "str"],
+    hdf5_dtype: Literal["float", "str"],
+    map_values: Callable[[pd.DataFrame], pd.DataFrame],
     batch_size: int = 5000,  # Adjust batch size as needed
 ):
     f = h5py.File(path, mode="w")
     try:
         if isinstance(df_wrapper, PandasDataFrameWrapper):
             df = df_wrapper.get_df()
+            df = map_values(df)
             # Convert to float type so hdf5 can store it as float64
-            if dtype == "float":
+            if hdf5_dtype == "float":
                 df = df.astype(np.float64)
             # If the DataFrame is sparse, we need to store only
-            if df_wrapper.is_sparse():
+            if is_sparse_df(df):
                 dataset = f.create_dataset(
                     "data",
                     shape=df.shape,
-                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    dtype=h5py.string_dtype() if hdf5_dtype == "str" else np.float64,
                     chunks=(
                         1,
                         1,
@@ -56,14 +71,14 @@ def write_hdf5_file(
                 for row_idx, col_idx in df_wrapper.get_nonnull_indices():
                     dataset[row_idx, col_idx] = df.iloc[row_idx, col_idx]
             else:
-                if dtype == "str":
+                if hdf5_dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     df = df.fillna("")
                 # NOTE: For a large and dense string matrix, the size of the hdf5 will be very large. Right now, list of string matrices are a very rare use case and it is unlikely we'll encounter one that is not sparse. However, if that changes, we should consider other hdf5 size optimization methods such as compression
                 dataset = f.create_dataset(
                     "data",
                     shape=df.shape,
-                    dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                    dtype=h5py.string_dtype() if hdf5_dtype == "str" else np.float64,
                     data=df.values,
                 )
         else:
@@ -75,19 +90,15 @@ def write_hdf5_file(
             dataset = f.create_dataset(
                 "data",
                 shape=shape,
-                dtype=h5py.string_dtype() if dtype == "str" else np.float64,
+                dtype=h5py.string_dtype() if hdf5_dtype == "str" else np.float64,
             )
 
-            for i in range(0, len(cols), batch_size):
-                # Find the correct column slice to write
-                end_col = i + batch_size
+            for start_col_index, end_col_index, chunk_df in column_batch_iterator(
+                df_wrapper, batch_size=batch_size
+            ):
+                chunk_df = map_values(chunk_df)
 
-                col_batch = cols[i:end_col]
-
-                # Read the chunk of data from the Parquet file
-                chunk_df = df_wrapper.read_columns(col_batch)
-
-                if dtype == "str":
+                if hdf5_dtype == "str":
                     # NOTE: hdf5 will fail to stringify None or <NA>. Use empty string to represent NAs instead
                     chunk_df = chunk_df.fillna("")
                 else:
@@ -95,10 +106,10 @@ def write_hdf5_file(
 
                 values = chunk_df.values
                 try:
-                    dataset[:, i:end_col] = values
+                    dataset[:, start_col_index:end_col_index] = values
                 except Exception as e:
                     raise FileValidationError(
-                        f"Failed to update {i}:{end_col} of hdf5 file {path} with {values}"
+                        f"Failed to update {start_col_index}:{end_col_index} of hdf5 file {path} with {values}"
                     ) from e
 
         create_index_dataset(f, "features", pd.Index(df_wrapper.get_column_names()))
@@ -113,6 +124,11 @@ DUPLICATE_STORAGE = "duplicate_storage"
 CHUNKED_STORAGE = "chunked_storage"
 
 import contextlib
+import typing
+
+
+# def _cast_matrix(f_data):
+#     # the type information for return types
 
 
 @contextlib.contextmanager
@@ -135,10 +151,14 @@ def with_hdf5_cache(
             with h5py.File(filename, "r") as src:
                 with h5py.File(tmp.name, "w") as dest:
                     for src_name in ["features", "samples"]:
-                        data = pd.Index([x.decode("utf8") for x in src[src_name]])
+                        src_dataset = src[src_name]
+                        assert isinstance(src_dataset, h5py.Dataset)
+                        data = pd.Index([x.decode("utf8") for x in src_dataset])
                         create_index_dataset(dest, src_name, data)
 
                     f_data = src["data"]
+                    assert isinstance(f_data, h5py.Dataset)
+
                     if cache_strategy == DUPLICATE_STORAGE:
                         dest.create_dataset(
                             "data_by_col",
@@ -190,6 +210,12 @@ def with_hdf5_cache(
         yield f, f_data
 
 
+def _get_dataset(hdf5_file: h5py.File, name: str) -> h5py.Dataset:
+    dataset = hdf5_file[name]
+    assert isinstance(dataset, h5py.Dataset)
+    return dataset
+
+
 def read_hdf5_file(
     path: str,
     feature_indexes: Optional[List[int]] = None,
@@ -204,6 +230,7 @@ def read_hdf5_file(
         f,
         f_data,
     ):
+        assert isinstance(f_data, h5py.Dataset)
         # HDF5 requires indices used by indexing are sorted
         if feature_indexes is not None:
             feature_indexes = sorted(feature_indexes)
@@ -226,25 +253,25 @@ def read_hdf5_file(
             else:
                 data = f_data[sample_indexes, :][:, feature_indexes]
             if read_index_names:
-                feature_ids = f["features"][feature_indexes]
-                sample_ids = f["samples"][sample_indexes]
+                feature_ids = _get_dataset(f, "features")[feature_indexes]
+                sample_ids = _get_dataset(f, "samples")[sample_indexes]
         elif feature_indexes is not None:
             _validate_read_size(len(feature_indexes), row_len)
             data = f_data[:, feature_indexes]
             if read_index_names:
-                feature_ids = f["features"][feature_indexes]
-                sample_ids = f["samples"]
+                feature_ids = _get_dataset(f, "features")[feature_indexes]
+                sample_ids = _get_dataset(f, "samples")
         elif sample_indexes is not None:
             _validate_read_size(col_len, len(sample_indexes))
             data = f_data[sample_indexes]
             if read_index_names:
-                feature_ids = f["features"]
-                sample_ids = f["samples"][sample_indexes]
+                feature_ids = _get_dataset(f, "features")
+                sample_ids = _get_dataset(f, "samples")[sample_indexes]
         else:
             _validate_read_size(col_len, row_len)
             data = f_data
-            feature_ids = f["features"]
-            sample_ids = f["samples"]
+            feature_ids = _get_dataset(f, "features")
+            sample_ids = _get_dataset(f, "samples")
 
         if indices_as_index:
             feature_idx = pd.Index(feature_indexes)
