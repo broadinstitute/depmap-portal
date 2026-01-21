@@ -29,7 +29,7 @@ class DataIssue:
         return f"{self.dimension_type_name}:{self.dataset_id}:{self.issue_type}"
     
 
-def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_type_name: str, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
+def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_type_name: str, dataset_given_ids: list[str], metadata_given_ids: list[str]) -> Optional[DataIssue]:
     """
     Return a warning string if there are a substantial number of features in dataset_given_ids that are not in metadata_given_ids.
     """
@@ -49,7 +49,7 @@ def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_typ
         )
     return None
 
-def check_for_metadata_not_in_dataset(dataset: MatrixDataset, dimension_type_name: str, axis: str, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
+def check_for_metadata_not_in_dataset(dataset: MatrixDataset, dimension_type_name: str, axis: str, dataset_given_ids: list[str], metadata_given_ids: list[str]) -> Optional[DataIssue]:
     # Get the cutoffs configured for this particular dataset
     dataset_configs = dataset.dataset_metadata
     min_percent_feature_metadata_used = dataset_configs.get("min_percent_feature_metadata_used", 95)

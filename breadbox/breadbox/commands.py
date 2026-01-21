@@ -503,10 +503,10 @@ def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
         metadata_given_ids = get_tabular_dataset_index_given_ids(db=db, dataset=dimension_type.dataset)
 
         # For now, only validate matrix datasets
-        associated_datasets: list[MatrixDataset] = [d for d in associated_datasets if d.format == "matrix_dataset"]
+        matrix_datasets: list[MatrixDataset] = [d for d in associated_datasets if d.format == "matrix_dataset"]
         
         used_given_ids_across_datasets = set()
-        for dataset in associated_datasets:
+        for dataset in matrix_datasets:
             if dataset.given_id is None:
                 print(f"WARNING: dataset {dataset.name} has no given_id. Issues will be logged using the transient dataset ID.")
             dataset_given_ids = get_matrix_dataset_given_ids(db=db, dataset=dataset, axis=dimension_type.axis)
@@ -521,7 +521,7 @@ def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
                 all_issues[unused_metadata_issue.get_key()] = unused_metadata_issue
 
         # Validate overall usage of metadata across all datasets
-        if len(associated_datasets) > 0:
+        if len(matrix_datasets) > 0:
             unused_metadata_given_ids = set(metadata_given_ids).difference(used_given_ids_across_datasets)
             percent_unused_metadata_given_ids = len(unused_metadata_given_ids) / len(metadata_given_ids)
             if unused_metadata_given_ids:
