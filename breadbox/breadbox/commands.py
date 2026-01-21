@@ -1,3 +1,4 @@
+from hashlib import new
 import os
 
 import click
@@ -418,16 +419,17 @@ def run_dev_worker():
 
 @cli.command("log_data_issues")
 @click.option(
+    "--filepath", 
+    default="known-data-issues.json",
+)
+@click.option(
     "--accept-worsened-issues", 
     is_flag=True, 
     default=False, 
     help="Overwrite the known issues file with the newly detected issues. Only use this option when outstanding issues are not easily fixed and/or cutoffs are not configurable in the breadbox loader."
 )
-# TODO: add an option to log all outstanding issues
-# TODO: consider just storing these to file as one big dictionary. 
-# - we could update the key to include the dimension type. 
-# - Then we could just store this as one big flat dict behind the scenes instead of a nested dict.
-def log_data_issues(accept_worsened_issues: bool):
+# TODO: log warning or error when given ID is not defined in metadata for a dataset
+def log_data_issues(filepath: str, accept_worsened_issues: bool):
     """
     Identify places where dataset features are missing metadata and log them as data issues.
     Specifically, flag places where either:
@@ -435,56 +437,55 @@ def log_data_issues(accept_worsened_issues: bool):
     2. A matrix dataset has a large number of metadata records not referenced by any features in the dataset (not applicable to samples).
     3. Metadata records are not referenced by any features in any dataset.
     """
-    known_issues = data_issues.load_known_issues()
-    active_issues = _get_data_issues()
+    known_issues = data_issues.load_known_issues(filepath)
+    active_issues = _get_active_data_issues()
 
-    new_or_worsened_issues = []
+    new_or_worsened_issues: dict[str, list[data_issues.DataIssue]] = defaultdict(list)
     for issue_key, issue in active_issues.items():
         # Identify new issues or issues that have gotten worse
             current_issue_key = issue_key
             matching_known_issue = known_issues.get(current_issue_key, None)
             if matching_known_issue is None:
-                new_or_worsened_issues.append(issue)
+                new_or_worsened_issues[issue.dimension_type_name].append(issue)
             
             # Consider it worsened if both the count and percent of affected records have increased
             elif (issue.count_affected > matching_known_issue.count_affected) and (issue.percent_affected >= matching_known_issue.percent_affected):
-                new_or_worsened_issues.append(issue)
-
+                new_or_worsened_issues[issue.dimension_type_name].append(issue)
+    
     # Log new or worsened issues, grouped by dimension type
-    issues_to_log: dict[str, list[data_issues.DataIssue]] = defaultdict(list)
-    for issue in new_or_worsened_issues:
-        issues_to_log[issue.dimension_type_name].append(issue)
+    for dimension_type in types_crud.get_dimension_types(db=_get_db_connection()):
+        if dimension_type.name not in new_or_worsened_issues:
+            print(Fore.GREEN + f"\nDimension type {dimension_type.name} has no new or worsened issues." + Style.RESET_ALL)
+        else:
+            issues_for_dim_type = new_or_worsened_issues[dimension_type.name]
+            print(Fore.RED + f"\nDimension type {dimension_type.name} has {len(issues_for_dim_type)} new or worsened issues:" + Style.RESET_ALL)
+            for issue in issues_for_dim_type:
+                print(Fore.RED + "\t* " + str(issue) + Style.RESET_ALL)
 
-    for dimension_type_name, issues_to_log_for_dim_type in issues_to_log.items():
-        text_color = Fore.RED if issues_to_log_for_dim_type else Fore.GREEN
-        print(text_color + f"Dimension type {dimension_type_name} has {len(issues_to_log_for_dim_type)} new or worsened issues.")
-        for issue in issues_to_log_for_dim_type:
-            print("\t* " + str(issue))
-        print(Style.RESET_ALL)
+    # Summarize total new or worsened issues
+    total_new_or_worsened_issues = sum(len(issues) for issues in new_or_worsened_issues.values())
+    if total_new_or_worsened_issues > 0 and not accept_worsened_issues:
+        raise Exception(f"Detected {total_new_or_worsened_issues} new or worsened data issues. See logs above for details.")
+
 
     # If the user has accepted the changes, save the list of all possible outstanding issues to file.
-    if accept_worsened_issues:
-        num_issues_saved = data_issues.save_issues(active_issues)
-        print(f"Overwrote the known issues file with {num_issues_saved} issues.")
+    elif total_new_or_worsened_issues > 0 and accept_worsened_issues:
+        num_issues_saved = data_issues.save_issues(active_issues, filepath)
+        print(f"Overwrote the known issues file with {num_issues_saved} issues, including {total_new_or_worsened_issues} new or worsened issues.")
 
-    # Otherwise, throw an error if there are any new or worsened issues.
-    elif len(new_or_worsened_issues) > 0:
-        raise Exception(f"{len(new_or_worsened_issues)} New or worsened data issues detected. See logs above for details.")
-    
     # If no new or worsened issues, just print a confirmation.
     else:
         print(Fore.GREEN + "No new or worsened data issues detected." + Style.RESET_ALL)
-        num_issues_saved = data_issues.save_issues(active_issues)
-        print(f"Updated known issues file to only include {num_issues_saved} outstanding issues.")
+        num_issues_saved = data_issues.save_issues(active_issues, filepath)
+        print(f"Updated known issues file with {num_issues_saved} outstanding issues.")
 
 
-def _get_data_issues() -> dict[str, data_issues.DataIssue]:
+def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
     db = _get_db_connection()
 
     all_dimension_types = types_crud.get_dimension_types(db=db)
 
     all_issues = {}
-
     for dimension_type in all_dimension_types:
         if dimension_type.dataset is None:
             print(f"Skipping dimension type {dimension_type.name} because it has no data")

@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Optional
-
+from datetime import datetime
 from dataclasses import dataclass, asdict
 
 from breadbox.models.dataset import MatrixDataset
@@ -26,7 +26,7 @@ class DataIssue:
         return f"{dataset_part} {self.issue_type}. Impacted records: {self.count_affected} ({self.percent_affected:.2%}).{examples_part}"
     
     def get_key(self) -> str:
-        return f"{self.issue_type}:{self.dataset_id}"
+        return f"{self.dimension_type_name}:{self.dataset_id}:{self.issue_type}"
     
 
 def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_type_name: str, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
@@ -74,11 +74,12 @@ def check_for_metadata_not_in_dataset(dataset: MatrixDataset, dimension_type_nam
 # and modified to fit this use case.
 
 
-def load_known_issues() -> dict[str, DataIssue]:
-    if not os.path.exists(ISSUES_FILE):
+def load_known_issues(issues_filepath: str) -> dict[str, DataIssue]:
+    """Load all known data issues from file"""
+    if not os.path.exists(issues_filepath):
         return {}
         
-    with open(ISSUES_FILE, "rt") as fd:
+    with open(issues_filepath, "rt") as fd:
         data = json.load(fd)
         issues = {}
         for issue_key, issue in data.items():
@@ -86,11 +87,24 @@ def load_known_issues() -> dict[str, DataIssue]:
     return issues
 
 
-def save_issues(issues: dict[str, DataIssue]) -> int:
+def save_issues(issues: dict[str, DataIssue], issues_filepath: str) -> int:
+    """
+    Save all known data issues to file. If a file already exists at the specified path, 
+    store it as a backup by renaming it with a date suffix.
+    """
+    if os.path.exists(issues_filepath):
+        # Get the current date as a string in YYYYMMDD format
+        date = datetime.now().strftime("%Y%m%d")
+        
+        backup_filepath = issues_filepath + date + ".bak"
+        os.rename(issues_filepath, backup_filepath)
+        print(f"Existing issues file renamed to backup: {backup_filepath}")
+
+
     # Convert DataIssue objects to dictionaries for JSON serialization
     serializable_issues = {issue_key: asdict(issue) for issue_key, issue in issues.items()}
     
-    with open(ISSUES_FILE, "wt") as fd:
+    with open(issues_filepath, "wt") as fd:
         json.dump(serializable_issues, fd, indent=2)
     
     return len(issues)
