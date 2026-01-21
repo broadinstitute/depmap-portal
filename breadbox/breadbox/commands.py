@@ -7,6 +7,7 @@ from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from colorama import Fore, Style
+from collections import defaultdict
 
 from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 from breadbox.db.session import SessionWithUser
@@ -437,43 +438,38 @@ def log_data_issues(accept_worsened_issues: bool):
     A given environment (e.g. internal, DMC, public), may only exhibit a subset of the known issues.
     Therefor, we do not want to overwrite the known issues file with only the currently observed issues.
     """
-    current_issues = _get_data_issues()
     known_issues = data_issues.load_known_issues()
+    active_issues = _get_data_issues()
 
     # Keep track of all possible outstanding issues, including:
     # - The "worse" version of worsened issues
-    # - All known issues that have not changed
+    # - All known issues that have not changed or do not appear in this environment
     # - Any new issues
-    all_outstanding_issues = {}
+    all_outstanding_issues = known_issues.copy()
 
-    new_or_worsened_issues_count = 0
-    for dimension_type_name, current_issues_for_type in current_issues.items():
-
-        known_issues_for_type = known_issues.get(dimension_type_name, [])
-        outstanding_dim_issues_by_key = {issue.get_key(): issue for issue in known_issues_for_type}
-
+    new_or_worsened_issues = []
+    for issue_key, issue in active_issues.items():
         # Identify new issues or issues that have gotten worse
-        new_or_worsened_issues = []
-        for current_issue in current_issues_for_type: 
-            current_issue_key = current_issue.get_key()
-            matching_known_issue = outstanding_dim_issues_by_key.get(current_issue_key, None)
+            current_issue_key = issue_key
+            matching_known_issue = all_outstanding_issues.get(current_issue_key, None)
             if matching_known_issue is None:
-                new_or_worsened_issues.append(current_issue)
-                outstanding_dim_issues_by_key[current_issue_key] = current_issue
-
+                new_or_worsened_issues.append(issue)
+                all_outstanding_issues[current_issue_key] = issue
             # Consider it worsened if both the count and percent of affected records have increased
-            elif (current_issue.count_affected > matching_known_issue.count_affected) and (current_issue.percent_affected >= matching_known_issue.percent_affected):
-                new_or_worsened_issues.append(current_issue)
-                outstanding_dim_issues_by_key[current_issue_key] = current_issue
-            
-        new_or_worsened_issues_count += len(new_or_worsened_issues)
-        all_outstanding_issues[dimension_type_name] = list(outstanding_dim_issues_by_key.values())
+            elif (issue.count_affected > matching_known_issue.count_affected) and (issue.percent_affected >= matching_known_issue.percent_affected):
+                new_or_worsened_issues.append(issue)
+                all_outstanding_issues[current_issue_key] = issue
 
-        # Log new or worsened issues
-        text_color = Fore.RED if new_or_worsened_issues else Fore.GREEN
-        print(text_color + f"Dimension type {dimension_type_name} has {len(known_issues_for_type)} existing issues and {len(new_or_worsened_issues)} new or worsened issues.")
-        for issue in new_or_worsened_issues:
-            print("\t * " + str(issue))
+    # Log new or worsened issues, grouped by dimension type
+    new_or_worsened_issues_by_dimension_type: dict[str, list[data_issues.DataIssue]] = defaultdict(list)
+    for issue in all_outstanding_issues.values():
+        new_or_worsened_issues_by_dimension_type[issue.dimension_type_name].append(issue)
+
+    for dimension_type_name, new_or_worsened_issues_for_dim_type in new_or_worsened_issues_by_dimension_type.items():
+        text_color = Fore.RED if new_or_worsened_issues_for_dim_type else Fore.GREEN
+        print(text_color + f"Dimension type {dimension_type_name} has {len(new_or_worsened_issues_for_dim_type)} new or worsened issues.")
+        for issue in new_or_worsened_issues_for_dim_type:
+            print("\t* " + str(issue))
         print(Style.RESET_ALL)
 
     # If the user has accepted the changes, save the list of all possible outstanding issues to file.
@@ -482,18 +478,18 @@ def log_data_issues(accept_worsened_issues: bool):
         print(f"Overwrote the known issues file with {num_issues_saved} issues.")
 
     # Otherwise, throw an error if there are any new or worsened issues.
-    elif new_or_worsened_issues_count > 0:
-        raise Exception(f"{new_or_worsened_issues_count} New or worsened data issues detected. See logs above for details.")
+    elif len(new_or_worsened_issues) > 0:
+        raise Exception(f"{len(new_or_worsened_issues)} New or worsened data issues detected. See logs above for details.")
     
     # If no new or worsened issues, just print a confirmation.
     # Do not want to overwrite the known issues file when issues improve because issues may differ between environments.
     else:
         print(Fore.GREEN + "No new or worsened data issues detected." + Style.RESET_ALL)
-        num_issues_saved = data_issues.save_issues(current_issues)
+        num_issues_saved = data_issues.save_issues(active_issues)
         print(f"Updated known issues file with {num_issues_saved} current (non-worsened) issues.")
 
 
-def _get_data_issues() -> dict[str, list[data_issues.DataIssue]]:
+def _get_data_issues() -> dict[str, data_issues.DataIssue]:
     db = _get_db_connection()
 
     all_dimension_types = types_crud.get_dimension_types(db=db)
@@ -517,19 +513,18 @@ def _get_data_issues() -> dict[str, list[data_issues.DataIssue]]:
         # For now, only validate matrix datasets
         associated_datasets: list[MatrixDataset] = [d for d in associated_datasets if d.format == "matrix_dataset"]
         
-        dimension_issues = []
         used_given_ids_across_datasets = set()
         for dataset in associated_datasets:
             dataset_given_ids = get_matrix_dataset_given_ids(db=db, dataset=dataset, axis=dimension_type.axis)
             used_given_ids_across_datasets.update(set(dataset_given_ids))
 
-            missing_metadata_issue = data_issues.check_for_dataset_ids_without_metadata(dataset, dataset_given_ids, metadata_given_ids)
+            missing_metadata_issue = data_issues.check_for_dataset_ids_without_metadata(dataset, dimension_type.name, dataset_given_ids, metadata_given_ids)
             if missing_metadata_issue:
-                dimension_issues.append(missing_metadata_issue)
+                all_issues[missing_metadata_issue.get_key()] = missing_metadata_issue
             
-            unused_metadata_issue = data_issues.check_for_metadata_not_in_dataset(dataset, dimension_type.axis, dataset_given_ids, metadata_given_ids)
+            unused_metadata_issue = data_issues.check_for_metadata_not_in_dataset(dataset, dimension_type.name, dimension_type.axis, dataset_given_ids, metadata_given_ids)
             if unused_metadata_issue:
-                dimension_issues.append(unused_metadata_issue)
+                all_issues[unused_metadata_issue.get_key()] = unused_metadata_issue
 
         # Validate overall usage of metadata across all datasets
         if len(associated_datasets) > 0:
@@ -537,6 +532,7 @@ def _get_data_issues() -> dict[str, list[data_issues.DataIssue]]:
             percent_unused_metadata_given_ids = len(unused_metadata_given_ids) / len(metadata_given_ids)
             if unused_metadata_given_ids:
                 issue = data_issues.DataIssue(
+                    dimension_type_name=dimension_type.name,
                     dataset_id=None,
                     dataset_name=None,
                     issue_type="Metadata records not used in any dataset",
@@ -544,10 +540,7 @@ def _get_data_issues() -> dict[str, list[data_issues.DataIssue]]:
                     percent_affected=percent_unused_metadata_given_ids,
                     examples=list(unused_metadata_given_ids)[:5],
                 )
-                dimension_issues.append(issue)
-
-
-        all_issues[dimension_type.name] = dimension_issues
+                all_issues[issue.get_key()] = issue
 
     return all_issues
 

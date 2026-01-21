@@ -11,6 +11,7 @@ ISSUES_FILE = "known-data-issues.json"
 
 @dataclass
 class DataIssue:
+    dimension_type_name: str 
     dataset_id: Optional[str] # None if the issue is not dataset-specific
     dataset_name: Optional[str] # None if the issue is not dataset-specific
     issue_type: str
@@ -28,7 +29,7 @@ class DataIssue:
         return f"{self.issue_type}:{self.dataset_id}"
     
 
-def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
+def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_type_name: str, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
     """
     Return a warning string if there are a substantial number of features in dataset_given_ids that are not in metadata_given_ids.
     """
@@ -38,6 +39,7 @@ def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dataset_given
     # Append a warning when a given matrix dataset has a large number of features or samples with no metadata.
     if percent_ids_not_in_metadata > 0:
         return DataIssue(
+            dimension_type_name=dimension_type_name,
             dataset_id=dataset.given_id if dataset.given_id else dataset.id,
             dataset_name=dataset.name,
             issue_type="Dataset give IDs without metadata",
@@ -47,7 +49,7 @@ def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dataset_given
         )
     return None
 
-def check_for_metadata_not_in_dataset(dataset: MatrixDataset, axis: str, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
+def check_for_metadata_not_in_dataset(dataset: MatrixDataset, dimension_type_name: str, axis: str, dataset_given_ids: set[str], metadata_given_ids: set[str]) -> Optional[DataIssue]:
     # Get the cutoffs configured for this particular dataset
     dataset_configs = dataset.dataset_metadata
     min_percent_feature_metadata_used = dataset_configs.get("min_percent_feature_metadata_used", 95)
@@ -56,6 +58,7 @@ def check_for_metadata_not_in_dataset(dataset: MatrixDataset, axis: str, dataset
     percent_metadata_ids_not_in_dataset = len(metadata_ids_not_in_dataset) / len(metadata_given_ids)
     if percent_metadata_ids_not_in_dataset > (1 - min_percent_feature_metadata_used / 100) and axis == "feature":
         return DataIssue(
+            dimension_type_name=dimension_type_name,
             dataset_id=dataset.given_id if dataset.given_id else dataset.id,
             dataset_name=dataset.name,
             issue_type="Metadata records not used in dataset",
@@ -71,23 +74,21 @@ def check_for_metadata_not_in_dataset(dataset: MatrixDataset, axis: str, dataset
 # and modified to fit this use case.
 
 
-def load_known_issues() -> dict[str, list[DataIssue]]:
+def load_known_issues() -> dict[str, DataIssue]:
     if not os.path.exists(ISSUES_FILE):
         return {}
         
     with open(ISSUES_FILE, "rt") as fd:
         data = json.load(fd)
         issues = {}
-        for dimension_type, issues_list in data.items():
-            issues[dimension_type] = [DataIssue(**issue_dict) for issue_dict in issues_list]
+        for issue_key, issue in data.items():
+            issues[issue_key] = DataIssue(**issue)
     return issues
 
 
-def save_issues(issues: dict[str, list[DataIssue]]) -> int:
+def save_issues(issues: dict[str, DataIssue]) -> int:
     # Convert DataIssue objects to dictionaries for JSON serialization
-    serializable_issues = {}
-    for dimension_type, issues_list in issues.items():
-        serializable_issues[dimension_type] = [asdict(issue) for issue in issues_list]
+    serializable_issues = {issue_key: asdict(issue) for issue_key, issue in issues.items()}
     
     with open(ISSUES_FILE, "wt") as fd:
         json.dump(serializable_issues, fd, indent=2)
