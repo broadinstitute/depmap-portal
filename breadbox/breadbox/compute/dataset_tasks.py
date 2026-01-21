@@ -154,9 +154,7 @@ def _get_allowed_values_list(
     allowed_values: Union[Set[str], None]
 ) -> Union[List[str], None]:
     if allowed_values is not None:
-        allowed_values_list: List = list(
-            allowed_values
-        )  # convert to list so order preserved
+        allowed_values_list = list(allowed_values)  # convert to list so order preserved
         # Check that no repeats of allowed values since they should be case-insensitive
         allowed_values_list_lower = [str(x).lower() for x in allowed_values_list]
         if len(set(allowed_values_list_lower)) != len(allowed_values):

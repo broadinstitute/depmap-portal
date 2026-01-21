@@ -22,7 +22,7 @@ from breadbox.crud.group import (
     add_group,
     add_group_entry,
 )
-from breadbox.schemas.group import GroupIn, GroupEntryIn
+from breadbox.schemas.group import GroupIn, GroupEntryIn, AccessType
 from breadbox.schemas.dataset import (
     AddDatasetResponse,
     MatrixDatasetParams,
@@ -128,7 +128,7 @@ def public_group(db: SessionWithUser, settings: Settings):
         db,
         admin_user,
         public_group,
-        GroupEntryIn(email="", exact_match=False, access_type="read"),
+        GroupEntryIn(email="", exact_match=False, access_type=AccessType.read),
     )
     return public_group
 
@@ -144,7 +144,7 @@ def transient_group(db: SessionWithUser, settings: Settings):
         db,
         admin_user,
         transient_group,
-        GroupEntryIn(email="", exact_match=False, access_type="read"),
+        GroupEntryIn(email="", exact_match=False, access_type=AccessType.read),
     )
     return transient_group
 

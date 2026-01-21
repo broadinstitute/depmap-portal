@@ -53,32 +53,6 @@ def cast_tabular_cell_value_type(value, type) -> Union[None, str, float, List[st
     raise Exception(f"unhandled type: {type}")
 
 
-def _get_metadata_as_name_value_list(df: pd.DataFrame):
-    # Assert the sample or feature id column is just 1 dimension_given_id
-    id_vals = df["dimension_given_id"].to_numpy()
-
-    # Samples and features could exist without metadata
-    formatted_metadata: List[Dict[str, Any]] = []
-    if len(id_vals) > 0:
-
-        assert (id_vals[0] == id_vals).all()
-
-        for index, row in df[["given_id", "value", "annotation_type"]].iterrows():
-            formatted_metadata.append(
-                {
-                    "given_id": row["given_id"],
-                    "value": cast_tabular_cell_value_type(
-                        row["value"], row["annotation_type"]
-                    ),
-                    "annotation_type": row["annotation_type"].value,
-                }
-            )
-
-    given_ids = [x["given_id"] for x in formatted_metadata]
-    assert len(set(given_ids)) == len(given_ids)
-    return formatted_metadata
-
-
 # Example:
 #                      value    dimension_given_id              given_id            annotation_type
 # 0   CADO-ES-1,CADOES1_BONE            ACH-000210               aliases        AnnotationType.text
@@ -112,16 +86,6 @@ def _get_metadata_as_name_value_list(df: pd.DataFrame):
 #     metadata_df = pd.read_sql(query.statement, query.session.connection())
 #
 #     return metadata_df
-
-
-# def format_feature_or_sample_metadata(metadata_df: pd.DataFrame, label_or_id: str):
-#     # TODO: Having more than one row signifies there are multiple features or samples with same label. Not sure if this needs to be accounted for yet...
-#     formatted_metadata = _get_metadata_as_name_value_list(metadata_df)
-#     # TODO: Is this right behavior? Return label as the label_or_id that was given in query
-#     labeled_metadata = MetadataResponse(
-#         label=label_or_id, metadata=[FormattedMetadata(**x) for x in formatted_metadata]
-#     )
-#     return labeled_metadata
 
 
 def get_metadata_search_options(db: SessionWithUser, user: str, text: str):
