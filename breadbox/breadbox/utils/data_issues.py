@@ -51,7 +51,7 @@ def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_typ
 
 def check_for_metadata_not_in_dataset(dataset: MatrixDataset, dimension_type_name: str, axis: str, dataset_given_ids: list[str], metadata_given_ids: list[str]) -> Optional[DataIssue]:
     # Get the cutoffs configured for this particular dataset
-    dataset_configs = dataset.dataset_metadata
+    dataset_configs = dataset.dataset_metadata if dataset.dataset_metadata else {}
     min_percent_feature_metadata_used = dataset_configs.get("min_percent_feature_metadata_used", 95)
 
     metadata_ids_not_in_dataset = set(metadata_given_ids).difference(set(dataset_given_ids))
