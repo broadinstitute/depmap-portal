@@ -551,6 +551,7 @@ def test_get_tabular_dataset_data(
         },
         headers=admin_headers,
     )
+
     assert_status_ok(r_add_metadata_for_depmap_model)
 
     # Create tabular dataset
