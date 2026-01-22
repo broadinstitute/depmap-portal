@@ -200,7 +200,7 @@ const ContextExplorerTabs = ({
                 treeType={treeType}
                 featureType={"compound"}
                 datasetId={
-                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+                  ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
                 }
                 customInfoImg={customInfoImg}
               />
@@ -218,7 +218,7 @@ const ContextExplorerTabs = ({
                 treeType={treeType}
                 featureType={"compound"}
                 datasetId={
-                  ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
+                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
                 }
                 customInfoImg={customInfoImg}
               />

@@ -775,10 +775,25 @@ function ContextAnalysis({
                   </h4>
                 </>
               )}
-              {isOncRefDataset && (
+              {datasetId ===
+                ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix && (
                 <>
                   <h2>
                     OncRef Lum sensitivies enriched in{" "}
+                    {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display compound sensitivities that are
+                    enriched in {selectedContextNameInfo.name} models compared
+                    to {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
+              {datasetId ===
+                ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix && (
+                <>
+                  <h2>
+                    OncRef Seq sensitivies enriched in{" "}
                     {selectedContextNameInfo.name}
                   </h2>
                   <h4>
