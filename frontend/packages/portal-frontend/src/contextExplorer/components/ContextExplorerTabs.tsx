@@ -98,6 +98,7 @@ const ContextExplorerTabs = ({
     const allowedTabTypes = Object.values(TabTypes).filter(
       (tabTypeStr) =>
         tabTypeStr !== String(TabTypes.DrugSensitivityOncRefLum) ||
+        tabTypeStr !== String(TabTypes.DrugSensitivityOncRefSeq) ||
         enabledFeatures.context_explorer_prerelease_datasets
     );
 

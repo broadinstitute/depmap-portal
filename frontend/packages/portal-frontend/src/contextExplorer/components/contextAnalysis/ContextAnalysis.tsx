@@ -385,7 +385,7 @@ function ContextAnalysis({
         },
       };
     },
-    [featureType, datasetId, isOncRefDataset]
+    [featureType, isOncRefDataset]
   );
 
   const formattedScatterPlotData = useMemo(
