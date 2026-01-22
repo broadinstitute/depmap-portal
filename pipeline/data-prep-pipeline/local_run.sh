@@ -22,8 +22,10 @@ if [[ "$ENV_TYPE" != "internal" && "$ENV_TYPE" != "external" ]]; then
     exit 1
 fi
 
+echo "Data prep pipeline: Preprocessing taiga ids..."
 python ../preprocess_taiga_ids.py \
     ../../../depmap-deploy/non-public-pipeline-files/data-prep-pipeline/release_inputs_${ENV_TYPE}.template \
     release_inputs_${ENV_TYPE}-DO-NOT-EDIT-ME 
     
+echo "Data prep pipeline: Running conseq..."
 conseq run data_prep_pipeline/run_${ENV_TYPE}.conseq
