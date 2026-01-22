@@ -41,7 +41,11 @@ export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
   ],
   [
     DataTypeStrings.PRISMOncRefLum.toString(),
-    "Models that have been included in at least one PRISM OncRef screen.",
+    "Models that have been included in at least one PRISM OncRef Lum screen.",
+  ],
+  [
+    DataTypeStrings.PRISMOncRefSeq.toString(),
+    "Models that have been included in at least one PRISM OncRef Seq screen.",
   ],
   [
     DataTypeStrings.PRISMRepurposing.toString(),

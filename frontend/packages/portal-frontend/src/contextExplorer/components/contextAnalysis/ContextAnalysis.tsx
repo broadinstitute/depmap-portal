@@ -274,7 +274,7 @@ function ContextAnalysis({
     }
 
     return geneDepFilterDefinitions;
-  }, [datasetId]);
+  }, [datasetId, isOncRefDataset]);
 
   const {
     transientFilterState,
@@ -385,7 +385,7 @@ function ContextAnalysis({
         },
       };
     },
-    [featureType, datasetId]
+    [featureType, datasetId, isOncRefDataset]
   );
 
   const formattedScatterPlotData = useMemo(

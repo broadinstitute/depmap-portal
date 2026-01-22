@@ -87,7 +87,7 @@ const ContextExplorerTabs = ({
       wes: capitalizeFirstLetter(String(row.wes)),
       rna_seq: capitalizeFirstLetter(String(row.rna_seq)),
       prismOncRefSeq: capitalizeFirstLetter(String(row.oncrefSeq)),
-      prismOncRefLum: capitalizeFirstLetter(String(row.oncref)),
+      prismOncRefLum: capitalizeFirstLetter(String(row.oncrefLum)),
       prismRepurposing: capitalizeFirstLetter(String(row.repurposing)),
     };
   });
