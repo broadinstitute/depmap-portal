@@ -122,6 +122,7 @@ def _get_dose_response_curves_per_model(
         model_ids=out_group_model_ids,
         model_display_names_by_model_id=out_group_model_display_names,
         compound=compound,
+        drc_dataset_label=drc_dataset_label,
     )
 
     return {
