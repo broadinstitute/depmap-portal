@@ -1,7 +1,7 @@
 from typing import List
 from depmap.cell_line.models_new import DepmapModel
 from depmap.compound import new_dose_curves_utils
-from depmap.context_explorer.models import ContextExplorerDatasets, is_oncref_dataset
+from depmap.context_explorer.models import is_oncref_dataset
 import pandas as pd
 from depmap.context_explorer import utils
 from depmap.context.models_new import SubtypeNode, SubtypeContext
@@ -108,11 +108,11 @@ def _get_dose_response_curves_per_model(
     in_group_model_display_names = DepmapModel.get_cell_line_display_names(
         list(set(in_group_model_ids))
     )
-
     in_group_curve_params = get_curve_params_for_model_ids(
         model_ids=in_group_model_ids,
         model_display_names_by_model_id=in_group_model_display_names,
         compound=compound,
+        drc_dataset_label=drc_dataset_label,
     )
 
     out_group_model_display_names = DepmapModel.get_cell_line_display_names(
@@ -136,15 +136,14 @@ def get_curve_params_for_model_ids(
     compound: Compound,
     model_ids: List[str],
     model_display_names_by_model_id: pd.Series,
+    drc_dataset_label: str,
 ):
     # Use drc_dataset_label to get the dose response curves for the dataset selected in the UI. This is necessary
     # because dose response curves have a relationship with CompoundExperiment, not Compound, and 1 compound can have
     # multiple compound experiments mapping to different datasets and therefore different sets of dose response curves.
-
-    # TODO Remove temporary hard coding of drc_dataset_label once we add support for more OncRef datasets in Context Explorer.
     curve_objs = Compound.get_dose_response_curves(
         compound_id=compound.compound_id,
-        drc_dataset_label="Prism_oncology_per_curve",
+        drc_dataset_label=drc_dataset_label,
         model_ids=model_ids,
     )
 
