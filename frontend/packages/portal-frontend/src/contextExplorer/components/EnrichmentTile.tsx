@@ -71,7 +71,14 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
       return "repurposing";
     }
 
-    return "oncref";
+    if (
+      datasetName ===
+      ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.toString()
+    ) {
+      return "oncrefLum";
+    }
+
+    return "oncrefSeq";
   }, []);
 
   if (
