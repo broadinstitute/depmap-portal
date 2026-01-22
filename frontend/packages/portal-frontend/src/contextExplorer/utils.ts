@@ -40,7 +40,7 @@ export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
     "Models that have been screened with at least one genome-wide CRISPR library.",
   ],
   [
-    DataTypeStrings.PRISMOncRef.toString(),
+    DataTypeStrings.PRISMOncRefLum.toString(),
     "Models that have been included in at least one PRISM OncRef screen.",
   ],
   [

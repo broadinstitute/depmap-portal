@@ -87,7 +87,7 @@ const ContextExplorerTabs = ({
       wes: capitalizeFirstLetter(String(row.wes)),
       rna_seq: capitalizeFirstLetter(String(row.rna_seq)),
       prismOncRefSeq: capitalizeFirstLetter(String(row.oncrefSeq)),
-      prismOncRef: capitalizeFirstLetter(String(row.oncref)),
+      prismOncRefLum: capitalizeFirstLetter(String(row.oncref)),
       prismRepurposing: capitalizeFirstLetter(String(row.repurposing)),
     };
   });
@@ -97,7 +97,7 @@ const ContextExplorerTabs = ({
     const map = new Map<number, TabTypes>();
     const allowedTabTypes = Object.values(TabTypes).filter(
       (tabTypeStr) =>
-        tabTypeStr !== String(TabTypes.DrugSensitivityOncRef) ||
+        tabTypeStr !== String(TabTypes.DrugSensitivityOncRefLum) ||
         enabledFeatures.context_explorer_prerelease_datasets
     );
 

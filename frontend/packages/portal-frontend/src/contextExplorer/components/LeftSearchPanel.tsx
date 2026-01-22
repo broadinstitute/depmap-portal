@@ -368,7 +368,7 @@ const ContextTree = (props: ContextTreeProps) => {
           <p>{REPURPOSING_SIDE_BAR_TEXT}</p>
         </>
       )}
-      {selectedTab === TabTypes.DrugSensitivityOncRef && (
+      {selectedTab === TabTypes.DrugSensitivityOncRefLum && (
         <>
           <hr
             style={{

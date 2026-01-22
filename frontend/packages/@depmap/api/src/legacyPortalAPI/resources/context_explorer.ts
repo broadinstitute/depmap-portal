@@ -13,7 +13,8 @@ import { getJson } from "../client";
 
 enum DataType {
   PRISMRepurposing,
-  PRISMOncRef,
+  PRISMOncRefLum,
+  PRISMOncRefSeq,
   RNASeq,
   WGS,
   WES,
@@ -49,7 +50,8 @@ function getDataTypeColorCategoryFromDataTypeValue(
     case DataType.WGS:
     case DataType.RNASeq:
       return DataTypeCategory.OMICS;
-    case DataType.PRISMOncRef:
+    case DataType.PRISMOncRefSeq:
+    case DataType.PRISMOncRefLum:
     case DataType.PRISMRepurposing:
       return DataTypeCategory.CompoundViability;
     default:
