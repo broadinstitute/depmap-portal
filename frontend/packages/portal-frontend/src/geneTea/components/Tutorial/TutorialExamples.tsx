@@ -21,7 +21,7 @@ function TutorialExamples() {
             </p>
             <p>
               <b>Try</b>: using the search bar to find other genes matching the
-              term “~ EF hand”. Pre-populates the text box with those 3 genes.
+              term “~ EF hand”.
             </p>
           </>
         }
@@ -56,11 +56,7 @@ function TutorialExamples() {
             </p>
             <p>
               <b>Try:</b> clicking on a bar in the Top Terms plot to see the
-              text excerpts corresponding to the terms. Loads a Gene Context
-              containing:
-            </p>
-            <p style={{ wordWrap: "break-word" }}>
-              CHMP4B,ELMO2,FERMT2,FGFR1,ITGAV,JUN,MSTO1,NHLRC2,PPP2R1A,RPP25L,SEPSECS,TUBB
+              text excerpts corresponding to the terms.
             </p>
           </>
         }
@@ -285,7 +281,7 @@ function TutorialExamples() {
             <p>
               <b>Try:</b> Zooming in on a module of genes using the heatmap
               navigation bar, then selecting a subset to create a new Gene
-              Context. Pre-populates the text box using the hallmark gene set.
+              Context.
             </p>
           </>
         }
