@@ -52,15 +52,15 @@
 
   .mainContentGrid {
     display: grid;
-    grid-template-columns: 9fr 1fr;
-    grid-template-areas: "plot plot plot plot plot plot plot plot plot selections";
-
+    grid-template-columns: 4fr minmax(250px, 1fr);
+    gap: 5px;
+    grid-template-areas: "plot selections";
     .plotArea {
-      grid-area: "plot";
+      grid-area: plot;
     }
 
     .selectionsArea {
-      grid-area: "selections";
+      grid-area: selections;
       @media (max-width: 1250px) {
         margin-top: 20px;
       }
@@ -72,16 +72,6 @@
         "plot";
       grid-template-columns: minmax(450px, 1fr);
       grid-template-rows: auto auto;
-    }
-  }
-
-  .mainContentGridAllMatchingTerms {
-    display: grid;
-    grid-template-columns: 10fr;
-    grid-template-areas: "plot plot plot plot plot plot plot plot plot plot";
-
-    .plotAreaAllMatchingTerms {
-      grid-area: "plot";
     }
   }
 

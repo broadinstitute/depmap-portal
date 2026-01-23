@@ -13,7 +13,6 @@ import GenesMatchingTermSearchPanel from "./FindGenesMatchingTerm/GenesMatchingT
 import SectionStack, {
   StackableSection,
 } from "../collapsibleOptions/SectionStack";
-import { enabledFeatures } from "@depmap/globals";
 
 interface TopTermsTabProps {
   rawData: GeneTeaEnrichedTerms | null;
