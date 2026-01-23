@@ -7,6 +7,7 @@ import PaginationControls from "./PaginationControls";
 import styles from "../../../../../styles/GeneTea.scss";
 import CopyListButton from "../CopyListButton/CopyListButton";
 import { useFetchGeneList } from "src/geneTea/hooks/useFetchGeneList";
+import { useGeneContextCreation } from "src/geneTea/hooks/useCreateGeneContext";
 
 interface ExcerptTableProps {
   useTerms: boolean;
@@ -33,7 +34,6 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     currentPage,
     handleNextPage,
     handlePrevPage,
-    handleClickCreateTermContext,
     totalMatchingGenes,
     pageSize,
   } = useExcerptData(term, termToMatchingGenesObj, useAllGenes);
@@ -45,6 +45,14 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     termToMatchingGenesObj,
     useAllGenes
   );
+
+  const handleClickCreateContext = useGeneContextCreation({
+    name: term,
+    termsKey: term,
+    termToMatchingGenesObj,
+    useAllGenes,
+    onComplete: () => {},
+  });
 
   const isLoading = isDataLoading || isListLoading;
 
@@ -90,7 +98,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
             bsStyle="primary"
             bsSize="small"
             disabled={isLoading}
-            onClick={handleClickCreateTermContext}
+            onClick={handleClickCreateContext}
           >
             {isLoading ? "Loading..." : "Save Term as Gene Context"}
           </Button>

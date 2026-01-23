@@ -21,17 +21,8 @@ function GeneTea() {
     geneSymbolSelections,
   } = useGeneTeaFiltersContext();
 
-  const hasInteracted = useRef(geneSymbolSelections.size > 0);
-
-  // Only ever set it to true. Never set it to false. We never want to re-show the tutorial after the initial interaction.
-  if (geneSymbolSelections.size > 0 && !hasInteracted.current) {
-    hasInteracted.current = true;
-  }
-
-  // Show tutorial ONLY if they have never interacted
-  // AND the current search is empty.
-  const showTutorialAsMain =
-    !hasInteracted.current && geneSymbolSelections.size === 0;
+  // Show tutorial every time the search is empty
+  const showTutorialAsMain = geneSymbolSelections.size === 0;
 
   useEffect(() => {
     (async () => {
