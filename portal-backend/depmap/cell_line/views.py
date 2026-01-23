@@ -360,10 +360,15 @@ def get_all_cell_line_gene_effects(dataset_name: str, model_id: str) -> pd.DataF
 
 @blueprint.route("/compound_sensitivity/download/<model_id>")
 def download_compound_sensitivities(model_id: str):
+    priority = request.args.get("priority", default=1, type=int)
+
     # Check that the requested cell line exists
-    dataset_name = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.drug_screen
-    ).name.name
+    dataset = DependencyDataset.get_dataset_by_data_type_priority(
+        DependencyDataset.DataTypeEnum.drug_screen, priority=priority
+    )
+    dataset_name = dataset.name.name
+    dataset_display_name = dataset.display_name
+
     cell_line_col_index = get_cell_line_col_index(dataset_name, model_id)
     if cell_line_col_index is None:
         abort(404)
@@ -375,7 +380,7 @@ def download_compound_sensitivities(model_id: str):
     response = make_response(df.to_csv())
     response.headers[
         "Content-Disposition"
-    ] = f"attachment; filename=compound_sensitivity_{model_id}.csv"
+    ] = f"attachment; filename={dataset_display_name}_compound_sensitivity_{model_id}.csv"
     response.headers["Content-Type"] = "text/csv"
     return response
 

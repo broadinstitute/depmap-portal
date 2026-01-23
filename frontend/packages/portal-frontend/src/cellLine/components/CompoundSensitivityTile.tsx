@@ -65,7 +65,9 @@ const CompoundSensitivityTile = ({
                 Download z-scores for all compounds:{" "}
                 <a
                   href={toPortalLink(
-                    `/cell_line/compound_sensitivity/download/${depmapId}?dataset=${dataMatrix.dataset_label}`
+                    `/cell_line/compound_sensitivity/download/${depmapId}?priority=${(
+                      index + 1
+                    ).toString()}`
                   )}
                 >
                   {dataMatrix.dataset_label}
