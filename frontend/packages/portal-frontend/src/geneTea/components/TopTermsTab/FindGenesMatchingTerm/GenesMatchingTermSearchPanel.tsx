@@ -58,9 +58,7 @@ const GenesMatchingTermSearchPanel: React.FC<GenesMatchingTermSearchPanelProps> 
         );
 
     return options;
-  }, [rawData, useTerms]);
-
-  console.log(termOrGroupSelectOptions);
+  }, [rawData, useTerms, useFrequentTerms]);
 
   return (
     <div className={styles.GeneTeaMatchingTermPanel}>

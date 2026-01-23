@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import GeneTeaMainContent from "./GeneTeaMainContent";
 import { TabsWithHistory } from "src/common/components/tabs/TabsWithHistory";
 import { Tab, TabList, TabPanel, TabPanels } from "src/common/components/tabs";
