@@ -32,16 +32,5 @@ ln -sf "../../depmap-deploy/non-public-pipeline-files/${ENV_NAME}.template" "../
 ln -sf "../../../depmap-deploy/non-public-pipeline-files/preprocessing-pipeline/run_${ENV_NAME}.conseq" "run_${ENV_NAME}.conseq"
 ln -sf "../../../depmap-deploy/non-public-pipeline-files/preprocessing-pipeline/_run_${ENV_NAME}.conseq" "_run_${ENV_NAME}.conseq"
 
-# Cleanup function to remove symlinks
-cleanup() {
-    echo "Preprocessing pipeline: Cleaning up temporary symlinks..."
-    rm -f "xrefs-non-public.template"
-    rm -f "xrefs-${ENV_NAME}.template"
-    rm -f "../${ENV_NAME}.template"
-    rm -f "run_${ENV_NAME}.conseq"
-    rm -f "_run_${ENV_NAME}.conseq"
-}
-trap cleanup EXIT
-
 echo "Preprocessing pipeline: Running conseq..."
 conseq run run_${ENV_NAME}.conseq
