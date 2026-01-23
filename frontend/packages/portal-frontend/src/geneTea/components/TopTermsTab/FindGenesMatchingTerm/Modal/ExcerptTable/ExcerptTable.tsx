@@ -57,7 +57,9 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
   const isLoading = isDataLoading || isListLoading;
 
   const renderTableBody = () => {
-    if (!pageData) return null;
+    if (isLoading || !pageData) {
+      return <tbody />;
+    }
 
     return (
       <tbody>
@@ -111,24 +113,26 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         </div>
       )}
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Gene</th>
-            <th>Excerpt</th>
-          </tr>
-        </thead>
-        {renderTableBody()}
-      </table>
+      <div style={{ position: "relative" }}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Gene</th>
+              <th>Excerpt</th>
+            </tr>
+          </thead>
+          {renderTableBody()}
+        </table>
 
-      {isLoading && (
-        <div className={styles.geneTeaModalSpinner}>
-          <Spinner left="0px" position="static" />
-        </div>
-      )}
+        {isLoading && (
+          <div className={styles.geneTeaModalSpinner}>
+            <Spinner left="0px" position="static" />
+          </div>
+        )}
+      </div>
 
       {error && (
-        <Alert bsStyle="danger">
+        <Alert bsStyle="danger" style={{ marginTop: "15px" }}>
           There was a problem retrieving the excerpt(s) for this term/page.
           Please try again!
         </Alert>
@@ -139,12 +143,16 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         totalMatchingGenes > 0 &&
         pageData &&
         Object.keys(pageData).length === 0 && (
-          <Alert bsStyle="danger">
+          <Alert bsStyle="danger" style={{ marginTop: "15px" }}>
             Could not find an excerpt for any gene on this page.
           </Alert>
         )}
 
-      {!isLoading && (
+      <div
+        style={{
+          marginTop: "15px",
+        }}
+      >
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
@@ -154,7 +162,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           handleNextPage={handleNextPage}
           handlePrevPage={handlePrevPage}
         />
-      )}
+      </div>
     </div>
   );
 };
