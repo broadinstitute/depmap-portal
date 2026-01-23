@@ -41,12 +41,22 @@ function GeneTea() {
   return (
     <div className={styles.page}>
       <header className={styles.header}>
-        <h1>Tea Party</h1>
+        <h1>TEA party - An Interactive App for GeneTEA</h1>
         <p>
-          GeneTEA (Gene-Term Enrichment Analysis) is a model that takes in
-          free-text gene descriptions and incorporates several natural language
-          processing methods to learn a sparse gene-by-term embedding, which can
-          be treated as a de novo gene set database.
+          GeneTEA (Gene-Term Enrichment Analysis) is a model that ingests
+          free-text gene descriptions and incorporates natural language
+          processing methods to learn a sparse gene-by-term embedding that can
+          be used for overrepresentation analysis (ORA). To read about the
+          methodology and comparisons to existing ORA tools, please see our
+          paper (
+          <a
+            href="https://doi.org/10.1186/s13059-025-03844-8"
+            target="_blank"
+            rel="noreferrer noopener"
+          >
+            Boyle et al. 2025
+          </a>
+          ).
         </p>
       </header>
       <main className={styles.main}>
