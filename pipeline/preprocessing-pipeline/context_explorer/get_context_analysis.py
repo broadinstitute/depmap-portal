@@ -372,8 +372,35 @@ def get_id_or_file_name(possible_id, id_key="dataset_id"):
 
 
 ##### Entry points into this code. Each calc_..._enrichment function is invokable from the command line
+
+## OncRef Luminex and OncRef Sequencing will use the same code. Below are wrappers 
+## around the shared function
+def oncref_lum_context_analysis(
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id    
+):
+    return oncref_context_analysis(
+        tc,
+        subtype_tree,
+        context_matrix,
+        oncref_auc_taiga_id,
+        portal_compounds_taiga_id,
+        ONCREF_DATASET_NAME
+    )
+
+def oncref_seq_context_analysis(
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id    
+):
+    return oncref_context_analysis(
+        tc,
+        subtype_tree,
+        context_matrix,
+        oncref_auc_taiga_id,
+        portal_compounds_taiga_id,
+        ONCREF_SEQ_DATASET_NAME
+    )
+
 def oncref_context_analysis(
-    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id, oncref_dataset_name
 ):
     # for OncRef we compute the t-test on the logged AUCs,
     # but want to set the mean_in and mean_out columns based on
@@ -388,7 +415,7 @@ def oncref_context_analysis(
         portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
-    datasets_to_calculate_bimodality = {ONCREF_DATASET_NAME: oncref_log_aucs}
+    datasets_to_calculate_bimodality = {oncref_dataset_name: oncref_log_aucs}
     oncref_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
 
     def prism_onc_ref_add_extra_columns(ds_res, ds_in_group, ds_out_group):
@@ -409,7 +436,7 @@ def oncref_context_analysis(
     return compute_in_out_groups(
         subtype_tree,
         context_matrix,
-        ONCREF_DATASET_NAME,
+        oncref_dataset_name,
         oncref_log_aucs,
         prism_onc_ref_add_extra_columns,
     )
@@ -530,7 +557,8 @@ if __name__ == "__main__":
     add_commands(
         subparsers,
         [
-            oncref_context_analysis,
+            oncref_lum_context_analysis,
+            oncref_seq_context_analysis,
             repurposing_context_analysis,
             crispr_context_analysis,
         ],
