@@ -226,18 +226,39 @@ def get_pref_dep_data_for_data_type(data_type: str, model_id: str) -> dict:
     return get_lowest_z_scores_response(dataset_name, model_id, df)
 
 
-@blueprint.route("/compound_sensitivity/<model_id>")
-def get_compound_sensitivity_data(model_id: str) -> dict:
+def _get_compound_sensitivity_for_dataset(model_id: str, priority: int):
     dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.drug_screen
+        DependencyDataset.DataTypeEnum.drug_screen, priority=priority
     )
+
     if dataset is None:
-        abort(404)
+        return None
+
     dataset_name = dataset.name.name
     # HACK: See comment in get_pref_dep_data_for_data_type
     df = interactive_utils.get_subsetted_df_by_labels(dataset_name, None, None)
 
     return get_lowest_z_scores_response(dataset_name, model_id, df)
+
+
+@blueprint.route("/compound_sensitivity/<model_id>")
+def get_compound_sensitivity_data(model_id: str) -> dict:
+    sensitivities = []
+
+    priority1 = _get_compound_sensitivity_for_dataset(model_id=model_id, priority=1)
+
+    if priority1 is not None:
+        sensitivities.append(priority1)
+
+    priority2 = _get_compound_sensitivity_for_dataset(model_id=model_id, priority=2)
+
+    if priority2 is not None:
+        sensitivities.append(priority2)
+
+    if len(sensitivities) == 0:
+        abort(404)
+
+    return {"data": sensitivities}
 
 
 def get_lowest_z_scores_response(
