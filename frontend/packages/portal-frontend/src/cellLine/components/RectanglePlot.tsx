@@ -1,3 +1,4 @@
+import { Tooltip } from "@depmap/common-components";
 import React, { useEffect, useRef } from "react";
 import StackedBoxPlotUtils from "src/cellLine/utilities/boxplotUtils";
 
@@ -128,18 +129,30 @@ const RectanglePlot = ({
   return (
     <div className="stacked-boxplot-plot">
       <div className="stacked-boxplot-labels-container">
-        {labels.map((label) => (
+        {labels.map((label, i) => (
           <p key={label} className="boxplot-label">
-            <a
-              href={getLabelLinkUrl(
-                linkType === "compound"
-                  ? attemptFindCompoundLabel(label)
-                  : label,
-                linkType
-              )}
+            <Tooltip
+              key={`${label}-${i}`}
+              id="pref-sens-compound-tooltip"
+              content={label}
+              placement="top"
             >
-              {label}
-            </a>
+              <a
+                style={{
+                  display: "block",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+                href={getLabelLinkUrl(
+                  linkType === "compound"
+                    ? attemptFindCompoundLabel(label)
+                    : label,
+                  linkType
+                )}
+              >
+                {label}
+              </a>
+            </Tooltip>
           </p>
         ))}
       </div>
