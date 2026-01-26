@@ -595,12 +595,13 @@ def get_codependencies_html_OLD(gene):
 def get_codependencies_html(gene):
     div_id = str(uuid.uuid4())
     entrez_id = gene.entrez_id
+    gene_symbol = gene.label
 
     return RenderedTile(
         f'<div id="{div_id}"></div>',
         f"""(
         function() {{
-            DepMap.initTopCoDependenciesTile("{div_id}", "{entrez_id}");
+            DepMap.initTopCoDependenciesTile("{div_id}", "{entrez_id}", "{gene_symbol}");
         }})""",
     )
 

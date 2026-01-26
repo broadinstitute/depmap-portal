@@ -1,5 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { Dataset } from "@depmap/types";
+import { Dataset, MatrixDataset } from "@depmap/types";
 import { GeneCorrelationDatasetOption } from "src/correlationAnalysis/types";
 
 export async function getCorrelationDatasetsForEntity(
@@ -41,6 +41,15 @@ export async function getCorrelationDatasetsForEntity(
   return formattedDatasetOptions;
 }
 
+function isMatrixDataset(d: unknown): d is MatrixDataset {
+  return (
+    typeof d === "object" &&
+    d !== null &&
+    "feature_type_name" in d &&
+    typeof (d as any).feature_type_name === "string"
+  );
+}
+
 export async function getDependencyDatasetIds(
   entrezId: string
 ): Promise<string[]> {
@@ -49,7 +58,12 @@ export async function getDependencyDatasetIds(
     feature_type: "gene",
   });
 
-  const filteredDatasets = [...datasets].filter((d) => d.given_id !== null);
+  const filteredDatasets = [...datasets].filter(
+    (d) =>
+      d.given_id !== null &&
+      isMatrixDataset(d) &&
+      d.feature_type_name === "gene"
+  );
 
   if (filteredDatasets.length === 0) {
     return [];

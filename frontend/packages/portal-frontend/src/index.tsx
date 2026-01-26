@@ -314,7 +314,8 @@ export function initEnrichmentTile(
 
 export async function initTopCoDependenciesTile(
   elementId: string,
-  entrezId: string
+  entrezId: string,
+  geneLabel: string
 ) {
   const dependencyDatasetIds = await getDependencyDatasetIds(entrezId);
 
@@ -322,6 +323,7 @@ export async function initTopCoDependenciesTile(
     <React.Suspense fallback={<div>Loading...</div>}>
       <TopCoDependenciesTile
         geneEntrezId={entrezId}
+        geneLabel={geneLabel}
         associationDatasetIds={dependencyDatasetIds}
       />
     </React.Suspense>,

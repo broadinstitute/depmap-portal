@@ -8,12 +8,14 @@ import { CoDependenciesTable } from "./CoDependenciesTable";
 
 interface TopCoDependenciesTileProps {
   geneEntrezId: string;
+  geneLabel: string;
   associationDatasetIds: string[];
 }
 
 const TopCoDependenciesTile = ({
   geneEntrezId,
   associationDatasetIds,
+  geneLabel,
 }: TopCoDependenciesTileProps) => {
   const crisprGivenId = "Chronos_Combined";
   const rnaiGivenId = "RNAi_merged";
@@ -50,11 +52,11 @@ const TopCoDependenciesTile = ({
       return null;
     }
 
-    const sortedFeatures = [...associatedFeatures].sort(
-      (a, b) => Math.abs(b.correlation) - Math.abs(a.correlation)
-    );
+    const sortedFeatures = [...associatedFeatures]
+      .filter((feat) => feat.other_dimension_label !== geneLabel)
+      .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
 
-    return sortedFeatures.slice(0, 10);
+    return sortedFeatures.slice(0, 5);
   }, [crisprCorrelationData]);
 
   const topRnaiDatasetCorrelations = useMemo(() => {
@@ -68,11 +70,11 @@ const TopCoDependenciesTile = ({
       return null;
     }
 
-    const sortedFeatures = [...associatedFeatures].sort(
-      (a, b) => Math.abs(b.correlation) - Math.abs(a.correlation)
-    );
+    const sortedFeatures = [...associatedFeatures]
+      .filter((feat) => feat.other_dimension_label !== geneLabel)
+      .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
 
-    return sortedFeatures.slice(0, 10);
+    return sortedFeatures.slice(0, 5);
   }, [rnaiCorrelationData]);
 
   const customInfoImg = (
