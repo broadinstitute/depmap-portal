@@ -116,7 +116,7 @@ const TopCoDependenciesTile = ({
           <div>
             {crisprError && !crisprCorrelationData && (
               <div className={styles.errorMessage}>
-                Error loading correlation data. Please try again later.
+                Error loading CRISPR correlation data. Please try again later.
               </div>
             )}
             {!crisprCorrelationData && crisprIsLoading && <PlotSpinner />}
