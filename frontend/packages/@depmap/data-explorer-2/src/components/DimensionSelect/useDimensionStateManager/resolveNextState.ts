@@ -1,5 +1,6 @@
 import type {
   DataExplorerAggregation,
+  DataExplorerContext,
   DataExplorerDatasetDescriptor,
 } from "@depmap/types";
 import { contextsMatch, sliceLabelFromContext } from "../../../utils/context";
@@ -93,7 +94,7 @@ export default function resolveNextState({
   if ("slice_type" in changes && slice_type !== changes.slice_type) {
     slice_type = changes.slice_type || undefined;
 
-    if (slice_type !== context?.context_type) {
+    if (slice_type !== (context as DataExplorerContext)?.context_type) {
       context = undefined;
     }
 
@@ -212,7 +213,7 @@ export default function resolveNextState({
       dataType,
       slice_type,
       axis_type,
-      context,
+      context as DataExplorerContext,
       units
     );
 
@@ -262,7 +263,7 @@ export default function resolveNextState({
     units,
     slice_type,
     axis_type,
-    context
+    context as DataExplorerContext
   );
 
   if (!dataType && options.dataTypeOptions.length === 1) {

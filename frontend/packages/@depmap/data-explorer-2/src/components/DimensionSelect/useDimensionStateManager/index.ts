@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { DataExplorerPlotConfigDimension } from "@depmap/types";
+import {
+  DataExplorerContext,
+  DataExplorerPlotConfigDimension,
+} from "@depmap/types";
 import useData from "./useData";
 import useCallbacks from "./useCallbacks";
 import useSync from "./useSync";
@@ -43,7 +46,7 @@ export default function useDimensionStateManager({
     index_type,
     slice_type: state.dimension.slice_type,
     axis_type: state.dimension.axis_type,
-    context: state.dimension.context,
+    context: state.dimension.context as DataExplorerContext,
   });
 
   const update = useCallback(

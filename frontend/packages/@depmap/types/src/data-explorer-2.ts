@@ -63,7 +63,7 @@ export interface DataExplorerPlotConfigDimension {
   axis_type: "raw_slice" | "aggregated_slice";
   slice_type: string;
   dataset_id: string;
-  context: DataExplorerContext;
+  context: DataExplorerContext | DataExplorerContextV2;
   aggregation: DataExplorerAggregation;
 }
 

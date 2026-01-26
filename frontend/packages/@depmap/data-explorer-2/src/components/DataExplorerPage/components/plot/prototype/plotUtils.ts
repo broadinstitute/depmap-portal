@@ -345,7 +345,7 @@ export function formatDataForScatterPlot(
 
       Object.keys(data.metadata || {}).forEach((key) => {
         let { label: hoverLabel } = data.metadata[key]!;
-        const { values, value_type, dataset_label } = data.metadata[key]!;
+        const { values, dataset_label } = data.metadata[key]!;
 
         if (dataset_label) {
           hoverLabel += " " + dataset_label;
@@ -354,9 +354,7 @@ export function formatDataForScatterPlot(
         hoverLabel =
           hoverLabel.length > 25 ? `${hoverLabel.substr(0, 25)}…` : hoverLabel;
 
-        const nullValueLabel =
-          value_type === "categorical" ? "<b>N/A</b>" : "Other";
-        let val = values[i] != null ? values[i]!.toString() : nullValueLabel;
+        let val = values[i] != null ? values[i]!.toString() : "<b>N/A</b>";
         val = val.length > 40 ? `${val.substr(0, 40)}…` : val;
 
         formattedLines.push(`${hoverLabel}: ${val}`);
