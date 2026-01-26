@@ -179,13 +179,19 @@ function OverviewTable(props: OverviewTableProps) {
 
   if (enabledFeatures.context_explorer_prerelease_datasets) {
     columns.push({
-      accessor: "prismOncRef",
-      Header: "PRISM OncRef",
+      accessor: "prismOncRefSeq",
+      Header: "OncRef Seq",
       maxWidth: 90,
       disableFilters: true,
     });
-
-    defaultColumns.push("prismOncRef");
+    columns.push({
+      accessor: "prismOncRefLum",
+      Header: "OncRef Lum",
+      maxWidth: 90,
+      disableFilters: true,
+    });
+    defaultColumns.push("prismOncRefSeq");
+    defaultColumns.push("prismOncRefLum");
   }
 
   return (

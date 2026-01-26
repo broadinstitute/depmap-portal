@@ -6,7 +6,7 @@
 rule get_data_availability:
     inputs:
         script=fileref("./get_data_availability.py"),
-        artifacts=all {"type" ~ "sample_info_dataset_id|crispr-screen-sequence-map|omics_profiles|repurposing_matrix_taiga_id|prism_oncology_reference_auc_matrix|rnai_cell_lines_taiga_id|subtype_context_matrix"},
+        artifacts=all {"type" ~ "sample_info_dataset_id|crispr-screen-sequence-map|omics_profiles|repurposing_matrix_taiga_id|prism_oncology_reference_auc_matrix|prism_oncology_reference_seq_log2_auc_matrix|rnai_cell_lines_taiga_id|subtype_context_matrix"},
 #        model_taiga_id=all {"type": "sample_info_dataset_id"},
 #        screen_sequence_map_taiga_id=all {"type": "crispr-screen-sequence-map"},        
 #        omics_profiles_taiga_id=all {"type": "omics_profiles"},
@@ -37,6 +37,7 @@ rule get_data_availability:
                 ('omics_profiles_taiga_id', 'omics_profiles'), 
                 ('repurposing_matrix_taiga_id', 'repurposing_matrix_taiga_id'), 
                 ('oncref_auc_taiga_id', 'prism_oncology_reference_auc_matrix'), 
+                ('prism_oncology_reference_seq_log2_auc_matrix', 'prism_oncology_reference_seq_log2_auc_matrix'),
                 ('rnai_cell_lines_taiga_id', 'rnai_cell_lines_taiga_id'),
                 ('subtype_context_matrix_taiga_id', 'subtype_context_matrix')]:
             artifact = by_type.get(type_name)

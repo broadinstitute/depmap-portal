@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox"
-version = "4.3.20"
+version = "4.4.0"
 description = "A peristent service that stores and fetches datasets"
 authors = ["Jessica Cheng <jcheng@broadinstitute.org>"]
 packages = [{include = "breadbox"}]
@@ -42,6 +42,7 @@ psutil = "^7.1.0"
 json-logic = "^0.7.0-alpha"
 apsw = "^3.47.2.0"
 sqlglot = "^28.5.0"
+colorama = "^0.4.6"
 
 
 [tool.poetry.group.dev.dependencies]

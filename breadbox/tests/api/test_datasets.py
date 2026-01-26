@@ -3,6 +3,8 @@ import json
 import uuid
 import numpy as np
 import pandas as pd
+
+from breadbox.crud.dataset import get_dataset
 from breadbox.crud.dimension_types import get_dimension_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
@@ -20,7 +22,6 @@ from breadbox.models.dataset import (
     ValueType,
 )
 from fastapi.testclient import TestClient
-from breadbox.api.dependencies import get_dataset
 from breadbox.io.filestore_crud import get_slice
 from breadbox.models.dataset import DimensionSearchIndex
 from breadbox.service.search import populate_search_index_after_update
@@ -171,8 +172,14 @@ class TestGet:
     def test_get_matrix_dataset_samples(
         self, client: TestClient, minimal_db: SessionWithUser, settings
     ):
+        minimal_db.reset_user(settings.admin_users[0])
         given_id = "some_matrix_dataset"
         dataset = factories.matrix_dataset(minimal_db, settings, given_id=given_id)
+
+        tabular_given_id = "tabular"
+        factories.tabular_dataset(minimal_db, settings, given_id=tabular_given_id)
+        minimal_db.reset_user(settings.default_user)
+
         response = client.get(
             f"/datasets/samples/{dataset.id}", headers={"X-Forwarded-User": "anyone"},
         )
@@ -188,6 +195,12 @@ class TestGet:
         )
         assert_status_ok(given_id_response)
         assert given_id_response.json() == response.json()
+
+        response = client.get(
+            f"/datasets/samples/{tabular_given_id}",
+            headers={"X-Forwarded-User": "anyone"},
+        )
+        assert response.status_code == 400
 
     def test_get_dimensions_with_reference_tiny_example(
         self, minimal_db, client: TestClient, settings, public_group
@@ -1468,7 +1481,7 @@ class TestPatch:
         # Check that you can't update a dataset without valid credentials
         bad_user_update_dataset = client.patch(
             f"/datasets/{dataset_id}",
-            json={"name": "New Name"},
+            json={"format": "tabular", "name": "invalid",},
             headers={"X-Forwarded-User": "someone"},
         )
         assert bad_user_update_dataset.status_code == 404

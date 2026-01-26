@@ -28,6 +28,7 @@ from depmap.cansar.views import blueprint as cansar_blueprint
 from depmap.cas.views import blueprint as cas_blueprint
 from depmap.cell_line.views import blueprint as cell_line_blueprint
 from depmap.celligner.views import blueprint as celligner_blueprint
+from depmap.cli_commands.copy_breadbox_names import copy_breadbox_names_cmd
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
 from depmap.constellation.views import blueprint as constellation_blueprint
@@ -422,14 +423,15 @@ def register_commands(app: Flask):
     )
 
     """Register Click commands."""
+    app.cli.add_command(copy_breadbox_names_cmd)
     app.cli.add_command(db_load_commands.recreate_dev_db)
     app.cli.add_command(db_load_commands.fixup_dataset_names)
     app.cli.add_command(db_load_commands.recreate_full_db)
     app.cli.add_command(db_load_commands.export_cell_lines)
     app.cli.add_command(db_load_commands.reload_resources)
     app.cli.add_command(post_deploy_commands.check_data_issues)
-    app.cli.add_command(post_deploy_commands.check_download_data)
     app.cli.add_command(post_deploy_commands.check_nonstandard_datasets)
+    app.cli.add_command(post_deploy_commands.check_legacy_db_mirrors_breadbox)
     app.cli.add_command(spawn_commands.run_worker)
     app.cli.add_command(spawn_commands.run_dev_worker)
     app.cli.add_command(spawn_commands.webpack)

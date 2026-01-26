@@ -14,7 +14,6 @@ class DataIssue(Model):
 
     @staticmethod
     def get_unique_data_issues():
-
         """
         :return: a dataframe of data_type, identifier, description
         """

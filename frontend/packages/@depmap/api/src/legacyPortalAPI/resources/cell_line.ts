@@ -3,7 +3,7 @@ import { uri } from "../../uriTemplateTag";
 import { getJson } from "../client";
 
 export function getCellLineCompoundSensitivityData(depmapId: string) {
-  return getJson<CellLineDataMatrix>(
+  return getJson<{ data: CellLineDataMatrix[] }>(
     uri`/cell_line/compound_sensitivity/${depmapId}`
   );
 }

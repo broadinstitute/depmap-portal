@@ -1,13 +1,14 @@
-import sys
+from hashlib import new
 import os
 
-import re
-from typing import List, Optional
 import click
 import subprocess
 import json
+from typing import Optional
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from colorama import Fore, Style
+from collections import defaultdict
 
 from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 from breadbox.db.session import SessionWithUser
@@ -16,20 +17,20 @@ from breadbox.crud.access_control import PUBLIC_GROUP_ID, TRANSIENT_GROUP_ID
 from breadbox.crud import group as group_crud
 from breadbox.crud import dimension_types as types_crud
 from breadbox.crud import data_type as data_type_crud
+from breadbox.crud import dataset as dataset_crud
+from breadbox.crud.dimension_ids import get_matrix_dataset_given_ids, get_tabular_dataset_index_given_ids
 from breadbox.db.util import transaction
-from breadbox.models.dataset import DimensionTypeLabel
+from breadbox.models.dataset import DimensionTypeLabel, MatrixDataset
 from breadbox.models.group import AccessType
 from breadbox.schemas.group import GroupIn, GroupEntryIn
 from pydantic import ValidationError
 from breadbox.service.dataset import add_dimension_type
+from breadbox.utils import data_issues
 import logging
 from datetime import timedelta
-from breadbox.crud.dataset import find_expired_datasets, delete_dataset
 
 import os
-import shutil
 from db_load import upload_example_datasets
-import hashlib
 from datetime import timedelta
 
 
@@ -414,3 +415,127 @@ def run_dev_worker():
         _run_worker(["--pool=solo", "-c", "1"])
 
     main_func()
+
+
+@cli.command("log_data_issues")
+@click.option(
+    "--issues-dir", 
+    default="./data_issues",
+    help="Path to the directory where the known data issues file and backups should be stored."
+)
+@click.option(
+    "--accept-worsened-issues", 
+    is_flag=True, 
+    default=False, 
+    help="Overwrite the known issues file with the newly detected issues. Only use this option when outstanding issues are not easily fixed and/or cutoffs are not configurable in the breadbox loader."
+)
+def log_data_issues(issues_dir: str, accept_worsened_issues: bool):
+    """
+    Identify places where dataset features are missing metadata and log them as data issues.
+    Specifically, flag places where either:
+    1. A matrix dataset has features or samples with no metadata.
+    2. A matrix dataset has a large number of metadata records not referenced by any features in the dataset (not applicable to samples).
+    3. Metadata records are not referenced by any features in any dataset.
+    The breadbox log_data_issues ratchets similarly to pyright-ratchet to let us reduce the number of issues over time.
+    Known issues are logged, and errors are only raised for new issues.
+    """
+    known_issues = data_issues.load_known_issues(issues_dir)
+    active_issues = _get_active_data_issues()
+
+    new_or_worsened_issues: dict[str, list[data_issues.DataIssue]] = defaultdict(list)
+    for issue_key, issue in active_issues.items():
+        # Identify new issues or issues that have gotten worse
+            current_issue_key = issue_key
+            matching_known_issue = known_issues.get(current_issue_key, None)
+            if matching_known_issue is None:
+                new_or_worsened_issues[issue.dimension_type_name].append(issue)
+            
+            # Consider it worsened if both the count and percent of affected records have increased
+            elif (issue.count_affected > matching_known_issue.count_affected) and (issue.percent_affected >= matching_known_issue.percent_affected):
+                new_or_worsened_issues[issue.dimension_type_name].append(issue)
+    
+    # Log new or worsened issues, grouped by dimension type
+    for dimension_type in types_crud.get_dimension_types(db=_get_db_connection()):
+        if dimension_type.name not in new_or_worsened_issues:
+            print(Fore.GREEN + f"\nDimension type {dimension_type.name} has no new or worsened issues." + Style.RESET_ALL)
+        else:
+            issues_for_dim_type = new_or_worsened_issues[dimension_type.name]
+            print(Fore.RED + f"\nDimension type {dimension_type.name} has {len(issues_for_dim_type)} new or worsened issues:" + Style.RESET_ALL)
+            for issue in issues_for_dim_type:
+                print(Fore.RED + "\t* " + str(issue) + Style.RESET_ALL)
+
+    # Summarize total new or worsened issues
+    total_new_or_worsened_issues = sum(len(issues) for issues in new_or_worsened_issues.values())
+    if total_new_or_worsened_issues > 0 and not accept_worsened_issues:
+        raise Exception(f"Detected {total_new_or_worsened_issues} new or worsened data issues. See logs above for details.")
+
+
+    # If the user has accepted the changes, save the list of all possible outstanding issues to file.
+    elif total_new_or_worsened_issues > 0 and accept_worsened_issues:
+        num_issues_saved = data_issues.save_issues(active_issues, issues_dir)
+        print(f"Overwrote the known issues file with {num_issues_saved} issues, including {total_new_or_worsened_issues} new or worsened issues.")
+
+    # If no new or worsened issues, just print a confirmation.
+    else:
+        print(Fore.GREEN + "No new or worsened data issues detected." + Style.RESET_ALL)
+        num_issues_saved = data_issues.save_issues(active_issues, issues_dir)
+        print(f"Updated known issues file with {num_issues_saved} outstanding issues.")
+
+
+def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
+    db = _get_db_connection()
+
+    all_dimension_types = types_crud.get_dimension_types(db=db)
+
+    all_issues = {}
+    for dimension_type in all_dimension_types:
+        if dimension_type.dataset is None:
+            print(f"Skipping dimension type {dimension_type.name} because it has no data")
+            continue
+
+        if dimension_type.axis == "feature":
+            associated_datasets = dataset_crud.get_datasets(db=db, user=db.user, feature_type=dimension_type.name)
+        else:
+            associated_datasets = dataset_crud.get_datasets(db=db, user=db.user, sample_type=dimension_type.name)
+
+        
+        # Get all given IDs belonging to the metadata 
+        metadata_given_ids = get_tabular_dataset_index_given_ids(db=db, dataset=dimension_type.dataset)
+
+        # For now, only validate matrix datasets
+        matrix_datasets: list[MatrixDataset] = [d for d in associated_datasets if d.format == "matrix_dataset"]
+        
+        used_given_ids_across_datasets = set()
+        for dataset in matrix_datasets:
+            if dataset.given_id is None:
+                print(f"WARNING: dataset {dataset.name} has no given_id. Issues will be logged using the transient dataset ID.")
+            dataset_given_ids = get_matrix_dataset_given_ids(db=db, dataset=dataset, axis=dimension_type.axis)
+            used_given_ids_across_datasets.update(set(dataset_given_ids))
+
+            missing_metadata_issue = data_issues.check_for_dataset_ids_without_metadata(dataset, dimension_type.name, dataset_given_ids, metadata_given_ids)
+            if missing_metadata_issue:
+                all_issues[missing_metadata_issue.get_key()] = missing_metadata_issue
+            
+            unused_metadata_issue = data_issues.check_for_metadata_not_in_dataset(dataset, dimension_type.name, dimension_type.axis, dataset_given_ids, metadata_given_ids)
+            if unused_metadata_issue:
+                all_issues[unused_metadata_issue.get_key()] = unused_metadata_issue
+
+        # Validate overall usage of metadata across all datasets
+        if len(matrix_datasets) > 0:
+            unused_metadata_given_ids = set(metadata_given_ids).difference(used_given_ids_across_datasets)
+            percent_unused_metadata_given_ids = len(unused_metadata_given_ids) / len(metadata_given_ids)
+            if unused_metadata_given_ids:
+                issue = data_issues.DataIssue(
+                    dimension_type_name=dimension_type.name,
+                    dataset_id=None,
+                    dataset_name=None,
+                    issue_type="Metadata records not used in any dataset",
+                    count_affected=len(unused_metadata_given_ids),
+                    percent_affected=percent_unused_metadata_given_ids,
+                    examples=list(unused_metadata_given_ids)[:5],
+                )
+                all_issues[issue.get_key()] = issue
+
+    return all_issues
+
+    

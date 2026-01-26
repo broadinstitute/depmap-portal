@@ -43,7 +43,7 @@
     // Prevent the svg from auto-scaling (to make sure the y-axis labels line up)
     min-height: auto;
     width: 250px;
-    margin-left: 100px;
+    margin-left: 120px;
   }
 
   .container_fluid .card_padding {
@@ -65,7 +65,7 @@
   }
 
   .boxplot-label {
-    max-width: 75px;
+    max-width: 110px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

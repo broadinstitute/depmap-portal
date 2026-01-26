@@ -1,4 +1,4 @@
-rule oncref_context_analysis:
+rule oncref_lum_context_analysis:
     inputs:
         script=fileref("./get_context_analysis.py"),
         subtype_tree_taiga_id={"type":"subtype_tree"},
@@ -6,14 +6,32 @@ rule oncref_context_analysis:
         oncref_auc_taiga_id={"type":"prism_oncology_reference_auc_matrix"},
         portal_compounds={"type": "drug-metadata", "name": "merged-drugs"},
     outputs:
-        {"type": "context_analysis_for_dataset", "dataset": "oncref", "filename": {"$filename": "context_analysis.csv"}}
+        {"type": "context_analysis_for_dataset", "dataset": "oncref_lum", "filename": {"$filename": "context_analysis.csv"}}
     run """ python {{ inputs.script.filename }} \
-              oncref_context_analysis \
+              oncref_lum_context_analysis \
               {{ inputs.subtype_tree_taiga_id.dataset_id }} \
               {{ inputs.context_matrix_taiga_id.dataset_id }} \
               {{ inputs.oncref_auc_taiga_id.dataset_id }} \
               {{ inputs.portal_compounds.dataset_id }} \
               context_analysis.csv """
+
+rule oncref_seq_context_analysis:
+    inputs:
+        script=fileref("./get_context_analysis.py"),
+        subtype_tree_taiga_id={"type":"subtype_tree"},
+        context_matrix_taiga_id={"type":"subtype_context_matrix"},
+        oncref_auc_taiga_id={"type":"prism_oncology_reference_seq_log2_auc_matrix"},
+        portal_compounds={"type": "drug-metadata", "name": "merged-drugs"},
+    outputs:
+        {"type": "context_analysis_for_dataset", "dataset": "oncref_seq", "filename": {"$filename": "context_analysis.csv"}}
+    run """ python {{ inputs.script.filename }} \
+              oncref_seq_context_analysis \
+              {{ inputs.subtype_tree_taiga_id.dataset_id }} \
+              {{ inputs.context_matrix_taiga_id.dataset_id }} \
+              {{ inputs.oncref_auc_taiga_id.dataset_id }} \
+              {{ inputs.portal_compounds.dataset_id }} \
+              context_analysis.csv """
+
 
 rule repurposing_context_analysis:
     inputs:
