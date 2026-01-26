@@ -1,6 +1,7 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { Dataset, MatrixDataset } from "@depmap/types";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
+import Papa from "papaparse";
 import { fetchMetadata } from "src/compound/fetchDataHelpers";
 import { GeneCorrelationDatasetOption } from "src/correlationAnalysis/types";
 
@@ -94,19 +95,19 @@ export async function downloadTopCorrelations(
     ])
   );
 
-  // 2. Format the data rows
-  const headers = ["Gene", "Entrez Id", "Dataset", "Correlation"];
-  const rows = correlationsData.map((corr) => [
-    `"${corr.other_dimension_label}"`,
-    `"${geneMap.get(corr.other_dimension_label) ?? "N/A"}"`,
-    `"${datasetDisplayName}"`,
-    corr.correlation.toString(),
-  ]);
+  // 1. Create objects
+  const dataToExport = correlationsData.map((corr) => ({
+    Gene: corr.other_dimension_label,
+    "Entrez Id": geneMap.get(corr.other_dimension_label) ?? "N/A",
+    Dataset: datasetDisplayName,
+    Correlation: corr.correlation,
+  }));
 
-  // 3. Construct CSV String
-  const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join(
-    "\n"
-  );
+  // 2. Use Papa.unparse to convert objects to a CSV string
+  const csvContent = Papa.unparse(dataToExport, {
+    quotes: true, // Forces quotes around all cells for safety
+    header: true, // Uses the object keys as the first row
+  });
 
   // 4. Native Browser Download Trigger
   const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
