@@ -36,7 +36,7 @@ def test_copy_breadbox_names(monkeypatch, empty_db_mock_downloads):
     assert committed
 
     def check_name(value, expected):
-        dataset = DependencyDataset.get_dataset_by_name(DependencyEnum.Avana.value)
+        dataset = DependencyDataset.get_dataset_by_name(value)
         assert dataset is not None
         assert dataset.display_name == expected
 
