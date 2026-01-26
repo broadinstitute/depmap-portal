@@ -86,7 +86,8 @@ const ContextExplorerTabs = ({
       wgs: capitalizeFirstLetter(String(row.wgs)),
       wes: capitalizeFirstLetter(String(row.wes)),
       rna_seq: capitalizeFirstLetter(String(row.rna_seq)),
-      prismOncRef: capitalizeFirstLetter(String(row.oncref)),
+      prismOncRefSeq: capitalizeFirstLetter(String(row.oncrefSeq)),
+      prismOncRefLum: capitalizeFirstLetter(String(row.oncrefLum)),
       prismRepurposing: capitalizeFirstLetter(String(row.repurposing)),
     };
   });
@@ -96,7 +97,8 @@ const ContextExplorerTabs = ({
     const map = new Map<number, TabTypes>();
     const allowedTabTypes = Object.values(TabTypes).filter(
       (tabTypeStr) =>
-        tabTypeStr !== String(TabTypes.DrugSensitivityOncRef) ||
+        tabTypeStr !== String(TabTypes.DrugSensitivityOncRefLum) ||
+        tabTypeStr !== String(TabTypes.DrugSensitivityOncRefSeq) ||
         enabledFeatures.context_explorer_prerelease_datasets
     );
 
@@ -125,7 +127,12 @@ const ContextExplorerTabs = ({
           CRISPR Gene Dependency
         </Tab>
         {enabledFeatures.context_explorer_prerelease_datasets && (
-          <Tab id="oncref" className={styles.Tab}>
+          <Tab id="oncrefSeq" className={styles.Tab}>
+            OncRef Seq Sensitivity
+          </Tab>
+        )}
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <Tab id="oncrefLum" className={styles.Tab}>
             OncRef Lum Sensitivity
           </Tab>
         )}
@@ -183,6 +190,24 @@ const ContextExplorerTabs = ({
             />
           )}
         </TabPanel>
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <TabPanel className={styles.TabPanel}>
+            {" "}
+            {!isLoadingInitialData && (
+              <ContextAnalysis
+                selectedContextNode={selectedContextNode}
+                selectedContextNameInfo={selectedContextNameInfo}
+                topContextNameInfo={topContextNameInfo}
+                treeType={treeType}
+                featureType={"compound"}
+                datasetId={
+                  ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
+                }
+                customInfoImg={customInfoImg}
+              />
+            )}
+          </TabPanel>
+        )}
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <TabPanel className={styles.TabPanel}>
             {" "}
