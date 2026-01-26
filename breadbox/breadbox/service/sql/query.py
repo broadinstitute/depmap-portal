@@ -38,6 +38,7 @@ from .schema import assign_names, SchemaNames
 from breadbox.utils.profiling import profiled_region
 
 import sqlglot
+import sqlglot.errors
 import sqlglot.expressions
 import csv
 import io
