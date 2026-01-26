@@ -210,7 +210,7 @@ const ContextExplorerTabs = ({
               topContextNameInfo={topContextNameInfo}
               treeType={treeType}
               featureType={"compound"}
-              datasetId={ContextExplorerDatasets.REPURPOSING_primary_collapsed}
+              datasetId={ContextExplorerDatasets.Rep_all_single_pt_per_compound}
               customInfoImg={customInfoImg}
             />
           )}

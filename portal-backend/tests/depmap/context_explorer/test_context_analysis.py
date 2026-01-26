@@ -513,7 +513,7 @@ def _setup_entities_and_dataset_id(
     "dataset_given_id",
     [
         "Chronos_Combined",
-        "REPURPOSING_primary_collapsed",
+        "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
     ],
 )
@@ -1068,7 +1068,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
     "dataset_given_id",
     [
         "Chronos_Combined",
-        "REPURPOSING_primary_collapsed",
+        "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
     ],
 )
@@ -1142,7 +1142,7 @@ def _get_box_plot_data(
     "dataset_given_id",
     [
         "Chronos_Combined",
-        "REPURPOSING_primary_collapsed",
+        "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
     ],
 )

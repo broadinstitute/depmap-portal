@@ -20,12 +20,14 @@ const Tutorial = () => {
   return (
     <div className={styles.tutorialContainer}>
       <div className={styles.tutorialHeader}>
-        <h2 className={styles.tutorialTitle}>Welcome to GeneTea</h2>
+        <h2 className={styles.tutorialTitle}>Welcome to TEA party</h2>
         <p className={styles.subtitle}>
-          TeaParty is a model that takes in free-text gene descriptions and
-          incorporates several natural language processing methods to learn a
-          sparse gene-by-term embedding, which can be treated as a de novo gene
-          set database.
+          This app facilitates overrepresentation analysis with GeneTEA. To see
+          the top enriched terms for a list of genes enter them in the input
+          filed to a left, or load an existing Gene Context. To search for a
+          genes matching a term, type the term in the search bar below. Unsure
+          of where to start? Check out the guided examples section for
+          inspiration!
         </p>
 
         <div className={styles.termSearch}>
@@ -51,6 +53,7 @@ const Tutorial = () => {
         </div>
       </div>
       <div className={styles.gettingStarted}>
+        <h3>Guided Examples</h3>
         <TutorialExamples />
       </div>
 

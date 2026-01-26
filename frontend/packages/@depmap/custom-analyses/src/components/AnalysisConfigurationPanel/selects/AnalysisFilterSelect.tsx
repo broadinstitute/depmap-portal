@@ -16,7 +16,7 @@ function AnalysisFilterSelect({ context_type, value, onChange }: Props) {
   };
 
   const handleClickSaveAsContext = () => {
-    DepMap.saveNewContext(value, null, setValue);
+    DepMap.saveNewContext(value, null, onChange);
   };
 
   return (

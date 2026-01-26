@@ -20,7 +20,7 @@ rule repurposing_context_analysis:
         script=fileref("./get_context_analysis.py"),
         subtype_tree_taiga_id={"type":"subtype_tree"},
         context_matrix_taiga_id={"type":"subtype_context_matrix"},
-        repurposing_matrix_taiga_id={"type": "rep-primary-collapsed-taiga-id", "label": "REPURPOSING_primary_collapsed"},
+        repurposing_matrix_taiga_id={"type": "rep-primary-collapsed-taiga-id", "label": "Rep_all_single_pt_per_compound"},
         portal_compounds={"type": "drug-metadata", "name": "merged-drugs"},
     outputs:
         {"type": "context_analysis_for_dataset", "dataset": "repurposing", "filename": {"$filename": "context_analysis.csv"}}

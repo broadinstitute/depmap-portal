@@ -15,7 +15,6 @@ from starlette.datastructures import MutableHeaders
 from .api import api_router
 from .config import Settings
 from .ui import SinglePageApplication
-from .api.proxy import router as proxy_router
 from importlib.metadata import version
 
 
@@ -46,13 +45,6 @@ def create_app(settings: Settings):
         root_router = api_router
     app.include_router(root_router)
 
-    # For Elara breadbox development only. When enabled, this option will proxy all
-    # requests that have a /depmap/ prefix to http://localhost:5000 (i.e. the
-    # portal's Flask server). To enable this feature, edit the ./breadbox/.env file
-    # and set USE_DEPMAP_PROXY = True
-    if settings.use_depmap_proxy:
-        app.include_router(proxy_router)
-
     app.mount(
         f"{api_prefix}/elara",
         SinglePageApplication(directory=pathlib.Path("breadbox/static/elara")),
@@ -66,7 +58,7 @@ def create_app(settings: Settings):
             scheme_override=scheme_override,
             host_override=host_override,
         )
-    
+
     # Add request logging middleware
     app.add_middleware(RequestLoggingMiddleware)
 
@@ -96,7 +88,7 @@ class RequestLoggingMiddleware:
         path = scope.get("path", "unknown")
         method = scope.get("method", "unknown")
         request_id = str(uuid.uuid4())
-        
+
         # Log request start
         span_name = f"{method} {path}"
         log_event(log_filename, "start", request_id, {"n": span_name})
@@ -104,27 +96,26 @@ class RequestLoggingMiddleware:
         # Capture the original send function to intercept the response
         original_send = send
         response_status = None
-        
+
         async def wrapped_send(message):
             nonlocal response_status
-            
+
             if message["type"] == "http.response.start":
                 # Capture the status code when headers are sent
                 response_status = message.get("status", 0)
-            
+
             # Check if this is the final response body message
-            is_final_message = (
-                message["type"] == "http.response.body" and 
-                not message.get("more_body", False)
-            )
-            
+            is_final_message = message[
+                "type"
+            ] == "http.response.body" and not message.get("more_body", False)
+
             # Pass through to the original send
             await original_send(message)
-            
+
             # If this is the final message, log the completion
             if is_final_message:
                 log_event(log_filename, "end", request_id, {"s": response_status})
-        
+
         # Use the wrapped send function and catch any exceptions
         try:
             await self.app(scope, receive, wrapped_send)
@@ -157,5 +148,3 @@ class OverrideMiddleWare:
             scope["scheme"] = self.scheme_override
 
         await self.app(scope, receive, send)
-
-

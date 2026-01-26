@@ -15,7 +15,7 @@ export interface ContextInfo {
 
 export enum ContextExplorerDatasets {
   Chronos_Combined = "Chronos_Combined",
-  REPURPOSING_primary_collapsed = "REPURPOSING_primary_collapsed",
+  Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound",
   PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix",
 }
 
@@ -63,8 +63,8 @@ export interface ContextPlotBoxData {
   insignificant_heme_data: BoxData;
   insignificant_solid_data: BoxData;
   drug_dotted_line: number;
-  entity_label: string;
-  entity_overview_page_label: string;
+  feature_label: string;
+  feature_overview_page_label: string;
   dataset_units: string;
 }
 

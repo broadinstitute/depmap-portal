@@ -266,7 +266,7 @@ function ContextAnalysis({
       return oncrefFilterDefinitions;
     }
 
-    if (datasetId === ContextExplorerDatasets.REPURPOSING_primary_collapsed) {
+    if (datasetId === ContextExplorerDatasets.Rep_all_single_pt_per_compound) {
       return repurposingFilterDefinitions;
     }
 
@@ -793,7 +793,7 @@ function ContextAnalysis({
                 </>
               )}
               {datasetId ===
-                ContextExplorerDatasets.REPURPOSING_primary_collapsed && (
+                ContextExplorerDatasets.Rep_all_single_pt_per_compound && (
                 <>
                   <h2>
                     PRISM Repurposing compound sensitivities enriched in{" "}
@@ -843,7 +843,7 @@ function ContextAnalysis({
                   </h2>
                 )}
                 {datasetId ===
-                  ContextExplorerDatasets.REPURPOSING_primary_collapsed && (
+                  ContextExplorerDatasets.Rep_all_single_pt_per_compound && (
                   <h2>
                     Not enough data points to compute enriched PRISM Repurposing
                     compound sensitivities for {selectedContextNameInfo.name}.
@@ -1026,7 +1026,7 @@ function ContextAnalysis({
                 </p>
               )}
               {datasetId ===
-                ContextExplorerDatasets.REPURPOSING_primary_collapsed && (
+                ContextExplorerDatasets.Rep_all_single_pt_per_compound && (
                 <p
                   style={{
                     fontSize: "14px",
@@ -1110,7 +1110,7 @@ function ContextAnalysis({
             {boxPlotData && (
               <a
                 href={toPortalLink(
-                  `/${featureType}/${boxPlotData.entity_overview_page_label}`
+                  `/${featureType}/${boxPlotData.feature_label}`
                 )}
                 target="_blank"
                 rel="noreferrer"
@@ -1205,7 +1205,7 @@ function ContextAnalysis({
                       ONCREF_DETAIL_NO_COMPOUND_SELECTED}
                     {featureType === "compound" &&
                       datasetId ===
-                        ContextExplorerDatasets.REPURPOSING_primary_collapsed &&
+                        ContextExplorerDatasets.Rep_all_single_pt_per_compound &&
                       REPURPOSING_DETAIL_NO_COMPOUND_SELECTED}
                   </h4>
                 </div>

@@ -127,21 +127,18 @@ def compute_univariate_associations(
         resultsDirPrefix, str(datetime.datetime.now().strftime("%Y%m%d")),
     )
 
-    try:
-        result = utils.cast_celery_task(analysis_tasks.run_custom_analysis).delay(
-            user=user,
-            analysis_type=analysis_type,
-            query_feature_id=computeParams.queryFeatureId,
-            query_dataset_id=computeParams.queryDatasetId,
-            filestore_location=settings.filestore_location,
-            dataset_id=dataset_id,
-            depmap_model_ids=depmap_model_ids,  # Use might pick subset of cell lines
-            query_values=query_values,
-            vector_is_dependent=vector_is_dependent,
-            results_dir=results_dir,
-        )
-    except PermissionError as e:
-        raise HTTPException(403, detail=str(e))
+    result = utils.cast_celery_task(analysis_tasks.run_custom_analysis).delay(
+        user=user,
+        analysis_type=analysis_type,
+        query_feature_id=computeParams.queryFeatureId,
+        query_dataset_id=computeParams.queryDatasetId,
+        filestore_location=settings.filestore_location,
+        dataset_id=dataset_id,
+        depmap_model_ids=depmap_model_ids,  # Use might pick subset of cell lines
+        query_values=query_values,
+        vector_is_dependent=vector_is_dependent,
+        results_dir=results_dir,
+    )
 
     return utils.format_task_status(result)
 

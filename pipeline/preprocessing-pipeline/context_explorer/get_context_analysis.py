@@ -6,11 +6,11 @@ import argparse
 import json
 import re
 
-# need to add ../pipeline/ to the sys path in order to import from scripts
+# need to add the preprocessing-pipeline directory to sys.path in order to import from scripts
 import sys
 from pathlib import Path
 
-sys.path.append(str(Path().resolve().parents[0]))
+sys.path.append(str(Path(__file__).resolve().parent.parent))
 from scripts.calculate_bimodality_coefficient import (
     bimodality_coefficient_for_cpd_viabilities,
 )
@@ -20,7 +20,7 @@ from tqdm import tqdm
 MIN_GROUP_SIZE = 5
 
 CRISPR_DATASET_NAME = "Chronos_Combined"
-REPURPOSING_DATASET_NAME = "REPURPOSING_primary_collapsed"
+REPURPOSING_DATASET_NAME = "Rep_all_single_pt_per_compound"
 ONCREF_DATASET_NAME = "PRISMOncologyReferenceLog2AUCMatrix"
 
 
@@ -382,7 +382,9 @@ def oncref_context_analysis(
     # dictionary rather than expected named inputs to the
     # compute_context_results function.
     oncref_aucs, oncref_log_aucs = load_oncref_data(
-        tc=tc, oncref_auc_taiga_id=oncref_auc_taiga_id
+        tc=tc,
+        oncref_auc_taiga_id=oncref_auc_taiga_id,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
     datasets_to_calculate_bimodality = {ONCREF_DATASET_NAME: oncref_log_aucs}
@@ -397,7 +399,11 @@ def oncref_context_analysis(
 
         ds_res["effect_size"] = ds_res.mean_in - ds_res.mean_out
 
-        return ds_res.reset_index(names="entity_id").merge(oncref_selectivity)
+        return (
+            ds_res.reset_index()
+            .rename(columns={"index": "feature_id"})
+            .merge(oncref_selectivity, on=["feature_id", "dataset"])
+        )
 
     return compute_in_out_groups(
         subtype_tree,
@@ -413,19 +419,23 @@ def repurposing_context_analysis(
     subtype_tree,
     context_matrix,
     repurposing_matrix_taiga_id,
-    repurposing_list_taiga_id,
+    portal_compounds_taiga_id,
 ):
     rep_sensitivity = load_repurposing_data(
         tc=tc,
         repurposing_matrix_taiga_id=repurposing_matrix_taiga_id,
-        repurposing_list_taiga_id=repurposing_list_taiga_id,
+        portal_compounds_taiga_id=portal_compounds_taiga_id,
     )
 
     datasets_to_calculate_bimodality = {REPURPOSING_DATASET_NAME: rep_sensitivity}
     repurposing_selectivity = format_selectivity_vals(datasets_to_calculate_bimodality)
 
     def prism_add_extra_columns(ds_res, ds_in_group, ds_out_group):
-        return ds_res.reset_index(names="entity_id").merge(repurposing_selectivity)
+        return (
+            ds_res.reset_index()
+            .rename(columns={"index": "feature_id"})
+            .merge(repurposing_selectivity, on=["feature_id", "dataset"])
+        )
 
     return compute_in_out_groups(
         subtype_tree,
@@ -453,9 +463,11 @@ def crispr_context_analysis(
     )
 
     def crispr_add_extra_columns(ds_res, ds_in_group, ds_out_group):
-        return add_crispr_columns(
-            ds_res, gene_dependency, ds_in_group, ds_out_group,
-        ).reset_index(names="entity_id")
+        return (
+            add_crispr_columns(ds_res, gene_dependency, ds_in_group, ds_out_group,)
+            .reset_index()
+            .rename(columns={"index": "feature_id"})
+        )
 
     return compute_in_out_groups(
         subtype_tree,

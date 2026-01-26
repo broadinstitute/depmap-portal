@@ -1,5 +1,5 @@
 import sqlglot
-
+from typing import Callable
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import AnnotationType
 from tests import factories
@@ -7,14 +7,17 @@ import pandas as pd
 from fastapi.testclient import TestClient
 
 
-def _assert_sql_result_eq(client, sql, expected_result):
+def _assert_sql_result_eq(client, sql, expected_result, expected_status_code=200):
     response = client.post(
         "/temp/sql/query",
         json={"sql": sql,},
         headers={"X-Forwarded-User": "anonymous"},
     )
-    assert response.status_code == 200
-    assert response.text == expected_result
+    assert response.status_code == expected_status_code
+    if isinstance(expected_result, Callable):
+        assert expected_result(response.text)
+    else:
+        assert response.text == expected_result
 
 
 def test_matrix_query(minimal_db: SessionWithUser, settings, client: TestClient):
@@ -94,6 +97,24 @@ def assert_schema_is_valid(client):
     print(f"Schema:\n{response.text}")
 
 
+def test_bad_queries(minimal_db: SessionWithUser, settings, client: TestClient):
+    # malformed query
+    _assert_sql_result_eq(
+        client,
+        "select count(1) samples from",
+        lambda text: "Expected table name" in text,
+        expected_status_code=400,
+    )
+
+    # query a table which doesn't exist
+    _assert_sql_result_eq(
+        client,
+        "select count(1) samples from invalid",
+        lambda text: "no such table: invalid" in text,
+        expected_status_code=400,
+    )
+
+
 def test_tabular_query(minimal_db: SessionWithUser, settings, client: TestClient):
     # Define metadata
     factories.add_dimension_type(
@@ -153,4 +174,9 @@ def test_tabular_query(minimal_db: SessionWithUser, settings, client: TestClient
         client,
         'select a1.label "label1", a2.label "label2" from annot1_metadata a1 join annot2_metadata a2 on a1.ID = a2.ID order by a1.ID',
         "label1,label2\r\nfeatureLabel1,dim2-1\r\nfeatureLabel5,dim2-5\r\n",
+    )
+
+    # make sure we handle fetching no rows correctly
+    _assert_sql_result_eq(
+        client, "select age from annot1_metadata where age > 10000", "age\r\n"
     )
