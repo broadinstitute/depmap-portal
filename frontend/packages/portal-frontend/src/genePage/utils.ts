@@ -1,5 +1,7 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { Dataset, MatrixDataset } from "@depmap/types";
+import { AssociatedFeatures } from "@depmap/types/src/Dataset";
+import { fetchMetadata } from "src/compound/fetchDataHelpers";
 import { GeneCorrelationDatasetOption } from "src/correlationAnalysis/types";
 
 export async function getCorrelationDatasetsForEntity(
@@ -70,4 +72,58 @@ export async function getDependencyDatasetIds(
   }
 
   return filteredDatasets.map(({ given_id }: Dataset) => given_id!);
+}
+
+export async function downloadTopCorrelations(
+  geneSymbol: string,
+  datasetDisplayName: string,
+  correlationsData: AssociatedFeatures[]
+) {
+  const geneMetadata = await fetchMetadata<any>(
+    "gene",
+    null,
+    ["label"],
+    breadboxAPI,
+    "id"
+  );
+  // 1. Create lookup map for the Join
+  const geneMap = new Map(
+    Object.entries(geneMetadata["label"]).map(([entrez_id, label]) => [
+      label, // Key: the string label (e.g., "SOX10")
+      entrez_id, // Value: the ID (e.g., "6662")
+    ])
+  );
+
+  // 2. Format the data rows
+  const headers = ["Gene", "Entrez Id", "Dataset", "Correlation"];
+  const rows = correlationsData.map((corr) => [
+    `"${corr.other_dimension_label}"`,
+    `"${geneMap.get(corr.other_dimension_label) ?? "N/A"}"`,
+    `"${corr.other_dataset_given_id}"`,
+    corr.correlation.toString(),
+  ]);
+
+  // 3. Construct CSV String
+  const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join(
+    "\n"
+  );
+
+  // 4. Native Browser Download Trigger
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute(
+    "download",
+    `${geneSymbol}'s Top 100 Codependencies for ${datasetDisplayName}.csv`
+  );
+
+  // Append to body, click, and remove
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  // Clean up the URL to free up memory
+  URL.revokeObjectURL(url);
 }

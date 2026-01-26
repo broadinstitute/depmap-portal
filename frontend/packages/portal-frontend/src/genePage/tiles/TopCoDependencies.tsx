@@ -5,6 +5,7 @@ import { toStaticUrl } from "@depmap/globals";
 import InfoIcon from "src/common/components/InfoIcon";
 import useTopCoDependenciesData from "../hooks/useTopCoDependenciesData";
 import { CoDependenciesTable } from "./CoDependenciesTable";
+import { downloadTopCorrelations } from "../utils";
 
 interface TopCoDependenciesTileProps {
   geneEntrezId: string;
@@ -40,8 +41,8 @@ const TopCoDependenciesTile = ({
     associationDatasetIds
   );
 
-  // Get the top 10 dataset associations based on abs(correlation) sorted in descending order
-  const topCrisprDatasetCorrelations = useMemo(() => {
+  // Get the top dataset associations based on abs(correlation) sorted in descending order
+  const allTopCrisprDatasetCorrelations = useMemo(() => {
     if (!crisprCorrelationData) {
       return null;
     }
@@ -56,10 +57,10 @@ const TopCoDependenciesTile = ({
       .filter((feat) => feat.other_dimension_label !== geneLabel) // Filter out self
       .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
 
-    return sortedFeatures.slice(0, 5);
+    return sortedFeatures;
   }, [crisprCorrelationData, geneLabel]);
 
-  const topRnaiDatasetCorrelations = useMemo(() => {
+  const allTopRnaiDatasetCorrelations = useMemo(() => {
     if (!rnaiCorrelationData) {
       return null;
     }
@@ -74,8 +75,15 @@ const TopCoDependenciesTile = ({
       .filter((feat) => feat.other_dimension_label !== geneLabel)
       .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
 
-    return sortedFeatures.slice(0, 5);
+    return sortedFeatures;
   }, [rnaiCorrelationData, geneLabel]);
+
+  const topCrisprDatasetCorrelations = allTopCrisprDatasetCorrelations?.slice(
+    0,
+    5
+  );
+
+  const topRnaiDatasetCorrelations = allTopRnaiDatasetCorrelations?.slice(0, 5);
 
   const customInfoImg = (
     <img
@@ -94,7 +102,7 @@ const TopCoDependenciesTile = ({
     <article className={`card_wrapper stacked-boxplot-tile`}>
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">
-          Top Co-Dependencies{" "}
+          Top Co-dependencies{" "}
           {false && (
             <InfoIcon
               target={customInfoImg}
@@ -122,6 +130,21 @@ const TopCoDependenciesTile = ({
                   featureType={"gene"}
                   topDatasetCorrelations={topCrisprDatasetCorrelations}
                 />
+                <p>
+                  Download{" "}
+                  <a
+                    style={{ cursor: "pointer" }}
+                    onClick={() =>
+                      downloadTopCorrelations(
+                        crisprDatasetName,
+                        geneLabel,
+                        crisprCorrelationData.associated_dimensions
+                      )
+                    }
+                  >
+                    Top 100 Co-dependencies
+                  </a>
+                </p>
               </div>
             )}
           </div>
@@ -146,6 +169,21 @@ const TopCoDependenciesTile = ({
                     featureType={"gene"}
                     topDatasetCorrelations={topRnaiDatasetCorrelations}
                   />
+                  <p>
+                    Download{" "}
+                    <a
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        downloadTopCorrelations(
+                          rnaiDatasetName,
+                          geneLabel,
+                          rnaiCorrelationData.associated_dimensions
+                        )
+                      }
+                    >
+                      Top 100 Co-dependencies
+                    </a>
+                  </p>
                 </>
               )}
           </div>
