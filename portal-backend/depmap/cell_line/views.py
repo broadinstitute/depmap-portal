@@ -366,6 +366,9 @@ def download_compound_sensitivities(model_id: str):
     dataset = DependencyDataset.get_dataset_by_data_type_priority(
         DependencyDataset.DataTypeEnum.drug_screen, priority=priority
     )
+    if dataset is None:
+        abort(404)
+
     dataset_name = dataset.name.name
     dataset_display_name = dataset.display_name
 
