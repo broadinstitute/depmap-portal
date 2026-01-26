@@ -3,6 +3,7 @@ from logging import getLogger
 from uuid import UUID
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
+from pydantic import Json
 
 from pydantic import Json
 
@@ -13,7 +14,6 @@ from fastapi import (
     Form,
     HTTPException,
     UploadFile,
-    Query,
     Body,
     Response,
     Query,
@@ -61,12 +61,10 @@ from ..schemas.dataset import (
 from breadbox.service import dataset as dataset_service
 from breadbox.service import metadata as metadata_service
 from breadbox.service import slice as slice_service
-from .dependencies import get_dataset as get_dataset_dep
 from .dependencies import get_db_with_user, get_user, get_cache
-from breadbox.utils.caching import CachingCaller
-
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
+from ..utils.caching import CachingCaller
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 log = getLogger(__name__)
@@ -104,17 +102,45 @@ def get_datasets(
     return [dataset for dataset in datasets]
 
 
+def _get_required_dataset(db: SessionWithUser, dataset_id: str):
+    dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise DatasetNotFoundError(f"Could not find dataset with id {dataset_id}")
+    return dataset
+
+
+def _get_required_matrix_dataset(db: SessionWithUser, dataset_id: str):
+    """
+        fetches matrix dataset and raises a user error if dataset is not found or it's the wrong type
+    """
+    dataset = _get_required_dataset(db, dataset_id)
+    if not isinstance(dataset, MatrixDataset):
+        raise UserError(f"This endpoint only works with MatrixDatasets")
+    return dataset
+
+
+def _get_required_tabular_dataset(db: SessionWithUser, dataset_id: str):
+    """
+        fetches matrix dataset and raises a user error if dataset is not found or it's the wrong type
+    """
+    dataset = _get_required_dataset(db, dataset_id)
+    if not isinstance(dataset, TabularDataset):
+        raise UserError(f"This endpoint only works with MatrixDatasets")
+    return dataset
+
+
 @router.get(
     "/features/{dataset_id}", operation_id="get_dataset_features",
 )
 def get_dataset_features(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
-    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
+    dataset_id: str,
 ):
     """
     Get information about each feature belonging to a given dataset.
     """
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     feature_labels_by_id = metadata_service.get_matrix_dataset_feature_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -128,13 +154,14 @@ def get_dataset_features(
 def get_dataset_samples(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     user: Annotated[str, Depends(get_user)],
-    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
+    dataset_id: str,
 ):
     """
     Get information about each sample belonging to a given dataset.
     For example, if the samples are depmap models, then this should
     return depmap_ids as ids and cell line names as labels.
     """
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     sample_labels_by_id = metadata_service.get_matrix_dataset_sample_labels_by_id(
         db=db, user=user, dataset=dataset,
@@ -211,8 +238,11 @@ def get_feature_data(
     response_model=DatasetResponse,
     response_model_by_alias=False,
 )
-def get_dataset(dataset: DatasetModel = Depends(get_dataset_dep)):
+def get_dataset(
+    dataset_id: str, db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+):
     """Get metadata for a dataset, if it exists and is available to the user."""
+    dataset = _get_required_dataset(db, dataset_id)
     return dataset
 
 
@@ -222,7 +252,7 @@ def get_dataset(dataset: DatasetModel = Depends(get_dataset_dep)):
 def get_matrix_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
-    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
+    dataset_id: str,
     matrix_dimensions_info: Annotated[
         MatrixDimensionsInfo, Body(default_factory=MatrixDimensionsInfo)
     ],
@@ -233,10 +263,7 @@ def get_matrix_dataset_data(
         ),
     ] = False,
 ):
-    if dataset.format != "matrix_dataset":
-        raise UserError(
-            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
-        )
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     df = dataset_service.get_subsetted_matrix_dataset_df(
         db, dataset, matrix_dimensions_info, settings.filestore_location, strict,
@@ -250,8 +277,8 @@ def get_matrix_dataset_data(
 )
 async def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
     cache: Annotated[CachingCaller, Depends(get_cache)],
+    dataset_id: str,
     tabular_dimensions_info: Annotated[
         TabularDimensionsInfo, Body(default_factory=TabularDimensionsInfo)
     ],
@@ -262,15 +289,7 @@ async def get_tabular_dataset_data(
         ),
     ] = False,
 ):
-    if dataset.format != "tabular_dataset":
-        raise UserError(
-            "This endpoint only supports tabular datasets. Use the `/matrix` endpoint instead."
-        )
-
-    assert isinstance(dataset, TabularDataset)
-    # help pyright out a bit by making a new variable at the time we know that `dataset` is
-    # an instance of `TabularDataset`.
-    tabular_dataset = dataset
+    tabular_dataset = _get_required_tabular_dataset(db, dataset_id)
 
     def fetch_df(db_: SessionWithUser):
         return dataset_service.get_subsetted_tabular_dataset_df(
@@ -280,10 +299,10 @@ async def get_tabular_dataset_data(
     # only allow caching of requests for public datasets
     df_as_json = await cache.memoize_db_query(
         db,
-        lambda: dataset_crud.is_public_dataset(dataset),
+        lambda: dataset_crud.is_public_dataset(tabular_dataset),
         fetch_df,
         depends_on=[
-            str(dataset.id),
+            str(tabular_dataset.id),
             tabular_dimensions_info.model_dump(mode="json"),
             strict,
         ],
@@ -296,7 +315,7 @@ async def get_tabular_dataset_data(
 def get_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
     settings: Annotated[Settings, Depends(get_settings)],
-    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
+    dataset_id: str,
     features: Annotated[
         Optional[List[str]],
         Body(
@@ -323,10 +342,7 @@ def get_dataset_data(
     ] = None,
 ):
     """Get dataset dataframe subset given the features and samples. Filtering should be possible using either labels (cell line name, gene name, etc.) or ids (depmap_id, entrez_id, etc.). If features or samples are not specified, return all features or samples"""
-    if dataset.format != "matrix_dataset":
-        raise UserError(
-            "This endpoint only supports matrix_datasets. Use the `/tabular` endpoint instead."
-        )
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     dim_info = MatrixDimensionsInfo(
         features=features,
@@ -335,7 +351,6 @@ def get_dataset_data(
         sample_identifier=sample_identifier,
     )
 
-    assert isinstance(dataset, MatrixDataset)
     df = dataset_service.get_subsetted_matrix_dataset_df(
         db, dataset, dim_info, settings.filestore_location
     )
@@ -451,10 +466,10 @@ def get_dimension_data(
     response_model_by_alias=False,
 )
 def update_dataset(
+    dataset_id: str,
     dataset_update_params: UpdateDatasetParams,
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
-    dataset: DatasetModel = Depends(get_dataset_dep),
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    user: Annotated[str, Depends(get_user)],
 ):
     """
     Update the dataset metadata
@@ -469,6 +484,7 @@ def update_dataset(
     `units` - Optional parameter for matrix dataset only. Units for the values in the dataset
 
     """
+    dataset = _get_required_dataset(db, dataset_id)
     if dataset.format == "matrix_dataset":
         if not isinstance(dataset_update_params, MatrixDatasetUpdateParams):
             raise UserError(

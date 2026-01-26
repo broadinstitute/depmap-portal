@@ -336,26 +336,32 @@ def tabular_dataset(
     columns_metadata=None,
     dataset_metadata={},
     is_transient=False,
-    index_type_name=None,
+    index_type_name="depmap_model",
     user=None,
     short_name=None,
     description=None,
     version=None,
 ):
-
     if group_id is None:
         if is_transient:
             group_id = TRANSIENT_GROUP_ID
         else:
             group_id = PUBLIC_GROUP_ID
     if user is None:
-        user = settings.admin_users[0]
+        user = db.user
 
     if data_df is None:
-        data_df = pd.DataFrame({"label": ["X"]})
-        columns_metadata = {
-            "label": ColumnMetadata(units=None, col_type=AnnotationType.text)
-        }
+        if index_type_name == "depmap_model":
+            data_df = pd.DataFrame({"label": ["X"], "depmap_id": ["ACH-01"]})
+            columns_metadata = {
+                "label": ColumnMetadata(col_type=AnnotationType.text),
+                "depmap_id": ColumnMetadata(col_type=AnnotationType.text),
+            }
+        else:
+            data_df = pd.DataFrame({"label": ["X"]})
+            columns_metadata = {
+                "label": ColumnMetadata(units=None, col_type=AnnotationType.text)
+            }
 
     assert index_type_name is not None
     # index_type = dimension_type_factory(

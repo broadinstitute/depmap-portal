@@ -1,37 +1,18 @@
-import os
 import json
-import uuid
 import numpy as np
 import pandas as pd
 
-from breadbox.crud.dimension_types import get_dimension_type
 from ..utils import assert_status_not_ok, assert_status_ok, assert_task_failure
 
 
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import (
     AnnotationType,
-    DatasetFeature,
-    DatasetSample,
     Dataset,
-    Dimension,
-    MatrixDataset,
-    TabularDataset,
-    TabularColumn,
-    TabularCell,
-    ValueType,
 )
 from fastapi.testclient import TestClient
-from breadbox.api.dependencies import get_dataset
-from breadbox.io.filestore_crud import get_slice
-from breadbox.models.dataset import DimensionSearchIndex
-from breadbox.service.search import populate_search_index_after_update
-
-from breadbox.models.dataset import PropertyToIndex
-from breadbox.schemas.dataset import ColumnMetadata
 
 from tests import factories
-from breadbox.config import Settings
 from typing import Dict
 from ..utils import upload_and_get_file_ids
 
