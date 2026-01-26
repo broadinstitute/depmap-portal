@@ -99,7 +99,7 @@ export async function downloadTopCorrelations(
   const rows = correlationsData.map((corr) => [
     `"${corr.other_dimension_label}"`,
     `"${geneMap.get(corr.other_dimension_label) ?? "N/A"}"`,
-    `"${corr.other_dataset_given_id}"`,
+    `"${datasetDisplayName}"`,
     corr.correlation.toString(),
   ]);
 

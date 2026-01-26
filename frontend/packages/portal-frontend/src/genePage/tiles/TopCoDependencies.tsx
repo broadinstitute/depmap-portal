@@ -120,33 +120,35 @@ const TopCoDependenciesTile = ({
               </div>
             )}
             {!crisprCorrelationData && crisprIsLoading && <PlotSpinner />}
-            {crisprCorrelationData && topCrisprDatasetCorrelations && (
-              <div className={styles.tableWrapper}>
-                <CoDependenciesTable
-                  featureId={geneEntrezId}
-                  datasetName={crisprDatasetName}
-                  datasetId={crisprCorrelationData.dataset_given_id}
-                  key={crisprGivenId}
-                  featureType={"gene"}
-                  topDatasetCorrelations={topCrisprDatasetCorrelations}
-                />
-                <p>
-                  Download{" "}
-                  <a
-                    style={{ cursor: "pointer" }}
-                    onClick={() =>
-                      downloadTopCorrelations(
-                        crisprDatasetName,
-                        geneLabel,
-                        crisprCorrelationData.associated_dimensions
-                      )
-                    }
-                  >
-                    Top 100 Co-dependencies
-                  </a>
-                </p>
-              </div>
-            )}
+            {crisprCorrelationData &&
+              topCrisprDatasetCorrelations &&
+              allTopCrisprDatasetCorrelations && (
+                <div className={styles.tableWrapper}>
+                  <CoDependenciesTable
+                    featureId={geneEntrezId}
+                    datasetName={crisprDatasetName}
+                    datasetId={crisprCorrelationData.dataset_given_id}
+                    key={crisprGivenId}
+                    featureType={"gene"}
+                    topDatasetCorrelations={topCrisprDatasetCorrelations}
+                  />
+                  <p>
+                    Download{" "}
+                    <a
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        downloadTopCorrelations(
+                          geneLabel,
+                          crisprDatasetName,
+                          allTopCrisprDatasetCorrelations
+                        )
+                      }
+                    >
+                      Top 100 Co-dependencies
+                    </a>
+                  </p>
+                </div>
+              )}
           </div>
           <div>
             {/* Allow for there to be no rnai correlations data  */}
@@ -158,6 +160,7 @@ const TopCoDependenciesTile = ({
             {!rnaiCorrelationData && rnaiIsLoading && <PlotSpinner />}
             {rnaiCorrelationData &&
               topRnaiDatasetCorrelations &&
+              allTopRnaiDatasetCorrelations &&
               !rnaiError &&
               !rnaiIsLoading && (
                 <>
@@ -175,9 +178,9 @@ const TopCoDependenciesTile = ({
                       style={{ cursor: "pointer" }}
                       onClick={() =>
                         downloadTopCorrelations(
-                          rnaiDatasetName,
                           geneLabel,
-                          rnaiCorrelationData.associated_dimensions
+                          rnaiDatasetName,
+                          allTopRnaiDatasetCorrelations
                         )
                       }
                     >
