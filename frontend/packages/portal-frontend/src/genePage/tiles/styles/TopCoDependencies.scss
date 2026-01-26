@@ -5,6 +5,18 @@
   border-left: 1px black solid;
 }
 
+.linkButton {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  text-decoration: none;
+  margin-bottom: 10px;
+
+  &:hover {
+    color: #23527c;
+    text-decoration: underline;
+  }
+}
 // center text in div
 .errorMessage {
   display: grid;

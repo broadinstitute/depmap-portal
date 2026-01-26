@@ -89,7 +89,7 @@ export async function downloadTopCorrelations(
   );
   // 1. Create lookup map for the Join
   const geneMap = new Map(
-    Object.entries(geneMetadata["label"]).map(([entrez_id, label]) => [
+    Object.entries(geneMetadata.label).map(([entrez_id, label]) => [
       label, // Key: the string label (e.g., "SOX10")
       entrez_id, // Value: the ID (e.g., "6662")
     ])

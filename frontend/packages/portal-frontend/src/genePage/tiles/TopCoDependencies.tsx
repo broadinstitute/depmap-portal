@@ -134,8 +134,10 @@ const TopCoDependenciesTile = ({
                   />
                   <p>
                     Download{" "}
-                    <a
-                      style={{ cursor: "pointer" }}
+                    <button
+                      key="cripsrButton"
+                      type="button"
+                      className={styles.linkButton}
                       onClick={() =>
                         downloadTopCorrelations(
                           geneLabel,
@@ -145,7 +147,7 @@ const TopCoDependenciesTile = ({
                       }
                     >
                       Top 100 Co-dependencies
-                    </a>
+                    </button>
                   </p>
                 </div>
               )}
@@ -174,8 +176,10 @@ const TopCoDependenciesTile = ({
                   />
                   <p>
                     Download{" "}
-                    <a
-                      style={{ cursor: "pointer" }}
+                    <button
+                      key="rnaiButton"
+                      type="button"
+                      className={styles.linkButton}
                       onClick={() =>
                         downloadTopCorrelations(
                           geneLabel,
@@ -185,7 +189,7 @@ const TopCoDependenciesTile = ({
                       }
                     >
                       Top 100 Co-dependencies
-                    </a>
+                    </button>
                   </p>
                 </>
               )}
