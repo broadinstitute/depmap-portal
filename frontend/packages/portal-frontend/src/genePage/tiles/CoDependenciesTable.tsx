@@ -5,6 +5,7 @@ import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { Tooltip } from "@depmap/common-components";
 import { getFullUrlPrefix } from "src/compound/utils";
 import CorrelationMeter from "src/predictability/components/CorrelationMeter";
+import { toPortalLink } from "@depmap/globals";
 
 interface CoDependenciesTableProps {
   featureName: string;
@@ -21,7 +22,7 @@ export const CoDependenciesTable: React.FC<CoDependenciesTableProps> = ({
   featureType, // should be gene
   topDatasetCorrelations,
 }) => {
-  const urlPrefix = getFullUrlPrefix();
+  const dataExplorerBase = "/data_explorer_2/";
   return (
     <div className={styles.CoDependenciesTable}>
       <h3
@@ -57,7 +58,9 @@ export const CoDependenciesTable: React.FC<CoDependenciesTableProps> = ({
               <tr key={`${datasetCor.other_dataset_id}-${i}`}>
                 <td>
                   <a
-                    href={`${urlPrefix}/data_explorer_2/?xDataset=${datasetId}&xFeature=${featureName}&yDataset=${datasetCor.other_dataset_given_id}&yFeature=${datasetCor.other_dimension_label}`}
+                    href={toPortalLink(
+                      `${dataExplorerBase}?xDataset=${datasetId}&xFeature=${featureName}&yDataset=${datasetCor.other_dataset_given_id}&yFeature=${datasetCor.other_dimension_label}`
+                    )}
                     target="_blank"
                     rel="noreferrer"
                   >
@@ -71,7 +74,9 @@ export const CoDependenciesTable: React.FC<CoDependenciesTableProps> = ({
                     placement="top"
                   >
                     <a
-                      href={`${urlPrefix}/${featureType}/${datasetCor.other_dimension_label}`}
+                      href={toPortalLink(
+                        `/${featureType}/${datasetCor.other_dimension_label}`
+                      )}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
