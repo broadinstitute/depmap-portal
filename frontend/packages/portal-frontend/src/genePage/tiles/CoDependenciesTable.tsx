@@ -3,7 +3,6 @@ import React from "react";
 import styles from "./styles/TopCoDependencies.scss";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
 import { Tooltip } from "@depmap/common-components";
-import { getFullUrlPrefix } from "src/compound/utils";
 import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 import { toPortalLink } from "@depmap/globals";
 
