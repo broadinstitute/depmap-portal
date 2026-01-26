@@ -1,3 +1,4 @@
+from http.client import HTTPException
 from pyexpat import features
 from typing import (
     Callable,
@@ -13,6 +14,7 @@ from typing import (
 )
 
 from breadbox.db.session import SessionWithUser
+from ...schemas.custom_http_exception import UserError
 from ...schemas.dataset import (
     AnnotationType,
     MatrixDimensionsInfo,
@@ -31,6 +33,7 @@ import re
 import bisect
 
 import apsw
+import apsw.ext
 from .schema import assign_names, SchemaNames
 from breadbox.utils.profiling import profiled_region
 
@@ -40,6 +43,9 @@ import csv
 import io
 
 SQLiteValue = Any
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def _create_schema_str(columns: Iterable[str]) -> str:
@@ -414,39 +420,48 @@ def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
     # print("dataset_id", dataset_id, constraints)
     # start = time.time()
     # not efficient, but first goal is something that works:
-    dataset_key = f"dataset:{dataset_id}"
-    if dataset_key not in index_cache:
-        dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
-        assert isinstance(dataset, TabularDataset)
-        index_cache[dataset_key] = dataset
-    else:
-        dataset = index_cache[dataset_key]
 
-    if len(constraints) > 0:
-        # construct an index to avoid slow lookups. If we need to look up via a particular key,
-        # we'll probably need to use that combo again (if it's due to a join), so cache the table indexed that way.
-        constraint_columns = sorted(constraints.keys())
-        index_key = tuple(["idx", dataset_id] + constraint_columns)
-        if index_key not in index_cache:
-            index_cache[index_key] = _build_indexed_version_of_tabular_data(
-                db, dataset, constraint_columns, constraints
+    try:
+        dataset_key = f"dataset:{dataset_id}"
+        if dataset_key not in index_cache:
+            dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
+            assert isinstance(dataset, TabularDataset)
+            index_cache[dataset_key] = dataset
+        else:
+            dataset = index_cache[dataset_key]
+
+        if len(constraints) > 0:
+            # construct an index to avoid slow lookups. If we need to look up via a particular key,
+            # we'll probably need to use that combo again (if it's due to a join), so cache the table indexed that way.
+            constraint_columns = sorted(constraints.keys())
+            index_key = tuple(["idx", dataset_id] + constraint_columns)
+            if index_key not in index_cache:
+                index_cache[index_key] = _build_indexed_version_of_tabular_data(
+                    db, dataset, constraint_columns, constraints
+                )
+
+            # extract out the records with this key
+            records_key = tuple(
+                [
+                    constraints[constraint_column]
+                    for constraint_column in constraint_columns
+                ]
             )
 
-        # extract out the records with this key
-        records_key = tuple(
-            [constraints[constraint_column] for constraint_column in constraint_columns]
-        )
+            recs = index_cache[index_key].get(records_key, [],)
+        else:
+            # if we weren't given a constraint, just fetch the whole table and return all the rows
+            df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
+            df2 = _fix_continuous_column_types(df, dataset)
+            recs = df2.to_records()
 
-        recs = index_cache[index_key].get(records_key, [],)
-    else:
-        # if we weren't given a constraint, just fetch the whole table and return all the rows
-        df = crud_dataset.get_subset_of_tabular_data_as_df(db, dataset, None, None)
-        df2 = _fix_continuous_column_types(df, dataset)
-        recs = df2.to_records()
+        # return the rows that were fetched
+        for row in recs:
+            yield [row[column] for column in columns]
 
-    # return the rows that were fetched
-    for row in recs:
-        yield [row[column] for column in columns]
+    except Exception as e:
+        log.exception("Got exception in query_tabular_dataset")
+        raise
 
 
 def create_db_with_virtual_schema(db: SessionWithUser, filestore_location: str):
@@ -519,10 +534,16 @@ def create_db_with_virtual_schema(db: SessionWithUser, filestore_location: str):
 
 
 def assert_single_select(sql: str):
-    # TODO: replace with throwing a helpful 400 message
-    parsed = sqlglot.parse(sql, dialect="sqlite")
-    assert len(parsed) == 1
-    assert isinstance(parsed[0], sqlglot.expressions.Select)
+    try:
+        parsed = sqlglot.parse(sql, dialect="sqlite")
+    except sqlglot.errors.SqlglotError as ex:
+        raise UserError(f"Could not parse query: {ex}")
+
+    if len(parsed) != 1:
+        raise UserError(f"Expected a single statement but got {len(parsed)}")
+
+    if not isinstance(parsed[0], sqlglot.expressions.Select):
+        raise UserError(f"Only SELECT statements are allowed")
 
 
 def create_to_row_func():
@@ -541,11 +562,10 @@ def create_to_row_func():
     return to_row
 
 
-def stream_cursor_as_csv(cursor, cleanup_callback):
+def stream_cursor_as_csv(column_names, cursor, cleanup_callback):
     try:
         with profiled_region("stream_cursor_as_csv"):
             to_row = create_to_row_func()
-            column_names = [description[0] for description in cursor.description]
             # write out column names as first row
             yield to_row(column_names)
 
@@ -568,39 +588,20 @@ def execute_sql_in_virtual_db(
             )
             cursor = virtual_db_connection.cursor()
 
-        # qd = apsw.ext.query_info(
-        #     virtual_db_connection,
-        #     sql_statement,
-        #     actions=True,  # which tables/views etc and how they are accessed
-        #     explain=True,  # shows low level VDBE
-        #     explain_query_plan=True,  # how SQLite solves the query
-        # )
-        #
-        # from pprint import pprint
-        #
-        # print("query", qd.query)
-        # print("\nbindings_count", qd.bindings_count)
-        # print("\nbindings_names", qd.bindings_names)
-        # print("\nexpanded_sql", qd.expanded_sql)
-        # print("\nfirst_query", qd.first_query)
-        # print("\nquery_remaining", qd.query_remaining)
-        # print("\nis_explain", qd.is_explain)
-        # print("\nis_readonly", qd.is_readonly)
-        # print("\ndescription")
-        # pprint(qd.description)
-        # if hasattr(qd, "description_full"):
-        #     print("\ndescription_full")
-        #     pprint(qd.description_full)
-        #
-        # print("\nquery_plan")
-        # pprint(qd.query_plan)
-        # print("\nFirst 5 actions")
-        # pprint(qd.actions[:5])
-        # print("\nFirst 5 explain")
-        # pprint(qd.explain[:5])
+        with profiled_region(f"execute statement"):
+            try:
+                cursor.execute(sql_statement)
+            except apsw.SQLError as ex:
+                raise UserError(str(ex))
 
-        with profiled_region("execute statement"):
-            cursor.execute(sql_statement)
+        # get the column names by using query_info. Alternatively we could probably get column names
+        # by using the strategy at https://github.com/rogerbinns/apsw/blob/7a9a4b695a2ef038514d2dc4e0b95e44111132ac/apsw/ext.py#L1859
+        # The naive approach of running the query and using cursor.description after the fact throws an exception
+        # `apsw.ExecutionCompleteError: Can't get description for statements that have completed execution` if the query results
+        # in no rows.
+        query_info = apsw.ext.query_info(virtual_db_connection, sql_statement)
+        col_names = [col_name for col_name, _ in query_info.description]
+        log.warning(f"got cursor names: {col_names}")
 
         def cleanup_callback():
             # this might all automatically get cleaned up by the GC, but let's clean it up like we're supposed to
@@ -608,4 +609,4 @@ def execute_sql_in_virtual_db(
             cursor.close()
             virtual_db_connection.close()
 
-    return stream_cursor_as_csv(cursor, cleanup_callback)
+    return stream_cursor_as_csv(col_names, cursor, cleanup_callback)
