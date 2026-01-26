@@ -53,11 +53,11 @@ const TopCoDependenciesTile = ({
     }
 
     const sortedFeatures = [...associatedFeatures]
-      .filter((feat) => feat.other_dimension_label !== geneLabel)
+      .filter((feat) => feat.other_dimension_label !== geneLabel) // Filter out self
       .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
 
     return sortedFeatures.slice(0, 5);
-  }, [crisprCorrelationData]);
+  }, [crisprCorrelationData, geneLabel]);
 
   const topRnaiDatasetCorrelations = useMemo(() => {
     if (!rnaiCorrelationData) {
@@ -75,7 +75,7 @@ const TopCoDependenciesTile = ({
       .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
 
     return sortedFeatures.slice(0, 5);
-  }, [rnaiCorrelationData]);
+  }, [rnaiCorrelationData, geneLabel]);
 
   const customInfoImg = (
     <img
@@ -108,7 +108,7 @@ const TopCoDependenciesTile = ({
           <div>
             {crisprError && !crisprCorrelationData && (
               <div className={styles.errorMessage}>
-                Error loading CRISPR correlation data. Please try again later.
+                Error loading correlation data. Please try again later.
               </div>
             )}
             {!crisprCorrelationData && crisprIsLoading && <PlotSpinner />}
@@ -126,24 +126,28 @@ const TopCoDependenciesTile = ({
             )}
           </div>
           <div>
-            {rnaiError && !rnaiCorrelationData && (
+            {/* Allow for there to be no rnai correlations data  */}
+            {rnaiError && !rnaiIsLoading && (
               <div className={styles.errorMessage}>
                 Error loading RNAi correlation data. Please try again later.
               </div>
             )}
             {!rnaiCorrelationData && rnaiIsLoading && <PlotSpinner />}
-            {rnaiCorrelationData && topRnaiDatasetCorrelations && (
-              <>
-                <CoDependenciesTable
-                  featureId={geneEntrezId}
-                  datasetName={rnaiDatasetName}
-                  datasetId={rnaiCorrelationData.dataset_given_id}
-                  key={rnaiGivenId}
-                  featureType={"gene"}
-                  topDatasetCorrelations={topRnaiDatasetCorrelations}
-                />
-              </>
-            )}
+            {rnaiCorrelationData &&
+              topRnaiDatasetCorrelations &&
+              !rnaiError &&
+              !rnaiIsLoading && (
+                <>
+                  <CoDependenciesTable
+                    featureId={geneEntrezId}
+                    datasetName={rnaiDatasetName}
+                    datasetId={rnaiCorrelationData.dataset_given_id}
+                    key={rnaiGivenId}
+                    featureType={"gene"}
+                    topDatasetCorrelations={topRnaiDatasetCorrelations}
+                  />
+                </>
+              )}
           </div>
         </div>
       </div>

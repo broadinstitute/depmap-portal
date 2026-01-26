@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/control-has-associated-label */
 import React from "react";
 import styles from "./styles/TopCoDependencies.scss";
 import { AssociatedFeatures } from "@depmap/types/src/Dataset";
