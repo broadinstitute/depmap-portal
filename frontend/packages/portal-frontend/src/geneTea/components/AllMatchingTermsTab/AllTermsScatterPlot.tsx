@@ -292,7 +292,7 @@ function AllTermsScatterPlot({
   }, [data, selectedPlotOrTableTerms, enrichedTermsForInitialSelection]);
 
   return (
-    <div>
+    <>
       <ScatterPlot
         data={plotData}
         height={500}
@@ -312,7 +312,7 @@ function AllTermsScatterPlot({
         matchingGenes={selectedTerm?.matchingGenes || []}
         onClose={() => setSelectedTerm(null)}
       />
-    </div>
+    </>
   );
 }
 

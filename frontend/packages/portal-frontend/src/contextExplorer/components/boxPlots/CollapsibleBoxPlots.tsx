@@ -177,7 +177,7 @@ function CollapsibleBoxPlots({
       return boxPlotData?.dataset_units || "";
     }
 
-    if (datasetId === ContextExplorerDatasets.REPURPOSING_primary_collapsed) {
+    if (datasetId === ContextExplorerDatasets.Rep_all_single_pt_per_compound) {
       return "log2(Viability)";
     }
 

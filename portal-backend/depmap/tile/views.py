@@ -346,7 +346,7 @@ def get_enrichment_html(
     entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
 ):
     div_id = str(uuid.uuid4())
-    feature_label = entity.label
+    feature_label = entity.label if entity.type == "compound" else str(entity.entrez_id)
     feature_type = entity.type
 
     return RenderedTile(

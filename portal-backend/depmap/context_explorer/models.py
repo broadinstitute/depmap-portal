@@ -22,7 +22,7 @@ from depmap.database import (
 
 
 class ContextExplorerDatasets(enum.Enum):
-    REPURPOSING_primary_collapsed = "REPURPOSING_primary_collapsed"
+    Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound"
     PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix"
     Chronos_Combined = "Chronos_Combined"
 
@@ -238,11 +238,14 @@ class BoxPlotTypes(enum.Enum):
 
 class ContextAnalysis(Model):
     __table_args__ = (
-        db.Index("context_analysis_idx_1", "feature_id", "out_group"),
+        db.Index(
+            "context_analysis_idx_1", "feature_id", "out_group", "dataset_given_id"
+        ),
         db.UniqueConstraint(
             "subtype_code",
             "out_group",
             "feature_id",
+            "dataset_given_id",
             name="uc_context_outgroup_entity",
         ),
     )

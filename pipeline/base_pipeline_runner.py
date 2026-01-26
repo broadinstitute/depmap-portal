@@ -321,7 +321,7 @@ class PipelineRunner(ABC):
         if config.get("s3_staging_url"):
             cmd_parts.append(f"-D S3_STAGING_URL={config['s3_staging_url']}")
         if config.get("publish_dest"):
-            cmd_parts.append(f"-D publish_dest={config['publish_dest']}")
+            cmd_parts.append(f"-D publish_dest=\"{config['publish_dest']}\"")
         if config.get("publish_data_prep"):
             cmd_parts.append("-D publish_data_prep=True")
 

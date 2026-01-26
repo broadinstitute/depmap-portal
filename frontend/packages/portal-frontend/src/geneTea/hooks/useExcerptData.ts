@@ -87,6 +87,5 @@ export const useExcerptData = (
     handlePrevPage: () => setCurrentPage((p) => p - 1),
     totalMatchingGenes: allGenesList.length,
     pageSize: PAGE_SIZE,
-    handleClickCreateTermContext: () => {},
   };
 };

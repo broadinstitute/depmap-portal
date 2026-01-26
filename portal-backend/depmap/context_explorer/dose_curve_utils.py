@@ -9,14 +9,19 @@ from depmap.dataset.models import Dataset
 from depmap.compound.models import Compound, drc_compound_datasets
 
 
-def _get_out_group_model_ids(
-    out_group_type, dataset_given_id, in_group_model_ids, feature_id, tree_type
-):
+def _get_entity_full_row_of_values_df(dataset_given_id: str, feature_id: str):
     (entity_full_row_of_values) = utils.get_full_row_of_values_and_depmap_ids(
         dataset_given_id=dataset_given_id, feature_id=feature_id
     )
     entity_full_row_of_values.dropna(inplace=True)
     entity_full_row_of_values = pd.DataFrame(entity_full_row_of_values)
+
+    return entity_full_row_of_values
+
+
+def _get_out_group_model_ids(
+    out_group_type, entity_full_row_of_values, in_group_model_ids, tree_type
+):
 
     if out_group_type == "All Others":
         return entity_full_row_of_values[
@@ -56,20 +61,27 @@ def _get_in_group_out_group_model_ids(
     out_group_type: str,
     tree_type: str,
 ):
-    in_group_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
+    subtype_model_ids = SubtypeNode.get_model_ids_by_subtype_code_and_node_level(
         subtype_code, level
     )
 
+    entity_full_row_of_values = _get_entity_full_row_of_values_df(
+        dataset_given_id=dataset_given_id, feature_id=feature_id
+    )
+
+    subtype_model_ids_specific_to_dataset = entity_full_row_of_values[
+        entity_full_row_of_values.index.isin(subtype_model_ids)
+    ].index.tolist()
+
     out_group_model_ids = _get_out_group_model_ids(
         out_group_type,
-        dataset_given_id=dataset_given_id,
-        in_group_model_ids=in_group_model_ids,
-        feature_id=feature_id,
+        entity_full_row_of_values=entity_full_row_of_values,
+        in_group_model_ids=subtype_model_ids_specific_to_dataset,
         tree_type=tree_type,
     )
 
     return {
-        "in_group_model_ids": in_group_model_ids,
+        "in_group_model_ids": subtype_model_ids_specific_to_dataset,
         "out_group_model_ids": out_group_model_ids,
     }
 

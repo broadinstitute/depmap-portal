@@ -7,13 +7,12 @@ from depmap.compound.models import Compound
 from depmap.context_explorer.models import (
     BoxCardData,
     ContextAnalysis,
+    ContextExplorerDatasets,
     EnrichedLineagesTileData,
     GroupedOtherBoxPlotData,
 )
 import dataclasses
-from depmap.dataset.models import DependencyDataset
 from depmap.gene.models import Gene
-from depmap.tile.views import get_dependency_dataset_for_entity
 import pandas as pd
 from flask import url_for
 
@@ -28,6 +27,7 @@ def _get_node_entity_data(
     feature_id_and_label = utils.get_feature_id_from_full_label(
         feature_type=feature_type, feature_id=feature_id
     )
+
     feature_id = feature_id_and_label["feature_id"]
     label = feature_id_and_label["label"]
     entity_overview_page_label = feature_id_and_label["entity_overview_page_label"]
@@ -526,23 +526,24 @@ def get_organized_contexts(
 ################################################################################
 
 
-def get_gene_enriched_lineages_entity_id_and_dataset_name(
+def get_gene_enriched_lineages_feature_dataset_metadata(
     feature_id: str,
 ) -> Optional[dict]:
     gene = Gene.get_gene_by_entrez(int(feature_id))
 
     assert gene is not None
 
-    dataset = get_dependency_dataset_for_entity(
-        DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.entity_id
+    dataset = data_access.get_matrix_dataset(
+        ContextExplorerDatasets.Chronos_Combined.value
     )
     if dataset is None:
         return None
-    dataset_name = dataset.name.name
-    dataset_display_name = dataset.display_name
+
+    dataset_name = dataset.given_id
+    dataset_display_name = dataset.label
 
     return {
-        "feature_id": gene.entrez_id,
+        "feature_id": feature_id,
         "dataset_given_id": dataset_name,
         "label": gene.label,
         "dataset_display_name": dataset_display_name,
@@ -558,9 +559,17 @@ def get_compound_enriched_lineages_feature_id_and_dataset_name(
         compound_id=compound.compound_id
     )
 
-    assert len(possible_datasets) > 0
+    possible_datasets_w_compound = [
+        dataset
+        for dataset in possible_datasets
+        if dataset.given_id is not None
+        and data_access.valid_row(dataset_id=dataset.given_id, row_name=compound.label)
+        and dataset.given_id in ContextExplorerDatasets.values()
+    ]
 
-    priority_dataset = possible_datasets[0]
+    assert len(possible_datasets_w_compound) > 0
+
+    priority_dataset = possible_datasets_w_compound[0]
     dataset_display_name = priority_dataset.label
     dataset_given_id = priority_dataset.given_id
 

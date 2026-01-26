@@ -7,6 +7,7 @@ import PaginationControls from "./PaginationControls";
 import styles from "../../../../../styles/GeneTea.scss";
 import CopyListButton from "../CopyListButton/CopyListButton";
 import { useFetchGeneList } from "src/geneTea/hooks/useFetchGeneList";
+import { useGeneContextCreation } from "src/geneTea/hooks/useCreateGeneContext";
 
 interface ExcerptTableProps {
   useTerms: boolean;
@@ -33,7 +34,6 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     currentPage,
     handleNextPage,
     handlePrevPage,
-    handleClickCreateTermContext,
     totalMatchingGenes,
     pageSize,
   } = useExcerptData(term, termToMatchingGenesObj, useAllGenes);
@@ -46,10 +46,20 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
     useAllGenes
   );
 
+  const handleClickCreateContext = useGeneContextCreation({
+    name: term,
+    termsKey: term,
+    termToMatchingGenesObj,
+    useAllGenes,
+    onComplete: () => {},
+  });
+
   const isLoading = isDataLoading || isListLoading;
 
   const renderTableBody = () => {
-    if (!pageData) return null;
+    if (isLoading || !pageData) {
+      return <tbody />;
+    }
 
     return (
       <tbody>
@@ -90,7 +100,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
             bsStyle="primary"
             bsSize="small"
             disabled={isLoading}
-            onClick={handleClickCreateTermContext}
+            onClick={handleClickCreateContext}
           >
             {isLoading ? "Loading..." : "Save Term as Gene Context"}
           </Button>
@@ -103,24 +113,26 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         </div>
       )}
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Gene</th>
-            <th>Excerpt</th>
-          </tr>
-        </thead>
-        {renderTableBody()}
-      </table>
+      <div style={{ position: "relative" }}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Gene</th>
+              <th>Excerpt</th>
+            </tr>
+          </thead>
+          {renderTableBody()}
+        </table>
 
-      {isLoading && (
-        <div className={styles.geneTeaModalSpinner}>
-          <Spinner left="0px" position="static" />
-        </div>
-      )}
+        {isLoading && (
+          <div className={styles.geneTeaModalSpinner}>
+            <Spinner left="0px" position="static" />
+          </div>
+        )}
+      </div>
 
       {error && (
-        <Alert bsStyle="danger">
+        <Alert bsStyle="danger" style={{ marginTop: "15px" }}>
           There was a problem retrieving the excerpt(s) for this term/page.
           Please try again!
         </Alert>
@@ -131,12 +143,16 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
         totalMatchingGenes > 0 &&
         pageData &&
         Object.keys(pageData).length === 0 && (
-          <Alert bsStyle="danger">
+          <Alert bsStyle="danger" style={{ marginTop: "15px" }}>
             Could not find an excerpt for any gene on this page.
           </Alert>
         )}
 
-      {!isLoading && (
+      <div
+        style={{
+          marginTop: "15px",
+        }}
+      >
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
@@ -146,7 +162,7 @@ const ExcerptTable: React.FC<ExcerptTableProps> = ({
           handleNextPage={handleNextPage}
           handlePrevPage={handlePrevPage}
         />
-      )}
+      </div>
     </div>
   );
 };

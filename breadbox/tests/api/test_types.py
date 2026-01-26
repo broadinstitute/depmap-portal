@@ -1047,7 +1047,7 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
         },
         headers=admin_headers,
     )
-    assert_status_ok(r_update_sample_1), r_update_sample_1.status_code == 200
+    assert_status_ok(r_update_sample_1)
     r_update_sample_1 = r_update_sample_1.json()
     other_sample_dataset_id = r_update_sample_1["dataset"]["id"]
     assert other_sample_dataset_id is not None
@@ -1139,7 +1139,7 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
         },
         headers=admin_headers,
     )
-    assert_status_ok(r_update_sample_2), r_update_sample_2.status_code == 200
+    assert_status_ok(r_update_sample_2)
     r_update_sample_2 = r_update_sample_2.json()
     # make sure the dataset ID changes each time data changes
     assert r_update_sample_2["dataset"]["id"] != r_update_sample_1["dataset"]["id"]
@@ -1183,7 +1183,7 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
         },
         headers=admin_headers,
     )
-    assert_status_ok(r_update_feature_1), r_update_feature_1.status_code == 200
+    assert_status_ok(r_update_feature_1)
     other_feature_metadata_id = r_update_feature_1.json()["dataset"]["id"]
     assert_metadata_row_counts(other_feature_metadata_id, "feature_metadata", 2, 3, 1)
 
@@ -1207,7 +1207,7 @@ def test_update_metadata(client: TestClient, minimal_db, settings):
         },
         headers=admin_headers,
     )
-    assert_status_ok(r_update_feature_2), r_update_feature_2.status_code == 200
+    assert_status_ok(r_update_feature_2)
     other_feature_metadata_id = r_update_feature_2.json()["dataset"]["id"]
     assert_metadata_row_counts(
         other_feature_metadata_id, "new_feature_metadata", 3, 2, 0

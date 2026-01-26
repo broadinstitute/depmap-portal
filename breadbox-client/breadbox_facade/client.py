@@ -63,7 +63,6 @@ from breadbox_client.models import (
     ComputeResponse,
     Context,
     ContextMatchResponse,
-    DatasetMetadata,
     DataType,
     DimensionIdentifiers, 
     DimensionType,

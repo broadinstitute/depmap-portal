@@ -1,4 +1,5 @@
 import React from "react";
+import cx from "classnames";
 import PlotConfigSelect from "../PlotConfigSelect";
 import { DataExplorerAggregation } from "@depmap/types";
 import styles from "../../styles/DimensionSelect.scss";
@@ -26,7 +27,7 @@ function AggregationSelect({
         show
         enable
         inlineLabel
-        className={selectClassName}
+        className={cx(selectClassName, styles.aggregationSelect)}
         label="Method"
         placeholder="Choose a method…"
         options={{
@@ -34,6 +35,7 @@ function AggregationSelect({
           median: "Median",
           "25%tile": "25%tile",
           "75%tile": "75%tile",
+          stddev: "Standard deviation",
         }}
         value={value}
         onChange={(nextValue) => onChange(nextValue as DataExplorerAggregation)}

@@ -12,6 +12,32 @@ This process is now run in a production setting via jenkins jobs. If you
 want to make changes, its often easiest to download the latest artifacts
 from a given environment as your starting point.
 
+## How to run the Preprocessing Pipeline locally
+
+To run the preprocessing pipeline locally, you need:
+
+1. The `depmap-deploy` repo checked out as a sibling to `depmap-portal`:
+
+   ```
+   some-directory/
+     depmap-portal/
+     depmap-deploy/
+   ```
+
+2. Run the script from the `pipeline/preprocessing-pipeline` directory:
+
+   ```bash
+   sh local_run_preprocessing_pipeline.sh [internal|external|dmc]
+   ```
+
+   Example:
+
+   ```bash
+   sh local_run_preprocessing_pipeline.sh internal
+   ```
+
+The script creates temporary symlinks to non-public files in `depmap-deploy`, runs conseq, and cleans up the symlinks automatically when finished (even if the script fails).
+
 # Common conventions
 
 ## xrefs
