@@ -277,7 +277,6 @@ def get_matrix_dataset_data(
 )
 async def get_tabular_dataset_data(
     db: Annotated[SessionWithUser, Depends(get_db_with_user)],
-    dataset: Annotated[DatasetModel, Depends(get_dataset_dep)],
     cache: Annotated[CachingCaller, Depends(get_cache)],
     dataset_id: str,
     tabular_dimensions_info: Annotated[
@@ -300,10 +299,10 @@ async def get_tabular_dataset_data(
     # only allow caching of requests for public datasets
     df_as_json = await cache.memoize_db_query(
         db,
-        lambda: dataset_crud.is_public_dataset(dataset),
+        lambda: dataset_crud.is_public_dataset(tabular_dataset),
         fetch_df,
         depends_on=[
-            str(dataset.id),
+            str(tabular_dataset.id),
             tabular_dimensions_info.model_dump(mode="json"),
             strict,
         ],
