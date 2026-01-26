@@ -40,3 +40,20 @@ export async function getCorrelationDatasetsForEntity(
 
   return formattedDatasetOptions;
 }
+
+export async function getDependencyDatasetIds(
+  entrezId: string
+): Promise<string[]> {
+  const datasets = await cached(breadboxAPI).getDatasets({
+    feature_id: entrezId,
+    feature_type: "gene",
+  });
+
+  const filteredDatasets = [...datasets].filter((d) => d.given_id !== null);
+
+  if (filteredDatasets.length === 0) {
+    return [];
+  }
+
+  return filteredDatasets.map(({ given_id }: Dataset) => given_id!);
+}

@@ -29,6 +29,8 @@ import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
+import TopCoDependenciesTile from "./genePage/tiles/TopCoDependencies";
+import { getDependencyDatasetIds } from "./genePage/utils";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -305,6 +307,23 @@ export function initEnrichmentTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <EnrichmentTile featureLabel={featureLabel} featureType={featureType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export async function initTopCoDependenciesTile(
+  elementId: string,
+  entrezId: string
+) {
+  const dependencyDatasetIds = await getDependencyDatasetIds(entrezId);
+
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <TopCoDependenciesTile
+        geneEntrezId={entrezId}
+        associationDatasetIds={dependencyDatasetIds}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
