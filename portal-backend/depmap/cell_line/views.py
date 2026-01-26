@@ -369,6 +369,8 @@ def download_compound_sensitivities(model_id: str):
     if dataset is None:
         abort(404)
 
+    assert dataset is not None
+
     dataset_name = dataset.name.name
     dataset_display_name = dataset.display_name
 
