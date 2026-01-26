@@ -7,7 +7,7 @@ import { getFullUrlPrefix } from "src/compound/utils";
 import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 
 interface CoDependenciesTableProps {
-  featureId: string;
+  featureName: string;
   datasetId: string;
   datasetName: string;
   featureType: string;
@@ -15,7 +15,7 @@ interface CoDependenciesTableProps {
 }
 
 export const CoDependenciesTable: React.FC<CoDependenciesTableProps> = ({
-  featureId,
+  featureName,
   datasetId,
   datasetName,
   featureType, // should be gene
@@ -57,7 +57,7 @@ export const CoDependenciesTable: React.FC<CoDependenciesTableProps> = ({
               <tr key={`${datasetCor.other_dataset_id}-${i}`}>
                 <td>
                   <a
-                    href={`${urlPrefix}/data_explorer_2/?xDataset=${datasetId}&xFeature=${featureId}&yDataset=${datasetCor.other_dataset_given_id}&yFeature=${datasetCor.other_dimension_label}`}
+                    href={`${urlPrefix}/data_explorer_2/?xDataset=${datasetId}&xFeature=${featureName}&yDataset=${datasetCor.other_dataset_given_id}&yFeature=${datasetCor.other_dimension_label}`}
                     target="_blank"
                     rel="noreferrer"
                   >

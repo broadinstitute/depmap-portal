@@ -125,7 +125,7 @@ const TopCoDependenciesTile = ({
               allTopCrisprDatasetCorrelations && (
                 <div className={styles.tableWrapper}>
                   <CoDependenciesTable
-                    featureId={geneEntrezId}
+                    featureName={geneLabel}
                     datasetName={crisprDatasetName}
                     datasetId={crisprCorrelationData.dataset_given_id}
                     key={crisprGivenId}
@@ -165,7 +165,7 @@ const TopCoDependenciesTile = ({
               !rnaiIsLoading && (
                 <>
                   <CoDependenciesTable
-                    featureId={geneEntrezId}
+                    featureName={geneLabel}
                     datasetName={rnaiDatasetName}
                     datasetId={rnaiCorrelationData.dataset_given_id}
                     key={rnaiGivenId}
