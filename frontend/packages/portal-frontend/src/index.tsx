@@ -319,6 +319,10 @@ export async function initTopCoDependenciesTile(
 ) {
   const dependencyDatasetIds = await getDependencyDatasetIds(entrezId);
 
+  if (dependencyDatasetIds.length === 0) {
+    return;
+  }
+
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <TopCoDependenciesTile
