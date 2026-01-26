@@ -5,6 +5,7 @@ from depmap import extensions
 from depmap.access_control import all_records_visible
 from depmap.dataset.models import DependencyDataset, Dataset, BiomarkerDataset
 import logging
+import typing
 
 log = logging.getLogger(__name__)
 
@@ -35,7 +36,8 @@ def copy_breadbox_names(dryrun: bool):
                 )
             else:
                 log.warning(f"Updating: {dataset.display_name} -> {bb_name}")
-                dataset.display_name = bb_name
+                # pyright is confused about the type on this field
+                dataset.display_name = bb_name  # pyright: ignore
         if dryrun:
             log.warning("Dryrun so skipping commit")
         else:

@@ -35,13 +35,10 @@ def test_copy_breadbox_names(monkeypatch, empty_db_mock_downloads):
     copy_breadbox_names(False)
     assert committed
 
-    assert (
-        DependencyDataset.get_dataset_by_name(DependencyEnum.Avana.value).display_name
-        == "d1_new_name"
-    )
-    assert (
-        DependencyDataset.get_dataset_by_name(
-            DependencyEnum.Chronos_Achilles.value
-        ).display_name
-        == "d2"
-    )
+    def check_name(value, expected):
+        dataset = DependencyDataset.get_dataset_by_name(DependencyEnum.Avana.value)
+        assert dataset is not None
+        assert dataset.display_name == expected
+
+    check_name(DependencyEnum.Avana.value, "d1_new_name")
+    check_name(DependencyEnum.Chronos_Achilles.value, "d2")
