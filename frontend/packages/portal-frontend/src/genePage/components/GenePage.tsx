@@ -1,6 +1,5 @@
 import React from "react";
 import { Option } from "src/common/models/utilities";
-import { ConnectivityValue } from "src/constellation/models/constellation";
 import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageHeader from "./GenePageHeader";
 import GenePageTabs from "./GenePageTabs";
@@ -26,7 +25,6 @@ interface Props {
   methodologyLink: string;
   similarityOptions: Array<Option<string>>;
   colorOptions: Array<Option<string>>;
-  connectivityOptions: Array<Option<ConnectivityValue>>;
   targetFeatureLabel: string;
   datasets: Array<Option<string>>;
   dependencyProfileOptions: Array<DatasetOption>;

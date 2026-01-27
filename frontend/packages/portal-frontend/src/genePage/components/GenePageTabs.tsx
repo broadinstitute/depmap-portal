@@ -11,8 +11,6 @@ import {
 import AsyncTile from "src/common/components/AsyncTile";
 import { EntityType } from "src/entity/models/entities";
 import { getQueryParams } from "@depmap/utils";
-import { Option } from "src/common/models/utilities";
-import { ConnectivityValue } from "src/constellation/models/constellation";
 import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageOverview, { TileTypeEnum } from "./GenePageOverview";
 import GeneCharacterizationPanel from "./GeneCharacterizationPanel";
