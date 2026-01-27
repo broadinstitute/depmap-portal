@@ -1,5 +1,4 @@
 import React from "react";
-import { Option } from "src/common/models/utilities";
 import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageHeader from "./GenePageHeader";
 import GenePageTabs from "./GenePageTabs";
