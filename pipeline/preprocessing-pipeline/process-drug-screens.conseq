@@ -1,7 +1,10 @@
+type "drug-metadata" ( dataset_id, name, label, format, filename )
+
 rule process_taiga_pulled_artifact:
    inputs:
       download={"type": "download_from_taiga"},
       hdf5_utils=fileref("scripts/hdf5_utils.py")
+   output_types: ( "drug-metadata"* )
    run "python" with """
       import shutil
       import taigapy
@@ -84,24 +87,6 @@ rule process_drug_screen_drc:
       }
    run "python {{ inputs.script.filename }} {{ inputs.download.label }} {{ inputs.download.dataset_id }} {{ inputs.download.conditions_dataset_id }} {{ inputs.download.sample_id_prefix }} {{ inputs.download.label }}.csv"
 
-rule process_download_csv_from_taiga:
-   inputs:
-      download={"type": "download_csv_from_taiga"},
-   run "python" with """
-      import shutil
-      import taigapy
-      import os
-
-      tc = taigapy.create_version_3_client()
-
-      label = {{ inputs.download.label | quoted }}
-
-      assert label in [ "compound_metadata" ]
-      cached = tc.download_to_cache("{{ inputs.download.dataset_id }}", LocalFormat.CSV_TABLE)
-      shutil.copy2(cached, "out.csv")
-      
-      assert os.path.exists("out.csv"), "Output file 'out.csv' not generated"
-	"""
 
 rule process_viability_dataset_from_taiga:
     inputs:

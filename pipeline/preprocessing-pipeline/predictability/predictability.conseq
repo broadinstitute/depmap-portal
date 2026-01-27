@@ -70,12 +70,15 @@ rule process_model_config:
             yaml.dump(ensemble_config, f, sort_keys=True)
     """
 
+type dep-matrix-ftr-unfiltered ( dataset_id, label, confounders_label, has_related, run_interpretable_models, filename )
+
 # Generate dep-matrix-ftr-unfiltered artifacts for only those dep-matrix artifacts which we want to predict
 rule download_dep_matrix:
     inputs:
         dep={'type': 'dep-matrix', "label": label},
         probs={"type": "raw-dep-prob-matrix", "label" : label},
         hdf5_utils=fileref("../scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
+        output_types: ( dep-matrix-ftr-unfiltered* )
     run "python3" with """
         from hdf5_utils import read_hdf5
         import re
@@ -385,6 +388,7 @@ rule prep_rppa_pred_biomarker_matrix:
         hdf5_utils.write_hdf5(df.transpose(), "rppa.hdf5")
     """
 
+type ensemble-feature-set ( label )
 
 # Construct the feature matrix for each target matrix (and its corresponding model config)
 rule assemble_feature_matrix:
@@ -403,6 +407,7 @@ rule assemble_feature_matrix:
         dep_ftr={'type': 'pred-dep-matrix-ftr', "label": label, "confounders_label" : confounders_label},
         model_config={"type": "ensemble-model-config", "label": label},
         confounders={'type' ~ 'pred-biomarker-matrix-csv|confounders-stub', 'category': confounders_label},
+     output_types: ( ensemble-feature-set * )
 #    construct-cache-key-run "python3" with """
 #        import json
 #        import hashlib

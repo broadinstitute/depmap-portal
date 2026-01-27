@@ -11,11 +11,18 @@ import os
 
 tc = create_taiga_client_v3()
 
+_resolve_versioned_dataset_id_cache = {}
+
 
 def _resolve_versioned_dataset_id(taiga_permaname):
     if "." in taiga_permaname:
         return taiga_permaname
-    return tc.get_latest_version_id(taiga_permaname)
+    if taiga_permaname in _resolve_versioned_dataset_id_cache:
+        latest = _resolve_versioned_dataset_id_cache[taiga_permaname]
+    else:
+        latest = tc.get_latest_version_id(taiga_permaname)
+        _resolve_versioned_dataset_id_cache[taiga_permaname] = latest
+    return latest
 
 
 def _rewrite_stream(vars, in_name, in_lines, out_fd):
@@ -100,4 +107,6 @@ def rewrite_file(in_name, out_name):
 
 
 if __name__ == "__main__":
+    print("starting preprocessing-pipeline")
     rewrite_file(sys.argv[1], sys.argv[2])
+    print("complete preprocessing-pipeline")

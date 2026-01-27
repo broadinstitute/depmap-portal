@@ -2,6 +2,7 @@ rule validate_biomarker_matrix:
     inputs:
         data={'type': 'biomarker-matrix'},
         hdf5_utils=fileref('scripts/hdf5_utils.py', copy_to='hdf5_utils.py')
+    outputs: none
     run "python3" with """
         import pandas as pd
         from hdf5_utils import read_hdf5
