@@ -31,13 +31,6 @@ const {
   entityId,
   customDownloadsLink,
   methodologyLink,
-  similarityOptions,
-  colorOptions,
-  connectivityOptions,
-  targetFeatureLabel,
-  datasets,
-  dependencyProfileOptions,
-  howToImg,
   sizeBiomEnumName,
   color,
   figure,
@@ -68,13 +61,6 @@ const App = () => {
         entityId={entityId}
         customDownloadsLink={customDownloadsLink}
         methodologyLink={methodologyLink}
-        similarityOptions={similarityOptions}
-        colorOptions={colorOptions}
-        connectivityOptions={connectivityOptions}
-        targetFeatureLabel={targetFeatureLabel}
-        datasets={datasets}
-        dependencyProfileOptions={dependencyProfileOptions}
-        howToImg={howToImg}
         sizeBiomEnumName={sizeBiomEnumName}
         color={color}
         figure={figure}
