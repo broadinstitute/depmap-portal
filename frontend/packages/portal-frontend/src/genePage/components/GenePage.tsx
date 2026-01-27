@@ -23,12 +23,6 @@ interface Props {
   entityId: string;
   customDownloadsLink: string;
   methodologyLink: string;
-  similarityOptions: Array<Option<string>>;
-  colorOptions: Array<Option<string>>;
-  targetFeatureLabel: string;
-  datasets: Array<Option<string>>;
-  dependencyProfileOptions: Array<DatasetOption>;
-  howToImg: string;
   sizeBiomEnumName: string;
   color: string;
   figure: { name: number };
