@@ -3,7 +3,7 @@ import { GeneTeaScatterPlotData } from "@depmap/types/src/experimental_genetea";
 import React, { useMemo, useState } from "react";
 import ScatterPlot from "./ScatterPlot";
 import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
-import GeneTeaContextModal from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaContextModal";
+import MatchingTermsModal from "../TopTermsTab/FindGenesMatchingTerm/Modal/MatchingTermsModal";
 
 interface Props {
   data: GeneTeaScatterPlotData | null; // TODO simplify this. We only need x (Effect Size) and y (fdr)
@@ -303,14 +303,18 @@ function AllTermsScatterPlot({
           setSelectedTerm({ matchingGenes: matchingGenes || [], term })
         }
       />
-
-      <GeneTeaContextModal
+      <MatchingTermsModal
         show={Boolean(selectedTerm)}
-        term={selectedTerm?.term || ""}
-        synonyms={[]}
-        coincident={[]}
-        matchingGenes={selectedTerm?.matchingGenes || []}
+        termOrTermGroup={selectedTerm?.term || ""}
+        termsWithinSelectedGroup={null}
+        termToMatchingGenesMap={
+          selectedTerm
+            ? new Map([[selectedTerm.term, selectedTerm.matchingGenes]])
+            : new Map<string, string[]>()
+        }
         onClose={() => setSelectedTerm(null)}
+        useAllGenes={false}
+        useTerms
       />
     </>
   );
