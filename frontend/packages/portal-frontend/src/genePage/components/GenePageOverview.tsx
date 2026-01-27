@@ -6,7 +6,6 @@ interface Props {
   symbol: string;
   showDependencyTab: boolean;
   showConfidenceTab: boolean;
-  showCelfieTile: boolean;
   showCharacterizationTab: boolean;
   showPredictabilityTab: boolean;
   orderedTiles: [TileTypeEnum, number][][];
@@ -29,7 +28,6 @@ export enum TileTypeEnum {
   Mutations = "mutations",
   Gene_score_confidence = "gene_score_confidence",
   Description = "description",
-  Celfie = "celfie",
 }
 
 const GenePageOverview = ({
@@ -39,7 +37,6 @@ const GenePageOverview = ({
   showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
-  showCelfieTile,
   hasDatasets,
   isMobile,
   showMutationsTile,
@@ -57,9 +54,6 @@ const GenePageOverview = ({
 
       case TileTypeEnum.Gene_score_confidence:
         return showConfidenceTab;
-
-      case TileTypeEnum.Celfie:
-        return showCelfieTile;
 
       case TileTypeEnum.Omics:
         return showCharacterizationTab && showOmicsExpressionTile;
@@ -86,7 +80,7 @@ const GenePageOverview = ({
       <AsyncTile key={key[0]} url={`/tile/gene/${tile[0]}/${symbol}`} />
     );
 
-    // Match tiles with tabs... On occasion we have to show a tab, but not the tile (i.e. Celfie tab but not tile for HNF1B)
+    // Match tiles with tabs... On occasion we have to show a tab, but not the tile
     if (!shouldShowTile(tile)) {
       resultTile = null;
     }

@@ -1,7 +1,6 @@
 from depmap import data_access
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.compound.views.executive import (
-    determine_compound_experiment_and_dataset,
     format_availability_tile,
     format_dep_dist,
 )
@@ -107,34 +106,3 @@ def test_format_availability_tile(empty_db_mock_downloads):
     availability = format_availability_tile(compound)
 
     assert expected == availability
-
-
-def test_determine_compound_experiment_and_dataset(empty_db_mock_downloads):
-    """
-    test that the compound experiment and dataset is returned given the ranking provided
-    Currently: OncRef > Repurposing Secondary > Rep All Single Pt > Others
-    """
-    compound_experiment_1 = CompoundExperimentFactory()
-    compound_experiment_2 = CompoundExperimentFactory()
-    # multiple cell lines so can plot distplot
-    matrix = MatrixFactory(
-        [compound_experiment_1, compound_experiment_2],
-        [DepmapModelFactory(), DepmapModelFactory()],
-        using_depmap_model_table=True,
-    )
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Rep_all_single_pt, matrix=matrix
-    )
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Prism_oncology_AUC, matrix=matrix
-    )
-    compound_experiment_and_datasets = [
-        (compound_experiment_1, dataset_1),
-        (compound_experiment_2, dataset_1),
-        (compound_experiment_1, dataset_2),
-        (compound_experiment_2, dataset_2),
-    ]
-    empty_db_mock_downloads.session.flush()
-    assert determine_compound_experiment_and_dataset(
-        compound_experiment_and_datasets
-    ) == [[compound_experiment_1, dataset_2]]

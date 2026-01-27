@@ -94,14 +94,6 @@ const EntitySummary = React.lazy(
     )
 );
 
-const CelfiePage = React.lazy(
-  () =>
-    import(
-      /* webpackChunkName: "CelfiePage" */
-      "./celfie/components/CelfiePage"
-    )
-);
-
 const PredictabilityTab = React.lazy(
   () =>
     import(
@@ -653,53 +645,4 @@ export function initSublineagePlot(
   window.addEventListener(rerenderPlotEventName, renderPlot);
 
   renderPlot();
-}
-
-export function initCelfiePage(
-  elementId: string,
-  similarityOptions: Array<Option<string>>,
-  colorOptions: Array<Option<string>>,
-  connectivityOptions: Array<Option<ConnectivityValue>>,
-  targetFeatureLabel: string,
-  datasets: Array<Option<string>>,
-  dependencyProfileOptions: Array<DatasetOption>,
-  howToImg: string
-) {
-  renderWithErrorBoundary(
-    <React.Suspense fallback={<div>Loading...</div>}>
-      <CelfiePage
-        getGraphData={(
-          taskIds,
-          numGenes,
-          similarityMeasure,
-          connectivity,
-          topFeature
-        ) =>
-          legacyPortalAPI.getConstellationGraphs(
-            taskIds,
-            null,
-            similarityMeasure,
-            numGenes,
-            connectivity,
-            topFeature
-          )
-        }
-        getVolcanoData={legacyPortalAPI.getTaskStatus}
-        similarityOptions={similarityOptions}
-        colorOptions={colorOptions}
-        connectivityOptions={connectivityOptions}
-        targetFeatureLabel={targetFeatureLabel}
-        datasets={datasets}
-        getComputeUnivariateAssociations={
-          legacyPortalAPI.computeUnivariateAssociations
-        }
-        dependencyProfileOptions={dependencyProfileOptions}
-        onCelfieInitialized={() => {}}
-        howToImg={howToImg}
-        methodIcon={toStaticUrl("img/predictability/pdf.svg")}
-        methodPdf={toStaticUrl("pdf/Genomic_Associations_Methodology.pdf")}
-      />
-    </React.Suspense>,
-    document.getElementById(elementId) as HTMLElement
-  );
 }

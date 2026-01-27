@@ -25,8 +25,6 @@ const {
   showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
-  showCelfieTab,
-  showCelfieTile,
   hasDatasets,
   order,
   isMobile,
@@ -64,8 +62,6 @@ const App = () => {
         showConfidenceTab={showConfidenceTab}
         showCharacterizationTab={showCharacterizationTab}
         showPredictabilityTab={showPredictabilityTab}
-        showCelfieTab={showCelfieTab}
-        showCelfieTile={showCelfieTile}
         hasDatasets={hasDatasets}
         order={order}
         isMobile={isMobile}

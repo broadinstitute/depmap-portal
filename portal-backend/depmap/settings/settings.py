@@ -168,10 +168,6 @@ class FeatureFlags:
         return self.is_prerelease_env()
 
     @property
-    def celfie(self):
-        return False
-
-    @property
     def celligner_app_v3(self):
         return True
 

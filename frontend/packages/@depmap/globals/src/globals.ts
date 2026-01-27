@@ -174,7 +174,6 @@ function polyfillProxy() {
     "initWideTable",
     "initEntitySummary",
     "initSublineagePlot",
-    "initCelfiePage",
     "initEnrichmentTile",
     "initHeatmapTile",
     "initStructureAndDetailTile",
