@@ -180,7 +180,7 @@ class TestPost:
             json={
                 "email": "random@email.com",
                 "access_type": "read",
-                "exact_match": False,
+                "exact_match": True,
             },
             headers=admin_headers,
         )
@@ -190,11 +190,27 @@ class TestPost:
             json={
                 "email": "random@email.com",
                 "access_type": "read",
-                "exact_match": False,
+                "exact_match": True,
             },
             headers=admin_headers,
         )
         assert_status_ok(post_entry_1_copy)
+
+        # this should fail because the email doesn't start with '@'
+        post_suffix_match_entry = client.post(
+            f"/groups/{owner_group['id']}/addAccess",
+            json={"email": "email.com", "access_type": "read", "exact_match": False,},
+            headers=admin_headers,
+        )
+        assert_status_not_ok(post_suffix_match_entry)
+
+        # this should succeed because now that email starts with '@'
+        post_suffix_match_entry = client.post(
+            f"/groups/{owner_group['id']}/addAccess",
+            json={"email": "@email.com", "access_type": "read", "exact_match": False,},
+            headers=admin_headers,
+        )
+        assert_status_ok(post_suffix_match_entry)
 
 
 class TestDelete:
@@ -298,10 +314,11 @@ class TestDelete:
             json={
                 "email": "random@group.com",
                 "access_type": "read",
-                "exact_match": False,
+                "exact_match": True,
             },
             headers=admin_headers,
         )
+        assert_status_ok(post_read_entry)
         read_only_user_entry = post_read_entry.json()
         group = client.get(f"/groups/{owner_group['id']}", headers=admin_headers).json()
         assert len(group["group_entries"]) == 2
@@ -312,10 +329,11 @@ class TestDelete:
             json={
                 "email": "writer@group.com",
                 "access_type": "write",
-                "exact_match": False,
+                "exact_match": True,
             },
             headers=admin_headers,
         )
+        assert_status_ok(post_write_entry)
         write_only_user_entry = post_write_entry.json()
         group = client.get(f"/groups/{owner_group['id']}", headers=admin_headers).json()
         assert len(group["group_entries"]) == 3
@@ -358,7 +376,7 @@ class TestDelete:
             json={
                 "email": "owner2@group.com",
                 "access_type": "owner",
-                "exact_match": False,
+                "exact_match": True,
             },
             headers=admin_headers,
         )
