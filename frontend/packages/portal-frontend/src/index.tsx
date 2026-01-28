@@ -434,6 +434,7 @@ export async function initRelatedCompoundsTile(
     <React.Suspense fallback={<div>Loading...</div>}>
       <RelatedCompoundsTile
         entityLabel={entityLabel}
+        compoundId={compoundID}
         datasetId={highestPriorityGivenId}
         datasetToDataTypeMap={datasetToDataTypeMap}
       />
