@@ -8,12 +8,14 @@ import InfoIcon from "src/common/components/InfoIcon";
 
 interface RelatedCompoundsTileProps {
   entityLabel: string;
+  compoundId: string;
   datasetId: string;
   datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi">;
 }
 
 const RelatedCompoundsTile = ({
   entityLabel,
+  compoundId,
   datasetId,
   datasetToDataTypeMap,
 }: RelatedCompoundsTileProps) => {
@@ -24,7 +26,7 @@ const RelatedCompoundsTile = ({
     topCompoundCorrelates,
     isLoading,
     hasError,
-  } = useRelatedCompoundsData(datasetId, entityLabel, datasetToDataTypeMap);
+  } = useRelatedCompoundsData(datasetId, compoundId, datasetToDataTypeMap);
   const dataTypes = Object.values(datasetToDataTypeMap);
 
   // If there is no data, don't show tile
