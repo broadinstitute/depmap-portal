@@ -16,9 +16,9 @@ from flask import (
     send_file,
     url_for,
 )
-from depmap.compound.models import Compound, CompoundExperiment
+from depmap.compound.models import Compound
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
-from depmap.entity.views.index import format_celfie, format_summary
+from depmap.entity.views.index import format_summary
 from depmap.extensions import memoize_without_user_permissions
 from depmap.gene.models import Gene
 from depmap.gene.views import characterization
@@ -30,7 +30,6 @@ from depmap.predictability.utilities import (
 )
 from depmap.tile.views import (
     find_compounds_targeting_gene,
-    get_correlations_for_celfie_react_tile,
     get_omics,
 )
 from depmap.utilities.sign_bucket_url import get_signed_url
@@ -132,13 +131,6 @@ def _get_gene_page_template_parameters(gene_symbol):
         is not None
     )
 
-    has_celfie = (
-        current_app.config["ENABLED_FEATURES"].celfie and crispr_dataset is not None
-    )
-    if has_celfie:
-        celfie = format_celfie(gene.symbol, summary["summary_options"])
-
-    correlations = get_correlations_for_celfie_react_tile(gene, has_celfie)
     omics = get_omics(gene)
     show_omics_expression_tile = (
         omics is not None and omics.get("copy_number") is not None
@@ -174,9 +166,6 @@ def _get_gene_page_template_parameters(gene_symbol):
         },
         pubmed_search_terms=[gene_symbol, gene_symbol + " AND cancer"],
         order=get_order(has_predictability),
-        has_celfie=has_celfie,
-        celfie=celfie if has_celfie else None,
-        correlations=correlations,
         show_mutations_tile=show_mutations_tile,
         show_omics_expression_tile=show_omics_expression_tile,
         show_targeting_compounds_tile=show_targeting_compounds_tile,
@@ -477,31 +466,6 @@ def download_top_correlations_for_gene_dataset(gene_symbol: str):
         correlations,
         "{}'s Top 100 Codependencies for {}".format(gene_symbol, dataset.display_name),
         {"index": False},
-    )
-
-
-@blueprint.route("/<gene_symbol>/genomic_associations")
-def view_genomic_associations(gene_symbol: str):
-    gene = Gene.query.filter_by(label=gene_symbol).one_or_none()
-    if gene is None:
-        abort(404)
-
-    entity_id = gene.entity_id
-
-    dependency_datasets = dependency_datasets_with_gene(entity_id)
-    # Format dependency options
-    dependency_datasets_options = [
-        format_summary_option(dataset, gene, dataset.display_name)
-        for dataset in dependency_datasets
-    ]
-    has_celfie = (
-        current_app.config["ENABLED_FEATURES"].celfie
-        and dependency_datasets_options is not None
-    )
-    celfie = format_celfie(gene.symbol, dependency_datasets_options)
-
-    return render_template(
-        "entities/celfie_page.html", celfie=celfie if has_celfie else None
     )
 
 

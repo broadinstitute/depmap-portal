@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { legacyPortalAPI } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
-import { enabledFeatures, toStaticUrl } from "@depmap/globals";
+import { enabledFeatures } from "@depmap/globals";
 import {
   TabsWithHistory,
   TabList,
@@ -12,8 +11,6 @@ import {
 import AsyncTile from "src/common/components/AsyncTile";
 import { EntityType } from "src/entity/models/entities";
 import { getQueryParams } from "@depmap/utils";
-import { Option } from "src/common/models/utilities";
-import { ConnectivityValue } from "src/constellation/models/constellation";
 import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageOverview, { TileTypeEnum } from "./GenePageOverview";
 import GeneCharacterizationPanel from "./GeneCharacterizationPanel";
@@ -42,15 +39,6 @@ const EntitySummary = React.lazy(
     )
 );
 
-// For tab titled "Genomic Associations"
-const CelfiePage = React.lazy(
-  () =>
-    import(
-      /* webpackChunkName: "CelfiePage" */
-      "src/celfie/components/CelfiePage"
-    )
-);
-
 const PredictabilityTab = React.lazy(
   () =>
     import(
@@ -73,8 +61,6 @@ interface Props {
   showConfidenceTab: boolean;
   showCharacterizationTab: boolean;
   showPredictabilityTab: boolean;
-  showCelfieTab: boolean;
-  showCelfieTile: boolean;
   hasDatasets: boolean;
   order: [TileTypeEnum, number][][];
   isMobile: boolean;
@@ -82,13 +68,6 @@ interface Props {
   entrezId: string;
   customDownloadsLink: string;
   methodologyLink: string;
-  similarityOptions: Array<Option<string>>;
-  colorOptions: Array<Option<string>>;
-  connectivityOptions: Array<Option<ConnectivityValue>>;
-  targetFeatureLabel: string;
-  datasets: Array<Option<string>>;
-  dependencyProfileOptions: Array<DatasetOption>;
-  howToImg: string;
   sizeBiomEnumName: string;
   color: string;
   figure: { name: number };
@@ -105,8 +84,6 @@ const GenePageTabs = ({
   showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
-  showCelfieTab,
-  showCelfieTile,
   hasDatasets,
   order,
   isMobile,
@@ -114,13 +91,6 @@ const GenePageTabs = ({
   entrezId,
   customDownloadsLink,
   methodologyLink,
-  similarityOptions,
-  colorOptions,
-  connectivityOptions,
-  targetFeatureLabel,
-  datasets,
-  dependencyProfileOptions,
-  howToImg,
   sizeBiomEnumName,
   color,
   figure,
@@ -188,7 +158,6 @@ const GenePageTabs = ({
           showDependencyTab={showDependencyTab}
           showConfidenceTab={showConfidenceTab}
           showCharacterizationTab={showCharacterizationTab}
-          showCelfieTile={showCelfieTile}
           showPredictabilityTab={showPredictabilityTab}
           orderedTiles={order}
           hasDatasets={hasDatasets}
@@ -215,9 +184,6 @@ const GenePageTabs = ({
             {showCharacterizationTab && (
               <Tab id="characterization">Characterization</Tab>
             )}
-            {showCelfieTab && (
-              <Tab id="genomic_assoc">Genomic Associations</Tab>
-            )}
             {showPredictabilityTab && (
               <Tab id="predictability">Predictability</Tab>
             )}
@@ -233,7 +199,6 @@ const GenePageTabs = ({
                 showDependencyTab={showDependencyTab}
                 showConfidenceTab={showConfidenceTab}
                 showCharacterizationTab={showCharacterizationTab}
-                showCelfieTile={showCelfieTile}
                 showPredictabilityTab={showPredictabilityTab}
                 orderedTiles={order}
                 hasDatasets={hasDatasets}
@@ -274,46 +239,6 @@ const GenePageTabs = ({
                   selectedCellLineList={selectedCellLineList}
                   onListSelect={setSelectedCellLineList}
                 />
-              </TabPanel>
-            )}
-            {showCelfieTab && (
-              <TabPanel className={styles.TabPanel}>
-                <React.Suspense fallback={<div>Loading...</div>}>
-                  <CelfiePage
-                    getGraphData={(
-                      taskIds,
-                      numGenes,
-                      similarityMeasure,
-                      connectivity,
-                      topFeature
-                    ) =>
-                      legacyPortalAPI.getConstellationGraphs(
-                        taskIds,
-                        null,
-                        similarityMeasure,
-                        numGenes,
-                        connectivity,
-                        topFeature
-                      )
-                    }
-                    getVolcanoData={legacyPortalAPI.getTaskStatus}
-                    similarityOptions={similarityOptions}
-                    colorOptions={colorOptions}
-                    connectivityOptions={connectivityOptions}
-                    targetFeatureLabel={targetFeatureLabel}
-                    datasets={datasets}
-                    getComputeUnivariateAssociations={
-                      legacyPortalAPI.computeUnivariateAssociations
-                    }
-                    dependencyProfileOptions={dependencyProfileOptions}
-                    onCelfieInitialized={() => {}}
-                    howToImg={howToImg}
-                    methodIcon={toStaticUrl("img/predictability/pdf.svg")}
-                    methodPdf={toStaticUrl(
-                      "pdf/Genomic_Associations_Methodology.pdf"
-                    )}
-                  />
-                </React.Suspense>
               </TabPanel>
             )}
             {showPredictabilityTab && (

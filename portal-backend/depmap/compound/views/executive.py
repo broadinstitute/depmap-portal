@@ -129,7 +129,6 @@ def get_order(
 
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
-        CompoundTileEnum.celfie.value: tile_large,
     }
     if show_compound_correlation_tiles:
         anywhere_cards[
@@ -173,23 +172,6 @@ def get_order(
 
     order[num_cols - 1].append(bottom_left_card)
     return order
-
-
-def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
-    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
-    dataset_regexp_ranking = [
-        "Prism_oncology.*",
-        "Repurposing_secondary.*",
-        "Rep_all_single_pt.*",
-        ".*",
-    ]
-    ce_and_d = []
-    for regexp in dataset_regexp_ranking:
-        for ce, d in compound_experiment_and_datasets:
-            pattern = re.compile(regexp)
-            if pattern.match(d.name.value):
-                ce_and_d = [[ce, d]]
-                return ce_and_d
 
 
 def format_dep_dist(compound: Compound, dataset: MatrixDataset):

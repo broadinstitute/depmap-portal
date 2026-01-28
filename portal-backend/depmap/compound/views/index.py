@@ -42,7 +42,6 @@ from depmap.compound.views.executive import (
     get_predictive_models_for_compound,
 )
 from depmap.dataset.models import Dataset, DependencyDataset
-from depmap.entity.views.index import format_celfie
 from depmap.enums import DependencyEnum
 from depmap.partials.matrix.models import ColMatrixIndex
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
@@ -85,20 +84,6 @@ def view_compound(name):
     sensitivity_tab_compound_summary = get_sensitivity_tab_info(
         compound.entity_id, compound_datasets
     )
-    has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
-    if has_celfie:
-        celfie_dataset_options = []
-        for compound_experiment, dataset in compound_experiment_and_datasets:
-            celfie_dataset_options.append(
-                format_summary_option(
-                    dataset,
-                    compound_experiment,
-                    "{} {}".format(compound_experiment.label, dataset.display_name),
-                )
-            )
-        celfie = format_celfie(
-            entity_label=name, dependency_datasets=celfie_dataset_options
-        )
 
     dose_curve_options_new = get_new_dose_curves_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
@@ -163,8 +148,6 @@ def view_compound(name):
         dose_curve_options_new=dose_curve_options_new,
         corr_analysis_options=corr_analysis_options,
         heatmap_dataset_options=heatmap_dataset_options,
-        has_celfie=has_celfie,
-        celfie=celfie if has_celfie else None,
         compound_units=compound.units,
         show_heatmap_tab=show_heatmap_tab,
         show_enriched_lineages=show_enriched_lineages,
@@ -625,9 +608,3 @@ def get_predictability_files():
                 )  # this overwrites the destination if exists bc should be atomic on unix systems
 
     return send_file(write_path, mimetype="application/zip", as_attachment=True)
-
-
-@blueprint.route("/<path:compound_name>/genomic_associations")
-def view_genomic_associations(compound_name: str):
-    # This is broken and being replaced
-    return render_template("entities/celfie_page.html", celfie=None)

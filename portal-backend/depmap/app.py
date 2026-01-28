@@ -31,7 +31,6 @@ from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.cli_commands.copy_breadbox_names import copy_breadbox_names_cmd
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
-from depmap.constellation.views import blueprint as constellation_blueprint
 from depmap.anchor_screen_dashboard.views import (
     blueprint as anchor_screen_dashboard_blueprint,
 )
@@ -331,7 +330,6 @@ def register_blueprints(app: Flask):
     app.register_blueprint(cas_blueprint)
     app.register_blueprint(access_control_blueprint)
     app.register_blueprint(tda_blueprint)
-    app.register_blueprint(constellation_blueprint)
     app.register_blueprint(tile_blueprint)
     app.register_blueprint(compound_dashboard_blueprint)
     app.register_blueprint(external_tools_blueprint)
