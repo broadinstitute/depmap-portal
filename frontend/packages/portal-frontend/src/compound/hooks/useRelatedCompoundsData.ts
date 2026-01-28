@@ -86,7 +86,6 @@ function getTopCorrelatedData(
     // Check 2: Is the specific gene in this row one of the selected compound's targets?
     const isSelectedTarget = selectedTargetsSet.has(itemGene);
 
-    // Combine checks into a single "isRelevant" flag to avoid 'continue'
     if (hasOverlap && isSelectedTarget) {
       // Update Top Targets (up to 2)
       if (topTargets.size < 2) {
