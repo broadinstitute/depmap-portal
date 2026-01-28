@@ -22,9 +22,20 @@ interface TopCompoundTargetsCorrelates {
   };
 }
 
+function hasIntersection(listA: string[], listB: string[]): boolean {
+  const [smaller, larger] =
+    listA.length < listB.length ? [listA, listB] : [listB, listA];
+
+  const smallerSet = new Set(smaller);
+  return larger.some((item) => smallerSet.has(item));
+}
+
 function getTopCorrelatedData(
+  selectedCompoundGeneTargets: string[],
   allCorrelatedCompounds: TargetCorrelatedCompound[],
-  datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi">
+  datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi">,
+  geneMetadata: any,
+  allCompoundMetadata: any
 ) {
   // Get top 2 gene targets by correlation bc that's how much space we can realistically show in tile.
   // Note JS sets preserve insertion order so targets should be sorted by correlation already from earlier
@@ -36,41 +47,59 @@ function getTopCorrelatedData(
   // filter all sorted correlations by those that would be in topTargets and topCompound
   const topCorrelates: TopCompoundTargetsCorrelates = {};
   for (let i = 0; i < allCorrelatedCompounds.length; i++) {
-    const correlatedCompound = allCorrelatedCompounds[i];
+    // "possibleRelatedCompound" is defined as the dataset/gene target of interest is associated with this compound, but this
+    // compound does not necessarily target one of our top 2 target genes for the selected compound, which is a requirement for
+    // being included in the y axis compounds.
+    const possibleRelatedCompound = allCorrelatedCompounds[i];
+    const possibleRelatedCompoundName =
+      possibleRelatedCompound.other_dimension_label;
 
-    const correlatedCompoundGeneTarget = correlatedCompound.gene;
-    if (topTargets.size < 2) {
-      if (!topTargets.has(correlatedCompoundGeneTarget)) {
-        topTargets.add(correlatedCompoundGeneTarget);
-      }
-    }
+    // There appears to be an assumption that this stores a gene targeted by the "correlatedCompound".This is FALSE, though
+    // const correlatedCompoundGeneTarget = correlatedCompound.gene;
 
-    const correlatedCompoundName = correlatedCompound.other_dimension_label;
-    if (topCompounds.size < 10) {
-      // for this correlate, add its correlated compound to topCompounds list if it isn't there and if correlated gene target is in topTargets list
-      if (
-        !topCompounds.has(correlatedCompoundName) &&
-        topTargets.has(correlatedCompoundGeneTarget)
-      ) {
-        topCompounds.add(correlatedCompoundName);
-      }
-    }
-    // for this correlate, if it is in topCompounds and topTargets, add it to its respective gene target's dataset data type
+    // Does the compound in question share a gene target with the selected compound? If not, we don't want to keep analyzing it for y axis inclusion.
+    const possibleRelatedCompoundGeneTargets = allCompoundMetadata
+      .EntrezIDsOfTargets[possibleRelatedCompoundName]
+      ? mapEntrezIdToSymbols(
+          allCompoundMetadata.EntrezIDsOfTargets[possibleRelatedCompoundName],
+          geneMetadata
+        )
+      : [];
     if (
-      topCompounds.has(correlatedCompoundName) &&
-      topTargets.has(correlatedCompoundGeneTarget)
+      hasIntersection(
+        possibleRelatedCompoundGeneTargets,
+        selectedCompoundGeneTargets
+      )
     ) {
-      const dataTypeKey = datasetToDataTypeMap[correlatedCompound.dataset];
-
-      if (!(correlatedCompoundName in topCorrelates)) {
-        topCorrelates[correlatedCompoundName] = {
-          CRISPR: {},
-          RNAi: {},
-        };
+      // Why would we add a topTarget that the selected compound is not targeting? The rule seems to be
+      // we want the topTargets to definitely be target by the selected compound AND all y axis compounds
+      if (topTargets.size < 2) {
+        if (!topTargets.has(possibleRelatedCompound.gene)) {
+          topTargets.add(possibleRelatedCompound.gene);
+        }
       }
-      topCorrelates[correlatedCompoundName][dataTypeKey][
-        correlatedCompound.gene
-      ] = correlatedCompound.correlation;
+
+      if (topCompounds.size < 10) {
+        // for this correlate, add its correlated compound to topCompounds list if it isn't there and if correlated gene target is in topTargets list
+        if (!topCompounds.has(possibleRelatedCompoundName)) {
+          topCompounds.add(possibleRelatedCompoundName);
+        }
+      }
+      // for this correlate, if it is in topCompounds and topTargets, add it to its respective gene target's dataset data type
+      if (topCompounds.has(possibleRelatedCompoundName)) {
+        const dataTypeKey =
+          datasetToDataTypeMap[possibleRelatedCompound.dataset];
+
+        if (!(possibleRelatedCompoundName in topCorrelates)) {
+          topCorrelates[possibleRelatedCompoundName] = {
+            CRISPR: {},
+            RNAi: {},
+          };
+        }
+        topCorrelates[possibleRelatedCompoundName][dataTypeKey][
+          possibleRelatedCompound.gene
+        ] = possibleRelatedCompound.correlation;
+      }
     }
   }
   return { topCorrelates, topTargets, topCompounds };
@@ -161,6 +190,9 @@ function useRelatedCompoundsData(
             })
           );
 
+          // BUG --> the above just means the dataset has ONE of the target genes. It does not mean the compound correlate
+          // actually targets the gene.
+
           // Flatten all associated compounds from correlated datasets with gene targets
           const allCorrelatedCompounds = datasetTargetCorrelates.flatMap((c) =>
             c.associated_dimensions.map((dim) => ({
@@ -177,8 +209,11 @@ function useRelatedCompoundsData(
             topTargets,
             topCompounds,
           } = getTopCorrelatedData(
+            targetGenes,
             allCorrelatedCompounds,
-            datasetToDataTypeMap
+            datasetToDataTypeMap,
+            geneMetadata,
+            allCompoundMetadata
           );
           setTargetCorrelationData(topCorrelates);
           setTopGeneTargets(Array.from(topTargets));
