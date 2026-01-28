@@ -24,6 +24,7 @@ import {
   ContextNameInfo,
   ContextNode,
 } from "@depmap/types";
+import PurpleHelpIcon from "src/geneTea/components/PurpleHelpIcon";
 
 interface Props {
   isLoadingInitialData: boolean;
@@ -124,20 +125,40 @@ const ContextExplorerTabs = ({
           Overview
         </Tab>
         <Tab id="geneDependency" className={styles.Tab}>
-          CRISPR Gene Dependency
+          CRISPR Gene Dependency{" "}
+          <PurpleHelpIcon
+            tooltipText="Selective gene dependencies calculated from Chronos CRISPR Gene Effect scores."
+            popoverId="gene-dep-tab-help"
+            placement="top"
+          />
         </Tab>
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <Tab id="oncrefSeq" className={styles.Tab}>
-            OncRef Seq Sensitivity
+            OncRef Seq Sensitivity{" "}
+            <PurpleHelpIcon
+              tooltipText="Selective compound sensitivities calculated from the OncRef Sequencing Dataset (viability readout captured via Next Generation Sequencing)."
+              popoverId="oncref-seq-tab-help"
+              placement="top"
+            />
           </Tab>
         )}
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <Tab id="oncrefLum" className={styles.Tab}>
-            OncRef Lum Sensitivity
+            OncRef Lum Sensitivity{" "}
+            <PurpleHelpIcon
+              tooltipText="Selective compound sensitivities calculated from the OncRef Luminex Dataset (viability readout captured via Luminex)."
+              popoverId="oncref-lum-tab-help"
+              placement="top"
+            />
           </Tab>
         )}
         <Tab id="repurposing" className={styles.Tab}>
-          Repurposing Sensitivity
+          Repurposing Sensitivity{" "}
+          <PurpleHelpIcon
+            tooltipText="Selective compound sensitivities calculated from the PRISM Repurposing Primary Screen."
+            popoverId="repurposing-tab-help"
+            placement="top"
+          />
         </Tab>
       </TabList>
 
