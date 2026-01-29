@@ -12,7 +12,6 @@ from depmap.data_access.models import MatrixDataset
 from depmap.entity.views.executive import format_generic_distribution_plot
 from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, CompoundTileEnum
-from depmap.correlation.utils import get_all_correlations
 
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.compound.models import Compound, CompoundExperiment
