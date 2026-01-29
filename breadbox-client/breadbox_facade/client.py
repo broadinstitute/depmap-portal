@@ -45,6 +45,8 @@ from breadbox_client.api.temp import get_associations as get_associations_client
 from breadbox_client.api.temp import add_associations as add_associations_client
 from breadbox_client.api.temp import get_associations_for_slice as get_associations_for_slice_client
 from breadbox_client.api.temp import evaluate_context as evaluate_context_client
+from breadbox_client.api.temp import get_sql_schema
+from breadbox_client.api.temp import query_sql
 
 from breadbox_client.models import (
     AccessType,
@@ -82,6 +84,7 @@ from breadbox_client.models import (
     SliceQuery,
     BodyGetAssociationsForSlice,
     SliceQueryIdentifierType,
+    SqlQuery,
     TableDatasetParams,
     TableDatasetParamsColumnsMetadata,
     TableDatasetParamsDatasetMetadataType0,
@@ -581,6 +584,15 @@ class BBClient:
     def evaluate_context(self, context_expression: dict) -> ContextMatchResponse:
         request_body = Context.from_dict(context_expression)
         breadbox_response = evaluate_context_client.sync_detailed(client=self.client, body=request_body)
+        return self._parse_client_response(breadbox_response)
+    
+    def get_sql_schema(self):
+        breadbox_response = get_sql_schema.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def query_sql(self, sql: str):
+        request_body = SqlQuery(sql=sql)
+        breadbox_response = query_sql.sync_detailed(client=self.client, body=request_body)
         return self._parse_client_response(breadbox_response)
 
     # API
