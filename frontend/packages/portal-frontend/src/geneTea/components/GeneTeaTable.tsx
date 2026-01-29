@@ -2,7 +2,7 @@ import styles from "../styles/GeneTea.scss";
 import React, { useState } from "react";
 import WideTable from "@depmap/wide-table";
 import PlotSpinner from "src/plot/components/PlotSpinner";
-import GeneTeaContextModal from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/integrations/GeneTea/GeneTeaContextModal";
+import MatchingTermsModal from "./TopTermsTab/FindGenesMatchingTerm/Modal/MatchingTermsModal";
 
 interface GeneTeaTableProps {
   error: boolean;
@@ -175,13 +175,18 @@ const GeneTeaTable: React.FC<GeneTeaTableProps> = ({
           minimumAllowedSelections={1}
           useAllSelectionsInOnChangeHandler
         />{" "}
-        <GeneTeaContextModal
+        <MatchingTermsModal
           show={Boolean(selectedTerm)}
-          term={selectedTerm?.term || ""}
-          synonyms={[]}
-          coincident={[]}
-          matchingGenes={selectedTerm?.matchingGenes || []}
+          termOrTermGroup={selectedTerm?.term || ""}
+          termsWithinSelectedGroup={null}
+          termToMatchingGenesMap={
+            selectedTerm
+              ? new Map([[selectedTerm.term, selectedTerm.matchingGenes]])
+              : new Map<string, string[]>()
+          }
           onClose={() => setSelectedTerm(null)}
+          useAllGenes={false}
+          useTerms
         />
       </div>
     );

@@ -12,6 +12,11 @@ if [ "$1" = "" ]; then
 fi
 IMAGE_TAG="$1"
 
+if [ ! -e ../.git ] ; then
+  echo "This command only works when run from the portal-backend directory of the git checkout. Change directory before running this command"
+  exit 1
+fi
+
 set -ex
 
 if [[ "$RUN_YARN" == "true" ]]; then
@@ -48,6 +53,9 @@ python3 ../depmap-shared/generate-py ../depmap-shared/color_palette.json depmap/
 mkdir -p dist
 git rev-parse HEAD > dist/git-sha
 ( cd .. && tar -czf portal-backend/dist/additional-files.tar.gz config)
+
+# save the current sha to help track what we built this docker image from
+git rev-parse HEAD > git-sha
 
 # Build Docker image
 DOCKER_BUILDKIT=1 \
