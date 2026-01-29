@@ -33,7 +33,6 @@ from depmap.taiga_id.utils import get_taiga_client
 from depmap.utilities.filename_utils import get_base_name_without_extension
 from depmap.utilities.hdf5_utils import csv_to_hdf5, df_to_hdf5
 from loader import (
-    association_loader,
     cell_line_loader,
     celligner_loader,
     compound_loader,
@@ -735,20 +734,6 @@ def _load_real_data(
                 gene_dep_summary_file_path, dropped_by_chronos_file,
             )
 
-    associations = gcsc_depmap.read_json("metadata/correlations.json")["in"]
-    associations = []
-    for association in associations:
-        with checkpoint(
-            "association-cor-{}-{}".format(
-                association["label"], association["category"]
-            )
-        ) as needed:
-            if needed:
-                assoc_db = gcsc_conseq_depmap.download_to_cache(association["db"])
-                association_loader.load_correlations(
-                    assoc_db, association["label"], association["category"]
-                )
-
     with checkpoint("matrix-min-max") as needed:
         if needed:
             ensure_all_max_min_loaded()
@@ -1167,68 +1152,6 @@ def load_sample_data(
             os.path.join(loader_data_dir, "gene/dropped_by_chronos.csv"),
         )
 
-        # Associations
-        association_deps = [
-            ("Chronos_Combined", DependencyEnum.Chronos_Combined.name),
-            ("RNAi_Ach", DependencyEnum.RNAi_Ach.name),
-            ("RNAi_Nov_DEM", DependencyEnum.RNAi_Nov_DEM.name),
-            ("RNAi_merged", DependencyEnum.RNAi_merged.name),
-            # deliberately dont load correlations for chronos achilles, chronos score, sanger crispr, gdsc and ctrp in dev because we                               can't be bothered to make the sample data
-            # we don't actually want to load correlations in these, for dev
-            # But we're still stuck with the historical baggage that enrichment loads from these, so we need these for enrichment to                               load correctly
-            # So we have special cases hardcoded in load sample data. All this could be organized better.
-            (
-                "Repurposing_secondary_AUC",
-                DependencyEnum.Repurposing_secondary_AUC.name,
-            ),
-            ("Chronos_Achilles", DependencyEnum.Chronos_Achilles.name),
-            ("GDSC1_AUC", DependencyEnum.GDSC1_AUC.name),
-            ("GDSC2_AUC", DependencyEnum.GDSC2_AUC.name),
-            ("ctd2_drug_auc", DependencyEnum.CTRP_AUC.name),
-            ("prism_oncology_auc", DependencyEnum.Prism_oncology_AUC.name)
-            # ('ctd2_drug_dose_replicate_level', DependencyEnum.CTRP_dose_replicate.name)
-        ]
-        association_bioms = [  # remember to add to sample_data/subset_files/calc_sample_data_assoc.py as well
-            ("expression", BiomarkerEnum.expression.name),
-            ("copy_number_absolute", BiomarkerEnum.copy_number_absolute.name),
-            ("mutation_pearson", BiomarkerEnum.mutation_pearson.name),
-            ("copy_number_relative", BiomarkerEnum.copy_number_relative.name),
-            ("mutations_damaging", BiomarkerEnum.mutations_damaging.name),
-            ("mutations_driver", BiomarkerEnum.mutations_driver.name),
-            ("mutations_hotspot", BiomarkerEnum.mutations_hotspot.name),
-        ]
-        get_assoc_db_file = lambda x: os.path.join(
-            loader_data_dir, "association/{}.db".format(x)
-        )
-        # for file_name_root, enum_name in association_deps:
-        #     if enum_name not in [
-        #         DependencyDataset.DependencyEnum.Chronos_Achilles.name,
-        #         DependencyDataset.DependencyEnum.GDSC1_AUC.name,
-        #         DependencyDataset.DependencyEnum.GDSC2_AUC.name,
-        #         DependencyDataset.DependencyEnum.CTRP_AUC.name,
-        #         DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
-        #     ]:
-        #         association_loader.load_dep_dep_correlation(
-        #             get_assoc_db_file("{}_dep_cor".format(file_name_root)), enum_name
-        #         )
-        #
-        # for dep_file_name_root, dep_enum_name in association_deps:
-        #     for (biom_file_name_root, biom_enum_name,) in association_bioms:
-        #         if dep_enum_name not in [
-        #             DependencyDataset.DependencyEnum.Chronos_Achilles.name,
-        #             DependencyDataset.DependencyEnum.GDSC1_AUC.name,
-        #             DependencyDataset.DependencyEnum.GDSC2_AUC.name,
-        #             DependencyDataset.DependencyEnum.CTRP_AUC.name,
-        #             DependencyDataset.DependencyEnum.Prism_oncology_AUC.name,
-        #         ]:
-        #             association_loader.load_dep_biom_correlation(
-        #                 get_assoc_db_file(
-        #                     "{}_{}_cor".format(dep_file_name_root, biom_file_name_root)
-        #                 ),
-        #                 dep_enum_name,
-        #                 biom_enum_name,
-        #             )
-        #
         ensure_all_max_min_loaded()
 
         if load_taiga_dependencies and load_nonstandard:

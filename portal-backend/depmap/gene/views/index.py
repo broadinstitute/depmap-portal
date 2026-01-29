@@ -33,7 +33,6 @@ from depmap.tile.views import (
     get_omics,
 )
 from depmap.utilities.sign_bucket_url import get_signed_url
-from depmap.correlation.utils import get_all_correlations
 from depmap.partials.views import format_csv_response
 from depmap.partials.data_table.factories import (
     get_mutation_by_gene_table,
@@ -424,48 +423,6 @@ def gene_characterization_content(gene_symbol: str, characterization_id: str):
         "genes/characterization-content.html",
         characterization=single_characterization,
         gene_name=gene_symbol,
-    )
-
-
-@blueprint.route("/<gene_symbol>/top_correlations")
-def download_top_correlations_for_gene_dataset(gene_symbol: str):
-    gene = Gene.query.filter_by(label=gene_symbol).one_or_none()
-    if gene is None:
-        abort(404)
-    dataset_name = str(request.args.get("dataset_name"))
-    dataset = DependencyDataset.get_dataset_by_name(dataset_name, must=True)
-    assert dataset
-    correlations = get_all_correlations(
-        dataset.matrix_id,
-        gene_symbol,
-        max_per_other_dataset=100,
-        other_dataset_ids=[dataset.dataset_id],
-    )
-    correlations.drop(columns="other_dataset_id", inplace=True)
-    labels = correlations["other_entity_label"].tolist()
-    # Get genes filtered by correlation genes list
-    filtered_genes = Gene.query.filter(Gene.label.in_(labels)).with_entities(
-        Gene.label, Gene.entrez_id
-    )
-    genes = pd.read_sql(filtered_genes.statement, filtered_genes.session.connection())
-    # join the tables together on the gene label
-    correlations = correlations.join(genes.set_index("label"), on="other_entity_label")
-    correlations.rename(
-        columns={
-            "other_entity_label": "Gene",
-            "other_dataset": "Dataset",
-            "correlation": "Correlation",
-            "entrez_id": "Entrez Id",
-        },
-        inplace=True,
-    )
-    # Reorder columns
-    correlations = correlations[["Gene", "Entrez Id", "Dataset", "Correlation"]]
-
-    return format_csv_response(
-        correlations,
-        "{}'s Top 100 Codependencies for {}".format(gene_symbol, dataset.display_name),
-        {"index": False},
     )
 
 

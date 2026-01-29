@@ -5,7 +5,6 @@ from depmap.gene.views.executive import (
     format_crispr_possible_missing_reason,
     get_dependency_distribution,
     plot_mutation_profile,
-    format_codependencies,
 )
 from depmap.dataset.models import DependencyDataset
 from depmap.enums import DependencyEnum
@@ -112,33 +111,3 @@ def test_plot_mutation_profile():
     "Test we can generate svg plot without getting an exception"
     svg = plot_mutation_profile([["Silent", 10], ["Frame_Shift_Ins", 5]])
     assert_is_svg(svg)
-
-
-from tests.factories import CorrelationFactory
-
-
-def test_format_codependencies(empty_db_mock_downloads, tmpdir):
-    gene1 = GeneFactory(label="G1")
-    gene2 = GeneFactory(label="G2")
-    matrix = MatrixFactory(entities=[gene1, gene2])
-    dataset = DependencyDatasetFactory(
-        display_name="test display name",
-        name=DependencyDataset.DependencyEnum.Chronos_Combined,
-        matrix=matrix,
-        priority=1,
-    )
-
-    CorrelationFactory(
-        dataset, dataset, str(tmpdir.join("cor")), cor_values=[[1.0, None], [0.5, 1.0]]
-    )
-
-    empty_db_mock_downloads.session.flush()
-
-    tables = format_codependencies("G1")
-    assert len(tables) == 1
-    assert tables[0].dataset_name == "Chronos_Combined"
-    assert tables[0].dataset_display_name == "test display name"
-    assert len(tables[0].entries) == 1
-    entry = tables[0].entries[0]
-    assert entry.label == "G2"
-    assert entry.correlation == 0.5

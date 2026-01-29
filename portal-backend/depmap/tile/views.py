@@ -20,8 +20,6 @@ from depmap.gene.views.confidence import format_confidence
 from depmap.enums import DependencyEnum
 from depmap.gene.views.executive import (
     format_mutation_profile,
-    format_codependencies,
-    generate_correlations_table_from_datasets,
     get_dependency_distribution,
 )
 from depmap.compound.views.executive import (
@@ -579,13 +577,6 @@ def get_essentiality_html(gene):
     dep_dist = get_dependency_distribution(gene, crispr_dataset, rnai_dataset)
 
     return render_template("tiles/essentiality.html", dep_dist=dep_dist,)
-
-
-def get_codependencies_html_OLD(gene):
-    codependencies = format_codependencies(gene.label)
-    return render_template(
-        "tiles/codependencies.html", codependencies=codependencies, gene=gene
-    )
 
 
 def get_codependencies_html(gene):
