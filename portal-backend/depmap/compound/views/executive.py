@@ -246,31 +246,6 @@ def format_availability_tile(compound: Compound):
     return results
 
 
-def format_corr_table(compound_label, top_correlations):
-    table = []
-    for _, tc in top_correlations.items():
-        interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2",
-            xDataset=tc["compound_dataset"].values[0],
-            yDataset="expression",
-            xFeature=compound_label,
-            yFeature=tc["other_entity_label"].values[0],
-        )
-        gene_url = url_for(
-            "gene.view_gene", gene_symbol=tc["other_entity_label"].values[0]
-        )
-        table.append(
-            {
-                "interactive_url": interactive_url,
-                "gene_url": gene_url,
-                "correlation": tc["correlation"].values[0],
-                "gene_symbol": tc["other_entity_label"].values[0],
-            }
-        )
-    table = sorted(table, key=lambda x: abs(x["correlation"]), reverse=True)
-    return table[:50]
-
-
 def get_predictive_models_for_compound(
     compound_experiment_and_datasets: List[
         Tuple[CompoundExperiment, DependencyDataset]
