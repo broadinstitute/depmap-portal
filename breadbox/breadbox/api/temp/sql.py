@@ -9,6 +9,10 @@ from ...service.sql import generate_simulated_schema, execute_sql_in_virtual_db
 from fastapi.responses import PlainTextResponse, StreamingResponse
 
 
+class StreamingCSVResponse(StreamingResponse):
+    media_type = "text/csv"
+
+
 class SqlQuery(BaseModel):
     sql: str
 
@@ -27,7 +31,9 @@ def get_sql_schema(
     return schema_text
 
 
-@router.post("/sql/query", operation_id="query_sql")
+@router.post(
+    "/sql/query", operation_id="query_sql", response_class=StreamingCSVResponse
+)
 def query_sql(
     query: SqlQuery,
     db: SessionWithUser = Depends(get_db_with_user),
@@ -39,4 +45,4 @@ def query_sql(
     streaming_result = execute_sql_in_virtual_db(
         db, settings.filestore_location, query.sql
     )
-    return StreamingResponse(streaming_result, media_type="text/csv")
+    return streaming_result
