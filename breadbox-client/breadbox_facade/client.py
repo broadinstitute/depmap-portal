@@ -586,11 +586,11 @@ class BBClient:
         breadbox_response = evaluate_context_client.sync_detailed(client=self.client, body=request_body)
         return self._parse_client_response(breadbox_response)
     
-    def get_sql_schema(self):
+    def get_sql_schema(self) -> str:
         breadbox_response = get_sql_schema.sync_detailed(client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def query_sql(self, sql: str):
+    def query_sql(self, sql: str) -> str:
         request_body = SqlQuery(sql=sql)
         breadbox_response = query_sql.sync_detailed(client=self.client, body=request_body)
         return self._parse_client_response(breadbox_response)
