@@ -73,7 +73,7 @@ const TopCoDependenciesTile = ({
 
     const sortedFeatures = [...associatedFeatures]
       .filter((feat) => feat.other_dimension_label !== geneLabel)
-      .sort((a, b) => Math.abs(b.correlation) - Math.abs(a.correlation));
+      .sort((a, b) => b.correlation - a.correlation);
 
     return sortedFeatures;
   }, [rnaiCorrelationData, geneLabel]);
