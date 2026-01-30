@@ -1,6 +1,4 @@
 import React from "react";
-import { Option } from "src/common/models/utilities";
-import { ConnectivityValue } from "src/constellation/models/constellation";
 import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageHeader from "./GenePageHeader";
 import GenePageTabs from "./GenePageTabs";
@@ -18,21 +16,12 @@ interface Props {
   showConfidenceTab: boolean;
   showCharacterizationTab: boolean;
   showPredictabilityTab: boolean;
-  showCelfieTab: boolean;
-  showCelfieTile: boolean;
   hasDatasets: boolean;
   order: [TileTypeEnum, number][][];
   isMobile: boolean;
   entityId: string;
   customDownloadsLink: string;
   methodologyLink: string;
-  similarityOptions: Array<Option<string>>;
-  colorOptions: Array<Option<string>>;
-  connectivityOptions: Array<Option<ConnectivityValue>>;
-  targetFeatureLabel: string;
-  datasets: Array<Option<string>>;
-  dependencyProfileOptions: Array<DatasetOption>;
-  howToImg: string;
   sizeBiomEnumName: string;
   color: string;
   figure: { name: number };
@@ -54,21 +43,12 @@ const GenePage = ({
   showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
-  showCelfieTab,
-  showCelfieTile,
   hasDatasets,
   order,
   isMobile,
   entityId,
   customDownloadsLink,
   methodologyLink,
-  similarityOptions,
-  colorOptions,
-  connectivityOptions,
-  targetFeatureLabel,
-  datasets,
-  dependencyProfileOptions,
-  howToImg,
   sizeBiomEnumName,
   color,
   figure,
@@ -94,8 +74,6 @@ const GenePage = ({
         showConfidenceTab={showConfidenceTab}
         showCharacterizationTab={showCharacterizationTab}
         showPredictabilityTab={showPredictabilityTab}
-        showCelfieTab={showCelfieTab}
-        showCelfieTile={showCelfieTile}
         hasDatasets={hasDatasets}
         order={order}
         isMobile={isMobile}
@@ -103,13 +81,6 @@ const GenePage = ({
         entrezId={entrezId}
         customDownloadsLink={customDownloadsLink}
         methodologyLink={methodologyLink}
-        similarityOptions={similarityOptions}
-        colorOptions={colorOptions}
-        connectivityOptions={connectivityOptions}
-        targetFeatureLabel={targetFeatureLabel}
-        datasets={datasets}
-        dependencyProfileOptions={dependencyProfileOptions}
-        howToImg={howToImg}
         sizeBiomEnumName={sizeBiomEnumName}
         color={color}
         figure={figure}

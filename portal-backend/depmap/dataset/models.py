@@ -45,7 +45,7 @@ from depmap.utilities.exception import InvalidDatasetEnumError
 from depmap.enums import DataTypeEnum, BiomarkerEnum
 
 
-# Used for predictive features' feature type labels in predictability tile and celfie tile omics features
+# Used for predictive features' feature type labels in predictability tile
 DATASET_NAME_TO_FEATURE_TYPE = {
     BiomarkerEnum.expression.name: "Expression",
     BiomarkerEnum.mutations_damaging.name: "Dam. Mut.",

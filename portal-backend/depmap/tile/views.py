@@ -7,7 +7,6 @@ from dataclasses import dataclass
 import uuid
 
 from depmap import data_access
-import depmap.celfie.utils as celfie_utils
 from flask import Blueprint, render_template, abort, jsonify, url_for, request
 from depmap.enums import GeneTileEnum, CompoundTileEnum, CellLineTileEnum
 from depmap.predictability.models import TDPredictiveModel
@@ -21,12 +20,9 @@ from depmap.gene.views.confidence import format_confidence
 from depmap.enums import DependencyEnum
 from depmap.gene.views.executive import (
     format_mutation_profile,
-    format_codependencies,
-    generate_correlations_table_from_datasets,
     get_dependency_distribution,
 )
 from depmap.compound.views.executive import (
-    determine_compound_experiment_and_dataset,
     get_best_compound_predictability,
     format_dep_dist,
     format_dep_dist_warnings,
@@ -157,7 +153,6 @@ def render_gene_tile(tile_name, gene):
         GeneTileEnum.codependencies.value: get_codependencies_html,
         GeneTileEnum.gene_score_confidence.value: get_confidence_html,
         GeneTileEnum.target_tractability.value: get_tractability_html,
-        GeneTileEnum.celfie.value: get_celfie_html,
         GeneTileEnum.targeting_compounds.value: get_targeting_compounds_html,
     }
     if tile_name not in tiles:
@@ -175,7 +170,6 @@ def render_compound_tile(
         CompoundTileEnum.selectivity.value: get_enrichment_html,
         CompoundTileEnum.sensitivity.value: get_sensitivity_html,
         CompoundTileEnum.availability.value: get_availability_html,
-        CompoundTileEnum.celfie.value: get_celfie_html,
         CompoundTileEnum.heatmap.value: get_heatmap_html,
         CompoundTileEnum.correlated_dependencies.value: get_correlated_dependencies_html,
         CompoundTileEnum.correlated_expression.value: get_correlated_expression_html,
@@ -585,13 +579,6 @@ def get_essentiality_html(gene):
     return render_template("tiles/essentiality.html", dep_dist=dep_dist,)
 
 
-def get_codependencies_html_OLD(gene):
-    codependencies = format_codependencies(gene.label)
-    return render_template(
-        "tiles/codependencies.html", codependencies=codependencies, gene=gene
-    )
-
-
 def get_codependencies_html(gene):
     div_id = str(uuid.uuid4())
     entrez_id = gene.entrez_id
@@ -661,89 +648,3 @@ def get_availability_html(
         name=compound.label,
         availability=format_availability_tile(compound),
     )
-
-
-def get_correlations_for_celfie_react_tile(
-    entity, show_celfie, compound_experiment_and_datasets=None
-):
-    # show tile only if env is skyros/dev
-    if show_celfie:
-        entity_type = entity.type
-        entity_symbol = entity.label
-        # Initialize dep_dataset_list
-        dep_dataset_list = []
-
-        # Get list of celfie omics datasets
-        omics_dataset_ids = [
-            BiomarkerDataset.get_dataset_by_name(dataset).dataset_id
-            for dataset in celfie_utils.celfie_datasets
-        ]
-
-        if entity_type == "gene":
-            entity_symbol = entity.label
-            gene = Gene.query.filter_by(label=entity_symbol).one_or_none()
-            if gene is None:
-                abort(404)
-
-            # Grab the default CRISPR and RNAi dependency datasets
-            crispr_dataset = get_dependency_dataset_for_entity(
-                DependencyDataset.get_dataset_by_data_type_priority(
-                    DependencyDataset.DataTypeEnum.crispr
-                ).name,
-                entity.entity_id,
-            )
-
-            rnai_dataset = get_dependency_dataset_for_entity(
-                DependencyDataset.get_dataset_by_data_type_priority(
-                    DependencyDataset.DataTypeEnum.rnai
-                ).name,
-                entity.entity_id,
-            )
-            dep_dataset_list = [crispr_dataset, rnai_dataset]
-
-        elif entity_type == "compound":
-            # Show "best" dataset same as in sensitiivity tile in form [[cpd_exp, dependency_dataset]]
-            # NOTE: Not sure if this should only be returning 1 dataset or a list.
-            best_ce_and_d = determine_compound_experiment_and_dataset(
-                compound_experiment_and_datasets
-            )
-            if best_ce_and_d:
-                # Get only dataset
-                dep_dataset_list = [
-                    cpd_and_dataset[1] for cpd_and_dataset in best_ce_and_d
-                ]
-                # Assuming only one dataset from "best" dataset gets returned,
-                # use it for correlation
-                entity_symbol = best_ce_and_d[0][0].label
-
-        # Get correlations for dependency datasets vs omics datasets
-        # For compound, look into get_top_correlated_expression but
-        # generate_correlations_table_from_datasets should be the same idea..
-        correlations = generate_correlations_table_from_datasets(
-            entity_symbol, dep_dataset_list, omics_dataset_ids
-        )
-
-        return correlations
-    return []
-
-
-def get_celfie_html(
-    entity, compound_experiment_and_datasets=None, query_params_dict={}
-):
-    # DEPRECATED: will be redesigned/replaced
-    # show tile only if env is skyros/dev
-    show_celfie = current_app.config["ENABLED_FEATURES"].celfie
-
-    if show_celfie:
-        # Get correlations for dependency datasets vs omics datasets
-        # For compound, look into get_top_correlated_expression but
-        # generate_correlations_table_from_datasets should be the same idea..
-        correlations = get_correlations_for_celfie_react_tile(
-            entity, show_celfie, compound_experiment_and_datasets
-        )
-
-        return render_template(
-            "tiles/celfie.html", correlations=correlations, show_celfie=show_celfie
-        )
-    # if CELFIE is not enabled, don't render anything
-    return ""
