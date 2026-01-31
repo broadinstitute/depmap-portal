@@ -93,6 +93,19 @@ def check_legacy_db_mirrors_breadbox():
     This ensures that the data versions are used in both places - even though they're configured separately.
     At this point, we also expect that all legacy dataset IDs exist in the breadbox database.
     """
+    # There are some given IDs that we never plan on migrating to breadbox
+    whitelisted_given_ids = [
+        "proteomics",
+        "Prism_oncology_dose_replicate",
+        "rep1m_confounders",
+        "mutation_pearson",
+        "Chronos_Achilles",
+        "mutations_driver",
+        "copy_number_absolute",
+        "fusions",
+        "sanger_proteomics",
+    ]
+
     legacy_dataset_ids = interactive_utils.get_all_dataset_ids()
     all_breadbox_given_ids = breadbox_dao.get_breadbox_given_ids()
 
@@ -110,11 +123,16 @@ def check_legacy_db_mirrors_breadbox():
                     )
                 )
         elif interactive_utils.is_continuous(legacy_dataset_id):
-            issues.append(
-                "Continuous legacy dataset '{}' not found in breadbox given IDs".format(
-                    legacy_dataset_id
-                )
+            is_exception = (
+                interactive_utils.get_entity_type(legacy_dataset_id) == "compound_experiment"
+                or legacy_dataset_id in whitelisted_given_ids
             )
+            if not is_exception:
+                issues.append(
+                    "Continuous legacy dataset '{}' not found in breadbox given IDs".format(
+                        legacy_dataset_id
+                    )
+                )
     if issues:
         issue_text = "Unexpected mismatches detected between the legacy DB and breadbox DB:\n"
         for issue in issues:
