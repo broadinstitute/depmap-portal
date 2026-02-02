@@ -95,15 +95,20 @@ def check_legacy_db_mirrors_breadbox():
     """
     # There are some given IDs that we never plan on migrating to breadbox
     whitelisted_given_ids = [
-        "proteomics",
-        "Prism_oncology_dose_replicate",
-        "rep1m_confounders",
-        "mutation_pearson",
-        "Chronos_Achilles",
-        "mutations_driver",
-        "copy_number_absolute",
-        "fusions",
-        "sanger_proteomics",
+        "proteomics", # Commented out in depmap-deploy for unknown reasons, historically not shown in data explorer
+        "fusions", # Commented out in depmap-deploy for unknown reasons
+        # The following datasets were discussed here: https://docs.google.com/spreadsheets/d/1A4jsEPquSQv0-Aghk6uYwyy-AaDkpjCjoRB3eOstO-g/edit?gid=0#gid=0
+        "Prism_oncology_dose_replicate", # Not needed in breadbox, historically not shown in data explorer
+        "copy_number_absolute", # Dataset marked as "will drop (confirmed)" on spreadsheet, but still appears in the legacy backend, could probably be removed there
+        "sanger_proteomics", # Historically not shown in data explorer
+
+        # Things I still need to sort out. It's possible that these datasets were not historically included in DE2:
+        # The best next step would probably be to just ask Phil if he remembers
+        "rep1m_confounders", # Name: Rep1M confounders
+        "mutation_pearson", # Historically did have associations?
+        "mutations_driver", # Historically did have associations?
+        "Chronos_Achilles", # Name=CRISPR (DepMap, Chronos)", Historically did have associations?
+
     ]
 
     legacy_dataset_ids = interactive_utils.get_all_dataset_ids()
