@@ -15,7 +15,9 @@ import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
 import { Option } from "src/common/models/utilities";
 import { ConnectivityValue } from "src/constellation/models/constellation";
 import { DatasetOption } from "src/entity/components/EntitySummary";
-import CompoundPageOverview, { TileTypeEnum } from "./CompoundPageOverview";
+import CompoundPageOverview, {
+  CompoundTileTypeEnum,
+} from "./CompoundPageOverview";
 import styles from "../styles/CompoundPage.scss";
 import DoseCurvesTab from "../doseCurvesTab/DoseCurvesTab";
 import HeatmapTab from "../heatmapTab/HeatmapTab";
@@ -68,6 +70,7 @@ const CorrelationAnalysis = React.lazy(
 
 interface Props {
   isMobile: boolean;
+  order: any;
   compoundName: string;
   compoundId: string;
   aka: string; // Comma separated list of compound aliases
@@ -76,7 +79,7 @@ interface Props {
   predictabilityMethodologyLink: string;
   hasDatasets: boolean;
   showSensitivityTab: boolean;
-  showPredictabilityTab: string;
+  showPredictabilityTab: boolean;
   showDoseCurvesTab: boolean;
   showHeatmapTab: boolean;
   showCorrelationAnalysisTab: boolean;
@@ -97,6 +100,7 @@ interface Props {
 
 const CompoundPageTabs = ({
   isMobile,
+  order,
   compoundName,
   compoundId,
   aka, // Comma separated list of compound aliases
@@ -138,7 +142,17 @@ const CompoundPageTabs = ({
   return (
     <div>
       {isMobile ? (
-        <CompoundPageOverview compoundName={compoundName} aka={aka} />
+        <CompoundPageOverview
+          compoundName={compoundName}
+          aka={aka}
+          showPredictability={showPredictabilityTab}
+          showHeatmap={showHeatmapTab}
+          showEnrichedLineages={showEnrichedLineages}
+          showCompoundCorrelationTiles={showCompoundCorrelationTiles}
+          orderedTiles={order}
+          hasDatasets={hasDatasets}
+          isMobile={isMobile}
+        />
       ) : (
         <TabsWithHistory
           className={styles.Tabs}
@@ -161,7 +175,17 @@ const CompoundPageTabs = ({
 
           <TabPanels className={styles.TabPanels}>
             <TabPanel className={styles.TabPanel}>
-              <CompoundPageOverview compoundName={compoundName} aka={aka} />
+              <CompoundPageOverview
+                compoundName={compoundName}
+                aka={aka}
+                showPredictability={showPredictabilityTab}
+                showHeatmap={showHeatmapTab}
+                showEnrichedLineages={showEnrichedLineages}
+                showCompoundCorrelationTiles={showCompoundCorrelationTiles}
+                orderedTiles={order}
+                hasDatasets={hasDatasets}
+                isMobile={isMobile}
+              />
             </TabPanel>
             {showSensitivityTab && (
               <TabPanel className={styles.TabPanel}>

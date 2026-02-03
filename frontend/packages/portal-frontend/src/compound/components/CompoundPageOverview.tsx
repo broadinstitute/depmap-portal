@@ -5,17 +5,36 @@ import { CardContainer, CardColumn } from "src/common/components/Card";
 interface Props {
   compoundName: string;
   aka: string;
-  /* more props whether to show the tiles */
-  orderedTiles: [TileTypeEnum, number][][];
+  showPredictability: boolean;
+  showHeatmap: boolean;
+  showEnrichedLineages: boolean;
+  showCompoundCorrelationTiles: boolean;
+  orderedTiles: [CompoundTileTypeEnum, number][][];
   hasDatasets: boolean;
   isMobile: boolean;
 }
 
-export enum TileTypeEnum {}
+export enum CompoundTileTypeEnum {
+  Selectivity = "selectivity",
+  Predictability = "predictability",
+  Description = "description",
+  Sensitivity = "sensitivity",
+  Availability = "availability",
+  Celfie = "celfie",
+  Heatmap = "heatmap",
+  Correlated_dependencies = "correlated_dependencies",
+  Related_compounds = "related_compounds",
+  Correlated_expression = "correlated_expression",
+}
 /* match to portal-backend tile enum */
 
 const CompoundPageOverview = ({
   compoundName,
+  aka,
+  showPredictability,
+  showHeatmap,
+  showEnrichedLineages,
+  showCompoundCorrelationTiles,
   orderedTiles,
   hasDatasets,
   isMobile,
@@ -23,10 +42,10 @@ const CompoundPageOverview = ({
   // We have an array of arrays. Each child array represents the tiles of a single column. Each tile is a tuple,
   // with the name of the tile (i.e. essentiality) at index 0
 
-  const shouldShowTile = (tile: [TileTypeEnum, number]) => {
+  const shouldShowTile = (tile: [CompoundTileTypeEnum, number]) => {
     switch (tile[0]) {
-      case TileTypeEnum.Essentiality:
-      case TileTypeEnum.Codependencies:
+      case TileTypeEnum.Selectivity:
+      case TileTypeEnum.Predictability:
         return showDependencyTab;
 
       case TileTypeEnum.Gene_score_confidence:

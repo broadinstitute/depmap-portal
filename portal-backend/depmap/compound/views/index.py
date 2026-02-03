@@ -12,6 +12,7 @@ from depmap.compound.utils import (
 )
 
 from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.extensions import memoize_without_user_permissions
 import numpy as np
 import pandas as pd
 from flask import (
@@ -57,13 +58,11 @@ blueprint = Blueprint(
 )
 
 
-# we use path: to be able to capture compound names such as VNLG/124 and
-# erlotinib:PLX-4032 (2:1 mol/mol) which have slashes and colons. in most normal cases
-# (e.g. more sane gene names), we don't want to do this.
-@blueprint.route("/<path:name>")
-def view_compound(name):
-
+@memoize_without_user_permissions()
+def _get_compound_page_template_parameters(name):
     compound = Compound.get_by_label(name, must=False)
+    if compound is None:
+        abort(404)
 
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
@@ -125,8 +124,7 @@ def view_compound(name):
         "ENABLED_FEATURES"
     ].correlation_analysis
 
-    return render_template(
-        "compounds/index.html",
+    template_parameters = dict(
         name=name,
         compound_id=compound.compound_id,
         title=name,
@@ -148,13 +146,24 @@ def view_compound(name):
         dose_curve_options_new=dose_curve_options_new,
         corr_analysis_options=corr_analysis_options,
         heatmap_dataset_options=heatmap_dataset_options,
-        has_celfie=has_celfie,
-        celfie=celfie if has_celfie else None,
         compound_units=compound.units,
         show_heatmap_tab=show_heatmap_tab,
         show_enriched_lineages=show_enriched_lineages,
         show_correlation_analysis=show_correlation_analysis,
     )
+    return template_parameters
+
+
+# we use path: to be able to capture compound names such as VNLG/124 and
+# erlotinib:PLX-4032 (2:1 mol/mol) which have slashes and colons. in most normal cases
+# (e.g. more sane gene names), we don't want to do this.
+@blueprint.route("/<path:name>")
+def view_compound(name):
+    # fetching these can be safely cached
+    template_parameters = _get_compound_page_template_parameters(name)
+
+    # but this template has a call to is_mobile which cannot safely be cached
+    return render_template("compounds/index.html", **template_parameters)
 
 
 def get_sensitivity_tab_info(
