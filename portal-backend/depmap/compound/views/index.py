@@ -85,20 +85,6 @@ def view_compound(name):
     sensitivity_tab_compound_summary = get_sensitivity_tab_info(
         compound.entity_id, compound_datasets
     )
-    has_celfie = current_app.config["ENABLED_FEATURES"].celfie and has_datasets
-    if has_celfie:
-        celfie_dataset_options = []
-        for compound_experiment, dataset in compound_experiment_and_datasets:
-            celfie_dataset_options.append(
-                format_summary_option(
-                    dataset,
-                    compound_experiment,
-                    "{} {}".format(compound_experiment.label, dataset.display_name),
-                )
-            )
-        celfie = format_celfie(
-            entity_label=name, dependency_datasets=celfie_dataset_options
-        )
 
     dose_curve_options_new = get_new_dose_curves_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
@@ -158,7 +144,6 @@ def view_compound(name):
             show_enriched_lineages=show_enriched_lineages,
             show_compound_correlation_tiles=show_compound_correlation_tiles,
         ),
-        dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
         # If len(dose_curve_options_new) is 0, hide the tab in the index.html
         dose_curve_options_new=dose_curve_options_new,
         corr_analysis_options=corr_analysis_options,

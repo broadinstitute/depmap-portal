@@ -21,4 +21,4 @@ const CompoundPage = ({}: /* props */ Props) => {
   );
 };
 
-export default GenePage;
+export default CompoundPage;
