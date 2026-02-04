@@ -4,7 +4,6 @@ from depmap.compound.models import Compound
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
 from depmap.compound.views.index import (
     get_corr_analysis_options,
-    get_heatmap_tab_drc_options,
     get_heatmap_dose_curves_tab_drc_options,
 )
 from flask_restplus import Namespace, Resource

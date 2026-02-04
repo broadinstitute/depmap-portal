@@ -14,7 +14,6 @@ from depmap.compound.models import (
 )
 from depmap.compound.views.index import (
     get_corr_analysis_options,
-    get_heatmap_tab_drc_options,
     get_heatmap_dose_curves_tab_drc_options,
 )
 from tests.factories import (
@@ -183,7 +182,7 @@ def test_get_predictive_table(app, empty_db_mock_downloads):
         assert len(r_no_predictability_table_json) == 0
 
 
-def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
+def test_format_dose_curve_and_heatmap_options_new_tab(
     app, monkeypatch, empty_db_mock_downloads
 ):
     with app.app_context():
@@ -230,30 +229,15 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         )
 
         compound = CompoundFactory()
-        dose_curves_result = get_heatmap_dose_curves_tab_drc_options(
-            compound.label, compound.compound_id
-        )
-        heatmap_result = get_heatmap_tab_drc_options(
+        dose_curves_and_heatmap_result = get_heatmap_dose_curves_tab_drc_options(
             compound.label, compound.compound_id
         )
 
-        assert dose_curves_result == [expected_oncref_dataset_w_priority]
-        assert heatmap_result == [expected_oncref_dataset_w_priority]
+        assert dose_curves_and_heatmap_result == [expected_oncref_dataset_w_priority]
 
 
-def corr_analysis_config(request):
-    class TestFeatureFlags:
-        def correlation_analysis(self):
-            return True
-
-    class TestVersionConfig(TestConfig):
-        ENABLED_FEATURES = TestFeatureFlags
-
-    return TestVersionConfig
-
-
-@override(config=corr_analysis_config)
-def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
+# Whether or not to showCorrelationAnalysis is a check that has been moved to the frontend in CompoundPage.tsx
+def test_get_corr_analysis_options(app, monkeypatch):
     with app.app_context():
 
         def mock_valid_row(a, b):
@@ -287,19 +271,7 @@ def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
         assert len(matches) == 1
 
 
-def config(request):
-    class TestFeatureFlags:
-        def new_dose_curves_tab(self):
-            return True
-
-    class TestVersionConfig(TestConfig):
-        ENABLED_FEATURES = TestFeatureFlags
-
-    return TestVersionConfig
-
-
-@override(config=config)
-def test_dose_curve_options_all_datasets_available(app, monkeypatch):
+def test_dose_curve_options_all_datasets(app, monkeypatch):
     with app.app_context():
 
         def mock_valid_row(a, b):
@@ -354,19 +326,3 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
             )
             for dataset in drc_compound_datasets
         ]
-
-
-def test_get_heatmap_tab_drc_options_if_available_false(app):
-    with app.app_context():
-        app.config["ENV_TYPE"] = "public"
-        compound = CompoundFactory()
-        result = get_heatmap_tab_drc_options(compound.label, compound.compound_id)
-        assert result == []
-
-
-def test_get_corr_analysis_options_if_available_false(app):
-    with app.app_context():
-        app.config["ENV_TYPE"] = "public"
-        compound = CompoundFactory()
-        result = get_corr_analysis_options(compound_label=compound.label)
-        assert result == []
