@@ -236,29 +236,6 @@ def get_compound_url_route():
     return jsonify(url_for("compound.view_compound", name=""))
 
 
-def get_auc_data(dataset_name, compound_experiment):
-    dataset_to_auc = {
-        DependencyEnum(x.replicate_dataset).name: x.auc_dataset
-        for x in drc_compound_datasets
-    }
-    if dataset_name in dataset_to_auc:
-        auc_dataset_name = dataset_to_auc[dataset_name].name
-        auc_dataset = Dataset.get_dataset_by_name(auc_dataset_name, must=True)
-        auc_matrix = auc_dataset.matrix
-        auc_data = auc_matrix.get_cell_line_values_and_depmap_ids(
-            compound_experiment.entity_id
-        )
-        auc_log_or_auc_col = auc_dataset.matrix.units
-
-        auc_data = pd.DataFrame.from_dict(
-            auc_data.to_dict(), orient="index", columns=[auc_log_or_auc_col]
-        )
-        auc_data.index.name = "depmap_id"
-        return auc_data
-    else:
-        return None
-
-
 @blueprint.route("/api/predictive")
 def get_predictive_table():
     compound_label = request.args.get("compoundLabel")
