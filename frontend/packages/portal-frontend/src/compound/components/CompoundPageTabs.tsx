@@ -84,7 +84,8 @@ interface Props {
   showHeatmapTab: boolean;
   showCorrelationAnalysisTab: boolean;
   showEnrichedLineages: boolean;
-  showCompoundCorrelationTiles: boolean;
+  showCorrelatedDependenciesTile: boolean;
+  showRelatedCompoundTiles: boolean;
   doseCurveTabOptions: any[];
   heatmapTabOptions: any[];
   correlationAnalysisOptions: any[];
@@ -114,7 +115,8 @@ const CompoundPageTabs = ({
   showHeatmapTab,
   showCorrelationAnalysisTab,
   showEnrichedLineages,
-  showCompoundCorrelationTiles,
+  showCorrelatedDependenciesTile,
+  showRelatedCompoundTiles,
   doseCurveTabOptions,
   heatmapTabOptions,
   correlationAnalysisOptions,
@@ -148,7 +150,8 @@ const CompoundPageTabs = ({
           showPredictability={showPredictabilityTab}
           showHeatmap={showHeatmapTab}
           showEnrichedLineages={showEnrichedLineages}
-          showCompoundCorrelationTiles={showCompoundCorrelationTiles}
+          showCorrelatedDependenciesTile={showCorrelatedDependenciesTile}
+          showRelatedCompoundsTile={showRelatedCompoundTiles}
           orderedTiles={order}
           hasDatasets={hasDatasets}
           isMobile={isMobile}
@@ -181,7 +184,8 @@ const CompoundPageTabs = ({
                 showPredictability={showPredictabilityTab}
                 showHeatmap={showHeatmapTab}
                 showEnrichedLineages={showEnrichedLineages}
-                showCompoundCorrelationTiles={showCompoundCorrelationTiles}
+                showCorrelatedDependenciesTile={showCorrelatedDependenciesTile}
+                showRelatedCompoundsTile={showRelatedCompoundTiles}
                 orderedTiles={order}
                 hasDatasets={hasDatasets}
                 isMobile={isMobile}

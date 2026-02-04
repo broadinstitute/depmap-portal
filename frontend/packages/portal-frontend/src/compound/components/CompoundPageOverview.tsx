@@ -8,7 +8,8 @@ interface Props {
   showPredictability: boolean;
   showHeatmap: boolean;
   showEnrichedLineages: boolean;
-  showCompoundCorrelationTiles: boolean;
+  showCorrelatedDependenciesTile: boolean;
+  showRelatedCompoundsTile: boolean;
   orderedTiles: [CompoundTileTypeEnum, number][][];
   hasDatasets: boolean;
   isMobile: boolean;
@@ -34,7 +35,8 @@ const CompoundPageOverview = ({
   showPredictability,
   showHeatmap,
   showEnrichedLineages,
-  showCompoundCorrelationTiles,
+  showCorrelatedDependenciesTile,
+  showRelatedCompoundsTile,
   orderedTiles,
   hasDatasets,
   isMobile,
@@ -44,27 +46,16 @@ const CompoundPageOverview = ({
 
   const shouldShowTile = (tile: [CompoundTileTypeEnum, number]) => {
     switch (tile[0]) {
-      case TileTypeEnum.Selectivity:
-      case TileTypeEnum.Predictability:
-        return showDependencyTab;
-
-      case TileTypeEnum.Gene_score_confidence:
-        return showConfidenceTab;
-
-      case TileTypeEnum.Celfie:
-        return showCelfieTile;
-
-      case TileTypeEnum.Omics:
-        return showCharacterizationTab && showOmicsExpressionTile;
-
-      case TileTypeEnum.Predictability:
-        return showPredictabilityTab;
-
-      case TileTypeEnum.Mutations:
-        return showMutationsTile && showCharacterizationTab;
-
-      case TileTypeEnum.Targeting_compounds:
-        return showTargetingCompoundsTile;
+      case CompoundTileTypeEnum.Heatmap:
+        return showHeatmap;
+      case CompoundTileTypeEnum.Selectivity:
+        return showEnrichedLineages;
+      case CompoundTileTypeEnum.Predictability:
+        return showPredictability;
+      case CompoundTileTypeEnum.Correlated_dependencies:
+        return showCorrelatedDependenciesTile;
+      case CompoundTileTypeEnum.Related_compounds:
+        return showRelatedCompoundsTile;
 
       default:
         return true;
@@ -72,11 +63,11 @@ const CompoundPageOverview = ({
   };
 
   const getTileIfOkayToShow = (
-    tile: [TileTypeEnum, number],
-    key: [TileTypeEnum, number]
+    tile: [CompoundTileTypeEnum, number],
+    key: [CompoundTileTypeEnum, number]
   ) => {
     let resultTile: JSX.Element | null = (
-      <AsyncTile key={key[0]} url={`/tile/gene/${tile[0]}/${symbol}`} />
+      <AsyncTile key={key[0]} url={`/tile/gene/${tile[0]}/${compoundName}`} />
     );
 
     // Match tiles with tabs... On occasion we have to show a tab, but not the tile (i.e. Celfie tab but not tile for HNF1B)

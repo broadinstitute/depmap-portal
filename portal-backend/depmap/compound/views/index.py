@@ -116,9 +116,13 @@ def _get_compound_page_template_parameters(name):
         )
     )
 
-    show_compound_correlation_tiles = current_app.config[
+    show_compound_correlated_dependencies_tile = current_app.config[
         "ENABLED_FEATURES"
-    ].compound_correlation_tiles
+    ].compound_correlated_dependencies_tile
+
+    show_related_compounds_tile = current_app.config[
+        "ENABLED_FEATURES"
+    ].related_compounds_tile
 
     show_correlation_analysis = current_app.config[
         "ENABLED_FEATURES"
@@ -140,7 +144,8 @@ def _get_compound_page_template_parameters(name):
             has_predictability,
             has_heatmap=show_heatmap_tab,
             show_enriched_lineages=show_enriched_lineages,
-            show_compound_correlation_tiles=show_compound_correlation_tiles,
+            show_compound_correlated_dependencies_tile=show_compound_correlated_dependencies_tile,
+            show_related_compounds_tile=show_related_compounds_tile,
         ),
         # If len(dose_curve_options_new) is 0, hide the tab in the index.html
         dose_curve_options_new=dose_curve_options_new,
@@ -150,6 +155,8 @@ def _get_compound_page_template_parameters(name):
         show_heatmap_tab=show_heatmap_tab,
         show_enriched_lineages=show_enriched_lineages,
         show_correlation_analysis=show_correlation_analysis,
+        show_compound_correlated_dependencies_tile=show_compound_correlated_dependencies_tile,
+        show_related_compounds_tile=show_related_compounds_tile,
     )
     return template_parameters
 
