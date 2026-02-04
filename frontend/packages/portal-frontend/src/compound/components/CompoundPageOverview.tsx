@@ -4,7 +4,6 @@ import { CardContainer, CardColumn } from "src/common/components/Card";
 
 interface Props {
   compoundName: string;
-  aka: string;
   showPredictability: boolean;
   showHeatmap: boolean;
   showEnrichedLineages: boolean;
@@ -31,7 +30,6 @@ export enum CompoundTileTypeEnum {
 
 const CompoundPageOverview = ({
   compoundName,
-  aka,
   showPredictability,
   showHeatmap,
   showEnrichedLineages,

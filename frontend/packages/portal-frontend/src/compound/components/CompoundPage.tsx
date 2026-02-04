@@ -2,8 +2,6 @@ import React from "react";
 import styles from "../styles/CompoundPage.scss";
 import CompoundPageTabs from "./CompoundPageTabs";
 import CompoundPageHeader from "./CompoundPageHeader";
-import { DatasetOption } from "@depmap/types";
-import { useEntitySummaryData } from "../hooks/useEntitySummaryData";
 import { useCompoundPageData } from "../hooks/useCompoundPageData";
 import { enabledFeatures } from "@depmap/globals";
 
@@ -51,7 +49,6 @@ const CompoundPage = ({
           order={order}
           compoundName={compoundName}
           compoundId={compoundId}
-          aka={aka}
           compoundUnits={compoundUnits}
           predictabilityCustomDownloadsLink={predictabilityCustomDownloadsLink}
           predictabilityMethodologyLink={predictabilityMethodologyLink}

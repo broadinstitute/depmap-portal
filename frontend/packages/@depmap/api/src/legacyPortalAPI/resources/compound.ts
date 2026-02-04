@@ -2,7 +2,6 @@ import {
   CompoundDoseCurveData,
   CompoundSummaryResponse,
   DRCDatasetOptions,
-  SensitivityTabSummary,
 } from "@depmap/types";
 import { getJson } from "../client";
 

@@ -57,7 +57,6 @@ interface Props {
   order: any;
   compoundName: string;
   compoundId: string;
-  aka: string; // Comma separated string of compound aliases
   compoundUnits: string;
   predictabilityCustomDownloadsLink: string;
   predictabilityMethodologyLink: string;
@@ -81,7 +80,6 @@ const CompoundPageTabs = ({
   order,
   compoundName,
   compoundId,
-  aka, // Comma separated string of compound aliases
   compoundUnits,
   predictabilityCustomDownloadsLink,
   predictabilityMethodologyLink,
@@ -109,7 +107,6 @@ const CompoundPageTabs = ({
       {isMobile ? (
         <CompoundPageOverview
           compoundName={compoundName}
-          aka={aka}
           showPredictability={showPredictabilityTab}
           showHeatmap={showHeatmapTab}
           showEnrichedLineages={showEnrichedLineages}
@@ -143,7 +140,6 @@ const CompoundPageTabs = ({
             <TabPanel className={styles.TabPanel}>
               <CompoundPageOverview
                 compoundName={compoundName}
-                aka={aka}
                 showPredictability={showPredictabilityTab}
                 showHeatmap={showHeatmapTab}
                 showEnrichedLineages={showEnrichedLineages}
