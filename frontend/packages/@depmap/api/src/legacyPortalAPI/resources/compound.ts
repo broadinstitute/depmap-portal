@@ -1,27 +1,9 @@
 import {
   CompoundDoseCurveData,
-  CurveParams,
-  CurvePlotPoints,
   DRCDatasetOptions,
   SensitivityTabSummary,
 } from "@depmap/types";
-import { uri } from "../../uriTemplateTag";
 import { getJson } from "../client";
-
-export function getDoseResponsePoints(
-  datasetName: string,
-  depmapId: string,
-  compoundLabel: string
-) {
-  return getJson<{
-    curve_params: Array<CurveParams>;
-    points: Array<CurvePlotPoints>;
-  }>(uri`/compound/dosecurve/${datasetName}/${depmapId}/${compoundLabel}`);
-}
-
-export function getDoseResponseTable(datasetName: string, xrefFull: string) {
-  return getJson<any>(uri`/compound/dosetable/${datasetName}/${xrefFull}`);
-}
 
 export function getCompoundDoseCurveData(
   compoundId: string,
