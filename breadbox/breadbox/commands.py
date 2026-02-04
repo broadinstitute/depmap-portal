@@ -436,10 +436,12 @@ def log_data_issues(issues_dir: str, accept_worsened_issues: bool):
             matching_known_issue = known_issues.get(current_issue_key, None)
             if matching_known_issue is None:
                 new_or_worsened_issues[issue.dimension_type_name].append(issue)
-            
-            # Consider it worsened if both the count and percent of affected records have increased
-            elif (issue.count_affected > matching_known_issue.count_affected) and (issue.percent_affected >= matching_known_issue.percent_affected):
-                new_or_worsened_issues[issue.dimension_type_name].append(issue)
+            else:
+                # Consider it worsened if both the count and percent of affected records have increased
+                count_increased = issue.count_affected > matching_known_issue.count_affected
+                percent_increased = issue.percent_affected >= matching_known_issue.percent_affected + 0.01
+                if count_increased and percent_increased:
+                    new_or_worsened_issues[issue.dimension_type_name].append(issue)
     
     # Log new or worsened issues, grouped by dimension type
     for dimension_type in types_crud.get_dimension_types(db=_get_db_connection()):
