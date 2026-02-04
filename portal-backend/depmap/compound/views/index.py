@@ -131,7 +131,6 @@ def _get_compound_page_template_parameters(name):
     template_parameters = dict(
         name=name,
         compound_id=compound.compound_id,
-        title=name,
         compound_aliases=compound_aliases,
         summary=sensitivity_tab_compound_summary,
         has_predictability=has_predictability,
@@ -171,33 +170,6 @@ def view_compound(name):
 
     # but this template has a call to is_mobile which cannot safely be cached
     return render_template("compounds/index.html", **template_parameters)
-
-
-def get_sensitivity_tab_info(
-    compound_entity_id: int, compound_datasets: list[MatrixDataset]
-) -> Optional[dict[str, Any]]:
-    """Get a dictionary of values containing layout information for the sensitivity tab."""
-    if len(compound_datasets) == 0:
-        return None
-
-    # Define the options that will appear in the datasets dropdown
-    dataset_options = []
-    for dataset in compound_datasets:
-        dataset_summary = {
-            "label": dataset.label,
-            "id": dataset.id,
-            "dataset": dataset.id,
-            "entity": compound_entity_id,
-        }
-        dataset_options.append(dataset_summary)
-
-    return {
-        "figure": {"name": compound_entity_id},
-        "summary_options": dataset_options,
-        "show_auc_message": True,
-        "size_biom_enum_name": None,
-        "color": None,
-    }
 
 
 def format_summary_option(dataset, entity, label):

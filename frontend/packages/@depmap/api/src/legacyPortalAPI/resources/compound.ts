@@ -3,6 +3,7 @@ import {
   CurveParams,
   CurvePlotPoints,
   DRCDatasetOptions,
+  SensitivityTabSummary,
 } from "@depmap/types";
 import { uri } from "../../uriTemplateTag";
 import { getJson } from "../client";
@@ -50,6 +51,19 @@ export function getPrioritizedDataset(
 
   return getJson<DRCDatasetOptions>(
     `/api/compound/prioritized_dataset`,
+    params
+  );
+}
+
+export function getSensitivityTabSummary(
+  compoundId: string
+): Promise<SensitivityTabSummary> {
+  const params = {
+    compound_id: compoundId,
+  };
+
+  return getJson<SensitivityTabSummary>(
+    `/api/compound/sensitivity_summary`,
     params
   );
 }

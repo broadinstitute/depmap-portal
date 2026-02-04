@@ -1,5 +1,6 @@
 import dataclasses
 from depmap import data_access
+from depmap.compound.models import Compound
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
 from depmap.compound.views.index import get_new_dose_curves_tab_drc_options
 from flask_restplus import Namespace, Resource
@@ -45,3 +46,46 @@ class PrioritizedDataset(Resource):
         )
 
         return dataclasses.asdict(sorted_data[0])
+
+
+@namespace.route("/sensitivity_summary")
+class SensitivitySummary(Resource):
+    def get(self):
+        compound_id = request.args.get("compound_id")
+        compound_dataset_ids = request.args.get("compound_dataset_ids")
+
+        """Get a dictionary of values containing layout information for the sensitivity tab."""
+        if len(compound_dataset_ids) == 0:
+            return None
+
+        compound = Compound.get_by_compound_id(compound_id=compound_id)
+
+        if compound is None:
+            return None
+
+        compound_entity_id = compound.entity_id
+
+        # Define the options that will appear in the datasets dropdown
+        dataset_options = []
+        for dataset_id in compound_dataset_ids:
+            dataset = data_access.get_matrix_dataset(dataset_id=dataset_id)
+            if dataset is None:
+                continue
+            dataset_summary = {
+                "label": dataset.label,
+                "id": dataset.id,
+                "dataset": dataset.id,
+                "entity": compound_entity_id,
+            }
+            dataset_options.append(dataset_summary)
+
+        if len(dataset_options) == 0:
+            return None
+
+        return {
+            "figure": {"name": compound_entity_id},
+            "summary_options": dataset_options,
+            "show_auc_message": True,
+            "size_biom_enum_name": None,
+            "color": None,
+        }

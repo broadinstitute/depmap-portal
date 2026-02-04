@@ -1,6 +1,6 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { getUrlPrefix } from "@depmap/globals";
-import { MatrixDataset } from "@depmap/types/src/Dataset";
+import { Dataset, MatrixDataset } from "@depmap/types/src/Dataset";
 
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
@@ -162,3 +162,26 @@ export const getCorrelationColor = (val: number) => {
 
   return `rgba(${R}, ${G}, ${B}, 1)`;
 };
+
+export async function getCachedAvailableCompoundDatasetIds(
+  compoundId: string
+): Promise<string[]> {
+  const datasets = await cached(breadboxAPI).getDatasets({
+    feature_id: compoundId,
+
+    feature_type: "compound",
+  });
+
+  const filteredDatasets = [...datasets].filter(
+    (d) =>
+      d.given_id !== null &&
+      isMatrixDataset(d) &&
+      d.feature_type_name === "compound"
+  );
+
+  if (filteredDatasets.length === 0) {
+    return [];
+  }
+
+  return filteredDatasets.map(({ given_id }: Dataset) => given_id!);
+}

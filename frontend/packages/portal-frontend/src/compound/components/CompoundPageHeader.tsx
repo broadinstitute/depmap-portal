@@ -2,10 +2,11 @@ import React from "react";
 import styles from "../styles/CompoundPage.scss";
 
 interface Props {
-  /* props */
+  compoundName: string;
+  aka: string;
 }
 
-const CompoundPageHeader = ({}: /* props */ Props): JSX.Element => {
+const CompoundPageHeader = ({ compoundName, aka }: Props): JSX.Element => {
   return (
     <div className={styles.header}>
       <div className={styles.symbol}>{compoundName}</div>

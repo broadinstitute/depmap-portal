@@ -14,13 +14,13 @@ import { EntityType } from "src/entity/models/entities";
 import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
 import { Option } from "src/common/models/utilities";
 import { ConnectivityValue } from "src/constellation/models/constellation";
-import { DatasetOption } from "src/entity/components/EntitySummary";
 import CompoundPageOverview, {
   CompoundTileTypeEnum,
 } from "./CompoundPageOverview";
 import styles from "../styles/CompoundPage.scss";
 import DoseCurvesTab from "../doseCurvesTab/DoseCurvesTab";
 import HeatmapTab from "../heatmapTab/HeatmapTab";
+import { DatasetOption } from "@depmap/types";
 
 // Many of the compound page tiles make calls to a global `clickTab` function. Here
 // we're defining it to dispatch a custom "clickTab" event that is caught by
@@ -40,15 +40,6 @@ const EntitySummary = React.lazy(
     import(
       /* webpackChunkName: "EntitySummary" */
       "src/entity/components/EntitySummary"
-    )
-);
-
-// For tab titled "Genomic Associations"
-const CelfiePage = React.lazy(
-  () =>
-    import(
-      /* webpackChunkName: "CelfiePage" */
-      "src/celfie/components/CelfiePage"
     )
 );
 
@@ -73,7 +64,7 @@ interface Props {
   order: any;
   compoundName: string;
   compoundId: string;
-  aka: string; // Comma separated list of compound aliases
+  aka: string; // Comma separated string of compound aliases
   compoundUnits: string;
   predictabilityCustomDownloadsLink: string;
   predictabilityMethodologyLink: string;
@@ -104,7 +95,7 @@ const CompoundPageTabs = ({
   order,
   compoundName,
   compoundId,
-  aka, // Comma separated list of compound aliases
+  aka, // Comma separated string of compound aliases
   compoundUnits,
   predictabilityCustomDownloadsLink,
   predictabilityMethodologyLink,

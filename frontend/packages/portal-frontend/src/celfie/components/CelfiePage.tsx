@@ -5,7 +5,7 @@ import React, {
   useCallback,
   useMemo,
 } from "react";
-import { TopFeatureValue } from "@depmap/types";
+import { DatasetOption, TopFeatureValue } from "@depmap/types";
 import { NetworkOverrepresentation } from "src/celfie/components/NetworkOverrepresentation";
 import {
   ConstellationGraphInputs,
@@ -30,7 +30,6 @@ import { Option } from "src/common/models/utilities";
 import { UnivariateAssociationsParams, ComputeResponse } from "@depmap/compute";
 import { ProgressTracker } from "@depmap/common-components";
 import * as Plotly from "plotly.js";
-import { DatasetOption } from "src/entity/components/EntitySummary";
 import { ColorByOption } from "src/celfie/models/celfie";
 import HelpModal from "src/common/components/HelpModal";
 import { getNumGenes } from "src/celfie/utilities/celfieUtils";

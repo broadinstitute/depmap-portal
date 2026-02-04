@@ -15,14 +15,54 @@ if (!dataElement || !dataElement.textContent) {
 const data = JSON.parse(dataElement.textContent);
 
 const {
-  /*props*/
+  isMobile,
+  order,
+  compoundName,
+  compoundId,
+  aka, // Comma separated string of compound aliases
+  compoundUnits,
+  predictabilityCustomDownloadsLink,
+  predictabilityMethodologyLink,
+  hasDatasets,
+  showSensitivityTab,
+  showPredictabilityTab,
+  showDoseCurvesTab,
+  showHeatmapTab,
+  showCorrelationAnalysisTab,
+  showEnrichedLineages,
+  showCorrelatedDependenciesTile,
+  showRelatedCompoundTiles,
+  doseCurveTabOptions,
+  heatmapTabOptions,
+  correlationAnalysisOptions,
+  sensitivityTabSummary,
 } = data;
 
 const App = () => {
   return (
     <ErrorBoundary>
       <CompoundPage
-      /*props*/
+        isMobile={isMobile}
+        order={order}
+        compoundName={compoundName}
+        compoundId={compoundId}
+        aka={aka}
+        compoundUnits={compoundUnits}
+        predictabilityCustomDownloadsLink={predictabilityCustomDownloadsLink}
+        predictabilityMethodologyLink={predictabilityMethodologyLink}
+        hasDatasets={hasDatasets}
+        showSensitivityTab={showSensitivityTab}
+        showPredictabilityTab={showPredictabilityTab}
+        showDoseCurvesTab={showDoseCurvesTab}
+        showHeatmapTab={showHeatmapTab}
+        showCorrelationAnalysisTab={showCorrelationAnalysisTab}
+        showEnrichedLineages={showEnrichedLineages}
+        showCorrelatedDependenciesTile={showCorrelatedDependenciesTile}
+        showRelatedCompoundTiles={showRelatedCompoundTiles}
+        doseCurveTabOptions={doseCurveTabOptions}
+        heatmapTabOptions={heatmapTabOptions}
+        correlationAnalysisOptions={correlationAnalysisOptions}
+        sensitivityTabSummary={sensitivityTabSummary}
       />
     </ErrorBoundary>
   );
