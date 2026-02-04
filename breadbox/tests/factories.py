@@ -38,7 +38,7 @@ _unique_name_counter = 0
 
 
 class SettingsFactory(factory.Factory):  # type: ignore[misc]
-    class Meta:
+    class Meta: # pyright: ignore
         model = config.Settings
 
     sqlalchemy_database_url = "invalid path"
@@ -295,8 +295,9 @@ def feature_type_with_metadata(
 def sample_type_with_metadata(
     db: SessionWithUser,
     settings: config.Settings,
-    metadata_file: typing.BinaryIO,
     user: str,
+    *,
+    metadata_file: Optional[typing.BinaryIO] = None,
     name="New Sample Type",
     id_column="depmap_id",
     metadata_df=None,

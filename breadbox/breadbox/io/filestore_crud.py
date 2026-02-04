@@ -171,6 +171,25 @@ def get_sample_slice(
     return value_mapping(df)
 
 
+def get_df_by_value_type(
+    df: pd.DataFrame,
+    value_type: Optional[ValueType],
+    dataset_allowed_values: Optional[Any],
+):
+    if value_type == ValueType.categorical:
+        assert dataset_allowed_values
+        dataset_allowed_values.append(None)
+        # Convert numerical values back to origincal categorical value
+        df = df.astype(int)
+        assert isinstance(df, pd.DataFrame)
+        df = df.applymap(lambda x: dataset_allowed_values[x])
+    elif value_type == ValueType.list_strings:
+        # NOTE: String data in HDF5 datasets is read as bytes by default
+        # len of byte encoded empty string should be 0
+        assert isinstance(df, pd.DataFrame)
+        df = df.applymap(lambda x: json.loads(x) if len(x) != 0 else None)
+    return df
+
 def delete_data_files(dataset_id: str, filestore_location: str):
     base_path = os.path.join(filestore_location, dataset_id)
     assert os.path.isdir(base_path)

@@ -10,7 +10,6 @@ from numpy.array_api import float64
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
 from breadbox.db.session import SessionWithUser
-from depmap_compute.slice import SliceQuery
 
 from breadbox.io.filestore_crud import get_feature_slice, read_chunked_feature_data
 from breadbox.models.dataset import MatrixDataset, DatasetFeature
@@ -30,8 +29,7 @@ from breadbox.schemas.custom_http_exception import (
 from breadbox.schemas.dataset import MatrixDimensionsInfo
 from breadbox.service import slice as slice_service
 import logging
-from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
-from breadbox.crud.dimension_types import get_dimension_type_labels_by_id
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id, get_dataset_feature_by_given_id
 import breadbox.crud.dimension_types as dimension_types_crud
 
 import packed_cor_tables
@@ -204,7 +202,7 @@ def compute_associations(
     print(
         f"Calling get_dataset_feature_by_given_id(dataset_id={resolved_slice.dataset.id}, feature_given_id={resolved_slice.given_id}"
     )
-    feature = dataset_crud.get_dataset_feature_by_given_id(
+    feature = get_dataset_feature_by_given_id(
         db=db,
         dataset_id=resolved_slice.dataset.id,
         feature_given_id=resolved_slice.given_id,
@@ -247,7 +245,7 @@ def compute_associations(
         # this special case again: not having a feature_type_name means given_id == label. Should this go into get_dimension_type_labels_by_id?
         given_id_index_mapping["label"] = given_id_index_mapping["given_id"]
     else:
-        label_by_id = dimension_types_crud.get_dimension_type_labels_by_id(
+        label_by_id = get_dimension_type_labels_by_id(
             db, other_dataset.feature_type_name
         )
         given_id_index_mapping["label"] = [

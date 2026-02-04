@@ -3,7 +3,8 @@ import pandas as pd
 import pytest
 from breadbox.db.session import SessionWithUser
 from breadbox.service.associations import compute_associations
-from depmap_compute.slice import SliceQuery
+#from depmap_compute.slice import SliceQuery
+from breadbox.depmap_compute_embed.slice import SliceQuery
 from tests import factories
 
 
@@ -25,6 +26,7 @@ def test_compute_dataset_associations(minimal_db: SessionWithUser, settings, tmp
     factories.sample_type_with_metadata(
         minimal_db,
         settings,
+        settings.admin_users[0],
         name="cell_line",
         id_column="depmap_id",
         metadata_df=pd.DataFrame(
@@ -33,7 +35,6 @@ def test_compute_dataset_associations(minimal_db: SessionWithUser, settings, tmp
                 "label": ["Cell1", "Cell2", "Cell3"],
             }
         ),
-        user=settings.admin_users[0],
     )
 
     # Create first dataset with known values for correlation calculation
