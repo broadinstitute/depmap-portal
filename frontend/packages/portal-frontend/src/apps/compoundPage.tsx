@@ -24,7 +24,6 @@ const {
   predictabilityCustomDownloadsLink,
   predictabilityMethodologyLink,
   hasDatasets,
-  showSensitivityTab,
   showPredictabilityTab,
   showDoseCurvesTab,
   showHeatmapTab,
@@ -35,7 +34,6 @@ const {
   doseCurveTabOptions,
   heatmapTabOptions,
   correlationAnalysisOptions,
-  sensitivityTabSummary,
 } = data;
 
 const App = () => {
@@ -51,7 +49,6 @@ const App = () => {
         predictabilityCustomDownloadsLink={predictabilityCustomDownloadsLink}
         predictabilityMethodologyLink={predictabilityMethodologyLink}
         hasDatasets={hasDatasets}
-        showSensitivityTab={showSensitivityTab}
         showPredictabilityTab={showPredictabilityTab}
         showDoseCurvesTab={showDoseCurvesTab}
         showHeatmapTab={showHeatmapTab}
@@ -62,7 +59,6 @@ const App = () => {
         doseCurveTabOptions={doseCurveTabOptions}
         heatmapTabOptions={heatmapTabOptions}
         correlationAnalysisOptions={correlationAnalysisOptions}
-        sensitivityTabSummary={sensitivityTabSummary}
       />
     </ErrorBoundary>
   );

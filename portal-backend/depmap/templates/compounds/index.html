@@ -13,19 +13,13 @@ endblock content_class %} {% block content %}
     "compoundName": {{ name|tojson|safe }},
     "compoundId": {{ compound_id|tojson|safe }},
     "aka": {{ compound_aliases|tojson|safe }},
-    "showSensitivityTab": {{ summary is not none|tojson|safe }},
     "showPredictabilityTab": {{ (has_datasets and has_predictability)|tojson|safe }},
     "hasDatasets": {{ has_datasets|tojson|safe }},
     "order": {{ order|tojson|safe }},
     "isMobile": {{ is_mobile|tojson|safe  }},
     "predictabilityCustomDownloadsLink": {{ predictability_custom_downloads_link|tojson|safe }},
     "predictabilityMethodologyLink": {{ predictability_methodology_link|tojson|safe }},
-    {% if summary.size_biom_enum_name %}"sizeBiomEnumName": {{ summary.size_biom_enum_name|tojson|safe }},{% endif %}
-    {% if summary.color %}"color": {{ summary.color|tojson|safe }},{% endif %}
-    {% if summary.figure %}"figure": {{ summary.figure|tojson|safe }},{% endif %}
-    {% if summary.show_auc_message %}"showAUCMessage": {{ summary.show_auc_message|tojson|safe }},{% endif %}
     "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}",
-    {% if summary.summary_options %}"summaryOptions": {{ summary.summary_options|tojson|safe }},{% endif %}
     "showEnrichedLineages": {{ show_enriched_lineages|tojson|safe }},
     "showDoseCurvesTab: {{ show_dose_curve_tab|tojson|safe}},
     "showHeatmapTab": {{ show_heatmap_tab|tojson|safe }}

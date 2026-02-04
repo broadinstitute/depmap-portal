@@ -1,9 +1,10 @@
 import { getSensitivityTabSummary } from "@depmap/api/src/legacyPortalAPI/resources/compound";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getCachedAvailableCompoundDatasetIds } from "../utils";
-import { SensitivityTabSummary } from "@depmap/types";
+import { SensitivityTabSummary, DatasetOption } from "@depmap/types";
+import { getQueryParams } from "@depmap/utils";
 
-export const useCompoundPageData = (compoundId: string) => {
+export const useEntitySummaryData = (compoundId: string) => {
   const [data, setData] = useState<{
     datasetIds: string[];
     sensitivitySummary: SensitivityTabSummary | null;
@@ -20,7 +21,6 @@ export const useCompoundPageData = (compoundId: string) => {
       try {
         setIsLoading(true);
 
-        // Fetch both Breadbox IDs and Sensitivity Summary in parallel
         const [ids, summary] = await Promise.all([
           getCachedAvailableCompoundDatasetIds(compoundId),
           getSensitivityTabSummary(compoundId),
@@ -41,5 +41,33 @@ export const useCompoundPageData = (compoundId: string) => {
     fetchAllData();
   }, [compoundId]);
 
-  return { ...data, isLoading, error };
+  const initialSelectedDataset = useMemo(() => {
+    const summary = data.sensitivitySummary;
+    if (!summary || !summary.summary_options.length) {
+      return undefined;
+    }
+
+    const query = getQueryParams();
+    const options = summary.summary_options;
+
+    // Default to the first option
+    let selected: DatasetOption | undefined = options[0];
+
+    // If 'dependency' is in the URL, try to find a matching dataset
+    if ("dependency" in query) {
+      const matched = options.find((o) => o.dataset === query.dependency);
+      if (matched) {
+        selected = matched;
+      }
+    }
+
+    return selected;
+  }, [data.sensitivitySummary]);
+
+  return {
+    ...data,
+    initialSelectedDataset,
+    isLoading,
+    error,
+  };
 };

@@ -3,6 +3,7 @@ import styles from "../styles/CompoundPage.scss";
 import CompoundPageTabs from "./CompoundPageTabs";
 import CompoundPageHeader from "./CompoundPageHeader";
 import { DatasetOption } from "@depmap/types";
+import { useEntitySummaryData } from "../hooks/useEntitySummaryData";
 
 interface Props {
   isMobile: boolean;
@@ -14,7 +15,6 @@ interface Props {
   predictabilityCustomDownloadsLink: string;
   predictabilityMethodologyLink: string;
   hasDatasets: boolean;
-  showSensitivityTab: boolean;
   showPredictabilityTab: boolean;
   showDoseCurvesTab: boolean;
   showHeatmapTab: boolean;
@@ -25,14 +25,6 @@ interface Props {
   doseCurveTabOptions: any[];
   heatmapTabOptions: any[];
   correlationAnalysisOptions: any[];
-  sensitivityTabSummary: {
-    initialSelectedDataset: DatasetOption;
-    size_biom_enum_name: string;
-    color: string;
-    figure: { name: number };
-    show_auc_message: boolean;
-    summary_options: DatasetOption[];
-  };
 }
 
 const CompoundPage = ({
@@ -45,7 +37,6 @@ const CompoundPage = ({
   predictabilityCustomDownloadsLink,
   predictabilityMethodologyLink,
   hasDatasets,
-  showSensitivityTab,
   showPredictabilityTab,
   showDoseCurvesTab,
   showHeatmapTab,
@@ -56,8 +47,13 @@ const CompoundPage = ({
   doseCurveTabOptions,
   heatmapTabOptions,
   correlationAnalysisOptions,
-  sensitivityTabSummary,
 }: Props) => {
+  const {
+    sensitivitySummary,
+    initialSelectedDataset,
+    isLoading,
+  } = useEntitySummaryData(compoundId);
+
   return (
     <div className={styles.CompoundPage}>
       <CompoundPageHeader compoundName={compoundName} aka={aka} />
@@ -71,7 +67,6 @@ const CompoundPage = ({
         predictabilityCustomDownloadsLink={predictabilityCustomDownloadsLink}
         predictabilityMethodologyLink={predictabilityMethodologyLink}
         hasDatasets={hasDatasets}
-        showSensitivityTab={showSensitivityTab}
         showPredictabilityTab={showPredictabilityTab}
         showDoseCurvesTab={showDoseCurvesTab}
         showHeatmapTab={showHeatmapTab}
@@ -82,7 +77,8 @@ const CompoundPage = ({
         doseCurveTabOptions={doseCurveTabOptions}
         heatmapTabOptions={heatmapTabOptions}
         correlationAnalysisOptions={correlationAnalysisOptions}
-        sensitivityTabSummary={sensitivityTabSummary}
+        sensitivitySummary={sensitivitySummary}
+        initialSelectedDataset={initialSelectedDataset}
       />
     </div>
   );

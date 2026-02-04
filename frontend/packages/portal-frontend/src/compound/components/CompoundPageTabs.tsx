@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { legacyPortalAPI } from "@depmap/api";
+import React, { useState } from "react";
 import { CustomList } from "@depmap/cell-line-selector";
-import { enabledFeatures, toStaticUrl } from "@depmap/globals";
 import {
   TabsWithHistory,
   TabList,
@@ -9,18 +7,13 @@ import {
   Tab,
   TabPanel,
 } from "src/common/components/tabs";
-import AsyncTile from "src/common/components/AsyncTile";
 import { EntityType } from "src/entity/models/entities";
-import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
-import { Option } from "src/common/models/utilities";
-import { ConnectivityValue } from "src/constellation/models/constellation";
-import CompoundPageOverview, {
-  CompoundTileTypeEnum,
-} from "./CompoundPageOverview";
+import { sortByNumberOrNull } from "@depmap/utils";
+import CompoundPageOverview from "./CompoundPageOverview";
 import styles from "../styles/CompoundPage.scss";
 import DoseCurvesTab from "../doseCurvesTab/DoseCurvesTab";
 import HeatmapTab from "../heatmapTab/HeatmapTab";
-import { DatasetOption } from "@depmap/types";
+import { DatasetOption, SensitivityTabSummary } from "@depmap/types";
 
 // Many of the compound page tiles make calls to a global `clickTab` function. Here
 // we're defining it to dispatch a custom "clickTab" event that is caught by
@@ -69,7 +62,6 @@ interface Props {
   predictabilityCustomDownloadsLink: string;
   predictabilityMethodologyLink: string;
   hasDatasets: boolean;
-  showSensitivityTab: boolean;
   showPredictabilityTab: boolean;
   showDoseCurvesTab: boolean;
   showHeatmapTab: boolean;
@@ -80,14 +72,8 @@ interface Props {
   doseCurveTabOptions: any[];
   heatmapTabOptions: any[];
   correlationAnalysisOptions: any[];
-  sensitivityTabSummary: {
-    initialSelectedDataset: DatasetOption;
-    size_biom_enum_name: string;
-    color: string;
-    figure: { name: number };
-    show_auc_message: boolean;
-    summary_options: DatasetOption[];
-  };
+  sensitivitySummary: SensitivityTabSummary | null;
+  initialSelectedDataset: DatasetOption | undefined;
 }
 
 const CompoundPageTabs = ({
@@ -100,7 +86,6 @@ const CompoundPageTabs = ({
   predictabilityCustomDownloadsLink,
   predictabilityMethodologyLink,
   hasDatasets,
-  showSensitivityTab,
   showPredictabilityTab,
   showDoseCurvesTab,
   showHeatmapTab,
@@ -111,26 +96,13 @@ const CompoundPageTabs = ({
   doseCurveTabOptions,
   heatmapTabOptions,
   correlationAnalysisOptions,
-  sensitivityTabSummary,
+  sensitivitySummary,
+  initialSelectedDataset,
 }: Props) => {
   const [
     selectedCellLineList,
     setSelectedCellLineList,
   ] = useState<CustomList>();
-
-  let initialSelectedDataset;
-  if (showSensitivityTab && sensitivityTabSummary) {
-    const query = getQueryParams();
-    let firstSelectedDataset: DatasetOption | undefined =
-      sensitivityTabSummary.summary_options[0];
-    if ("dependency" in query) {
-      firstSelectedDataset = sensitivityTabSummary.summary_options.find(
-        (o: any) => o.dataset === query.dependency
-      );
-    }
-
-    initialSelectedDataset = firstSelectedDataset;
-  }
 
   return (
     <div>
@@ -156,7 +128,7 @@ const CompoundPageTabs = ({
         >
           <TabList className={styles.TabList}>
             <Tab id="overview">Overview</Tab>
-            {showSensitivityTab && <Tab id="dependency">Sensitivity</Tab>}
+            {sensitivitySummary && <Tab id="dependency">Sensitivity</Tab>}
             {showDoseCurvesTab && <Tab id="dose-curves-new">Dose Curves</Tab>}
             {showHeatmapTab && <Tab id="heatmap">Heatmap</Tab>}
             {showPredictabilityTab && (
@@ -182,18 +154,19 @@ const CompoundPageTabs = ({
                 isMobile={isMobile}
               />
             </TabPanel>
-            {showSensitivityTab && (
+            {sensitivitySummary && initialSelectedDataset && (
               <TabPanel className={styles.TabPanel}>
                 <React.Suspense fallback={<div>Loading...</div>}>
+                  {/* Using data from the hook here */}
                   {initialSelectedDataset && (
                     <EntitySummary
                       size_biom_enum_name={
-                        sensitivityTabSummary.size_biom_enum_name
+                        sensitivitySummary.size_biom_enum_name
                       }
-                      color={sensitivityTabSummary.color}
-                      figure={sensitivityTabSummary.figure}
-                      show_auc_message={sensitivityTabSummary.show_auc_message}
-                      summary_options={sensitivityTabSummary.summary_options}
+                      color={sensitivitySummary.color}
+                      figure={sensitivitySummary.figure}
+                      show_auc_message={sensitivitySummary.show_auc_message}
+                      summary_options={sensitivitySummary.summary_options}
                       initialSelectedDataset={initialSelectedDataset}
                       controlledList={selectedCellLineList}
                       onListSelect={setSelectedCellLineList}
