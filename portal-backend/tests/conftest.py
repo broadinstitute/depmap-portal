@@ -29,6 +29,7 @@ from loader import (
     gene_loader,
     matrix_loader,
     nonstandard_loader,
+    predictability_summary_loader,
     taiga_id_loader,
     transcription_start_site_loader,
     context_explorer_loader,

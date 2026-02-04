@@ -25,6 +25,36 @@ export async function fetchAssociations(
   }
 
   return result;
+
+interface ComputeAssociationsParams {
+  dataset_id: string;
+  slice_query: SliceQuery;
+}
+
+export function computeAssociations(params: ComputeAssociationsParams) {
+  return postJson<{ label: string[]; given_id: string[]; cor: number[] }>(
+    "/temp/associations/compute",
+    params
+  );
+}
+
+export function fetchAssociations(sliceQuery: SliceQuery) {
+  return postJson<{
+    dataset_name: string;
+    dimension_label: string;
+    associated_datasets: {
+      name: string;
+      dimension_type: string;
+      dataset_id: string;
+    }[];
+    associated_dimensions: {
+      correlation: number;
+      log10qvalue: number;
+      other_dataset_id: string;
+      other_dimension_given_id: string;
+      other_dimension_label: string;
+    }[];
+  }>("/temp/associations/query-slice", sliceQuery);
 }
 
 export async function evaluateContext(

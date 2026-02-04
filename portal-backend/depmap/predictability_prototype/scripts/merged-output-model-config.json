@@ -1,0 +1,624 @@
+{
+  "crispr": {
+    "CellContext": {
+      "input": {
+        "name": "CellContext",
+        "data": {
+          "CRISPR": {
+            "taiga_id": "internal-24q2-3719.82/CRISPRGeneEffect",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/CellContext_ensemble_crispr",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_crispr_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/CellContext_predictions_crispr"
+      }
+    },
+    "DNA": {
+      "input": {
+        "name": "DNA",
+        "data": {
+          "CRISPR": {
+            "taiga_id": "internal-24q2-3719.82/CRISPRGeneEffect",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          },
+          "ArmLevelCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsArmLevelCNA",
+            "table_type": "feature",
+            "dim_type": "armlevel",
+            "required": true,
+            "exempt": false
+          },
+          "CytobandCN": {
+            "taiga_id": "predictability-76d5.99/PredictabilityGenticDerangementTransformed",
+            "table_type": "feature",
+            "dim_type": "cytoband",
+            "required": true,
+            "exempt": false
+          },
+          "GeneticSignature": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSignatures",
+            "table_type": "feature",
+            "dim_type": "geneticsignature",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsHotspot": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixHotspot",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsDamaging": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixDamaging",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "GeneCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsCNGene",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "LoH": {
+            "taiga_id": "internal-24q2-3719.82/OmicsLoH",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": false,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/DNA_ensemble_crispr",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_crispr_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/DNA_predictions_crispr"
+      }
+    },
+    "DriverEvents": {
+      "input": {
+        "name": "DriverEvents",
+        "data": {
+          "CRISPR": {
+            "taiga_id": "internal-24q2-3719.82/CRISPRGeneEffect",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/DriverEvents_ensemble_crispr",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_crispr_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/DriverEvents_predictions_crispr"
+      }
+    },
+    "GeneticDerangement": {
+      "input": {
+        "name": "GeneticDerangement",
+        "data": {
+          "CRISPR": {
+            "taiga_id": "internal-24q2-3719.82/CRISPRGeneEffect",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          },
+          "ArmLevelCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsArmLevelCNA",
+            "table_type": "feature",
+            "dim_type": "armlevel",
+            "required": true,
+            "exempt": false
+          },
+          "CytobandCN": {
+            "taiga_id": "predictability-76d5.99/PredictabilityGenticDerangementTransformed",
+            "table_type": "feature",
+            "dim_type": "cytoband",
+            "required": true,
+            "exempt": false
+          },
+          "GeneticSignature": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSignatures",
+            "table_type": "feature",
+            "dim_type": "geneticsignature",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/GeneticDerangement_ensemble_crispr",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_crispr_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/GeneticDerangement_predictions_crispr"
+      }
+    },
+    "RNASeq": {
+      "input": {
+        "name": "RNASeq",
+        "data": {
+          "CRISPR": {
+            "taiga_id": "internal-24q2-3719.82/CRISPRGeneEffect",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-76d5.111/PredictabilityCRISPRConfoundersTransformed",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          },
+          "ArmLevelCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsArmLevelCNA",
+            "table_type": "feature",
+            "dim_type": "armlevel",
+            "required": true,
+            "exempt": false
+          },
+          "CytobandCN": {
+            "taiga_id": "predictability-76d5.99/PredictabilityGenticDerangementTransformed",
+            "table_type": "feature",
+            "dim_type": "cytoband",
+            "required": true,
+            "exempt": false
+          },
+          "GeneticSignature": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSignatures",
+            "table_type": "feature",
+            "dim_type": "geneticsignature",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsHotspot": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixHotspot",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsDamaging": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixDamaging",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "GeneCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsCNGene",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "LoH": {
+            "taiga_id": "internal-24q2-3719.82/OmicsLoH",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": false,
+            "exempt": false
+          },
+          "RNASeq": {
+            "taiga_id": "internal-24q2-3719.82/OmicsExpressionProteinCodingGenesTPMLogp1",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/RNASeq_ensemble_crispr",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_crispr_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/RNASeq_predictions_crispr"
+      }
+    }
+  },
+  "rnai": {
+    "CellContext": {
+      "input": {
+        "name": "CellContext",
+        "data": {
+          "RNAi": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiDep",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiConfounders",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/CellContext_ensemble_rnai",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_rnai_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/CellContext_predictions_rnai"
+      }
+    },
+    "DNA": {
+      "input": {
+        "name": "DNA",
+        "data": {
+          "RNAi": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiDep",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiConfounders",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          },
+          "ArmLevelCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsArmLevelCNA",
+            "table_type": "feature",
+            "dim_type": "armlevel",
+            "required": true,
+            "exempt": false
+          },
+          "CytobandCN": {
+            "taiga_id": "predictability-76d5.99/PredictabilityGenticDerangementTransformed",
+            "table_type": "feature",
+            "dim_type": "cytoband",
+            "required": true,
+            "exempt": false
+          },
+          "GeneticSignature": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSignatures",
+            "table_type": "feature",
+            "dim_type": "geneticsignature",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsHotspot": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixHotspot",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsDamaging": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixDamaging",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "GeneCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsCNGene",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "LoH": {
+            "taiga_id": "internal-24q2-3719.82/OmicsLoH",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": false,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/DNA_ensemble_rnai",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_rnai_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/DNA_predictions_rnai"
+      }
+    },
+    "DriverEvents": {
+      "input": {
+        "name": "DriverEvents",
+        "data": {
+          "RNAi": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiDep",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiConfounders",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/DriverEvents_ensemble_rnai",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_rnai_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/DriverEvents_predictions_rnai"
+      }
+    },
+    "GeneticDerangement": {
+      "input": {
+        "name": "GeneticDerangement",
+        "data": {
+          "RNAi": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiDep",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiConfounders",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          },
+          "ArmLevelCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsArmLevelCNA",
+            "table_type": "feature",
+            "dim_type": "armlevel",
+            "required": true,
+            "exempt": false
+          },
+          "CytobandCN": {
+            "taiga_id": "predictability-76d5.99/PredictabilityGenticDerangementTransformed",
+            "table_type": "feature",
+            "dim_type": "cytoband",
+            "required": true,
+            "exempt": false
+          },
+          "GeneticSignature": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSignatures",
+            "table_type": "feature",
+            "dim_type": "geneticsignature",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/GeneticDerangement_ensemble_rnai",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_rnai_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/GeneticDerangement_predictions_rnai"
+      }
+    },
+    "RNASeq": {
+      "input": {
+        "name": "RNASeq",
+        "data": {
+          "RNAi": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiDep",
+            "table_type": "target_matrix",
+            "relation": "All"
+          },
+          "Lineage": {
+            "taiga_id": "predictability-76d5.94/PredictabilityLineageTransformed",
+            "table_type": "feature",
+            "dim_type": "lineage",
+            "required": true,
+            "exempt": false
+          },
+          "Confounder": {
+            "taiga_id": "predictability-legacy-datasets-8c54.14/RNAiConfounders",
+            "table_type": "feature",
+            "dim_type": "confounder",
+            "required": true,
+            "exempt": false
+          },
+          "DriverEvents": {
+            "taiga_id": "predictability-76d5.99/DriverEvents",
+            "table_type": "feature",
+            "dim_type": "driverevents",
+            "required": true,
+            "exempt": false
+          },
+          "ArmLevelCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsArmLevelCNA",
+            "table_type": "feature",
+            "dim_type": "armlevel",
+            "required": true,
+            "exempt": false
+          },
+          "CytobandCN": {
+            "taiga_id": "predictability-76d5.99/PredictabilityGenticDerangementTransformed",
+            "table_type": "feature",
+            "dim_type": "cytoband",
+            "required": true,
+            "exempt": false
+          },
+          "GeneticSignature": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSignatures",
+            "table_type": "feature",
+            "dim_type": "geneticsignature",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsHotspot": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixHotspot",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "MutationsDamaging": {
+            "taiga_id": "internal-24q2-3719.82/OmicsSomaticMutationsMatrixDamaging",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "GeneCN": {
+            "taiga_id": "internal-24q2-3719.82/OmicsCNGene",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          },
+          "LoH": {
+            "taiga_id": "internal-24q2-3719.82/OmicsLoH",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": false,
+            "exempt": false
+          },
+          "RNASeq": {
+            "taiga_id": "internal-24q2-3719.82/OmicsExpressionProteinCodingGenesTPMLogp1",
+            "table_type": "feature",
+            "dim_type": "gene",
+            "required": true,
+            "exempt": false
+          }
+        }
+      },
+      "output": {
+        "ensemble_taiga_id": "predictability-76d5.115/RNASeq_ensemble_rnai",
+        "feature_metadata_taiga_id": "predictability-76d5.115/feature_metadata_rnai_new",
+        "prediction_matrix_taiga_id": "predictability-76d5.115/RNASeq_predictions_rnai"
+      }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+from depmap_compute.slice import SliceQuery
 from pydantic import BaseModel
 from breadbox.depmap_compute_embed.slice import SliceQuery
 from typing import List, Optional, Union
@@ -46,3 +47,14 @@ class AssociationTable(BaseModel):
     axis: Literal["sample", "feature"]
     dataset_1_id: str
     dataset_2_id: str
+
+
+class ComputeAssociationsParams(BaseModel):
+    dataset_id: str
+    slice_query: SliceQuery
+
+
+class LongAssociationsTable(BaseModel):
+    label: List[str]
+    given_id: List[str]
+    cor: List[float]

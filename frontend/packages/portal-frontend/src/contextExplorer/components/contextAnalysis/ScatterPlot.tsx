@@ -1,4 +1,5 @@
 /* eslint-disable react/require-default-props */
+/* eslint-disable no-nested-ternary */
 import React, { useEffect, useMemo, useRef } from "react";
 import type {
   Config,
@@ -17,7 +18,6 @@ const MAX_POINTS_TO_ANNOTATE = 1;
 
 interface Props {
   data: Data;
-  colorVariable: number[];
   xKey: string;
   yKey: string;
   xLabel: string;
@@ -25,8 +25,13 @@ interface Props {
   // Height can be defined in pixels or set to "auto."  In auto mode, it will
   // attempt to fill the height of the viewport.
   height: number | "auto";
+  colorVariable: number[];
+  density?: number[]; // For coloring by density
+  margin?: any;
+  plotTitle?: string;
   hoverTextKey?: string;
   continuousColorKey?: string;
+  customSelectedMarkerSymbol?: string;
   selectedPoints?: Set<number>;
   onClickPoint?: (pointIndex: number) => void;
   onClickResetSelection?: () => void;
@@ -35,6 +40,9 @@ interface Props {
   regressionLines?: any[];
   onLoad?: (plot: ExtendedPlotType) => void;
   customContinuousColorScale?: string[][];
+  renderAsSvg?: boolean;
+  autosize?: boolean;
+  disableAnnotations?: boolean;
 }
 
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
@@ -49,13 +57,16 @@ const calcPlotHeight = (plot: HTMLDivElement) => {
 
 function ContextScatterPlot({
   data,
-  colorVariable,
   xKey,
   yKey,
   xLabel,
   yLabel,
   height,
   continuousColorKey,
+  colorVariable,
+  margin = { t: 25, l: 62, r: 15 },
+  customSelectedMarkerSymbol = undefined,
+  plotTitle = undefined,
   hoverTextKey = undefined,
   selectedPoints = undefined,
   pointVisibility = undefined,
@@ -65,6 +76,10 @@ function ContextScatterPlot({
   onClickPoint = () => {},
   onClickResetSelection = () => {},
   onLoad = () => {},
+  density = undefined,
+  renderAsSvg = false,
+  disableAnnotations = false,
+  autosize = undefined,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -134,9 +149,9 @@ function ContextScatterPlot({
 
     const contColorData = colorVariable;
 
-    const color = contColorData.map((c: any) =>
-      c === null ? DEFAULT_PALETTE.other : c
-    );
+    const color =
+      contColorData.map((c: any) => (c === null ? DEFAULT_PALETTE.other : c)) ||
+      undefined;
 
     const colorscale = customContinuousColorScale;
 
@@ -148,28 +163,50 @@ function ContextScatterPlot({
       return typeof c === "number" ? "#aaa" : "#fff";
     });
 
-    const templateTrace = {
-      type: "scattergl",
-      y,
-      name: "",
-      mode: "markers",
-      text,
-      showlegend: false,
-      selectedpoints: selectedPoints ? [...selectedPoints] : [],
-      marker: {
+    const getMarker = () => {
+      if (density) {
+        return {
+          color: density,
+          colorbar: {
+            title: "Density (sqrt)",
+            titleside: "right",
+            thickness: "5px",
+          },
+          colorscale,
+          size: 7,
+          line: { color: "#000000", width: 0.5 },
+          opacity: 0.8,
+        };
+      }
+
+      return {
         color,
         colorscale,
         size: 7,
         line: { color: lineColor, width: 0.5 },
-        opacity: selectedPoints && selectedPoints.size > 0 ? 0.75 : 1,
-      },
+        opacity: selectedPoints && selectedPoints.size > 0 ? 0.8 : 1,
+      };
+    };
+
+    const templateTrace = {
+      type: renderAsSvg ? "scatter" : "scattergl",
+      y,
+      name: "",
+      title: plotTitle,
+      mode: "markers",
+      text,
+      showlegend: true,
+      selectedpoints: selectedPoints ? [...selectedPoints] : [],
+      marker: getMarker(),
       selected: { marker: { opacity: 1 } },
       unselected: {
         marker: {
-          opacity: selectedPoints && selectedPoints.size > 0 ? 0.75 : 1,
+          opacity: selectedPoints && selectedPoints.size > 0 ? 0.8 : 1,
         },
       },
     };
+
+    console.log({ templateTrace });
 
     const uncoloredTace = {
       ...templateTrace,
@@ -203,12 +240,20 @@ function ContextScatterPlot({
     const selectedTrace1 = {
       ...templateTrace,
       x: uncoloredTace.x,
-      marker: {
-        color,
-        colorscale,
-        size: 10,
-        line: { color: "#000", width: 1 },
-      },
+      marker: customSelectedMarkerSymbol
+        ? {
+            color,
+            colorscale,
+            symbol: "star-dot",
+            size: 10,
+            line: { color: "#000", width: 1 },
+          }
+        : {
+            color,
+            colorscale,
+            size: 10,
+            line: { color: "#000", width: 1 },
+          },
       selected: { marker: { opacity: 1 } },
       unselected: { marker: { opacity: 0 } },
       hoverinfo: "skip",
@@ -301,9 +346,10 @@ function ContextScatterPlot({
 
     const layout: Partial<Layout> = {
       uirevision: "true",
+      autosize,
       shapes,
       height: height === "auto" ? calcPlotHeight(plot) : height,
-      margin: { t: 25, l: 62, r: 15 },
+      margin,
       hovermode: "closest",
       hoverlabel: {
         namelength: -1,
@@ -317,55 +363,59 @@ function ContextScatterPlot({
       xaxis,
       yaxis,
 
-      annotations:
-        selectedPoints && selectedPoints.size <= MAX_POINTS_TO_ANNOTATE
-          ? [...selectedPoints]
-              .filter(
-                // Filter out any annotations associated with missing data. This can
-                // happen if the x or y column has changed since the annotations were
-                // created.
-                (pointIndex) =>
-                  typeof x[pointIndex] === "number" &&
-                  typeof y[pointIndex] === "number"
-              )
-              .map((pointIndex) => ({
-                x: x[pointIndex],
-                y: y[pointIndex],
-                text: annotationText[pointIndex],
-                visible: visible[pointIndex],
-                xref: "x",
-                yref: "y",
-                arrowhead: 0,
-                standoff: 4,
-                arrowcolor: "#888",
-                bordercolor: "#c7c7c7",
-                bgcolor: "#fff",
-                pointIndex,
-              }))
-          : (() => {
-              return selectedPoints
-                ? [
-                    {
-                      text: `(${selectedPoints.size} selected points)`,
-                      arrowcolor: "transparent",
-                      bordercolor: "#c7c7c7",
-                      bgcolor: "#fff",
-                    },
-                  ]
-                : undefined;
-            })(),
+      annotations: disableAnnotations
+        ? undefined
+        : selectedPoints && selectedPoints.size <= MAX_POINTS_TO_ANNOTATE
+        ? [...selectedPoints]
+            .filter(
+              // Filter out any annotations associated with missing data. This can
+              // happen if the x or y column has changed since the annotations were
+              // created.
+              (pointIndex) =>
+                typeof x[pointIndex] === "number" &&
+                typeof y[pointIndex] === "number"
+            )
+            .map((pointIndex) => ({
+              x: x[pointIndex],
+              y: y[pointIndex],
+              text: annotationText[pointIndex],
+              visible: visible[pointIndex],
+              xref: "x",
+              yref: "y",
+              arrowhead: 0,
+              standoff: 4,
+              arrowcolor: "#888",
+              bordercolor: "#c7c7c7",
+              bgcolor: "#fff",
+              pointIndex,
+            }))
+        : (() => {
+            return selectedPoints
+              ? [
+                  {
+                    text: `(${selectedPoints.size} selected points)`,
+                    arrowcolor: "transparent",
+                    bordercolor: "#c7c7c7",
+                    bgcolor: "#fff",
+                  },
+                ]
+              : undefined;
+          })(),
     };
 
     const config: Partial<Config> = {
       // Automatically resizes the plot when the window is resized.
       responsive: true,
-
       // Allows the user to move annotations (but just the tail and not the
       // whole thing).
       edits: { annotationTail: true },
     };
 
-    Plotly.react(plot, plotlyData, layout, config);
+    if (renderAsSvg) {
+      Plotly.react(plot, plotlyData, layout, { staticPlot: true });
+    } else {
+      Plotly.react(plot, plotlyData, layout, config);
+    }
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: any) => void][] = [];
@@ -477,6 +527,7 @@ function ContextScatterPlot({
     continuousColorKey,
     xLabel,
     yLabel,
+    plotTitle,
     hoverTextKey,
     height,
     selectedPoints,
@@ -487,6 +538,12 @@ function ContextScatterPlot({
     extents,
     showYEqualXLine,
     regressionLines,
+    customSelectedMarkerSymbol,
+    renderAsSvg,
+    disableAnnotations,
+    density,
+    margin,
+    autosize,
     Plotly,
   ]);
 

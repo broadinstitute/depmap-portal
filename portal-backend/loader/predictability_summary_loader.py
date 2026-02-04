@@ -1,0 +1,375 @@
+import logging
+import os
+import re
+import shutil
+from typing import Any, Dict, Match, Optional, Tuple, Union, cast
+from typing import Callable
+
+import pandas as pd
+from flask import current_app
+from sqlalchemy import func
+
+from depmap.compound.models import CompoundExperiment
+from depmap.database import db
+from depmap.gene.models import Gene
+from depmap.predictability_prototype.models import (
+    PrototypePredictiveFeature,
+    PrototypePredictiveFeatureResult,
+    PrototypePredictiveModel,
+)
+from depmap.utilities.bulk_load import bulk_load
+from depmap.utilities.models import log_data_issue
+import re
+from depmap.taiga_id.utils import get_taiga_client
+import os
+import json
+import logging
+
+log = logging.getLogger(__name__)
+
+# this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
+#
+# as a secondary concern, all these taiga IDs must exist in a file that this processes, so this also handles a "TAIGA_PREPROCESSOR_INCLUDE" statement to merge multiple files
+# into one while the taiga IDs are being processed
+
+# tc = get_taiga_client()
+MODEL_SEQUENCE = ["CellContext", "DriverEvents", "GeneticDerangement", "DNA", "RNASeq"]
+
+
+def lookup_gene(m: Match):
+    entrez_id = m.group(1)
+
+    entity = Gene.get_gene_by_entrez(entrez_id, must=False)
+    if entity:
+        return entity.entity_id
+
+    return None
+
+
+def lookup_compound_dose(xref_full: str):
+    entity = CompoundExperiment.get_by_xref_full(xref_full, must=False)
+
+    if entity:
+        return entity.entity_id
+
+    return None
+
+
+# _seen_models = set()
+
+
+def _load_predictive_models(
+    ensemble_csv_path: str,
+    model_ids: Dict[Tuple[str, str], int],
+    entity_type: str,
+    next_id,
+    screen_type: str,
+    model_configs: dict,
+):
+    #    global _seen_models
+
+    def lookup_entity_id(gene_or_compound_experiment_label: str,) -> Optional[int]:
+        if entity_type == "gene":
+            m = re.match("\S+ \\((\\d+)\\)", gene_or_compound_experiment_label)
+            if m is None:
+                log_data_issue(
+                    "PrototypePredictiveModel",
+                    "Missing gene",
+                    identifier=gene_or_compound_experiment_label,
+                    id_type=entity_type,
+                )
+                return None
+            return lookup_gene(m)
+
+        if entity_type == "compound_experiment":
+            # Below is a hack for the 24Q2 release - where none of the OncRef Predictability outputs
+            # were formatted with the "BRD:" prefix. This should eventually be cleaned up.
+            if ":" not in gene_or_compound_experiment_label:
+                gene_or_compound_experiment_label = (
+                    "BRD:" + gene_or_compound_experiment_label
+                )
+
+            entity_id = lookup_compound_dose(gene_or_compound_experiment_label)
+            if entity_id is None:
+                log_data_issue(
+                    "PrototypePredictiveModel",
+                    "Missing compound experiment",
+                    identifier=gene_or_compound_experiment_label,
+                    id_type=entity_type,
+                )
+            return entity_id
+
+        log_data_issue(
+            "PrototypePredictiveModel", f"Unexpected dataset entity type {entity_type}",
+        )
+        return None
+
+    # load all models
+    def row_to_model_dict(row):
+        model_id = next_id[0]
+        next_id[0] += 1
+
+        entity_label = row["target_variable"]
+        model_name = row["model"]
+        model_ids_key = (entity_label, model_name)
+
+        entity_id = lookup_entity_id(entity_label)
+        if entity_id is None:
+            return None
+
+        # only add to dictionary if valid entity id
+        model_ids[model_ids_key] = model_id
+
+        tc = get_taiga_client()
+        predictions_dataset_taiga_id = model_configs[model_name]["output"][
+            "prediction_matrix_taiga_id"
+        ]
+        predictions_dataset_taiga_id = tc.get_canonical_id(predictions_dataset_taiga_id)
+
+        entity_id = lookup_entity_id(entity_label)
+        # key = (entity_label, model_name, entity_id)
+        # assert key not in _seen_models
+        # _seen_models.add(key)
+        rec = dict(
+            predictive_model_id=model_id,
+            entity_id=entity_id,
+            label=model_name,
+            predictions_dataset_taiga_id=predictions_dataset_taiga_id,
+            pearson=float(row["pearson"]),
+            screen_type=screen_type,
+        )
+        return rec
+
+    assert entity_type in {"gene", "compound_experiment"}
+
+    bulk_load(ensemble_csv_path, row_to_model_dict, PrototypePredictiveModel.__table__)
+
+
+def _load_predictive_features(screen_configs: dict, feature_names: set):
+    tc = get_taiga_client()
+
+    taiga_ids = set()
+    for screen_type in screen_configs.keys():
+        model_config = screen_configs[screen_type]
+        for model in model_config.keys():
+            # breakpoint()
+            taiga_ids.add(model_config[model]["output"]["feature_metadata_taiga_id"])
+    print(f"Loading feature metadata from {taiga_ids}")
+
+    # merge all of these
+    feature_metadata = pd.concat([tc.get(x) for x in taiga_ids], ignore_index=True)
+    assert feature_metadata is not None
+    feature_metadata = feature_metadata.drop_duplicates(subset=["feature_name"])
+    assert feature_metadata is not None
+    print(f"total features {len(feature_metadata)}")
+    feature_metadata = feature_metadata[
+        feature_metadata["feature_name"].isin(feature_names)
+    ]
+    print(f"after filtering features {len(feature_metadata)}")
+
+    seen_taiga_id = set()
+
+    def row_to_feature_obj(row) -> Optional[dict]:
+        feature_name = row["feature_name"]
+        feature_label = row["feature_label"]
+
+        taiga_id = row["taiga_id"]
+        if taiga_id not in seen_taiga_id:
+            seen_taiga_id.add(taiga_id)
+            print(f"Loading features which reference {taiga_id}")
+
+        tc = get_taiga_client()
+        taiga_id = tc.get_canonical_id(taiga_id)
+        assert taiga_id, f"Could not find canonical taiga ID for {taiga_id}"
+
+        dim_type = row["dim_type"]
+        given_id = row["given_id"]
+
+        existing_feature = PrototypePredictiveFeature.get(feature_name, must=False)
+
+        # don't load dups. If it exists, move on
+        if existing_feature is not None:
+            return None
+
+        rec = dict(
+            feature_name=feature_name,
+            feature_label=feature_label,
+            dim_type=dim_type,
+            taiga_id=taiga_id,
+            given_id=str(given_id),
+            feature_id=feature_name,
+        )
+
+        return rec
+
+    feature_metadata.to_csv("merged_feature_metadata.csv", index=False)
+
+    bulk_load(
+        "merged_feature_metadata.csv",
+        row_to_feature_obj,
+        PrototypePredictiveFeature.__table__,
+    )
+
+
+def _get_feature_col_count(columns):
+    i = 1
+    while True:
+        if f"feature{i}" not in columns:
+            break
+        i += 1
+    return i
+
+
+def _read_all_feature_names(
+    screen_model_configs, get_ensemble_csv: Callable[[str], str]
+):
+    feature_names = set()
+
+    for screen_type in screen_model_configs.keys():
+        model_config = screen_model_configs[screen_type]
+        for model_name in model_config.keys():
+            ensemble_csv_taiga_id = model_config[model_name]["output"][
+                "ensemble_taiga_id"
+            ]
+
+            ensemble_csv_path = get_ensemble_csv(ensemble_csv_taiga_id)
+            df = pd.read_csv(ensemble_csv_path, index_col=0)
+            n_features = _get_feature_col_count(set(df.columns))
+            for i in range(n_features):
+                feature_names.update(df[f"feature{i}"])
+
+    return feature_names
+
+
+def _load_predictability_screen(
+    screen_type: str, screen_model_configs: dict, get_ensemble_csv: Callable[[str], str]
+):
+    for model_name in MODEL_SEQUENCE:
+        ensemble_csv_taiga_id = screen_model_configs[model_name]["output"][
+            "ensemble_taiga_id"
+        ]
+        log.warning(
+            f"_load_predictability_screen({screen_type}, {ensemble_csv_taiga_id})"
+        )
+
+        ensemble_csv_path = get_ensemble_csv(ensemble_csv_taiga_id)
+
+        model_ids: Dict[Tuple[str, str], int] = {}
+        next_id = [get_starting_predictive_model_id()]
+
+        # temp hack: Remove once we've fixed loading of oncref data
+        if screen_type not in ["rnai", "crispr"]:
+            log.warning(
+                f"Skipping load of {screen_type} {model_name} because call to _load_predictive_models below assume entity_type is always gene"
+            )
+            continue
+
+        _load_predictive_models(
+            ensemble_csv_path,
+            model_ids,
+            "gene",
+            next_id,
+            screen_type,
+            screen_model_configs,
+        )
+
+        n_features = None
+
+        # Load all feature results
+        def row_to_feature_result_dict(row):
+            nonlocal n_features
+            if n_features is None:
+                n_features = _get_feature_col_count(set(row.keys()))
+
+            results = []
+            entity_label = row["target_variable"]
+            model_name = row["model"]
+            model_ids_key = (entity_label, model_name)
+            # if invalid entity id, not in dictionary
+            if model_ids_key not in model_ids:
+                return results
+
+            model_id = model_ids[model_ids_key]
+
+            # top N features, columns are labelled e.g. feature0, feature0_importance
+            for feature_index in range(n_features):
+                feature_column = f"feature{feature_index}"
+                if feature_column not in row:
+                    break
+
+                feature_name = row[feature_column]
+                feature_importance = row[f"{feature_column}_importance"]
+                feature_correlation = row[f"{feature_column}_correlation"]
+
+                feature = PrototypePredictiveFeature.get_by_feature_name(feature_name)
+
+                if feature is None:
+                    logging.warning(
+                        f"Could not find PredictiveFeature where feature_name={feature_name}"
+                    )
+                else:
+                    rec = dict(
+                        predictive_model_id=model_id,
+                        feature_id=feature.feature_id,
+                        rank=feature_index,
+                        importance=feature_importance,
+                        pearson=feature_correlation,
+                    )
+                    results.append(rec)
+                feature_index += 1
+            return results
+
+        bulk_load(
+            ensemble_csv_path,
+            row_to_feature_result_dict,
+            PrototypePredictiveFeatureResult.__table__,
+        )
+
+        # Copy file for download
+        assert isinstance(current_app.config, dict)
+        source_dir = current_app.config.get("WEBAPP_DATA_DIR")
+
+        assert source_dir is not None
+        path = os.path.join(
+            source_dir,
+            "predictability_prototype",
+            f"{model_name}_{screen_type}_predictability_results.csv",
+        )
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        shutil.copy(ensemble_csv_path, path)
+
+
+def load_predictability_prototype(
+    model_config_file_path: str, get_ensemble_csv: Callable[[str], str]
+):
+    with open(model_config_file_path, "r") as file:
+        model_configs = json.load(file)
+
+    feature_names = _read_all_feature_names(model_configs, get_ensemble_csv)
+    print(f"found {len(feature_names)} feature names")
+    _load_predictive_features(model_configs, feature_names)
+
+    screen_types = model_configs.keys()
+
+    for screen_type in screen_types:
+        log.warning(f"Loading predictability screen for {screen_type}")
+        _load_predictability_screen(
+            screen_type=screen_type,
+            screen_model_configs=model_configs[screen_type],
+            get_ensemble_csv=get_ensemble_csv,
+        )
+
+
+def get_starting_predictive_model_id():
+    """
+    :return: predictive_model_id for the first newly inserted predictive model
+    """
+    highest_existing_id = db.session.query(
+        func.max(PrototypePredictiveModel.predictive_model_id)
+    ).one()[
+        0
+    ]  # the id, or None
+    if highest_existing_id is not None:
+        return highest_existing_id + 1
+    else:
+        return 1
