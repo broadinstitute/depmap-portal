@@ -175,7 +175,6 @@ const CompoundPageTabs = ({
                 </React.Suspense>
               </TabPanel>
             )}
-            {/* Can update this to determine data availability here instead of the portal-backend and tab visibility once the dose response curves are moved to breadbox */}
             {showDoseCurvesTab && (
               <TabPanel className={styles.TabPanel}>
                 <DoseCurvesTab
@@ -190,7 +189,6 @@ const CompoundPageTabs = ({
                 />
               </TabPanel>
             )}
-            {/* Can update this to determine data availability here instead of the portal-backend and tab visibility once the dose response curves are moved to breadbox */}
             {showHeatmapTab && (
               <TabPanel className={styles.TabPanel}>
                 <HeatmapTab
@@ -220,7 +218,6 @@ const CompoundPageTabs = ({
                 </React.Suspense>
               </TabPanel>
             )}
-            {/* Can update this to determine data availability here instead of the portal-backend and tab visibility once the dose response curves are moved to breadbox */}
             {showCorrelationAnalysisTab && (
               <TabPanel className={styles.TabPanel}>
                 <React.Suspense fallback={<div>Loading...</div>}>

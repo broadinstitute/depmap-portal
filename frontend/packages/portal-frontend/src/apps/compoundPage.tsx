@@ -25,15 +25,6 @@ const {
   predictabilityMethodologyLink,
   hasDatasets,
   showPredictabilityTab,
-  showDoseCurvesTab,
-  showHeatmapTab,
-  showCorrelationAnalysisTab,
-  showEnrichedLineages,
-  showCorrelatedDependenciesTile,
-  showRelatedCompoundTiles,
-  doseCurveTabOptions,
-  heatmapTabOptions,
-  correlationAnalysisOptions,
 } = data;
 
 const App = () => {
@@ -50,15 +41,6 @@ const App = () => {
         predictabilityMethodologyLink={predictabilityMethodologyLink}
         hasDatasets={hasDatasets}
         showPredictabilityTab={showPredictabilityTab}
-        showDoseCurvesTab={showDoseCurvesTab}
-        showHeatmapTab={showHeatmapTab}
-        showCorrelationAnalysisTab={showCorrelationAnalysisTab}
-        showEnrichedLineages={showEnrichedLineages}
-        showCorrelatedDependenciesTile={showCorrelatedDependenciesTile}
-        showRelatedCompoundTiles={showRelatedCompoundTiles}
-        doseCurveTabOptions={doseCurveTabOptions}
-        heatmapTabOptions={heatmapTabOptions}
-        correlationAnalysisOptions={correlationAnalysisOptions}
       />
     </ErrorBoundary>
   );

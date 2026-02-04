@@ -1,45 +1,33 @@
-from depmap.compound import new_dose_curves_utils, utils
+from depmap.compound import new_dose_curves_utils
 from depmap.data_access import breadbox_dao
-from depmap.enums import DependencyEnum
 from depmap.interactive import interactive_utils
 from depmap.settings.settings import TestConfig
-import pandas as pd
 import pytest
 from flask import url_for
-from json import loads as json_loads
 
 from depmap import data_access
 from depmap.dataset.models import DependencyDataset
 from depmap.compound.models import (
     Compound,
-    DRCCompoundDataset,
     DRCCompoundDatasetWithNamesAndPriority,
     drc_compound_datasets,
 )
 from depmap.compound.views.index import (
-    get_corr_analysis_options_if_available,
+    get_corr_analysis_options,
     get_heatmap_tab_drc_options,
-    get_new_dose_curves_tab_drc_options,
-    get_sensitivity_tab_info,
-    format_summary_option,
-    format_dose_curve_options,
-    format_dose_curve,
+    get_heatmap_dose_curves_tab_drc_options,
 )
 from tests.factories import (
     BiomarkerDatasetFactory,
     CompoundFactory,
     CompoundExperimentFactory,
-    DepmapModelFactory,
     MatrixFactory,
     DependencyDatasetFactory,
-    DoseResponseCurveFactory,
-    CompoundDoseReplicateFactory,
     PredictiveBackgroundFactory,
     PredictiveFeatureFactory,
     PredictiveFeatureResultFactory,
     PredictiveModelFactory,
 )
-from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 
 expected_oncref_dataset_w_priority = DRCCompoundDatasetWithNamesAndPriority(
@@ -242,7 +230,7 @@ def test_format_dose_curve_and_heatmap_options_new_tab_if_available_true(
         )
 
         compound = CompoundFactory()
-        dose_curves_result = get_new_dose_curves_tab_drc_options(
+        dose_curves_result = get_heatmap_dose_curves_tab_drc_options(
             compound.label, compound.compound_id
         )
         heatmap_result = get_heatmap_tab_drc_options(
@@ -293,7 +281,7 @@ def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
 
         compound = CompoundFactory()
 
-        result = get_corr_analysis_options_if_available(compound_label=compound.label)
+        result = get_corr_analysis_options(compound_label=compound.label)
         assert len(result) == 6
         matches = [x for x in result if x == expected_oncref_dataset_w_priority]
         assert len(matches) == 1
@@ -302,9 +290,6 @@ def test_get_corr_analysis_options_if_available_true(app, monkeypatch):
 def config(request):
     class TestFeatureFlags:
         def new_dose_curves_tab(self):
-            return True
-
-        def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
             return True
 
     class TestVersionConfig(TestConfig):
@@ -351,7 +336,7 @@ def test_dose_curve_options_all_datasets_available(app, monkeypatch):
         )
 
         compound = CompoundFactory()
-        result = get_new_dose_curves_tab_drc_options(
+        result = get_heatmap_dose_curves_tab_drc_options(
             compound.label, compound.compound_id
         )
         assert isinstance(result, list)
@@ -383,5 +368,5 @@ def test_get_corr_analysis_options_if_available_false(app):
     with app.app_context():
         app.config["ENV_TYPE"] = "public"
         compound = CompoundFactory()
-        result = get_corr_analysis_options_if_available(compound_label=compound.label)
+        result = get_corr_analysis_options(compound_label=compound.label)
         assert result == []

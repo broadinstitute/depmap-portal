@@ -49,3 +49,31 @@ export function getSensitivityTabSummary(
     params
   );
 }
+
+export function getHeatmapDoseCurveOptions(
+  compoundId: string,
+  compoundName: string
+): Promise<DRCDatasetOptions[]> {
+  const params = {
+    compound_id: compoundId,
+    compound_label: compoundName,
+  };
+
+  return getJson<DRCDatasetOptions[]>(
+    `/api/compound/heatmap_dose_curve_options`,
+    params
+  );
+}
+
+export function getCorrelationAnalysisOptions(
+  compoundName: string
+): Promise<DRCDatasetOptions[]> {
+  const params = {
+    compound_label: compoundName,
+  };
+
+  return getJson<DRCDatasetOptions[]>(
+    `/api/compound/correlation_analysis_options`,
+    params
+  );
+}

@@ -1,5 +1,6 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { getUrlPrefix } from "@depmap/globals";
+import { ContextExplorerDatasets } from "@depmap/types";
 import { Dataset, MatrixDataset } from "@depmap/types/src/Dataset";
 
 export const Rep1Color = "#CC4778";
@@ -168,7 +169,6 @@ export async function getCachedAvailableCompoundDatasetIds(
 ): Promise<string[]> {
   const datasets = await cached(breadboxAPI).getDatasets({
     feature_id: compoundId,
-
     feature_type: "compound",
   });
 
@@ -184,4 +184,28 @@ export async function getCachedAvailableCompoundDatasetIds(
   }
 
   return filteredDatasets.map(({ given_id }: Dataset) => given_id!);
+}
+
+export async function doContextExpDatasetsExistWithCompound(
+  compoundId: string
+): Promise<boolean> {
+  const datasets = await cached(breadboxAPI).getDatasets({
+    feature_id: compoundId,
+    feature_type: "compound",
+  });
+
+  const filteredDatasets = [...datasets].filter(
+    (d) =>
+      d.given_id !== null &&
+      isMatrixDataset(d) &&
+      d.feature_type_name === "compound"
+  );
+
+  if (filteredDatasets.length === 0) {
+    return false;
+  }
+
+  const validGivenIds: string[] = Object.values(ContextExplorerDatasets);
+
+  return filteredDatasets.some((d) => validGivenIds.includes(d.given_id!));
 }

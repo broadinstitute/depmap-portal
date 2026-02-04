@@ -4,6 +4,8 @@ import CompoundPageTabs from "./CompoundPageTabs";
 import CompoundPageHeader from "./CompoundPageHeader";
 import { DatasetOption } from "@depmap/types";
 import { useEntitySummaryData } from "../hooks/useEntitySummaryData";
+import { useCompoundPageData } from "../hooks/useCompoundPageData";
+import { enabledFeatures } from "@depmap/globals";
 
 interface Props {
   isMobile: boolean;
@@ -16,15 +18,6 @@ interface Props {
   predictabilityMethodologyLink: string;
   hasDatasets: boolean;
   showPredictabilityTab: boolean;
-  showDoseCurvesTab: boolean;
-  showHeatmapTab: boolean;
-  showCorrelationAnalysisTab: boolean;
-  showEnrichedLineages: boolean;
-  showCorrelatedDependenciesTile: boolean;
-  showRelatedCompoundTiles: boolean;
-  doseCurveTabOptions: any[];
-  heatmapTabOptions: any[];
-  correlationAnalysisOptions: any[];
 }
 
 const CompoundPage = ({
@@ -38,21 +31,16 @@ const CompoundPage = ({
   predictabilityMethodologyLink,
   hasDatasets,
   showPredictabilityTab,
-  showDoseCurvesTab,
-  showHeatmapTab,
-  showCorrelationAnalysisTab,
-  showEnrichedLineages,
-  showCorrelatedDependenciesTile,
-  showRelatedCompoundTiles,
-  doseCurveTabOptions,
-  heatmapTabOptions,
-  correlationAnalysisOptions,
 }: Props) => {
   const {
+    isLoading,
     sensitivitySummary,
     initialSelectedDataset,
-    isLoading,
-  } = useEntitySummaryData(compoundId);
+    doseCurveOptions,
+    heatmapOptions,
+    correlationAnalysisOptions,
+    showEnrichedLineages,
+  } = useCompoundPageData(compoundId, compoundName);
 
   return (
     <div className={styles.CompoundPage}>
@@ -68,14 +56,20 @@ const CompoundPage = ({
         predictabilityMethodologyLink={predictabilityMethodologyLink}
         hasDatasets={hasDatasets}
         showPredictabilityTab={showPredictabilityTab}
-        showDoseCurvesTab={showDoseCurvesTab}
-        showHeatmapTab={showHeatmapTab}
-        showCorrelationAnalysisTab={showCorrelationAnalysisTab}
+        showDoseCurvesTab={
+          doseCurveOptions.length > 0 && enabledFeatures.new_dose_curves_tab
+        }
+        showHeatmapTab={
+          heatmapOptions.length > 0 && enabledFeatures.heatmap_tab
+        }
+        showCorrelationAnalysisTab={correlationAnalysisOptions.length > 0}
         showEnrichedLineages={showEnrichedLineages}
-        showCorrelatedDependenciesTile={showCorrelatedDependenciesTile}
-        showRelatedCompoundTiles={showRelatedCompoundTiles}
-        doseCurveTabOptions={doseCurveTabOptions}
-        heatmapTabOptions={heatmapTabOptions}
+        showCorrelatedDependenciesTile={
+          enabledFeatures.compound_correlated_dependencies_tile
+        }
+        showRelatedCompoundTiles={enabledFeatures.related_compounds_tile}
+        doseCurveTabOptions={doseCurveOptions}
+        heatmapTabOptions={heatmapOptions}
         correlationAnalysisOptions={correlationAnalysisOptions}
         sensitivitySummary={sensitivitySummary}
         initialSelectedDataset={initialSelectedDataset}

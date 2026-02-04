@@ -9,7 +9,6 @@ from depmap.compound.utils import (
 )
 
 from depmap.context_explorer.models import ContextExplorerDatasets
-from depmap.extensions import memoize_without_user_permissions
 import pandas as pd
 from flask import (
     Blueprint,
@@ -46,8 +45,11 @@ blueprint = Blueprint(
 )
 
 
-@memoize_without_user_permissions()
-def _get_compound_page_template_parameters(name):
+# we use path: to be able to capture compound names such as VNLG/124 and
+# erlotinib:PLX-4032 (2:1 mol/mol) which have slashes and colons. in most normal cases
+# (e.g. more sane gene names), we don't want to do this.
+@blueprint.route("/<path:name>")
+def view_compound(name):
     compound = Compound.get_by_label(name, must=False)
     if compound is None:
         abort(404)
@@ -70,21 +72,13 @@ def _get_compound_page_template_parameters(name):
     )
     has_datasets = len(compound_datasets) != 0
 
-    dose_curve_options_new = get_new_dose_curves_tab_drc_options(
+    heatmap_dataset_options = get_heatmap_dose_curves_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
-    )
-    heatmap_dataset_options = get_heatmap_tab_drc_options(
-        compound_label=compound.label, compound_id=compound.compound_id
-    )
-
-    corr_analysis_options = get_corr_analysis_options_if_available(
-        compound_label=compound.label,
     )
 
     # If there are no no valid dataset options, hide the heatmap tab and tile
     show_heatmap_tab = len(heatmap_dataset_options) > 0
 
-    # TODO: Update when context explorer moves to using compounds instead of compound experiments
     show_enriched_lineages = (
         data_access.dataset_exists(
             ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
@@ -109,13 +103,11 @@ def _get_compound_page_template_parameters(name):
         "ENABLED_FEATURES"
     ].related_compounds_tile
 
-    show_correlation_analysis = current_app.config[
-        "ENABLED_FEATURES"
-    ].correlation_analysis
-
-    template_parameters = dict(
+    return render_template(
+        "compounds/index.html",
         name=name,
         compound_id=compound.compound_id,
+        title=name,
         compound_aliases=compound_aliases,
         has_predictability=has_predictability,
         predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
@@ -130,103 +122,44 @@ def _get_compound_page_template_parameters(name):
             show_compound_correlated_dependencies_tile=show_compound_correlated_dependencies_tile,
             show_related_compounds_tile=show_related_compounds_tile,
         ),
-        # If len(dose_curve_options_new) is 0, hide the tab in the index.html
-        dose_curve_options_new=dose_curve_options_new,
-        corr_analysis_options=corr_analysis_options,
-        heatmap_dataset_options=heatmap_dataset_options,
         compound_units=compound.units,
-        show_heatmap_tab=show_heatmap_tab,
-        show_enriched_lineages=show_enriched_lineages,
-        show_correlation_analysis=show_correlation_analysis,
-        show_compound_correlated_dependencies_tile=show_compound_correlated_dependencies_tile,
-        show_related_compounds_tile=show_related_compounds_tile,
     )
-    return template_parameters
 
 
-# we use path: to be able to capture compound names such as VNLG/124 and
-# erlotinib:PLX-4032 (2:1 mol/mol) which have slashes and colons. in most normal cases
-# (e.g. more sane gene names), we don't want to do this.
-@blueprint.route("/<path:name>")
-def view_compound(name):
-    # fetching these can be safely cached
-    template_parameters = _get_compound_page_template_parameters(name)
-
-    # but this template has a call to is_mobile which cannot safely be cached
-    return render_template("compounds/index.html", **template_parameters)
-
-
-def get_heatmap_tab_drc_options(
+def get_heatmap_dose_curves_tab_drc_options(
     compound_label: str, compound_id: str
 ) -> List[DRCCompoundDatasetWithNamesAndPriority]:
-    """
-    Used for jinja rendering of heatmap tab
-    """
-    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].heatmap_tab
-
     valid_options = []
-    if show_heatmap_tab:
-        for drc_dataset in drc_compound_datasets:
-            if dataset_exists_with_compound_in_auc_and_rep_datasets(
-                drc_dataset=drc_dataset,
-                compound_label=compound_label,
-                compound_id=compound_id,
-            ):
-                complete_option = get_compound_dataset_with_name_and_priority(
-                    drc_dataset
-                )
-                valid_options.append(complete_option)
+
+    for drc_dataset in drc_compound_datasets:
+        if dataset_exists_with_compound_in_auc_and_rep_datasets(
+            drc_dataset=drc_dataset,
+            compound_label=compound_label,
+            compound_id=compound_id,
+        ):
+            complete_option = get_compound_dataset_with_name_and_priority(drc_dataset)
+            valid_options.append(complete_option)
 
     return valid_options
 
 
-def get_new_dose_curves_tab_drc_options(
-    compound_label: str, compound_id: str
-) -> List[DRCCompoundDatasetWithNamesAndPriority]:
-    """
-    Used for jinja rendering of the dose curve tab
-    """
-    show_new_dose_curves_tab = current_app.config[
-        "ENABLED_FEATURES"
-    ].new_dose_curves_tab
-
+def get_corr_analysis_options(compound_label: str,) -> List[DRCCompoundDataset]:
     valid_options = []
-    if show_new_dose_curves_tab:
-        for drc_dataset in drc_compound_datasets:
-            if dataset_exists_with_compound_in_auc_and_rep_datasets(
-                drc_dataset=drc_dataset,
-                compound_label=compound_label,
-                compound_id=compound_id,
-            ):
+
+    for drc_dataset in drc_compound_datasets:
+        if drc_dataset.log_auc_dataset_given_id is not None:
+
+            does_dataset_exist_with_compound = data_access.dataset_exists(
+                drc_dataset.log_auc_dataset_given_id
+            ) and data_access.valid_row(
+                drc_dataset.log_auc_dataset_given_id, compound_label
+            )
+
+            if does_dataset_exist_with_compound:
                 complete_option = get_compound_dataset_with_name_and_priority(
-                    drc_dataset
+                    drc_dataset, use_logged_auc=True
                 )
                 valid_options.append(complete_option)
-
-    return valid_options
-
-
-def get_corr_analysis_options_if_available(
-    compound_label: str,
-) -> List[DRCCompoundDataset]:
-    show_corr_analysis = current_app.config["ENABLED_FEATURES"].correlation_analysis
-
-    valid_options = []
-    if show_corr_analysis:
-        for drc_dataset in drc_compound_datasets:
-            if drc_dataset.log_auc_dataset_given_id is not None:
-
-                does_dataset_exist_with_compound = data_access.dataset_exists(
-                    drc_dataset.log_auc_dataset_given_id
-                ) and data_access.valid_row(
-                    drc_dataset.log_auc_dataset_given_id, compound_label
-                )
-
-                if does_dataset_exist_with_compound:
-                    complete_option = get_compound_dataset_with_name_and_priority(
-                        drc_dataset, use_logged_auc=True
-                    )
-                    valid_options.append(complete_option)
 
     return valid_options
 

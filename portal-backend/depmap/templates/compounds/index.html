@@ -1,4 +1,4 @@
-{% extends "nav_footer.html" %} {% block page_title %} {{ about.symbol }} DepMap
+{% extends "nav_footer.html" %} {% block page_title %} {{ name }} DepMap
 Compound Summary {% endblock %} {% block css %} {% assets filters="libsass",
 output="public/css/compound_page.css", "css/entities/view_entity.scss",
 "css/entities/executive.scss", "css/shared/*.scss",
@@ -20,11 +20,6 @@ endblock content_class %} {% block content %}
     "predictabilityCustomDownloadsLink": {{ predictability_custom_downloads_link|tojson|safe }},
     "predictabilityMethodologyLink": {{ predictability_methodology_link|tojson|safe }},
     "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}",
-    "showEnrichedLineages": {{ show_enriched_lineages|tojson|safe }},
-    "showDoseCurvesTab: {{ show_dose_curve_tab|tojson|safe}},
-    "showHeatmapTab": {{ show_heatmap_tab|tojson|safe }}
-    "showCorrelatedDependenciesTile: {{ show_correlated_dependencies_tile|tojson|safe}},
-    "showRelatedCompoundTiles": {{ show_related_compound_tiles|tojson|safe }}
   }
 </script>
 <script src="{{ webpack_url('compoundPage.js') }}"></script>

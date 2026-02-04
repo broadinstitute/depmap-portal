@@ -115,10 +115,6 @@ class FeatureFlags:
         return True
 
     @property
-    def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
-        return True
-
-    @property
     def data_page(self):
         return True
 

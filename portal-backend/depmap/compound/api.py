@@ -2,7 +2,11 @@ import dataclasses
 from depmap import data_access
 from depmap.compound.models import Compound
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
-from depmap.compound.views.index import get_new_dose_curves_tab_drc_options
+from depmap.compound.views.index import (
+    get_corr_analysis_options,
+    get_heatmap_tab_drc_options,
+    get_heatmap_dose_curves_tab_drc_options,
+)
 from flask_restplus import Namespace, Resource
 from flask import request
 
@@ -31,7 +35,7 @@ class PrioritizedDataset(Resource):
         compound_label = request.args.get("compound_label")
         compound_id = request.args.get("compound_id")
 
-        dataset_options = get_new_dose_curves_tab_drc_options(
+        dataset_options = get_heatmap_dose_curves_tab_drc_options(
             compound_label=compound_label, compound_id=compound_id
         )
 
@@ -52,7 +56,7 @@ class PrioritizedDataset(Resource):
 class SensitivitySummary(Resource):
     def get(self):
         compound_id = request.args.get("compound_id")
-        compound_dataset_ids = request.args.get("compound_dataset_ids")
+        compound_dataset_ids = request.args.getlist("compound_dataset_ids")
 
         """Get a dictionary of values containing layout information for the sensitivity tab."""
         if len(compound_dataset_ids) == 0:
@@ -89,3 +93,30 @@ class SensitivitySummary(Resource):
             "size_biom_enum_name": None,
             "color": None,
         }
+
+
+# Combined. These options are identical, but need to check for feature availability using feature flags on frontend.
+# Dose curves and the Heatmap are NOT both available in all environments.
+@namespace.route("/heatmap_dose_curve_options")
+class HeatmapDoseCurveOptions(Resource):
+    def get(self):
+        compound_id = request.args.get("compound_id")
+        compound_label = request.args.get("compound_label")
+
+        options = get_heatmap_dose_curves_tab_drc_options(
+            compound_label=compound_label, compound_id=compound_id
+        )
+        serializable_options = [dataclasses.asdict(opt) for opt in options]
+
+        return serializable_options
+
+
+@namespace.route("/correlation_analysis_options")
+class CorrelationAnalysisOptions(Resource):
+    def get(self):
+        compound_label = request.args.get("compound_label")
+
+        options = get_corr_analysis_options(compound_label=compound_label)
+        serializable_options = [dataclasses.asdict(opt) for opt in options]
+
+        return serializable_options
