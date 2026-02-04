@@ -123,7 +123,7 @@ def format_task_status(task):
         elif isinstance(task.result, HTTPException):
             message = {
                 "status_code": str(task.result.status_code),
-                "detail": str(task.result.status_code),
+                "detail": str(task.result.detail),
             }
         else:
             # This is an unexpected error thrown while the task was running.

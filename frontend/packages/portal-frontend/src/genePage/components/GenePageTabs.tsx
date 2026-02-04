@@ -57,6 +57,14 @@ const PredictabilityTab = React.lazy(
     )
 );
 
+const PredictabilityPrototypeTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "PredictabilityPrototypeTab" */
+      "src/predictabilityPrototype/components/PredictabilityPrototypeTab"
+    )
+);
+
 interface Props {
   symbol: string;
   showDependencyTab: boolean;
@@ -86,6 +94,7 @@ interface Props {
   showMutationsTile: boolean;
   showOmicsExpressionTile: boolean;
   showTargetingCompoundsTile: boolean;
+  showPredictabilityPrototype: boolean;
 }
 
 const GenePageTabs = ({
@@ -117,6 +126,7 @@ const GenePageTabs = ({
   showMutationsTile,
   showOmicsExpressionTile,
   showTargetingCompoundsTile,
+  showPredictabilityPrototype,
 }: Props) => {
   const [
     selectedCellLineList,
@@ -176,6 +186,9 @@ const GenePageTabs = ({
             )}
             {showPredictabilityTab && (
               <Tab id="predictability">Predictability</Tab>
+            )}
+            {showPredictabilityPrototype && (
+              <Tab id="predictability_prototype">Predictive Insights</Tab>
             )}
           </TabList>
 
@@ -281,6 +294,19 @@ const GenePageTabs = ({
                       methodologyUrl={methodologyLink}
                     />
                   </div>
+                </React.Suspense>
+              </TabPanel>
+            )}
+            {showPredictabilityPrototype && (
+              <TabPanel className={styles.TabPanel}>
+                <React.Suspense fallback={<div>loading...</div>}>
+                  <PredictabilityPrototypeTab
+                    entityIdOrLabel={entityId}
+                    entityLabel={symbol}
+                    entityType={EntityType.Gene}
+                    customDownloadsLink={customDownloadsLink}
+                    methodologyUrl={methodologyLink}
+                  />
                 </React.Suspense>
               </TabPanel>
             )}

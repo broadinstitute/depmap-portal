@@ -183,12 +183,13 @@ def get_subsetted_df_by_labels(
     dataset_id: str,
     feature_row_labels: Optional[list[str]],
     sample_col_ids: Optional[list[str]],
+    feature_identifier: Optional[Literal["id", "label"]] = "label",
 ) -> pd.DataFrame:
     bb_dataset_id = remove_breadbox_prefix(dataset_id)
     return extensions.breadbox.client.get_dataset_data(
         dataset_id=bb_dataset_id,
         features=feature_row_labels,
-        feature_identifier="label",
+        feature_identifier=feature_identifier,
         samples=sample_col_ids,
         sample_identifier="id",
     ).transpose()

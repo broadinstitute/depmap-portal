@@ -111,12 +111,12 @@ def write_hdf5_file(
         f.close()
 
 
-# def batched_columns(column_names: List[str], batch_size: int = 5000):
-#     """
-#     Returns a generator that yields batches of column names to avoid memory issues with large datasets (e.g. >200k columns).
-#     """
-#     for i in range(0, len(column_names), batch_size):
-#         yield column_names[i : i + batch_size]
+def get_hdf5_file_matrix_size(path: str):
+    with h5py.File(path, mode="r") as f:
+        data = f["data"]
+        if hasattr(data, "shape"):
+            return data.shape  # type: ignore
+        raise ValueError("HDF5 file does not contain a dataset with shape")
 
 
 def read_hdf5_file(

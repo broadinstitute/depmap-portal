@@ -113,7 +113,7 @@ js_cdns = [
 # they occur at the end of loading the DOM
 
 js = Bundle(
-    "libs/bootstrap-3-typeahead/bootstrap3-typeahead.js",  # looks like no cdn
+    # "libs/bootstrap-3-typeahead/bootstrap3-typeahead.js",  # looks like no cdn
     "js/dataTableSort.js",
     "js/colorOpacityUtils.js",
     "js/jQueryActual.js",

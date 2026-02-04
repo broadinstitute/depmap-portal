@@ -1,0 +1,11 @@
+# This file exists in the depmap-deploy repo which contains the release label and taiga id
+# TAIGA_PREPROCESSOR_INCLUDE "internal.conseq"
+
+## Shared content for internal release
+# TAIGA_PREPROCESSOR_INCLUDE "release_inputs_common.template"
+
+## Internal-only inputs
+add-if-missing {
+  "type": "prism_oncology_reference_auc_matrix",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLog2AUCMatrix") 
+}

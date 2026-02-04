@@ -80,6 +80,14 @@ const PredictabilityTab = React.lazy(
     )
 );
 
+const PredictabilityPrototypeTab = React.lazy(
+  () =>
+    import(
+      /* webpackChunkName: "PredictabilityPrototypeTab" */
+      "src/predictabilityPrototype/components/PredictabilityPrototypeTab"
+    )
+);
+
 const SublineagePlot = React.lazy(
   () =>
     import(
@@ -290,6 +298,29 @@ export function initPredictiveTab(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <PredictabilityTab
+        entityIdOrLabel={entityId}
+        entityLabel={entityLabel}
+        entityType={entityType}
+        customDownloadsLink={customDownloadsLink}
+        methodologyUrl={methodologyUrl}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+// This is a prototype
+export function initPredictabilityPrototypeTab(
+  elementId: string,
+  entityId: number,
+  entityLabel: string,
+  entityType: EntityType,
+  customDownloadsLink: string,
+  methodologyUrl: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <PredictabilityPrototypeTab
         entityIdOrLabel={entityId}
         entityLabel={entityLabel}
         entityType={entityType}

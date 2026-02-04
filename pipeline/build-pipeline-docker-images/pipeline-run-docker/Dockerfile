@@ -29,7 +29,7 @@ RUN mkdir -p /root/.taiga && mkdir -p /root/.local/bin
 RUN virtualenv /install/dsub && \
     /install/dsub/bin/pip install git+https://github.com/pgm/dsub.git@patched-0.4.13 && \
     ln -s /install/dsub/bin/dsub /root/.local/bin && \
-    ln -s /install/dsub/bin/dstat /root/.local/bin 
+    ln -s /install/dsub/bin/dstat /root/.local/bin
 
 # install sparkles v5 (requires python==3.10 )
 RUN virtualenv --python=python3.10 /install/sparkles && \

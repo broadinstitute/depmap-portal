@@ -10,16 +10,68 @@ from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.db.session import SessionWithUser
 from breadbox.api.uploads import construct_file_from_ids
-from breadbox.schemas.associations import Associations
-from breadbox.schemas.associations import AssociationTable, AssociationsIn
+from breadbox.schemas.associations import (
+    Associations,
+    AssociationTable,
+    AssociationsIn,
+    ComputeAssociationsParams,
+    LongAssociationsTable,
+)
+
 from typing import List
 from breadbox.service import associations as associations_service
 from breadbox.crud import associations as associations_crud
+from breadbox.crud import dataset as dataset_crud
 import uuid
 from breadbox.db.util import transaction
 from typing import cast, Literal
 
 from .router import router
+from ...models.dataset import MatrixDataset
+from ...schemas.custom_http_exception import ResourceNotFoundError, DatasetNotAMatrix
+
+import logging
+
+log = logging.getLogger(__name__)
+
+
+@router.post(
+    "/associations/compute",
+    operation_id="compute_associations_for_slice",
+    response_model=LongAssociationsTable,
+    response_model_exclude_none=False,
+)
+def compute_associations_for_slice(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    params: Annotated[
+        ComputeAssociationsParams,
+        Body(
+            description="The dataset for which each feature will be correlated with the slice"
+        ),
+    ],
+):
+
+    dataset = dataset_crud.get_dataset(db, db.user, params.dataset_id)
+    if dataset is None:
+        raise ResourceNotFoundError(f"Could not find dataset {params.dataset_id}")
+
+    if not isinstance(dataset, MatrixDataset):
+        raise DatasetNotAMatrix(f"{dataset.id} is not a MatrixDataset")
+
+    log.warning("Starting calc")
+    correlations = associations_service.compute_associations(
+        db, settings.filestore_location, dataset, params.slice_query
+    )
+    log.warning("Calc finished")
+
+    correlations.sort_values("cor", inplace=True)  # type: ignore
+
+    return LongAssociationsTable(
+        label=correlations["label"].to_list(),  # type: ignore
+        given_id=correlations["given_id"].to_list(),  # type: ignore
+        cor=correlations["cor"].to_list(),  # type: ignore
+    )
 
 
 @router.post(

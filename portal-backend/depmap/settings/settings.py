@@ -117,6 +117,10 @@ class FeatureFlags:
         return True
 
     @property
+    def predictability_prototype(self):
+        return self.is_skyros()
+
+    @property
     def context_explorer(self):
         return True
 

@@ -48,6 +48,7 @@ const {
   showMutationsTile,
   showOmicsExpressionTile,
   showTargetingCompoundsTile,
+  showPredictabilityPrototype,
 } = data;
 
 const App = () => {
@@ -87,6 +88,7 @@ const App = () => {
         showMutationsTile={showMutationsTile}
         showOmicsExpressionTile={showOmicsExpressionTile}
         showTargetingCompoundsTile={showTargetingCompoundsTile}
+        showPredictabilityPrototype={showPredictabilityPrototype}
       />
     </ErrorBoundary>
   );

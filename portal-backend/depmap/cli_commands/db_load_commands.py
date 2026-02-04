@@ -13,6 +13,7 @@ from depmap.cell_line.models import CellLine
 from depmap.dataset.models import TabularDataset
 
 import click
+from loader import predictability_loader, predictability_summary_loader
 import pandas as pd
 from flask import current_app
 from flask.cli import with_appcontext
@@ -857,6 +858,32 @@ def _load_real_data(
             df = taiga_client.get(current_app.config["MATCH_RELATED_TAIGA_ID"])
             match_related_loader.load_match_related(df)
 
+    if current_app.config["ENABLED_FEATURES"].predictability_prototype:
+        with checkpoint("predictive-insights-load-reset-2") as needed:
+            if needed:
+                db.session.execute("delete from prototype_predictive_feature_result")
+                db.session.execute("delete from prototype_predictive_feature")
+                db.session.execute("delete from prototype_predictive_model")
+
+                log.info("Adding predictability prototype summary info")
+                daintree_outputs_json_artifacts = gcsc_depmap.read_json(
+                    "metadata/combined_daintree_upload_outputs.json"
+                )
+                daintree_outputs_json_artifact = daintree_outputs_json_artifacts[
+                    "outputs"
+                ]
+                daintree_outputs_url = daintree_outputs_json_artifact["filename"]
+                daintree_outputs_filename = gcsc_depmap.download_to_cache(
+                    daintree_outputs_url
+                )
+
+                predictability_summary_loader.load_predictability_prototype(
+                    model_config_file_path=daintree_outputs_filename,
+                    get_ensemble_csv=lambda ensemble_csv_taiga_id: taiga_client.download_to_cache(
+                        ensemble_csv_taiga_id, requested_format="csv_table"
+                    ),
+                )
+
     if current_app.config["ENABLED_FEATURES"].target_discovery_app:
         with checkpoint("tda") as needed:
             if needed:
@@ -1443,6 +1470,14 @@ def load_sample_data(
                 os.path.join(
                     loader_data_dir, "context_explorer/context_analysis_v2.csv"
                 )
+            )
+
+        if current_app.config["ENABLED_FEATURES"].predictability_prototype:
+            log.info("Adding predictability prototype summary info")
+
+            predictability_summary_loader.load_predictability_prototype(
+                model_config_file_path="sample_data/predictability_prototype/merged-output-model-config.json",
+                get_ensemble_csv=lambda ensemble_taiga_id: f"sample_data/predictability_prototype/{ensemble_taiga_id}.json",
             )
 
         if current_app.config["ENABLED_FEATURES"].data_page:
