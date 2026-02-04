@@ -19,7 +19,7 @@ endblock content_class %} {% block content %}
     "isMobile": {{ is_mobile|tojson|safe  }},
     "predictabilityCustomDownloadsLink": {{ predictability_custom_downloads_link|tojson|safe }},
     "predictabilityMethodologyLink": {{ predictability_methodology_link|tojson|safe }},
-    "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}",
+    "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}"
   }
 </script>
 <script src="{{ webpack_url('compoundPage.js') }}"></script>

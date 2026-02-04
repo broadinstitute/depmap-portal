@@ -67,7 +67,10 @@ const CompoundPageOverview = ({
     key: [CompoundTileTypeEnum, number]
   ) => {
     let resultTile: JSX.Element | null = (
-      <AsyncTile key={key[0]} url={`/tile/gene/${tile[0]}/${compoundName}`} />
+      <AsyncTile
+        key={key[0]}
+        url={`/tile/compound/${tile[0]}/${compoundName}`}
+      />
     );
 
     // Match tiles with tabs... On occasion we have to show a tab, but not the tile (i.e. Celfie tab but not tile for HNF1B)

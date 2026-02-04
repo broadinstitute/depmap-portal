@@ -1,6 +1,6 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { getUrlPrefix } from "@depmap/globals";
-import { ContextExplorerDatasets } from "@depmap/types";
+import { ContextExplorerDatasets, CurvePlotPoints } from "@depmap/types";
 import { Dataset, MatrixDataset } from "@depmap/types/src/Dataset";
 
 export const Rep1Color = "#CC4778";
@@ -208,4 +208,26 @@ export async function doContextExpDatasetsExistWithCompound(
   const validGivenIds: string[] = Object.values(ContextExplorerDatasets);
 
   return filteredDatasets.some((d) => validGivenIds.includes(d.given_id!));
+}
+
+// from : https://stackoverflow.com/questions/14696326/break-array-of-objects-into-separate-arrays-based-on-a-property
+export function groupBy(
+  array: Array<CurvePlotPoints>,
+  prop: "dose" | "viability" | "isMasked" | "replicate" | "id"
+): Map<string, Array<CurvePlotPoints>> {
+  const grouped = new Map<string, Array<CurvePlotPoints>>();
+
+  array.forEach((points) => {
+    const p = prop in points ? points[prop]!.toString() : null;
+
+    if (p) {
+      if (!grouped.has(p)) {
+        grouped.set(p, []);
+      }
+
+      grouped.get(p)?.push(points);
+    }
+  });
+
+  return grouped;
 }
