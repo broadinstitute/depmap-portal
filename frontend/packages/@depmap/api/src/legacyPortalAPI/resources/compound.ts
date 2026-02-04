@@ -1,5 +1,6 @@
 import {
   CompoundDoseCurveData,
+  CompoundSummaryResponse,
   DRCDatasetOptions,
   SensitivityTabSummary,
 } from "@depmap/types";
@@ -37,43 +38,19 @@ export function getPrioritizedDataset(
   );
 }
 
-export function getSensitivityTabSummary(
-  compoundId: string
-): Promise<SensitivityTabSummary> {
-  const params = {
-    compound_id: compoundId,
-  };
-
-  return getJson<SensitivityTabSummary>(
-    `/api/compound/sensitivity_summary`,
-    params
-  );
-}
-
-export function getHeatmapDoseCurveOptions(
+export function getCompoundSummary(
   compoundId: string,
-  compoundName: string
-): Promise<DRCDatasetOptions[]> {
+  compoundName: string,
+  compoundDatasetIds: string[] = []
+): Promise<CompoundSummaryResponse> {
   const params = {
     compound_id: compoundId,
     compound_label: compoundName,
+    compound_dataset_ids: compoundDatasetIds,
   };
 
-  return getJson<DRCDatasetOptions[]>(
-    `/api/compound/heatmap_dose_curve_options`,
-    params
-  );
-}
-
-export function getCorrelationAnalysisOptions(
-  compoundName: string
-): Promise<DRCDatasetOptions[]> {
-  const params = {
-    compound_label: compoundName,
-  };
-
-  return getJson<DRCDatasetOptions[]>(
-    `/api/compound/correlation_analysis_options`,
+  return getJson<CompoundSummaryResponse>(
+    `/api/compound/compound_summary`,
     params
   );
 }

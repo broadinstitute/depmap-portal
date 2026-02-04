@@ -83,3 +83,9 @@ export interface SensitivityTabSummary {
   show_auc_message: boolean;
   summary_options: DatasetOption[];
 }
+
+export interface CompoundSummaryResponse {
+  sensitivity_summary: SensitivityTabSummary | null;
+  heatmap_dose_curve_options: DRCDatasetOptions[];
+  correlation_analysis_options: DRCDatasetOptions[];
+}

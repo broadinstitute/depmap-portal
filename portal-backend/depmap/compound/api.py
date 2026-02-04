@@ -51,71 +51,53 @@ class PrioritizedDataset(Resource):
         return dataclasses.asdict(sorted_data[0])
 
 
-@namespace.route("/sensitivity_summary")
-class SensitivitySummary(Resource):
+@namespace.route("/compound_summary")
+class CompoundSummary(Resource):
     def get(self):
         compound_id = request.args.get("compound_id")
+        compound_label = request.args.get("compound_label")
         compound_dataset_ids = request.args.getlist("compound_dataset_ids")
 
-        """Get a dictionary of values containing layout information for the sensitivity tab."""
-        if len(compound_dataset_ids) == 0:
-            return None
+        # 1. Fetch Sensitivity Summary Data
+        sensitivity_data = None
+        if compound_dataset_ids:
+            compound = Compound.get_by_compound_id(compound_id=compound_id)
+            if compound:
+                dataset_options = []
+                for dataset_id in compound_dataset_ids:
+                    dataset = data_access.get_matrix_dataset(dataset_id=dataset_id)
+                    if dataset:
+                        dataset_options.append(
+                            {
+                                "label": dataset.label,
+                                "id": dataset.id,
+                                "dataset": dataset.id,
+                                "entity": compound.entity_id,
+                            }
+                        )
 
-        compound = Compound.get_by_compound_id(compound_id=compound_id)
+                if dataset_options:
+                    sensitivity_data = {
+                        "figure": {"name": compound.entity_id},
+                        "summary_options": dataset_options,
+                        "show_auc_message": True,
+                        "size_biom_enum_name": None,
+                        "color": None,
+                    }
 
-        if compound is None:
-            return None
-
-        compound_entity_id = compound.entity_id
-
-        # Define the options that will appear in the datasets dropdown
-        dataset_options = []
-        for dataset_id in compound_dataset_ids:
-            dataset = data_access.get_matrix_dataset(dataset_id=dataset_id)
-            if dataset is None:
-                continue
-            dataset_summary = {
-                "label": dataset.label,
-                "id": dataset.id,
-                "dataset": dataset.id,
-                "entity": compound_entity_id,
-            }
-            dataset_options.append(dataset_summary)
-
-        if len(dataset_options) == 0:
-            return None
-
-        return {
-            "figure": {"name": compound_entity_id},
-            "summary_options": dataset_options,
-            "show_auc_message": True,
-            "size_biom_enum_name": None,
-            "color": None,
-        }
-
-
-# Combined. These options are identical, but need to check for feature availability using feature flags on frontend.
-# Dose curves and the Heatmap are NOT both available in all environments.
-@namespace.route("/heatmap_dose_curve_options")
-class HeatmapDoseCurveOptions(Resource):
-    def get(self):
-        compound_id = request.args.get("compound_id")
-        compound_label = request.args.get("compound_label")
-
-        options = get_heatmap_dose_curves_tab_drc_options(
+        # 2. Fetch Heatmap and Dose Curve Options
+        drc_options = get_heatmap_dose_curves_tab_drc_options(
             compound_label=compound_label, compound_id=compound_id
         )
-        serializable_options = [dataclasses.asdict(opt) for opt in options]
+        serializable_drc = [dataclasses.asdict(opt) for opt in drc_options]
 
-        return serializable_options
+        # 3. Fetch Correlation Analysis Options
+        corr_options = get_corr_analysis_options(compound_label=compound_label)
+        serializable_corr = [dataclasses.asdict(opt) for opt in corr_options]
 
-
-@namespace.route("/correlation_analysis_options")
-class CorrelationAnalysisOptions(Resource):
-    def get(self):
-        compound_label = request.args.get("compound_label")
-
-        options = get_corr_analysis_options(compound_label=compound_label)
-        serializable_options = [dataclasses.asdict(opt) for opt in options]
-
-        return serializable_options
+        # 4. Return consolidated response
+        return {
+            "sensitivity_summary": sensitivity_data,
+            "heatmap_dose_curve_options": serializable_drc,
+            "correlation_analysis_options": serializable_corr,
+        }

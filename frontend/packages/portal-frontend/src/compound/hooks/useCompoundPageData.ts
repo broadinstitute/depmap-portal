@@ -1,13 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  getCorrelationAnalysisOptions,
-  getHeatmapDoseCurveOptions,
-  getSensitivityTabSummary,
-} from "@depmap/api/src/legacyPortalAPI/resources/compound";
-import {
-  doContextExpDatasetsExistWithCompound,
-  getCachedAvailableCompoundDatasetIds,
-} from "../utils";
+import { getCompoundSummary } from "@depmap/api/src/legacyPortalAPI/resources/compound";
+import { getCachedAvailableCompoundDatasetIds } from "../utils";
 import { SensitivityTabSummary, DatasetOption } from "@depmap/types";
 import { getQueryParams } from "@depmap/utils";
 
@@ -30,31 +23,25 @@ export const useCompoundPageData = (
     const fetchAllCompoundData = async () => {
       try {
         setState((s) => ({ ...s, isLoading: true }));
+        // Step 1: Get Breadbox IDs first
+        const ids = await getCachedAvailableCompoundDatasetIds(compoundId);
 
-        const [
-          ids,
-          summary,
-          doseAndHeatmapOpts,
-          corrOpts,
-          hasEnrichedLineages,
-        ] = await Promise.all([
-          getCachedAvailableCompoundDatasetIds(compoundId),
-          getSensitivityTabSummary(compoundId),
-          getHeatmapDoseCurveOptions(compoundId, compoundLabel),
-          getCorrelationAnalysisOptions(compoundLabel),
-          doContextExpDatasetsExistWithCompound(compoundId),
-        ]);
+        // Step 2: Fetch the consolidated summary in one go
+        const summary = await getCompoundSummary(
+          compoundId,
+          compoundLabel,
+          ids
+        );
 
-        setState({
+        setState((prev) => ({
+          ...prev,
           datasetIds: ids,
-          sensitivitySummary: summary,
-          doseCurveOptions: doseAndHeatmapOpts,
-          heatmapOptions: doseAndHeatmapOpts,
-          correlationAnalysisOptions: corrOpts,
-          showEnrichedLineages: hasEnrichedLineages,
+          sensitivitySummary: summary.sensitivity_summary,
+          doseCurveOptions: summary.heatmap_dose_curve_options,
+          heatmapOptions: summary.heatmap_dose_curve_options,
+          correlationAnalysisOptions: summary.correlation_analysis_options,
           isLoading: false,
-          error: null,
-        });
+        }));
       } catch (err) {
         setState((s) => ({
           ...s,
