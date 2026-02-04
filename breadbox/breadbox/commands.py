@@ -354,19 +354,6 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
             GroupEntryIn(email="", exact_match=False, access_type=AccessType.write),
         )
 
-    # Define the generic type
-    existing_generic_type = types_crud.get_dimension_type(db, name="generic")
-    if not existing_generic_type:
-        add_dimension_type(
-            db,
-            settings,
-            user=admin_user,
-            name="generic",
-            display_name="Generic",
-            id_column="label",
-            axis="feature",
-        )
-
     existing_user_upload_data_type = data_type_crud.get_data_type(db, "User upload")
     if not existing_user_upload_data_type:
         data_type_crud.add_data_type(db, "User upload")
