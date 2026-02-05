@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Any
 from depmap import data_access
 from depmap.compound.models import Compound
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
@@ -56,7 +57,8 @@ class CompoundSummary(Resource):
     def get(self):
         compound_id = request.args.get("compound_id")
         compound_label = request.args.get("compound_label")
-        compound_dataset_ids = request.args.getlist("compound_dataset_ids")
+        args: Any = request.args
+        compound_dataset_ids = args.getlist("compound_dataset_ids")
 
         # 1. Fetch Sensitivity Summary Data
         sensitivity_data = None
