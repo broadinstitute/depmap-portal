@@ -145,6 +145,7 @@ def get_subsetted_df_by_labels(
     dataset_id: str,
     feature_row_labels: Optional[list[str]] = None,
     sample_col_ids: Optional[list[str]] = None,
+    feature_identifier: Optional[Literal["id", "label"]] = "label",
 ) -> pd.DataFrame:
     """
     Load a dataframe with only the specified rows (features) and columns (cell_lines).
@@ -154,7 +155,10 @@ def get_subsetted_df_by_labels(
     """
     if is_breadbox_id(dataset_id):
         return breadbox_dao.get_subsetted_df_by_labels(
-            dataset_id, feature_row_labels, sample_col_ids
+            dataset_id=dataset_id,
+            feature_row_labels=feature_row_labels,
+            sample_col_ids=sample_col_ids,
+            feature_identifier=feature_identifier,
         )
     return interactive_utils.get_subsetted_df_by_labels(
         dataset_id, feature_row_labels, sample_col_ids
