@@ -56,6 +56,39 @@ headers = {
 
 oncotree = tc.get(name="oncotree-42c7", version=1, file="oncotree").set_index("code")
 
+hcmi_OT_map = {
+    'Ampulla of Vater':'AMPULLA_OF_VATER',
+    'Bladder Cancer':'BLADDER', 
+    'Bone Cancer':'BONE',
+    'Breast Cancer':'BREAST',
+    'Carcinoma, NOS':'OTHER',
+    'Colorectal Cancer':'COADREAD',
+    'Desmoid Tumors':'DES',
+    'Endometrial Cancer':'UTERUS',
+    'Epithelial Sarcoma':'SOFT_TISSUE',
+    'Esophageal Cancer':'STOMACH',
+    'Extrahepatic Cholangiocarcinoma':'BILIARY_TRACT', 
+    'Gallbladder Cancer':'GBC',
+    'Glioblastoma':'GB',
+    'Hepatocellular carcinoma':'HCC',
+    'IPMN':'IPMN',
+    'Intraductal Carcinoma':'OTHER',
+    'Intrahepatic Cholangiocarcinoma':'BILIARY_TRACT',
+    'Kidney Cancer':'KIDNEY',
+    'Leiomyosarcoma':'LMS',
+    'Lung Cancer':'LUNG',
+    'Melanoma':'MEL', 
+    'Ovarian Cancer':'OOVC',
+    'Pancreatic Cancer':'PAAD', 
+    'Rare Cancer':'OTHER',
+    'Small Intestine Cancer':'SIC',
+    'Spindle Cell Sarcoma':'MFH',
+    'Stomach Cancer':'STOMACH',
+    'Tubulovilluos Adenoma':'BOWEL',
+    'Undifferentiated Pleomorphic Sarcoma':'MFH',
+    'Wilms Tumor':'KIDNEY'
+}
+
 nv_OT_map = {
     "colorectal": "BOWEL",
     "pancreas": "PANCREAS",
@@ -173,6 +206,121 @@ def process_oncocode(code):
     else:
         return pd.Series({"lineage": np.nan, "subtype": np.nan})
 
+def process_hcmi_tumor_ipts(expr_df, context_df):
+    """
+    Collects HCMI tumor expression data and metadata into single anndata object, and standardizes the metadata.
+    @param expr_df: (Pandas DataFrame) HCMI tumor expression data, same format as depmap expression data
+    @param context_df: (Pandas DataFrame) HCMI tumor metadata pulled from taiga
+    @return: anndata object containing both HCMI tumor expression and metadata
+    """
+    hgnc_complete_set = tc.get(
+        name="hgnc-gene-table-e250", version=3, file="hgnc_complete_set"
+    )
+    hgnc_complete_set["depmap"] = (
+        hgnc_complete_set.symbol
+        + " ("
+        + hgnc_complete_set.entrez_id.astype("Int64").astype(str)
+        + ")"
+    )
+    
+    expr_df = expr_df.set_index(expr_df.columns[0])    
+    expr_ensembls = expr_df.columns.to_series()[
+        expr_df.columns.to_series().str[:4] == "ENSG"
+    ]
+    expr_nonsembls = expr_df.columns.to_series()[
+        expr_df.columns.to_series().str[:4] != "ENSG"
+    ]
+    expr_ensembls = expr_ensembls.str.extract(r"(ENSG[0-9]+)")
+    expr_nonsembls.loc[
+        expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))
+    ] = (
+        hgnc_complete_set.set_index("depmap")
+        .loc[expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))]
+        .ensembl_gene_id
+    )
+
+    bg_genes = pd.concat([expr_ensembls, expr_nonsembls])[0]
+    expr_df = expr_df.rename(columns=bg_genes)
+
+    context_df = context_df.set_index("ModelID") 
+    context_df["oncotree_code"] = context_df.cancer_type.map(hcmi_OT_map)
+    context_df.loc[:, ["lineage", "subtype"]] = context_df.oncotree_code.apply(
+        lambda x: process_oncocode(x)
+    )
+    context_df["GrowthPattern"] = "Tumor"
+    context_df["type"] = "HCMI tumor"
+    context_df["PrimaryOrMetastasis"] = np.nan
+
+    adata = ad.AnnData(expr_df)
+    adata.obs_names = expr_df.index
+    adata.var_names = expr_df.columns
+    adata.obs = context_df.loc[
+            expr_df.index,
+            ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type",],
+        ]
+    adata.uns["type"] = "tumor"
+    adata.uns["name"] = "hcmi_tumor"
+    adata.uns["mnn_params"] = {"k1": 20, "k2": 50}
+    
+    return adata
+
+def process_hcmi_model_ipts(expr_df, context_df):
+    """
+    Collects HCMI model expression data and metadata into single anndata object, and standardizes the metadata.
+    @param expr_df: (Pandas DataFrame) HCMI model expression data, same format as depmap expression data
+    @param context_df: (Pandas DataFrame) HCMI model metadata pulled from taiga
+    @return: anndata object containing both HCMI model expression and metadata
+    """
+    hgnc_complete_set = tc.get(
+        name="hgnc-gene-table-e250", version=3, file="hgnc_complete_set"
+    )
+    hgnc_complete_set["depmap"] = (
+        hgnc_complete_set.symbol
+        + " ("
+        + hgnc_complete_set.entrez_id.astype("Int64").astype(str)
+        + ")"
+    )
+    
+    expr_df = expr_df.set_index(expr_df.columns[0])    
+    expr_ensembls = expr_df.columns.to_series()[
+        expr_df.columns.to_series().str[:4] == "ENSG"
+    ]
+    expr_nonsembls = expr_df.columns.to_series()[
+        expr_df.columns.to_series().str[:4] != "ENSG"
+    ]
+    expr_ensembls = expr_ensembls.str.extract(r"(ENSG[0-9]+)")
+    expr_nonsembls.loc[
+        expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))
+    ] = (
+        hgnc_complete_set.set_index("depmap")
+        .loc[expr_nonsembls.index.intersection(pd.Index(hgnc_complete_set.depmap))]
+        .ensembl_gene_id
+    )
+
+    bg_genes = pd.concat([expr_ensembls, expr_nonsembls])[0]
+    expr_df = expr_df.rename(columns=bg_genes)
+
+    context_df = context_df.set_index("ModelID") 
+    context_df["oncotree_code"] = context_df.cancer_type.map(hcmi_OT_map)
+    context_df.loc[:, ["lineage", "subtype"]] = context_df.oncotree_code.apply(
+        lambda x: process_oncocode(x)
+    )
+    context_df["GrowthPattern"] = "model"
+    context_df["type"] = context_df["model_type"]
+    context_df["PrimaryOrMetastasis"] = np.nan
+
+    adata = ad.AnnData(expr_df)
+    adata.obs_names = expr_df.index
+    adata.var_names = expr_df.columns
+    adata.obs = context_df.loc[
+            expr_df.index,
+            ["GrowthPattern", "PrimaryOrMetastasis", "lineage", "subtype", "type",],
+        ]
+    adata.uns["type"] = "model"
+    adata.uns["name"] = "hcmi_model"
+    adata.uns["mnn_params"] = None
+    
+    return adata
 
 def process_tcga_ipts(expr_df, context_df):
     """
@@ -403,6 +551,80 @@ def process_ped_pdx_ipts(expr_df, context_df):
     adata.uns["mnn_params"] = {"k1": 10, "k2": 50}
     return adata
 
+def align_hcmi_to_depmap(depmap_out, hcmi_out):
+    """
+    Aligns HCMI expression data to DepMap by applying mean-centering transformation.
+    Uses overlapping samples to calculate transformation parameters.
+    Args:
+        depmap_out: (AnnData) DepMap expression and metadata
+        hcmi_out: (AnnData) HCMI expression and metadata
+    Returns:
+        (AnnData) concatenated and transformed HCMI data plus all depmap data
+    """
+    depmap_expr = pd.DataFrame(
+        depmap_out.X, 
+        index=depmap_out.obs_names, 
+        columns=depmap_out.var_names
+    )
+    hcmi_expr = pd.DataFrame(
+        hcmi_out.X,
+        index=hcmi_out.obs_names,
+        columns=hcmi_out.var_names
+    )
+    
+    #depmap samples with HCMI IDs
+    #if "HCMIID" not in depmap_out.obs.columns:
+    #    raise ValueError("HCMIID column not found in depmap obs. Cannot align HCMI data.")
+    depmap_HCMI = depmap_out.obs.dropna(subset=["HCMIID"]).reset_index().set_index("HCMIID").drop_duplicates()
+    depmap_HCMI_IDs = depmap_HCMI.index
+    
+    common_hcmi = set(hcmi_out.obs_names).intersection(set(depmap_HCMI_IDs))
+    print(f"Found {len(common_hcmi)} common samples")
+    
+    #mapping of hcmi id to model condition id
+    HCMI_to_ModelConditionID = depmap_HCMI.loc[list(common_hcmi), "ModelConditionID"]
+    
+    #subset depmap expression to common samples
+    depmap_expr_subset = depmap_expr.loc[HCMI_to_ModelConditionID.values, :]
+    print(f"DepMap subset: {depmap_expr_subset.shape}")
+    
+    #subset hcmi + get set of common genes
+    hcmi_expr_subset = hcmi_expr.loc[list(common_hcmi), :]
+    common_genes = depmap_expr_subset.columns.intersection(hcmi_expr_subset.columns)
+    
+    depmap_expr_subset = depmap_expr_subset[common_genes]
+    hcmi_expr_subset = hcmi_expr_subset[common_genes]
+    
+    #gene means from overlapping samples
+    hcmi_gene_means = hcmi_expr_subset.mean()
+    depmap_gene_means = depmap_expr_subset.mean()
+    
+    #transcform hcmi dataset
+    hcmi_expr_aligned = hcmi_expr[common_genes]
+    transformed_HCMI = hcmi_expr_aligned - hcmi_gene_means + depmap_gene_means
+    
+    depmap_expr_aligned = depmap_expr[common_genes]
+    combined_expr = pd.concat([depmap_expr_aligned, transformed_HCMI], axis=0)
+
+    combined_obs = pd.concat([depmap_out.obs, hcmi_out.obs], axis=0)
+
+    adata_combined = ad.AnnData(combined_expr)
+    adata_combined.obs = combined_obs
+    adata_combined.var_names = combined_expr.columns
+    adata_combined.obs_names = combined_expr.index
+    adata_combined.uns["type"] = "model"  
+    adata_combined.uns["name"] = "depmap_hcmi_combined"
+    adata_combined.uns["source_datasets"] = ["depmap", "hcmi"]
+    adata_combined.uns["transformation"] = "mean_centered_alignment"
+    
+    #new AnnData object with transformed data
+    adata_transformed = ad.AnnData(transformed_HCMI)
+    adata_transformed.obs = hcmi_out.obs.copy()
+    adata_transformed.var_names = transformed_HCMI.columns
+    adata_transformed.obs_names = transformed_HCMI.index
+    adata_transformed.uns = hcmi_out.uns.copy()
+    
+    return adata_combined, adata_transformed
 
 # %%
 
@@ -563,6 +785,15 @@ def process_data(inputs, extra=True):
 
     depmap_out = process_depmap_ipts(depmap_data, depmap_ann, depmap_model_cond)
 
+    warnings.warn("loading hcmi data+annotation")
+    hcmi_model_data = tc.get(inputs["hcmi_model_expr"]["source_dataset_id"])
+    hcmi_model_ann = tc.get(inputs["hcmi_model_ann"]["source_dataset_id"])
+    
+    hcmi_out = process_hcmi_model_ipts(hcmi_model_data, hcmi_model_ann)
+    
+    warnings.warn("transforming hcmi to integrated with depmap")
+    depmap_hcmi_out, hcmi_transformed = align_hcmi_to_depmap(depmap_out, hcmi_out) 
+    
     # process tcga data into single input for celligner
     warnings.warn("loading tcga")
     print("loading TCGA data...")
@@ -570,8 +801,14 @@ def process_data(inputs, extra=True):
     tcga_ann = tc.get(inputs["tcga_ann"]["source_dataset_id"])
 
     tcga_out = process_tcga_ipts(tcga_expr, tcga_ann)
+    
     warnings.warn("loading extra datasets")
     if extra:
+        # process hcmi tumor data into single input for celligner
+        hcmi_tumor_data= tc.get(inputs["hcmi_tumor_expr"]["source_dataset_id"])
+        hcmi_tumor_ann = tc.get(inputs["hcmi_tumor_ann"]["source_dataset_id"])
+        hcmi_tumor_out = process_hcmi_tumor_ipts(hcmi_tumor_data, hcmi_tumor_ann)
+
         # process met500 data into single input for celligner
         print("loading MET500 data...")
         met500_data = tc.get(inputs["met500_expr"]["source_dataset_id"])
@@ -593,10 +830,10 @@ def process_data(inputs, extra=True):
 
         ped_pdx_out = process_ped_pdx_ipts(ped_pdx_data, ped_pdx_ann)
 
-        extra_data = [met500_out, nov_pdx_out, ped_pdx_out]
+        extra_data = [hcmi_tumor_out, met500_out, nov_pdx_out, ped_pdx_out]
     else:
         extra_data = None
-    return depmap_out, tcga_out, extra_data
+    return depmap_hcmi_out, tcga_out, extra_data
 
 
 # %%
