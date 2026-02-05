@@ -202,19 +202,12 @@ class MatrixDataset(Dataset):
     units: Mapped[str] = mapped_column(
         String, nullable=False
     )  # TODO: Limit to conitnuous value types later
-<<<<<<< HEAD
+
     feature_type_name: Mapped[Optional[str]] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=True,
-    )
-    sample_type_name: Mapped[str] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
-=======
-    feature_type_name = Column(
         String, ForeignKey("dimension_type.name"), nullable=True,
     )
-    sample_type_name = Column(
+    sample_type_name: Mapped[str] = mapped_column(
         String, ForeignKey("dimension_type.name"), nullable=False
->>>>>>> 5aefef97 (fix(breadbox): remove cascade delete from dimension_type foreign keys)
     )
     feature_type = relationship("DimensionType", foreign_keys=[feature_type_name])
     sample_type = relationship("DimensionType", foreign_keys=[sample_type_name])
