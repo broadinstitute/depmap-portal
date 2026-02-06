@@ -124,7 +124,6 @@ def test_gene_dependency_datasets_where_present(
             [
                 "expression",
                 "copy_number_relative",
-                "mutation_pearson",
                 "mutations_damaging",
                 "mutations_driver",
                 "rrbs",
@@ -137,7 +136,6 @@ def test_gene_dependency_datasets_where_present(
             [
                 "expression",
                 "copy_number_relative",
-                "mutation_pearson",
             ],
         ),  # TNS2, not in rppa
     ],

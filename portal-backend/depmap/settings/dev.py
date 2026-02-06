@@ -94,7 +94,6 @@ additional_dev_metadata = {
     # },
     BiomarkerEnum.expression: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.copy_number_relative: {"taiga_id": "placeholder-taiga-id.1"},
-    BiomarkerEnum.mutation_pearson: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.context: {"taiga_id": "placeholder-taiga-id.1", "transpose": True},
     BiomarkerEnum.rppa: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.rrbs: {"taiga_id": "placeholder-taiga-id.1"},

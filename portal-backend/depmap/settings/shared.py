@@ -63,13 +63,6 @@ DATASET_METADATA: Dict[
         priority=1,
         global_priority=4,
     ),
-    BiomarkerEnum.mutation_pearson: DatasetLabel(
-        display_name="Mutation",
-        units="Mutation (one hot encoding)",
-        s3_json_name="mutation-pearson",
-        data_type=DataTypeEnum.mutations,
-        global_priority=5,
-    ),
     BiomarkerEnum.context: DatasetLabel(
         display_name="Context",
         units="Context",

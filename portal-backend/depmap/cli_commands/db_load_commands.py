@@ -1096,7 +1096,6 @@ def load_sample_data(
         biomarker_datasets = [
             BiomarkerEnum.expression,
             BiomarkerEnum.copy_number_relative,
-            BiomarkerEnum.mutation_pearson,
             BiomarkerEnum.mutations_hotspot,
             BiomarkerEnum.mutations_damaging,
             BiomarkerEnum.mutations_driver,

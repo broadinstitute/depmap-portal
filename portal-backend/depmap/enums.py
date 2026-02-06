@@ -74,7 +74,6 @@ class DependencyEnum(DatasetEnum):
 class BiomarkerEnum(DatasetEnum):
     expression = "expression"
     copy_number_relative = "copy_number_relative"
-    mutation_pearson = "mutation_pearson"
     mutations_damaging = "mutations_damaging"
     mutations_hotspot = "mutations_hotspot"
     mutations_driver = "mutations_driver"
