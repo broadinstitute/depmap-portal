@@ -146,6 +146,14 @@ ped_oncotree_map = {
     "Wilms": "WT",
 }
 
+hcmi_modeltype_map = {
+    "2-D: Adherent": "Adherent",
+    "3-D: Organoid": "Dome",
+    "3-D: Other (e.g. neurosphere, air-liquid interface, etc.)": "Unknown",
+    "2-D: Conditionally reprogrammed cells": "Adherent", 
+    "Mixed adherent and suspension": "Mixed"
+}
+
 portal_in_dict = {}
 
 portal_out_dict = {}
@@ -305,8 +313,9 @@ def process_hcmi_model_ipts(expr_df, context_df):
     context_df.loc[:, ["lineage", "subtype"]] = context_df.oncotree_code.apply(
         lambda x: process_oncocode(x)
     )
-    context_df["GrowthPattern"] = "model"
-    context_df["type"] = context_df["model_type"]
+    
+    context_df["GrowthPattern"] =  context_df.model_type.map(hcmi_modeltype_map)
+    context_df["type"] = "HCMI model"    
     context_df["PrimaryOrMetastasis"] = np.nan
 
     adata = ad.AnnData(expr_df)
@@ -445,7 +454,7 @@ def process_depmap_ipts(expr_df, context_df, model_condition):
             "ModelID",
             "HCMIID"
         ],
-    ].drop_duplicates()
+    ] # this was accidentally dropping model conditions that we want to keep: .drop_duplicates()
 
     expr_df = expr_df.loc[expr_df.index.intersection(context_df.index)]
     expr_df = expr_df.T.groupby(level=0).mean().T
@@ -573,10 +582,9 @@ def align_hcmi_to_depmap(depmap_out, hcmi_out):
         columns=hcmi_out.var_names
     )
     
-    #depmap samples with HCMI IDs
-    #if "HCMIID" not in depmap_out.obs.columns:
-    #    raise ValueError("HCMIID column not found in depmap obs. Cannot align HCMI data.")
-    depmap_HCMI = depmap_out.obs.dropna(subset=["HCMIID"]).reset_index().set_index("HCMIID").drop_duplicates()
+    #depmap samples with HCMI IDs - keeping first HCMIID if dups 
+    depmap_HCMI = depmap_out.obs.dropna(subset=["HCMIID"]).reset_index().drop_duplicates(subset=["HCMIID"]).set_index("HCMIID").drop_duplicates()
+
     depmap_HCMI_IDs = depmap_HCMI.index
     
     common_hcmi = set(hcmi_out.obs_names).intersection(set(depmap_HCMI_IDs))
@@ -768,7 +776,7 @@ def process_data(inputs, extra=True):
 
     print(f"loading DepMap data ({depmap_expr_id})...")
     depmap_data = tc.get(depmap_expr_id)
-    print(depmap_data)
+    
     # starting in 25Q2, some additional columns got added which will need to be dropped before proceeding.
     # the following should reformat the matrix to be the format we used to get from taiga prior to 25Q2
 
@@ -776,7 +784,7 @@ def process_data(inputs, extra=True):
     depmap_data.index = depmap_data["ModelConditionID"]
 
     depmap_data.drop(
-        columns=["SequencingID", "IsDefaultEntryForModel", "ModelID"], inplace=True
+        columns=["SequencingID", "ModelConditionID", "SequencingID", "IsDefaultEntryForModel", "IsDefaultEntryForMC", "ModelID"], inplace=True
     )
 
     warnings.warn("loading anns")
