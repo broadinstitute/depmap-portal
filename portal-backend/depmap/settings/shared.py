@@ -55,13 +55,6 @@ DATASET_METADATA: Dict[
         priority=1,
         global_priority=3,
     ),
-    BiomarkerEnum.copy_number_absolute: DatasetLabel(
-        display_name="Copy Number (Absolute)",
-        units="Copy Number",
-        s3_json_name="copy-number-absolute",
-        data_type=DataTypeEnum.cn,
-        priority=2,
-    ),
     BiomarkerEnum.copy_number_relative: DatasetLabel(
         display_name="Copy Number",
         units="Copy Number log2(relative to ploidy + 1)",

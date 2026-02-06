@@ -123,7 +123,6 @@ def test_gene_dependency_datasets_where_present(
             "MAP4K4",
             [
                 "expression",
-                "copy_number_absolute",
                 "copy_number_relative",
                 "mutation_pearson",
                 "mutations_damaging",
@@ -137,7 +136,6 @@ def test_gene_dependency_datasets_where_present(
             "TNS2",
             [
                 "expression",
-                "copy_number_absolute",
                 "copy_number_relative",
                 "mutation_pearson",
             ],
