@@ -1,8 +1,18 @@
 import React from "react";
 import { Button } from "react-bootstrap";
-import styles from "../styles/SliceTable.scss";
+import SearchBar from "./SearchBar";
+import styles from "../../styles/SliceTable.scss";
 
 interface Props {
+  tableRef: React.RefObject<{
+    goToNextMatch: () => void;
+    goToPreviousMatch: () => void;
+    readonly currentMatchIndex: number;
+    readonly totalMatches: number;
+    readonly searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    subscribeToSearch: (listener: () => void) => () => void;
+  }>;
   isLoading: boolean;
   hadError: boolean;
   onClickFilterButton: () => void;
@@ -12,6 +22,7 @@ interface Props {
 }
 
 function Controls({
+  tableRef,
   isLoading,
   hadError,
   onClickFilterButton,
@@ -21,8 +32,11 @@ function Controls({
 }: Props) {
   return (
     <div className={styles.Controls}>
-      <div>{renderCustomControls()}</div>
-      <div>
+      <div className={styles.customControls}>{renderCustomControls()}</div>
+      <div className={styles.search}>
+        <SearchBar tableRef={tableRef} />
+      </div>
+      <div className={styles.filterAndDownload}>
         <Button
           onClick={onClickFilterButton}
           bsSize="small"
