@@ -2,7 +2,7 @@ import React from "react";
 import styles from "../styles/CompoundPage.scss";
 import CompoundPageTabs from "./CompoundPageTabs";
 import CompoundPageHeader from "./CompoundPageHeader";
-import { useCompoundPageData } from "../hooks/useCompoundPageData";
+import { useCompoundPageSelectionOptions } from "../hooks/useCompoundPageSelectionOptions";
 import { enabledFeatures } from "@depmap/globals";
 
 interface Props {
@@ -31,48 +31,43 @@ const CompoundPage = ({
   showPredictabilityTab,
 }: Props) => {
   const {
-    isLoading,
+    isLoadingSelectionOptions,
     sensitivitySummary,
     initialSelectedDataset,
     doseCurveOptions,
     heatmapOptions,
     correlationAnalysisOptions,
     showEnrichedLineages,
-  } = useCompoundPageData(compoundId, compoundName);
+  } = useCompoundPageSelectionOptions(compoundId, compoundName);
 
   return (
     <div className={styles.CompoundPage}>
       <CompoundPageHeader compoundName={compoundName} aka={aka} />
-      {!isLoading && (
-        <CompoundPageTabs
-          isMobile={isMobile}
-          order={order}
-          compoundName={compoundName}
-          compoundId={compoundId}
-          compoundUnits={compoundUnits}
-          predictabilityCustomDownloadsLink={predictabilityCustomDownloadsLink}
-          predictabilityMethodologyLink={predictabilityMethodologyLink}
-          hasDatasets={hasDatasets}
-          showPredictabilityTab={showPredictabilityTab}
-          showDoseCurvesTab={
-            doseCurveOptions.length > 0 && enabledFeatures.new_dose_curves_tab
-          }
-          showHeatmapTab={
-            heatmapOptions.length > 0 && enabledFeatures.heatmap_tab
-          }
-          showCorrelationAnalysisTab={correlationAnalysisOptions.length > 0}
-          showEnrichedLineages={showEnrichedLineages}
-          showCorrelatedDependenciesTile={
-            enabledFeatures.compound_correlated_dependencies_tile
-          }
-          showRelatedCompoundTiles={enabledFeatures.related_compounds_tile}
-          doseCurveTabOptions={doseCurveOptions}
-          heatmapTabOptions={heatmapOptions}
-          correlationAnalysisOptions={correlationAnalysisOptions}
-          sensitivitySummary={sensitivitySummary}
-          initialSelectedDataset={initialSelectedDataset}
-        />
-      )}
+      <CompoundPageTabs
+        isLoadingSelectionOptions={isLoadingSelectionOptions}
+        isMobile={isMobile}
+        order={order}
+        compoundName={compoundName}
+        compoundId={compoundId}
+        compoundUnits={compoundUnits}
+        predictabilityCustomDownloadsLink={predictabilityCustomDownloadsLink}
+        predictabilityMethodologyLink={predictabilityMethodologyLink}
+        hasDatasets={hasDatasets}
+        showPredictabilityTab={showPredictabilityTab}
+        showDoseCurvesTab={enabledFeatures.new_dose_curves_tab}
+        showHeatmapTab={enabledFeatures.heatmap_tab}
+        showCorrelationAnalysisTab={enabledFeatures.correlation_analysis}
+        showEnrichedLineages={showEnrichedLineages}
+        showCorrelatedDependenciesTile={
+          enabledFeatures.compound_correlated_dependencies_tile
+        }
+        showRelatedCompoundTiles={enabledFeatures.related_compounds_tile}
+        doseCurveTabOptions={doseCurveOptions}
+        heatmapTabOptions={heatmapOptions}
+        correlationAnalysisOptions={correlationAnalysisOptions}
+        sensitivitySummary={sensitivitySummary}
+        initialSelectedDataset={initialSelectedDataset}
+      />
     </div>
   );
 };

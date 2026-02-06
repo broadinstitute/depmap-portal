@@ -4,7 +4,7 @@ import { getCachedAvailableCompoundDatasetIds } from "../utils";
 import { SensitivityTabSummary, DatasetOption } from "@depmap/types";
 import { getQueryParams } from "@depmap/utils";
 
-export const useCompoundPageData = (
+export const useCompoundPageSelectionOptions = (
   compoundId: string,
   compoundLabel: string
 ) => {
@@ -15,14 +15,14 @@ export const useCompoundPageData = (
     heatmapOptions: [] as any[],
     correlationAnalysisOptions: [] as any[],
     showEnrichedLineages: false,
-    isLoading: true,
+    isLoadingSelectionOptions: true,
     error: null as Error | null,
   });
 
   useEffect(() => {
     const fetchAllCompoundData = async () => {
       try {
-        setState((s) => ({ ...s, isLoading: true }));
+        setState((s) => ({ ...s, isLoadingSelectionOptions: true }));
         // Step 1: Get Breadbox IDs first
         const ids = await getCachedAvailableCompoundDatasetIds(compoundId);
 
@@ -40,13 +40,13 @@ export const useCompoundPageData = (
           doseCurveOptions: summary.heatmap_dose_curve_options,
           heatmapOptions: summary.heatmap_dose_curve_options,
           correlationAnalysisOptions: summary.correlation_analysis_options,
-          isLoading: false,
+          isLoadingSelectionOptions: false,
         }));
       } catch (err) {
         setState((s) => ({
           ...s,
-          isLoading: false,
-          error: Error("Failed to load compound data"),
+          isLoadingSelectionOptions: false,
+          error: Error("Failed to load compound selection options"),
         }));
       }
     };

@@ -75,13 +75,19 @@ class CompoundSummary(Resource):
                                 "id": dataset.id,
                                 "dataset": dataset.id,
                                 "entity": compound.entity_id,
+                                "priority": dataset.priority
+                                if dataset.priority is not None
+                                else 999,
                             }
                         )
 
                 if dataset_options:
+                    ordered_options = sorted(
+                        dataset_options, key=lambda x: x["priority"]
+                    )
                     sensitivity_data = {
                         "figure": {"name": compound.entity_id},
-                        "summary_options": dataset_options,
+                        "summary_options": ordered_options,
                         "show_auc_message": True,
                         "size_biom_enum_name": None,
                         "color": None,

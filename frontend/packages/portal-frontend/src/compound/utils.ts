@@ -169,14 +169,14 @@ export async function getCachedAvailableCompoundDatasetIds(
 ): Promise<string[]> {
   const datasets = await cached(breadboxAPI).getDatasets({
     feature_id: compoundId,
-    feature_type: "compound",
+    feature_type: "compound_v2",
   });
 
   const filteredDatasets = [...datasets].filter(
     (d) =>
       d.given_id !== null &&
       isMatrixDataset(d) &&
-      d.feature_type_name === "compound"
+      d.feature_type_name === "compound_v2"
   );
 
   if (filteredDatasets.length === 0) {

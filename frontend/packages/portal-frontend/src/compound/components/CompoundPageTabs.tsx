@@ -53,6 +53,7 @@ const CorrelationAnalysis = React.lazy(
 );
 
 interface Props {
+  isLoadingSelectionOptions: boolean;
   isMobile: boolean;
   order: any;
   compoundName: string;
@@ -76,6 +77,7 @@ interface Props {
 }
 
 const CompoundPageTabs = ({
+  isLoadingSelectionOptions,
   isMobile,
   order,
   compoundName,
@@ -125,7 +127,7 @@ const CompoundPageTabs = ({
         >
           <TabList className={styles.TabList}>
             <Tab id="overview">Overview</Tab>
-            {sensitivitySummary && <Tab id="dependency">Sensitivity</Tab>}
+            <Tab id="dependency">Sensitivity</Tab>
             {showDoseCurvesTab && <Tab id="dose-curves-new">Dose Curves</Tab>}
             {showHeatmapTab && <Tab id="heatmap">Heatmap</Tab>}
             {showPredictabilityTab && (
@@ -150,11 +152,15 @@ const CompoundPageTabs = ({
                 isMobile={isMobile}
               />
             </TabPanel>
-            {sensitivitySummary && initialSelectedDataset && (
-              <TabPanel className={styles.TabPanel}>
-                <React.Suspense fallback={<div>Loading...</div>}>
-                  {/* Using data from the hook here */}
-                  {initialSelectedDataset && (
+            <TabPanel className={styles.TabPanel}>
+              <React.Suspense fallback={<div>Loading...</div>}>
+                {!isLoadingSelectionOptions && !sensitivitySummary && (
+                  <div>No data sensitivity data found for {compoundName}</div>
+                )}
+                {/* Using data from the hook here */}
+                {!isLoadingSelectionOptions &&
+                  initialSelectedDataset &&
+                  sensitivitySummary && (
                     <EntitySummary
                       size_biom_enum_name={
                         sensitivitySummary.size_biom_enum_name
@@ -168,35 +174,55 @@ const CompoundPageTabs = ({
                       onListSelect={setSelectedCellLineList}
                     />
                   )}
-                </React.Suspense>
-              </TabPanel>
-            )}
+              </React.Suspense>
+            </TabPanel>
+
             {showDoseCurvesTab && (
               <TabPanel className={styles.TabPanel}>
-                <DoseCurvesTab
-                  datasetOptions={sortByNumberOrNull(
-                    doseCurveTabOptions,
-                    "auc_dataset_priority",
-                    "asc"
-                  )}
-                  doseUnits={compoundUnits}
-                  compoundName={compoundName}
-                  compoundId={compoundId}
-                />
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  {!isLoadingSelectionOptions &&
+                    doseCurveTabOptions.length === 0 && (
+                      <div>
+                        No data dose curves data found for {compoundName}
+                      </div>
+                    )}
+                  {!isLoadingSelectionOptions &&
+                    doseCurveTabOptions.length > 0 && (
+                      <DoseCurvesTab
+                        datasetOptions={sortByNumberOrNull(
+                          doseCurveTabOptions,
+                          "auc_dataset_priority",
+                          "asc"
+                        )}
+                        doseUnits={compoundUnits}
+                        compoundName={compoundName}
+                        compoundId={compoundId}
+                      />
+                    )}
+                </React.Suspense>
               </TabPanel>
             )}
             {showHeatmapTab && (
               <TabPanel className={styles.TabPanel}>
-                <HeatmapTab
-                  datasetOptions={sortByNumberOrNull(
-                    heatmapTabOptions,
-                    "auc_dataset_priority",
-                    "asc"
-                  )}
-                  doseUnits={compoundUnits}
-                  compoundName={compoundName}
-                  compoundId={compoundId}
-                />
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  {!isLoadingSelectionOptions &&
+                    heatmapTabOptions.length === 0 && (
+                      <div>No data heatmap data found for {compoundName}</div>
+                    )}
+                  {!isLoadingSelectionOptions &&
+                    heatmapTabOptions.length > 0 && (
+                      <HeatmapTab
+                        datasetOptions={sortByNumberOrNull(
+                          heatmapTabOptions,
+                          "auc_dataset_priority",
+                          "asc"
+                        )}
+                        doseUnits={compoundUnits}
+                        compoundName={compoundName}
+                        compoundId={compoundId}
+                      />
+                    )}
+                </React.Suspense>
               </TabPanel>
             )}
             {showPredictabilityTab && (
@@ -216,18 +242,27 @@ const CompoundPageTabs = ({
             )}
             {showCorrelationAnalysisTab && (
               <TabPanel className={styles.TabPanel}>
+                {!isLoadingSelectionOptions &&
+                  correlationAnalysisOptions.length === 0 && (
+                    <div>
+                      No data correlation analysis data found for {compoundName}
+                    </div>
+                  )}
                 <React.Suspense fallback={<div>Loading...</div>}>
-                  <CorrelationAnalysis
-                    compoundDatasetOptions={sortByNumberOrNull(
-                      correlationAnalysisOptions,
-                      "auc_dataset_priority",
-                      "asc"
+                  {!isLoadingSelectionOptions &&
+                    correlationAnalysisOptions.length > 0 && (
+                      <CorrelationAnalysis
+                        compoundDatasetOptions={sortByNumberOrNull(
+                          correlationAnalysisOptions,
+                          "auc_dataset_priority",
+                          "asc"
+                        )}
+                        geneDatasetOptions={[]}
+                        featureName={compoundId}
+                        featureId={compoundId}
+                        featureType={"compound"}
+                      />
                     )}
-                    geneDatasetOptions={[]}
-                    featureName={compoundId}
-                    featureId={compoundId}
-                    featureType={"compound"}
-                  />
                 </React.Suspense>
               </TabPanel>
             )}
