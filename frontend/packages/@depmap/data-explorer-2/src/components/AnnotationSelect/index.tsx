@@ -13,6 +13,8 @@ interface Props {
     identifier_type: "column" | "sample_id" | "feature_id"
   ) => void;
   onChangeAnnotationSlice: (identifier_type: string, label: string) => void;
+  disabledAnnotations?: Set<string>;
+  hiddenAnnotations?: Set<string>;
   isClearable?: boolean;
   className?: string;
   removeWrapperDiv?: boolean;
@@ -42,6 +44,8 @@ function AnnotationSelect({
   identifierDisplayLabel,
   onChangeSourceDataset,
   onChangeAnnotationSlice,
+  disabledAnnotations = undefined,
+  hiddenAnnotations = undefined,
   isClearable = false,
   className = undefined,
   removeWrapperDiv = false,
@@ -95,6 +99,8 @@ function AnnotationSelect({
             : identifier
         }
         onChange={onChangeAnnotationSlice}
+        disabledAnnotations={disabledAnnotations}
+        hiddenAnnotations={hiddenAnnotations}
         menuPortalTarget={menuPortalTarget}
         isClearable={isClearable}
       />
