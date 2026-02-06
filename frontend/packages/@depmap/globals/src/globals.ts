@@ -169,15 +169,9 @@ function polyfillProxy() {
     "saveNewContext",
     "editContext",
     "repairContent",
-    "initPredictiveTab",
-    "initDoseResponseTab",
     "initWideTable",
     "initEntitySummary",
     "initSublineagePlot",
-    "initCelfiePage",
-    "initEnrichmentTile",
-    "initHeatmapTile",
-    "initStructureAndDetailTile",
   ].forEach((prop) => {
     Object.defineProperty(proxy, prop, {
       get() {

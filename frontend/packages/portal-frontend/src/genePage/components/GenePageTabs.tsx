@@ -14,12 +14,12 @@ import { EntityType } from "src/entity/models/entities";
 import { getQueryParams } from "@depmap/utils";
 import { Option } from "src/common/models/utilities";
 import { ConnectivityValue } from "src/constellation/models/constellation";
-import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageOverview, { TileTypeEnum } from "./GenePageOverview";
 import GeneCharacterizationPanel from "./GeneCharacterizationPanel";
 import styles from "../styles/GenePage.scss";
 import { getCorrelationDatasetsForEntity } from "../utils";
 import { GeneCorrelationDatasetOption } from "src/correlationAnalysis/types";
+import { DatasetOption } from "@depmap/types";
 
 // Many of the gene page tiles make calls to a global `clickTab` function. Here
 // we're defining it to dispatch a custom "clickTab" event that is caught by
