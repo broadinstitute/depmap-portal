@@ -59,7 +59,6 @@ DATASET_NAME_TO_FEATURE_TYPE = {
     BiomarkerEnum.copy_number_relative.name: "Copy num.",
     BiomarkerEnum.crispr_confounders.name: "Confounders",
     BiomarkerEnum.rnai_confounders.name: "Confounders",
-    BiomarkerEnum.rep1m_confounders.name: "Confounders",
     BiomarkerEnum.proteomics.name: "Proteomics",
     BiomarkerEnum.sanger_proteomics.name: "Sanger Proteomics",
 }

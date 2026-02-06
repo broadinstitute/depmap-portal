@@ -1110,7 +1110,6 @@ def load_sample_data(
             BiomarkerEnum.metabolomics,
             BiomarkerEnum.crispr_confounders,
             BiomarkerEnum.rnai_confounders,
-            BiomarkerEnum.rep1m_confounders,
             BiomarkerEnum.oncref_confounders,
             BiomarkerEnum.rep_all_single_pt_confounders,
         ]

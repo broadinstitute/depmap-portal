@@ -165,13 +165,6 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.confounders,
         priority=2,
     ),
-    BiomarkerEnum.rep1m_confounders: DatasetLabel(
-        display_name="Rep1M confounders",
-        units="",
-        s3_json_name="rep1m-confounders",
-        data_type=DataTypeEnum.confounders,
-        priority=5,
-    ),
     BiomarkerEnum.oncref_confounders: DatasetLabel(
         display_name="PRISM OncRef confounders",
         units="",

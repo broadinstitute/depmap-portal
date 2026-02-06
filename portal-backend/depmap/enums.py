@@ -92,7 +92,6 @@ class BiomarkerEnum(DatasetEnum):
     oncref_confounders = "oncref_confounders"
     oncref_seq_confounders = "oncref_seq_confounders"
     rep_all_single_pt_confounders = "rep_all_single_pt_confounders"
-    rep1m_confounders = "rep1m_confounders"
     CRISPRGeneDependency = "CRISPRGeneDependency"
     OmicsAbsoluteCNGene = "OmicsAbsoluteCNGene"
     OmicsSignatures = "OmicsSignatures"

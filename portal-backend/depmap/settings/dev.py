@@ -106,7 +106,6 @@ additional_dev_metadata = {
     BiomarkerEnum.fusions: {"taiga_id": "placeholder-taiga-id.1", "transpose": True},
     BiomarkerEnum.ssgsea: {"taiga_id": "placeholder-taiga-id.1", "transpose": True},
     BiomarkerEnum.metabolomics: {"taiga_id": "placeholder-taiga-id.1"},
-    BiomarkerEnum.rep1m_confounders: {"taiga_id": "placeholder-taiga-id.1",},
     BiomarkerEnum.crispr_confounders: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.rnai_confounders: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.oncref_confounders: {"taiga_id": "placeholder-taiga-id.1"},
