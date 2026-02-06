@@ -38,7 +38,6 @@ def format_characterizations(gene_id, gene_symbol, biomarker_datasets):
 
     dataset_enums = [
         BiomarkerEnum.expression,
-        BiomarkerEnum.copy_number_absolute,
         BiomarkerEnum.copy_number_relative,
         TabularDataset.TabularEnum.mutation,
         TabularDataset.TabularEnum.fusion,
