@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { CustomList } from "@depmap/cell-line-selector";
 import {
   TabsWithHistory,
@@ -104,6 +104,46 @@ const CompoundPageTabs = ({
     setSelectedCellLineList,
   ] = useState<CustomList>();
 
+  const sortedOptions = useMemo(() => {
+    return {
+      doseCurves:
+        doseCurveTabOptions.length > 0
+          ? sortByNumberOrNull(
+              doseCurveTabOptions,
+              "auc_dataset_priority",
+              "asc"
+            )
+          : [],
+      heatmap:
+        heatmapTabOptions.length > 0
+          ? sortByNumberOrNull(heatmapTabOptions, "auc_dataset_priority", "asc")
+          : [],
+      correlation:
+        correlationAnalysisOptions.length > 0
+          ? sortByNumberOrNull(
+              correlationAnalysisOptions,
+              "auc_dataset_priority",
+              "asc"
+            )
+          : [],
+    };
+  }, [doseCurveTabOptions, heatmapTabOptions, correlationAnalysisOptions]);
+
+  // 2. Define a helper to handle the "Empty vs Loading vs Content" state
+  const renderTabContent = (
+    hasData: boolean,
+    isEmptyMessage: string,
+    children: React.ReactNode
+  ) => {
+    if (isLoadingSelectionOptions) {
+      return <div className={styles.TabLoadingPlaceholder}>Loading...</div>;
+    }
+    if (!hasData) {
+      return <div className={styles.TabEmptyState}>{isEmptyMessage}</div>;
+    }
+    return children;
+  };
+
   return (
     <div>
       {isMobile ? (
@@ -153,14 +193,11 @@ const CompoundPageTabs = ({
               />
             </TabPanel>
             <TabPanel className={styles.TabPanel}>
-              <React.Suspense fallback={<div>Loading...</div>}>
-                {!isLoadingSelectionOptions && !sensitivitySummary && (
-                  <div>No data sensitivity data found for {compoundName}</div>
-                )}
-                {/* Using data from the hook here */}
-                {!isLoadingSelectionOptions &&
-                  initialSelectedDataset &&
-                  sensitivitySummary && (
+              {renderTabContent(
+                !!(sensitivitySummary && initialSelectedDataset),
+                `No sensitivity data found for ${compoundName}`,
+                <React.Suspense fallback={<div>Downloading component...</div>}>
+                  {sensitivitySummary && initialSelectedDataset && (
                     <EntitySummary
                       size_biom_enum_name={
                         sensitivitySummary.size_biom_enum_name
@@ -174,96 +211,66 @@ const CompoundPageTabs = ({
                       onListSelect={setSelectedCellLineList}
                     />
                   )}
-              </React.Suspense>
+                </React.Suspense>
+              )}
             </TabPanel>
 
             {showDoseCurvesTab && (
               <TabPanel className={styles.TabPanel}>
-                <React.Suspense fallback={<div>Loading...</div>}>
-                  {!isLoadingSelectionOptions &&
-                    doseCurveTabOptions.length === 0 && (
-                      <div>
-                        No data dose curves data found for {compoundName}
-                      </div>
-                    )}
-                  {!isLoadingSelectionOptions &&
-                    doseCurveTabOptions.length > 0 && (
-                      <DoseCurvesTab
-                        datasetOptions={sortByNumberOrNull(
-                          doseCurveTabOptions,
-                          "auc_dataset_priority",
-                          "asc"
-                        )}
-                        doseUnits={compoundUnits}
-                        compoundName={compoundName}
-                        compoundId={compoundId}
-                      />
-                    )}
-                </React.Suspense>
+                {renderTabContent(
+                  sortedOptions.doseCurves.length > 0,
+                  `No dose curves data found for ${compoundName}`,
+                  <DoseCurvesTab
+                    datasetOptions={sortedOptions.doseCurves}
+                    doseUnits={compoundUnits}
+                    compoundName={compoundName}
+                    compoundId={compoundId}
+                  />
+                )}
               </TabPanel>
             )}
             {showHeatmapTab && (
               <TabPanel className={styles.TabPanel}>
-                <React.Suspense fallback={<div>Loading...</div>}>
-                  {!isLoadingSelectionOptions &&
-                    heatmapTabOptions.length === 0 && (
-                      <div>No data heatmap data found for {compoundName}</div>
-                    )}
-                  {!isLoadingSelectionOptions &&
-                    heatmapTabOptions.length > 0 && (
-                      <HeatmapTab
-                        datasetOptions={sortByNumberOrNull(
-                          heatmapTabOptions,
-                          "auc_dataset_priority",
-                          "asc"
-                        )}
-                        doseUnits={compoundUnits}
-                        compoundName={compoundName}
-                        compoundId={compoundId}
-                      />
-                    )}
-                </React.Suspense>
+                {renderTabContent(
+                  sortedOptions.heatmap.length > 0,
+                  `No heatmap data found for ${compoundName}`,
+                  <HeatmapTab
+                    datasetOptions={sortedOptions.heatmap}
+                    doseUnits={compoundUnits}
+                    compoundName={compoundName}
+                    compoundId={compoundId}
+                  />
+                )}
               </TabPanel>
             )}
             {showPredictabilityTab && (
               <TabPanel className={styles.TabPanel}>
-                <React.Suspense fallback={<div>loading...</div>}>
-                  <div id="predictive-tab-root">
-                    <PredictabilityTab
-                      entityIdOrLabel={compoundName} // weird that it takes compoundName twice, but this consistent with the old implementation
-                      entityLabel={compoundName}
-                      entityType={"compound" as EntityType}
-                      customDownloadsLink={predictabilityCustomDownloadsLink}
-                      methodologyUrl={predictabilityMethodologyLink}
-                    />
-                  </div>
+                <React.Suspense fallback={<div>Loading predictability...</div>}>
+                  <PredictabilityTab
+                    entityIdOrLabel={compoundName}
+                    entityLabel={compoundName}
+                    entityType={"compound" as EntityType}
+                    customDownloadsLink={predictabilityCustomDownloadsLink}
+                    methodologyUrl={predictabilityMethodologyLink}
+                  />
                 </React.Suspense>
               </TabPanel>
             )}
             {showCorrelationAnalysisTab && (
               <TabPanel className={styles.TabPanel}>
-                {!isLoadingSelectionOptions &&
-                  correlationAnalysisOptions.length === 0 && (
-                    <div>
-                      No data correlation analysis data found for {compoundName}
-                    </div>
-                  )}
-                <React.Suspense fallback={<div>Loading...</div>}>
-                  {!isLoadingSelectionOptions &&
-                    correlationAnalysisOptions.length > 0 && (
-                      <CorrelationAnalysis
-                        compoundDatasetOptions={sortByNumberOrNull(
-                          correlationAnalysisOptions,
-                          "auc_dataset_priority",
-                          "asc"
-                        )}
-                        geneDatasetOptions={[]}
-                        featureName={compoundId}
-                        featureId={compoundId}
-                        featureType={"compound"}
-                      />
-                    )}
-                </React.Suspense>
+                {renderTabContent(
+                  sortedOptions.correlation.length > 0,
+                  `No correlation data found for ${compoundName}`,
+                  <React.Suspense fallback={<div>Loading analysis...</div>}>
+                    <CorrelationAnalysis
+                      compoundDatasetOptions={sortedOptions.correlation}
+                      geneDatasetOptions={[]}
+                      featureName={compoundId}
+                      featureId={compoundId}
+                      featureType={"compound"}
+                    />
+                  </React.Suspense>
+                )}
               </TabPanel>
             )}
           </TabPanels>
