@@ -146,16 +146,14 @@ for an example.
 ### Recreating dev db
 
 `./flask recreate_dev_db` by default skips loading entirety
-of non-core portions of the portal (nonstandard, celligner, tda, and
-constellation). For constellation, sample data is loaded, while the
-others are completely skipped. :
+of non-core portions of the portal (nonstandard, celligner, and tda). :
 
     ./flask recreate_dev_db
 
 To load those, add their respective flags (`-n`,
-`-c`, `-t`, and `-d`). :
+`-c`, `-t`). :
 
-    ./flask recreate_dev_db -nctd
+    ./flask recreate_dev_db -nct
 
 ### Testing locally with non-dev data
 

@@ -1,7 +1,6 @@
 import * as cell_line from "./resources/cell_line";
 import * as celligner from "./resources/celligner";
 import * as compound from "./resources/compound";
-import * as constellation from "./resources/constellation";
 import * as context_explorer from "./resources/context_explorer";
 import * as data_page from "./resources/data_page";
 import * as download from "./resources/download";
@@ -16,7 +15,6 @@ export const legacyPortalAPI = {
   ...cell_line,
   ...celligner,
   ...compound,
-  ...constellation,
   ...context_explorer,
   ...data_page,
   ...download,
