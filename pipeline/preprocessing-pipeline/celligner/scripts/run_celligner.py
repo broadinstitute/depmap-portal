@@ -443,6 +443,7 @@ def process_depmap_ipts(expr_df, context_df, model_condition):
             "type",
             "FormulationID",
             "ModelID",
+            "HCMIID"
         ],
     ].drop_duplicates()
 
