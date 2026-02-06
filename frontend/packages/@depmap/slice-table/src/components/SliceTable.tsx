@@ -19,6 +19,30 @@ interface Props {
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
   enableRowSelection?: boolean;
   onChangeRowSelection?: (nextRowSelection: Record<string, boolean>) => void;
+  hideIdColumn?: boolean;
+  hideLabelColumn?: boolean;
+  customColumns?: {
+    header: () => React.ReactNode;
+    cell: ({ row }: { row: Record<"id", string> }) => React.ReactNode;
+  }[];
+  headerCellRenderer?: ({
+    label,
+    sliceQuery,
+    defaultElement,
+  }: {
+    label: string;
+    sliceQuery: SliceQuery;
+    defaultElement: React.ReactNode;
+  }) => React.ReactNode;
+  bodyCellRenderer?: ({
+    label,
+    sliceQuery,
+    getValue,
+  }: {
+    label: string;
+    sliceQuery: SliceQuery;
+    getValue: () => React.ReactNode;
+  }) => React.ReactNode;
   renderCustomControls?: () => React.ReactNode;
   renderCustomActions?: () => React.ReactNode;
   downloadFilename?: string;
@@ -40,6 +64,11 @@ function SliceTable({
   onChangeSlices = NOOP,
   enableRowSelection = false,
   onChangeRowSelection = NOOP,
+  hideIdColumn = false,
+  hideLabelColumn = false,
+  customColumns = undefined,
+  headerCellRenderer = undefined,
+  bodyCellRenderer = undefined,
   renderCustomControls = () => null,
   renderCustomActions = () => null,
   downloadFilename = "",
@@ -66,11 +95,17 @@ function SliceTable({
     []
   );
 
-  // Currently unused.
   const tableRef = useRef<{
     resetColumnResizing: () => void;
     manuallyResizedColumns: Set<string>;
     resetSort: () => void;
+    goToNextMatch: () => void;
+    goToPreviousMatch: () => void;
+    totalMatches: number;
+    currentMatchIndex: number;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    subscribeToSearch: any;
   }>(null);
 
   const {
@@ -90,6 +125,9 @@ function SliceTable({
     initialSlices,
     viewOnlySlices,
     enableRowSelection,
+    customColumns,
+    headerCellRenderer,
+    bodyCellRenderer,
     initialRowSelection,
     onChangeSlices,
     downloadFilename,
@@ -110,6 +148,7 @@ function SliceTable({
   return (
     <div className={styles.SliceTable}>
       <Controls
+        tableRef={tableRef}
         isLoading={loading}
         hadError={Boolean(error)}
         onClickFilterButton={handleClickFilterButton}
@@ -140,7 +179,11 @@ function SliceTable({
         enableRowSelection={enableRowSelection}
         enableMultiRowSelection
         enableStickyFirstColumn
-        columnVisibility={{ label: shouldShowLabelColumn }}
+        columnVisibility={{
+          id: !hideIdColumn,
+          label: shouldShowLabelColumn && !hideLabelColumn,
+        }}
+        enableSearch
         defaultSort={(a, b) => {
           const aId = getRowId(a);
           const bId = getRowId(b);
