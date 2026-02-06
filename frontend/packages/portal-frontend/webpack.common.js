@@ -25,6 +25,7 @@ module.exports = {
     secretDataViewer: "./src/apps/secretDataViewer.tsx",
     peddepPage: "./src/apps/peddepPage.tsx",
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
+    anchorScreenDashboard_v2: "./src/apps/anchorScreenDashboard_v2.tsx",
     doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
     geneTea: "./src/apps/geneTea.tsx",
     custom_analyses: "./src/apps/custom_analyses.tsx",
