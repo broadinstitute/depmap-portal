@@ -224,9 +224,11 @@ const GenePageTabs = ({
             {showPredictabilityTab && (
               <Tab id="predictability">Predictability</Tab>
             )}
-            {enabledFeatures.gene_page_correlation_analysis && (
-              <Tab id="correlation_analysis">Correlation Analysis</Tab>
-            )}
+            {enabledFeatures.gene_page_correlation_analysis &&
+              !isLoadingGeneOptions &&
+              geneCorrelationAnalysisOptions.length > 0 && (
+                <Tab id="correlation_analysis">Correlation Analysis</Tab>
+              )}
           </TabList>
 
           <TabPanels className={styles.TabPanels}>
@@ -336,7 +338,8 @@ const GenePageTabs = ({
               </TabPanel>
             )}
             {enabledFeatures.gene_page_correlation_analysis &&
-              !isLoadingGeneOptions && (
+              !isLoadingGeneOptions &&
+              geneCorrelationAnalysisOptions.length > 0 && (
                 <TabPanel className={styles.TabPanel}>
                   <React.Suspense fallback={<div>Loading...</div>}>
                     <CorrelationAnalysis
