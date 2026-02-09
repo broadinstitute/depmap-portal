@@ -41,7 +41,8 @@ endblock content_class %} {% block content %}
     {% if summary.summary_options %}"summaryOptions": {{ summary.summary_options|tojson|safe }},{% endif %}
     "showMutationsTile": {{ show_mutations_tile|tojson|safe }},
     "showOmicsExpressionTile": {{ show_omics_expression_tile|tojson|safe}},
-    "showTargetingCompoundsTile": {{ show_targeting_compounds_tile|tojson|safe }}
+    "showTargetingCompoundsTile": {{ show_targeting_compounds_tile|tojson|safe }},
+    "showEnrichmentTile": {{ show_enrichment_tile|tojson|safe }}
   }
 </script>
 <script type="text/javascript">

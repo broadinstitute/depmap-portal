@@ -41,6 +41,7 @@ interface Props {
   showMutationsTile: boolean;
   showOmicsExpressionTile: boolean;
   showTargetingCompoundsTile: boolean;
+  showEnrichmentTile: boolean;
 }
 
 const GenePage = ({
@@ -77,6 +78,7 @@ const GenePage = ({
   showMutationsTile,
   showOmicsExpressionTile,
   showTargetingCompoundsTile,
+  showEnrichmentTile,
 }: Props) => {
   return (
     <div className={styles.GenePage}>
@@ -118,6 +120,7 @@ const GenePage = ({
         showMutationsTile={showMutationsTile}
         showOmicsExpressionTile={showOmicsExpressionTile}
         showTargetingCompoundsTile={showTargetingCompoundsTile}
+        showEnrichmentTile={showEnrichmentTile}
       />
     </div>
   );
