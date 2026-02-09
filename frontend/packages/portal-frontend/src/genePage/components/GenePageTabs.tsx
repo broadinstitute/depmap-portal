@@ -97,6 +97,7 @@ interface Props {
   showMutationsTile: boolean;
   showOmicsExpressionTile: boolean;
   showTargetingCompoundsTile: boolean;
+  showEnrichmentTile: boolean;
 }
 
 const GenePageTabs = ({
@@ -129,6 +130,7 @@ const GenePageTabs = ({
   showMutationsTile,
   showOmicsExpressionTile,
   showTargetingCompoundsTile,
+  showEnrichmentTile,
 }: Props) => {
   const [
     selectedCellLineList,
@@ -196,6 +198,7 @@ const GenePageTabs = ({
           showMutationsTile={showMutationsTile}
           showOmicsExpressionTile={showOmicsExpressionTile}
           showTargetingCompoundsTile={showTargetingCompoundsTile}
+          showEnrichmentTile={showEnrichmentTile}
         />
       ) : (
         <TabsWithHistory
@@ -241,6 +244,7 @@ const GenePageTabs = ({
                 showMutationsTile={showMutationsTile}
                 showOmicsExpressionTile={showOmicsExpressionTile}
                 showTargetingCompoundsTile={showTargetingCompoundsTile}
+                showEnrichmentTile={showEnrichmentTile}
               />
             </TabPanel>
             {showDependencyTab && (

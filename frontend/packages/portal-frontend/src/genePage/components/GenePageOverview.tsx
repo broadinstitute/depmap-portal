@@ -15,6 +15,7 @@ interface Props {
   showMutationsTile: boolean;
   showOmicsExpressionTile: boolean;
   showTargetingCompoundsTile: boolean;
+  showEnrichmentTile: boolean;
 }
 
 export enum TileTypeEnum {
@@ -45,6 +46,7 @@ const GenePageOverview = ({
   showMutationsTile,
   showOmicsExpressionTile,
   showTargetingCompoundsTile,
+  showEnrichmentTile,
 }: Props) => {
   // We have an array of arrays. Each child array represents the tiles of a single column. Each tile is a tuple,
   // with the name of the tile (i.e. essentiality) at index 0
@@ -66,6 +68,9 @@ const GenePageOverview = ({
 
       case TileTypeEnum.Predictability:
         return showPredictabilityTab;
+
+      case TileTypeEnum.Selectivity:
+        return showEnrichmentTile;
 
       case TileTypeEnum.Mutations:
         return showMutationsTile && showCharacterizationTab;

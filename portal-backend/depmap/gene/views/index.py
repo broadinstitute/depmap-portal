@@ -2,6 +2,7 @@ import os
 import tempfile
 import zipfile
 from typing import List
+from depmap.context_explorer.models import ContextExplorerDatasets
 from depmap.enums import DataTypeEnum
 import pandas as pd
 import json
@@ -40,6 +41,7 @@ from depmap.partials.data_table.factories import (
     get_mutation_by_gene_table,
     get_fusion_by_gene_table,
 )
+from depmap import data_access
 
 blueprint = Blueprint("gene", __name__, url_prefix="/gene", static_folder="../static")
 
@@ -151,6 +153,12 @@ def _get_gene_page_template_parameters(gene_symbol):
     targeting_compounds = find_compounds_targeting_gene(gene_symbol)
     show_targeting_compounds_tile = len(targeting_compounds) > 0
 
+    show_enrichment_tile = data_access.dataset_exists(
+        ContextExplorerDatasets.Chronos_Combined.name
+    ) and data_access.valid_row(
+        ContextExplorerDatasets.Chronos_Combined.name, gene.label,
+    )
+
     template_parameters = dict(
         gene_name=gene_symbol,
         title=gene_symbol,
@@ -180,6 +188,7 @@ def _get_gene_page_template_parameters(gene_symbol):
         show_mutations_tile=show_mutations_tile,
         show_omics_expression_tile=show_omics_expression_tile,
         show_targeting_compounds_tile=show_targeting_compounds_tile,
+        show_enrichment_tile=show_enrichment_tile,
     )
     return template_parameters
 
