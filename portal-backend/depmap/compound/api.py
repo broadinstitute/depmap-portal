@@ -54,13 +54,29 @@ class PrioritizedDataset(Resource):
 
 @namespace.route("/compound_summary")
 class CompoundSummary(Resource):
+    """
+    Endpoint for Compound Page components.
+    
+    GOAL: Consolidate data-loading for React tabs (Sensitivity, Heatmap, DRC, 
+    and Correlation) into a single high-performance request.
+    
+    - view_compound (index.py): Returns the initial HTML template and high-level 
+      static metadata (IDs, names, aliases) via Jinja2.
+    - /compound_summary (api.py): Returns JSON dataset options, priority-sorted 
+      configs, and shared parameters used by multiple React tiles/tabs.
+    
+    By centralizing 'options' here, we ensure consistent dataset priority across 
+    the UI and reduce the network waterfall on page load.
+    """
+
     def get(self):
         compound_id = request.args.get("compound_id")
         compound_label = request.args.get("compound_label")
         args: Any = request.args
         compound_dataset_ids = args.getlist("compound_dataset_ids")
 
-        # 1. Fetch Sensitivity Summary Data
+        # 1. Fetch Sensitivity Tab Data: Sorted by priority to ensure
+        # the 'Best' dataset is selected by default in the dropdown.
         sensitivity_data = None
         if compound_dataset_ids:
             compound = Compound.get_by_compound_id(compound_id=compound_id)
@@ -85,6 +101,9 @@ class CompoundSummary(Resource):
                     ordered_options = sorted(
                         dataset_options, key=lambda x: x["priority"]
                     )
+                    # sensitivity data is the data required to load the "Sensitivity" React tab. The Sensitivity tab
+                    # makes use of a React component called EntitySummary (due to it's reuse in multiple differently named
+                    # locations in the UI (i.e. the Perturbation Effects tab and the Characterization tab on the Gene page)).
                     sensitivity_data = {
                         "figure": {"name": compound.entity_id},
                         "summary_options": ordered_options,
@@ -93,13 +112,15 @@ class CompoundSummary(Resource):
                         "color": None,
                     }
 
-        # 2. Fetch Heatmap and Dose Curve Options
+        # 2. Fetch Heatmap and Dose Curve shared Options: We consolidate them here so the frontend knows which tabs to show/hide
+        # without making multiple separate HEAD or GET requests.
         drc_options = get_heatmap_dose_curves_tab_drc_options(
             compound_label=compound_label, compound_id=compound_id
         )
         serializable_drc = [dataclasses.asdict(opt) for opt in drc_options]
 
-        # 3. Fetch Correlation Analysis Options
+        # 3. Fetch Correlation Analysis Options: Nearly identical to the Heatmap and Dose Curve get_heatmap_dose_curves_tab_drc_options logic,
+        # but for correlations, we do not care about the replicate datasets.
         corr_options = get_corr_analysis_options(compound_label=compound_label)
         serializable_corr = [dataclasses.asdict(opt) for opt in corr_options]
 

@@ -225,7 +225,7 @@ class FeatureFlags:
     def compound_correlated_dependencies_tile(self):
         return self.is_prerelease_env()
 
-    # Not showing in 25Q4: This tile appears to have some incorrect behavior in how
+    # Not showing as of 25Q4: This tile appears to have some incorrect behavior in how
     # it chooses which compounds are "related". Disabling for now.
     @property
     def related_compounds_tile(self):

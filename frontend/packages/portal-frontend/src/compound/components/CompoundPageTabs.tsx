@@ -27,7 +27,7 @@ window.clickTab = (tabId: string) => {
   );
 };
 
-// For #dependency (titled "Perturbation Effects")
+// (tab titled "Sensitivity")
 const EntitySummary = React.lazy(
   () =>
     import(
