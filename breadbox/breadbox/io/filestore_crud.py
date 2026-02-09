@@ -12,6 +12,7 @@ from .hdf5_utils import (
     read_hdf5_file,
 )
 from .hdf5_value_mapping import get_decoder_function
+from .hdf5_utils import write_hdf5_file, read_hdf5_file, get_hdf5_file_matrix_size
 from breadbox.schemas.custom_http_exception import (
     SampleNotFoundError,
     FeatureNotFoundError,
@@ -80,6 +81,54 @@ def get_slice(
     return value_mapping(df)
 
 
+MAX_MEMORY_PER_CHUNK = 1024 * 1024 * 300  # 50 MB
+# MAX_MEMORY_PER_CHUNK = 1024 * 1024 * 50  # 50 MB
+
+
+def _chunk(values, per_chunk_size):
+    for i in range(0, len(values), per_chunk_size):
+        yield values[i : i + per_chunk_size]
+
+
+import numpy as np
+import logging
+
+log = logging.getLogger(__name__)
+import time
+
+
+def read_chunked_feature_data(
+    dataset: MatrixDataset, filestore_location: str, max_columns: Optional[int] = None
+):
+    """
+    Returns a generator which yields subsets of the dataset's features until all column in the datase has been returned.
+    This method exists for situations where we want to process the data from an
+    entire matrix, but loading the entire matrix upfront might consume too much memory. Instead it reads out a chunk
+    of columns at a time and yields the chunk.
+    """
+
+    hdf5_path = get_file_location(dataset, filestore_location)
+    shape = get_hdf5_file_matrix_size(hdf5_path)
+    time_spent_reading = 0.0
+
+    # approx bytes per column for 8 byte doubles
+    column_size_in_bytes = shape[0] * 8
+    columns_per_chunk = max(1, MAX_MEMORY_PER_CHUNK // column_size_in_bytes)
+    if max_columns is not None:
+        columns_per_chunk = min(columns_per_chunk, max_columns)
+
+    for feature_indexes in _chunk(np.arange(shape[1]), columns_per_chunk):
+        start = time.time()
+        log.warning("starting read")
+        df = read_hdf5_file(hdf5_path, feature_indexes=feature_indexes,)
+        log.warning("completed read")
+        time_spent_reading += time.time() - start
+
+        df = get_df_by_value_type(df, dataset.value_type, dataset.allowed_values)
+        yield df
+    log.warning(f"{time_spent_reading} seconds spent reading")
+
+
 def get_feature_slice(
     dataset: MatrixDataset, feature_indexes: List[int], filestore_location: str
 ) -> pd.DataFrame:
@@ -121,6 +170,25 @@ def get_sample_slice(
 
     return value_mapping(df)
 
+
+def get_df_by_value_type(
+    df: pd.DataFrame,
+    value_type: Optional[ValueType],
+    dataset_allowed_values: Optional[Any],
+):
+    if value_type == ValueType.categorical:
+        assert dataset_allowed_values
+        dataset_allowed_values.append(None)
+        # Convert numerical values back to origincal categorical value
+        df = df.astype(int)
+        assert isinstance(df, pd.DataFrame)
+        df = df.applymap(lambda x: dataset_allowed_values[x])
+    elif value_type == ValueType.list_strings:
+        # NOTE: String data in HDF5 datasets is read as bytes by default
+        # len of byte encoded empty string should be 0
+        assert isinstance(df, pd.DataFrame)
+        df = df.applymap(lambda x: json.loads(x) if len(x) != 0 else None)
+    return df
 
 def delete_data_files(dataset_id: str, filestore_location: str):
     base_path = os.path.join(filestore_location, dataset_id)
