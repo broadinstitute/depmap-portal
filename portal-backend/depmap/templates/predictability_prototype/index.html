@@ -1,0 +1,19 @@
+{% extends "full_page.html" %} {% block page_title %} Predictability Prototype |
+DepMap Portal {% endblock %} {% block content_class %}{% endblock %} {% block
+css %} {% assets filters="libsass",
+output="public/css/predictability_prototype/predictability_prototype.css",
+"css/predictability_prototype/predictability_prototype.scss" %}
+<link rel="stylesheet" href="{{ ASSET_URL }}" />
+{% endassets %} {% endblock %} {% block meta_description %} Predictability
+Prototype {% endblock %} {% block content %}
+<div class="full-screen-div">
+  {% include "nav_footer/nav.html" %}
+  <div id="react-predictability-prototype"></div>
+</div>
+{% endblock %} {% block js %}
+<script
+  id="react-predictability-prototype-data"
+  type="application/json"
+></script>
+<script src="{{ webpack_url('predictabilityPrototype.js') }}"></script>
+{% endblock %}

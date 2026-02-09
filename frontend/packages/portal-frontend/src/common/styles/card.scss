@@ -4,6 +4,37 @@
   width: 100%;
 }
 
+.CardRowContainer {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.CardRow {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+
+.CardRowItem {
+  width: 550px;
+
+  @media (max-width: 1100px) {
+    width: 850px;
+  }
+
+  @media (max-width: 855px) {
+    width: 550px;
+  }
+
+  
+}
+
+.CardRowItem:empty {
+  display: none;
+}
+
+
 .CardColumn {
   display: flex;
   flex-direction: column;
@@ -28,6 +59,7 @@
   .CardColumn {
     flex: 50%;
   }
+
 }
 
 @media (min-width: 1200px) {
