@@ -1,0 +1,5 @@
+# This file exists in the depmap-deploy repo which contains the release label and taiga id
+# TAIGA_PREPROCESSOR_INCLUDE "external.conseq"
+
+## Shared content for external release
+# TAIGA_PREPROCESSOR_INCLUDE "release_inputs_common.template"

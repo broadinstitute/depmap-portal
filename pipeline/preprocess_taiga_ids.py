@@ -51,6 +51,13 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             line_suffix = m.group(3)
             line = line_prefix + repr(json.loads(template.format(**vars))) + line_suffix
 
+        m = re.match("(.*)PREPROCESS_FORMAT_STR\\(([^ ,]+)\\)(.*)", line, re.DOTALL)
+        if m is not None:
+            line_prefix = m.group(1)
+            template = m.group(2)
+            line_suffix = m.group(3)
+            line = line_prefix + repr(json.loads(template.format(**vars))) + line_suffix
+
         m = re.match("(.*)PREPROCESS_TAIGA_ID\\(([^ ,]+)\\)(.*)", line, re.DOTALL)
         if m is not None:
             line_prefix = m.group(1)

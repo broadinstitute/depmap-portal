@@ -104,7 +104,7 @@ const makeGetJson = (urlPrefix: string) => <T>(
 ): Promise<T> => {
   const getJson = () => {
     let fullUrl = `${urlPrefix}${url}`;
-
+    
     if (
       queryParameters &&
       Object.values(queryParameters).some((val) => val !== undefined)

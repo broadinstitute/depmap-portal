@@ -1,0 +1,92 @@
+import React, { useState } from "react";
+import LineChart from "src/plot/components/LineChart";
+import PlotSpinner from "src/plot/components/PlotSpinner";
+import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
+import styles from "src/predictabilityPrototype/styles/PredictabilityPrototype.scss";
+import { SCREEN_TYPE_COLORS } from "../models/types";
+import { AggScoresData } from "@depmap/types";
+
+export interface AggScoresTileProps {
+  plotTitle: string;
+  crisprData: AggScoresData | null;
+  rnaiData: AggScoresData | null;
+}
+
+const AggScoresTile = ({
+  plotTitle,
+  crisprData,
+  rnaiData,
+}: AggScoresTileProps) => {
+  const [
+    aggScoresPlotElement,
+    setAggScoresPlotElement,
+  ] = useState<ExtendedPlotType | null>(null);
+
+  console.log(crisprData);
+  return (
+    <article className="card_wrapper stacked-boxplot-tile">
+      <div className="card_border container_fluid" style={{ height: "560px" }}>
+        <h2 style={{ marginLeft: "10px" }}>
+          Aggregate Scores Across All Models
+        </h2>
+        <p
+          style={{
+            marginLeft: "10px",
+            marginRight: "10px",
+            marginBottom: "15px",
+          }}
+        >
+          The features displayed on mouseover have the highest feature
+          importance of all new features added at the selected step.
+        </p>
+        <div className="card_padding stacked-boxplot-graphs-padding">
+          <div className={styles.PredictabilityTab}>
+            {!crisprData && !rnaiData && !aggScoresPlotElement && (
+              <PlotSpinner height="100%" />
+            )}
+            {crisprData && rnaiData && (
+              <LineChart
+                title={plotTitle}
+                yAxisTitle={"Model Cumulative Accuracy"}
+                xLabels={[
+                  crisprData?.accuracies.name,
+                  rnaiData?.accuracies.name,
+                ]}
+                yValues={[
+                  crisprData?.accuracies.accuracy,
+                  rnaiData?.accuracies.accuracy,
+                ]}
+                text={[
+                  crisprData.accuracies.name.map(
+                    (modelName: string) =>
+                      crisprData.accuracies.feature_highest_importance[
+                        modelName
+                      ]?.join("<br>") || "None above .1 importance"
+                  ),
+                  rnaiData.accuracies.name.map(
+                    (modelName: string) =>
+                      rnaiData.accuracies.feature_highest_importance[
+                        modelName
+                      ]?.join("<br>") || "None above .1 importance"
+                  ),
+                ]}
+                lineColors={[
+                  SCREEN_TYPE_COLORS.get("crispr")!,
+                  SCREEN_TYPE_COLORS.get("rnai")!,
+                ]}
+                traceNames={["CRISPR", "RNAi"]}
+                onLoad={(element: ExtendedPlotType | null) => {
+                  if (element) {
+                    setAggScoresPlotElement(element);
+                  }
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+};
+
+export default AggScoresTile;

@@ -3,7 +3,7 @@ import { encodeParams } from "@depmap/utils";
 import React, { useEffect, useRef } from "react";
 import styles from "src/dataPage/styles/DataPage.scss";
 import { Tooltip } from "@depmap/common-components";
-import { CollapsiblePanel } from "./CollapsiblePanel";
+import { CollapsiblePanel } from "../../common/components/CollapsiblePanel";
 import { DownloadGlyph, DownloadLink } from "@depmap/downloads";
 import { enabledFeatures } from "@depmap/globals";
 import { VersionBadge } from "./VersionBadge";

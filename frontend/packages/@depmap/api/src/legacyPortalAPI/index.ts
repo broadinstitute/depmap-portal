@@ -11,6 +11,7 @@ import * as experimental_genetea from "./resources/experimental_genetea";
 import * as interactive from "./resources/interactive";
 import * as tda from "./resources/tda";
 import * as misc from "./resources/misc";
+import * as predictability_prototype from "./resources/predictability_prototype";
 
 export const legacyPortalAPI = {
   ...cell_line,
@@ -26,6 +27,7 @@ export const legacyPortalAPI = {
   ...tda,
   ...misc,
   ...experimental_genetea,
+  ...predictability_prototype,
 };
 
 type Api = typeof legacyPortalAPI;

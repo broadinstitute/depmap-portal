@@ -25,6 +25,17 @@ export async function fetchAssociations(
   }
 
   return result;
+
+interface ComputeAssociationsParams {
+  dataset_id: string;
+  slice_query: SliceQuery;
+}
+
+export function computeAssociations(params: ComputeAssociationsParams) {
+  return postJson<{ label: string[]; given_id: string[]; cor: number[] }>(
+    "/temp/associations/compute",
+    params
+  );
 }
 
 export async function evaluateContext(
