@@ -87,6 +87,7 @@ def _get_gene_page_template_parameters(gene_symbol):
         abort(404)
     # Figure out entity_id
     entity_id = gene.entity_id
+
     # Figure out membership in different datasets
     dependency_datasets = dependency_datasets_with_gene(entity_id)
     # TODO: Gene confidence is probably something we can delete...
@@ -137,6 +138,7 @@ def _get_gene_page_template_parameters(gene_symbol):
     has_celfie = (
         current_app.config["ENABLED_FEATURES"].celfie and crispr_dataset is not None
     )
+    celfie = None
     if has_celfie:
         celfie = format_celfie(gene.symbol, summary["summary_options"])
 
@@ -153,43 +155,44 @@ def _get_gene_page_template_parameters(gene_symbol):
     targeting_compounds = find_compounds_targeting_gene(gene_symbol)
     show_targeting_compounds_tile = len(targeting_compounds) > 0
 
+    show_enrichment_tile = False
     show_enrichment_tile = data_access.dataset_exists(
         ContextExplorerDatasets.Chronos_Combined.name
     ) and data_access.valid_row(
-        ContextExplorerDatasets.Chronos_Combined.name, gene.label,
+        ContextExplorerDatasets.Chronos_Combined.name, gene.label
     )
 
-    template_parameters = dict(
-        gene_name=gene_symbol,
-        title=gene_symbol,
-        entity_id=entity_id,
-        has_datasets=has_datasets,
-        summary=summary,
-        has_confidence=has_confidence,
-        characterizations=characterizations,
-        has_predictability=has_predictability,
-        predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
-        predictability_methodology_link=get_signed_url(
+    template_parameters = {
+        "gene_name": gene_symbol,
+        "title": gene_symbol,
+        "entity_id": entity_id,
+        "has_datasets": has_datasets,
+        "summary": summary,
+        "has_confidence": has_confidence,
+        "characterizations": characterizations,
+        "has_predictability": has_predictability,
+        "predictability_custom_downloads_link": get_predictability_input_files_downloads_link(),
+        "predictability_methodology_link": get_signed_url(
             "shared-portal-files", "Tools/Predictability_methodology.pdf"
         ),
-        about={
+        "about": {
             "entrez_id": gene.entrez_id,
             "symbol": gene.symbol,
             "full_name": gene.name,
             "aka": ", ".join([alias.alias for alias in gene.entity_alias.all()]),
-            "ensembl_id": gene.ensembl_id,  # lazy to rename, this isn't just entrez
+            "ensembl_id": gene.ensembl_id,
             "hngc_id": gene.hgnc_id,
         },
-        pubmed_search_terms=[gene_symbol, gene_symbol + " AND cancer"],
-        order=get_order(has_predictability),
-        has_celfie=has_celfie,
-        celfie=celfie if has_celfie else None,
-        correlations=correlations,
-        show_mutations_tile=show_mutations_tile,
-        show_omics_expression_tile=show_omics_expression_tile,
-        show_targeting_compounds_tile=show_targeting_compounds_tile,
-        show_enrichment_tile=show_enrichment_tile,
-    )
+        "pubmed_search_terms": [gene_symbol, gene_symbol + " AND cancer"],
+        "order": get_order(has_predictability),
+        "has_celfie": has_celfie,
+        "celfie": celfie,  # Works because celfie was initialized to None above
+        "correlations": correlations,
+        "show_mutations_tile": show_mutations_tile,
+        "show_omics_expression_tile": show_omics_expression_tile,
+        "show_targeting_compounds_tile": show_targeting_compounds_tile,
+        "show_enrichment_tile": show_enrichment_tile,
+    }
     return template_parameters
 
 
