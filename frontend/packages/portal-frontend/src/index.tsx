@@ -8,14 +8,16 @@ import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
 
-import { DatasetOption } from "src/entity/components/EntitySummary";
-
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
 import { Option } from "src/common/models/utilities";
 
-import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  DatasetOption,
+} from "@depmap/types";
 
 import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
@@ -25,7 +27,6 @@ import {
   isBreadboxOnlyMode,
 } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
-import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
@@ -61,14 +62,6 @@ const RelatedCompoundsTile = React.lazy(
     import(
       /* webpackChunkName: "RelatedCompoundsTile" */
       "./compound/tiles/RelatedCompoundsTile/RelatedCompoundsTile"
-    )
-);
-
-const DoseResponseTab = React.lazy(
-  () =>
-    import(
-      /* webpackChunkName: "DoseResponseTab" */
-      "src/compound/components/DoseResponseTab"
     )
 );
 
@@ -459,43 +452,6 @@ export function initPredictiveTab(
         entityType={entityType}
         customDownloadsLink={customDownloadsLink}
         methodologyUrl={methodologyUrl}
-      />
-    </React.Suspense>,
-    document.getElementById(elementId) as HTMLElement
-  );
-}
-
-export function initDoseResponseTab(
-  elementId: string,
-  datasetOptions: Array<any>,
-  units: string
-) {
-  renderWithErrorBoundary(
-    <React.Suspense fallback={<div>Loading...</div>}>
-      <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
-    </React.Suspense>,
-    document.getElementById(elementId) as HTMLElement
-  );
-}
-
-export function initCorrelationAnalysisTab(
-  elementId: string,
-  featureName: string,
-  featureId: string,
-  datasetOptions: Array<any>
-) {
-  renderWithErrorBoundary(
-    <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelationAnalysis
-        compoundDatasetOptions={sortByNumberOrNull(
-          datasetOptions,
-          "auc_dataset_priority",
-          "asc"
-        )}
-        geneDatasetOptions={[]}
-        featureName={featureName}
-        featureId={featureId}
-        featureType={"compound"}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

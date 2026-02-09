@@ -16,6 +16,7 @@ module.exports = {
     groupsManager: "./src/apps/groupsManager.tsx",
     tdaSummary: "./src/apps/tdaSummary.tsx",
     genePage: "./src/apps/genePage.tsx",
+    compoundPage: "./src/apps/compoundPage.tsx",
     compoundDashboard: "./src/apps/compoundDashboard.tsx",
     tableTester: "./src/apps/tableTester.tsx",
     dataExplorer2: "./src/apps/dataExplorer2.tsx",

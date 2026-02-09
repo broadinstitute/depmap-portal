@@ -1,11 +1,11 @@
 import React from "react";
 import { Option } from "src/common/models/utilities";
 import { ConnectivityValue } from "src/constellation/models/constellation";
-import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageHeader from "./GenePageHeader";
 import GenePageTabs from "./GenePageTabs";
 import styles from "../styles/GenePage.scss";
 import { TileTypeEnum } from "./GenePageOverview";
+import { DatasetOption } from "@depmap/types";
 
 interface Props {
   fullName: string;
