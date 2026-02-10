@@ -285,9 +285,3 @@ def get_predictability_files():
                 )  # this overwrites the destination if exists bc should be atomic on unix systems
 
     return send_file(write_path, mimetype="application/zip", as_attachment=True)
-
-
-@blueprint.route("/<path:compound_name>/genomic_associations")
-def view_genomic_associations(compound_name: str):
-    # This is broken and being replaced
-    return render_template("entities/celfie_page.html", celfie=None)

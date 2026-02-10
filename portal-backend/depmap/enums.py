@@ -128,7 +128,6 @@ class GeneTileEnum(enum.Enum):
     mutations = "mutations"
     gene_score_confidence = "gene_score_confidence"
     description = "description"
-    celfie = "celfie"
     targeting_compounds = "targeting_compounds"
 
 
@@ -138,7 +137,6 @@ class CompoundTileEnum(enum.Enum):
     description = "description"
     sensitivity = "sensitivity"
     availability = "availability"
-    celfie = "celfie"
     heatmap = "heatmap"
     correlated_dependencies = "correlated_dependencies"
     related_compounds = "related_compounds"

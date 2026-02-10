@@ -12,7 +12,6 @@ from depmap.data_access.models import MatrixDataset
 from depmap.entity.views.executive import format_generic_distribution_plot
 from depmap.utilities import color_palette
 from depmap.enums import DependencyEnum, CompoundTileEnum
-from depmap.correlation.utils import get_all_correlations
 
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.compound.models import Compound, CompoundExperiment
@@ -130,7 +129,6 @@ def get_order(
 
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
-        CompoundTileEnum.celfie.value: tile_large,
     }
     if show_compound_correlated_dependencies_tile:
         anywhere_cards[
@@ -175,23 +173,6 @@ def get_order(
 
     order[num_cols - 1].append(bottom_left_card)
     return order
-
-
-def determine_compound_experiment_and_dataset(compound_experiment_and_datasets):
-    # DEPRECATED: this method will not work with breadbox datasets. Calls to it should be replaced.
-    dataset_regexp_ranking = [
-        "Prism_oncology.*",
-        "Repurposing_secondary.*",
-        "Rep_all_single_pt.*",
-        ".*",
-    ]
-    ce_and_d = []
-    for regexp in dataset_regexp_ranking:
-        for ce, d in compound_experiment_and_datasets:
-            pattern = re.compile(regexp)
-            if pattern.match(d.name.value):
-                ce_and_d = [[ce, d]]
-                return ce_and_d
 
 
 def format_dep_dist(compound: Compound, dataset: MatrixDataset):
@@ -265,31 +246,6 @@ def format_availability_tile(compound: Compound):
     # per dataset has both dose_range and assay in its corresponding metadata
     results.sort(key=lambda x: x["dataset_name"])
     return results
-
-
-def format_corr_table(compound_label, top_correlations):
-    table = []
-    for _, tc in top_correlations.items():
-        interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2",
-            xDataset=tc["compound_dataset"].values[0],
-            yDataset="expression",
-            xFeature=compound_label,
-            yFeature=tc["other_entity_label"].values[0],
-        )
-        gene_url = url_for(
-            "gene.view_gene", gene_symbol=tc["other_entity_label"].values[0]
-        )
-        table.append(
-            {
-                "interactive_url": interactive_url,
-                "gene_url": gene_url,
-                "correlation": tc["correlation"].values[0],
-                "gene_symbol": tc["other_entity_label"].values[0],
-            }
-        )
-    table = sorted(table, key=lambda x: abs(x["correlation"]), reverse=True)
-    return table[:50]
 
 
 def get_predictive_models_for_compound(

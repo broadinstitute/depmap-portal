@@ -164,21 +164,12 @@ class FeatureFlags:
         return self.is_prerelease_env()
 
     @property
-    def celfie(self):
-        return False
-
-    @property
     def celligner_app_v3(self):
         return True
 
     # used in depmap/settings/shared.py to set special value for DepDatasetMeta cell_lines
     @property
     def repurposing_secondary_AUC_cell_line_range(self):
-        return self.is_prerelease_env()
-
-    # Constellation isn't in the portal anymore, but we still use its view and data for other parts of the portal
-    @property
-    def constellation_app(self):
         return self.is_prerelease_env()
 
     @property

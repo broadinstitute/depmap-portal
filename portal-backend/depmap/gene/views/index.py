@@ -17,9 +17,9 @@ from flask import (
     send_file,
     url_for,
 )
-from depmap.compound.models import Compound, CompoundExperiment
+from depmap.compound.models import Compound
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
-from depmap.entity.views.index import format_celfie, format_summary
+from depmap.entity.views.index import format_summary
 from depmap.extensions import memoize_without_user_permissions
 from depmap.gene.models import Gene
 from depmap.gene.views import characterization
@@ -31,11 +31,9 @@ from depmap.predictability.utilities import (
 )
 from depmap.tile.views import (
     find_compounds_targeting_gene,
-    get_correlations_for_celfie_react_tile,
     get_omics,
 )
 from depmap.utilities.sign_bucket_url import get_signed_url
-from depmap.correlation.utils import get_all_correlations
 from depmap.partials.views import format_csv_response
 from depmap.partials.data_table.factories import (
     get_mutation_by_gene_table,
@@ -135,14 +133,6 @@ def _get_gene_page_template_parameters(gene_symbol):
         is not None
     )
 
-    has_celfie = (
-        current_app.config["ENABLED_FEATURES"].celfie and crispr_dataset is not None
-    )
-    celfie = None
-    if has_celfie:
-        celfie = format_celfie(gene.symbol, summary["summary_options"])
-
-    correlations = get_correlations_for_celfie_react_tile(gene, has_celfie)
     omics = get_omics(gene)
     show_omics_expression_tile = (
         omics is not None and omics.get("copy_number") is not None
@@ -185,9 +175,6 @@ def _get_gene_page_template_parameters(gene_symbol):
         },
         "pubmed_search_terms": [gene_symbol, gene_symbol + " AND cancer"],
         "order": get_order(has_predictability),
-        "has_celfie": has_celfie,
-        "celfie": celfie,  # Works because celfie was initialized to None above
-        "correlations": correlations,
         "show_mutations_tile": show_mutations_tile,
         "show_omics_expression_tile": show_omics_expression_tile,
         "show_targeting_compounds_tile": show_targeting_compounds_tile,
@@ -447,73 +434,6 @@ def gene_characterization_content(gene_symbol: str, characterization_id: str):
         "genes/characterization-content.html",
         characterization=single_characterization,
         gene_name=gene_symbol,
-    )
-
-
-@blueprint.route("/<gene_symbol>/top_correlations")
-def download_top_correlations_for_gene_dataset(gene_symbol: str):
-    gene = Gene.query.filter_by(label=gene_symbol).one_or_none()
-    if gene is None:
-        abort(404)
-    dataset_name = str(request.args.get("dataset_name"))
-    dataset = DependencyDataset.get_dataset_by_name(dataset_name, must=True)
-    assert dataset
-    correlations = get_all_correlations(
-        dataset.matrix_id,
-        gene_symbol,
-        max_per_other_dataset=100,
-        other_dataset_ids=[dataset.dataset_id],
-    )
-    correlations.drop(columns="other_dataset_id", inplace=True)
-    labels = correlations["other_entity_label"].tolist()
-    # Get genes filtered by correlation genes list
-    filtered_genes = Gene.query.filter(Gene.label.in_(labels)).with_entities(
-        Gene.label, Gene.entrez_id
-    )
-    genes = pd.read_sql(filtered_genes.statement, filtered_genes.session.connection())
-    # join the tables together on the gene label
-    correlations = correlations.join(genes.set_index("label"), on="other_entity_label")
-    correlations.rename(
-        columns={
-            "other_entity_label": "Gene",
-            "other_dataset": "Dataset",
-            "correlation": "Correlation",
-            "entrez_id": "Entrez Id",
-        },
-        inplace=True,
-    )
-    # Reorder columns
-    correlations = correlations[["Gene", "Entrez Id", "Dataset", "Correlation"]]
-
-    return format_csv_response(
-        correlations,
-        "{}'s Top 100 Codependencies for {}".format(gene_symbol, dataset.display_name),
-        {"index": False},
-    )
-
-
-@blueprint.route("/<gene_symbol>/genomic_associations")
-def view_genomic_associations(gene_symbol: str):
-    gene = Gene.query.filter_by(label=gene_symbol).one_or_none()
-    if gene is None:
-        abort(404)
-
-    entity_id = gene.entity_id
-
-    dependency_datasets = dependency_datasets_with_gene(entity_id)
-    # Format dependency options
-    dependency_datasets_options = [
-        format_summary_option(dataset, gene, dataset.display_name)
-        for dataset in dependency_datasets
-    ]
-    has_celfie = (
-        current_app.config["ENABLED_FEATURES"].celfie
-        and dependency_datasets_options is not None
-    )
-    celfie = format_celfie(gene.symbol, dependency_datasets_options)
-
-    return render_template(
-        "entities/celfie_page.html", celfie=celfie if has_celfie else None
     )
 
 

@@ -33,11 +33,9 @@ from depmap.taiga_id.utils import get_taiga_client
 from depmap.utilities.filename_utils import get_base_name_without_extension
 from depmap.utilities.hdf5_utils import csv_to_hdf5, df_to_hdf5
 from loader import (
-    association_loader,
     cell_line_loader,
     celligner_loader,
     compound_loader,
-    constellation_loader,
     data_page_loader,
     dataset_loader,
     depmap_model_loader,
@@ -109,15 +107,10 @@ def db_create_all():
 @with_appcontext
 @click.option("-c", "--load_celligner", is_flag=True, default=False)
 @click.option("-n", "--load_nonstandard", is_flag=True, default=False)
-@click.option("-d", "--load_full_constellation", is_flag=True, default=False)
 @click.option("-t", "--load_tda_predictability", is_flag=True, default=False)
 @click.option("--sync-only", is_flag=True, default=False)
 def recreate_dev_db(
-    load_celligner,
-    load_nonstandard,
-    load_full_constellation,
-    load_tda_predictability,
-    sync_only,
+    load_celligner, load_nonstandard, load_tda_predictability, sync_only,
 ):
     """
     Deletes and recreates db
@@ -145,7 +138,6 @@ def recreate_dev_db(
             load_sample_data(
                 load_celligner=load_celligner,
                 load_nonstandard=load_nonstandard,
-                load_full_constellation=load_full_constellation,
                 load_tda_predictability=load_tda_predictability,
             )
 
@@ -742,20 +734,6 @@ def _load_real_data(
                 gene_dep_summary_file_path, dropped_by_chronos_file,
             )
 
-    associations = gcsc_depmap.read_json("metadata/correlations.json")["in"]
-    associations = []
-    for association in associations:
-        with checkpoint(
-            "association-cor-{}-{}".format(
-                association["label"], association["category"]
-            )
-        ) as needed:
-            if needed:
-                assoc_db = gcsc_conseq_depmap.download_to_cache(association["db"])
-                association_loader.load_correlations(
-                    assoc_db, association["label"], association["category"]
-                )
-
     with checkpoint("matrix-min-max") as needed:
         if needed:
             ensure_all_max_min_loaded()
@@ -772,11 +750,6 @@ def _load_real_data(
                 celligner_artifact["distances"]
             )
             celligner_loader.load_celligner_data(alignment_file, distances_file)
-
-    if current_app.config["ENABLED_FEATURES"].constellation_app:
-        with checkpoint("constellation") as needed:
-            if needed:
-                constellation_loader.load_constellation_files()
 
     if not os.path.exists(current_app.config["COMPUTE_RESULTS_ROOT"]):
         os.makedirs(current_app.config["COMPUTE_RESULTS_ROOT"])
@@ -928,7 +901,6 @@ def load_sample_data(
     load_taiga_dependencies=True,
     load_celligner=False,
     load_nonstandard=False,
-    load_full_constellation=False,
     load_tda_predictability=False,
 ):
     """
@@ -1144,12 +1116,6 @@ def load_sample_data(
         log.info("Adding Celligner data")
         if load_taiga_dependencies and load_celligner:
             celligner_loader.load_celligner_sample_data()
-
-        log.info("Adding constellation data")
-        if load_full_constellation and load_taiga_dependencies:
-            constellation_loader.load_constellation_files()
-        else:
-            constellation_loader.load_sample_constellation_files()
 
         log.info("Loading gene guide map")
         gene_loader.load_guide_gene_map(
