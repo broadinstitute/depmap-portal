@@ -7,7 +7,7 @@ import useHeatmapData from "src/compound/heatmapTab/hooks/useHeatmapData";
 import PrototypeBrushableHeatmap from "src/compound/heatmapTab/doseViabilityHeatmap/components/PrototypeBrushableHeatmap";
 import { sortHeatmapByViability } from "src/compound/heatmapTab/heatmapPlotUtils";
 import DoseTriangleLabel from "./DoseTriangleLabel";
-import ErrorLoading from "./ErrorLoading";
+import ErrorLoading from "../ErrorLoading";
 import TopLinesMiniTable from "./TopLinesMiniTable";
 import { useDoseViabilityDataContext } from "src/compound/hooks/DoseViabilityDataContext";
 
@@ -60,7 +60,7 @@ export const HeatmapTile: React.FC<HeatmapTileProps> = ({
   );
 
   if (!isLoading && error) {
-    return <ErrorLoading />;
+    return <ErrorLoading tileName="Heatmap" />;
   }
 
   return (

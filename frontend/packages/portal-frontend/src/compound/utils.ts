@@ -1,8 +1,9 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { getUrlPrefix } from "@depmap/globals";
+import { getUrlPrefix, toStaticUrl } from "@depmap/globals";
 import { ContextExplorerDatasets, CurvePlotPoints } from "@depmap/types";
 import { Dataset, MatrixDataset } from "@depmap/types/src/Dataset";
 
+// Constants
 export const Rep1Color = "#CC4778";
 export const Rep2Color = "#F89540";
 export const Rep3Color = "#176CE0";
@@ -10,70 +11,9 @@ export const Rep3Color = "#176CE0";
 export const compoundImageBaseURL =
   "https://storage.googleapis.com/depmap-compound-images/";
 
-// Added to generate the image url location for the Structure and Detail
-// tile. The urls were previously located using Python's urllib.parse.quote,
-// which encodes differently. As a result, here we needreplace certain
-// characters that Python encodes differently. By default, encodeURIComponent
-//  does not encode (, ), !, *, ', while Python’s quote does.
-export function pythonQuote(str: string): string {
-  // encodeURIComponent, then replace characters Python encodes but JS does not
-  return encodeURIComponent(str).replace(
-    /[!'()*]/g,
-    (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase()
-  );
-}
+const DEFAULT_COL_STYLE = { maxWidth: 120, minWidth: 80 };
 
-export const hiddenDoseViabilityCols = [
-  { accessor: "modelId", Header: "Model ID", maxWidth: 120, minWidth: 80 },
-  {
-    accessor: "ec50",
-    Header: "EC50",
-    maxWidth: 120,
-    minWidth: 80,
-  },
-  {
-    accessor: "upperAsymptote",
-    Header: "Upper Asymptote",
-    maxWidth: 120,
-    minWidth: 80,
-  },
-  {
-    accessor: "lowerAsymptote",
-    Header: "Lower Asymptote",
-    maxWidth: 120,
-    minWidth: 80,
-  },
-  {
-    accessor: "slope",
-    Header: "Slope",
-    maxWidth: 120,
-    minWidth: 80,
-  },
-];
-
-export const staticDoseViabilityCols = [
-  {
-    accessor: "auc",
-    Header: "AUC",
-    maxWidth: 120,
-    minWidth: 80,
-  },
-  ...hiddenDoseViabilityCols,
-];
-
-export function mapEntrezIdToSymbols(
-  entrezIds: string[],
-  geneMetadata: { label: { [key: number]: string } }
-): string[] {
-  const symbolLookup = geneMetadata.label;
-
-  const geneSymbols = entrezIds.map((entrezId) => {
-    // Look up the symbol, using the Entrez ID as fallback if not found.
-    return symbolLookup[Number(entrezId)] || entrezId;
-  });
-
-  return geneSymbols;
-}
+// --- Internal Helpers ---
 
 function isMatrixDataset(d: unknown): d is MatrixDataset {
   return (
@@ -84,148 +24,142 @@ function isMatrixDataset(d: unknown): d is MatrixDataset {
   );
 }
 
-export async function getHighestPriorityCorrelationDatasetForEntity(
-  compoundID: string
-): Promise<string | null> {
+/**
+ * Shared internal fetcher to reduce repetitive Breadbox boilerplate.
+ * Handles filtering and sorting by priority (lower number = higher priority).
+ */
+async function fetchCompoundDatasets(
+  compoundId: string,
+  featureType: "compound" | "compound_v2" = "compound_v2"
+): Promise<MatrixDataset[]> {
   const datasets = await cached(breadboxAPI).getDatasets({
-    feature_id: compoundID,
-    feature_type: "compound_v2",
+    feature_id: compoundId,
+    feature_type: featureType,
   });
 
-  if (datasets.length === 0) {
-    return null;
-  }
-
-  const matrixDatasets = datasets.filter(
-    (d) => isMatrixDataset(d) && d.units === "log2(AUC)"
-  );
-
-  const sorted = [...matrixDatasets].sort((a, b) => {
-    const pa = typeof a.priority === "number" ? a.priority : Infinity;
-    const pb = typeof b.priority === "number" ? b.priority : Infinity;
-    return pa - pb;
-  });
-
-  if (sorted.length === 0) return null;
-
-  return sorted[0].given_id || null;
+  return (datasets as Dataset[])
+    .filter(
+      (d): d is MatrixDataset =>
+        d.given_id !== null &&
+        isMatrixDataset(d) &&
+        d.feature_type_name === featureType
+    )
+    .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
 }
 
-export function getFullUrlPrefix() {
-  let relativeUrlPrefix = getUrlPrefix();
-
-  if (relativeUrlPrefix === "/") {
-    relativeUrlPrefix = "";
-  }
-
-  const urlPrefix = `${window.location.protocol}//${window.location.host}${relativeUrlPrefix}`;
-  return urlPrefix;
-}
-
-export const getCorrelationColor = (val: number) => {
-  if (val >= 0) {
-    // Ranges:
-    // Light red - rgb(255, 200, 200)
-    // Dark red -  rgb(150,   0,   0)
-    const r = Math.round(255 - 105 * val);
-    const g = Math.round(200 - 200 * val);
-    const b = Math.round(200 - 200 * val);
-
-    return `rgb(${r}, ${g}, ${b})`;
-  }
-
-  // Ranges:
-  // Light blue - rgba(203, 223, 246, 1)
-  // Dark blue - rgba(0, 117, 250, 1)
-  const R_LIGHT = 189;
-  const G_LIGHT = 216;
-  const B_LIGHT = 246;
-
-  const R_DARK = 0;
-  const G_DARK = 117;
-  const B_DARK = 250;
-
-  // Calculate the Differences
-  // Since val goes from 0 to -1, we need to subtract the change vector
-  // to move from LIGHT to DARK.
-  const deltaR = R_DARK - R_LIGHT;
-  const deltaG = G_DARK - G_LIGHT;
-  const deltaB = B_DARK - B_LIGHT;
-
-  const r = Math.round(R_LIGHT + deltaR * -val);
-  const g = Math.round(G_LIGHT + deltaG * -val);
-  const b = Math.round(B_LIGHT + deltaB * -val);
-
-  // Ensure values are within the valid 0-255 range
-  const R = Math.max(0, Math.min(255, r));
-  const G = Math.max(0, Math.min(255, g));
-  const B = Math.max(0, Math.min(255, b));
-
-  return `rgba(${R}, ${G}, ${B}, 1)`;
-};
+// --- Data Fetching Utilities ---
 
 export async function getCachedAvailableCompoundDatasetIds(
   compoundId: string
 ): Promise<string[]> {
-  const datasets = await cached(breadboxAPI).getDatasets({
-    feature_id: compoundId,
-    feature_type: "compound_v2",
-  });
+  const datasets = await fetchCompoundDatasets(compoundId);
+  return datasets.map((d) => d.given_id!);
+}
 
-  const filteredDatasets = [...datasets].filter(
-    (d) =>
-      d.given_id !== null &&
-      isMatrixDataset(d) &&
-      d.feature_type_name === "compound_v2"
-  );
+export async function getHighestPriorityCompoundDataset(
+  compoundId: string
+): Promise<MatrixDataset | null> {
+  const datasets = await fetchCompoundDatasets(compoundId);
+  return datasets[0] || null;
+}
 
-  if (filteredDatasets.length === 0) {
-    return [];
-  }
-
-  return filteredDatasets.map(({ given_id }: Dataset) => given_id!);
+export async function getHighestPriorityCorrelationDatasetForEntity(
+  compoundID: string
+): Promise<string | null> {
+  const datasets = await fetchCompoundDatasets(compoundID);
+  const log2Datasets = datasets.filter((d) => d.units === "log2(AUC)");
+  return log2Datasets[0]?.given_id || null;
 }
 
 export async function doContextExpDatasetsExistWithCompound(
   compoundId: string
 ): Promise<boolean> {
-  const datasets = await cached(breadboxAPI).getDatasets({
-    feature_id: compoundId,
-    feature_type: "compound",
-  });
-
-  const filteredDatasets = [...datasets].filter(
-    (d) =>
-      d.given_id !== null &&
-      isMatrixDataset(d) &&
-      d.feature_type_name === "compound"
-  );
-
-  if (filteredDatasets.length === 0) {
-    return false;
-  }
-
-  const validGivenIds: string[] = Object.values(ContextExplorerDatasets);
-
-  return filteredDatasets.some((d) => validGivenIds.includes(d.given_id!));
+  const datasets = await fetchCompoundDatasets(compoundId, "compound");
+  const validIds: string[] = Object.values(ContextExplorerDatasets);
+  return datasets.some((d) => validIds.includes(d.given_id!));
 }
 
-// from : https://stackoverflow.com/questions/14696326/break-array-of-objects-into-separate-arrays-based-on-a-property
+// --- Formatting & UI Utilities ---
+
+/**
+ * Encodes strings to match Python's urllib.parse.quote behavior.
+ * encodeURIComponent ignores ( ) ! * ', while Python's quote does not.
+ */
+export function pythonQuote(str: string): string {
+  return encodeURIComponent(str).replace(
+    /[!'()*]/g,
+    (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase()
+  );
+}
+
+export const hiddenDoseViabilityCols = [
+  { accessor: "modelId", Header: "Model ID", ...DEFAULT_COL_STYLE },
+  { accessor: "ec50", Header: "EC50", ...DEFAULT_COL_STYLE },
+  {
+    accessor: "upperAsymptote",
+    Header: "Upper Asymptote",
+    ...DEFAULT_COL_STYLE,
+  },
+  {
+    accessor: "lowerAsymptote",
+    Header: "Lower Asymptote",
+    ...DEFAULT_COL_STYLE,
+  },
+  { accessor: "slope", Header: "Slope", ...DEFAULT_COL_STYLE },
+];
+
+export const staticDoseViabilityCols = [
+  { accessor: "auc", Header: "AUC", ...DEFAULT_COL_STYLE },
+  ...hiddenDoseViabilityCols,
+];
+
+export function mapEntrezIdToSymbols(
+  entrezIds: string[],
+  geneMetadata: { label: { [key: number]: string } }
+): string[] {
+  const symbolLookup = geneMetadata.label;
+  return entrezIds.map((id) => symbolLookup[Number(id)] || id);
+}
+
+export function getFullUrlPrefix(): string {
+  const relativePrefix = getUrlPrefix() === "/" ? "" : getUrlPrefix();
+  return `${window.location.protocol}//${window.location.host}${relativePrefix}`;
+}
+
+/**
+ * Generates a color based on correlation value (-1 to 1).
+ * Positive: Light red to Dark red. Negative: Light blue to Dark blue.
+ */
+export const getCorrelationColor = (val: number): string => {
+  const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+
+  if (val >= 0) {
+    return `rgb(${clamp(255 - 105 * val)}, ${clamp(200 - 200 * val)}, ${clamp(
+      200 - 200 * val
+    )})`;
+  }
+
+  // Linear interpolation between Light Blue and Dark Blue
+  const factor = -val;
+  const r = 189 + (0 - 189) * factor;
+  const g = 216 + (117 - 216) * factor;
+  const b = 246 + (250 - 246) * factor;
+
+  return `rgba(${clamp(r)}, ${clamp(g)}, ${clamp(b)}, 1)`;
+};
+
 export function groupBy(
   array: Array<CurvePlotPoints>,
-  prop: "dose" | "viability" | "isMasked" | "replicate" | "id"
+  prop: keyof CurvePlotPoints
 ): Map<string, Array<CurvePlotPoints>> {
   const grouped = new Map<string, Array<CurvePlotPoints>>();
 
   array.forEach((points) => {
-    const p = prop in points ? points[prop]!.toString() : null;
-
-    if (p) {
-      if (!grouped.has(p)) {
-        grouped.set(p, []);
-      }
-
-      grouped.get(p)?.push(points);
+    const val = points[prop];
+    if (val !== undefined && val !== null) {
+      const key = val.toString();
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key)?.push(points);
     }
   });
 
