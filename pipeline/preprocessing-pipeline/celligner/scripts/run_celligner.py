@@ -268,8 +268,7 @@ def process_hcmi_tumor_ipts(expr_df, context_df):
         ]
     adata.uns["type"] = "tumor"
     adata.uns["name"] = "hcmi_tumor"
-    adata.uns["mnn_params"] = {"k1": 20, "k2": 50}
-    
+    adata.uns["mnn_params"] = {"k1": 10, "k2": 50}
     return adata
 
 def process_hcmi_model_ipts(expr_df, context_df):
