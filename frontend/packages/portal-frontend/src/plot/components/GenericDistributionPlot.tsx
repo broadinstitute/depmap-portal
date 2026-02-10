@@ -1,6 +1,5 @@
 import { Layout } from "plotly.js";
-import React, { useMemo, useRef } from "react";
-import { useEffect } from "react";
+import React, { useMemo, useRef, useEffect } from "react";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
@@ -15,13 +14,12 @@ type DistributionPlotPropsWithPlotly = DistributionPlotProps & {
   Plotly: PlotlyType;
 };
 
-// (Replaces sns.kdeplot)
 function kernelDensityEstimator(samples: number[], bandwidth: number) {
   return (x: number) =>
     samples.reduce(
       (sum, v) =>
         sum +
-        Math.exp(-0.5 * Math.pow((x - v) / bandwidth, 2)) /
+        Math.exp(-0.5 * ((x - v) / bandwidth) ** 2) /
           (Math.sqrt(2 * Math.PI) * bandwidth),
       0
     ) / samples.length;
@@ -43,12 +41,6 @@ function GenericDistributionPlot({
   }, [onLoad]);
 
   const plotData = useMemo(() => {
-    useEffect(() => {
-      if (onLoad && ref.current) {
-        onLoad(ref.current);
-      }
-    }, [onLoad]);
-
     // 1. Validation: Handle zero variance/empty
     if (values.length < 2 || values.every((v) => v === values[0])) {
       return null;
@@ -62,9 +54,9 @@ function GenericDistributionPlot({
       1.06 *
         Math.sqrt(
           values.reduce((s, v) => s + v * v, 0) / values.length -
-            Math.pow(values.reduce((a, b) => a + b) / values.length, 2)
+            (values.reduce((a, b) => a + b) / values.length) ** 2
         ) *
-        Math.pow(values.length, -0.2) || 0.5;
+        values.length ** -0.2 || 0.5;
 
     const kde = kernelDensityEstimator(values, bandwidth);
     const xPoints = Array.from(
@@ -76,17 +68,15 @@ function GenericDistributionPlot({
     return { xPoints, yPoints };
   }, [values]);
 
-  if (!plotData) {
-    return <p>Cannot create density plot. Insufficient variance in data.</p>;
-  }
-
   useEffect(() => {
-    const plot = ref.current as ExtendedPlotType;
+    if (!plotData || !ref.current) {
+      return;
+    }
 
-    // 3. Define Plotly Traces
+    const plot = ref.current;
+
     const traces: any[] = [
       {
-        // Top: KDE Fill (sns.kdeplot + fill_between)
         x: plotData.xPoints,
         y: plotData.yPoints,
         type: "scatter",
@@ -98,7 +88,6 @@ function GenericDistributionPlot({
         name: "Density",
       },
       {
-        // Bottom: Rug/Eventplot (ax2.eventplot)
         x: values,
         y: values.map(() => 0),
         type: "scatter",
@@ -106,10 +95,11 @@ function GenericDistributionPlot({
         marker: {
           symbol: "line-ns-open",
           size: 12,
-          line: { width: 1.5, color: color },
+          color,
+          line: { width: 1.5, color },
         },
         yaxis: "y1",
-        name: "Events",
+        name: "",
         hoverinfo: "x",
       },
     ];
@@ -117,9 +107,9 @@ function GenericDistributionPlot({
     const hasZeroCross = Math.min(...values) <= 0 && Math.max(...values) >= 0;
 
     const layout: Partial<Layout> = {
-      width: 450,
+      width: 310,
       height: 180,
-      margin: { l: 10, r: 10, t: 10, b: 30 },
+      margin: { l: 10, r: 10, t: 10, b: 0 },
       showlegend: false,
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
@@ -127,31 +117,38 @@ function GenericDistributionPlot({
         showgrid: false,
         zeroline: yAxisAtZero && hasZeroCross,
         zerolinecolor: "#333",
-        tickfont: { size: 10 },
+        tickfont: { size: 12 },
       },
       yaxis: {
-        domain: [0, 0.15], // Bottom 15% for rug plot
+        domain: [0, 0.2],
         showgrid: false,
         showticklabels: false,
         zeroline: false,
       },
       yaxis2: {
-        domain: [0.2, 1], // Top 80% for density
+        domain: [0.2, 1],
         showgrid: false,
         showticklabels: false,
         zeroline: false,
       },
     };
 
-    const config: Partial<Plotly.Config> = {
-      responsive: true,
+    Plotly.react(plot, traces, layout, {
+      staticPlot: true,
       displayModeBar: false,
-    };
+    });
+  }, [Plotly, color, plotData, values, yAxisAtZero]);
 
-    Plotly.react(plot, traces, layout, config);
-  }, [Plotly]);
-
-  return <div ref={ref} />;
+  // Use a conditional inside the return so hooks are always called in the same order
+  return (
+    <>
+      {!plotData ? (
+        <p>Cannot create density plot. Insufficient variance in data.</p>
+      ) : (
+        <div ref={ref} />
+      )}
+    </>
+  );
 }
 
 export default function LazyGenericDistributionPlot({
@@ -165,7 +162,6 @@ export default function LazyGenericDistributionPlot({
           <GenericDistributionPlot
             values={values}
             Plotly={Plotly}
-            // eslint-disable-next-line react/jsx-props-no-spreading
             {...otherProps}
           />
         ) : null

@@ -35,7 +35,7 @@ export default function useSensitivityTileData(
 
         const dataList = Object.values(record)
           .map((val) => Number(val))
-          .filter((val) => typeof val === "number" && !isNaN(val));
+          .filter((val) => typeof val === "number" && !Number.isNaN(val));
 
         setSliceValues(dataList);
         setIsLoading(false);

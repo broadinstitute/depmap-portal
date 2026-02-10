@@ -1,5 +1,5 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { getUrlPrefix, toStaticUrl } from "@depmap/globals";
+import { getUrlPrefix } from "@depmap/globals";
 import { ContextExplorerDatasets, CurvePlotPoints } from "@depmap/types";
 import { Dataset, MatrixDataset } from "@depmap/types/src/Dataset";
 

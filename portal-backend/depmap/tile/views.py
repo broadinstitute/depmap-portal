@@ -344,7 +344,7 @@ def get_enrichment_html(
     feature_type = entity.type
 
     return RenderedTile(
-        f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
+        f'<div id="{div_id}"/>',
         f"""(
         function() {{
             DepMap.initEnrichmentTile("{div_id}", "{feature_label}", "{feature_type}");
@@ -623,7 +623,7 @@ def get_sensitivity_html(
     div_id = str(uuid.uuid4())
 
     return RenderedTile(
-        f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
+        f'<div id="{div_id}"/>',
         f"""(
         function() {{
             DepMap.initSensitivityTile("{div_id}", "{compound.compound_id}");

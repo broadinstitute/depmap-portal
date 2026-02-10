@@ -1,5 +1,5 @@
 import React from "react";
-import styles from "../CompoundTiles.scss";
+import styles from "./CompoundTiles.scss";
 
 interface Props {
   tileName: string;
