@@ -1,4 +1,4 @@
-import { Layout } from "plotly.js";
+import { Layout, Shape } from "plotly.js";
 import React, { useMemo, useRef, useEffect } from "react";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
@@ -41,22 +41,18 @@ function GenericDistributionPlot({
   }, [onLoad]);
 
   const plotData = useMemo(() => {
-    // 1. Validation: Handle zero variance/empty
-    if (values.length < 2 || values.every((v) => v === values[0])) {
+    if (!values || values.length < 2 || values.every((v) => v === values[0])) {
       return null;
     }
 
-    // 2. Generate KDE Curve points
     const min = Math.min(...values);
     const max = Math.max(...values);
     const range = max - min;
-    const bandwidth =
-      1.06 *
-        Math.sqrt(
-          values.reduce((s, v) => s + v * v, 0) / values.length -
-            (values.reduce((a, b) => a + b) / values.length) ** 2
-        ) *
-        values.length ** -0.2 || 0.5;
+    const stdDev = Math.sqrt(
+      values.reduce((s, v) => s + v * v, 0) / values.length -
+        (values.reduce((a, b) => a + b) / values.length) ** 2
+    );
+    const bandwidth = 1.06 * stdDev * values.length ** -0.2 || 0.5;
 
     const kde = kernelDensityEstimator(values, bandwidth);
     const xPoints = Array.from(
@@ -69,11 +65,15 @@ function GenericDistributionPlot({
   }, [values]);
 
   useEffect(() => {
-    if (!plotData || !ref.current) {
-      return;
-    }
+    if (!plotData || !ref.current) return;
 
     const plot = ref.current;
+    const SEPARATOR_Y = 0.3;
+
+    // 1. Calculate a shared range so y-axes (and the 0 line) align perfectly
+    const xMin = Math.min(...plotData.xPoints, ...values);
+    const xMax = Math.max(...plotData.xPoints, ...values);
+    const sharedRange = [xMin, xMax];
 
     const traces: any[] = [
       {
@@ -85,7 +85,8 @@ function GenericDistributionPlot({
         fillcolor: color,
         line: { color: "transparent" },
         yaxis: "y2",
-        name: "Density",
+        xaxis: "x2",
+        name: "",
       },
       {
         x: values,
@@ -94,42 +95,71 @@ function GenericDistributionPlot({
         mode: "markers",
         marker: {
           symbol: "line-ns-open",
-          size: 12,
+          size: 20,
           color,
-          line: { width: 1.5, color },
         },
         yaxis: "y1",
+        xaxis: "x1",
         name: "",
         hoverinfo: "x",
       },
     ];
 
-    const hasZeroCross = Math.min(...values) <= 0 && Math.max(...values) >= 0;
-
     const layout: Partial<Layout> = {
       width: 310,
-      height: 180,
-      margin: { l: 10, r: 10, t: 10, b: 0 },
+      height: 250,
+      margin: { l: 30, r: 30, t: 10, b: 20 },
       showlegend: false,
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
+
       xaxis: {
+        range: sharedRange, // 2. Force identical range
         showgrid: false,
-        zeroline: yAxisAtZero && hasZeroCross,
-        zerolinecolor: "#333",
-        tickfont: { size: 12 },
+        showline: false,
+        ticks: "",
+        tickfont: { size: 14, color: "#333" },
+        fixedrange: true,
+        // Set to true and uncomment out the below to debug 0 line alignments
+        zeroline: false,
+        // zerolinecolor: "#ccc",
+        // zerolinewidth: 1,
       },
+
+      xaxis2: {
+        range: sharedRange, // 3. Force identical range here too
+        overlaying: "x",
+        showgrid: false,
+        showline: true,
+        linecolor: "black",
+        linewidth: 1.5,
+        ticks: "outside",
+        ticklen: 6,
+        tickcolor: "black",
+        showticklabels: false,
+        position: SEPARATOR_Y,
+        anchor: "free",
+        fixedrange: true,
+        // Match zeroline settings for perfect vertical alignment - if misalignment is suspected, switch this to true to debug
+        zeroline: false,
+        // zerolinecolor: "black",
+        // zerolinewidth: 1,
+      },
+
       yaxis: {
-        domain: [0, 0.2],
+        domain: [0.05, SEPARATOR_Y],
         showgrid: false,
         showticklabels: false,
         zeroline: false,
+        range: [-0.9, 0.1],
+        fixedrange: true,
       },
       yaxis2: {
-        domain: [0.2, 1],
+        domain: [SEPARATOR_Y, 1],
         showgrid: false,
         showticklabels: false,
         zeroline: false,
+        fixedrange: true,
       },
     };
 
@@ -137,35 +167,29 @@ function GenericDistributionPlot({
       staticPlot: true,
       displayModeBar: false,
     });
-  }, [Plotly, color, plotData, values, yAxisAtZero]);
+  }, [Plotly, color, plotData, values]);
 
-  // Use a conditional inside the return so hooks are always called in the same order
   return (
-    <>
+    <div style={{ minHeight: "200px" }}>
       {!plotData ? (
-        <p>Cannot create density plot. Insufficient variance in data.</p>
+        <p style={{ padding: "20px", fontSize: "12px", color: "#666" }}>
+          Insufficient variance.
+        </p>
       ) : (
         <div ref={ref} />
       )}
-    </>
+    </div>
   );
 }
 
-export default function LazyGenericDistributionPlot({
-  values,
-  ...otherProps
-}: DistributionPlotProps) {
+export default function LazyGenericDistributionPlot(
+  props: DistributionPlotProps
+) {
   return (
     <PlotlyLoader version="module">
-      {(Plotly: PlotlyType) =>
-        values ? (
-          <GenericDistributionPlot
-            values={values}
-            Plotly={Plotly}
-            {...otherProps}
-          />
-        ) : null
-      }
+      {(Plotly: PlotlyType) => (
+        <GenericDistributionPlot {...props} Plotly={Plotly} />
+      )}
     </PlotlyLoader>
   );
 }
