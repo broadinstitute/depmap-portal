@@ -155,7 +155,7 @@ class TabularDataset(Dataset):
         default=lambda: str(uuid.uuid4()),
     )
     index_type_name: Mapped[str] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
+        String, ForeignKey("dimension_type.name"), nullable=False
     )
     __mapper_args__ = {"polymorphic_identity": "tabular_dataset"}
 
@@ -202,11 +202,12 @@ class MatrixDataset(Dataset):
     units: Mapped[str] = mapped_column(
         String, nullable=False
     )  # TODO: Limit to conitnuous value types later
+
     feature_type_name: Mapped[Optional[str]] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=True,
+        String, ForeignKey("dimension_type.name"), nullable=True,
     )
     sample_type_name: Mapped[str] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
+        String, ForeignKey("dimension_type.name"), nullable=False
     )
     feature_type = relationship("DimensionType", foreign_keys=[feature_type_name])
     sample_type = relationship("DimensionType", foreign_keys=[sample_type_name])

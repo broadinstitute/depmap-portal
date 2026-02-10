@@ -1,5 +1,6 @@
 const path = require("path");
 const merge = require("webpack-merge").merge;
+const ESLintPlugin = require("eslint-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const { WebpackManifestPlugin } = require("webpack-manifest-plugin");
 const jsonImporter = require("node-sass-json-importer");
@@ -20,7 +21,14 @@ module.exports = merge(common, {
     publicPath: "",
   },
 
-  plugins: [new WebpackManifestPlugin(), new CleanWebpackPlugin()],
+  plugins: [
+    new ESLintPlugin({
+      context: path.resolve("../../packages"),
+      files: ["**/src/**/*.@(ts|tsx)"],
+    }),
+    new WebpackManifestPlugin(),
+    new CleanWebpackPlugin(),
+  ],
 
   module: {
     rules: [

@@ -112,7 +112,8 @@ def get_order(
     has_predictability: bool,
     has_heatmap: bool,
     show_enriched_lineages: bool,
-    show_compound_correlation_tiles: bool,
+    show_compound_correlated_dependencies_tile: bool,
+    show_related_compounds_tile: bool,
 ):
     # hardcoded approximate heights of the different cards.  These values are used for sorting cards into columns such that column heights are as close as they can be
     tile_large = 650
@@ -129,14 +130,15 @@ def get_order(
     anywhere_cards = {
         CompoundTileEnum.predictability.value: tile_large,
     }
-    if show_compound_correlation_tiles:
+    if show_compound_correlated_dependencies_tile:
         anywhere_cards[
             CompoundTileEnum.correlated_dependencies.value
         ] = tile_large  # TBD: Actually we want to group with CompoundTileEnum.correlations
 
-        # Commenting out in 25Q4: This tile appears to have some incorrect behavior in how
-        # it chooses which compounds are "related". Disabling for now.
-        # anywhere_cards[CompoundTileEnum.related_compounds.value] = tile_medium
+    # Not showing in 25Q4: This tile appears to have some incorrect behavior in how
+    # it chooses which compounds are "related". Disabling for now.
+    if show_related_compounds_tile:
+        anywhere_cards[CompoundTileEnum.related_compounds.value] = tile_medium
 
     if has_heatmap:
         anywhere_cards[CompoundTileEnum.heatmap.value] = tile_medium

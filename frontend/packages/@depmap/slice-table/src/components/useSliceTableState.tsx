@@ -5,8 +5,8 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { Button } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
+import { getConfirmation } from "@depmap/common-components";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import { RowSelectionState } from "@depmap/react-table";
 import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
@@ -14,7 +14,6 @@ import useData, { RowFilters } from "./useData";
 import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
-import styles from "../styles/SliceTable.scss";
 
 interface Props {
   index_type_name: string;
@@ -24,6 +23,28 @@ interface Props {
   initialRowSelection: RowSelectionState;
   onChangeSlices: (nextSlices: SliceQuery[]) => void;
   downloadFilename: string;
+  customColumns?: {
+    header: () => React.ReactNode;
+    cell: ({ row }: { row: Record<"id", string> }) => React.ReactNode;
+  }[];
+  headerCellRenderer?: ({
+    label,
+    sliceQuery,
+    defaultElement,
+  }: {
+    label: string;
+    sliceQuery: SliceQuery;
+    defaultElement: React.ReactNode;
+  }) => React.ReactNode;
+  bodyCellRenderer?: ({
+    label,
+    sliceQuery,
+    getValue,
+  }: {
+    label: string;
+    sliceQuery: SliceQuery;
+    getValue: () => React.ReactNode;
+  }) => React.ReactNode;
 }
 
 const defaultRowFilters = {
@@ -39,6 +60,9 @@ export function useSliceTableState({
   initialRowSelection,
   onChangeSlices,
   downloadFilename,
+  customColumns = undefined,
+  headerCellRenderer = undefined,
+  bodyCellRenderer = undefined,
 }: Props) {
   const [slices, setSlices] = useState<SliceQuery[]>(initialSlices || []);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>(
@@ -76,6 +100,8 @@ export function useSliceTableState({
   }, [initialSlices, slices, onChangeSlices]);
 
   const { columns, data, loading, error, exportToCsv } = useData({
+    bodyCellRenderer,
+    headerCellRenderer,
     index_type_name,
     slices,
     viewOnlySlices,
@@ -83,12 +109,13 @@ export function useSliceTableState({
     selectedRowIds,
   });
 
+  const idColumnLabel = columns[0]?.meta.idLabel;
   let shouldShowLabelColumn = true;
 
   if (
     columns &&
     columns.length >= 2 &&
-    columns[0].meta.idLabel === columns[1].meta.idLabel
+    idColumnLabel === columns[1].meta.idLabel
   ) {
     shouldShowLabelColumn = false;
   }
@@ -99,6 +126,8 @@ export function useSliceTableState({
     const newSlice = await chooseDataSlice({
       index_type_name,
       PlotlyLoader,
+      existingSlices: slices,
+      idColumnLabel,
     });
 
     if (newSlice) {
@@ -110,7 +139,7 @@ export function useSliceTableState({
         return [...prev, newSlice];
       });
     }
-  }, [index_type_name, PlotlyLoader]);
+  }, [idColumnLabel, index_type_name, PlotlyLoader, slices]);
 
   const handleClickEditColumn = useCallback(
     async (column: typeof columns[number]) => {
@@ -133,11 +162,8 @@ export function useSliceTableState({
         initialSource,
         index_type_name,
         PlotlyLoader,
-        onClickRemoveColumn: () => {
-          setSlices((prev) => {
-            return prev.filter((slice) => slice !== column.meta.sliceQuery);
-          });
-        },
+        existingSlices: slices,
+        idColumnLabel,
       });
 
       if (editedSlice) {
@@ -148,7 +174,7 @@ export function useSliceTableState({
         );
       }
     },
-    [index_type_name, PlotlyLoader]
+    [idColumnLabel, index_type_name, PlotlyLoader, slices]
   );
 
   const handleClickViewColumn = useCallback(
@@ -162,40 +188,126 @@ export function useSliceTableState({
     [index_type_name, PlotlyLoader]
   );
 
-  const columnsWithEditOrViewButton = useMemo(() => {
-    return columns.map((column) => ({
-      ...column,
-      header:
-        !column.meta.isEditable && !column.meta.isViewable
-          ? column.header
-          : () => (
-              <div className={styles.editableColumnHeader}>
-                {column.header()}
-                <Button
-                  bsSize="sm"
-                  onClick={(e) => {
-                    e.stopPropagation();
+  const extendedColumns = useMemo(() => {
+    const OFFSET = columns.length - slices.length;
 
-                    if (column.meta.isEditable) {
-                      handleClickEditColumn(column);
-                    } else {
-                      handleClickViewColumn(column);
-                    }
-                  }}
-                >
-                  <i
-                    className={[
-                      "glyphicon",
-                      column.meta.isEditable
-                        ? "glyphicon-edit"
-                        : "glyphicon-eye-open",
-                    ].join(" ")}
-                  />
-                </Button>
-              </div>
-            ),
+    const sliceColumns = columns.map((column, colIndex) => ({
+      ...column,
+      meta: {
+        ...column.meta,
+        headerMenuItems: [
+          column.meta.isEditable && {
+            label: "View distribution",
+            icon: "glyphicon-eye-open",
+            onClick: () => handleClickEditColumn(column),
+          },
+
+          !column.meta.isEditable &&
+            column.meta.isViewable && {
+              label: "View distribution",
+              icon: "glyphicon-eye-open",
+              onClick: () => handleClickViewColumn(column),
+            },
+
+          colIndex >= OFFSET && {
+            label: "Move column left",
+            icon: "glyphicon-arrow-left",
+            disabled: colIndex <= OFFSET,
+            onClick: () => {
+              setSlices((prev) => {
+                const index = colIndex - OFFSET;
+
+                const newSlices = [...prev];
+                [newSlices[index - 1], newSlices[index]] = [
+                  newSlices[index],
+                  newSlices[index - 1],
+                ];
+
+                return newSlices;
+              });
+            },
+          },
+
+          colIndex >= OFFSET && {
+            label: "Move column right",
+            icon: "glyphicon-arrow-right",
+            disabled: colIndex < OFFSET || colIndex >= columns.length - 1,
+            onClick: () => {
+              setSlices((prev) => {
+                const index = colIndex - OFFSET;
+
+                const newSlices = [...prev];
+                [newSlices[index], newSlices[index + 1]] = [
+                  newSlices[index + 1],
+                  newSlices[index],
+                ];
+
+                return newSlices;
+              });
+            },
+          },
+
+          column.meta.isEditable && {
+            widget: "divider",
+          },
+
+          column.meta.isEditable && {
+            label: "Remove column",
+            icon: "glyphicon-remove-sign",
+            onClick: async () => {
+              const confirmed = await getConfirmation({
+                message: (
+                  <div>
+                    Are you sure you want to remove the column{" "}
+                    <b>“{column.meta.sliceQuery.identifier}”</b>?
+                  </div>
+                ),
+                yesText: "Remove",
+                noText: "Cancel",
+              });
+
+              if (confirmed) {
+                setTimeout(() => {
+                  setSlices((prev) => {
+                    return prev.filter(
+                      (slice) =>
+                        !areSliceQueriesEqual(slice, column.meta.sliceQuery)
+                    );
+                  });
+                });
+              }
+            },
+          },
+        ].filter(Boolean),
+      },
     }));
-  }, [columns, handleClickEditColumn, handleClickViewColumn]);
+
+    const nonSliceColumns = (customColumns || []).map((col, i) => ({
+      header: col.header,
+      cell: col.cell,
+      id: `custom-${i}`,
+      accessorFn: () => null,
+      enableSorting: false,
+      meta: {
+        idLabel: "",
+        units: "",
+        value_type: null,
+        datasetName: "",
+        csvHeader: "",
+        sliceQuery: {} as SliceQuery,
+        isEditable: false,
+        isViewable: false,
+      },
+    }));
+
+    return [...sliceColumns, ...nonSliceColumns];
+  }, [
+    columns,
+    customColumns,
+    handleClickEditColumn,
+    handleClickViewColumn,
+    slices.length,
+  ]);
 
   const handleClickFilterButton = useCallback(async () => {
     const result = await chooseFilters({ enableRowSelection, rowFilters });
@@ -230,7 +342,7 @@ export function useSliceTableState({
     data,
     error,
     loading,
-    columns: columnsWithEditOrViewButton,
+    columns: extendedColumns,
     handleClickAddColumn,
     handleClickDownload,
     handleClickFilterButton,

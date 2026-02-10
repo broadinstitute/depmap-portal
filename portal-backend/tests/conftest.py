@@ -542,13 +542,7 @@ def load_populated_db_data():
             BiomarkerDataset.BiomarkerEnum.expression: {
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            BiomarkerDataset.BiomarkerEnum.copy_number_absolute: {
-                "taiga_id": "placeholder-taiga-id.1",
-            },
             BiomarkerDataset.BiomarkerEnum.copy_number_relative: {
-                "taiga_id": "placeholder-taiga-id.1",
-            },
-            BiomarkerDataset.BiomarkerEnum.mutation_pearson: {
                 "taiga_id": "placeholder-taiga-id.1",
             },
             BiomarkerDataset.BiomarkerEnum.mutations_hotspot: {

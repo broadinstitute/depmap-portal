@@ -67,3 +67,25 @@ export interface DRCDatasetOptions {
   drc_dataset_label: string;
   log_auc_dataset_given_id?: string;
 }
+
+export type DatasetOption = {
+  dataset: string;
+  entity: number;
+  id: string;
+  label: string;
+};
+
+export interface SensitivityTabSummary {
+  initialSelectedDataset: DatasetOption;
+  size_biom_enum_name: string;
+  color: string;
+  figure: { name: number };
+  show_auc_message: boolean;
+  summary_options: DatasetOption[];
+}
+
+export interface CompoundSummaryResponse {
+  sensitivity_summary: SensitivityTabSummary | null;
+  heatmap_dose_curve_options: DRCDatasetOptions[];
+  correlation_analysis_options: DRCDatasetOptions[];
+}

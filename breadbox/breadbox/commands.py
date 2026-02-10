@@ -354,19 +354,6 @@ def _populate_minimal_data(db: SessionWithUser, settings: Settings):
             GroupEntryIn(email="", exact_match=False, access_type=AccessType.write),
         )
 
-    # Define the generic type
-    existing_generic_type = types_crud.get_dimension_type(db, name="generic")
-    if not existing_generic_type:
-        add_dimension_type(
-            db,
-            settings,
-            user=admin_user,
-            name="generic",
-            display_name="Generic",
-            id_column="label",
-            axis="feature",
-        )
-
     existing_user_upload_data_type = data_type_crud.get_data_type(db, "User upload")
     if not existing_user_upload_data_type:
         data_type_crud.add_data_type(db, "User upload")
@@ -449,10 +436,12 @@ def log_data_issues(issues_dir: str, accept_worsened_issues: bool):
             matching_known_issue = known_issues.get(current_issue_key, None)
             if matching_known_issue is None:
                 new_or_worsened_issues[issue.dimension_type_name].append(issue)
-            
-            # Consider it worsened if both the count and percent of affected records have increased
-            elif (issue.count_affected > matching_known_issue.count_affected) and (issue.percent_affected >= matching_known_issue.percent_affected):
-                new_or_worsened_issues[issue.dimension_type_name].append(issue)
+            else:
+                # Consider it worsened if both the count and percent of affected records have increased
+                count_increased = issue.count_affected > matching_known_issue.count_affected
+                percent_increased = issue.percent_affected >= matching_known_issue.percent_affected + 0.01
+                if count_increased and percent_increased:
+                    new_or_worsened_issues[issue.dimension_type_name].append(issue)
     
     # Log new or worsened issues, grouped by dimension type
     for dimension_type in types_crud.get_dimension_types(db=_get_db_connection()):

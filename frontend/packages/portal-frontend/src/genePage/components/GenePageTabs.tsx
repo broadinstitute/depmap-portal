@@ -11,12 +11,12 @@ import {
 import AsyncTile from "src/common/components/AsyncTile";
 import { EntityType } from "src/entity/models/entities";
 import { getQueryParams } from "@depmap/utils";
-import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageOverview, { TileTypeEnum } from "./GenePageOverview";
 import GeneCharacterizationPanel from "./GeneCharacterizationPanel";
 import styles from "../styles/GenePage.scss";
 import { getCorrelationDatasetsForEntity } from "../utils";
 import { GeneCorrelationDatasetOption } from "src/correlationAnalysis/types";
+import { DatasetOption } from "@depmap/types";
 
 // Many of the gene page tiles make calls to a global `clickTab` function. Here
 // we're defining it to dispatch a custom "clickTab" event that is caught by
@@ -76,6 +76,7 @@ interface Props {
   showMutationsTile: boolean;
   showOmicsExpressionTile: boolean;
   showTargetingCompoundsTile: boolean;
+  showEnrichmentTile: boolean;
 }
 
 const GenePageTabs = ({
@@ -99,6 +100,7 @@ const GenePageTabs = ({
   showMutationsTile,
   showOmicsExpressionTile,
   showTargetingCompoundsTile,
+  showEnrichmentTile,
 }: Props) => {
   const [
     selectedCellLineList,
@@ -165,6 +167,7 @@ const GenePageTabs = ({
           showMutationsTile={showMutationsTile}
           showOmicsExpressionTile={showOmicsExpressionTile}
           showTargetingCompoundsTile={showTargetingCompoundsTile}
+          showEnrichmentTile={showEnrichmentTile}
         />
       ) : (
         <TabsWithHistory
@@ -206,6 +209,7 @@ const GenePageTabs = ({
                 showMutationsTile={showMutationsTile}
                 showOmicsExpressionTile={showOmicsExpressionTile}
                 showTargetingCompoundsTile={showTargetingCompoundsTile}
+                showEnrichmentTile={showEnrichmentTile}
               />
             </TabPanel>
             {showDependencyTab && (
@@ -256,20 +260,27 @@ const GenePageTabs = ({
                 </React.Suspense>
               </TabPanel>
             )}
-            {enabledFeatures.gene_page_correlation_analysis &&
-              !isLoadingGeneOptions && (
-                <TabPanel className={styles.TabPanel}>
-                  <React.Suspense fallback={<div>Loading...</div>}>
-                    <CorrelationAnalysis
-                      compoundDatasetOptions={[]}
-                      geneDatasetOptions={geneCorrelationAnalysisOptions}
-                      featureName={symbol}
-                      featureId={entrezId}
-                      featureType={"gene"}
-                    />
-                  </React.Suspense>
-                </TabPanel>
-              )}
+            {enabledFeatures.gene_page_correlation_analysis && (
+              <TabPanel className={styles.TabPanel}>
+                <React.Suspense fallback={<div>Loading...</div>}>
+                  {!isLoadingGeneOptions &&
+                    geneCorrelationAnalysisOptions.length === 0 && (
+                      <div>No correlation analysis data found for {symbol}</div>
+                    )}
+
+                  {!isLoadingGeneOptions &&
+                    geneCorrelationAnalysisOptions.length > 0 && (
+                      <CorrelationAnalysis
+                        compoundDatasetOptions={[]}
+                        geneDatasetOptions={geneCorrelationAnalysisOptions}
+                        featureName={symbol}
+                        featureId={entrezId}
+                        featureType={"gene"}
+                      />
+                    )}
+                </React.Suspense>
+              </TabPanel>
+            )}
           </TabPanels>
         </TabsWithHistory>
       )}

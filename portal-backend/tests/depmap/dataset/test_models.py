@@ -468,14 +468,6 @@ def test_biomarker_dataset_has_entity(empty_db_mock_downloads):
                 "global_priority": None,
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            BiomarkerDataset.BiomarkerEnum.mutation_pearson: {
-                "display_name": "Mutation",
-                "units": "Mutation",
-                "data_type": "mutation",
-                "priority": None,
-                "global_priority": None,
-                "taiga_id": "placeholder-taiga-id.1",
-            },
             # BiomarkerDataset.BiomarkerEnum.rppa: {
             #     "display_name": "RPPA",
             #     "units": "RPPA signal (log2)",

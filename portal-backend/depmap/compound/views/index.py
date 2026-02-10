@@ -1,18 +1,14 @@
 from itertools import groupby
-import math
 import os
 import tempfile
-from typing import Any, List, Optional
+from typing import List
 import zipfile
-from depmap.compound import legacy_utils
 from depmap.compound.utils import (
-    find_compound_dataset,
     get_compound_dataset_with_name_and_priority,
     dataset_exists_with_compound_in_auc_and_rep_datasets,
 )
 
 from depmap.context_explorer.models import ContextExplorerDatasets
-import numpy as np
 import pandas as pd
 from flask import (
     Blueprint,
@@ -26,15 +22,10 @@ from flask import (
 )
 
 from depmap import data_access
-from depmap.data_access.models import MatrixDataset
-from depmap.cell_line.models_new import DepmapModel
 from depmap.compound.models import (
     Compound,
-    CompoundDoseReplicate,
-    CompoundExperiment,
     DRCCompoundDataset,
     DRCCompoundDatasetWithNamesAndPriority,
-    DoseResponseCurve,
     drc_compound_datasets,
 )
 from depmap.compound.views.executive import (
@@ -43,12 +34,10 @@ from depmap.compound.views.executive import (
 )
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.enums import DependencyEnum
-from depmap.partials.matrix.models import ColMatrixIndex
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
 from depmap.predictability.utilities import (
     get_predictability_input_files_downloads_link,
 )
-from depmap.settings.shared import DATASET_METADATA
 from depmap.utilities.sign_bucket_url import get_signed_url
 
 blueprint = Blueprint(
@@ -61,8 +50,9 @@ blueprint = Blueprint(
 # (e.g. more sane gene names), we don't want to do this.
 @blueprint.route("/<path:name>")
 def view_compound(name):
-
     compound = Compound.get_by_label(name, must=False)
+    if compound is None:
+        abort(404)
 
     aliases = Compound.get_aliases_by_entity_id(compound.entity_id)
     compound_aliases = ", ".join(
@@ -81,25 +71,14 @@ def view_compound(name):
         compound.compound_id
     )
     has_datasets = len(compound_datasets) != 0
-    sensitivity_tab_compound_summary = get_sensitivity_tab_info(
-        compound.entity_id, compound_datasets
-    )
 
-    dose_curve_options_new = get_new_dose_curves_tab_drc_options(
+    heatmap_dataset_options = get_heatmap_dose_curves_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
-    )
-    heatmap_dataset_options = get_heatmap_tab_drc_options(
-        compound_label=compound.label, compound_id=compound.compound_id
-    )
-
-    corr_analysis_options = get_corr_analysis_options_if_available(
-        compound_label=compound.label,
     )
 
     # If there are no no valid dataset options, hide the heatmap tab and tile
     show_heatmap_tab = len(heatmap_dataset_options) > 0
 
-    # TODO: Update when context explorer moves to using compounds instead of compound experiments
     show_enriched_lineages = (
         data_access.dataset_exists(
             ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
@@ -116,13 +95,13 @@ def view_compound(name):
         )
     )
 
-    show_compound_correlation_tiles = current_app.config[
+    show_compound_correlated_dependencies_tile = current_app.config[
         "ENABLED_FEATURES"
-    ].compound_correlation_tiles
+    ].compound_correlated_dependencies_tile
 
-    show_correlation_analysis = current_app.config[
+    show_related_compounds_tile = current_app.config[
         "ENABLED_FEATURES"
-    ].correlation_analysis
+    ].related_compounds_tile
 
     return render_template(
         "compounds/index.html",
@@ -130,7 +109,6 @@ def view_compound(name):
         compound_id=compound.compound_id,
         title=name,
         compound_aliases=compound_aliases,
-        summary=sensitivity_tab_compound_summary,
         has_predictability=has_predictability,
         predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
         predictability_methodology_link=get_signed_url(
@@ -141,172 +119,47 @@ def view_compound(name):
             has_predictability,
             has_heatmap=show_heatmap_tab,
             show_enriched_lineages=show_enriched_lineages,
-            show_compound_correlation_tiles=show_compound_correlation_tiles,
+            show_compound_correlated_dependencies_tile=show_compound_correlated_dependencies_tile,
+            show_related_compounds_tile=show_related_compounds_tile,
         ),
-        dose_curve_options=format_dose_curve_options(compound_experiment_and_datasets),
-        # If len(dose_curve_options_new) is 0, hide the tab in the index.html
-        dose_curve_options_new=dose_curve_options_new,
-        corr_analysis_options=corr_analysis_options,
-        heatmap_dataset_options=heatmap_dataset_options,
         compound_units=compound.units,
-        show_heatmap_tab=show_heatmap_tab,
-        show_enriched_lineages=show_enriched_lineages,
-        show_correlation_analysis=show_correlation_analysis,
     )
 
 
-def get_sensitivity_tab_info(
-    compound_entity_id: int, compound_datasets: list[MatrixDataset]
-) -> Optional[dict[str, Any]]:
-    """Get a dictionary of values containing layout information for the sensitivity tab."""
-    if len(compound_datasets) == 0:
-        return None
+def get_heatmap_dose_curves_tab_drc_options(
+    compound_label: str, compound_id: str
+) -> List[DRCCompoundDatasetWithNamesAndPriority]:
+    valid_options = []
 
-    # Define the options that will appear in the datasets dropdown
-    dataset_options = []
-    for dataset in compound_datasets:
-        dataset_summary = {
-            "label": dataset.label,
-            "id": dataset.id,
-            "dataset": dataset.id,
-            "entity": compound_entity_id,
-        }
-        dataset_options.append(dataset_summary)
-
-    return {
-        "figure": {"name": compound_entity_id},
-        "summary_options": dataset_options,
-        "show_auc_message": True,
-        "size_biom_enum_name": None,
-        "color": None,
-    }
-
-
-def format_summary_option(dataset, entity, label):
-    option = {
-        "label": label,
-        "id": "{}_{}".format(
-            dataset.name.name, entity.entity_id
-        ),  # used for uniqueness
-        "dataset": dataset.name.name,
-        "entity": entity.entity_id,
-    }
-    return option
-
-
-def format_dose_curve_options(compound_experiment_and_datasets):
-    """
-    Used for jinja rendering of the dose curve tab
-    """
-    dose_curve_options = []
-    for compound_experiment, dataset in compound_experiment_and_datasets:
-        # if has dose curve information
-        if (
-            dataset.get_dose_replicate_enum()
-            and len(
-                CompoundDoseReplicate.get_all_with_compound_experiment_id(
-                    compound_experiment.entity_id
-                )
-            )
-            > 0
+    for drc_dataset in drc_compound_datasets:
+        if dataset_exists_with_compound_in_auc_and_rep_datasets(
+            drc_dataset=drc_dataset,
+            compound_label=compound_label,
+            compound_id=compound_id,
         ):
-            dose_curve_option = format_dose_curve_option(
-                dataset,
-                compound_experiment,
-                "{} {}".format(compound_experiment.label, dataset.display_name),
+            complete_option = get_compound_dataset_with_name_and_priority(drc_dataset)
+            valid_options.append(complete_option)
+
+    return valid_options
+
+
+def get_corr_analysis_options(compound_label: str,) -> List[DRCCompoundDataset]:
+    valid_options = []
+
+    for drc_dataset in drc_compound_datasets:
+        if drc_dataset.log_auc_dataset_given_id is not None:
+
+            does_dataset_exist_with_compound = data_access.dataset_exists(
+                drc_dataset.log_auc_dataset_given_id
+            ) and data_access.valid_row(
+                drc_dataset.log_auc_dataset_given_id, compound_label
             )
-            dose_curve_options.append(dose_curve_option)
-    return dose_curve_options
 
-
-def format_dose_curve_option(dataset, compound_experiment, label):
-    option = format_summary_option(dataset, compound_experiment, label)
-    option.update(
-        {
-            "dose_replicate_dataset": dataset.get_dose_replicate_enum().name,
-            "auc_dataset_display_name": dataset.display_name,
-            "compound_label": compound_experiment.label,
-            "compound_xref_full": compound_experiment.xref_full,
-            "dose_replicate_level_yunits": DATASET_METADATA[
-                dataset.get_dose_replicate_enum()
-            ].units,
-        }
-    )
-
-    return option
-
-
-def get_heatmap_tab_drc_options(
-    compound_label: str, compound_id: str
-) -> List[DRCCompoundDatasetWithNamesAndPriority]:
-    """
-    Used for jinja rendering of heatmap tab
-    """
-    show_heatmap_tab = current_app.config["ENABLED_FEATURES"].heatmap_tab
-
-    valid_options = []
-    if show_heatmap_tab:
-        for drc_dataset in drc_compound_datasets:
-            if dataset_exists_with_compound_in_auc_and_rep_datasets(
-                drc_dataset=drc_dataset,
-                compound_label=compound_label,
-                compound_id=compound_id,
-            ):
+            if does_dataset_exist_with_compound:
                 complete_option = get_compound_dataset_with_name_and_priority(
-                    drc_dataset
+                    drc_dataset, use_logged_auc=True
                 )
                 valid_options.append(complete_option)
-
-    return valid_options
-
-
-def get_new_dose_curves_tab_drc_options(
-    compound_label: str, compound_id: str
-) -> List[DRCCompoundDatasetWithNamesAndPriority]:
-    """
-    Used for jinja rendering of the dose curve tab
-    """
-    show_new_dose_curves_tab = current_app.config[
-        "ENABLED_FEATURES"
-    ].new_dose_curves_tab
-
-    valid_options = []
-    if show_new_dose_curves_tab:
-        for drc_dataset in drc_compound_datasets:
-            if dataset_exists_with_compound_in_auc_and_rep_datasets(
-                drc_dataset=drc_dataset,
-                compound_label=compound_label,
-                compound_id=compound_id,
-            ):
-                complete_option = get_compound_dataset_with_name_and_priority(
-                    drc_dataset
-                )
-                valid_options.append(complete_option)
-
-    return valid_options
-
-
-def get_corr_analysis_options_if_available(
-    compound_label: str,
-) -> List[DRCCompoundDataset]:
-    show_corr_analysis = current_app.config["ENABLED_FEATURES"].correlation_analysis
-
-    valid_options = []
-    if show_corr_analysis:
-        for drc_dataset in drc_compound_datasets:
-            if drc_dataset.log_auc_dataset_given_id is not None:
-
-                does_dataset_exist_with_compound = data_access.dataset_exists(
-                    drc_dataset.log_auc_dataset_given_id
-                ) and data_access.valid_row(
-                    drc_dataset.log_auc_dataset_given_id, compound_label
-                )
-
-                if does_dataset_exist_with_compound:
-                    complete_option = get_compound_dataset_with_name_and_priority(
-                        drc_dataset, use_logged_auc=True
-                    )
-                    valid_options.append(complete_option)
 
     return valid_options
 
@@ -314,182 +167,6 @@ def get_corr_analysis_options_if_available(
 @blueprint.route("/compoundUrlRoot")
 def get_compound_url_route():
     return jsonify(url_for("compound.view_compound", name=""))
-
-
-# for testing:  http://127.0.0.1:5000/depmap-xqa/compound/dosecurve/CTRP_dose_replicate/ACH-000425/CTRP:1788
-@blueprint.route("/dosecurve/<dataset_name>/<depmap_id>/<compound_label>")
-def fetch_dose_curve(dataset_name, depmap_id, compound_label):
-    dose_response_curve = format_dose_curve(dataset_name, depmap_id, compound_label)
-    return jsonify(dose_response_curve)
-
-
-def format_dose_curve(dataset_name, depmap_id, xref_full):
-    # first, fetch the points of the dose response curve
-    # use dataset_name to get the Dataset by name
-    dataset = Dataset.get_dataset_by_name(dataset_name)
-    assert dataset
-
-    # get matrix associated with the dataset
-    matrix = dataset.matrix
-
-    cell_line = DepmapModel.get_by_model_id(depmap_id)
-
-    # use xref_full to get the appropriate CompoundExperiment
-    compound_experiment = CompoundExperiment.get_by_xref_full(xref_full)
-
-    # get all CompoundDoseReplicate objects associated with CompoundExperiment
-    compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
-        compound_experiment.entity_id
-    )
-    compound_dose_replicates = [
-        dose_rep
-        for dose_rep in compound_dose_replicates
-        if DependencyDataset.has_entity(dataset.name, dose_rep.entity_id)
-    ]
-
-    # call the get_values_by_entities_and_depmap_id function in matrix, passing in entities and depmap id
-    viabilities = matrix.get_values_by_entities_and_depmap_id(
-        entities=compound_dose_replicates, depmap_id=cell_line.depmap_id
-    )
-
-    # points only contains viability -- we need to add on dose, isMasked, and replicate ourselves
-    assert len(compound_dose_replicates) == len(viabilities)
-    points = []
-    for i in range(len(viabilities)):
-        if (viabilities[i] is not None) & (not math.isnan(viabilities[i])):
-            points.append(
-                {
-                    "dose": compound_dose_replicates[i].dose,
-                    "viability": viabilities[i].item(),
-                    "isMasked": compound_dose_replicates[i].is_masked,
-                    "replicate": compound_dose_replicates[i].replicate,
-                }
-            )
-
-    # fetch the dose response curve parameters using cell line name and compound experiment to find the appropriate DoseResponseCurve
-    curve_objs = DoseResponseCurve.query.filter(
-        DoseResponseCurve.compound_exp == compound_experiment,
-        DoseResponseCurve.cell_line == cell_line,
-    ).all()
-
-    curve_params = []
-
-    for curve in curve_objs:
-        curve_param = {
-            "ec50": curve.ec50,
-            "slope": curve.slope,
-            "lowerAsymptote": curve.lower_asymptote,
-            "upperAsymptote": curve.upper_asymptote,
-        }
-        curve_params.append(curve_param)
-
-    dose_response_curve = {"points": points, "curve_params": curve_params}
-
-    return dose_response_curve
-
-
-@blueprint.route("/dosetable/<dataset_name>/<xref_full>")
-def dose_table(dataset_name, xref_full):
-    """
-    Return table of dose responses for different doses by cell line, plus depmap id
-    and display name for the cell lines.
-    :param dataset_name: enum name for the dose replicate dataset
-    :return: a json structure like
-        {
-           "ACH-000552":{
-              "0-0045":0.9473772049, # "0-0045" refers to the dose but with "." replaced with "-". This thus corresponds to 0.0045
-              "0-29":0.8894940615,
-              "2-3":0.68013376,
-              "9-2":0.1122418195,
-              "cell_line_display_name":"HT29",
-              "auc":0.8729583436,
-           },
-           "ACH-000279":{
-              ...
-    """
-    # first, fetch the points of the dose response curve
-    # use dataset_name to get the Dataset by name
-    dataset = Dataset.get_dataset_by_name(dataset_name, must=True)
-
-    # get matrix associated with the dataset
-    matrix = dataset.matrix
-
-    # use xref_full to get the appropriate CompoundExperiment
-    compound_experiment = CompoundExperiment.get_by_xref_full(xref_full)
-
-    # get all CompoundDoseReplicate objects associated with CompoundExperiment
-    compound_dose_replicates = CompoundDoseReplicate.get_all_with_compound_experiment_id(
-        compound_experiment.entity_id
-    )
-    compound_dose_replicates = [
-        dose_rep
-        for dose_rep in compound_dose_replicates
-        if DependencyDataset.has_entity(dataset.name, dose_rep.entity_id)
-    ]
-
-    matrix_col_index: List[ColMatrixIndex] = matrix.col_index.order_by(
-        ColMatrixIndex.index
-    ).all()
-    # We need to filter out cols that exist in the underlying HDF5 file, but that were
-    # not loaded as ColMatrixIndexes
-    table_indices = [ci.index for ci in matrix_col_index]
-
-    table = np.array(
-        [matrix.get_values_by_entity(cpr.entity_id) for cpr in compound_dose_replicates]
-    )
-
-    df = pd.DataFrame(
-        table[:, table_indices], columns=[ci.depmap_id for ci in matrix_col_index]
-    )
-
-    # The React component BaseTable has issues with periods in column names
-    # "{:.15f}".format(cpr.dose) to fix UI bug caused by scientific notation. 5e-05 was being
-    # parsed to 5μM instead of 0.000050 μM
-    df["dose"] = [
-        str("{:.15f}".format(cpr.dose)).replace(".", "-")
-        for cpr in compound_dose_replicates
-    ]
-
-    if len(df) > 0:
-        df = df.groupby("dose").mean()
-
-    df = df.T
-
-    cell_line_names = DepmapModel.get_cell_line_display_names(df.index)
-
-    df = df.merge(cell_line_names, left_index=True, right_index=True)
-
-    #### AUC
-    auc_data = get_auc_data(dataset_name, compound_experiment)
-
-    if auc_data is not None:
-        df = df.merge(auc_data, left_index=True, right_index=True, how="left")
-
-    df = df.T
-    return df.to_json()
-
-
-def get_auc_data(dataset_name, compound_experiment):
-    dataset_to_auc = {
-        DependencyEnum(x.replicate_dataset).name: x.auc_dataset
-        for x in drc_compound_datasets
-    }
-    if dataset_name in dataset_to_auc:
-        auc_dataset_name = dataset_to_auc[dataset_name].name
-        auc_dataset = Dataset.get_dataset_by_name(auc_dataset_name, must=True)
-        auc_matrix = auc_dataset.matrix
-        auc_data = auc_matrix.get_cell_line_values_and_depmap_ids(
-            compound_experiment.entity_id
-        )
-        auc_log_or_auc_col = auc_dataset.matrix.units
-
-        auc_data = pd.DataFrame.from_dict(
-            auc_data.to_dict(), orient="index", columns=[auc_log_or_auc_col]
-        )
-        auc_data.index.name = "depmap_id"
-        return auc_data
-    else:
-        return None
 
 
 @blueprint.route("/api/predictive")

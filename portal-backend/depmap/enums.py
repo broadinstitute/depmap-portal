@@ -73,9 +73,7 @@ class DependencyEnum(DatasetEnum):
 
 class BiomarkerEnum(DatasetEnum):
     expression = "expression"
-    copy_number_absolute = "copy_number_absolute"
     copy_number_relative = "copy_number_relative"
-    mutation_pearson = "mutation_pearson"
     mutations_damaging = "mutations_damaging"
     mutations_hotspot = "mutations_hotspot"
     mutations_driver = "mutations_driver"
@@ -93,7 +91,6 @@ class BiomarkerEnum(DatasetEnum):
     oncref_confounders = "oncref_confounders"
     oncref_seq_confounders = "oncref_seq_confounders"
     rep_all_single_pt_confounders = "rep_all_single_pt_confounders"
-    rep1m_confounders = "rep1m_confounders"
     CRISPRGeneDependency = "CRISPRGeneDependency"
     OmicsAbsoluteCNGene = "OmicsAbsoluteCNGene"
     OmicsSignatures = "OmicsSignatures"

@@ -57,10 +57,8 @@ DATASET_NAME_TO_FEATURE_TYPE = {
     BiomarkerEnum.metabolomics.name: "Metabolomics",
     BiomarkerEnum.fusions.name: "Fusion",
     BiomarkerEnum.copy_number_relative.name: "Copy num.",
-    BiomarkerEnum.copy_number_absolute.name: "Copy num. abs",
     BiomarkerEnum.crispr_confounders.name: "Confounders",
     BiomarkerEnum.rnai_confounders.name: "Confounders",
-    BiomarkerEnum.rep1m_confounders.name: "Confounders",
     BiomarkerEnum.proteomics.name: "Proteomics",
     BiomarkerEnum.sanger_proteomics.name: "Sanger Proteomics",
 }

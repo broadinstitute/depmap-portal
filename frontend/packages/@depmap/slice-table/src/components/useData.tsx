@@ -10,6 +10,32 @@ import type {
   SliceQuery,
 } from "@depmap/types";
 
+interface Parameters {
+  index_type_name: string;
+  slices: SliceQuery[]; // Make sure to memoize this!
+  viewOnlySlices?: Set<SliceQuery>; // Make sure to memoize this!
+  rowFilters?: RowFilters; // Make sure to memoize this!
+  selectedRowIds?: Set<string>; // Make sure to memoize this!
+  headerCellRenderer?: ({
+    label,
+    sliceQuery,
+    defaultElement,
+  }: {
+    label: string;
+    sliceQuery: SliceQuery;
+    defaultElement: React.ReactNode;
+  }) => React.ReactNode;
+  bodyCellRenderer?: ({
+    label,
+    sliceQuery,
+    getValue,
+  }: {
+    label: string;
+    sliceQuery: SliceQuery;
+    getValue: () => React.ReactNode;
+  }) => React.ReactNode;
+}
+
 // Types for better code clarity
 type DatasetResponse = Record<string, Record<string, string | number>>;
 type LabelLookup = { id: string; label: string }[];
@@ -34,6 +60,17 @@ interface AlignedData {
       sliceQuery: SliceQuery;
       isEditable: boolean;
       isViewable: boolean;
+      headerMenuItems?: (
+        | {
+            label: string;
+            icon: string;
+            onClick: () => void;
+            disabled?: boolean;
+          }
+        | {
+            widget: "divider";
+          }
+      )[];
     };
   }>;
   data: Record<string, string | number | undefined>[];
@@ -324,7 +361,9 @@ function transformToTableData(
   labelColumnDisplayName: string,
   idToLabelMappings: Record<string, Record<string, string>>,
   rowFilters?: RowFilters,
-  selectedRowIds?: Set<string>
+  selectedRowIds?: Parameters["selectedRowIds"],
+  headerCellRenderer?: Parameters["headerCellRenderer"],
+  bodyCellRenderer?: Parameters["bodyCellRenderer"]
 ) {
   // Step 1: Create unique column keys and collect all row IDs
   const columnKeys = slices.map(createUniqueColumnKey);
@@ -474,17 +513,37 @@ function transformToTableData(
         sliceQuery: slice,
       },
       accessorFn: (row: Record<string, unknown>) => row[columnKey],
-      header: () => (
-        <div>
-          <WordBreaker text={truncateMiddle(displayLabel)} />
-          {datasetName && (
-            <>
-              <br />
-              <WordBreaker text={datasetName} />
-            </>
-          )}
-        </div>
-      ),
+      header: () => {
+        const defaultElement = (
+          <div>
+            <WordBreaker text={truncateMiddle(displayLabel)} />
+            {datasetName && (
+              <>
+                <br />
+                <WordBreaker text={datasetName} />
+              </>
+            )}
+          </div>
+        );
+
+        return headerCellRenderer
+          ? headerCellRenderer({
+              sliceQuery: slice,
+              label: displayLabel,
+              defaultElement,
+            })
+          : defaultElement;
+      },
+      // Add a custom cell renderer for string lists.
+      ...(bodyCellRenderer && {
+        cell: ({ getValue }: { getValue: () => React.ReactNode }) => {
+          return bodyCellRenderer({
+            getValue,
+            sliceQuery: slice,
+            label: displayLabel,
+          });
+        },
+      }),
       // Add a custom cell renderer if we can turn the value into a hyperlink.
       ...(isLinkable(references) && {
         cell: ({
@@ -541,13 +600,9 @@ export default function useAlignedData({
   viewOnlySlices = undefined,
   rowFilters = undefined,
   selectedRowIds = undefined,
-}: {
-  index_type_name: string;
-  slices: SliceQuery[]; // Make sure to memoize this!
-  viewOnlySlices?: Set<SliceQuery>; // Make sure to memoize this!
-  rowFilters?: RowFilters; // Make sure to memoize this!
-  selectedRowIds?: Set<string>; // Make sure to memoize this!
-}): AlignedData {
+  headerCellRenderer = undefined,
+  bodyCellRenderer = undefined,
+}: Parameters): AlignedData {
   const [state, setState] = useState<AlignedData>({
     columns: [],
     data: [],
@@ -710,7 +765,9 @@ export default function useAlignedData({
           labelColumnDisplayName,
           idToLabelMappings,
           rowFilters,
-          selectedRowIds
+          selectedRowIds,
+          headerCellRenderer,
+          bodyCellRenderer
         );
 
         setState((prev) => ({
@@ -740,7 +797,15 @@ export default function useAlignedData({
     return () => {
       isCancelled = true;
     };
-  }, [index_type_name, slices, viewOnlySlices, rowFilters, selectedRowIds]);
+  }, [
+    bodyCellRenderer,
+    headerCellRenderer,
+    index_type_name,
+    slices,
+    viewOnlySlices,
+    rowFilters,
+    selectedRowIds,
+  ]);
 
   return {
     columns: state.columns,

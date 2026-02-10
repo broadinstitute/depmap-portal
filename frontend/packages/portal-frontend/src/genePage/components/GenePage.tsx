@@ -1,9 +1,9 @@
 import React from "react";
-import { DatasetOption } from "src/entity/components/EntitySummary";
 import GenePageHeader from "./GenePageHeader";
 import GenePageTabs from "./GenePageTabs";
 import styles from "../styles/GenePage.scss";
 import { TileTypeEnum } from "./GenePageOverview";
+import { DatasetOption } from "@depmap/types";
 
 interface Props {
   fullName: string;
@@ -30,6 +30,7 @@ interface Props {
   showMutationsTile: boolean;
   showOmicsExpressionTile: boolean;
   showTargetingCompoundsTile: boolean;
+  showEnrichmentTile: boolean;
 }
 
 const GenePage = ({
@@ -57,6 +58,7 @@ const GenePage = ({
   showMutationsTile,
   showOmicsExpressionTile,
   showTargetingCompoundsTile,
+  showEnrichmentTile,
 }: Props) => {
   return (
     <div className={styles.GenePage}>
@@ -89,6 +91,7 @@ const GenePage = ({
         showMutationsTile={showMutationsTile}
         showOmicsExpressionTile={showOmicsExpressionTile}
         showTargetingCompoundsTile={showTargetingCompoundsTile}
+        showEnrichmentTile={showEnrichmentTile}
       />
     </div>
   );

@@ -23,16 +23,9 @@ import {
   mutationNumToColor,
   setQueryStringWithoutPageReload,
 } from "@depmap/utils";
+import { DatasetOption } from "@depmap/types";
 
 type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
-
-export type DatasetOption = {
-  // called a "summary_option" on the backend
-  dataset: string;
-  entity: number;
-  id: string;
-  label: string;
-};
 
 type Props = {
   initialSelectedDataset: DatasetOption;

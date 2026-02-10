@@ -620,23 +620,14 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    all_matching_datasets = data_access.get_all_datasets_containing_compound(
-        compound.compound_id
-    )
-    if len(all_matching_datasets) == 0:
-        return render_template(
-            "tiles/sensitivity.html", dep_dist=None, dep_dist_caption=None
-        )
+    div_id = str(uuid.uuid4())
 
-    # This tile was originally configured to show multiple distributions, but
-    # was later updated to only display the top priority dataset
-    top_priority_dataset = all_matching_datasets[0]
-    dependency_distribution_info = format_dep_dist(compound, top_priority_dataset)
-
-    return render_template(
-        "tiles/sensitivity.html",
-        dep_dist=dependency_distribution_info,
-        dep_dist_caption=format_dep_dist_warnings(top_priority_dataset),
+    return RenderedTile(
+        f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
+        f"""(
+        function() {{
+            DepMap.initSensitivityTile("{div_id}", "{compound.compound_id}");
+        }})""",
     )
 
 

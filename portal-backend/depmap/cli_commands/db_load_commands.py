@@ -1067,9 +1067,7 @@ def load_sample_data(
 
         biomarker_datasets = [
             BiomarkerEnum.expression,
-            BiomarkerEnum.copy_number_absolute,
             BiomarkerEnum.copy_number_relative,
-            BiomarkerEnum.mutation_pearson,
             BiomarkerEnum.mutations_hotspot,
             BiomarkerEnum.mutations_damaging,
             BiomarkerEnum.mutations_driver,
@@ -1083,7 +1081,6 @@ def load_sample_data(
             BiomarkerEnum.metabolomics,
             BiomarkerEnum.crispr_confounders,
             BiomarkerEnum.rnai_confounders,
-            BiomarkerEnum.rep1m_confounders,
             BiomarkerEnum.oncref_confounders,
             BiomarkerEnum.rep_all_single_pt_confounders,
         ]
