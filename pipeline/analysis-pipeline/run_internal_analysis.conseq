@@ -1,0 +1,21 @@
+eval """
+import subprocess
+preprocessor = f"../preprocess_taiga_ids.py"
+cmd = ["python", preprocessor, 
+                        f"predictability_inputs_internal.template", 
+                        f"predictability_inputs_internal-DO-NOT-EDIT-ME"]
+print(f"Preprocessing templates by running {' '.join(cmd)}...")
+subprocess.check_call(cmd)
+"""
+
+include "predictability_inputs_internal-DO-NOT-EDIT-ME"
+
+include "predictability/fit.conseq"
+
+# all of the run_xxx.conseq files define publish_dest as INVALID because
+# this variable is overriden when run from jenkins. If the valid is still 
+# INVALID, then we're probably running the pipeline for development, and 
+# therefore, don't publish any of the results to the dest path
+if "config.get('publish_dest', 'INVALID') != 'INVALID'":
+  include "publish.conseq"
+endif
