@@ -24,8 +24,6 @@ from depmap.gene.views.executive import (
 )
 from depmap.compound.views.executive import (
     get_best_compound_predictability,
-    format_dep_dist,
-    format_dep_dist_warnings,
     format_availability_tile,
 )
 from depmap.gene.models import Gene
