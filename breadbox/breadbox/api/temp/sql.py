@@ -20,7 +20,7 @@ class SqlQuery(BaseModel):
 
 
 @router.get(
-    "/sql/schema", operation_id="get_sql_schema", response_class=PlainTextResponse
+    "/sql/schema", operation_id="get_sql_schema",
 )
 def get_sql_schema(
     db: SessionWithUser = Depends(get_db_with_user),
@@ -36,8 +36,8 @@ def get_sql_schema(
         raise HTTPException(403, "SQL endpoints not enabled in this environment")
 
     dataset = dataset_crud.get_dataset(db, db.user, dataset_id=dataset_given_id)
-    schema_text = generate_simulated_schema(db, dataset)
-    return schema_text
+    statements_by_given_id = generate_simulated_schema(db, dataset)
+    return statements_by_given_id
 
 
 @router.post(

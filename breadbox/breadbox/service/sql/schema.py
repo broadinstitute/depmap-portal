@@ -266,7 +266,7 @@ def generate_simulated_schema(db: SessionWithUser, filter_by_dataset: Optional[D
     schema = assign_names(all_datasets, all_dim_types)
 
     filtered_datasets = [filter_by_dataset] if filter_by_dataset else all_datasets
-    all_statements = []
+    statements_by_given_id = {}
     for dataset in filtered_datasets:
         if isinstance(dataset, MatrixDataset):
             statements = _get_create_table_for_matrix(dataset, schema)
@@ -274,6 +274,10 @@ def generate_simulated_schema(db: SessionWithUser, filter_by_dataset: Optional[D
             statements = _get_create_table_for_tabular(dataset, schema)
         else:
             raise Exception("Unknown dataset type")
-        all_statements.append(statements)
-    # return repr(all_statements)
-    return "\n".join(all_statements)
+        
+        # In production, every dataset should have a given ID, but that may not be the case in dev envs
+        # When the given ID doesn't exist, we can just use the dataset UUID.
+        given_id = dataset.given_id if dataset.given_id else dataset.id
+        statements_by_given_id[given_id] = statements
+    
+    return statements_by_given_id
