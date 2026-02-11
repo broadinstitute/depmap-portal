@@ -1,8 +1,10 @@
 from pydantic import BaseModel
+from typing import Annotated, Optional
 
 from .router import router
 from fastapi import APIRouter, Body, Depends, HTTPException
 from breadbox.api.dependencies import get_db_with_user
+from breadbox.crud import dataset as dataset_crud
 from ...config import get_settings, Settings
 from ...db.session import SessionWithUser
 from ...service.sql import generate_simulated_schema, execute_sql_in_virtual_db
@@ -23,11 +25,18 @@ class SqlQuery(BaseModel):
 def get_sql_schema(
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
+    dataset_given_id: Optional[str] = None,
 ):
+    """
+    Return a virtual schema definition queryable by the /sql/query endpoint.
+    If a dataset given ID is specified, only return a subset of the schema definition 
+    (tables relevant to that dataset).
+    """
     if not settings.sql_endpoints_enabled:
         raise HTTPException(403, "SQL endpoints not enabled in this environment")
 
-    schema_text = generate_simulated_schema(db)
+    dataset = dataset_crud.get_dataset(db, db.user, dataset_id=dataset_given_id)
+    schema_text = generate_simulated_schema(db, dataset)
     return schema_text
 
 

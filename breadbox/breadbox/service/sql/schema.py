@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Iterator, Any, Union, List, Tuple, Dict
+from typing import Callable, Iterator, Any, Union, List, Optional, Tuple, Dict
 
 
 from dataclasses import dataclass
@@ -259,14 +259,15 @@ def assign_names(datasets: List[Dataset], dim_types: List[DimensionType]):
     )
 
 
-def generate_simulated_schema(db: SessionWithUser):
-    datasets = crud_dataset.get_datasets(db, db.user)
-    dim_types = crud_dimension_types.get_dimension_types(db)
+def generate_simulated_schema(db: SessionWithUser, filter_by_dataset: Optional[Dataset]):
+    # Assign names for all datasets and dim types
+    all_datasets = crud_dataset.get_datasets(db, db.user)
+    all_dim_types = crud_dimension_types.get_dimension_types(db)
+    schema = assign_names(all_datasets, all_dim_types)
 
-    schema = assign_names(datasets, dim_types)
-
+    filtered_datasets = [filter_by_dataset] if filter_by_dataset else all_datasets
     all_statements = []
-    for dataset in datasets:
+    for dataset in filtered_datasets:
         if isinstance(dataset, MatrixDataset):
             statements = _get_create_table_for_matrix(dataset, schema)
         elif isinstance(dataset, TabularDataset):
