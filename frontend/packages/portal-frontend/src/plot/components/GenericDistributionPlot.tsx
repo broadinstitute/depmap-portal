@@ -56,7 +56,7 @@ function GenericDistributionPlot({
 
     // 3. Scipy's Scott's Factor logic
     // scipy.stats.gaussian_kde.scotts_factor() = n**(-1./(d+4))
-    const scottsFactor = Math.pow(n, -1 / (1 + 4));
+    const scottsFactor = n ** (-1 / (1 + 4));
 
     // 4. Bandwidth is factor * stdDev
     const bandwidth = scottsFactor * stdDev;
@@ -190,21 +190,6 @@ function GenericDistributionPlot({
       displayModeBar: false,
       responsive: true,
     });
-
-    // Use ResizeObserver for the column shifts
-    const observer = new ResizeObserver(() => {
-      // Plotly.Plots.resize is asynchronous by default.
-      // Calling it inside an observer during a flex-basis change
-      // can cause a 1-frame "pop".
-      // We call it directly here.
-      if (ref.current) {
-        Plotly.Plots.resize(plot);
-      }
-    });
-
-    observer.observe(plot);
-
-    return () => observer.disconnect();
   }, [Plotly, color, plotData, values, xaxisLabel]);
 
   return (
@@ -220,9 +205,9 @@ function GenericDistributionPlot({
   );
 }
 
-export default function LazyGenericDistributionPlot(
-  props: DistributionPlotProps
-) {
+export default function LazyGenericDistributionPlot({
+  ...props
+}: DistributionPlotProps) {
   return (
     <PlotlyLoader version="module">
       {(Plotly: PlotlyType) => (

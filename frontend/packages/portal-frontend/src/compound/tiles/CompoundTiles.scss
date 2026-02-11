@@ -127,47 +127,23 @@
 }
 
 .SensitivityTile {
-  .heatmapContainer {
+  .sensitivityContainer {
     flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     position: relative;
+    padding-bottom: 15px;
+  }
+
+  .cellLineCountLabel {
+    color: #c55252;
+    font-weight: bold;
   }
 
   .subHeader {
     font-size: 14px;
     font-weight: 700;
     padding-bottom: 10px;
-  }
-
-  .subHeader2 {
-    font-size: 14px;
-    font-weight: 700;
-    padding-bottom: 4px;
-  }
-
-  .tableColumnHeader {
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .heatmapTileTable {
-    margin-left: 34px;
-    th {
-      border-left: 50px solid transparent;
-      border-top: 4px solid transparent;
-    }
-    th:first-child {
-      border-left: 0;
-    }
-
-    td {
-      border-left: 50px solid transparent;
-      border-top: 4px solid transparent;
-    }
-    td:first-child {
-      border-left: 0;
-    }
   }
 }
 
