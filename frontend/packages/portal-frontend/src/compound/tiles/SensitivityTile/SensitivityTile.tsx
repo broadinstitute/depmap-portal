@@ -62,7 +62,9 @@ export const SensitivityTile: React.FC<SensitivityTileProps> = ({
     >
       <div className="card_border container_fluid">
         <h2 className="no_margin cardtitle_text">Sensitive Cell Lines</h2>
+
         <div className="card_padding">
+          <div className={styles.subHeader}>{dataset.name}</div>
           {!isLoading && !error && sliceValues && (
             <div style={{ color: "#c55252", fontWeight: "bold" }}>
               {numberOfCellLines} of Cell Lines Shown
@@ -70,15 +72,17 @@ export const SensitivityTile: React.FC<SensitivityTileProps> = ({
           )}
           {isLoading && !error && <PlotSpinner />}
           {!isLoading && !error && sliceValues && (
-            <div className={styles.heatmapWithTriangle}>
-              <div className={styles.heatmapContainer}>
-                <GenericDistributionPlot values={sliceValues} color="#c55252" />
-              </div>
+            <div className={styles.heatmapContainer}>
+              <GenericDistributionPlot
+                values={sliceValues}
+                xaxisLabel={dataset.units}
+                color="#c55252"
+              />
             </div>
           )}
 
           {sliceValues && (
-            <div>
+            <div style={{ paddingTop: "15px" }}>
               <p>{warningText}</p>
               <hr className={styles.heatmapSeparator} />
               <p className="stacked-boxplot-download-container">

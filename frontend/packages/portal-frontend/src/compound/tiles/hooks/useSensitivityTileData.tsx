@@ -33,9 +33,7 @@ export default function useSensitivityTileData(
 
         const record: Record<string, any> = sliceData[compoundId] || {};
 
-        const dataList = Object.values(record)
-          .map((val) => Number(val))
-          .filter((val) => typeof val === "number" && !Number.isNaN(val));
+        const dataList = Object.values(record).map(Number).filter(Boolean);
 
         setSliceValues(dataList);
         setIsLoading(false);
