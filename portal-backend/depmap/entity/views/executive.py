@@ -46,6 +46,7 @@ def remove_svg_height_width(svg_string):
     return front + svg_open_tag + back
 
 
+# Seems to only be used for the Gene Page Omics tile (portal-backend/depmap/tile/views.py get_omics_html)
 def format_generic_distribution_plot(values, color, y_axis_at_zero=False):
     # if all of `values` is a single value, the following fails at ax1.lines[0] so instead return html explaining we
     # have zero variance

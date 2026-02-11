@@ -25,9 +25,13 @@ import {
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
-import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
+import {
+  getHighestPriorityCompoundDataset,
+  getHighestPriorityCorrelationDatasetForEntity,
+} from "./compound/utils";
 import TopCoDependenciesTile from "./genePage/tiles/TopCoDependencies";
 import { getDependencyDatasetIds } from "./genePage/utils";
+import { SensitivityTile } from "./compound/tiles/SensitivityTile/SensitivityTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -288,6 +292,28 @@ export function initEnrichmentTile(
   renderWithErrorBoundary(
     <React.Suspense fallback={<div>Loading...</div>}>
       <EnrichmentTile featureLabel={featureLabel} featureType={featureType} />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export async function initSensitivityTile(
+  elementId: string,
+  compoundId: string
+) {
+  const highestPriorityDataset = await getHighestPriorityCompoundDataset(
+    compoundId
+  );
+
+  if (highestPriorityDataset === null) {
+    return;
+  }
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <SensitivityTile
+        compoundId={compoundId}
+        dataset={highestPriorityDataset}
+      />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );
