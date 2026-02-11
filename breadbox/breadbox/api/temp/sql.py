@@ -5,6 +5,7 @@ from .router import router
 from fastapi import APIRouter, Body, Depends, HTTPException
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.crud import dataset as dataset_crud
+from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 from ...config import get_settings, Settings
 from ...db.session import SessionWithUser
 from ...service.sql import generate_simulated_schema, execute_sql_in_virtual_db
@@ -35,7 +36,13 @@ def get_sql_schema(
     if not settings.sql_endpoints_enabled:
         raise HTTPException(403, "SQL endpoints not enabled in this environment")
 
-    dataset = dataset_crud.get_dataset(db, db.user, dataset_id=dataset_given_id)
+    if dataset_given_id is None:
+        dataset = None
+    else:
+        dataset = dataset_crud.get_dataset(db, db.user, dataset_id=dataset_given_id)
+        if dataset is None:
+            raise ResourceNotFoundError("Dataset not found")
+
     statements_by_given_id = generate_simulated_schema(db, dataset)
     return statements_by_given_id
 
