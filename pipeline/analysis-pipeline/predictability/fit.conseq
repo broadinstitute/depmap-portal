@@ -3,9 +3,15 @@
 # 2. Run the model fitting
 # 3. Combine the output config files
 
-let sparkes_path = "/install/sparkles/bin/sparkles"
+let sparkles_path = "sparkles"
 let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:test"
-let dest_permaname = "internal-25q2-pred-test-f0ee"
+
+# Change the artifact below to run on a small subset of the full config (useful just for testing). Set all to "yes" 
+# for normal operation, or "no" for doing a subset of the normal work
+add-if-missing {
+    "type": "daintree-test-run-flags", 
+    "run_all_configs": "yes",
+    "fit_all_actuals": "no"}
 
 rule process_model_config:
     inputs:
@@ -35,6 +41,9 @@ rule process_model_config:
         # Script to generate daintree input config file
         script=fileref("scripts/generate_daintree_input_configs.py"),
 
+        # whether this is a test run or not
+        is_test_run={"type": "daintree-test-run-flags"}
+
     run "python" with """
     import json
 
@@ -43,9 +52,7 @@ rule process_model_config:
         json.dump(config_dict, f, indent=2)   
 
     """
-    # Add --test-only-first-n 2 to only generate a two configs (for testing)
-    run "python3 {{ inputs.script.filename }} --model_config {{ inputs.model_config.filename }} --input_config 'daintree_input_config.json'"
-
+    run "python3 {{ inputs.script.filename }} --model_config {{ inputs.model_config.filename }} --input_config 'daintree_input_config.json' {% if inputs.is_test_run.run_all_configs == 'no' %}--test-only-first-n 2{% endif %} "
 
 rule run_fit_models:
     resources: {'slots': "0.1"} # let up to 10 of these run in parallel
@@ -56,9 +63,12 @@ rule run_fit_models:
         release_taiga_id={
           "type": "release_taiga_id"
           },
-        sparkles_config=fileref("sparkles-config"),
-        create_workflow_script=fileref("scripts/create_daintree_workflow.py")
-    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.filename }} --out workflow.json --nfolds 5 --models-per-task {{ inputs.daintree_input_config.models_per_task}} --test-first-n-tasks 10"
+        sparkles_config=fileref("../../sparkles-config"),
+        create_workflow_script=fileref("scripts/create_daintree_workflow.py"),
+        # whether this is a test run or not
+        is_test_run={"type": "daintree-test-run-flags"}
+
+    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.filename }} --out workflow.json --nfolds 5 --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 100{% endif %}"
     run "cp {{ inputs.sparkles_config.filename }} .sparkles"
     run "{{config.sparkles_path}} workflow run --nodes 100 --retry --add-hash-to-job-id -i {{ config.daintree_docker_image }} daintree-fit-v1 workflow.json"
 
@@ -84,31 +94,10 @@ rule run_fit_models:
             ]}))
     """
 
-rule upload_fit_results_to_taiga2:
-    inputs:
-        daintree_output={"type": "daintree_output"},
-        script=fileref("scripts/upload_fit_results_to_taiga.py")
-    outputs:
-        {
-            "type": "daintree_upload_output", 
-            "filename": {"$filename": "{{ inputs.daintree_output.model_name }}-{{ inputs.daintree_output.screen_name }}.json" },
-            "model_name": "{{ inputs.daintree_output.model_name }}",
-            "screen_name": "{{ inputs.daintree_output.screen_name }}"
-        }
-    run "bash" with """
-        python3 {{inputs.script.filename}} \
-            --runner_config_file {{ inputs.daintree_output.daintree_input_config_filename }} \
-            --features_metadata_csv {{ inputs.daintree_output.features_metadata_filename }} \
-            --ensemble_csv {{ inputs.daintree_output.ensemble_filename }} \
-            --predictions_matrix_csv {{ inputs.daintree_output.predictions_filename }} \
-            --dest_permaname {{ config.dest_permaname }} \
-            --output_config_file {{ inputs.daintree_output.model_name }}-{{ inputs.daintree_output.screen_name }}.json \
-    """
-
-rule combine_daintree_upload_outputs:
+rule combine_daintree_outputs:
     inputs:
         outputs = all{
-          "type": "daintree_upload_output"
+          "type": "daintree_output"
           }
     outputs:
         {
@@ -149,4 +138,3 @@ rule combine_daintree_upload_outputs:
             json.dump(combined_output_config, f, indent=2)
     """
 
-# TODO: Add publish rule

@@ -33,4 +33,4 @@ ln -sf "../../../depmap-deploy/non-public-pipeline-files/preprocessing-pipeline/
 ln -sf "../../../depmap-deploy/non-public-pipeline-files/preprocessing-pipeline/_run_${ENV_NAME}.conseq" "_run_${ENV_NAME}.conseq"
 
 echo "Preprocessing pipeline: Running conseq..."
-conseq run run_${ENV_NAME}.conseq
+exec conseq run run_${ENV_NAME}.conseq

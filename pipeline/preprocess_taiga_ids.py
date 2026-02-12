@@ -3,6 +3,14 @@ import re
 from taigapy import create_taiga_client_v3
 import json
 import os
+import logging
+
+log = logging.getLogger(__name__)
+
+class UserError(Exception):
+    def __init__(self, message) -> None:
+        super().__init__(message)
+        self.message = message
 
 # this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
 #
@@ -85,7 +93,8 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             try:
                 canonical = tc.get_canonical_id(taiga_id)
             except:
-                print(f"failed to get data from canonical taiga id for {taiga_id}")
+                raise UserError(f"failed to get data from canonical taiga id for {taiga_id}")
+
             line = line_prefix + '"' + canonical + '"' + line_suffix
         fd.write(line)
 
@@ -100,4 +109,9 @@ def rewrite_file(in_name, out_name):
 
 
 if __name__ == "__main__":
-    rewrite_file(sys.argv[1], sys.argv[2])
+    try:
+        rewrite_file(sys.argv[1], sys.argv[2])
+    except UserError as err:
+        log.error(err.message)
+        sys.exit(1)
+

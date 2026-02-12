@@ -3,3 +3,23 @@ rule publish_merged_drugs:
     inputs: outputs={"type": "combined_daintree_upload_outputs"}
     publish: "{{config.publish_dest}}/combined_daintree_upload_outputs.json"
 
+rule upload_fit_results_to_taiga2:
+    inputs:
+        daintree_output={"type": "daintree_output"},
+        script=fileref("scripts/upload_fit_results_to_taiga.py")
+    outputs:
+        {
+            "type": "daintree_upload_output", 
+            "filename": {"$filename": "{{ inputs.daintree_output.model_name }}-{{ inputs.daintree_output.screen_name }}.json" },
+            "model_name": "{{ inputs.daintree_output.model_name }}",
+            "screen_name": "{{ inputs.daintree_output.screen_name }}"
+        }
+    run "bash" with """
+        python3 {{inputs.script.filename}} \
+            --runner_config_file {{ inputs.daintree_output.daintree_input_config_filename }} \
+            --features_metadata_csv {{ inputs.daintree_output.features_metadata_filename }} \
+            --ensemble_csv {{ inputs.daintree_output.ensemble_filename }} \
+            --predictions_matrix_csv {{ inputs.daintree_output.predictions_filename }} \
+            --dest_permaname {{ config.dest_permaname }} \
+            --output_config_file {{ inputs.daintree_output.model_name }}-{{ inputs.daintree_output.screen_name }}.json \
+    """
