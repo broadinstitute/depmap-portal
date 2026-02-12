@@ -14,7 +14,13 @@ import {
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";
 import { uri } from "../../uriTemplateTag";
-import { getJson, postJson, deleteJson, postMultipart } from "../client";
+import {
+  getJson,
+  patchJson,
+  postJson,
+  deleteJson,
+  postMultipart,
+} from "../client";
 
 export function getDatasets(
   params?: Partial<{
@@ -50,7 +56,7 @@ export function updateDataset(
   datasetUpdateArgs: DatasetUpdateArgs
 ) {
   checkDatasetId(datasetId);
-  return postJson<Dataset>(uri`/datasets/${datasetId}`, datasetUpdateArgs);
+  return patchJson<Dataset>(uri`/datasets/${datasetId}`, datasetUpdateArgs);
 }
 
 export function getMatrixDatasetData(

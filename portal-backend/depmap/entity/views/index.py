@@ -1,7 +1,4 @@
 from depmap.utilities.url_utils import js_url_for
-from depmap.dataset.models import BiomarkerDataset
-from depmap.constellation.utils import ConnectivityOption, SimilarityOption
-import depmap.celfie.utils as celfie_utils
 
 
 def format_summary(
@@ -13,8 +10,8 @@ def format_summary(
     show_auc_message=False,
 ):
     """Only used for gene summary, not compound summary"""
-    summary = { 
-        "figure": "", # This "figure" param isn't used anymore and should be removed
+    summary = {
+        "figure": "",  # This "figure" param isn't used anymore and should be removed
         "summary_options": summary_options,
         "ajax_url": js_url_for(
             "partials.entity_summary_json_data",
@@ -32,36 +29,3 @@ def format_summary(
         "color": default_color if default_color is not None else None,
     }
     return summary
-
-
-def format_celfie(entity_label: str, dependency_datasets):
-    # Define datasets to pass to celfie
-
-    celfie = {
-        "entity_name": entity_label,
-        "dependency_datasets": dependency_datasets,
-        "similarity_options": [
-            {"value": s.option_id, "label": s.label}
-            for s in SimilarityOption
-            if s.option_id
-            is not SimilarityOption.expression.option_id  # Don't include CCLE Coexpression
-        ],
-        "color_options": [
-            {"value": "effect", "label": "Correlation",},
-            {"value": "direction", "label": "Direction",},
-            {"value": "-log10(P)", "label": "-log10(P)",},
-            {"value": "task", "label": "Feature",},
-        ],
-        "connectivity_options": [
-            {"value": option.value, "label": option.name.capitalize()}
-            for option in ConnectivityOption
-        ],
-        "datasets": [
-            {
-                "value": dataset,
-                "label": BiomarkerDataset.get_dataset_by_name(dataset).display_name,
-            }
-            for dataset in celfie_utils.celfie_datasets
-        ],
-    }
-    return celfie

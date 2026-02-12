@@ -1,6 +1,5 @@
 from typing import List, Optional, Set, Annotated
 from logging import getLogger
-from uuid import UUID
 from ..db.util import transaction
 from breadbox.utils.asserts import index_error_msg
 from pydantic import Json
@@ -520,14 +519,14 @@ def update_dataset(
     "/{dataset_id}", operation_id="remove_dataset",
 )
 def delete_dataset(
-    dataset_id: UUID,
+    dataset_id: str,
     db: SessionWithUser = Depends(get_db_with_user),
     user: str = Depends(get_user),
     settings: Settings = Depends(get_settings),
 ):
     """Delete a dataset, if the user has write permissions for the containing group.
 
-    `dataset_id` - UUID string of the dataset id
+    `dataset_id` - UUID or the human-readable dataset given ID.
     """
     dataset = dataset_crud.get_dataset(db, user, dataset_id)
     if dataset is None:

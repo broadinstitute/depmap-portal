@@ -1,26 +1,9 @@
 import {
   CompoundDoseCurveData,
-  CurveParams,
-  CurvePlotPoints,
+  CompoundSummaryResponse,
   DRCDatasetOptions,
 } from "@depmap/types";
-import { uri } from "../../uriTemplateTag";
 import { getJson } from "../client";
-
-export function getDoseResponsePoints(
-  datasetName: string,
-  depmapId: string,
-  compoundLabel: string
-) {
-  return getJson<{
-    curve_params: Array<CurveParams>;
-    points: Array<CurvePlotPoints>;
-  }>(uri`/compound/dosecurve/${datasetName}/${depmapId}/${compoundLabel}`);
-}
-
-export function getDoseResponseTable(datasetName: string, xrefFull: string) {
-  return getJson<any>(uri`/compound/dosetable/${datasetName}/${xrefFull}`);
-}
 
 export function getCompoundDoseCurveData(
   compoundId: string,
@@ -50,6 +33,23 @@ export function getPrioritizedDataset(
 
   return getJson<DRCDatasetOptions>(
     `/api/compound/prioritized_dataset`,
+    params
+  );
+}
+
+export function getCompoundSummary(
+  compoundId: string,
+  compoundName: string,
+  compoundDatasetIds: string[] = []
+): Promise<CompoundSummaryResponse> {
+  const params = {
+    compound_id: compoundId,
+    compound_label: compoundName,
+    compound_dataset_ids: compoundDatasetIds,
+  };
+
+  return getJson<CompoundSummaryResponse>(
+    `/api/compound/compound_summary`,
     params
   );
 }

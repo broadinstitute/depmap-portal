@@ -267,29 +267,6 @@ def empty_db_with_celligner(_empty_db_taiga_aliases_loaded):
 
 
 @pytest.fixture(scope="function")
-def empty_db_with_constellation(_empty_db_taiga_aliases_loaded):
-    source_dir = current_app.config["WEBAPP_DATA_DIR"]
-    constellation_dir = os.path.join(source_dir, "constellation")
-
-    os.makedirs(constellation_dir)
-
-    shutil.copy(
-        "sample_data/constellation/gene_sets.csv",
-        os.path.join(constellation_dir, "gene_sets.csv"),
-    )
-    shutil.copy(
-        "sample_data/constellation/msigdb.csv",
-        os.path.join(constellation_dir, "msigdb.csv"),
-    )
-    shutil.copy(
-        "sample_data/constellation/codep.csv",
-        os.path.join(constellation_dir, "codep.csv"),
-    )
-
-    yield _empty_db_taiga_aliases_loaded
-
-
-@pytest.fixture(scope="function")
 def interactive_db_mock_downloads(_empty_db_taiga_aliases_loaded):
     with transaction(_empty_db_taiga_aliases_loaded):
         load_interactive_db_data()
@@ -565,13 +542,7 @@ def load_populated_db_data():
             BiomarkerDataset.BiomarkerEnum.expression: {
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            BiomarkerDataset.BiomarkerEnum.copy_number_absolute: {
-                "taiga_id": "placeholder-taiga-id.1",
-            },
             BiomarkerDataset.BiomarkerEnum.copy_number_relative: {
-                "taiga_id": "placeholder-taiga-id.1",
-            },
-            BiomarkerDataset.BiomarkerEnum.mutation_pearson: {
                 "taiga_id": "placeholder-taiga-id.1",
             },
             BiomarkerDataset.BiomarkerEnum.mutations_hotspot: {

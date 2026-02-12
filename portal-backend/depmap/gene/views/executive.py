@@ -18,7 +18,6 @@ from depmap.gene.models import (
     GeneExecutiveInfo,
     Gene,
 )
-from depmap.correlation.utils import get_all_correlations
 from collections import namedtuple
 
 matplotlib.use(
@@ -58,24 +57,6 @@ class Entry:
         self.dataset_name = dataset_name
 
 
-class CodependencyEntry(Entry):
-    pass
-
-
-class CelfieEntry(Entry):
-    def __init__(
-        self,
-        label: str,
-        gene_url: str,
-        interactive_url: str,
-        correlation: float,
-        dataset_name: str,
-        feature_type: str,
-    ):
-        super().__init__(label, gene_url, interactive_url, correlation, dataset_name)
-        self.feature_type = feature_type
-
-
 # sort cards into columns of roughly-equal heights based on hard-coded guesstimated heights
 # header cards should always appear in the top row
 def get_order(has_predictability):
@@ -94,7 +75,6 @@ def get_order(has_predictability):
         GeneTileEnum.codependencies.value: tile_medium,
         GeneTileEnum.mutations.value: tile_small,
         GeneTileEnum.gene_score_confidence.value: tile_medium,
-        GeneTileEnum.celfie.value: tile_large,
         GeneTileEnum.targeting_compounds.value: tile_medium,
     }
     bottom_left_card = (GeneTileEnum.description.value, tile_small)
@@ -379,88 +359,3 @@ def format_mutation_profile(gene_id):
     ).display_name
 
     return {"plot": svg, "dataset_display_name": dataset_display_name}
-
-
-def make_correlations_table(gene_symbol: str, dataset, df, has_omics_dataset_ids: bool):
-    entries = []
-
-    all_labels = set([gene_symbol])
-    all_labels.update(df["other_entity_label"])
-
-    for rec in df.iloc[:5, :].to_dict("records"):
-        gene_url = url_for("gene.view_gene", gene_symbol=rec["other_entity_label"])
-        interactive_url = url_for(
-            "data_explorer_2.view_data_explorer_2",
-            xDataset=dataset.name.value,
-            yDataset=rec["other_dataset_name"].value
-            if has_omics_dataset_ids
-            else dataset.name.value,
-            yFeature=rec["other_entity_label"],
-            xFeature=gene_symbol,
-        )
-        entries.append(
-            CodependencyEntry(
-                rec["other_entity_label"],
-                gene_url,
-                interactive_url,
-                rec["correlation"],
-                rec["other_dataset"],
-            )
-            if not has_omics_dataset_ids
-            else CelfieEntry(
-                rec["other_entity_label"],
-                gene_url,
-                interactive_url,
-                rec["correlation"],
-                rec["other_dataset"],
-                DATASET_NAME_TO_FEATURE_TYPE[rec["other_dataset_name"].value],
-            )
-        )
-
-    return CorrelationTable(
-        dataset.display_name,
-        dataset.name.value,
-        entries,
-        "\n".join(all_labels),
-        dataset.data_type == DataTypeEnum.crispr,
-        dataset.data_type == DataTypeEnum.rnai,
-    )
-
-
-def generate_correlations_table_from_datasets(
-    gene_symbol: str,
-    dependency_datasets_list: List[DependencyDataset],
-    omics_dataset_ids: List[int] = None,
-):
-    results = []
-    for d in dependency_datasets_list:
-        if d is not None:
-            correlations = get_all_correlations(
-                d.matrix_id,
-                gene_symbol,
-                max_per_other_dataset=100,
-                other_dataset_ids=[d.dataset_id]
-                if omics_dataset_ids is None
-                else omics_dataset_ids,
-            )
-
-            has_omics_dataset_ids = omics_dataset_ids is not None
-            if correlations.shape[0] > 0:
-                results.append(
-                    make_correlations_table(
-                        gene_symbol, d, correlations, has_omics_dataset_ids
-                    )
-                )
-    return results
-
-
-def format_codependencies(gene_symbol):
-    crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.crispr
-    )
-    assert crispr_dataset
-    rnai_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.rnai
-    )
-    dataset_list = [crispr_dataset, rnai_dataset]
-    return generate_correlations_table_from_datasets(gene_symbol, dataset_list)

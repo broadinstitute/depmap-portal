@@ -115,10 +115,6 @@ class FeatureFlags:
         return True
 
     @property
-    def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
-        return True
-
-    @property
     def data_page(self):
         return True
 
@@ -168,21 +164,12 @@ class FeatureFlags:
         return self.is_prerelease_env()
 
     @property
-    def celfie(self):
-        return False
-
-    @property
     def celligner_app_v3(self):
         return True
 
     # used in depmap/settings/shared.py to set special value for DepDatasetMeta cell_lines
     @property
     def repurposing_secondary_AUC_cell_line_range(self):
-        return self.is_prerelease_env()
-
-    # Constellation isn't in the portal anymore, but we still use its view and data for other parts of the portal
-    @property
-    def constellation_app(self):
         return self.is_prerelease_env()
 
     @property
@@ -226,8 +213,14 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def compound_correlation_tiles(self):
+    def compound_correlated_dependencies_tile(self):
         return self.is_prerelease_env()
+
+    # Not showing as of 25Q4: This tile appears to have some incorrect behavior in how
+    # it chooses which compounds are "related". Disabling for now.
+    @property
+    def related_compounds_tile(self):
+        return False
 
     @property
     def correlation_analysis(self):
