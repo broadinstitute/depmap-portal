@@ -1117,15 +1117,6 @@ def load_sample_data(
         if load_taiga_dependencies and load_celligner:
             celligner_loader.load_celligner_sample_data()
 
-        log.info("loading achilles lfc cell file")
-        gene_loader.load_achilles_lfc_cell_file(
-            os.path.join(
-                current_app.config["LOADER_DATA_DIR"],
-                "dataset",
-                "achilles_lfc_cell.hdf5",
-            )
-        )
-
         log.info("loading metmap 500 data")
         metmap_loader.load_metmap_500(
             os.path.join(loader_data_dir, "metmap/metmap500.csv")

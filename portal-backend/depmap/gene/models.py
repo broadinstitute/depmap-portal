@@ -22,8 +22,6 @@ from depmap.entity.models import Entity, EntityAlias
 from depmap.enums import DependencyEnum
 from depmap.utilities import hdf5_utils
 
-ACHILLES_LFC_CELL_HDF5 = "achilles_lfc_cell.hdf5"  # stays avana, because this is used only for gene confidence
-
 
 class Gene(Entity):
     __tablename__ = "gene"
@@ -223,31 +221,3 @@ class GeneExecutiveInfo(Model):
                 dictionary[label] = "unknown"
 
         return pd.Series(dictionary)
-
-
-class AchillesLogfoldChangeCellRowIndex(Model):
-    __tablename__ = "achilles_logfold_change_cell_row_index"
-    row_index_id = Column(Integer, primary_key=True, autoincrement=True)
-    index = Column(Integer, nullable=False)
-    sgrna = Column(String, nullable=False)
-
-    @staticmethod
-    def get_by_sgrna_list(sgrnas: List[str]):
-        q = db.session.query(AchillesLogfoldChangeCellRowIndex).filter(
-            AchillesLogfoldChangeCellRowIndex.sgrna.in_(sgrnas)
-        )
-        return q.all()
-
-
-class AchillesLogfoldChangeCellColIndex(Model):
-    __tablename__ = "achilles_logfold_change_cell_col_index"
-    col_index_id = Column(Integer, primary_key=True, autoincrement=True)
-    index = Column(Integer, nullable=False)
-    depmap_id = Column(String, nullable=False)
-
-    @staticmethod
-    def get_by_depmap_id_list(depmap_ids: List[str]):
-        q = db.session.query(AchillesLogfoldChangeCellColIndex).filter(
-            AchillesLogfoldChangeCellColIndex.depmap_id.in_(depmap_ids)
-        )
-        return q.all()

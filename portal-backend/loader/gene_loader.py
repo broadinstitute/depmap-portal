@@ -29,9 +29,6 @@ MISSING_ID_PATTERN_2 = re.compile("\\S+ \\(([^)]+)\\)")
 UNIPROT_ID_PATTERN = re.compile("[A-Z][A-Z0-9]+")
 MISSING_ID_PATTERN_3 = re.compile("\\S+")
 
-GENE_SCORE_CONFIDENCE_COEFFS_FILE = "gene_score_confidence_coeffs.csv"
-from depmap.gene.models import ACHILLES_LFC_CELL_HDF5
-
 
 def _get_entrez_id_from_gene_symbol(gene_symbol: str) -> Optional[int]:
     m = ENTREZ_ID_PATTERN.match(gene_symbol)
@@ -332,36 +329,3 @@ def format_dropped_by_chronos(dropped_by_chronos_csv: str) -> pd.DataFrame:
     df["dataset"] = default_crispr.name
     del df["gene"]
     return df
-
-
-def load_achilles_lfc_cell_file(file: str):
-    """Download achilles logfold change cell and create col and row indexes"""
-    source_dir = current_app.config["WEBAPP_DATA_DIR"]
-    path = os.path.join(source_dir, ACHILLES_LFC_CELL_HDF5)
-    shutil.copyfile(file, path)
-
-    row_index = hdf5_utils.get_row_index(source_dir, ACHILLES_LFC_CELL_HDF5)
-    sgrna_index_objects = [
-        AchillesLogfoldChangeCellRowIndex(sgrna=sgrna, index=i)
-        for i, sgrna in enumerate(row_index)
-    ]
-    db.session.bulk_save_objects(sgrna_index_objects)
-
-    missing_cell_lines = 0
-    col_index = hdf5_utils.get_col_index(source_dir, ACHILLES_LFC_CELL_HDF5)
-    for i, cell_line_name in enumerate(col_index):
-        cell_line = CellLine.get_by_name_or_depmap_id_for_loaders(
-            cell_line_name, must=False
-        )
-
-        if cell_line is None:
-            missing_cell_lines += 1
-            log_data_issue(
-                "Achilles LFC Cell cell lines",
-                "Missing cell line",
-                identifier=cell_line_name,
-                id_type="cell_line_name",
-            )
-        db.session.add(
-            AchillesLogfoldChangeCellColIndex(depmap_id=cell_line.depmap_id, index=i)
-        )

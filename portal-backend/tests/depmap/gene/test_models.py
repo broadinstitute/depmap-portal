@@ -3,7 +3,6 @@ from tests.factories import (
     GeneFactory,
     EntityAliasFactory,
     CompoundFactory,
-    GeneScoreConfidenceFactory,
 )
 import pytest
 
