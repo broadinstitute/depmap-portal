@@ -13,7 +13,6 @@ interface Props {
   hgncId: string;
   aka: string;
   showDependencyTab: boolean;
-  showConfidenceTab: boolean;
   showCharacterizationTab: boolean;
   showPredictabilityTab: boolean;
   hasDatasets: boolean;
@@ -41,7 +40,6 @@ const GenePage = ({
   hgncId,
   aka,
   showDependencyTab,
-  showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
   hasDatasets,
@@ -73,7 +71,6 @@ const GenePage = ({
       <GenePageTabs
         symbol={symbol}
         showDependencyTab={showDependencyTab}
-        showConfidenceTab={showConfidenceTab}
         showCharacterizationTab={showCharacterizationTab}
         showPredictabilityTab={showPredictabilityTab}
         hasDatasets={hasDatasets}

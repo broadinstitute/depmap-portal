@@ -445,10 +445,6 @@ def load_populated_db_data():
             os.path.join(loader_data_dir, "transcription_start_site/rrbs_tss_info.csv")
         )
 
-        gene_loader.load_gene_score_confidence_coeffs(
-            os.path.join(loader_data_dir, "gene", "gene_confidence_coeffs.csv",)
-        )
-
         gene_loader.load_achilles_lfc_cell_file(
             os.path.join(loader_data_dir, "dataset", "achilles_lfc_cell.hdf5",)
         )

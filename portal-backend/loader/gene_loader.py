@@ -334,23 +334,6 @@ def format_dropped_by_chronos(dropped_by_chronos_csv: str) -> pd.DataFrame:
     return df
 
 
-def load_gene_score_confidence_coeffs(coeffs_file: str):
-    srs = pd.read_csv(coeffs_file, index_col=0, header=None, squeeze=True)
-
-    gene_score_confidence_coefficient = GeneScoreConfidenceCoefficient(
-        guide_consistency_mean=srs.guide_consistency_mean,
-        guide_consistency_max=srs.guide_consistency_max,
-        unique_guides=srs.unique_guides,
-        sanger_crispr_consistency=srs.score_consistency,  # note name change from pipeline output to db model
-        rnai_consistency=srs.rnai_consistency,
-        normLRT=srs.normLRT,
-        predictability=srs.predictability,
-        top_feature_importance=srs.top_feature_importance,
-        top_feature_confounder=srs.top_feature_confounder,
-    )
-    db.session.add(gene_score_confidence_coefficient)
-
-
 def load_achilles_lfc_cell_file(file: str):
     """Download achilles logfold change cell and create col and row indexes"""
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
@@ -382,31 +365,3 @@ def load_achilles_lfc_cell_file(file: str):
         db.session.add(
             AchillesLogfoldChangeCellColIndex(depmap_id=cell_line.depmap_id, index=i)
         )
-
-
-def load_guide_gene_map(guide_gene_map_filename: str):
-    def _lookup_gene(gene_name):
-        gene = Gene.get_gene_from_rowname(gene_name, must=False)
-        if gene:
-            return gene
-        else:
-            log_data_issue("GuideGeneMap", "Gene for {} not found".format(gene_name))
-            return None
-
-    lookup_gene = LazyCache(_lookup_gene)
-
-    def row_to_model_dict(row):
-        # only add to db if both gene exists
-        if lookup_gene.get(row["gene"]):
-            entry_dict = dict(
-                gene_id=lookup_gene.get(row["gene"]).entity_id,
-                sgrna=row["sgrna"],
-                genome_alignment=row["genome_alignment"],
-                num_alignments=row["n_alignments"],
-            )
-            return entry_dict
-        else:
-            return None
-
-    bulk_load(guide_gene_map_filename, row_to_model_dict, GuideGeneMap.__table__)
-    return None

@@ -5,7 +5,6 @@ import { CardContainer, CardColumn } from "src/common/components/Card";
 interface Props {
   symbol: string;
   showDependencyTab: boolean;
-  showConfidenceTab: boolean;
   showCharacterizationTab: boolean;
   showPredictabilityTab: boolean;
   orderedTiles: [TileTypeEnum, number][][];
@@ -27,7 +26,6 @@ export enum TileTypeEnum {
   Codependencies = "codependencies",
   Targeting_compounds = "targeting_compounds",
   Mutations = "mutations",
-  Gene_score_confidence = "gene_score_confidence",
   Description = "description",
 }
 
@@ -35,7 +33,6 @@ const GenePageOverview = ({
   symbol,
   orderedTiles,
   showDependencyTab,
-  showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
   hasDatasets,
@@ -53,9 +50,6 @@ const GenePageOverview = ({
       case TileTypeEnum.Essentiality:
       case TileTypeEnum.Codependencies:
         return showDependencyTab;
-
-      case TileTypeEnum.Gene_score_confidence:
-        return showConfidenceTab;
 
       case TileTypeEnum.Omics:
         return showCharacterizationTab && showOmicsExpressionTile;

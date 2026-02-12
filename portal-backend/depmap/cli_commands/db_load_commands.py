@@ -1117,13 +1117,6 @@ def load_sample_data(
         if load_taiga_dependencies and load_celligner:
             celligner_loader.load_celligner_sample_data()
 
-        log.info("Loading gene guide map")
-        gene_loader.load_guide_gene_map(
-            os.path.join(
-                current_app.config["LOADER_DATA_DIR"], "gene", "guide_gene_map.csv",
-            )
-        )
-
         log.info("loading achilles lfc cell file")
         gene_loader.load_achilles_lfc_cell_file(
             os.path.join(

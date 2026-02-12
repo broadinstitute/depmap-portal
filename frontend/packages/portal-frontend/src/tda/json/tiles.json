@@ -28,10 +28,6 @@
     "label": "Mutations"
   },
   {
-    "key": "gene_score_confidence",
-    "label": "Gene score confidence"
-  },
-  {
     "key": "description",
     "label": "Description"
   }
