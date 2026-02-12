@@ -8,7 +8,6 @@ import {
   Tab,
   TabPanel,
 } from "src/common/components/tabs";
-import AsyncTile from "src/common/components/AsyncTile";
 import { EntityType } from "src/entity/models/entities";
 import { getQueryParams } from "@depmap/utils";
 import GenePageOverview, { TileTypeEnum } from "./GenePageOverview";
