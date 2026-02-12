@@ -17,7 +17,6 @@ endblock content_class %} {% block content %}
     {% if about.hgnc_id %}"hgncId": {{ about.hgnc_id|tojson|safe }},{% endif %}
     {% if about.aka %}"aka": {{ about.aka|tojson|safe }},{% endif %}
     "showDependencyTab": {{ summary is not none|tojson|safe }},
-    "showConfidenceTab": {{ has_confidence|tojson|safe }},
     "showCharacterizationTab": {{ (characterizations|length > 0)|tojson|safe }},
     "showPredictabilityTab": {{ (has_datasets and has_predictability)|tojson|safe }},
     "hasDatasets": {{ has_datasets|tojson|safe }},

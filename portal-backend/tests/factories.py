@@ -39,7 +39,7 @@ from depmap.dataset.models import (
     Fusion,
 )
 from depmap.entity.models import Entity, EntityAlias, GenericEntity
-from depmap.gene.models import Gene, GeneExecutiveInfo, GeneScoreConfidence
+from depmap.gene.models import Gene, GeneExecutiveInfo
 from depmap.antibody.models import Antibody
 from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.compound.models import (
@@ -332,27 +332,6 @@ class GeneExecutiveInfoFactory(SQLAlchemyModelFactory):
     num_lines_with_data = 1
     is_strongly_selective = False
     is_common_essential = False
-
-
-class GeneScoreConfidenceFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = GeneScoreConfidence
-
-        # Use the not-so-global scoped_session
-        # Warning: DO NOT USE common.Session()!
-        sqlalchemy_session = _db.session
-
-    gene = factory.SubFactory(GeneFactory)
-    score = 0.5
-    guide_consistency_mean = 0.5
-    guide_consistency_max = 0.5
-    unique_guides = 3
-    sanger_crispr_consistency = 0.5
-    rnai_consistency = 0.5
-    normLRT = 0.5
-    predictability = 0.5
-    top_feature_importance = 0.5
-    top_feature_confounder = False
 
 
 class ProteinFactory(SQLAlchemyModelFactory):

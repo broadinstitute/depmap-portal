@@ -74,7 +74,6 @@ def get_order(has_predictability):
         GeneTileEnum.target_tractability.value: tile_small,
         GeneTileEnum.codependencies.value: tile_medium,
         GeneTileEnum.mutations.value: tile_small,
-        GeneTileEnum.gene_score_confidence.value: tile_medium,
         GeneTileEnum.targeting_compounds.value: tile_medium,
     }
     bottom_left_card = (GeneTileEnum.description.value, tile_small)

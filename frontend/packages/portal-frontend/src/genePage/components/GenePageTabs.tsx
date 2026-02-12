@@ -8,7 +8,6 @@ import {
   Tab,
   TabPanel,
 } from "src/common/components/tabs";
-import AsyncTile from "src/common/components/AsyncTile";
 import { EntityType } from "src/entity/models/entities";
 import { getQueryParams } from "@depmap/utils";
 import GenePageOverview, { TileTypeEnum } from "./GenePageOverview";
@@ -58,7 +57,6 @@ const CorrelationAnalysis = React.lazy(
 interface Props {
   symbol: string;
   showDependencyTab: boolean;
-  showConfidenceTab: boolean;
   showCharacterizationTab: boolean;
   showPredictabilityTab: boolean;
   hasDatasets: boolean;
@@ -82,7 +80,6 @@ interface Props {
 const GenePageTabs = ({
   symbol,
   showDependencyTab,
-  showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
   hasDatasets,
@@ -158,7 +155,6 @@ const GenePageTabs = ({
         <GenePageOverview
           symbol={symbol}
           showDependencyTab={showDependencyTab}
-          showConfidenceTab={showConfidenceTab}
           showCharacterizationTab={showCharacterizationTab}
           showPredictabilityTab={showPredictabilityTab}
           orderedTiles={order}
@@ -181,9 +177,6 @@ const GenePageTabs = ({
             {showDependencyTab && (
               <Tab id="dependency">Perturbation Effects</Tab>
             )}
-            {showConfidenceTab && (
-              <Tab id="confidence">Perturbation Confidence</Tab>
-            )}
             {showCharacterizationTab && (
               <Tab id="characterization">Characterization</Tab>
             )}
@@ -200,7 +193,6 @@ const GenePageTabs = ({
               <GenePageOverview
                 symbol={symbol}
                 showDependencyTab={showDependencyTab}
-                showConfidenceTab={showConfidenceTab}
                 showCharacterizationTab={showCharacterizationTab}
                 showPredictabilityTab={showPredictabilityTab}
                 orderedTiles={order}
@@ -228,11 +220,6 @@ const GenePageTabs = ({
                     />
                   )}
                 </React.Suspense>
-              </TabPanel>
-            )}
-            {showConfidenceTab && (
-              <TabPanel className={styles.TabPanel}>
-                <AsyncTile url={`/gene/gene_confidence/${symbol}`} />
               </TabPanel>
             )}
             {showCharacterizationTab && (

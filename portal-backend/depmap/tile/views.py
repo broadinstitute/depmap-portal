@@ -16,7 +16,6 @@ from depmap.entity.views.executive import (
 )
 from depmap.cell_line.models_new import DepmapModel
 from depmap.entity.models import Entity
-from depmap.gene.views.confidence import format_confidence
 from depmap.enums import DependencyEnum
 from depmap.gene.views.executive import (
     format_mutation_profile,
@@ -151,7 +150,6 @@ def render_gene_tile(tile_name, gene):
         GeneTileEnum.description.value: get_description_html,
         GeneTileEnum.essentiality.value: get_essentiality_html,
         GeneTileEnum.codependencies.value: get_codependencies_html,
-        GeneTileEnum.gene_score_confidence.value: get_confidence_html,
         GeneTileEnum.target_tractability.value: get_tractability_html,
         GeneTileEnum.targeting_compounds.value: get_targeting_compounds_html,
     }
@@ -591,11 +589,6 @@ def get_codependencies_html(gene):
             DepMap.initTopCoDependenciesTile("{div_id}", "{entrez_id}", "{gene_symbol}");
         }})""",
     )
-
-
-def get_confidence_html(gene):
-    confidence = format_confidence(gene)
-    return render_template("tiles/confidence.html", confidence=confidence)
 
 
 from oauthlib.oauth2.rfc6749.errors import UnauthorizedClientError
