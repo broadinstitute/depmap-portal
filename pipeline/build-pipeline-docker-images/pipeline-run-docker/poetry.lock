@@ -1906,14 +1906,14 @@ docs = ["ipykernel", "jupyter-client", "matplotlib", "nbconvert", "nbformat", "n
 
 [[package]]
 name = "taigapy"
-version = "4.0.1"
+version = "4.1.1"
 description = "Client library for fetching data from Taiga"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "taigapy-4.0.1-py3-none-any.whl", hash = "sha256:4439dda253dbed033c220ddae19ea6b736d7c1b489aac758c16e6c66f831e036"},
-    {file = "taigapy-4.0.1.tar.gz", hash = "sha256:7e4eadcb06ca4a5453627a7c02e724a35af1fbc905d70c52061d61d47ea82d7c"},
+    {file = "taigapy-4.1.1-py3-none-any.whl", hash = "sha256:41e12bba9f5c5226d7fc93256a48a4d21dd2e4a3acd544bb03671e56fc9e3345"},
+    {file = "taigapy-4.1.1.tar.gz", hash = "sha256:166d364413de2390818017a19eeb1ad3be1dbb052904b760a780506c91c36564"},
 ]
 
 [package.dependencies]
@@ -2172,4 +2172,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">3.9,<3.10"
-content-hash = "f315f9e3ffbebb6adc85727b4a4dd6d85fc09e524886861f7ae43d8d1dac00b6"
+content-hash = "239fb5d41e03be65a1d56948186cbd12a205eedd19848b2b1dea5763b19a2560"
