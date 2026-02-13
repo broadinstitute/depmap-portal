@@ -246,13 +246,15 @@ const CompoundPageTabs = ({
             {showPredictabilityTab && (
               <TabPanel className={styles.TabPanel}>
                 <React.Suspense fallback={<div>Loading predictability...</div>}>
-                  <PredictabilityTab
-                    entityIdOrLabel={compoundName}
-                    entityLabel={compoundName}
-                    entityType={"compound" as EntityType}
-                    customDownloadsLink={predictabilityCustomDownloadsLink}
-                    methodologyUrl={predictabilityMethodologyLink}
-                  />
+                  <div id="predictive-tab-root">
+                    <PredictabilityTab
+                      entityIdOrLabel={compoundName}
+                      entityLabel={compoundName}
+                      entityType={"compound" as EntityType}
+                      customDownloadsLink={predictabilityCustomDownloadsLink}
+                      methodologyUrl={predictabilityMethodologyLink}
+                    />
+                  </div>
                 </React.Suspense>
               </TabPanel>
             )}

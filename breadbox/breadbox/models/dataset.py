@@ -71,7 +71,7 @@ class DimensionType(Base):
         backref=backref("dimension_type", uselist=False),
         foreign_keys=[dataset_id],
         lazy="select",
-        cascade="all, delete",
+        cascade="all",
     )
 
 
