@@ -582,7 +582,7 @@ rule fit_predictive_model:
         -u {{ inputs.ensemble_feature_set.valid_samples_filename }}:X_valid_samples.ftr \
         -u partitions.csv \
         --params partitions.csv \
-        --skipifexists \
+        --retry \
         --nodes 300 \
         -n ${JOB_NAME} \
         cds-ensemble fit-model \
