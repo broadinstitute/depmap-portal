@@ -270,39 +270,39 @@ def format_tda_predictability_tile(
     }
 
 
-def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]):
+def format_predictability_tile(feature_id: str, dataset_given_ids: List[str]):
     plot_params = []
 
-    for dataset in datasets:
-        if dataset is None:
-            continue
-        df = PredictiveModel.get_top_models_features(
-            dataset.dataset_id, entity.entity_id
-        )
+    for dataset_id in dataset_given_ids:
+        df = PredictiveModel.get_top_models_features(dataset_id, feature_id)
         if df is None:
             continue
         # TODO: It looks like we only have predictive models for datasets: Prism_oncology_AUC, RNAi_merged, Rep_all_single_pt, Chronos_Combined) but we should try to avoid hardcoding this
-        if dataset.data_type == DataTypeEnum.crispr:
+        if dataset_id == DependencyDataset.DependencyEnum.Chronos_Combined.name:
             dataset_type = "crispr"
             label = "CRISPR"
             color = color_palette.crispr_color
-        elif dataset.data_type == DataTypeEnum.rnai:
+        elif dataset_id == DependencyDataset.DependencyEnum.RNAi_merged.name:
             dataset_type = "rnai"
             label = "RNAi"
             color = color_palette.rnai_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Rep1M:
-            dataset_type = "rep1m"
-            label = "Rep1M"
-            color = color_palette.rep1m_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Rep_all_single_pt:
+        # elif dataset.name == DependencyDataset.DependencyEnum.Rep1M:
+        #     dataset_type = "rep1m"
+        #     label = "Rep1M"
+        #     color = color_palette.rep1m_color
+        elif dataset_id == "Rep_all_single_pt_per_compound":
             dataset_type = "rep_all_single_pt"
             label = "Repurposing Extended"
             color = color_palette.rep_all_single_pt_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_AUC:
+        elif (
+            dataset_id == "PRISMOncologyReferenceLog2AUCMatrix"
+        ):  # or Prism_oncology_AUC_collapsed???
             dataset_type = "prism_onc_ref"
             label = "PRISM OncRef log2(AUC) Lum"
             color = color_palette.prism_oncology_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_seq_AUC:
+        elif (
+            dataset_id == "PRISMOncologyReferenceSeqLog2AUCMatrix"
+        ):  # or Prism_oncology_seq_AUC???
             dataset_type = "prism_onc_seq_ref"
             label = "PRISM OncRef log2(AUC) Seq"
             color = color_palette.prism_oncology_color
@@ -311,10 +311,10 @@ def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]
             raise Exception("Type not defined")
 
         df["type"] = dataset_type
-        background = PredictiveBackground.get_background(dataset.dataset_id)
+        background = PredictiveBackground.get_background(dataset_id)
         plot_params.append(
             {
-                "dataset": dataset,
+                "dataset": "???",
                 "df": df,
                 "background": background,
                 "label": label,

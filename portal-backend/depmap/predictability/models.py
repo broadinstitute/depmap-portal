@@ -26,7 +26,6 @@ from depmap.dataset.models import (
 from depmap.entity.models import Entity
 from depmap.gene.models import Gene
 from depmap.match_related.models import RelatedEntityIndex
-from depmap.cell_line.models import Lineage
 
 
 class TDPredictiveModel(Model):
@@ -60,19 +59,9 @@ class PredictiveModel(Model):
 
     predictive_model_id = Column(Integer, primary_key=True, autoincrement=True)
 
-    dataset_id = Column(
-        Integer, ForeignKey("dataset.dataset_id"), nullable=False, index=True
-    )
-    dataset: DependencyDataset = relationship(
-        "Dataset", foreign_keys="PredictiveModel.dataset_id", uselist=False
-    )
+    dataset_given_id = Column(String, nullable=False, index=True)
 
-    entity_id = Column(
-        Integer, ForeignKey("entity.entity_id"), nullable=False, index=True
-    )
-    entity: Entity = relationship(
-        "Entity", foreign_keys="PredictiveModel.entity_id", uselist=False
-    )
+    feature_id = Column(String, nullable=False, index=True)
 
     label = Column(String(), nullable=False)
     pearson = Column(
@@ -85,7 +74,7 @@ class PredictiveModel(Model):
 
     @staticmethod
     def get_top_models_features(
-        dataset_id: int, entity_id: int, num_models=3, num_top_features=5
+        dataset_given_id: str, feature_id: str, num_models=3, num_top_features=5
     ):
         """
         :return: America's next top model
@@ -96,14 +85,14 @@ class PredictiveModel(Model):
 
         subquery = (
             db.session.query(PredictiveModel.predictive_model_id)
-            .filter_by(dataset_id=dataset_id, entity_id=entity_id)
+            .filter_by(dataset_id=dataset_given_id, feature_id=feature_id)
             .order_by(PredictiveModel.pearson.desc())
             .limit(num_models)
         )
 
         q = PredictiveFeatureResult.query.join(PredictiveModel).filter(
-            PredictiveModel.dataset_id == dataset_id,
-            PredictiveModel.entity_id == entity_id,
+            PredictiveModel.dataset_given_id == dataset_given_id,
+            PredictiveModel.feature_id == feature_id,
             PredictiveModel.predictive_model_id.in_(subquery),
             PredictiveFeatureResult.rank < num_top_features,
         )
@@ -127,7 +116,7 @@ class PredictiveModel(Model):
                 "predictive_model_id": predictive_model.predictive_model_id,
                 "model_label": predictive_model.label,
                 "model_pearson": predictive_model.pearson,
-                "dataset_enum": predictive_model.dataset.name,
+                "dataset_enum": predictive_model.dataset_given_id,
                 "feature_name": feature.feature_name,
                 "feature_type": feature.feature_type,
                 "feature_importance": feature_result.importance,
@@ -137,25 +126,26 @@ class PredictiveModel(Model):
                 "related_type": False,
             }
             if feature is not None:
-                row["interactive_url"] = feature.get_interactive_url_for_entity(
-                    predictive_model.dataset, predictive_model.entity,
+                row["interactive_url"] = feature.get_interactive_url_for_feature(
+                    predictive_model.dataset_given_id, predictive_model.feature_id,
                 )
-                row["correlation"] = feature.get_correlation_for_entity(
-                    predictive_model.dataset, predictive_model.entity,
+                row["correlation"] = feature.get_correlation_for_feature(
+                    predictive_model.dataset_given_id, predictive_model.feature_id,
                 )
-                row["related_type"] = feature.get_relation_to_entity(entity_id)
+                row["related_type"] = feature.get_relation_to_entity(feature_id)
             rows.append(row)
 
         df = pd.DataFrame(rows)
         return df
 
     @staticmethod
-    def get_top_model(dataset_id, entity_id, must=True) -> Optional["PredictiveModel"]:
+    def get_top_model(
+        dataset_given_id: str, feature_id: str, must=True
+    ) -> Optional["PredictiveModel"]:
         q = (
-            PredictiveModel.query.join(DependencyDataset)
-            .filter(
-                PredictiveModel.dataset_id == dataset_id,
-                PredictiveModel.entity_id == entity_id,
+            PredictiveModel.query.filter(
+                PredictiveModel.dataset_given_id == dataset_given_id,
+                PredictiveModel.feature_id == feature_id,
             )
             .order_by(PredictiveModel.pearson.desc())
             .limit(1)
@@ -165,25 +155,24 @@ class PredictiveModel(Model):
         return q.one_or_none()
 
     @staticmethod
-    def get_all_models(dataset_id: int, entity_id: int) -> List["PredictiveModel"]:
+    def get_all_models(
+        dataset_given_id: str, feature_id: str
+    ) -> List["PredictiveModel"]:
         models = PredictiveModel.query.filter_by(
-            dataset_id=dataset_id, entity_id=entity_id
+            dataset_id=dataset_given_id, feature_id=feature_id
         ).all()
         return models
 
     @staticmethod
-    def get_datasets_with_models_for_entity(entity_id: int) -> List[DependencyDataset]:
+    def get_dataset_given_ids_with_models_for_entity(feature_id: str) -> List[str]:
         dataset_ids = (
-            PredictiveModel.query.with_entities(PredictiveModel.dataset_id)
-            .filter(PredictiveModel.entity_id == entity_id)
+            PredictiveModel.query.with_entities(PredictiveModel.dataset_given_id)
+            .filter(PredictiveModel.feature_id == feature_id)
             .distinct()
             .all()
         )
 
-        return [
-            DependencyDataset.get_dataset_by_id(dataset_id)
-            for (dataset_id,) in dataset_ids
-        ]
+        return [dataset_id for (dataset_id,) in dataset_ids]
 
 
 class PredictiveFeature(Model):

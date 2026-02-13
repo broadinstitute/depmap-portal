@@ -88,48 +88,37 @@ def _get_gene_page_template_parameters(gene_symbol):
 
     # Figure out membership in different datasets
     dependency_datasets = dependency_datasets_with_gene(entity_id)
-    # TODO: Gene confidence is probably something we can delete...
-    chronos_achilles_dataset_for_confidence = next(  # only confidence should be using hardcoded chronos_achilles instead of the default crispr dataset
-        (
-            x
-            for x in dependency_datasets
-            if x.name == DependencyDataset.DependencyEnum.Chronos_Achilles
-        ),
-        None,
-    )
-    default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.crispr
-    )
-    crispr_dataset = (
-        default_crispr_dataset
-        if default_crispr_dataset in dependency_datasets
-        else None
-    )
-    default_rnai_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.rnai
-    )
-    rnai_dataset = (
-        default_rnai_dataset if default_rnai_dataset in dependency_datasets else None
-    )
 
     biomarker_datasets = biomarker_datasets_with_gene(entity_id)
     # if there are biomarker datasets and dependency datasets
     has_datasets = len(biomarker_datasets) > 0 or len(dependency_datasets) > 0
     summary = format_gene_summary(gene, dependency_datasets)
-    has_confidence = has_gene_confidence(gene, chronos_achilles_dataset_for_confidence)
+
     characterizations = characterization.format_characterizations(
         entity_id, gene_symbol, biomarker_datasets
     )
 
+    crispr_given_id = DependencyDataset.DependencyEnum.Chronos_Combined.name
+    has_crispr_dataset = data_access.dataset_exists(
+        DependencyDataset.DependencyEnum.Chronos_Combined.name
+    ) and data_access.valid_row(
+        DependencyDataset.DependencyEnum.Chronos_Combined.name, gene.label
+    )
+
+    rnai_given_id = DependencyDataset.DependencyEnum.Chronos_Combined.name
+    has_rnai_dataset = data_access.dataset_exists(
+        DependencyDataset.DependencyEnum.RNAi_merged.name
+    ) and data_access.valid_row(
+        DependencyDataset.DependencyEnum.RNAi_merged.name, gene.label
+    )
+
     has_predictability = (
-        crispr_dataset is not None
-        and PredictiveModel.get_top_models_features(
-            crispr_dataset.dataset_id, entity_id
-        )
+        has_crispr_dataset
+        and PredictiveModel.get_top_models_features(crispr_given_id, gene.label)
         is not None
     ) or (
-        rnai_dataset is not None
-        and PredictiveModel.get_top_models_features(rnai_dataset.dataset_id, entity_id)
+        has_rnai_dataset
+        and PredictiveModel.get_top_models_features(rnai_given_id, gene.label)
         is not None
     )
 
@@ -158,7 +147,7 @@ def _get_gene_page_template_parameters(gene_symbol):
         "entity_id": entity_id,
         "has_datasets": has_datasets,
         "summary": summary,
-        "has_confidence": has_confidence,
+        "has_confidence": False,  # removed in a not yet merged PR
         "characterizations": characterizations,
         "has_predictability": has_predictability,
         "predictability_custom_downloads_link": get_predictability_input_files_downloads_link(),

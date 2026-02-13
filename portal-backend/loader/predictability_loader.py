@@ -9,7 +9,7 @@ from flask import current_app
 from sqlalchemy import func
 
 from depmap.antibody.models import Antibody
-from depmap.compound.models import CompoundExperiment
+from depmap.compound.models import CompoundExperiment, Compound
 from depmap.context.models_new import SubtypeContextEntity
 from depmap.database import db
 from depmap.dataset.models import BiomarkerDataset, Dataset, DependencyDataset
@@ -39,7 +39,8 @@ def lookup_gene(m: Match):
 
 
 def lookup_compound_dose(xref_full: str):
-    entity = CompoundExperiment.get_by_xref_full(xref_full, must=False)
+    ce = CompoundExperiment.get_by_xref_full(xref_full, must=False)
+    entity = Compound.get_by_entity_id(ce.compound_id)
 
     if entity:
         return entity.entity_id
