@@ -10,9 +10,7 @@
 # and should be referenced from there going forward    #
 ########################################################
 
-from .config_groups import (
-    get_all_dataset_ids,
-)
+from .config_groups import get_all_dataset_ids
 
 from depmap.interactive.config.utils import (
     get_dataset_data_type,
@@ -22,7 +20,6 @@ from depmap.interactive.config.utils import (
     get_entity_type,
     get_taiga_id,
     # the functions listed below should eventually be removed from this interface
-    get_entity_class,  # only used in InteractiveTree, which is only used in constellation/celfie
     get_matrix_id,  # only used in old compound page functionality which is no longer needed
 )
 
