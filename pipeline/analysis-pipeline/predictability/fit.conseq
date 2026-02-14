@@ -4,7 +4,7 @@
 # 3. Combine the output config files
 
 let sparkles_path = "sparkles"
-let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:test"
+let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.3.0"
 
 # Change the artifact below to run on a small subset of the full config (useful just for testing). Set all to "yes" 
 # for normal operation, or "no" for doing a subset of the normal work
@@ -52,7 +52,9 @@ rule process_model_config:
         json.dump(config_dict, f, indent=2)   
 
     """
-    run "python3 {{ inputs.script.filename }} --model_config {{ inputs.model_config.filename }} --input_config 'daintree_input_config.json' {% if inputs.is_test_run.run_all_configs == 'no' %}--test-only-first-n 2{% endif %} "
+    run """python3 {{ inputs.script.filename }} \
+    --model_config {{ inputs.model_config.filename }} \
+    --input_config 'daintree_input_config.json' {% if inputs.is_test_run.run_all_configs == 'no' %}--test-only-first-n 2{% endif %}"""
 
 rule run_fit_models:
     resources: {'slots': "0.1"} # let up to 10 of these run in parallel
@@ -65,12 +67,27 @@ rule run_fit_models:
           },
         sparkles_config=fileref("../../sparkles-config"),
         create_workflow_script=fileref("scripts/create_daintree_workflow.py"),
+        daintree_preprocess_script=fileref("scripts/daintree_preprocess.py"),
         # whether this is a test run or not
         is_test_run={"type": "daintree-test-run-flags"}
 
-    run "python3 {{ inputs.create_workflow_script.filename }} --config {{ inputs.daintree_input_config.filename }} --out workflow.json --nfolds 5 --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 100{% endif %}"
     run "cp {{ inputs.sparkles_config.filename }} .sparkles"
-    run "{{config.sparkles_path}} workflow run --nodes 100 --retry --add-hash-to-job-id -i {{ config.daintree_docker_image }} daintree-fit-v1 workflow.json"
+    run "mkdir -p extra_python_files"
+    run "cp {{ inputs.daintree_preprocess_script.filename }} extra_python_files/daintree_preprocess.py"
+
+    run """python3 {{ inputs.create_workflow_script.filename }} \
+        --config {{ inputs.daintree_input_config.filename }} \
+        --out workflow.json \
+        --nfolds 5 \
+        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 100{% endif %} \
+        --extra-python-files extra_python_files"""
+
+    run """{{config.sparkles_path}} workflow run \
+      --nodes 100 \
+      --retry \
+      --add-hash-to-job-id \
+      -i {{ config.daintree_docker_image }} \
+      daintree-fit-v1 workflow.json"""
 
     # reformat daintree-output into artifacts conseq will understand
     run "python3" with """

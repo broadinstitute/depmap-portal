@@ -98,6 +98,7 @@ def generate_daintree_configs(
                     "table_type": feature_input["type"],
                     "dim_type": feature_input["category"],
                     "required": feature in model_config["Required"],
+                    "preprocess": "daintree_preprocess:index_by_model",
                     "exempt": False,
                 }
 
