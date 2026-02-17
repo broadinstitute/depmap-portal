@@ -22,7 +22,6 @@ const {
   hgncId,
   aka,
   showDependencyTab,
-  showConfidenceTab,
   showCharacterizationTab,
   showPredictabilityTab,
   hasDatasets,
@@ -53,7 +52,6 @@ const App = () => {
         hgncId={hgncId}
         aka={aka}
         showDependencyTab={showDependencyTab}
-        showConfidenceTab={showConfidenceTab}
         showCharacterizationTab={showCharacterizationTab}
         showPredictabilityTab={showPredictabilityTab}
         hasDatasets={hasDatasets}

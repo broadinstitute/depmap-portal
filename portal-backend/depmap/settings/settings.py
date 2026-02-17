@@ -83,10 +83,6 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def gene_confidence(self):
-        return False  # Disabled everywhere as of 22Q4
-
-    @property
     def compound_dashboard_app(self):
         return self.is_prerelease_env()
 
