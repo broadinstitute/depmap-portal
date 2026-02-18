@@ -1,36 +1,34 @@
-version: "2"
 services:
-  breadbox:
-    container_name: breadbox
-    image: us-central1-docker.pkg.dev/depmap-consortium/elara/breadbox:0.0.2-alpha
-    environment:
-      - SQLALCHEMY_DATABASE_URL=sqlite:////data/sql_app.db
-      - FILESTORE_LOCATION=/data/app_datasets
-      - COMPUTE_RESULTS_LOCATION=/data/results
-      - ADMIN_USERS=["breadbox-admin@broadinstitute.org"]
-      # - DEFAULT_USER=breadbox-admin@broadinstitute.org # if a proxy is not in place, this will need to be set manually
-      - USE_DEPMAP_PROXY=False
-      - CELERY_BROKER_URL=redis://breadbox-redis-host:6379/0
-      - CELERY_RESULT_BACKEND=redis://breadbox-redis-host:6379/0
+  breadbox-service:
+    container_name: breadbox-service
+    image: depmap-breadbox
+    mem_limit: "5G"
     depends_on:
       - breadbox-redis
       - breadbox-worker
     command:
       [
         "uvicorn",
-        "breadbox.main:breadbox",
+        "breadbox.main:app",
         "--host",
         "0.0.0.0",
         "--port",
         "8000",
+        "--root-path",
+        "/breadbox",
       ]
+    environment:
+      - CELERY_BROKER_URL=redis://breadbox-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://breadbox-redis:6379/0
+
     ports:
-      - 127.0.0.1:8008:8000 # Randomly choose port 8008
+      - 127.0.0.1:8000:8000
     networks:
       - redis-net
     volumes:
-      - ${PWD}/data:/data # Mount directory for where the datasets and database will persist on host
-      - ${PWD}/result:/data/results
+      - ./data:/data
+      - ./result:/result
+      - ./.env:/install/breadbox/.env
 
   breadbox-redis:
     container_name: breadbox-redis
@@ -45,31 +43,27 @@ services:
         "--maxmemory-policy",
         "allkeys-lru",
       ]
-    hostname: breadbox-redis-host
+    mem_limit: "5G"
+    hostname: breadbox-redis
     networks:
       - redis-net
 
   breadbox-worker:
     container_name: breadbox-worker
     command: ["./bb", "run_worker"]
-    image: us-central1-docker.pkg.dev/depmap-consortium/elara/breadbox:0.0.2-alpha
+    mem_limit: "5G"
+    image: depmap-breadbox
     environment:
-      - REDIS_HOST=breadbox-redis-host
-      - CELERY_BROKER_URL=redis://breadbox-redis-host:6379/0
-      - CELERY_RESULT_BACKEND=redis://breadbox-redis-host:6379/0
-      - SQLALCHEMY_DATABASE_URL=sqlite:////data/sql_app.db
-      - FILESTORE_LOCATION=/data/app_datasets
-      - COMPUTE_RESULTS_LOCATION=/data/results
-      - ADMIN_USERS=["breadbox-admin@broadinstitute.org"]
-      # - DEFAULT_USER=breadbox-admin@broadinstitute.org # if a proxy is not in place, this will need to be set manually
-      - USE_DEPMAP_PROXY=False
+      - CELERY_BROKER_URL=redis://breadbox-redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://breadbox-redis:6379/0
     networks:
       - redis-net
     depends_on:
       - breadbox-redis
     volumes:
-      - ${PWD}/data:/data # Mount directory for where the datasets and database will persist on host
-      - ${PWD}/result:/data/results
+      - ./data:/data
+      - ./result:/result
+      - ./.env:/install/breadbox/.env
 
 networks:
   redis-net:

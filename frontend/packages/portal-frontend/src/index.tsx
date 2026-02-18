@@ -2,22 +2,20 @@ import "src/public-path";
 
 import React from "react";
 import ReactDOM from "react-dom";
-import { legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
+import { LegacyPortalApiResponse } from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
-import { toStaticUrl } from "@depmap/globals";
 
 import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
-
-import { DatasetOption } from "src/entity/components/EntitySummary";
 
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
-import { Option } from "src/common/models/utilities";
+import {
+  DataExplorerContext,
+  DataExplorerContextV2,
+  DatasetOption,
+} from "@depmap/types";
 
-import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
-
-import { ConnectivityValue } from "./constellation/models/constellation";
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
 import {
@@ -25,12 +23,11 @@ import {
   isBreadboxOnlyMode,
 } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
-import CorrelationAnalysis from "./correlationAnalysis/components";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 import { getHighestPriorityCorrelationDatasetForEntity } from "./compound/utils";
 import TopCoDependenciesTile from "./genePage/tiles/TopCoDependencies";
-import { getDependencyDatasetIds } from "./genePage/utils";
+import { getTopCodependencyDatasetIds } from "./genePage/utils";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -64,14 +61,6 @@ const RelatedCompoundsTile = React.lazy(
     )
 );
 
-const DoseResponseTab = React.lazy(
-  () =>
-    import(
-      /* webpackChunkName: "DoseResponseTab" */
-      "src/compound/components/DoseResponseTab"
-    )
-);
-
 const DoseCurvesTab = React.lazy(
   () =>
     import(
@@ -93,14 +82,6 @@ const EntitySummary = React.lazy(
     import(
       /* webpackChunkName: "EntitySummary" */
       "src/entity/components/EntitySummary"
-    )
-);
-
-const CelfiePage = React.lazy(
-  () =>
-    import(
-      /* webpackChunkName: "CelfiePage" */
-      "./celfie/components/CelfiePage"
     )
 );
 
@@ -317,8 +298,9 @@ export async function initTopCoDependenciesTile(
   entrezId: string,
   geneLabel: string
 ) {
-  const dependencyDatasetIds = await getDependencyDatasetIds(entrezId);
+  const dependencyDatasetIds = await getTopCodependencyDatasetIds(entrezId);
 
+  // Don't show the tile if the gene is not in the RNAi or CRISPR dataset
   if (dependencyDatasetIds.length === 0) {
     return;
   }
@@ -459,43 +441,6 @@ export function initPredictiveTab(
         entityType={entityType}
         customDownloadsLink={customDownloadsLink}
         methodologyUrl={methodologyUrl}
-      />
-    </React.Suspense>,
-    document.getElementById(elementId) as HTMLElement
-  );
-}
-
-export function initDoseResponseTab(
-  elementId: string,
-  datasetOptions: Array<any>,
-  units: string
-) {
-  renderWithErrorBoundary(
-    <React.Suspense fallback={<div>Loading...</div>}>
-      <DoseResponseTab datasetOptions={datasetOptions} doseUnits={units} />
-    </React.Suspense>,
-    document.getElementById(elementId) as HTMLElement
-  );
-}
-
-export function initCorrelationAnalysisTab(
-  elementId: string,
-  featureName: string,
-  featureId: string,
-  datasetOptions: Array<any>
-) {
-  renderWithErrorBoundary(
-    <React.Suspense fallback={<div>Loading...</div>}>
-      <CorrelationAnalysis
-        compoundDatasetOptions={sortByNumberOrNull(
-          datasetOptions,
-          "auc_dataset_priority",
-          "asc"
-        )}
-        geneDatasetOptions={[]}
-        featureName={featureName}
-        featureId={featureId}
-        featureType={"compound"}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
@@ -679,53 +624,4 @@ export function initSublineagePlot(
   window.addEventListener(rerenderPlotEventName, renderPlot);
 
   renderPlot();
-}
-
-export function initCelfiePage(
-  elementId: string,
-  similarityOptions: Array<Option<string>>,
-  colorOptions: Array<Option<string>>,
-  connectivityOptions: Array<Option<ConnectivityValue>>,
-  targetFeatureLabel: string,
-  datasets: Array<Option<string>>,
-  dependencyProfileOptions: Array<DatasetOption>,
-  howToImg: string
-) {
-  renderWithErrorBoundary(
-    <React.Suspense fallback={<div>Loading...</div>}>
-      <CelfiePage
-        getGraphData={(
-          taskIds,
-          numGenes,
-          similarityMeasure,
-          connectivity,
-          topFeature
-        ) =>
-          legacyPortalAPI.getConstellationGraphs(
-            taskIds,
-            null,
-            similarityMeasure,
-            numGenes,
-            connectivity,
-            topFeature
-          )
-        }
-        getVolcanoData={legacyPortalAPI.getTaskStatus}
-        similarityOptions={similarityOptions}
-        colorOptions={colorOptions}
-        connectivityOptions={connectivityOptions}
-        targetFeatureLabel={targetFeatureLabel}
-        datasets={datasets}
-        getComputeUnivariateAssociations={
-          legacyPortalAPI.computeUnivariateAssociations
-        }
-        dependencyProfileOptions={dependencyProfileOptions}
-        onCelfieInitialized={() => {}}
-        howToImg={howToImg}
-        methodIcon={toStaticUrl("img/predictability/pdf.svg")}
-        methodPdf={toStaticUrl("pdf/Genomic_Associations_Methodology.pdf")}
-      />
-    </React.Suspense>,
-    document.getElementById(elementId) as HTMLElement
-  );
 }

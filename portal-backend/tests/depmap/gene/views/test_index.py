@@ -123,9 +123,7 @@ def test_gene_dependency_datasets_where_present(
             "MAP4K4",
             [
                 "expression",
-                "copy_number_absolute",
                 "copy_number_relative",
-                "mutation_pearson",
                 "mutations_damaging",
                 "mutations_driver",
                 "rrbs",
@@ -137,9 +135,7 @@ def test_gene_dependency_datasets_where_present(
             "TNS2",
             [
                 "expression",
-                "copy_number_absolute",
                 "copy_number_relative",
-                "mutation_pearson",
             ],
         ),  # TNS2, not in rppa
     ],
