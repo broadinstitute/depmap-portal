@@ -10,3 +10,7 @@ from breadbox.models.dataset import (
     DimensionType,
 )
 from breadbox.models.group import Group, GroupEntry
+from breadbox.models.predictive_models import (
+    PredictiveModelConfig,
+    PredictiveModelResult,
+)
