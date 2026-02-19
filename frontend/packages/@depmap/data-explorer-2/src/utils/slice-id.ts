@@ -16,7 +16,7 @@ export function legacyPortalIdToBreadboxGivenId(legacyId: string) {
       return "GDSC2_AUC_collapsed";
 
     case "Prism_oncology_AUC":
-      return "Prism_oncology_AUC_collapsed";
+      return "PRISMOncologyReferenceLog2AUCMatrix";
 
     case "Repurposing_secondary_AUC":
       return "REPURPOSING_AUC_collapsed";
