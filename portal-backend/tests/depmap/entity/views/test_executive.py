@@ -374,7 +374,7 @@ def test_format_dataset_predictability(empty_db_mock_downloads):
 
     matrix_1 = MatrixFactory(entities=[query_gene])
     dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Avana, matrix=matrix_1
+        name=DependencyDataset.DependencyEnum.Chronos_Combined, matrix=matrix_1
     )
     dataset_1_model = PredictiveModelFactory(
         dataset=dataset_1, entity=query_gene, pearson=10, label="model_1"
@@ -410,7 +410,9 @@ def test_format_dataset_predictability(empty_db_mock_downloads):
     interactive_test_utils.reload_interactive_config()
 
     # both present
-    pred = format_predictability_tile(query_gene, [dataset_1, dataset_2])
+    pred = format_predictability_tile(
+        query_gene, [dataset_1.name.name, dataset_2.name.name]
+    )
 
     assert pred.keys() == {"overall_top_model", "plot", "tables"}
     assert (
@@ -436,7 +438,7 @@ def test_format_dataset_predictability(empty_db_mock_downloads):
     assert isinstance(pred["tables"][0]["top_models"], list)
 
     # only dataset 1
-    pred = format_predictability_tile(query_gene, [dataset_1])
+    pred = format_predictability_tile(query_gene, [dataset_1.name.name])
     assert len(pred["tables"]) == 1
     assert (
         pred["overall_top_model"]["features"][0]["name"] == feature_gene.label
@@ -444,7 +446,7 @@ def test_format_dataset_predictability(empty_db_mock_downloads):
     assert pred["overall_top_model"]["features"][0]["type"] == "Expression"
 
     # only dataset 2
-    pred = format_predictability_tile(query_gene, [dataset_2])
+    pred = format_predictability_tile(query_gene, [dataset_2.name.name])
     assert len(pred["tables"]) == 1
     assert (
         pred["overall_top_model"]["features"][0]["name"] == feature_gene.label

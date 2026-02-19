@@ -10,7 +10,7 @@ import seaborn as sns
 from bisect import bisect
 from io import StringIO
 from matplotlib import gridspec
-from typing import List
+from typing import List, Union
 
 matplotlib.use(
     "svg", force=True
@@ -269,18 +269,23 @@ def format_tda_predictability_tile(
     }
 
 
-def format_predictability_tile(entity: Entity, dataset_given_ids: List[str]):
+def format_predictability_tile(
+    entity: Entity, dataset_given_ids: List[Union[str, None]]
+):
     plot_params = []
 
     for given_id in dataset_given_ids:
+        if given_id is None:
+            continue
 
         # TODO: TEMP: We will need to update get_all_models to query using breadbox given ids and compound entity ids.
         # For now, it uses DependencyDataset "names" and compound experiment entity_ids
         legacy_dataset = temp_get_legacy_dataset_from_breadbox_dataset_id(given_id)
-
+        if legacy_dataset is None:
+            continue
         if entity.type == "compound":
             compound_experiment_entity_ids_by_compound_entity_id = legacy_utils.temp_get_compound_experiment_entity_ids_by_compound_entity_id(
-                "Prism_oncology_AUC"
+                legacy_dataset.name
             )
         #### Once PredictiveModel.get_top_models_features is updated to use compounds and Breadbox given_ids, delete from the TODO until here
         #### and update the inputs to get_top_models_features accordingly!!!

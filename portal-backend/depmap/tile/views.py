@@ -265,6 +265,7 @@ def get_predictability_html(
         )
     elif entity_type == "compound":
         compound = entity
+
         all_matching_datasets = data_access.get_all_datasets_containing_compound(
             compound.compound_id
         )
