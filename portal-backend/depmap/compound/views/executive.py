@@ -90,24 +90,6 @@ data_availability_datasets = [
 ]
 
 
-def format_dep_dist_warnings(dataset: MatrixDataset):
-    dataset_given_id = dataset.given_id if dataset.given_id else dataset.id
-    s = ""
-    if dataset.units == "log2(AUC)":
-        s += "Please note that log2(AUC) values depend on the dose range of the screen and are not comparable across different assays. "
-
-    if dataset.units == "AUC":
-        s += "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays."
-
-    if "CTRP_AUC" in dataset_given_id:
-        s += " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1."
-
-    if s != "":
-        return s
-
-    return None
-
-
 def get_order(
     has_predictability: bool,
     has_heatmap: bool,
@@ -173,26 +155,6 @@ def get_order(
 
     order[num_cols - 1].append(bottom_left_card)
     return order
-
-
-def format_dep_dist(compound: Compound, dataset: MatrixDataset):
-    df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset.id)
-    feature_data = df.loc[compound.label]
-    filtered_feature_data = [x for x in feature_data if not isnan(x)]
-
-    color = color_palette.compound_color
-
-    svg = format_generic_distribution_plot(filtered_feature_data, color)
-
-    units = dataset.units
-
-    return {
-        "svg": svg,
-        "title": "{} {}".format(compound.label, dataset.label),
-        "num_lines": len(filtered_feature_data),
-        "units": units,
-        "color": color,
-    }
 
 
 def format_availability_tile(compound: Compound):

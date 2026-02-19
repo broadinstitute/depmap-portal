@@ -1,0 +1,120 @@
+import React from "react";
+import styles from "../CompoundTiles.scss";
+import PlotSpinner from "src/plot/components/PlotSpinner";
+import ErrorLoading from "../ErrorLoading";
+import GenericDistributionPlot from "src/plot/components/GenericDistributionPlot";
+import useSensitivityTileData from "../hooks/useSensitivityTileData";
+import { MatrixDataset } from "@depmap/types";
+
+interface SensitivityTileProps {
+  compoundId: string;
+  dataset: MatrixDataset;
+}
+
+const formatDepDistWarnings = (dataset: MatrixDataset): string | null => {
+  const datasetGivenId = dataset.given_id || dataset.id;
+  let s = "";
+
+  if (dataset.units === "log2(AUC)") {
+    s +=
+      "Please note that log2(AUC) values depend on the dose range of the screen and are not comparable across different assays. ";
+  }
+
+  if (dataset.units === "AUC") {
+    s +=
+      "Please note that AUC values depend on the dose range of the screen and are not comparable across different assays.";
+  }
+
+  if (datasetGivenId.includes("CTRP_AUC")) {
+    s +=
+      " Additionally, CTRP AUCs are not normalized by the dose range and thus have values greater than 1.";
+  }
+
+  // Return the trimmed string if it's not empty, otherwise null
+  return s !== "" ? s.trim() : null;
+};
+
+export const SensitivityTile: React.FC<SensitivityTileProps> = ({
+  compoundId,
+  dataset,
+}) => {
+  const { sliceValues, error, isLoading } = useSensitivityTileData(
+    compoundId,
+    dataset.given_id!
+  );
+  const numberOfCellLines = sliceValues ? sliceValues.length : 0;
+
+  const warningText = formatDepDistWarnings(dataset);
+
+  const handleTabClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    const url = new URL(window.location.href);
+    url.searchParams.set("tab", "dependency");
+    window.history.pushState({}, "", url.toString());
+
+    // Trigger a manual 'popstate' event so that the Tab component
+    // listening for URL changes knows to update.
+    const navEvent = new PopStateEvent("popstate");
+    window.dispatchEvent(navEvent);
+  };
+
+  if (!isLoading && error) {
+    return <ErrorLoading tileName="Sensitive Cell Lines" />;
+  }
+
+  return (
+    <article
+      className={`${styles.SensitivityTile} card_wrapper stacked-boxplot-tile`}
+    >
+      <div className="card_border container_fluid">
+        <h2 className="no_margin cardtitle_text">Sensitive Cell Lines</h2>
+
+        <div className="card_padding">
+          <div className={styles.subHeader}>{dataset.name}</div>
+          {!isLoading && !error && sliceValues && (
+            <div className={styles.cellLineCountLabel}>
+              {numberOfCellLines} of Cell Lines Shown
+            </div>
+          )}
+          {isLoading && !error && <PlotSpinner />}
+          {!isLoading && !error && sliceValues && (
+            <div className={styles.sensitivityContainer}>
+              <GenericDistributionPlot
+                values={sliceValues}
+                xaxisLabel={dataset.units}
+                color="#c55252"
+              />
+            </div>
+          )}
+
+          {sliceValues && (
+            <div>
+              <p>{warningText}</p>
+              <hr className={styles.heatmapSeparator} />
+              <p className="stacked-boxplot-download-container">
+                View details in{" "}
+                <button
+                  type="button"
+                  onClick={handleTabClick}
+                  className={styles.pseudoLink}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    font: "inherit",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                    color: "inherit",
+                  }}
+                >
+                  Sensitivity Tab
+                </button>
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
+  );
+};

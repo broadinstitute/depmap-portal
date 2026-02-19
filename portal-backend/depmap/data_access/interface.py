@@ -292,6 +292,7 @@ def get_all_datasets_containing_compound(compound_id: str) -> list[MatrixDataset
     return bb_compound_datasets + visible_legacy_datasets
 
 
+# Used on the compound page data availability tile and the cell line page
 def get_subsetted_df_by_labels_compound_friendly(dataset_id: str) -> pd.DataFrame:
     """
     Load the data for a drug screen dataset. This is similar to get_subsetted_df_by_labels,
@@ -336,7 +337,7 @@ def add_matrix_dataset_to_breadbox(
     data_df: pd.DataFrame,
     sample_type: str,
     feature_type: Optional[str],
-    is_transient: bool = False
+    is_transient: bool = False,
 ) -> tuple[str, list[str]]:
     """
     Upload the given matrix dataset to breadbox.
