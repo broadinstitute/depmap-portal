@@ -273,21 +273,3 @@ def get_predictive_models_for_compound(
             for model in models:
                 models_for_compound_experiments.append((compound_experiment, model))
     return models_for_compound_experiments
-
-
-# TODO: Temporary during the stepwise process of moving the legacy predictability backend over to
-# use Compounds instead of Compound Experiments. Step 1 is just updating the tile, but the
-# original get_predictive_models_for_compound is also used for the tab, so we need to keep the original
-# get_predictive_models_for_compound around for a bit.
-def TEMP_get_predictive_models_for_compound(
-    compound_entity_id: str, dataset_given_id: str
-) -> List[PredictiveModel]:
-
-    model_order = {"Core_omics": 1, "Extended_omics": 2, "DNA_based": 3}
-
-    # TODO: TEMP: We will need to update get_all_models to query using breadbox given ids and compound entity ids.
-    # For now, it uses DependencyDataset "names" and compound experiment entity_ids
-    models = PredictiveModel.get_all_models(dataset_given_id, compound_entity_id)
-    models = sorted(models, key=lambda model: model_order[model.label])
-
-    return models

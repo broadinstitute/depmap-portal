@@ -283,18 +283,23 @@ def format_predictability_tile(
         legacy_dataset = temp_get_legacy_dataset_from_breadbox_dataset_id(given_id)
         if legacy_dataset is None:
             continue
+        compound_exp_entity_id = None
         if entity.type == "compound":
             compound_experiment_entity_ids_by_compound_entity_id = legacy_utils.temp_get_compound_experiment_entity_ids_by_compound_entity_id(
-                legacy_dataset.name
+                legacy_dataset.name.name
             )
+            compound_exp_entity_id = compound_experiment_entity_ids_by_compound_entity_id[
+                entity.entity_id
+            ]
         #### Once PredictiveModel.get_top_models_features is updated to use compounds and Breadbox given_ids, delete from the TODO until here
         #### and update the inputs to get_top_models_features accordingly!!!
 
+        entity_id = (
+            entity.entity_id if entity.type == "gene" else compound_exp_entity_id
+        )
+        assert entity_id is not None
         df = PredictiveModel.get_top_models_features(
-            legacy_dataset.dataset_id,
-            entity.entity_id
-            if entity.type == "gene"
-            else compound_experiment_entity_ids_by_compound_entity_id[entity.entity_id],
+            legacy_dataset.dataset_id, entity_id
         )
         if df is None:
             continue
