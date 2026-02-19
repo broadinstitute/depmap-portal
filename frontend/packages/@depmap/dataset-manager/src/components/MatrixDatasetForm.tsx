@@ -219,6 +219,7 @@ export function MatrixDatasetForm({
         },
         sample_type: {
           ...(matrixFormSchema.properties.sample_type as object),
+          default: "depmap_model",
           oneOf: sampleTypeOptions,
         },
         data_type: {
@@ -299,6 +300,7 @@ export function MatrixDatasetForm({
     if (!isAdvancedMode) {
       [
         "feature_type",
+        "sample_type",
         "value_type",
         "priority",
         "dataset_metadata",
