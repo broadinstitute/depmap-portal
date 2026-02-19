@@ -46,11 +46,18 @@ export const SensitivityTile: React.FC<SensitivityTileProps> = ({
 
   const warningText = formatDepDistWarnings(dataset);
 
-  const sensitvityTabHref = (() => {
+  const handleTabClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
     const url = new URL(window.location.href);
     url.searchParams.set("tab", "dependency");
-    return url.pathname + url.search;
-  })();
+    window.history.pushState({}, "", url.toString());
+
+    // Trigger a manual 'popstate' event so that the Tab component
+    // listening for URL changes knows to update.
+    const navEvent = new PopStateEvent("popstate");
+    window.dispatchEvent(navEvent);
+  };
 
   if (!isLoading && error) {
     return <ErrorLoading tileName="Sensitive Cell Lines" />;
@@ -87,9 +94,22 @@ export const SensitivityTile: React.FC<SensitivityTileProps> = ({
               <hr className={styles.heatmapSeparator} />
               <p className="stacked-boxplot-download-container">
                 View details in{" "}
-                <a href={sensitvityTabHref} className={styles.buttonLink}>
+                <button
+                  type="button"
+                  onClick={handleTabClick}
+                  className={styles.pseudoLink}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    font: "inherit",
+                    textDecoration: "underline",
+                    cursor: "pointer",
+                    color: "inherit",
+                  }}
+                >
                   Sensitivity Tab
-                </a>
+                </button>
               </p>
             </div>
           )}
