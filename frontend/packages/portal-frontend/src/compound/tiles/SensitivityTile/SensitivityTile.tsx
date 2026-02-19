@@ -48,7 +48,7 @@ export const SensitivityTile: React.FC<SensitivityTileProps> = ({
 
   const sensitvityTabHref = (() => {
     const url = new URL(window.location.href);
-    url.searchParams.set("tab", "sensitivity");
+    url.searchParams.set("tab", "dependency");
     return url.pathname + url.search;
   })();
 
