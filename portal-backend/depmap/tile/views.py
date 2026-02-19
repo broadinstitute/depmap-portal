@@ -23,7 +23,6 @@ from depmap.gene.views.executive import (
     get_dependency_distribution,
 )
 from depmap.compound.views.executive import (
-    get_best_compound_predictability,
     format_dep_dist,
     format_dep_dist_warnings,
     format_availability_tile,
@@ -249,58 +248,32 @@ def get_predictability_html(
     """
 
     entity_type = entity.type
-    if entity_type == "gene":
-        default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-            DependencyDataset.DataTypeEnum.crispr
-        )
-        crispr_dataset = (
-            get_dependency_dataset_for_entity(
-                default_crispr_dataset.name, entity.entity_id
-            )
-            if default_crispr_dataset
-            else None
-        )
 
-        default_rnai_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-            DependencyDataset.DataTypeEnum.rnai
-        )
-        rnai_dataset = (
-            get_dependency_dataset_for_entity(
-                default_rnai_dataset.name, entity.entity_id
-            )
-            if default_rnai_dataset
-            else None
-        )
+    if entity_type == "gene":
+        # TODO: TEMP hardcoding of ids
+        default_crispr_dataset = "Chronos_Combined"
+        default_rnai_dataset = "RNAi_merged"
 
         return render_template(
             "tiles/predictability.html",
             predictability=format_predictability_tile(
-                entity, [crispr_dataset, rnai_dataset]
+                entity, [default_crispr_dataset, default_rnai_dataset]
             ),
             is_gene_executive=True,  # Hard coded as True; TBD if we want TDA to show something else
             gene_symbol=entity.symbol,
             entity_type=entity_type,
         )
     elif entity_type == "compound":
-        # query param intended for compound dashboard to show predictability for specific dataset
-        if "datasetName" in query_params_dict:
-            dep_dataset_name = query_params_dict["datasetName"]
-            dataset = DependencyDataset.get_dataset_by_name(
-                dep_dataset_name, must=True,
-            )
-        else:
-            dataset = None
-
-        best_predictive_model_for_compound = get_best_compound_predictability(
-            cpd_exp_and_datasets, dataset
+        compound = entity
+        all_matching_datasets = data_access.get_all_datasets_containing_compound(
+            compound.compound_id
         )
-        compound_experiment = best_predictive_model_for_compound[0]
 
         predictability = None
-        if compound_experiment is not None:
-            predictability = format_predictability_tile(
-                compound_experiment, [best_predictive_model_for_compound[1]],
-            )
+
+        if compound is not None and len(all_matching_datasets) > 0:
+            dataset_given_id = all_matching_datasets[0].given_id
+            predictability = format_predictability_tile(compound, [dataset_given_id],)
 
         return render_template(
             "tiles/predictability.html",

@@ -1,7 +1,7 @@
 import re
-from depmap.context.models_new import SubtypeNode
-from depmap.context_explorer.models import ContextAnalysis
-from depmap.enums import DataTypeEnum
+from depmap import data_access
+from depmap.compound import legacy_utils
+from depmap.tile.TEMP import temp_get_legacy_dataset_from_breadbox_dataset_id
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -9,7 +9,6 @@ import seaborn as sns
 
 from bisect import bisect
 from io import StringIO
-from math import isnan
 from matplotlib import gridspec
 from typing import List
 
@@ -270,48 +269,53 @@ def format_tda_predictability_tile(
     }
 
 
-def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]):
+def format_predictability_tile(entity: Entity, dataset_given_ids: List[str]):
     plot_params = []
 
-    for dataset in datasets:
-        if dataset is None:
-            continue
+    for given_id in dataset_given_ids:
+
+        # TODO: TEMP: We will need to update get_all_models to query using breadbox given ids and compound entity ids.
+        # For now, it uses DependencyDataset "names" and compound experiment entity_ids
+        legacy_dataset = temp_get_legacy_dataset_from_breadbox_dataset_id(given_id)
+
+        if entity.type == "compound":
+            compound_experiment_entity_ids_by_compound_entity_id = legacy_utils.temp_get_compound_experiment_entity_ids_by_compound_entity_id(
+                "Prism_oncology_AUC"
+            )
+        #### Once PredictiveModel.get_top_models_features is updated to use compounds and Breadbox given_ids, delete from the TODO until here
+        #### and update the inputs to get_top_models_features accordingly!!!
+
         df = PredictiveModel.get_top_models_features(
-            dataset.dataset_id, entity.entity_id
+            legacy_dataset.dataset_id,
+            entity.entity_id
+            if entity.type == "gene"
+            else compound_experiment_entity_ids_by_compound_entity_id[entity.entity_id],
         )
         if df is None:
             continue
-        # TODO: It looks like we only have predictive models for datasets: Prism_oncology_AUC, RNAi_merged, Rep_all_single_pt, Chronos_Combined) but we should try to avoid hardcoding this
-        if dataset.data_type == DataTypeEnum.crispr:
+        if given_id == "Chronos_Combined":
             dataset_type = "crispr"
-            label = "CRISPR"
             color = color_palette.crispr_color
-        elif dataset.data_type == DataTypeEnum.rnai:
+        elif given_id == "RNAi_merged":
             dataset_type = "rnai"
-            label = "RNAi"
             color = color_palette.rnai_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Rep1M:
-            dataset_type = "rep1m"
-            label = "Rep1M"
-            color = color_palette.rep1m_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Rep_all_single_pt:
+        elif given_id == "Rep_all_single_pt_per_compound":
             dataset_type = "rep_all_single_pt"
-            label = "Repurposing Extended"
             color = color_palette.rep_all_single_pt_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_AUC:
+        elif given_id == "PRISMOncologyReferenceLog2AUCMatrix":
             dataset_type = "prism_onc_ref"
-            label = "PRISM OncRef log2(AUC) Lum"
             color = color_palette.prism_oncology_color
-        elif dataset.name == DependencyDataset.DependencyEnum.Prism_oncology_seq_AUC:
+        elif given_id == "PRISMOncologyReferenceSeqLog2AUCMatrix":
             dataset_type = "prism_onc_seq_ref"
-            label = "PRISM OncRef log2(AUC) Seq"
             color = color_palette.prism_oncology_color
         else:
-            # TODO: Figure out how to not hardcode above code
             raise Exception("Type not defined")
 
+        dataset = data_access.get_matrix_dataset(given_id)
+        label = dataset.label
         df["type"] = dataset_type
-        background = PredictiveBackground.get_background(dataset.dataset_id)
+        # TODO: Update PredictiveBackground to use breadbox given ids!!!
+        background = PredictiveBackground.get_background(legacy_dataset.dataset_id)
         plot_params.append(
             {
                 "dataset": dataset,
@@ -344,7 +348,7 @@ def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]
         predictability["tables"].append(
             {
                 "type": plot_param["type"],
-                "dataset": plot_param["dataset"].display_name,
+                "dataset": plot_param["label"],
                 "top_models": format_top_three_models_top_feature(
                     sorted_df, plot_param["type"]
                 ),
@@ -388,7 +392,7 @@ def format_predictability_plot(plot_params, sorted_df):
                 "percentile": number_utils.format_3_sf(
                     get_percentile(value, plot_param["background"])
                 ),
-                "dataset_display_name": plot_param["dataset"].display_name,
+                "dataset_display_name": plot_param["label"],
                 "type": plot_param["type"],
             }
         )

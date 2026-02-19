@@ -115,6 +115,18 @@ def get_compound_ids_by_experiment_id(dataset_id: str) -> dict[int, int]:
     return result
 
 
+def temp_get_compound_experiment_entity_ids_by_compound_entity_id(
+    dataset_id: str,
+) -> dict[int, int]:
+    result = {}
+    experiment_compound_pairs = _get_deduplicated_experiment_compound_mapping(
+        dataset_id
+    )
+    for experiment, compound in experiment_compound_pairs:
+        result[compound.entity_id] = experiment.entity_id
+    return result
+
+
 def get_experiment_label_for_compound_label(
     dataset_id: str, compoound_label: str
 ) -> Optional[str]:
