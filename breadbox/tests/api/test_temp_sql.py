@@ -180,3 +180,10 @@ def test_tabular_query(minimal_db: SessionWithUser, settings, client: TestClient
     _assert_sql_result_eq(
         client, "select age from annot1_metadata where age > 10000", "age\r\n"
     )
+
+    # make sure UNION queries work
+    _assert_sql_result_eq(
+        client,
+        "select ID from annot1_metadata where ID = '1' union select ID from annot1_metadata where ID = '2' order by ID",
+        "ID\r\n1\r\n2\r\n",
+    )
