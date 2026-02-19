@@ -19,7 +19,6 @@ from depmap.user_uploads.utils.task_utils import (
     write_upload_to_local_file,
     write_url_to_local_file,
 )
-from depmap.vector_catalog.trees import InteractiveTree
 
 
 log = logging.getLogger(__name__)
@@ -71,36 +70,6 @@ def get_custom_analysis_datasets():
         combined_datasets, key=lambda dataset: dataset.get("label"),
     )
     return jsonify(combined_datasets)
-
-
-@blueprint.route("/api/dataset/add-csv-one-row", methods=["POST"])
-@csrf_protect.exempt
-def add_custom_csv_one_row_dataset():
-    """
-    Add a custom csv in the format
-        cell line, value
-        cell line, value
-        cell line, value
-    With no header, and where cell lines are rows
-    Saves it as a custom dataset with a fixed row name as follows
-    Returns a response that includes the slice id for that one row
-    This is a horrible, long, and ugly function. Josephine just got tired to dealing with this
-    There is potential for reuse (the try catch stuff, invalid fields) with upload_transient_csv
-    """
-    datafile = request.files.get("uploadFile")
-
-    row_name = "custom data"
-
-    csv_path = write_upload_to_local_file(datafile)
-    result = upload_transient_csv.apply(args=[row_name, "", "row", csv_path, True])
-
-    response = format_task_status(result)
-    if response["state"] == TaskState.SUCCESS.value:
-        response["sliceId"] = InteractiveTree.get_id_from_dataset_feature(
-            response["result"]["datasetId"], row_name
-        )
-
-    return jsonify(response)
 
 
 @blueprint.route("/api/dataset/add-csv", methods=["POST"])

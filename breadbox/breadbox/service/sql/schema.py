@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Iterator, Any, Union, List, Tuple, Dict
+from typing import Callable, Iterator, Any, Union, List, Optional, Tuple, Dict
 
 
 from dataclasses import dataclass
@@ -259,20 +259,25 @@ def assign_names(datasets: List[Dataset], dim_types: List[DimensionType]):
     )
 
 
-def generate_simulated_schema(db: SessionWithUser):
-    datasets = crud_dataset.get_datasets(db, db.user)
-    dim_types = crud_dimension_types.get_dimension_types(db)
+def generate_simulated_schema(db: SessionWithUser, filter_by_dataset: Optional[Dataset]):
+    # Assign names for all datasets and dim types
+    all_datasets = crud_dataset.get_datasets(db, db.user)
+    all_dim_types = crud_dimension_types.get_dimension_types(db)
+    schema = assign_names(all_datasets, all_dim_types)
 
-    schema = assign_names(datasets, dim_types)
-
-    all_statements = []
-    for dataset in datasets:
+    filtered_datasets = [filter_by_dataset] if filter_by_dataset else all_datasets
+    statements_by_given_id = {}
+    for dataset in filtered_datasets:
         if isinstance(dataset, MatrixDataset):
             statements = _get_create_table_for_matrix(dataset, schema)
         elif isinstance(dataset, TabularDataset):
             statements = _get_create_table_for_tabular(dataset, schema)
         else:
             raise Exception("Unknown dataset type")
-        all_statements.append(statements)
-    # return repr(all_statements)
-    return "\n".join(all_statements)
+        
+        # In production, every dataset should have a given ID, but that may not be the case in dev envs
+        # When the given ID doesn't exist, we can just use the dataset UUID.
+        given_id = dataset.given_id if dataset.given_id else dataset.id
+        statements_by_given_id[given_id] = statements
+    
+    return statements_by_given_id

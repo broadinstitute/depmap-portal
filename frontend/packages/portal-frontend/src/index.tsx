@@ -30,8 +30,8 @@ import {
   getHighestPriorityCorrelationDatasetForEntity,
 } from "./compound/utils";
 import TopCoDependenciesTile from "./genePage/tiles/TopCoDependencies";
-import { getDependencyDatasetIds } from "./genePage/utils";
 import { SensitivityTile } from "./compound/tiles/SensitivityTile/SensitivityTile";
+import { getTopCodependencyDatasetIds } from "./genePage/utils";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -324,8 +324,9 @@ export async function initTopCoDependenciesTile(
   entrezId: string,
   geneLabel: string
 ) {
-  const dependencyDatasetIds = await getDependencyDatasetIds(entrezId);
+  const dependencyDatasetIds = await getTopCodependencyDatasetIds(entrezId);
 
+  // Don't show the tile if the gene is not in the RNAi or CRISPR dataset
   if (dependencyDatasetIds.length === 0) {
     return;
   }

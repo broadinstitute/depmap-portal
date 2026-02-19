@@ -91,10 +91,13 @@ def assert_schema_is_valid(client):
         "/temp/sql/schema", headers={"X-Forwarded-User": "anonymous"},
     )
     assert response.status_code == 200
-    # make sure we can parse the resulting SQL that describes the schema
-    parsed = sqlglot.parse(response.text, dialect="sqlite")
-    assert len(parsed) > 0
-    print(f"Schema:\n{response.text}")
+
+    response_content: dict = response.json()
+    for _, schema in response_content.items():
+        # make sure we can parse the resulting SQL that describes the schema
+        parsed = sqlglot.parse(schema, dialect="sqlite")
+        assert len(parsed) > 0
+        print(f"Schema:\n{schema}")
 
 
 def test_bad_queries(minimal_db: SessionWithUser, settings, client: TestClient):
@@ -179,4 +182,11 @@ def test_tabular_query(minimal_db: SessionWithUser, settings, client: TestClient
     # make sure we handle fetching no rows correctly
     _assert_sql_result_eq(
         client, "select age from annot1_metadata where age > 10000", "age\r\n"
+    )
+
+    # make sure UNION queries work
+    _assert_sql_result_eq(
+        client,
+        "select ID from annot1_metadata where ID = '1' union select ID from annot1_metadata where ID = '2' order by ID",
+        "ID\r\n1\r\n2\r\n",
     )

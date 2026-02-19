@@ -543,8 +543,16 @@ def assert_single_select(sql: str):
     if len(parsed) != 1:
         raise UserError(f"Expected a single statement but got {len(parsed)}")
 
-    if not isinstance(parsed[0], sqlglot.expressions.Select):
-        raise UserError(f"Only SELECT statements are allowed")
+    # Allow SELECT statements and set operations (UNION, INTERSECT, EXCEPT)
+    # which are parsed as separate expression types by sqlglot
+    allowed_types = (
+        sqlglot.expressions.Select,
+        sqlglot.expressions.Union,
+        sqlglot.expressions.Intersect,
+        sqlglot.expressions.Except,
+    )
+    if not isinstance(parsed[0], allowed_types):
+        raise UserError(f"Only read-only queries are allowed")
 
 
 def create_to_row_func():

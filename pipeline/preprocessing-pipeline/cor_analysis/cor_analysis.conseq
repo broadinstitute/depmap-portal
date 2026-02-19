@@ -51,7 +51,7 @@ rule run_cor_analysis_pair_v2:
         -u inputs.json \
         -u {{ inputs.script.filename }}:cor.py \
         -u {{ inputs.taiga_token.filename}}:.taiga-token \
-        --skipifexists \
+        --retry \
         -n {{ inputs.pair.job_name }} \
         python3 ./cor.py inputs.json {{inputs.pair.a_given_id}}.{{inputs.pair.b_given_id}}.cor
     """

@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
-import { breadboxAPI, legacyPortalAPI } from "@depmap/api";
 import { isElara } from "@depmap/globals";
 import { UploadFormat, UserUploadModal } from "@depmap/user-upload";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import StartScreenExamples from "./StartScreenExamples";
 import styles from "../../styles/DataExplorer2.scss";
 
@@ -49,28 +47,13 @@ function StartScreen({ tutorialLink }: Props) {
         </>
       )}
       <UserUploadModal
-        disableOrientationOptions={isBreadboxOnlyMode}
+        disableOrientationOptions
         key={`${showCsvUploadModal}`}
         show={showCsvUploadModal}
         onHide={() => setShowCsvUploadModal(false)}
         uploadFormat={UploadFormat.File}
         isPrivate={false}
         isTransient
-        taskKickoffFunction={(args) => {
-          if (isBreadboxOnlyMode) {
-            return breadboxAPI.postCustomCsv(args);
-          }
-
-          return legacyPortalAPI.postCustomCsv({
-            ...args,
-            useDataExplorer2: true,
-          });
-        }}
-        getTaskStatus={
-          isBreadboxOnlyMode
-            ? breadboxAPI.getTaskStatus
-            : legacyPortalAPI.getTaskStatus
-        }
       />
     </div>
   );

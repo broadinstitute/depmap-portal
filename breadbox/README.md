@@ -4,7 +4,7 @@ Breadbox is a persistent service for storing and retrieving data for the [DepMap
 
 See the [docs](docs/) folder for more documentation on the breadbox data model and terminology.
 
-## Setup
+## Setup for running locally
 
 1.  Install pyenv & poetry
 
@@ -59,24 +59,31 @@ If trying to access Elara from the Depmap app (behind the `/breadbox` url prefix
 
 ### Running Elara and Breadbox in a Container Locally
 
-You may notice that there is a `docker-compose.yaml` file in `/breadbox` which contains only Breadbox-related services. As the file is, it was designed to be a general portable file on any host machine, without needing the any of the Breadbox code. Note that the image for the Breadbox container in the Compose file is based off a specific Breadbox Docker image build so it may not contain the latest changes in Breadbox. You may change the `image` key value in the yaml to be a specific image of your own choosing. Also, note that `volume` value in the Compose file expects that the datasets and database file are under a directory `/data`. You may change those values along with the environment variables `SQLALCHEMY_DATABASE_URL` and `FILESTORE_LOCATION` in the docker-compose.yaml file which relies on that volume directory.
+You may notice that there is a `docker-compose.yaml` file in `/breadbox` which contains only Breadbox-related services.
+As the file is, it was designed to be a general portable file on any host machine, without needing the any of the
+Breadbox code.
 
-**Any changes you make to the Docker Compose file should be for testing purposes only!**
+Before starting the services, you should first build the docker image that `docker-compose.yaml` uses via:
+
+```
+# run this from the root of the git repo
+bash breadbox/build-docker-image.sh depmap-breadbox
+```
 
 To run the Docker Compose file as is:
 
 1.  Create a directory to mount the Elara application at that specific path in your host machine
 2.  Copy the given `docker-compose.yaml` file to the newly created directory
-3.  Within the newly created directory, create a directory `/data`. This will be where the datasets and database file for the Elara app will be stored and allows you to mount the volume `/data` into `/data` in the breadbox service container
+3.  Within the newly created directory, create empty directories `/data` and `/results`. The `data` directory will be where the datasets and database file for the Elara app will be stored and allows you to mount the volume `/data` into `/data` in the breadbox service container. The `results` directory will be used for temporary files and should be periodically emptied.
 4.  **Skip if you’ve already initialized the database!** Within the directory for the Elara app, recreate the database from scratch by running:
 
-        docker compose run breadbox ./bb recreate-dev-db --minimal_data_only
+        docker compose run breadbox-worker ./bb upgrade-db
 
 5.  Go to the directory for the Elara app (the parent directory for `/data`) and run
 
         docker compose up
 
-6.  The Elara app can now be accessed by going to http://127.0.0.1:8008/elara
+6.  The Elara app can now be accessed by going to http://127.0.0.1:8000/elara
 
 ### Running the background worker
 
