@@ -16,6 +16,7 @@ from tests.factories import (
     PredictiveFeatureResultFactory,
     PredictiveBackgroundFactory,
 )
+from tests.utilities import interactive_test_utils
 from tests.utilities.override_fixture import override
 from depmap.dataset.models import DependencyDataset
 from depmap.tile.views import render_tile
@@ -132,6 +133,7 @@ def test_render_predictability_tile(app, empty_db_mock_downloads):
     PredictiveBackgroundFactory(dataset=dataset)
 
     empty_db_mock_downloads.session.flush()
+    interactive_test_utils.reload_interactive_config()
 
     with app.test_client() as c:
         r = c.get(
@@ -146,115 +148,6 @@ def test_render_predictability_tile(app, empty_db_mock_downloads):
         assert r.status_code == 200
         assert "html" in r_json
         assert r_json["html"] != ""
-
-
-def test_render_predictability_tile_for_compound_dataset(app, empty_db_mock_downloads):
-    compound1 = CompoundFactory(label="Compound 1")
-    compound2 = CompoundFactory(label="Compound 2")
-    compound_experiment1 = CompoundExperimentFactory(compound=compound1)
-    compound_experiment2 = CompoundExperimentFactory(compound=compound2)
-    non_existing_compound = CompoundFactory(label="fake")
-
-    rep_all_single_pt_dataset = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Rep_all_single_pt,
-        matrix=MatrixFactory(entities=[compound_experiment1]),
-        priority=1,
-    )
-    oncref_dataset = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Prism_oncology_AUC,
-        matrix=MatrixFactory(entities=[compound_experiment1, compound_experiment2]),
-        priority=None,
-    )
-
-    rep_all_single_pt_dataset_model = PredictiveModelFactory(
-        dataset=rep_all_single_pt_dataset,
-        entity=compound_experiment1,
-        pearson=10,
-        label="Core_omics",
-    )
-    oncref_dataset_model1 = PredictiveModelFactory(
-        dataset=oncref_dataset,
-        entity=compound_experiment1,
-        pearson=10,
-        label="Core_omics",
-    )
-    oncref_dataset_model2 = PredictiveModelFactory(
-        dataset=oncref_dataset,
-        entity=compound_experiment2,
-        pearson=10,
-        label="Core_omics",
-    )
-
-    predictive_feature = PredictiveFeatureFactory(
-        dataset_id=BiomarkerDatasetFactory().name.value
-    )
-
-    PredictiveFeatureResultFactory(
-        predictive_model=rep_all_single_pt_dataset_model,
-        feature=predictive_feature,
-        rank=0,
-        importance=0.5,
-    )
-    PredictiveFeatureResultFactory(
-        predictive_model=oncref_dataset_model1,
-        feature=predictive_feature,
-        rank=0,
-        importance=0.5,
-    )
-    PredictiveFeatureResultFactory(
-        predictive_model=oncref_dataset_model2,
-        feature=predictive_feature,
-        rank=0,
-        importance=0.5,
-    )
-
-    PredictiveBackgroundFactory(dataset=rep_all_single_pt_dataset)
-    PredictiveBackgroundFactory(dataset=oncref_dataset)
-
-    empty_db_mock_downloads.session.flush()
-
-    with app.test_client() as c:
-        # Tile should render if data for compound exists
-        # Data exists for compound 1 in rep_all_single_pt
-        r_show_compound1_tile = c.get(
-            url_for(
-                "tile.render_tile",
-                subject_type="compound",
-                tile_name="predictability",
-                identifier=compound1.label,
-            )
-        )
-        r_show_compound1_tile_json = r_show_compound1_tile.get_json()
-        assert r_show_compound1_tile.status_code == 200
-        assert "html" in r_show_compound1_tile_json
-        assert r_show_compound1_tile_json["html"] != ""
-        # Data exists for compund 2 for only oncref
-        r_show_compound2_tile = c.get(
-            url_for(
-                "tile.render_tile",
-                subject_type="compound",
-                tile_name="predictability",
-                identifier=compound2.label,
-            )
-        )
-        r_show_compound2_tile_json = r_show_compound2_tile.get_json()
-        assert r_show_compound2_tile.status_code == 200
-        assert "html" in r_show_compound2_tile_json
-        assert r_show_compound2_tile_json["html"] != ""
-
-        # Tile should not render if no data for compound exists
-        r_no_show_tile = c.get(
-            url_for(
-                "tile.render_tile",
-                subject_type="compound",
-                tile_name="predictability",
-                identifier=non_existing_compound.label,
-            )
-        )
-        r_no_show_tile_json = r_no_show_tile.get_json()
-        assert r_no_show_tile.status_code == 200
-        assert "html" in r_no_show_tile_json
-        assert r_no_show_tile_json["html"] == ""
 
 
 def test_render_description_tile(app, empty_db_mock_downloads):

@@ -273,23 +273,3 @@ def get_predictive_models_for_compound(
             for model in models:
                 models_for_compound_experiments.append((compound_experiment, model))
     return models_for_compound_experiments
-
-
-def get_best_compound_predictability(
-    compound_experiment_and_datasets: List[
-        Tuple[CompoundExperiment, DependencyDataset]
-    ],
-    dataset: Optional[DependencyDataset],
-) -> Tuple[CompoundExperiment, DependencyDataset]:
-    models_for_compound_experiments = get_predictive_models_for_compound(
-        compound_experiment_and_datasets, dataset
-    )
-    best_model_compound_experiment = None
-    best_model_pearson = 0.0
-    best_predictive_model_dataset = None
-    for compound_experiment, model in models_for_compound_experiments:
-        if model.pearson >= best_model_pearson:
-            best_model_pearson = float(model.pearson)
-            best_model_compound_experiment = compound_experiment
-            best_predictive_model_dataset = model.dataset
-    return (best_model_compound_experiment, best_predictive_model_dataset)
