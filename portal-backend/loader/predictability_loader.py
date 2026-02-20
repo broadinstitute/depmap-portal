@@ -28,21 +28,23 @@ from depmap.utilities.bulk_load import bulk_load
 from depmap.utilities.models import log_data_issue
 
 
-def lookup_gene(m: Match):
+def lookup_gene_entrez_id(m: Match):
     entrez_id = m.group(1)
 
     entity = Gene.get_gene_by_entrez(entrez_id, must=False)
     if entity:
-        return entity.entity_id
+        return entity.entrez_id
 
     return None
 
 
-def lookup_compound_dose(xref_full: str):
-    entity = CompoundExperiment.get_by_xref_full(xref_full, must=False)
+def lookup_compound_id_matching_compound_exp(xref_full: str):
+    ce = CompoundExperiment.get_by_xref_full(xref_full, must=False)
 
-    if entity:
-        return entity.entity_id
+    if ce:
+        entity = ce.compound
+        if entity:
+            return entity.compound_id
 
     return None
 
@@ -63,7 +65,7 @@ def _load_predictive_models(
                     id_type=dataset.entity_type,
                 )
                 return None
-            return lookup_gene(m)
+            return lookup_gene_entrez_id(m)
 
         if dataset.entity_type == "compound_experiment":
             # Below is a hack for the 24Q2 release - where none of the OncRef Predictability outputs
@@ -73,15 +75,18 @@ def _load_predictive_models(
                     "BRD:" + gene_or_compound_experiment_label
                 )
 
-            entity_id = lookup_compound_dose(gene_or_compound_experiment_label)
-            if entity_id is None:
+            compound = lookup_compound_id_matching_compound_exp(
+                gene_or_compound_experiment_label
+            )
+
+            if compound is None:
                 log_data_issue(
                     "PredictiveModel",
-                    "Missing compound experiment",
-                    identifier=gene_or_compound_experiment_label,
-                    id_type=dataset.entity_type,
+                    "Missing compound",
+                    identifier=compound.compound_id,
+                    id_type="compound",
                 )
-            return entity_id
+            return compound.compound_id
 
         log_data_issue(
             "PredictiveModel", f"Unexpected dataset entity type {dataset.entity_type}",
@@ -101,12 +106,12 @@ def _load_predictive_models(
         if feature_id is None:
             return None
 
-        # only add to dictionary if valid entity id
+        # only add to dictionary if valid feature id
         model_ids[model_ids_key] = model_id
         rec = dict(
             predictive_model_id=model_id,
-            dataset_id=dataset.dataset_id,
-            feature_id=lookup_feature_id(entity_label),
+            dataset_given_id=lookup_breadbox_dataset_given_id(dataset.dataset_id),
+            pred_model_feature_id=lookup_feature_id(entity_label),
             label=model_name,
             pearson=float(row["pearson"]),
         )

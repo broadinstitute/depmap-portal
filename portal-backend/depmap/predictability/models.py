@@ -79,7 +79,6 @@ class PredictiveModel(Model):
     def get_top_models_features(
         dataset_given_id: str,
         pred_model_feature_id: str,
-        pred_model_feature_type: str,
         num_models=3,
         num_top_features=5,
     ):
@@ -147,7 +146,7 @@ class PredictiveModel(Model):
                     predictive_model.pred_model_feature_id,
                 )
                 row["related_type"] = predictive_feature.get_relation_to_entity(
-                    pred_model_feature_id, pred_model_feature_type
+                    pred_model_feature_id
                 )
             rows.append(row)
 
@@ -217,27 +216,27 @@ class PredictiveFeature(Model):
         return DATASET_NAME_TO_FEATURE_TYPE.get(self.dataset_id, self.dataset_id)
 
     def get_interactive_url_for_entity(
-        self, dep_dataset: DependencyDataset, entity: Entity
+        self, pred_model_dataset_given_id: str, pred_model_feature_id: str
     ) -> Optional[str]:
         if not self._get_feature_is_loaded():
             return None
 
-        dataset_id = dep_dataset.name.name
-        if (
-            dataset_id in ["Prism_oncology_AUC", "Prism_oncology_seq_AUC"]
-            and entity.get_entity_type() == "compound_experiment"
-        ):
-            entity = entity.compound
-            if dataset_id == "Prism_oncology_seq_AUC":
-                dataset_id = "Prism_oncology_seq_AUC_collapsed"
-        else:
-            pass
-
+        pred_model_feautre_labels_by_id = data_access.get_dataset_feature_labels_by_id(
+            pred_model_dataset_given_id
+        )
+        pred_model_feature_label = pred_model_feautre_labels_by_id.get(
+            pred_model_feature_id
+        )
+        xFeature = (
+            pred_model_feature_label
+            if pred_model_feature_label is not None
+            else pred_model_feature_id
+        )
         if self.dataset_id == "context":
             return url_for(
                 "data_explorer_2.view_data_explorer_2",
-                xDataset=dataset_id,
-                xFeature=entity.label,
+                xDataset=pred_model_dataset_given_id,
+                xFeature=xFeature,
                 color1=json_dumps(
                     {
                         "name": self.feature_name,
@@ -256,14 +255,14 @@ class PredictiveFeature(Model):
 
         return url_for(
             "data_explorer_2.view_data_explorer_2",
-            xDataset=dataset_id,
-            xFeature=entity.label,
+            xDataset=pred_model_dataset_given_id,
+            xFeature=xFeature,
             yDataset=self.dataset_id,
             yFeature=self.feature_name,
         )
 
     def get_correlation_for_entity(
-        self, dataset_given_id: str, pred_model_feature_id: Gene | Compound
+        self, dataset_given_id: str, pred_model_feature_id: str
     ) -> Optional[float]:
         if not self._get_feature_is_loaded():
             return None
