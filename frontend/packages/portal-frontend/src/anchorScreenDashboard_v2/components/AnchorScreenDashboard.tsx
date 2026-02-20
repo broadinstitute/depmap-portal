@@ -3,7 +3,6 @@ import SliceTable from "@depmap/slice-table";
 import initialSlices from "./initialSlices.json";
 import PlotLinksHeader from "./PlotLinksHeader";
 import PlotLinksCell from "./PlotLinksCell";
-import HeaderCell from "./HeaderCell";
 import useMetadata from "./useMetadata";
 import styles from "../styles/AnchorScreenDashboard.scss";
 
@@ -33,7 +32,6 @@ function AnchorScreenDashboard() {
           getInitialState={() => ({ initialSlices })}
           hideIdColumn
           hideLabelColumn
-          headerCellRenderer={HeaderCell}
           customColumns={[
             {
               header: PlotLinksHeader,

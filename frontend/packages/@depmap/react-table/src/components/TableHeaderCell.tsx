@@ -11,7 +11,11 @@ type TableHeaderCellProps<T> = {
   stickyLeft: number | undefined;
   isSortable: boolean;
   isSelectColumn: boolean;
+  scrollColumnIntoView?: (columnId: string) => void;
+  cancelScrollColumnIntoView?: () => void;
 };
+
+const NOOP = () => {};
 
 export function TableHeaderCell<T>({
   header,
@@ -19,11 +23,34 @@ export function TableHeaderCell<T>({
   stickyLeft,
   isSortable,
   isSelectColumn,
+  scrollColumnIntoView = NOOP,
+  cancelScrollColumnIntoView = NOOP,
 }: TableHeaderCellProps<T>) {
   const canResize = header.column.getCanResize();
   const resizeHandler = header.getResizeHandler();
   const headerMenuItems = (header.column.columnDef.meta as any)
     ?.headerMenuItems;
+
+  // Track whether we've already triggered a scroll for this hover session.
+  // Reset on mouseleave so the next genuine entry can trigger again.
+  const hasTriggeredRef = React.useRef(false);
+
+  const handleMouseMove = () => {
+    // mousemove only fires when the user physically moves the pointer,
+    // NOT when the element scrolls under a stationary cursor. This
+    // prevents the cascading scroll loop caused by overshoot revealing
+    // the next column header under the cursor.
+    if (isSticky || !scrollColumnIntoView || hasTriggeredRef.current) return;
+    hasTriggeredRef.current = true;
+    scrollColumnIntoView(header.column.id);
+  };
+
+  const handleMouseLeave = () => {
+    hasTriggeredRef.current = false;
+    if (cancelScrollColumnIntoView) {
+      cancelScrollColumnIntoView();
+    }
+  };
 
   return (
     <th
@@ -34,6 +61,8 @@ export function TableHeaderCell<T>({
         ...(isSticky && stickyLeft !== undefined ? { left: stickyLeft } : {}),
       }}
       onClick={isSortable ? header.column.getToggleSortingHandler() : undefined}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
     >
       <div className={styles.thContent}>
         <div className={styles.renderedHeaderText}>

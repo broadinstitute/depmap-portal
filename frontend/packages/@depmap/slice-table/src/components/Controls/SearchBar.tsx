@@ -6,9 +6,9 @@ interface Props {
   tableRef: React.RefObject<{
     goToNextMatch: () => void;
     goToPreviousMatch: () => void;
-    readonly currentMatchIndex: number;
-    readonly totalMatches: number;
-    readonly searchQuery: string;
+    currentMatchIndex: number;
+    totalMatches: number;
+    searchQuery: string;
     setSearchQuery: (query: string) => void;
     subscribeToSearch: (listener: () => void) => () => void;
   }>;

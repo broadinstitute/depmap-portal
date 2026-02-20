@@ -10,30 +10,25 @@ import type {
   SliceQuery,
 } from "@depmap/types";
 
+export interface ColumnDisplayOptions {
+  header?: ({
+    label,
+    defaultElement,
+  }: {
+    label: string;
+    defaultElement: React.ReactNode;
+  }) => React.ReactNode;
+  cell?: ({ getValue }: { getValue: () => unknown }) => React.ReactNode;
+  numericPrecision?: number;
+}
+
 interface Parameters {
   index_type_name: string;
   slices: SliceQuery[]; // Make sure to memoize this!
   viewOnlySlices?: Set<SliceQuery>; // Make sure to memoize this!
-  rowFilters?: RowFilters; // Make sure to memoize this!
-  selectedRowIds?: Set<string>; // Make sure to memoize this!
-  headerCellRenderer?: ({
-    label,
-    sliceQuery,
-    defaultElement,
-  }: {
-    label: string;
-    sliceQuery: SliceQuery;
-    defaultElement: React.ReactNode;
-  }) => React.ReactNode;
-  bodyCellRenderer?: ({
-    label,
-    sliceQuery,
-    getValue,
-  }: {
-    label: string;
-    sliceQuery: SliceQuery;
-    getValue: () => React.ReactNode;
-  }) => React.ReactNode;
+  getColumnDisplayOptions?: (
+    sliceQuery: SliceQuery
+  ) => ColumnDisplayOptions | null;
 }
 
 // Types for better code clarity
@@ -44,6 +39,7 @@ type ColumnRenames = Record<string, string>;
 export interface RowFilters {
   hideUnselectedRows: boolean;
   hideIncompleteRows: boolean;
+  hideRowsWithNoSearchResults: boolean;
 }
 
 interface AlignedData {
@@ -60,6 +56,7 @@ interface AlignedData {
       sliceQuery: SliceQuery;
       isEditable: boolean;
       isViewable: boolean;
+      numericPrecision?: number;
       headerMenuItems?: (
         | {
             label: string;
@@ -76,7 +73,15 @@ interface AlignedData {
   data: Record<string, string | number | undefined>[];
   loading: boolean;
   error: string | null;
-  exportToCsv: () => string;
+  exportToCsv: (options?: {
+    rowFilter?: (row: Record<string, string | number | undefined>) => boolean;
+    // When provided, the exported rows are ordered to match this array.
+    // Rows not in this array (but passing rowFilter) are appended at the end.
+    sortedRowIds?: string[];
+    // When provided, only these columns are included in the export.
+    visibleColumnIds?: string[];
+    selectedRowIds?: Set<string>;
+  }) => string;
 }
 
 /**
@@ -123,29 +128,27 @@ async function extractColumnRenames(
       return {};
     }
 
-    const renamesMatch = preprocess.match(/renames\s*=\s*\{[^}]+\}/);
-    if (!renamesMatch) {
-      return {};
-    }
+    const renames: Record<string, string> = {};
 
-    const renamesString = renamesMatch[0]
-      .replace(/^renames\s*=\s*/, "")
-      .replace(/'/g, '"');
+    const copyColRegex = /CopyColumns\(column_names=\{([^}]*)\}\)/g;
+    const hasLabelTransform = preprocess.includes("AppendIdsToLabels");
+    let outerMatch: RegExpExecArray | null;
 
-    let renames = JSON.parse(renamesString);
+    // eslint-disable-next-line no-cond-assign
+    while ((outerMatch = copyColRegex.exec(preprocess)) !== null) {
+      const entryRegex = /'([^']+)'\s*:\s*'([^']+)'/g;
+      let entryMatch: RegExpExecArray | null;
 
-    // Invert the mapping: renames typically maps old_name -> new_name,
-    // but we want new_name -> old_name for display purposes
-    renames = Object.fromEntries(
-      Object.entries(renames).map(([key, value]) => [value, key])
-    );
+      // eslint-disable-next-line no-cond-assign
+      while ((entryMatch = entryRegex.exec(outerMatch[1])) !== null) {
+        if (entryMatch[2] === "label" && hasLabelTransform) {
+          // eslint-disable-next-line no-continue
+          continue;
+        }
 
-    // HACK: Account for transforms to the label column. At least in the case
-    // of compound_dose (where a UpdateCompoundDoseLabels transform is applied)
-    // it could be unsafe to assume the label column is redundant.
-    // FIXME: This is a pretty weak test. We could compare values instead.
-    if (/Update.*Labels/i.test(preprocess)) {
-      delete renames.label;
+        // Invert: value becomes key, key becomes value
+        renames[entryMatch[2]] = entryMatch[1];
+      }
     }
 
     return renames;
@@ -297,58 +300,12 @@ const truncateMiddle = (str: string, maxLength = 45): string => {
 };
 
 /**
- * Applies row filters to the data.
- *
- * @param data - Array of data rows
- * @param filters - Row filter configuration
- * @param selectedRowIds - Set of selected row IDs (for hideUnselectedRows filter)
- * @returns Filtered data array
- */
-function applyRowFilters(
-  data: Record<string, string | number | undefined>[],
-  filters: RowFilters,
-  selectedRowIds?: Set<string>
-) {
-  return data.filter((row) => {
-    // Apply hideUnselectedRows filter
-    if (filters.hideUnselectedRows && selectedRowIds) {
-      const rowId = row.id as string;
-      if (!selectedRowIds.has(rowId)) {
-        return false;
-      }
-    }
-
-    // Apply hideIncompleteRows filter
-    if (filters.hideIncompleteRows) {
-      // Check if any data columns (excluding id and label) have undefined values
-      const hasUndefinedValues = Object.entries(row).some(([key, value]) => {
-        // Skip id and label columns for completeness check
-        if (key === "id" || key === "label") {
-          return false;
-        }
-
-        return (
-          value === undefined || (Array.isArray(value) && value.length === 0)
-        );
-      });
-
-      if (hasUndefinedValues) {
-        return false;
-      }
-    }
-
-    return true;
-  });
-}
-
-/**
  * Transforms raw API responses into a unified table structure.
  *
  * This function:
  * 1. Collects all unique row IDs across all data slices
  * 2. Creates rows where each ID gets values from all slices (with null for missing data)
  * 3. Generates table column definitions with proper headers and metadata
- * 4. Applies row filters if specified
  */
 function transformToTableData(
   dataResponses: DatasetResponse[],
@@ -360,10 +317,7 @@ function transformToTableData(
   idColumnDisplayName: string,
   labelColumnDisplayName: string,
   idToLabelMappings: Record<string, Record<string, string>>,
-  rowFilters?: RowFilters,
-  selectedRowIds?: Parameters["selectedRowIds"],
-  headerCellRenderer?: Parameters["headerCellRenderer"],
-  bodyCellRenderer?: Parameters["bodyCellRenderer"]
+  getColumnDisplayOptions?: Parameters["getColumnDisplayOptions"]
 ) {
   // Step 1: Create unique column keys and collect all row IDs
   const columnKeys = slices.map(createUniqueColumnKey);
@@ -397,7 +351,7 @@ function transformToTableData(
   });
 
   // Step 2: Build data rows
-  let data = Array.from(allRowIds).map((rowId) => {
+  const data = Array.from(allRowIds).map((rowId) => {
     const row: Record<string, string | number | undefined> = { id: rowId };
 
     columnKeys.forEach((columnKey) => {
@@ -409,11 +363,6 @@ function transformToTableData(
 
     return row;
   });
-
-  // Step 2.5: Apply row filters if specified
-  if (rowFilters) {
-    data = applyRowFilters(data, rowFilters, selectedRowIds);
-  }
 
   const ID_AND_LABEL_COLUMN_SIZE = 160;
 
@@ -490,12 +439,17 @@ function transformToTableData(
     const value_type =
       dataset.format === "matrix_dataset"
         ? dataset.value_type
-        : dataset.columns_metadata[slice.identifier].col_type;
+        : dataset.columns_metadata[slice.identifier]?.col_type;
 
     const references =
       dataset.format === "tabular_dataset"
-        ? dataset.columns_metadata[slice.identifier].references
+        ? dataset.columns_metadata[slice.identifier]?.references
         : null;
+
+    // Get per-column display options from the consumer
+    const displayOptions = getColumnDisplayOptions
+      ? getColumnDisplayOptions(slice)
+      : null;
 
     return {
       size: columnKey === "label" ? ID_AND_LABEL_COLUMN_SIZE : undefined,
@@ -511,6 +465,9 @@ function transformToTableData(
           .filter(Boolean)
           .join(" | "),
         sliceQuery: slice,
+        ...(displayOptions?.numericPrecision != null && {
+          numericPrecision: displayOptions.numericPrecision,
+        }),
       },
       accessorFn: (row: Record<string, unknown>) => row[columnKey],
       header: () => {
@@ -526,52 +483,48 @@ function transformToTableData(
           </div>
         );
 
-        return headerCellRenderer
-          ? headerCellRenderer({
-              sliceQuery: slice,
+        return displayOptions?.header
+          ? displayOptions.header({
               label: displayLabel,
               defaultElement,
             })
           : defaultElement;
       },
-      // Add a custom cell renderer for string lists.
-      ...(bodyCellRenderer && {
-        cell: ({ getValue }: { getValue: () => React.ReactNode }) => {
-          return bodyCellRenderer({
+      // Custom cell renderer from getColumnDisplayOptions takes highest priority.
+      // When provided, it fully overrides the cell (magnitude bars won't apply).
+      ...(displayOptions?.cell && {
+        cell: displayOptions.cell,
+      }),
+      // Built-in cell renderer for linkable references (only if no custom cell).
+      ...(!displayOptions?.cell &&
+        isLinkable(references) && {
+          cell: ({
             getValue,
-            sliceQuery: slice,
-            label: displayLabel,
-          });
-        },
-      }),
-      // Add a custom cell renderer if we can turn the value into a hyperlink.
-      ...(isLinkable(references) && {
-        cell: ({
-          getValue,
-        }: {
-          getValue: () => unknown;
-          row: { original: Record<string, unknown> };
-        }) => {
-          const value = getValue();
+          }: {
+            getValue: () => unknown;
+            row: { original: Record<string, unknown> };
+          }) => {
+            const value = getValue();
 
-          return value == null ? (
-            <></>
-          ) : (
-            toDetailPageLink(
-              getValue() as string,
-              idToLabelMappings[references!][value as string],
-              references as string
-            )
-          );
-        },
-      }),
-      // Add a custom cell renderer for string lists.
-      ...(value_type === "list_strings" && {
-        cell: ({ getValue }: { getValue: () => unknown }) => {
-          const value = getValue();
-          return value == null ? <></> : (value as string[]).join(", ");
-        },
-      }),
+            return value == null ? (
+              <></>
+            ) : (
+              toDetailPageLink(
+                getValue() as string,
+                idToLabelMappings[references!][value as string],
+                references as string
+              )
+            );
+          },
+        }),
+      // Built-in cell renderer for string lists (only if no custom cell).
+      ...(!displayOptions?.cell &&
+        value_type === "list_strings" && {
+          cell: ({ getValue }: { getValue: () => unknown }) => {
+            const value = getValue();
+            return value == null ? <></> : (value as string[]).join(", ");
+          },
+        }),
     };
   });
 
@@ -588,20 +541,17 @@ function transformToTableData(
  * 1. Fetches metadata about the index type (including display name mappings)
  * 2. Fetches data for each slice using the appropriate API (tabular vs matrix)
  * 3. Aligns all data to the shared index ID space
- * 4. Applies row filters if specified
- * 5. Returns table-ready data structures for @tanstack/react-table
+ * 4. Returns table-ready data structures for @tanstack/react-table
  *
- * The "shared index" refers to aligning all data by the same set of IDs - for example,
- * if using "depmap_model" as the index, all data will be aligned by model IDs like "ACH-000001".
+ * Row filtering is NOT applied here. The full unfiltered dataset is returned
+ * so that ReactTable can compute stable column statistics (for magnitude bars)
+ * from the complete data. Filtering is handled by ReactTable's `rowFilter` prop.
  */
 export default function useAlignedData({
   index_type_name,
   slices,
   viewOnlySlices = undefined,
-  rowFilters = undefined,
-  selectedRowIds = undefined,
-  headerCellRenderer = undefined,
-  bodyCellRenderer = undefined,
+  getColumnDisplayOptions = undefined,
 }: Parameters): AlignedData {
   const [state, setState] = useState<AlignedData>({
     columns: [],
@@ -615,53 +565,97 @@ export default function useAlignedData({
   const indexTypeRef = useRef<DimensionType | null>(null);
   const idColumnDisplayNameRef = useRef<string>("");
 
-  // Create CSV export callback that has access to current state
-  const exportToCsv = useCallback(() => {
-    if (!state.columns.length || !state.data.length) {
-      return "";
-    }
+  // Create CSV export callback that has access to current state.
+  // Accepts an optional rowFilter to export only visible rows, or
+  // exports all rows when no filter is provided.
+  const exportToCsv = useCallback(
+    (
+      options: {
+        rowFilter?: (
+          row: Record<string, string | number | undefined>
+        ) => boolean;
+        sortedRowIds?: string[];
+        visibleColumnIds?: string[];
+        selectedRowIds?: Set<string>;
+      } = {}
+    ) => {
+      const {
+        rowFilter,
+        sortedRowIds,
+        visibleColumnIds,
+        selectedRowIds,
+      } = options;
 
-    // Determine if we should include the selection column
-    const shouldIncludeSelectionColumn =
-      selectedRowIds &&
-      selectedRowIds.size > 0 &&
-      (!rowFilters || !rowFilters.hideUnselectedRows);
-
-    // Create headers from column definitions
-    const headers = state.columns.map((column) => column.meta.csvHeader);
-
-    // Insert selection column header after ID (second position) if needed
-    if (shouldIncludeSelectionColumn) {
-      headers.splice(1, 0, "Selected");
-    }
-
-    // Transform data to match column order and convert values to strings
-    const csvData = state.data.map((row) => {
-      const rowData = state.columns.map((column) => {
-        const value = column.accessorFn(row);
-        // Handle null, undefined, and other falsy values
-        if (value === null || value === undefined) {
-          return "";
-        }
-        return String(value);
-      });
-
-      // Insert selection status after ID (second position) if needed
-      if (shouldIncludeSelectionColumn) {
-        const rowId = row.id as string;
-        const isSelected = selectedRowIds.has(rowId);
-        rowData.splice(1, 0, isSelected ? "Yes" : "No");
+      if (!state.columns.length || !state.data.length) {
+        return "";
       }
 
-      return rowData;
-    });
+      // Filter columns to only visible ones if specified
+      const visibleColumnIdSet = visibleColumnIds
+        ? new Set(visibleColumnIds)
+        : null;
+      const columnsToExport = visibleColumnIdSet
+        ? state.columns.filter((col) => visibleColumnIdSet.has(col.id))
+        : state.columns;
 
-    // Use Papaparse to generate CSV string
-    return Papa.unparse({
-      fields: headers,
-      data: csvData,
-    });
-  }, [state.columns, state.data, selectedRowIds, rowFilters]);
+      // Apply the row filter if provided
+      const filteredData = rowFilter
+        ? state.data.filter(rowFilter)
+        : state.data;
+
+      // Sort to match display order if sortedRowIds is provided
+      let dataToExport = filteredData;
+      if (sortedRowIds && sortedRowIds.length > 0) {
+        const orderMap = new Map(sortedRowIds.map((id, index) => [id, index]));
+
+        dataToExport = [...filteredData].sort((a, b) => {
+          const aOrder = orderMap.get(a.id as string) ?? Infinity;
+          const bOrder = orderMap.get(b.id as string) ?? Infinity;
+          return aOrder - bOrder;
+        });
+      }
+
+      // Determine if we should include the selection column
+      const shouldIncludeSelectionColumn =
+        selectedRowIds && selectedRowIds.size > 0;
+
+      // Create headers from column definitions
+      const headers = columnsToExport.map((column) => column.meta.csvHeader);
+
+      // Insert selection column header after ID (second position) if needed
+      if (shouldIncludeSelectionColumn) {
+        headers.splice(1, 0, "Selected");
+      }
+
+      // Transform data to match column order and convert values to strings
+      const csvData = dataToExport.map((row) => {
+        const rowData = columnsToExport.map((column) => {
+          const value = column.accessorFn(row);
+          // Handle null, undefined, and other falsy values
+          if (value === null || value === undefined) {
+            return "";
+          }
+          return String(value);
+        });
+
+        // Insert selection status after ID (second position) if needed
+        if (shouldIncludeSelectionColumn) {
+          const rowId = row.id as string;
+          const isSelected = selectedRowIds.has(rowId);
+          rowData.splice(1, 0, isSelected ? "Yes" : "No");
+        }
+
+        return rowData;
+      });
+
+      // Use Papaparse to generate CSV string
+      return Papa.unparse({
+        fields: headers,
+        data: csvData,
+      });
+    },
+    [state.columns, state.data]
+  );
 
   // Combined effect: Load index type metadata and data
   useEffect(() => {
@@ -736,7 +730,7 @@ export default function useAlignedData({
 
           const references =
             dataset.format === "tabular_dataset"
-              ? dataset.columns_metadata[slice.identifier].references
+              ? dataset.columns_metadata[slice.identifier]?.references
               : null;
 
           if (references && !(references in idToLabelMappings)) {
@@ -764,10 +758,7 @@ export default function useAlignedData({
           idColumnDisplayName,
           labelColumnDisplayName,
           idToLabelMappings,
-          rowFilters,
-          selectedRowIds,
-          headerCellRenderer,
-          bodyCellRenderer
+          getColumnDisplayOptions
         );
 
         setState((prev) => ({
@@ -797,15 +788,7 @@ export default function useAlignedData({
     return () => {
       isCancelled = true;
     };
-  }, [
-    bodyCellRenderer,
-    headerCellRenderer,
-    index_type_name,
-    slices,
-    viewOnlySlices,
-    rowFilters,
-    selectedRowIds,
-  ]);
+  }, [getColumnDisplayOptions, index_type_name, slices, viewOnlySlices]);
 
   return {
     columns: state.columns,
