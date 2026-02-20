@@ -1192,12 +1192,6 @@ def load_sample_data(
                 "rnai_predictive_models_feature_metadata.csv",
                 "RNAi_fit_distribution.csv",
             ),
-            (
-                DependencyDataset.DependencyEnum.Rep1M.name,
-                "rep1m_predictive_models.csv",
-                "rep1m_predictive_models_feature_metadata.csv",
-                "rep1m_fit_distribution.csv",
-            ),
             # NOTE: Set predictability data to be same as repurposing primary so don't need to generate sample data since script subset_predictive_models_and_features.py to do so isn't working
             (
                 DependencyDataset.DependencyEnum.Rep_all_single_pt.name,

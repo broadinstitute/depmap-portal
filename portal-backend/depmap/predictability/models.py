@@ -374,16 +374,13 @@ class PredictiveBackground(Model):
 
     __tablename__ = "predictive_background"
     predictive_background_id = Column(Integer, primary_key=True, autoincrement=True)
-    dataset_id = Column(Integer, ForeignKey("dataset.dataset_id"), unique=True)
-    dataset = relationship(
-        "Dataset", foreign_keys="PredictiveBackground.dataset_id", uselist=False
-    )
+    dataset_given_id = Column(String, unique=True)
     background = Column(String, nullable=False)  # jsonified list of numbers
 
     @staticmethod
-    def get_background(dataset_id):
+    def get_background(dataset_given_id: str):
         background_string = (
-            PredictiveBackground.query.filter_by(dataset_id=dataset_id)
+            PredictiveBackground.query.filter_by(dataset_given_id=dataset_given_id)
             .with_entities(PredictiveBackground.background)
             .one()[0]
         )

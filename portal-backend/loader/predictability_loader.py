@@ -28,6 +28,22 @@ from depmap.utilities.bulk_load import bulk_load
 from depmap.utilities.models import log_data_issue
 
 
+def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
+    """
+    Returns the breadbox_dataset_id for a given legacy dataset ID string.
+    """
+    # Mapping legacy names back to breadbox IDs
+    legacy_to_breadbox = {
+        "Prism_oncology_AUC": "PRISMOncologyReferenceLog2AUCMatrix",
+        "Prism_oncology_AUC_seq": "PRISMOncologyReferenceSeqLog2AUCMatrix",
+        "Rep_all_single_pt": "Rep_all_single_pt_per_compound",
+    }
+
+    # Check if it's in our mapping;
+    # otherwise, return the ID itself (for "Chronos_Combined" and "RNAi_merged")
+    return legacy_to_breadbox.get(legacy_dataset_id, legacy_dataset_id)
+
+
 def lookup_gene_entrez_id(m: Match):
     entrez_id = m.group(1)
 
@@ -371,12 +387,14 @@ def load_predictive_background_from_db(dataset_enum_name):
     )
 
 
-def load_predictive_background_from_file(filename, dataset_enum_name):
+def load_predictive_background_from_file(filename, dep_dataset_name: str):
     """
     ONLY USED FOR SAMPLE DATA LOAD
     """
-    dataset = Dataset.get_dataset_by_name(dataset_enum_name, must=True)
+    dataset_given_id = lookup_breadbox_dataset_given_id(dep_dataset_name)
     background = pd.read_csv(filename)["pearson"].tolist()
     db.session.add(
-        PredictiveBackground(dataset=dataset, background=json_dumps(background))
+        PredictiveBackground(
+            dataset_given_id=dataset_given_id, background=json_dumps(background)
+        )
     )
