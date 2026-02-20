@@ -174,8 +174,8 @@ def get_predictive_table():
     compound_label = request.args.get("compoundLabel")
     compound = Compound.get_by_label(compound_label)
 
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound.entity_id
+    compound_and_datasets = data_access.get_all_datasets_containing_compound(
+        compound.compound_id
     )
     sorted_compound_experiment_and_datasets = sorted(
         compound_experiment_and_datasets,

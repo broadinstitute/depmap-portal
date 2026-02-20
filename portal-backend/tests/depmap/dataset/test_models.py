@@ -305,58 +305,6 @@ def test_get_case_sensitive_name(name, case_sensitive_name):
     assert DependencyDataset.get_case_sensitive_name(name) == case_sensitive_name
 
 
-def test_get_compound_experiment_datasets_with_compound(empty_db_mock_downloads):
-    """
-    The tested function only checks for presence of compound experiments, not of compounds
-    This test checks that
-        If a dataset (matrix_1) has two compound experiments of a queried compound, we get both compound experiments back
-        If a compound experiment of a queried compound (compound_exp_1) is in two datasets, we get both datasets back
-        We do not get back compound experiments not in any dataset (compound_exp_no_dataset), even if they match the compound
-        We do not get back compound experiments not matching the compound (compound_exp_different_compound)
-
-    dataset_2 is Avana, because in theory the function doesn't actually care whether the dataset 'should' be a compound dataset, just what its row entities are
-    """
-    compound = CompoundFactory()
-    compound_exp_1 = CompoundExperimentFactory(compound=compound)  # in GDSC1_AUC
-    compound_exp_2 = CompoundExperimentFactory(
-        compound=compound
-    )  # in Avana and Rep_all_single_pt and GDSC1_AUC
-
-    compound_exp_no_dataset = CompoundExperimentFactory(
-        compound=compound
-    )  # unused variable because name describes purpose
-    compound_exp_different_compound = CompoundExperimentFactory()
-
-    matrix_1 = MatrixFactory(entities=[compound_exp_1, compound_exp_2])
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC1_AUC, matrix=matrix_1, priority=2
-    )
-    matrix_2 = MatrixFactory(entities=[compound_exp_2, compound_exp_different_compound])
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Avana, matrix=matrix_2
-    )
-    dataset_3 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Rep_all_single_pt,
-        matrix=matrix_2,
-        priority=1,
-    )
-    empty_db_mock_downloads.session.flush()
-
-    expected_pairs = [  # ordered by priority first, then by compound experiment entity id
-        (compound_exp_2, dataset_3),
-        (compound_exp_1, dataset_1),
-        (compound_exp_2, dataset_1),
-        (compound_exp_2, dataset_2),
-    ]
-
-    result = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound.entity_id
-    )
-    assert len(expected_pairs) == len(result)
-
-    assert result == expected_pairs
-
-
 def test_dependency_dataset_has_entity(empty_db_mock_downloads):
     """
     Test DependencyDataset.has_entity(enum, gene_id)

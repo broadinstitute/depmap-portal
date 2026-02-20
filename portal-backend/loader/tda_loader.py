@@ -1,4 +1,5 @@
 import os
+from loader.predictability_loader import lookup_breadbox_dataset_given_id
 import numpy as np
 import pandas as pd
 import re
@@ -85,8 +86,6 @@ def _format_tda_summary(df):
 
 
 def load_interpretable_model(file_path, dataset_name):
-    dataset = Dataset.get_dataset_by_name(dataset_name, must=True)
-
     dots_df = pd.read_csv(file_path)
 
     for _, row in dots_df.iterrows():
@@ -99,8 +98,9 @@ def load_interpretable_model(file_path, dataset_name):
                 id_type="label",
             )
             continue
+        # lookup_breadbox_dataset_given_id will fall back to the legacy database dataset in the case of crispr Avana.
         predictive_model = PredictiveModel.get_top_model(
-            dataset.dataset_id, gene.entity_id
+            lookup_breadbox_dataset_given_id(dataset_name), gene.entrez_id
         )
         db.session.add(
             TDAInterpretableModel(

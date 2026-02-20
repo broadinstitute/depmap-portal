@@ -181,19 +181,6 @@ class PredictiveModel(Model):
         ).all()
         return models
 
-    @staticmethod
-    def get_dataset_given_ids_with_models_for_entity(
-        pred_model_feature_id: str,
-    ) -> List[DependencyDataset]:
-        dataset_ids = (
-            PredictiveModel.query.with_entities(PredictiveModel.dataset_given_id)
-            .filter(PredictiveModel.pred_model_feature_id == pred_model_feature_id)
-            .distinct()
-            .all()
-        )
-
-        return [dataset_id for (dataset_id,) in dataset_ids]
-
 
 class PredictiveFeature(Model):
     __tablename__ = "predictive_feature"

@@ -366,38 +366,6 @@ class DependencyDataset(Dataset):
                 return enum.name
         return None
 
-    @staticmethod
-    def get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound_id: int,  # Expects compound.entity_id, not compound.compound_id
-    ) -> List[Tuple["CompoundExperiment", "DependencyDataset"]]:
-        # DEPRECATED: this will not work with breadbox datasets.
-        # Calls to this should be replaced with get_all_datasets_containing_compound
-        """
-        :compound_id: entity id of compound object
-        :return: List of (compound experiment object, dependency dataset object) tuples sorted by dataset priority first and secondly by compound experiment entity id
-        """
-        object_tuples = (
-            db.session.query(CompoundExperiment, DependencyDataset)
-            .join(
-                Matrix, DependencyDataset.matrix_id == Matrix.matrix_id
-            )  # NOTE: I'm not sure if this join is necessary since RowMatrixIndex already has a matrix_id
-            .join(RowMatrixIndex)
-            .join(
-                CompoundExperiment,
-                RowMatrixIndex.entity_id == CompoundExperiment.entity_id,
-            )
-            .join(Compound, Compound.entity_id == CompoundExperiment.compound_id)
-            .filter(Compound.entity_id == compound_id)
-            .order_by(
-                nullslast(DependencyDataset.priority),
-                CompoundExperiment.entity_id,
-                case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
-            )
-            .all()
-        )
-
-        return object_tuples
-
 
 class BiomarkerDataset(Dataset):
     """

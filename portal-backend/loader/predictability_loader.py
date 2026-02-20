@@ -30,7 +30,8 @@ from depmap.utilities.models import log_data_issue
 
 def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
     """
-    Returns the breadbox_dataset_id for a given legacy dataset ID string.
+    Returns the breadbox_dataset_id for a given legacy dataset ID string. If
+    there are no breadbox dataset ids, fallback to the legacy id.
     """
     # Mapping legacy names back to breadbox IDs
     legacy_to_breadbox = {
@@ -40,7 +41,7 @@ def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
     }
 
     # Check if it's in our mapping;
-    # otherwise, return the ID itself (for "Chronos_Combined" and "RNAi_merged")
+    # otherwise, return the ID itself (for "Chronos_Combined" and "RNAi_merged", and "Avana" (Avana seems to only be relevant for TDA))
     return legacy_to_breadbox.get(legacy_dataset_id, legacy_dataset_id)
 
 
