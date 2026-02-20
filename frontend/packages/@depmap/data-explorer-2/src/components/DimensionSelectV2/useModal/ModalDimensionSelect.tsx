@@ -15,6 +15,7 @@ export interface Props {
   onClickSaveAsContext: () => void;
   allowNullFeatureType: boolean;
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
+  hiddenDatasets: Set<string>;
 }
 
 function ModalDimensionSelect({
@@ -28,6 +29,7 @@ function ModalDimensionSelect({
   onClickSaveAsContext,
   allowNullFeatureType,
   valueTypes,
+  hiddenDatasets,
 }: Props) {
   const state = useDimensionStateManager({
     index_type,
@@ -37,6 +39,7 @@ function ModalDimensionSelect({
     initialDataType,
     allowNullFeatureType,
     valueTypes,
+    hiddenDatasets,
   });
 
   return (

@@ -50,6 +50,17 @@ function chooseFilters({ enableRowSelection, rowFilters }: Props) {
             >
               Hide incomplete rows (rows containing some N/A cells)
             </Checkbox>
+            <Checkbox
+              checked={value.hideRowsWithNoSearchResults}
+              onChange={() => {
+                onChange((prev) => ({
+                  ...prev,
+                  hideRowsWithNoSearchResults: !prev.hideRowsWithNoSearchResults,
+                }));
+              }}
+            >
+              Hide rows with no search results
+            </Checkbox>
           </FormGroup>
         </div>
       );

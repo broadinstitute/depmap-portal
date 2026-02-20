@@ -5,11 +5,7 @@ import {
   dataTypeSortComparator,
 } from "@depmap/utils";
 import { DimensionType } from "@depmap/types";
-import {
-  pluralize,
-  sortDimensionTypes,
-  uncapitalize,
-} from "../../../utils/misc";
+import { pluralize, sortDimensionTypes } from "../../../utils/misc";
 import { State, SLICE_TYPE_NULL } from "./types";
 import {
   DataExplorerDatasetDescriptor,
@@ -186,8 +182,6 @@ async function computeDataTypeOptions(
   if (!sliceDisplayName) {
     sliceDisplayName = sliceAxis;
   }
-
-  sliceDisplayName = uncapitalize(sliceDisplayName);
 
   if (dimension.slice_type === null && dimension.dataset_id) {
     const selectedDataType = datasets.find(
@@ -376,7 +370,8 @@ async function computeDataVersionOptions(
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
   dimension: State["dimension"],
   datasets: DataExplorerDatasetDescriptor[],
-  dimensionTypes: DimensionType[]
+  dimensionTypes: DimensionType[],
+  hiddenDatasets: Set<string>
 ) {
   const contextCompatibleDatasetIds = await fetchContextCompatibleDatasetIds(
     dimension
@@ -396,6 +391,11 @@ async function computeDataVersionOptions(
 
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
+    .filter(
+      (d) =>
+        !hiddenDatasets.has(d.id) &&
+        (!d.given_id || !hiddenDatasets.has(d.given_id))
+    )
     .filter((d) =>
       valueTypes.has(
         d.value_type as typeof valueTypes extends Set<infer U> ? U : never
@@ -406,7 +406,7 @@ async function computeDataVersionOptions(
       let isDisabled = false;
       let disabledReason = "";
 
-      const sliceDisplayName = uncapitalize(dataset.slice_type_display_name);
+      const sliceDisplayName = dataset.slice_type_display_name;
 
       if (selectedUnits && selectedUnits !== dataset.units) {
         isDisabled = true;
@@ -598,6 +598,7 @@ export default async function computeOptions(
   selectedUnits: string | null,
   allowNullFeatureType: boolean,
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">,
+  hiddenDatasets: Set<string>,
   dimension: State["dimension"]
 ) {
   const [datasets, dimensionTypes] = await Promise.all([
@@ -632,7 +633,8 @@ export default async function computeOptions(
       valueTypes,
       dimension,
       datasets,
-      dimensionTypes
+      dimensionTypes,
+      hiddenDatasets
     ),
     computeUnitsOptions(
       index_type,
