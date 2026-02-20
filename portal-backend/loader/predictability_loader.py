@@ -28,21 +28,39 @@ from depmap.utilities.bulk_load import bulk_load
 from depmap.utilities.models import log_data_issue
 
 
-def lookup_gene(m: Match):
+def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
+    """
+    Returns the breadbox_dataset_id for a given legacy dataset ID string.
+    """
+    # Mapping legacy names back to breadbox IDs
+    legacy_to_breadbox = {
+        "Prism_oncology_AUC": "PRISMOncologyReferenceLog2AUCMatrix",
+        "Prism_oncology_AUC_seq": "PRISMOncologyReferenceSeqLog2AUCMatrix",
+        "Rep_all_single_pt": "Rep_all_single_pt_per_compound",
+    }
+
+    # Check if it's in our mapping;
+    # otherwise, return the ID itself (for "Chronos_Combined" and "RNAi_merged")
+    return legacy_to_breadbox.get(legacy_dataset_id, legacy_dataset_id)
+
+
+def lookup_gene_entrez_id(m: Match):
     entrez_id = m.group(1)
 
     entity = Gene.get_gene_by_entrez(entrez_id, must=False)
     if entity:
-        return entity.entity_id
+        return entity.entrez_id
 
     return None
 
 
-def lookup_compound_dose(xref_full: str):
-    entity = CompoundExperiment.get_by_xref_full(xref_full, must=False)
+def lookup_compound_id_matching_compound_exp(xref_full: str):
+    ce = CompoundExperiment.get_by_xref_full(xref_full, must=False)
 
-    if entity:
-        return entity.entity_id
+    if ce:
+        entity = ce.compound
+        if entity:
+            return entity.compound_id
 
     return None
 
@@ -50,7 +68,7 @@ def lookup_compound_dose(xref_full: str):
 def _load_predictive_models(
     filename: str, dataset: Dataset, model_ids: Dict[Tuple[str, str], int], next_id
 ):
-    def lookup_entity_id(
+    def lookup_feature_id(
         gene_or_compound_experiment_label: str,
     ) -> Optional[Union[Gene, CompoundExperiment]]:
         if dataset.entity_type == "gene":
@@ -63,7 +81,7 @@ def _load_predictive_models(
                     id_type=dataset.entity_type,
                 )
                 return None
-            return lookup_gene(m)
+            return lookup_gene_entrez_id(m)
 
         if dataset.entity_type == "compound_experiment":
             # Below is a hack for the 24Q2 release - where none of the OncRef Predictability outputs
@@ -73,15 +91,18 @@ def _load_predictive_models(
                     "BRD:" + gene_or_compound_experiment_label
                 )
 
-            entity_id = lookup_compound_dose(gene_or_compound_experiment_label)
-            if entity_id is None:
+            compound = lookup_compound_id_matching_compound_exp(
+                gene_or_compound_experiment_label
+            )
+
+            if compound is None:
                 log_data_issue(
                     "PredictiveModel",
-                    "Missing compound experiment",
-                    identifier=gene_or_compound_experiment_label,
-                    id_type=dataset.entity_type,
+                    "Missing compound",
+                    identifier=compound.compound_id,
+                    id_type="compound",
                 )
-            return entity_id
+            return compound.compound_id
 
         log_data_issue(
             "PredictiveModel", f"Unexpected dataset entity type {dataset.entity_type}",
@@ -97,16 +118,16 @@ def _load_predictive_models(
         model_name = row["model"]
         model_ids_key = (entity_label, model_name)
 
-        entity_id = lookup_entity_id(entity_label)
-        if entity_id is None:
+        feature_id = lookup_feature_id(entity_label)
+        if feature_id is None:
             return None
 
-        # only add to dictionary if valid entity id
+        # only add to dictionary if valid feature id
         model_ids[model_ids_key] = model_id
         rec = dict(
             predictive_model_id=model_id,
-            dataset_id=dataset.dataset_id,
-            entity_id=lookup_entity_id(entity_label),
+            dataset_given_id=lookup_breadbox_dataset_given_id(dataset.dataset_id),
+            pred_model_feature_id=lookup_feature_id(entity_label),
             label=model_name,
             pearson=float(row["pearson"]),
         )
@@ -366,12 +387,14 @@ def load_predictive_background_from_db(dataset_enum_name):
     )
 
 
-def load_predictive_background_from_file(filename, dataset_enum_name):
+def load_predictive_background_from_file(filename, dep_dataset_name: str):
     """
     ONLY USED FOR SAMPLE DATA LOAD
     """
-    dataset = Dataset.get_dataset_by_name(dataset_enum_name, must=True)
+    dataset_given_id = lookup_breadbox_dataset_given_id(dep_dataset_name)
     background = pd.read_csv(filename)["pearson"].tolist()
     db.session.add(
-        PredictiveBackground(dataset=dataset, background=json_dumps(background))
+        PredictiveBackground(
+            dataset_given_id=dataset_given_id, background=json_dumps(background)
+        )
     )

@@ -60,19 +60,10 @@ class PredictiveModel(Model):
 
     predictive_model_id = Column(Integer, primary_key=True, autoincrement=True)
 
-    dataset_id = Column(
-        Integer, ForeignKey("dataset.dataset_id"), nullable=False, index=True
-    )
-    dataset: DependencyDataset = relationship(
-        "Dataset", foreign_keys="PredictiveModel.dataset_id", uselist=False
-    )
+    dataset_given_id = Column(String, nullable=False, index=True)
 
-    entity_id = Column(
-        Integer, ForeignKey("entity.entity_id"), nullable=False, index=True
-    )
-    entity: Entity = relationship(
-        "Entity", foreign_keys="PredictiveModel.entity_id", uselist=False
-    )
+    # prefix pred_model to help distinguish from the feature_id column on the PredictiveFeatureResult table when reading
+    pred_model_feature_id = Column(String, nullable=False, index=True)
 
     label = Column(String(), nullable=False)
     pearson = Column(
@@ -83,9 +74,13 @@ class PredictiveModel(Model):
         "PredictiveFeatureResult"
     )
 
+    # Used to determine has_predictability in portal-backend/depmap/gene/views/index.py, and to get the df in portal-backend/depmap/entity/views/executive.py
     @staticmethod
     def get_top_models_features(
-        dataset_id: int, entity_id: int, num_models=3, num_top_features=5
+        dataset_given_id: str,
+        pred_model_feature_id: str,
+        num_models=3,
+        num_top_features=5,
     ):
         """
         :return: America's next top model
@@ -96,14 +91,17 @@ class PredictiveModel(Model):
 
         subquery = (
             db.session.query(PredictiveModel.predictive_model_id)
-            .filter_by(dataset_id=dataset_id, entity_id=entity_id)
+            .filter_by(
+                dataset_given_id=dataset_given_id,
+                pred_model_feature_id=pred_model_feature_id,
+            )
             .order_by(PredictiveModel.pearson.desc())
             .limit(num_models)
         )
 
         q = PredictiveFeatureResult.query.join(PredictiveModel).filter(
-            PredictiveModel.dataset_id == dataset_id,
-            PredictiveModel.entity_id == entity_id,
+            PredictiveModel.dataset_given_id == dataset_given_id,
+            PredictiveModel.pred_model_feature_id == pred_model_feature_id,
             PredictiveModel.predictive_model_id.in_(subquery),
             PredictiveFeatureResult.rank < num_top_features,
         )
@@ -114,7 +112,7 @@ class PredictiveModel(Model):
         rows = []
         for feature_result in feature_results:
             predictive_model = feature_result.predictive_model
-            feature = feature_result.feature
+            predictive_feature = feature_result.feature
             model_label = predictive_model.label
 
             # Hack to rename these without needing to change pipeline/db
@@ -127,35 +125,43 @@ class PredictiveModel(Model):
                 "predictive_model_id": predictive_model.predictive_model_id,
                 "model_label": predictive_model.label,
                 "model_pearson": predictive_model.pearson,
-                "dataset_enum": predictive_model.dataset.name,
-                "feature_name": feature.feature_name,
-                "feature_type": feature.feature_type,
+                "dataset_given_id": predictive_model.dataset_given_id,
+                "predictive_feature_name": predictive_feature.feature_name,
+                "predictive_feature_type": predictive_feature.feature_type,
                 "feature_importance": feature_result.importance,
                 "feature_rank": feature_result.rank,
                 "interactive_url": None,
                 "correlation": None,
                 "related_type": False,
             }
-            if feature is not None:
-                row["interactive_url"] = feature.get_interactive_url_for_entity(
-                    predictive_model.dataset, predictive_model.entity,
+            if predictive_feature is not None:
+                row[
+                    "interactive_url"
+                ] = predictive_feature.get_interactive_url_for_entity(
+                    predictive_model.dataset_given_id,
+                    predictive_model.pred_model_feature_id,
                 )
-                row["correlation"] = feature.get_correlation_for_entity(
-                    predictive_model.dataset, predictive_model.entity,
+                row["correlation"] = predictive_feature.get_correlation_for_entity(
+                    predictive_model.dataset_given_id,
+                    predictive_model.pred_model_feature_id,
                 )
-                row["related_type"] = feature.get_relation_to_entity(entity_id)
+                row["related_type"] = predictive_feature.get_relation_to_entity(
+                    pred_model_feature_id
+                )
             rows.append(row)
 
         df = pd.DataFrame(rows)
         return df
 
     @staticmethod
-    def get_top_model(dataset_id, entity_id, must=True) -> Optional["PredictiveModel"]:
+    def get_top_model(
+        dataset_given_id: str, pred_model_feature_id: str, must=True
+    ) -> Optional["PredictiveModel"]:
         q = (
             PredictiveModel.query.join(DependencyDataset)
             .filter(
-                PredictiveModel.dataset_id == dataset_id,
-                PredictiveModel.entity_id == entity_id,
+                PredictiveModel.dataset_given_id == dataset_given_id,
+                PredictiveModel.pred_model_feature_id == pred_model_feature_id,
             )
             .order_by(PredictiveModel.pearson.desc())
             .limit(1)
@@ -165,25 +171,26 @@ class PredictiveModel(Model):
         return q.one_or_none()
 
     @staticmethod
-    def get_all_models(dataset_id: int, entity_id: int) -> List["PredictiveModel"]:
+    def get_all_models(
+        dataset_given_id: int, pred_model_feature_id: str
+    ) -> List["PredictiveModel"]:
         models = PredictiveModel.query.filter_by(
-            dataset_id=dataset_id, entity_id=entity_id
+            dataset_id=dataset_given_id, pred_model_feature_id=pred_model_feature_id
         ).all()
         return models
 
     @staticmethod
-    def get_datasets_with_models_for_entity(entity_id: int) -> List[DependencyDataset]:
+    def get_dataset_given_ids_with_models_for_entity(
+        pred_model_feature_id: str,
+    ) -> List[DependencyDataset]:
         dataset_ids = (
-            PredictiveModel.query.with_entities(PredictiveModel.dataset_id)
-            .filter(PredictiveModel.entity_id == entity_id)
+            PredictiveModel.query.with_entities(PredictiveModel.dataset_given_id)
+            .filter(PredictiveModel.pred_model_feature_id == pred_model_feature_id)
             .distinct()
             .all()
         )
 
-        return [
-            DependencyDataset.get_dataset_by_id(dataset_id)
-            for (dataset_id,) in dataset_ids
-        ]
+        return [dataset_id for (dataset_id,) in dataset_ids]
 
 
 class PredictiveFeature(Model):
@@ -209,27 +216,27 @@ class PredictiveFeature(Model):
         return DATASET_NAME_TO_FEATURE_TYPE.get(self.dataset_id, self.dataset_id)
 
     def get_interactive_url_for_entity(
-        self, dep_dataset: DependencyDataset, entity: Entity
+        self, pred_model_dataset_given_id: str, pred_model_feature_id: str
     ) -> Optional[str]:
         if not self._get_feature_is_loaded():
             return None
 
-        dataset_id = dep_dataset.name.name
-        if (
-            dataset_id in ["Prism_oncology_AUC", "Prism_oncology_seq_AUC"]
-            and entity.get_entity_type() == "compound_experiment"
-        ):
-            entity = entity.compound
-            if dataset_id == "Prism_oncology_seq_AUC":
-                dataset_id = "Prism_oncology_seq_AUC_collapsed"
-        else:
-            pass
-
+        pred_model_feautre_labels_by_id = data_access.get_dataset_feature_labels_by_id(
+            pred_model_dataset_given_id
+        )
+        pred_model_feature_label = pred_model_feautre_labels_by_id.get(
+            pred_model_feature_id
+        )
+        xFeature = (
+            pred_model_feature_label
+            if pred_model_feature_label is not None
+            else pred_model_feature_id
+        )
         if self.dataset_id == "context":
             return url_for(
                 "data_explorer_2.view_data_explorer_2",
-                xDataset=dataset_id,
-                xFeature=entity.label,
+                xDataset=pred_model_dataset_given_id,
+                xFeature=xFeature,
                 color1=json_dumps(
                     {
                         "name": self.feature_name,
@@ -248,24 +255,24 @@ class PredictiveFeature(Model):
 
         return url_for(
             "data_explorer_2.view_data_explorer_2",
-            xDataset=dataset_id,
-            xFeature=entity.label,
+            xDataset=pred_model_dataset_given_id,
+            xFeature=xFeature,
             yDataset=self.dataset_id,
             yFeature=self.feature_name,
         )
 
     def get_correlation_for_entity(
-        self, dep_dataset: DependencyDataset, entity: Entity
+        self, dataset_given_id: str, pred_model_feature_id: str
     ) -> Optional[float]:
         if not self._get_feature_is_loaded():
             return None
 
         dep_dataset_values = data_access.get_row_of_values(
-            dep_dataset.name.name, entity.label
+            dataset_given_id, pred_model_feature_id
         )
         if self.dataset_id == "context":
             cell_lines_in_self_context = data_access.get_row_of_values(
-                data_access.get_context_dataset(), self.feature_name
+                data_access.get_context_dataset(), pred_model_feature_id
             )
             self_values = pd.Series(
                 dep_dataset_values.index.map(
@@ -289,7 +296,9 @@ class PredictiveFeature(Model):
             return None
         return cor
 
-    def get_relation_to_entity(self, entity_id: int) -> Optional[str]:
+    def get_relation_to_entity(
+        self, pred_model_feature_id: str, pred_model_feature_type: str
+    ) -> Optional[str]:
         dataset = BiomarkerDataset.get_dataset_by_name(self.dataset_id, must=True)
         if dataset.entity_type != "gene":
             return None
@@ -301,23 +310,26 @@ class PredictiveFeature(Model):
         if self_entity is None:
             return None
 
-        if entity_id == self_entity.entity_id:
+        entity = (
+            Gene.get_gene_by_entrez(pred_model_feature_id)
+            if pred_model_feature_type == "gene"
+            else Compound.get_by_compound_id(pred_model_feature_id)
+        )
+
+        if entity.entity_id == self_entity.entity_id:
             return "self"
 
-        entity = Entity.get_by_entity_id(entity_id)
-
         if entity.type == "gene":
-            related_entity_index = RelatedEntityIndex.get(entity_id)
+            related_entity_index = RelatedEntityIndex.get(entity.entity_id)
             if related_entity_index is None:
                 return None
 
             related_entity_ids = related_entity_index.get_related_entity_ids()
             if self_entity.entity_id in related_entity_ids:
                 return "related"
-        elif entity.type == "compound_experiment":
-            compound: Compound = entity.compound
+        elif entity.type == "compound":
             if any(
-                gene.entity_id == self_entity.entity_id for gene in compound.target_gene
+                gene.entity_id == self_entity.entity_id for gene in entity.target_gene
             ):
                 return "target"
         return None
@@ -362,16 +374,13 @@ class PredictiveBackground(Model):
 
     __tablename__ = "predictive_background"
     predictive_background_id = Column(Integer, primary_key=True, autoincrement=True)
-    dataset_id = Column(Integer, ForeignKey("dataset.dataset_id"), unique=True)
-    dataset = relationship(
-        "Dataset", foreign_keys="PredictiveBackground.dataset_id", uselist=False
-    )
+    dataset_given_id = Column(String, unique=True)
     background = Column(String, nullable=False)  # jsonified list of numbers
 
     @staticmethod
-    def get_background(dataset_id):
+    def get_background(dataset_given_id: str):
         background_string = (
-            PredictiveBackground.query.filter_by(dataset_id=dataset_id)
+            PredictiveBackground.query.filter_by(dataset_given_id=dataset_given_id)
             .with_entities(PredictiveBackground.background)
             .one()[0]
         )
