@@ -7,6 +7,7 @@ interface Props {
   index_type_name: string;
   idColumnLabel: string;
   onChange: (nextSlice: SliceQuery | null) => void;
+  hiddenDatasets?: Set<string>;
   existingSlices?: SliceQuery[];
 }
 
@@ -15,16 +16,14 @@ function AddColumnAnnotationSelect({
   index_type_name,
   idColumnLabel,
   onChange,
+  hiddenDatasets = undefined,
   existingSlices = undefined,
 }: Props) {
   const initialValue = useRef(value);
 
-  const [tempPartialValue, setTempPartialValue] = useState<Partial<SliceQuery>>(
-    value || {
-      dataset_id: `${index_type_name}_metadata`,
-      identifier_type: "column",
-    }
-  );
+  const [tempPartialValue, setTempPartialValue] = useState<
+    Partial<SliceQuery>
+  >();
 
   useEffect(() => {
     if (value) {
@@ -37,8 +36,8 @@ function AddColumnAnnotationSelect({
 
     for (const slice of existingSlices || []) {
       if (
-        slice.dataset_id === tempPartialValue.dataset_id &&
-        slice.identifier !== tempPartialValue.identifier &&
+        slice.dataset_id === tempPartialValue?.dataset_id &&
+        slice.identifier !== tempPartialValue?.identifier &&
         slice.identifier !== initialValue.current?.identifier
       ) {
         out.add(slice.identifier);
@@ -56,9 +55,10 @@ function AddColumnAnnotationSelect({
     <AnnotationSelect
       isClearable
       dimension_type={index_type_name}
-      dataset_id={tempPartialValue.dataset_id || null}
-      identifier={tempPartialValue.identifier || null}
+      dataset_id={tempPartialValue?.dataset_id || null}
+      identifier={tempPartialValue?.identifier || null}
       identifierDisplayLabel={null}
+      hiddenDatasets={hiddenDatasets}
       disabledAnnotations={disabledAnnotations}
       hiddenAnnotations={hiddenAnnotations}
       onChangeSourceDataset={(dataset_id, identifier_type) => {

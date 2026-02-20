@@ -15,6 +15,8 @@ interface Props {
   existingSlices?: SliceQuery[];
   defaultValue?: SliceQuery | null;
   initialSource?: "property" | "custom";
+  hiddenDatasets?: Set<string>;
+  extraHoverData?: Record<string, string>;
 }
 
 function chooseDataSlice({
@@ -24,6 +26,8 @@ function chooseDataSlice({
   existingSlices = undefined,
   defaultValue = null,
   initialSource = "property",
+  hiddenDatasets = undefined,
+  extraHoverData,
 }: Props) {
   const isEditMode = defaultValue !== null;
 
@@ -47,6 +51,7 @@ function chooseDataSlice({
               defaultValue={defaultValue}
               initialSource={initialSource}
               existingSlices={existingSlices}
+              hiddenDatasets={hiddenDatasets}
               onChange={onChange}
             />
           </div>
@@ -55,6 +60,7 @@ function chooseDataSlice({
               index_type_name={index_type_name}
               value={value}
               PlotlyLoader={PlotlyLoader}
+              extraHoverData={extraHoverData}
             />
           </div>
         </div>

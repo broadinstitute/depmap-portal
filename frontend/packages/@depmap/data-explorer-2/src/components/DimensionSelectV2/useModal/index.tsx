@@ -12,6 +12,7 @@ interface Props {
   state: State;
   allowNullFeatureType: boolean;
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
+  hiddenDatasets: Set<string>;
 }
 
 export default function useModal({
@@ -22,6 +23,7 @@ export default function useModal({
   state,
   allowNullFeatureType,
   valueTypes,
+  hiddenDatasets,
 }: Props) {
   const onClickShowModal = useCallback(() => {
     const container = document.createElement("div");
@@ -46,6 +48,7 @@ export default function useModal({
         includeAllInContextOptions={includeAllInContextOptions}
         allowNullFeatureType={allowNullFeatureType}
         valueTypes={valueTypes}
+        hiddenDatasets={hiddenDatasets}
       />,
       container
     );
@@ -53,6 +56,7 @@ export default function useModal({
     includeAllInContextOptions,
     allowNullFeatureType,
     valueTypes,
+    hiddenDatasets,
     index_type,
     mode,
     onChange,

@@ -55,6 +55,7 @@ export interface State {
   dimension: PartialDimension;
   allowNullFeatureType: boolean;
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
+  hiddenDatasets: Set<string>;
 }
 
 export const DEFAULT_STATE: State = {
@@ -70,6 +71,7 @@ export const DEFAULT_STATE: State = {
   dimension: {},
   allowNullFeatureType: false,
   valueTypes: new Set(),
+  hiddenDatasets: new Set(),
 };
 
 export type Changes = Partial<{

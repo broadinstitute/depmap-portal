@@ -150,6 +150,7 @@ async function resolveNextState(
         units,
         prev.allowNullFeatureType,
         prev.valueTypes,
+        prev.hiddenDatasets,
         {
           ...prev.dimension,
           axis_type,
@@ -236,17 +237,18 @@ async function resolveNextState(
     dataset_id = options.dataVersionOptions[0].value;
   }
 
-  if ("index_type" in changes && shouldCalcOptions) {
-    const enabledOpts = options.dataTypeOptions.filter((o) => !o.isDisabled);
-    if (enabledOpts.length === 1) {
-      dataType = enabledOpts[0].value;
-    }
-  }
+  if (shouldCalcOptions) {
+    const dtOpts = options.dataTypeOptions.filter((o) => !o.isDisabled);
+    const stOpts = options.sliceTypeOptions.filter((o) => !o.isDisabled);
 
-  if ("index_type" in changes && shouldCalcOptions) {
-    const enabledOpts = options.sliceTypeOptions.filter((o) => !o.isDisabled);
-    if (enabledOpts.length === 1) {
-      slice_type = enabledOpts[0].value.valueOf();
+    if ("index_type" in changes || Object.keys(changes).length === 0) {
+      if (dtOpts.length === 1) {
+        dataType = dtOpts[0].value;
+      }
+
+      if (stOpts.length === 1) {
+        slice_type = stOpts[0].value.valueOf();
+      }
     }
   }
 
