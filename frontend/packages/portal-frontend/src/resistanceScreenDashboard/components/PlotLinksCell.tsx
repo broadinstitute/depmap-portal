@@ -1,26 +1,26 @@
 import React from "react";
-import type { AnchorPlotMetadata } from "./useMetadata";
-import styles from "../styles/AnchorScreenDashboard.scss";
+import type { ScreenPairMetadata } from "./useMetadata";
+import styles from "../styles/ResistanceScreenDashboard.scss";
 
 interface Props {
-  experimentId: string;
-  metadata: AnchorPlotMetadata | null;
+  pairId: string;
+  metadata: ScreenPairMetadata | null;
 }
 
 const ScatterLink = ({
-  experimentId,
+  pairId,
   metadata,
 }: {
-  experimentId: string;
-  metadata: AnchorPlotMetadata | null;
+  pairId: string;
+  metadata: ScreenPairMetadata | null;
 }) => {
   if (!metadata) {
     return "...";
   }
 
-  const { DrugArmScreenID, ControlArmScreenID } = metadata;
-  const drug = DrugArmScreenID[experimentId];
-  const control = ControlArmScreenID[experimentId];
+  const { TestArmScreenID, CtrlArmScreenID } = metadata;
+  const testArm = TestArmScreenID[pairId];
+  const control = CtrlArmScreenID[pairId];
 
   const plot = {
     index_type: "gene",
@@ -29,23 +29,23 @@ const ScatterLink = ({
       x: {
         dataset_id: "ScreenGeneEffect",
         axis_type: "raw_slice",
-        slice_type: "Screen metadata",
+        slice_type: "screen",
         aggregation: "first",
         context: {
-          name: `${drug} (drug arm)`,
-          dimension_type: "Screen metadata",
-          expr: { "==": [{ var: "given_id" }, drug] },
+          name: `${testArm} (test arm)`,
+          dimension_type: "screen",
+          expr: { "==": [{ var: "given_id" }, testArm] },
           vars: {},
         },
       },
       y: {
         dataset_id: "ScreenGeneEffect",
         axis_type: "raw_slice",
-        slice_type: "Screen metadata",
+        slice_type: "screen",
         aggregation: "first",
         context: {
           name: `${control} (control arm)`,
-          dimension_type: "Screen metadata",
+          dimension_type: "screen",
           expr: { "==": [{ var: "given_id" }, control] },
           vars: {},
         },
@@ -62,14 +62,19 @@ const ScatterLink = ({
   );
 };
 
-function PlotLinksCell({ experimentId, metadata }: Props) {
-  const xDataset = "anchor_diff_gene_effect";
-  const yDataset = "anchor_diff_significance";
+function PlotLinksCell({ pairId, metadata }: Props) {
+  if (!metadata) {
+    return "...";
+  }
+
+  const xDataset = "PairedResGeneEffectDiff";
+  const yDataset = "PairedResGeneEffectFDR";
+  const { label } = metadata;
 
   const href =
     "../data_explorer_2/" +
-    `?xDataset=${xDataset}&xSample=${experimentId}` +
-    `&yDataset=${yDataset}&ySample=${experimentId}`;
+    `?xDataset=${xDataset}&xSample=${label[pairId]}` +
+    `&yDataset=${yDataset}&ySample=${label[pairId]}`;
 
   return (
     <span>
@@ -77,7 +82,7 @@ function PlotLinksCell({ experimentId, metadata }: Props) {
         Volcano
       </a>
       <span className={styles.cellDivider} />
-      <ScatterLink experimentId={experimentId} metadata={metadata} />
+      <ScatterLink pairId={pairId} metadata={metadata} />
     </span>
   );
 }
