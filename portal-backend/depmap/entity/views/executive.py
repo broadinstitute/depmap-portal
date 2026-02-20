@@ -270,7 +270,7 @@ def format_tda_predictability_tile(
 
 
 def format_predictability_tile(
-    entity: Entity, dataset_given_ids: List[Union[str, None]]
+    feature_id: str, dataset_given_ids: List[Union[str, None]]
 ):
     plot_params = []
 
@@ -278,28 +278,8 @@ def format_predictability_tile(
         if given_id is None:
             continue
 
-        # TODO: TEMP: We will need to update get_all_models to query using breadbox given ids and compound entity ids.
-        # For now, it uses DependencyDataset "names" and compound experiment entity_ids
-        legacy_dataset = temp_get_legacy_dataset_from_breadbox_dataset_id(given_id)
-        if legacy_dataset is None:
-            continue
-        compound_exp_entity_id = None
-        if entity.type == "compound":
-            compound_experiment_entity_ids_by_compound_entity_id = legacy_utils.temp_get_compound_experiment_entity_ids_by_compound_entity_id(
-                legacy_dataset.name.name
-            )
-            compound_exp_entity_id = compound_experiment_entity_ids_by_compound_entity_id[
-                entity.entity_id
-            ]
-        #### Once PredictiveModel.get_top_models_features is updated to use compounds and Breadbox given_ids, delete from the TODO until here
-        #### and update the inputs to get_top_models_features accordingly!!!
-
-        entity_id = (
-            entity.entity_id if entity.type == "gene" else compound_exp_entity_id
-        )
-        assert entity_id is not None
         df = PredictiveModel.get_top_models_features(
-            legacy_dataset.dataset_id, entity_id
+            dataset_given_id=given_id, pred_model_feature_id=feature_id
         )
         if df is None:
             continue
@@ -324,8 +304,8 @@ def format_predictability_tile(
         dataset = data_access.get_matrix_dataset(given_id)
         label = dataset.label
         df["type"] = dataset_type
-        # TODO: Update PredictiveBackground to use breadbox given ids!!!
-        background = PredictiveBackground.get_background(legacy_dataset.dataset_id)
+
+        background = PredictiveBackground.get_background(given_id)
         plot_params.append(
             {
                 "dataset": dataset,

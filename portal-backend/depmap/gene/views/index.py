@@ -23,7 +23,7 @@ from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.entity.views.index import format_summary
 from depmap.extensions import memoize_without_user_permissions
 from depmap.gene.models import Gene
-from depmap.gene.views import characterization
+from depmap.gene.views import characterization, utils
 from depmap.gene.views.confidence import format_confidence, has_gene_confidence
 from depmap.gene.views.executive import format_mutation_profile, get_order
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
@@ -98,20 +98,9 @@ def _get_gene_page_template_parameters(gene_symbol):
         ),
         None,
     )
-    default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.crispr
-    )
-    crispr_dataset = (
-        default_crispr_dataset
-        if default_crispr_dataset in dependency_datasets
-        else None
-    )
-    default_rnai_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.rnai
-    )
-    rnai_dataset = (
-        default_rnai_dataset if default_rnai_dataset in dependency_datasets else None
-    )
+
+    crispr_dataset = utils.get_default_crispr_dataset()
+    rnai_dataset = utils.get_default_rnai_dataset()
 
     biomarker_datasets = biomarker_datasets_with_gene(entity_id)
     # if there are biomarker datasets and dependency datasets
@@ -125,12 +114,14 @@ def _get_gene_page_template_parameters(gene_symbol):
     has_predictability = (
         crispr_dataset is not None
         and PredictiveModel.get_top_models_features(
-            crispr_dataset.dataset_id, entity_id
+            crispr_dataset.given_id, gene.entrez_id
         )
         is not None
     ) or (
         rnai_dataset is not None
-        and PredictiveModel.get_top_models_features(rnai_dataset.dataset_id, entity_id)
+        and PredictiveModel.get_top_models_features(
+            rnai_dataset.given_id, gene.entrez_id
+        )
         is not None
     )
 
@@ -249,15 +240,13 @@ def get_predictive_table():
 
     datasets: List[MatrixDataset] = []
 
-    crispr_dataset_given_id = "Chronos_Combined"
-    rnai_dataset_given_id = "RNAi_merged"
-    default_crispr_dataset = data_access.get_matrix_dataset(crispr_dataset_given_id)
-    default_rnai_dataset = data_access.get_matrix_dataset(rnai_dataset_given_id)
+    default_crispr_dataset = utils.get_default_crispr_dataset()
+    default_rnai_dataset = utils.get_default_rnai_dataset()
     assert default_crispr_dataset is not None
     assert default_rnai_dataset is not None
-    if data_access.valid_row(crispr_dataset_given_id, gene.entrez_id):
+    if data_access.valid_row(default_crispr_dataset.given_id, gene.entrez_id):
         datasets.append(default_crispr_dataset)
-    if data_access.valid_row(rnai_dataset_given_id, gene.entrez_id):
+    if data_access.valid_row(default_rnai_dataset.given_id, gene.entrez_id):
         datasets.append(default_rnai_dataset)
 
     data = []

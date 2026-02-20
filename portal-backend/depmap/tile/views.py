@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import uuid
 
+from depmap.gene.views import utils
 from flask.globals import current_app
 
 from dataclasses import dataclass
@@ -250,14 +251,14 @@ def get_predictability_html(
     entity_type = entity.type
 
     if entity_type == "gene":
-        # TODO: TEMP hardcoding of ids
-        default_crispr_dataset = "Chronos_Combined"
-        default_rnai_dataset = "RNAi_merged"
+        gene = Gene.get_by_entity_id(entity.entity_id)
+        default_crispr_dataset = utils.get_default_crispr_dataset()
+        default_rnai_dataset = utils.get_default_rnai_dataset()
 
         return render_template(
             "tiles/predictability.html",
             predictability=format_predictability_tile(
-                entity, [default_crispr_dataset, default_rnai_dataset]
+                gene.entrez_id, [default_crispr_dataset, default_rnai_dataset]
             ),
             is_gene_executive=True,  # Hard coded as True; TBD if we want TDA to show something else
             gene_symbol=entity.symbol,
@@ -274,7 +275,9 @@ def get_predictability_html(
 
         if compound is not None and len(all_matching_datasets) > 0:
             dataset_given_id = all_matching_datasets[0].given_id
-            predictability = format_predictability_tile(compound, [dataset_given_id],)
+            predictability = format_predictability_tile(
+                compound.compound_id, [dataset_given_id]
+            )
 
         return render_template(
             "tiles/predictability.html",
