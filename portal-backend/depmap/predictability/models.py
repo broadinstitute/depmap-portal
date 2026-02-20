@@ -64,6 +64,7 @@ class PredictiveModel(Model):
 
     # prefix pred_model to help distinguish from the feature_id column on the PredictiveFeatureResult table when reading
     pred_model_feature_id = Column(String, nullable=False, index=True)
+    pred_model_feature_type = Column(String, nullable=False, index=True)
 
     label = Column(String(), nullable=False)
     pearson = Column(

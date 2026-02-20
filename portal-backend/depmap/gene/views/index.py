@@ -332,10 +332,9 @@ def get_predictability_files():
     path = os.path.join(predictability_path, "genes_predictability_results.zip",)
     # Find all predictive models for datasets with genes as features and get the dataset enum
     # Note: This returns a named Tuple
-    gene_dataset_enums_with_predictabilities = (
-        PredictiveModel.query.filter(PredictiveModel.entity.has(type="gene"))
-        .join(DependencyDataset)
-        .with_entities(DependencyDataset.name)
+    gene_dataset_given_ids_with_predictabilities = (
+        PredictiveModel.query.filter(PredictiveModel.pred_model_feature_type == "gene")
+        .with_entities(PredictiveModel.dataset_given_id)
         .distinct()
         .all()
     )
@@ -346,13 +345,13 @@ def get_predictability_files():
             delete=False, dir=os.path.dirname(os.path.abspath(predictability_path))
         ) as tmpfile:
             with zipfile.ZipFile(tmpfile, "w") as zf:
-                for (enum,) in gene_dataset_enums_with_predictabilities:
+                for (given_id,) in gene_dataset_given_ids_with_predictabilities:
                     zf.write(
                         os.path.join(
                             predictability_path,
-                            f"{enum.name}_predictability_results.csv",
+                            f"{given_id}_predictability_results.csv",
                         ),
-                        arcname=f"{enum.name}_predictability_results.csv",
+                        arcname=f"{given_id}_predictability_results.csv",
                     )
                 zf.close()
                 # Move zip file in tmpdir to predictabilty results path
