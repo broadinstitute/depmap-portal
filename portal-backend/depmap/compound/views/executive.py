@@ -249,27 +249,19 @@ def format_availability_tile(compound: Compound):
 
 
 def get_predictive_models_for_compound(
-    compound_experiment_and_datasets: List[
-        Tuple[CompoundExperiment, DependencyDataset]
-    ],
-    filter_dataset: DependencyDataset = None,
-) -> List[Tuple[CompoundExperiment, PredictiveModel]]:
-    if filter_dataset:
-        dataset_id = filter_dataset.dataset_id
-        compound_experiment_and_datasets = [
-            t for t in compound_experiment_and_datasets if t[1].dataset_id == dataset_id
-        ]
+    compound_id: List[str], dataset_given_ids: List[str]
+) -> List[PredictiveModel]:
 
     model_order = {"Core_omics": 1, "Extended_omics": 2, "DNA_based": 3}
-    models_for_compound_experiments = []
+    models_for_compound = []
 
-    if len(compound_experiment_and_datasets) != 0:
-        for compound_experiment, dataset in compound_experiment_and_datasets:
-            models = PredictiveModel.get_all_models(
-                dataset.dataset_id, compound_experiment.entity_id
-            )
-            models = sorted(models, key=lambda model: model_order[model.label])
+    for given_id in dataset_given_ids:
+        models = PredictiveModel.get_all_models(
+            dataset_given_id=given_id, feature_id=compound_id
+        )
+        models = sorted(models, key=lambda model: model_order[model.label])
 
-            for model in models:
-                models_for_compound_experiments.append((compound_experiment, model))
-    return models_for_compound_experiments
+        for model in models:
+            models_for_compound.append(model)
+
+    return models_for_compound

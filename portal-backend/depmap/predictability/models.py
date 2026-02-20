@@ -175,7 +175,8 @@ class PredictiveModel(Model):
         dataset_given_id: int, pred_model_feature_id: str
     ) -> List["PredictiveModel"]:
         models = PredictiveModel.query.filter_by(
-            dataset_id=dataset_given_id, pred_model_feature_id=pred_model_feature_id
+            dataset_given_id=dataset_given_id,
+            pred_model_feature_id=pred_model_feature_id,
         ).all()
         return models
 

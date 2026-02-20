@@ -3,6 +3,7 @@ import tempfile
 import zipfile
 from typing import List
 from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.data_access.models import MatrixDataset
 from depmap.enums import DataTypeEnum
 import pandas as pd
 import json
@@ -246,22 +247,18 @@ def get_predictive_table():
     entity_id = int(request.args.get("entityId"))
     gene = Gene.get_by_entity_id(entity_id)
 
-    datasets: List[DependencyDataset] = []
-    default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.crispr
-    )
-    default_rnai_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.rnai
-    )
+    datasets: List[MatrixDataset] = []
+
+    crispr_dataset_given_id = "Chronos_Combined"
+    rnai_dataset_given_id = "RNAi_merged"
+    default_crispr_dataset = data_access.get_matrix_dataset(crispr_dataset_given_id)
+    default_rnai_dataset = data_access.get_matrix_dataset(rnai_dataset_given_id)
     assert default_crispr_dataset is not None
     assert default_rnai_dataset is not None
-    if DependencyDataset.has_entity(default_crispr_dataset.name, entity_id):
+    if data_access.valid_row(crispr_dataset_given_id, gene.entrez_id):
         datasets.append(default_crispr_dataset)
-    if DependencyDataset.has_entity(default_rnai_dataset.name, entity_id):
-        rnai_dataset = DependencyDataset.get_dataset_by_name(
-            default_rnai_dataset.name.name
-        )
-        datasets.append(rnai_dataset)
+    if data_access.valid_row(rnai_dataset_given_id, gene.entrez_id):
+        datasets.append(default_rnai_dataset)
 
     data = []
     for dataset in datasets:
@@ -271,7 +268,7 @@ def get_predictive_table():
         elif dataset.data_type == DataTypeEnum.rnai:
             screen_type = "rnai"
 
-        models = PredictiveModel.get_all_models(dataset.dataset_id, entity_id)
+        models = PredictiveModel.get_all_models(dataset.given_id, gene.entrez_id)
         if len(models) == 0:
             continue
 
@@ -286,18 +283,20 @@ def get_predictive_table():
             )
             results = []
             for feature_result in sorted_feature_results:
-                related_type = feature_result.feature.get_relation_to_entity(entity_id)
+                related_type = feature_result.feature.get_relation_to_entity(
+                    gene.entrez_id, dataset.feature_type
+                )
 
                 row = {
                     "featureName": feature_result.feature.feature_name,
                     "featureImportance": feature_result.importance,
                     "correlation": feature_result.feature.get_correlation_for_entity(
-                        dataset, gene
+                        dataset.dataset_given_id, gene.entrez_id
                     ),
                     "featureType": feature_result.feature.feature_type,
                     "relatedType": related_type,
                     "interactiveUrl": feature_result.feature.get_interactive_url_for_entity(
-                        dataset, gene
+                        dataset.given_id, gene.entrez_id
                     ),
                 }
                 results.append(row)
@@ -317,7 +316,7 @@ def get_predictive_table():
             models_and_results.append(row)
         data.append(
             {
-                "screen": dataset.display_name,
+                "screen": dataset.label,
                 "screenType": screen_type,
                 "modelsAndResults": models_and_results,
             }

@@ -59,18 +59,18 @@ def view_compound(name):
         [alias for alias in aliases if alias.lower() != name.lower()]
     )
 
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound.entity_id
-    )
-    has_predictability: bool = len(
-        get_predictive_models_for_compound(compound_experiment_and_datasets)
-    ) != 0
-
     # Figure out membership in different datasets
     compound_datasets = data_access.get_all_datasets_containing_compound(
         compound.compound_id
     )
     has_datasets = len(compound_datasets) != 0
+
+    dataset_given_ids = [d.given_id for d in compound_datasets]
+    has_predictability: bool = has_datasets and len(
+        get_predictive_models_for_compound(
+            dataset_given_ids=dataset_given_ids, feature_id=compound.compound_id
+        )
+    ) != 0
 
     heatmap_dataset_options = get_heatmap_dose_curves_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
