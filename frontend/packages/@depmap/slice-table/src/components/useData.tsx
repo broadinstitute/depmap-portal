@@ -20,6 +20,7 @@ export interface ColumnDisplayOptions {
   }) => React.ReactNode;
   cell?: ({ getValue }: { getValue: () => unknown }) => React.ReactNode;
   numericPrecision?: number;
+  width?: number;
 }
 
 interface Parameters {
@@ -368,6 +369,15 @@ function transformToTableData(
 
   const shouldRenderIdsAsLinks = isLinkable(indexType.name);
 
+  // Check for display options on the id column so consumers can
+  // customize its width via getColumnDisplayOptions.
+  const idDisplayOptions =
+    getColumnDisplayOptions?.({
+      dataset_id: indexType.metadata_dataset_id!,
+      identifier_type: "column",
+      identifier: indexType.id_column,
+    }) ?? null;
+
   // Step 3: Build column definitions
   const idColumn = {
     id: "id",
@@ -387,7 +397,7 @@ function transformToTableData(
       },
     },
     header: () => idColumnDisplayName,
-    size: ID_AND_LABEL_COLUMN_SIZE,
+    size: idDisplayOptions?.width ?? ID_AND_LABEL_COLUMN_SIZE,
     cell: ({
       getValue,
       row,
@@ -452,7 +462,9 @@ function transformToTableData(
       : null;
 
     return {
-      size: columnKey === "label" ? ID_AND_LABEL_COLUMN_SIZE : undefined,
+      size:
+        displayOptions?.width ??
+        (columnKey === "label" ? ID_AND_LABEL_COLUMN_SIZE : undefined),
       id: columnKey,
       meta: {
         isEditable: columnKey !== "label" && !viewOnlySlices?.has(slice),
