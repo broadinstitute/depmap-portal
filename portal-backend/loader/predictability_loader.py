@@ -50,7 +50,7 @@ def lookup_compound_dose(xref_full: str):
 def _load_predictive_models(
     filename: str, dataset: Dataset, model_ids: Dict[Tuple[str, str], int], next_id
 ):
-    def lookup_entity_id(
+    def lookup_feature_id(
         gene_or_compound_experiment_label: str,
     ) -> Optional[Union[Gene, CompoundExperiment]]:
         if dataset.entity_type == "gene":
@@ -97,8 +97,8 @@ def _load_predictive_models(
         model_name = row["model"]
         model_ids_key = (entity_label, model_name)
 
-        entity_id = lookup_entity_id(entity_label)
-        if entity_id is None:
+        feature_id = lookup_feature_id(entity_label)
+        if feature_id is None:
             return None
 
         # only add to dictionary if valid entity id
@@ -106,7 +106,7 @@ def _load_predictive_models(
         rec = dict(
             predictive_model_id=model_id,
             dataset_id=dataset.dataset_id,
-            entity_id=lookup_entity_id(entity_label),
+            feature_id=lookup_feature_id(entity_label),
             label=model_name,
             pearson=float(row["pearson"]),
         )
