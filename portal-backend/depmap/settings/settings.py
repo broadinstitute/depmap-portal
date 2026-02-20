@@ -206,7 +206,10 @@ class FeatureFlags:
 
     @property
     def anchor_and_resistance_screen_dashboards(self):
-        return self.is_dmc_like()
+        # FIXME: Temporary hack to allow testing in QA.
+        # The following commit in the history reverts this
+        # so it won't accidentally be release this way.
+        return self.is_skyros() or self.is_dmc_like()
 
     @property
     def show_peddep_landing_page(self):
