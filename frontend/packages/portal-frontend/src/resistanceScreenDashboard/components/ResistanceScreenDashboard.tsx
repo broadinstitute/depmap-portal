@@ -32,7 +32,6 @@ function ResistanceScreenDashboard() {
           isLoading={!metadata}
           getInitialState={() => ({ initialSlices })}
           downloadFilename="resistance_screen_dashboard.csv"
-          hideIdColumn
           hideLabelColumn
           hiddenDatasets={
             new Set([
@@ -42,32 +41,33 @@ function ResistanceScreenDashboard() {
               "PairedAnchorGeneEffectFDR",
             ])
           }
-          implicitFilter={({ getValue }) => {
-            const hasData = Boolean(
-              getValue({
-                dataset_id: "PairedResScreenTable",
-                identifier_type: "column",
-                identifier: "CtrlArmModelID",
-              })
-            );
+          implicitFilter={({ id }) => {
+            if (!metadata) {
+              return false;
+            }
 
-            const comparisonType = getValue({
-              dataset_id: "PairedResScreenTable",
-              identifier_type: "column",
-              identifier: "ComparisonType",
-            }) as string;
+            return [
+              "drug adapted",
+              "genetic knock out",
+              "genetic knock-in",
+            ].includes(metadata.ComparisonType[id]);
+          }}
+          getColumnDisplayOptions={(sliceQuery) => {
+            switch (sliceQuery.identifier) {
+              case "PairID":
+                return { width: 100 };
 
-            return (
-              hasData &&
-              [
-                "drug adapted",
-                "genetic knock out",
-                "genetic knock-in",
-              ].includes(comparisonType)
-            );
+              case "CtrlArmModelID":
+              case "TestArmModelID":
+                return { width: 125 };
+
+              default:
+                return null;
+            }
           }}
           customColumns={[
             {
+              width: 148,
               header: PlotLinksHeader,
               cell: ({ row }) => (
                 <PlotLinksCell pairId={row.id} metadata={metadata} />
