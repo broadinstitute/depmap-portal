@@ -205,7 +205,7 @@ class FeatureFlags:
         return True
 
     @property
-    def anchor_screen_dashboard(self):
+    def anchor_and_resistance_screen_dashboards(self):
         return self.is_dmc_like()
 
     @property

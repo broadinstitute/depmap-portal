@@ -147,14 +147,11 @@ export const isSampleTypeSync = (
     }
   }
 
-  return [
-    "anchor_experiment",
-    "anchor_experiment_v2",
-    "depmap_model",
-    "ModelCondition",
-    "Screen metadata",
-    "tumor",
-  ].includes(dimensionTypeName);
+  // HACK: Fall back to this hardcoded list if we're in the small
+  // temporal window where `dimensionTypes` has not been fetchd yet.
+  return ["depmap_model", "ModelCondition", "screen", "tumor"].includes(
+    dimensionTypeName
+  );
 };
 
 export const isSampleType = (dimensionTypeName: string | null) => {

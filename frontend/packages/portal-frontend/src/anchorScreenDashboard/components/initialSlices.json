@@ -1,41 +1,41 @@
 [
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
     "identifier": "ModelID"
   },
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
     "identifier": "StrippedCellLineName"
   },
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
     "identifier": "OncotreeLineage"
   },
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
     "identifier": "Drug"
   },
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
     "identifier": "DrugConcentration"
   },
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
-    "identifier": "DrugArmAvgCPD"
+    "identifier": "TestArmAvgCPD"
   },
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
     "identifier": "ControlArmAvgCPD"
   },
   {
-    "dataset_id": "anchor_experiment_metadata",
+    "dataset_id": "PairedAnchorScreenTable",
     "identifier_type": "column",
     "identifier": "PercentCPDChange"
   }
