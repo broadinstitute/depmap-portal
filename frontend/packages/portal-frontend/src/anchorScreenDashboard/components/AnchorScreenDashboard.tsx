@@ -34,7 +34,6 @@ function AnchorScreenDashboard() {
           isLoading={!metadata}
           getInitialState={() => ({ initialSlices })}
           downloadFilename="anchor_screen_dashboard.csv"
-          hideIdColumn
           hideLabelColumn
           hiddenDatasets={
             new Set([
@@ -44,36 +43,46 @@ function AnchorScreenDashboard() {
               "PairedResGeneEffectFDR",
             ])
           }
-          implicitFilter={({ id, getValue }) => {
+          implicitFilter={({ id }) => {
             if (!metadata) {
               return false;
             }
 
-            const comparisonType = metadata.ComparisonType[id];
-
-            const hasData = Boolean(
-              getValue({
-                dataset_id: "PairedAnchorScreenTable",
-                identifier_type: "column",
-                identifier: "ModelID",
-              })
-            );
-
-            return hasData && comparisonType === "drug-anchor";
+            return metadata.ComparisonType[id] === "drug-anchor";
           }}
           getColumnDisplayOptions={(sliceQuery) => {
-            if (sliceQuery.identifier === "PercentCPDChange") {
-              return { numericPrecision: 2, header: PercentCPDChangeHeader };
-            }
+            switch (sliceQuery.identifier) {
+              case "PairID":
+                return { width: 100 };
 
-            if (sliceQuery.identifier === "Drug") {
-              return { cell: CompoundLink };
-            }
+              case "ModelID":
+                return { width: 125 };
 
-            return null; // default behavior
+              case "Drug":
+                return {
+                  cell: CompoundLink,
+                };
+
+              case "TestArmAvgCPD":
+                return { width: 140 };
+
+              case "ControlArmAvgCPD":
+                return { width: 140 };
+
+              case "PercentCPDChange":
+                return {
+                  width: 180,
+                  numericPrecision: 2,
+                  header: PercentCPDChangeHeader,
+                };
+
+              default:
+                return null;
+            }
           }}
           customColumns={[
             {
+              width: 148,
               header: PlotLinksHeader,
               cell: ({ row }) => (
                 <PlotLinksCell pairId={row.id} metadata={metadata} />

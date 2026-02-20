@@ -273,20 +273,6 @@ export function useTableInstance<TData extends RowData>(
       };
     });
 
-    // Enforce a minSize on the last column so its right-edge resizer
-    // is easier to grab (it won't collapse to a sliver).
-    if (withDefaults.length > 0) {
-      const last = withDefaults[withDefaults.length - 1];
-      const LAST_COL_MIN_SIZE = 150;
-
-      if (!last.minSize || last.minSize < LAST_COL_MIN_SIZE) {
-        withDefaults[withDefaults.length - 1] = {
-          ...last,
-          minSize: LAST_COL_MIN_SIZE,
-        };
-      }
-    }
-
     return withDefaults;
   }, [
     columns,
@@ -620,17 +606,22 @@ export function useTableInstance<TData extends RowData>(
         const isStickyFirstDataCol = colIndex === stickyFirstDataColIndex;
 
         if (isSelectColumn) {
-          // Select column: always explicit, and sticky when present
-          explicitSizesTotal += col.size!;
+          // Select column: always explicit, and sticky when present.
+          // Track in stickyColumnsTotal; only add to explicitSizesTotal
+          // when sticky first column is disabled (stickyReduction will be
+          // 0 in that case, so we need to account for it here instead).
           stickyColumnsTotal += col.size!;
+          if (!enableStickyFirstColumn) {
+            explicitSizesTotal += col.size!;
+          }
         } else if (isStickyFirstDataCol) {
-          // Sticky first data column: treat as explicit (don't auto-size it)
-          // and account for it in the sticky width budget.
+          // Sticky first data column: don't auto-size it, and account
+          // for it in the sticky width budget. Do NOT also add to
+          // explicitSizesTotal — stickyReduction handles the deduction.
           const currentSize =
             wasManuallyResized || hasExplicitSize
               ? table.getColumn(colId)?.getSize() || col.size || 150
               : col.size || 150;
-          explicitSizesTotal += currentSize;
           stickyColumnsTotal += currentSize;
         } else if (hasExplicitSize) {
           explicitSizesTotal += col.size!;
@@ -817,6 +808,7 @@ export function useTableInstance<TData extends RowData>(
   }, [
     enhancedColumns,
     containerWidth,
+    columnVisibility,
     getColumnId,
     manuallyResizedColumns,
     redistributeAutoSizeableColumns,

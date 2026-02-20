@@ -9,7 +9,11 @@ import { breadboxAPI, cached } from "@depmap/api";
 import { getConfirmation } from "@depmap/common-components";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import { RowSelectionState } from "@depmap/react-table";
-import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
+import {
+  areSliceQueriesEqual,
+  isValidSliceQuery,
+  SliceQuery,
+} from "@depmap/types";
 import useData, { RowFilters } from "./useData";
 import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
@@ -37,6 +41,7 @@ interface Props {
   customColumns?: {
     header: () => React.ReactNode;
     cell: ({ row }: { row: Record<"id", string> }) => React.ReactNode;
+    width?: number;
   }[];
   getColumnDisplayOptions?: (
     sliceQuery: SliceQuery
@@ -67,7 +72,8 @@ export const filterPredicate = (
       label,
       getValue: (sq: SliceQuery) => {
         const column = columns.find((c) => {
-          return areSliceQueriesEqual(sq, c.meta.sliceQuery);
+          const colSq = c.meta.sliceQuery;
+          return isValidSliceQuery(colSq) && areSliceQueriesEqual(sq, colSq);
         });
 
         return column ? row[column.id] : undefined;
@@ -417,6 +423,7 @@ export function useSliceTableState({
       id: `custom-${i}`,
       accessorFn: () => null,
       enableSorting: false,
+      ...(col.width != null && { size: col.width }),
       meta: {
         idLabel: "",
         units: "",

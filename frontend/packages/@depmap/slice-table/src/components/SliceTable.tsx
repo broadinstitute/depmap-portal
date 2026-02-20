@@ -26,6 +26,7 @@ interface Props {
   customColumns?: {
     header: () => React.ReactNode;
     cell: ({ row }: { row: Record<"id", string> }) => React.ReactNode;
+    width?: number;
   }[];
   // Per-column display customization. Called once per column during column
   // definition building. Return `null` for default behavior, or an object with:
