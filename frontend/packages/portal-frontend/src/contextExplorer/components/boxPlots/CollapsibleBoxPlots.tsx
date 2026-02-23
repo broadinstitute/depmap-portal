@@ -172,7 +172,10 @@ function CollapsibleBoxPlots({
 
   const xAxisTitle = useMemo(() => {
     if (
-      datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+      datasetId ===
+        ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
+      datasetId ===
+        ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
     ) {
       return boxPlotData?.dataset_units || "";
     }

@@ -23,7 +23,7 @@ export class HoverInfo {
     target.append(hoverElement);
 
     // activate tooltip
-    $(`${targetSelector} > span.entitySummaryHoverInfo`).tooltip();
+    ($(`${targetSelector} > span.entitySummaryHoverInfo`) as any).tooltip();
   }
 
   static positionAll() {

@@ -6,7 +6,7 @@ from breadbox.compute import dataset_tasks
 from breadbox.crud.access_control import PUBLIC_GROUP_ID
 from breadbox.crud.group import delete_group_entry, add_group, add_group_entry
 from breadbox.schemas.group import GroupEntryIn, GroupIn, AccessType
-from ..utils import assert_status_ok, assert_status_not_ok
+from ..utils import assert_status_ok, assert_status_not_ok, upload_and_get_file_ids
 
 from tests import factories
 
@@ -199,29 +199,8 @@ class TestPost:
 
 class TestDelete:
     def test_delete_group(
-        self,
-        client: TestClient,
-        settings: Settings,
-        minimal_db,
-        monkeypatch,
-        celery_app,
+        self, client: TestClient, settings: Settings, minimal_db, mock_celery,
     ):
-        @contextmanager
-        def mock_db_context(user, **kwargs):
-            yield minimal_db
-
-        def get_test_settings():
-            return settings
-
-        # The endpoint uses celery, and needs monkeypatching to replace db_context and get_settings,
-        # which are not passed in as params due to the limits of redis serialization.
-        monkeypatch.setattr(dataset_tasks, "db_context", mock_db_context)
-        monkeypatch.setattr(dataset_tasks, "get_settings", get_test_settings)
-        monkeypatch.setattr(
-            dataset_tasks,
-            "run_upload_dataset",
-            celery_app.task(bind=True)(dataset_tasks.run_upload_dataset),
-        )
 
         nongroup_user_header = {"X-Forwarded-User": "random@group.com"}
         admin_user = settings.admin_users[0]
@@ -239,23 +218,29 @@ class TestDelete:
         assert len(owner_groups) == 2
         assert owner_group in owner_groups
 
+        file_ids, expected_md5 = upload_and_get_file_ids(
+            client, filename=f"tests/sample_data/chronos_combined_score.csv"
+        )
+
         # Add dataset to group
-        with open(f"tests/sample_data/chronos_combined_score.csv", "rb") as f:
-            post_data = client.post(
-                "/datasets/",
-                data={
-                    "name": "a dataset",
-                    "units": "a unit",
-                    "feature_type": "generic",
-                    "sample_type": "depmap_model",
-                    "data_type": "User upload",
-                    "is_transient": "false",
-                    "group_id": owner_group["id"],
-                    "value_type": "continuous",
-                },
-                files={"data_file": ("data.csv", f, "text/csv",),},
-                headers=admin_headers,
-            )
+
+        post_data = client.post(
+            "/dataset-v2/",
+            json={
+                "format": "matrix",
+                "name": "a dataset",
+                "units": "a unit",
+                "feature_type": "generic",
+                "sample_type": "depmap_model",
+                "data_type": "User upload",
+                "is_transient": "false",
+                "group_id": owner_group["id"],
+                "value_type": "continuous",
+                "file_ids": file_ids,
+                "dataset_md5": expected_md5,
+            },
+            headers=admin_headers,
+        )
         assert_status_ok(post_data)
         dataset = post_data.json()
         minimal_db.commit()

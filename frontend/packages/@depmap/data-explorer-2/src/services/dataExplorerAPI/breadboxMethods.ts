@@ -149,7 +149,14 @@ function contextVariablesAsMetadata(filters?: DataExplorerFilters) {
         return;
       }
 
-      uniqueVars.add(JSON.stringify(variable));
+      // Keep only the relevant properties.
+      const asSliceQuery = {
+        dataset_id: variable.dataset_id,
+        identifier: variable.identifier,
+        identifier_type: variable.identifier_type,
+      };
+
+      uniqueVars.add(JSON.stringify(asSliceQuery));
     });
   }
 

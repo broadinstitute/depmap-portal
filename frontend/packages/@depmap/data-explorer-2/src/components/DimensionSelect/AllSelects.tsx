@@ -1,4 +1,5 @@
 import React from "react";
+import { DataExplorerContext } from "@depmap/types";
 import ContextSelector from "../ContextSelector";
 import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";
@@ -88,7 +89,7 @@ function AllSelects({
       />
       <SliceLabelSelect
         show={Boolean(slice_type) && axis_type === "raw_slice"}
-        value={context || null}
+        value={(context as DataExplorerContext) || null}
         onChange={onChangeContext}
         dataType={dataType}
         slice_type={slice_type as string}
@@ -100,7 +101,7 @@ function AllSelects({
       <ContextSelector
         enable
         show={axis_type === "aggregated_slice" && slice_type !== undefined}
-        value={context || null}
+        value={(context as DataExplorerContext) || null}
         onChange={onChangeContext}
         context_type={slice_type as string}
         includeAllInOptions={includeAllInContextOptions}

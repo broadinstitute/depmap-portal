@@ -282,54 +282,81 @@
         "aggregation": "first",
         "context": {
           "name": "ERBB2",
-          "context_type": "gene",
+          "dimension_type": "gene",
           "expr": {
             "==": [
               {
-                "var": "entity_label"
+                "var": "given_id"
               },
-              "ERBB2"
+              "2064"
             ]
-          }
+          },
+          "vars": {}
         }
       }
     },
     "filters": {
       "visible": {
         "name": "Breast",
-        "context_type": "depmap_model",
+        "dimension_type": "depmap_model",
         "expr": {
           "==": [
             {
-              "var": "slice/lineage/1/label"
+              "var": "0"
             },
             "Breast"
           ]
+        },
+        "vars": {
+          "0": {
+            "dataset_id": "depmap_model_metadata",
+            "identifier_type": "column",
+            "identifier": "OncotreeLineage",
+            "source": "property"
+          }
         }
       },
       "color1": {
-        "context_type": "depmap_model",
+        "dimension_type": "depmap_model",
         "expr": {
           ">": [
             {
-              "var": "slice/copy_number_relative/ERBB2/label"
+              "var": "0"
             },
             1.5
           ]
         },
-        "name": "HER2Amp"
+        "name": "HER2Amp",
+        "vars": {
+          "0": {
+            "dataset_id": "copy_number_relative",
+            "identifier": "2064",
+            "identifier_type": "feature_id",
+            "label": "ERBB2",
+            "slice_type": "gene",
+            "source": "custom"
+          }
+        }
       },
       "color2": {
-        "name": "Not HER2Amp",
-        "context_type": "depmap_model",
+        "name": "not HER2Amp",
+        "dimension_type": "depmap_model",
         "expr": {
-          "!": {
-            ">": [
-              {
-                "var": "slice/copy_number_relative/ERBB2/label"
-              },
-              1.5
-            ]
+          "<=": [
+            {
+              "var": "0"
+            },
+            1.5
+          ]
+        },
+        "vars": {
+          "0": {
+            "dataset_id": "copy_number_relative",
+            "identifier": "2064",
+            "identifier_type": "feature_id",
+            "label": "ERBB2",
+            "slice_type": "gene",
+            "source": "custom"
           }
         }
       }

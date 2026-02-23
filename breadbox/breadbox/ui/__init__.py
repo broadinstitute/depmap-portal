@@ -37,6 +37,8 @@ class SinglePageApplication(StaticFiles):
 
         # if a file cannot be found
         if stat_result is None:
-            return super().lookup_path(self.index)
+            path_, stat_ = super().lookup_path(self.index)
+            assert stat_ is not None
+            return path_, stat_
 
         return (full_path, stat_result)

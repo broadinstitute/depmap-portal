@@ -12,7 +12,11 @@ export default function shouldUseLogScale(
   const { minOrders = 3, ignoreFraction = 0 } = opts;
 
   // Filter strictly positive values (log scale requirement)
-  const positives = data.filter((d) => d > 0);
+  const positives: number[] = [];
+  for (let i = 0; i < data.length; i++) {
+    const d = data[i];
+    if (d > 0) positives.push(d);
+  }
   if (positives.length === 0) return false;
 
   // Optionally trim extreme outliers (symmetric)
@@ -25,8 +29,15 @@ export default function shouldUseLogScale(
 
   if (filtered.length === 0) return false;
 
-  const min = Math.min(...filtered);
-  const max = Math.max(...filtered);
+  // Safe min/max (no spread)
+  let min = filtered[0];
+  let max = filtered[0];
+
+  for (let i = 1; i < filtered.length; i++) {
+    const v = filtered[i];
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
 
   // Avoid division by numbers extremely close to 0
   if (min <= 0) return false;

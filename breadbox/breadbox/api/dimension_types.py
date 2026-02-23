@@ -211,7 +211,7 @@ def add_feature_type(
     user: Annotated[str, Depends(get_user)],
     settings: Annotated[Settings, Depends(get_settings)],
     properties_to_index: Annotated[
-        List[str],
+        Optional[List[str]],
         Form(
             description="A list of columns by name to add to the dimension search index.",
             default_factory=lambda: [],

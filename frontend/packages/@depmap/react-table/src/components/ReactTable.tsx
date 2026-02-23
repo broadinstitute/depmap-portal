@@ -45,11 +45,20 @@ type TableProps<TData extends RowData> = {
       | Record<string, boolean>
       | ((old: Record<string, boolean>) => Record<string, boolean>)
   ) => void;
+  enableSearch?: boolean;
   // Optional ref to expose table methods
   tableRef?: React.RefObject<{
     resetColumnResizing: () => void;
     manuallyResizedColumns: Set<string>;
     resetSort: () => void;
+    // Search methods and state
+    goToNextMatch: () => void;
+    goToPreviousMatch: () => void;
+    readonly totalMatches: number;
+    readonly currentMatchIndex: number;
+    readonly searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    subscribeToSearch: (listener: () => void) => () => void;
   }>;
 };
 
@@ -67,6 +76,7 @@ function ReactTable<TData extends RowData>({
   defaultSort = undefined,
   columnVisibility = {},
   onColumnVisibilityChange = undefined,
+  enableSearch = false,
   tableRef = undefined,
 }: TableProps<TData>) {
   const {
@@ -82,6 +92,16 @@ function ReactTable<TData extends RowData>({
     syncScroll,
     stickyColumnsInfo,
     resetSort,
+    goToNextMatch,
+    goToPreviousMatch,
+    getCellHighlightStatus,
+    searchQuery,
+    setSearchQuery,
+    subscribeToSearch,
+    getTotalMatches,
+    getCurrentMatchIndex,
+    getSearchQuery,
+    columnStats,
   } = useTableInstance(columns, data, {
     enableRowSelection,
     enableMultiRowSelection,
@@ -92,6 +112,7 @@ function ReactTable<TData extends RowData>({
     enableStickyFirstColumn,
     columnVisibility,
     onColumnVisibilityChange,
+    enableSearch,
   });
 
   // Expose methods via ref if provided
@@ -101,8 +122,32 @@ function ReactTable<TData extends RowData>({
       resetColumnResizing,
       manuallyResizedColumns,
       resetSort,
+      goToNextMatch,
+      goToPreviousMatch,
+      get totalMatches() {
+        return getTotalMatches();
+      },
+      get currentMatchIndex() {
+        return getCurrentMatchIndex();
+      },
+      get searchQuery() {
+        return getSearchQuery();
+      },
+      setSearchQuery,
+      subscribeToSearch,
     }),
-    [resetColumnResizing, manuallyResizedColumns, resetSort]
+    [
+      resetColumnResizing,
+      manuallyResizedColumns,
+      resetSort,
+      goToNextMatch,
+      goToPreviousMatch,
+      getTotalMatches,
+      getCurrentMatchIndex,
+      getSearchQuery,
+      setSearchQuery,
+      subscribeToSearch,
+    ]
   );
 
   return (
@@ -121,6 +166,9 @@ function ReactTable<TData extends RowData>({
         height={height}
         onScroll={syncScroll}
         stickyColumnsInfo={stickyColumnsInfo}
+        getCellHighlightStatus={getCellHighlightStatus}
+        searchQuery={searchQuery}
+        columnStats={columnStats}
       />
     </div>
   );

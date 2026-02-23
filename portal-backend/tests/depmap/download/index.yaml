@@ -1,5 +1,7 @@
 downloads:
   - test_a
   - test_b
+  - priority: 1
+    name: test_first
   - test_c
   - test_d

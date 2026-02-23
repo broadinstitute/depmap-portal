@@ -115,10 +115,6 @@ class FeatureFlags:
         return True
 
     @property
-    def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
-        return True
-
-    @property
     def data_page(self):
         return True
 
@@ -168,21 +164,12 @@ class FeatureFlags:
         return self.is_prerelease_env()
 
     @property
-    def celfie(self):
-        return False
-
-    @property
     def celligner_app_v3(self):
         return True
 
     # used in depmap/settings/shared.py to set special value for DepDatasetMeta cell_lines
     @property
     def repurposing_secondary_AUC_cell_line_range(self):
-        return self.is_prerelease_env()
-
-    # Constellation isn't in the portal anymore, but we still use its view and data for other parts of the portal
-    @property
-    def constellation_app(self):
         return self.is_prerelease_env()
 
     @property
@@ -207,19 +194,15 @@ class FeatureFlags:
     # refers to the portal gene tea tool page.
     @property
     def gene_tea_portal_page(self):
-        return self.is_prerelease_env()
+        return True
 
     @property
     def gene_tea_matching_terms_panel(self):
-        return self.is_prerelease_env()
+        return True
 
-    # TODO: Remove this feature flag once demo is approved. This is used in 2 places:
-    # (1) frontend/packages/portal-frontend/src/geneTea/context/GeneTeaFiltersContext.tsx (on enabling this feature
-    # delete all code in the if block that checks enabledFeatures.gene_tea_tutorial_page)
-    # (2) frontend/packages/portal-frontend/src/geneTea/components/GeneTea.tsx
     @property
     def gene_tea_tutorial_page(self):
-        return self.is_prerelease_env()
+        return True
 
     @property
     def anchor_screen_dashboard(self):
@@ -230,8 +213,14 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def compound_correlation_tiles(self):
+    def compound_correlated_dependencies_tile(self):
         return self.is_prerelease_env()
+
+    # Not showing as of 25Q4: This tile appears to have some incorrect behavior in how
+    # it chooses which compounds are "related". Disabling for now.
+    @property
+    def related_compounds_tile(self):
+        return False
 
     @property
     def correlation_analysis(self):

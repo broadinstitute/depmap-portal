@@ -1,6 +1,5 @@
 const path = require("path");
 const webpack = require("webpack");
-const ESLintPlugin = require("eslint-webpack-plugin");
 
 module.exports = {
   entry: {
@@ -17,6 +16,7 @@ module.exports = {
     groupsManager: "./src/apps/groupsManager.tsx",
     tdaSummary: "./src/apps/tdaSummary.tsx",
     genePage: "./src/apps/genePage.tsx",
+    compoundPage: "./src/apps/compoundPage.tsx",
     compoundDashboard: "./src/apps/compoundDashboard.tsx",
     tableTester: "./src/apps/tableTester.tsx",
     dataExplorer2: "./src/apps/dataExplorer2.tsx",
@@ -26,21 +26,13 @@ module.exports = {
     secretDataViewer: "./src/apps/secretDataViewer.tsx",
     peddepPage: "./src/apps/peddepPage.tsx",
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
+    anchorScreenDashboard_v2: "./src/apps/anchorScreenDashboard_v2.tsx",
     doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
     geneTea: "./src/apps/geneTea.tsx",
     custom_analyses: "./src/apps/custom_analyses.tsx",
   },
 
   plugins: [
-    new ESLintPlugin({
-      context: path.resolve("../../packages"),
-      files: ["**/src/**/*.@(ts|tsx)"],
-      quiet: true,
-      cache: true,
-      cacheLocation: path.resolve(
-        "../../node_modules/.cache/eslint-webpack-plugin/.eslintcache"
-      ),
-    }),
     // https://stackoverflow.com/a/64553486
     new webpack.ProvidePlugin({ process: "process/browser" }),
   ],

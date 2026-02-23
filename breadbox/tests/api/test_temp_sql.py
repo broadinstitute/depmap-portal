@@ -91,10 +91,13 @@ def assert_schema_is_valid(client):
         "/temp/sql/schema", headers={"X-Forwarded-User": "anonymous"},
     )
     assert response.status_code == 200
-    # make sure we can parse the resulting SQL that describes the schema
-    parsed = sqlglot.parse(response.text, dialect="sqlite")
-    assert len(parsed) > 0
-    print(f"Schema:\n{response.text}")
+
+    response_content: dict = response.json()
+    for _, schema in response_content.items():
+        # make sure we can parse the resulting SQL that describes the schema
+        parsed = sqlglot.parse(schema, dialect="sqlite")
+        assert len(parsed) > 0
+        print(f"Schema:\n{schema}")
 
 
 def test_bad_queries(minimal_db: SessionWithUser, settings, client: TestClient):

@@ -1,6 +1,3 @@
-from typing import Union, Optional
-from uuid import UUID
-
 from fastapi import Depends, HTTPException, Request
 
 from ..crud import dataset as dataset_crud
@@ -52,19 +49,6 @@ def get_user(request: Request) -> str:
         raise HTTPException(401, "User cannot be null")
 
     return user
-
-
-def get_dataset(
-    dataset_id: Union[UUID, str],
-    db: SessionWithUser = Depends(get_db_with_user),
-    user: str = Depends(get_user),
-):
-    dataset = dataset_crud.get_dataset(db, user, dataset_id)
-
-    if dataset is None:
-        raise DatasetNotFoundError(f"Dataset '{dataset_id}' not found")
-
-    return dataset
 
 
 def get_cache():

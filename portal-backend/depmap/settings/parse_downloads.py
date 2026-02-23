@@ -26,6 +26,14 @@ from dataclasses import dataclass
 
 
 @dataclass
+class FilesetYaml:
+    priority: int
+    file_index: int
+    index: int
+    filename: str
+
+
+@dataclass
 class DownloadInfoFromConfig:
     releases: List[DownloadRelease]
     display_names_by_taiga_ids: Dict[str, str]
@@ -279,7 +287,7 @@ def parse_downloads_file(filepath: str):
     return final_downloads
 
 
-def get_downloads_file_paths(index_yaml: str) -> List[str]:
+def get_downloads_file_paths(index_yaml: str, file_index: int) -> List[FilesetYaml]:
     with open(index_yaml) as fp:
         index_yaml_content = fp.read()
 
@@ -290,21 +298,42 @@ def get_downloads_file_paths(index_yaml: str) -> List[str]:
         return []
 
     downloads_dir = os.path.dirname(index_yaml)
-    downloads_file_paths: List[str] = [
-        f"{downloads_dir}/{download}.yaml" for download in downloads
+
+    def to_fileset_yaml(entry_index: int, entry: Union[dict, str]):
+        if isinstance(entry, dict):
+            return FilesetYaml(
+                entry["priority"],
+                file_index,
+                entry_index,
+                f"{downloads_dir}/{entry['name']}.yaml",
+            )
+        else:
+            assert isinstance(entry, str)
+            return FilesetYaml(
+                500, file_index, entry_index, f"{downloads_dir}/{entry}.yaml"
+            )
+
+    downloads_file_paths: List[FilesetYaml] = [
+        to_fileset_yaml(i, download) for i, download in enumerate(downloads)
     ]
 
     return downloads_file_paths
 
 
 def get_list_of_file_paths(download_dir_paths: List[str]) -> List[str]:
-    file_paths = []
+    file_paths_with_priority = []
 
-    for download_dir_path in download_dir_paths:
+    for file_index, download_dir_path in enumerate(download_dir_paths):
         index_file_path = os.path.join(download_dir_path, "index.yaml")
-        file_paths.extend(get_downloads_file_paths(index_file_path))
+        file_paths_with_priority.extend(
+            get_downloads_file_paths(index_file_path, file_index)
+        )
 
-    return file_paths
+    # sort by priority
+    file_paths_with_priority.sort(key=lambda x: (x.priority, x.file_index, x.index))
+
+    # return the flattened list of files
+    return [x.filename for x in file_paths_with_priority]
 
 
 # specific_release should be the file name of 1 of the 2 release in config/dev/downloads:

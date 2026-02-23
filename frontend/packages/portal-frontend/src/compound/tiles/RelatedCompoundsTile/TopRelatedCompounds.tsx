@@ -94,7 +94,8 @@ export const TopRelatedCompounds = ({
                   >
                     <CorrelationBar
                       correlation={
-                        targetCorrelationData[compound][dataType][target]
+                        targetCorrelationData[compound]?.[dataType]?.[target] !=
+                        null
                           ? targetCorrelationData[compound][dataType][
                               target
                             ].toFixed(2)

@@ -9,6 +9,10 @@ import {
 } from "@depmap/types/src/experimental_genetea";
 import PlotSection from "./PlotSection";
 import { useAllTermsContext } from "src/geneTea/context/AllTermsContext";
+import GenesMatchingTermSearchPanel from "../TopTermsTab/FindGenesMatchingTerm/GenesMatchingTermSearchPanel";
+import SectionStack, {
+  StackableSection,
+} from "../collapsibleOptions/SectionStack";
 
 interface AllMatchingTermsTabProps {
   data: GeneTeaScatterPlotData | null;
@@ -112,8 +116,8 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
         <div className={styles.errorMessage}>Error loading plot data.</div>
       ) : (
         <div>
-          <div className={styles.mainContentGridAllMatchingTerms}>
-            <div className={styles.plotAreaAllMatchingTerms}>
+          <div className={styles.mainContentGrid}>
+            <div className={styles.plotArea}>
               <PlotSection
                 isLoading={isLoading}
                 plotElement={plotElement}
@@ -121,6 +125,26 @@ function AllMatchingTermsTab({ data, rawData }: AllMatchingTermsTabProps) {
                 enrichedTerms={rawData?.enrichedTerms?.term || []}
                 handleSetPlotElement={setPlotElement}
               />
+            </div>
+            <div className={styles.selectionsArea}>
+              <div className={styles.test}>
+                <SectionStack>
+                  <StackableSection
+                    title="Matching Terms"
+                    minHeight={150}
+                    usePlotStyles
+                  >
+                    <GenesMatchingTermSearchPanel
+                      rawData={rawData}
+                      termGroupToTermsMapping={new Map<string, string[]>()}
+                      termToMatchingGenesMap={termToMatchingGenesMap}
+                      useTerms
+                      useFrequentTerms
+                    />
+                  </StackableSection>
+                  <></>
+                </SectionStack>
+              </div>
             </div>
           </div>
         </div>

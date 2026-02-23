@@ -34,7 +34,8 @@ def test_get_context_info(populated_db):
             "wes",
             "rnai",
             "crispr",
-            "oncref",
+            "oncrefLum",
+            "oncrefSeq",
             "cell_line_display_name",
             "lineage",
             "primary_disease",
@@ -123,7 +124,8 @@ def test_get_context_summary(populated_db):
             "WGS",
             "WES",
             "RNASeq",
-            "PRISMOncRef",
+            "PRISMOncRefSeq",
+            "PRISMOncRefLum",
             "PRISMRepurposing",
         ]
 
@@ -152,7 +154,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": True,
             "rna_seq": True,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "A673",
             "lineage": "bone",
@@ -175,7 +178,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": True,
             "rna_seq": True,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "CADOES1",
             "lineage": "bone",
@@ -197,7 +201,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": True,
             "rna_seq": True,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "EWS502",
             "lineage": "bone",
@@ -223,7 +228,8 @@ def test_get_context_summary(populated_db):
             "WGS",
             "WES",
             "RNASeq",
-            "PRISMOncRef",
+            "PRISMOncRefSeq",
+            "PRISMOncRefLum",
             "PRISMRepurposing",
         ]
         model_id_indices = {}
@@ -235,7 +241,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000552"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_552 = [True, True, True, True, True, False, True]
+        expected_552 = [True, True, True, True, True, False, False, True]
         assert actual_552 == expected_552
 
         # 001001
@@ -243,7 +249,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-001001"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_001001 = [True, True, True, True, True, True, True]
+        expected_001001 = [True, True, True, True, True, True, True, True]
 
         assert actual_001001 == expected_001001
 
@@ -252,7 +258,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000706"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_000706 = [True, True, False, True, True, False, True]
+        expected_000706 = [True, True, False, True, True, False, False, True]
         assert actual_000706 == expected_000706
 
         # 000279
@@ -260,7 +266,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-000279"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_000279 = [True, True, False, True, True, False, True]
+        expected_000279 = [True, True, False, True, True, False, False, True]
         assert actual_000279 == expected_000279
 
         # 001170
@@ -268,7 +274,7 @@ def test_get_context_summary(populated_db):
             row[model_id_indices["ACH-001170"]]
             for row in context_summary["summary"]["values"]
         ]
-        expected_001170 = [False, True, False, False, False, False, False]
+        expected_001170 = [False, True, False, False, False, False, False, False]
         assert actual_001170 == expected_001170
 
         assert {
@@ -287,7 +293,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": False,
             "rna_seq": False,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": False,
             "cell_line_display_name": "PETA",
             "lineage": "skin",
@@ -309,7 +316,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": True,
             "rna_seq": True,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "CADOES1",
             "lineage": "bone",
@@ -331,7 +339,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": True,
             "rna_seq": True,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "EWS502",
             "lineage": "bone",
@@ -353,7 +362,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": True,
             "rna_seq": False,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "TC32",
             "lineage": "bone",
@@ -375,7 +385,8 @@ def test_get_context_summary(populated_db):
             "wgs": True,
             "wes": True,
             "rna_seq": True,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "HT29",
             "lineage": "colorectal",
@@ -397,7 +408,8 @@ def test_get_context_summary(populated_db):
             "wgs": False,
             "wes": True,
             "rna_seq": True,
-            "oncref": False,
+            "oncrefSeq": False,
+            "oncrefLum": False,
             "repurposing": True,
             "cell_line_display_name": "EKVX",
             "lineage": "lung",

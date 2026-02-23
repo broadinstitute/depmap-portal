@@ -267,7 +267,7 @@ def _run_custom_analysis_test_wrapper(
 
     # columns to search determined by dataset_feature instead of dep_mat_col_indices
     minimal_db.reset_user(settings.default_user)
-    result = run_custom_analysis(
+    result = run_custom_analysis(  # pyright: ignore
         user=settings.default_user,
         analysis_type=analysis_type.name,
         query_feature_id=query_feature_id,
@@ -400,7 +400,7 @@ def test_run_custom_analysis_pearson_with_feature_ids_and_query_values(
     )
 
     minimal_db.reset_user(settings.default_user)
-    result = run_custom_analysis(
+    result = run_custom_analysis(  # pyright: ignore
         user=settings.default_user,
         analysis_type=AnalysisType.pearson.name,
         query_feature_id=None,

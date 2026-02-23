@@ -21,6 +21,7 @@ interface PromptOptions<T> {
   defaultValue?: any;
   acceptButtonText?: string | null;
   modalProps?: ModalPropsWithOptionalOnHide;
+  shouldFocusAcceptOnChange?: boolean;
   secondaryAction?: {
     buttonText: string;
     bsStyle?: string | null | undefined;
@@ -61,6 +62,8 @@ function launchModal<T>(
     container.remove();
   };
 
+  const acceptButtonId = `${Math.random()}`.replace("0.", "id-");
+
   ReactDOM.render(
     <State initialValue={options.defaultValue}>
       {(value, onChange, acceptText, setAcceptText) => (
@@ -82,7 +85,20 @@ function launchModal<T>(
             <section>
               <options.PromptComponent
                 value={value}
-                onChange={onChange}
+                onChange={(nextValue) => {
+                  if (
+                    nextValue != null &&
+                    nextValue !== options.defaultValue &&
+                    options.shouldFocusAcceptOnChange
+                  ) {
+                    const button = document.querySelector(`#${acceptButtonId}`);
+                    setTimeout(() => {
+                      (button as HTMLButtonElement)?.focus();
+                    });
+                  }
+
+                  onChange(nextValue);
+                }}
                 updateAcceptText={setAcceptText}
               />
             </section>
@@ -112,6 +128,7 @@ function launchModal<T>(
               </Button>
             )}
             <Button
+              id={acceptButtonId}
               disabled={
                 value === null ||
                 value === undefined ||

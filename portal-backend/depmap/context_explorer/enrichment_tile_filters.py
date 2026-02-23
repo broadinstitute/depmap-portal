@@ -2,7 +2,7 @@
 # and the Gene/Compound overview page tiles. This sets the filter
 # defaults for the enrichment tile on the overview page. The
 # Context Explorer defaults are set in frontend/packages/portal-frontend/src/contextExplorer/json.
-from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.context_explorer.models import ContextExplorerDatasets, is_oncref_dataset
 
 
 def get_enrichment_tile_filters(feature_type: str, dataset_given_id: str):
@@ -11,11 +11,7 @@ def get_enrichment_tile_filters(feature_type: str, dataset_given_id: str):
     min_frac_dep_in: float = 0.1  # ignored for compounds
 
     if feature_type == "compound":
-        # TODO also allow new OncRef
-        if (
-            dataset_given_id
-            == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
-        ):
+        if is_oncref_dataset(dataset_given_id):
             max_fdr = 0.1
             min_abs_effect_size = 0.1
         else:

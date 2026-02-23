@@ -1,8 +1,6 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */
 import React from "react";
-import cx from "classnames";
-import { flexRender, Table } from "@tanstack/react-table";
-import styles from "../styles/ReactTable.scss";
+import { Table } from "@tanstack/react-table";
+import { TableHeaderCell } from "./TableHeaderCell";
 
 type StickyColumnsInfo = {
   selectColumnWidth: number;
@@ -31,19 +29,13 @@ export function TableHeader<T>({
         return (
           <tr key={headerGroup.id}>
             {headerGroup.headers.map((header, index) => {
-              const canResize = header.column.getCanResize();
-              const resizeHandler = header.getResizeHandler();
-
-              // Check if this is the select column
               const isSelectColumn = header.column.id === "select";
 
-              // Check if this is the first data column (after selection column if present)
               const isFirstDataColumn =
                 hasStickyFirstColumn &&
                 ((hasSelectColumn && index === 1) ||
                   (!hasSelectColumn && index === 0));
 
-              // Determine sticky positioning
               let stickyLeft: number | undefined;
               if (isSelectColumn) {
                 stickyLeft = 0;
@@ -52,64 +44,17 @@ export function TableHeader<T>({
               }
 
               const isSticky = isSelectColumn || isFirstDataColumn;
+              const isSortable = !isSelectColumn && header.column.getCanSort();
 
               return (
-                <th
+                <TableHeaderCell
                   key={header.id}
-                  className={isSticky ? styles.stickyCell : undefined}
-                  style={{
-                    width: header.getSize(),
-                    ...(isSticky && stickyLeft !== undefined
-                      ? { left: stickyLeft }
-                      : {}),
-                  }}
-                  onClick={
-                    !isSelectColumn
-                      ? header.column.getToggleSortingHandler()
-                      : undefined
-                  }
-                >
-                  <div
-                    className={styles.thContent}
-                    style={{
-                      cursor:
-                        !isSelectColumn && header.column.getCanSort()
-                          ? "pointer"
-                          : "default",
-                    }}
-                  >
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                    {!isSelectColumn && (
-                      <div className={styles.sortIcon}>
-                        <span
-                          className={cx("glyphicon glyphicon-triangle-top", {
-                            [styles.sortArrowActive]:
-                              header.column.getIsSorted() === "asc",
-                          })}
-                        />
-                        <span
-                          className={cx("glyphicon glyphicon-triangle-bottom", {
-                            [styles.sortArrowActive]:
-                              header.column.getIsSorted() === "desc",
-                          })}
-                        />
-                      </div>
-                    )}
-
-                    {canResize && (
-                      <div
-                        className={styles.resizer}
-                        onDoubleClick={() => header.column.resetSize()}
-                        onMouseDown={resizeHandler}
-                        onTouchStart={resizeHandler}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                    )}
-                  </div>
-                </th>
+                  header={header}
+                  isSticky={isSticky}
+                  stickyLeft={stickyLeft}
+                  isSortable={isSortable}
+                  isSelectColumn={isSelectColumn}
+                />
               );
             })}
           </tr>

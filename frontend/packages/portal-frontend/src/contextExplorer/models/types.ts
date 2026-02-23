@@ -40,13 +40,15 @@ export interface CellLineOverview {
   rnai: string;
   wgs: string;
   wes: string;
-  prismOncRef: string;
+  prismOncRefLum: string;
+  prismOncRefSeq: string;
   prismRepurposing: string;
 }
 
 export enum DataType {
   PRISMRepurposing,
-  PRISMOncRef,
+  PRISMOncRefLum,
+  PRISMOncRefSeq,
   RNASeq,
   WGS,
   WES,
@@ -57,7 +59,8 @@ export enum DataType {
 
 export enum DataTypeStrings {
   PRISMRepurposing = "PRISMRepurposing",
-  PRISMOncRef = "PRISMOncRef",
+  PRISMOncRefLum = "PRISMOncRefLum",
+  PRISMOncRefSeq = "PRISMOncRefSeq",
   RNASeq = "RNASeq",
   WGS = "WGS",
   WES = "WES",
@@ -88,7 +91,8 @@ export function getDataTypeColorCategoryFromDataTypeValue(
     case DataType.WGS:
     case DataType.RNASeq:
       return DataTypeCategory.OMICS;
-    case DataType.PRISMOncRef:
+    case DataType.PRISMOncRefLum:
+    case DataType.PRISMOncRefSeq:
     case DataType.PRISMRepurposing:
       return DataTypeCategory.CompoundViability;
     default:
@@ -159,7 +163,8 @@ export interface OtherSignificantBoxCardData {
 export enum TabTypes {
   Overview = "Overview",
   GeneDependency = "GeneDependency",
-  DrugSensitivityOncRef = "DrugSensitivityOncRef",
+  DrugSensitivityOncRefSeq = "DrugSensitivityOncRefSeq",
+  DrugSensitivityOncRefLum = "DrugSensitivityOncRefLum",
   DrugSensitivityRepurposing = "DrugSensitivityRepurposing",
 }
 

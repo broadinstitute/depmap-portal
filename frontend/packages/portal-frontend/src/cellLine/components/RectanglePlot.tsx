@@ -1,3 +1,4 @@
+import { Tooltip } from "@depmap/common-components";
 import React, { useEffect, useRef } from "react";
 import StackedBoxPlotUtils from "src/cellLine/utilities/boxplotUtils";
 
@@ -9,6 +10,21 @@ export interface RectPlotProps {
   xAxisLabel: string;
   linkType: "gene" | "compound";
 }
+
+// HACK: This should be taken out when we update this tile to use Compounds instead of Compound Experiments
+const attemptFindCompoundLabel = (compoundExpLabel: string) => {
+  // ^       : Start of string
+  // (.+?)   : Capture group 1 (the name) - matches any char non-greedily
+  // \s\(    : Matches a space followed by a literal opening parenthesis
+  // .* : Matches any characters inside the parentheses
+  // \)      : Matches the closing parenthesis
+  // $       : End of string
+  const regex = /^(.+?)\s\(.*\)$/;
+  const match = compoundExpLabel.match(regex);
+
+  // If a match is found, return the first capture group, otherwise original string
+  return match ? match[1] : compoundExpLabel;
+};
 
 const getLabelLinkUrl = (label: string, linkType: "gene" | "compound") => {
   return window.location.href
@@ -113,9 +129,30 @@ const RectanglePlot = ({
   return (
     <div className="stacked-boxplot-plot">
       <div className="stacked-boxplot-labels-container">
-        {labels.map((label) => (
+        {labels.map((label, i) => (
           <p key={label} className="boxplot-label">
-            <a href={getLabelLinkUrl(label, linkType)}>{label}</a>
+            <Tooltip
+              key={`${label}-${i}`}
+              id="pref-sens-compound-tooltip"
+              content={label}
+              placement="top"
+            >
+              <a
+                style={{
+                  display: "block",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+                href={getLabelLinkUrl(
+                  linkType === "compound"
+                    ? attemptFindCompoundLabel(label)
+                    : label,
+                  linkType
+                )}
+              >
+                {label}
+              </a>
+            </Tooltip>
           </p>
         ))}
       </div>

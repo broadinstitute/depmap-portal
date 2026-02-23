@@ -23,6 +23,9 @@ def main(
     rnai_taiga_id = get_id(taiga_ids["rnai_cell_lines_taiga_id"])
     repurposing_matrix_taiga_id = get_id(taiga_ids["repurposing_matrix_taiga_id"])
     prism_oncology_reference_auc_matrix = get_id(taiga_ids["oncref_auc_taiga_id"])
+    prism_oncology_reference_seq_log2_auc_matrix = get_id(
+        taiga_ids["prism_oncology_reference_seq_log2_auc_matrix"]
+    )
 
     tc = create_taiga_client_v3()
 
@@ -65,17 +68,30 @@ def main(
         overall_summary.index.isin(Repurposing_Matrix.columns), "PRISMRepurposing"
     ] = True
 
-    # PRISM OncRef
+    # PRISM OncRef Seq
+    if prism_oncology_reference_seq_log2_auc_matrix is not None:
+        OncRef_Seq_Matrix = tc.get(prism_oncology_reference_seq_log2_auc_matrix)
+        assert OncRef_Seq_Matrix is not None
+
+        overall_summary["PRISMOncRefSeq"] = False
+        overall_summary.loc[
+            overall_summary.index.isin(OncRef_Seq_Matrix.index), "PRISMOncRefSeq"
+        ] = True
+        resulting_cols.insert(
+            -1, "PRISMOncRefSeq"
+        )  # put the oncref column before the PRISMOncRefLum column
+
+    # PRISM OncRef Lum
     if prism_oncology_reference_auc_matrix is not None:
         OncRef_Matrix = tc.get(prism_oncology_reference_auc_matrix)
         assert OncRef_Matrix is not None
 
-        overall_summary["PRISMOncRef"] = False
+        overall_summary["PRISMOncRefLum"] = False
         overall_summary.loc[
-            overall_summary.index.isin(OncRef_Matrix.index), "PRISMOncRef"
+            overall_summary.index.isin(OncRef_Matrix.index), "PRISMOncRefLum"
         ] = True
         resulting_cols.insert(
-            -1, "PRISMOncRef"
+            -1, "PRISMOncRefLum"
         )  # put the oncref column before the repurposing column
 
     # OMICS

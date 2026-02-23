@@ -32,6 +32,19 @@ type SelectionOptions<TData> = {
       | Record<string, boolean>
       | ((old: Record<string, boolean>) => Record<string, boolean>)
   ) => void;
+  enableSearch?: boolean;
+};
+
+type SearchMatchInfo = {
+  rowIndex: number;
+  rowId: string;
+  columnId: string;
+};
+
+export type ColumnStats = {
+  min: number;
+  max: number;
+  hasVariance: boolean;
 };
 
 export function useTableInstance<TData extends RowData>(
@@ -49,6 +62,7 @@ export function useTableInstance<TData extends RowData>(
     defaultSort = undefined,
     columnVisibility: controlledColumnVisibility,
     onColumnVisibilityChange,
+    enableSearch = false,
   } = selectionOptions;
 
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -76,6 +90,47 @@ export function useTableInstance<TData extends RowData>(
   const headerScrollRef = useRef<HTMLDivElement>(null);
   const parentRef = useRef<HTMLDivElement>(null);
 
+  // Search state - stored in refs to avoid re-renders on currentMatchIndex changes
+  const searchQueryRef = useRef<string>("");
+  const currentMatchIndexRef = useRef<number>(0);
+  const totalMatchesRef = useRef<number>(0);
+  const searchListenersRef = useRef<Set<() => void>>(new Set());
+
+  // This state triggers re-renders only when the search query changes
+  const [searchQueryTrigger, setSearchQueryTrigger] = useState(0);
+
+  const notifySearchListeners = useCallback(() => {
+    searchListenersRef.current.forEach((listener) => listener());
+  }, []);
+
+  const setSearchQuery = useCallback(
+    (query: string) => {
+      searchQueryRef.current = query;
+      currentMatchIndexRef.current = 0;
+      setSearchQueryTrigger((n) => n + 1); // Trigger re-render for new search
+      notifySearchListeners();
+    },
+    [notifySearchListeners]
+  );
+
+  const [currentMatchTrigger, setCurrentMatchTrigger] = useState(0);
+
+  const setCurrentMatchIndex = useCallback(
+    (index: number) => {
+      currentMatchIndexRef.current = index;
+      setCurrentMatchTrigger((n) => n + 1);
+      notifySearchListeners(); // Notify listeners but don't re-render table
+    },
+    [notifySearchListeners]
+  );
+
+  const subscribeToSearch = useCallback((listener: () => void) => {
+    searchListenersRef.current.add(listener);
+    return () => {
+      searchListenersRef.current.delete(listener);
+    };
+  }, []);
+
   // Use controlled selection if provided, otherwise use internal state
   const rowSelection = controlledRowSelection ?? internalRowSelection;
   const handleRowSelectionChange =
@@ -86,6 +141,11 @@ export function useTableInstance<TData extends RowData>(
     controlledColumnVisibility ?? internalColumnVisibility;
   const handleColumnVisibilityChange =
     onColumnVisibilityChange ?? setInternalColumnVisibility;
+
+  // Read search query from ref (changes trigger re-render via searchQueryTrigger)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _searchQueryTrigger = searchQueryTrigger; // Reference to ensure re-render
+  const searchQuery = searchQueryRef.current;
 
   // Function to synchronize header scroll with body scroll
   const syncScroll = useCallback((scrollLeft: number) => {
@@ -168,6 +228,76 @@ export function useTableInstance<TData extends RowData>(
     return [...data].sort(defaultSort);
   }, [data, sorting, defaultSort]);
 
+  // Compute column statistics for magnitude bars
+  // This calculates min/max for each numeric column
+  const columnStats = useMemo(() => {
+    const stats: Record<string, ColumnStats> = {};
+
+    // Build a map of column accessors for efficient data extraction
+    const columnAccessors: Array<{
+      id: string;
+      accessorFn?: (row: TData, index: number) => unknown;
+      accessorKey?: string;
+    }> = [];
+
+    enhancedColumns.forEach((col) => {
+      const colId = getColumnId(col);
+      // Skip the select column
+      if (colId === "select") return;
+
+      const accessorFn = (col as any).accessorFn;
+      const accessorKey = (col as any).accessorKey;
+
+      if (accessorFn || accessorKey) {
+        columnAccessors.push({ id: colId, accessorFn, accessorKey });
+      }
+    });
+
+    // Initialize stats with extreme values
+    columnAccessors.forEach(({ id }) => {
+      stats[id] = {
+        min: Infinity,
+        max: -Infinity,
+        hasVariance: false,
+      };
+    });
+
+    // Single pass through data to compute all column stats
+    data.forEach((row, rowIndex) => {
+      columnAccessors.forEach(({ id, accessorFn, accessorKey }) => {
+        let value: unknown;
+        if (accessorFn) {
+          value = accessorFn(row, rowIndex);
+        } else if (accessorKey) {
+          value = (row as any)[accessorKey];
+        }
+
+        // Only process numeric values
+        if (typeof value === "number" && !Number.isNaN(value)) {
+          const colStats = stats[id];
+          if (value < colStats.min) colStats.min = value;
+          if (value > colStats.max) colStats.max = value;
+        }
+      });
+    });
+
+    // Determine hasVariance and clean up columns with no numeric data
+    Object.keys(stats).forEach((colId) => {
+      const colStats = stats[colId];
+
+      // If min is still Infinity, no numeric values were found
+      if (colStats.min === Infinity) {
+        delete stats[colId];
+        return;
+      }
+
+      // Check for variance (min !== max)
+      colStats.hasVariance = colStats.min !== colStats.max;
+    });
+
+    return stats;
+  }, [data, enhancedColumns, getColumnId]);
+
   const table = useReactTable({
     data: sortedData,
     columns: enhancedColumns,
@@ -219,6 +349,101 @@ export function useTableInstance<TData extends RowData>(
   const tableRef = useRef(table);
   tableRef.current = table;
 
+  // Get rows once per render cycle with a stable dependency proxy
+  // Using table.getRowModel().rows directly in deps causes re-computation
+  // because it returns a new array reference on each call
+  const rows = table.getRowModel().rows;
+
+  // Helper to get searchable text from a cell value
+  const getSearchableText = useCallback((value: unknown): string => {
+    if (value == null) return "";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") {
+      return String(value);
+    }
+    if (Array.isArray(value)) {
+      return value.map((v) => getSearchableText(v)).join(" ");
+    }
+    if (typeof value === "object") {
+      return JSON.stringify(value);
+    }
+    return String(value);
+  }, []);
+
+  // Calculate search matches
+  const searchMatches = useMemo<SearchMatchInfo[]>(() => {
+    if (!enableSearch || !searchQuery || searchQuery.trim() === "") {
+      return [];
+    }
+
+    const query = searchQuery.toLowerCase();
+    const matches: SearchMatchInfo[] = [];
+
+    // Get visible column IDs and their accessors for direct data access
+    // This avoids the expensive row.getVisibleCells() call
+    const visibleColumns = table
+      .getVisibleLeafColumns()
+      .filter((col) => col.id !== "select")
+      .map((col) => ({
+        id: col.id,
+        accessorFn: col.accessorFn,
+        accessorKey: (col.columnDef as any).accessorKey,
+      }));
+
+    rows.forEach((row, rowIndex) => {
+      const rowData = row.original;
+
+      visibleColumns.forEach((col) => {
+        // Get value directly from data instead of through TanStack's cell API
+        let cellValue: unknown;
+        if (col.accessorFn) {
+          cellValue = col.accessorFn(rowData, rowIndex);
+        } else if (col.accessorKey) {
+          cellValue = (rowData as any)[col.accessorKey];
+        } else {
+          return; // No accessor, skip
+        }
+
+        const searchableText = getSearchableText(cellValue).toLowerCase();
+
+        if (searchableText.includes(query)) {
+          matches.push({
+            rowIndex,
+            rowId: row.id,
+            columnId: col.id,
+          });
+        }
+      });
+    });
+
+    return matches;
+  }, [enableSearch, searchQuery, getSearchableText, rows, table]);
+
+  // Update totalMatches ref and reset currentMatchIndex when matches change
+  useEffect(() => {
+    totalMatchesRef.current = searchMatches.length;
+
+    if (
+      searchMatches.length > 0 &&
+      currentMatchIndexRef.current >= searchMatches.length
+    ) {
+      currentMatchIndexRef.current = 0;
+    } else if (searchMatches.length === 0) {
+      currentMatchIndexRef.current = 0;
+    }
+
+    notifySearchListeners();
+  }, [searchMatches, notifySearchListeners]);
+
+  // Memoized lookup map for row index by rowId
+  const rowIndexByIdMap = useMemo(() => {
+    const map = new Map<string, number>();
+    rows.forEach((row, index) => {
+      map.set(row.id, index);
+    });
+    return map;
+  }, [rows]);
+
   // Calculate sticky columns information
   const stickyColumnsInfo = useMemo(() => {
     const hasSelectColumn = enableRowSelection;
@@ -251,6 +476,11 @@ export function useTableInstance<TData extends RowData>(
 
       enhancedColumns.forEach((col) => {
         const colId = getColumnId(col);
+
+        // Skip hidden columns
+        const isVisible = table.getColumn(colId)?.getIsVisible() ?? true;
+        if (!isVisible) return;
+
         const hasExplicitSize = col.size !== undefined && col.size !== 150; // 150 is our default
         const wasManuallyResized = manuallyResizedColumns.has(colId);
 
@@ -278,6 +508,11 @@ export function useTableInstance<TData extends RowData>(
 
       enhancedColumns.forEach((col) => {
         const colId = getColumnId(col);
+
+        // Skip hidden columns
+        const isVisible = table.getColumn(colId)?.getIsVisible() ?? true;
+        if (!isVisible) return;
+
         const hasExplicitSize = col.size !== undefined && col.size !== 150;
         const wasManuallyResized = manuallyResizedColumns.has(colId);
 
@@ -436,6 +671,84 @@ export function useTableInstance<TData extends RowData>(
     setSorting([]);
   }, []);
 
+  const goToNextMatch = useCallback(() => {
+    if (searchMatches.length === 0) return;
+
+    const nextIndex = (currentMatchIndexRef.current + 1) % searchMatches.length;
+    setCurrentMatchIndex(nextIndex);
+
+    // Find the current row index by rowId (in case sort order changed)
+    const match = searchMatches[nextIndex];
+    const rowIndex = rowIndexByIdMap.get(match.rowId) ?? -1;
+
+    if (rowIndex !== -1) {
+      rowVirtualizer.scrollToIndex(rowIndex, {
+        align: "center",
+        behavior: "auto",
+      });
+    }
+  }, [searchMatches, setCurrentMatchIndex, rowVirtualizer, rowIndexByIdMap]);
+
+  const goToPreviousMatch = useCallback(() => {
+    if (searchMatches.length === 0) return;
+
+    const prevIndex =
+      currentMatchIndexRef.current === 0
+        ? searchMatches.length - 1
+        : currentMatchIndexRef.current - 1;
+    setCurrentMatchIndex(prevIndex);
+
+    // Find the current row index by rowId (in case sort order changed)
+    const match = searchMatches[prevIndex];
+    const rowIndex = rowIndexByIdMap.get(match.rowId) ?? -1;
+
+    if (rowIndex !== -1) {
+      rowVirtualizer.scrollToIndex(rowIndex, {
+        align: "center",
+        behavior: "auto",
+      });
+    }
+  }, [searchMatches, setCurrentMatchIndex, rowVirtualizer, rowIndexByIdMap]);
+
+  // Auto-scroll to first match when search results change
+  useEffect(() => {
+    if (searchMatches.length > 0 && currentMatchIndexRef.current === 0) {
+      const match = searchMatches[0];
+      const rowIndex = rowIndexByIdMap.get(match.rowId) ?? -1;
+
+      if (rowIndex !== -1) {
+        rowVirtualizer.scrollToIndex(rowIndex, {
+          align: "center",
+          behavior: "auto",
+        });
+      }
+    }
+  }, [searchMatches, rowVirtualizer, rowIndexByIdMap]);
+
+  const getCellHighlightStatus = useCallback(
+    (rowId: string, columnId: string) => {
+      if (!enableSearch || searchMatches.length === 0) {
+        return { isMatch: false, isCurrentMatch: false };
+      }
+
+      // Find the exact cell match (not just the row)
+      const matchIndex = searchMatches.findIndex(
+        (m) => m.rowId === rowId && m.columnId === columnId
+      );
+
+      if (matchIndex === -1) {
+        return { isMatch: false, isCurrentMatch: false };
+      }
+
+      return {
+        isMatch: true,
+        isCurrentMatch: matchIndex === currentMatchIndexRef.current,
+        currentMatchTrigger,
+      };
+    },
+    [enableSearch, searchMatches, currentMatchTrigger]
+  );
+
   return {
     table,
     parentRef,
@@ -449,13 +762,34 @@ export function useTableInstance<TData extends RowData>(
       setColumnSizing({});
     },
     manuallyResizedColumns,
-    // New exports for synchronized scrolling
+    // Exports for synchronized scrolling
     headerScrollRef,
     syncScroll,
     // Export sticky columns info
     stickyColumnsInfo,
-    // Imperative method to force sorting to be reinitialized.
-    // This will also trigger the `defaultSort` calback.
+    // Sort methods
     resetSort,
+    // Search - use getters that read from refs for current values
+    searchMatches,
+    get totalMatches() {
+      return totalMatchesRef.current;
+    },
+    get currentMatchIndex() {
+      return currentMatchIndexRef.current;
+    },
+    get searchQuery() {
+      return searchQueryRef.current;
+    },
+    // Also expose getter functions for use in useImperativeHandle
+    getTotalMatches: () => totalMatchesRef.current,
+    getCurrentMatchIndex: () => currentMatchIndexRef.current,
+    getSearchQuery: () => searchQueryRef.current,
+    goToNextMatch,
+    goToPreviousMatch,
+    getCellHighlightStatus,
+    setSearchQuery,
+    subscribeToSearch,
+    // Column statistics for magnitude bars
+    columnStats,
   };
 }

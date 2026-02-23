@@ -48,10 +48,9 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
     setPrefDepRnaiData,
   ] = useState<CellLineDataMatrix | null>(null);
 
-  const [
-    compoundSensitivityData,
-    setCompoundSensitivityData,
-  ] = useState<CellLineDataMatrix | null>(null);
+  const [compoundSensitivityData, setCompoundSensitivityData] = useState<
+    CellLineDataMatrix[] | null
+  >(null);
 
   const [cellLineDatasets, setCellLineDatasets] = useState<
     DatasetDataTypes[] | null
@@ -86,7 +85,7 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
 
     legacyPortalAPI.getCellLineCompoundSensitivityData(modelId).then((data) => {
       if (mounted) {
-        setCompoundSensitivityData(data);
+        setCompoundSensitivityData(data.data);
       }
     });
 
@@ -135,7 +134,7 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
           >
             <CompoundSensitivityTile
               depmapId={modelId}
-              dataMatrix={compoundSensitivityData}
+              dataMatrices={compoundSensitivityData}
             />
           </React.Suspense>
         )}

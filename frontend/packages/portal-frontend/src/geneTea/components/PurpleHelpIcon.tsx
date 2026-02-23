@@ -6,12 +6,14 @@ interface PurpleHelpIconProps {
   tooltipText: string;
   popoverId: string;
   trigger?: TriggerType | TriggerType[] | undefined;
+  placement?: "top" | "right" | "bottom" | "left";
 }
 
 const PurpleHelpIcon: React.FC<PurpleHelpIconProps> = ({
   tooltipText,
   popoverId,
   trigger = ["hover", "focus"],
+  placement = "right",
 }) => {
   const customImg = (
     <img
@@ -31,6 +33,7 @@ const PurpleHelpIcon: React.FC<PurpleHelpIconProps> = ({
       popoverContent={<>{tooltipText}</>}
       popoverId={popoverId}
       trigger={trigger}
+      placement={placement}
     />
   );
 };

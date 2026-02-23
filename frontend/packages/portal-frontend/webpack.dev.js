@@ -1,5 +1,7 @@
+const path = require("path");
 const merge = require("webpack-merge").merge;
 const common = require("./webpack.common.js");
+const ESLintPlugin = require("eslint-webpack-plugin");
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 const ReactRefreshTypeScript = require("react-refresh-typescript");
 const jsonImporter = require("node-sass-json-importer");
@@ -11,7 +13,7 @@ const devConfig = (env, argv) => ({
 
   output: {
     filename: "[name].js",
-    publicPath: "/depmap/static/webpack",
+    publicPath: "http://127.0.0.1:5001/depmap/static/webpack",
   },
 
   devServer: {
@@ -31,7 +33,34 @@ const devConfig = (env, argv) => ({
     },
   },
 
-  plugins: [new ReactRefreshWebpackPlugin({ overlay: false })],
+  plugins: [
+    new ReactRefreshWebpackPlugin({ overlay: false }),
+    env.transpileOnly === "true"
+      ? null
+      : new ESLintPlugin({
+          context: path.resolve("../../packages"),
+          files: ["**/src/**/*.@(ts|tsx)"],
+          quiet: true,
+          cache: true,
+          cacheLocation: path.resolve(
+            "../../node_modules/.cache/eslint-webpack-plugin/.eslintcache"
+          ),
+        }),
+  ].filter(Boolean),
+
+  experiments:
+    env.transpileOnly === "true"
+      ? {
+          lazyCompilation: {
+            entries: true, // Lazy-compile entry points
+            imports: true, // Also lazy-compile dynamic imports
+            test: (module) => {
+              // Return false to exclude from lazy compilation
+              return !/src\/index\.tsx/.test(module.nameForCondition?.() || "");
+            },
+          },
+        }
+      : {},
 
   module: {
     rules: [

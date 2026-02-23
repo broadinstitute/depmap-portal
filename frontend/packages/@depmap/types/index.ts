@@ -8,7 +8,6 @@ export {
   ContextExplorerDatasets,
   DataTypeCategory,
 } from "./src/context-explorer";
-export { TopFeatureValue } from "./src/constellation";
 export { DataPageDataType, DataPageDataTypeCategory } from "./src/data_page";
 export { ModelType, ScreenType } from "./src/predictability";
 export { ErrorTypeError } from "./src/BreadboxErrorType";
@@ -37,6 +36,7 @@ export type {
   DatasetUpdateArgs,
   TabularDataset,
   MatrixDataset,
+  MatrixDatasetParams,
   DatasetAssociations,
   TabularDatasetDataArgs,
 } from "./src/Dataset";

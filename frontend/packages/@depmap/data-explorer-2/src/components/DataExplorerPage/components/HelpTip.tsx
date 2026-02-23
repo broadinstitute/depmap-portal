@@ -1,7 +1,9 @@
-import React, { ReactNode } from "react";
-import cx from "classnames";
-import { Popover, OverlayTrigger } from "react-bootstrap";
-import { BoxSelectIcon, LassoSelectIcon } from "@depmap/common-components";
+import React from "react";
+import {
+  BoxSelectIcon,
+  InfoTip,
+  LassoSelectIcon,
+} from "@depmap/common-components";
 
 const tips = {
   "plot-type-help": {
@@ -150,35 +152,6 @@ const tips = {
 
 type HelpTipId = keyof typeof tips;
 
-function Tooltip({
-  id,
-  placement,
-  title,
-  content,
-}: {
-  id: HelpTipId;
-  placement: "top" | "bottom" | "left" | "right";
-  title: string;
-  content: ReactNode;
-}) {
-  return (
-    <OverlayTrigger
-      trigger={["hover", "focus"]}
-      placement={placement}
-      overlay={
-        <Popover id={id} title={title}>
-          {content}
-        </Popover>
-      }
-    >
-      <span
-        className={cx("glyphicon", "glyphicon-info-sign")}
-        style={{ marginInlineStart: 8, top: 2, color: "#7B317C" }}
-      />
-    </OverlayTrigger>
-  );
-}
-
 function HelpTip({
   id,
   customContent = null,
@@ -190,7 +163,7 @@ function HelpTip({
   const content = tips[id].content || customContent;
 
   return (
-    <Tooltip
+    <InfoTip
       id={id}
       title={title}
       content={content}

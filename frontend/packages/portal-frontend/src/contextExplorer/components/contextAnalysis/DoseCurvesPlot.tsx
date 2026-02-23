@@ -1,8 +1,7 @@
 import React, { useMemo } from "react";
-import { groupBy } from "src/compound/components/DoseResponseCurve";
 import { CurveParams, CurvePlotPoints, CurveTrace } from "@depmap/types";
 import CurvesChart from "src/plot/components/CurvesChart";
-import { Rep1Color, Rep2Color, Rep3Color } from "src/compound/utils";
+import { groupBy, Rep1Color, Rep2Color, Rep3Color } from "src/compound/utils";
 
 // Make median curve traces
 const lineColorInGroup = "rgba(1, 50, 32, 1)";

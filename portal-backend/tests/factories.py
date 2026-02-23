@@ -57,7 +57,6 @@ from depmap.interactive.nonstandard.models import (
     ColNonstandardMatrix,
     CellLineNameType,
 )
-from depmap.correlation.models import CorrelatedDataset
 from depmap.compute.models import CustomCellLineGroup
 from depmap.utilities.hdf5_utils import get_values_min_max
 from depmap.predictability.models import (
@@ -1111,26 +1110,3 @@ class TaigaAliasFactory(SQLAlchemyModelFactory):
     canonical_taiga_id = factory.Sequence(
         lambda number: "canonical-taiga-id.{}/file".format(number)
     )
-
-
-def CorrelationFactory(dataset_1, dataset_2, filename, cor_values=[[0.5]]):
-    create_correlation_file(filename, cor_values)
-    _db.session.add(
-        CorrelatedDataset(dataset_1=dataset_1, dataset_2=dataset_2, filename=filename)
-    )
-
-
-def create_correlation_file(filename, cor_values):
-    conn = sqlite3.connect(filename)
-    conn.execute("create table correlation (dim_0 INTEGER, dim_1 INTEGER, cor REAL)")
-    rows = []
-    for i in range(len(cor_values)):
-        for j in range(len(cor_values[i])):
-            v = cor_values[i][j]
-            if v is not None:
-                rows.append((i, j, v))
-    conn.executemany(
-        "insert into correlation (dim_0, dim_1, cor) values (?, ?, ?)", rows
-    )
-    conn.commit()
-    conn.close()

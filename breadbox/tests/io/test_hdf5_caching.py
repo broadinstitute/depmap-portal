@@ -27,7 +27,7 @@ def create_sample_data(row_length: int, col_length: int):
     cols = [f"Col-{i}" for i in range(col_length)]
     rows = [f"Row-{i}" for i in range(row_length)]
     data = np.random.uniform(0.0, 10.0, size=(row_length, col_length))
-    test_df = pd.DataFrame(data, columns=cols, index=rows)
+    test_df = pd.DataFrame(data, columns=pd.Index(cols), index=pd.Index(rows))
     return test_df
 
 

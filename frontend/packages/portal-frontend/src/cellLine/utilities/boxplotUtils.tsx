@@ -19,7 +19,7 @@ export default class StackedBoxplotUtils {
   xAxisMaximum: number;
 
   // set constant dimensions and margins for the graph
-  readonly margin = { top: 0, right: 0, bottom: 50, left: 0 };
+  readonly margin = { top: 0, right: 15, bottom: 50, left: 0 };
   readonly svgWidth = 250; // Note: this needs to match the value set in CSS to prevent auto scaling
   readonly rowHeight = 30;
   readonly plotWidth = this.svgWidth - this.margin.left - this.margin.right;

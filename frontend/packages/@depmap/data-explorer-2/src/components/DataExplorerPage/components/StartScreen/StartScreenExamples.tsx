@@ -94,7 +94,7 @@ function StartScreenExamples() {
       <StartScreenExample
         title="Compare expression distributions"
         imgSrc={toStaticUrl(
-          "img/data_explorer_2/example_thumbnails/compare-expression-distributions.png"
+          "img/data_explorer_2/example_thumbnails/compare-expression-distributions-v2.png"
         )}
         plot={
           examples["compare-expression-distributions"] as DataExplorerPlotConfig

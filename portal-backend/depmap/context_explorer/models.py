@@ -24,11 +24,20 @@ from depmap.database import (
 class ContextExplorerDatasets(enum.Enum):
     Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound"
     PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix"
+    PRISMOncologyReferenceSeqLog2AUCMatrix = "PRISMOncologyReferenceSeqLog2AUCMatrix"
     Chronos_Combined = "Chronos_Combined"
 
     @staticmethod
     def values():
         return {x.value for x in ContextExplorerDatasets}
+
+
+def is_oncref_dataset(dataset_id: str):
+    return (
+        dataset_id == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
+        or dataset_id
+        == ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix.name
+    )
 
 
 @dataclass
@@ -309,10 +318,7 @@ class ContextAnalysis(Model):
     ):
         def _get_compound_min_effect_size_by_dependency_dataset_name():
 
-            if (
-                dataset_id
-                == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
-            ):
+            if is_oncref_dataset(dataset_id):
                 return 0.1
             else:
                 return 0.5

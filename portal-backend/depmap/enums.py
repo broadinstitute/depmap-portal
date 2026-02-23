@@ -73,9 +73,7 @@ class DependencyEnum(DatasetEnum):
 
 class BiomarkerEnum(DatasetEnum):
     expression = "expression"
-    copy_number_absolute = "copy_number_absolute"
     copy_number_relative = "copy_number_relative"
-    mutation_pearson = "mutation_pearson"
     mutations_damaging = "mutations_damaging"
     mutations_hotspot = "mutations_hotspot"
     mutations_driver = "mutations_driver"
@@ -93,7 +91,6 @@ class BiomarkerEnum(DatasetEnum):
     oncref_confounders = "oncref_confounders"
     oncref_seq_confounders = "oncref_seq_confounders"
     rep_all_single_pt_confounders = "rep_all_single_pt_confounders"
-    rep1m_confounders = "rep1m_confounders"
     CRISPRGeneDependency = "CRISPRGeneDependency"
     OmicsAbsoluteCNGene = "OmicsAbsoluteCNGene"
     OmicsSignatures = "OmicsSignatures"
@@ -131,7 +128,6 @@ class GeneTileEnum(enum.Enum):
     mutations = "mutations"
     gene_score_confidence = "gene_score_confidence"
     description = "description"
-    celfie = "celfie"
     targeting_compounds = "targeting_compounds"
 
 
@@ -141,7 +137,6 @@ class CompoundTileEnum(enum.Enum):
     description = "description"
     sensitivity = "sensitivity"
     availability = "availability"
-    celfie = "celfie"
     heatmap = "heatmap"
     correlated_dependencies = "correlated_dependencies"
     related_compounds = "related_compounds"

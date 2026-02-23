@@ -13,7 +13,6 @@ interface Props {
   defaultSettings: Settings;
   onSave: (nextValue: Settings) => void;
   onHide: () => void;
-  feedbackUrl?: string;
 }
 
 function SettingsModal({
@@ -21,7 +20,6 @@ function SettingsModal({
   defaultSettings,
   onSave,
   onHide,
-  feedbackUrl = "",
 }: Props) {
   const [settings, setSettings] = useState(initialSettings);
 
@@ -267,48 +265,6 @@ function SettingsModal({
             >
               Restore default styles
             </Button>
-          </div>
-        </section>
-        <section>
-          <h2>
-            Experimental <i className="fa fa-flask" />
-          </h2>
-          <div>
-            <label className={styles.checkboxLabel}>
-              <input
-                id="use-legacy-portal-backend"
-                type="checkbox"
-                checked={settings.useLegacyPortalBackend}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  const { checked } = e.target;
-                  setSettings((prev) => ({
-                    ...prev,
-                    useLegacyPortalBackend: checked,
-                  }));
-                }}
-              />
-              <span>Use Legacy Mode</span>
-            </label>
-            <p>
-              <i>
-                Try this if any data fails to load. It will fall back to using
-                our legacy database.
-              </i>
-              {feedbackUrl && (
-                <i>
-                  <br />
-                  Then{" "}
-                  <a
-                    href={feedbackUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    let us know
-                  </a>{" "}
-                  so we can resolve the issue!
-                </i>
-              )}
-            </p>
           </div>
         </section>
       </Modal.Body>

@@ -1,0 +1,30 @@
+.AnchorScreenDashboard {
+  h2 {
+    margin-left: 30px;
+  }
+}
+
+.description {
+  margin: 20px 30px;
+  max-width: 800px;
+}
+
+.tableContainer {
+  display: flex;
+  height: calc(100vh - 240px);
+}
+
+.cellDivider {
+  position: relative;
+  margin: 0 10px 0 10px;
+  min-width: 1px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: -10px;
+    bottom: -10px;
+    left: 0;
+    border-left: 1px solid #ccc;
+  }
+}

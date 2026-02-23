@@ -94,9 +94,11 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     const getDrugInGroupLabel = () => {
       if (
         datasetId ===
-        ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+          ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
+        datasetId ===
+          ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
       ) {
-        // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
+        // Keep this as AUC regardless of what the units of OncRef are because
         // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
         return `In-context mean AUC`;
       }
@@ -107,7 +109,9 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
     const getDrugOutGroupLabel = () => {
       if (
         datasetId ===
-        ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+          ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
+        datasetId ===
+          ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
       ) {
         // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
         // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))

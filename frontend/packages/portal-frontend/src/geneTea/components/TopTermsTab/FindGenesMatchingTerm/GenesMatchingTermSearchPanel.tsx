@@ -10,6 +10,7 @@ interface GenesMatchingTermSearchPanelProps {
   termGroupToTermsMapping: Map<string, string[]>;
   termToMatchingGenesMap: Map<string, string[]>;
   useTerms: boolean;
+  useFrequentTerms?: boolean;
 }
 
 const GenesMatchingTermSearchPanel: React.FC<GenesMatchingTermSearchPanelProps> = ({
@@ -17,6 +18,7 @@ const GenesMatchingTermSearchPanel: React.FC<GenesMatchingTermSearchPanelProps> 
   termGroupToTermsMapping,
   termToMatchingGenesMap,
   useTerms,
+  useFrequentTerms = false,
 }) => {
   const [selectedTerm, setSelectedTerm] = useState<{
     value: string;
@@ -25,6 +27,18 @@ const GenesMatchingTermSearchPanel: React.FC<GenesMatchingTermSearchPanelProps> 
   const [useAllGenes, setUseAllGenes] = useState<boolean>(false);
 
   const termOrGroupSelectOptions = useMemo(() => {
+    // This if block should only be used for the All Matching Terms tab
+    if (useFrequentTerms) {
+      return Array.from(new Set(rawData?.frequentTerms?.term)).map(
+        (term: string) => {
+          return {
+            value: term,
+            label: term,
+          };
+        }
+      );
+    }
+
     const options = useTerms
       ? Array.from(new Set(rawData?.allEnrichedTerms?.term)).map(
           (term: string) => {
@@ -44,7 +58,7 @@ const GenesMatchingTermSearchPanel: React.FC<GenesMatchingTermSearchPanelProps> 
         );
 
     return options;
-  }, [rawData, useTerms]);
+  }, [rawData, useTerms, useFrequentTerms]);
 
   return (
     <div className={styles.GeneTeaMatchingTermPanel}>

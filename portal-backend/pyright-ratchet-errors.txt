@@ -56,9 +56,6 @@ celligner_loader.py: error: No overloads for "__getitem__" match the provided ar
 characterization.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
 check_data_issues.py: error: Argument of type "Literal['ENV']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 check_data_issues.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-check_download_data.py: error: Argument of type "Literal['ENABLED_FEATURES']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
-check_download_data.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
-check_download_data.py: error: Object of type "list[str]" is not callable (reportCallIssue)
 check_nonstandard_datasets.py: error: Argument of type "Literal['GET_NONSTANDARD_DATASETS']" cannot be assigned to parameter "__s" of type "slice" in function "__getitem__"
 check_nonstandard_datasets.py: error: No overloads for "__getitem__" match the provided arguments (reportCallIssue)
 compat.py: error: "basestring" is not defined (reportUndefinedVariable)
@@ -364,7 +361,6 @@ test_cell_line_loader.py: error: "source" is not a known member of "None" (repor
 test_cell_line_loader.py: error: Cannot access member "catalog_number" for type "CellLineFactory"
 test_cell_line_loader.py: error: Cannot access member "growth_pattern" for type "CellLineFactory"
 test_cell_line_loader.py: error: Cannot access member "name" for type "SubFactory"
-test_check_download_data.py: error: Argument of type "Unknown | Literal[FileType.genetic_dependency] | None" cannot be assigned to parameter "type" of type "FileType" in function "__init__"
 test_context_analysis.py: error: "keys" is not a known member of "None" (reportOptionalMemberAccess)
 test_context_analysis.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_dataset_loader.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)

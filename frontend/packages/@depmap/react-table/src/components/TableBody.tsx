@@ -1,6 +1,7 @@
 import React, { RefObject } from "react";
 import { Table } from "@tanstack/react-table";
 import { TableCell } from "./TableCell";
+import { ColumnStats } from "./useTableInstance";
 import { useTruncatedCellTooltip } from "../hooks/useTruncatedCellTooltip";
 import styles from "../styles/ReactTable.scss";
 
@@ -20,6 +21,15 @@ type TableBodyProps<T> = {
   height: number | "100%";
   onScroll?: (scrollLeft: number) => void;
   stickyColumnsInfo: StickyColumnsInfo;
+  getCellHighlightStatus?: (
+    rowId: string,
+    columnId: string
+  ) => {
+    isMatch: boolean;
+    isCurrentMatch: boolean;
+  };
+  searchQuery?: string;
+  columnStats?: Record<string, ColumnStats>;
 };
 
 const NOOP = () => {};
@@ -46,6 +56,9 @@ export function TableBody<T>({
   height,
   onScroll = NOOP,
   stickyColumnsInfo,
+  getCellHighlightStatus = () => ({ isMatch: false, isCurrentMatch: false }),
+  searchQuery = "",
+  columnStats = {},
 }: TableBodyProps<T>) {
   const { truncatedCellId, handleMouseEnter } = useTruncatedCellTooltip();
   const rows = table.getRowModel().rows;
@@ -102,6 +115,9 @@ export function TableBody<T>({
                       stickyColumnsInfo={stickyColumnsInfo}
                       isTruncated={cell.id === truncatedCellId}
                       onMouseEnterOrMove={(e) => handleMouseEnter(e, cell.id)}
+                      getCellHighlightStatus={getCellHighlightStatus}
+                      searchQuery={searchQuery}
+                      columnStats={columnStats}
                     />
                   ))}
                 </tr>

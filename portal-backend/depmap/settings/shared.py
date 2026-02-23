@@ -55,13 +55,6 @@ DATASET_METADATA: Dict[
         priority=1,
         global_priority=3,
     ),
-    BiomarkerEnum.copy_number_absolute: DatasetLabel(
-        display_name="Copy Number (Absolute)",
-        units="Copy Number",
-        s3_json_name="copy-number-absolute",
-        data_type=DataTypeEnum.cn,
-        priority=2,
-    ),
     BiomarkerEnum.copy_number_relative: DatasetLabel(
         display_name="Copy Number",
         units="Copy Number log2(relative to ploidy + 1)",
@@ -69,13 +62,6 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.cn,
         priority=1,
         global_priority=4,
-    ),
-    BiomarkerEnum.mutation_pearson: DatasetLabel(
-        display_name="Mutation",
-        units="Mutation (one hot encoding)",
-        s3_json_name="mutation-pearson",
-        data_type=DataTypeEnum.mutations,
-        global_priority=5,
     ),
     BiomarkerEnum.context: DatasetLabel(
         display_name="Context",
@@ -171,13 +157,6 @@ DATASET_METADATA: Dict[
         s3_json_name="rnai-confounders",
         data_type=DataTypeEnum.confounders,
         priority=2,
-    ),
-    BiomarkerEnum.rep1m_confounders: DatasetLabel(
-        display_name="Rep1M confounders",
-        units="",
-        s3_json_name="rep1m-confounders",
-        data_type=DataTypeEnum.confounders,
-        priority=5,
     ),
     BiomarkerEnum.oncref_confounders: DatasetLabel(
         display_name="PRISM OncRef confounders",

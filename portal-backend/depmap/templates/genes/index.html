@@ -20,28 +20,21 @@ endblock content_class %} {% block content %}
     "showConfidenceTab": {{ has_confidence|tojson|safe }},
     "showCharacterizationTab": {{ (characterizations|length > 0)|tojson|safe }},
     "showPredictabilityTab": {{ (has_datasets and has_predictability)|tojson|safe }},
-    "showCelfieTab": {{ has_celfie|tojson|safe }},
-    "showCelfieTile": {{ (has_celfie and correlations|length > 0)|tojson|safe }},
     "hasDatasets": {{ has_datasets|tojson|safe }},
     "order": {{ order|tojson|safe }},
     "isMobile": {{ is_mobile|tojson|safe  }},
     "entityId": {{ entity_id|tojson|safe }},
     "customDownloadsLink": {{ predictability_custom_downloads_link|tojson|safe }},
     "methodologyLink": {{ predictability_methodology_link|tojson|safe }},
-    {% if celfie.similarity_options %}"similarityOptions": {{ celfie.similarity_options|tojson|safe }},{% endif %}
-    {% if celfie.color_options %}"colorOptions": {{ celfie.color_options|tojson|safe }},{% endif %}
-    {% if celfie.connectivity_options %}"connectivityOptions": {{ celfie.connectivity_options|tojson|safe }},{% endif %}
-    {% if celfie.datasets %}"datasets": {{ celfie.datasets|tojson|safe }},{% endif %}
-    {% if celfie.dependency_datasets %}"dependencyProfileOptions": {{ celfie.dependency_datasets|tojson|safe }},{% endif %}
     {% if summary.size_biom_enum_name %}"sizeBiomEnumName": {{ summary.size_biom_enum_name|tojson|safe }},{% endif %}
     {% if summary.color %}"color": {{ summary.color|tojson|safe }},{% endif %}
     {% if summary.figure %}"figure": {{ summary.figure|tojson|safe }},{% endif %}
     {% if summary.show_auc_message %}"showAUCMessage": {{ summary.show_auc_message|tojson|safe }},{% endif %}
-    "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}",
     {% if summary.summary_options %}"summaryOptions": {{ summary.summary_options|tojson|safe }},{% endif %}
     "showMutationsTile": {{ show_mutations_tile|tojson|safe }},
     "showOmicsExpressionTile": {{ show_omics_expression_tile|tojson|safe}},
-    "showTargetingCompoundsTile": {{ show_targeting_compounds_tile|tojson|safe }}
+    "showTargetingCompoundsTile": {{ show_targeting_compounds_tile|tojson|safe }},
+    "showEnrichmentTile": {{ show_enrichment_tile|tojson|safe }}
   }
 </script>
 <script type="text/javascript">

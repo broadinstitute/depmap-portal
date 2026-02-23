@@ -24,13 +24,115 @@
 .Controls {
   display: flex;
   width: 100%;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   gap: 8px;
   justify-content: space-between;
 
-  & > div:nth-child(2) {
+  .customControls {
     display: flex;
+    align-items: center;
+    min-width: 33%;
+    max-width: 33%;
+  }
+
+  .search {
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .filterAndDownload {
+    display: flex;
+    justify-content: flex-end;
     gap: 8px;
+  }
+}
+
+.searchBar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border: 1px solid #ccc;
+  border-radius: 22px;
+  background: #fff;
+  font-size: 14px;
+  transition: box-shadow 0.2s;
+  height: 30px;
+
+  &:focus-within {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 2px #4285f4;
+  }
+
+  .glyphicon-search {
+    color: #5f6368;
+    font-size: 14px;
+  }
+
+  i {
+    top: 0;
+  }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: inherit;
+    color: #202124;
+
+    &::placeholder {
+      color: #80868b;
+    }
+
+    &:placeholder-shown {
+      width: 296px;
+    }
+  }
+
+  .matchCount {
+    color: #5f6368;
+    font-size: 12px;
+    white-space: nowrap;
+    padding: 0 4px;
+    min-width: 40px;
+  }
+
+  .divider {
+    width: 1px;
+    height: 20px;
+    background: #dadce0;
+  }
+
+  .navButton,
+  .clearButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #5f6368;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    transition: background-color 0.15s;
+
+    &:hover:not(:disabled) {
+      background: #f1f3f4;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .clearButton {
+    font-size: 12px;
   }
 }
 
@@ -48,22 +150,6 @@
   width: 100%;
   margin-top: 20px;
   gap: 8px;
-}
-
-.editableColumnHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  margin-right: 8px;
-
-  & > div:first-child {
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4; /* fallback */
-    line-clamp: 4; /* standard */
-  }
 }
 
 .hidden {

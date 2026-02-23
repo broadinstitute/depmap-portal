@@ -81,6 +81,7 @@ function CurvesChart({
   Plotly,
 }: CurvesChartWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
+  const originalColors = useRef<Map<number, string>>(new Map());
 
   const axes = useRef<Partial<Layout>>({
     xaxis: undefined,
@@ -188,6 +189,13 @@ function CurvesChart({
     };
 
     Plotly.newPlot(plot, curveTraces, layout, config);
+
+    originalColors.current.clear();
+    (plot.data as any).forEach((trace: any, index: number) => {
+      // Store the trace color, falling back to your default gray if undefined
+      const color = trace.line?.color || "rgba(108, 122, 137, 0.5)";
+      originalColors.current.set(index, color);
+    });
 
     if (selectedCurves && selectedCurves.size > 0) {
       const prevSelections =
@@ -301,10 +309,12 @@ function CurvesChart({
 
       // If the user clicked the line, we want to persist the change in coloring
       if (!selectedCurves?.has(curveId)) {
+        const originalColor =
+          originalColors.current.get(curveNumber) || "rgba(108, 122, 137, 0.1)";
         Plotly.restyle(
           plot,
           {
-            line: { color: "rgba(108, 122, 137, 0.5)" },
+            line: { color: originalColor },
           },
           [curveNumber]
         );
