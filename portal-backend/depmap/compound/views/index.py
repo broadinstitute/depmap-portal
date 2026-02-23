@@ -174,49 +174,44 @@ def get_predictive_table():
     compound_label = request.args.get("compoundLabel")
     compound = Compound.get_by_label(compound_label)
 
-    compound_and_datasets = data_access.get_all_datasets_containing_compound(
+    sorted_datasets_with_compound = data_access.get_all_datasets_containing_compound(
         compound.compound_id
     )
-    sorted_compound_experiment_and_datasets = sorted(
-        compound_experiment_and_datasets,
-        key=lambda x: x[1].priority if x[1].priority else 999,
+
+    sorted_dataset_given_ids = [d.id for d in sorted_datasets_with_compound]
+
+    sorted_models_for_compound = get_predictive_models_for_compound(
+        compound_id=compound.compound_id, dataset_given_ids=sorted_dataset_given_ids
     )
 
-    # Sorted by compound experiment ID then model label
-    sorted_models_for_compound_experiments = get_predictive_models_for_compound(
-        sorted_compound_experiment_and_datasets
-    )
-
-    models_grouped_by_compound_experiment_and_dataset = groupby(
-        sorted_models_for_compound_experiments, key=lambda x: (x[0], x[1].dataset)
+    models_grouped_by_dataset = groupby(
+        sorted_models_for_compound, key=lambda x: (x[0], x[1].dataset_given_id)
     )
 
     data = []
-    for (
-        (compound_experiment, dataset),
-        ce_and_models,
-    ) in models_grouped_by_compound_experiment_and_dataset:
+    for (dataset, models,) in models_grouped_by_dataset:
         models_and_results = []
-        for ce, model in ce_and_models:
+
+        for model in models:
             sorted_feature_results: List[PredictiveFeatureResult] = sorted(
                 model.feature_results, key=lambda result: result.rank
             )
             results = []
             for feature_result in sorted_feature_results:
                 related_type = feature_result.feature.get_relation_to_entity(
-                    ce.entity_id
+                    compound.entity_id
                 )
 
                 row = {
                     "featureName": feature_result.feature.feature_name,
                     "featureImportance": feature_result.importance,
                     "correlation": feature_result.feature.get_correlation_for_entity(
-                        model.dataset, ce
+                        model.dataset_given_id, compound.compound_id
                     ),
                     "featureType": feature_result.feature.feature_type,
                     "relatedType": related_type,
                     "interactiveUrl": feature_result.feature.get_interactive_url_for_entity(
-                        model.dataset, ce
+                        model.dataset_given_id, compound.compound_id
                     ),
                 }
                 results.append(row)
@@ -229,7 +224,7 @@ def get_predictive_table():
             }[model.label]
 
             row = {
-                "compoundExperimentId": ce.xref_full,
+                "compoundId": compound.compound_id,
                 "modelCorrelation": model.pearson,
                 "results": results,
                 "modelName": model_label,
@@ -237,8 +232,8 @@ def get_predictive_table():
             models_and_results.append(row)
         data.append(
             {
-                "screen": dataset.display_name,
-                "compoundExperimentId": compound_experiment.xref_full,
+                "screen": dataset.label,
+                "compoundId": compound.compound_id,
                 "modelsAndResults": models_and_results,
             }
         )
@@ -249,8 +244,7 @@ def get_predictive_table():
 def get_predictability_files():
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     predictability_path = os.path.join(source_dir, "predictability")
-    # Find all predictive models for drug screen datasets which have compounds or compound experiments as features and get the dataset enum
-    # Note: It seems predictive models have relationship with DependencyDataset and are usually compound experiments features?
+    # Find all predictive models for drug screen datasets which have compounds as features and get the dataset given id
     drug_screen_enums_with_predictabilities = (
         PredictiveModel.query.filter(
             PredictiveModel.dataset.has(data_type="drug_screen")
