@@ -1,4 +1,5 @@
 from json import dumps as json_dumps
+from depmap import data_access
 from depmap.dataset.models import DependencyDataset
 from depmap.predictability.models import (
     PredictiveModel,
@@ -16,7 +17,7 @@ from tests.factories import (
 )
 
 
-def test_get_top_models_features(empty_db_mock_downloads):
+def test_get_top_models_features(empty_db_mock_downloads, monkeypatch):
     """
     Test that
         Filters for specified dataset and gene
@@ -24,23 +25,41 @@ def test_get_top_models_features(empty_db_mock_downloads):
             specified number of top models
             specified number of top features for each model
     """
-    dataset = DependencyDatasetFactory()
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles
-    )
+    dataset_given_id = "dataset_given_id"
+    dataset_2_given_id = "dataset_2_given_id"
     biomarker_dataset_1 = BiomarkerDatasetFactory()
     gene = GeneFactory()
     gene_2 = GeneFactory()
     gene_no_model = GeneFactory()
 
     # different genes and datasets
-    PredictiveModelFactory(dataset=dataset, entity=gene_2, pearson=20)
-    PredictiveModelFactory(dataset=dataset_2, entity=gene, pearson=20)
+    PredictiveModelFactory(
+        dataset_given_id=dataset_given_id,
+        pred_model_feature_id=gene_2.entrez_id,
+        pearson=20,
+    )
+    PredictiveModelFactory(
+        dataset_given_id=dataset_2_given_id,
+        pred_model_feature_id=gene.entrez_id,
+        pearson=20,
+    )
 
     # insert uselected one first
-    unselected = PredictiveModelFactory(dataset=dataset, entity=gene, pearson=1)
-    expected_1 = PredictiveModelFactory(dataset=dataset, entity=gene, pearson=30)
-    expected_2 = PredictiveModelFactory(dataset=dataset, entity=gene, pearson=20)
+    unselected = PredictiveModelFactory(
+        dataset_given_id=dataset_given_id,
+        pred_model_feature_id=gene.entrez_id,
+        pearson=1,
+    )
+    expected_1 = PredictiveModelFactory(
+        dataset_given_id=dataset_given_id,
+        pred_model_feature_id=gene.entrez_id,
+        pearson=30,
+    )
+    expected_2 = PredictiveModelFactory(
+        dataset_given_id=dataset_given_id,
+        pred_model_feature_id=gene.entrez_id,
+        pearson=20,
+    )
 
     # insert unselected one first (rank 2)
     PredictiveFeatureResultFactory(
@@ -118,25 +137,37 @@ def test_get_top_models_features(empty_db_mock_downloads):
 
     empty_db_mock_downloads.session.flush()
 
+    def mock_get_dataset_feature_type(dataset_id):
+        return "gene"
+
+    monkeypatch.setattr(
+        data_access, "get_dataset_feature_type", mock_get_dataset_feature_type
+    )
+
     assert (
         PredictiveModel.get_top_models_features(
-            dataset.dataset_id, gene_no_model.entity_id
+            dataset_given_id=dataset_given_id,
+            pred_model_feature_id=gene_no_model.entrez_id,
         )
         is None
     )
 
     df = PredictiveModel.get_top_models_features(
-        dataset.dataset_id, gene.entity_id, num_models=2, num_top_features=2
+        dataset_given_id=dataset_given_id,
+        pred_model_feature_id=gene.entrez_id,
+        num_models=2,
+        num_top_features=2,
     )
 
     assert len(df) == 4
+
     assert list(df.columns) == [
         "predictive_model_id",
         "model_label",
         "model_pearson",
-        "dataset_enum",
-        "feature_name",
-        "feature_type",
+        "dataset_given_id",
+        "predictive_feature_name",
+        "predictive_feature_type",
         "feature_importance",
         "feature_rank",
         "interactive_url",
@@ -148,17 +179,19 @@ def test_get_top_models_features(empty_db_mock_downloads):
     assert len(df[df["predictive_model_id"] == expected_2.predictive_model_id]) == 2
 
     assert df[df["predictive_model_id"] == expected_1.predictive_model_id][
-        "feature_name"
+        "predictive_feature_name"
     ].tolist() == ["model_1_feature_0_name", "model_1_feature_1_name"]
 
     assert df[df["predictive_model_id"] == expected_2.predictive_model_id][
-        "feature_name"
+        "predictive_feature_name"
     ].tolist() == ["model_2_feature_0_name", "model_2_feature_1_name"]
 
 
 def test_get_background(empty_db_mock_downloads):
-    dataset = DependencyDatasetFactory()
-    PredictiveBackgroundFactory(dataset=dataset, background=json_dumps([1, 2, 3]))
+    dataset_given_id = "Chronos_Combined"
+    PredictiveBackgroundFactory(
+        dataset_given_id=dataset_given_id, background=json_dumps([1, 2, 3])
+    )
     empty_db_mock_downloads.session.flush()
 
-    assert PredictiveBackground.get_background(dataset.dataset_id) == [1, 2, 3]
+    assert PredictiveBackground.get_background(dataset_given_id) == [1, 2, 3]

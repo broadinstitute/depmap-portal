@@ -146,8 +146,11 @@ class PredictiveModel(Model):
                     predictive_model.dataset_given_id,
                     predictive_model.pred_model_feature_id,
                 )
+                pred_model_feature_type = data_access.get_dataset_feature_type(
+                    predictive_model.dataset_given_id
+                )
                 row["related_type"] = predictive_feature.get_relation_to_entity(
-                    pred_model_feature_id
+                    pred_model_feature_id, pred_model_feature_type
                 )
             rows.append(row)
 
