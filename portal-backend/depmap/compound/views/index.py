@@ -68,7 +68,7 @@ def view_compound(name):
     dataset_given_ids = [d.given_id for d in compound_datasets]
     has_predictability: bool = has_datasets and len(
         get_predictive_models_for_compound(
-            dataset_given_ids=dataset_given_ids, feature_id=compound.compound_id
+            dataset_given_ids=dataset_given_ids, compound_id=compound.compound_id
         )
     ) != 0
 
@@ -245,14 +245,11 @@ def get_predictability_files():
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     predictability_path = os.path.join(source_dir, "predictability")
     # Find all predictive models for drug screen datasets which have compounds as features and get the dataset given id
-    all_datasets = data_access.get_all_matrix_datasets()
-    compound_v2_datasets = [
-        ds for ds in all_datasets if ds.feature_type == "compound_v2"
-    ]
-    compound_v2_dataset_given_ids = [d.given_id for d in compound_v2_datasets]
     drug_screen_given_ids_with_predictabilities = (
         PredictiveModel.query.filter(
-            PredictiveModel.dataset_given_id.in_(compound_v2_dataset_given_ids)
+            PredictiveModel.query.filter(
+                PredictiveModel.pred_model_feature_type == "gene"
+            )
         )
         .distinct()
         .all()

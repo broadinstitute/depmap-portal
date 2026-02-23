@@ -257,7 +257,7 @@ def get_predictive_models_for_compound(
 
     for given_id in dataset_given_ids:
         models = PredictiveModel.get_all_models(
-            dataset_given_id=given_id, feature_id=compound_id
+            dataset_given_id=given_id, pred_model_feature_id=compound_id
         )
         models = sorted(models, key=lambda model: model_order[model.label])
 
