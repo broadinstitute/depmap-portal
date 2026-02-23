@@ -1074,7 +1074,7 @@ class PredictiveBackgroundFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    dataset = factory.SubFactory(DependencyDatasetFactory)
+    dataset_given_id = factory.Sequence(lambda number: f"dataset_given_id{number}")
     background = json.dumps([1, 2, 3, 4])
 
 
