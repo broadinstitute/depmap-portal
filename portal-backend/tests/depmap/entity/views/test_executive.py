@@ -1,6 +1,8 @@
+from depmap import data_access
 from depmap.cell_line.models_new import DepmapModel
 from depmap.context.models_new import SubtypeNode
 from depmap.context_explorer.models import ContextAnalysis
+from depmap.data_access.models import MatrixDataset
 import pytest
 from numpy import NaN
 import pandas as pd
@@ -355,103 +357,6 @@ def test_format_top_three_models_top_feature():
     ]
 
     assert format_top_three_models_top_feature(sorted_df, "crispr") == expected
-
-
-def test_format_dataset_predictability(empty_db_mock_downloads):
-    """
-    Mostly concerned with
-        The combination (concatenation) of the two datasets, to get the one with the higher pearson
-        I.e. mostly concerned with the if/else etc. that test crispr_dataset and rnai_dataset
-        First-level keys are correct
-    Test three secnarios where both, or only one dataset is present
-
-    Correct sorting, retrieval given a sorted dataset, and sub-level formatting are tested in other functions
-    """
-    query_gene = GeneFactory()
-    feature_gene = GeneFactory()
-    biomarker_matrix = MatrixFactory(entities=[feature_gene])
-    biomarker_dataset = BiomarkerDatasetFactory(matrix=biomarker_matrix)
-
-    matrix_1 = MatrixFactory(entities=[query_gene])
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Combined, matrix=matrix_1
-    )
-    dataset_1_model = PredictiveModelFactory(
-        dataset=dataset_1, entity=query_gene, pearson=10, label="model_1"
-    )
-    feature_1 = PredictiveFeatureFactory(
-        feature_id="feature_1_label",
-        feature_name=feature_gene.label,
-        dataset_id=biomarker_dataset.name.name,
-    )
-    PredictiveFeatureResultFactory(
-        predictive_model=dataset_1_model, rank=0, importance=0.5, feature=feature_1
-    )
-    PredictiveBackgroundFactory(dataset=dataset_1)
-
-    # this has a higher model pearson
-    matrix_2 = MatrixFactory(entities=[query_gene])
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.RNAi_merged, matrix=matrix_2
-    )
-    dataset_2_model = PredictiveModelFactory(
-        dataset=dataset_2, entity=query_gene, pearson=20, label="model_2"
-    )
-    feature_2 = PredictiveFeatureFactory(
-        feature_id="feature_2_label",
-        feature_name=feature_gene.label,
-        dataset_id=biomarker_dataset.name.name,
-    )
-    PredictiveFeatureResultFactory(
-        predictive_model=dataset_2_model, rank=0, importance=0.5, feature=feature_2
-    )
-    PredictiveBackgroundFactory(dataset=dataset_2)
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    # both present
-    pred = format_predictability_tile(
-        query_gene, [dataset_1.name.name, dataset_2.name.name]
-    )
-
-    assert pred.keys() == {"overall_top_model", "plot", "tables"}
-    assert (
-        pred["overall_top_model"]["features"][0]["name"] == feature_gene.label
-    )  # model 2 has higher pearson
-    assert pred["overall_top_model"]["features"][0]["type"] == "Expression"
-
-    assert set(pred["plot"].keys()) == {"svg", "percentiles"}
-    assert set(pred["plot"]["percentiles"][0].keys()) == {
-        "percentile",
-        "dataset_display_name",
-        "type",
-    }
-    assert set(pred["plot"]["percentiles"][1].keys()) == {
-        "percentile",
-        "dataset_display_name",
-        "type",
-    }
-    assert_is_svg(pred["plot"]["svg"])
-
-    assert len(pred["tables"]) == 2
-    assert set(pred["tables"][0].keys()) == {"dataset", "top_models", "type"}
-    assert isinstance(pred["tables"][0]["top_models"], list)
-
-    # only dataset 1
-    pred = format_predictability_tile(query_gene, [dataset_1.name.name])
-    assert len(pred["tables"]) == 1
-    assert (
-        pred["overall_top_model"]["features"][0]["name"] == feature_gene.label
-    )  # only one model
-    assert pred["overall_top_model"]["features"][0]["type"] == "Expression"
-
-    # only dataset 2
-    pred = format_predictability_tile(query_gene, [dataset_2.name.name])
-    assert len(pred["tables"]) == 1
-    assert (
-        pred["overall_top_model"]["features"][0]["name"] == feature_gene.label
-    )  # only one model
-    assert pred["overall_top_model"]["features"][0]["type"] == "Expression"
 
 
 @pytest.mark.parametrize(

@@ -13,7 +13,7 @@ from tests.factories import BiomarkerDatasetFactory
 
 def test_load_predictive_model_csv(populated_db):
     sox10 = Gene.get_gene_by_entrez(entrez_id=6663)
-    dataset = DependencyDataset.get_dataset_by_name(DependencyEnum.Chronos_Combined)
+    dataset_given_id = "Chronos_Combined"
 
     # manually add rppa because this is the only test that relies on it existing
     BiomarkerDatasetFactory(name=BiomarkerDataset.BiomarkerEnum.rppa)
@@ -21,13 +21,13 @@ def test_load_predictive_model_csv(populated_db):
 
     load_predictive_model_csv(
         "sample_data/predictability/predictive_models_Chronos_Combined.csv",
-        dataset.name.name,
+        "Chronos_Combined",
         "sample_data/predictability/predictive_models_feature_metadata_Chronos_Combined.csv",
     )
 
     model = PredictiveModel.query.filter(
-        PredictiveModel.dataset_id == dataset.dataset_id,
-        PredictiveModel.entity_id == sox10.entity_id,
+        PredictiveModel.dataset_given_id == dataset_given_id,
+        PredictiveModel.pred_model_feature_id == sox10.entrez_id,
         PredictiveModel.label == "DNA_based",
     ).one()
     assert model.label == "DNA_based"
