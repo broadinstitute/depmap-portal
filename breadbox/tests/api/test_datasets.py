@@ -825,6 +825,58 @@ class TestGet:
             ],
         )
 
+    def test_get_dimensions_exact_match_prioritized(
+        self, client, settings, public_group, minimal_db
+    ):
+        """
+        Test that exact prefix matches appear before substring matches when the limit
+        would otherwise exclude them. For example, searching for "C10" should return
+        the gene "C10" at the top even if there are many "ABC1", "ABC2", etc. genes
+        that contain "C10" as a substring.
+        """
+        admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+        # Create 10 genes named ABC10Z1-ABC10Z10 (all contain "C10" as substring)
+        # and one gene named exactly "C10"
+        row_values = [[f"ABC10Z{i}", f"abc{i}"] for i in range(1, 11)]
+        row_values.append(["C10", "c10"])
+
+        gene_feature_type_response = client.post(
+            "/types/feature",
+            data={
+                "name": "gene",
+                "id_column": "label",
+                "properties_to_index": ["label", "name"],
+                "annotation_type_mapping": json.dumps(
+                    {"annotation_type_mapping": {"label": "text", "name": "text"}}
+                ),
+            },
+            files={
+                "metadata_file": (
+                    "gene_metadata",
+                    factories.tabular_csv_data_file(
+                        cols=["label", "name"], row_values=row_values,
+                    ),
+                    "text/csv",
+                )
+            },
+            headers=admin_headers,
+        )
+        assert gene_feature_type_response.status_code == 200
+
+        # Query for "C10" with limit 5. Without the fix, "C10" might not appear
+        # because ABC10Z1, ABC10Z2, ABC10Z3, ABC10Z4, ABC10Z5 could fill the limit.
+        dimensions_response = client.get("/datasets/dimensions/?limit=5&substring=C10")
+        assert dimensions_response.status_code == 200
+        results = dimensions_response.json()
+
+        # Should return exactly 5 results
+        assert len(results) == 5
+
+        # The exact match "C10" should be at the top
+        assert results[0]["id"] == "C10"
+        assert results[0]["label"] == "C10"
+
     def test_get_dimensions(
         self, minimal_db, client: TestClient, settings, public_group
     ):
