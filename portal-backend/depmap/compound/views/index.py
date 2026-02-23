@@ -245,12 +245,15 @@ def get_predictability_files():
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     predictability_path = os.path.join(source_dir, "predictability")
     # Find all predictive models for drug screen datasets which have compounds as features and get the dataset given id
-    drug_screen_enums_with_predictabilities = (
+    all_datasets = data_access.get_all_matrix_datasets()
+    compound_v2_datasets = [
+        ds for ds in all_datasets if ds.feature_type == "compound_v2"
+    ]
+    compound_v2_dataset_given_ids = [d.given_id for d in compound_v2_datasets]
+    drug_screen_given_ids_with_predictabilities = (
         PredictiveModel.query.filter(
-            PredictiveModel.dataset.has(data_type="drug_screen")
+            PredictiveModel.dataset_given_id.in_(compound_v2_dataset_given_ids)
         )
-        .join(DependencyDataset)
-        .with_entities(DependencyDataset.name)
         .distinct()
         .all()
     )
@@ -264,13 +267,13 @@ def get_predictability_files():
             delete=False, dir=os.path.dirname(os.path.abspath(predictability_path))
         ) as tmpfile:
             with zipfile.ZipFile(tmpfile, "w") as zf:
-                for (enum,) in drug_screen_enums_with_predictabilities:
+                for (given_id,) in drug_screen_given_ids_with_predictabilities:
                     zf.write(
                         os.path.join(
                             predictability_path,
-                            f"{enum.name}_predictability_results.csv",
+                            f"{given_id}_predictability_results.csv",
                         ),
-                        arcname=f"{enum.name}_predictability_results.csv",
+                        arcname=f"{given_id}_predictability_results.csv",
                     )
                 zf.close()
                 # Move zip file in tmpdir to predictabilty results path
