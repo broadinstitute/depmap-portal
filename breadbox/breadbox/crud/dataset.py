@@ -352,7 +352,12 @@ def get_dataset_dimension_search_index_entries(
                 dimension_type_name,
                 include_referenced_by,
             )
-            results = results_for_prefixes + results_for_substrings
+
+            # add these new hits to the list (filtering out any that were returned by prefix search already. Not doing so results in dups being returned)
+            seen_ids = set([x.id for x in results_for_prefixes])
+            results = results_for_prefixes + [
+                x for x in results_for_substrings if x.id not in seen_ids
+            ]
             if len(results) > limit:
                 # if we've now got too many, cap the results at limit
                 results = results[:limit]

@@ -877,6 +877,22 @@ class TestGet:
         assert results[0]["id"] == "C10"
         assert results[0]["label"] == "C10"
 
+        # now make sure we don't get duplicate entires when people _do_ search for a substring which is a prefix
+        dimensions_response = client.get(
+            "/datasets/dimensions/?limit=1000&substring=ABC10Z"
+        )
+        assert dimensions_response.status_code == 200
+        results = dimensions_response.json()
+
+        assert len(results) == 10
+        # should be alphabetically sorted with no dups
+        assert results[0]["id"] == "ABC10Z1"
+        assert results[0]["label"] == "ABC10Z1"
+        assert results[1]["id"] == "ABC10Z10"
+        assert results[1]["label"] == "ABC10Z10"
+        assert results[2]["id"] == "ABC10Z2"
+        assert results[2]["label"] == "ABC10Z2"
+
     def test_get_dimensions(
         self, minimal_db, client: TestClient, settings, public_group
     ):
