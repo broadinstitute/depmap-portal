@@ -30,10 +30,6 @@ rule publish_models_metadata:
     inputs: metadata={"type":"models_metadata"}
     publish: "{{config.publish_dest}}/models-metadata.json"
 
-rule publish_correlations:
-    inputs: in=all {'type': 'dep-matrix-pearson-cor'}
-    publish: "{{config.publish_dest}}/correlations.json"
-
 rule publish_biomarker_matrices:
     inputs: in=all {"type": "biomarker-matrix"}
 	publish: "{{config.publish_dest}}/biom-matrices.json"
