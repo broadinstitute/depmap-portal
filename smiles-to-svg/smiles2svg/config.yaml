@@ -1,0 +1,3 @@
+portal_compounds_smiles_taiga_id: "compound-metadata-de37.51/PortalCompounds"
+depmap_compound_images_bucket_name: "depmap-compound-images"
+depmap_compound_images_bad_smiles_file: "bad_smiles.txt"
