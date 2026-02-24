@@ -24,6 +24,7 @@ rule filter-portal-compounds:
         {{inputs.repsdrug_auc_matrix.dataset_id}} \
         {{inputs.portal_compounds.dataset_id}} \
         {% if inputs.prism_oncology_reference_lum_log2_auc_matrix|length > 1 %} \
-        --prism_oncology_reference_lum_log2_auc_matrix_taiga_id {{(inputs.prism_oncology_reference_lum_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
+        --prism_oncology_reference_lum_log2_auc_matrix_taiga_id {{(inputs.prism_oncology_reference_lum_log2_auc_matrix|selectattr('type', 'equalto', 'prism_oncology_reference_lum_log2_auc_matrix')|first).dataset_id}} \
+        --prism_oncology_reference_seq_log2_auc_matrix_taiga_id {{(inputs.prism_oncology_reference_lum_log2_auc_matrix|selectattr('type', 'equalto', 'prism_oncology_reference_seq_log2_auc_matrix')|first).dataset_id}} \
         {% endif %} \
         filtered_portal_compounds.csv"
