@@ -62,7 +62,6 @@ from loader.gcs import GCSCache
 
 log = logging.getLogger(__name__)
 
-pd.set_option("mode.use_inf_as_na", True)
 
 from depmap.cell_line.models_new import DepmapModel
 from depmap.public.resources import refresh_all_category_topics, read_forum_api_key

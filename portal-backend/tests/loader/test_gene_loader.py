@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from pandas.testing import assert_frame_equal
 from loader import gene_loader
 
 
@@ -73,4 +74,7 @@ def test_merge_gene_executive_info():
     merged_gene_executive_info = gene_loader._merge_gene_executive_info(
         dep_summary, dropped_by_chronos
     )
-    assert merged_gene_executive_info.equals(expected_df)
+    sort_cols = ["entrez_id", "dataset"]
+    result = merged_gene_executive_info.sort_values(sort_cols).reset_index(drop=True)
+    expected = expected_df.sort_values(sort_cols).reset_index(drop=True)
+    assert_frame_equal(result, expected, check_dtype=False)

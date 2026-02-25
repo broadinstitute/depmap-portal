@@ -346,7 +346,8 @@ class GeneScoreConfidence(Model):
             ],
             GeneScoreConfidence.gene_id
         )
-        confidence_evidence_df = pd.read_sql(query.statement, query.session.bind)
+        with db.engine.connect() as conn:
+            confidence_evidence_df = pd.read_sql(query.statement, conn)
         confidence_evidence_df.set_index("gene_id", inplace=True)
         return confidence_evidence_df
 

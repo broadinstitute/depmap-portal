@@ -1,4 +1,4 @@
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 from depmap.celery_task.utils import task_response_model
 from depmap.health_check import site_check_task
 from depmap.celery_task.utils import format_task_status

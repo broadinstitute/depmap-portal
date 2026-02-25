@@ -7,7 +7,7 @@ import zipfile
 import numpy as np
 import pandas as pd
 from flask import Blueprint, current_app, jsonify, render_template, request, send_file
-from flask_restplus import Api, Resource, fields
+from flask_restx import Api, Resource, fields
 
 from depmap.celligner.models import (
     CellignerDistanceColIndex,
@@ -199,9 +199,7 @@ def download_celligner_files():
 
     memory_file.seek(0)
 
-    return send_file(
-        memory_file, attachment_filename="celligner.zip", as_attachment=True
-    )
+    return send_file(memory_file, download_name="celligner.zip", as_attachment=True)
 
 
 CellLineSelectorColorMap = restplus.model(

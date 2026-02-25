@@ -134,9 +134,7 @@ class DepmapModel(Model):
         All cell lines have a level 1 lineage, even if it may be "unknown"
         """
         # TODO: When the DepmapModel table replaces CellLine, this needs to change to iterate self.oncotree_lineage
-        return next(
-            lineage for lineage in self.cell_line.lineage.all() if lineage.level == 1
-        )
+        return next(lineage for lineage in self.cell_line.lineage if lineage.level == 1)
 
     def lineage_is_unknown(self):
         """

@@ -210,7 +210,7 @@ class Dataset(Model):
             .join(cls)
             .with_entities(cls)
             .order_by(
-                case([(DependencyDataset.data_type == "crispr", 0)], else_=1),
+                case((DependencyDataset.data_type == "crispr", 0), else_=1),
                 nullslast(DependencyDataset.priority),
             )  # Unsure if format_gene_summary() gets first dataset from ordered dataset enums previously so add case just in case. Also, test_gene_dependency_datasets_where_present() assumes some kind of order
             .all()
@@ -297,7 +297,7 @@ class Dataset(Model):
         * NOTE: It is undetermined whether crispr datasets MUST appear first but we provide this option as default to match behavior of deprecated function get_enums_in_order(). 
         """
         return cls.query.order_by(
-            case([(cls.data_type == data_type.name, 0)], else_=1),
+            case((cls.data_type == data_type.name, 0), else_=1),
             nullslast(cls.priority),
         ).all()
 
@@ -391,7 +391,7 @@ class DependencyDataset(Dataset):
             .order_by(
                 nullslast(DependencyDataset.priority),
                 CompoundExperiment.entity_id,
-                case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
+                case((DependencyDataset.data_type == "drug_screen", 0), else_=1),
             )
             .all()
         )
@@ -462,8 +462,10 @@ class BiomarkerDataset(Dataset):
         else:
             biom_enum = biom_enum_or_name
 
-        row_index = BiomarkerDataset.query.filter_by(name=biom_enum.name).join(
-            Matrix, RowMatrixIndex
+        row_index = (
+            BiomarkerDataset.query.filter_by(name=biom_enum.name)
+            .join(Matrix, BiomarkerDataset.matrix_id == Matrix.matrix_id)
+            .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)
         )
 
         gene_related_with_multiple_entities = {
@@ -736,14 +738,16 @@ class Mutation(Model):
         """
         Returns tuples of variant class and # of cell lines
         """
-        return (
+        subq = (
             Mutation.query.join(Mutation.cell_line)
             .with_entities(Mutation.variant_info, CellLine.depmap_id)
             .filter(Mutation.gene_id == gene_id)
             .distinct()
-            .from_self()
-            .with_entities(Mutation.variant_info, func.count(1))
-            .group_by(Mutation.variant_info)
+            .subquery()
+        )
+        return (
+            db.session.query(subq.c.variant_info, func.count(1))
+            .group_by(subq.c.variant_info)
             .all()
         )
 

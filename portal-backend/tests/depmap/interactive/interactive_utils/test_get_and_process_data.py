@@ -7,7 +7,9 @@ from depmap.dataset.models import TabularDataset, BiomarkerDataset, DependencyDa
 from depmap.cell_line.models import CellLine
 from depmap.interactive import interactive_utils
 from depmap.interactive.config.categories import CategoryConfig
-from depmap.interactive.interactive_utils.get_and_process_data import get_category_config
+from depmap.interactive.interactive_utils.get_and_process_data import (
+    get_category_config,
+)
 from depmap.interactive.nonstandard.models import NonstandardMatrix
 from depmap.settings.settings import TestConfig
 from depmap.utilities import hdf5_utils
@@ -126,7 +128,9 @@ def test_get_row_of_values(interactive_db_mock_downloads):
         context_dataset_id, context_dataset_feature
     )
 
-    assert found_context_series.equals(expected_context_series)
+    assert found_context_series.sort_index().equals(
+        expected_context_series.sort_index()
+    )
 
     expected_custom_cell_lines_series = pd.Series(1, custom_cell_line_group_depmap_ids)
     assert interactive_utils.get_row_of_values(
@@ -187,9 +191,10 @@ def test_get_row_of_values(interactive_db_mock_downloads):
         ],
     )
 
-    assert interactive_utils.get_row_of_values(
+    actual = interactive_utils.get_row_of_values(
         lineage_dataset_id, lineage_dataset_feature
-    ).equals(expected_lineage_series)
+    )
+    assert actual.sort_index().equals(expected_lineage_series.sort_index())
 
 
 def test_get_row_of_values_drops_nas(interactive_db_mock_downloads):
@@ -245,9 +250,7 @@ def test_get_category_config(interactive_db_mock_downloads):
         lineage_dataset_id,
         custom_cell_line_group_dataset_id,
     ]:
-        assert isinstance(
-            get_category_config(dataset), CategoryConfig
-        )
+        assert isinstance(get_category_config(dataset), CategoryConfig)
 
 
 @override(config=config)

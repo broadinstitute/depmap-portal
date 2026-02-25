@@ -15,7 +15,7 @@ from flask import (
     render_template,
     request,
 )
-from flask.json import JSONEncoder
+from flask.json.provider import DefaultJSONProvider
 from werkzeug.routing import RequestRedirect
 
 from depmap.access_control import initialize_request_user, load_auth_config_for_app
@@ -97,8 +97,6 @@ from flask_hunter_profile.flask_blueprint import (
 from depmap.custom_analyses.views import blueprint as custom_analyses_blueprint
 
 log = logging.getLogger(__name__)
-
-pd.set_option("mode.use_inf_as_na", False)
 
 
 def _fix_disabled_loggers(logger_names):
@@ -439,12 +437,17 @@ def register_commands(app: Flask):
     app.cli.add_command(spawn_commands.webpack)
 
 
-def register_json_encoder(app: Flask):
-    def encoder_default_disallow_nan(*args, **kwargs):
-        kwargs["allow_nan"] = False
-        return JSONEncoder(*args, **kwargs)
+class DisallowNanJSONProvider(DefaultJSONProvider):
+    """Custom JSON provider that rejects NaN/Infinity values."""
 
-    app.json_encoder = encoder_default_disallow_nan
+    def dumps(self, obj, **kwargs):
+        kwargs.setdefault("allow_nan", False)
+        return super().dumps(obj, **kwargs)
+
+
+def register_json_encoder(app: Flask):
+    app.json_provider_class = DisallowNanJSONProvider
+    app.json = DisallowNanJSONProvider(app)
 
 
 @in_memory_cache.cached(timeout=0, key_prefix="webpack_manifest")

@@ -3,8 +3,7 @@ import json
 import sqlite3
 import os
 
-from flask import _app_ctx_stack as stack  # type: ignore
-from flask import current_app
+from flask import g, has_app_context, current_app
 
 
 class MethylationDbExtension:
@@ -14,26 +13,21 @@ class MethylationDbExtension:
             self.init_app(app)
 
     def init_app(self, app):
-        if hasattr(app, "teardown_appcontext"):
-            app.teardown_appcontext(self.teardown)
-        else:
-            app.teardown_request(self.teardown)
+        app.teardown_appcontext(self.teardown)
 
     def teardown(self, exception):
-        ctx = stack.top
-        if hasattr(ctx, "methylation_db"):
-            ctx.methylation_db.close()
+        if hasattr(g, "methylation_db"):
+            g.methylation_db.close()
 
     def connect(self):
         return open_db(current_app.config["METHYLATION_DATABASE"])
 
     @property
     def connection(self):
-        ctx = stack.top
-        if ctx is not None:
-            if not hasattr(ctx, "methylation_db"):
-                ctx.methylation_db = self.connect()
-            return ctx.methylation_db
+        if has_app_context():
+            if not hasattr(g, "methylation_db"):
+                g.methylation_db = self.connect()
+            return g.methylation_db
 
 
 class MethylationDb:

@@ -7,10 +7,10 @@ import threading
 from collections import defaultdict
 from typing import Dict, List, Optional, Type, TypeVar, Union
 
-import flask_sqlalchemy
 import sqlalchemy
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import relationship as _sa_relationship
 
 from .extensions import db
 
@@ -20,25 +20,22 @@ log = logging.getLogger(__name__)
 
 # Alias common SQLAlchemy names
 Column = sqlalchemy.Column
-relationship = db.relationship
-Integer: Type[sqlalchemy.Integer] = db.Integer
-ForeignKey: Type[sqlalchemy.ForeignKey] = db.ForeignKey
-Float: Type[sqlalchemy.Float] = db.Float
-String: Type[sqlalchemy.String] = db.String
-Boolean: Type[sqlalchemy.Boolean] = db.Boolean
-Text: Type[sqlalchemy.Text] = db.Text
+relationship = _sa_relationship
+Integer = sqlalchemy.Integer
+ForeignKey = sqlalchemy.ForeignKey
+Float = sqlalchemy.Float
+String = sqlalchemy.String
+Boolean = sqlalchemy.Boolean
+Text = sqlalchemy.Text
 
 
-DBModel: flask_sqlalchemy.Model = db.Model
 # "Generic" type
 T = TypeVar("T", bound="Model")
-# Import this one to avoid mypy errors + use typed helper methods
-class Model(DBModel):
-    __abstract__ = True
 
-    # @classmethod
-    # def get(cls: Type[T], id: str) -> T:
-    #     return cls.query.get(id)
+
+class Model(db.Model):  # type: ignore[name-defined]
+    __abstract__ = True
+    __allow_unmapped__ = True
 
     @classmethod
     def get_by(cls: Type[T], **kw) -> Optional[T]:
@@ -51,6 +48,9 @@ class Model(DBModel):
     @classmethod
     def get_all_by(cls: Type[T], **kw) -> List[T]:
         return cls.query.filter_by(**kw).all()
+
+
+DBModel = Model
 
 
 @event.listens_for(Engine, "connect")

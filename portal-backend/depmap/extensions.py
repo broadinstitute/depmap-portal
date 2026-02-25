@@ -8,7 +8,8 @@ from flask_humanize import Humanize
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from flaskext.markdown import Markdown
+import markdown as _md_lib
+from markupsafe import Markup
 
 from .utilities.gcs_reporter import ExceptionReporter
 
@@ -20,12 +21,27 @@ from functools import wraps
 bcrypt = Bcrypt()
 csrf_protect = CSRFProtect()
 login_manager = LoginManager()
+
+
+@login_manager.user_loader
+def _load_user(user_id):
+    return None
+
+
 db = SQLAlchemy()
 cache = Cache()
 in_memory_cache = Cache()
 debug_toolbar = DebugToolbarExtension()
 exception_reporter = ExceptionReporter()
-markdown = Markdown
+
+
+def markdown(app):
+    """Register a 'markdown' Jinja2 filter (replaces Flask-Markdown)."""
+    app.jinja_env.filters.setdefault(
+        "markdown", lambda text: Markup(_md_lib.markdown(text))
+    )
+
+
 humanize = Humanize
 methylation_db = MethylationDbExtension()
 cansar = CansarExtension()

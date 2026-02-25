@@ -61,8 +61,21 @@ class Matrix(Model):
     __tablename__ = "matrix"
     matrix_id = Column(Integer, primary_key=True, autoincrement=True)
     file_path = Column(Text, nullable=False)
-    row_index: "RowMatrixIndex" = db.relationship("RowMatrixIndex", lazy="dynamic")
-    col_index: "ColMatrixIndex" = db.relationship("ColMatrixIndex", lazy="dynamic")
+    _row_index = db.relationship("RowMatrixIndex", overlaps="matrix")
+    _col_index = db.relationship("ColMatrixIndex", overlaps="matrix")
+
+    @property
+    def row_index(self):
+        if self.matrix_id is None:
+            db.session.flush()
+        return RowMatrixIndex.query.filter_by(matrix_id=self.matrix_id)
+
+    @property
+    def col_index(self):
+        if self.matrix_id is None:
+            db.session.flush()
+        return ColMatrixIndex.query.filter_by(matrix_id=self.matrix_id)
+
     min = Column(
         Float
     )  # should be nullable=False, no constraint for easier migration + additional checkpoint
@@ -305,7 +318,7 @@ class RowMatrixIndex(Model):
         "Matrix",
         foreign_keys="RowMatrixIndex.matrix_id",
         uselist=False,
-        overlaps="row_index",
+        overlaps="_row_index",
     )
     owner_id = Column(Integer, nullable=False)
 
@@ -324,6 +337,6 @@ class ColMatrixIndex(Model):
         "Matrix",
         foreign_keys="ColMatrixIndex.matrix_id",
         uselist=False,
-        overlaps="col_index",
+        overlaps="_col_index",
     )
     owner_id = Column(Integer, nullable=False)

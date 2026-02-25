@@ -20,7 +20,9 @@ def load_global_search_index():
 
 
 def _execute(stmt):
-    db.session.connection().execute(stmt)
+    from sqlalchemy import text
+
+    db.session.connection().execute(text(stmt))
 
 
 def __load_compound_search_index():
@@ -55,13 +57,19 @@ def __load_compound_search_index():
                 (target_or_mechanism.strip(), compound.entity_id, compound.entity_id)
             )
     if len(values) > 0:
-        db.session.connection().execute(
+        from sqlalchemy import text
+
+        stmt = text(
             """
             insert into global_search_index (label, type, compound_id, entity_id)
-            values (?, 'compound_target_or_mechanism', ?, ?)
-        """,
-            values,
+            values (:label, 'compound_target_or_mechanism', :compound_id, :entity_id)
+        """
         )
+        # SQLAlchemy 2.0 executemany requires list of dicts
+        params = [
+            {"label": v[0], "compound_id": v[1], "entity_id": v[2]} for v in values
+        ]
+        db.session.connection().execute(stmt, params)
 
     stmt = """
 		insert into global_search_index (label, type, compound_id, entity_id)

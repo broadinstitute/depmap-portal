@@ -41,8 +41,21 @@ class NonstandardMatrix(Model):
     nonstandard_matrix_id = Column(Integer, primary_key=True, autoincrement=True)
     file_path = Column(Text, nullable=False)
     nonstandard_dataset_id = Column(String, nullable=False, unique=True, index=True)
-    row_index = relationship("RowNonstandardMatrix", lazy="dynamic")
-    col_index = relationship("ColNonstandardMatrix", lazy="dynamic")
+    _row_index = relationship("RowNonstandardMatrix")
+    _col_index = relationship("ColNonstandardMatrix")
+
+    @property
+    def row_index(self):
+        return RowNonstandardMatrix.query.filter_by(
+            nonstandard_matrix_id=self.nonstandard_matrix_id
+        )
+
+    @property
+    def col_index(self):
+        return ColNonstandardMatrix.query.filter_by(
+            nonstandard_matrix_id=self.nonstandard_matrix_id
+        )
+
     owner_id = Column(Integer, nullable=False)
     data_type: "Column[enums.DataTypeEnum]" = Column(
         db.Enum(DataTypeEnum, name="DataTypeEnum"), nullable=False
@@ -247,8 +260,8 @@ class NonstandardMatrix(Model):
         dataset_index = NonstandardMatrix(
             nonstandard_dataset_id=dataset_id,
             file_path=file_path,
-            row_index=row_index_objects,
-            col_index=col_index_objects,
+            _row_index=row_index_objects,
+            _col_index=col_index_objects,
             owner_id=owner_id,
             data_type=data_type,
         )

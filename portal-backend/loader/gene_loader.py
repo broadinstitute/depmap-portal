@@ -335,7 +335,7 @@ def format_dropped_by_chronos(dropped_by_chronos_csv: str) -> pd.DataFrame:
 
 
 def load_gene_score_confidence_coeffs(coeffs_file: str):
-    srs = pd.read_csv(coeffs_file, index_col=0, header=None, squeeze=True)
+    srs = pd.read_csv(coeffs_file, index_col=0, header=None).squeeze("columns")
 
     gene_score_confidence_coefficient = GeneScoreConfidenceCoefficient(
         guide_consistency_mean=srs.guide_consistency_mean,

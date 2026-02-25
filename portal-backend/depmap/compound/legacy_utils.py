@@ -168,7 +168,7 @@ def get_compound_experiment_priority_sorted_datasets(compound_id: str) -> list[s
         .order_by(
             nullslast(DependencyDataset.priority),
             CompoundExperiment.entity_id,
-            case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
+            case((DependencyDataset.data_type == "drug_screen", 0), else_=1),
         )
         .with_entities(DependencyDataset)
         .all()

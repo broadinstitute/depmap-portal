@@ -127,7 +127,10 @@ def setup_middleware(app, CONFIG):
     )
 
     if CONFIG.APPLICATION_ROOT != "/":
-        from werkzeug.wsgi import DispatcherMiddleware
+        try:
+            from werkzeug.middleware.dispatcher import DispatcherMiddleware
+        except ImportError:
+            from werkzeug.wsgi import DispatcherMiddleware
 
         app.wsgi_app = DispatcherMiddleware(
             _no_content_response, {CONFIG.APPLICATION_ROOT: app.wsgi_app}

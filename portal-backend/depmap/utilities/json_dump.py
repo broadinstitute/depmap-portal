@@ -55,7 +55,11 @@ def jsonify_df(df: pd.DataFrame, schema: pa.DataFrameSchema):
     indent = None
     separators = (",", ":")
 
-    if current_app.config["JSONIFY_PRETTYPRINT_REGULAR"] or current_app.debug:
+    # JSONIFY_PRETTYPRINT_REGULAR was removed in Flask 3.x; use .get() for backward compat
+    if (
+        current_app.config.get("JSONIFY_PRETTYPRINT_REGULAR", False)
+        or current_app.debug
+    ):
         indent = 2
         separators = (", ", ": ")
 
@@ -68,7 +72,7 @@ def jsonify_df(df: pd.DataFrame, schema: pa.DataFrameSchema):
             data, indent=indent, separators=separators, cls=Encoder, allow_nan=False
         )
         + "\n",
-        mimetype=current_app.config["JSONIFY_MIMETYPE"],
+        mimetype=current_app.config.get("JSONIFY_MIMETYPE", "application/json"),
     )
 
     return jsonify(data)

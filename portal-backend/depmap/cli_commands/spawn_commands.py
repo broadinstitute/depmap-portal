@@ -27,6 +27,7 @@ def run_worker(name, celery_args):
     print(f"Starting worker named {name} with args {celery_args}")
     _run_worker(celery_args)
 
+
 def _run_worker(extra_args=[]):
     main(
         ["", "-A", "depmap.compute.worker.app", "worker", "-l", "info"]
@@ -38,7 +39,10 @@ def _run_worker(extra_args=[]):
 @with_appcontext
 def run_dev_worker():
     """Starts a celery worker with some settings to make it easier to debug with. (concurrency of 1 and solo pool so there's less confusion from multiple workers and disable capturing stdout)"""
-    from werkzeug._reloader import run_with_reloader
+    try:
+        from werkzeug._reloader import run_with_reloader
+    except ImportError:
+        from werkzeug.serving import run_with_reloader
 
     extra_files = []
     reloader_interval = 1

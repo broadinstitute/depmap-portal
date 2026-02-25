@@ -6,7 +6,7 @@ from depmap.compound.models import Compound
 from depmap.context_explorer.utils import get_path_to_node
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
 from depmap.tda.views import convert_series_to_json_safe_list
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 from flask import current_app, request, url_for
 import pandas as pd
 from depmap.context_explorer.models import (
