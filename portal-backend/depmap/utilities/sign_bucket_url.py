@@ -5,21 +5,13 @@ import urllib.parse
 import re
 
 from flask import current_app
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 
 
 def _get_service_account_project_id(creds):
-    # The spirit of this method is, given a oauth2client.service_account.ServiceAccountCredentials object
-    # return the name of the project that owns that service account.
-    #
-    # this has the potential to break in the future because it's making a
-    # bunch of assumptions which I'm not clear if we can rely upon. However,
-    # these have remained stable for the last few years, so I have any reason
-    # to expect them to change anytime soon.
-
-    # This regex is to extract "broad-achilles" out of a service
-    # account name like depmap-dmc-downloads@broad-achilles.iam.gserviceaccount.com
-    m = re.match("[^@]+@([^.]+)\\..*", getattr(creds, "_service_account_email", ""))
+    # Extract the GCP project from a service account email like
+    # depmap-dmc-downloads@broad-achilles.iam.gserviceaccount.com → "broad-achilles"
+    m = re.match("[^@]+@([^.]+)\\..*", creds.service_account_email or "")
     if m is None:
         return None
     else:
@@ -58,7 +50,7 @@ def sign_url(
     # print("Blob", blob)
 
     client_id = creds.service_account_email
-    signature = creds.sign_blob(blob)[1]
+    signature = creds.sign_bytes(blob.encode("utf-8"))
     encoded_signature = (
         base64.b64encode(signature)
         .decode("utf8")
@@ -88,7 +80,7 @@ def sign_url(
 
 
 def get_signed_url(bucket: str, key: str) -> str:
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    credentials = service_account.Credentials.from_service_account_file(
         current_app.config["DOWNLOADS_KEY"]
     )
 

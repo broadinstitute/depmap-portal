@@ -346,70 +346,11 @@ files = [
 
 [[package]]
 name = "celery"
-version = "5.5.3"
-description = "Distributed Task Queue."
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "python_version < \"3.11\""
-files = [
-    {file = "celery-5.5.3-py3-none-any.whl", hash = "sha256:0b5761a07057acee94694464ca482416b959568904c9dfa41ce8413a7d65d525"},
-    {file = "celery-5.5.3.tar.gz", hash = "sha256:6c972ae7968c2b5281227f01c3a3f984037d21c5129d07bf3550cc2afc6b10a5"},
-]
-
-[package.dependencies]
-billiard = ">=4.2.1,<5.0"
-click = ">=8.1.2,<9.0"
-click-didyoumean = ">=0.3.0"
-click-plugins = ">=1.1.1"
-click-repl = ">=0.2.0"
-kombu = ">=5.5.2,<5.6"
-python-dateutil = ">=2.8.2"
-vine = ">=5.1.0,<6.0"
-
-[package.extras]
-arangodb = ["pyArango (>=2.0.2)"]
-auth = ["cryptography (==44.0.2)"]
-azureblockblob = ["azure-identity (>=1.19.0)", "azure-storage-blob (>=12.15.0)"]
-brotli = ["brotli (>=1.0.0) ; platform_python_implementation == \"CPython\"", "brotlipy (>=0.7.0) ; platform_python_implementation == \"PyPy\""]
-cassandra = ["cassandra-driver (>=3.25.0,<4)"]
-consul = ["python-consul2 (==0.1.5)"]
-cosmosdbsql = ["pydocumentdb (==2.3.5)"]
-couchbase = ["couchbase (>=3.0.0) ; platform_python_implementation != \"PyPy\" and (platform_system != \"Windows\" or python_version < \"3.10\")"]
-couchdb = ["pycouchdb (==1.16.0)"]
-django = ["Django (>=2.2.28)"]
-dynamodb = ["boto3 (>=1.26.143)"]
-elasticsearch = ["elastic-transport (<=8.17.1)", "elasticsearch (<=8.17.2)"]
-eventlet = ["eventlet (>=0.32.0) ; python_version < \"3.10\""]
-gcs = ["google-cloud-firestore (==2.20.1)", "google-cloud-storage (>=2.10.0)", "grpcio (==1.67.0)"]
-gevent = ["gevent (>=1.5.0)"]
-librabbitmq = ["librabbitmq (>=2.0.0) ; python_version < \"3.11\""]
-memcache = ["pylibmc (==1.6.3) ; platform_system != \"Windows\""]
-mongodb = ["kombu[mongodb]"]
-msgpack = ["kombu[msgpack]"]
-pydantic = ["pydantic (>=2.4)"]
-pymemcache = ["python-memcached (>=1.61)"]
-pyro = ["pyro4 (==4.82) ; python_version < \"3.11\""]
-pytest = ["pytest-celery[all] (>=1.2.0,<1.3.0)"]
-redis = ["kombu[redis]"]
-s3 = ["boto3 (>=1.26.143)"]
-slmq = ["softlayer_messaging (>=1.0.3)"]
-solar = ["ephem (==4.2) ; platform_python_implementation != \"PyPy\""]
-sqlalchemy = ["kombu[sqlalchemy]"]
-sqs = ["boto3 (>=1.26.143)", "kombu[sqs] (>=5.5.0)", "urllib3 (>=1.26.16)"]
-tblib = ["tblib (>=1.3.0) ; python_version < \"3.8.0\"", "tblib (>=1.5.0) ; python_version >= \"3.8.0\""]
-yaml = ["kombu[yaml]"]
-zookeeper = ["kazoo (>=1.3.1)"]
-zstd = ["zstandard (==0.23.0)"]
-
-[[package]]
-name = "celery"
 version = "5.6.2"
 description = "Distributed Task Queue."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version >= \"3.11\""
 files = [
     {file = "celery-5.6.2-py3-none-any.whl", hash = "sha256:3ffafacbe056951b629c7abcf9064c4a2366de0bdfc9fdba421b97ebb68619a5"},
     {file = "celery-5.6.2.tar.gz", hash = "sha256:4a8921c3fcf2ad76317d3b29020772103581ed2454c4c042cc55dcc43585009b"},
@@ -421,6 +362,7 @@ click = ">=8.1.2,<9.0"
 click-didyoumean = ">=0.3.0"
 click-plugins = ">=1.1.1"
 click-repl = ">=0.2.0"
+exceptiongroup = {version = ">=1.3.0", markers = "python_version < \"3.11\""}
 kombu = ">=5.6.0"
 python-dateutil = ">=2.8.2"
 tzlocal = "*"
@@ -876,12 +818,31 @@ version = "1.1.2"
 description = "Backport of PEP 654 (exception groups)"
 optional = false
 python-versions = ">=3.7"
-groups = ["main", "dev"]
+groups = ["main"]
+markers = "python_version >= \"3.11\""
 files = [
     {file = "exceptiongroup-1.1.2-py3-none-any.whl", hash = "sha256:e346e69d186172ca7cf029c8c1d16235aa0e04035e5750b4b95039e65204328f"},
     {file = "exceptiongroup-1.1.2.tar.gz", hash = "sha256:12c3e887d6485d16943a309616de20ae5582633e0a2eda17f4e10fd61c1e8af5"},
 ]
-markers = {dev = "python_version < \"3.11\""}
+
+[package.extras]
+test = ["pytest (>=6)"]
+
+[[package]]
+name = "exceptiongroup"
+version = "1.3.1"
+description = "Backport of PEP 654 (exception groups)"
+optional = false
+python-versions = ">=3.7"
+groups = ["main", "dev"]
+markers = "python_version < \"3.11\""
+files = [
+    {file = "exceptiongroup-1.3.1-py3-none-any.whl", hash = "sha256:a7a39a3bd276781e98394987d3a5701d0c4edffb633bb7a5144577f82c773598"},
+    {file = "exceptiongroup-1.3.1.tar.gz", hash = "sha256:8b412432c6055b0b7d14c310000ae93352ed6754f70fa8f7c34141f91c4e3219"},
+]
+
+[package.dependencies]
+typing-extensions = {version = ">=4.6.0", markers = "python_version < \"3.13\""}
 
 [package.extras]
 test = ["pytest (>=6)"]
@@ -2061,21 +2022,6 @@ socks = ["socksio (==1.*)"]
 trio = ["trio (>=0.22.0,<1.0)"]
 
 [[package]]
-name = "httplib2"
-version = "0.22.0"
-description = "A comprehensive HTTP client library."
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-groups = ["main"]
-files = [
-    {file = "httplib2-0.22.0-py3-none-any.whl", hash = "sha256:14ae0a53c1ba8f3d37e9e27cf37eabb0fb9980f435ba405d546948b009dd64dc"},
-    {file = "httplib2-0.22.0.tar.gz", hash = "sha256:d7a10bc5ef5ab08322488bde8c726eeee5c8618723fdb399597ec58f3d82df81"},
-]
-
-[package.dependencies]
-pyparsing = {version = ">=2.4.2,<3.0.0 || >3.0.0,<3.0.1 || >3.0.1,<3.0.2 || >3.0.2,<3.0.3 || >3.0.3,<4", markers = "python_version > \"3.0\""}
-
-[[package]]
 name = "httpx"
 version = "0.28.1"
 description = "The next generation HTTP client."
@@ -2592,49 +2538,11 @@ files = [
 
 [[package]]
 name = "kombu"
-version = "5.5.4"
-description = "Messaging library for Python."
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-markers = "python_version < \"3.11\""
-files = [
-    {file = "kombu-5.5.4-py3-none-any.whl", hash = "sha256:a12ed0557c238897d8e518f1d1fdf84bd1516c5e305af2dacd85c2015115feb8"},
-    {file = "kombu-5.5.4.tar.gz", hash = "sha256:886600168275ebeada93b888e831352fe578168342f0d1d5833d88ba0d847363"},
-]
-
-[package.dependencies]
-amqp = ">=5.1.1,<6.0.0"
-packaging = "*"
-tzdata = {version = ">=2025.2", markers = "python_version >= \"3.9\""}
-vine = "5.1.0"
-
-[package.extras]
-azureservicebus = ["azure-servicebus (>=7.10.0)"]
-azurestoragequeues = ["azure-identity (>=1.12.0)", "azure-storage-queue (>=12.6.0)"]
-confluentkafka = ["confluent-kafka (>=2.2.0)"]
-consul = ["python-consul2 (==0.1.5)"]
-gcpubsub = ["google-cloud-monitoring (>=2.16.0)", "google-cloud-pubsub (>=2.18.4)", "grpcio (==1.67.0)", "protobuf (==4.25.5)"]
-librabbitmq = ["librabbitmq (>=2.0.0) ; python_version < \"3.11\""]
-mongodb = ["pymongo (==4.10.1)"]
-msgpack = ["msgpack (==1.1.0)"]
-pyro = ["pyro4 (==4.82)"]
-qpid = ["qpid-python (>=0.26)", "qpid-tools (>=0.26)"]
-redis = ["redis (>=4.5.2,!=4.5.5,!=5.0.2,<=5.2.1)"]
-slmq = ["softlayer_messaging (>=1.0.3)"]
-sqlalchemy = ["sqlalchemy (>=1.4.48,<2.1)"]
-sqs = ["boto3 (>=1.26.143)", "urllib3 (>=1.26.16)"]
-yaml = ["PyYAML (>=3.10)"]
-zookeeper = ["kazoo (>=2.8.0)"]
-
-[[package]]
-name = "kombu"
 version = "5.6.2"
 description = "Messaging library for Python."
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version >= \"3.11\""
 files = [
     {file = "kombu-5.6.2-py3-none-any.whl", hash = "sha256:efcfc559da324d41d61ca311b0c64965ea35b4c55cc04ee36e55386145dace93"},
     {file = "kombu-5.6.2.tar.gz", hash = "sha256:8060497058066c6f5aed7c26d7cd0d3b574990b09de842a8c5aaed0b92cc5a55"},
@@ -3204,25 +3112,6 @@ files = [
     {file = "numpy-1.26.3-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:a8474703bffc65ca15853d5fd4d06b18138ae90c17c8d12169968e998e448bb5"},
     {file = "numpy-1.26.3.tar.gz", hash = "sha256:697df43e2b6310ecc9d95f05d5ef20eacc09c7c4ecc9da3f235d39e71b7da1e4"},
 ]
-
-[[package]]
-name = "oauth2client"
-version = "4.1.3"
-description = "OAuth 2.0 client library"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "oauth2client-4.1.3-py2.py3-none-any.whl", hash = "sha256:b8a81cc5d60e2d364f0b1b98f958dbd472887acaf1a5b05e21c28c31a2d6d3ac"},
-    {file = "oauth2client-4.1.3.tar.gz", hash = "sha256:d486741e451287f69568a4d26d70d9acd73a2bbfa275746c535b4209891cccc6"},
-]
-
-[package.dependencies]
-httplib2 = ">=0.9.1"
-pyasn1 = ">=0.1.7"
-pyasn1-modules = ">=0.0.5"
-rsa = ">=3.1.4"
-six = ">=1.6.1"
 
 [[package]]
 name = "oauthlib"
@@ -5257,7 +5146,6 @@ description = "tzinfo object for the local timezone"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
-markers = "python_version >= \"3.11\""
 files = [
     {file = "tzlocal-5.3.1-py3-none-any.whl", hash = "sha256:eb1a66c3ef5847adf7a834f1be0800581b683b5608e74f86ecbcef8ab91bb85d"},
     {file = "tzlocal-5.3.1.tar.gz", hash = "sha256:cceffc7edecefea1f595541dbd6e990cb1ea3d19bf01b2809f362a03dd7921fd"},
@@ -5502,4 +5390,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.9"
-content-hash = "e79be783c3670b899d8fc543dbdb9610f88baea73a114c0c41f939550f29e6ac"
+content-hash = "5f9df579cf7fa3959a94dac8686e8b81d277ac5b0b6584d75bb252bc7d3ffb20"

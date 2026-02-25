@@ -22,7 +22,7 @@ import pandas as pd
 
 from depmap import data_access
 from depmap.partials.matrix.models import ColMatrixIndex
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2 import service_account
 
 from depmap.dataset.models import (
     DependencyDataset,
@@ -105,7 +105,7 @@ def get_image_url(image_filename):
         image_list = image_filename.split(",")
         if len(image_list) == 1:
             file_name = "cell_line_photos/" + image_list[0]
-            credentials = ServiceAccountCredentials.from_json_keyfile_name(
+            credentials = service_account.Credentials.from_service_account_file(
                 current_app.config["DOWNLOADS_KEY"]
             )
             url = sign_url(credentials, ExternalBucketUrl.BUCKET, file_name)
