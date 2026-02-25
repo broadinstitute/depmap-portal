@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import pandas as pd
 
 # user upload
@@ -11,4 +11,6 @@ class UserUploadFixture:
     file_name: str = "canary.csv"
     file_path: str = "sample_data/dataset/canary.csv"
     row_name: str = "wing speed"
-    expected_row_of_values: pd.Series = pd.Series([10.0], index=[canary_cell_line])
+    expected_row_of_values: pd.Series = field(
+        default_factory=lambda: pd.Series([10.0], index=[canary_cell_line])
+    )

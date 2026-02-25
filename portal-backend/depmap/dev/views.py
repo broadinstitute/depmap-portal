@@ -21,7 +21,6 @@ from depmap.access_control.utils import (
     get_authenticated_user,
     get_current_user_for_access_control,
 )
-from google.cloud.trace.client import Client
 
 blueprint = Blueprint("dev", __name__, url_prefix="/dev", static_folder="../static")
 
