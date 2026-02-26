@@ -106,8 +106,8 @@ const svgs: Record<string, React.ReactElement> = {
         d="M12 9.172L17.657 3.515L20.485 6.343L14.828 12L20.485 17.657L17.657 20.485L12 14.828L6.343 20.485L3.515 17.657L9.172 12L3.515 6.343L6.343 3.515L12 9.172Z"
         fill="#C4C4C4"
         stroke="black"
-        stroke-width="1.5"
-        stroke-linejoin="round"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
       />
     </svg>
   ),
