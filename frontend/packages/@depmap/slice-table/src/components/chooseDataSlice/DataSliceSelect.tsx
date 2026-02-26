@@ -12,6 +12,7 @@ interface Props {
   onChange: (nextValue: SliceQuery | null) => void;
   initialSource: "property" | "custom";
   existingSlices?: SliceQuery[];
+  hiddenDatasets?: Set<string>;
 }
 
 function DataSliceSelect({
@@ -22,6 +23,7 @@ function DataSliceSelect({
   value,
   onChange,
   existingSlices = undefined,
+  hiddenDatasets = undefined,
 }: Props) {
   const [source, setSource] = useState(initialSource);
 
@@ -42,6 +44,7 @@ function DataSliceSelect({
           idColumnLabel={idColumnLabel}
           onChange={onChange}
           existingSlices={existingSlices}
+          hiddenDatasets={hiddenDatasets}
         />
       )}
       {source === "custom" && (
@@ -49,6 +52,7 @@ function DataSliceSelect({
           defaultValue={defaultValue}
           index_type_name={index_type_name}
           onChange={onChange}
+          hiddenDatasets={hiddenDatasets}
         />
       )}
     </div>

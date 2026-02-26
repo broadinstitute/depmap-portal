@@ -48,8 +48,9 @@
             {% if config.ENABLED_FEATURES.gene_tea_portal_page %}
               <li><a href="{{ url_for('gene_tea.view_gene_tea') }}">GeneTEA</a></li>
             {% endif %}
-            {% if config.ENABLED_FEATURES.anchor_screen_dashboard %}
+            {% if config.ENABLED_FEATURES.anchor_and_resistance_screen_dashboards %}
               <li><a href="{{ url_for('anchor_screen_dashboard.view_anchor_screen_dashboard') }}">Anchor Screen Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
+              <li><a href="{{ url_for('resistance_screen_dashboard.view_resistance_screen_dashboard') }}">Resistance Screen Dashboard <i class="alpha-tag"><b>Alpha</b></i></a></li>
             {% endif %}
             <li role="separator" class="divider"></li>
               <li><a class="cursor-pointer" onclick="DepMap.launchContextManagerModal()">Context Manager</a></li>

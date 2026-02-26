@@ -21,7 +21,9 @@ ERROR_CODES = [
     status.HTTP_409_CONFLICT,
     status.HTTP_401_UNAUTHORIZED
 ]
-ERROR_RESPONSES = dict.fromkeys(ERROR_CODES, {"model": HTTPError})
+ERROR_RESPONSES = dict.fromkeys(
+    ERROR_CODES, {"model": HTTPError, "content": {"application/json": {}}}
+)
 
 
 class UserError(HTTPException):

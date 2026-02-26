@@ -9,14 +9,11 @@ from depmap import data_access
 from depmap.dataset.models import BiomarkerDataset
 from depmap.entity.models import Entity
 from depmap.extensions import cache_without_user_permissions
-from depmap.partials.data_table.factories import (
-    get_data_table,
-    get_anchor_screen_metadata_table,
-)
+from depmap.partials.data_table.factories import get_data_table
 from depmap.partials.entity_summary.models import (
     format_strip_plot,
     get_download_data,
-    get_feature_data, 
+    get_feature_data,
     get_entity_summary_metadata,
     integrate_cell_line_information,
     integrate_size_and_label_data,
@@ -77,24 +74,20 @@ def data_table_download_temp(type):
     return format_csv_response(temp_df, filename, {"index": False})
 
 
-@blueprint.route("/data_table/anchor_screen_metadata")
-def data_table_download_anchor_screen_metadata():
-    data_table = get_anchor_screen_metadata_table()
-    return format_csv_response(data_table._df, data_table.filename, {"index": False})
-
-
 @blueprint.route("/entity_summary")
 @cache_without_user_permissions()
 def entity_summary_json_data():
     """
     Not using _parse_args_and_call_func just because we need to get entity label, and process the size biom enum 
     """
-    # Note: this entity ID param is NOT what breadbox uses as feature IDs. 
+    # Note: this entity ID param is NOT what breadbox uses as feature IDs.
     entity_id = request.args.get("entity_id")
-    entity = Entity.query.get(entity_id) # Compound, Gene
-    dataset_id = request.args.get("dep_enum_name") # Dataset ID
-    size_dataset_id = request.args.get("size_biom_enum_name") # Another dataset ID, Ex. 'expression' - expected to NOT be a breadbox dataset
-    color = request.args.get("color") # Ex. 'mutations_prioritized'
+    entity = Entity.query.get(entity_id)  # Compound, Gene
+    dataset_id = request.args.get("dep_enum_name")  # Dataset ID
+    size_dataset_id = request.args.get(
+        "size_biom_enum_name"
+    )  # Another dataset ID, Ex. 'expression' - expected to NOT be a breadbox dataset
+    color = request.args.get("color")  # Ex. 'mutations_prioritized'
 
     if size_dataset_id == "none":
         size_dataset_enum = None
@@ -128,6 +121,7 @@ def entity_summary_json_data():
     response["strip"] = format_strip_plot(df)
 
     return Response(json_dumps(response), mimetype="application/json")
+
 
 @blueprint.route("/entity_summary/download")
 def entity_summary_download():

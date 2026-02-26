@@ -14,6 +14,7 @@ interface Props {
   defaultValue: any;
   index_type_name: string;
   onChange: any;
+  hiddenDatasets?: Set<string>;
 }
 
 async function convertSliceQueryToDataExplorerDimension(
@@ -63,6 +64,7 @@ function AddColumnDimensionSelect({
   defaultValue,
   index_type_name,
   onChange,
+  hiddenDatasets = undefined,
 }: Props) {
   const [
     valueAsDimension,
@@ -92,6 +94,7 @@ function AddColumnDimensionSelect({
       allowTextValueType
       allowCategoricalValueType
       allowListStringsValueType
+      datasetIdsToHide={hiddenDatasets}
       index_type={index_type_name}
       value={valueAsDimension}
       onChange={async (dimension) => {

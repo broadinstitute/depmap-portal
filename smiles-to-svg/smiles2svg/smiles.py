@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import yaml
 from taigapy import create_taiga_client_v3
 from google.cloud import storage
 
@@ -14,9 +17,13 @@ import click
 
 # RDLogger.DisableLog('rdApp.*') # To suppress parse error messages
 
-# Global variables
-BUCKET_NAME = "depmap-compound-images"
-BAD_SMILES_FILE = "bad_smiles.txt"
+_config_path = Path(__file__).parent / "config.yaml"
+with open(_config_path) as _f:
+    _config = yaml.safe_load(_f)
+
+BUCKET_NAME = _config["depmap_compound_images_bucket_name"]
+BAD_SMILES_FILE = _config["depmap_compound_images_bad_smiles_file"]
+PORTAL_COMPOUNDS_TAIGA_ID = _config["portal_compounds_smiles_taiga_id"]
 
 storage_client = storage.Client()
 bucket = storage_client.get_bucket(BUCKET_NAME)
@@ -132,7 +139,7 @@ def generate_and_upload_svg(smile: str) -> None:
 @click.option(
     "--taiga_id",
     type=str,
-    default="compound-metadata-de37.39/PortalCompounds",
+    default=PORTAL_COMPOUNDS_TAIGA_ID,
     help="Taiga ID for the compound metadata",
 )
 def main(taiga_id):

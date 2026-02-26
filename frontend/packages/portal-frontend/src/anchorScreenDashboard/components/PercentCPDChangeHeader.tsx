@@ -1,21 +1,8 @@
 import React from "react";
 import { InfoTip, WordBreaker } from "@depmap/common-components";
-import { SliceQuery } from "@depmap/types";
 import styles from "../styles/AnchorScreenDashboard.scss";
 
-function HeaderCell({
-  label,
-  sliceQuery,
-  defaultElement,
-}: {
-  label: string;
-  sliceQuery: SliceQuery;
-  defaultElement: React.ReactNode;
-}) {
-  if (sliceQuery.identifier !== "PercentCPDChange") {
-    return defaultElement;
-  }
-
+function PercentCPDChangeHeader({ label }: { label: string }) {
   return (
     <div className={styles.infotip}>
       <WordBreaker text={label} />
@@ -37,4 +24,4 @@ function HeaderCell({
   );
 }
 
-export default HeaderCell;
+export default PercentCPDChangeHeader;
