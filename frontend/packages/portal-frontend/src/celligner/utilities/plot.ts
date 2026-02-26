@@ -311,6 +311,27 @@ export function getSampleTypeTransform(
           },
         },
       },
+      {
+        target: "hcmi-tumor",
+        value: {
+          marker: {
+            size: tumorPointSize,
+            symbol: "x",
+          },
+        },
+      },
+      {
+        target: "hcmi-model",
+        value: {
+          marker: {
+            size: cellLinePointSize,
+            symbol: "x",
+            line: {
+              width: 1,
+            },
+          },
+        },
+      },
     ],
   };
 }
@@ -525,4 +546,6 @@ export const sampleTypeToLabel: Map<CellignerSampleType, string> = new Map([
   [CellignerSampleType.NOVARTIS_PDX_MODEL, "Novartis PDX"],
   [CellignerSampleType.PEDIATRIC_PDX_MODEL, "Pediatric PDX"],
   [CellignerSampleType.TCGA_TUMOR, "TCGA+ Tumors"],
+  [CellignerSampleType.HCMI_MODEL, "HCMI model"],
+  [CellignerSampleType.HCMI_TUMOR, "HCMI tumor"],
 ]);
