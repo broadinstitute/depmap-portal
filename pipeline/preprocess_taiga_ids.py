@@ -19,6 +19,7 @@ def _resolve_versioned_dataset_id(taiga_permaname):
 
 
 def _rewrite_stream(vars, in_name, in_lines, out_fd):
+    errors = []
     fd = out_fd
     for line in in_lines:
         m = re.match('#\\s*TAIGA_PREPROCESSOR_INCLUDE\\s+"([^"]+)"\\s*', line)
@@ -85,9 +86,16 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
             try:
                 canonical = tc.get_canonical_id(taiga_id)
             except:
-                print(f"failed to get data from canonical taiga id for {taiga_id}")
+                errors.append(
+                    f"failed to get data from canonical taiga id for {taiga_id}"
+                )
             line = line_prefix + '"' + canonical + '"' + line_suffix
         fd.write(line)
+    if len(errors) > 0:
+        errors_str = "\n".join(errors)
+        raise Exception(
+            f"Got the following errors while trying to run preprocess_taiga_ids.py:\n{errors_str}"
+        )
 
 
 def rewrite_file(in_name, out_name):
