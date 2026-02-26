@@ -4,16 +4,20 @@ export enum CellignerSampleType {
   DEPMAP_MODEL = "depmap-model",
   NOVARTIS_PDX_MODEL = "novartisPDX-model",
   PEDIATRIC_PDX_MODEL = "pediatricPDX-model",
+  HCMI_TUMOR = "hcmi-tumor",
+  HCMI_MODEL = "hcmi-model",
 }
 
 export type CellignerTumorTypes =
   | CellignerSampleType.TCGA_TUMOR
-  | CellignerSampleType.MET500_TUMOR;
+  | CellignerSampleType.MET500_TUMOR
+  | CellignerSampleType.HCMI_TUMOR;
 
 export type CellignerModelTypes =
   | CellignerSampleType.DEPMAP_MODEL
   | CellignerSampleType.NOVARTIS_PDX_MODEL
-  | CellignerSampleType.PEDIATRIC_PDX_MODEL;
+  | CellignerSampleType.PEDIATRIC_PDX_MODEL
+  | CellignerSampleType.HCMI_MODEL;
 
 export interface Alignments {
   modelConditionId: Array<string>;
