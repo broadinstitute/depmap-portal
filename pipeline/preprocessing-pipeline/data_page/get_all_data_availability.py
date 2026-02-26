@@ -529,7 +529,7 @@ def main(
     if len(depmap_oncref_taiga_id) > 0:
         oncref_summary = get_oncref_summary(
             tc=tc,
-            depmap_oncref_taiga_id=f"{depmap_oncref_taiga_id[0]}/PRISMOncologyReferenceViabilityMatrix",
+            depmap_oncref_taiga_id=f"{depmap_oncref_taiga_id[0]}/PRISMOncologyReferenceLumViabilityMatrix",
         )
         assert oncref_summary.index.is_unique
 
