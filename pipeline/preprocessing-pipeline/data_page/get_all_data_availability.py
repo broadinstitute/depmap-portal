@@ -318,12 +318,7 @@ def get_crispr_summary(tc, crispr_screen_sequence_map_taiga_id):
     ScreenSequenceMap = tc.get(crispr_screen_sequence_map_taiga_id)
     # map the library to the institution that ran screens with that library. If a library
     # is added in the future, we'll get a KeyError and need to update this map
-    library_to_source = {
-        "Avana": "broad",
-        "Humagne-CD": "broad",
-        "KY": "sanger",
-        "Brunello": "broad",
-    }
+    library_to_source = {"Avana": "broad", "Humagne-CD": "broad", "KY": "sanger"}
     ScreenSequenceMap["Source"] = [
         library_to_source[x] for x in ScreenSequenceMap["Library"]
     ]
