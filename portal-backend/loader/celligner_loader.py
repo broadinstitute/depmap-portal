@@ -130,6 +130,8 @@ def load_celligner_data(celligner_filename, distances_filename):
             "MET500 tumor": "met500-tumor",
             "Novartis_PDX": "novartisPDX-model",
             "Pediatric_PDX": "pediatricPDX-model",
+            "HCMI model": "hcmi-model",
+            "HCMI tumor": "hcmi-tumor",
         }
     )
 
@@ -153,6 +155,8 @@ def load_celligner_data(celligner_filename, distances_filename):
                         "met500-tumor",
                         "novartisPDX-model",
                         "pediatricPDX-model",
+                        "hcmi-model",
+                        "hcmi-tumor",
                     ]
                 ),
             ),

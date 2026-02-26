@@ -15,6 +15,8 @@ const labels: Record<string, string> = {
   "novartisPDX-model": "Novartis PDX",
   "pediatricPDX-model": "Pediatric PDX",
   "tcgaplus-tumor": " TCGA+ Tumors",
+  "hcmi-model": "HCMI model",
+  "hcmi-tumor": "HCMI tumor",
 };
 
 const svgs: Record<string, React.ReactElement> = {
@@ -92,6 +94,37 @@ const svgs: Record<string, React.ReactElement> = {
       />
     </svg>
   ),
+  "hcmi-model": (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 9.172L17.657 3.515L20.485 6.343L14.828 12L20.485 17.657L17.657 20.485L12 14.828L6.343 20.485L3.515 17.657L9.172 12L3.515 6.343L6.343 3.515L12 9.172Z"
+        fill="#C4C4C4"
+        stroke="black"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  "hcmi-tumor": (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M12 9.172L17.657 3.515L20.485 6.343L14.828 12L20.485 17.657L17.657 20.485L12 14.828L6.343 20.485L3.515 17.657L9.172 12L3.515 6.343L6.343 3.515L12 9.172Z"
+        fill="#C4C4C4"
+      />
+    </svg>
+  ),
 };
 
 function CellLineTumorLegend({ alignments, onChange }: Props) {
@@ -105,6 +138,8 @@ function CellLineTumorLegend({ alignments, onChange }: Props) {
     enabledFeatures.celligner_app_v3 && "novartisPDX-model",
     enabledFeatures.celligner_app_v3 && "pediatricPDX-model",
     "tcgaplus-tumor",
+    "hcmi-tumor",
+    "hcmi-model",
   ].filter(Boolean) as string[];
 
   useEffect(() => {
