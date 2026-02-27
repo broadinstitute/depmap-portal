@@ -38,6 +38,10 @@ def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
         "Prism_oncology_AUC": "PRISMOncologyReferenceLog2AUCMatrix",
         "Prism_oncology_AUC_seq": "PRISMOncologyReferenceSeqLog2AUCMatrix",
         "Rep_all_single_pt": "Rep_all_single_pt_per_compound",
+        "CTRP_AUC": "CTRP_AUC_collapsed",
+        "GDSC1_AUC": "GDSC1_AUC_collapsed",
+        "GDSC2_AUC": "GDSC2_AUC_collapsed",
+        "Repurposing_secondary_AUC": "REPURPOSING_AUC_collapsed",
     }
 
     # Check if it's in our mapping;
