@@ -11,11 +11,15 @@ import os
 
 tc = create_taiga_client_v3()
 
+latest_cache = {}
+
 
 def _resolve_versioned_dataset_id(taiga_permaname):
     if "." in taiga_permaname:
         return taiga_permaname
-    return tc.get_latest_version_id(taiga_permaname)
+    if taiga_permaname not in latest_cache:
+        latest_cache[taiga_permaname] = tc.get_latest_version_id(taiga_permaname)
+    return latest_cache[taiga_permaname]
 
 
 def _rewrite_stream(vars, in_name, in_lines, out_fd):
@@ -89,8 +93,10 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd):
                 errors.append(
                     f"failed to get data from canonical taiga id for {taiga_id}"
                 )
+                continue
             line = line_prefix + '"' + canonical + '"' + line_suffix
         fd.write(line)
+
     if len(errors) > 0:
         errors_str = "\n".join(errors)
         raise Exception(
