@@ -189,7 +189,7 @@ const PredictabilityRowForEntity = (props: {
     );
   }
 
-  // sorted on back end; grouping by compound experiment and dataset model which should each have 3 tables
+  // sorted on back end; grouping by compound and dataset model which should each have 3 tables
   const tablesGroupedBycompoundId = tables.reduce<
     Record<string, PredictabilityTable[]>
   >((r, e) => {
@@ -217,7 +217,7 @@ const PredictabilityRowForEntity = (props: {
           >
             <Col md={12}>
               <div className="compound-experiment-label-container">
-                <div className="all-caps">Compound experiment ID</div>
+                <div className="all-caps">Compound ID</div>
                 <div className="compound-experiment-label">
                   {
                     (group[0]

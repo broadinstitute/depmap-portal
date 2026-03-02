@@ -260,7 +260,7 @@ class PredictiveFeature(Model):
             return None
 
         dep_dataset_values = data_access.get_row_of_values(
-            dataset_given_id, pred_model_feature_id
+            dataset_given_id, pred_model_feature_id, feature_identifier="id"
         )
         if self.dataset_id == "context":
             cell_lines_in_self_context = data_access.get_row_of_values(

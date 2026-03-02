@@ -178,18 +178,18 @@ def get_predictive_table():
         compound.compound_id
     )
 
-    sorted_dataset_given_ids = [d.id for d in sorted_datasets_with_compound]
+    sorted_dataset_given_ids = [d.given_id for d in sorted_datasets_with_compound]
 
     sorted_models_for_compound = get_predictive_models_for_compound(
         compound_id=compound.compound_id, dataset_given_ids=sorted_dataset_given_ids
     )
 
     models_grouped_by_dataset = groupby(
-        sorted_models_for_compound, key=lambda x: (x[0], x[1].dataset_given_id)
+        sorted_models_for_compound, key=lambda x: x.dataset_given_id
     )
 
     data = []
-    for (dataset, models,) in models_grouped_by_dataset:
+    for dataset_given_id, models in models_grouped_by_dataset:
         models_and_results = []
 
         for model in models:
@@ -199,7 +199,7 @@ def get_predictive_table():
             results = []
             for feature_result in sorted_feature_results:
                 related_type = feature_result.feature.get_relation_to_entity(
-                    compound.entity_id
+                    compound.compound_id, "compound_v2"
                 )
 
                 row = {
@@ -230,13 +230,16 @@ def get_predictive_table():
                 "modelName": model_label,
             }
             models_and_results.append(row)
+
+        dataset_label = data_access.get_dataset_label(dataset_given_id)
         data.append(
             {
-                "screen": dataset.label,
+                "screen": dataset_label,
                 "compoundId": compound.compound_id,
                 "modelsAndResults": models_and_results,
             }
         )
+
     return jsonify(data)
 
 
