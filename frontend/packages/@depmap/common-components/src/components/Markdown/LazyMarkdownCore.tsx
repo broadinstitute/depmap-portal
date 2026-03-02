@@ -1,5 +1,5 @@
 import React from "react";
-import "github-markdown-css/github-markdown.css";
+import "github-markdown-css/github-markdown-light.css";
 
 export const LazyMarkdownCore = React.lazy(async () => {
   const ReactMarkdown = (await import("react-markdown")).default;
