@@ -23,12 +23,17 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 # Install pyenv to /opt/pyenv
 RUN curl https://pyenv.run | bash
 
-# Install Python 3.9 with shared library support (required by some packages)
-ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
-RUN pyenv install 3.9 && pyenv global 3.9
+# Copy .python-version first so the Python version is defined in one place.
+# pyenv reads this file automatically; the Dockerfile never hardcodes a version.
+COPY .python-version /tmp/.python-version
 
-# Create python3.9 venv at /python3.9 for compatibility with existing PATH expectations
-RUN python -m venv /python3.9
+# Install the Python version specified in .python-version
+ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
+RUN pyenv install "$(cat /tmp/.python-version)" && \
+    pyenv global "$(cat /tmp/.python-version)"
+
+# Create a version-agnostic venv at /appenv
+RUN python -m venv /appenv
 
 # create cds-service user and group
 RUN groupadd -g 990 cds-service
@@ -44,13 +49,13 @@ RUN mkdir -p /depmap && chown -R depmap:cds-service /depmap
 RUN mkdir -p /data1/taiga && chown -R depmap:cds-service /data1/taiga
 
 ENV ORIG_PATH="${PATH}"
-ENV PATH="/python3.9/bin:${PATH}"
+ENV PATH="/appenv/bin:${PATH}"
 ENV FLASK_APP=autoapp.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
 # Install requirements
-RUN pip install poetry==1.5.1 && poetry config virtualenvs.in-project true
+RUN pip install "poetry>=2.1,<3" && poetry config virtualenvs.in-project true
 
 RUN mkdir -p /install
 ADD dist/additional-files.tar.gz /install
