@@ -22,6 +22,7 @@ on:
       - "dmc*"
       - "external*"
       - "test-*"
+      - "legacy-portal-upgrade-26q1"
 
 permissions:
   contents: write
