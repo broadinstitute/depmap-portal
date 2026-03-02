@@ -120,7 +120,7 @@
           </div>
           <h4 class="{{predictability.overall_top_model.type}} no_margin">
             {{ (predictability.tables | selectattr("type", "equalto",
-            predictability.overall_top_model.type) | first).dataset }}
+            predictability.overall_top_model.type) | first).dataset_given_id }}
           </h4>
           {{ top_features_table( predictability.overall_top_model.features,
           predictability.overall_top_model.type ) }}

@@ -259,7 +259,6 @@ def get_predictability_html(
         )
 
         predictability = None
-
         if compound is not None and len(all_matching_datasets) > 0:
             dataset_given_id = all_matching_datasets[0].given_id
             predictability = format_predictability_tile(
