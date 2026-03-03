@@ -48,9 +48,11 @@ const makeFeatureParser = (dimensionKey: DimensionKey) => (
 ) => {
   const p = { ...partialPlot };
 
-  const dataset_id = (dimensionKey === "x"
+  let dataset_id = (dimensionKey === "x"
     ? allParams.xDataset
     : allParams.yDataset) as string;
+
+  dataset_id = dataset_id?.replace("breadbox/", "");
 
   if (!dataset_id) {
     return partialPlot;
@@ -83,9 +85,11 @@ const makeSampleParser = (dimensionKey: DimensionKey) => (
 ) => {
   const p = { ...partialPlot };
 
-  const dataset_id = (dimensionKey === "x"
+  let dataset_id = (dimensionKey === "x"
     ? allParams.xDataset
     : allParams.yDataset) as string;
+
+  dataset_id = dataset_id?.replace("breadbox/", "");
 
   if (!dataset_id) {
     return partialPlot;
@@ -280,7 +284,7 @@ const inferIndexType = (
   partialPlot: PartialDataExplorerPlotConfig,
   datasets: Datasets
 ) => {
-  const dataset_id = partialPlot.dimensions?.x?.dataset_id;
+  let dataset_id = partialPlot.dimensions?.x?.dataset_id;
   const slice_type = partialPlot.dimensions?.x?.slice_type;
 
   if (!dataset_id || slice_type === undefined) {
@@ -291,6 +295,7 @@ const inferIndexType = (
     return "depmap_model";
   }
 
+  dataset_id = dataset_id.replace("breadbox/", "");
   const dataset = findDataset(dataset_id, datasets[slice_type]);
 
   return dataset?.slice_type || null;
