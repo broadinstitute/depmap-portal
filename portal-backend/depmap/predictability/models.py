@@ -264,7 +264,7 @@ class PredictiveFeature(Model):
         )
         if self.dataset_id == "context":
             cell_lines_in_self_context = data_access.get_row_of_values(
-                data_access.get_context_dataset(), pred_model_feature_id
+                data_access.get_context_dataset(), self.feature_name
             )
             self_values = pd.Series(
                 dep_dataset_values.index.map(
