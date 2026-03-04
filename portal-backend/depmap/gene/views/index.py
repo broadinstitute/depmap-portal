@@ -244,9 +244,10 @@ def get_predictive_table():
     default_rnai_dataset = utils.get_default_rnai_dataset()
     assert default_crispr_dataset is not None
     assert default_rnai_dataset is not None
-    if data_access.valid_row(default_crispr_dataset.given_id, gene.entrez_id):
+
+    if data_access.valid_row(default_crispr_dataset.given_id, gene.label):
         datasets.append(default_crispr_dataset)
-    if data_access.valid_row(default_rnai_dataset.given_id, gene.entrez_id):
+    if data_access.valid_row(default_rnai_dataset.given_id, gene.label):
         datasets.append(default_rnai_dataset)
 
     data = []
@@ -257,7 +258,8 @@ def get_predictive_table():
         elif dataset.data_type == DataTypeEnum.rnai:
             screen_type = "rnai"
 
-        models = PredictiveModel.get_all_models(dataset.given_id, gene.entrez_id)
+        models = PredictiveModel.get_all_models(dataset.given_id, str(gene.entrez_id))
+
         if len(models) == 0:
             continue
 
@@ -280,12 +282,12 @@ def get_predictive_table():
                     "featureName": feature_result.feature.feature_name,
                     "featureImportance": feature_result.importance,
                     "correlation": feature_result.feature.get_correlation_for_entity(
-                        dataset.dataset_given_id, gene.entrez_id
+                        dataset.given_id, str(gene.entrez_id)
                     ),
                     "featureType": feature_result.feature.feature_type,
                     "relatedType": related_type,
                     "interactiveUrl": feature_result.feature.get_interactive_url_for_entity(
-                        dataset.given_id, gene.entrez_id
+                        dataset.given_id, str(gene.entrez_id)
                     ),
                 }
                 results.append(row)

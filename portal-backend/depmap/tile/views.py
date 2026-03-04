@@ -245,7 +245,8 @@ def get_predictability_html(
         return render_template(
             "tiles/predictability.html",
             predictability=format_predictability_tile(
-                gene.entrez_id, [default_crispr_dataset, default_rnai_dataset]
+                gene.entrez_id,
+                [default_crispr_dataset.given_id, default_rnai_dataset.given_id],
             ),
             is_gene_executive=True,  # Hard coded as True; TBD if we want TDA to show something else
             gene_symbol=entity.symbol,

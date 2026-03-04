@@ -279,7 +279,7 @@ def format_predictability_tile(
             continue
 
         df = PredictiveModel.get_top_models_features(
-            dataset_given_id=given_id, pred_model_feature_id=feature_id
+            dataset_given_id=given_id, pred_model_feature_id=str(feature_id)
         )
         if df is None:
             continue
