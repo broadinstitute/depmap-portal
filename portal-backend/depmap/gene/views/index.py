@@ -3,6 +3,7 @@ import tempfile
 import zipfile
 from typing import List
 from depmap.context_explorer.models import ContextExplorerDatasets
+from depmap.data_access.models import MatrixDataset
 from depmap.enums import DataTypeEnum
 import pandas as pd
 import json
@@ -22,7 +23,7 @@ from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.entity.views.index import format_summary
 from depmap.extensions import memoize_without_user_permissions
 from depmap.gene.models import Gene
-from depmap.gene.views import characterization
+from depmap.gene.views import characterization, utils
 from depmap.gene.views.confidence import format_confidence, has_gene_confidence
 from depmap.gene.views.executive import format_mutation_profile, get_order
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
@@ -97,20 +98,9 @@ def _get_gene_page_template_parameters(gene_symbol):
         ),
         None,
     )
-    default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.crispr
-    )
-    crispr_dataset = (
-        default_crispr_dataset
-        if default_crispr_dataset in dependency_datasets
-        else None
-    )
-    default_rnai_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.rnai
-    )
-    rnai_dataset = (
-        default_rnai_dataset if default_rnai_dataset in dependency_datasets else None
-    )
+
+    crispr_dataset = utils.get_default_crispr_dataset()
+    rnai_dataset = utils.get_default_rnai_dataset()
 
     biomarker_datasets = biomarker_datasets_with_gene(entity_id)
     # if there are biomarker datasets and dependency datasets
@@ -123,13 +113,17 @@ def _get_gene_page_template_parameters(gene_symbol):
 
     has_predictability = (
         crispr_dataset is not None
+        and crispr_dataset.given_id is not None
         and PredictiveModel.get_top_models_features(
-            crispr_dataset.dataset_id, entity_id
+            crispr_dataset.given_id, gene.entrez_id
         )
         is not None
     ) or (
         rnai_dataset is not None
-        and PredictiveModel.get_top_models_features(rnai_dataset.dataset_id, entity_id)
+        and rnai_dataset.given_id is not None
+        and PredictiveModel.get_top_models_features(
+            rnai_dataset.given_id, gene.entrez_id
+        )
         is not None
     )
 
@@ -246,22 +240,22 @@ def get_predictive_table():
     entity_id = int(request.args.get("entityId"))
     gene = Gene.get_by_entity_id(entity_id)
 
-    datasets: List[DependencyDataset] = []
-    default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.crispr
+    datasets: List[MatrixDataset] = []
+
+    default_crispr_dataset = utils.get_default_crispr_dataset()
+    default_rnai_dataset = utils.get_default_rnai_dataset()
+    assert (
+        default_crispr_dataset is not None
+        and default_crispr_dataset.given_id is not None
     )
-    default_rnai_dataset = DependencyDataset.get_dataset_by_data_type_priority(
-        DependencyDataset.DataTypeEnum.rnai
+    assert (
+        default_rnai_dataset is not None and default_rnai_dataset.given_id is not None
     )
-    assert default_crispr_dataset is not None
-    assert default_rnai_dataset is not None
-    if DependencyDataset.has_entity(default_crispr_dataset.name, entity_id):
+
+    if data_access.valid_row(default_crispr_dataset.given_id, gene.label):
         datasets.append(default_crispr_dataset)
-    if DependencyDataset.has_entity(default_rnai_dataset.name, entity_id):
-        rnai_dataset = DependencyDataset.get_dataset_by_name(
-            default_rnai_dataset.name.name
-        )
-        datasets.append(rnai_dataset)
+    if data_access.valid_row(default_rnai_dataset.given_id, gene.label):
+        datasets.append(default_rnai_dataset)
 
     data = []
     for dataset in datasets:
@@ -271,7 +265,9 @@ def get_predictive_table():
         elif dataset.data_type == DataTypeEnum.rnai:
             screen_type = "rnai"
 
-        models = PredictiveModel.get_all_models(dataset.dataset_id, entity_id)
+        assert dataset.given_id is not None
+        models = PredictiveModel.get_all_models(dataset.given_id, str(gene.entrez_id))
+
         if len(models) == 0:
             continue
 
@@ -286,18 +282,20 @@ def get_predictive_table():
             )
             results = []
             for feature_result in sorted_feature_results:
-                related_type = feature_result.feature.get_relation_to_entity(entity_id)
+                related_type = feature_result.feature.get_relation_to_entity(
+                    gene.entrez_id, dataset.feature_type
+                )
 
                 row = {
                     "featureName": feature_result.feature.feature_name,
                     "featureImportance": feature_result.importance,
                     "correlation": feature_result.feature.get_correlation_for_entity(
-                        dataset, gene
+                        dataset.given_id, str(gene.entrez_id)
                     ),
                     "featureType": feature_result.feature.feature_type,
                     "relatedType": related_type,
                     "interactiveUrl": feature_result.feature.get_interactive_url_for_entity(
-                        dataset, gene
+                        dataset.given_id, str(gene.entrez_id)
                     ),
                 }
                 results.append(row)
@@ -317,7 +315,7 @@ def get_predictive_table():
             models_and_results.append(row)
         data.append(
             {
-                "screen": dataset.display_name,
+                "screen": dataset.label,
                 "screenType": screen_type,
                 "modelsAndResults": models_and_results,
             }
@@ -333,10 +331,9 @@ def get_predictability_files():
     path = os.path.join(predictability_path, "genes_predictability_results.zip",)
     # Find all predictive models for datasets with genes as features and get the dataset enum
     # Note: This returns a named Tuple
-    gene_dataset_enums_with_predictabilities = (
-        PredictiveModel.query.filter(PredictiveModel.entity.has(type="gene"))
-        .join(DependencyDataset)
-        .with_entities(DependencyDataset.name)
+    gene_dataset_given_ids_with_predictabilities = (
+        PredictiveModel.query.filter(PredictiveModel.pred_model_feature_type == "gene")
+        .with_entities(PredictiveModel.dataset_given_id)
         .distinct()
         .all()
     )
@@ -347,13 +344,13 @@ def get_predictability_files():
             delete=False, dir=os.path.dirname(os.path.abspath(predictability_path))
         ) as tmpfile:
             with zipfile.ZipFile(tmpfile, "w") as zf:
-                for (enum,) in gene_dataset_enums_with_predictabilities:
+                for (given_id,) in gene_dataset_given_ids_with_predictabilities:
                     zf.write(
                         os.path.join(
                             predictability_path,
-                            f"{enum.name}_predictability_results.csv",
+                            f"{given_id}_predictability_results.csv",
                         ),
-                        arcname=f"{enum.name}_predictability_results.csv",
+                        arcname=f"{given_id}_predictability_results.csv",
                     )
                 zf.close()
                 # Move zip file in tmpdir to predictabilty results path
