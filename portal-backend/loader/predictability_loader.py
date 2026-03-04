@@ -138,6 +138,9 @@ def _load_predictive_models(
             predictive_model_id=model_id,
             dataset_given_id=lookup_breadbox_dataset_given_id(dataset_name),
             pred_model_feature_id=lookup_feature_id(entity_label),
+            pred_model_feature_type="gene"
+            if dataset.entity_type == "gene"
+            else "compound_v2",
             label=model_name,
             pearson=float(row["pearson"]),
         )
