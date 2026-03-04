@@ -100,7 +100,7 @@ def load_interpretable_model(file_path, dataset_name):
             continue
         # lookup_breadbox_dataset_given_id will fall back to the legacy database dataset in the case of crispr Avana.
         predictive_model = PredictiveModel.get_top_model(
-            lookup_breadbox_dataset_given_id(dataset_name), gene.entrez_id
+            lookup_breadbox_dataset_given_id(dataset_name), str(gene.entrez_id)
         )
         db.session.add(
             TDAInterpretableModel(

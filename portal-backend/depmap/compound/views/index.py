@@ -65,7 +65,9 @@ def view_compound(name):
     )
     has_datasets = len(compound_datasets) != 0
 
-    dataset_given_ids = [d.given_id for d in compound_datasets]
+    dataset_given_ids = [
+        d.given_id for d in compound_datasets if d.given_id is not None
+    ]
     has_predictability: bool = has_datasets and len(
         get_predictive_models_for_compound(
             dataset_given_ids=dataset_given_ids, compound_id=compound.compound_id
@@ -178,7 +180,9 @@ def get_predictive_table():
         compound.compound_id
     )
 
-    sorted_dataset_given_ids = [d.given_id for d in sorted_datasets_with_compound]
+    sorted_dataset_given_ids = [
+        d.given_id for d in sorted_datasets_with_compound if d.given_id is not None
+    ]
 
     sorted_models_for_compound = get_predictive_models_for_compound(
         compound_id=compound.compound_id, dataset_given_ids=sorted_dataset_given_ids

@@ -13,6 +13,7 @@ from tests.factories import BiomarkerDatasetFactory
 
 def test_load_predictive_model_csv(populated_db):
     sox10 = Gene.get_gene_by_entrez(entrez_id=6663)
+    assert sox10 is not None
     dataset_given_id = "Chronos_Combined"
 
     # manually add rppa because this is the only test that relies on it existing

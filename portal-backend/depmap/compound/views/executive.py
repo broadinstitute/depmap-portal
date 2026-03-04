@@ -249,7 +249,7 @@ def format_availability_tile(compound: Compound):
 
 
 def get_predictive_models_for_compound(
-    compound_id: List[str], dataset_given_ids: List[str]
+    compound_id: str, dataset_given_ids: List[str]
 ) -> List[PredictiveModel]:
 
     model_order = {"Core_omics": 1, "Extended_omics": 2, "DNA_based": 3}

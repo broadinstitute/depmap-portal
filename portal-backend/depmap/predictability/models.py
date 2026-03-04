@@ -176,7 +176,7 @@ class PredictiveModel(Model):
 
     @staticmethod
     def get_all_models(
-        dataset_given_id: int, pred_model_feature_id: str
+        dataset_given_id: str, pred_model_feature_id: str
     ) -> List["PredictiveModel"]:
         models = PredictiveModel.query.filter_by(
             dataset_given_id=dataset_given_id,
@@ -303,10 +303,13 @@ class PredictiveFeature(Model):
             return None
 
         entity = (
-            Gene.get_gene_by_entrez(pred_model_feature_id)
+            Gene.get_gene_by_entrez(int(pred_model_feature_id))
             if pred_model_feature_type == "gene"
             else Compound.get_by_compound_id(pred_model_feature_id)
         )
+
+        if entity is None:
+            return None
 
         if entity.entity_id == self_entity.entity_id:
             return "self"

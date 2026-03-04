@@ -147,14 +147,14 @@ def test_get_top_models_features(empty_db_mock_downloads, monkeypatch):
     assert (
         PredictiveModel.get_top_models_features(
             dataset_given_id=dataset_given_id,
-            pred_model_feature_id=gene_no_model.entrez_id,
+            pred_model_feature_id=str(gene_no_model.entrez_id),
         )
         is None
     )
 
     df = PredictiveModel.get_top_models_features(
         dataset_given_id=dataset_given_id,
-        pred_model_feature_id=gene.entrez_id,
+        pred_model_feature_id=str(gene.entrez_id),
         num_models=2,
         num_top_features=2,
     )

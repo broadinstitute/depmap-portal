@@ -113,12 +113,14 @@ def _get_gene_page_template_parameters(gene_symbol):
 
     has_predictability = (
         crispr_dataset is not None
+        and crispr_dataset.given_id is not None
         and PredictiveModel.get_top_models_features(
             crispr_dataset.given_id, gene.entrez_id
         )
         is not None
     ) or (
         rnai_dataset is not None
+        and rnai_dataset.given_id is not None
         and PredictiveModel.get_top_models_features(
             rnai_dataset.given_id, gene.entrez_id
         )
@@ -242,8 +244,13 @@ def get_predictive_table():
 
     default_crispr_dataset = utils.get_default_crispr_dataset()
     default_rnai_dataset = utils.get_default_rnai_dataset()
-    assert default_crispr_dataset is not None
-    assert default_rnai_dataset is not None
+    assert (
+        default_crispr_dataset is not None
+        and default_crispr_dataset.given_id is not None
+    )
+    assert (
+        default_rnai_dataset is not None and default_rnai_dataset.given_id is not None
+    )
 
     if data_access.valid_row(default_crispr_dataset.given_id, gene.label):
         datasets.append(default_crispr_dataset)
@@ -258,6 +265,7 @@ def get_predictive_table():
         elif dataset.data_type == DataTypeEnum.rnai:
             screen_type = "rnai"
 
+        assert dataset.given_id is not None
         models = PredictiveModel.get_all_models(dataset.given_id, str(gene.entrez_id))
 
         if len(models) == 0:
