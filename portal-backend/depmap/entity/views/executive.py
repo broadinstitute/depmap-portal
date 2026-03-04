@@ -220,8 +220,8 @@ def format_top_three_models_top_feature(sorted_df, type):
     return [
         {
             "model_label": row["model_label"],
-            "feature_name": row["predictive_feature_name"],
-            "feature_type": row["predictive_feature_type"],
+            "feature_name": row["feature_name"],
+            "feature_type": row["feature_type"],
             "model_pearson": number_utils.format_3_sf(row["model_pearson"]),
         }
         for row in relevant_rows.to_dict("records")  # iterrows, but, safer copy
