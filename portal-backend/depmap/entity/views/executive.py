@@ -425,8 +425,8 @@ def format_overall_top_model(sorted_df):
     relevant_rows = sorted_df[sorted_df["predictive_model_id"] == top_model_id].head(5)
     features = [
         {
-            "name": row["predictive_feature_name"],
-            "type": row["predictive_feature_type"],
+            "name": row["feature_name"],
+            "type": row["feature_type"],
             "importance": row["feature_importance"],
             "interactive_url": row["interactive_url"],
             "correlation": row["correlation"]

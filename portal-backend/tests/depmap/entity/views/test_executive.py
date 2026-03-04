@@ -12,28 +12,11 @@ from depmap.entity.views.executive import (
     format_generic_distribution_plot,
     format_overall_top_model,
     format_top_three_models_top_feature,
-    format_predictability_tile,
     sort_by_model_pearson_feature_rank,
     get_percentile,
     split_feature_label,
 )
 from tests.depmap.utilities.test_svg_utils import assert_is_svg
-from tests.utilities import interactive_test_utils
-from tests.factories import (
-    BiomarkerDatasetFactory,
-    CellLineFactory,
-    ContextAnalysisFactory,
-    DepmapModelFactory,
-    GeneFactory,
-    MatrixFactory,
-    DependencyDatasetFactory,
-    PredictiveFeatureFactory,
-    PredictiveModelFactory,
-    PredictiveFeatureResultFactory,
-    PredictiveBackgroundFactory,
-    SubtypeContextFactory,
-    SubtypeNodeFactory,
-)
 from depmap.dataset.models import DependencyDataset
 
 
