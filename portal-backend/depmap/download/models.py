@@ -225,7 +225,9 @@ class ReleaseTerms(Enum):
             "ccle": """CCLE publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("ccle", path="terms_and_conditions")
             ),
-            "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(url_for("public.terms")),
+            "depmap": """DepMap publishes it's data under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
+                url_for("public.terms")
+            ),
             "ctd2": """The CTD^2 releases data in accordance with their <a target="_blank" href="https://ocg.cancer.gov/programs/ctd2/using-ctd2-data">data release policy</a>""",
             "dmc": """Data for the Dependency Map Consortium is made available under the <a target="_blank" href="{}">Terms and Conditions linked here.</a>""".format(
                 url_for("public.terms")
@@ -476,9 +478,6 @@ class DownloadFile:
         md5_hash: Optional[str] = None,
         display_label: Optional[str] = None,
     ):
-        """
-        :param sources: defaults to Broad. file-specific sources overrides release sources, but is the same thing
-        """
         self.name: str = name
         self.display_label = display_label
         assert isinstance(type, FileType)
@@ -502,7 +501,7 @@ class DownloadFile:
             assert all([isinstance(source, FileSource) for source in sources])
             self._source_specified = True
         else:
-            sources = [FileSource.broad]
+            sources = []
             # if sources is set on release, will use that unless specified here
             self._source_specified = False
         self.sources: List[FileSource] = sources
