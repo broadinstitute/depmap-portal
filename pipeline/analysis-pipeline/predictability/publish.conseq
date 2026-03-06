@@ -1,0 +1,30 @@
+# publish the model configs that the breadbox loader will need
+rule publish_breadbox_model_configs:
+    inputs: in={"type": "breadbox-model-configs"}
+    publish: "{{config.publish_dest}}/breadbox-model-configs.json"
+
+# publish the merged feature metadata mapping file
+rule publish_daintree_feature_metadata:
+    inputs: in={"type": "daintree-feature-metadata"}
+    publish: "{{config.publish_dest}}/daintree-feature-metadata.json"
+
+# for each daintree output, upload the required files and produce an artifact with the taiga ids for each file.
+rule upload_daintree_results_to_taiga:
+    inputs:
+        actuals={"type":"target_matrix", "label":target_label},
+        daintree_output={"type": "daintree_output", "screen_name": target_label},
+        script=fileref("scripts/upload_fit_results_to_taiga.py")
+    run "bash" with """
+        python3 {{inputs.script.filename}} \
+            --actuals {{inputs.daintree_output.screen_name}} \
+            --actuals_taiga_id {{inputs.actuals.source_dataset_id}}\
+            --config {{inputs.daintree_output.model_name }} \
+            --ensemble_csv {{ inputs.daintree_output.ensemble_filename }} \
+            --predictions_matrix_csv {{ inputs.daintree_output.predictions_filename }} \
+            --dest_permaname {{ config.dest_permaname }} 
+    """
+
+# the above resulted in artifacts of type breadbox-daintree-output. We want to collect all of them in one place for the breadbox loader to pull down
+rule publish_breadbox_daintree_outputs:
+    inputs: outputs=all {"type": "breadbox-daintree-output"}
+    publish: "{{config.publish_dest}}/breadbox-daintree-outputs.json"

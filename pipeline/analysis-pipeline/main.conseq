@@ -26,6 +26,6 @@ include "predictability/fit.conseq"
 # INVALID, then we're probably running the pipeline for development, and 
 # therefore, don't publish any of the results to the dest path
 if "config.get('publish_dest', 'INVALID') != 'INVALID'":
-  include "publish.conseq"
+  include "predictability/publish.conseq"
 endif
 

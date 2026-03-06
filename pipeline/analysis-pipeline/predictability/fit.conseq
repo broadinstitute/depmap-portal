@@ -3,16 +3,17 @@
 # 2. Run the model fitting
 # 3. Combine the output config files
 
-let sparkles_path = "sparkles"
+let sparkles_path = "PYTHONUNBUFFERED=1 sparkles"
 let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.3.0"
 
 # Change the artifact below to run on a small subset of the full config (useful just for testing). Set all to "yes" 
 # for normal operation, or "no" for doing a subset of the normal work
 add-if-missing {
     "type": "daintree-test-run-flags", 
-    "run_all_configs": "yes",
+    "run_all_configs": "no",
     "fit_all_actuals": "no"}
 
+# creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
 rule process_model_config:
     inputs:
         # Model config yaml file
@@ -54,10 +55,11 @@ rule process_model_config:
     """
     run """python3 {{ inputs.script.filename }} \
     --model_config {{ inputs.model_config.filename }} \
-    --input_config 'daintree_input_config.json' {% if inputs.is_test_run.run_all_configs == 'no' %}--test-only-first-n 2{% endif %}"""
+    --input_config 'daintree_input_config.json' {% if inputs.is_test_run.run_all_configs == 'no' %}--test-only-first-n 3{% endif %}"""
 
+# this is the heart of running daintree: For each daintree config, run the workflow and produce an artifact per run.
 rule run_fit_models:
-    resources: {'slots': "0.1"} # let up to 10 of these run in parallel
+    resources: {'slots': "0.5"} # let up to 2 of these run in parallel
     inputs:
         daintree_input_config={
           "type": "daintree_input_config"
@@ -79,7 +81,7 @@ rule run_fit_models:
         --config {{ inputs.daintree_input_config.filename }} \
         --out workflow.json \
         --nfolds 5 \
-        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 100{% endif %} \
+        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 20{% endif %} \
         --extra-python-files extra_python_files"""
 
     run """{{config.sparkles_path}} workflow run \
@@ -111,47 +113,29 @@ rule run_fit_models:
             ]}))
     """
 
-rule combine_daintree_outputs:
+# export all daintree outputs into a form which is digestible to the breadbox loader. 
+# For the breadbox loader, we'll want to refer to all data by taiga_id. How about we do three passes:
+# 1. write out model config json file (this is information about the model configs for breadbox's purposes)
+# 2. export an artifact which contains all the info we need, but has references to daintree files. This seems like it's just the fit process we have today.
+# 3. upload each to taiga and but this one has a taiga_id in place of file paths.
+# 4. merge all features_metadata_filenames together
+# Then we publish the model config artifact and the list of daintree taiga artifacts
+
+rule merge_feature_metadata_files:
+    # takes all of the feature metadata from all the daintree outputs and merges them into a single table
+    # since the mapping between feature name -> taiga_id, given_id, etc should be the same across all runs
     inputs:
-        outputs = all{
-          "type": "daintree_output"
-          }
+        outputs = all{"type": "daintree_output"},
+        script = fileref("scripts/merge_feature_metadata.py")
     outputs:
         {
-          "type": "combined_daintree_upload_outputs",
-          "filename": {"$filename": "combined_daintree_upload_outputs.json"}
+          "type": "daintree-feature-metadata",
+          "filename": {"$filename": "feature_metadata.csv"}
         }
-    run "python" with """
-        import json
-        import os
-
-        def merge_json_files(json_files):
-            combined = {}
-            
-            for file_path in json_files:
-                with open(file_path, 'r') as f:
-                    data = json.load(f)
-                    
-                model_names = list(data.keys())
-                assert len(model_names) == 1
-                model_name = model_names[0]
-                screen_name = data[model_name]["input"]["screen_name"]
-                
-                # Initialize the screen in combined if it doesn't exist
-                if screen_name not in combined:
-                    combined[screen_name] = {}
-                    
-                # Add the model data to the appropriate screen
-                combined[screen_name][model_name] = data[model_name]
-            
-            return combined        
-
-        artifacts = {{ inputs.outputs | quoted }}
-        list_of_files = [artifact['filename'] for artifact in artifacts]
-
-        combined_output_config = merge_json_files(list_of_files)
-
-        with open("combined_daintree_upload_outputs.json", 'w') as f:
-            json.dump(combined_output_config, f, indent=2)
+    run "bash" with """
+        cat > artifacts.json <<EOF
+        {{ inputs.outputs | quoted }}
+        EOF
     """
+    run "python {{inputs.script.filename}} artifacts.json feature_metadata.csv"
 
