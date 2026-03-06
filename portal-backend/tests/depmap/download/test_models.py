@@ -60,7 +60,7 @@ def test_sources_precedence():
         sources=[FileSource.sanger],
     )
 
-    assert default_release_file.all_files[0].sources == [FileSource.broad]
+    assert default_release_file.all_files[0].sources == []
     assert default_release_file.all_files[1].sources == [FileSource.marcotte]
 
     assert set_release_file.all_files[0].sources == [FileSource.sanger]
@@ -76,7 +76,7 @@ def test_get_sources_display_names(app):
     assert file_specified.get_sources_display_names() == specified_expected
 
     file_default = get_download_list()[0].all_files[1]
-    default_expected = ["Broad Institute"]
+    default_expected = []
     assert file_default.get_sources_display_names() == default_expected
 
 

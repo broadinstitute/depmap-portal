@@ -115,7 +115,7 @@ def test_get_file_record(app, _empty_db_base):
     # No SummaryStats; date override
     f = release.all_files[1]
     expected = {
-        "sources": ["Broad Institute"],
+        "sources": [],
         "fileName": "headliner2 file name",
         "fileType": "Cellular Models",
         "fileSubType": {"code": "mutations", "label": "Mutations", "position": 1},

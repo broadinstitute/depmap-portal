@@ -31,6 +31,7 @@ expected_downloads = [
                 sub_type=FileSubtype(
                     code="crispr_screen", label="CRISPR Screen", position=0
                 ),
+                sources=[FileSource.broad],
                 size="MB",
                 url=DmcBucketUrl("test/gene_effect.csv"),
                 taiga_id="small-chronos-combined-e82b.2/chronos_combined_score",
@@ -52,6 +53,7 @@ expected_downloads = [
                 description="This is the file description.",
                 is_main_file=True,
                 satisfies_db_taiga_id="placeholder-gdsc-id.1",
+                sources=[FileSource.broad],
                 summary_stats=SummaryStats(
                     [
                         {"value": 1, "label": "genes"},
@@ -67,6 +69,7 @@ expected_downloads = [
                 size="MB",
                 url="https://link.to/figshare/drugctrp",
                 taiga_id="placeholder-ctrp-id.1",
+                sources=[FileSource.broad],
             ),
             DownloadFile(
                 name="copy_number.csv",
