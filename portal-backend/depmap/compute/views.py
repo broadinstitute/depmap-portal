@@ -1,7 +1,7 @@
 import logging
 
 from flask import Blueprint, render_template
-from flask_restplus import Api
+from flask_restx import Api
 
 from depmap.extensions import csrf_protect, restplus_handle_exception
 
@@ -27,4 +27,3 @@ log = logging.getLogger(__name__)
 @blueprint.route("/ui")
 def ui():
     return render_template("compute/ui.html")
-

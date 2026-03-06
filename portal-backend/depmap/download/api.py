@@ -7,7 +7,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 from typing import List
 from datetime import datetime
 from flask import request, current_app, make_response
-from flask_restplus import Namespace, Resource, fields
+from flask_restx import Namespace, Resource, fields
 
 from depmap import data_access
 from depmap.download import tasks

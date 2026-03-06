@@ -17,7 +17,7 @@ readme = "README.md"
 python = "^3.9"
 Flask = "^1.1.4"
 #wheel==0.37.1
-# below is needed because flask_restplus does not work with later versions
+# Werkzeug was pinned to 0.16.1 for flask-restplus compat; now using flask-restx
 Werkzeug="0.16.1"
 #itsdangerous==1.1.0
 requests="^2.27.1"
@@ -78,7 +78,7 @@ oauthlib="^3.2.0"
 requests_oauthlib="1.3.1"
 
 # APIs
-flask-restplus="0.13.0"
+flask-restx="^1.3.0"
 
 # adding extension which switches shell to ipython
 flask-shell-ipython="0.4.1"

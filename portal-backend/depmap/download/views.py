@@ -14,7 +14,7 @@ from flask import (
 from sqlalchemy import func
 from oauth2client.service_account import ServiceAccountCredentials
 from typing import Any, List, Dict, Literal, Tuple, Union
-from flask_restplus import Api, Resource, fields
+from flask_restx import Api, Resource, fields
 
 from depmap import data_access
 from depmap.download.models import (

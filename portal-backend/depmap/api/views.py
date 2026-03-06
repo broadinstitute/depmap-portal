@@ -1,5 +1,5 @@
 from flask import Blueprint
-from flask_restplus import Resource
+from flask_restx import Resource
 
 from depmap.api.models import ApiWithUrlScheme
 from depmap.celery_task.api import namespace as celery_namespace
