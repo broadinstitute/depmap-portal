@@ -152,11 +152,8 @@ executive.py: error: Argument of type "Column[str]" cannot be assigned to parame
 executive.py: error: Argument of type "Column[str]" cannot be assigned to parameter "compound_id" of type "str" in function "get_all_datasets_containing_compound"
 executive.py: error: Argument of type "DependencyDataset | None" cannot be assigned to parameter "filter_dataset" of type "DependencyDataset" in function "get_predictive_models_for_compound"
 executive.py: error: Argument of type "str | Any" cannot be assigned to parameter "__value" of type "list[Unknown]" in function "__setitem__"
-executive.py: error: Cannot access member "barh" for type "ndarray[Any, dtype[Any]]"
 executive.py: error: Cannot access member "get_top_models_features" for type "type[TDPredictiveModel]"
 executive.py: error: Cannot access member "name" for type "None"
-executive.py: error: Cannot access member "spines" for type "ndarray[Any, dtype[Any]]"
-executive.py: error: Cannot access member "tick_params" for type "ndarray[Any, dtype[Any]]"
 executive.py: error: Expected type expression but received "(typename: str, fields: dict[str, type[Any]], total: bool = ...) -> type[dict[str, Any]]" (reportGeneralTypeIssues)
 executive.py: error: Expression of type "None" cannot be assigned to parameter of type "DependencyDataset"
 executive.py: error: Expression of type "dict[Any, Any]" cannot be assigned to declared type "CrisprDepDistInfo" (reportAssignmentType)
@@ -166,6 +163,7 @@ executive.py: error: Incorrect keyword arguments for __init_subclass__ method (r
 executive.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 executive.py: error: Invalid conditional operand of type "Column[bool] | None"
 executive.py: error: Invalid conditional operand of type "Column[bool]"
+executive.py: error: No parameter named "labels" (reportCallIssue)
 executive.py: error: No parameter named "total" (reportCallIssue)
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "forced_update" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "hash_method" of type "(...) -> Unknown" in function "cached"
@@ -173,8 +171,12 @@ extensions.py: error: Argument of type "bool" cannot be assigned to parameter "k
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "make_cache_key" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "response_filter" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "unless" of type "((...) -> Unknown) | None" in function "cached"
+factories.py: error: "LazyAttribute" is not exported from module "factory" (reportPrivateImportUsage)
 factories.py: error: "Meta" overrides symbol of same name in class "DatasetFactory"
 factories.py: error: "Meta" overrides symbol of same name in class "SQLAlchemyModelFactory"
+factories.py: error: "SelfAttribute" is not exported from module "factory" (reportPrivateImportUsage)
+factories.py: error: "Sequence" is not exported from module "factory" (reportPrivateImportUsage)
+factories.py: error: "SubFactory" is not exported from module "factory" (reportPrivateImportUsage)
 factories.py: error: "label" is not a known member of "None" (reportOptionalMemberAccess)
 factories.py: error: Argument of type "Query | RowReturningQuery[Tuple[str, str, str, Any, Any]]" cannot be assigned to parameter "query" of type "MutationTableSpec" in function "format_mutations_table"
 factories.py: error: Argument of type "Query[Any]" cannot be assigned to parameter "query" of type "MutationTableSpec" in function "format_mutations_table"
@@ -397,6 +399,7 @@ spawn_commands.py: error: "run_with_reloader" is unknown import symbol (reportAt
 spawn_commands.py: error: Argument of type "Literal['auto']" cannot be assigned to parameter "interval" of type "int | float" in function "run_with_reloader"
 spawn_commands.py: error: Argument of type "Literal[1]" cannot be assigned to parameter "exclude_patterns" of type "Iterable[str] | None" in function "run_with_reloader"
 spawn_commands.py: error: Cannot access member "_get_current_object" for type "Flask"
+spawn_commands.py: error: Expected 0 positional arguments (reportCallIssue)
 standard_utils.py: error: "get_cell_line_values_and_depmap_ids" is not a known member of "None" (reportOptionalMemberAccess)
 standard_utils.py: error: "get_subsetted_df" is not a known member of "None" (reportOptionalMemberAccess)
 str_profile_loader.py: error: Expected no arguments to "STRProfile" constructor (reportCallIssue)
@@ -434,6 +437,7 @@ tasks.py: error: Argument of type "dict[Column[str], Column[str]]" cannot be ass
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
 tda_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 tda_loader.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
+tda_loader.py: error: Argument of type "dict[str, list[Unknown]]" cannot be assigned to parameter "segmentdata" of type "dict[Literal['red', 'green', 'blue', 'alpha'], Sequence[tuple[float, ...]]]" in function "__init__"
 tda_loader.py: error: Argument of type "list[Unknown | None]" cannot be assigned to parameter "__iterable" of type "Iterable[str]" in function "join"
 tda_loader.py: error: Argument of type "str | Any" cannot be assigned to parameter "entrez_id" of type "int" in function "get_gene_by_entrez"
 tda_loader.py: error: Cannot access member "__table__" for type "type[TDPredictiveModel]"

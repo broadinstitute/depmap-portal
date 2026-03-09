@@ -198,7 +198,7 @@ def split_feature_label(feature_label):
     """
     feature_name, feature_type = feature_label.rsplit("_", 1)  # split from the right
     feature_name = re.sub(
-        " \([0-9]*?\)", "", feature_name
+        r" \([0-9]*?\)", "", feature_name
     )  # given "SOX10 (6663)", removes (6663) including the space before it
     feature_name = feature_name.replace("_", " ")
 

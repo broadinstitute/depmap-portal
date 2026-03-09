@@ -12,7 +12,7 @@ from flask import (
     send_file,
 )
 from sqlalchemy import func
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from typing import Any, List, Dict, Literal, Tuple, Union
 from flask_restx import Api, Resource, fields
 
@@ -201,7 +201,7 @@ def download_file():
     downloads = get_download_list()
 
     if is_valid_download_file(downloads, bucket, file_name):
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        credentials = ServiceAccountCredentials.from_service_account_file(
             current_app.config["DOWNLOADS_KEY"]
         )
 

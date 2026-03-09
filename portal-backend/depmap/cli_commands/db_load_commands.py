@@ -62,6 +62,11 @@ from loader.gcs import GCSCache
 
 log = logging.getLogger(__name__)
 
+import warnings
+
+warnings.filterwarnings(
+    "ignore", message="use_inf_as_na option is deprecated", category=FutureWarning
+)
 pd.set_option("mode.use_inf_as_na", True)
 
 from depmap.cell_line.models_new import DepmapModel

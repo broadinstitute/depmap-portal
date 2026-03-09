@@ -17,7 +17,7 @@ from depmap.settings.download_settings import get_download_list
 from itsdangerous import URLSafeSerializer
 from depmap.utilities.sign_bucket_url import sign_url
 import urllib.parse
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 
 from flask import (
     Blueprint,
@@ -62,7 +62,7 @@ def simulate_error():
 @blueprint.route("/")
 def home():
     latest = _get_latest_release(get_download_list())
-    m = re.match(".*(2\dQ\d)", latest.name)
+    m = re.match(r".*(2\dQ\d)", latest.name)
 
     if m:
         quarter_name = m.groups()[0]
@@ -275,7 +275,7 @@ def portal_dmc_url():
     except Exception as e:
         raise PermissionError("Resource not verified!") from e
 
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    credentials = ServiceAccountCredentials.from_service_account_file(
         current_app.config["DOWNLOADS_KEY"]
     )
     # We've confirmed url was signed by portal so redirect to generated GCS url

@@ -75,7 +75,7 @@ class Gene(Entity):
         # only been discovered in the Fusion table. This causes the initial pattern to return an invalid ID "ENSG00000152422.15".
         # We need to remove the dot and anything after.
         if "." in match.group(1):
-            pattern = re.compile(".*(?=\.)")
+            pattern = re.compile(r".*(?=\.)")
             match = pattern.match(match.group(1))
             stable_id = match.group(0)
 
