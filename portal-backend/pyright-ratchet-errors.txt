@@ -2,6 +2,7 @@ access_control_config.py: error: "GroupAuthConfig" is not defined (reportUndefin
 api.py: error: "context_explorer_prerelease_datasets" is not a known member of "None" (reportOptionalMemberAccess)
 api.py: error: "dataset_id" is possibly unbound (reportPossiblyUnboundVariable)
 api.py: error: "taiga_id" is not a known member of "None" (reportOptionalMemberAccess)
+api.py: error: Argument of type "dict[bool, str]" cannot be assigned to parameter "func" of type "PythonFuncType" in function "map" (reportArgumentType)
 api.py: error: Argument of type "float | None" cannot be assigned to parameter "max_fdr" of type "float" in function "get_sig_context_dataframe"
 api.py: error: Argument of type "float | None" cannot be assigned to parameter "min_abs_effect_size" of type "float" in function "get_sig_context_dataframe"
 api.py: error: Argument of type "float | None" cannot be assigned to parameter "min_frac_dep_in" of type "float" in function "get_sig_context_dataframe"
@@ -37,10 +38,15 @@ api.py: error: Argument of type "str | None" cannot be assigned to parameter "tr
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "tree_type" of type "str" in function "get_organized_contexts"
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "tree_type" of type "str" in function "get_sig_context_dataframe"
 api.py: error: Cannot access member "delay" for type "function"
+api.py: error: Expression of type "Series | DataFrame | Unknown" cannot be assigned to return type "DataFrame"
+api.py: error: No overloads for "rename" match the provided arguments
+api.py: error: No overloads for "sort_values" match the provided arguments
 autoapp.py: error: Argument of type "Serializer[str]" cannot be assigned to parameter "serializer" of type "Serializer[str | bytes]" in function "__init__"
 biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVariable)
 biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
 biomarker_loader.py: error: "taiga_id" is not a known member of "None" (reportOptionalMemberAccess)
+biomarker_loader.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
+biomarker_loader.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 biomarker_loader.py: error: Cannot access member "__table__" for type "type[Fusion]"
 biomarker_loader.py: error: Cannot access member "__table__" for type "type[Mutation]"
 biomarker_loader.py: error: Cannot access member "__table__" for type "type[Translocation]"
@@ -48,6 +54,7 @@ biomarker_loader.py: error: Expected no arguments to "GenericEntity" constructor
 biomarker_loader.py: error: Expected no arguments to "OncokbDatasetVersionDate" constructor (reportCallIssue)
 biomarker_loader.py: error: Expression of type "(x: Unknown) -> (SubtypeContextEntity | None)" cannot be assigned to declared type "(x: Unknown) -> GenericEntity"
 biomarker_loader.py: error: Expression of type "(x: Unknown) -> (Unknown | None)" cannot be assigned to declared type "(x: Unknown) -> GenericEntity"
+breadbox_dao.py: error: Expression of type "NDFrame | Unknown" cannot be assigned to return type "Series"
 categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__" (reportArgumentType)
 categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
 categories.py: error: Method "_get_na_value" overrides class "CategoryConfig" in an incompatible manner
@@ -76,8 +83,11 @@ cell_line_loader.py: error: Expected no arguments to "CellLine" constructor (rep
 cell_line_loader.py: error: Expected no arguments to "CellLineAlias" constructor (reportCallIssue)
 cell_line_loader.py: error: Expected no arguments to "DiseaseSubtype" constructor (reportCallIssue)
 cell_line_loader.py: error: Expected no arguments to "Lineage" constructor (reportCallIssue)
+celligner_loader.py: error: Cannot access member "to_csv" for type "NDArray[Unknown]"
+celligner_loader.py: error: Cannot access member "to_csv" for type "ndarray[Any, Unknown]"
 celligner_loader.py: error: Expected no arguments to "CellignerDistanceColIndex" constructor (reportCallIssue)
 celligner_loader.py: error: Expected no arguments to "CellignerDistanceRowIndex" constructor (reportCallIssue)
+celligner_loader.py: error: No overloads for "sort_values" match the provided arguments
 characterization.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
 characterization.py: error: "table_class" is not a known member of "None" (reportOptionalMemberAccess)
 compat.py: error: "basestring" is not defined (reportUndefinedVariable)
@@ -105,6 +115,8 @@ db_load_commands.py: error: Expected no arguments to "TaigaAlias" constructor (r
 depmap_model_loader.py: error: Expected no arguments to "DepmapModel" constructor (reportCallIssue)
 depmap_model_loader.py: error: Expected no arguments to "SubtypeContext" constructor (reportCallIssue)
 depmap_model_loader.py: error: Expected no arguments to "SubtypeContextEntity" constructor (reportCallIssue)
+df_test_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
+df_test_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 df_test_utils.py: error: Expected no arguments to "CellLine" constructor (reportCallIssue)
 executive.py: error: "_has_statsmodels" is not a known member of module "seaborn.distributions" (reportAttributeAccessIssue)
 executive.py: error: "ax" is possibly unbound (reportPossiblyUnboundVariable)
@@ -137,7 +149,6 @@ extensions.py: error: Argument of type "bool" cannot be assigned to parameter "r
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "unless" of type "((...) -> Unknown) | None" in function "cached"
 factories.py: error: "Meta" overrides symbol of same name in class "DatasetFactory"
 factories.py: error: "Meta" overrides symbol of same name in class "SQLAlchemyModelFactory"
-factories.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
 factories.py: error: Cannot access member "get" for type "scoped_session"
 factories.py: error: Cannot access member "statement" for type "MutationTableSpec*"
 factories.py: error: Cannot access member "uuid4" for type "None"
@@ -149,6 +160,7 @@ factories.py: error: Expression of type "None" cannot be assigned to declared ty
 factories.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 gcs_reporter.py: error: Expected 0 positional arguments (reportCallIssue)
 gene_loader.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
+gene_loader.py: error: Cannot access member "any" for type "ExtensionArray"
 gene_loader.py: error: Expected no arguments to "EntityAlias" constructor (reportCallIssue)
 gene_loader.py: error: Expected no arguments to "Gene" constructor (reportCallIssue)
 gene_loader.py: error: Expected no arguments to "GeneExecutiveInfo" constructor (reportCallIssue)
@@ -157,18 +169,16 @@ get_and_process_data.py: error: "col_index" is not a known member of "None" (rep
 global_search_loader.py: error: Cannot access member "is_not" for type "Column[Text]"
 global_search_loader.py: error: Expected no arguments to "ContextExplorerSearchIndex" constructor (reportCallIssue)
 global_search_loader.py: error: Expected no arguments to "FileSearchIndex" constructor (reportCallIssue)
-hashing_utils.py: error: "hash_pandas_object" is not a known member of module "numpy" (reportAttributeAccessIssue)
-hashing_utils.py: error: "indexes" is not a known member of module "numpy" (reportAttributeAccessIssue)
-hashing_utils.py: error: Cannot access member "hash_pandas_object" for type "type[SparseArray]"
-hashing_utils.py: error: Cannot access member "hash_pandas_object" for type "type[datetime]"
-hashing_utils.py: error: Cannot access member "indexes" for type "type[SparseArray]"
-hashing_utils.py: error: Cannot access member "indexes" for type "type[datetime]"
+hashing_utils.py: error: "core" is not a known member of module "pandas" (reportAttributeAccessIssue)
+hashing_utils.py: error: "util" is not a known member of module "pandas" (reportAttributeAccessIssue)
 hdf5_utils.py: error: "Datatype" is not iterable
 hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "arr" of type "ArrayLike" in function "apply_along_axis" (reportArgumentType)
 hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
 hdf5_utils.py: error: Argument of type "NDArray[Any]" cannot be assigned to parameter "__x1" of type "_ScalarLike_co" in function "__call__"
+hdf5_utils.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
+hdf5_utils.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 hdf5_utils.py: error: Cannot access member "shape" for type "Datatype"
 hdf5_utils.py: error: Cannot access member "shape" for type "Group"
 hdf5_utils.py: error: No overloads for "__call__" match the provided arguments (reportCallIssue)
@@ -216,14 +226,17 @@ models.py: error: "NoResultFound" is unknown import symbol (reportAttributeAcces
 models.py: error: "display_name" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "entity_type" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
-models.py: error: "index" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "taiga_id" is not a known member of "None" (reportOptionalMemberAccess)
+models.py: error: Argument of type "ArrayLike | float | Number | number[Unknown] | Index | Series | Unknown | ArrowExtensionArray | NAType | NaTType | Timestamp | Timedelta | Any | DatetimeIndex | TimedeltaIndex | BooleanArray | FloatingArray | IntegerArray | ndarray[Any, Unknown] | ndarray[Any, dtype[Any]] | ndarray[Any, dtype[int64]]" cannot be assigned to parameter "__x" of type "ConvertibleToFloat" in function "__new__" (reportArgumentType)
 models.py: error: Argument of type "List[str] | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
+models.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
 models.py: error: Argument of type "tuple[Unknown, Literal[0]]" cannot be assigned to parameter "whens" of type "Mapping[Any, _T@Case]" in function "__init__"
 models.py: error: Cannot access member "__table__" for type "type[Fusion]"
 models.py: error: Cannot access member "__table__" for type "type[Mutation]"
 models.py: error: Cannot access member "__table__" for type "type[Translocation]"
+models.py: error: Cannot access member "apply" for type "NDArray[Unknown]"
+models.py: error: Cannot access member "apply" for type "ndarray[Any, Unknown]"
 models.py: error: Cannot access member "cell_line" for type "_CellLine*"
 models.py: error: Cannot access member "compound" for type "Entity"
 models.py: error: Cannot access member "compound" for type "_Compound*"
@@ -233,6 +246,8 @@ models.py: error: Cannot access member "gene" for type "_Gene*"
 models.py: error: Cannot access member "get" for type "scoped_session"
 models.py: error: Cannot access member "name" for type "Dataset*"
 models.py: error: Cannot access member "nominal_range" for type "TabularDatasetMeta"
+models.py: error: Cannot access member "unique" for type "NDArray[Unknown]"
+models.py: error: Cannot access member "unique" for type "ndarray[Any, Unknown]"
 models.py: error: Cannot assign member "funding" for type "DownloadRelease*"
 models.py: error: Expected no arguments to "ColNonstandardMatrix" constructor (reportCallIssue)
 models.py: error: Expected no arguments to "DataIssue" constructor (reportCallIssue)
@@ -264,8 +279,8 @@ models.py: error: Method "has_entity" overrides class "Dataset" in an incompatib
 models.py: error: No overloads for "__init__" match the provided arguments (reportCallIssue)
 models.py: error: No parameter named "overlaps" (reportCallIssue)
 models.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
-models.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 models_new.py: error: Expression of type "DepmapModel | None" cannot be assigned to return type "DepmapModel"
+models_new.py: error: Expression of type "Series | Unknown | DataFrame" cannot be assigned to return type "Series"
 models_new.py: error: No parameter named "overlaps" (reportCallIssue)
 nonstandard_loader.py: error: Expected no arguments to "RowNonstandardMatrix" constructor (reportCallIssue)
 nonstandard_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
@@ -286,12 +301,13 @@ parse_resources.py: error: No overloads for "get" match the provided arguments (
 predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 predictability_loader.py: error: Argument of type "BiomarkerDataset | None" cannot be assigned to parameter "__value" of type "BiomarkerDataset" in function "__setitem__"
 predictability_loader.py: error: Argument of type "Dataset | None" cannot be assigned to parameter "dataset" of type "Dataset" in function "_load_predictive_models"
-predictability_loader.py: error: Argument of type "Hashable" cannot be assigned to parameter "feature_id" of type "str" in function "row_to_feature_obj"
+predictability_loader.py: error: Argument of type "list[str]" cannot be assigned to parameter "usecols" of type "UsecolsArgType[Unknown]" in function "read_csv"
 predictability_loader.py: error: Cannot access member "__table__" for type "type[PredictiveFeatureResult]"
 predictability_loader.py: error: Cannot access member "__table__" for type "type[PredictiveModel]"
 predictability_loader.py: error: Expected no arguments to "PredictiveBackground" constructor (reportCallIssue)
 predictability_loader.py: error: Expected no arguments to "PredictiveFeature" constructor (reportCallIssue)
 predictability_loader.py: error: Expression of type "int | None" cannot be assigned to return type "Gene | CompoundExperiment | None" (reportReturnType)
+predictability_loader.py: error: No overloads for "read_csv" match the provided arguments (reportCallIssue)
 private_util_functions.py: error: Argument of type "str | None" cannot be assigned to parameter "user_id_override" of type "str" in function "_setup_current_authorizations"
 private_util_functions.py: error: Cannot access member "__depmap_auth_config" for type "Flask"
 private_util_functions.py: error: Cannot access member "_get_current_object" for type "SessionMixin"
@@ -312,14 +328,34 @@ str_profile_loader.py: error: Expected no arguments to "STRProfile" constructor 
 subset_celligner.py: error: Cannot access member "CELLIGNER_ALIGNMENT_TAIGA_ID" for type "type[Config]"
 subset_celligner.py: error: Cannot access member "CELLIGNER_DISTANCES_TAIGA_ID" for type "type[Config]"
 subset_celligner.py: error: Cannot access member "CELLIGNER_SUBTYPES_TAIGA_ID" for type "type[Config]"
+subset_compound_metadata.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
+subset_compound_metadata.py: error: Cannot access member "iloc" for type "NDArray[Unknown]"
+subset_compound_metadata.py: error: Cannot access member "iloc" for type "ndarray[Any, Unknown]"
+subset_context_analysis_v2.py: error: Cannot access member "isin" for type "NDArray[Unknown]"
+subset_context_analysis_v2.py: error: Cannot access member "isin" for type "ndarray[Any, Unknown]"
+subset_context_analysis_v2.py: error: Cannot access member "to_csv" for type "NDArray[Unknown]"
+subset_context_analysis_v2.py: error: Cannot access member "to_csv" for type "ndarray[Any, Unknown]"
+subset_context_explorer.py: error: Argument of type "Series | Any | ndarray[Any, Unknown] | Unknown | NDArray[Unknown] | DataFrame" cannot be assigned to parameter "right" of type "DataFrame | Series" in function "merge" (reportArgumentType)
+subset_context_explorer.py: error: Cannot access member "drop_duplicates" for type "NDArray[Unknown]"
+subset_context_explorer.py: error: Cannot access member "drop_duplicates" for type "ndarray[Any, Unknown]"
+subset_context_explorer.py: error: Cannot access member "drop_duplicates" for type "ndarray[Any, _dtype]"
+subset_context_explorer.py: error: Cannot access member "str" for type "NDArray[Unknown]"
+subset_context_explorer.py: error: Cannot access member "str" for type "ndarray[Any, Unknown]"
+subset_context_explorer.py: error: No overloads for "rename" match the provided arguments
+subset_fusions.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
+subset_hgnc_csv.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
 subset_mutations_table.py: error: "TaigaClient" is not defined (reportUndefinedVariable)
-subset_predictive_models_and_features.py: error: Argument of type "Series | Unknown | ndarray[Any, Unknown] | Any | NDArray[Unknown]" cannot be assigned to parameter "feature_id" of type "str" in function "get_closest"
+subset_predictive_models_and_features.py: error: Argument of type "Series | Any | ndarray[Any, Unknown] | Unknown | NDArray[Unknown]" cannot be assigned to parameter "feature_id" of type "str" in function "get_closest"
+subset_predictive_models_and_features.py: error: Cannot access member "values" for type "NDArray[Unknown]"
+subset_predictive_models_and_features.py: error: Cannot access member "values" for type "ndarray[Any, Unknown]"
+subset_predictive_models_and_features.py: error: Expression of type "Series | Unknown | DataFrame" cannot be assigned to declared type "DataFrame"
 subset_ssgsea.py: error: Import "hdf5_utils" could not be resolved (reportMissingImports)
 subset_translocations.py: error: Argument of type "Literal['4']" cannot be assigned to parameter "version" of type "DatasetVersion | None" in function "get"
+subset_translocations.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
 taiga_id_loader.py: error: Expected no arguments to "TaigaAlias" constructor (reportCallIssue)
 task_utils.py: error: Argument of type "FileStorage" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
-tasks.py: error: "tolist" is not a known member of "None" (reportOptionalMemberAccess)
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas" (reportArgumentType)
+tasks.py: error: Argument of type "dict[Text, Text]" cannot be assigned to parameter "func" of type "PythonFuncType" in function "map"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
 tda_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 tda_loader.py: error: "groups" is not a known member of "None" (reportOptionalMemberAccess)
@@ -328,6 +364,7 @@ tda_loader.py: error: Argument of type "str | Any" cannot be assigned to paramet
 tda_loader.py: error: Cannot access member "__table__" for type "type[TDPredictiveModel]"
 tda_loader.py: error: Expected no arguments to "TDAInterpretableModel" constructor (reportCallIssue)
 tda_loader.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
+test_app.py: error: Argument of type "list[int]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_cell_line_loader.py: error: "catalog_number" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_alias" is not a known member of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_name" is not a known member of "None" (reportOptionalMemberAccess)
@@ -339,6 +376,7 @@ test_cell_line_loader.py: error: Cannot access member "catalog_number" for type 
 test_cell_line_loader.py: error: Cannot access member "growth_pattern" for type "CellLineFactory"
 test_cell_line_loader.py: error: Cannot access member "name" for type "SubFactory"
 test_context_analysis.py: error: "keys" is not a known member of "None" (reportOptionalMemberAccess)
+test_context_analysis.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_context_analysis.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_dataset_loader.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
 test_dataset_loader.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "dataset_metadata" of type "DepDatasetMeta" in function "load_compound_dose_replicate_dataset"
@@ -357,6 +395,7 @@ test_factories.py: error: "entity" is not a known member of "None" (reportOption
 test_factories_views.py: error: "entity_id" is not a known member of "None" (reportOptionalMemberAccess)
 test_factories_views.py: error: "model_id" is not a known member of "None" (reportOptionalMemberAccess)
 test_foreign_key_constraint.py: error: Expected no arguments to "DependencyDataset" constructor (reportCallIssue)
+test_gene_loader.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
 test_get_and_process_data.py: error: "file_path" is not a known member of "None" (reportOptionalMemberAccess)
 test_get_and_process_data.py: error: "row_index" is not a known member of "None" (reportOptionalMemberAccess)
 test_get_row_of_values.py: error: Expected no arguments to "ColNonstandardMatrix" constructor (reportCallIssue)
@@ -373,13 +412,20 @@ test_global_search_loader.py: error: Expected no arguments to "EntityAlias" cons
 test_global_search_loader.py: error: Expected no arguments to "Gene" constructor (reportCallIssue)
 test_global_search_loader.py: error: Expected no arguments to "PrimaryDisease" constructor (reportCallIssue)
 test_global_search_loader.py: error: Expected no arguments to "TumorType" constructor (reportCallIssue)
+test_hashing_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
+test_hashing_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
+test_hdf5_utils.py: error: Argument of type "list[int]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
+test_hdf5_utils.py: error: Argument of type "list[int]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_hdf5_utils.py: error: Cannot access member "tolist" for type "float"
+test_hdf5_utils.py: error: Cannot access member "tolist" for type "int"
 test_index.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_index.py: error: Cannot access member "name" for type "Dataset"
 test_index.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_match_related_loader.py: error: "entity_id" is not a known member of "None" (reportOptionalMemberAccess)
 test_match_related_loader.py: error: Cannot access member "entrez_id" for type "Entity"
 test_match_related_loader.py: error: Cannot access member "symbol" for type "Entity"
+test_match_related_loader.py: error: Cannot access member "values" for type "NDArray[Unknown]"
+test_match_related_loader.py: error: Cannot access member "values" for type "ndarray[Any, Unknown]"
 test_models.py: error: "LazyAttribute" is not iterable
 test_models.py: error: "__getitem__" method not defined on type "LazyAttribute" (reportIndexIssue)
 test_models.py: error: "__load_cell_line_search_index" is not a known member of module "loader.global_search_loader" (reportAttributeAccessIssue)
@@ -391,6 +437,10 @@ test_models.py: error: "dataset_id" is not a known member of "None" (reportOptio
 test_models.py: error: "get_cell_line_values_and_depmap_ids" is not a known member of "None" (reportOptionalMemberAccess)
 test_models.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 test_models.py: error: Argument of type "DataFrame | None" cannot be assigned to parameter "__obj" of type "Sized" in function "len"
+test_models.py: error: Argument of type "list[CellLineFactory]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
+test_models.py: error: Argument of type "list[Sequence]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
+test_models.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
+test_models.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_models.py: error: Cannot access member "biomarker_dataset_id" for type "BiomarkerDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "BiomarkerDatasetFactory"
 test_models.py: error: Cannot access member "dataset_id" for type "DependencyDatasetFactory"
@@ -418,12 +468,14 @@ test_models.py: error: Expected no arguments to "Gene" constructor (reportCallIs
 test_models.py: error: Expected no arguments to "PrimaryDisease" constructor (reportCallIssue)
 test_models.py: error: Expected no arguments to "TumorType" constructor (reportCallIssue)
 test_models.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+test_new_dose_curve_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_nonstandard_loader.py: error: "label" is not a known member of "None" (reportOptionalMemberAccess)
 test_parse_downloads.py: error: "stats" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: "dataset_id" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: "entity_id" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 test_predictability_loader.py: error: Argument of type "Literal[DependencyEnum.Chronos_Combined]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+test_tasks.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_tasks.py: error: Cannot access member "entity_id" for type "GeneFactory"
 test_utils.py: error: "__get_taiga_id_to_download_url" is unknown import symbol (reportAttributeAccessIssue)
 test_views.py: error: "label" is not a known member of "None" (reportOptionalMemberAccess)
@@ -449,11 +501,16 @@ views.py: error: "model_id" is not a known member of "None" (reportOptionalMembe
 views.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "safe_join" is not exported from module "werkzeug.utils"
 views.py: error: "source_dir" is possibly unbound (reportPossiblyUnboundVariable)
+views.py: error: Argument of type "ArrayLike | Any | Unknown" cannot be assigned to parameter "tumor_sample_ids" of type "List[str]" in function "get_by_tumor_sample_ids"
 views.py: error: Argument of type "FileStorage | None" cannot be assigned to parameter "upload_file" of type "FileStorage" in function "write_upload_to_local_file"
+views.py: error: Argument of type "Literal['val']" cannot be assigned to parameter "mapper" of type "Renamer | None" in function "rename"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "get_stats_for_dataframe"
+views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "jsonify_df"
 views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "get_root_category_subcategory_topics"
 views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "refresh_all_category_topics"
 views.py: error: Argument of type "list[DependencyDataset | None]" cannot be assigned to parameter "datasets" of type "List[DependencyDataset]" in function "format_predictability_tile"
+views.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_taiga_id"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "dataset_id" of type "str" in function "get_download_data"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "dataset_id" of type "str" in function "get_entity_summary_metadata"
@@ -470,9 +527,15 @@ views.py: error: Cannot access member "apply" for type "function"
 views.py: error: Cannot access member "entrez_id" for type "Entity"
 views.py: error: Cannot access member "get" for type "scoped_session"
 views.py: error: Cannot access member "rename" for type "float"
+views.py: error: Cannot access member "rename" for type "int"
 views.py: error: Cannot access member "symbol" for type "Entity"
+views.py: error: Cannot access member "values" for type "NDArray[Unknown]"
+views.py: error: Cannot access member "values" for type "ndarray[Any, Unknown]"
 views.py: error: Expected type expression but received "(typename: str, fields: dict[str, type[Any]], total: bool = ...) -> type[dict[str, Any]]" (reportGeneralTypeIssues)
 views.py: error: Expression of type "None" cannot be assigned to parameter of type "List[Tuple[CompoundExperiment, DependencyDataset]]"
+views.py: error: Expression of type "Series | Unknown | DataFrame" cannot be assigned to declared type "DataFrame"
 views.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
+views.py: error: No overloads for "rename" match the provided arguments (reportCallIssue)
+views.py: error: No overloads for "sort_values" match the provided arguments
 views.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 views.py: error: Variable not allowed in type expression (reportInvalidTypeForm)
