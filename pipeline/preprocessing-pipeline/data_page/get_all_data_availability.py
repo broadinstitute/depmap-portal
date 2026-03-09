@@ -309,7 +309,13 @@ def get_crispr_summary(tc, crispr_screen_sequence_map_taiga_id):
     ScreenSequenceMap = tc.get(crispr_screen_sequence_map_taiga_id)
     # map the library to the institution that ran screens with that library. If a library
     # is added in the future, we'll get a KeyError and need to update this map
-    library_to_source = {"Avana": "broad", "Humagne-CD": "broad", "KY": "sanger"}
+    library_to_source = {
+        "Avana": "broad",
+        "Humagne-CD": "broad",
+        "KY": "sanger",
+        "Brunello": "biogrid",
+        "TKOv3": "biogrid",
+    }
     ScreenSequenceMap["Source"] = [
         library_to_source.get(x, "unknown") for x in ScreenSequenceMap["Library"]
     ]
@@ -325,6 +331,9 @@ def get_crispr_summary(tc, crispr_screen_sequence_map_taiga_id):
             ),
             "CRISPR_Score_Sanger": valid_screens.groupby("ModelID").apply(
                 lambda x: "sanger" in set(x["Source"])
+            ),
+            "CRISPR_Biogrid": valid_screens.groupby("ModelID").apply(
+                lambda x: "biogrid" in set(x["Source"])
             ),
         }
     )
