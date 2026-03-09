@@ -33,7 +33,8 @@ DATA_ORDER = [
     "Drug_Repurposing_Broad",
     "Drug_GDSC_Sanger",
     "Drug_OncRef_Broad",
-    "Proteomics_Olink",
+    "Proteomics_Olink_Lysate",
+    "Proteomics_Olink_Media",
     "Proteomics_RPPA_CCLE",
     "Proteomics_MS_CCLE",
     "Proteomics_MS_Sanger",
@@ -106,7 +107,8 @@ def _get_data_type_url_mapping(data_types: List[str]):
         ),
         "Drug_GDSC_Sanger": _get_dataset_url(DependencyEnum.GDSC2_AUC.name),
         "Drug_OncRef_Broad": _get_dataset_url(DependencyEnum.Prism_oncology_AUC.name),
-        "Proteomics_Olink": None,
+        "Proteomics_Olink_Lysate": None,
+        "Proteomics_Olink_Media": None,
         "Proteomics_RPPA_CCLE": _get_dataset_url(
             BiomarkerEnum.rppa.name, isDependencyDataset=False
         ),

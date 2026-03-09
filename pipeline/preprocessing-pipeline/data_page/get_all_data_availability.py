@@ -182,22 +182,6 @@ def get_drive_novartis_summary(tc, drive_novartis_taiga_id, Model):
     return drive_novartis_summary
 
 
-def get_olink_summary(tc, olink_taiga_id):
-    print("getting olink summary...")
-    Olink = tc.get(olink_taiga_id)
-
-    Olink = Olink.reset_index(names=["ModelID"])
-
-    olink_summary = (
-        Olink[["ModelID"]]
-        .assign(Proteomics_Olink=True)
-        .drop_duplicates()
-        .set_index("ModelID")
-    )
-
-    return olink_summary
-
-
 def get_rppa_ccle_summary(tc, rppa_ccle_taiga_id):
     print("getting rppa_ccle_summary")
     Rppa = tc.get(rppa_ccle_taiga_id)
@@ -276,7 +260,12 @@ def get_omics_summary(tc, omics_taiga_id):
 
         omics_summary = (
             omics_summary.rename(
-                columns={"rna": "Sequencing_RNA_Broad", "wgs": "Sequencing_WGS_Broad"}
+                columns={
+                    "rna": "Sequencing_RNA_Broad",
+                    "wgs": "Sequencing_WGS_Broad",
+                    "olink_lysate": "Proteomics_Olink_Lysate",
+                    "olink_media": "Proteomics_Olink_Media",
+                }
             )
             .fillna(False)
             .astype(bool)
@@ -286,7 +275,7 @@ def get_omics_summary(tc, omics_taiga_id):
             OmicsProfiles.SourceModelCondition + "_" + OmicsProfiles.Datatype
         )
 
-        # RNA (Broad), WGS (Broad), WES (Broad)
+        # RNA (Broad), WGS (Broad), WES (Broad), Olink Lysate, Olink Media
         omics_summary = OmicsProfiles[["ModelID", "Datatype"]].drop_duplicates()
 
         omics_summary = pd.pivot(
@@ -303,6 +292,8 @@ def get_omics_summary(tc, omics_taiga_id):
                     "BROAD_wes": "Sequencing_WES_Broad",
                     "SANGER_wes": "Sequencing_WES_Sanger",
                     "wgs": "Sequencing_WGS_Broad",
+                    "olink_lysate": "Proteomics_Olink_Lysate",
+                    "olink_media": "Proteomics_Olink_Media",
                 }
             )
             .fillna(False)
@@ -486,7 +477,6 @@ def main(
     methylation_ccle_taiga_id = get_taiga_id(taiga_ids["methylation_ccle_taiga_id"])
     ccle_mirna_taiga_id = get_taiga_id(taiga_ids["ccle_mirna_taiga_id"])
     atac_seq_taiga_id = get_taiga_id(taiga_ids["ataq_seq_taiga_id"])
-    olink_taiga_id = get_taiga_id(taiga_ids["olink_taiga_id"])
     ms_sanger_taiga_id = get_taiga_id(taiga_ids["sanger_proteomics_taiga_id"])
     depmap_paralogs_taiga_id = get_taiga_id(taiga_ids["depmap_paralogs_taiga_id"])
     rnai_broad_only_taiga_id = get_taiga_id(taiga_ids["rnai_broad_only"])
@@ -560,11 +550,10 @@ def main(
     ##################
     ### Proteomics ###
     ##################
-    # Olink
-    olink_summary = None
-    if len(olink_taiga_id) > 0:
-        olink_summary = get_olink_summary(tc=tc, olink_taiga_id=olink_taiga_id[0])
-        assert olink_summary.index.is_unique
+
+    # Olink Lysate and Olink Media are processed with the Omics Sequencing files above.
+    # Olink Lysate and Olink Media model counts are dervied from the OmicsProfiles DataType column as follows:
+    # "olink_lysate": "Proteomics_Olink_Lysate", "olink_media": "Proteomics_Olink_Media"
 
     # RPPA (CCLE)
     rppa_ccle_summary = get_rppa_ccle_summary(
@@ -589,7 +578,7 @@ def main(
     ### Sequencing###
     #################
 
-    # WES (Broad), WES (Sanger), WGS (Broad), RNA (Broad)
+    # WES (Broad), WES (Sanger), WGS (Broad), RNA (Broad). NOTE: Also includes Olink Lysate and Olink Media (these are grouped under Proteomics instead of sequencing in the resuling data availability graph)
     omics_summary = get_omics_summary(
         tc=tc, omics_taiga_id=f"{depmap_data_taiga_id[0]}/OmicsProfiles"
     )
@@ -662,10 +651,9 @@ def main(
             rnai_achilles_broad_summary,
             rnai_marcotte_summary,
             drive_novartis_summary,
-            olink_summary,
             rppa_ccle_summary,
             ms_ccle_summary,
-            omics_summary,
+            omics_summary,  # includes the Proteomics rows: Olink Lysate, Olink Media. includes the Sequencing rows: WES (Broad), WES (Sanger), WGS (Broad), RNA (Broad)
             crispr_summary,
             methylation_sanger_summary,
             methylation_ccle_summary,

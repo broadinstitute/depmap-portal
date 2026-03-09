@@ -34,7 +34,8 @@ function getDataPageDataTypeColorCategory(
       return DataPageDataTypeCategory.Sequencing;
     case DataPageDataType.Proteomics_MS_CCLE:
     case DataPageDataType.Proteomics_MS_Sanger:
-    case DataPageDataType.Proteomics_Olink:
+    case DataPageDataType.Proteomics_Olink_Lysate:
+    case DataPageDataType.Proteomics_Olink_Media:
     case DataPageDataType.Proteomics_RPPA_CCLE:
       return DataPageDataTypeCategory.Proteomics;
     case DataPageDataType.Methylation_CCLE:
