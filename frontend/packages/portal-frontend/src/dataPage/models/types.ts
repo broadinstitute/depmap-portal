@@ -82,6 +82,8 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
       return "CRISPR KO screens (Broad)";
     case DataPageDataType.CRISPR_Score_Sanger:
       return "CRISPR KO screens (Sanger)";
+    case DataPageDataType.CRISPR_Biogrid:
+      return "CRISPR KO screens (Biogrid)";
     case DataPageDataType.CRISPR_ParalogsScreens:
       return "Paralog CRISPR KO screens (Broad)";
     case DataPageDataType.Methylation_Sanger:
@@ -123,6 +125,7 @@ export function getDataPageDataTypeColorCategoryString(
       return DataPageDataTypeCategoryStrings.Sequencing;
     case DataPageDataType.CRISPR_Achilles_Broad:
     case DataPageDataType.CRISPR_Score_Sanger:
+    case DataPageDataType.CRISPR_Biogrid:
     case DataPageDataType.CRISPR_ParalogsScreens:
       return DataPageDataTypeCategoryStrings.CRISPRScreens;
     case DataPageDataType.Methylation_Sanger:
