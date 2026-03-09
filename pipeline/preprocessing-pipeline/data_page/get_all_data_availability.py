@@ -182,31 +182,6 @@ def get_drive_novartis_summary(tc, drive_novartis_taiga_id, Model):
     return drive_novartis_summary
 
 
-def get_data_type_counts_from_omics_profiles(
-    tc, omics_profiles_taiga_id: str, data_type_key: str
-):
-    print(f"getting summary for omics profile of data type {data_type_key}...")
-    omics_profiles = tc.get(omics_profiles_taiga_id)
-    omics_summary = omics_profiles[["ModelID", "DataType"]].drop_duplicates()
-    omics_summary = pd.pivot(
-        omics_summary.assign(value=True),
-        index="ModelID",
-        columns="DataType",
-        values="value",
-    )
-
-    Olink = Olink.reset_index(names=["ModelID"])
-
-    olink_summary = (
-        Olink[["ModelID"]]
-        .assign(Proteomics_Olink=True)
-        .drop_duplicates()
-        .set_index("ModelID")
-    )
-
-    return olink_summary
-
-
 def get_rppa_ccle_summary(tc, rppa_ccle_taiga_id):
     print("getting rppa_ccle_summary")
     Rppa = tc.get(rppa_ccle_taiga_id)
@@ -502,7 +477,6 @@ def main(
     methylation_ccle_taiga_id = get_taiga_id(taiga_ids["methylation_ccle_taiga_id"])
     ccle_mirna_taiga_id = get_taiga_id(taiga_ids["ccle_mirna_taiga_id"])
     atac_seq_taiga_id = get_taiga_id(taiga_ids["ataq_seq_taiga_id"])
-    olink_taiga_id = get_taiga_id(taiga_ids["olink_taiga_id"])
     ms_sanger_taiga_id = get_taiga_id(taiga_ids["sanger_proteomics_taiga_id"])
     depmap_paralogs_taiga_id = get_taiga_id(taiga_ids["depmap_paralogs_taiga_id"])
     rnai_broad_only_taiga_id = get_taiga_id(taiga_ids["rnai_broad_only"])
