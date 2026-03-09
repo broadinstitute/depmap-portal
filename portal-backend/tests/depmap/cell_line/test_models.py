@@ -1,6 +1,7 @@
 from depmap.cell_line.models_new import DepmapModel, add_depmap_model_table_columns
 import pytest
 import pandas as pd
+from depmap.extensions import db
 from depmap.cell_line.models import (
     CellLine,
     Lineage,
@@ -32,7 +33,7 @@ def test_add_depmap_model_table_columns(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
 
     query = add_depmap_model_table_columns(DepmapModel.query)
-    df = pd.read_sql(query.statement, query.session.connection())
+    df = pd.read_sql(query.statement, db.session.connection())
 
     assert len(df) == 1
 
@@ -80,7 +81,7 @@ def test_add_cell_line_table_columns(empty_db_mock_downloads):
     empty_db_mock_downloads.session.flush()
 
     query = add_cell_line_table_columns(CellLine.query)
-    df = pd.read_sql(query.statement, query.session.connection())
+    df = pd.read_sql(query.statement, db.session.connection())
     assert len(df) == 1
     assert df.loc[0]["cell_line_name"] == cell_line.cell_line_name
     assert df.loc[0]["primary_disease"] == cell_line.primary_disease.name
@@ -180,13 +181,11 @@ def test_get_cell_line_information_df(empty_db_mock_downloads):
             "cell_line_display_name": cell_line_1.cell_line_display_name,
             "primary_disease": cell_line_1.primary_disease.name,
             "lineage_name": [
-                lineage.name
-                for lineage in cell_line_1.lineage.all()
-                if lineage.level == 2
+                lineage.name for lineage in cell_line_1.lineage if lineage.level == 2
             ][0],
             "lineage_display_name": [
                 lineage.display_name
-                for lineage in cell_line_1.lineage.all()
+                for lineage in cell_line_1.lineage
                 if lineage.level == 2
             ][0],
             "lineage_level": 2,

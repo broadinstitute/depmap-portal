@@ -5,7 +5,7 @@ from typing import List, Optional
 import flask
 import pandas as pd
 from flask import current_app
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 from depmap.database import (
     Boolean,

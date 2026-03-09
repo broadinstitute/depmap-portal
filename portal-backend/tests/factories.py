@@ -493,8 +493,8 @@ def MatrixFactory(
 
     matrix = Matrix(
         file_path=file_path,
-        row_index=row_index_objects,
-        col_index=col_index_objects,
+        _row_index=row_index_objects,
+        _col_index=col_index_objects,
         units=units if units is not None else "units",
         min=min,
         max=max,
@@ -503,6 +503,7 @@ def MatrixFactory(
     )
 
     _db.session.add(matrix)
+    _db.session.flush()
     return matrix
 
 
@@ -965,12 +966,13 @@ def NonstandardMatrixFactory(
     matrix = NonstandardMatrix(
         file_path=file_path,
         nonstandard_dataset_id=nonstandard_dataset_id,  # can't get factory.Sequence working here, so forcing the test writer to specify
-        row_index=row_index_objects,
-        col_index=col_index_objects,
+        _row_index=row_index_objects,
+        _col_index=col_index_objects,
         owner_id=owner_id,
         data_type=data_type,
     )
     _db.session.add(matrix)
+    _db.session.flush()
     return matrix
 
 

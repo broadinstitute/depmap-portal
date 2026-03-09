@@ -188,8 +188,8 @@ def create_matrix_object(
 
     matrix = Matrix(
         file_path=base_name,
-        row_index=row_index_objects,
-        col_index=col_index_objects,
+        _row_index=row_index_objects,
+        _col_index=col_index_objects,
         min=min,
         max=max,
         units=units,
@@ -266,8 +266,8 @@ def create_viablity_matrix_from_hdf5(
     min, max = hdf5_utils.get_values_min_max(source_dir, base_name)
     matrix = Matrix(
         file_path=base_name,
-        row_index=row_index_objects,
-        col_index=col_index_objects,
+        _row_index=row_index_objects,
+        _col_index=col_index_objects,
         min=min,
         max=max,
         units="",  # units are being pulled directly from shared.py on the frontend

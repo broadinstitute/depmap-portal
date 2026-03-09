@@ -274,7 +274,7 @@ def data_slicer_download():
         full_file_path,
         mimetype="text/csv",
         as_attachment=True,
-        attachment_filename=filename_for_user,
+        download_name=filename_for_user,
     )
 
 

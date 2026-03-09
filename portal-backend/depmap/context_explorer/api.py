@@ -16,7 +16,7 @@ from depmap.context_explorer.models import (
     EnrichedLineagesTileData,
 )
 from depmap.context.models_new import SubtypeNode, TreeType
-from depmap.extensions import cache
+from depmap.extensions import cache, db
 
 
 namespace = Namespace("context_explorer", description="View context data in the portal")
@@ -71,9 +71,7 @@ def _get_context_summary_df() -> pd.DataFrame:
 def _get_context_summary(tree_type: str):
     subtype_tree_query = SubtypeNode.get_all_by_models_query(tree_type)
 
-    subtype_df = pd.read_sql(
-        subtype_tree_query.statement, subtype_tree_query.session.connection()
-    )
+    subtype_df = pd.read_sql(subtype_tree_query.statement, db.session.connection())
     valid_models = subtype_df["model_id"].tolist()
 
     summary_df = _get_context_summary_df()
@@ -350,9 +348,7 @@ def get_context_explorer_lineage_trees_and_table_data(
         node.tree_type, level_0_subtype_code
     )
 
-    subtype_df = pd.read_sql(
-        subtype_tree_query.statement, subtype_tree_query.session.connection()
-    )
+    subtype_df = pd.read_sql(subtype_tree_query.statement, db.session.connection())
 
     summary_df = _get_context_summary_df()
 

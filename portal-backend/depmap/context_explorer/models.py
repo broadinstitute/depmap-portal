@@ -218,10 +218,8 @@ def get_context_analysis_query(
             )
             .join(Gene, Gene.entrez_id == ContextAnalysis.feature_id)
             .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("feature"),
-                sqlalchemy.column('"gene".entrez_id', is_literal=True).label(
-                    "entrez_id"
-                ),
+                sqlalchemy.literal_column('"entity".label').label("feature"),
+                sqlalchemy.literal_column('"gene".entrez_id').label("entrez_id"),
             )
         )
     else:
@@ -232,9 +230,7 @@ def get_context_analysis_query(
                 dataset_given_id=dataset_given_id,
             )
             .join(Compound, Compound.compound_id == ContextAnalysis.feature_id)
-            .add_columns(
-                sqlalchemy.column('"entity".label', is_literal=True).label("entity")
-            )
+            .add_columns(sqlalchemy.literal_column('"entity".label').label("entity"))
         )
 
     return query
@@ -400,7 +396,7 @@ class ContextAnalysis(Model):
             feature_type=feature_type,
             dataset_given_id=dataset_given_id,
         )
-        context_analysis_df = pd.read_sql(query.statement, query.session.connection())
+        context_analysis_df = pd.read_sql(query.statement, db.session.connection())
 
         return context_analysis_df
 

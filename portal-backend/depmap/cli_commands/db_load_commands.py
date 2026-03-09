@@ -1338,7 +1338,7 @@ def dev_only_write_taiga_alias_table_to_cache(cache_path):
     assert current_app.config["ENV"] in ["dev", "test-dev"]
 
     query = TaigaAlias.query
-    df = pd.read_sql(query.statement, query.session.connection())
+    df = pd.read_sql(query.statement, db.session.connection())
     df.to_csv(cache_path)
 
 

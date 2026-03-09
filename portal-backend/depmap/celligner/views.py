@@ -199,9 +199,7 @@ def download_celligner_files():
 
     memory_file.seek(0)
 
-    return send_file(
-        memory_file, attachment_filename="celligner.zip", as_attachment=True
-    )
+    return send_file(memory_file, download_name="celligner.zip", as_attachment=True)
 
 
 CellLineSelectorColorMap = restplus.model(

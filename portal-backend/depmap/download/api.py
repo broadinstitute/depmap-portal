@@ -10,6 +10,7 @@ from flask import request, current_app, make_response
 from flask_restx import Namespace, Resource, fields
 
 from depmap import data_access
+from depmap.extensions import db
 from depmap.download import tasks
 from depmap.download.models import (
     DownloadRelease,
@@ -400,7 +401,7 @@ class GeneDependencySummary(
         query = GeneExecutiveInfo.query.join(Gene).add_columns(
             Gene.entrez_id, Gene.label
         )
-        df = pd.read_sql(query.statement, query.session.connection())
+        df = pd.read_sql(query.statement, db.session.connection())
         df.drop(
             columns=["gene_executive_info_id", "gene_id", "is_dropped_by_chronos"],
             inplace=True,
