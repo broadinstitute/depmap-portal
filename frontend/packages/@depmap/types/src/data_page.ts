@@ -1,6 +1,7 @@
 export enum DataPageDataType {
   CRISPR_Achilles_Broad = "CRISPR_Achilles_Broad",
   CRISPR_Score_Sanger = "CRISPR_Score_Sanger",
+  CRISPR_Biogrid = "CRISPR_Biogrid",
   CRISPR_ParalogsScreens = "CRISPR_ParalogsScreens",
   RNAi_Marcotte = "RNAi_Marcotte",
   RNAi_Achilles_Broad = "RNAi_Achilles_Broad",

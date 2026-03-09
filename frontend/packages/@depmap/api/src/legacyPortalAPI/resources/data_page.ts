@@ -18,6 +18,7 @@ function getDataPageDataTypeColorCategory(
 
   switch (datatype) {
     case DataPageDataType.CRISPR_Achilles_Broad:
+    case DataPageDataType.CRISPR_Biogrid:
     case DataPageDataType.CRISPR_Score_Sanger:
     case DataPageDataType.CRISPR_ParalogsScreens:
       return DataPageDataTypeCategory.CRISPRScreens;
