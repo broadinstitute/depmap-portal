@@ -35,8 +35,8 @@ def test_get_data_availability(populated_db):
         assert data_availablity["data_types"] == [
             "CRISPR_Achilles_Broad",
             "CRISPR_Score_Sanger",
-            "CRISPR_Biogrid",
             "CRISPR_ParalogsScreens",
+            "CRISPR_Biogrid",
             "RNAi_Marcotte",
             "RNAi_Achilles_Broad",
             "RNAi_Drive_Novartis",
