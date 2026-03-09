@@ -93,6 +93,7 @@ def _get_data_type_url_mapping(data_types: List[str]):
         # a url for crispr sanger, but we do not want this url to show up in the data availability graph.
         "CRISPR_Score_Sanger": None,
         "CRISPR_ParalogsScreens": None,
+        "CRISPR_Biogrid": None,
         "RNAi_Marcotte": None,
         "RNAi_Achilles_Broad": _get_dataset_url(DependencyEnum.RNAi_merged.name),
         "RNAi_Drive_Novartis": _get_dataset_url(DependencyEnum.RNAi_Nov_DEM.name),
