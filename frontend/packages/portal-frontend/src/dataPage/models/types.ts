@@ -56,8 +56,10 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
       return "Marcotte";
     case DataPageDataType.RNAi_Drive_Novartis:
       return "Drive (Novartis)";
-    case DataPageDataType.Proteomics_Olink:
-      return "Olink";
+    case DataPageDataType.Proteomics_Olink_Lysate:
+      return "Olink Lysate";
+    case DataPageDataType.Proteomics_Olink_Media:
+      return "Olink Media";
     case DataPageDataType.Proteomics_RPPA_CCLE:
       return "RPPA (CCLE)";
     case DataPageDataType.Proteomics_MS_CCLE:
@@ -106,7 +108,8 @@ export function getDataPageDataTypeColorCategoryString(
     case DataPageDataType.RNAi_Marcotte:
     case DataPageDataType.RNAi_Drive_Novartis:
       return DataPageDataTypeCategoryStrings.RNAiScreens;
-    case DataPageDataType.Proteomics_Olink:
+    case DataPageDataType.Proteomics_Olink_Lysate:
+    case DataPageDataType.Proteomics_Olink_Media:
     case DataPageDataType.Proteomics_RPPA_CCLE:
     case DataPageDataType.Proteomics_MS_CCLE:
     case DataPageDataType.Proteomics_MS_Sanger:
