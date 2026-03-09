@@ -19,8 +19,8 @@ ALL_DATA_AVAIL_FILE = "all_data_avail.csv"
 DATA_ORDER = [
     "CRISPR_Achilles_Broad",
     "CRISPR_Score_Sanger",
-    "CRISPR_Biogrid",
     "CRISPR_ParalogsScreens",
+    "CRISPR_Biogrid",
     "RNAi_Marcotte",
     "RNAi_Achilles_Broad",
     "RNAi_Drive_Novartis",
