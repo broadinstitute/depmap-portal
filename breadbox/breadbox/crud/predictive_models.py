@@ -27,6 +27,7 @@ from breadbox.schemas.predictive_models import (
     PredictiveFeature,
     PredictiveModelConfigIn,
     PredictiveModelConfigOut,
+    PredictiveModelResultOut,
     PredictiveModelsResponse,
 )
 from breadbox.service import metadata
@@ -224,6 +225,7 @@ def bulk_load_results(
     actuals_dataset_id: str,
     predictions_dataset_id: str,
     source_file: str,
+    etag: str,
 ):
     """Load results from a parquet file and store as SQLite"""
     _require_admin(db, settings)
@@ -279,11 +281,40 @@ def bulk_load_results(
         actuals_dataset_id=actuals_dataset.id,
         predictions_dataset_id=predictions_dataset.id,
         filename=dest_filename,
+        etag=etag,
     )
     db.add(result)
     db.flush()
 
     return result
+
+
+def get_all_results(db: SessionWithUser) -> List[PredictiveModelResultOut]:
+    """Get summary of all PredictiveModelResult records"""
+    results = (
+        db.query(PredictiveModelResult)
+        .options(
+            joinedload(PredictiveModelResult.config),
+            joinedload(PredictiveModelResult.actuals_dataset),
+            joinedload(PredictiveModelResult.predictions_dataset),
+        )
+        .all()
+    )
+
+    return [
+        PredictiveModelResultOut(
+            dim_type_name=r.config.dimension_type_name,
+            config_name=r.config.model_config_name,
+            actuals_dataset_id=r.actuals_dataset_id,
+            actuals_dataset_name=r.actuals_dataset.name,
+            actuals_dataset_taiga_id=r.actuals_dataset.taiga_id,
+            predictions_dataset_id=r.predictions_dataset_id,
+            predictions_dataset_name=r.predictions_dataset.name,
+            predictions_taiga_id=r.predictions_dataset.taiga_id,
+            etag=r.etag,
+        )
+        for r in results
+    ]
 
 
 def _convert_parquet_to_sqlite(df: pd.DataFrame, output_path: str):
