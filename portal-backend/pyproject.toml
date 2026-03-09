@@ -97,7 +97,7 @@ pyyaml="^6.0"
 
 natsort="^8.4.0"
 igraph = "^0.10.6"
-pandera = "^0.16.1"
+pandera = "^0.20"
 pytest = "^7.4.0"
 pytest-split = "^0.9"
 multidict = "^6.1.0"

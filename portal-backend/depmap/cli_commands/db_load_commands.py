@@ -21,6 +21,7 @@ from depmap.database import checkpoint, transaction
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.extensions import db
+from sqlalchemy import text
 from depmap.settings.dev import additional_dev_metadata
 from depmap.settings.shared import (
     DATASET_METADATA,
@@ -95,7 +96,7 @@ def _recreate_td_predictive_model():
     ]
     for statement in statements:
         log.info("Executing: %s", statement)
-        db.session.execute(statement)
+        db.session.execute(text(statement))
 
 
 def _setup_logging():

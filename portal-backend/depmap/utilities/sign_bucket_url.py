@@ -19,7 +19,7 @@ def _get_service_account_project_id(creds):
 
     # This regex is to extract "broad-achilles" out of a service
     # account name like depmap-dmc-downloads@broad-achilles.iam.gserviceaccount.com
-    m = re.match("[^@]+@([^.]+)\\..*", getattr(creds, "service_account_email", ""))
+    m = re.match(r"[^@]+@([^.]+)\..*", getattr(creds, "service_account_email", ""))
     if m is None:
         return None
     else:
