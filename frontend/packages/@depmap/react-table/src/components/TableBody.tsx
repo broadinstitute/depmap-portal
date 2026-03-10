@@ -1,5 +1,5 @@
 import React, { RefObject } from "react";
-import { Table } from "@tanstack/react-table";
+import { Row } from "@tanstack/react-table";
 import { TableCell } from "./TableCell";
 import { ColumnStats } from "./useTableInstance";
 import { useTruncatedCellTooltip } from "../hooks/useTruncatedCellTooltip";
@@ -13,7 +13,7 @@ type StickyColumnsInfo = {
 };
 
 type TableBodyProps<T> = {
-  table: Table<T>;
+  rows: Row<T>[];
   parentRef: RefObject<HTMLDivElement>;
   virtualRows: { index: number; size: number; start: number }[];
   totalSize: number;
@@ -48,7 +48,7 @@ function handleRowClick(e: React.MouseEvent<HTMLTableRowElement>, row: any) {
 }
 
 export function TableBody<T>({
-  table,
+  rows,
   parentRef,
   virtualRows,
   totalSize,
@@ -61,7 +61,6 @@ export function TableBody<T>({
   columnStats = {},
 }: TableBodyProps<T>) {
   const { truncatedCellId, handleMouseEnter } = useTruncatedCellTooltip();
-  const rows = table.getRowModel().rows;
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     onScroll(e.currentTarget.scrollLeft);

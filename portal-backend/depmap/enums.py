@@ -126,7 +126,6 @@ class GeneTileEnum(enum.Enum):
     target_tractability = "target_tractability"
     codependencies = "codependencies"
     mutations = "mutations"
-    gene_score_confidence = "gene_score_confidence"
     description = "description"
     targeting_compounds = "targeting_compounds"
 

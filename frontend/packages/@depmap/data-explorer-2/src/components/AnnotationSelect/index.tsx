@@ -13,6 +13,7 @@ interface Props {
     identifier_type: "column" | "sample_id" | "feature_id"
   ) => void;
   onChangeAnnotationSlice: (identifier_type: string, label: string) => void;
+  hiddenDatasets?: Set<string>;
   disabledAnnotations?: Set<string>;
   hiddenAnnotations?: Set<string>;
   isClearable?: boolean;
@@ -44,6 +45,7 @@ function AnnotationSelect({
   identifierDisplayLabel,
   onChangeSourceDataset,
   onChangeAnnotationSlice,
+  hiddenDatasets = undefined,
   disabledAnnotations = undefined,
   hiddenAnnotations = undefined,
   isClearable = false,
@@ -79,6 +81,7 @@ function AnnotationSelect({
       <AnnotationSourceSelect
         axis={axis}
         isLoadingAnnotationDatasets={isLoadingAnnotationDatasets}
+        hiddenDatasets={hiddenDatasets}
         metadataDataset={metadataDataset}
         annotationDatasets={annotationDatasets}
         value={dataset_id}

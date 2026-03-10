@@ -320,7 +320,7 @@ def get_crispr_summary(tc, crispr_screen_sequence_map_taiga_id):
     # is added in the future, we'll get a KeyError and need to update this map
     library_to_source = {"Avana": "broad", "Humagne-CD": "broad", "KY": "sanger"}
     ScreenSequenceMap["Source"] = [
-        library_to_source[x] for x in ScreenSequenceMap["Library"]
+        library_to_source.get(x, "unknown") for x in ScreenSequenceMap["Library"]
     ]
 
     valid_screens = ScreenSequenceMap[
@@ -529,7 +529,7 @@ def main(
     if len(depmap_oncref_taiga_id) > 0:
         oncref_summary = get_oncref_summary(
             tc=tc,
-            depmap_oncref_taiga_id=f"{depmap_oncref_taiga_id[0]}/PRISMOncologyReferenceViabilityMatrix",
+            depmap_oncref_taiga_id=f"{depmap_oncref_taiga_id[0]}/PRISMOncologyReferenceLumViabilityMatrix",
         )
         assert oncref_summary.index.is_unique
 

@@ -6,6 +6,34 @@ const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin"
 const ReactRefreshTypeScript = require("react-refresh-typescript");
 const jsonImporter = require("node-sass-json-importer");
 
+const tsLoader = {
+  loader: require.resolve("ts-loader"),
+  options: {
+    transpileOnly: false,
+    getCustomTransformers: () => ({
+      before: [ReactRefreshTypeScript()],
+    }),
+  },
+};
+
+const swcLoader = {
+  loader: "swc-loader",
+  options: {
+    jsc: {
+      parser: {
+        syntax: "typescript",
+        tsx: true,
+      },
+      transform: {
+        react: {
+          runtime: "classic",
+          refresh: true,
+        },
+      },
+    },
+  },
+};
+
 const devConfig = (env, argv) => ({
   mode: "development",
 
@@ -67,17 +95,7 @@ const devConfig = (env, argv) => ({
       {
         test: /\.tsx?$/,
         exclude: /node_modules/,
-        use: [
-          {
-            loader: require.resolve("ts-loader"),
-            options: {
-              transpileOnly: env.transpileOnly === "true",
-              getCustomTransformers: () => ({
-                before: [ReactRefreshTypeScript()],
-              }),
-            },
-          },
-        ],
+        use: [env.transpileOnly === "true" ? swcLoader : tsLoader],
       },
       { test: /\.css$/, use: ["style-loader", "css-loader"] },
       {

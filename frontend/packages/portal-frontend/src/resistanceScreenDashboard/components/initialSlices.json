@@ -1,0 +1,42 @@
+[
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "CtrlArmModelID"
+  },
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "CtrlArmStrippedCellLineName"
+  },
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "TestArmModelID"
+  },
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "TestArmStrippedCellLineName"
+  },
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "OncotreeLineage"
+  },
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "CulturedDrugResistance"
+  },
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "EngineeredModelDetails"
+  },
+  {
+    "dataset_id": "PairedResScreenTable",
+    "identifier_type": "column",
+    "identifier": "ComparisonType"
+  }
+]

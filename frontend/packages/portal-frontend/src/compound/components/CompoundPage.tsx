@@ -16,6 +16,7 @@ interface Props {
   predictabilityMethodologyLink: string;
   hasDatasets: boolean;
   showPredictabilityTab: boolean;
+  showEnrichedLineages: boolean;
 }
 
 const CompoundPage = ({
@@ -29,6 +30,7 @@ const CompoundPage = ({
   predictabilityMethodologyLink,
   hasDatasets,
   showPredictabilityTab,
+  showEnrichedLineages,
 }: Props) => {
   const {
     isLoadingSelectionOptions,
@@ -37,7 +39,6 @@ const CompoundPage = ({
     doseCurveOptions,
     heatmapOptions,
     correlationAnalysisOptions,
-    showEnrichedLineages,
   } = useCompoundPageSelectionOptions(compoundId, compoundName);
 
   return (

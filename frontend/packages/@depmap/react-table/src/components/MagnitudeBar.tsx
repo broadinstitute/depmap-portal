@@ -5,6 +5,10 @@ type MagnitudeBarProps = {
   value: number;
   min: number;
   max: number;
+  // Optional formatted string for display. When provided, this is shown
+  // instead of the raw numeric value. The raw `value` is still used for
+  // bar width calculations.
+  displayValue?: string;
 };
 
 const NEGATIVE_COLOR = "#E53935"; // Red
@@ -16,7 +20,12 @@ const POSITIVE_COLOR = "#1E88E5"; // Blue
  * - Negative values show a red bar growing LEFT from center toward left edge
  * - Positive values show a blue bar growing RIGHT from center toward right edge
  */
-export function MagnitudeBar({ value, min, max }: MagnitudeBarProps) {
+export function MagnitudeBar({
+  value,
+  min,
+  max,
+  displayValue = undefined,
+}: MagnitudeBarProps) {
   // Bar width as percentage of half the cell (0-50%)
   let barWidthPercent = 0;
   let isNegative = false;
@@ -54,7 +63,7 @@ export function MagnitudeBar({ value, min, max }: MagnitudeBarProps) {
           }}
         />
       )}
-      <span className={styles.magnitudeBarValue}>{value}</span>
+      <span className={styles.magnitudeBarValue}>{displayValue ?? value}</span>
     </div>
   );
 }

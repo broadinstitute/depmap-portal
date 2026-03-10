@@ -314,6 +314,10 @@
   outline-color: transparent;
   outline-style: solid;
   transition: outline-color 200ms ease-in;
+
+  &.stickyCell {
+    outline: 1px solid #ccc;
+  }
 }
 
 .table td:has(.currentSearchMatchText) {

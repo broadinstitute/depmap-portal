@@ -23,8 +23,7 @@ from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.entity.views.index import format_summary
 from depmap.extensions import memoize_without_user_permissions
 from depmap.gene.models import Gene
-from depmap.gene.views import characterization, utils
-from depmap.gene.views.confidence import format_confidence, has_gene_confidence
+from depmap.gene.views import characterization
 from depmap.gene.views.executive import format_mutation_profile, get_order
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
 from depmap.predictability.utilities import (
@@ -89,15 +88,6 @@ def _get_gene_page_template_parameters(gene_symbol):
 
     # Figure out membership in different datasets
     dependency_datasets = dependency_datasets_with_gene(entity_id)
-    # TODO: Gene confidence is probably something we can delete...
-    chronos_achilles_dataset_for_confidence = next(  # only confidence should be using hardcoded chronos_achilles instead of the default crispr dataset
-        (
-            x
-            for x in dependency_datasets
-            if x.name == DependencyDataset.DependencyEnum.Chronos_Achilles
-        ),
-        None,
-    )
 
     crispr_dataset = utils.get_default_crispr_dataset()
     rnai_dataset = utils.get_default_rnai_dataset()
@@ -106,7 +96,7 @@ def _get_gene_page_template_parameters(gene_symbol):
     # if there are biomarker datasets and dependency datasets
     has_datasets = len(biomarker_datasets) > 0 or len(dependency_datasets) > 0
     summary = format_gene_summary(gene, dependency_datasets)
-    has_confidence = has_gene_confidence(gene, chronos_achilles_dataset_for_confidence)
+
     characterizations = characterization.format_characterizations(
         entity_id, gene_symbol, biomarker_datasets
     )
@@ -152,7 +142,6 @@ def _get_gene_page_template_parameters(gene_symbol):
         "entity_id": entity_id,
         "has_datasets": has_datasets,
         "summary": summary,
-        "has_confidence": has_confidence,
         "characterizations": characterizations,
         "has_predictability": has_predictability,
         "predictability_custom_downloads_link": get_predictability_input_files_downloads_link(),
@@ -359,19 +348,6 @@ def get_predictability_files():
                 )  # this overwrites the destination if exists bc should be atomic on unix systems
 
     return send_file(path, mimetype="application/zip", as_attachment=True)
-
-
-@blueprint.route("/gene_confidence/<gene_symbol>")
-def view_gene_confidence(gene_symbol: str):
-    gene = Gene.get_by_label(gene_symbol, must=False)
-    if gene is None:
-        abort(404)
-
-    confidence = format_confidence(gene)
-    if confidence is None:
-        abort(404)
-
-    return render_template("genes/confidence.html", confidence=confidence,)
 
 
 @blueprint.route("/gene_characterization/<gene_symbol>")

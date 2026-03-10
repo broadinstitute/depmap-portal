@@ -153,6 +153,8 @@ export function getGroupByColorPalette(
     { target: "novartisPDX-model", value: { marker: { color: "#66cd00" } } },
     { target: "pediatricPDX-model", value: { marker: { color: "#ffd738" } } },
     { target: "tcgaplus-tumor", value: { marker: { color: "#9370db" } } },
+    { target: "hcmi-tumor", value: { marker: { color: "#c71585" } } },
+    { target: "hcmi-model", value: { marker: { color: "#8b7355" } } },
   ]);
 
   const aFewDivergentColors = [
@@ -161,6 +163,8 @@ export function getGroupByColorPalette(
     "#66cd00",
     "#ffd738",
     "#9370db",
+    "#c71585",
+    "#8b7355",
   ];
 
   const makeColorMap = (
@@ -304,6 +308,27 @@ export function getSampleTypeTransform(
           marker: {
             size: tumorPointSize,
             symbol: "cross",
+          },
+        },
+      },
+      {
+        target: "hcmi-tumor",
+        value: {
+          marker: {
+            size: tumorPointSize,
+            symbol: "x",
+          },
+        },
+      },
+      {
+        target: "hcmi-model",
+        value: {
+          marker: {
+            size: cellLinePointSize,
+            symbol: "x",
+            line: {
+              width: 1,
+            },
           },
         },
       },
@@ -521,4 +546,6 @@ export const sampleTypeToLabel: Map<CellignerSampleType, string> = new Map([
   [CellignerSampleType.NOVARTIS_PDX_MODEL, "Novartis PDX"],
   [CellignerSampleType.PEDIATRIC_PDX_MODEL, "Pediatric PDX"],
   [CellignerSampleType.TCGA_TUMOR, "TCGA+ Tumors"],
+  [CellignerSampleType.HCMI_MODEL, "HCMI model"],
+  [CellignerSampleType.HCMI_TUMOR, "HCMI tumor"],
 ]);

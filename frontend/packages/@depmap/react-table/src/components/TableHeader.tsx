@@ -11,11 +11,17 @@ type StickyColumnsInfo = {
 type TableHeaderProps<T> = {
   table: Table<T>;
   stickyColumnsInfo: StickyColumnsInfo;
+  scrollColumnIntoView?: (columnId: string) => void;
+  cancelScrollColumnIntoView?: () => void;
 };
+
+const NOOP = () => {};
 
 export function TableHeader<T>({
   table,
   stickyColumnsInfo,
+  scrollColumnIntoView = NOOP,
+  cancelScrollColumnIntoView = NOOP,
 }: TableHeaderProps<T>) {
   const {
     selectColumnWidth,
@@ -54,6 +60,8 @@ export function TableHeader<T>({
                   stickyLeft={stickyLeft}
                   isSortable={isSortable}
                   isSelectColumn={isSelectColumn}
+                  scrollColumnIntoView={scrollColumnIntoView}
+                  cancelScrollColumnIntoView={cancelScrollColumnIntoView}
                 />
               );
             })}

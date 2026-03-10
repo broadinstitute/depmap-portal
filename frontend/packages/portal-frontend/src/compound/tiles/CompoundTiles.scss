@@ -120,8 +120,81 @@
   }
 }
 
+.pseudoLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7 !important;
+  text-decoration: none !important;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    color: #23527c !important;
+    text-decoration: underline !important;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
+}
+
 .heatmapSeparator {
   border: 0;
   border-top: 1px solid #999999;
   margin: 16px 0px;
+}
+
+.SensitivityTile {
+  .sensitivityContainer {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+    padding-bottom: 15px;
+  }
+
+  .cellLineCountLabel {
+    color: #c55252;
+    font-weight: bold;
+  }
+
+  .subHeader {
+    font-size: 14px;
+    font-weight: 700;
+    padding-bottom: 10px;
+  }
+}
+
+.errorMessage {
+  padding: 24px;
+  text-align: center;
+  color: #b00020;
+  font-weight: 600;
+}
+
+.infoImage {
+  height: 13px;
+  margin: 1px 3px 4px 3px;
+  cursor: pointer;
+}
+
+.buttonLink {
+  all: unset;
+  cursor: pointer;
+  color: #337ab7;
+  cursor: pointer;
+
+  &:active {
+    text-decoration: underline;
+  }
+
+  &:hover {
+    color: #23527c;
+  }
+
+  &:focus-visible {
+    outline: 5px auto -webkit-focus-ring-color;
+    outline-offset: 3px;
+  }
 }

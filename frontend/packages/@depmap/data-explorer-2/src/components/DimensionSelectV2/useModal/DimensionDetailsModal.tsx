@@ -21,6 +21,7 @@ interface Props {
   initialState: State;
   allowNullFeatureType: boolean;
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
+  hiddenDatasets: Set<string>;
 }
 
 function DimensionDetailsModal({
@@ -32,6 +33,7 @@ function DimensionDetailsModal({
   initialState,
   allowNullFeatureType,
   valueTypes,
+  hiddenDatasets,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [dimension, setDimension] = useState(initialState.dimension);
@@ -77,6 +79,7 @@ function DimensionDetailsModal({
           includeAllInContextOptions={includeAllInContextOptions}
           allowNullFeatureType={allowNullFeatureType}
           valueTypes={valueTypes}
+          hiddenDatasets={hiddenDatasets}
           onClickCreateContext={() => {
             const context_type = dimension.slice_type;
 

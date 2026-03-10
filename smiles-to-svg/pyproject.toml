@@ -13,6 +13,7 @@ taigapy = {git = "https://github.com/broadinstitute/taigapy"}
 rdkit = "^2023.9.2"
 tqdm = "^4.66.3"
 click = "^8.1.7"
+pyyaml = "^6.0"
 
 
 [build-system]

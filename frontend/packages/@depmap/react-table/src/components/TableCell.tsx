@@ -258,6 +258,18 @@ export function TableCell<T>({
     const cellContext = cell.getContext();
     const rawValue = cell.getValue();
 
+    // Read numericPrecision from column meta (set by getColumnDisplayOptions)
+    const numericPrecision = (columnDef.meta as any)?.numericPrecision as
+      | number
+      | undefined;
+
+    // Format a number for display, applying numericPrecision if set
+    const formatNumber = (value: number): string => {
+      return numericPrecision != null
+        ? value.toFixed(numericPrecision)
+        : String(value);
+    };
+
     // Check if this is a numeric value that should show a magnitude bar
     const colStats = columnStats[cell.column.id];
     const shouldShowMagnitudeBar =
@@ -274,6 +286,8 @@ export function TableCell<T>({
         colStats.max
       );
 
+      const displayValue = formatNumber(rawValue);
+
       // If we should highlight, we need to highlight the number inside MagnitudeBar
       if (shouldHighlight) {
         return (
@@ -283,7 +297,7 @@ export function TableCell<T>({
             )}
             <span className={styles.magnitudeBarValue}>
               <HighlightedText
-                text={String(rawValue)}
+                text={displayValue}
                 searchQuery={searchQuery}
                 isCurrentMatch={highlightStatus.isCurrentMatch}
               />
@@ -293,8 +307,35 @@ export function TableCell<T>({
       }
 
       return (
-        <MagnitudeBar value={rawValue} min={colStats.min} max={colStats.max} />
+        <MagnitudeBar
+          value={rawValue}
+          min={colStats.min}
+          max={colStats.max}
+          displayValue={displayValue}
+        />
       );
+    }
+
+    // For plain numbers (no magnitude bar), apply numericPrecision formatting
+    if (
+      typeof rawValue === "number" &&
+      !Number.isNaN(rawValue) &&
+      numericPrecision != null &&
+      !columnDef.cell // Only format if no custom cell renderer
+    ) {
+      const displayValue = formatNumber(rawValue);
+
+      if (shouldHighlight) {
+        return (
+          <HighlightedText
+            text={displayValue}
+            searchQuery={searchQuery}
+            isCurrentMatch={highlightStatus.isCurrentMatch}
+          />
+        );
+      }
+
+      return displayValue;
     }
 
     // Get the rendered content - either from custom cell renderer or default

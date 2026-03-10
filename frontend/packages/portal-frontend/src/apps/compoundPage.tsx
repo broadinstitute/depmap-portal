@@ -25,6 +25,7 @@ const {
   predictabilityMethodologyLink,
   hasDatasets,
   showPredictabilityTab,
+  showEnrichedLineages,
 } = data;
 
 const App = () => {
@@ -41,6 +42,7 @@ const App = () => {
         predictabilityMethodologyLink={predictabilityMethodologyLink}
         hasDatasets={hasDatasets}
         showPredictabilityTab={showPredictabilityTab}
+        showEnrichedLineages={showEnrichedLineages}
       />
     </ErrorBoundary>
   );
