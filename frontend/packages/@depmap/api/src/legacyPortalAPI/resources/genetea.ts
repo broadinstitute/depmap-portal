@@ -1,5 +1,4 @@
 import qs from "qs";
-import { enabledFeatures } from "@depmap/globals";
 import { getJson } from "../client";
 
 // Do not use in production! For local development only.
@@ -20,10 +19,6 @@ export async function fetchGeneTeaEnrichment(
   matchingGenes: string[][];
   total: number;
 }> {
-  if (!enabledFeatures.gene_tea) {
-    throw new Error("GeneTea is not supported in this environment!");
-  }
-
   const geneTeaUrl = "genetea-api/enriched-terms";
 
   const params = {
@@ -88,10 +83,6 @@ export async function fetchGeneTeaTermContext(
   term: string,
   genes: string[]
 ): Promise<Record<string, string>> {
-  if (!enabledFeatures.gene_tea) {
-    throw new Error("GeneTea is not supported in this environment!");
-  }
-
   const geneTeaUrl = "genetea-api/context";
 
   const params = {
