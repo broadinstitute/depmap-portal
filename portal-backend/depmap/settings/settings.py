@@ -185,14 +185,6 @@ class FeatureFlags:
         return True
 
     @property
-    def gene_tea(self):
-        return self.is_prerelease_env()
-
-    # NOTE: This feature flag is separated out from the above
-    # "gene_tea" feature flag. "gene_tea" refers to the data
-    # explorer integration of gene_tea; whereas, gene_tea_portal_page
-    # refers to the portal gene tea tool page.
-    @property
     def gene_tea_portal_page(self):
         return True
 
