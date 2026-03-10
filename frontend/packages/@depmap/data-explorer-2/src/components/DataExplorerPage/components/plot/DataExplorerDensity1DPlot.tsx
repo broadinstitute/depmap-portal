@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
-import { enabledFeatures } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import {
-  DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
@@ -40,7 +39,7 @@ interface Props {
     context_type: string,
     selectedLabels: Set<string>
   ) => void;
-  onClickColorByContext: (context: DataExplorerContext) => void;
+  onClickColorByContext: (context: DataExplorerContextV2) => void;
 }
 
 function DataExplorerDensity1DPlot({
@@ -326,7 +325,7 @@ function DataExplorerDensity1DPlot({
               }}
             />
           </StackableSection>
-          {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (
+          {plotConfig.index_type === "gene" ? (
             <StackableSection
               title="GeneTEA Enriched Terms"
               minHeight={200}

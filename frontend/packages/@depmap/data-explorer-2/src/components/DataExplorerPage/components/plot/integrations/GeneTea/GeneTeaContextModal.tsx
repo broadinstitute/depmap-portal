@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import qs from "qs";
 import { Button, Modal } from "react-bootstrap";
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
@@ -13,7 +14,6 @@ interface Props {
   coincident: string[];
   matchingGenes: string[];
   onClose: () => void;
-  showViewInGenePartyButton?: boolean;
 }
 
 function GeneTeaContextModal({
@@ -22,7 +22,6 @@ function GeneTeaContextModal({
   coincident,
   matchingGenes,
   onClose,
-  showViewInGenePartyButton = false,
 }: Props) {
   const [show, setShow] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -54,8 +53,15 @@ function GeneTeaContextModal({
     DepMap.saveNewContext(
       {
         name: term,
-        context_type: "gene",
+        dimension_type: "gene",
         expr: { in: [{ var: "entity_label" }, matchingGenes] },
+        vars: {
+          entity_label: {
+            dataset_id: "gene_metadata",
+            identifier_type: "column",
+            identifier: "label",
+          },
+        },
       },
       () => setShow(true)
     );
@@ -74,7 +80,22 @@ function GeneTeaContextModal({
             synonyms={synonyms}
             coincident={coincident}
           />
-          ” is associated with {matchingGenes.length} of the selected genes.
+          ” is associated with{" "}
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href={(() => {
+              const queryString = qs.stringify(
+                { genes: matchingGenes },
+                {
+                  arrayFormat: "repeat",
+                }
+              );
+              return `../gene_tea/?${queryString}`;
+            })()}
+          >
+            {matchingGenes.length} of the selected genes.
+          </a>
         </p>
         <table className="table">
           <thead>
@@ -127,15 +148,6 @@ function GeneTeaContextModal({
       </Modal.Body>
       <Modal.Footer>
         <Button onClick={onClose}>Close</Button>
-        {showViewInGenePartyButton && (
-          <Button
-            bsStyle="info"
-            target="_blank"
-            href={`../../genetea/?genes=${matchingGenes.join("+")}`}
-          >
-            View in TEAparty
-          </Button>
-        )}
         <Button bsStyle="primary" onClick={handleClickCreateContext}>
           Save as Gene Context
         </Button>

@@ -1,4 +1,5 @@
 import React, { useCallback } from "react";
+import qs from "qs";
 import {
   promptForValue,
   PromptComponentProps,
@@ -21,12 +22,31 @@ interface Props {
 
 type PartialRange = [number | undefined, number | undefined];
 
+const isGeneList = (variable: SliceQuery | null) => {
+  return (
+    variable &&
+    variable.identifier === "label" &&
+    variable.dataset_id === "gene_metadata"
+  );
+};
+
+const openInGeneTea = (genes: string[]) => {
+  const queryString = qs.stringify({ genes }, { arrayFormat: "repeat" });
+  const url = `../gene_tea/?${queryString}`;
+  window.open(url, "_blank", "noreferrer");
+};
+
 function useSlicePreview({ expr, op, path, variable }: Props) {
   const PlotlyLoader = usePlotlyLoader();
   const { dimension_type, dispatch } = useContextBuilderState();
 
   const handleClickShowSlicePreview = useCallback(async () => {
     let nextValue: unknown = expr;
+
+    if (isGeneList(variable as SliceQuery)) {
+      openInGeneTea(expr as string[]);
+      return;
+    }
 
     const accepted = await promptForValue({
       title: `${variable!.label || variable!.identifier} distribution`,

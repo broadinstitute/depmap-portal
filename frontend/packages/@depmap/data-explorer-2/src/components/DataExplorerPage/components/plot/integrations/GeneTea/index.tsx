@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
+import qs from "qs";
 import { Button } from "react-bootstrap";
 import { cached, legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContextV2 } from "@depmap/types";
 import ExplanatoryText from "./ExplanatoryText";
 import GeneTeaTable from "./GeneTeaTable";
 import GeneTeaContextModal from "./GeneTeaContextModal";
@@ -11,7 +12,7 @@ import styles from "../../../../styles/DataExplorer2.scss";
 
 interface Props {
   selectedLabels: Set<string> | null;
-  onClickColorByContext: (context: DataExplorerContext) => void;
+  onClickColorByContext: (context: DataExplorerContextV2) => void;
 }
 
 type GeneTeaEnrichedTerms = LegacyPortalApiResponse["fetchGeneTeaEnrichment"];
@@ -127,9 +128,15 @@ function GeneTea({ selectedLabels, onClickColorByContext }: Props) {
             selectedLabels.size > MAX_SELECTION ||
             data?.term.length === 0
           }
-          href={`../../genetea/?genes=${
-            selectedLabels && [...selectedLabels].join("+")
-          }`}
+          href={(() => {
+            const queryString = qs.stringify(
+              { genes: [...(selectedLabels || [])] },
+              {
+                arrayFormat: "repeat",
+              }
+            );
+            return `../gene_tea/?${queryString}`;
+          })()}
         >
           View in TEAparty
         </Button>
