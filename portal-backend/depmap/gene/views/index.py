@@ -23,7 +23,7 @@ from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.entity.views.index import format_summary
 from depmap.extensions import memoize_without_user_permissions
 from depmap.gene.models import Gene
-from depmap.gene.views import characterization
+from depmap.gene.views import characterization, utils
 from depmap.gene.views.executive import format_mutation_profile, get_order
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
 from depmap.predictability.utilities import (
