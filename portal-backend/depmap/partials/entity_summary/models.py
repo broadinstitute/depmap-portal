@@ -216,7 +216,7 @@ def get_entity_summary_metadata(
     metadata["x_label"] = dataset.units
     metadata["interactive_url"] = url_for(
         "data_explorer_2.view_data_explorer_2",
-        xDataset=dataset.given_id,
+        xDataset=dataset.given_id if dataset.given_id else dataset.id,
         xFeature=feature_label,
         yDataset=None,
         yFeature=None,
