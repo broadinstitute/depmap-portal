@@ -1017,8 +1017,16 @@ class PredictiveModelFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    dataset = factory.SubFactory(DependencyDatasetFactory)
-    entity = factory.SubFactory(GeneFactory)
+    dataset_given_id = factory.Sequence(
+        lambda number: "dataset_given_id{}".format(number)
+    )
+    pred_model_feature_id = factory.Sequence(
+        lambda number: "pred_model_feature_id_{}".format(number)
+    )
+    pred_model_feature_type = factory.Sequence(
+        lambda number: "pred_model_feature_type_{}".format(number)
+    )
+
     label = factory.Sequence(lambda number: "label_{}".format(number))
     pearson = factory.Sequence(lambda number: number)
 
@@ -1066,7 +1074,7 @@ class PredictiveBackgroundFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    dataset = factory.SubFactory(DependencyDatasetFactory)
+    dataset_given_id = factory.Sequence(lambda number: f"dataset_given_id{number}")
     background = json.dumps([1, 2, 3, 4])
 
 

@@ -2,6 +2,7 @@ from depmap.database import Column, Model, Integer, ForeignKey, String, relation
 from depmap.dataset.models import DependencyDataset
 from depmap.gene.models import Gene
 from depmap.predictability.models import PredictiveModel
+from loader.predictability_loader import lookup_breadbox_dataset_given_id
 
 
 class TDAInterpretableModel(Model):
@@ -23,6 +24,7 @@ class TDAInterpretableModel(Model):
 
     @staticmethod
     def get_by_gene_label_and_dataset_name(gene_label, dataset_name, must=False):
+        dataset_given_id = lookup_breadbox_dataset_given_id(dataset_name)
         query = (
             TDAInterpretableModel.query.join(
                 Gene, TDAInterpretableModel.gene_id == Gene.entity_id
@@ -32,12 +34,8 @@ class TDAInterpretableModel(Model):
                 TDAInterpretableModel.predictive_model_id
                 == PredictiveModel.predictive_model_id,
             )
-            .join(
-                DependencyDataset,
-                PredictiveModel.dataset_id == DependencyDataset.dataset_id,
-            )
             .filter(Gene.label == gene_label)
-            .filter(DependencyDataset.name == dataset_name)
+            .filter(PredictiveModel.dataset_given_id == dataset_given_id)
         )
         if must:
             return query.one()

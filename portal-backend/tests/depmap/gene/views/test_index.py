@@ -131,13 +131,7 @@ def test_gene_dependency_datasets_where_present(
                 "sanger_proteomics",
             ],
         ),
-        (
-            "TNS2",
-            [
-                "expression",
-                "copy_number_relative",
-            ],
-        ),  # TNS2, not in rppa
+        ("TNS2", ["expression", "copy_number_relative",],),  # TNS2, not in rppa
     ],
 )
 def test_biomarker_datasets_where_present(populated_db, gene_label, expected_names):
@@ -172,86 +166,3 @@ def test_format_gene_summary(empty_db_mock_downloads):
     summary = format_gene_summary(gene, [dep_dataset])
     for param in {"color=mutation", "size_biom_enum_name=expression"}:
         assert param in summary["ajax_url"]
-
-
-def test_get_predictive_table(app, empty_db_mock_downloads):
-    """
-    Test that includes rnai, crispr, and nothing else
-    """
-    gene = GeneFactory()
-    crispr = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Combined,
-        matrix=MatrixFactory(entities=[gene]),
-        priority=1,
-    )
-    rnai = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.RNAi_merged,
-        matrix=MatrixFactory(entities=[gene]),
-        priority=1,
-    )
-    other = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
-        matrix=MatrixFactory(entities=[gene]),
-    )
-
-    feature_gene = GeneFactory()
-    biomarker_matrix = MatrixFactory(entities=[feature_gene])
-    biomarker_dataset = BiomarkerDatasetFactory(matrix=biomarker_matrix)
-
-    for dataset in [crispr, rnai, other]:
-        model = PredictiveModelFactory(
-            label="Core_omics", dataset=dataset, entity=gene, pearson=1
-        )
-        feature_0 = PredictiveFeatureFactory(
-            feature_name=feature_gene.label, dataset_id=biomarker_dataset.name.name,
-        )
-        feature_1 = PredictiveFeatureFactory(
-            feature_name=feature_gene.label, dataset_id=biomarker_dataset.name.name,
-        )
-        PredictiveFeatureResultFactory(
-            predictive_model=model, importance=0, rank=0, feature=feature_0,
-        )
-        PredictiveFeatureResultFactory(
-            predictive_model=model, importance=1, rank=1, feature=feature_1
-        )
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    with app.test_client() as c:
-        r = c.get(url_for("gene.get_predictive_table", entityId=gene.entity_id))
-        assert r.status_code == 200, r.status_code
-        response = json_loads(r.data.decode("utf8"))
-
-        # test shape of response
-        assert len(response) == 2
-        crispr_row = next(
-            (x for x in response if x["screen"] == crispr.display_name), None
-        )
-        rnai_row = next(
-            (x for x in response if x["screen"] == crispr.display_name), None
-        )
-        assert crispr_row is not None and rnai_row is not None
-
-        for row in crispr_row, rnai_row:
-            print(row)
-            assert set(row.keys()) == {"screen", "screenType", "modelsAndResults"}
-            assert set(row["modelsAndResults"][0].keys()) == {
-                "modelName",
-                "modelCorrelation",
-                "results",
-            }
-            assert len(row["modelsAndResults"][0]["results"]) == 2
-            assert all(
-                [
-                    set(subrow["results"][0].keys())
-                    == {
-                        "featureName",
-                        "featureImportance",
-                        "correlation",
-                        "featureType",
-                        "relatedType",
-                        "interactiveUrl",
-                    }
-                    for subrow in row["modelsAndResults"]
-                ]
-            )

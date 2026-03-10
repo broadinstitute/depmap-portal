@@ -16,7 +16,7 @@ export interface GenePredictiveModelResults
 
 export interface CompoundDosePredictiveModelResults
   extends PredictiveModelResultsBase {
-  compoundExperimentId: string;
+  compoundId: string;
 }
 
 export type PredictiveModelResults =
@@ -36,7 +36,7 @@ export interface PredictabilityTable {
   screen: string;
   screenType: ScreenType;
   modelsAndResults: Array<PredictiveModelResults>;
-  compoundExperimentId?: string;
+  compoundId?: string;
 }
 
 export enum ModelType {
