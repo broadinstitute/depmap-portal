@@ -8,7 +8,7 @@ import React, {
 import cx from "classnames";
 import { LegacyPortalApiResponse } from "@depmap/api";
 import { Tooltip, WordBreaker } from "@depmap/common-components";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContextV2 } from "@depmap/types";
 import { SectionStackContext } from "../../../SectionStack";
 import GeneTeaTerm from "./GeneTeaTerm";
 import styles from "../../../../styles/DataExplorer2.scss";
@@ -17,7 +17,7 @@ type GeneTeaEnrichedTerms = LegacyPortalApiResponse["fetchGeneTeaEnrichment"];
 
 interface Props {
   data: GeneTeaEnrichedTerms;
-  onClickColorByContext: (context: DataExplorerContext) => void;
+  onClickColorByContext: (context: DataExplorerContextV2) => void;
   onClickTerm: (
     term: string,
     matchingGenes: string[],
@@ -87,9 +87,16 @@ function GeneTeaTable({ data, onClickColorByContext, onClickTerm }: Props) {
                 onClick={() => {
                   onClickColorByContext({
                     name: term,
-                    context_type: "gene",
+                    dimension_type: "gene",
                     expr: {
                       in: [{ var: "entity_label" }, data.matchingGenes[i]],
+                    },
+                    vars: {
+                      entity_label: {
+                        dataset_id: "gene_metadata",
+                        identifier_type: "column",
+                        identifier: "label",
+                      },
                     },
                   });
                 }}
