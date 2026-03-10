@@ -64,6 +64,7 @@ class PredictiveModel(Model):
 
     # prefix pred_model to help distinguish from the feature_id column on the PredictiveFeatureResult table when reading
     pred_model_feature_id = Column(String, nullable=False, index=True)
+    pred_model_feature_type = Column(String, nullable=False, index=True)
 
     label = Column(String(), nullable=False)
     pearson = Column(
@@ -145,8 +146,11 @@ class PredictiveModel(Model):
                     predictive_model.dataset_given_id,
                     predictive_model.pred_model_feature_id,
                 )
+                pred_model_feature_type = data_access.get_dataset_feature_type(
+                    predictive_model.dataset_given_id
+                )
                 row["related_type"] = predictive_feature.get_relation_to_entity(
-                    pred_model_feature_id
+                    pred_model_feature_id, pred_model_feature_type
                 )
             rows.append(row)
 
@@ -172,25 +176,13 @@ class PredictiveModel(Model):
 
     @staticmethod
     def get_all_models(
-        dataset_given_id: int, pred_model_feature_id: str
+        dataset_given_id: str, pred_model_feature_id: str
     ) -> List["PredictiveModel"]:
         models = PredictiveModel.query.filter_by(
-            dataset_id=dataset_given_id, pred_model_feature_id=pred_model_feature_id
+            dataset_given_id=dataset_given_id,
+            pred_model_feature_id=pred_model_feature_id,
         ).all()
         return models
-
-    @staticmethod
-    def get_dataset_given_ids_with_models_for_entity(
-        pred_model_feature_id: str,
-    ) -> List[DependencyDataset]:
-        dataset_ids = (
-            PredictiveModel.query.with_entities(PredictiveModel.dataset_given_id)
-            .filter(PredictiveModel.pred_model_feature_id == pred_model_feature_id)
-            .distinct()
-            .all()
-        )
-
-        return [dataset_id for (dataset_id,) in dataset_ids]
 
 
 class PredictiveFeature(Model):
@@ -268,11 +260,11 @@ class PredictiveFeature(Model):
             return None
 
         dep_dataset_values = data_access.get_row_of_values(
-            dataset_given_id, pred_model_feature_id
+            dataset_given_id, pred_model_feature_id, feature_identifier="id"
         )
         if self.dataset_id == "context":
             cell_lines_in_self_context = data_access.get_row_of_values(
-                data_access.get_context_dataset(), pred_model_feature_id
+                data_access.get_context_dataset(), self.feature_name
             )
             self_values = pd.Series(
                 dep_dataset_values.index.map(
@@ -311,10 +303,13 @@ class PredictiveFeature(Model):
             return None
 
         entity = (
-            Gene.get_gene_by_entrez(pred_model_feature_id)
+            Gene.get_gene_by_entrez(int(pred_model_feature_id))
             if pred_model_feature_type == "gene"
             else Compound.get_by_compound_id(pred_model_feature_id)
         )
+
+        if entity is None:
+            return None
 
         if entity.entity_id == self_entity.entity_id:
             return "self"

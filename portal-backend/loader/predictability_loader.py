@@ -30,17 +30,22 @@ from depmap.utilities.models import log_data_issue
 
 def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
     """
-    Returns the breadbox_dataset_id for a given legacy dataset ID string.
+    Returns the breadbox_dataset_id for a given legacy dataset ID string. If
+    there are no breadbox dataset ids, fallback to the legacy id.
     """
     # Mapping legacy names back to breadbox IDs
     legacy_to_breadbox = {
         "Prism_oncology_AUC": "PRISMOncologyReferenceLog2AUCMatrix",
         "Prism_oncology_AUC_seq": "PRISMOncologyReferenceSeqLog2AUCMatrix",
         "Rep_all_single_pt": "Rep_all_single_pt_per_compound",
+        "CTRP_AUC": "CTRP_AUC_collapsed",
+        "GDSC1_AUC": "GDSC1_AUC_collapsed",
+        "GDSC2_AUC": "GDSC2_AUC_collapsed",
+        "Repurposing_secondary_AUC": "REPURPOSING_AUC_collapsed",
     }
 
     # Check if it's in our mapping;
-    # otherwise, return the ID itself (for "Chronos_Combined" and "RNAi_merged")
+    # otherwise, return the ID itself (for "Chronos_Combined" and "RNAi_merged", and "Avana" (Avana seems to only be relevant for TDA))
     return legacy_to_breadbox.get(legacy_dataset_id, legacy_dataset_id)
 
 
@@ -66,7 +71,11 @@ def lookup_compound_id_matching_compound_exp(xref_full: str):
 
 
 def _load_predictive_models(
-    filename: str, dataset: Dataset, model_ids: Dict[Tuple[str, str], int], next_id
+    filename: str,
+    dataset: Dataset,
+    dataset_name: str,
+    model_ids: Dict[Tuple[str, str], int],
+    next_id,
 ):
     def lookup_feature_id(
         gene_or_compound_experiment_label: str,
@@ -99,9 +108,10 @@ def _load_predictive_models(
                 log_data_issue(
                     "PredictiveModel",
                     "Missing compound",
-                    identifier=compound.compound_id,
+                    identifier=gene_or_compound_experiment_label,
                     id_type="compound",
                 )
+                return None
             return compound.compound_id
 
         log_data_issue(
@@ -126,8 +136,11 @@ def _load_predictive_models(
         model_ids[model_ids_key] = model_id
         rec = dict(
             predictive_model_id=model_id,
-            dataset_given_id=lookup_breadbox_dataset_given_id(dataset.dataset_id),
+            dataset_given_id=lookup_breadbox_dataset_given_id(dataset_name),
             pred_model_feature_id=lookup_feature_id(entity_label),
+            pred_model_feature_type="gene"
+            if dataset.entity_type == "gene"
+            else "compound_v2",
             label=model_name,
             pearson=float(row["pearson"]),
         )
@@ -309,7 +322,13 @@ def load_predictive_model_csv(
     model_ids: Dict[Tuple[str, str], int] = {}
     next_id = [get_starting_predictive_model_id()]
 
-    _load_predictive_models(filename, dataset, model_ids, next_id)
+    _load_predictive_models(
+        filename=filename,
+        dataset=dataset,
+        dataset_name=dataset_name,
+        model_ids=model_ids,
+        next_id=next_id,
+    )
 
     _load_predictive_features(filename, feature_metadata_file)
 

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import uuid
 
+from depmap.gene.views import utils
 from flask.globals import current_app
 
 from dataclasses import dataclass
@@ -74,17 +75,8 @@ def render_tile(subject_type, tile_name, identifier):
         compound = Compound.query.filter_by(label=identifier).one_or_none()
         if compound is None:
             abort(404)
-        # Figure out membership in different datasets
-        compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-            compound.entity_id
-        )
-        compound_experiment_and_datasets = [
-            x for x in compound_experiment_and_datasets if not x[1].is_dose_replicate
-        ]  # filter for non dose replicate datasets
 
-        rendered_tile = render_compound_tile(
-            tile_name, compound, compound_experiment_and_datasets, args_dict
-        )
+        rendered_tile = render_compound_tile(tile_name, compound, args_dict)
     elif subject_type == "cell_line":
         cell_line = DepmapModel.query.filter_by(model_id=identifier).one_or_none()
         if cell_line is None:
@@ -161,9 +153,7 @@ def render_gene_tile(tile_name, gene):
     return rendered_tile
 
 
-def render_compound_tile(
-    tile_name, compound, cpd_exp_and_datasets=None, query_params_dict={}
-):
+def render_compound_tile(tile_name, compound, query_params_dict={}):
     tiles = {
         CompoundTileEnum.predictability.value: get_predictability_html,
         CompoundTileEnum.selectivity.value: get_enrichment_html,
@@ -179,7 +169,7 @@ def render_compound_tile(
     if tile_name not in tiles:
         abort(400)
     tile_html = tiles[tile_name]
-    rendered_tile = tile_html(compound, cpd_exp_and_datasets, query_params_dict)
+    rendered_tile = tile_html(compound, query_params_dict)
     return rendered_tile
 
 
@@ -238,9 +228,7 @@ def get_tda_predictability_html(entity):
 
 
 def get_predictability_html(
-    entity: Entity,
-    cpd_exp_and_datasets: List[Tuple[CompoundExperiment, DependencyDataset]] = None,
-    query_params_dict={},
+    entity: Entity, query_params_dict={},
 ):
     """
     This is the predictability tile on the gene page
@@ -250,14 +238,15 @@ def get_predictability_html(
     entity_type = entity.type
 
     if entity_type == "gene":
-        # TODO: TEMP hardcoding of ids
-        default_crispr_dataset = "Chronos_Combined"
-        default_rnai_dataset = "RNAi_merged"
+        gene = Gene.get_by_entity_id(entity.entity_id)
+        default_crispr_dataset = utils.get_default_crispr_dataset()
+        default_rnai_dataset = utils.get_default_rnai_dataset()
 
         return render_template(
             "tiles/predictability.html",
             predictability=format_predictability_tile(
-                entity, [default_crispr_dataset, default_rnai_dataset]
+                gene.entrez_id,
+                [default_crispr_dataset.given_id, default_rnai_dataset.given_id],
             ),
             is_gene_executive=True,  # Hard coded as True; TBD if we want TDA to show something else
             gene_symbol=entity.symbol,
@@ -271,10 +260,11 @@ def get_predictability_html(
         )
 
         predictability = None
-
         if compound is not None and len(all_matching_datasets) > 0:
             dataset_given_id = all_matching_datasets[0].given_id
-            predictability = format_predictability_tile(compound, [dataset_given_id],)
+            predictability = format_predictability_tile(
+                compound.compound_id, [dataset_given_id]
+            )
 
         return render_template(
             "tiles/predictability.html",
@@ -310,9 +300,7 @@ def get_targeting_compounds_html(gene):
     )
 
 
-def get_enrichment_html(
-    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
-):
+def get_enrichment_html(entity: Entity, query_params_dict={}):
     div_id = str(uuid.uuid4())
     feature_label = entity.label if entity.type == "compound" else str(entity.entrez_id)
     feature_type = entity.type
@@ -326,9 +314,7 @@ def get_enrichment_html(
     )
 
 
-def get_structure_and_detail_html(
-    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
-):
+def get_structure_and_detail_html(entity: Entity, query_params_dict={}):
     div_id = str(uuid.uuid4())
     compound_name = entity.label
     compound_id = Compound.get_by_label(compound_name).compound_id
@@ -342,9 +328,7 @@ def get_structure_and_detail_html(
     )
 
 
-def get_heatmap_html(
-    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
-):
+def get_heatmap_html(entity: Entity, query_params_dict={}):
     div_id = str(uuid.uuid4())
     entity_label = entity.label
     compound = Compound.get_by_label(entity_label)
@@ -359,9 +343,7 @@ def get_heatmap_html(
     )
 
 
-def get_correlated_dependencies_html(
-    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
-):
+def get_correlated_dependencies_html(entity: Entity, query_params_dict={}):
     # unique id to insert in DOM
     div_id = str(uuid.uuid4())
     compound_name = entity.label
@@ -376,9 +358,7 @@ def get_correlated_dependencies_html(
     )
 
 
-def get_correlated_expression_html(
-    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
-):
+def get_correlated_expression_html(entity: Entity, query_params_dict={}):
     # unique id to insert in DOM
     div_id = str(uuid.uuid4())
     compound_name = entity.label
@@ -393,9 +373,7 @@ def get_correlated_expression_html(
     )
 
 
-def get_related_compounds_html(
-    entity: Entity, compound_experiment_and_datasets=None, query_params_dict={}
-):
+def get_related_compounds_html(entity: Entity, query_params_dict={}):
     # unique id to insert in DOM
     div_id = str(uuid.uuid4())
     entity_label = entity.label
@@ -591,9 +569,7 @@ def get_tractability_html(gene):
     return render_template("tiles/tractability.html", proteins=proteins)
 
 
-def get_sensitivity_html(
-    compound: Compound, compound_experiment_and_datasets, query_params_dict={}
-):
+def get_sensitivity_html(compound: Compound, query_params_dict={}):
     all_matching_datasets = data_access.get_all_datasets_containing_compound(
         compound.compound_id
     )
@@ -614,9 +590,7 @@ def get_sensitivity_html(
     )
 
 
-def get_availability_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
-):
+def get_availability_html(compound, query_params_dict={}):
     return render_template(
         "tiles/availability.html",
         name=compound.label,

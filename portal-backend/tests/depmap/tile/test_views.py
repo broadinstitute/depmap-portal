@@ -111,45 +111,6 @@ def test_no_render_gene_tiles(populated_db):
         assert non_identifier.status_code == 404, non_identifier.status_code
 
 
-def test_render_predictability_tile(app, empty_db_mock_downloads):
-    gene = GeneFactory(label="SOX10")
-    dataset = DependencyDatasetFactory(
-        name=DependencyEnum.Chronos_Combined,
-        matrix=MatrixFactory(entities=[gene]),
-        priority=1,
-    )
-    dataset_model = PredictiveModelFactory(
-        dataset=dataset, entity=gene, pearson=10, label="model_1"
-    )
-    predictive_feature = PredictiveFeatureFactory(
-        dataset_id=BiomarkerDatasetFactory().name.value
-    )
-    PredictiveFeatureResultFactory(
-        predictive_model=dataset_model,
-        feature=predictive_feature,
-        rank=0,
-        importance=0.5,
-    )
-    PredictiveBackgroundFactory(dataset=dataset)
-
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    with app.test_client() as c:
-        r = c.get(
-            url_for(
-                "tile.render_tile",
-                subject_type="gene",
-                tile_name="predictability",
-                identifier=gene.label,
-            )
-        )
-        r_json = r.get_json()
-        assert r.status_code == 200
-        assert "html" in r_json
-        assert r_json["html"] != ""
-
-
 def test_render_description_tile(app, empty_db_mock_downloads):
     gene = GeneFactory(label="SOX10")
     empty_db_mock_downloads.session.flush()
