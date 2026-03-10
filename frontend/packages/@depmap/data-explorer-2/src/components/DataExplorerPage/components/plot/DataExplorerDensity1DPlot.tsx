@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
+import { isElara } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import {
@@ -325,7 +326,7 @@ function DataExplorerDensity1DPlot({
               }}
             />
           </StackableSection>
-          {plotConfig.index_type === "gene" ? (
+          {!isElara && plotConfig.index_type === "gene" ? (
             <StackableSection
               title="GeneTEA Enriched Terms"
               minHeight={200}
