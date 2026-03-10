@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import qs from "qs";
 import { Button } from "react-bootstrap";
 import { cached, legacyPortalAPI, LegacyPortalApiResponse } from "@depmap/api";
+import { toPortalLink } from "@depmap/globals";
 import { Spinner } from "@depmap/common-components";
 import { DataExplorerContextV2 } from "@depmap/types";
 import ExplanatoryText from "./ExplanatoryText";
@@ -135,7 +136,7 @@ function GeneTea({ selectedLabels, onClickColorByContext }: Props) {
                 arrayFormat: "repeat",
               }
             );
-            return `../gene_tea/?${queryString}`;
+            return toPortalLink(`gene_tea/?${queryString}`);
           })()}
         >
           View in TEAparty

@@ -4,6 +4,7 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
+import { toPortalLink } from "@depmap/globals";
 import { SlicePreview } from "@depmap/slice-table";
 import { DataExplorerContextVariable, SliceQuery } from "@depmap/types";
 import { usePlotlyLoader } from "../../../../../../contexts/PlotlyLoaderContext";
@@ -32,7 +33,7 @@ const isGeneList = (variable: SliceQuery | null) => {
 
 const openInGeneTea = (genes: string[]) => {
   const queryString = qs.stringify({ genes }, { arrayFormat: "repeat" });
-  const url = `../gene_tea/?${queryString}`;
+  const url = toPortalLink(`gene_tea/?${queryString}`);
   window.open(url, "_blank", "noreferrer");
 };
 

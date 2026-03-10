@@ -3,7 +3,7 @@ import qs from "qs";
 import { Button, Modal } from "react-bootstrap";
 import { cached, legacyPortalAPI } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
-import { DepMap } from "@depmap/globals";
+import { DepMap, toPortalLink } from "@depmap/globals";
 import renderConditionally from "../../../../../../utils/render-conditionally";
 import GeneTeaTerm from "./GeneTeaTerm";
 import styles from "../../../../styles/DataExplorer2.scss";
@@ -91,7 +91,7 @@ function GeneTeaContextModal({
                   arrayFormat: "repeat",
                 }
               );
-              return `../gene_tea/?${queryString}`;
+              return toPortalLink(`gene_tea/?${queryString}`);
             })()}
           >
             {matchingGenes.length} of the selected genes.
