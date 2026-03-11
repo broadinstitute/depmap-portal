@@ -41,11 +41,13 @@ def batch_load_from_generator(
 def _dump_table_to_csv(connection, table_name, dump_name):
     with open(dump_name, "wt") as fd:
         w = csv.writer(fd)
-        result = connection.execute("select * from {}".format(table_name))
+        result = connection.execute(
+            sqlalchemy.text("select * from {}".format(table_name))
+        )
         header_written = False
         for row in result:
             if not header_written:
-                w.writerow(row.keys())
+                w.writerow(row._fields)
                 header_written = True
             w.writerow([str(x) for x in row])
 

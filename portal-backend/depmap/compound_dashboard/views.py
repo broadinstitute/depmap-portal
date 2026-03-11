@@ -3,8 +3,8 @@ from flask import (
     current_app,
     render_template,
     abort,
-    safe_join,
 )
+from werkzeug.utils import safe_join
 
 import pandas as pd
 

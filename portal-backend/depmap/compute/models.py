@@ -15,7 +15,7 @@ class CustomCellLineGroup(Model):
 
     @classmethod
     def get_depmap_ids(cls, uuid_str):
-        row = cls.query.get(uuid_str)
+        row = db.session.get(cls, uuid_str)
         return json.loads(row.depmap_ids)
 
     @classmethod

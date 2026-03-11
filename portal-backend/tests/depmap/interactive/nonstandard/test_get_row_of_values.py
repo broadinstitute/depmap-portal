@@ -78,10 +78,10 @@ def test_get_row_of_values(empty_db_mock_downloads):
         nonstandard_dataset_id=dataset_id,
         data_type="user_upload",
         file_path=file_path,
-        row_index=[
+        _row_index=[
             RowNonstandardMatrix(index=0, row_name="row", owner_id=PUBLIC_ACCESS_GROUP)
         ],
-        col_index=col_index_objects,
+        _col_index=col_index_objects,
         owner_id=PUBLIC_ACCESS_GROUP,
     )
     empty_db_mock_downloads.session.add(dataset_index)

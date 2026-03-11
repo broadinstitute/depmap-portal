@@ -127,7 +127,7 @@ def test_get_file_record(app, _empty_db_base):
         "fileDescription": None,
         "isMainFile": False,
         "retractionOverride": None,
-        "downloadUrl": "/download/api/download?file_name=fake%2Ftest%2Fheadliner2_file_name&bucket=depmap-external-downloads",
+        "downloadUrl": "/download/api/download?file_name=fake/test/headliner2_file_name&bucket=depmap-external-downloads",
         "taigaUrl": "https://cds.team/taiga/dataset/test-taiga-id/1",
         "releaseName": "test name version",
         "terms": "achilles",

@@ -1,5 +1,6 @@
 import pandas as pd
 
+from depmap.extensions import db
 from depmap.dataset.models import DependencyDataset
 from depmap.context.models_new import SubtypeContext, SubtypeContextEntity
 from tests.factories import (
@@ -53,7 +54,7 @@ def test_context_entity_get_by_label(empty_db_mock_downloads):
 #         gene_context_enrichment.context.name
 #     )
 
-#     df = pd.read_sql(query.statement, query.session.connection())
+#     df = pd.read_sql(query.statement, db.session.connection())
 #     assert len(df) == 2
 
 #     gene_row = df.loc[df["label"] == gene_context_enrichment.entity.label].iloc[0]

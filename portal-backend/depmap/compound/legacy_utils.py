@@ -71,7 +71,7 @@ def _get_deduplicated_experiment_compound_mapping(
     compound_alias = sa.orm.aliased(Compound)
     comp_exp_info = (
         Matrix.query.filter_by(matrix_id=matrix_id)
-        .join(RowMatrixIndex)
+        .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)
         .join(comp_exp_alias)
         .join(compound_alias, compound_alias.entity_id == comp_exp_alias.compound_id)
         .with_entities(comp_exp_alias, compound_alias)
@@ -155,10 +155,8 @@ def get_compound_experiment_priority_sorted_datasets(compound_id: str) -> list[s
     # Get a list of dataset IDs with an initial priority order sorting
     datasets = (
         db.session.query(CompoundExperiment, DependencyDataset)
-        .join(
-            Matrix, DependencyDataset.matrix_id == Matrix.matrix_id
-        )  # NOTE: I'm not sure if this join is necessary since RowMatrixIndex already has a matrix_id
-        .join(RowMatrixIndex)
+        .join(Matrix, DependencyDataset.matrix_id == Matrix.matrix_id)
+        .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)
         .join(
             CompoundExperiment,
             RowMatrixIndex.entity_id == CompoundExperiment.entity_id,
@@ -168,7 +166,7 @@ def get_compound_experiment_priority_sorted_datasets(compound_id: str) -> list[s
         .order_by(
             nullslast(DependencyDataset.priority),
             CompoundExperiment.entity_id,
-            case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
+            case((DependencyDataset.data_type == "drug_screen", 0), else_=1),
         )
         .with_entities(DependencyDataset)
         .all()

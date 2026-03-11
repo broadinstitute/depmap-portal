@@ -20,13 +20,11 @@ def add_cell_line_table_columns(query):
         query.join(PrimaryDisease, CellLine.primary_disease)
         .join(Lineage, CellLine.lineage)
         .add_columns(
-            sqlalchemy.column('"primary_disease".name', is_literal=True).label(
+            sqlalchemy.literal_column('"primary_disease".name').label(
                 "primary_disease"
             ),
-            sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
-            sqlalchemy.column('"lineage".level', is_literal=True).label(
-                "lineage_level"
-            ),
+            sqlalchemy.literal_column('"lineage".name').label("lineage"),
+            sqlalchemy.literal_column('"lineage".level').label("lineage_level"),
         )
     )
     return table_query
@@ -64,7 +62,7 @@ class CellLine(Model):
 
     depmap_id = Column(String, primary_key=True)
     cell_line_name = Column(String, index=True, unique=True, nullable=True)
-    cell_line_alias = db.relationship("CellLineAlias", lazy="dynamic")
+    cell_line_alias = db.relationship("CellLineAlias", lazy="select")
     cell_line_display_name = Column(String, nullable=False)  # stripped cell line name
 
     wtsi_master_cell_id = Column(Integer, index=True)  # wtsi is wellcome trust sanger
@@ -73,7 +71,7 @@ class CellLine(Model):
     )  # Sanger cell line passport is Sanger ID in https://cellmodelpassports.sanger.ac.uk/
     cosmic_id = Column(Integer, index=True)
 
-    lineage = db.relationship("Lineage", lazy="dynamic")
+    lineage = db.relationship("Lineage", lazy="select")
 
     primary_disease_id = Column(
         Integer, ForeignKey("primary_disease.primary_disease_id")
@@ -119,7 +117,7 @@ class CellLine(Model):
         """
         All cell lines have a level 1 lineage, even if it may be "unknown"
         """
-        return next(lineage for lineage in self.lineage.all() if lineage.level == 1)
+        return next(lineage for lineage in self.lineage if lineage.level == 1)
 
     def lineage_is_unknown(self):
         """
@@ -148,19 +146,15 @@ class CellLine(Model):
             .outerjoin(DiseaseSubtype, CellLine.disease_subtype)
             .outerjoin(TumorType, CellLine.tumor_type)
             .add_columns(
-                sqlalchemy.column('"primary_disease".name', is_literal=True).label(
+                sqlalchemy.literal_column('"primary_disease".name').label(
                     "primary_disease"
                 ),
-                sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
-                sqlalchemy.column('"lineage".level', is_literal=True).label(
-                    "lineage_level"
-                ),
-                sqlalchemy.column('"disease_subtype".name', is_literal=True).label(
+                sqlalchemy.literal_column('"lineage".name').label("lineage"),
+                sqlalchemy.literal_column('"lineage".level').label("lineage_level"),
+                sqlalchemy.literal_column('"disease_subtype".name').label(
                     "disease_subtype"
                 ),
-                sqlalchemy.column('"tumor_type".name', is_literal=True).label(
-                    "tumor_type"
-                ),
+                sqlalchemy.literal_column('"tumor_type".name').label("tumor_type"),
             )
         )
         return table_query

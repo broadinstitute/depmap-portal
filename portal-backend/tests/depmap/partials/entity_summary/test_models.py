@@ -374,7 +374,7 @@ def test_format_strip_plot(empty_db_mock_downloads):
     mutation_nums = [0, 0, 0, 1, 1]
     depmap_ids = [x.depmap_id for x, _ in cell_lines_and_lineage_level]
     lineages = [
-        [lineage for lineage in x.lineage.all() if lineage.level == level][0]
+        [lineage for lineage in x.lineage if lineage.level == level][0]
         for x, level in cell_lines_and_lineage_level
     ]
 
