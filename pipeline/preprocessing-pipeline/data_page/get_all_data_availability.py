@@ -1,4 +1,5 @@
 import re
+from typing import Callable, Optional
 import pandas as pd
 import argparse
 import json
@@ -57,10 +58,14 @@ def get_gdsc_summary(tc, gdsc_drug_taiga_id):
     return gdsc_summary
 
 
-def preprocess_omics_dataframe(df, dataset_id):
+def preprocess_omics_dataframe(
+    df,
+    dataset_id,
+    custom_keep_filter: Optional[Callable[[pd.DataFrame], pd.Series]] = None,
+):
     """
     Preprocesses Omics dataframes with standard filtering steps:
-    1. Filter to default entries per model (IsDefaultEntryForModel == "Yes")
+    1. Filter to default entries per model (IsDefaultEntryForModel == "Yes") with an optional custom_keep_filter to further refine this filter
     2. Assert no duplicate ModelID after filtering
     3. Drop metadata columns
     4. Set ModelID as index
@@ -76,7 +81,22 @@ def preprocess_omics_dataframe(df, dataset_id):
 
     print(f"Preprocessing {dataset_id}...")
     print("Filtering to default entries per model...")
-    filtered_df = df[df["IsDefaultEntryForModel"] == "Yes"].copy()
+    mask = df["IsDefaultEntryForModel"] == "Yes"
+
+    if custom_keep_filter is not None:
+        print(f"Applying custom filter...")
+        mask |= custom_keep_filter(df)
+
+    filtered_df = df[mask].copy()
+
+    assert (
+        len(
+            filtered_df[filtered_df["IsDefaultEntryForModel"] == "No"][
+                "IsDefaultEntryForModel"
+            ].tolist()
+        )
+        == 0
+    )
 
     dataset_name = dataset_id.split("/")[-1]
     if dataset_name in [
@@ -242,7 +262,14 @@ def get_ms_sanger_summary(tc, ms_sanger_taiga_id, Model):
 def get_omics_summary(tc, omics_taiga_id):
     print("getting omics_summary...")
     OmicsProfiles = tc.get(omics_taiga_id)
-    OmicsProfiles = preprocess_omics_dataframe(OmicsProfiles, omics_taiga_id)
+
+    OmicsProfiles = preprocess_omics_dataframe(
+        OmicsProfiles,
+        omics_taiga_id,
+        custom_keep_filter=lambda x: (x["IsDefaultEntryForModel"].isna())
+        & (x["DataType"].isin(["olink_media", "olink_lysate"])),
+    )
+
     # if the case is wrong on Datatype, fix it (the new capitalization was introduced 25Q2)
     OmicsProfiles.rename(columns={"DataType": "Datatype"}, inplace=True)
 
