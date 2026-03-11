@@ -162,8 +162,7 @@ class PredictiveModel(Model):
         dataset_given_id: str, pred_model_feature_id: str, must=True
     ) -> Optional["PredictiveModel"]:
         q = (
-            PredictiveModel.query.join(DependencyDataset)
-            .filter(
+            PredictiveModel.query.filter(
                 PredictiveModel.dataset_given_id == dataset_given_id,
                 PredictiveModel.pred_model_feature_id == pred_model_feature_id,
             )

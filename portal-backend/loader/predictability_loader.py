@@ -100,11 +100,11 @@ def _load_predictive_models(
                     "BRD:" + gene_or_compound_experiment_label
                 )
 
-            compound = lookup_compound_id_matching_compound_exp(
+            compound_id = lookup_compound_id_matching_compound_exp(
                 gene_or_compound_experiment_label
             )
 
-            if compound is None:
+            if compound_id is None:
                 log_data_issue(
                     "PredictiveModel",
                     "Missing compound",
@@ -112,7 +112,7 @@ def _load_predictive_models(
                     id_type="compound",
                 )
                 return None
-            return compound.compound_id
+            return compound_id
 
         log_data_issue(
             "PredictiveModel", f"Unexpected dataset entity type {dataset.entity_type}",
