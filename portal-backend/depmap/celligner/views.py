@@ -33,6 +33,7 @@ blueprint = Blueprint(
 restplus = Api(
     blueprint,
     validate=True,
+    doc=False,
     title="Internal restplus endpoints",
     version="1.0",
     description="These are endpoints that use restplus to better document and define contracts. This is not a user-facing interface.",

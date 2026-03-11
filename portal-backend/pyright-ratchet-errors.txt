@@ -120,9 +120,7 @@ database.py: error: Expected no arguments to "Checkpoint" constructor (reportCal
 db_load_commands.py: error: "download_to_cache" is not a known member of "None" (reportOptionalMemberAccess)
 db_load_commands.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "dataset_metadata" of type "DepDatasetMeta" in function "load_compound_dose_replicate_dataset"
 db_load_commands.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "obj" of type "DataclassInstance" in function "asdict"
-db_load_commands.py: error: Argument of type "str" cannot be assigned to parameter "statement" of type "Executable" in function "execute"
 db_load_commands.py: error: Expected no arguments to "TaigaAlias" constructor (reportCallIssue)
-db_load_commands.py: error: No overloads for "execute" match the provided arguments (reportCallIssue)
 depmap_model_loader.py: error: Expected no arguments to "DepmapModel" constructor (reportCallIssue)
 depmap_model_loader.py: error: Expected no arguments to "SubtypeContext" constructor (reportCallIssue)
 depmap_model_loader.py: error: Expected no arguments to "SubtypeContextEntity" constructor (reportCallIssue)
@@ -617,6 +615,7 @@ views.py: error: Argument of type "Entity | None" cannot be assigned to paramete
 views.py: error: Argument of type "FileStorage | None" cannot be assigned to parameter "upload_file" of type "FileStorage" in function "write_upload_to_local_file"
 views.py: error: Argument of type "Literal['val']" cannot be assigned to parameter "mapper" of type "Renamer | None" in function "rename"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
+views.py: error: Argument of type "Literal[False]" cannot be assigned to parameter "doc" of type "str" in function "__init__"
 views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "get_stats_for_dataframe"
 views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "jsonify_df"
 views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "get_root_category_subcategory_topics"
