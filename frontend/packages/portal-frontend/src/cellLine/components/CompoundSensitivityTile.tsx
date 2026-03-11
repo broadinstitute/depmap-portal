@@ -16,8 +16,8 @@ const CompoundSensitivityTile = ({
   const prefDepTooltip = (
     <Tooltip id="compound-sensitivity-tooltip">
       The below compounds are ranked by z-score. The z-score is computed for
-      each gene by taking the gene effect for this model, subtracting the mean
-      across all models, and dividing by the standard deviation.
+      each gene by taking the log2(AUC) value for this model, subtracting the
+      mean across all models, and dividing by the standard deviation.
     </Tooltip>
   );
 

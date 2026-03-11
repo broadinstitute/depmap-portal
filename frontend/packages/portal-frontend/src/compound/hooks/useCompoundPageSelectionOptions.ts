@@ -14,7 +14,6 @@ export const useCompoundPageSelectionOptions = (
     doseCurveOptions: [] as any[],
     heatmapOptions: [] as any[],
     correlationAnalysisOptions: [] as any[],
-    showEnrichedLineages: false,
     isLoadingSelectionOptions: true,
     error: null as Error | null,
   });

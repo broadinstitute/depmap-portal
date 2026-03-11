@@ -16,7 +16,6 @@ from depmap.entity.views.executive import (
 )
 from depmap.cell_line.models_new import DepmapModel
 from depmap.entity.models import Entity
-from depmap.gene.views.confidence import format_confidence
 from depmap.enums import DependencyEnum
 from depmap.gene.views.executive import (
     format_mutation_profile,
@@ -24,8 +23,6 @@ from depmap.gene.views.executive import (
 )
 from depmap.compound.views.executive import (
     get_best_compound_predictability,
-    format_dep_dist,
-    format_dep_dist_warnings,
     format_availability_tile,
 )
 from depmap.gene.models import Gene
@@ -151,7 +148,6 @@ def render_gene_tile(tile_name, gene):
         GeneTileEnum.description.value: get_description_html,
         GeneTileEnum.essentiality.value: get_essentiality_html,
         GeneTileEnum.codependencies.value: get_codependencies_html,
-        GeneTileEnum.gene_score_confidence.value: get_confidence_html,
         GeneTileEnum.target_tractability.value: get_tractability_html,
         GeneTileEnum.targeting_compounds.value: get_targeting_compounds_html,
     }
@@ -344,7 +340,7 @@ def get_enrichment_html(
     feature_type = entity.type
 
     return RenderedTile(
-        f'<div id="{div_id}">get_enrichment_html is stubbed out</div>',
+        f'<div id="{div_id}"/>',
         f"""(
         function() {{
             DepMap.initEnrichmentTile("{div_id}", "{feature_label}", "{feature_type}");
@@ -593,11 +589,6 @@ def get_codependencies_html(gene):
     )
 
 
-def get_confidence_html(gene):
-    confidence = format_confidence(gene)
-    return render_template("tiles/confidence.html", confidence=confidence)
-
-
 from oauthlib.oauth2.rfc6749.errors import UnauthorizedClientError
 
 
@@ -620,23 +611,14 @@ def get_tractability_html(gene):
 def get_sensitivity_html(
     compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
-    all_matching_datasets = data_access.get_all_datasets_containing_compound(
-        compound.compound_id
-    )
-    if len(all_matching_datasets) == 0:
-        return render_template(
-            "tiles/sensitivity.html", dep_dist=None, dep_dist_caption=None
-        )
+    div_id = str(uuid.uuid4())
 
-    # This tile was originally configured to show multiple distributions, but
-    # was later updated to only display the top priority dataset
-    top_priority_dataset = all_matching_datasets[0]
-    dependency_distribution_info = format_dep_dist(compound, top_priority_dataset)
-
-    return render_template(
-        "tiles/sensitivity.html",
-        dep_dist=dependency_distribution_info,
-        dep_dist_caption=format_dep_dist_warnings(top_priority_dataset),
+    return RenderedTile(
+        f'<div id="{div_id}"/>',
+        f"""(
+        function() {{
+            DepMap.initSensitivityTile("{div_id}", "{compound.compound_id}");
+        }})""",
     )
 
 

@@ -323,6 +323,70 @@ def get_dataset_dimension_search_index_entries(
     dimension_type_name: Optional[str],
     include_referenced_by: bool,
 ):
+    # fix for problem where an exact match can get dropped. For example
+    # searching genes for SKP2 with a limit of 100 will result in >100
+    # matches to genes that start with "RN7SPK2...". As a result, the SKP2
+    # gene doesn't appear in the top 100. To avoid this, run the query twice:
+    # first searching by prefix and then concatenate the results for searching
+    # by substring. This allows the prefix results to be sorted independently of the
+    # substring results and keeps SKP2 at the top
+
+    if len(substrings) > 0:
+        results_for_prefixes = query_search_index_entries(
+            db,
+            user,
+            limit,
+            prefixes + substrings,
+            prefixes,
+            dimension_type_name,
+            include_referenced_by,
+        )
+        if len(results_for_prefixes) < limit:
+            # if we haven't hit our cap yet, run the normal query and add those on the end of the results list
+            results_for_substrings = query_search_index_entries(
+                db,
+                user,
+                limit,
+                prefixes,
+                substrings,
+                dimension_type_name,
+                include_referenced_by,
+            )
+
+            # add these new hits to the list (filtering out any that were returned by prefix search already. Not doing so results in dups being returned)
+            seen_ids = set([x.id for x in results_for_prefixes])
+            results = results_for_prefixes + [
+                x for x in results_for_substrings if x.id not in seen_ids
+            ]
+
+            if len(results) > limit:
+                # if we've now got too many, cap the results at limit
+                results = results[:limit]
+        else:
+            results = results_for_prefixes
+    else:
+        results = query_search_index_entries(
+            db,
+            user,
+            limit,
+            prefixes,
+            substrings,
+            dimension_type_name,
+            include_referenced_by,
+        )
+
+    return results
+
+
+def query_search_index_entries(
+    db: SessionWithUser,
+    user: str,
+    limit: int,
+    prefixes: List[str],
+    substrings: List[str],
+    dimension_type_name: Optional[str],
+    include_referenced_by: bool,
+):
     # Filter out any datasets the user doesn't have access to
     visible_database_clause = get_dataset_filter_clauses(db, user)
 

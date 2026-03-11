@@ -28,7 +28,7 @@ def main():
     def make_drug_vs_genetic():
         by_given_id = {artifact["given_id"]: artifact for artifact in inputs["a_set"]}
         for drug_given_id in [
-            "PRISMOncologyReferenceLog2AUCMatrix",
+            "PRISMOncologyReferenceLumLog2AUCMatrix",
             "PRISMOncologyReferenceSeqLog2AUCMatrix",
             "Prism_oncology_seq_viability",
             "REPURPOSING_log2AUC_collapsed",

@@ -83,10 +83,6 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def gene_confidence(self):
-        return False  # Disabled everywhere as of 22Q4
-
-    @property
     def compound_dashboard_app(self):
         return self.is_prerelease_env()
 
@@ -184,14 +180,6 @@ class FeatureFlags:
     def target_discovery_app(self):
         return True
 
-    @property
-    def gene_tea(self):
-        return self.is_prerelease_env()
-
-    # NOTE: This feature flag is separated out from the above
-    # "gene_tea" feature flag. "gene_tea" refers to the data
-    # explorer integration of gene_tea; whereas, gene_tea_portal_page
-    # refers to the portal gene tea tool page.
     @property
     def gene_tea_portal_page(self):
         return True

@@ -1,11 +1,6 @@
-from depmap import data_access
-from depmap.compound.models import Compound, CompoundExperiment
-from depmap.compound.views.executive import (
-    format_availability_tile,
-    format_dep_dist,
-)
+from depmap.compound.models import Compound
+from depmap.compound.views.executive import format_availability_tile
 from depmap.dataset.models import DependencyDataset
-from tests.depmap.utilities.test_svg_utils import assert_is_svg
 from tests.factories import (
     CompoundExperimentFactory,
     CompoundFactory,
@@ -13,46 +8,7 @@ from tests.factories import (
     DepmapModelFactory,
     MatrixFactory,
 )
-import typing
 from tests.utilities import interactive_test_utils
-
-
-def test_format_dep_dist(empty_db_mock_downloads):
-    """
-    test that
-        one element for every compound experiment, dataset
-        expected keys in every element
-    """
-    compound_experiment_1 = CompoundExperimentFactory()
-    compound_experiment_2 = CompoundExperimentFactory()
-
-    assert isinstance(compound_experiment_1, CompoundExperiment)
-    assert isinstance(compound_experiment_2, CompoundExperiment)
-
-    # multiple cell lines so can plot distplot
-    matrix = MatrixFactory(
-        [compound_experiment_1, compound_experiment_2],
-        [DepmapModelFactory(), DepmapModelFactory()],
-        using_depmap_model_table=True,
-    )
-    dataset_1 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.GDSC1_AUC, matrix=matrix
-    )
-    dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.CTRP_AUC, matrix=matrix
-    )
-    empty_db_mock_downloads.session.flush()
-    interactive_test_utils.reload_interactive_config()
-
-    top_priority_dataset = data_access.get_matrix_dataset(dataset_1.name.name)
-
-    dep_dist = format_dep_dist(
-        typing.cast(Compound, compound_experiment_1.compound), top_priority_dataset
-    )
-
-    assert dep_dist.keys() == {"svg", "title", "units", "num_lines", "color"}
-    assert dep_dist["num_lines"] == 2
-    assert_is_svg(dep_dist["svg"])
 
 
 def test_format_availability_tile(empty_db_mock_downloads):

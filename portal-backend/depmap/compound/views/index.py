@@ -123,6 +123,7 @@ def view_compound(name):
             show_related_compounds_tile=show_related_compounds_tile,
         ),
         compound_units=compound.units,
+        show_enriched_lineages=show_enriched_lineages,
     )
 
 
