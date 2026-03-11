@@ -43,6 +43,7 @@ blueprint = Blueprint(
 restplus = Api(
     blueprint,
     validate=True,
+    doc=False,
     decorators=[csrf_protect.exempt],  # this is needed for this particular endpoint
     title="Internal restplus endpoints",
     version="1.0",

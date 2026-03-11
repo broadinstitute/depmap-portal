@@ -12,6 +12,7 @@ blueprint = Blueprint(
 restplus = Api(
     blueprint,
     validate=True,
+    doc=False,
     decorators=[
         csrf_protect.exempt
     ],  # required, else 400s saying csrf token is missing
