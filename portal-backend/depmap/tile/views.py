@@ -21,10 +21,7 @@ from depmap.gene.views.executive import (
     format_mutation_profile,
     get_dependency_distribution,
 )
-from depmap.compound.views.executive import (
-    get_best_compound_predictability,
-    format_availability_tile,
-)
+from depmap.compound.views.executive import get_best_compound_predictability
 from depmap.gene.models import Gene
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
@@ -623,10 +620,14 @@ def get_sensitivity_html(
 
 
 def get_availability_html(
-    compound, compound_experiment_and_datasets, query_params_dict={}
+    compound: Entity, compound_experiment_and_datasets, query_params_dict={}
 ):
-    return render_template(
-        "tiles/availability.html",
-        name=compound.label,
-        availability=format_availability_tile(compound),
+    div_id = str(uuid.uuid4())
+
+    return RenderedTile(
+        f'<div id="{div_id}"/>',
+        f"""(
+        function() {{
+            DepMap.initDatasetAvailabilityTile("{div_id}", "{compound.compound_id}", "{compound.label}");
+        }})""",
     )

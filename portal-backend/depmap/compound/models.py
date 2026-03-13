@@ -33,6 +33,9 @@ class DRCCompoundDataset:
     auc_dataset: DependencyEnum
     display_name: str
     log_auc_dataset_given_id: Optional[str] = None
+    assay: Optional[
+        str
+    ] = None  # Only used on the Data Availability tile on the compound overview page
 
 
 @dataclass
@@ -46,6 +49,9 @@ class DRCCompoundDatasetWithNamesAndPriority:
     auc_dataset_display_name: str
     viability_dataset_display_name: str
     log_auc_dataset_given_id: Optional[str] = None
+    assay: Optional[
+        str
+    ] = None  # Only used on the Data Availability tile on the compound overview page
 
 
 drc_compound_datasets = [
@@ -56,6 +62,7 @@ drc_compound_datasets = [
         auc_dataset_given_id="Prism_oncology_AUC_collapsed",
         auc_dataset=DependencyEnum.Prism_oncology_AUC,
         display_name="PRISM OncRef Lum",
+        assay="PRISM",
         log_auc_dataset_given_id="PRISMOncologyReferenceLog2AUCMatrix",
     ),
     DRCCompoundDataset(
@@ -65,6 +72,7 @@ drc_compound_datasets = [
         auc_dataset_given_id="Prism_oncology_seq_AUC_collapsed",
         auc_dataset=DependencyEnum.Prism_oncology_seq_AUC,
         display_name="PRISM OncRef Seq",
+        assay="PRISM",
         log_auc_dataset_given_id="PRISMOncologyReferenceSeqLog2AUCMatrix",
     ),
     DRCCompoundDataset(
@@ -74,6 +82,7 @@ drc_compound_datasets = [
         auc_dataset_given_id="GDSC2_AUC_collapsed",
         auc_dataset=DependencyEnum.GDSC2_AUC,
         display_name="GDSC2",
+        assay="CellTitreGlo",
         log_auc_dataset_given_id="GDSC2_log2AUC_collapsed",
     ),
     DRCCompoundDataset(
@@ -83,6 +92,7 @@ drc_compound_datasets = [
         auc_dataset_given_id="GDSC1_AUC_collapsed",
         auc_dataset=DependencyEnum.GDSC1_AUC,
         display_name="GDSC1",
+        assay="Resazurin or Syto60",
         log_auc_dataset_given_id="GDSC1_log2AUC_collapsed",
     ),
     DRCCompoundDataset(
@@ -92,6 +102,7 @@ drc_compound_datasets = [
         auc_dataset_given_id="CTRP_AUC_collapsed",
         auc_dataset=DependencyEnum.CTRP_AUC,
         display_name="CTD^2",
+        assay="CellTitreGlo",
         log_auc_dataset_given_id="CTRP_log2AUC_collapsed",
     ),
     DRCCompoundDataset(
@@ -101,6 +112,7 @@ drc_compound_datasets = [
         auc_dataset_given_id="REPURPOSING_AUC_collapsed",
         auc_dataset=DependencyEnum.Repurposing_secondary_AUC,
         display_name="PRISM Drug Repurposing",
+        assay="PRISM",
         log_auc_dataset_given_id="REPURPOSING_log2AUC_collapsed",
     ),
 ]

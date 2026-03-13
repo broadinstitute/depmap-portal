@@ -157,59 +157,6 @@ def get_order(
     return order
 
 
-def format_availability_tile(compound: Compound):
-    """
-    Load high-level information about which datasets the given compound
-    appears in. This does NOT load the full list of datasets, but instead
-    returns a curated subset that users are most interested in. 
-    For example, we want to show whether there is "Repurposing" data, but don't need
-    to list all of the oncref datasets (AUC, etc.).
-    """
-    compound_id = compound.compound_id
-    # First, load ALL portal datasets containing the compound (for performance reasons).
-    # This is faster than iterating through the datasets and checking their full contents one-by-one.
-    all_compound_datasets = data_access.get_all_datasets_containing_compound(
-        compound_id
-    )
-    datasets_with_compound_by_id = {}
-    for dataset in all_compound_datasets:
-        if dataset.given_id:
-            datasets_with_compound_by_id[dataset.given_id] = dataset
-        else:
-            datasets_with_compound_by_id[dataset.id] = dataset
-
-    # Only return datasets which both 1) contain the compound and 2) exist in our hard-coded list
-    results = []
-    for dataset_config in data_availability_datasets:
-        # Use the highest priority dataset that exists
-        dataset: Optional[MatrixDataset] = None
-        for given_id in dataset_config.given_ids:
-            if dataset is None and given_id in datasets_with_compound_by_id:
-                dataset = datasets_with_compound_by_id[given_id]
-
-        if dataset is not None:
-            # Load data for this compound to determine how many cell lines have data for it
-            df = data_access.get_subsetted_df_by_labels_compound_friendly(dataset.id)
-            feature_data = df.loc[compound.label]
-            cell_line_count = feature_data.dropna().size
-
-            dataset_url = get_download_url(dataset.taiga_id)
-            results.append(
-                {
-                    "dataset_name": dataset_config.label,
-                    "dose_range": dataset_config.dose_range,
-                    "assay": dataset_config.assay,
-                    "cell_lines": cell_line_count,
-                    "dataset_url": dataset_url,
-                }
-            )
-
-    # Currently no filtering needs to happen here because only one DependencyDataset
-    # per dataset has both dose_range and assay in its corresponding metadata
-    results.sort(key=lambda x: x["dataset_name"])
-    return results
-
-
 def get_predictive_models_for_compound(
     compound_experiment_and_datasets: List[
         Tuple[CompoundExperiment, DependencyDataset]

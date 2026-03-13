@@ -26,12 +26,15 @@ import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 import {
+  fetchCompoundDatasets,
+  getCachedAvailableCompoundDatasetIds,
   getHighestPriorityCompoundDataset,
   getHighestPriorityCorrelationDatasetForEntity,
 } from "./compound/utils";
 import TopCoDependenciesTile from "./genePage/tiles/TopCoDependencies";
 import { SensitivityTile } from "./compound/tiles/SensitivityTile/SensitivityTile";
 import { getTopCodependencyDatasetIds } from "./genePage/utils";
+import { DatasetAvailabilityTile } from "./compound/tiles/DataAvailabilityTile/DataAvailabilityTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -445,6 +448,27 @@ export async function initRelatedCompoundsTile(
         compoundId={compoundID}
         datasetId={highestPriorityGivenId}
         datasetToDataTypeMap={datasetToDataTypeMap}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export async function initDatasetAvailabilityTile(
+  elementId: string,
+  compoundId: string,
+  compoundName: string
+) {
+  const datasets = await fetchCompoundDatasets(compoundId);
+  if (datasets.length === 0) {
+    return;
+  }
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <DatasetAvailabilityTile
+        compoundName={compoundName}
+        compoundId={compoundId}
+        datasets={datasets}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

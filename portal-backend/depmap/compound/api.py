@@ -1,7 +1,7 @@
 import dataclasses
 from typing import Any
 from depmap import data_access
-from depmap.compound.models import Compound
+from depmap.compound.models import Compound, drc_compound_datasets
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
 from depmap.compound.views.index import (
     get_corr_analysis_options,
@@ -130,3 +130,23 @@ class CompoundSummary(Resource):
             "heatmap_dose_curve_options": serializable_drc,
             "correlation_analysis_options": serializable_corr,
         }
+
+
+@namespace.route("/data_availability_metadata")
+class DataAvailabilityMetadata(Resource):
+    def get(self):
+        """
+        Returns a mapping of auc dataset IDs to their display metadata
+        (assay type and display name). Currently only used on the compound page
+        dataset availability tile.
+        """
+        # Create a dictionary using auc_dataset_given_id as the key
+        availability_map = {
+            ds.auc_dataset_given_id: {
+                "assay": ds.assay,
+                "display_name": ds.display_name,
+            }
+            for ds in drc_compound_datasets
+        }
+
+        return availability_map
