@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import styles from "../CompoundTiles.scss";
 import useDataAvailabilityTileData from "../hooks/useDataAvailabilityTileData";
 import { MatrixDataset } from "@depmap/types";
 import PlotSpinner from "src/plot/components/PlotSpinner";
@@ -22,24 +23,6 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
 
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // 1. Handle Loading State with PlotSpinner
-  if (isLoading) {
-    return (
-      <div
-        className="card_wrapper"
-        style={{
-          height: "200px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <PlotSpinner />
-      </div>
-    );
-  }
-
-  // 2. Handle Error State
   if (error) {
     return (
       <div
@@ -52,7 +35,10 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
     );
   }
 
-  if (!dataAvailabilityData || dataAvailabilityData.length === 0) {
+  if (
+    !isLoading &&
+    (!dataAvailabilityData || dataAvailabilityData.length === 0)
+  ) {
     return null;
   }
 
@@ -61,131 +47,89 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
   const hasMore = dataAvailabilityData.length > 5;
 
   return (
-    <div className="card_wrapper">
-      <div className="card_border">
-        <div>
-          <h2 className="no_margin cardtitle_text">
-            Datasets with data for {compoundName}
-          </h2>
-        </div>
+    <article
+      className={`${styles.DatasetAvailabilityTile} card_wrapper stacked-boxplot-tile`}
+    >
+      <div className="card_wrapper">
+        <div className="card_border container_fluid">
+          <div>
+            <h2 className="no_margin cardtitle_text">
+              Datasets with data for {compoundName}
+            </h2>
+          </div>
 
-        <div
-          className="card_padding"
-          style={{ overflowX: "auto", width: "100%" }}
-        >
-          <table
-            style={{
-              width: "100%",
-              tableLayout: "fixed",
-              borderCollapse: "collapse",
-            }}
+          <div
+            className="card_padding"
+            style={{ overflowX: "auto", width: "100%" }}
           >
-            <thead>
-              <tr>
-                {/* Fixed width for the first column to force wrapping */}
-                <th
-                  style={{
-                    width: "30%",
-                    textAlign: "left",
-                    padding: "8px 4px",
-                  }}
-                >
-                  Dataset
-                </th>
-                <th
-                  style={{
-                    width: "17%",
-                    textAlign: "left",
-                    padding: "8px 4px",
-                  }}
-                >
-                  Cell Lines
-                </th>
-                <th
-                  style={{
-                    width: "37%",
-                    textAlign: "left",
-                    padding: "8px 4px",
-                  }}
-                >
-                  Dose Range
-                </th>
-                <th
-                  style={{
-                    width: "16%",
-                    textAlign: "left",
-                    padding: "8px 4px",
-                  }}
-                >
-                  Assay
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {initialData.map((entry, index: number) => (
-                <tr key={index}>
-                  <td
-                    style={{
-                      padding: "16px 8px 16px 4px", // Significant top/bottom padding
-                      verticalAlign: "top", // Keep rows aligned
-                      wordWrap: "break-word",
-                      whiteSpace: "normal",
-                    }}
-                  >
-                    <a href={entry.datasetUrl || ""}>
-                      {entry.datasetDisplayName}
-                    </a>
-                  </td>
-                  <td style={{ padding: "16px 4px", verticalAlign: "top" }}>
-                    {entry.cellLineCount}
-                  </td>
-                  <td style={{ padding: "16px 4px", verticalAlign: "top" }}>
-                    {entry.doseRangeLabel}
-                  </td>
-                  <td style={{ padding: "16px 4px", verticalAlign: "top" }}>
-                    {entry.assayLabel}
-                  </td>
-                </tr>
-              ))}
-
-              {isExpanded &&
-                extraData.map((entry, index) => (
-                  <tr key={index + 5}>
-                    <td
-                      style={{ wordWrap: "break-word", whiteSpace: "normal" }}
-                    >
-                      <a href={entry.datasetUrl || ""}>
-                        {entry.datasetDisplayName}
-                      </a>
-                    </td>
-                    <td>{entry.cellLineCount}</td>
-                    <td>{entry.doseRangeLabel}</td>
-                    <td>{entry.assayLabel}</td>
+            {isLoading && <PlotSpinner />}
+            {!isLoading && (
+              <table className={styles.infoTable}>
+                <thead>
+                  <tr>
+                    {/* Fixed width for the first column to force wrapping */}
+                    <th className={styles.datasetColth}>Dataset</th>
+                    <th className={styles.cellLinesColth}>Cell Lines</th>
+                    <th className={styles.doseRangeColth}>Dose Range</th>
+                    <th className={styles.assayColth}>Assay</th>
                   </tr>
-                ))}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {initialData.map((entry, index: number) => (
+                    <tr key={index}>
+                      <td className={styles.datasetColContent}>
+                        <a href={entry.datasetUrl || ""}>
+                          {entry.datasetDisplayName}
+                        </a>
+                      </td>
+                      <td className={styles.cellLineColContent}>
+                        {entry.cellLineCount}
+                      </td>
+                      <td className={styles.doseRangeLabelColContent}>
+                        {entry.doseRangeLabel}
+                      </td>
+                      <td className={styles.assayLabelColContent}>
+                        {entry.assayLabel}
+                      </td>
+                    </tr>
+                  ))}
 
-          {hasMore && (
-            <div style={{ marginTop: "10px" }}>
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                style={{
-                  cursor: "pointer",
-                  color: "#007bff",
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  textDecoration: "underline",
-                }}
-              >
-                {isExpanded ? "View Less" : "View More"}
-              </button>
-            </div>
-          )}
+                  {isExpanded &&
+                    extraData.map((entry, index) => (
+                      <tr key={index + 5}>
+                        <td
+                          style={{
+                            wordWrap: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                        >
+                          <a href={entry.datasetUrl || ""}>
+                            {entry.datasetDisplayName}
+                          </a>
+                        </td>
+                        <td>{entry.cellLineCount}</td>
+                        <td>{entry.doseRangeLabel}</td>
+                        <td>{entry.assayLabel}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            )}
+
+            {!isLoading && hasMore && (
+              <div style={{ marginTop: "25px", marginBottom: "16px" }}>
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className={styles.buttonLink}
+                >
+                  {isExpanded ? "View Less" : "View More"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
