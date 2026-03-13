@@ -3,6 +3,7 @@ import styles from "../CompoundTiles.scss";
 import useDataAvailabilityTileData from "../hooks/useDataAvailabilityTileData";
 import { MatrixDataset } from "@depmap/types";
 import PlotSpinner from "src/plot/components/PlotSpinner";
+import ErrorLoading from "../ErrorLoading";
 
 interface DatasetAvailabilityTileProps {
   compoundName: string;
@@ -23,16 +24,8 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
 
   const [isExpanded, setIsExpanded] = useState(false);
 
-  if (error) {
-    return (
-      <div
-        className="card_wrapper"
-        style={{ color: "#d93025", padding: "20px" }}
-      >
-        <strong>Error:</strong> Failed to load dataset availability for{" "}
-        {compoundName}.
-      </div>
-    );
+  if (!isLoading && error) {
+    return <ErrorLoading tileName={`Datasets with data for ${compoundName}`} />;
   }
 
   if (
@@ -67,7 +60,6 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
               <table className={styles.infoTable}>
                 <thead>
                   <tr>
-                    {/* Fixed width for the first column to force wrapping */}
                     <th className={styles.datasetColth}>Dataset</th>
                     <th className={styles.cellLinesColth}>Cell Lines</th>
                     <th className={styles.doseRangeColth}>Dose Range</th>
@@ -97,12 +89,7 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
                   {isExpanded &&
                     extraData.map((entry, index) => (
                       <tr key={index + 5}>
-                        <td
-                          style={{
-                            wordWrap: "break-word",
-                            whiteSpace: "normal",
-                          }}
-                        >
+                        <td className={styles.extraDataContainer}>
                           <a href={entry.datasetUrl || ""}>
                             {entry.datasetDisplayName}
                           </a>
@@ -117,7 +104,7 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
             )}
 
             {!isLoading && hasMore && (
-              <div style={{ marginTop: "25px", marginBottom: "16px" }}>
+              <div className={styles.viewMoreLessContainer}>
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
                   className={styles.buttonLink}
