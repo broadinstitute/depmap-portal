@@ -7,87 +7,15 @@ matplotlib.use(
     "svg", force=True
 )  # this line must come before this import, otherwise matplotlib complains about python not being installed as a framework
 
-from depmap import data_access
-from depmap.data_access.models import MatrixDataset
 from depmap.entity.views.executive import format_generic_distribution_plot
 from depmap.utilities import color_palette
-from depmap.enums import DependencyEnum, CompoundTileEnum
+from depmap.enums import CompoundTileEnum
 
-from depmap.dataset.models import BiomarkerDataset, DependencyDataset
+from depmap.dataset.models import DependencyDataset
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.predictability.models import PredictiveModel
 
-from depmap.download.utils import get_download_url
-
 from flask import current_app, url_for
-from dataclasses import dataclass
-
-
-@dataclass
-class DataAvailabilityDataset:
-    label: str
-    dose_range: str
-    assay: str
-    # There are multiple given IDs we may use to load the relevant dataset
-    # If a re-indexed dataset exists in breadbox, that should be displayed.
-    # Otherwise, just display the legacy version
-    given_ids: list[str]
-
-
-# The set of information to show on the tile on the compound page
-data_availability_datasets = [
-    DataAvailabilityDataset(
-        label="CTRP",
-        dose_range="1nM - 10μM",
-        assay="CellTitreGlo",
-        given_ids=["CTRP_AUC_collapsed", DependencyEnum.CTRP_AUC.name],
-    ),
-    DataAvailabilityDataset(
-        label="GDSC1",
-        dose_range="1nM - 10μM",
-        assay="Resazurin or Syto60",
-        given_ids=["GDSC1_AUC_collapsed", DependencyEnum.GDSC1_AUC.name],
-    ),
-    DataAvailabilityDataset(
-        label="GDSC2",
-        dose_range="1nM - 10μM",
-        assay="CellTitreGlo",
-        given_ids=["GDSC2_AUC_collapsed", DependencyEnum.GDSC2_AUC.name],
-    ),
-    DataAvailabilityDataset(
-        label="Repurposing single point",
-        dose_range="2.5μM",
-        assay="PRISM",
-        given_ids=[DependencyEnum.Rep_all_single_pt.name],
-    ),
-    DataAvailabilityDataset(
-        label="Repurposing multi-dose",
-        dose_range="1nM - 10μM",
-        assay="PRISM",
-        given_ids=[
-            "REPURPOSING_AUC_collapsed",
-            DependencyEnum.Repurposing_secondary_AUC.name,
-        ],
-    ),
-    DataAvailabilityDataset(
-        label="OncRef Lum",
-        dose_range="1nM - 10μM",
-        assay="PRISM",
-        given_ids=[
-            "Prism_oncology_AUC_collapsed",
-            DependencyEnum.Prism_oncology_AUC.name,
-        ],
-    ),
-    DataAvailabilityDataset(
-        label="OncRef Seq",
-        dose_range="1nM - 10μM",
-        assay="PRISM",
-        given_ids=[
-            "Prism_oncology_seq_AUC_collapsed",
-            DependencyEnum.Prism_oncology_seq_AUC.name,
-        ],
-    ),
-]
 
 
 def get_order(

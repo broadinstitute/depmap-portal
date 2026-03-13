@@ -105,6 +105,7 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
           {!isLoading && hasMore && (
             <div className={styles.viewMoreLessContainer}>
               <button
+                type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={styles.buttonLink}
               >
