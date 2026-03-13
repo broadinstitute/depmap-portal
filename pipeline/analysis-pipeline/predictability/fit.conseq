@@ -10,7 +10,7 @@ let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/do
 # for normal operation, or "no" for doing a subset of the normal work
 add-if-missing {
     "type": "daintree-test-run-flags", 
-    "run_all_configs": "no",
+    "run_all_configs": "yes",
     "fit_all_actuals": "no"}
 
 # creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
@@ -81,7 +81,7 @@ rule run_fit_models:
         --config {{ inputs.daintree_input_config.filename }} \
         --out workflow.json \
         --nfolds 5 \
-        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 20{% endif %} \
+        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 100{% endif %} \
         --extra-python-files extra_python_files"""
 
     run """{{config.sparkles_path}} workflow run \
