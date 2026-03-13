@@ -145,6 +145,7 @@ class DataAvailabilityMetadata(Resource):
             ds.auc_dataset_given_id: {
                 "assay": ds.assay,
                 "display_name": ds.display_name,
+                "viability_dataset_given_id": ds.viability_dataset_given_id,
             }
             for ds in drc_compound_datasets
         }

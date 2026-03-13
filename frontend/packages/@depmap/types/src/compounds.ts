@@ -97,11 +97,12 @@ export interface CompoundSummaryResponse {
 export interface DatasetAvailabilityMetadata {
   assay: string;
   display_name: string;
+  viability_dataset_given_id: string;
 }
 
 /**
  * A mapping where the key is the auc_dataset_given_id
- * and the value is the DatasetMetadata object.
+ * and the value is the DatasetAvailabilityMetadata object.
  */
 export type DataAvailByAUCDatasetMetadataMap = Record<
   string,

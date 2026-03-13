@@ -1,10 +1,46 @@
 import { useEffect, useState } from "react";
 import { breadboxAPI, legacyPortalAPI, cached } from "@depmap/api";
 import { fetchMetadata } from "src/compound/fetchDataHelpers";
-import { getDoseRangeLabel, getKeysByValue } from "src/compound/utils";
-import { MatrixDataset } from "@depmap/types";
+import { getDoseRangeLabel } from "src/compound/utils";
 import { DatasetAvailability } from "src/compound/types";
+import { MatrixDataset } from "@depmap/types";
 
+/**
+ * Fetches and constructs a dose range label for a specific compound within a dataset.
+ */
+export async function fetchDoseRangeLabel(
+  compoundId: string,
+  viabilityDatasetId: string
+): Promise<string | null> {
+  const bapi = breadboxAPI;
+
+  try {
+    const features = await cached(bapi).getDatasetFeatures(viabilityDatasetId);
+
+    const viabilityFeatureIds = features
+      .filter((f: any) => f.id.includes(compoundId))
+      .map((f: any) => f.id);
+
+    if (viabilityFeatureIds.length === 0) {
+      return null;
+    }
+
+    const doseMetadata = await fetchMetadata<{
+      Dose: Record<string, number>;
+      DoseUnit: Record<string, string>;
+    }>("compound_dose", viabilityFeatureIds, ["Dose", "DoseUnit"], bapi);
+
+    return getDoseRangeLabel(doseMetadata);
+  } catch (error) {
+    console.error(
+      `Error fetching dose range for ${viabilityDatasetId}:`,
+      error
+    );
+    return null;
+  }
+}
+
+// Logic to build the base URL for the data page
 const dataPageHref = `${
   window.location.href.split(encodeURIComponent("compound"))[0]
 }data_page`;
@@ -12,7 +48,6 @@ const dataPageHref = `${
 const buildDatasetUrl = (dataset: MatrixDataset) => {
   const fileInfo = dataset.dataset_metadata?.download_file_info;
 
-  // If either required piece of info is missing, return null
   if (!fileInfo?.release_name || !fileInfo?.file_name) {
     return null;
   }
@@ -33,7 +68,8 @@ export default function useDataAvailabilityTileData(
   >([]);
 
   useEffect(() => {
-    if (!compoundId || !datasets) {
+    // Basic guard clause
+    if (!compoundId || !datasets || datasets.length === 0) {
       setDataAvailabilityData([]);
       setError(false);
       setIsLoading(false);
@@ -45,72 +81,66 @@ export default function useDataAvailabilityTileData(
       setError(false);
       try {
         const bbapi = breadboxAPI;
+        const lapi = legacyPortalAPI;
 
-        // Get the compound dose viability features by fetching the compound dose metadata. Will
-        // be like {CompoundID: "viability_feature_id": "compound_id"}
-        const doseCompoundMetadata = await fetchMetadata<{
-          CompoundID: Record<string, string>;
-        }>("compound_dose", null, ["CompoundID"], bbapi);
+        // 1. Fetch the metadata map from the legacy DB
+        const metadataMap = await cached(lapi).getDataAvailabilityMetadata();
 
-        // All of the viability features relevant to this particular compound will be the list of keys
-        // with a value equal to this compoundId.
-        const viabilityFeatureIds = getKeysByValue(
-          doseCompoundMetadata.CompoundID,
-          compoundId
+        // 2. Map Breadbox datasets by ID for quick lookup
+        const breadboxDatasetLookup: Record<string, MatrixDataset> = {};
+        datasets.forEach((ds) => {
+          const id = ds.given_id || ds.id;
+          breadboxDatasetLookup[id] = ds;
+        });
+
+        // 3. Process only the datasets that appear in our Metadata Map
+        // AND are present in the Breadbox datasets list
+        const prioritizedIds = Object.keys(metadataMap).filter(
+          (id) => !!breadboxDatasetLookup[id]
         );
 
-        if (viabilityFeatureIds.length === 0) {
-          setDataAvailabilityData([]);
-          setIsLoading(false);
-          throw new Error("No viability data found.");
-        }
-
-        const doseMetadata = await fetchMetadata<{
-          Dose: Record<string, number>;
-          DoseUnit: Record<string, string>;
-        }>("compound_dose", viabilityFeatureIds, ["Dose", "DoseUnit"], bbapi);
-
-        const doseRange = getDoseRangeLabel(doseMetadata);
-
-        const assayInfo = cached(legacyPortalAPI).getDataAvailabilityMetadata();
-
         const datasetStats = await Promise.all(
-          datasets.map(async (dataset) => {
+          prioritizedIds.map(async (aucId) => {
+            const meta = metadataMap[aucId];
+            const bbDataset = breadboxDatasetLookup[aucId];
+
             try {
-              // Fetch data for this specific dataset
-              const samples = await cached(bbapi).getDatasetSamples(
-                dataset.given_id || dataset.id
+              // Retrieve specific dose range for this dataset's viability dataset
+              const doseRange = await fetchDoseRangeLabel(
+                compoundId,
+                meta.viability_dataset_given_id
               );
 
-              const count = samples.length;
+              // Get sample (cell line) count
+              const samples = await cached(bbapi).getDatasetSamples(aucId);
+
               return {
-                datasetDisplayName: dataset.name,
-                // Update this URL pattern to match your routing structure
-                datasetUrl: buildDatasetUrl(dataset),
-                cellLineCount: count,
-                doseRangeLabel: doseRange || "",
-                // Fallback to "Viability" if assay metadata isn't on the dataset object
-                assayLabel: (dataset as any).assay_type || "Viability",
+                datasetDisplayName: meta.display_name,
+                datasetUrl: buildDatasetUrl(bbDataset),
+                cellLineCount: samples.length,
+                doseRangeLabel: doseRange || "N/A",
+                assayLabel: meta.assay,
               };
             } catch (e) {
-              console.error(`Error fetching data for ${dataset.name}:`, e);
+              console.error(`Error fetching data for ${meta.display_name}:`, e);
+              // Return a partial object so the row still shows up, but with error placeholders
               return {
-                datasetDisplayName: dataset.name,
-                datasetUrl: "#",
+                datasetDisplayName: meta.display_name,
+                datasetUrl: buildDatasetUrl(bbDataset) || "#",
                 cellLineCount: 0,
-                doseRangeLabel: doseRange || "",
-                assayLabel: "N/A",
+                doseRangeLabel: "N/A",
+                assayLabel: meta.assay || "N/A",
               };
             }
           })
         );
 
         setDataAvailabilityData(datasetStats);
-        setIsLoading(false);
       } catch (e) {
-        window.console.error(e);
+        window.console.error("Error in Data Availability Hook:", e);
         setDataAvailabilityData([]);
         setError(true);
+      } finally {
         setIsLoading(false);
       }
     })();

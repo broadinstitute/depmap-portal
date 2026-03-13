@@ -27,7 +27,6 @@ import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileCo
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
 import {
   fetchCompoundDatasets,
-  getCachedAvailableCompoundDatasetIds,
   getHighestPriorityCompoundDataset,
   getHighestPriorityCorrelationDatasetForEntity,
 } from "./compound/utils";

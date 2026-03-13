@@ -40,7 +40,7 @@ export function getPrioritizedDataset(
 
 export function getDataAvailabilityMetadata(): Promise<DataAvailByAUCDatasetMetadataMap> {
   return getJson<DataAvailByAUCDatasetMetadataMap>(
-    `/api/compound/prioritized_dataset`
+    `/api/compound/data_availability_metadata`
   );
 }
 
