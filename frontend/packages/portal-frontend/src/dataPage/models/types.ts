@@ -83,7 +83,7 @@ export function getDataPageDataTypeString(datatype: DataPageDataType) {
     case DataPageDataType.CRISPR_Score_Sanger:
       return "CRISPR KO screens (Sanger)";
     case DataPageDataType.CRISPR_Biogrid:
-      return "CRISPR KO screens (Biogrid)";
+      return "CRISPR KO screens (BioGRID ORCS)";
     case DataPageDataType.CRISPR_ParalogsScreens:
       return "Paralog CRISPR KO screens (Broad)";
     case DataPageDataType.Methylation_Sanger:
