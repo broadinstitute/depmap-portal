@@ -15,6 +15,7 @@ interface Props {
   index_type_name: string;
   value: SliceQuery | null;
   PlotlyLoader: ReturnType<typeof usePlotlyLoader>;
+  extraHoverData?: Record<string, string>;
   getContinuousFilterProps?: () => {
     hasFixedMin: boolean;
     hasFixedMax: boolean;
@@ -35,6 +36,7 @@ function SlicePreview({
   index_type_name,
   value,
   PlotlyLoader,
+  extraHoverData = undefined,
   getContinuousFilterProps = undefined,
   getCategoricalFilterProps = undefined,
 }: Props) {
@@ -108,7 +110,12 @@ function SlicePreview({
           {previewType === "continuous" ? (
             <ContinuousDataPreview
               values={values as number[]}
-              hoverText={previewData.map(({ label }) => label) as string[]}
+              hoverText={previewData.map((row) => {
+                const extra = extraHoverData?.[row.id as string];
+                return extra
+                  ? `${row.label}<br>${extra}`
+                  : (row.label as string);
+              })}
               xAxisTitle={xAxisTitle}
               getContinuousFilterProps={getContinuousFilterProps}
             />

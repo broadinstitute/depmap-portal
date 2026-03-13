@@ -16,7 +16,7 @@ export function legacyPortalIdToBreadboxGivenId(legacyId: string) {
       return "GDSC2_AUC_collapsed";
 
     case "Prism_oncology_AUC":
-      return "Prism_oncology_AUC_collapsed";
+      return "PRISMOncologyReferenceLog2AUCMatrix";
 
     case "Repurposing_secondary_AUC":
       return "REPURPOSING_AUC_collapsed";
@@ -60,8 +60,9 @@ export function sliceIdToSliceQuery(
   // See also https://docs.google.com/spreadsheets/d/1VKD3cvz9n4GhWnn4xIoT3mZaGyUiI6qqmxxcTxTBXG0/edit
   switch (dataset_id) {
     case "screen_metadata":
+    case "Screen metadata_metadata":
       return {
-        dataset_id: "Screen metadata_metadata",
+        dataset_id: "screen_metadata",
         identifier_type: "column",
         identifier,
       };

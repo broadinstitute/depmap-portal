@@ -5,7 +5,7 @@ import type { RowSelectionState } from "@depmap/react-table";
 import type { SliceQuery } from "@depmap/types";
 import Controls from "./Controls";
 import Actions from "./Actions";
-import { useSliceTableState } from "./useSliceTableState";
+import { useSliceTableState, filterPredicate } from "./useSliceTableState";
 import styles from "../styles/SliceTable.scss";
 
 interface Props {
@@ -19,9 +19,41 @@ interface Props {
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
   enableRowSelection?: boolean;
   onChangeRowSelection?: (nextRowSelection: Record<string, boolean>) => void;
+  hideIdColumn?: boolean;
+  hideLabelColumn?: boolean;
+  // Dataset IDs that should not appear in the "Add Column" menus.
+  hiddenDatasets?: Set<string>;
+  customColumns?: {
+    header: () => React.ReactNode;
+    cell: ({ row }: { row: Record<"id", string> }) => React.ReactNode;
+    width?: number;
+  }[];
+  // Per-column display customization. Called once per column during column
+  // definition building. Return `null` for default behavior, or an object with:
+  // - `header`: custom header renderer (receives label and defaultElement)
+  // - `cell`: full cell override (magnitude bars won't apply for this column)
+  // - `numericPrecision`: format numbers with .toFixed(n), works with magnitude bars
+  getColumnDisplayOptions?: (
+    sliceQuery: SliceQuery
+  ) => import("./useData").ColumnDisplayOptions | null;
   renderCustomControls?: () => React.ReactNode;
   renderCustomActions?: () => React.ReactNode;
   downloadFilename?: string;
+  // An implicit filter that is always applied and invisible to the end user.
+  // Rows for which this returns false are excluded from the dataset entirely —
+  // they won't appear in the table, search results, magnitude bar stats, or
+  // CSV exports. Use this to scope the table to a relevant subset of rows.
+  implicitFilter?: (row: {
+    id: string;
+    label: string;
+    getValue: (sliceQuery: SliceQuery) => unknown;
+  }) => boolean;
+  // Optional external loading state. When true, the table shows its loading
+  // spinner and disables interactions until the external dependency is ready.
+  // Most consumers don't need this — it's only necessary when props like
+  // `implicitFilter` depend on data that must be fetched before the table
+  // can render meaningfully.
+  isLoading?: boolean;
   sliceTableRef?: React.RefObject<{
     // Use this to force `getInitialState()` to be called.
     forceInitialize: () => void;
@@ -40,9 +72,16 @@ function SliceTable({
   onChangeSlices = NOOP,
   enableRowSelection = false,
   onChangeRowSelection = NOOP,
+  hideIdColumn = false,
+  hideLabelColumn = false,
+  hiddenDatasets = undefined,
+  customColumns = undefined,
+  getColumnDisplayOptions = undefined,
   renderCustomControls = () => null,
   renderCustomActions = () => null,
   downloadFilename = "",
+  implicitFilter = undefined,
+  isLoading: externalLoading = false,
   sliceTableRef = undefined,
 }: Props) {
   const [revision, setRevision] = useState(1);
@@ -66,11 +105,21 @@ function SliceTable({
     []
   );
 
-  // Currently unused.
   const tableRef = useRef<{
     resetColumnResizing: () => void;
     manuallyResizedColumns: Set<string>;
     resetSort: () => void;
+    goToNextMatch: () => void;
+    goToPreviousMatch: () => void;
+    totalMatches: number;
+    currentMatchIndex: number;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    filterToSearchResults: boolean;
+    setFilterToSearchResults: (enabled: boolean) => void;
+    subscribeToSearch: (listener: () => void) => () => void;
+    getDisplayRowIds: () => string[];
+    getVisibleColumnIds: () => string[];
   }>(null);
 
   const {
@@ -78,6 +127,7 @@ function SliceTable({
     error,
     loading,
     columns,
+    rowFilter,
     rowSelection,
     setRowSelection,
     handleClickDownload,
@@ -90,10 +140,17 @@ function SliceTable({
     initialSlices,
     viewOnlySlices,
     enableRowSelection,
+    customColumns,
+    getColumnDisplayOptions,
     initialRowSelection,
     onChangeSlices,
     downloadFilename,
+    tableRef,
+    implicitFilter,
+    hiddenDatasets,
   });
+
+  const combinedLoading = loading || externalLoading;
 
   useEffect(() => {
     const keysA = Object.keys(rowSelection);
@@ -107,17 +164,31 @@ function SliceTable({
     }
   }, [rowSelection, initialRowSelection, onChangeRowSelection]);
 
+  // Apply implicit filter before ReactTable sees the data. This shapes the
+  // dataset itself — magnitude bar stats, search, and everything else will
+  // be scoped to this subset. Unlike user-visible filters (which are handled
+  // by ReactTable's rowFilter prop), these rows are excluded as if they
+  // don't exist at all.
+  const filteredData = useMemo(() => {
+    if (!implicitFilter) {
+      return data;
+    }
+
+    return data.filter(filterPredicate(columns, implicitFilter));
+  }, [data, columns, implicitFilter]);
+
   return (
     <div className={styles.SliceTable}>
       <Controls
-        isLoading={loading}
+        tableRef={tableRef}
+        isLoading={combinedLoading}
         hadError={Boolean(error)}
         onClickFilterButton={handleClickFilterButton}
         onClickDownload={handleClickDownload}
         renderCustomControls={renderCustomControls}
         numFiltersApplied={numFiltersApplied}
       />
-      {loading && (
+      {combinedLoading && (
         <div className={styles.loadingContainer}>
           <Spinner position="static" />
         </div>
@@ -130,9 +201,9 @@ function SliceTable({
       )}
       <ReactTable
         tableRef={tableRef}
-        className={loading ? styles.hidden : ""}
+        className={combinedLoading ? styles.hidden : ""}
         height="100%"
-        data={data}
+        data={filteredData}
         columns={columns}
         rowSelection={rowSelection}
         onRowSelectionChange={setRowSelection}
@@ -140,7 +211,12 @@ function SliceTable({
         enableRowSelection={enableRowSelection}
         enableMultiRowSelection
         enableStickyFirstColumn
-        columnVisibility={{ label: shouldShowLabelColumn }}
+        columnVisibility={{
+          id: !hideIdColumn,
+          label: shouldShowLabelColumn && !hideLabelColumn,
+        }}
+        enableSearch
+        rowFilter={rowFilter}
         defaultSort={(a, b) => {
           const aId = getRowId(a);
           const bId = getRowId(b);
@@ -155,7 +231,7 @@ function SliceTable({
         }}
       />
       <Actions
-        isLoading={loading}
+        isLoading={combinedLoading}
         hadError={Boolean(error)}
         onClickAddColumn={handleClickAddColumn}
         renderCustomActions={renderCustomActions}

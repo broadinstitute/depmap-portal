@@ -45,11 +45,28 @@ type TableProps<TData extends RowData> = {
       | Record<string, boolean>
       | ((old: Record<string, boolean>) => Record<string, boolean>)
   ) => void;
+  enableSearch?: boolean;
+  // Generic row filter predicate. Rows for which this returns false are hidden
+  // from display and excluded from search, but column stats (magnitude bars)
+  // are still computed from the full `data` array so bar ranges stay stable.
+  rowFilter?: (row: TData) => boolean;
   // Optional ref to expose table methods
   tableRef?: React.RefObject<{
     resetColumnResizing: () => void;
     manuallyResizedColumns: Set<string>;
     resetSort: () => void;
+    // Search methods and state
+    goToNextMatch: () => void;
+    goToPreviousMatch: () => void;
+    totalMatches: number;
+    currentMatchIndex: number;
+    searchQuery: string;
+    setSearchQuery: (query: string) => void;
+    filterToSearchResults: boolean;
+    setFilterToSearchResults: (enabled: boolean) => void;
+    subscribeToSearch: (listener: () => void) => () => void;
+    getDisplayRowIds: () => string[];
+    getVisibleColumnIds: () => string[];
   }>;
 };
 
@@ -67,6 +84,8 @@ function ReactTable<TData extends RowData>({
   defaultSort = undefined,
   columnVisibility = {},
   onColumnVisibilityChange = undefined,
+  enableSearch = false,
+  rowFilter = undefined,
   tableRef = undefined,
 }: TableProps<TData>) {
   const {
@@ -76,12 +95,30 @@ function ReactTable<TData extends RowData>({
     tableWidth,
     virtualRows,
     totalSize,
+    displayRows,
     resetColumnResizing,
     manuallyResizedColumns,
     headerScrollRef,
     syncScroll,
+    syncHeaderToBody,
     stickyColumnsInfo,
     resetSort,
+    goToNextMatch,
+    goToPreviousMatch,
+    getCellHighlightStatus,
+    searchQuery,
+    setSearchQuery,
+    setFilterToSearchResults,
+    subscribeToSearch,
+    getTotalMatches,
+    getCurrentMatchIndex,
+    getSearchQuery,
+    getFilterToSearchResults,
+    columnStats,
+    scrollColumnIntoView,
+    cancelScrollColumnIntoView,
+    getDisplayRowIds,
+    getVisibleColumnIds,
   } = useTableInstance(columns, data, {
     enableRowSelection,
     enableMultiRowSelection,
@@ -92,6 +129,8 @@ function ReactTable<TData extends RowData>({
     enableStickyFirstColumn,
     columnVisibility,
     onColumnVisibilityChange,
+    enableSearch,
+    rowFilter,
   });
 
   // Expose methods via ref if provided
@@ -101,19 +140,62 @@ function ReactTable<TData extends RowData>({
       resetColumnResizing,
       manuallyResizedColumns,
       resetSort,
+      goToNextMatch,
+      goToPreviousMatch,
+      get totalMatches() {
+        return getTotalMatches();
+      },
+      get currentMatchIndex() {
+        return getCurrentMatchIndex();
+      },
+      get searchQuery() {
+        return getSearchQuery();
+      },
+      get filterToSearchResults() {
+        return getFilterToSearchResults();
+      },
+      setSearchQuery,
+      setFilterToSearchResults,
+      subscribeToSearch,
+      getDisplayRowIds,
+      getVisibleColumnIds,
     }),
-    [resetColumnResizing, manuallyResizedColumns, resetSort]
+    [
+      resetColumnResizing,
+      manuallyResizedColumns,
+      resetSort,
+      goToNextMatch,
+      goToPreviousMatch,
+      getTotalMatches,
+      getCurrentMatchIndex,
+      getSearchQuery,
+      getFilterToSearchResults,
+      setSearchQuery,
+      setFilterToSearchResults,
+      subscribeToSearch,
+      getDisplayRowIds,
+      getVisibleColumnIds,
+    ]
   );
 
   return (
     <div ref={containerRef} className={cx(styles.tableContainer, className)}>
-      <div ref={headerScrollRef} className={styles.headerScrollContainer}>
+      <div
+        ref={headerScrollRef}
+        className={styles.headerScrollContainer}
+        onScroll={(e) => syncHeaderToBody(e.currentTarget.scrollLeft)}
+      >
         <table className={styles.table} style={{ width: tableWidth }}>
-          <TableHeader table={table} stickyColumnsInfo={stickyColumnsInfo} />
+          <TableHeader
+            table={table}
+            stickyColumnsInfo={stickyColumnsInfo}
+            scrollColumnIntoView={scrollColumnIntoView}
+            cancelScrollColumnIntoView={cancelScrollColumnIntoView}
+          />
         </table>
       </div>
       <TableBody
-        table={table}
+        rows={displayRows}
         parentRef={parentRef}
         virtualRows={virtualRows}
         totalSize={totalSize}
@@ -121,6 +203,9 @@ function ReactTable<TData extends RowData>({
         height={height}
         onScroll={syncScroll}
         stickyColumnsInfo={stickyColumnsInfo}
+        getCellHighlightStatus={getCellHighlightStatus}
+        searchQuery={searchQuery}
+        columnStats={columnStats}
       />
     </div>
   );

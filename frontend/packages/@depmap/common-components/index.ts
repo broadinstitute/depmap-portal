@@ -19,6 +19,7 @@ export { HistosliderContainer as Histoslider } from "./src/components/HistoSlide
 export { Spinner } from "./src/components/Spinner";
 export { StackedBar } from "./src/components/StackedBar";
 export { Tooltip } from "./src/components/Tooltip";
+export { InfoTip } from "./src/components/InfoTip";
 
 export {
   ZoomIcon,

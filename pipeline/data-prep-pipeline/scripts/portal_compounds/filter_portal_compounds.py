@@ -59,8 +59,8 @@ if __name__ == "__main__":
         "portal_compounds_taiga_id", help="Taiga ID of portal compounds data"
     )
     parser.add_argument(
-        "--prism_oncology_reference_auc_matrix_taiga_id",
-        help="Taiga ID of the PRISMOncologyReferenceLog2AUCMatrix (optional)",
+        "--prism_oncology_reference_lum_log2_auc_matrix_taiga_id",
+        help="Taiga ID of the PRISMOncologyReferenceLumLog2AUCMatrix (optional)",
         default=None,
     )
     parser.add_argument(
@@ -85,14 +85,20 @@ if __name__ == "__main__":
     assert not portal_compounds_df.empty, "portal_compounds_df is empty"
 
     if (
-        args.prism_oncology_reference_auc_matrix_taiga_id is None
-        or args.prism_oncology_reference_auc_matrix_taiga_id.startswith("public")
+        args.prism_oncology_reference_lum_log2_auc_matrix_taiga_id is None
+        or args.prism_oncology_reference_lum_log2_auc_matrix_taiga_id.startswith(
+            "public"
+        )
     ):
-        oncrefauc_matrix = pd.DataFrame()
+        oncref_lum_log2_auc_matrix = pd.DataFrame()
     else:
-        print("Getting oncref AUC matrix data...")
-        oncrefauc_matrix = tc.get(args.prism_oncology_reference_auc_matrix_taiga_id)
-        assert not oncrefauc_matrix.columns.empty, "oncrefauc_matrix columns are empty"
+        print("Getting oncref lum log2 AUC matrix data...")
+        oncref_lum_log2_auc_matrix = tc.get(
+            args.prism_oncology_reference_lum_log2_auc_matrix_taiga_id
+        )
+        assert (
+            not oncref_lum_log2_auc_matrix.columns.empty
+        ), "oncref_lum_log2_auc_matrix columns are empty"
 
     if (
         args.prism_oncology_reference_seq_log2_auc_matrix_taiga_id is None
@@ -114,7 +120,7 @@ if __name__ == "__main__":
     brd_ids = (
         set(repsdrug_matrix.index)
         .union(repsdrug_auc.index)
-        .union(["BRD:" + x for x in oncrefauc_matrix.columns])
+        .union(["BRD:" + x for x in oncref_lum_log2_auc_matrix.columns])
         .union(["BRD:" + x for x in oncref_seq_log2_auc_matrix.columns])
     )
 

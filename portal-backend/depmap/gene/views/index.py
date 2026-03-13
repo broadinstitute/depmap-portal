@@ -2,6 +2,7 @@ import os
 import tempfile
 import zipfile
 from typing import List
+from depmap.context_explorer.models import ContextExplorerDatasets
 from depmap.enums import DataTypeEnum
 import pandas as pd
 import json
@@ -16,13 +17,12 @@ from flask import (
     send_file,
     url_for,
 )
-from depmap.compound.models import Compound, CompoundExperiment
+from depmap.compound.models import Compound
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
-from depmap.entity.views.index import format_celfie, format_summary
+from depmap.entity.views.index import format_summary
 from depmap.extensions import memoize_without_user_permissions
 from depmap.gene.models import Gene
 from depmap.gene.views import characterization
-from depmap.gene.views.confidence import format_confidence, has_gene_confidence
 from depmap.gene.views.executive import format_mutation_profile, get_order
 from depmap.predictability.models import PredictiveFeatureResult, PredictiveModel
 from depmap.predictability.utilities import (
@@ -30,16 +30,15 @@ from depmap.predictability.utilities import (
 )
 from depmap.tile.views import (
     find_compounds_targeting_gene,
-    get_correlations_for_celfie_react_tile,
     get_omics,
 )
 from depmap.utilities.sign_bucket_url import get_signed_url
-from depmap.correlation.utils import get_all_correlations
 from depmap.partials.views import format_csv_response
 from depmap.partials.data_table.factories import (
     get_mutation_by_gene_table,
     get_fusion_by_gene_table,
 )
+from depmap import data_access
 
 blueprint = Blueprint("gene", __name__, url_prefix="/gene", static_folder="../static")
 
@@ -85,17 +84,10 @@ def _get_gene_page_template_parameters(gene_symbol):
         abort(404)
     # Figure out entity_id
     entity_id = gene.entity_id
+
     # Figure out membership in different datasets
     dependency_datasets = dependency_datasets_with_gene(entity_id)
-    # TODO: Gene confidence is probably something we can delete...
-    chronos_achilles_dataset_for_confidence = next(  # only confidence should be using hardcoded chronos_achilles instead of the default crispr dataset
-        (
-            x
-            for x in dependency_datasets
-            if x.name == DependencyDataset.DependencyEnum.Chronos_Achilles
-        ),
-        None,
-    )
+
     default_crispr_dataset = DependencyDataset.get_dataset_by_data_type_priority(
         DependencyDataset.DataTypeEnum.crispr
     )
@@ -115,7 +107,7 @@ def _get_gene_page_template_parameters(gene_symbol):
     # if there are biomarker datasets and dependency datasets
     has_datasets = len(biomarker_datasets) > 0 or len(dependency_datasets) > 0
     summary = format_gene_summary(gene, dependency_datasets)
-    has_confidence = has_gene_confidence(gene, chronos_achilles_dataset_for_confidence)
+
     characterizations = characterization.format_characterizations(
         entity_id, gene_symbol, biomarker_datasets
     )
@@ -132,13 +124,6 @@ def _get_gene_page_template_parameters(gene_symbol):
         is not None
     )
 
-    has_celfie = (
-        current_app.config["ENABLED_FEATURES"].celfie and crispr_dataset is not None
-    )
-    if has_celfie:
-        celfie = format_celfie(gene.symbol, summary["summary_options"])
-
-    correlations = get_correlations_for_celfie_react_tile(gene, has_celfie)
     omics = get_omics(gene)
     show_omics_expression_tile = (
         omics is not None and omics.get("copy_number") is not None
@@ -151,36 +136,40 @@ def _get_gene_page_template_parameters(gene_symbol):
     targeting_compounds = find_compounds_targeting_gene(gene_symbol)
     show_targeting_compounds_tile = len(targeting_compounds) > 0
 
-    template_parameters = dict(
-        gene_name=gene_symbol,
-        title=gene_symbol,
-        entity_id=entity_id,
-        has_datasets=has_datasets,
-        summary=summary,
-        has_confidence=has_confidence,
-        characterizations=characterizations,
-        has_predictability=has_predictability,
-        predictability_custom_downloads_link=get_predictability_input_files_downloads_link(),
-        predictability_methodology_link=get_signed_url(
+    show_enrichment_tile = False
+    show_enrichment_tile = data_access.dataset_exists(
+        ContextExplorerDatasets.Chronos_Combined.name
+    ) and data_access.valid_row(
+        ContextExplorerDatasets.Chronos_Combined.name, gene.label
+    )
+
+    template_parameters = {
+        "gene_name": gene_symbol,
+        "title": gene_symbol,
+        "entity_id": entity_id,
+        "has_datasets": has_datasets,
+        "summary": summary,
+        "characterizations": characterizations,
+        "has_predictability": has_predictability,
+        "predictability_custom_downloads_link": get_predictability_input_files_downloads_link(),
+        "predictability_methodology_link": get_signed_url(
             "shared-portal-files", "Tools/Predictability_methodology.pdf"
         ),
-        about={
+        "about": {
             "entrez_id": gene.entrez_id,
             "symbol": gene.symbol,
             "full_name": gene.name,
             "aka": ", ".join([alias.alias for alias in gene.entity_alias.all()]),
-            "ensembl_id": gene.ensembl_id,  # lazy to rename, this isn't just entrez
+            "ensembl_id": gene.ensembl_id,
             "hngc_id": gene.hgnc_id,
         },
-        pubmed_search_terms=[gene_symbol, gene_symbol + " AND cancer"],
-        order=get_order(has_predictability),
-        has_celfie=has_celfie,
-        celfie=celfie if has_celfie else None,
-        correlations=correlations,
-        show_mutations_tile=show_mutations_tile,
-        show_omics_expression_tile=show_omics_expression_tile,
-        show_targeting_compounds_tile=show_targeting_compounds_tile,
-    )
+        "pubmed_search_terms": [gene_symbol, gene_symbol + " AND cancer"],
+        "order": get_order(has_predictability),
+        "show_mutations_tile": show_mutations_tile,
+        "show_omics_expression_tile": show_omics_expression_tile,
+        "show_targeting_compounds_tile": show_targeting_compounds_tile,
+        "show_enrichment_tile": show_enrichment_tile,
+    }
     return template_parameters
 
 
@@ -365,19 +354,6 @@ def get_predictability_files():
     return send_file(path, mimetype="application/zip", as_attachment=True)
 
 
-@blueprint.route("/gene_confidence/<gene_symbol>")
-def view_gene_confidence(gene_symbol: str):
-    gene = Gene.get_by_label(gene_symbol, must=False)
-    if gene is None:
-        abort(404)
-
-    confidence = format_confidence(gene)
-    if confidence is None:
-        abort(404)
-
-    return render_template("genes/confidence.html", confidence=confidence,)
-
-
 @blueprint.route("/gene_characterization/<gene_symbol>")
 def view_gene_characterzation(gene_symbol: str):
     gene = Gene.get_by_label(gene_symbol, must=False)
@@ -435,73 +411,6 @@ def gene_characterization_content(gene_symbol: str, characterization_id: str):
         "genes/characterization-content.html",
         characterization=single_characterization,
         gene_name=gene_symbol,
-    )
-
-
-@blueprint.route("/<gene_symbol>/top_correlations")
-def download_top_correlations_for_gene_dataset(gene_symbol: str):
-    gene = Gene.query.filter_by(label=gene_symbol).one_or_none()
-    if gene is None:
-        abort(404)
-    dataset_name = str(request.args.get("dataset_name"))
-    dataset = DependencyDataset.get_dataset_by_name(dataset_name, must=True)
-    assert dataset
-    correlations = get_all_correlations(
-        dataset.matrix_id,
-        gene_symbol,
-        max_per_other_dataset=100,
-        other_dataset_ids=[dataset.dataset_id],
-    )
-    correlations.drop(columns="other_dataset_id", inplace=True)
-    labels = correlations["other_entity_label"].tolist()
-    # Get genes filtered by correlation genes list
-    filtered_genes = Gene.query.filter(Gene.label.in_(labels)).with_entities(
-        Gene.label, Gene.entrez_id
-    )
-    genes = pd.read_sql(filtered_genes.statement, filtered_genes.session.connection())
-    # join the tables together on the gene label
-    correlations = correlations.join(genes.set_index("label"), on="other_entity_label")
-    correlations.rename(
-        columns={
-            "other_entity_label": "Gene",
-            "other_dataset": "Dataset",
-            "correlation": "Correlation",
-            "entrez_id": "Entrez Id",
-        },
-        inplace=True,
-    )
-    # Reorder columns
-    correlations = correlations[["Gene", "Entrez Id", "Dataset", "Correlation"]]
-
-    return format_csv_response(
-        correlations,
-        "{}'s Top 100 Codependencies for {}".format(gene_symbol, dataset.display_name),
-        {"index": False},
-    )
-
-
-@blueprint.route("/<gene_symbol>/genomic_associations")
-def view_genomic_associations(gene_symbol: str):
-    gene = Gene.query.filter_by(label=gene_symbol).one_or_none()
-    if gene is None:
-        abort(404)
-
-    entity_id = gene.entity_id
-
-    dependency_datasets = dependency_datasets_with_gene(entity_id)
-    # Format dependency options
-    dependency_datasets_options = [
-        format_summary_option(dataset, gene, dataset.display_name)
-        for dataset in dependency_datasets
-    ]
-    has_celfie = (
-        current_app.config["ENABLED_FEATURES"].celfie
-        and dependency_datasets_options is not None
-    )
-    celfie = format_celfie(gene.symbol, dependency_datasets_options)
-
-    return render_template(
-        "entities/celfie_page.html", celfie=celfie if has_celfie else None
     )
 
 

@@ -36,8 +36,7 @@ function DataSourceSelect({ isLoading, slice_type, value, onChange }: Props) {
   const hasBreadboxAnnotations =
     slice_type === "depmap_model" ||
     slice_type === "model_condition" ||
-    slice_type === "screen" ||
-    slice_type === "Screen metadata";
+    slice_type === "screen";
 
   if (!hasBreadboxAnnotations) {
     options = [

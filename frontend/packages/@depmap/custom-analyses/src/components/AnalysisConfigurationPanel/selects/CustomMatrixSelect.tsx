@@ -22,6 +22,24 @@ interface Props {
   filename?: string;
 }
 
+// Polls GET /api/task/{id} until the task reaches a terminal state.
+async function pollTaskUntilComplete(taskId: string): Promise<UploadTask> {
+  const poll = async (): Promise<UploadTask> => {
+    const task = await breadboxAPI.getTaskStatus(taskId);
+
+    if (task.state === "SUCCESS" || task.state === "FAILURE") {
+      return task as UploadTask;
+    }
+
+    // Wait before polling again
+    const delay = task.nextPollDelay ?? 1000;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return poll();
+  };
+
+  return poll();
+}
+
 function CustomMatrixSelect({
   format,
   index_type,
@@ -44,11 +62,11 @@ function CustomMatrixSelect({
 
     if (uploadTask.state === "SUCCESS") {
       const { result } = uploadTask;
-      datasetId = result.datasetId;
-      datasetName = result.dataset.name;
+      datasetId = result?.datasetId;
+      datasetName = result?.dataset?.name;
 
-      if (result.warnings.length > 0) {
-        messageWarning = result.warnings.join("\n");
+      if (result?.warnings?.length > 0) {
+        messageWarning = result?.warnings?.join("\n");
       }
     } else if (uploadTask.state === "FAILURE") {
       messageWarning = `Error: ${uploadTask.message}`;
@@ -64,7 +82,7 @@ function CustomMatrixSelect({
     });
   };
 
-  const handleFileChange = (uploadFile: File) => {
+  const handleFileChange = async (uploadFile: File) => {
     if (!uploadFile || uploadFile.name === "") {
       setUploadState({
         datasetId: "",
@@ -87,19 +105,32 @@ function CustomMatrixSelect({
 
     setUploadState((prev) => ({ ...prev, isLoading: true }));
 
+    let initialTask: UploadTask;
+
     if (format === "matrix") {
-      breadboxAPI
-        .postCustomCsv({
-          uploadFile,
-          displayName: uploadFile.name,
-          units: "",
-          transposed: true,
-        })
-        .then(handleUploadResponse);
+      initialTask = await breadboxAPI.postCustomCsv({
+        uploadFile,
+        displayName: uploadFile.name,
+        units: "",
+        transposed: true,
+      });
     } else {
-      breadboxAPI
-        .postCustomCsvOneRow({ uploadFile })
-        .then(handleUploadResponse);
+      initialTask = await breadboxAPI.postCustomCsvOneRow({
+        uploadFile,
+      });
+    }
+
+    // The v2 endpoint may return a pending/in-progress task.
+    // Poll until it reaches a terminal state.
+    if (
+      initialTask.state !== "SUCCESS" &&
+      initialTask.state !== "FAILURE" &&
+      initialTask.id
+    ) {
+      const finalTask = await pollTaskUntilComplete(initialTask.id);
+      handleUploadResponse(finalTask);
+    } else {
+      handleUploadResponse(initialTask);
     }
   };
 

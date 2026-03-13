@@ -34,10 +34,8 @@ type UserUploadModalProps = {
   uploadFormat: UploadFormat;
   isPrivate: boolean;
   isTransient: boolean;
-  taskKickoffFunction: (userUploadArgs: UserUploadArgs) => Promise<UploadTask>;
   groups?: Array<{ groupId: number; displayName: string }>;
   dataTypes?: DataTypeEnum[]; // Required for private uploads, but I think this modal is also used for non-private custom uploads
-  getTaskStatus: (taskIds: string) => Promise<ComputeResponse>;
   disableOrientationOptions?: boolean;
 };
 
@@ -157,8 +155,6 @@ export const UploadForm = (
   isTransient: boolean,
   groups: Array<{ groupId: number; displayName: string }>,
   dataTypes: DataTypeEnum[],
-  taskKickoffFunction: (userUploadArgs: UserUploadArgs) => Promise<UploadTask>,
-  getTaskStatus: (taskIds: string) => Promise<ComputeResponse>,
   disableOrientationOptions: boolean
 ) => {
   // Form inputs
@@ -224,9 +220,7 @@ export const UploadForm = (
       setTaskRunning(true);
 
       // make the submission
-      setSubmissionResponse(
-        taskKickoffFunction(taskKickoffFunctionArgs) as Promise<UploadTask>
-      );
+      setSubmissionResponse(breadboxAPI.postCustomCsv(taskKickoffFunctionArgs));
     } else if (
       displayName === "" ||
       units === "" ||
@@ -448,7 +442,7 @@ export const UploadForm = (
           submissionResponse={submissionResponse}
           onSuccess={onComplete}
           onFailure={onComplete}
-          getTaskStatus={getTaskStatus}
+          getTaskStatus={breadboxAPI.getTaskStatus}
         />
       )}
 
@@ -484,10 +478,8 @@ const UserUploadModal = ({
   uploadFormat,
   isPrivate,
   isTransient,
-  taskKickoffFunction,
   groups = [],
   dataTypes = [],
-  getTaskStatus,
   disableOrientationOptions = false,
 }: UserUploadModalProps) => {
   const modalTitle = isTransient
@@ -506,8 +498,6 @@ const UserUploadModal = ({
           isTransient,
           groups,
           dataTypes,
-          taskKickoffFunction,
-          getTaskStatus,
           disableOrientationOptions
         )}
       </Modal.Body>

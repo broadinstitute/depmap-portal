@@ -1,6 +1,34 @@
 add-if-missing {
     "type": "celligner-preprocess",
     "category": "expression",
+    "label": "HCMI_model",
+    "source_dataset_id": "portal-hcmi-rna-2026q1-b26f.1/hcmi_GDC_models_log2tpm1.csv"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "expression",
+    "label": "HCMI_tumor",
+    "source_dataset_id": "portal-hcmi-rna-2026q1-b26f.1/hcmi_GDC_tumors_log2tpm1.csv"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "annotation",
+    "label": "HCMI_tumor",
+    "source_dataset_id": "portal-hcmi-rna-2026q1-b26f.1/RNA_Tracker_v2_26Q1_in_GDC_TUMORS.csv"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "annotation",
+    "label": "HCMI_model",
+    "source_dataset_id": "portal-hcmi-rna-2026q1-b26f.1/RNA_Tracker_v2_26Q1_in_GDC_MODELS.csv"
+}
+
+add-if-missing {
+    "type": "celligner-preprocess",
+    "category": "expression",
     "label": "TCGA",
     "source_dataset_id": "celligner-input-9827.1/tumor_expression"
 }
@@ -65,6 +93,10 @@ rule process_celligner_inputs:
         depmap_ann = {"type": "biomarker-matrix", "category": "context"},
         depmap_prof_map = {"type": "profile-map", "category": "mapping"},
         depmap_model_cond = {"type": "model-condition", "category": "mapping"},
+        hcmi_model_expr = {"type": "celligner-preprocess", "category": "expression", "label": "HCMI_model"},
+        hcmi_model_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "HCMI_model"},
+        hcmi_tumor_expr = {"type": "celligner-preprocess", "category": "expression", "label": "HCMI_tumor"},
+        hcmi_tumor_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "HCMI_tumor"}, 
         tcga_expr = {"type": "celligner-preprocess", "category": "expression", "label": "TCGA"},
         tcga_ann = {"type": "celligner-preprocess", "category": "annotation", "label": "TCGA"},
         met500_expr = {"type": "celligner-preprocess", "category": "expression", "label": "MET500"},

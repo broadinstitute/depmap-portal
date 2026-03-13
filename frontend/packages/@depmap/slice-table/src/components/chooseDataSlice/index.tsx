@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  getConfirmation,
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
@@ -12,17 +11,23 @@ import styles from "../../styles/AddColumnModal.scss";
 interface Props {
   index_type_name: string;
   PlotlyLoader: any;
+  idColumnLabel: string;
+  existingSlices?: SliceQuery[];
   defaultValue?: SliceQuery | null;
   initialSource?: "property" | "custom";
-  onClickRemoveColumn?: () => void;
+  hiddenDatasets?: Set<string>;
+  extraHoverData?: Record<string, string>;
 }
 
 function chooseDataSlice({
   index_type_name,
   PlotlyLoader,
+  idColumnLabel,
+  existingSlices = undefined,
   defaultValue = null,
   initialSource = "property",
-  onClickRemoveColumn = () => {},
+  hiddenDatasets = undefined,
+  extraHoverData,
 }: Props) {
   const isEditMode = defaultValue !== null;
 
@@ -31,6 +36,7 @@ function chooseDataSlice({
     title: isEditMode ? "Edit column" : "Add a data column",
     acceptButtonText: isEditMode ? "Save changes" : "Add column",
     modalProps: { className: styles.AddColumnModal, bsSize: "lg" },
+    shouldFocusAcceptOnChange: true,
     PromptComponent: ({
       value,
       onChange,
@@ -40,9 +46,12 @@ function chooseDataSlice({
           <div className={styles.menus}>
             <DataSliceSelect
               index_type_name={index_type_name}
+              idColumnLabel={idColumnLabel}
               value={value}
               defaultValue={defaultValue}
               initialSource={initialSource}
+              existingSlices={existingSlices}
+              hiddenDatasets={hiddenDatasets}
               onChange={onChange}
             />
           </div>
@@ -51,34 +60,12 @@ function chooseDataSlice({
               index_type_name={index_type_name}
               value={value}
               PlotlyLoader={PlotlyLoader}
+              extraHoverData={extraHoverData}
             />
           </div>
         </div>
       );
     },
-    secondaryAction: isEditMode
-      ? {
-          buttonText: "Remove column",
-          bsStyle: "danger",
-          onClick: () => {
-            return getConfirmation({
-              showModalBackdrop: false,
-              message: "Are you sure you want to remove this column?",
-              yesText: "Remove",
-              noText: "Cancel",
-            }).then((confirmed) => {
-              let shouldCloseModal = false;
-
-              if (confirmed) {
-                onClickRemoveColumn();
-                shouldCloseModal = true;
-              }
-
-              return shouldCloseModal;
-            });
-          },
-        }
-      : undefined,
   });
 }
 

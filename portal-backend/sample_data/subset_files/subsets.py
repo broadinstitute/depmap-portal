@@ -335,20 +335,6 @@ expression = [
     "TRIL",
     "UNC93B1",
 ]
-copy_number_absolute = [
-    "HNF1B",
-    "KDM7A",
-    "MAP4K4",
-    "MED1",
-    "MIR3613",
-    "NRAS",
-    "PSG7",
-    "SOX10",
-    "SWI5",
-    "TNS2",
-    "TRIL",
-    "UNC93B1",
-]
 mutation = [
     "AMY1A",
     "F8A1",

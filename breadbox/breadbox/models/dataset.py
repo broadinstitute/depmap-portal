@@ -71,7 +71,7 @@ class DimensionType(Base):
         backref=backref("dimension_type", uselist=False),
         foreign_keys=[dataset_id],
         lazy="select",
-        cascade="all, delete",
+        cascade="all",
     )
 
 
@@ -155,7 +155,7 @@ class TabularDataset(Dataset):
         default=lambda: str(uuid.uuid4()),
     )
     index_type_name: Mapped[str] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
+        String, ForeignKey("dimension_type.name"), nullable=False
     )
     __mapper_args__ = {"polymorphic_identity": "tabular_dataset"}
 
@@ -202,11 +202,12 @@ class MatrixDataset(Dataset):
     units: Mapped[str] = mapped_column(
         String, nullable=False
     )  # TODO: Limit to conitnuous value types later
+
     feature_type_name: Mapped[Optional[str]] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=True,
+        String, ForeignKey("dimension_type.name"), nullable=True,
     )
     sample_type_name: Mapped[str] = mapped_column(
-        String, ForeignKey("dimension_type.name", ondelete="CASCADE"), nullable=False
+        String, ForeignKey("dimension_type.name"), nullable=False
     )
     feature_type = relationship("DimensionType", foreign_keys=[feature_type_name])
     sample_type = relationship("DimensionType", foreign_keys=[sample_type_name])
@@ -222,7 +223,9 @@ class Dimension(Base, UUIDMixin, GroupMixin):
     __tablename__ = "dimension"
     __table_args__ = (
         Index("idx_dataset_id_given_id", "dataset_id", "given_id"),
-        UniqueConstraint("given_id", "dataset_id", name="_given_id_dataset_id_uc"),
+        UniqueConstraint(
+            "given_id", "dataset_id", "subtype", name="_given_id_dataset_id_subtype_uc",
+        ),
         CheckConstraint(
             "((subtype == 'tabular_column' AND 'index' IS NULL) OR NOT(subtype == 'dataset_sample' AND 'index' IS NULL) OR NOT(subtype == 'dataset_feature' AND 'index' IS NULL))",
             name="ck_index_with_dim_subtype",

@@ -216,6 +216,14 @@ def _get_dataset(hdf5_file: h5py.File, name: str) -> h5py.Dataset:
     return dataset
 
 
+def get_hdf5_file_matrix_size(path: str):
+    with h5py.File(path, mode="r") as f:
+        data = f["data"]
+        if hasattr(data, "shape"):
+            return data.shape  # type: ignore
+        raise ValueError("HDF5 file does not contain a dataset with shape")
+    
+
 def read_hdf5_file(
     path: str,
     feature_indexes: Optional[List[int]] = None,

@@ -13,7 +13,9 @@ def view_anchor_screen_dashboard():
     """
     Entry point
     """
-    if not current_app.config["ENABLED_FEATURES"].anchor_screen_dashboard:
+    if not current_app.config[
+        "ENABLED_FEATURES"
+    ].anchor_and_resistance_screen_dashboards:
         abort(404)
 
     return render_template("anchor_screen_dashboard/index.html")

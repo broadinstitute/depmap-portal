@@ -56,6 +56,14 @@ export interface Props {
    */
   allowNullFeatureType?: boolean;
 
+  /**
+   * Use this to force specific datasets to be hidden from the Data Version
+   * menu.
+   *
+   * @default undefined
+   */
+  datasetIdsToHide?: Set<string>;
+
   /** Called when the height of the container <div> changes. Useful for modals
    * where the available height might be confined. */
   onHeightChange?: (el: HTMLDivElement, prevHeight: number) => void;
@@ -86,6 +94,7 @@ function DimensionSelectV2({
   allowCategoricalValueType = false,
   allowListStringsValueType = false,
   allowNullFeatureType = false,
+  datasetIdsToHide = undefined,
   onHeightChange = undefined,
   removeWrapperDiv = false,
   onClickCreateContext = () => {},
@@ -120,12 +129,17 @@ function DimensionSelectV2({
     allowListStringsValueType,
   ]);
 
+  const hiddenDatasets = useMemo(() => {
+    return datasetIdsToHide || new Set<string>([]);
+  }, [datasetIdsToHide]);
+
   const state = useDimensionStateManager({
     index_type,
     mode,
     value,
     onChange,
     valueTypes,
+    hiddenDatasets,
     allowNullFeatureType,
   });
 
@@ -136,6 +150,7 @@ function DimensionSelectV2({
     state,
     onChange,
     valueTypes,
+    hiddenDatasets,
     allowNullFeatureType,
   });
 

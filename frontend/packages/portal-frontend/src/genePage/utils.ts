@@ -53,7 +53,7 @@ function isMatrixDataset(d: unknown): d is MatrixDataset {
   );
 }
 
-export async function getDependencyDatasetIds(
+export async function getTopCodependencyDatasetIds(
   entrezId: string
 ): Promise<string[]> {
   const datasets = await cached(breadboxAPI).getDatasets({
@@ -65,7 +65,7 @@ export async function getDependencyDatasetIds(
     (d) =>
       d.given_id !== null &&
       isMatrixDataset(d) &&
-      d.feature_type_name === "gene"
+      ["Chronos_Combined", "RNAi_merged"].includes(d.given_id)
   );
 
   if (filteredDatasets.length === 0) {

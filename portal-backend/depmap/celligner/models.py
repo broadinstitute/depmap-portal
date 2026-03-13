@@ -10,16 +10,20 @@ class CellignerEntryEnum(Enum):
     DEPMAP_MODEL = "depmap-model"
     NOVARTIS_PDX_MODEL = "novartisPDX-model"
     PEDIATRIC_PDX_MODEL = "pediatricPDX-model"
+    HCMI_TUMOR = "hcmi-tumor"
+    HCMI_MODEL = "hcmi-model"
 
 
 TUMOR_TYPES = {
     CellignerEntryEnum.TCGA_TUMOR.value,
     CellignerEntryEnum.MET500_TUMOR.value,
+    CellignerEntryEnum.HCMI_TUMOR.value,
 }
 MODEL_TYPES = {
     CellignerEntryEnum.DEPMAP_MODEL.value,
     CellignerEntryEnum.NOVARTIS_PDX_MODEL.value,
     CellignerEntryEnum.PEDIATRIC_PDX_MODEL.value,
+    CellignerEntryEnum.HCMI_MODEL.value,
 }
 
 

@@ -54,7 +54,11 @@ const TopCoDependenciesTile = ({
     }
 
     const sortedFeatures = [...associatedFeatures]
-      .filter((feat) => feat.other_dimension_label !== geneLabel) // Filter out self
+      .filter(
+        (feat) =>
+          feat.other_dimension_label !== geneLabel &&
+          feat.other_dataset_given_id === crisprGivenId // We only want co-dependencies within the same dataset
+      )
       .sort((a, b) => b.correlation - a.correlation);
 
     return sortedFeatures;
@@ -72,7 +76,11 @@ const TopCoDependenciesTile = ({
     }
 
     const sortedFeatures = [...associatedFeatures]
-      .filter((feat) => feat.other_dimension_label !== geneLabel)
+      .filter(
+        (feat) =>
+          feat.other_dimension_label !== geneLabel &&
+          feat.other_dataset_given_id === rnaiGivenId // We only want co-dependencies within the same dataset
+      )
       .sort((a, b) => b.correlation - a.correlation);
 
     return sortedFeatures;
@@ -119,9 +127,17 @@ const TopCoDependenciesTile = ({
                 Error loading CRISPR correlation data. Please try again later.
               </div>
             )}
+            {!crisprError &&
+              topCrisprDatasetCorrelations &&
+              topCrisprDatasetCorrelations?.length === 0 && (
+                <div className={styles.errorMessage}>
+                  No CRISPR co-dependencies found.
+                </div>
+              )}
             {!crisprCorrelationData && crisprIsLoading && <PlotSpinner />}
             {crisprCorrelationData &&
               topCrisprDatasetCorrelations &&
+              topCrisprDatasetCorrelations?.length > 0 &&
               allTopCrisprDatasetCorrelations && (
                 <div className={styles.tableWrapper}>
                   <CoDependenciesTable
@@ -159,9 +175,17 @@ const TopCoDependenciesTile = ({
                 Error loading RNAi correlation data. Please try again later.
               </div>
             )}
+            {!rnaiError &&
+              topRnaiDatasetCorrelations &&
+              topRnaiDatasetCorrelations?.length === 0 && (
+                <div className={styles.errorMessage}>
+                  No RNAi co-dependencies found.
+                </div>
+              )}
             {!rnaiCorrelationData && rnaiIsLoading && <PlotSpinner />}
             {rnaiCorrelationData &&
               topRnaiDatasetCorrelations &&
+              topRnaiDatasetCorrelations?.length > 0 &&
               allTopRnaiDatasetCorrelations &&
               !rnaiError &&
               !rnaiIsLoading && (

@@ -39,7 +39,7 @@ from depmap.dataset.models import (
     Fusion,
 )
 from depmap.entity.models import Entity, EntityAlias, GenericEntity
-from depmap.gene.models import Gene, GeneExecutiveInfo, GeneScoreConfidence
+from depmap.gene.models import Gene, GeneExecutiveInfo
 from depmap.antibody.models import Antibody
 from depmap.transcription_start_site.models import TranscriptionStartSite
 from depmap.compound.models import (
@@ -57,7 +57,6 @@ from depmap.interactive.nonstandard.models import (
     ColNonstandardMatrix,
     CellLineNameType,
 )
-from depmap.correlation.models import CorrelatedDataset
 from depmap.compute.models import CustomCellLineGroup
 from depmap.utilities.hdf5_utils import get_values_min_max
 from depmap.predictability.models import (
@@ -333,27 +332,6 @@ class GeneExecutiveInfoFactory(SQLAlchemyModelFactory):
     num_lines_with_data = 1
     is_strongly_selective = False
     is_common_essential = False
-
-
-class GeneScoreConfidenceFactory(SQLAlchemyModelFactory):
-    class Meta:
-        model = GeneScoreConfidence
-
-        # Use the not-so-global scoped_session
-        # Warning: DO NOT USE common.Session()!
-        sqlalchemy_session = _db.session
-
-    gene = factory.SubFactory(GeneFactory)
-    score = 0.5
-    guide_consistency_mean = 0.5
-    guide_consistency_max = 0.5
-    unique_guides = 3
-    sanger_crispr_consistency = 0.5
-    rnai_consistency = 0.5
-    normLRT = 0.5
-    predictability = 0.5
-    top_feature_importance = 0.5
-    top_feature_confounder = False
 
 
 class ProteinFactory(SQLAlchemyModelFactory):
@@ -1111,26 +1089,3 @@ class TaigaAliasFactory(SQLAlchemyModelFactory):
     canonical_taiga_id = factory.Sequence(
         lambda number: "canonical-taiga-id.{}/file".format(number)
     )
-
-
-def CorrelationFactory(dataset_1, dataset_2, filename, cor_values=[[0.5]]):
-    create_correlation_file(filename, cor_values)
-    _db.session.add(
-        CorrelatedDataset(dataset_1=dataset_1, dataset_2=dataset_2, filename=filename)
-    )
-
-
-def create_correlation_file(filename, cor_values):
-    conn = sqlite3.connect(filename)
-    conn.execute("create table correlation (dim_0 INTEGER, dim_1 INTEGER, cor REAL)")
-    rows = []
-    for i in range(len(cor_values)):
-        for j in range(len(cor_values[i])):
-            v = cor_values[i][j]
-            if v is not None:
-                rows.append((i, j, v))
-    conn.executemany(
-        "insert into correlation (dim_0, dim_1, cor) values (?, ?, ?)", rows
-    )
-    conn.commit()
-    conn.close()

@@ -246,6 +246,10 @@ def update_dataset_dimensions_with_dimension_type(
 
 def delete_dimension_type(db: SessionWithUser, dimension_type: DimensionType):
     """Delete the dimension type as well as its metadata dataset."""
+    if dimension_type.dataset is not None:
+        db.delete(dimension_type.dataset)
+        dimension_type.dataset = None
+        db.flush()
     db.delete(dimension_type)
     db.flush()
     return True

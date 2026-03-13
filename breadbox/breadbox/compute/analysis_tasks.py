@@ -489,7 +489,6 @@ def create_cell_line_group(
             fd.flush()
 
             settings = get_settings()
-            generic_feature_type = get_dimension_type(db, "generic")
             depmap_model_sample_type = get_dimension_type(db, "depmap_model")
 
             (
@@ -506,7 +505,7 @@ def create_cell_line_group(
                         file=BytesIO(fd.read()),
                         content_type="text/csv",
                     ),
-                    feature_type=generic_feature_type,
+                    feature_type=None,
                     sample_type=depmap_model_sample_type,
                     filestore_location=settings.filestore_location,
                     value_type=ValueType.categorical,
@@ -519,7 +518,7 @@ def create_cell_line_group(
                 units="string",
                 is_transient=True,
                 group_id=group_crud.TRANSIENT_GROUP_ID,
-                feature_type_name="generic",
+                feature_type_name=None,
                 sample_type_name="depmap_model",
                 data_type="User upload",
                 id=dataset_id,
@@ -538,8 +537,8 @@ def create_cell_line_group(
                 dataset_in,
                 feature_given_id_and_index_df,
                 sample_given_id_and_index_df,
-                generic_feature_type,
-                depmap_model_sample_type,
+                feature_type=None,
+                sample_type=depmap_model_sample_type,
                 short_name=None,
                 version=None,
                 description=None,

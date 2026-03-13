@@ -83,10 +83,6 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def gene_confidence(self):
-        return False  # Disabled everywhere as of 22Q4
-
-    @property
     def compound_dashboard_app(self):
         return self.is_prerelease_env()
 
@@ -112,10 +108,6 @@ class FeatureFlags:
 
     @property
     def new_dose_curves_tab(self):
-        return True
-
-    @property
-    def show_all_new_dose_curve_and_heatmap_tab_datasets(self):
         return True
 
     @property
@@ -168,21 +160,12 @@ class FeatureFlags:
         return self.is_prerelease_env()
 
     @property
-    def celfie(self):
-        return False
-
-    @property
     def celligner_app_v3(self):
         return True
 
     # used in depmap/settings/shared.py to set special value for DepDatasetMeta cell_lines
     @property
     def repurposing_secondary_AUC_cell_line_range(self):
-        return self.is_prerelease_env()
-
-    # Constellation isn't in the portal anymore, but we still use its view and data for other parts of the portal
-    @property
-    def constellation_app(self):
         return self.is_prerelease_env()
 
     @property
@@ -198,14 +181,6 @@ class FeatureFlags:
         return True
 
     @property
-    def gene_tea(self):
-        return self.is_prerelease_env()
-
-    # NOTE: This feature flag is separated out from the above
-    # "gene_tea" feature flag. "gene_tea" refers to the data
-    # explorer integration of gene_tea; whereas, gene_tea_portal_page
-    # refers to the portal gene tea tool page.
-    @property
     def gene_tea_portal_page(self):
         return True
 
@@ -218,7 +193,7 @@ class FeatureFlags:
         return True
 
     @property
-    def anchor_screen_dashboard(self):
+    def anchor_and_resistance_screen_dashboards(self):
         return self.is_dmc_like()
 
     @property
@@ -226,8 +201,14 @@ class FeatureFlags:
         return self.is_public()
 
     @property
-    def compound_correlation_tiles(self):
+    def compound_correlated_dependencies_tile(self):
         return self.is_prerelease_env()
+
+    # Not showing as of 25Q4: This tile appears to have some incorrect behavior in how
+    # it chooses which compounds are "related". Disabling for now.
+    @property
+    def related_compounds_tile(self):
+        return False
 
     @property
     def correlation_analysis(self):
