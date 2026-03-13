@@ -12,7 +12,7 @@ blueprint = Blueprint(
 restplus = Api(
     blueprint,
     validate=True,
-    doc=False,
+    doc=False,  # type: ignore[arg-type]  # flask-restx accepts False to disable Swagger UI
     decorators=[
         csrf_protect.exempt
     ],  # required, else 400s saying csrf token is missing

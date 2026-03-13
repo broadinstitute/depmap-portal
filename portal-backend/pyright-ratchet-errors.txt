@@ -615,7 +615,6 @@ views.py: error: Argument of type "Entity | None" cannot be assigned to paramete
 views.py: error: Argument of type "FileStorage | None" cannot be assigned to parameter "upload_file" of type "FileStorage" in function "write_upload_to_local_file"
 views.py: error: Argument of type "Literal['val']" cannot be assigned to parameter "mapper" of type "Renamer | None" in function "rename"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
-views.py: error: Argument of type "Literal[False]" cannot be assigned to parameter "doc" of type "str" in function "__init__"
 views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "get_stats_for_dataframe"
 views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "jsonify_df"
 views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "get_root_category_subcategory_topics"
