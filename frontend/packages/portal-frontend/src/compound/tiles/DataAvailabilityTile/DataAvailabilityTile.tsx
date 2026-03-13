@@ -43,77 +43,75 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
     <article
       className={`${styles.DatasetAvailabilityTile} card_wrapper stacked-boxplot-tile`}
     >
-      <div className="card_wrapper">
-        <div className="card_border container_fluid">
-          <div>
-            <h2 className="no_margin cardtitle_text">
-              Datasets with data for {compoundName}
-            </h2>
-          </div>
+      <div className="card_border container_fluid">
+        <div>
+          <h2 className="no_margin cardtitle_text">
+            Datasets with data for {compoundName}
+          </h2>
+        </div>
 
-          <div
-            className="card_padding"
-            style={{ overflowX: "auto", width: "100%" }}
-          >
-            {isLoading && <PlotSpinner />}
-            {!isLoading && (
-              <table className={styles.infoTable}>
-                <thead>
-                  <tr>
-                    <th className={styles.datasetColth}>Dataset</th>
-                    <th className={styles.cellLinesColth}>Cell Lines</th>
-                    <th className={styles.doseRangeColth}>Dose Range</th>
-                    <th className={styles.assayColth}>Assay</th>
+        <div
+          className="card_padding"
+          style={{ overflowX: "auto", width: "100%" }}
+        >
+          {isLoading && <PlotSpinner />}
+          {!isLoading && (
+            <table className={styles.infoTable}>
+              <thead>
+                <tr>
+                  <th className={styles.datasetColth}>Dataset</th>
+                  <th className={styles.cellLinesColth}>Cell Lines</th>
+                  <th className={styles.doseRangeColth}>Dose Range</th>
+                  <th className={styles.assayColth}>Assay</th>
+                </tr>
+              </thead>
+              <tbody>
+                {initialData.map((entry, index: number) => (
+                  <tr key={index}>
+                    <td className={styles.datasetColContent}>
+                      <a href={entry.datasetUrl || ""}>
+                        {entry.datasetDisplayName}
+                      </a>
+                    </td>
+                    <td className={styles.cellLineColContent}>
+                      {entry.cellLineCount}
+                    </td>
+                    <td className={styles.doseRangeLabelColContent}>
+                      {entry.doseRangeLabel}
+                    </td>
+                    <td className={styles.assayLabelColContent}>
+                      {entry.assayLabel}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {initialData.map((entry, index: number) => (
-                    <tr key={index}>
-                      <td className={styles.datasetColContent}>
+                ))}
+
+                {isExpanded &&
+                  extraData.map((entry, index) => (
+                    <tr key={index + 5}>
+                      <td className={styles.extraDataContainer}>
                         <a href={entry.datasetUrl || ""}>
                           {entry.datasetDisplayName}
                         </a>
                       </td>
-                      <td className={styles.cellLineColContent}>
-                        {entry.cellLineCount}
-                      </td>
-                      <td className={styles.doseRangeLabelColContent}>
-                        {entry.doseRangeLabel}
-                      </td>
-                      <td className={styles.assayLabelColContent}>
-                        {entry.assayLabel}
-                      </td>
+                      <td>{entry.cellLineCount}</td>
+                      <td>{entry.doseRangeLabel}</td>
+                      <td>{entry.assayLabel}</td>
                     </tr>
                   ))}
+              </tbody>
+            </table>
+          )}
 
-                  {isExpanded &&
-                    extraData.map((entry, index) => (
-                      <tr key={index + 5}>
-                        <td className={styles.extraDataContainer}>
-                          <a href={entry.datasetUrl || ""}>
-                            {entry.datasetDisplayName}
-                          </a>
-                        </td>
-                        <td>{entry.cellLineCount}</td>
-                        <td>{entry.doseRangeLabel}</td>
-                        <td>{entry.assayLabel}</td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            )}
-
-            {!isLoading && hasMore && (
-              <div className={styles.viewMoreLessContainer}>
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className={styles.buttonLink}
-                >
-                  {isExpanded ? "View Less" : "View More"}
-                </button>
-              </div>
-            )}
-          </div>
+          {!isLoading && hasMore && (
+            <div className={styles.viewMoreLessContainer}>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className={styles.buttonLink}
+              >
+                {isExpanded ? "View Less" : "View More"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </article>
