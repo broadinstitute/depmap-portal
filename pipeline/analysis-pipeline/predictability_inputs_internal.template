@@ -1,5 +1,5 @@
 # TODO: Move these variables out of this file. They really should be provided from some common location shared by all pipelines
-# SET_TAIGA_PREPROCESSOR virtual_permaname "test-pred-25q3-1649.2"
+# SET_TAIGA_PREPROCESSOR virtual_permaname "test-pred-internal-26q1-59eb.6"
 # SET_TAIGA_PREPROCESSOR last_abs_cn_dataset_id "internal-24q4-8c04.118"
 
 # Destination Taiga ID
