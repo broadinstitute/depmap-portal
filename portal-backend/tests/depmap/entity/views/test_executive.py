@@ -157,7 +157,7 @@ def test_format_overall_top_model():
                 "top label",  # top model
                 "second label",
             ],
-            "feature_name": [
+            "predictive_feature_name": [
                 "name_0",
                 "name_1",
                 "name_2",
@@ -167,7 +167,7 @@ def test_format_overall_top_model():
                 "name_6",  # top model
                 "wrong id",
             ],
-            "feature_type": [
+            "predictive_feature_type": [
                 "type_0",
                 "type_1",
                 "type_2",
@@ -275,7 +275,7 @@ def test_format_top_three_models_top_feature():
                 0.6,  # third model
                 0.5,  # not top 3
             ],
-            "feature_name": [
+            "predictive_feature_name": [
                 "wrong type id",  # wrong type
                 "name_0",
                 "name_1",  # first model
@@ -285,7 +285,7 @@ def test_format_top_three_models_top_feature():
                 "name_1",  # third model
                 "wrong id",  # not top 3
             ],
-            "feature_type": [
+            "predictive_feature_type": [
                 "wrong type type",  # wrong type
                 "type_0",
                 "type_1",  # first model

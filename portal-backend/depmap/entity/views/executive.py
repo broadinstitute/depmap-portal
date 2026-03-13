@@ -221,8 +221,8 @@ def format_top_three_models_top_feature(sorted_df, type):
     return [
         {
             "model_label": row["model_label"],
-            "feature_name": row["feature_name"],
-            "feature_type": row["feature_type"],
+            "feature_name": row["predictive_feature_name"],
+            "feature_type": row["predictive_feature_type"],
             "model_pearson": number_utils.format_3_sf(row["model_pearson"]),
         }
         for row in relevant_rows.to_dict("records")  # iterrows, but, safer copy
@@ -424,10 +424,11 @@ def format_overall_top_model(sorted_df):
     first_row = sorted_df.iloc[0]
     top_model_id = first_row["predictive_model_id"]
     relevant_rows = sorted_df[sorted_df["predictive_model_id"] == top_model_id].head(5)
+
     features = [
         {
-            "name": row["feature_name"],
-            "type": row["feature_type"],
+            "name": row["predictive_feature_name"],
+            "type": row["predictive_feature_type"],
             "importance": row["feature_importance"],
             "interactive_url": row["interactive_url"],
             "correlation": row["correlation"]
