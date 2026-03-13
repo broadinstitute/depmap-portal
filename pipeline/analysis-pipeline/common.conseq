@@ -1,0 +1,11 @@
+# Since this directory is organized into subdirectories (just "predictability" at the moment)
+# this file is used to include the conseq files from each so we have one conseq file to run
+include "predictability/fit.conseq"
+
+# this variable is overriden when run from jenkins. If the valid is  
+# INVALID, then we're probably running the pipeline for development, and 
+# therefore, don't publish any of the results to the dest path
+if "config.get('publish_dest', 'INVALID') != 'INVALID'":
+  include "predictability/publish.conseq"
+endif
+

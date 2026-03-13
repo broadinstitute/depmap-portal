@@ -6,7 +6,17 @@ The configuration for all models is in model-config.yaml
 
 ## To run
 
-When running locally (ie: for development or testing) you can run using the `local_run.sh` script
+When running locally (ie: for development or testing) you can run using:
+
+```
+conseq run run_internal.conseq
+```
+
+or
+
+```
+conseq run run_exteranl.conseq
+```
 
 
 The `fit.conseq` works as follows:
