@@ -22,9 +22,7 @@ from depmap.gene.views.executive import (
     format_mutation_profile,
     get_dependency_distribution,
 )
-from depmap.compound.views.executive import (
-    format_availability_tile,
-)
+from depmap.compound.views.executive import format_availability_tile
 from depmap.gene.models import Gene
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
@@ -223,7 +221,7 @@ def get_tda_predictability_html(entity):
     return render_template("tiles/tda_predictablity.html", tables=tables,)
 
 
-def get_predictability_html(
+def get_predictability_html_gene(
     entity: Entity, query_params_dict={},
 ):
     """
@@ -233,42 +231,40 @@ def get_predictability_html(
 
     entity_type = entity.type
 
-    if entity_type == "gene":
-        gene = Gene.get_by_entity_id(entity.entity_id)
-        default_crispr_dataset = utils.get_default_crispr_dataset()
-        default_rnai_dataset = utils.get_default_rnai_dataset()
+    assert entity_type == "gene"
 
-        return render_template(
-            "tiles/predictability.html",
-            predictability=format_predictability_tile(
-                gene.entrez_id,
-                [default_crispr_dataset.given_id, default_rnai_dataset.given_id],
-            ),
-            is_gene_executive=True,  # Hard coded as True; TBD if we want TDA to show something else
-            gene_symbol=entity.symbol,
-            entity_type=entity_type,
-        )
-    elif entity_type == "compound":
-        compound = entity
+    gene = Gene.get_by_entity_id(entity.entity_id)
+    default_crispr_dataset = utils.get_default_crispr_dataset()
+    default_rnai_dataset = utils.get_default_rnai_dataset()
 
-        all_matching_datasets = data_access.get_all_datasets_containing_compound(
-            compound.compound_id
-        )
+    return render_template(
+        "tiles/predictability.html",
+        predictability=format_predictability_tile(
+            gene.entrez_id,
+            [default_crispr_dataset.given_id, default_rnai_dataset.given_id],
+        ),
+        is_gene_executive=True,  # Hard coded as True; TBD if we want TDA to show something else
+        gene_symbol=entity.symbol,
+        entity_type=entity_type,
+    )
 
-        predictability = None
-        if compound is not None and len(all_matching_datasets) > 0:
-            dataset_given_id = all_matching_datasets[0].given_id
-            predictability = format_predictability_tile(
-                compound.compound_id, [dataset_given_id]
-            )
 
-        return render_template(
-            "tiles/predictability.html",
-            predictability=predictability,
-            is_gene_executive=True,  # TODO: rethink attribute name since used for gene and cpd
-            gene_symbol=entity.entity_id,  # Doesn't seem like I need this attribute
-            entity_type=entity_type,
-        )
+def get_predictability_html_compound(
+    entity: Entity, query_params_dict={},
+):
+    """
+    This is the predictability tile on the compound page
+    """
+    div_id = str(uuid.uuid4())
+    compound = entity
+
+    return RenderedTile(
+        f'<div id="{div_id}"></div>',
+        f"""(
+        function() {{
+            DepMap.initPredictabilityTile("{div_id}", "{compound.compound_id}");
+        }})""",
+    )
 
 
 def find_compounds_targeting_gene(gene_symbol):
@@ -560,9 +556,7 @@ def get_tractability_html(gene):
     return render_template("tiles/tractability.html", proteins=proteins)
 
 
-def get_sensitivity_html(
-    compound: Compound, query_params_dict={}
-):
+def get_sensitivity_html(compound: Compound, query_params_dict={}):
     div_id = str(uuid.uuid4())
 
     return RenderedTile(

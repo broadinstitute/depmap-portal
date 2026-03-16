@@ -1,23 +1,57 @@
 import React from "react";
 import styles from "../CompoundTiles.scss";
 import GenericDistributionPlot from "src/plot/components/GenericDistributionPlot";
+import PlotSpinner from "src/plot/components/PlotSpinner";
+import ErrorLoading from "../ErrorLoading";
+import usePredictabilityTileData from "../hooks/usePredictabilityTileData";
 import { TopFeaturesTable } from "./TopFeaturesTable";
 import { TopModelsTable } from "./TopModelsTable";
+import { PredictabilityPlotData, PredictabilityTileData } from "@depmap/types";
 
 interface PredictabilityTileProps {
-  predictability: any;
+  compoundId: string;
+  datasetGivenIds: string[];
   isGeneExecutive: boolean;
-  // This is to identify whether or not
   isMobile: boolean;
 }
 
 export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
-  predictability,
+  compoundId,
+  datasetGivenIds,
   isGeneExecutive,
   isMobile,
 }) => {
-  if (!predictability) return null;
+  const { data, isLoading, error } = usePredictabilityTileData(
+    compoundId,
+    datasetGivenIds
+  );
 
+  if (isLoading) {
+    return <PlotSpinner />;
+  }
+
+  if (error) {
+    return <ErrorLoading tileName="Predictability" />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return (
+    <PredictabilityView
+      predictability={data}
+      isGeneExecutive={isGeneExecutive}
+      isMobile={isMobile}
+    />
+  );
+};
+
+const PredictabilityView: React.FC<{
+  predictability: PredictabilityTileData;
+  isGeneExecutive: boolean;
+  isMobile: boolean;
+}> = ({ predictability, isGeneExecutive, isMobile }) => {
   const handleTabClick = (e: React.MouseEvent) => {
     e.preventDefault();
     const url = new URL(window.location.href);
@@ -27,7 +61,7 @@ export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
   };
 
   return (
-    <div className="card_wrapper">
+    <div className={`${styles.PredictabilityTile} card_wrapper`}>
       <div className="card_border">
         <div>
           {isGeneExecutive ? (
@@ -44,41 +78,44 @@ export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
 
               <div className="card_padding">
                 {/* 1. Dynamic Percentile Headers */}
-                {predictability.plot_data.map((data) => (
-                  <h4 key={data.type} className={data.type}>
-                    {data.label}: {data.percentile}th percentile
-                  </h4>
-                ))}
+                {predictability.plot_data.map(
+                  (plot: PredictabilityPlotData) => (
+                    <h4 key={plot.type} className={plot.type}>
+                      {plot.label}: {plot.percentile}th percentile
+                    </h4>
+                  )
+                )}
 
-                {/* 2. React-rendered Distribution Plots */}
+                {/* 2. Distribution Plots */}
                 <div className="plot_width plot_padding1">
-                  {predictability.plot_data.map((data) => (
-                    <div
-                      key={data.type}
-                      className={styles.plotContainer}
-                      style={{ marginBottom: "15px", position: "relative" }}
-                    >
+                  {predictability.plot_data.map(
+                    (plot: PredictabilityPlotData) => (
                       <div
-                        style={{
-                          color: data.color,
-                          fontWeight: 900,
-                          fontSize: "12px",
-                          fontFamily: "Lato",
-                        }}
+                        key={plot.type}
+                        className={styles.plotContainer}
+                        style={{ marginBottom: "15px", position: "relative" }}
                       >
-                        {data.label} <br />
-                        {data.query_value.toFixed(3)}
-                      </div>
+                        <div
+                          style={{
+                            color: plot.color,
+                            fontWeight: 900,
+                            fontSize: "12px",
+                            fontFamily: "Lato",
+                          }}
+                        >
+                          {plot.label} <br />
+                          {plot.query_value.toFixed(3)}
+                        </div>
 
-                      <GenericDistributionPlot
-                        values={data.background_values}
-                        xaxisLabel=""
-                        color={data.color}
-                        // If GenericDistributionPlot supports a vertical line at a specific value:
-                        highlightValue={data.query_value}
-                      />
-                    </div>
-                  ))}
+                        <GenericDistributionPlot
+                          values={plot.background_values}
+                          xaxisLabel=""
+                          color={plot.color}
+                          highlightValue={plot.query_value}
+                        />
+                      </div>
+                    )
+                  )}
 
                   <p className="no_margin plot_label">
                     Prediction Accuracy
@@ -107,7 +144,8 @@ export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
                 >
                   {
                     predictability.tables.find(
-                      (t) => t.type === predictability.overall_top_model.type
+                      (t: any) =>
+                        t.type === predictability.overall_top_model.type
                     )?.dataset
                   }
                 </h4>
@@ -143,7 +181,7 @@ export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
               </div>
             </>
           ) : (
-            predictability.tables.map((table, index) => (
+            predictability.tables.map((table: any, index: number) => (
               <div key={index} className="card_padding">
                 <h4 className={`${table.type} no_margin`}>{table.dataset}</h4>
                 <TopModelsTable models={table.top_models} />
