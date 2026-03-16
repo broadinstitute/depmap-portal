@@ -9,7 +9,7 @@ rule publish_daintree_feature_metadata:
     publish: "{{config.publish_dest}}/daintree-feature-metadata.json"
 
 # for each daintree output, upload the required files and produce an artifact with the taiga ids for each file.
-rule upload_daintree_results_to_taiga:
+rule publish_daintree_results_to_taiga:
     inputs:
         actuals={"type":"target_matrix", "label":target_label},
         daintree_output={"type": "daintree_output", "screen_name": target_label},

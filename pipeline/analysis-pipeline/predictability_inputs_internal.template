@@ -47,7 +47,7 @@ add-if-missing {
 add-if-missing {
     "type": "target_matrix",
     "label": "oncref",
-    "source_dataset_id":  PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLog2AUCMatrix")
+    "source_dataset_id":  PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLumLog2AUCMatrix")
 }
 
 # Feature Matrices
@@ -76,7 +76,7 @@ add-if-missing {
     "type": "feature",
     "label": "oncref_confounder",
     "category": "confounder",
-    "source_dataset_id": "prism-oncology-reference-set-24q4-c0d0.3/PRISMOncologyReferenceConfounderMatrix"
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLumConfounderMatrix")
 }
 
 add-if-missing {
@@ -104,7 +104,7 @@ add-if-missing {
     "type": "feature",
     "label": "genetic_signature",
     "category": "geneticsignature",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(last_abs_cn_dataset_id, "OmicsSignatures")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSignatures")
 }
 
 add-if-missing {
