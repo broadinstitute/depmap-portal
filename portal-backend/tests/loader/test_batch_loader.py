@@ -1,6 +1,7 @@
 from loader import dataset_loader
 import sqlite3
 import sqlalchemy
+from sqlalchemy.exc import IntegrityError
 import json
 
 
@@ -27,7 +28,7 @@ def test_integrity_violation_on_load(tmpdir):
                 dump_name=dump_name,
             )
             raise Exception("Should not have reached here")
-        except sqlalchemy.exc.IntegrityError:
+        except IntegrityError:
             pass
 
         with open(dump_name + ".csv", "rt") as fd:

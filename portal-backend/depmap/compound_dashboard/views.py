@@ -4,7 +4,7 @@ from flask import (
     render_template,
     abort,
 )
-from werkzeug.utils import safe_join
+from werkzeug.security import safe_join
 
 import pandas as pd
 

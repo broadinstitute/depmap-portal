@@ -3,6 +3,7 @@ import logging
 from depmap.extensions import db
 import json
 import sqlalchemy
+from sqlalchemy.exc import IntegrityError
 import csv
 
 log = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ def batch_load_from_generator(
         for chunk in chunk_iter(generator(pbar), batch_size):
             try:
                 connection.execute(insert_stmt, chunk)
-            except sqlalchemy.exc.IntegrityError as ex:
+            except IntegrityError as ex:
                 if dump_name is None:
                     dump_name = "bad_{}".format(table_name)
                 dump_csv = dump_name + ".csv"

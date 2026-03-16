@@ -65,7 +65,6 @@ box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to p
 box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to parameter "selected_code" of type "str" in function "get_path_to_node"
 box_plot_utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "subtype_codes" of type "List[str]" in function "get_model_ids_for_node_branch"
 breadbox_dao.py: error: Expression of type "NDFrame | Unknown" cannot be assigned to return type "Series"
-bulk_load.py: error: "exc" is not a known member of module "sqlalchemy" (reportAttributeAccessIssue)
 categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__" (reportArgumentType)
 categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
 categories.py: error: Method "_get_na_value" overrides class "CategoryConfig" in an incompatible manner
@@ -196,8 +195,6 @@ get_and_process_data.py: error: "__get_config" is unknown import symbol (reportA
 get_and_process_data.py: error: "col_index" is not a known member of "None" (reportOptionalMemberAccess)
 global_search_loader.py: error: Expected no arguments to "ContextExplorerSearchIndex" constructor (reportCallIssue)
 global_search_loader.py: error: Expected no arguments to "FileSearchIndex" constructor (reportCallIssue)
-hashing_utils.py: error: "core" is not a known member of module "pandas" (reportAttributeAccessIssue)
-hashing_utils.py: error: "util" is not a known member of module "pandas" (reportAttributeAccessIssue)
 hdf5_utils.py: error: "Datatype" is not iterable
 hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "__iterable" of type "Iterable[_T@list]" in function "__init__"
@@ -237,7 +234,6 @@ initialize_current_auth.py: error: Cannot access member "__depmap_auth_config" f
 interactive_test_utils.py: error: Cannot assign member "_depmap_interactive_config" for type "Flask"
 iter.py: error: Argument of type "TranslateCRtoNL" cannot be assigned to parameter "__value" of type "int" in function "__setitem__"
 json_dump.py: error: Method "default" overrides class "JSONEncoder" in an incompatible manner
-legacy_utils.py: error: "orm" is not a known member of module "sqlalchemy" (reportAttributeAccessIssue)
 legacy_utils.py: error: Argument of type "Column[str]" cannot be assigned to parameter "row_name" of type "str" in function "valid_row"
 match_related_loader.py: error: Argument of type "Hashable" cannot be assigned to parameter "__x" of type "ConvertibleToInt" in function "__new__"
 match_related_loader.py: error: Expected no arguments to "RelatedEntityIndex" constructor (reportCallIssue)
@@ -250,7 +246,6 @@ matrix_loader.py: error: Expected no arguments to "RowMatrixIndex" constructor (
 metmap_loader.py: error: Expected no arguments to "MetMap500" constructor (reportCallIssue)
 minisites.py: error: "endswith" is not a known member of "None" (reportOptionalMemberAccess)
 minisites.py: error: "html_file" is possibly unbound (reportPossiblyUnboundVariable)
-minisites.py: error: "safe_join" is not exported from module "werkzeug.utils"
 minisites.py: error: Argument of type "str | None" cannot be assigned to parameter "__a" of type "StrPath" in function "join" (reportArgumentType)
 minisites.py: error: Argument of type "str | None" cannot be assigned to parameter "path" of type "FileDescriptorOrPath" in function "exists" (reportArgumentType)
 minisites.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "FileDescriptorOrPath" in function "isdir" (reportArgumentType)
@@ -272,7 +267,6 @@ models.py: error: "display_name" is not a known member of "None" (reportOptional
 models.py: error: "entity_type" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "group" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: "matrix" is not a known member of "None" (reportOptionalMemberAccess)
-models.py: error: "orm" is not a known member of module "sqlalchemy" (reportAttributeAccessIssue)
 models.py: error: "taiga_id" is not a known member of "None" (reportOptionalMemberAccess)
 models.py: error: Argument of type "ArrayLike | float | Number | number[Unknown] | Index | Series | Unknown | ArrowExtensionArray | NAType | NaTType | Timestamp | Timedelta | Any | DatetimeIndex | TimedeltaIndex | BooleanArray | FloatingArray | IntegerArray | ndarray[Any, Unknown] | ndarray[Any, dtype[Any]] | ndarray[Any, dtype[int64]]" cannot be assigned to parameter "__x" of type "ConvertibleToFloat" in function "__new__" (reportArgumentType)
 models.py: error: Argument of type "ColumnElement[bool] | Literal[False]" cannot be assigned to parameter "criterion" of type "_ColumnExpressionArgument[bool]" in function "filter" (reportArgumentType)
@@ -439,7 +433,6 @@ tda_loader.py: error: Expected no arguments to "TDAInterpretableModel" construct
 tda_loader.py: error: Invalid conditional operand of type "Column[int] | None"
 tda_loader.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
 test_app.py: error: Argument of type "list[int]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
-test_batch_loader.py: error: "exc" is not a known member of module "sqlalchemy" (reportAttributeAccessIssue)
 test_box_plot_utils.py: error: Invalid conditional operand of type "ColumnElement[bool] | Literal[False]"
 test_cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
 test_cell_line_loader.py: error: "__getitem__" method not defined on type "RelationshipProperty[Any]" (reportIndexIssue)
@@ -599,7 +592,6 @@ views.py: error: "label" is not a known member of "None" (reportOptionalMemberAc
 views.py: error: "lower" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "model_id" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: "name" is not a known member of "None" (reportOptionalMemberAccess)
-views.py: error: "safe_join" is not exported from module "werkzeug.utils"
 views.py: error: "source_dir" is possibly unbound (reportPossiblyUnboundVariable)
 views.py: error: "type" is not a known member of "None" (reportOptionalMemberAccess)
 views.py: error: Argument of type "ArrayLike | Any | Unknown" cannot be assigned to parameter "tumor_sample_ids" of type "List[str]" in function "get_by_tumor_sample_ids"

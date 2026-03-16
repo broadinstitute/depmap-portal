@@ -7,7 +7,7 @@ from depmap.cell_line.models_new import DepmapModel
 import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import UniqueConstraint, distinct, func, nullslast, case  # type: ignore
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import aliased, backref
 from sqlalchemy.exc import NoResultFound  # pyright: ignore
 from depmap import enums
 from depmap.antibody.models import Antibody
@@ -840,8 +840,8 @@ class Fusion(Model):
 
     @classmethod
     def find_by_gene_query(cls, gene_id):
-        left_alias = sa.orm.aliased(Gene, name="left")
-        right_alias = sa.orm.aliased(Gene, name="right")
+        left_alias = aliased(Gene, name="left")
+        right_alias = aliased(Gene, name="right")
         lin = Lineage.query.filter_by(level=1).subquery()
         lin_subtype = Lineage.query.filter_by(level=2).subquery()
 
@@ -878,8 +878,8 @@ class Fusion(Model):
 
     @classmethod
     def find_by_cell_line_query(cls, depmap_id):
-        gene_1_alias = sa.orm.aliased(Gene, name="gene_1")
-        gene_2_alias = sa.orm.aliased(Gene, name="gene_2")
+        gene_1_alias = aliased(Gene, name="gene_1")
+        gene_2_alias = aliased(Gene, name="gene_2")
 
         return (
             cls.query.filter_by(depmap_id=depmap_id)
@@ -925,8 +925,8 @@ class Translocation(Model):
 
     @classmethod
     def find_by_gene_query(cls, gene_id):
-        g1_alias = sa.orm.aliased(Gene, name="g1")
-        g2_alias = sa.orm.aliased(Gene, name="g2")
+        g1_alias = aliased(Gene, name="g1")
+        g2_alias = aliased(Gene, name="g2")
         query = (
             cls.query.with_entities(
                 CellLine.cell_line_display_name, *Translocation.__table__.columns
@@ -945,8 +945,8 @@ class Translocation(Model):
     # TODO: Will fully replace find_by_gene_query once the portal is fully dependent on DepmpModel instead of CellLine
     @classmethod
     def find_by_gene_using_model_table_query(cls, gene_id):
-        g1_alias = sa.orm.aliased(Gene, name="g1")
-        g2_alias = sa.orm.aliased(Gene, name="g2")
+        g1_alias = aliased(Gene, name="g1")
+        g2_alias = aliased(Gene, name="g2")
         query = (
             cls.query.with_entities(
                 DepmapModel.stripped_cell_line_name, *Translocation.__table__.columns
@@ -964,8 +964,8 @@ class Translocation(Model):
 
     @classmethod
     def find_by_models_query(cls, model_id):
-        g1_alias = sa.orm.aliased(Gene, name="g1")
-        g2_alias = sa.orm.aliased(Gene, name="g2")
+        g1_alias = aliased(Gene, name="g1")
+        g2_alias = aliased(Gene, name="g2")
         return (
             cls.query.with_entities(
                 DepmapModel.stripped_cell_line_name, *Translocation.__table__.columns
