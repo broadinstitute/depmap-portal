@@ -5,6 +5,7 @@ from typing import Optional
 
 import pandas as pd
 import sqlalchemy
+from sqlalchemy.orm import backref as sa_backref
 
 from depmap.database import Column, ForeignKey, Integer, Model, String, db, relationship
 
@@ -661,7 +662,7 @@ class STRProfile(Model):
         "CellLine",
         foreign_keys="STRProfile.depmap_id",
         uselist=False,
-        backref=sqlalchemy.orm.backref("str_profile", uselist=False),
+        backref=sa_backref("str_profile", uselist=False),
     )
 
     notation = Column(String)

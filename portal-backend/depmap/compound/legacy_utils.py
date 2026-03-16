@@ -5,6 +5,7 @@ import pandas as pd
 import re
 import sqlalchemy as sa
 from sqlalchemy import nullslast, case  # type: ignore
+from sqlalchemy.orm import aliased
 from typing import List, Optional, Tuple
 
 from depmap.interactive import interactive_utils
@@ -67,8 +68,8 @@ def _get_deduplicated_experiment_compound_mapping(
     All compound experiments not in the mapping should be dropped. 
     """
     matrix_id = interactive_utils.get_matrix_id(dataset_id)
-    comp_exp_alias = sa.orm.aliased(CompoundExperiment)
-    compound_alias = sa.orm.aliased(Compound)
+    comp_exp_alias = aliased(CompoundExperiment)
+    compound_alias = aliased(Compound)
     comp_exp_info = (
         Matrix.query.filter_by(matrix_id=matrix_id)
         .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)

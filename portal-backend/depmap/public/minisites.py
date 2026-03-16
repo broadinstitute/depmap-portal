@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 def serve_mini_site(config, root, path):
-    from werkzeug.utils import safe_join
+    from werkzeug.security import safe_join
 
     full_path = safe_join(root, path)
     assert os.path.isabs(full_path)
