@@ -130,7 +130,7 @@ def get_cell_line_metmap_html(cell_line: DepmapModel):
 def render_gene_tile(tile_name, gene):
     tiles = {
         GeneTileEnum.tda_predictability.value: get_tda_predictability_html,
-        GeneTileEnum.predictability.value: get_predictability_html,
+        GeneTileEnum.predictability.value: get_predictability_html_gene,
         GeneTileEnum.selectivity.value: get_enrichment_html,
         GeneTileEnum.mutations.value: get_mutations_html,
         GeneTileEnum.omics.value: get_omics_html,
@@ -149,7 +149,7 @@ def render_gene_tile(tile_name, gene):
 
 def render_compound_tile(tile_name, compound, query_params_dict={}):
     tiles = {
-        CompoundTileEnum.predictability.value: get_predictability_html,
+        CompoundTileEnum.predictability.value: get_predictability_html_compound,
         CompoundTileEnum.selectivity.value: get_enrichment_html,
         CompoundTileEnum.sensitivity.value: get_sensitivity_html,
         CompoundTileEnum.availability.value: get_availability_html,
