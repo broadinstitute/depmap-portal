@@ -13,6 +13,7 @@ import click
 import pandas as pd
 from flask import current_app
 from flask.cli import with_appcontext
+from sqlalchemy import text
 
 from depmap.access_control import PUBLIC_ACCESS_GROUP, all_records_visible
 from depmap.access_control.utils.initialize_current_auth import assume_user
@@ -217,7 +218,7 @@ def recreate_full_db(
 
     sqlite3_memory_in_kb = 1024 * 1024  # allow sqlite to use 1GB
     db.session.connection().execute(
-        "PRAGMA cache_size = -{}".format(sqlite3_memory_in_kb)
+        text("PRAGMA cache_size = -{}".format(sqlite3_memory_in_kb))
     )
 
     # load_taiga_aliases is an old name for the same option
