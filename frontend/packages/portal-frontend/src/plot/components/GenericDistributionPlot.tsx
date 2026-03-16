@@ -7,6 +7,7 @@ interface DistributionPlotProps {
   values: number[];
   color: string;
   xaxisLabel: string;
+  highlightValue?: number;
   onLoad?: (plot: ExtendedPlotType) => void;
 }
 
@@ -28,6 +29,7 @@ function GenericDistributionPlot({
   values,
   color,
   xaxisLabel,
+  highlightValue = undefined,
   onLoad = () => {},
   Plotly,
 }: DistributionPlotPropsWithPlotly) {
@@ -126,6 +128,26 @@ function GenericDistributionPlot({
       },
     ];
 
+    if (highlightValue !== undefined) {
+      const maxY = Math.max(...plotData.yPoints);
+      traces.push({
+        x: [highlightValue, highlightValue],
+        // Extending from negative range (y1 area) to the top of KDE (y2 area)
+        y: [-0.5, maxY * 1.1],
+        type: "scatter",
+        mode: "lines",
+        line: {
+          color: color, // Matches the dataset color
+          width: 3,
+          dash: "solid",
+        },
+        yaxis: "y2", // Anchored to top axis but overflows down
+        xaxis: "x2",
+        name: "",
+        hoverinfo: "x",
+      });
+    }
+
     const layout: Partial<Layout> = {
       autosize: true,
       height: 250,
@@ -181,6 +203,8 @@ function GenericDistributionPlot({
         showgrid: false,
         showticklabels: false,
         zeroline: false,
+        // Make sure the highlight line has room to show at the top
+        range: [0, Math.max(...plotData.yPoints) * 1.2],
         fixedrange: true,
       },
     };
@@ -190,7 +214,7 @@ function GenericDistributionPlot({
       displayModeBar: false,
       responsive: true,
     });
-  }, [Plotly, color, plotData, values, xaxisLabel]);
+  }, [Plotly, color, plotData, values, xaxisLabel, highlightValue]);
 
   return (
     <div style={{ minHeight: "200px" }}>
