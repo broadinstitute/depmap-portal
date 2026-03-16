@@ -29,3 +29,11 @@ export type HeatmapFormattedData = {
   y: DoseWithoutUnits[];
   z: Viability[][];
 };
+
+export interface DatasetAvailability {
+  cellLineCount: number;
+  datasetDisplayName: string;
+  doseRangeLabel: string;
+  assayLabel: string;
+  datasetUrl: string | null;
+}
