@@ -149,7 +149,7 @@ class PredictabilityTileData(Resource):
         compound_dataset_ids = args.getlist("compound_dataset_ids")
 
         data = self.format_predictability_tile_json(
-            feature_id=feature_id, dataset_ids=compound_dataset_ids
+            feature_id=feature_id, dataset_given_ids=compound_dataset_ids
         )
 
         if data is None:
@@ -207,7 +207,13 @@ class PredictabilityTileData(Resource):
 
         # Sort combined models
         unsorted_df = pd.concat([p["df"] for p in plot_params])
-        sorted_df = sort_by_model_pearson_feature_rank(unsorted_df)
+        # 1. Create type mapping for the dataframe
+        type_mapping = {k: v[0] for k, v in ID_MAP.items()}
+
+        # 2. Assign 'type' column sort
+        sorted_df = sort_by_model_pearson_feature_rank(
+            unsorted_df.assign(type=unsorted_df["dataset_given_id"].map(type_mapping))
+        )
 
         # Build the JSON response
         response = {
@@ -231,8 +237,7 @@ class PredictabilityTileData(Resource):
                     "percentile": number_utils.format_3_sf(
                         get_percentile(query_value, p["background"])
                     ),
-                    # Convert series to list for JSON
-                    "background_values": p["background"].tolist(),
+                    "background_values": p["background"],
                 }
             )
 

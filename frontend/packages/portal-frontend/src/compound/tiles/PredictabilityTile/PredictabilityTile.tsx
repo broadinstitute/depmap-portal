@@ -11,15 +11,13 @@ import { PredictabilityPlotData, PredictabilityTileData } from "@depmap/types";
 interface PredictabilityTileProps {
   compoundId: string;
   datasetGivenIds: string[];
-  isGeneExecutive: boolean;
-  isMobile: boolean;
+  isGeneExecutive: boolean; // This prop is not yet use. Will eventually be used to support switching the Gene Page Predictability tile to React
 }
 
 export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
   compoundId,
   datasetGivenIds,
-  isGeneExecutive,
-  isMobile,
+  isGeneExecutive, // This prop is not yet use. Will eventually be used to support switching the Gene Page Predictability tile to React
 }) => {
   const { data, isLoading, error } = usePredictabilityTileData(
     compoundId,
@@ -41,8 +39,7 @@ export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
   return (
     <PredictabilityView
       predictability={data}
-      isGeneExecutive={isGeneExecutive}
-      isMobile={isMobile}
+      isGeneExecutive={isGeneExecutive} // This prop is not yet use (i.e. is always false as set in index.tsx). Will eventually be used to support switching the Gene Page Predictability tile to React
     />
   );
 };
@@ -50,8 +47,7 @@ export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
 const PredictabilityView: React.FC<{
   predictability: PredictabilityTileData;
   isGeneExecutive: boolean;
-  isMobile: boolean;
-}> = ({ predictability, isGeneExecutive, isMobile }) => {
+}> = ({ predictability, isGeneExecutive }) => {
   const handleTabClick = (e: React.MouseEvent) => {
     e.preventDefault();
     const url = new URL(window.location.href);
@@ -155,29 +151,27 @@ const PredictabilityView: React.FC<{
                   type={predictability.overall_top_model.type}
                 />
 
-                {!isMobile && (
-                  <div style={{ marginTop: "1rem" }}>
-                    <p className="view-details-text">
-                      <span>
-                        View model details in the{" "}
-                        <button
-                          onClick={handleTabClick}
-                          className={styles.pseudoLink}
-                          style={{
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            textDecoration: "underline",
-                            cursor: "pointer",
-                            color: "inherit",
-                          }}
-                        >
-                          Predictability tab
-                        </button>
-                      </span>
-                    </p>
-                  </div>
-                )}
+                <div style={{ marginTop: "1rem" }}>
+                  <p className="view-details-text">
+                    <span>
+                      View model details in the{" "}
+                      <button
+                        onClick={handleTabClick}
+                        className={styles.pseudoLink}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          textDecoration: "underline",
+                          cursor: "pointer",
+                          color: "inherit",
+                        }}
+                      >
+                        Predictability tab
+                      </button>
+                    </span>
+                  </p>
+                </div>
               </div>
             </>
           ) : (
