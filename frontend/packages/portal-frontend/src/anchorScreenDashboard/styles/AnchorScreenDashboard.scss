@@ -1,6 +1,19 @@
-.AnchorScreenDashboard {
+.header {
+  display: flex;
+
   h2 {
     margin-left: 30px;
+  }
+
+  .download {
+    display: flex;
+    align-items: center;
+    margin-top: 21px;
+    margin-left: 15px;
+
+    svg {
+      margin-right: 6px;
+    }
   }
 }
 
