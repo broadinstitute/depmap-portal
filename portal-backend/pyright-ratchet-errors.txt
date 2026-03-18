@@ -44,7 +44,6 @@ api.py: error: Cannot access attribute "delay" for class "FunctionType"
 api.py: error: No overloads for "rename" match the provided arguments
 api.py: error: No overloads for "sort_values" match the provided arguments
 api.py: error: Type "Series | DataFrame | Unknown" is not assignable to return type "DataFrame"
-assets.py: error: "Bundle" is not exported from module "webassets"
 autoapp.py: error: Argument of type "Serializer[str]" cannot be assigned to parameter "serializer" of type "Serializer[str | bytes]" in function "__init__"
 biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVariable)
 biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
@@ -255,7 +254,6 @@ factories.py: error: No parameter named "units" (reportCallIssue)
 factories.py: error: No parameter named "uuid" (reportCallIssue)
 factories.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 factories.py: error: Type "None" is not assignable to declared type "int"
-fetch_forum_resources.py: error: Expected 0 positional arguments (reportCallIssue)
 gcs_reporter.py: error: Expected 0 positional arguments (reportCallIssue)
 gene_loader.py: error: "name" is not a known attribute of "None" (reportOptionalMemberAccess)
 gene_loader.py: error: Cannot access attribute "any" for class "ExtensionArray"
@@ -498,7 +496,6 @@ proteomics_loader.py: error: No parameter named "uniprot_id" (reportCallIssue)
 read_config.py: error: Cannot access attribute "ENV" for class "str"
 reformat_cpg_meth.py: error: Argument of type "str" cannot be assigned to parameter "data" of type "ReadableBuffer" in function "compress"
 reformat_cpg_meth.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-resources.py: error: Expected 0 positional arguments (reportCallIssue)
 shared.py: error: Type "None" is not assignable to declared type "int"
 spawn_commands.py: error: "run_with_reloader" is unknown import symbol (reportAttributeAccessIssue)
 spawn_commands.py: error: Argument of type "Literal['auto']" cannot be assigned to parameter "interval" of type "int | float" in function "run_with_reloader"
