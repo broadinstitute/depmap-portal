@@ -3,10 +3,18 @@ import React, { useMemo, useRef, useEffect } from "react";
 import PlotlyLoader, { PlotlyType } from "src/plot/components/PlotlyLoader";
 import ExtendedPlotType from "src/plot/models/ExtendedPlotType";
 
+const hexToRgba = (hex: string, opacity: number) => {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
+
 interface DistributionPlotProps {
   values: number[];
   color: string;
   xaxisLabel: string;
+  fillOpacity?: number; // (0 to 1)
   includeRugPlot?: boolean;
   highlightValue?: number;
   onLoad?: (plot: ExtendedPlotType) => void;
@@ -30,6 +38,7 @@ function GenericDistributionPlot({
   values,
   color,
   xaxisLabel,
+  fillOpacity = 1, // Default to 1 (fully opaque)
   includeRugPlot = true,
   highlightValue = undefined,
   onLoad = () => {},
@@ -107,7 +116,7 @@ function GenericDistributionPlot({
         type: "scatter",
         mode: "lines",
         fill: "tozeroy",
-        fillcolor: color,
+        fillcolor: hexToRgba(color, fillOpacity),
         line: { color: "transparent" },
         yaxis: "y2",
         xaxis: "x2",
@@ -227,6 +236,7 @@ function GenericDistributionPlot({
     xaxisLabel,
     highlightValue,
     includeRugPlot,
+    fillOpacity,
   ]);
 
   return (

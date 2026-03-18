@@ -71,6 +71,7 @@ const PredictabilityView: React.FC<{
                         values={plot.background_values}
                         xaxisLabel=""
                         color={plot.color}
+                        fillOpacity={0.5}
                         highlightValue={plot.query_value}
                         includeRugPlot={false}
                       />
