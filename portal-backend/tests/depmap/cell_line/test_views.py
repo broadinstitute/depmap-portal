@@ -118,7 +118,7 @@ def test_download_gene_effects(app, empty_db_mock_downloads):
     cell_lines = [DepmapModelFactory() for _ in range(3)]
     genes = [GeneFactory() for _ in range(3)]
     matrix = MatrixFactory(
-        data=[[2, 3, 4], [0, 2, 1], [np.NaN, np.NaN, np.NaN]],
+        data=[[2, 3, 4], [0, 2, 1], [np.nan, np.nan, np.nan]],
         cell_lines=cell_lines,
         entities=genes,
         using_depmap_model_table=True,
@@ -164,7 +164,7 @@ def test_download_compound_sensitivities(app, empty_db_mock_downloads):
     compounds = [CompoundFactory() for _ in range(3)]
     compound_experiments = [CompoundExperimentFactory(compound=c) for c in compounds]
     matrix = MatrixFactory(
-        data=[[2, 3, 4], [0, 2, 1], [np.NaN, np.NaN, np.NaN]],
+        data=[[2, 3, 4], [0, 2, 1], [np.nan, np.nan, np.nan]],
         cell_lines=cell_lines,
         entities=compound_experiments,
         using_depmap_model_table=True,
@@ -248,7 +248,7 @@ def test_get_all_cell_line_gene_effects(empty_db_mock_downloads):
 
     genes = [GeneFactory() for _ in range(3)]
     matrix = MatrixFactory(
-        data=[[2, 3, 4], [0, 2, 1], [np.NaN, np.NaN, np.NaN]],
+        data=[[2, 3, 4], [0, 2, 1], [np.nan, np.nan, np.nan]],
         cell_lines=cell_lines,
         entities=genes,
         using_depmap_model_table=True,
@@ -287,7 +287,7 @@ def test_get_all_cell_line_compound_sensitivities(empty_db_mock_downloads):
     compounds = [CompoundFactory() for _ in range(3)]
     compound_experiments = [CompoundExperimentFactory(compound=c) for c in compounds]
     matrix = MatrixFactory(
-        data=[[2, 3, 4], [0, 2, 1], [np.NaN, np.NaN, np.NaN]],
+        data=[[2, 3, 4], [0, 2, 1], [np.nan, np.nan, np.nan]],
         cell_lines=cell_lines,
         entities=compound_experiments,
         using_depmap_model_table=True,
@@ -371,13 +371,13 @@ def test_get_lowest_z_scores_response(empty_db_mock_downloads):
             [4, 5, 6],
             [1, 2, 3],
             [4, 5, 6],
-            [1, 2, np.NaN],
-            [np.NaN, 5, 6],
+            [1, 2, np.nan],
+            [np.nan, 5, 6],
             [1, 2, 3],
             [4, 5, 6],
             [1, 2, 3],
             [4, 5, 6],
-            [np.NaN, np.NaN, np.NaN],
+            [np.nan, np.nan, np.nan],
         ],
         cell_lines=cell_lines,
         entities=genes,
@@ -393,7 +393,7 @@ def test_get_lowest_z_scores_response(empty_db_mock_downloads):
     actual_result = get_lowest_z_scores_response(
         dataset_name=dataset_name.name,
         model_id=cell_lines[col_index].model_id,
-        dataset_df=data_access.get_subsetted_df_by_labels(dataset_name.name)
+        dataset_df=data_access.get_subsetted_df_by_labels(dataset_name.name),
     )
     assert actual_result["model_id"] == cell_lines[col_index].model_id
     assert actual_result["cell_line_col_index"] == col_index

@@ -99,7 +99,7 @@ def test_integrate_cell_line_information(empty_db_mock_downloads):
         cell_line_na,
         cell_line_1,
     ]  # deliberately changing the order from the order that the cell lines were created in
-    data = np.array([[3, np.NaN, 1]])  # data matches cell line order
+    data = np.array([[3, np.nan, 1]])  # data matches cell line order
 
     dep_matrix = MatrixFactory(
         entities=[gene], cell_lines=cell_line_objs, data=data, units="test units"

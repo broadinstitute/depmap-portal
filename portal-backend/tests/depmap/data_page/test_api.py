@@ -151,7 +151,7 @@ def test_get_data_availability_not_all_data_types_present(
         data=[
             [2, 3, 4, 5, 6],
             [0, 2, 1, 3, 5],
-            [np.NaN, np.NaN, np.NaN, np.NaN, np.NaN],
+            [np.nan, np.nan, np.nan, np.nan, np.nan],
         ],
         cell_lines=lung_cell_lines,
         entities=compound_experiments,

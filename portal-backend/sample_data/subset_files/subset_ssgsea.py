@@ -3,7 +3,7 @@ from taigapy import create_taiga_client_v3
 import sys
 
 sys.path.append("../../pipeline/scripts")
-import hdf5_utils
+import hdf5_utils  # type: ignore[import-not-found]
 
 tc = create_taiga_client_v3()
 full = tc.get("internal-21q1-4fc4.36/CCLE_ssGSEA")

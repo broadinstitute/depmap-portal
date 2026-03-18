@@ -1,5 +1,5 @@
 import pandas as pd
-from numpy import NaN
+from numpy import nan as NaN
 
 from depmap.cell_line.models import CellLine
 from depmap.dataset.models import DependencyDataset

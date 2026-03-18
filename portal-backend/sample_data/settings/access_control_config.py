@@ -1,7 +1,11 @@
 # This file is used for dev and test
-# GroupAuthConfig is deliberately not imported
-# Instead, see depmap/access_control/utils/initialize_auth_config.py::_read_groups_from_external_file for how this file is read
+# GroupAuthConfig is injected into the namespace at runtime via exec() in
+# depmap/access_control/utils/initialize_auth_config.py::_read_groups_from_external_file
 # Production versions of these files are separate configuration files in different repositories
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from depmap.access_control.models import GroupAuthConfig
 
 # DO NOT RENUMBER THESE. Always add a new one and do not delete.
 __UNUSED_VARIABLE_ZERO_IS_RESERVED_FOR_THE_PUBLIC_ACCESS_GROUP = 0

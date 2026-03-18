@@ -174,9 +174,8 @@ def check_dataset_versions_up_to_date():
 
     This also checks that any datasets that expect to have a templated version have a version specified
     """
-    # check that any datasets with a templated display name have a version specified
+    dataset_versions = current_app.config.get("DATASET_VERSIONS", {})
     for dataset_enum, metadata in DATASET_METADATA.items():
-        # this loops through for tablular datasets, which retrieve display names dynamically
         if (
             isinstance(dataset_enum, TabularEnum)
             and "{version}" in metadata.display_name

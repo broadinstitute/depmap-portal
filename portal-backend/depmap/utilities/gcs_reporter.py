@@ -9,7 +9,7 @@ from depmap.settings import build
 
 def setup_logging():
     client = LoggingClient()
-    client.setup_logging(logging.WARN)
+    client.setup_logging(log_level=logging.WARN)
 
 
 class ExceptionReporter:

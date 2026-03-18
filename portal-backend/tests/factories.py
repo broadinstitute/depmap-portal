@@ -10,6 +10,7 @@ import numpy as np
 import uuid
 import json
 from collections import defaultdict
+from factory.declarations import LazyAttribute, SelfAttribute, Sequence, SubFactory
 from factory.alchemy import SQLAlchemyModelFactory
 from depmap.proteomics.models import Protein
 from depmap.settings.shared import DATASET_METADATA
@@ -77,7 +78,7 @@ class CellLineAliasFactory(SQLAlchemyModelFactory):
         model = CellLineAlias
         sqlalchemy_session = _db.session
 
-    alias = factory.Sequence(lambda number: "cell_line_alias_{}".format(number))
+    alias = Sequence(lambda number: "cell_line_alias_{}".format(number))
 
 
 class LineageFactory(SQLAlchemyModelFactory):
@@ -85,7 +86,7 @@ class LineageFactory(SQLAlchemyModelFactory):
         model = Lineage
         sqlalchemy_session = _db.session
 
-    name = factory.Sequence(lambda number: "lineage_{}".format(number))
+    name = Sequence(lambda number: "lineage_{}".format(number))
     level = 1
 
 
@@ -95,7 +96,7 @@ class PrimaryDiseaseFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    name = factory.Sequence(lambda number: "primary_disease_{}".format(number))
+    name = Sequence(lambda number: "primary_disease_{}".format(number))
 
 
 class DiseaseSubtypeFactory(SQLAlchemyModelFactory):
@@ -104,9 +105,9 @@ class DiseaseSubtypeFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    name = factory.Sequence(lambda number: "disease_subtype_{}".format(number))
+    name = Sequence(lambda number: "disease_subtype_{}".format(number))
 
-    primary_disease = factory.SubFactory(PrimaryDiseaseFactory)
+    primary_disease = SubFactory(PrimaryDiseaseFactory)
 
 
 class TumorTypeFactory(SQLAlchemyModelFactory):
@@ -115,7 +116,7 @@ class TumorTypeFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    name = factory.Sequence(lambda number: "tumor_type_{}".format(number))
+    name = Sequence(lambda number: "tumor_type_{}".format(number))
 
 
 class CultureMediumFactory(SQLAlchemyModelFactory):
@@ -124,7 +125,7 @@ class CultureMediumFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    name = factory.Sequence(lambda number: "culture_medium_{}".format(number))
+    name = Sequence(lambda number: "culture_medium_{}".format(number))
 
 
 class ConditionsFactory(SQLAlchemyModelFactory):
@@ -133,7 +134,7 @@ class ConditionsFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    name = factory.Sequence(lambda number: "conditions_{}".format(number))
+    name = Sequence(lambda number: "conditions_{}".format(number))
 
 
 class CellLineFactory(SQLAlchemyModelFactory):
@@ -142,25 +143,25 @@ class CellLineFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    cell_line_name = factory.Sequence(lambda number: "cell_line_{}".format(number))
-    cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
-    cell_line_display_name = factory.Sequence(lambda number: "{}".format(number))
+    cell_line_name = Sequence(lambda number: "cell_line_{}".format(number))
+    cell_line_alias = LazyAttribute(lambda o: [CellLineAliasFactory()])
+    cell_line_display_name = Sequence(lambda number: "{}".format(number))
 
-    depmap_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    wtsi_master_cell_id = factory.Sequence(lambda number: number)
-    cosmic_id = factory.Sequence(lambda number: number)
-    cell_line_passport_id = factory.Sequence(lambda number: "SIDM{}".format(number))
+    depmap_id = Sequence(lambda number: "ACH-{}".format(number))
+    wtsi_master_cell_id = Sequence(lambda number: number)
+    cosmic_id = Sequence(lambda number: number)
+    cell_line_passport_id = Sequence(lambda number: "SIDM{}".format(number))
 
-    lineage = factory.LazyAttribute(lambda o: [LineageFactory()])
-    comments = factory.Sequence(lambda number: number)
+    lineage = LazyAttribute(lambda o: [LineageFactory()])
+    comments = Sequence(lambda number: number)
 
-    disease_subtype = factory.SubFactory(DiseaseSubtypeFactory)
+    disease_subtype = SubFactory(DiseaseSubtypeFactory)
     # TODO: Handle the case where disease_subtype is None
-    primary_disease = factory.SubFactory(PrimaryDiseaseFactory)
-    tumor_type = factory.SubFactory(TumorTypeFactory)
+    primary_disease = SubFactory(PrimaryDiseaseFactory)
+    tumor_type = SubFactory(TumorTypeFactory)
 
-    culture_medium = factory.SubFactory(CultureMediumFactory)
-    conditions = factory.SubFactory(ConditionsFactory)
+    culture_medium = SubFactory(CultureMediumFactory)
+    conditions = SubFactory(ConditionsFactory)
 
 
 class DepmapModelFactory(SQLAlchemyModelFactory):
@@ -169,34 +170,30 @@ class DepmapModelFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     stripped_cell_line_name = stripped_cell_line_name = typing.cast(
-        str, factory.Sequence(lambda number: "{}".format(number))
+        str, Sequence(lambda number: "{}".format(number))
     )
-    patient_id = typing.cast(
-        str, factory.Sequence(lambda number: "ACH-{}".format(number))
-    )
+    patient_id = typing.cast(str, Sequence(lambda number: "ACH-{}".format(number)))
     depmap_model_type = typing.cast(
-        str, factory.Sequence(lambda number: "depmap_model_type_{}".format(number))
+        str, Sequence(lambda number: "depmap_model_type_{}".format(number))
     )
-    cell_line_alias = factory.LazyAttribute(lambda o: [CellLineAliasFactory()])
-    age_category = factory.Sequence(lambda number: "age_category_{}".format(number))
+    cell_line_alias = LazyAttribute(lambda o: [CellLineAliasFactory()])
+    age_category = Sequence(lambda number: "age_category_{}".format(number))
 
-    model_id = typing.cast(
-        str, factory.Sequence(lambda number: "ACH-{}".format(number))
-    )
+    model_id = typing.cast(str, Sequence(lambda number: "ACH-{}".format(number)))
     cell_line_name = typing.cast(
-        str, factory.Sequence(lambda number: "cell_line_{}".format(number))
+        str, Sequence(lambda number: "cell_line_{}".format(number))
     )
 
     cell_line = typing.cast(
         CellLine,
-        factory.SubFactory(
+        SubFactory(
             CellLineFactory,
-            depmap_id=factory.SelfAttribute("..model_id"),
-            cell_line_display_name=factory.SelfAttribute("..stripped_cell_line_name"),
+            depmap_id=SelfAttribute("..model_id"),
+            cell_line_display_name=SelfAttribute("..stripped_cell_line_name"),
         ),
     )
 
-    patient_id = typing.cast(str, factory.Sequence(lambda number: f"PT-{number}"))
+    patient_id = typing.cast(str, Sequence(lambda number: f"PT-{number}"))
 
 
 class EntityFactory(SQLAlchemyModelFactory):
@@ -207,9 +204,7 @@ class EntityFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    label = typing.cast(
-        str, factory.Sequence(lambda number: "entity_{}".format(number))
-    )
+    label = typing.cast(str, Sequence(lambda number: "entity_{}".format(number)))
     type = "gene"
 
 
@@ -221,7 +216,7 @@ class EntityAliasFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    alias = factory.Sequence(lambda number: "alias_{}".format(number))
+    alias = Sequence(lambda number: "alias_{}".format(number))
 
 
 class CompoundFactory(SQLAlchemyModelFactory):
@@ -234,12 +229,10 @@ class CompoundFactory(SQLAlchemyModelFactory):
 
     type = "compound"
     compound_id = typing.cast(
-        str, factory.Sequence(lambda n: f"DPC-{n:06d}")
+        str, Sequence(lambda n: f"DPC-{n:06d}")
     )  # Generates IDs like DPC-000001, DPC-000002, etc.
-    label = typing.cast(
-        str, factory.Sequence(lambda number: "compound_{}".format(number))
-    )
-    entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
+    label = typing.cast(str, Sequence(lambda number: "compound_{}".format(number)))
+    entity_alias = LazyAttribute(lambda o: [EntityAliasFactory()])
     units = "μM"
 
 
@@ -252,15 +245,13 @@ class CompoundExperimentFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     xref_type = "CTRP"
-    xref = factory.Sequence(lambda number: "{}".format(number))
+    xref = Sequence(lambda number: "{}".format(number))
 
     type = "compound_experiment"
-    compound_id = factory.Sequence(lambda number: number)
-    compound = factory.SubFactory(
-        CompoundFactory, compound_id=factory.SelfAttribute("..compound_id")
-    )
-    label = typing.cast(str, factory.Sequence(lambda number: "CTRP:{}".format(number)))
-    entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
+    compound_id = Sequence(lambda number: number)
+    compound = SubFactory(CompoundFactory, compound_id=SelfAttribute("..compound_id"))
+    label = typing.cast(str, Sequence(lambda number: "CTRP:{}".format(number)))
+    entity_alias = LazyAttribute(lambda o: [EntityAliasFactory()])
 
 
 class CompoundDoseReplicateFactory(SQLAlchemyModelFactory):
@@ -272,11 +263,11 @@ class CompoundDoseReplicateFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "compound_dose_replicate"
-    label = factory.Sequence(lambda number: "CTRP:{} dose rep".format(number))
+    label = Sequence(lambda number: "CTRP:{} dose rep".format(number))
 
-    compound_experiment_id = factory.Sequence(lambda number: number)
-    dose = factory.Sequence(lambda number: number)
-    replicate = factory.Sequence(lambda number: number)
+    compound_experiment_id = Sequence(lambda number: number)
+    dose = Sequence(lambda number: number)
+    replicate = Sequence(lambda number: number)
     is_masked = None
 
 
@@ -288,14 +279,14 @@ class DoseResponseCurveFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    cell_line = factory.SubFactory(CellLineFactory)
-    compound_exp = factory.SubFactory(CompoundExperimentFactory)
+    cell_line = SubFactory(CellLineFactory)
+    compound_exp = SubFactory(CompoundExperimentFactory)
     ec50 = 0
     slope = 0
     upper_asymptote = 0
     lower_asymptote = 0
     drc_dataset_label = typing.cast(
-        str, factory.Sequence(lambda number: "drc_dataset_label{}".format(number))
+        str, Sequence(lambda number: "drc_dataset_label{}".format(number))
     )
 
 
@@ -308,13 +299,13 @@ class GeneFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "gene"
-    label = typing.cast(str, factory.Sequence(lambda number: "gene_{}".format(number)))
-    entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
-    name = factory.Sequence(lambda number: "Gene {}".format(number))
-    description = factory.Sequence(lambda number: "description_{}".format(number))
-    entrez_id = factory.Sequence(lambda number: number)
-    ensembl_id = factory.Sequence(lambda number: "ENSG_{}".format(number))
-    hgnc_id = factory.Sequence(lambda number: "HGNC:_{}".format(number))
+    label = typing.cast(str, Sequence(lambda number: "gene_{}".format(number)))
+    entity_alias = LazyAttribute(lambda o: [EntityAliasFactory()])
+    name = Sequence(lambda number: "Gene {}".format(number))
+    description = Sequence(lambda number: "description_{}".format(number))
+    entrez_id = Sequence(lambda number: number)
+    ensembl_id = Sequence(lambda number: "ENSG_{}".format(number))
+    hgnc_id = Sequence(lambda number: "HGNC:_{}".format(number))
     locus_type = "pseudogene"
 
 
@@ -326,7 +317,7 @@ class GeneExecutiveInfoFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    gene = factory.LazyAttribute(lambda o: [GeneFactory()])
+    gene = LazyAttribute(lambda o: [GeneFactory()])
     dataset = DependencyDataset.DependencyEnum.Chronos_Combined
     num_dependent_cell_lines = 0
     num_lines_with_data = 1
@@ -343,11 +334,9 @@ class ProteinFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "protein"
-    gene = factory.SubFactory(GeneFactory)
-    uniprot_id = factory.Sequence(lambda number: "P{}".format(number))
-    label = factory.LazyAttribute(
-        lambda obj: "{} ({})".format(obj.gene.label, obj.uniprot_id)
-    )
+    gene = SubFactory(GeneFactory)
+    uniprot_id = Sequence(lambda number: "P{}".format(number))
+    label = LazyAttribute(lambda obj: "{} ({})".format(obj.gene.label, obj.uniprot_id))
 
 
 class AntibodyFactory(SQLAlchemyModelFactory):
@@ -359,11 +348,11 @@ class AntibodyFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "antibody"
-    label = factory.Sequence(lambda number: "antibody_{}".format(number))
-    entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
+    label = Sequence(lambda number: "antibody_{}".format(number))
+    entity_alias = LazyAttribute(lambda o: [EntityAliasFactory()])
 
-    gene = factory.LazyAttribute(lambda o: [GeneFactory()])
-    protein = factory.Sequence(lambda number: "protein_{}".format(number))
+    gene = LazyAttribute(lambda o: [GeneFactory()])
+    protein = Sequence(lambda number: "protein_{}".format(number))
     phosphorylation = None
     is_caution = False
     is_validation_unavailable = False
@@ -378,12 +367,10 @@ class TranscriptionStartSiteFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "transcription_start_site"
-    label = factory.Sequence(
-        lambda number: "transcription_start_site_{}".format(number)
-    )
-    entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
+    label = Sequence(lambda number: "transcription_start_site_{}".format(number))
+    entity_alias = LazyAttribute(lambda o: [EntityAliasFactory()])
 
-    gene = factory.SubFactory(GeneFactory)
+    gene = SubFactory(GeneFactory)
     chromosome = "chr1"
     five_prime_position = 10000000
     three_prime_position = 10001000
@@ -399,8 +386,8 @@ class GenericEntityFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     type = "generic_entity"
-    label = factory.Sequence(lambda number: "generic_entity_{}".format(number))
-    entity_alias = factory.LazyAttribute(lambda o: [EntityAliasFactory()])
+    label = Sequence(lambda number: "generic_entity_{}".format(number))
+    entity_alias = LazyAttribute(lambda o: [EntityAliasFactory()])
 
 
 class RowMatrixIndexFactory(SQLAlchemyModelFactory):
@@ -413,7 +400,7 @@ class RowMatrixIndexFactory(SQLAlchemyModelFactory):
 
     index = 0
     # 90% of the tests want gene, we can override this default
-    entity = factory.SubFactory(GeneFactory)
+    entity = SubFactory(GeneFactory)
     owner_id = PUBLIC_ACCESS_GROUP
 
 
@@ -426,7 +413,7 @@ class ColMatrixIndexFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     index = 0
-    cell_line = factory.SubFactory(CellLineFactory)
+    cell_line = SubFactory(CellLineFactory)
     owner_id = PUBLIC_ACCESS_GROUP
 
 
@@ -643,12 +630,10 @@ class DependencyDatasetFactory(DatasetFactory):
 
     # cannot use Sequence because factory boy reuses the sequence across tests, also sequence suggests infiniteness when we have max number of DependencyEnums and the column must be unique
     name = DependencyDataset.DependencyEnum.Avana
-    display_name = factory.LazyAttribute(
-        lambda o: "{} display name".format(o.name.name)
-    )
+    display_name = LazyAttribute(lambda o: "{} display name".format(o.name.name))
     taiga_id = "test-taiga-id.1"
-    matrix = factory.LazyAttribute(lambda x: MatrixFactory())
-    entity_type = factory.LazyAttribute(
+    matrix = LazyAttribute(lambda x: MatrixFactory())
+    entity_type = LazyAttribute(
         lambda o: defaultdict(
             lambda: "gene",
             {
@@ -665,8 +650,8 @@ class DependencyDatasetFactory(DatasetFactory):
         )[o.name]
     )
     owner_id = PUBLIC_ACCESS_GROUP
-    units = factory.LazyAttribute(lambda o: DATASET_METADATA[o.name].units)
-    data_type = factory.LazyAttribute(lambda o: DATASET_METADATA[o.name].data_type)
+    units = LazyAttribute(lambda o: DATASET_METADATA[o.name].units)
+    data_type = LazyAttribute(lambda o: DATASET_METADATA[o.name].data_type)
 
 
 class BiomarkerDatasetFactory(DatasetFactory):
@@ -680,12 +665,10 @@ class BiomarkerDatasetFactory(DatasetFactory):
     # cannot use Sequence because factory boy reuses the sequence across tests, also sequence suggests infiniteness when we have max number of BiomarkerEnums and the column must be unique
     name = BiomarkerDataset.BiomarkerEnum.expression
 
-    display_name = factory.LazyAttribute(
-        lambda o: "{} display name".format(o.name.name)
-    )
+    display_name = LazyAttribute(lambda o: "{} display name".format(o.name.name))
     taiga_id = "test-taiga-id.1"
-    matrix = factory.LazyAttribute(lambda x: MatrixFactory())
-    entity_type = factory.LazyAttribute(
+    matrix = LazyAttribute(lambda x: MatrixFactory())
+    entity_type = LazyAttribute(
         lambda o: defaultdict(
             lambda: "gene",
             {
@@ -697,8 +680,8 @@ class BiomarkerDatasetFactory(DatasetFactory):
         )[o.name]
     )
     owner_id = PUBLIC_ACCESS_GROUP
-    units = factory.LazyAttribute(lambda o: DATASET_METADATA[o.name].units)
-    data_type = factory.LazyAttribute(lambda o: DATASET_METADATA[o.name].data_type)
+    units = LazyAttribute(lambda o: DATASET_METADATA[o.name].units)
+    data_type = LazyAttribute(lambda o: DATASET_METADATA[o.name].data_type)
 
 
 class TabularDatasetFactory(SQLAlchemyModelFactory):
@@ -722,8 +705,8 @@ class MutationFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    gene = factory.SubFactory(GeneFactory)
-    cell_line = factory.SubFactory(CellLineFactory)
+    gene = SubFactory(GeneFactory)
+    cell_line = SubFactory(CellLineFactory)
 
     chrom = "test_chrom"
     pos = 0
@@ -743,9 +726,9 @@ class FusionFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    gene_1 = factory.SubFactory(GeneFactory)
-    gene_2 = factory.SubFactory(GeneFactory)
-    cell_line = factory.SubFactory(CellLineFactory)
+    gene_1 = SubFactory(GeneFactory)
+    gene_2 = SubFactory(GeneFactory)
+    cell_line = SubFactory(CellLineFactory)
 
     fusion_name = "test_fusion_name"
     total_reads_supporting_fusion = 100
@@ -764,9 +747,9 @@ class TranslocationFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    gene_1 = factory.SubFactory(GeneFactory)
-    gene_2 = factory.SubFactory(GeneFactory)
-    cell_line = factory.SubFactory(CellLineFactory)
+    gene_1 = SubFactory(GeneFactory)
+    gene_2 = SubFactory(GeneFactory)
+    cell_line = SubFactory(CellLineFactory)
 
     map_id = "test_map_id"
     break_point_1 = "test_break_point_1"
@@ -807,23 +790,21 @@ class SubtypeNodeFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+    subtype_code = Sequence(lambda number: "subtype_code_{}".format(number))
 
-    oncotree_code = factory.Sequence(lambda number: "oncotree_code_{}".format(number))
+    oncotree_code = Sequence(lambda number: "oncotree_code_{}".format(number))
 
-    depmap_model_type = factory.Sequence(
-        lambda number: "depmap_model_type_{}".format(number)
-    )
+    depmap_model_type = Sequence(lambda number: "depmap_model_type_{}".format(number))
     molecular_subtype_code = None
 
     tree_type = "Lineage"
 
-    node_name = factory.Sequence(lambda number: "node_name_{}".format(number))
-    node_level = factory.Sequence(lambda number: number)
+    node_name = Sequence(lambda number: "node_name_{}".format(number))
+    node_level = Sequence(lambda number: number)
     if node_level == 0:
         level_0 = subtype_code
     else:
-        level_0 = factory.Sequence(lambda number: "level_0_{}".format(number))
+        level_0 = Sequence(lambda number: "level_0_{}".format(number))
 
 
 class SubtypeContextFactory(SQLAlchemyModelFactory):
@@ -832,7 +813,7 @@ class SubtypeContextFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
+    subtype_code = Sequence(lambda number: "subtype_code_{}".format(number))
 
 
 def SubtypeContextEntityFactory(subtype_context=None):
@@ -852,26 +833,26 @@ class ContextAnalysisFactory(SQLAlchemyModelFactory):
 
         sqlalchemy_session = _db.session
 
-    subtype_code = factory.Sequence(lambda number: "subtype_code_{}".format(number))
-    subtype_context = factory.SubFactory(
-        SubtypeContextFactory, subtype_code=factory.SelfAttribute("..subtype_code")
+    subtype_code = Sequence(lambda number: "subtype_code_{}".format(number))
+    subtype_context = SubFactory(
+        SubtypeContextFactory, subtype_code=SelfAttribute("..subtype_code")
     )
 
-    dataset_given_id = factory.Sequence(lambda number: f"dataset_{number}")
-    feature_id = factory.Sequence(lambda number: f"feature_{number}")
+    dataset_given_id = Sequence(lambda number: f"dataset_{number}")
+    feature_id = Sequence(lambda number: f"feature_{number}")
 
-    out_group = factory.Sequence(lambda number: "out_group_{}".format(number))
-    t_pval = factory.Sequence(lambda number: number)
-    mean_in = factory.Sequence(lambda number: number)
-    mean_out = factory.Sequence(lambda number: number)
-    effect_size = factory.Sequence(lambda number: number)
-    t_qval = factory.Sequence(lambda number: number)
-    t_qval_log = factory.Sequence(lambda number: number)
-    n_dep_in = factory.Sequence(lambda number: number)
-    n_dep_out = factory.Sequence(lambda number: number)
-    frac_dep_in = factory.Sequence(lambda number: number)
-    frac_dep_out = factory.Sequence(lambda number: number)
-    selectivity_val = factory.Sequence(lambda number: number)
+    out_group = Sequence(lambda number: "out_group_{}".format(number))
+    t_pval = Sequence(lambda number: number)
+    mean_in = Sequence(lambda number: number)
+    mean_out = Sequence(lambda number: number)
+    effect_size = Sequence(lambda number: number)
+    t_qval = Sequence(lambda number: number)
+    t_qval_log = Sequence(lambda number: number)
+    n_dep_in = Sequence(lambda number: number)
+    n_dep_out = Sequence(lambda number: number)
+    frac_dep_in = Sequence(lambda number: number)
+    frac_dep_out = Sequence(lambda number: number)
+    selectivity_val = Sequence(lambda number: number)
 
 
 class CustomDatasetConfigFactory(SQLAlchemyModelFactory):
@@ -885,7 +866,7 @@ class CustomDatasetConfigFactory(SQLAlchemyModelFactory):
     # uuids should be unique
     # however, in testing, we may run into issues from generating one custom and one private dataset, and not realizing that they had the same uuid
     # adding 100 is just too hopefully avoid clashes with private dataset metadata uuids
-    uuid = factory.Sequence(lambda number: str(uuid.UUID(int=number + 100)))
+    uuid = Sequence(lambda number: str(uuid.UUID(int=number + 100)))
     config = json.dumps(
         {
             "label": "test custom label",
@@ -909,9 +890,9 @@ class RowNonstandardMatrixFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    index = factory.Sequence(lambda number: number)
+    index = Sequence(lambda number: number)
     # 90% of the tests want gene, we can override this default
-    entity = factory.SubFactory(GeneFactory)
+    entity = SubFactory(GeneFactory)
     owner_id = PUBLIC_ACCESS_GROUP
     row_name = None
 
@@ -924,8 +905,8 @@ class ColNonstandardMatrixFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    index = factory.Sequence(lambda number: number)
-    cell_line = factory.SubFactory(CellLineFactory)
+    index = Sequence(lambda number: number)
+    cell_line = SubFactory(CellLineFactory)
     owner_id = PUBLIC_ACCESS_GROUP
 
 
@@ -965,7 +946,7 @@ def NonstandardMatrixFactory(
     )
     matrix = NonstandardMatrix(
         file_path=file_path,
-        nonstandard_dataset_id=nonstandard_dataset_id,  # can't get factory.Sequence working here, so forcing the test writer to specify
+        nonstandard_dataset_id=nonstandard_dataset_id,  # can't get Sequence working here, so forcing the test writer to specify
         _row_index=row_index_objects,
         _col_index=col_index_objects,
         owner_id=owner_id,
@@ -984,9 +965,7 @@ class NonstandardMatrixLoaderMetadataFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    nonstandard_dataset_id = factory.Sequence(
-        lambda number: "dataset-id.{}".format(number)
-    )
+    nonstandard_dataset_id = Sequence(lambda number: "dataset-id.{}".format(number))
     transpose = False
 
 
@@ -998,10 +977,10 @@ class PredictiveModelFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    dataset = factory.SubFactory(DependencyDatasetFactory)
-    entity = factory.SubFactory(GeneFactory)
-    label = factory.Sequence(lambda number: "label_{}".format(number))
-    pearson = factory.Sequence(lambda number: number)
+    dataset = SubFactory(DependencyDatasetFactory)
+    entity = SubFactory(GeneFactory)
+    label = Sequence(lambda number: "label_{}".format(number))
+    pearson = Sequence(lambda number: number)
 
 
 class PredictiveFeatureFactory(SQLAlchemyModelFactory):
@@ -1012,8 +991,8 @@ class PredictiveFeatureFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    feature_id = factory.Sequence(lambda n: n)
-    feature_name = factory.Sequence(lambda n: n)
+    feature_id = Sequence(lambda n: n)
+    feature_name = Sequence(lambda n: n)
 
 
 class PredictiveFeatureResultFactory(SQLAlchemyModelFactory):
@@ -1025,17 +1004,17 @@ class PredictiveFeatureResultFactory(SQLAlchemyModelFactory):
         sqlalchemy_session = _db.session
 
     class Params:
-        feature_id = factory.Sequence(lambda number: "feature_label_{}".format(number))
-        feature_name = factory.Sequence(lambda number: f"feature_name_{number}")
+        feature_id = Sequence(lambda number: "feature_label_{}".format(number))
+        feature_name = Sequence(lambda number: f"feature_name_{number}")
 
-    predictive_model = factory.SubFactory(PredictiveModelFactory)
-    rank = factory.Sequence(lambda number: number)
-    importance = factory.Sequence(lambda number: number)
+    predictive_model = SubFactory(PredictiveModelFactory)
+    rank = Sequence(lambda number: number)
+    importance = Sequence(lambda number: number)
 
-    feature = factory.SubFactory(
+    feature = SubFactory(
         PredictiveFeatureFactory,
-        feature_id=factory.SelfAttribute("..feature_id"),
-        feature_name=factory.SelfAttribute("..feature_name"),
+        feature_id=SelfAttribute("..feature_id"),
+        feature_name=SelfAttribute("..feature_name"),
     )
 
 
@@ -1047,7 +1026,7 @@ class PredictiveBackgroundFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    dataset = factory.SubFactory(DependencyDatasetFactory)
+    dataset = SubFactory(DependencyDatasetFactory)
     background = json.dumps([1, 2, 3, 4])
 
 
@@ -1056,27 +1035,27 @@ class STRProfileFactory(SQLAlchemyModelFactory):
         model = STRProfile
         sqlalchemy_session = _db.session
 
-    depmap_id = factory.Sequence(lambda number: "ACH-{}".format(number))
-    cell_line = factory.SubFactory(CellLineFactory)
-    name = factory.Sequence(lambda number: "name_{}".format(number))
-    notation = factory.Sequence(lambda number: "notation_{}".format(number))
-    d3s1358 = factory.Sequence(lambda number: "d3s1358_{}".format(number))
-    th01 = factory.Sequence(lambda number: "th01_{}".format(number))
-    d21s11 = factory.Sequence(lambda number: "d21s11_{}".format(number))
-    d18s51 = factory.Sequence(lambda number: "d18s51_{}".format(number))
-    penta_e = factory.Sequence(lambda number: "penta_e_{}".format(number))
-    d5s818 = factory.Sequence(lambda number: "d5s818_{}".format(number))
-    d13s317 = factory.Sequence(lambda number: "d13s317_{}".format(number))
-    d7s820 = factory.Sequence(lambda number: "d7s820_{}".format(number))
-    d16s539 = factory.Sequence(lambda number: "d16s539_{}".format(number))
-    csf1po = factory.Sequence(lambda number: "csf1po_{}".format(number))
-    penta_d = factory.Sequence(lambda number: "penta_d_{}".format(number))
-    vwa = factory.Sequence(lambda number: "vwa_{}".format(number))
-    d8s1179 = factory.Sequence(lambda number: "d8s1179_{}".format(number))
-    tpox = factory.Sequence(lambda number: "tpox_{}".format(number))
-    fga = factory.Sequence(lambda number: "fga_{}".format(number))
-    amel = factory.Sequence(lambda number: "amel_{}".format(number))
-    mouse = factory.Sequence(lambda number: "mouse_{}".format(number))
+    depmap_id = Sequence(lambda number: "ACH-{}".format(number))
+    cell_line = SubFactory(CellLineFactory)
+    name = Sequence(lambda number: "name_{}".format(number))
+    notation = Sequence(lambda number: "notation_{}".format(number))
+    d3s1358 = Sequence(lambda number: "d3s1358_{}".format(number))
+    th01 = Sequence(lambda number: "th01_{}".format(number))
+    d21s11 = Sequence(lambda number: "d21s11_{}".format(number))
+    d18s51 = Sequence(lambda number: "d18s51_{}".format(number))
+    penta_e = Sequence(lambda number: "penta_e_{}".format(number))
+    d5s818 = Sequence(lambda number: "d5s818_{}".format(number))
+    d13s317 = Sequence(lambda number: "d13s317_{}".format(number))
+    d7s820 = Sequence(lambda number: "d7s820_{}".format(number))
+    d16s539 = Sequence(lambda number: "d16s539_{}".format(number))
+    csf1po = Sequence(lambda number: "csf1po_{}".format(number))
+    penta_d = Sequence(lambda number: "penta_d_{}".format(number))
+    vwa = Sequence(lambda number: "vwa_{}".format(number))
+    d8s1179 = Sequence(lambda number: "d8s1179_{}".format(number))
+    tpox = Sequence(lambda number: "tpox_{}".format(number))
+    fga = Sequence(lambda number: "fga_{}".format(number))
+    amel = Sequence(lambda number: "amel_{}".format(number))
+    mouse = Sequence(lambda number: "mouse_{}".format(number))
 
 
 class TaigaAliasFactory(SQLAlchemyModelFactory):
@@ -1087,7 +1066,7 @@ class TaigaAliasFactory(SQLAlchemyModelFactory):
         # Warning: DO NOT USE common.Session()!
         sqlalchemy_session = _db.session
 
-    taiga_id = factory.Sequence(lambda number: "taiga-id.{}/file".format(number))
-    canonical_taiga_id = factory.Sequence(
+    taiga_id = Sequence(lambda number: "taiga-id.{}/file".format(number))
+    canonical_taiga_id = Sequence(
         lambda number: "canonical-taiga-id.{}/file".format(number)
     )

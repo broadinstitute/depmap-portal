@@ -39,17 +39,9 @@ def _run_worker(extra_args=[]):
 @with_appcontext
 def run_dev_worker():
     """Starts a celery worker with some settings to make it easier to debug with. (concurrency of 1 and solo pool so there's less confusion from multiple workers and disable capturing stdout)"""
-    try:
-        from werkzeug.serving import run_with_reloader
-    except ImportError:
-        from werkzeug._reloader import run_with_reloader
+    from werkzeug.serving import run_with_reloader
 
-    extra_files = []
-    reloader_interval = 1
-    reloader_type = "auto"
-
-    # main func executes in a different thread, so current_app won't work there. To work around this, pass the caller's app to the method and create a new context there.
-    flask_app = current_app._get_current_object()
+    flask_app = current_app._get_current_object()  # type: ignore[attr-defined]
 
     def main_func():
         from depmap.compute.celery import app as celery_app
@@ -58,4 +50,4 @@ def run_dev_worker():
             celery_app.conf.worker_redirect_stdouts = False
             _run_worker(["--pool=solo", "-c", "1"])
 
-    run_with_reloader(main_func, extra_files, reloader_interval, reloader_type)
+    run_with_reloader(main_func, extra_files=[], interval=1, reloader_type="auto")

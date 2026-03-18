@@ -1,4 +1,3 @@
-access_control_config.py: error: "GroupAuthConfig" is not defined (reportUndefinedVariable)
 api.py: error: "context_explorer_prerelease_datasets" is not a known attribute of "None" (reportOptionalMemberAccess)
 api.py: error: "dataset_id" is possibly unbound (reportPossiblyUnboundVariable)
 api.py: error: "taiga_id" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -45,7 +44,6 @@ api.py: error: No overloads for "rename" match the provided arguments
 api.py: error: No overloads for "sort_values" match the provided arguments
 api.py: error: Type "Series | DataFrame | Unknown" is not assignable to return type "DataFrame"
 autoapp.py: error: Argument of type "Serializer[str]" cannot be assigned to parameter "serializer" of type "Serializer[str | bytes]" in function "__init__"
-biomarker_loader.py: error: "dataset_versions" is not defined (reportUndefinedVariable)
 biomarker_loader.py: error: "record" is possibly unbound (reportPossiblyUnboundVariable)
 biomarker_loader.py: error: "taiga_id" is not a known attribute of "None" (reportOptionalMemberAccess)
 biomarker_loader.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
@@ -117,8 +115,6 @@ celligner_loader.py: error: No parameter named "model_condition_id" (reportCallI
 celligner_loader.py: error: No parameter named "tumor_sample_id" (reportCallIssue)
 characterization.py: error: "display_name" is not a known attribute of "None" (reportOptionalMemberAccess)
 characterization.py: error: "table_class" is not a known attribute of "None" (reportOptionalMemberAccess)
-compat.py: error: "basestring" is not defined (reportUndefinedVariable)
-compat.py: error: "unicode" is not defined (reportUndefinedVariable)
 compound_dashboard_loader.py: error: Argument of type "str | None" cannot be assigned to parameter "p" of type "AnyOrLiteralStr@dirname" in function "dirname"
 compound_dashboard_loader.py: error: No overloads for "dirname" match the provided arguments (reportCallIssue)
 compound_dose_replicate_loader.py: error: Cannot access attribute "__table__" for class "type[DoseResponseCurve]"
@@ -225,12 +221,8 @@ extensions.py: error: Argument of type "bool" cannot be assigned to parameter "k
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "make_cache_key" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "response_filter" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "unless" of type "((...) -> Unknown) | None" in function "cached"
-factories.py: error: "LazyAttribute" is not exported from module "factory" (reportPrivateImportUsage)
 factories.py: error: "Meta" overrides symbol of same name in class "DatasetFactory"
 factories.py: error: "Meta" overrides symbol of same name in class "SQLAlchemyModelFactory"
-factories.py: error: "SelfAttribute" is not exported from module "factory" (reportPrivateImportUsage)
-factories.py: error: "Sequence" is not exported from module "factory" (reportPrivateImportUsage)
-factories.py: error: "SubFactory" is not exported from module "factory" (reportPrivateImportUsage)
 factories.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 factories.py: error: Argument of type "Query[Any]" cannot be assigned to parameter "query" of type "MutationTableSpec" in function "format_mutations_table"
 factories.py: error: Argument of type "flask_sqlalchemy.query.Query | sqlalchemy.orm.query.Query[Any]" cannot be assigned to parameter "query" of type "MutationTableSpec" in function "format_mutations_table"
@@ -254,7 +246,6 @@ factories.py: error: No parameter named "units" (reportCallIssue)
 factories.py: error: No parameter named "uuid" (reportCallIssue)
 factories.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 factories.py: error: Type "None" is not assignable to declared type "int"
-gcs_reporter.py: error: Expected 0 positional arguments (reportCallIssue)
 gene_loader.py: error: "name" is not a known attribute of "None" (reportOptionalMemberAccess)
 gene_loader.py: error: Cannot access attribute "any" for class "ExtensionArray"
 gene_loader.py: error: No parameter named "alias" (reportCallIssue)
@@ -498,9 +489,6 @@ reformat_cpg_meth.py: error: Argument of type "str" cannot be assigned to parame
 reformat_cpg_meth.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 shared.py: error: Type "None" is not assignable to declared type "int"
 spawn_commands.py: error: "run_with_reloader" is unknown import symbol (reportAttributeAccessIssue)
-spawn_commands.py: error: Argument of type "Literal['auto']" cannot be assigned to parameter "interval" of type "int | float" in function "run_with_reloader"
-spawn_commands.py: error: Argument of type "Literal[1]" cannot be assigned to parameter "exclude_patterns" of type "Iterable[str] | None" in function "run_with_reloader"
-spawn_commands.py: error: Cannot access attribute "_get_current_object" for class "Flask"
 spawn_commands.py: error: Expected 0 positional arguments (reportCallIssue)
 standard_utils.py: error: "get_cell_line_values_and_depmap_ids" is not a known attribute of "None" (reportOptionalMemberAccess)
 standard_utils.py: error: "get_subsetted_df" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -537,11 +525,9 @@ subset_context_explorer.py: error: Cannot access attribute "str" for class "ndar
 subset_context_explorer.py: error: No overloads for "rename" match the provided arguments
 subset_fusions.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
 subset_hgnc_csv.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
-subset_mutations_table.py: error: "TaigaClient" is not defined (reportUndefinedVariable)
 subset_predictive_models_and_features.py: error: Argument of type "Series | Any | ndarray[_AnyShape, dtype[Any]] | Unknown" cannot be assigned to parameter "feature_id" of type "str" in function "get_closest"
 subset_predictive_models_and_features.py: error: Cannot access attribute "values" for class "ndarray[_AnyShape, dtype[Any]]"
 subset_predictive_models_and_features.py: error: Type "Series | Unknown | DataFrame" is not assignable to declared type "DataFrame"
-subset_ssgsea.py: error: Import "hdf5_utils" could not be resolved (reportMissingImports)
 subset_translocations.py: error: Argument of type "Literal['4']" cannot be assigned to parameter "version" of type "DatasetVersion | None" in function "get"
 subset_translocations.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
 taiga_id_loader.py: error: No parameter named "canonical_taiga_id" (reportCallIssue)
@@ -562,8 +548,6 @@ tda_loader.py: error: No overloads for "join" match the provided arguments (repo
 tda_loader.py: error: No parameter named "dot_graph" (reportCallIssue)
 tda_loader.py: error: No parameter named "gene" (reportCallIssue)
 tda_loader.py: error: No parameter named "predictive_model" (reportCallIssue)
-test_api.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
-test_app.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
 test_app.py: error: Argument of type "list[int]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_box_plot_utils.py: error: Invalid conditional operand of type "ColumnElement[bool] | Literal[False]"
 test_cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
@@ -587,7 +571,6 @@ test_dataset_loader.py: error: Argument of type "Literal[DependencyEnum.Avana]" 
 test_dataset_loader.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 test_dataset_loader_add_dataset.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_db.py: error: No parameter named "value" (reportCallIssue)
-test_executive.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
 test_executive.py: error: "keys" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_executive.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_factories.py: error: "cell_line_1" is unbound (reportUnboundVariable)
@@ -634,7 +617,6 @@ test_global_search_loader.py: error: No parameter named "primary_disease" (repor
 test_global_search_loader.py: error: No parameter named "tumor_type" (reportCallIssue)
 test_hashing_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
 test_hashing_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
-test_hdf5_utils.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
 test_hdf5_utils.py: error: Argument of type "list[int]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
 test_hdf5_utils.py: error: Argument of type "list[int]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_hdf5_utils.py: error: Cannot access attribute "tolist" for class "float"
@@ -648,8 +630,6 @@ test_match_related_loader.py: error: Argument of type "Column[int]" cannot be as
 test_match_related_loader.py: error: Cannot access attribute "entrez_id" for class "Entity"
 test_match_related_loader.py: error: Cannot access attribute "symbol" for class "Entity"
 test_match_related_loader.py: error: Cannot access attribute "values" for class "ndarray[_AnyShape, dtype[Any]]"
-test_models.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
-test_models.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
 test_models.py: error: "NoReturn" is not iterable (reportGeneralTypeIssues)
 test_models.py: error: "cell_line_name" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_models.py: error: "columns" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -698,7 +678,6 @@ test_predictability_loader.py: error: "name" is not a known attribute of "None" 
 test_predictability_loader.py: error: Argument of type "Literal[DependencyEnum.Chronos_Combined]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 test_str_loader.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 test_tasks.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
-test_views.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
 test_views.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 transcription_start_site_loader.py: error: No parameter named "average_coverage" (reportCallIssue)
 transcription_start_site_loader.py: error: No parameter named "chromosome" (reportCallIssue)

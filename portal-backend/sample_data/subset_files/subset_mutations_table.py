@@ -2,7 +2,7 @@ from taigapy import create_taiga_client_v3
 import pandas as pd
 from subsets import genes_entrez_ids, cell_lines_arxspan
 
-c = TaigaClient()
+c = create_taiga_client_v3()
 import numpy.random
 
 # pr_to_model_id = {rec["ProfileID"]: rec["ModelID"] for rec in c.get("internal-23q2-1e49.100/OmicsDefaultModelProfiles").to_records()}

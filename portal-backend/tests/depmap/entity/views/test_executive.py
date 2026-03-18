@@ -2,7 +2,7 @@ from depmap.cell_line.models_new import DepmapModel
 from depmap.context.models_new import SubtypeNode
 from depmap.context_explorer.models import ContextAnalysis
 import pytest
-from numpy import NaN
+from numpy import nan as NaN
 import pandas as pd
 
 from depmap.entity.views.executive import (

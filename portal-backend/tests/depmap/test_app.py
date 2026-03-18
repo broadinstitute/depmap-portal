@@ -1,5 +1,5 @@
 import pytest
-from numpy import NaN
+from numpy import nan as NaN
 import pandas as pd
 from flask import jsonify
 

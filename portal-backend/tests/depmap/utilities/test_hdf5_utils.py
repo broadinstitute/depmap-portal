@@ -22,7 +22,7 @@ def test_get_row_of_values(app):
 
     expected = [
         2.0,
-        np.NaN,
+        np.nan,
         32.0,
         47.0,
         62.0,
@@ -246,7 +246,7 @@ def test_get_values_min_max(empty_db_mock_downloads, app):
     Test that min and max are correct, even when NaN is present
     """
     df = pd.DataFrame(
-        {"col1": [-10, 2, 4, np.NaN], "col2": [1, 2, 4, 50]}, index=[0, 1, 2, 3]
+        {"col1": [-10, 2, 4, np.nan], "col2": [1, 2, 4, 50]}, index=[0, 1, 2, 3]
     )
     matrix = MatrixFactory(data=df.values)
     empty_db_mock_downloads.session.flush()
