@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from typing import List
 from depmap.utilities.sign_bucket_url import sign_url
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from itsdangerous import URLSafeSerializer
 from flask import current_app, url_for
 
@@ -52,7 +52,7 @@ def rewrite_documentation_urls(sections):
         m = BUCKET_STORED_LINK.match(link)
         if m:
             if credentials is None:
-                credentials = ServiceAccountCredentials.from_json_keyfile_name(
+                credentials = ServiceAccountCredentials.from_service_account_file(
                     current_app.config["DOWNLOADS_KEY"]
                 )
             bucket_name, key_name = m.groups()

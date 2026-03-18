@@ -98,8 +98,6 @@ from depmap.custom_analyses.views import blueprint as custom_analyses_blueprint
 
 log = logging.getLogger(__name__)
 
-pd.set_option("mode.use_inf_as_na", False)
-
 
 def _fix_disabled_loggers(logger_names):
     # if logging gets configures (as it does inside of alembic commands) then any existing loggers get disabled.
