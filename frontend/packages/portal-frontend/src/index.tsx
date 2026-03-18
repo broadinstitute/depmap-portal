@@ -336,7 +336,6 @@ export async function initPredictabilityTile(
       <PredictabilityTile
         compoundId={compoundId}
         datasetGivenIds={[highestPriorityDataset.given_id!]}
-        isGeneExecutive={false} // This prop is not yet use. Will eventually be used to support switching the Gene Page Predictability tile to React
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement

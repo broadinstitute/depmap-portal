@@ -7,6 +7,7 @@ interface DistributionPlotProps {
   values: number[];
   color: string;
   xaxisLabel: string;
+  includeRugPlot?: boolean;
   highlightValue?: number;
   onLoad?: (plot: ExtendedPlotType) => void;
 }
@@ -29,6 +30,7 @@ function GenericDistributionPlot({
   values,
   color,
   xaxisLabel,
+  includeRugPlot = true,
   highlightValue = undefined,
   onLoad = () => {},
   Plotly,
@@ -111,7 +113,10 @@ function GenericDistributionPlot({
         xaxis: "x2",
         name: "",
       },
-      {
+    ];
+
+    if (includeRugPlot) {
+      traces.push({
         x: values,
         y: values.map(() => 0),
         type: "scatter",
@@ -125,8 +130,8 @@ function GenericDistributionPlot({
         xaxis: "x1",
         name: "",
         hoverinfo: "x",
-      },
-    ];
+      });
+    }
 
     if (highlightValue !== undefined) {
       const maxY = Math.max(...plotData.yPoints);
@@ -214,7 +219,15 @@ function GenericDistributionPlot({
       displayModeBar: false,
       responsive: true,
     });
-  }, [Plotly, color, plotData, values, xaxisLabel, highlightValue]);
+  }, [
+    Plotly,
+    color,
+    plotData,
+    values,
+    xaxisLabel,
+    highlightValue,
+    includeRugPlot,
+  ]);
 
   return (
     <div style={{ minHeight: "200px" }}>
