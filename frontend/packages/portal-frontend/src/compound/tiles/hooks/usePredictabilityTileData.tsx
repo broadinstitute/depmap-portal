@@ -9,9 +9,7 @@ export default function usePredictabilityTileData(
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const memoizedIds = useMemo(() => datasetGivenIds, [
-    JSON.stringify(datasetGivenIds),
-  ]);
+  const memoizedIds = useMemo(() => datasetGivenIds, [datasetGivenIds]);
 
   useEffect(() => {
     if (!compoundId || memoizedIds.length === 0) {

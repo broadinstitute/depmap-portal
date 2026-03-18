@@ -2,10 +2,10 @@ import React from "react";
 import styles from "../CompoundTiles.scss";
 
 export const TopModelsTable: React.FC<{ models: any[] }> = ({ models }) => (
-  <table style={{ width: "100%" }}>
+  <table className={styles.topModelsTable}>
     <thead>
       <tr>
-        <th />
+        <th>{""}</th>
         <th>
           Prediction
           <br />

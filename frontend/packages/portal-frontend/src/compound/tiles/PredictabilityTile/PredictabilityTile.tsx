@@ -14,36 +14,6 @@ interface PredictabilityTileProps {
   isGeneExecutive: boolean; // This prop is not yet use. Will eventually be used to support switching the Gene Page Predictability tile to React
 }
 
-export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
-  compoundId,
-  datasetGivenIds,
-  isGeneExecutive, // This prop is not yet use. Will eventually be used to support switching the Gene Page Predictability tile to React
-}) => {
-  const { data, isLoading, error } = usePredictabilityTileData(
-    compoundId,
-    datasetGivenIds
-  );
-
-  if (isLoading) {
-    return <PlotSpinner />;
-  }
-
-  if (error) {
-    return <ErrorLoading tileName="Predictability" />;
-  }
-
-  if (!data) {
-    return null;
-  }
-
-  return (
-    <PredictabilityView
-      predictability={data}
-      isGeneExecutive={isGeneExecutive} // This prop is not yet use (i.e. is always false as set in index.tsx). Will eventually be used to support switching the Gene Page Predictability tile to React
-    />
-  );
-};
-
 const PredictabilityView: React.FC<{
   predictability: PredictabilityTileData;
   isGeneExecutive: boolean;
@@ -129,7 +99,7 @@ const PredictabilityView: React.FC<{
                 <div className="card_subheading">
                   Features of most accurate predictive model
                   <img
-                    className="info-icon popover-selector"
+                    className={styles.infoImage}
                     src="/static/img/gene_overview/info_purple.svg"
                     alt="info"
                   />
@@ -151,21 +121,14 @@ const PredictabilityView: React.FC<{
                   type={predictability.overall_top_model.type}
                 />
 
-                <div style={{ marginTop: "1rem" }}>
-                  <p className="view-details-text">
+                <div className={styles.viewDetailsSections}>
+                  <p className={styles.viewDetailsParagraph}>
                     <span>
                       View model details in the{" "}
                       <button
                         onClick={handleTabClick}
                         className={styles.pseudoLink}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          textDecoration: "underline",
-                          cursor: "pointer",
-                          color: "inherit",
-                        }}
+                        type="button"
                       >
                         Predictability tab
                       </button>
@@ -185,5 +148,35 @@ const PredictabilityView: React.FC<{
         </div>
       </div>
     </div>
+  );
+};
+
+export const PredictabilityTile: React.FC<PredictabilityTileProps> = ({
+  compoundId,
+  datasetGivenIds,
+  isGeneExecutive, // This prop is not yet use. Will eventually be used to support switching the Gene Page Predictability tile to React
+}) => {
+  const { data, isLoading, error } = usePredictabilityTileData(
+    compoundId,
+    datasetGivenIds
+  );
+
+  if (isLoading) {
+    return <PlotSpinner />;
+  }
+
+  if (error) {
+    return <ErrorLoading tileName="Predictability" />;
+  }
+
+  if (!data) {
+    return null;
+  }
+
+  return (
+    <PredictabilityView
+      predictability={data}
+      isGeneExecutive={isGeneExecutive} // This prop is not yet use (i.e. is always false as set in index.tsx). Will eventually be used to support switching the Gene Page Predictability tile to React
+    />
   );
 };

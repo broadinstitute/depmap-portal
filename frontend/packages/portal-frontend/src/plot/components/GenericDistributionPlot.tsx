@@ -137,7 +137,7 @@ function GenericDistributionPlot({
         type: "scatter",
         mode: "lines",
         line: {
-          color: color, // Matches the dataset color
+          color, // Matches the dataset color
           width: 3,
           dash: "solid",
         },

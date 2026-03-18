@@ -5,11 +5,11 @@ export const TopFeaturesTable: React.FC<{ features: any[]; type: string }> = ({
   features,
   type,
 }) => (
-  <div className="predictability-tile-table-container">
-    <table className="predictability-tile-table">
+  <div className={styles.topFeaturesTableContainer}>
+    <table className={styles.topFeaturesTable}>
       <thead>
         <tr>
-          <th />
+          <th>{""}</th>
           <th>Feature</th>
           <th>Importance</th>
           <th>Corr.</th>
@@ -21,7 +21,7 @@ export const TopFeaturesTable: React.FC<{ features: any[]; type: string }> = ({
           <tr key={index}>
             <td>
               {feature.related_type && (
-                <span className="relationship-icon-container">
+                <span>
                   <img
                     src={`/static/img/predictability/${feature.related_type}.svg`}
                     alt=""
