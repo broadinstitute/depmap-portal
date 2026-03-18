@@ -52,6 +52,8 @@ def upload_results(
     description_of_changes = (
         f"Uploading {ensemble_name} and {predictions_matrix_name} (via upload_fit_results_to_taiga.py)"
     )
+    print(description_of_changes)
+    assert dest_permaname is not None and dest_permaname != "None"
     version = tc.update_dataset(
         dest_permaname,
         description_of_changes,

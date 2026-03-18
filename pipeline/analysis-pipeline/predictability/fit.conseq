@@ -11,7 +11,8 @@ let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/do
 add-if-missing {
     "type": "daintree-test-run-flags", 
     "run_all_configs": "yes",
-    "fit_all_actuals": "no"}
+    "fit_all_actuals": "yes"
+}
 
 # creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
 rule process_model_config:
@@ -20,9 +21,11 @@ rule process_model_config:
         model_config=fileref("model-config.yaml"),
 
         # Target matrices
-        crispr_gene_effect={"type": "target_matrix", "label": "crispr_gene_effect"},
-        rnai={"type": "target_matrix", "label": "rnai"},
-        oncref={"type": "target_matrix", "label": "oncref"},
+        crispr_gene_effect={"type": "target_matrix", "label": "crispr"},
+
+        # lets get CRISPR fully working before tackling the others
+        # rnai={"type": "target_matrix", "label": "rnai"},
+        # oncref={"type": "target_matrix", "label": "oncref"},
 
         # Features
         lineage={"type": "feature", "label": "lineage"},
@@ -81,7 +84,7 @@ rule run_fit_models:
         --config {{ inputs.daintree_input_config.filename }} \
         --out workflow.json \
         --nfolds 5 \
-        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 100{% endif %} \
+        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 10{% endif %} \
         --extra-python-files extra_python_files"""
 
     run """{{config.sparkles_path}} workflow run \

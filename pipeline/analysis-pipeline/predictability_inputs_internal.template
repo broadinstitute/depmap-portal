@@ -34,7 +34,7 @@ add-if-missing {
 # Target Matrices
 add-if-missing {
     "type": "target_matrix",
-    "label": "crispr_gene_effect",
+    "label": "crispr",
     "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect")
 }
 
@@ -62,14 +62,14 @@ add-if-missing {
     "type": "feature",
     "label": "crispr_confounder",
     "category": "confounder",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PredictabilityCRISPRConfoundersTransformed")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRConfounders")
 }
 
 add-if-missing {
     "type": "feature",
     "label": "rnai_confounder",
     "category": "confounder",
-    "source_dataset_id": "predictability-legacy-datasets-8c54.14/RNAiConfounders"
+    "source_dataset_id": "confounders-f38f.2/demeter2-combined-v12-confounders"
 }
 
 add-if-missing {
@@ -104,7 +104,7 @@ add-if-missing {
     "type": "feature",
     "label": "genetic_signature",
     "category": "geneticsignature",
-    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSignatures")
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsGlobalSignatures")
 }
 
 add-if-missing {
