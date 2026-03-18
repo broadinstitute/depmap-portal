@@ -1,11 +1,6 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import markdown
 from datetime import datetime
-
-
-def markdown_to_html(text):
-    html = markdown.markdown(text)
-    return html
 
 
 class Announcement(BaseModel):
@@ -14,10 +9,15 @@ class Announcement(BaseModel):
     description: str = Field(
         description="Should be a markdown string for initialization. The instance returns description as an HTML string"
     )
-    _transform_description = validator("description", pre=True)(markdown_to_html)
 
-    @validator("date", pre=True)
-    def validate_date_format(cls, v):
+    @field_validator("description", mode="before")
+    @classmethod
+    def transform_description(cls, text: str) -> str:
+        return markdown.markdown(text)
+
+    @field_validator("date", mode="before")
+    @classmethod
+    def validate_date_format(cls, v: str) -> str:
         format = "%m.%d.%y"
 
         try:
