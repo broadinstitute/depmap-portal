@@ -149,6 +149,7 @@ def insert_or_update_cell_lines(df):
 
         if CellLine.exists_by_depmap_id(depmap_id):
             cell_line = CellLine.get_by_depmap_id(depmap_id, must=True)
+            assert cell_line is not None
 
             # this is required
             [db.session.delete(alias) for alias in cell_line.cell_line_alias]

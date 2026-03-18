@@ -20,6 +20,7 @@ def serve_mini_site(config, root, path):
     from werkzeug.security import safe_join
 
     full_path = safe_join(root, path)
+    assert full_path is not None
     assert os.path.isabs(full_path)
 
     # if the urls references a filename and serve static assets like .png or .css files
@@ -34,6 +35,8 @@ def serve_mini_site(config, root, path):
     if os.path.exists(full_path):
         if os.path.isdir(full_path):
             html_file = os.path.join(full_path, "index.html")
+        else:
+            html_file = full_path
     else:
         html_file = full_path + ".html"
 
@@ -57,6 +60,7 @@ def partial(*args):
 def register_minisites(app):
     site_root = os.path.join(os.path.dirname(__file__), "../sites")
     for path in app.config["STATIC_MINI_SITES"]:
+        assert path is not None
         rule = "/" + path + "/"
         site_dir = os.path.join(site_root, path)
         app.add_url_rule(

@@ -10,7 +10,6 @@ def initialize_request_user(user_id):
     I.e., when there is a normal request on a server with oauth, and this function is passed in the authenticated user_id
     """
     user_id_override = private_util_functions._get_session_override_if_present(user_id)
-
     is_admin = current_app.__depmap_auth_config.is_admin(user_id)
 
     # this puts private_util_functions.__depmap_access_control on flask.g

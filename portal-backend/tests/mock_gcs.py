@@ -65,9 +65,11 @@ def mock_gcs(monkeypatch, pytestconfig):
             return self.get_bucket(bucket_name).list_blobs()
 
     class MockBucket:
-        def __init__(self, client: MockClient, name: str = None):
+        def __init__(
+            self, client: Optional["MockClient"] = None, name: Optional[str] = None
+        ):
             self.client = client
-            self.name: str = name
+            self.name: str = name or ""
             self._blobs: Dict[str, "MockBlob"] = {}
 
         def __repr__(self):
@@ -102,7 +104,7 @@ def mock_gcs(monkeypatch, pytestconfig):
         def __init__(self, name: str, bucket: MockBucket):
             self.name = name
             self.bucket = bucket
-            self._content: bytes = None
+            self._content: Optional[bytes] = None
 
         def __repr__(self):
             return "<MockBlob: {}, {}>".format(self.name, self.bucket.name)
@@ -112,14 +114,14 @@ def mock_gcs(monkeypatch, pytestconfig):
             return self.bucket.client
 
         @staticmethod
-        def from_string(uri: str, client: MockClient = None) -> "MockBlob":
+        def from_string(uri: str, client: Optional["MockClient"] = None) -> "MockBlob":
             bucket_name, blob_name = parse_blob_uri(uri)
             if client is not None:
                 bucket = client.get_bucket(bucket_name)
 
                 return bucket.get_blob(blob_name)
 
-            new_bucket = MockBucket(client, bucket_name)
+            new_bucket = MockBucket(client, bucket_name)  # type: ignore[arg-type]
             new_blob = MockBlob(blob_name, new_bucket)
             return new_blob
 
@@ -134,7 +136,10 @@ def mock_gcs(monkeypatch, pytestconfig):
                 return False
 
         def upload_from_file(self, fileobj, content_type: Optional[str] = None):
-            self.upload_from_string(fileobj.read(), content_type=content_type)
+            self.upload_from_string(
+                fileobj.read(),
+                content_type=content_type if content_type is not None else "text/plain",
+            )
 
         def upload_from_string(
             self, data: Union[bytes, str], content_type: str = "text/plain"
@@ -162,6 +167,7 @@ def mock_gcs(monkeypatch, pytestconfig):
             if not self.exists():
                 raise Exception("Blob does not exist")
 
+            assert self._content is not None
             return self._content
 
         def delete(self):

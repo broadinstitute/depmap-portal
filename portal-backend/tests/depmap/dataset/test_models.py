@@ -79,17 +79,21 @@ def test_get_dataset_by_id(empty_db_mock_downloads):
     biom_dataset = BiomarkerDatasetFactory()
     empty_db_mock_downloads.session.flush()
 
-    assert Dataset.get_dataset_by_id(dep_dataset.dataset_id).name == dep_dataset.name
-    assert (
-        DependencyDataset.get_dataset_by_id(dep_dataset.dependency_dataset_id).name
-        == dep_dataset.name
-    )
+    result = Dataset.get_dataset_by_id(dep_dataset.dataset_id)
+    assert result is not None
+    assert result.name == dep_dataset.name
+    result_dep = DependencyDataset.get_dataset_by_id(dep_dataset.dependency_dataset_id)
+    assert result_dep is not None
+    assert result_dep.name == dep_dataset.name
 
-    assert Dataset.get_dataset_by_id(biom_dataset.dataset_id).name == biom_dataset.name
-    assert (
-        BiomarkerDataset.get_dataset_by_id(biom_dataset.biomarker_dataset_id).name
-        == biom_dataset.name
+    result_biom = Dataset.get_dataset_by_id(biom_dataset.dataset_id)
+    assert result_biom is not None
+    assert result_biom.name == biom_dataset.name
+    result_biom_ds = BiomarkerDataset.get_dataset_by_id(
+        biom_dataset.biomarker_dataset_id
     )
+    assert result_biom_ds is not None
+    assert result_biom_ds.name == biom_dataset.name
 
 
 def test_dataset_get_dataset_by_name(empty_db_mock_downloads):
@@ -97,14 +101,12 @@ def test_dataset_get_dataset_by_name(empty_db_mock_downloads):
     biom_dataset = BiomarkerDatasetFactory()
     empty_db_mock_downloads.session.flush()
 
-    assert (
-        Dataset.get_dataset_by_name(dep_dataset.name.name).dataset_id
-        == dep_dataset.dataset_id
-    )
-    assert (
-        Dataset.get_dataset_by_name(biom_dataset.name.name).dataset_id
-        == biom_dataset.dataset_id
-    )
+    result_dep = Dataset.get_dataset_by_name(dep_dataset.name.name)
+    assert result_dep is not None
+    assert result_dep.dataset_id == dep_dataset.dataset_id
+    result_biom = Dataset.get_dataset_by_name(biom_dataset.name.name)
+    assert result_biom is not None
+    assert result_biom.dataset_id == biom_dataset.dataset_id
 
 
 def test_dataset_find_datasets_with_entity_ids(empty_db_mock_downloads):

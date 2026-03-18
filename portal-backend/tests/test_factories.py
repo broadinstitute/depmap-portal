@@ -42,7 +42,9 @@ def test_matrix_factory_options(
     Test that things will create a matrix without error in the various combinations.
     Test that we can retrieve values from the hdf5 file
     """
-    kwargs = {}
+    kwargs: dict = {}
+    cell_line_1: object | None = None
+    cell_line_2: object | None = None
 
     if specify_genes:
         kwargs["entities"] = [GeneFactory(label="NRAS"), GeneFactory(label="MSL2")]
@@ -67,6 +69,7 @@ def test_matrix_factory_options(
         assert some_entity.label in {"NRAS", "MSL2"}
 
     if specify_cell_lines:
+        assert cell_line_1 is not None, "cell_line_1 set when specify_cell_lines"
         assert cell_line_1.depmap_id in cell_line_values.index
 
     if specify_data:

@@ -272,6 +272,7 @@ def format_dep_dist_info(
     if crispr_dataset:
         # Note: this often encounters an error with the dev database (deprecated, so not worth fixing now)
         crispr_info = GeneExecutiveInfo.get(gene.entity_id, crispr_dataset.name)
+        assert crispr_info is not None
         gene_executive_info["crispr"] = {
             "num_lines": "{}/{}".format(
                 crispr_info.num_dependent_cell_lines, crispr_info.num_lines_with_data
@@ -283,6 +284,7 @@ def format_dep_dist_info(
 
     if rnai_dataset:
         rnai_info = GeneExecutiveInfo.get(gene.entity_id, rnai_dataset.name)
+        assert rnai_info is not None
         gene_executive_info["rnai"] = {
             "num_lines": "{}/{}".format(
                 rnai_info.num_dependent_cell_lines, rnai_info.num_lines_with_data

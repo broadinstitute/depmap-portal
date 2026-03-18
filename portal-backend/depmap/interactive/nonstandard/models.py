@@ -387,6 +387,7 @@ class CustomDatasetConfig(Model):
     @classmethod
     def get(cls, uuid_str):
         row = db.session.get(cls, uuid_str)
+        assert row is not None
         return json.loads(row.config)
 
     @staticmethod

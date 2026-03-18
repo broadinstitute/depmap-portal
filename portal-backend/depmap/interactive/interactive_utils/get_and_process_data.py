@@ -8,9 +8,7 @@ import pandas as pd
 
 from depmap.database import db
 from depmap.cell_line.models import CellLine
-from depmap.dataset.models import (
-    Mutation,
-)
+from depmap.dataset.models import Mutation
 from depmap.compute.models import CustomCellLineGroup
 from depmap.interactive.config.utils import (
     get_context_dataset,
@@ -31,6 +29,7 @@ from depmap.interactive.standard import standard_utils
 from depmap.interactive.nonstandard import nonstandard_utils
 from depmap.partials.matrix.models import CellLineSeries
 from depmap.interactive.common_utils import RowSummary
+
 
 def get_matrix(dataset_id):
     """
@@ -112,7 +111,9 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
 
 
 def get_depmap_id_to_col_index_map(dataset_id) -> dict[str, int]:
-    col_index_objects = get_matrix(dataset_id).col_index
+    matrix = get_matrix(dataset_id)
+    assert matrix is not None
+    col_index_objects = matrix.col_index
     return {i.depmap_id: i.index for i in col_index_objects}
 
 
@@ -289,7 +290,11 @@ def get_row_of_values(dataset_id, feature):
 
 
 def get_category_config(color_dataset):
-    category_config = __get_config().get(color_dataset)["categories"]
+    config = __get_config()
+    assert config is not None
+    dataset_config = config.get(color_dataset)
+    assert dataset_config is not None, f"No config for color_dataset {color_dataset}"
+    category_config = dataset_config["categories"]
     return category_config
 
 

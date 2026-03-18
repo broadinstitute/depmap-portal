@@ -530,6 +530,7 @@ def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
         feature_type=feature_type,
         dataset_given_id=dataset_given_id,
     )
+    assert ew_vs_all is not None
 
     # Make sure the expected columns are present.
     if feature_type == "gene":
@@ -589,6 +590,7 @@ def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
         feature_type=feature_type,
         dataset_given_id=dataset_given_id,
     )
+    assert ew_vs_lineage is not None
 
     assert ew_vs_lineage["feature"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
@@ -606,6 +608,7 @@ def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
         feature_type=feature_type,
         dataset_given_id=dataset_given_id,
     )
+    assert myeloid_vs_other_heme is not None
 
     assert myeloid_vs_other_heme["feature"] == [
         f"{gene_a.label} ({gene_a.entrez_id})" if use_genes else compound_a.label
@@ -657,6 +660,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
         out_group_type="All Others",
         tree_type="Lineage",
     )
+    assert dose_curve_info is not None
 
     assert list(dose_curve_info.keys()) == [
         "compound",
@@ -933,6 +937,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
         out_group_type="BONE",
         tree_type="Lineage",
     )
+    assert dose_curve_info is not None
     assert dose_curve_info["dose_curve_info"] == {
         "in_group_curve_params": [
             {
@@ -1183,6 +1188,7 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
         min_abs_effect_size=all_range.min_abs_effect_size,
         min_frac_dep_in=all_range.min_frac_dep_in,
     )
+    assert data is not None
 
     assert data["significant_selection"] == [
         {
@@ -1304,6 +1310,7 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
         min_abs_effect_size=all_range.min_abs_effect_size,
         min_frac_dep_in=all_range.min_frac_dep_in,
     )
+    assert data is not None
 
     assert data["significant_selection"] == [
         {
@@ -1388,6 +1395,7 @@ def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatc
         min_abs_effect_size=nothing_range.min_abs_effect_size,
         min_frac_dep_in=nothing_range.min_frac_dep_in,
     )
+    assert data is not None
 
     assert data["significant_selection"] == None
 

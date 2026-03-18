@@ -82,7 +82,11 @@ def _get_context_summary(tree_type: str):
     subsetted_summary_df = summary_df[list(valid_models_summary_intersection)]
 
     sorted_summary_df = None
-    if current_app.config.get("ENABLED_FEATURES").context_explorer_prerelease_datasets:
+    enabled_features = current_app.config.get("ENABLED_FEATURES")
+    if (
+        enabled_features is not None
+        and enabled_features.context_explorer_prerelease_datasets
+    ):
         data_type_order = [
             "CRISPR",
             "RNAi",
@@ -185,6 +189,7 @@ class ContextInfo(
         """
 
         level_0_subtype_code = request.args.get("level_0_subtype_code")
+        assert level_0_subtype_code is not None
 
         (
             context_tree,
@@ -202,6 +207,7 @@ class ContextPath(
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
         selected_code = request.args.get("selected_code")
+        assert selected_code is not None
 
         path = get_path_to_node(selected_code)
 
@@ -249,6 +255,7 @@ class SubtypeDataAvailability(
 ):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
     def get(self):
         selected_code = request.args.get("selected_code")
+        assert selected_code is not None
 
         subtype_avail_summary = get_child_subtype_summary_df(subtype_code=selected_code)
 
@@ -405,6 +412,7 @@ class ContextSummary(
         as each available branch off of the key-node
         """
         tree_type = request.args.get("tree_type")
+        assert tree_type is not None
         summary, overview_data = _get_context_summary(tree_type)
 
         return {"summary": summary, "table": overview_data}
@@ -486,6 +494,11 @@ class AnalysisData(Resource):
         # Can be anything in ContextExplorerDatasets (portal-backend/depmap/context_explorer/models.py)
         dataset_given_id = request.args.get("dataset_given_id")
 
+        assert in_group is not None
+        assert out_group_type is not None
+        assert feature_type is not None
+        assert dataset_given_id is not None
+
         data_table = _get_analysis_data_table(
             in_group=in_group,
             out_group_type=out_group_type,
@@ -508,6 +521,13 @@ class ContextDoseCurves(Resource):
         level = request.args.get("level")
         out_group_type = request.args.get("out_group_type")
         tree_type = request.args.get("tree_type")
+
+        assert dataset_given_id is not None
+        assert feature_id is not None
+        assert subtype_code is not None
+        assert level is not None
+        assert out_group_type is not None
+        assert tree_type is not None
 
         dose_curve_info = dose_curve_utils.get_context_dose_curves(
             dataset_given_id=dataset_given_id,
@@ -545,6 +565,15 @@ class ContextBoxPlotData(Resource):
         min_abs_effect_size = request.args.get("min_abs_effect_size", type=float)
         min_frac_dep_in = request.args.get("min_frac_dep_in", type=float)
         show_positive_effect_sizes = request.args.get("show_positive_effect_sizes")
+
+        assert selected_subtype_code is not None
+        assert tree_type is not None
+        assert dataset_given_id is not None
+        assert feature_type is not None
+        assert feature_id is not None
+        assert max_fdr is not None
+        assert min_abs_effect_size is not None
+        assert min_frac_dep_in is not None
 
         show_positive_effect_sizes = show_positive_effect_sizes == "true"
 
@@ -607,6 +636,10 @@ class EnrichedLineagesTile(
         tree_type = request.args.get("tree_type")
         feature_id = request.args.get("feature_id")
         feature_type = request.args.get("feature_type")
+
+        assert tree_type is not None
+        assert feature_id is not None
+        assert feature_type is not None
 
         return _get_enriched_lineages_tile_with_caching(
             tree_type, feature_id, feature_type

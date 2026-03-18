@@ -62,6 +62,7 @@ def format_characterizations(gene_id, gene_symbol, biomarker_datasets):
                 )
         elif isinstance(dataset_enum, TabularDataset.TabularEnum):
             dataset = TabularDataset.get_by_name(dataset_enum)
+            assert dataset is not None
             if dataset.table_class.has_gene(gene_id):
                 characterizations.append(
                     {
@@ -77,6 +78,7 @@ def format_characterizations(gene_id, gene_symbol, biomarker_datasets):
             if dataset_enum in biomarker_enums:  # gene is in dataset
                 dataset_enum_name = dataset_enum.name
                 dataset = BiomarkerDataset.get_dataset_by_name(dataset_enum_name)
+                assert dataset is not None
 
                 if dataset_enum_name in multiple_entities_per_gene:
                     # for datasets with multiple characterizations per gene

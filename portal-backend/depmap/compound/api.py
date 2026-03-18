@@ -19,6 +19,9 @@ class DoseCurveData(Resource):
         compound_id = request.args.get("compound_id")
         drc_dataset_label = request.args.get("drc_dataset_label")
         replicate_dataset_name = request.args.get("replicate_dataset_name")
+        assert compound_id is not None
+        assert drc_dataset_label is not None
+        assert replicate_dataset_name is not None
 
         dose_curve_info = get_dose_response_curves_per_model(
             compound_id=compound_id,
@@ -34,6 +37,8 @@ class PrioritizedDataset(Resource):
     def get(self):
         compound_label = request.args.get("compound_label")
         compound_id = request.args.get("compound_id")
+        assert compound_label is not None
+        assert compound_id is not None
 
         dataset_options = get_heatmap_dose_curves_tab_drc_options(
             compound_label=compound_label, compound_id=compound_id
@@ -49,6 +54,7 @@ class PrioritizedDataset(Resource):
             else float("inf"),
         )
 
+        assert len(sorted_data) > 0
         return dataclasses.asdict(sorted_data[0])
 
 
@@ -72,6 +78,8 @@ class CompoundSummary(Resource):
     def get(self):
         compound_id = request.args.get("compound_id")
         compound_label = request.args.get("compound_label")
+        assert compound_id is not None
+        assert compound_label is not None
         args: Any = request.args
         compound_dataset_ids = args.getlist("compound_dataset_ids")
 

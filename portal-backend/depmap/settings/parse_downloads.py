@@ -48,9 +48,10 @@ def parse_yaml(yaml_str: str) -> Dict[str, List[Dict[str, Union[List, str, Dict]
     return parsed_yaml
 
 
-def get_sources(sources: Dict[str, Any]) -> List[FileSource]:
-    if sources == None:
+def get_sources(sources: Dict[str, Any] | None) -> List[FileSource] | None:
+    if sources is None:
         return None
+    assert isinstance(sources, dict), "sources must be a dict when not None"
 
     final_sources: List[FileSource] = []
     for s in sources:
@@ -62,16 +63,17 @@ def get_sources(sources: Dict[str, Any]) -> List[FileSource]:
         return final_sources
 
 
-def get_summary_stats(stats: List[Dict[str, Any]]) -> SummaryStats:
-    if stats == None:
+def get_summary_stats(stats: List[Dict[str, Any]] | None) -> SummaryStats | None:
+    if stats is None:
         return None
+    assert isinstance(stats, list), "stats must be a list when not None"
 
     stats_dict_list: List[SummaryStatsDict] = []
     for s in stats:
-        if s.get("label", None) and s.get("value", None):
-            single_stat = SummaryStatsDict(
-                {"value": s.get("value", None), "label": s.get("label", None)}
-            )
+        label_val = s.get("label")
+        value_val = s.get("value")
+        if label_val is not None and value_val is not None:
+            single_stat = SummaryStatsDict({"value": value_val, "label": label_val})
             stats_dict_list.append(single_stat)
 
     return SummaryStats(stats_dict_list)

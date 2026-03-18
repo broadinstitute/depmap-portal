@@ -36,9 +36,9 @@ def remove_svg_height_width(svg_string):
 
     # note that the svg_open_tag group does not contain the closing ">". this is in back.
     # re.DOTALL makes "." dot match newline characters
-    front, svg_open_tag, back = re.match(
-        split_three_capture_groups, svg_string, re.DOTALL
-    ).groups()
+    match = re.match(split_three_capture_groups, svg_string, re.DOTALL)
+    assert match is not None
+    front, svg_open_tag, back = match.groups()
 
     svg_open_tag = re.sub(r'height="[^"]+" ', "", svg_open_tag)
     svg_open_tag = re.sub(r'width="[^"]+" ', "", svg_open_tag)
@@ -342,10 +342,12 @@ def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]
     }
 
     for plot_param in plot_params:
+        dataset = plot_param["dataset"]
+        assert dataset is not None
         predictability["tables"].append(
             {
                 "type": plot_param["type"],
-                "dataset": plot_param["dataset"].display_name,
+                "dataset": dataset.display_name,
                 "top_models": format_top_three_models_top_feature(
                     sorted_df, plot_param["type"]
                 ),
@@ -355,6 +357,7 @@ def format_predictability_tile(entity: Entity, datasets: List[DependencyDataset]
 
 
 def format_predictability_plot(plot_params, sorted_df):
+    assert len(plot_params) > 0
     predictability_plot = {"percentiles": []}
     plt.figure(figsize=(4.5, 1.4))  # this has to be done first
 
@@ -384,12 +387,14 @@ def format_predictability_plot(plot_params, sorted_df):
             horizontalalignment="left",
         )
 
+        dataset = plot_param["dataset"]
+        assert dataset is not None
         predictability_plot["percentiles"].append(
             {
                 "percentile": number_utils.format_3_sf(
                     get_percentile(value, plot_param["background"])
                 ),
-                "dataset_display_name": plot_param["dataset"].display_name,
+                "dataset_display_name": dataset.display_name,
                 "type": plot_param["type"],
             }
         )

@@ -139,6 +139,7 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
 def get_subsetted_df(dataset_id, row_indices, col_indices):
     transpose = is_transpose(dataset_id)
     matrix = NonstandardMatrix.get(dataset_id)
+    assert matrix is not None
     df = matrix.get_subsetted_df(row_indices, col_indices, transpose)
     return df
 

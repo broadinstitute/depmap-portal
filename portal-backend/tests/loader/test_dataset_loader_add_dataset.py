@@ -87,12 +87,13 @@ def test_add_dependency_biomarker_dataset(
     )
 
     # test taiga id is canonical
-    assert (
+    result = (
         dataset_class.query.filter_by(name=dataset_enum)
         .with_entities(dataset_class.taiga_id)
-        .first()[0]
-        == canonical_taiga_id
+        .first()
     )
+    assert result is not None
+    assert result[0] == canonical_taiga_id
 
 
 @override(config=config)
@@ -105,9 +106,10 @@ def test_add_tabular_dataset(empty_db_mock_downloads, monkeypatch):
     dataset_loader.add_tabular_dataset(
         TabularDataset.TabularEnum.mutation, virtual_taiga_id
     )
-    assert (
+    result = (
         TabularDataset.query.filter_by(name=TabularDataset.TabularEnum.mutation)
         .with_entities(TabularDataset.taiga_id)
-        .first()[0]
-        == canonical_taiga_id
+        .first()
     )
+    assert result is not None
+    assert result[0] == canonical_taiga_id

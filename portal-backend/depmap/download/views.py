@@ -256,6 +256,11 @@ def data_slicer_download():
         "file_path"
     )  # there should not also be args named "file"
 
+    assert filename_for_user is not None, "name query param is required"
+    assert (
+        file_path_from_compute_results_dir is not None
+    ), "file_path query param is required"
+
     full_file_path = os.path.join(
         current_app.config["COMPUTE_RESULTS_ROOT"], file_path_from_compute_results_dir
     )

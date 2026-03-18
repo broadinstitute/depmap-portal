@@ -53,6 +53,7 @@ def color_int(x):
 
 
 def pack_rows(rows):
+    assert len(rows) > 0
     columns = dict(
         position=pack_col_from_row(rows, "position", int),
         methylation=pack_col_from_row(rows, "methylation", float),
@@ -96,7 +97,7 @@ def process_rows(fd, r):
                     fd.tell(), count, size, time.time() - start_time
                 )
             )
-        yield (key[0], key[1], sqlite3.Binary(packed))
+        yield (key[0], key[1], sqlite3.Binary(packed))  # key asserted not None above
 
 
 def reformat(source_file, dest_db):

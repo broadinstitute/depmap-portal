@@ -203,6 +203,7 @@ def test_get_row_of_values_drops_nas(interactive_db_mock_downloads):
 
     ## Verify test setup
     matrix = NonstandardMatrix.get(nonstandard_aliased_dataset_id)
+    assert matrix is not None
 
     # Verify that it actually exists in the db (is not dropped because it's not in the db)
     cell_line_with_nan = CellLine.get_by_name("CADOES1_BONE", must=True)

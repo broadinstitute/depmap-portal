@@ -97,6 +97,9 @@ def entity_summary_json_data():
     if color == "none":
         color = None
 
+    assert entity is not None
+    assert dataset_id is not None
+
     feature_data = get_feature_data(dataset_id, entity.label)
     metadata = get_entity_summary_metadata(dataset_id, feature_data, entity.label)
 
@@ -142,6 +145,9 @@ def entity_summary_download():
     if color == "none":
         color = None
 
+    assert entity is not None
+    assert dataset_id is not None
+
     df = get_download_data(
         dataset_id=dataset_id,
         entity=entity,
@@ -158,7 +164,9 @@ def _parse_args_and_call_func(func_to_call, type):
     Fixme naming 
     """
     if request.method == "POST":
-        kwargs = json_loads(request.form.get("data"))
+        data = request.form.get("data")
+        assert data is not None
+        kwargs = json_loads(data)
     elif (
         request.method == "GET" or request.method == "HEAD"
     ):  # head is used for the crawler

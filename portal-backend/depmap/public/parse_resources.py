@@ -16,9 +16,11 @@ def make_documents(subsection: Dict[str, Any]) -> List[Document]:
         links: List[Dict[str, Any]] = doc.get("links", [])
         link_list: List[DocLink] = []
         for link in links:
-            link_list.append(
-                DocLink(link.get("link_label", None), link.get("link", None))
-            )
+            link_label_raw = link.get("link_label")
+            link_url_raw = link.get("link")
+            link_label = link_label_raw if link_label_raw is not None else ""
+            link_url = link_url_raw if link_url_raw is not None else ""
+            link_list.append(DocLink(link_label, link_url))
 
         show_warning: bool = doc.get("link_show_dmc_warning", False)
         document = Document(
@@ -78,7 +80,7 @@ def make_sections(content: str) -> List[Section]:
     parsed_yaml: Dict[str, List[Dict[str, Union[List, str, Dict]]]] = parse_yaml(
         content
     )
-    sections: List[Dict[str, Any]] = parsed_yaml.get("sections", None)
+    sections: List[Dict[str, Any]] = parsed_yaml.get("sections") or []
 
     for s in sections:
         section = make_section(s)

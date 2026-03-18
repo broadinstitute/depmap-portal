@@ -353,6 +353,7 @@ def _load_real_data(
 ):
 
     taiga_client = get_taiga_client()
+    assert taiga_client is not None, "taiga_client is required for data loading"
 
     if process_downloads:
         with transaction():
@@ -1143,6 +1144,9 @@ def load_sample_data(
         ensure_all_max_min_loaded()
 
         if load_taiga_dependencies and load_nonstandard:
+            assert (
+                taiga_client is not None
+            ), "taiga_client required when load_taiga_dependencies is True"
             # Nonstandard datasets used only in interactive
             for taiga_id in current_app.config["GET_NONSTANDARD_DATASETS"]():
                 nonstandard_loader.delete_cache_if_invalid_exists(

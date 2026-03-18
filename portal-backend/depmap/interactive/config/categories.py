@@ -54,13 +54,14 @@ class Category:
         self.legend_label = legend_label if legend_label else actual_label
         self._color_num = color_num
         self._hex_color = hex_color
-        self.sort_priority = int(sort_priority) if sort_priority else 0
+        self.sort_priority = int(sort_priority) if sort_priority is not None else 0
 
     @property
     def color(self):
         if self._hex_color:
             return self._hex_color
         else:
+            assert self._color_num is not None
             return int(self._color_num)
 
 
@@ -258,7 +259,9 @@ class CategoricalSingletonConfig(CategoryConfig):
         return "No data on cell line"
 
     def get_non_na_category(self, value, feature):
-        return Category(value, label=value, color_num=self.cat_to_num[value])
+        color_num = self.cat_to_num.get(value)
+        assert color_num is not None, f"Unknown category value: {value}"
+        return Category(value, label=value, color_num=color_num)
 
 
 class LineageConfig(CategoryConfig):

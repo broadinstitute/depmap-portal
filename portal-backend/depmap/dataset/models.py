@@ -217,6 +217,7 @@ class Dataset(Model):
         )
 
     def get_entity_id(self, entity_label, must=True):
+        assert self.matrix is not None
         q = (
             self.matrix.row_index.join(Entity)
             .filter(Entity.label == entity_label)
@@ -225,6 +226,8 @@ class Dataset(Model):
         row = q.one_or_none()
         if must:
             assert row is not None
+        if row is None:
+            return None
         return row[0]
 
     @staticmethod

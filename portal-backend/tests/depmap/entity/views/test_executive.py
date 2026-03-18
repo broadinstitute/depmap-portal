@@ -411,6 +411,7 @@ def test_format_dataset_predictability(empty_db_mock_downloads):
 
     # both present
     pred = format_predictability_tile(query_gene, [dataset_1, dataset_2])
+    assert pred is not None
 
     assert pred.keys() == {"overall_top_model", "plot", "tables"}
     assert (
@@ -437,6 +438,7 @@ def test_format_dataset_predictability(empty_db_mock_downloads):
 
     # only dataset 1
     pred = format_predictability_tile(query_gene, [dataset_1])
+    assert pred is not None
     assert len(pred["tables"]) == 1
     assert (
         pred["overall_top_model"]["features"][0]["name"] == feature_gene.label
@@ -445,6 +447,7 @@ def test_format_dataset_predictability(empty_db_mock_downloads):
 
     # only dataset 2
     pred = format_predictability_tile(query_gene, [dataset_2])
+    assert pred is not None
     assert len(pred["tables"]) == 1
     assert (
         pred["overall_top_model"]["features"][0]["name"] == feature_gene.label

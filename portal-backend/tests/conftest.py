@@ -331,6 +331,7 @@ def load_interactive_db_data():
     """
     with transaction():
         loader_data_dir = current_app.config["LOADER_DATA_DIR"]
+        assert loader_data_dir is not None
 
         gene_loader.load_hgnc_genes(
             os.path.join(loader_data_dir, "gene/hgnc-database-1a29.1.csv")
@@ -404,6 +405,7 @@ def load_interactive_db_data():
 def load_populated_db_data():
     with transaction():
         loader_data_dir = current_app.config["LOADER_DATA_DIR"]
+        assert loader_data_dir is not None
 
         # standalone models first
         gene_loader.load_hgnc_genes(

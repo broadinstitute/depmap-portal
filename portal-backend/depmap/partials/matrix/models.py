@@ -87,6 +87,7 @@ class Matrix(Model):
 
     @property
     def entity_type(self):
+        assert self.dataset is not None
         type = self.dataset.entity_type
         return type
 

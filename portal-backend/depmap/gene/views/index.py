@@ -208,6 +208,7 @@ def format_gene_summary(gene, dependency_datasets):
         for dataset in dependency_datasets
     ]
     first_entity = gene
+    assert len(summary_options) > 0
     first_dep_enum_name = summary_options[0]["dataset"]
     return format_summary(
         summary_options,
@@ -219,6 +220,7 @@ def format_gene_summary(gene, dependency_datasets):
 
 
 def format_summary_option(dataset, entity, label):
+    assert dataset is not None
     option = {
         "label": label,
         "id": "{}_{}".format(
@@ -233,7 +235,9 @@ def format_summary_option(dataset, entity, label):
 
 @blueprint.route("/api/predictive")
 def get_predictive_table():
-    entity_id = int(request.args.get("entityId"))
+    entity_id_arg = request.args.get("entityId")
+    assert entity_id_arg is not None, "entityId query param is required"
+    entity_id = int(entity_id_arg)
     gene = Gene.get_by_entity_id(entity_id)
 
     datasets: List[DependencyDataset] = []
@@ -338,6 +342,8 @@ def get_predictability_files():
         ) as tmpfile:
             with zipfile.ZipFile(tmpfile, "w") as zf:
                 for (enum,) in gene_dataset_enums_with_predictabilities:
+                    if enum is None:
+                        continue
                     zf.write(
                         os.path.join(
                             predictability_path,
@@ -495,7 +501,9 @@ def get_fusion_data_by_gene(gene_id):
     # Get the sort configuration from the fusion_data_object
     display_data = fusion_data_object.data_for_ajax_partial_temp()["display"]
     sort_col_index = display_data.get("sort_col")
-    sort_col = columns[sort_col_index] if sort_col_index is not None else None
+    sort_col: str | None = (
+        columns[sort_col_index] if sort_col_index is not None else None
+    )
     sort_order = display_data.get("sort_order")
 
     endpoint_dict = {

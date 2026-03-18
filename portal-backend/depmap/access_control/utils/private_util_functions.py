@@ -12,8 +12,8 @@ from depmap.access_control.models import CurrentAuthorizations, GroupAuthConfig
 def _setup_current_authorizations(
     user_id: str,
     is_admin: bool,
-    user_id_override: str = None,
-    owner_ids_override: Dict[int, GroupAuthConfig] = None,
+    user_id_override: Optional[str] = None,
+    owner_ids_override: Optional[Dict[int, GroupAuthConfig]] = None,
 ) -> CurrentAuthorizations:
     """
     :param user_is: authenticated user
@@ -90,7 +90,7 @@ def _get_session_override_if_present(user_id) -> Optional[str]:
     if current_app.__depmap_auth_config.is_admin(user_id):
         # if they are an admin, and an user_override is set in session, use that
         try:
-            session._get_current_object()
+            session._get_current_object()  # type: ignore[attr-defined]
         except RuntimeError as e:
             # there is no request context, just return None because there is no override
             return None

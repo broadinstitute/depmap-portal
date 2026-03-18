@@ -86,6 +86,7 @@ def _format_tda_summary(df):
 
 def load_interpretable_model(file_path, dataset_name):
     dataset = Dataset.get_dataset_by_name(dataset_name, must=True)
+    assert dataset is not None
 
     dots_df = pd.read_csv(file_path)
 
@@ -245,6 +246,8 @@ def _edit_dot_data(dot_data):
 
 def _parse_feature(feature):
     m = re.match("^(.*)_([^_]+)$", feature)
+    if m is None:
+        return feature, "unknown"
     name, type = m.groups()
     m = re.match("(\S+) \\((\\d+)\\)", name)
     if m is not None:

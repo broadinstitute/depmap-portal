@@ -9,6 +9,7 @@ from depmap.enums import DependencyEnum
 
 def load_compound_summary(name: DependencyEnum, df: pd.DataFrame):
     dest_path = get_compound_summary_csv_path(name)
+    assert dest_path is not None, "compound summary path must be resolvable"
     parent_dir = os.path.dirname(dest_path)
     if not os.path.exists(parent_dir):
         os.makedirs(parent_dir)

@@ -14,6 +14,8 @@ from tests.factories import BiomarkerDatasetFactory
 def test_load_predictive_model_csv(populated_db):
     sox10 = Gene.get_gene_by_entrez(entrez_id=6663)
     dataset = DependencyDataset.get_dataset_by_name(DependencyEnum.Chronos_Combined)
+    assert sox10 is not None
+    assert dataset is not None
 
     # manually add rppa because this is the only test that relies on it existing
     BiomarkerDatasetFactory(name=BiomarkerDataset.BiomarkerEnum.rppa)

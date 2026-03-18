@@ -354,6 +354,7 @@ def get_starting_predictive_model_id():
 
 def load_predictive_background_from_db(dataset_enum_name):
     dataset = Dataset.get_dataset_by_name(dataset_enum_name, must=True)
+    assert dataset is not None, "dataset must exist when must=True"
     background = [
         x
         for (x,) in db.session.query(func.max(PredictiveModel.pearson))

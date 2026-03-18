@@ -105,13 +105,16 @@ def test_add_dataset_index(empty_db_mock_downloads):
         load_row_with_entity_func=nonstandard_loader.load_row_with_entity,
     )
     empty_db_mock_downloads.session.flush()
-    entity_id = (
+    row_index_obj = (
         NonstandardMatrix.query.filter_by(nonstandard_dataset_id=dataset_id)
         .one()
         .row_index.first()
-        .entity_id
     )
-    assert Entity.query.get(entity_id).label == row_in_hgnc_gene_symbol
+    assert row_index_obj is not None
+    entity_id = row_index_obj.entity_id
+    entity = Entity.query.get(entity_id)
+    assert entity is not None
+    assert entity.label == row_in_hgnc_gene_symbol
 
     dataset_id = (
         "attempt_look_up_nonexistent_entity"  # row_not_in_hgnc should just be skipped

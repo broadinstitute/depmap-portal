@@ -1,6 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 from flask import current_app
 
@@ -20,8 +20,8 @@ class DepDatasetMeta:
     display_name: str
     units: str
     data_type: DataTypeEnum
-    global_priority: int = None
-    priority: int = None
+    global_priority: Optional[int] = None
+    priority: Optional[int] = None
     nominal_range: tuple = (0, 0)
 
 
@@ -31,8 +31,8 @@ class DatasetLabel:
     units: str
     data_type: DataTypeEnum
     s3_json_name: str
-    global_priority: int = None
-    priority: int = None
+    global_priority: Optional[int] = None
+    priority: Optional[int] = None
     nominal_range: tuple = (0, 0)
 
 

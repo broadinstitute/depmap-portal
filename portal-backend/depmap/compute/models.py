@@ -16,6 +16,7 @@ class CustomCellLineGroup(Model):
     @classmethod
     def get_depmap_ids(cls, uuid_str):
         row = db.session.get(cls, uuid_str)
+        assert row is not None
         return json.loads(row.depmap_ids)
 
     @classmethod

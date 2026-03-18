@@ -72,6 +72,7 @@ def test_render_gene_tiles(populated_db, tile, mock_cansar_client):
 def test_no_render_gene_tiles(populated_db):
     with populated_db.app.test_client() as c:
         gene = Gene.query.filter_by(label="SOX10").one_or_none()
+        assert gene is not None
         """
         Tests nonexistent tiles returns 400
         """
