@@ -64,6 +64,7 @@ google-auth="^2.0"
 # taigapy
 taigapy = {version = "3.14.0", source = "public-python"}
 flask-hunter-profile={git = "https://github.com/broadinstitute/flask-hunter-profile.git"}
+hunter="<3.7"
 markdown="^3.4"
 Flask-Humanize="^0.3.0"
 
