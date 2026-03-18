@@ -18,8 +18,13 @@ or
 conseq run run_exteranl.conseq
 ```
 
+In order to run the "publish" parts which write to taiga and the GCS bucket, you need to provide `dest_permaname`, `S3_STAGING_URL` and `publish_dest` describing where to write to. For example:
 
-The `fit.conseq` works as follows:
+```
+conseq run --define dest_permaname=test-pred-internal-26q1-59eb --define S3_STAGING_URL=gs://dpp-sparkles/daintree-pgm-test-2 --define publish_dest=gs://dpp-sparkles/daintree-pgm-test-2 run_internal.conseq
+```
+
+The `daintree.conseq` works as follows:
 
 1. It first creates model input json files based on the `model-config.yaml` file.
 2. Once the input json file is created, daintree is run to produce the output for predictability. There are 3 different files that are uploaded to taiga for each model, predictions.csv, ensemble.csv, feature_metadata.csv.Running daintree also creates a `output_config.json` file which has the input config as well as the taiga ids of the 3 uploaded files.
