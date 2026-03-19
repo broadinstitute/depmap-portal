@@ -532,7 +532,7 @@ def _read_model_fit_from_sqlite(
     # Get top features
     cursor.execute(
         """
-        SELECT rank, feature_dataset_id, feature_given_id, feature_label,
+        SELECT rank, feature_dataset_id, feature_given_id,
                importance, correlation_with_actual
         FROM top_features
         WHERE actuals_feature_given_id = ?
@@ -548,9 +548,8 @@ def _read_model_fit_from_sqlite(
                 rank=row[0],
                 feature_dataset_id=row[1],
                 feature_given_id=row[2],
-                feature_label=row[3],
-                importance=row[4],
-                correlation_with_actual=row[5],
+                importance=row[3],
+                correlation_with_actual=row[4],
             )
         )
 
