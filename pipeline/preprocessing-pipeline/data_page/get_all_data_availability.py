@@ -436,6 +436,9 @@ def get_paralogs_summary(tc, depmap_paralogs_taiga_id):
     print("getting paralogs summary...")
     paralogs_df = tc.get(depmap_paralogs_taiga_id)
 
+    # Filter out rows where all values are "NA"
+    paralogs_df = paralogs_df[~(paralogs_df == "NA").all(axis=1)]
+
     paralogs = paralogs_df.reset_index(names=["ModelID"])
 
     paralogs_summary = (
