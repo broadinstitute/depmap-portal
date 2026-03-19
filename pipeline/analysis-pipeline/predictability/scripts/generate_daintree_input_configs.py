@@ -76,6 +76,7 @@ def generate_daintree_configs(
             output_json["data"][target] = {
                 "taiga_id": target_input["source_dataset_id"],
                 "table_type": "target_matrix",
+                "preprocess": "daintree_preprocess:drop_sparse_columns",
                 "relation": model_config["Relation"],
             }
 
