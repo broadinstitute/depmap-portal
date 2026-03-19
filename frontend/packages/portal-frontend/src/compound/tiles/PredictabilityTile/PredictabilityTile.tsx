@@ -73,6 +73,7 @@ const PredictabilityView: React.FC<{
                         color={plot.color}
                         fillOpacity={0.5}
                         highlightValue={plot.query_value}
+                        highlightLineLabel={plot.label}
                         includeRugPlot={false}
                       />
                     </div>

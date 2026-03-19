@@ -14,6 +14,7 @@ interface DistributionPlotProps {
   values: number[];
   color: string;
   xaxisLabel: string;
+  highlightLineLabel?: string;
   fillOpacity?: number; // (0 to 1)
   includeRugPlot?: boolean;
   highlightValue?: number;
@@ -41,6 +42,7 @@ function GenericDistributionPlot({
   fillOpacity = 1, // Default to 1 (fully opaque)
   includeRugPlot = true,
   highlightValue = undefined,
+  highlightLineLabel = undefined,
   onLoad = () => {},
   Plotly,
 }: DistributionPlotPropsWithPlotly) {
@@ -142,8 +144,8 @@ function GenericDistributionPlot({
       });
     }
 
+    const maxY = Math.max(...plotData.yPoints);
     if (highlightValue !== undefined) {
-      const maxY = Math.max(...plotData.yPoints);
       traces.push({
         x: [highlightValue, highlightValue],
         // Extending from negative range (y1 area) to the top of KDE (y2 area)
@@ -159,6 +161,28 @@ function GenericDistributionPlot({
         xaxis: "x2",
         name: "",
         hoverinfo: "x",
+      });
+    }
+
+    const annotations: any[] = [];
+    if (highlightValue !== undefined && highlightLineLabel) {
+      annotations.push({
+        x: highlightValue,
+        y: maxY * 1.1, // Positioned slightly above the KDE peak
+        xref: "x2",
+        yref: "y2",
+        text: highlightLineLabel,
+        showarrow: false,
+        font: {
+          family: "Lato, sans-serif",
+          size: 12,
+          color: color,
+          weight: 900,
+        },
+        align: "left",
+        xanchor: "left",
+        yanchor: "bottom",
+        // xshift: -5,
       });
     }
 
@@ -221,6 +245,7 @@ function GenericDistributionPlot({
         range: [0, Math.max(...plotData.yPoints) * 1.2],
         fixedrange: true,
       },
+      annotations,
     };
 
     Plotly.react(plot, traces, layout, {
@@ -235,6 +260,7 @@ function GenericDistributionPlot({
     values,
     xaxisLabel,
     highlightValue,
+    highlightLineLabel,
     includeRugPlot,
     fillOpacity,
   ]);
