@@ -7,19 +7,7 @@ import {
 import { breadboxAPI, legacyPortalAPI, cached } from "@depmap/api";
 import { TableFormattedData } from "../types";
 import { fetchMetadata } from "../fetchDataHelpers";
-
-function getKeysByValue<T extends Record<string, any>>(
-  obj: T,
-  value: any
-): (keyof T)[] {
-  const keys: (keyof T)[] = [];
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === value) {
-      keys.push(key);
-    }
-  }
-  return keys;
-}
+import { getKeysByValue } from "../utils";
 
 function buildTableData(
   viabilityAtDose: any,
