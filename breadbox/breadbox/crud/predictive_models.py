@@ -366,7 +366,7 @@ def _convert_parquet_to_sqlite(df: pd.DataFrame, output_path: str):
             correlation_col = f"feature_{rank}_correlation"
 
             given_id_val = row.get(given_id_col)
-            if pd.isna(given_id_val):
+            if given_id_val is None or pd.isna(given_id_val):
                 break
 
             cursor.execute(
