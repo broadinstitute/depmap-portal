@@ -3,7 +3,6 @@ import pandas as pd
 
 
 def get_paralogs_summary():
-    print("getting paralogs summary...")
     paralogs_df = data_access.get_subsetted_df_by_labels("paralogs_25q2")
 
     paralogs = paralogs_df.reset_index(names=["ModelID"])
