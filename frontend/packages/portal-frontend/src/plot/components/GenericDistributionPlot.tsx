@@ -176,7 +176,7 @@ function GenericDistributionPlot({
         font: {
           family: "Lato, sans-serif",
           size: 12,
-          color: color,
+          color,
           weight: 900,
         },
         align: "right",

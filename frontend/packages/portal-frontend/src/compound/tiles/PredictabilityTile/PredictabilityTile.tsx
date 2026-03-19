@@ -6,6 +6,7 @@ import ErrorLoading from "../ErrorLoading";
 import usePredictabilityTileData from "../hooks/usePredictabilityTileData";
 import { TopFeaturesTable } from "./TopFeaturesTable";
 import { PredictabilityPlotData, PredictabilityTileData } from "@depmap/types";
+import PurpleHelpIcon from "src/geneTea/components/PurpleHelpIcon";
 
 interface PredictabilityTileProps {
   compoundId: string;
@@ -30,11 +31,11 @@ const PredictabilityView: React.FC<{
           <>
             <h2 className="no_margin cardtitle_text">
               Predictability
-              <img
-                className="info-icon popover-selector"
-                src="/static/img/gene_overview/info_purple.svg"
-                alt="info"
-                data-toggle="tooltip"
+              <PurpleHelpIcon
+                tooltipText="Dependency probabilities for each gene are predicted using an ensemble of random forests (RF), where each RF model 
+        is fit using different combinations of CCLE 2019 datasets and feature selection methods (see details for model definitions). The measure 
+        of prediction accuracy for each model is the Pearson correlation of the predicted dependency values to the observed values."
+                popoverId="predictability-tooltip-1"
               />
             </h2>
 
@@ -72,10 +73,10 @@ const PredictabilityView: React.FC<{
 
                 <p className="no_margin plot_label">
                   Prediction Accuracy
-                  <img
-                    className="info-icon-axis popover-selector"
-                    src="/static/img/gene_overview/info_purple.svg"
-                    alt="info"
+                  <PurpleHelpIcon
+                    tooltipText="Densities represent the distribution of prediction accuracies for the top 6,000 genes with the highest variance. Vertical lines indicate the accuracy of 
+              predicting the query gene."
+                    popoverId="predictability-tooltip-2"
                   />
                 </p>
               </div>
@@ -85,10 +86,10 @@ const PredictabilityView: React.FC<{
               {/* 3. Predictive Model Features Table */}
               <div className="card_subheading">
                 Features of most accurate predictive model
-                <img
-                  className={styles.infoImage}
-                  src="/static/img/gene_overview/info_purple.svg"
-                  alt="info"
+                <PurpleHelpIcon
+                  tooltipText="Indicates the impact of an individual feature on prediction accuracy relative to the other features available to the model (0 to 1 scale). It is calculated 
+              using Gini Importance and is normalized so the total of all feature importance is 1."
+                  popoverId="predictability-tooltip-3"
                 />
               </div>
 
