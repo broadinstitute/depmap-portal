@@ -171,7 +171,7 @@ function GenericDistributionPlot({
         y: maxY * 1.1, // Positioned slightly above the KDE peak
         xref: "x2",
         yref: "y2",
-        text: highlightLineLabel,
+        text: `<b>${highlightLineLabel}</b>`,
         showarrow: false,
         font: {
           family: "Lato, sans-serif",
@@ -179,10 +179,10 @@ function GenericDistributionPlot({
           color: color,
           weight: 900,
         },
-        align: "left",
-        xanchor: "left",
+        align: "right",
+        xanchor: "center",
         yanchor: "bottom",
-        // xshift: -5,
+        xshift: -6,
       });
     }
 

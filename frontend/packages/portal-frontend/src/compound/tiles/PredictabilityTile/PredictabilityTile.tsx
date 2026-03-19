@@ -55,25 +55,15 @@ const PredictabilityView: React.FC<{
                       className={styles.plotContainer}
                       style={{ marginBottom: "15px", position: "relative" }}
                     >
-                      <div
-                        style={{
-                          color: plot.color,
-                          fontWeight: 900,
-                          fontSize: "12px",
-                          fontFamily: "Lato",
-                        }}
-                      >
-                        {plot.label} <br />
-                        {plot.query_value.toFixed(3)}
-                      </div>
-
                       <GenericDistributionPlot
                         values={plot.background_values}
                         xaxisLabel=""
                         color={plot.color}
                         fillOpacity={0.5}
                         highlightValue={plot.query_value}
-                        highlightLineLabel={plot.label}
+                        highlightLineLabel={`${
+                          plot.label
+                        }: ${plot.query_value.toFixed(3)}`}
                         includeRugPlot={false}
                       />
                     </div>
