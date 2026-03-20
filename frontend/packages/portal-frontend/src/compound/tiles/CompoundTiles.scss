@@ -204,3 +204,107 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.DatasetAvailabilityTile {
+  .datasetAvailabilityContainer {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    position: relative;
+    padding-bottom: 15px;
+
+    .subHeader {
+      font-size: 14px;
+      font-weight: 700;
+      padding-bottom: 10px;
+    }
+  }
+
+  .infoTable {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+
+    .datasetColth {
+      width: 25%;
+      text-align: left;
+      padding: 8px 4px;
+    }
+
+    .cellLinesColth {
+      width: 15%;
+      text-align: left;
+      padding: 8px 4px;
+    }
+
+    .doseRangeColth {
+      width: 37%;
+      text-align: left;
+      padding: 8px 4px;
+    }
+
+    .assayColth {
+      width: 23%;
+      text-align: left;
+      padding: 8px 4px;
+    }
+
+    .datasetColContent {
+      padding: 16px 4px 16px 4px;
+      vertical-align: top;
+      word-wrap: break-word;
+      white-space: normal;
+    }
+
+    .cellLineColContent {
+      padding: 16px 4px;
+      vertical-align: top;
+    }
+
+    .doseRangeLabelColContent {
+      padding: 16px 4px;
+      vertical-align: top;
+    }
+
+    .assayLabelColContent {
+      padding: 16px 4px;
+      vertical-align: top;
+    }
+  }
+
+  .errorMessage {
+    padding: 24px;
+    text-align: center;
+    color: #b00020;
+    font-weight: 600;
+  }
+
+  .extraDataContainer {
+    word-wrap: break-word;
+    white-space: normal;
+  }
+
+  .viewMoreLessContainer {
+    margin-top: 25px;
+    margin-bottom: 16px;
+  }
+
+  .buttonLink {
+    all: unset;
+    cursor: pointer;
+    color: #337ab7;
+    cursor: pointer;
+
+    &:active {
+      text-decoration: underline;
+    }
+
+    &:hover {
+      color: #23527c;
+    }
+
+    &:focus-visible {
+      outline: 5px auto -webkit-focus-ring-color;
+      outline-offset: 3px;
+    }
+  }
+}

@@ -47,6 +47,15 @@ from breadbox_client.api.temp import get_associations_for_slice as get_associati
 from breadbox_client.api.temp import evaluate_context as evaluate_context_client
 from breadbox_client.api.temp import get_sql_schema
 from breadbox_client.api.temp import query_sql
+from breadbox_client.api.temp import get_all_predictive_model_results as get_all_predictive_model_results_client
+from breadbox_client.api.temp import get_all_predictive_model_configs as get_all_predictive_model_configs_client
+from breadbox_client.api.temp import get_predictive_model_configs_for_dimension_type as get_predictive_model_configs_for_dimension_type_client
+from breadbox_client.api.temp import create_predictive_model_configs as create_predictive_model_configs_client
+from breadbox_client.api.temp import update_predictive_model_configs as update_predictive_model_configs_client
+from breadbox_client.api.temp import delete_predictive_model_configs as delete_predictive_model_configs_client
+from breadbox_client.api.temp import get_predictive_models_for_feature as get_predictive_models_for_feature_client
+from breadbox_client.api.temp import bulk_load_predictive_model_results as bulk_load_predictive_model_results_client
+from breadbox_client.api.temp import delete_predictive_model_results as delete_predictive_model_results_client
 
 from breadbox_client.models import (
     AccessType,
@@ -95,6 +104,12 @@ from breadbox_client.models import (
     UploadFileResponse,
     ValueType,
     MatrixDatasetParamsDataFileFormat,
+    BulkLoadResultsIn,
+    ModelConfigIn,
+    PredictiveModelConfigIn,
+    PredictiveModelConfigOut,
+    PredictiveModelResultOut,
+    PredictiveModelsResponse,
 )
 
 from breadbox_client.types import UNSET, Unset, File, Response
@@ -593,6 +608,96 @@ class BBClient:
     def query_sql(self, sql: str) -> str:
         request_body = SqlQuery(sql=sql)
         breadbox_response = query_sql.sync_detailed(client=self.client, body=request_body)
+        return self._parse_client_response(breadbox_response)
+
+    # PREDICTIVE MODELS
+
+    def get_all_predictive_model_results(self) -> List[PredictiveModelResultOut]:
+        """Get summary of all stored predictive model results."""
+        breadbox_response = get_all_predictive_model_results_client.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def get_all_predictive_model_configs(self) -> List[PredictiveModelConfigOut]:
+        """Get all predictive model configs."""
+        breadbox_response = get_all_predictive_model_configs_client.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def get_predictive_model_configs_for_dimension_type(self, dimension_type_name: str) -> PredictiveModelConfigOut:
+        """Get predictive model configs for a specific dimension type."""
+        breadbox_response = get_predictive_model_configs_for_dimension_type_client.sync_detailed(
+            dimension_type_name=dimension_type_name, client=self.client
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def create_predictive_model_configs(self, dimension_type_name: str, configs: List[ModelConfigIn]) -> PredictiveModelConfigOut:
+        """Create predictive model configs for a dimension type (admin only)."""
+        body = PredictiveModelConfigIn(configs=configs)
+        breadbox_response = create_predictive_model_configs_client.sync_detailed(
+            dimension_type_name=dimension_type_name, client=self.client, body=body
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def update_predictive_model_configs(self, dimension_type_name: str, configs: List[ModelConfigIn]) -> PredictiveModelConfigOut:
+        """Update predictive model configs for a dimension type (admin only)."""
+        body = PredictiveModelConfigIn(configs=configs)
+        breadbox_response = update_predictive_model_configs_client.sync_detailed(
+            dimension_type_name=dimension_type_name, client=self.client, body=body
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def delete_predictive_model_configs(self, dimension_type_name: str):
+        """Delete all predictive model configs for a dimension type (admin only)."""
+        breadbox_response = delete_predictive_model_configs_client.sync_detailed(
+            dimension_type_name=dimension_type_name, client=self.client
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def get_predictive_models_for_feature(self, dataset_id: str, feature_given_id: str) -> PredictiveModelsResponse:
+        """Get predictive model results for a specific feature in a dataset."""
+        breadbox_response = get_predictive_models_for_feature_client.sync_detailed(
+            dataset_id=dataset_id, feature_given_id=feature_given_id, client=self.client
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def bulk_load_predictive_model_results(
+        self,
+        dimension_type_name: str,
+        config_name: str,
+        actuals_dataset_id: str,
+        predictions_dataset_id: str,
+        results_file: IO[bytes],
+        etag: str,
+    ):
+        """Bulk load predictive model results from a parquet file (admin only)."""
+        uploaded_file = self.upload_file(results_file)
+        body = BulkLoadResultsIn(
+            etag=etag,
+            file_ids=uploaded_file.file_ids,
+            md5=uploaded_file.md5,
+            predictions_dataset_id=predictions_dataset_id,
+        )
+        breadbox_response = bulk_load_predictive_model_results_client.sync_detailed(
+            dimension_type_name=dimension_type_name,
+            config_name=config_name,
+            dataset_id=actuals_dataset_id,
+            client=self.client,
+            body=body,
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def delete_predictive_model_results(
+        self,
+        dimension_type_name: str,
+        config_name: str,
+        actuals_dataset_id: str,
+    ):
+        """Delete predictive model results for a config+dataset combination (admin only)."""
+        breadbox_response = delete_predictive_model_results_client.sync_detailed(
+            dimension_type_name=dimension_type_name,
+            config_name=config_name,
+            dataset_id=actuals_dataset_id,
+            client=self.client,
+        )
         return self._parse_client_response(breadbox_response)
 
     # API

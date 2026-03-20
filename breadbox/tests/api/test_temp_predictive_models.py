@@ -231,6 +231,7 @@ def test_bulk_load_and_query(
         json={
             "file_ids": file_ids,
             "md5": md5,
+            "etag": "dummy-etag",
             "predictions_dataset_id": predictions_dataset.id,
         },
         headers=admin_headers,
@@ -306,6 +307,7 @@ def test_query_nonexistent_feature(
         json={
             "file_ids": file_ids,
             "md5": md5,
+            "etag": "dummy-etag",
             "predictions_dataset_id": predictions_dataset.id,
         },
         headers=admin_headers,
@@ -368,6 +370,7 @@ def test_delete_results(
         json={
             "file_ids": file_ids,
             "md5": md5,
+            "etag": "dummy-etag",
             "predictions_dataset_id": predictions_dataset.id,
         },
         headers=admin_headers,

@@ -1,6 +1,7 @@
 import {
   CompoundDoseCurveData,
   CompoundSummaryResponse,
+  DataAvailByAUCDatasetMetadataMap,
   DRCDatasetOptions,
 } from "@depmap/types";
 import { getJson } from "../client";
@@ -34,6 +35,12 @@ export function getPrioritizedDataset(
   return getJson<DRCDatasetOptions>(
     `/api/compound/prioritized_dataset`,
     params
+  );
+}
+
+export function getDataAvailabilityMetadata(): Promise<DataAvailByAUCDatasetMetadataMap> {
+  return getJson<DataAvailByAUCDatasetMetadataMap>(
+    `/api/compound/data_availability_metadata`
   );
 }
 

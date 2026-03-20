@@ -133,3 +133,20 @@ export interface PredictabilityTileData {
   };
   tables: PredictabilityTable[];
 }
+ * Represents the metadata for a single dataset's availability as
+ * defined in the drc_compound_datasets constant.
+ */
+export interface DatasetAvailabilityMetadata {
+  assay: string;
+  display_name: string;
+  viability_dataset_given_id: string;
+}
+
+/**
+ * A mapping where the key is the auc_dataset_given_id
+ * and the value is the DatasetAvailabilityMetadata object.
+ */
+export type DataAvailByAUCDatasetMetadataMap = Record<
+  string,
+  DatasetAvailabilityMetadata
+>;
