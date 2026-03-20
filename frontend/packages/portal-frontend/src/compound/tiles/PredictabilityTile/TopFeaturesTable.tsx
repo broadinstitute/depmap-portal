@@ -1,5 +1,6 @@
 import React from "react";
 import styles from "../CompoundTiles.scss";
+import { Tooltip } from "@depmap/common-components";
 
 export const TopFeaturesTable: React.FC<{ features: any[]; type: string }> = ({
   features,
@@ -9,11 +10,11 @@ export const TopFeaturesTable: React.FC<{ features: any[]; type: string }> = ({
     <table className={styles.topFeaturesTable}>
       <thead>
         <tr>
-          <th>{""}</th>
-          <th>Feature</th>
-          <th>Importance</th>
-          <th>Corr.</th>
-          <th>Type</th>
+          <th style={{ width: "8%" }}>{""}</th>
+          <th style={{ width: "35%" }}>Feature</th>
+          <th style={{ width: "25%" }}>Importance</th>
+          <th style={{ width: "12%" }}>Corr.</th>
+          <th style={{ width: "20%" }}>Type</th>
         </tr>
       </thead>
       <tbody>
@@ -29,15 +30,21 @@ export const TopFeaturesTable: React.FC<{ features: any[]; type: string }> = ({
                 </span>
               )}
             </td>
-            <td>
+            <td className={styles.ellipsisStyle}>
               {feature.interactive_url ? (
-                <a
-                  href={feature.interactive_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <Tooltip
+                  id={`predictability-${feature.name}-tooltip`}
+                  content={feature.name}
+                  placement="top"
                 >
-                  {feature.name}
-                </a>
+                  <a
+                    href={feature.interactive_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {feature.name}
+                  </a>
+                </Tooltip>
               ) : (
                 feature.name
               )}

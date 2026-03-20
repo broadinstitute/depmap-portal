@@ -104,9 +104,13 @@ function GenericDistributionPlot({
     if (!plotData || !ref.current) return;
 
     const plot = ref.current;
-    const SEPARATOR_Y = 0.15; // The rug plot takes up 15% of the total height.
+    const maxY = Math.max(...plotData.yPoints);
 
-    // 1. Calculate a shared range so y-axes (and the 0 line) align perfectly
+    // Define which axes we are using based on includeRugPlot
+    const mainX = includeRugPlot ? "x2" : "x";
+    const mainY = includeRugPlot ? "y2" : "y";
+    const SEPARATOR_Y = 0.15;
+
     const xMin = Math.min(...plotData.xPoints, ...values);
     const xMax = Math.max(...plotData.xPoints, ...values);
     const sharedRange = [xMin, xMax];
@@ -120,8 +124,8 @@ function GenericDistributionPlot({
         fill: "tozeroy",
         fillcolor: hexToRgba(color, fillOpacity),
         line: { color: "transparent" },
-        yaxis: "y2",
-        xaxis: "x2",
+        yaxis: mainY,
+        xaxis: mainX,
         name: "",
       },
     ];
@@ -144,21 +148,20 @@ function GenericDistributionPlot({
       });
     }
 
-    const maxY = Math.max(...plotData.yPoints);
     if (highlightValue !== undefined) {
       traces.push({
         x: [highlightValue, highlightValue],
-        // Extending from negative range (y1 area) to the top of KDE (y2 area)
-        y: [-0.5, maxY * 1.1],
+        // If no rug plot, start at 0, otherwise start slightly below 0 to cross the rug
+        y: [includeRugPlot ? -0.5 : 0, maxY * 1.1],
         type: "scatter",
         mode: "lines",
         line: {
-          color, // Matches the dataset color
+          color,
           width: 3,
           dash: "solid",
         },
-        yaxis: "y2", // Anchored to top axis but overflows down
-        xaxis: "x2",
+        yaxis: mainY,
+        xaxis: mainX,
         name: "",
         hoverinfo: "x",
       });
@@ -168,16 +171,15 @@ function GenericDistributionPlot({
     if (highlightValue !== undefined && highlightLineLabel) {
       annotations.push({
         x: highlightValue,
-        y: maxY * 1.1, // Positioned slightly above the KDE peak
-        xref: "x2",
-        yref: "y2",
+        y: maxY * 1.1,
+        xref: mainX,
+        yref: mainY,
         text: `<b>${highlightLineLabel}</b>`,
         showarrow: false,
         font: {
           family: "Lato, sans-serif",
           size: 12,
           color,
-          weight: 900,
         },
         align: "right",
         xanchor: "center",
@@ -189,62 +191,63 @@ function GenericDistributionPlot({
     const layout: Partial<Layout> = {
       autosize: true,
       height: 250,
-      margin: { l: 20, r: 20, t: 10, b: 30 },
+      margin: { l: 20, r: 20, t: 10, b: 50 },
       showlegend: false,
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
 
+      // The base xaxis - shows labels/numbers
       xaxis: {
         title: xaxisLabel,
-        range: sharedRange, // 2. Force identical range
+        range: sharedRange,
         showgrid: false,
-        showline: false,
-        ticks: "",
-        tickfont: { size: 14, color: "#333" },
-        fixedrange: true,
-        // Set to true and uncomment out the below to debug 0 line alignments
-        zeroline: false,
-        // zerolinecolor: "#ccc",
-        // zerolinewidth: 1,
-      },
-
-      xaxis2: {
-        range: sharedRange, // 3. Force identical range here too
-        overlaying: "x",
-        showgrid: false,
-        showline: true,
+        showline: !includeRugPlot, // Only show a line here if it's the only axis
         linecolor: "black",
-        linewidth: 1.5,
+        linewidth: 1,
         ticks: "outside",
-        ticklen: 6,
-        tickcolor: "black",
-        showticklabels: false,
-        position: SEPARATOR_Y,
-        anchor: "free",
+        showticklabels: !includeRugPlot,
+        tickfont: { size: 12, color: "#333" },
         fixedrange: true,
-        // Match zeroline settings for perfect vertical alignment - if misalignment is suspected, switch this to true to debug
         zeroline: false,
-        // zerolinecolor: "black",
-        // zerolinewidth: 1,
       },
 
+      // The base yaxis - domain changes based on rug plot presence
       yaxis: {
-        domain: [0.05, SEPARATOR_Y],
+        domain: includeRugPlot ? [0.05, SEPARATOR_Y] : [0, 1],
         showgrid: false,
         showticklabels: false,
         zeroline: false,
-        range: [-0.9, 0.1],
+        range: includeRugPlot ? [-0.9, 0.1] : [0, maxY * 1.2],
         fixedrange: true,
       },
-      yaxis2: {
-        domain: [SEPARATOR_Y, 1],
-        showgrid: false,
-        showticklabels: false,
-        zeroline: false,
-        // Make sure the highlight line has room to show at the top
-        range: [0, Math.max(...plotData.yPoints) * 1.2],
-        fixedrange: true,
-      },
+
+      // Only add secondary axes if we have a rug plot
+      ...(includeRugPlot && {
+        xaxis2: {
+          range: sharedRange,
+          overlaying: "x",
+          showgrid: false,
+          showline: true,
+          linecolor: "black",
+          linewidth: 1,
+          ticks: "outside",
+          ticklen: 20,
+          tickcolor: "black",
+          showticklabels: true,
+          position: SEPARATOR_Y,
+          anchor: "free",
+          fixedrange: true,
+          zeroline: false,
+        },
+        yaxis2: {
+          domain: [SEPARATOR_Y, 1],
+          showgrid: false,
+          showticklabels: false,
+          zeroline: false,
+          range: [0, maxY * 1.1],
+          fixedrange: true,
+        },
+      }),
       annotations,
     };
 
