@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "breadbox-client"
-version = "4.6.0"
+version = "4.7.0"
 description = "A client library for accessing Breadbox"
 
 authors = []
@@ -30,6 +30,7 @@ httpx = "^0.28.1"
 
 [tool.poetry.group.dev.dependencies]
 pyright = "^1.1.379"
+pyarrow = ">3.0.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

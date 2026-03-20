@@ -1,14 +1,23 @@
 import dataclasses
 from typing import Any
 from depmap import data_access
-from depmap.compound.models import Compound
+from depmap.compound.models import Compound, drc_compound_datasets
 from depmap.compound.new_dose_curves_utils import get_dose_response_curves_per_model
 from depmap.compound.views.index import (
     get_corr_analysis_options,
     get_heatmap_dose_curves_tab_drc_options,
 )
 from flask_restx import Namespace, Resource
-from flask import request
+from flask import request, jsonify
+from depmap.entity.views.executive import (
+    format_overall_top_model,
+    format_top_three_models_top_feature,
+    get_percentile,
+    sort_by_model_pearson_feature_rank,
+)
+from depmap.predictability.models import PredictiveBackground, PredictiveModel
+from depmap.utilities import color_palette, number_utils
+import pandas as pd
 
 namespace = Namespace("compound", description="View compound data in the portal")
 
@@ -130,3 +139,141 @@ class CompoundSummary(Resource):
             "heatmap_dose_curve_options": serializable_drc,
             "correlation_analysis_options": serializable_corr,
         }
+
+
+@namespace.route("/predictability_tile_data")
+class PredictabilityTileData(Resource):
+    def get(self):
+        feature_id = request.args.get("compound_id")
+        args: Any = request.args
+        compound_dataset_ids = args.getlist("compound_dataset_ids")
+
+        data = self.format_predictability_tile_json(
+            feature_id=feature_id, dataset_given_ids=compound_dataset_ids
+        )
+
+        if data is None:
+            return {"message": "No predictability data found"}, 404
+
+        return jsonify(data)
+
+    def format_predictability_tile_json(self, feature_id, dataset_given_ids):
+        plot_params = []
+
+        # Mapping for colors and types (TODO: move to a config/const file)
+        ID_MAP = {
+            "Chronos_Combined": ("crispr", color_palette.crispr_color),
+            "RNAi_merged": ("rnai", color_palette.rnai_color),
+            "Rep_all_single_pt_per_compound": (
+                "rep_all_single_pt",
+                color_palette.rep_all_single_pt_color,
+            ),
+            "PRISMOncologyReferenceLog2AUCMatrix": (
+                "prism_onc_ref",
+                color_palette.prism_oncology_color,
+            ),
+            "PRISMOncologyReferenceSeqLog2AUCMatrix": (
+                "prism_onc_seq_ref",
+                color_palette.prism_oncology_color,
+            ),
+        }
+
+        for given_id in dataset_given_ids:
+            if not given_id or given_id not in ID_MAP:
+                continue
+
+            df = PredictiveModel.get_top_models_features(
+                dataset_given_id=given_id, pred_model_feature_id=str(feature_id)
+            )
+            if df is None or df.empty:
+                continue
+
+            dataset_type, color = ID_MAP[given_id]
+            dataset = data_access.get_matrix_dataset(given_id)
+            background = PredictiveBackground.get_background(given_id)
+
+            plot_params.append(
+                {
+                    "df": df,
+                    "background": background,
+                    "label": dataset.label,
+                    "type": dataset_type,
+                    "color": color,
+                }
+            )
+
+        if not plot_params:
+            return None
+
+        # Sort combined models
+        unsorted_df = pd.concat([p["df"] for p in plot_params])
+        # 1. Create type mapping for the dataframe
+        type_mapping = {k: v[0] for k, v in ID_MAP.items()}
+
+        # 2. Assign 'type' column sort
+        sorted_df = sort_by_model_pearson_feature_rank(
+            unsorted_df.assign(type=unsorted_df["dataset_given_id"].map(type_mapping))
+        )
+
+        # Build the JSON response
+        response = {
+            "plot_data": [],
+            "overall_top_model": format_overall_top_model(sorted_df),
+            "tables": [],
+        }
+
+        for p in plot_params:
+            # Get the specific pearson value for this dataset from the sorted results
+            subset = sorted_df[sorted_df["type"] == p["type"]]
+            query_value = float(subset.iloc[0]["model_pearson"])
+
+            # 1. Data for the GenericDistributionPlot
+            response["plot_data"].append(
+                {
+                    "label": p["label"],
+                    "type": p["type"],
+                    "color": p["color"],
+                    "query_value": query_value,
+                    "percentile": number_utils.format_3_sf(
+                        get_percentile(query_value, p["background"])
+                    ),
+                    "background_values": p["background"],
+                }
+            )
+
+            # 2. Data for the Tables
+            response["tables"].append(
+                {
+                    "type": p["type"],
+                    "dataset": p["label"],
+                    "dataset_given_id": p.get(
+                        "dataset_given_id"
+                    ),  # For the header logic in React
+                    "top_models": format_top_three_models_top_feature(
+                        sorted_df, p["type"]
+                    ),
+                }
+            )
+
+        return response
+
+
+@namespace.route("/data_availability_metadata")
+class DataAvailabilityMetadata(Resource):
+    def get(self):
+        """
+        Returns a mapping of auc dataset IDs to their display metadata
+        (assay type and display name). Currently only used on the compound page
+        dataset availability tile.
+        """
+        # Create a dictionary using auc_dataset_given_id as the key
+        availability_map = {
+            ds.auc_dataset_given_id: {
+                "assay": ds.assay,
+                "display_name": ds.display_name,
+                "viability_dataset_given_id": ds.viability_dataset_given_id,
+            }
+            for ds in drc_compound_datasets
+        }
+
+        return availability_map

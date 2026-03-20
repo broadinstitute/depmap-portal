@@ -46,7 +46,7 @@ const InformationalContent = ({
     const data: Array<{
       screen: string;
       model: string;
-      compoundExperimentId?: string;
+      compoundId?: string;
       modelCorrelation: number;
       feature: string;
       featureImportance: number;
@@ -62,8 +62,8 @@ const InformationalContent = ({
               screen: table.screen,
               model: (modelAndResults as CompoundDosePredictiveModelResults)
                 .modelName,
-              compoundExperimentId: (modelAndResults as CompoundDosePredictiveModelResults)
-                .compoundExperimentId,
+              compoundId: (modelAndResults as CompoundDosePredictiveModelResults)
+                .compoundId,
               modelCorrelation: modelAndResults.modelCorrelation,
               feature: result.featureName,
               featureImportance: result.featureImportance,
@@ -189,11 +189,11 @@ const PredictabilityRowForEntity = (props: {
     );
   }
 
-  // sorted on back end; grouping by compound experiment and dataset model which should each have 3 tables
-  const tablesGroupedByCompoundExperimentId = tables.reduce<
+  // sorted on back end; grouping by compound and dataset model which should each have 3 tables
+  const tablesGroupedBycompoundId = tables.reduce<
     Record<string, PredictabilityTable[]>
   >((r, e) => {
-    const ceId = e.compoundExperimentId;
+    const ceId = e.compoundId;
     if (ceId !== undefined) {
       return {
         ...r,
@@ -203,7 +203,7 @@ const PredictabilityRowForEntity = (props: {
     return r;
   }, {});
 
-  const groupedTables = Object.values(tablesGroupedByCompoundExperimentId);
+  const groupedTables = Object.values(tablesGroupedBycompoundId);
   return (
     <>
       {groupedTables.map((group, i) => {
@@ -212,17 +212,17 @@ const PredictabilityRowForEntity = (props: {
             key={
               (group[0]
                 .modelsAndResults as CompoundDosePredictiveModelResults[])[0]
-                .compoundExperimentId
+                .compoundId
             }
           >
             <Col md={12}>
               <div className="compound-experiment-label-container">
-                <div className="all-caps">Compound experiment ID</div>
+                <div className="all-caps">Compound ID</div>
                 <div className="compound-experiment-label">
                   {
                     (group[0]
                       .modelsAndResults[0] as CompoundDosePredictiveModelResults)
-                      .compoundExperimentId
+                      .compoundId
                   }
                 </div>
               </div>
