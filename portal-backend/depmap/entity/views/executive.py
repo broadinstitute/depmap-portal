@@ -1,7 +1,5 @@
 import re
 from depmap import data_access
-from depmap.compound import legacy_utils
-from depmap.tile.TEMP import temp_get_legacy_dataset_from_breadbox_dataset_id
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd

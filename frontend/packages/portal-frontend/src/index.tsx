@@ -33,6 +33,7 @@ import {
 import TopCoDependenciesTile from "./genePage/tiles/TopCoDependencies";
 import { SensitivityTile } from "./compound/tiles/SensitivityTile/SensitivityTile";
 import { getTopCodependencyDatasetIds } from "./genePage/utils";
+import { PredictabilityTile } from "./compound/tiles/PredictabilityTile/PredictabilityTile";
 import { DatasetAvailabilityTile } from "./compound/tiles/DataAvailabilityTile/DataAvailabilityTile";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
@@ -315,6 +316,28 @@ export async function initSensitivityTile(
       <SensitivityTile
         compoundId={compoundId}
         dataset={highestPriorityDataset}
+      />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export async function initPredictabilityTile(
+  elementId: string,
+  compoundId: string
+) {
+  const highestPriorityDataset = await getHighestPriorityCompoundDataset(
+    compoundId
+  );
+
+  if (highestPriorityDataset === null) {
+    return;
+  }
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <PredictabilityTile
+        compoundId={compoundId}
+        datasetGivenIds={[highestPriorityDataset.given_id!]}
       />
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
