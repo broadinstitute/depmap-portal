@@ -75,3 +75,22 @@ class BulkLoadResultsIn(BaseModel):
     file_ids: List[str]
     md5: str
     predictions_dataset_id: str
+    etag: str
+
+
+class PredictiveModelResultOut(BaseModel):
+    """Summary of a stored PredictiveModelResult record"""
+
+    dim_type_name: str
+    config_name: str
+    actuals_dataset_id: str
+    actuals_dataset_name: str
+    actuals_dataset_taiga_id: Optional[str] = Field(
+        default=None, json_schema_extra={"nullable": True}
+    )
+    predictions_dataset_id: str
+    predictions_dataset_name: str
+    predictions_taiga_id: Optional[str] = Field(
+        default=None, json_schema_extra={"nullable": True}
+    )
+    etag: str
