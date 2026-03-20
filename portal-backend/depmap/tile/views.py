@@ -22,9 +22,6 @@ from depmap.gene.views.executive import (
     format_mutation_profile,
     get_dependency_distribution,
 )
-from depmap.compound.views.executive import (
-    format_availability_tile,
-)
 from depmap.gene.models import Gene
 from depmap.compound.models import Compound, CompoundExperiment
 from depmap.dataset.models import DependencyDataset, BiomarkerDataset
@@ -560,9 +557,7 @@ def get_tractability_html(gene):
     return render_template("tiles/tractability.html", proteins=proteins)
 
 
-def get_sensitivity_html(
-    compound: Compound, query_params_dict={}
-):
+def get_sensitivity_html(compound: Compound, query_params_dict={}):
     div_id = str(uuid.uuid4())
 
     return RenderedTile(
@@ -574,10 +569,7 @@ def get_sensitivity_html(
     )
 
 
-
-def get_availability_html(
-    compound: Entity, query_params_dict={}
-):
+def get_availability_html(compound: Entity, query_params_dict={}):
     div_id = str(uuid.uuid4())
 
     return RenderedTile(
