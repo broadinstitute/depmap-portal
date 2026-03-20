@@ -12,7 +12,30 @@ Second, check out the `depmap-deploy` repo if you have not already and put that 
 Then, assuming you are in `depmap-portal/pipeline/data-prep-pipeline` where this readme is located:
 
 1. Run `eval $(poetry env activate)` or `poetry shell` if poetry is <2.0. Then install the packages inside the poetry env.
-2. Once inside the poetry environment, run `local_run.sh` with either `internal` or `external` as parameters depending on the environment which will run each rule mentioned there and produce the relevant output.
+2. Once inside the poetry environment, run `conseq`:
+
+For all the internal deployments:
+
+```
+conseq run data_prep_pipeline/run_internal.conseq
+```
+
+For the public deployment:
+
+```
+conseq run data_prep_pipeline/run_external.conseq
+```
+
+## How to locally run the taiga update process
+
+When run from jenkins, this pipeline updates the release dataset that it is configured to read from. If you need to test the "publish" process (ie: writing back to taiga) then:
+
+1. Create a copy of the release, and update `<env>`.template with the permaname of the copy. We do not want to update the official release dataset in the course of development/debugging
+2. Run the following command which will force publishing to occur. (The default is to _not_ publish back to taiga which is conveninent for testing the rest of the pipeline without alterning anything)
+
+```
+conseq run --define publish_data_prep=True --define is_dev=False data_prep_pipeline/run_<env>.conseq 
+```
 
 ## How to extend the pipeline to add additional files to the release
 

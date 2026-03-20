@@ -15,10 +15,23 @@ from breadbox.schemas.predictive_models import (
     BulkLoadResultsIn,
     PredictiveModelConfigIn,
     PredictiveModelConfigOut,
+    PredictiveModelResultOut,
     PredictiveModelsResponse,
 )
 
 from .router import router
+
+
+@router.get(
+    "/predictive_models",
+    operation_id="get_all_predictive_model_results",
+    response_model=List[PredictiveModelResultOut],
+)
+def get_all_predictive_model_results(
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+):
+    """Get summary of all stored predictive model results"""
+    return predictive_models_crud.get_all_results(db)
 
 
 @router.get(
@@ -168,6 +181,7 @@ def bulk_load_predictive_model_results(
                 dataset_id,
                 results_in.predictions_dataset_id,
                 full_file,
+                results_in.etag,
             )
             return {
                 "status": "loaded",

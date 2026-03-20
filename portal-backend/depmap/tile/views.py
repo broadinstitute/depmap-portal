@@ -574,9 +574,16 @@ def get_sensitivity_html(
     )
 
 
-def get_availability_html(compound, query_params_dict={}):
-    return render_template(
-        "tiles/availability.html",
-        name=compound.label,
-        availability=format_availability_tile(compound),
+
+def get_availability_html(
+    compound: Entity, query_params_dict={}
+):
+    div_id = str(uuid.uuid4())
+
+    return RenderedTile(
+        f'<div id="{div_id}"/>',
+        f"""(
+        function() {{
+            DepMap.initDatasetAvailabilityTile("{div_id}", "{compound.compound_id}", "{compound.label}");
+        }})""",
     )
