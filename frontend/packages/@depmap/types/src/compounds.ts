@@ -133,7 +133,7 @@ export interface PredictabilityTileData {
   };
   tables: PredictabilityTable[];
 }
- * Represents the metadata for a single dataset's availability as
+/* Represents the metadata for a single dataset's availability as
  * defined in the drc_compound_datasets constant.
  */
 export interface DatasetAvailabilityMetadata {
