@@ -108,7 +108,7 @@ const PredictabilityView: React.FC<{
                 type={predictability.overall_top_model.type}
               />
 
-              <div className={styles.viewDetailsSections}>
+              <div className={styles.viewDetailsSection}>
                 <p className={styles.viewDetailsParagraph}>
                   <span>
                     View model details in the{" "}
@@ -117,7 +117,7 @@ const PredictabilityView: React.FC<{
                       className={styles.pseudoLink}
                       type="button"
                     >
-                      Predictability tab
+                      Predictability Tab
                     </button>
                   </span>
                 </p>
