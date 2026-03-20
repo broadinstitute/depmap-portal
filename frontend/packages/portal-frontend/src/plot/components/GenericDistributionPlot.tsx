@@ -191,12 +191,11 @@ function GenericDistributionPlot({
     const layout: Partial<Layout> = {
       autosize: true,
       height: 250,
-      margin: { l: 20, r: 20, t: 10, b: 50 },
+      margin: { l: 20, r: 20, t: 10, b: includeRugPlot ? 50 : 20 },
       showlegend: false,
       paper_bgcolor: "rgba(0,0,0,0)",
       plot_bgcolor: "rgba(0,0,0,0)",
 
-      // The base xaxis - shows labels/numbers
       xaxis: {
         title: xaxisLabel,
         range: sharedRange,
@@ -204,14 +203,12 @@ function GenericDistributionPlot({
         showline: !includeRugPlot, // Only show a line here if it's the only axis
         linecolor: "black",
         linewidth: 1,
-        ticks: "outside",
+        ticks: !includeRugPlot ? "outside" : undefined,
         showticklabels: !includeRugPlot,
-        tickfont: { size: 12, color: "#333" },
+        tickfont: !includeRugPlot ? { size: 12, color: "#333" } : undefined,
         fixedrange: true,
         zeroline: false,
       },
-
-      // The base yaxis - domain changes based on rug plot presence
       yaxis: {
         domain: includeRugPlot ? [0.05, SEPARATOR_Y] : [0, 1],
         showgrid: false,
