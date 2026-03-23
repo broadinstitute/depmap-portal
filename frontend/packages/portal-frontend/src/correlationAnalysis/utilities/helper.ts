@@ -182,9 +182,8 @@ export function formatDoseString(input: string | undefined): string {
     return input;
   }
 
-  // Round to 4 decimal places and get the new string representation
-  // Use parseFloat(toFixed(4)).toString() to remove trailing zeros after rounding
-  const roundedNumberStr = parseFloat(numberValue.toFixed(4)).toString();
+  // use toPrecision in case of scientific notation
+  const roundedNumberStr = parseFloat(numberValue.toPrecision(4)).toString();
 
   // Reconstruct the string: rounded number + space (optional) + units
   if (units.length > 0 && units.trim().length > 0) {
