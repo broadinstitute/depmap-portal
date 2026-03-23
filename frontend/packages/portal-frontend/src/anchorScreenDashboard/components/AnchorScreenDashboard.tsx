@@ -1,5 +1,7 @@
 import React from "react";
+import { toPortalLink } from "@depmap/globals";
 import SliceTable from "@depmap/slice-table";
+import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
 import initialSlices from "./initialSlices.json";
 import PlotLinksHeader from "./PlotLinksHeader";
 import PlotLinksCell from "./PlotLinksCell";
@@ -12,8 +14,27 @@ function AnchorScreenDashboard() {
   const metadata = useMetadata();
 
   return (
-    <div className={styles.AnchorScreenDashboard}>
-      <h2>Anchor Screen Dashboard</h2>
+    <div>
+      <div className={styles.header}>
+        <h2>Anchor Screen Dashboard</h2>
+        <span className={styles.download}>
+          <DownloadDataSvg />
+          <a
+            target="_blank"
+            rel="noreferrer"
+            href={toPortalLink(
+              "data_page/?" +
+                new URLSearchParams({
+                  tab: "allData",
+                  releasename: "Anchor Screens 26Q1",
+                  filename: "PairedAnchorScreenTable.csv",
+                }).toString()
+            )}
+          >
+            Download files
+          </a>
+        </span>
+      </div>
       <div className={styles.description}>
         <p>
           This dashboard will help you navigate the CRISPR drug anchor screens
