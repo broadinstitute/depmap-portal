@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
-import { enabledFeatures } from "@depmap/globals";
+import { isElara } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import {
-  DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
@@ -34,7 +34,7 @@ interface Props {
   data: DataExplorerPlotResponse | null;
   isLoading: boolean;
   plotConfig: DataExplorerPlotConfig;
-  onClickColorByContext: (context: DataExplorerContext) => void;
+  onClickColorByContext: (context: DataExplorerContextV2) => void;
   onClickSaveSelectionAsContext: (
     context_type: string,
     selectedLabels: Set<string>
@@ -369,7 +369,7 @@ function DataExplorerWaterfallPlot({
               }}
             />
           </StackableSection>
-          {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (
+          {!isElara && plotConfig.index_type === "gene" ? (
             <StackableSection
               title="GeneTEA Enriched Terms"
               minHeight={200}

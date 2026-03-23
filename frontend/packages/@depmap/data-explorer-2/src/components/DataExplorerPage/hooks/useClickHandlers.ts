@@ -3,6 +3,7 @@ import omit from "lodash.omit";
 import {
   ContextPath,
   DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerPlotConfig,
 } from "@depmap/types";
 import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
@@ -109,7 +110,7 @@ export default function useClickHandlers(
   );
 
   const handleClickColorByContext = useCallback(
-    async (context: DataExplorerContext) => {
+    async (context: DataExplorerContextV2) => {
       const nextPlot = omit(
         {
           ...plot,

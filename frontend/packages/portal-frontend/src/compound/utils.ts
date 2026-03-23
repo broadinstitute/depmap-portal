@@ -28,7 +28,7 @@ function isMatrixDataset(d: unknown): d is MatrixDataset {
  * Shared internal fetcher to reduce repetitive Breadbox boilerplate.
  * Handles filtering and sorting by priority (lower number = higher priority).
  */
-async function fetchCompoundDatasets(
+export async function fetchCompoundDatasets(
   compoundId: string,
   featureType: "compound" | "compound_v2" = "compound_v2"
 ): Promise<MatrixDataset[]> {
@@ -164,4 +164,67 @@ export function groupBy(
   });
 
   return grouped;
+}
+
+export function getKeysByValue<T extends Record<string, any>>(
+  obj: T,
+  value: any
+): (keyof T)[] {
+  const keys: (keyof T)[] = [];
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === value) {
+      keys.push(key);
+    }
+  }
+  return keys;
+}
+
+/**
+ * Formats a dose range string from metadata.
+ * Handles different units for min/max and scientific notation.
+ * Format: "{minDose}{minUnit} - {maxDose}{maxUnit}"
+ */
+export function getDoseRangeLabel(doseMetadata: {
+  Dose: Record<string, number>;
+  DoseUnit: Record<string, string>;
+}): string | null {
+  const entries = Object.entries(doseMetadata.Dose);
+
+  if (entries.length === 0) return null;
+
+  // Find the IDs (keys) for the absolute min and max dose values
+  let minId = entries[0][0];
+  let maxId = entries[0][0];
+
+  entries.forEach(([id, value]) => {
+    if (value < doseMetadata.Dose[minId]) minId = id;
+    if (value > doseMetadata.Dose[maxId]) maxId = id;
+  });
+
+  /**
+   * Helper to format numbers with scientific notation support.
+   * Uses 4 significant digits for very small numbers.
+   */
+  const formatValue = (val: number): string => {
+    if (val === 0) return "0";
+    const isVerySmall = Math.abs(val) < 0.0001;
+
+    return isVerySmall
+      ? Number(val.toPrecision(4)).toString()
+      : parseFloat(val.toFixed(4)).toString();
+  };
+
+  const minVal = doseMetadata.Dose[minId];
+  const maxVal = doseMetadata.Dose[maxId];
+
+  const minUnit = doseMetadata.DoseUnit[minId] || "";
+  const maxUnit = doseMetadata.DoseUnit[maxId] || "";
+
+  // If units are the same, we can format as "0.1 - 10 µM"
+  // If different, "0.1 nM - 10 µM"
+  if (minUnit === maxUnit) {
+    return `${formatValue(minVal)} - ${formatValue(maxVal)} ${minUnit}`;
+  }
+
+  return `${formatValue(minVal)}${minUnit} - ${formatValue(maxVal)}${maxUnit}`;
 }
