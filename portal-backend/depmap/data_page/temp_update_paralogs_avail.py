@@ -5,7 +5,8 @@ import pandas as pd
 def get_paralogs_summary():
     paralogs_df = data_access.get_subsetted_df_by_labels("paralogs_25q2")
 
-    paralogs = paralogs_df.reset_index(names=["ModelID"])
+    # The data_access interface returns a transposed matrix, so let's transpose it back before reseting the index
+    paralogs = paralogs_df.T.reset_index(names=["ModelID"])
 
     paralogs_summary = (
         paralogs[["ModelID"]]
