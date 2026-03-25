@@ -255,9 +255,7 @@ def get_predictability_files():
     # Find all predictive models for drug screen datasets which have compounds as features and get the dataset given id
     drug_screen_given_ids_with_predictabilities = (
         PredictiveModel.query.filter(
-            PredictiveModel.query.filter(
-                PredictiveModel.pred_model_feature_type == "gene"
-            )
+            PredictiveModel.pred_model_feature_type == "compound_v2"
         )
         .distinct()
         .all()
