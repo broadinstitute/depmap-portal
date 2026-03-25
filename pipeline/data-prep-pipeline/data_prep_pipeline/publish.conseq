@@ -43,31 +43,31 @@ rule publish_context_matrix:
     run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Created SubtypeMatrix for release from data-prep-pipeline'  'SubtypeMatrix' {{inputs.context_matrix.filename}} 'csv_matrix'"
 
 
-rule publish_driver_events:
-    inputs:
-        driver_events_data={"type": "predictability_driver_events"},
-        update_taiga_script=fileref('upload_to_taiga.py')
-    outputs:{"type": "predictability_driver_events_published"}
+# rule publish_driver_events:
+#     inputs:
+#         driver_events_data={"type": "predictability_driver_events"},
+#         update_taiga_script=fileref('upload_to_taiga.py')
+#     outputs:{"type": "predictability_driver_events_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityDriverEventsTransformed for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
-
-
-rule publish_genetic_derangement:
-    inputs:
-        genetic_derangement_data={"type": "predictability_genetic_derangement"},
-        update_taiga_script=fileref('upload_to_taiga.py')
-    outputs:{"type": "predictability_genetic_derangement_published"}
-
-    run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityGeneticDerangementTransformed for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityDriverEventsTransformed for predictability'  'PredictabilityDriverEventsTransformed' {{inputs.driver_events_data.filename}} 'csv_matrix'"
 
 
-rule publish_fusion:
-    inputs:
-        fusion_data={"type": "predictability_fusion"},
-        update_taiga_script=fileref('upload_to_taiga.py')
-    outputs:{"type": "predictability_fusion_published"}
+# rule publish_genetic_derangement:
+#     inputs:
+#         genetic_derangement_data={"type": "predictability_genetic_derangement"},
+#         update_taiga_script=fileref('upload_to_taiga.py')
+#     outputs:{"type": "predictability_genetic_derangement_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityFusionTransformed for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
+#     run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityGeneticDerangementTransformed for predictability'  'PredictabilityGeneticDerangementTransformed' {{inputs.genetic_derangement_data.filename}} 'csv_matrix'"
+
+
+# rule publish_fusion:
+    # inputs:
+    #     fusion_data={"type": "predictability_fusion"},
+    #     update_taiga_script=fileref('upload_to_taiga.py')
+    # outputs:{"type": "predictability_fusion_published"}
+
+    # run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityFusionTransformed for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
 
 
 # rule publish_lineage:
