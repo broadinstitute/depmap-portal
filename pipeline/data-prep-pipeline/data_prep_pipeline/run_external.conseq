@@ -3,8 +3,8 @@ eval """
 import subprocess
 import os
 
-assert os.path.exists("../../../depmap-deploy"), "Expected depmap-deploy checked out at ../../../depmap-deploy"
-subprocess.check_call(["python", "../preprocess_taiga_ids.py", "../../../depmap-deploy/non-public-pipeline-files/data-prep-pipeline/release_inputs_external.template", "release_inputs_external-DO-NOT-EDIT-ME"])
+assert os.path.exists("release_inputs_external.template"), "Expected release_inputs_external.template file in the current directory"
+subprocess.check_call(["python", "../preprocess_taiga_ids.py", "release_inputs_external.template", "release_inputs_external-DO-NOT-EDIT-ME"])
 """
 
 include "release_inputs_external-DO-NOT-EDIT-ME"
