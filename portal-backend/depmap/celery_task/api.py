@@ -1,5 +1,5 @@
 from celery.result import AsyncResult
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 from depmap.compute.celery import app
 from depmap.celery_task.utils import format_task_status, task_response_model
 

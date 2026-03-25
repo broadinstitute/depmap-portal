@@ -7,7 +7,7 @@ from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.cell_line.models_new import DepmapModel
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
 

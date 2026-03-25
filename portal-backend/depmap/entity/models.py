@@ -30,7 +30,7 @@ class Entity(Model):
     type = Column(entity_type_db_enum, nullable=False)
     label = Column(String(80), nullable=False)
 
-    entity_alias = db.relationship("EntityAlias", lazy="dynamic")
+    entity_alias = db.relationship("EntityAlias", lazy="select")
 
     __table_args__: Union[Dict, Tuple] = (
         db.Index("ix_entity_label_type", "label", "type"),

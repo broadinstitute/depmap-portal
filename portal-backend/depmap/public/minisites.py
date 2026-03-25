@@ -17,7 +17,9 @@ log = logging.getLogger(__name__)
 
 
 def serve_mini_site(config, root, path):
-    full_path = flask.safe_join(root, path)
+    from werkzeug.security import safe_join
+
+    full_path = safe_join(root, path)
     assert os.path.isabs(full_path)
 
     # if the urls references a filename and serve static assets like .png or .css files

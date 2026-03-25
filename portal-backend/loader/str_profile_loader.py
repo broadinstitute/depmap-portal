@@ -3,7 +3,7 @@ import csv
 
 from depmap.cell_line.models import CellLine, STRProfile
 from depmap.database import db
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 from depmap.utilities.models import log_data_issue
 
 

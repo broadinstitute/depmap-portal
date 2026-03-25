@@ -7,7 +7,7 @@ from depmap.cell_line.models_new import DepmapModel
 import pandas as pd
 import sqlalchemy as sa
 from sqlalchemy import UniqueConstraint, distinct, func, nullslast, case  # type: ignore
-from sqlalchemy.orm import backref
+from sqlalchemy.orm import aliased, backref
 from sqlalchemy.exc import NoResultFound  # pyright: ignore
 from depmap import enums
 from depmap.antibody.models import Antibody
@@ -210,7 +210,7 @@ class Dataset(Model):
             .join(cls)
             .with_entities(cls)
             .order_by(
-                case([(DependencyDataset.data_type == "crispr", 0)], else_=1),
+                case((DependencyDataset.data_type == "crispr", 0), else_=1),
                 nullslast(DependencyDataset.priority),
             )  # Unsure if format_gene_summary() gets first dataset from ordered dataset enums previously so add case just in case. Also, test_gene_dependency_datasets_where_present() assumes some kind of order
             .all()
@@ -297,7 +297,7 @@ class Dataset(Model):
         * NOTE: It is undetermined whether crispr datasets MUST appear first but we provide this option as default to match behavior of deprecated function get_enums_in_order(). 
         """
         return cls.query.order_by(
-            case([(cls.data_type == data_type.name, 0)], else_=1),
+            case((cls.data_type == data_type.name, 0), else_=1),
             nullslast(cls.priority),
         ).all()
 
@@ -335,7 +335,7 @@ class DependencyDataset(Dataset):
         row = (
             db.session.query(DependencyDataset)
             .join(Matrix, DependencyDataset.matrix_id == Matrix.matrix_id)
-            .join(ColMatrixIndex)
+            .join(ColMatrixIndex, ColMatrixIndex.matrix_id == Matrix.matrix_id)
             .filter(DependencyDataset.name == dependency_dataset_name)
             .filter(ColMatrixIndex.depmap_id == depmap_id)
             .one_or_none()
@@ -354,7 +354,7 @@ class DependencyDataset(Dataset):
         dep_dataset = DependencyDataset.query.filter_by(name=dep_enum_name)
         score_row_index = (
             dep_dataset.join(Matrix, DependencyDataset.matrix_id == Matrix.matrix_id)
-            .join(RowMatrixIndex)
+            .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)
             .filter(RowMatrixIndex.entity_id == entity_id)
         )
         return db.session.query(score_row_index.exists()).scalar()
@@ -378,10 +378,8 @@ class DependencyDataset(Dataset):
         """
         object_tuples = (
             db.session.query(CompoundExperiment, DependencyDataset)
-            .join(
-                Matrix, DependencyDataset.matrix_id == Matrix.matrix_id
-            )  # NOTE: I'm not sure if this join is necessary since RowMatrixIndex already has a matrix_id
-            .join(RowMatrixIndex)
+            .join(Matrix, DependencyDataset.matrix_id == Matrix.matrix_id)
+            .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)
             .join(
                 CompoundExperiment,
                 RowMatrixIndex.entity_id == CompoundExperiment.entity_id,
@@ -391,7 +389,7 @@ class DependencyDataset(Dataset):
             .order_by(
                 nullslast(DependencyDataset.priority),
                 CompoundExperiment.entity_id,
-                case([(DependencyDataset.data_type == "drug_screen", 0)], else_=1),
+                case((DependencyDataset.data_type == "drug_screen", 0), else_=1),
             )
             .all()
         )
@@ -435,7 +433,7 @@ class BiomarkerDataset(Dataset):
         row = (
             db.session.query(BiomarkerDataset)
             .join(Matrix)
-            .join(ColMatrixIndex)
+            .join(ColMatrixIndex, ColMatrixIndex.matrix_id == Matrix.matrix_id)
             .filter(BiomarkerDataset.name == biomarker_dataset_name)
             .filter(ColMatrixIndex.depmap_id == depmap_id)
             .one_or_none()
@@ -462,8 +460,10 @@ class BiomarkerDataset(Dataset):
         else:
             biom_enum = biom_enum_or_name
 
-        row_index = BiomarkerDataset.query.filter_by(name=biom_enum.name).join(
-            Matrix, RowMatrixIndex
+        row_index = (
+            BiomarkerDataset.query.filter_by(name=biom_enum.name)
+            .join(Matrix)
+            .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)
         )
 
         gene_related_with_multiple_entities = {
@@ -736,14 +736,16 @@ class Mutation(Model):
         """
         Returns tuples of variant class and # of cell lines
         """
-        return (
+        subq = (
             Mutation.query.join(Mutation.cell_line)
             .with_entities(Mutation.variant_info, CellLine.depmap_id)
             .filter(Mutation.gene_id == gene_id)
             .distinct()
-            .from_self()
-            .with_entities(Mutation.variant_info, func.count(1))
-            .group_by(Mutation.variant_info)
+            .subquery()
+        )
+        return (
+            db.session.query(subq.c.variant_info, func.count(1))
+            .group_by(subq.c.variant_info)
             .all()
         )
 
@@ -779,7 +781,7 @@ class Mutation(Model):
             )
         )
 
-        relevant_rows_df = pd.read_sql(query.statement, query.session.connection())
+        relevant_rows_df = pd.read_sql(query.statement, db.session.connection())
         return relevant_rows_df
 
     @staticmethod
@@ -838,8 +840,8 @@ class Fusion(Model):
 
     @classmethod
     def find_by_gene_query(cls, gene_id):
-        left_alias = sa.orm.aliased(Gene, name="left")
-        right_alias = sa.orm.aliased(Gene, name="right")
+        left_alias = aliased(Gene, name="left")
+        right_alias = aliased(Gene, name="right")
         lin = Lineage.query.filter_by(level=1).subquery()
         lin_subtype = Lineage.query.filter_by(level=2).subquery()
 
@@ -867,10 +869,8 @@ class Fusion(Model):
             .outerjoin(lin, CellLine.depmap_id == lin.c.depmap_id)
             .outerjoin(lin_subtype, CellLine.depmap_id == lin_subtype.c.depmap_id)
             .add_columns(
-                sa.column('"right".entity_label', is_literal=True).label(
-                    "gene_2_label"
-                ),
-                sa.column('"left".entity_label', is_literal=True).label("gene_1_label"),
+                sa.literal_column('"right".entity_label').label("gene_2_label"),
+                sa.literal_column('"left".entity_label').label("gene_1_label"),
             )
         )
 
@@ -878,20 +878,16 @@ class Fusion(Model):
 
     @classmethod
     def find_by_cell_line_query(cls, depmap_id):
-        gene_1_alias = sa.orm.aliased(Gene, name="gene_1")
-        gene_2_alias = sa.orm.aliased(Gene, name="gene_2")
+        gene_1_alias = aliased(Gene, name="gene_1")
+        gene_2_alias = aliased(Gene, name="gene_2")
 
         return (
             cls.query.filter_by(depmap_id=depmap_id)
             .join(gene_1_alias, cls.gene_1_id == gene_1_alias.entity_id)
             .join(gene_2_alias, cls.gene_2_id == gene_2_alias.entity_id)
             .add_columns(
-                sa.column('"gene_2".entity_label', is_literal=True).label(
-                    "gene_2_label"
-                ),
-                sa.column('"gene_1".entity_label', is_literal=True).label(
-                    "gene_1_label"
-                ),
+                sa.literal_column('"gene_2".entity_label').label("gene_2_label"),
+                sa.literal_column('"gene_1".entity_label').label("gene_1_label"),
             )
         )
 
@@ -929,8 +925,8 @@ class Translocation(Model):
 
     @classmethod
     def find_by_gene_query(cls, gene_id):
-        g1_alias = sa.orm.aliased(Gene, name="g1")
-        g2_alias = sa.orm.aliased(Gene, name="g2")
+        g1_alias = aliased(Gene, name="g1")
+        g2_alias = aliased(Gene, name="g2")
         query = (
             cls.query.with_entities(
                 CellLine.cell_line_display_name, *Translocation.__table__.columns
@@ -940,8 +936,8 @@ class Translocation(Model):
             .join(g1_alias, cls.gene_1_id == g1_alias.entity_id)
             .join(g2_alias, cls.gene_2_id == g2_alias.entity_id)
             .add_columns(
-                sa.column('"g1".entity_label', is_literal=True).label("gene_1_label"),
-                sa.column('"g2".entity_label', is_literal=True).label("gene_2_label"),
+                sa.literal_column('"g1".entity_label').label("gene_1_label"),
+                sa.literal_column('"g2".entity_label').label("gene_2_label"),
             )
         )
         return query
@@ -949,8 +945,8 @@ class Translocation(Model):
     # TODO: Will fully replace find_by_gene_query once the portal is fully dependent on DepmpModel instead of CellLine
     @classmethod
     def find_by_gene_using_model_table_query(cls, gene_id):
-        g1_alias = sa.orm.aliased(Gene, name="g1")
-        g2_alias = sa.orm.aliased(Gene, name="g2")
+        g1_alias = aliased(Gene, name="g1")
+        g2_alias = aliased(Gene, name="g2")
         query = (
             cls.query.with_entities(
                 DepmapModel.stripped_cell_line_name, *Translocation.__table__.columns
@@ -960,16 +956,16 @@ class Translocation(Model):
             .join(g1_alias, cls.gene_1_id == g1_alias.entity_id)
             .join(g2_alias, cls.gene_2_id == g2_alias.entity_id)
             .add_columns(
-                sa.column('"g1".entity_label', is_literal=True).label("gene_1_label"),
-                sa.column('"g2".entity_label', is_literal=True).label("gene_2_label"),
+                sa.literal_column('"g1".entity_label').label("gene_1_label"),
+                sa.literal_column('"g2".entity_label').label("gene_2_label"),
             )
         )
         return query
 
     @classmethod
     def find_by_models_query(cls, model_id):
-        g1_alias = sa.orm.aliased(Gene, name="g1")
-        g2_alias = sa.orm.aliased(Gene, name="g2")
+        g1_alias = aliased(Gene, name="g1")
+        g2_alias = aliased(Gene, name="g2")
         return (
             cls.query.with_entities(
                 DepmapModel.stripped_cell_line_name, *Translocation.__table__.columns
@@ -979,7 +975,7 @@ class Translocation(Model):
             .join(g1_alias, cls.gene_1_id == g1_alias.entity_id)
             .join(g2_alias, cls.gene_2_id == g2_alias.entity_id)
             .add_columns(
-                sa.column('"g1".entity_label', is_literal=True).label("gene_1_label"),
-                sa.column('"g2".entity_label', is_literal=True).label("gene_2_label"),
+                sa.literal_column('"g1".entity_label').label("gene_1_label"),
+                sa.literal_column('"g2".entity_label').label("gene_2_label"),
             )
         )
