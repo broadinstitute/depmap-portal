@@ -248,9 +248,9 @@ class PipelineRunner(ABC):
         """Get the conseq file to use for this pipeline."""
         pass
 
-    @abstractmethod
     def handle_special_features(self, config):
-        """Handle pipeline-specific features like START_WITH, override files, etc."""
+        """Handle pipeline-specific features like START_WITH, override files, etc.
+        Override in subclasses that need pre-run setup. No-op by default."""
         pass
 
     def run(self, script_file_path):
