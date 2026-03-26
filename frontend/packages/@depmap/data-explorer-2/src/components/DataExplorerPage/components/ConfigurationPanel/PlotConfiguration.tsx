@@ -2,13 +2,11 @@ import React from "react";
 import qs from "qs";
 import cx from "classnames";
 import { Button } from "react-bootstrap";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
-import DimensionSelectV1 from "../../../DimensionSelect";
 import DimensionSelectV2 from "../../../DimensionSelectV2";
 import {
   ContextPath,
-  DataExplorerContext,
-  DataExplorerPlotConfigDimension,
+  DataExplorerContextV2,
+  DataExplorerPlotConfigDimensionV2,
   DataExplorerPlotType,
   DimensionKey,
   PartialDataExplorerPlotConfig,
@@ -24,16 +22,12 @@ interface Props {
   dispatch: (action: PlotConfigReducerAction) => void;
   onClickCreateContext: (path: ContextPath) => void;
   onClickSaveAsContext: (
-    contextToEdit: DataExplorerContext,
+    contextToEdit: DataExplorerContextV2,
     pathToSave: ContextPath
   ) => void;
   onClickCopyAxisConfig: () => void;
   onClickSwapAxisConfigs: () => void;
 }
-
-const DimensionSelect = isBreadboxOnlyMode
-  ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
-  : DimensionSelectV1;
 
 const getAxisLabel = (plot_type: string | undefined, axis: string) => {
   if (axis === "y" || plot_type === "waterfall") {
@@ -129,7 +123,7 @@ function PlotConfiguration({
 
             const dimension = plot.dimensions![
               key
-            ] as Partial<DataExplorerPlotConfigDimension>;
+            ] as Partial<DataExplorerPlotConfigDimensionV2>;
             const path: ContextPath = ["dimensions", key, "context"];
 
             const onlyParallelAxisHasAggregation =
@@ -152,14 +146,15 @@ function PlotConfiguration({
                     onClickSwapAxisConfigs={onClickSwapAxisConfigs}
                   />
                 )}
-                <DimensionSelect
-                  // HACK: Only support by DimensionSelectV2
-                  {...{ allowNullFeatureType: true }}
+                <DimensionSelectV2
                   className={cx({
                     [styles.dimensionWithGap]: onlyParallelAxisHasAggregation,
                   })}
-                  index_type={plot.index_type || null}
-                  value={dimension || null}
+                  index_type={plot.index_type as string}
+                  allowNullFeatureType
+                  value={
+                    (dimension as DataExplorerPlotConfigDimensionV2) || null
+                  }
                   onChange={(nextDimension) => {
                     dispatch({
                       type: "select_dimension",
@@ -176,8 +171,8 @@ function PlotConfiguration({
                   }
                   onClickCreateContext={() => onClickCreateContext(path)}
                   onClickSaveAsContext={() => {
-                    const context = dimension.context as DataExplorerContext;
-                    onClickSaveAsContext(context, path);
+                    const context = dimension.context;
+                    onClickSaveAsContext(context!, path);
                   }}
                 />
               </div>

@@ -1,6 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
-import { DataExplorerContext } from "@depmap/types";
 import { saveNewContext } from "src";
 import compoundPagePromptForSelectionFromContext from "../../compoundPagePromptForSelectionFromContext";
 import { HeatmapFormattedData, TableFormattedData } from "../../types";
@@ -77,10 +76,17 @@ function useHeatmapSelectionHandlers(
     const labels = [...selectedModelIds];
     const context = {
       name: defaultContextName(selectedModelIds.size),
-      context_type: "depmap_model",
+      dimension_type: "depmap_model",
       expr: { in: [{ var: "entity_label" }, labels] },
+      vars: {
+        entity_label: {
+          dataset_id: "depmap_model_metadata",
+          identifier_type: "column" as const,
+          identifier: "label",
+        },
+      },
     };
-    saveNewContext(context as DataExplorerContext);
+    saveNewContext(context);
   }, [selectedModelIds]);
 
   const displayNameModelIdMap = useMemo(() => {

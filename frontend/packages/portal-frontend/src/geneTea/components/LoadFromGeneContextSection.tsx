@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import {
-  ContextSelector,
-  deprecatedDataExplorerAPI,
+  ContextSelectorV2,
   getDimensionTypeLabel,
   pluralize,
 } from "@depmap/data-explorer-2";
 import { DepMap } from "@depmap/globals";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContextV2 } from "@depmap/types";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
 
 const LoadFromGeneContextSection: React.FC = () => {
@@ -20,7 +20,7 @@ const LoadFromGeneContextSection: React.FC = () => {
 
   const indexType = "gene";
 
-  const [value, setValue] = useState<DataExplorerContext | null>(null);
+  const [value, setValue] = useState<DataExplorerContextV2 | null>(null);
 
   const [stats, setStats] = useState<{
     total: number;
@@ -35,7 +35,7 @@ const LoadFromGeneContextSection: React.FC = () => {
     return [n.toLocaleString(), n === 1 ? entity : entities].join(" ");
   };
 
-  const handleChange = async (nextContext: DataExplorerContext | null) => {
+  const handleChange = async (nextContext: DataExplorerContextV2 | null) => {
     // If the context is changing, the gene list sent to GeneTEA is changing. Clear out the Valid
     // and Invalid gene sets in preparation to receive a new valid/invalid list from the GeneTEA api.
     handleSetValidGeneSymbols(new Set([]));
@@ -49,9 +49,7 @@ const LoadFromGeneContextSection: React.FC = () => {
       return;
     }
 
-    const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
-      nextContext
-    );
+    const { labels } = await cached(breadboxAPI).evaluateContext(nextContext);
     const contextLabels = new Set(labels);
 
     handleSetGeneSymbolSelections(contextLabels);
@@ -78,19 +76,19 @@ const LoadFromGeneContextSection: React.FC = () => {
 
   return (
     <div>
-      <ContextSelector
+      <ContextSelectorV2
         show
         enable
         value={value}
         onChange={handleChange}
         onClickCreateContext={() => {
           DepMap.saveNewContext(
-            { context_type: indexType },
-            null,
+            { dimension_type: indexType },
+            undefined,
             handleChange
           );
         }}
-        context_type={indexType}
+        dimension_type={indexType}
         onClickSaveAsContext={() => {}}
         includeAllInOptions={false}
       />

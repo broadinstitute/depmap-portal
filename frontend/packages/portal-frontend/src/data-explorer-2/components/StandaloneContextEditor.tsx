@@ -1,26 +1,16 @@
 import React from "react";
 import {
-  ContextBuilderModal,
   ContextBuilderV2,
-  isBreadboxOnlyMode,
   PlotlyLoaderProvider,
   saveContextToLocalStorageAndPersist,
 } from "@depmap/data-explorer-2";
-import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
+import { DataExplorerContextV2 } from "@depmap/types";
 import PlotlyLoader from "src/plot/components/PlotlyLoader";
-
-const ContextBuilder = isBreadboxOnlyMode
-  ? (ContextBuilderV2 as any)
-  : ContextBuilderModal;
 
 interface Props {
   /* The context to use as a starting point. This can be as simple as
-   * { context_type: '...' } if that's all the information you know. */
-  context:
-    | { context_type: string }
-    | { dimension_type: string }
-    | DataExplorerContext
-    | DataExplorerContextV2;
+   * { dimension_type: '...' } if that's all the information you know. */
+  context: { dimension_type: string } | DataExplorerContextV2;
 
   /* Supply a hash if an existing context should be replaced by the edited one
    * or null if this should be considered a brand new context. */
@@ -49,7 +39,7 @@ function StandaloneContextEditor({
     return null;
   }
 
-  const onClickSave = async (editedContext: DataExplorerContext) => {
+  const onClickSave = async (editedContext: DataExplorerContextV2) => {
     const nextHash = await saveContextToLocalStorageAndPersist(
       editedContext,
       hash
@@ -73,7 +63,7 @@ function StandaloneContextEditor({
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
-      <ContextBuilder
+      <ContextBuilderV2
         show
         context={context}
         isExistingContext={Boolean(hash)}

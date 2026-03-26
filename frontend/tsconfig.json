@@ -1,7 +1,6 @@
 {
   "references": [
     { "path": "./packages/@depmap/api" },
-    { "path": "./packages/@depmap/cell-line-selector" },
     { "path": "./packages/@depmap/common-components" },
     { "path": "./packages/@depmap/compute" },
     { "path": "./packages/@depmap/data-explorer-2" },

@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import * as React from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { MatrixDatasetForm } from "./MatrixDatasetForm";
 import { TableDatasetForm } from "./TableDatasetForm";
 import { FormGroup, Radio } from "react-bootstrap";
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { matrixFormSchema } from "../models/matrixDatasetFormSchema";
-import { tableFormSchema } from "../models/tableDatasetFormSchema";
 import {
+  CeleryTask,
   DatasetParams,
   DataType,
   Group,
@@ -18,8 +16,9 @@ import {
   Dataset,
   ErrorTypeError,
 } from "@depmap/types";
+import { matrixFormSchema } from "../models/matrixDatasetFormSchema";
+import { tableFormSchema } from "../models/tableDatasetFormSchema";
 import ChunkedFileUploader from "./ChunkedFileUploader";
-import { CeleryTask } from "@depmap/compute";
 import progressTrackerStyles from "@depmap/common-components/src/styles/ProgressTracker.scss";
 import styles from "../styles/styles.scss";
 

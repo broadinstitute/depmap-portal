@@ -7,8 +7,6 @@
     "test": "echo 'no tests to run'"
   },
   "dependencies": {
-    "@depmap/cell-line-selector": "1.0.0",
-    "@depmap/compute": "1.0.0",
     "@depmap/data-slicer": "1.0.0",
     "@depmap/globals": "1.0.0",
     "@depmap/types": "1.0.0",

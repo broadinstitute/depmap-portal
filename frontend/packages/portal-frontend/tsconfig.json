@@ -8,7 +8,6 @@
   "exclude": ["**/__tests__/**", "**/__stories__/**", "**/stories/**"],
   "references": [
     { "path": "../@depmap/api" },
-    { "path": "../@depmap/cell-line-selector" },
     { "path": "../@depmap/common-components" },
     { "path": "../@depmap/compute" },
     { "path": "../@depmap/custom-analyses" },

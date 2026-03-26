@@ -4,24 +4,12 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
-import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
-import { isV2Context } from "../../../../utils/context";
 import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
-import ContextSelector from "../../../ContextSelector";
+import ContextSelectorV2 from "../../../ContextSelectorV2";
 import { DepMap } from "@depmap/globals";
-import {
-  DataExplorerContext,
-  DataExplorerContextV2,
-  DataExplorerPlotResponse,
-} from "@depmap/types";
+import { DataExplorerContextV2, DataExplorerPlotResponse } from "@depmap/types";
 
-const resolveToLabels = async (
-  context: DataExplorerContext | DataExplorerContextV2
-) => {
-  if (!isV2Context(context)) {
-    return deprecatedDataExplorerAPI.evaluateLegacyContext(context);
-  }
-
+const resolveToLabels = async (context: DataExplorerContextV2) => {
   const result = await cached(breadboxAPI).evaluateContext(context);
 
   return context.dimension_type === "depmap_model" ? result.ids : result.labels;
@@ -48,7 +36,7 @@ export default async function promptForSelectionFromContext(
       value,
       onChange,
       updateAcceptText,
-    }: PromptComponentProps<DataExplorerContext | null>) => {
+    }: PromptComponentProps<DataExplorerContextV2 | null>) => {
       const [stats, setStats] = useState<{
         total: number;
         notFound: number;
@@ -62,7 +50,9 @@ export default async function promptForSelectionFromContext(
         return [n.toLocaleString(), n === 1 ? entity : entities].join(" ");
       };
 
-      const handleChange = async (nextContext: DataExplorerContext | null) => {
+      const handleChange = async (
+        nextContext: DataExplorerContextV2 | null
+      ) => {
         onChange(nextContext);
 
         if (!nextContext) {
@@ -107,20 +97,20 @@ export default async function promptForSelectionFromContext(
 
       return (
         <div>
-          <ContextSelector
+          <ContextSelectorV2
             show
             enable
             value={value}
             onChange={handleChange}
             onClickCreateContext={() => {
               DepMap.saveNewContext(
-                { context_type: data.index_type },
+                { dimension_type: data.index_type },
                 null,
                 handleChange
               );
             }}
             label="Choose a context"
-            context_type={data.index_type}
+            dimension_type={data.index_type}
             onClickSaveAsContext={() => {}}
             includeAllInOptions={false}
           />

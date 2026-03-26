@@ -1,7 +1,4 @@
 {
   "extends": "../../tsconfig.base.json",
-  "references": [
-    { "path": "../globals" },
-    { "path": "../utils" }
-  ]
+  "references": [{ "path": "../globals" }]
 }

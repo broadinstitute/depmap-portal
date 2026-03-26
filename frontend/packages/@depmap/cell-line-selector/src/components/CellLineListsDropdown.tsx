@@ -1,17 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { breadboxAPI } from "@depmap/api";
 import {
-  ContextSelector,
-  deprecatedDataExplorerAPI,
+  ContextSelectorV2,
   fetchContext,
   isNegatedContext,
-  isV2Context,
   negateContext,
   persistLegacyListAsContext,
   PlotConfigSelect,
 } from "@depmap/data-explorer-2";
 import { DepMap } from "@depmap/globals";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContextV2 } from "@depmap/types";
 import {
   getSelectedCellLineListName,
   setSelectedCellLineListName,
@@ -43,10 +41,10 @@ function CellLineListsDropdown({
   onListSelect,
 }: Props) {
   const [isLoading, setIsLoading] = useState(!defaultNone);
-  const [value, setValue] = useState<DataExplorerContext | null>(null);
+  const [value, setValue] = useState<DataExplorerContextV2 | null>(null);
 
   const handleChange = useCallback(
-    async (context: DataExplorerContext | null, hash: string | null) => {
+    async (context: DataExplorerContextV2 | null, hash: string | null) => {
       setValue(context);
       const negated = isNegatedContext(context);
 
@@ -55,19 +53,8 @@ function CellLineListsDropdown({
       }
 
       if (context && hash) {
-        let labels: string[] = [];
-
-        if (isV2Context(context)) {
-          const result = await breadboxAPI.evaluateContext(context);
-          labels = result.ids;
-        } else {
-          // TODO: Convert to a V2 context instead. That way we remove the
-          // depedency on this deprecated endpoint (and eventually remove it
-          // too).
-          labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
-            context
-          );
-        }
+        const result = await breadboxAPI.evaluateContext(context);
+        const labels = result.ids;
 
         onListSelect({
           name: context.name,
@@ -101,7 +88,7 @@ function CellLineListsDropdown({
         try {
           const context = (await fetchContext(
             hashWithoutPrefix
-          )) as DataExplorerContext;
+          )) as DataExplorerContextV2;
 
           handleChange(
             selectedContextHash.startsWith("not_")
@@ -120,11 +107,15 @@ function CellLineListsDropdown({
   }, [value, defaultNone, handleChange]);
 
   const handleClickCreateContext = () => {
-    DepMap.saveNewContext({ context_type: "depmap_model" }, null, handleChange);
+    DepMap.saveNewContext(
+      { dimension_type: "depmap_model" },
+      null,
+      handleChange
+    );
   };
 
   const handleClickSaveAsContext = () => {
-    DepMap.saveNewContext(value, null, setValue);
+    DepMap.saveNewContext(value!, null, setValue);
   };
 
   if (isLoading) {
@@ -143,11 +134,11 @@ function CellLineListsDropdown({
   }
 
   return (
-    <ContextSelector
+    <ContextSelectorV2
       show
       enable
       value={value}
-      context_type="depmap_model"
+      dimension_type="depmap_model"
       onChange={handleChange}
       onClickCreateContext={handleClickCreateContext}
       onClickSaveAsContext={handleClickSaveAsContext}
@@ -155,4 +146,12 @@ function CellLineListsDropdown({
   );
 }
 
+// FIXME: Replace this component with ContextSelector. It only existed to ease
+// the transition away from the the cell line lists that Cell Line Selector
+// output. The following components should be updated:
+// DataSlicer
+// ElaraDataSlicer
+// EntitySummary
+// GeneCharacterizationPanel
+// CellignerCellLinesForTumorsControlPanel
 export default CellLineListsDropdown;

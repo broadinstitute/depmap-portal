@@ -5,7 +5,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
 import {
   DEFAULT_EMPTY_PLOT,
   plotsAreEquivalentWhenSerialized,
@@ -141,10 +140,7 @@ function DataExplorer2MainContent({
 
   return (
     <>
-      <main
-        className={styles.DataExplorer2}
-        data-breadbox-only={isBreadboxOnlyMode}
-      >
+      <main className={styles.DataExplorer2}>
         <ConfigurationPanel
           key={reactKey.current}
           plot={plot}
