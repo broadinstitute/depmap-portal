@@ -5,9 +5,9 @@ import os
 import math
 from typing import List, Dict, Any, Optional
 
-# lets get CRISPR fully working before tackling the others
+# lets get CRISPR and rnai fully working before tackling the others
 # screens = ["crispr", "rnai", "oncref"]
-screens = ["rnai"]
+screens = ["crispr", "rnai"]
 
 def generate_daintree_configs(
     model_config_path: str, input_config_path: str, test_only_first_n: Optional[int]
