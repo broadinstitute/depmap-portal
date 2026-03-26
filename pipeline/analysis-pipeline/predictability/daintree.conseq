@@ -21,11 +21,9 @@ rule process_model_config:
         model_config=fileref("model-config.yaml"),
 
         # Target matrices
-        crispr_gene_effect={"type": "target_matrix", "label": "crispr"},
-
-        # lets get CRISPR fully working before tackling the others
-        # rnai={"type": "target_matrix", "label": "rnai"},
-        # oncref={"type": "target_matrix", "label": "oncref"},
+        crispr={"type": "target_matrix", "label": "crispr"},
+        rnai={"type": "target_matrix", "label": "rnai"},
+        oncref={"type": "target_matrix", "label": "oncref"},
 
         # Features
         lineage={"type": "feature", "label": "lineage"},
