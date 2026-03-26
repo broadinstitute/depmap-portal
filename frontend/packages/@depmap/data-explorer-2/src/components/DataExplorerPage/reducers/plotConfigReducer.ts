@@ -1,9 +1,9 @@
 import omit from "lodash.omit";
 import {
-  DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerContextExpression,
   DataExplorerPlotConfig,
-  DataExplorerPlotConfigDimension,
+  DataExplorerPlotConfigDimensionV2,
   DataExplorerPlotType,
   DimensionKey,
   FilterKey,
@@ -19,14 +19,14 @@ export type PlotConfigReducerAction =
       type: "select_dimension";
       payload: {
         key: DimensionKey;
-        dimension: Partial<DataExplorerPlotConfigDimension>;
+        dimension: Partial<DataExplorerPlotConfigDimensionV2>;
       };
     }
   | {
       type: "select_filter";
       payload: {
         key: FilterKey;
-        filter: DataExplorerContext | null;
+        filter: DataExplorerContextV2 | null;
       };
     }
   | { type: "select_color_by"; payload: DataExplorerPlotConfig["color_by"] }
@@ -49,10 +49,7 @@ export type PlotConfigReducerAction =
         dataset_id: string;
         slice_label: string;
         slice_type: string;
-        // `given_id` is optional to work with the legacy Portal as the backend.
-        // With Breadbox-as-the-backend (currently only supported in Elrara),
-        // given_id is required.
-        given_id?: string;
+        given_id: string;
       };
     }
   // Use this to dispatch multiple actions as if
@@ -429,12 +426,11 @@ function plotConfigReducer(
             dataset_id,
             context: {
               name: slice_label,
-              [given_id ? "dimension_type" : "context_type"]: slice_type,
-              expr: given_id
-                ? { "==": [{ var: "given_id" }, given_id] }
-                : ({
-                    "==": [{ var: "entity_label" }, slice_label],
-                  } as DataExplorerContextExpression),
+              dimension_type: slice_type,
+              expr: {
+                "==": [{ var: "given_id" }, given_id],
+              } as DataExplorerContextExpression,
+              vars: {},
             },
           },
         },

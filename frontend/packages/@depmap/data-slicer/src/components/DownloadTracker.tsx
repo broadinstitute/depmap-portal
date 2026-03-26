@@ -1,8 +1,7 @@
 /* eslint-disable */
 import React from "react";
-
-import { CeleryTask } from "@depmap/compute";
 import { ProgressTracker } from "@depmap/common-components";
+import { CeleryTask } from "@depmap/types";
 
 interface Props {
   getMorpheusUrl?: (downloadUrls: string) => Promise<string>;

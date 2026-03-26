@@ -1,10 +1,10 @@
 import SparkMD5 from "spark-md5";
 import * as Papa from "papaparse";
-import { FailedCeleryTask } from "@depmap/compute";
 import {
   AddDatasetOneRowArgs,
   DatasetParams,
   DatasetValueType,
+  FailedCeleryTask,
   MatrixDatasetParams,
 } from "@depmap/types";
 import { UploadTask, UploadTaskUserError } from "@depmap/user-upload";

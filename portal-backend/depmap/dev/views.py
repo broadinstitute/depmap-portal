@@ -36,11 +36,6 @@ def whoami():
     )
 
 
-@blueprint.route("/datasets")
-def datasets():
-    return render_template("dev/datasets.html")
-
-
 @blueprint.route("/crawl_start/")
 def crawl_start():
     """

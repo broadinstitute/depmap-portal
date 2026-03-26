@@ -1,7 +1,7 @@
 import React from "react";
 import cx from "classnames";
 import { Form, FormControl, FormGroup, ControlLabel } from "react-bootstrap";
-import styles from "../../styles/ContextBuilder.scss";
+import styles from "../../../styles/ContextBuilderV2.scss";
 
 interface Props {
   value: string | undefined;

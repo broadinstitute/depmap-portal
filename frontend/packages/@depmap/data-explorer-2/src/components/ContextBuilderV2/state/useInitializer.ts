@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import type {
   DataExplorerContextVariable,
   TabularDataset,
@@ -29,6 +30,8 @@ function useInitializer(
       const seen = new Set<string>();
       const varsToCopy: string[][] = [];
       const varsToCreate: string[] = [];
+
+      const allDatasets = await cached(breadboxAPI).getDatasets();
 
       const {
         metadataDataset,
@@ -96,14 +99,18 @@ function useInitializer(
         }
       }
 
-      // If a variable lacks a `source` we'll try to infer it.
+      // If a variable lacks a `source` we'll infer it.
       for (const [name, variable] of Object.entries(vars)) {
-        if (
-          !variable.source &&
-          variable.identifier_type === "column" &&
-          variable.dataset_id?.endsWith("_metadata")
-        ) {
-          setVar(name, { ...variable, source: "property" });
+        if (!variable.source) {
+          const isAnnotationDataset =
+            allDatasets.find(({ id, given_id }) =>
+              [id, given_id].includes(variable.dataset_id!)
+            )?.data_type === "Annotations";
+
+          setVar(name, {
+            ...variable,
+            source: isAnnotationDataset ? "property" : "custom",
+          });
         }
       }
 

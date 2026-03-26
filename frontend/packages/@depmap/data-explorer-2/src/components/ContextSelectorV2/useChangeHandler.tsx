@@ -17,11 +17,11 @@ type OnChange = (
   hash: string | null
 ) => void;
 
-const handleCaseAll = (context_type: string, onChange: OnChange) => {
+const handleCaseAll = (dimension_type: string, onChange: OnChange) => {
   onChange(
     {
       name: "All",
-      dimension_type: context_type,
+      dimension_type,
       expr: true,
       vars: {},
     },
@@ -139,7 +139,7 @@ const handleDefaultCase = async (
 };
 
 export default function useChangeHandler(
-  context_type: string,
+  dimension_type: string,
   onChange: OnChange,
   onClickCreateContext: () => void,
   value: DataExplorerContextV2 | null,
@@ -153,7 +153,7 @@ export default function useChangeHandler(
 
       switch (contextHash) {
         case "all":
-          return handleCaseAll(context_type, onChange);
+          return handleCaseAll(dimension_type, onChange);
 
         case "new":
           return onClickCreateContext();
@@ -163,7 +163,7 @@ export default function useChangeHandler(
 
         case "manage":
           return DepMap.launchContextManagerModal({
-            initialContextType: context_type,
+            initialContextType: dimension_type,
           });
 
         case null:
@@ -179,7 +179,7 @@ export default function useChangeHandler(
       }
     },
     [
-      context_type,
+      dimension_type,
       onChange,
       onClickCreateContext,
       value,

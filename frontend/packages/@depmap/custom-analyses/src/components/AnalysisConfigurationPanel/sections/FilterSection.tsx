@@ -33,7 +33,7 @@ function FilterSection({ analysis, dispatch }: Props) {
             label: `Select a subset of ${entities}`,
             whenSelectedRender: () => (
               <AnalysisFilterSelect
-                context_type={analysis.index_type}
+                dimension_type={analysis.index_type}
                 value={analysis.filterByContext || null}
                 onChange={(nextContext) => {
                   dispatch({

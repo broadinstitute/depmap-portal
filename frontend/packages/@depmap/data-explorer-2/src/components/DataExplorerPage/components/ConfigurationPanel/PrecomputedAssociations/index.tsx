@@ -1,15 +1,9 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useRef } from "react";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../../isBreadboxOnlyMode";
 import renderConditionally from "../../../../../utils/render-conditionally";
 import { PlotConfigReducerAction } from "../../../reducers/plotConfigReducer";
 import Section from "../../Section";
 import PrecomputedAssociations from "./PrecomputedAssociations";
-import LegacyPrecomputedAssociations from "./LegacyPrecomputedAssociations";
-
-const Associations = isBreadboxOnlyMode
-  ? PrecomputedAssociations
-  : LegacyPrecomputedAssociations;
 
 interface Props {
   plot: PartialDataExplorerPlotConfig;
@@ -17,7 +11,6 @@ interface Props {
 }
 
 function PrecomputedAssociationsSection({ plot, dispatch }: Props) {
-  const [open, setOpen] = useState(false);
   const sectionRef = useRef<HTMLDivElement | null>(null);
 
   const handleSelectY = useCallback(
@@ -25,7 +18,7 @@ function PrecomputedAssociationsSection({ plot, dispatch }: Props) {
       dataset_id: string,
       slice_label: string,
       slice_type: string,
-      given_id?: string
+      given_id: string
     ) => {
       dispatch({
         type: "select_scatter_y_slice",
@@ -33,7 +26,7 @@ function PrecomputedAssociationsSection({ plot, dispatch }: Props) {
           dataset_id,
           slice_label,
           slice_type,
-          given_id: isBreadboxOnlyMode ? given_id : undefined,
+          given_id,
         },
       });
     },
@@ -45,11 +38,8 @@ function PrecomputedAssociationsSection({ plot, dispatch }: Props) {
       innerRef={sectionRef}
       title="Pre-computed Associations"
       defaultOpen={false}
-      onOpen={() => setOpen(true)}
-      onClose={() => setOpen(false)}
     >
-      <Associations
-        show={open}
+      <PrecomputedAssociations
         plot={plot}
         onSelectY={handleSelectY}
         sectionRef={sectionRef}

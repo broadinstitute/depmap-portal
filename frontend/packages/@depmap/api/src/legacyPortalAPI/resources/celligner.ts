@@ -1,4 +1,3 @@
-import { CellignerColorsForCellLineSelector } from "@depmap/cell-line-selector";
 import { getJson } from "../client";
 
 export function getCellignerDistancesToTumors(
@@ -23,8 +22,4 @@ export function getCellignerDistancesToCellLine(
     modelConditionId,
     kNeighbors,
   });
-}
-
-export function getCellignerColorMap() {
-  return getJson<CellignerColorsForCellLineSelector>("/celligner/colors");
 }

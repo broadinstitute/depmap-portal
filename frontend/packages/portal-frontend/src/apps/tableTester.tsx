@@ -168,7 +168,6 @@ const App = () => {
           <ContextTypeSelect
             value={indexTypeName}
             onChange={handleChangeIndexTypeName}
-            useContextBuilderV2
             title="Dimension type"
           />
         </div>

@@ -4,11 +4,14 @@ import omit from "lodash.omit";
 import { Button } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
-import { ComputeResponseResult, CustomAnalysisResult } from "@depmap/compute";
+import { CustomAnalysisResult } from "@depmap/compute";
 import { isElara } from "@depmap/globals";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
-import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
-import { PartialDataExplorerPlotConfig } from "@depmap/types";
+import {
+  ComputeResponseResult,
+  Dataset,
+  DimensionType,
+  PartialDataExplorerPlotConfig,
+} from "@depmap/types";
 import { usePlotlyLoader } from "../../../../contexts/PlotlyLoaderContext";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import Section from "../Section";
@@ -17,6 +20,18 @@ import styles from "../../styles/ConfigurationPanel.scss";
 interface Props {
   plot: PartialDataExplorerPlotConfig;
   dispatch: (action: PlotConfigReducerAction) => void;
+}
+
+function resolveMetadataGivenId(
+  dimensionTypeName: string,
+  dimTypes: DimensionType[],
+  datasets: Dataset[]
+): string | undefined {
+  const dimType = dimTypes.find((dt) => dt.name === dimensionTypeName);
+  if (!dimType) return undefined;
+
+  const dataset = datasets.find((ds) => ds.id === dimType.metadata_dataset_id);
+  return dataset?.given_id || dataset?.id || undefined;
 }
 
 function AnalysisResult({ plot, dispatch }: Props) {
@@ -85,25 +100,11 @@ function AnalysisResult({ plot, dispatch }: Props) {
       setStatus("loading");
 
       try {
-        let analysisResult: ComputeResponseResult | null;
-
-        if (isBreadboxOnlyMode) {
-          const task = await cached(breadboxAPI).getTaskStatus(taskId);
-          analysisResult = task.result;
-        } else {
-          analysisResult = await deprecatedDataExplorerAPI.fetchAnalysisResult(
-            taskId
-          );
-        }
-
+        const task = await cached(breadboxAPI).getTaskStatus(taskId);
+        const analysisResult = task.result;
         setResult(analysisResult);
 
-        let nextSliceType: string | null = analysisResult?.entityType || null;
-
-        if (!nextSliceType && !isBreadboxOnlyMode) {
-          nextSliceType = "custom";
-        }
-
+        const nextSliceType: string | null = analysisResult?.entityType || null;
         setSliceType(nextSliceType);
         setStatus("loaded");
       } catch (e) {
@@ -186,7 +187,7 @@ function AnalysisResult({ plot, dispatch }: Props) {
               analysisType={result.analysisType}
               queryLimit={1000}
               controlledLabel={controlledLabel}
-              onLabelClick={(slice_label) => {
+              onLabelClick={async (slice_label) => {
                 let plot_type =
                   dimensionKey === "y" ? "scatter" : plot.plot_type;
 
@@ -205,10 +206,33 @@ function AnalysisResult({ plot, dispatch }: Props) {
                   result.data[0].vectorId.split("/")?.[1]
                 );
 
+                const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+                const datasets = await cached(breadboxAPI).getDatasets();
+                const metadataDataset = resolveMetadataGivenId(
+                  sliceType!,
+                  dimTypes,
+                  datasets
+                );
+
+                if (!metadataDataset) {
+                  window.console.warn(
+                    "Could not find metadata dataset for dimension type",
+                    `"${sliceType}".`
+                  );
+                  return;
+                }
+
                 const context = {
                   name: slice_label,
-                  context_type: sliceType,
+                  dimension_type: sliceType,
                   expr: { "==": [{ var: "entity_label" }, slice_label] },
+                  vars: {
+                    entity_label: {
+                      dataset_id: metadataDataset,
+                      identifier_type: "column" as const,
+                      identifier: "label",
+                    },
+                  },
                 };
 
                 dispatch({
