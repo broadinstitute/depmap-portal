@@ -7,7 +7,6 @@ import React, {
 import promptForSelectionFromContext from "../components/promptForSelectionFromContext";
 import { defaultContextName } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { saveNewContext } from "src";
-import { DataExplorerContext } from "@depmap/types";
 import { useGeneTeaFiltersContext } from "./GeneTeaFiltersContext";
 
 export interface TopTermsContextType {
@@ -50,10 +49,17 @@ export function TopTermsContextProvider({
       const labels = [...selectedPlotGenes];
       const context = {
         name: defaultContextName(selectedPlotGenes.size),
-        context_type: "gene",
+        dimension_type: "gene",
         expr: { in: [{ var: "entity_label" }, labels] },
+        vars: {
+          entity_label: {
+            dataset_id: "gene_metadata",
+            identifier_type: "column" as const,
+            identifier: "label",
+          },
+        },
       };
-      saveNewContext(context as DataExplorerContext);
+      saveNewContext(context);
     }
   }, [selectedPlotGenes]);
 

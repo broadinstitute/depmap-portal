@@ -3,6 +3,7 @@ from depmap.cell_line.models_new import DepmapModel
 import pandas as pd
 
 from depmap.cell_line.models import CellLine, Lineage
+from depmap.extensions import db
 from depmap.gene.models import Gene
 from depmap.dataset.models import (
     Mutation,
@@ -211,19 +212,19 @@ class MutationTableSpec:
         query = Mutation.find_by_genes_and_cell_lines_query(
             gene_ids=gene_ids, depmap_ids=depmap_ids
         )
-        df = pd.read_sql(query.statement, query.session.connection())
+        df = pd.read_sql(query.statement, db.session.connection())
         return df
 
     @staticmethod
     def get_all_mutation_gene_ids() -> List[str]:
         query = Mutation.get_all_gene_ids()
-        df = pd.read_sql(query.statement, query.session.connection())
+        df = pd.read_sql(query.statement, db.session.connection())
 
         return df["gene_id"].values.tolist()
 
     def format_mutations_table(query):
         def get_data():
-            df = pd.read_sql(query.statement, query.session.connection())
+            df = pd.read_sql(query.statement, db.session.connection())
             return df
 
         def get_column_types():
@@ -342,7 +343,7 @@ def get_mutation_by_gene_table(gene_id):
     table = MutationTableSpec.format_mutations_table(query)
 
     def filename_lambda(gene_id):
-        return "{} mutations".format(Gene.query.get(gene_id).label)
+        return "{} mutations".format(db.session.get(Gene, gene_id).label)
 
     return DataTable(
         table,
@@ -403,7 +404,7 @@ def _get_translocation_by_gene_table(gene_id):
     query = Translocation.find_by_gene_query(gene_id)
 
     def filename_lambda(gene_id):
-        return "{} translocations".format(Gene.query.get(gene_id).label)
+        return "{} translocations".format(db.session.get(Gene, gene_id).label)
 
     return DataTable(
         query,
@@ -467,7 +468,7 @@ def get_fusion_by_gene_table(gene_id):
     query = Fusion.find_by_gene_query(gene_id)
 
     def filename_lambda(gene_id):
-        return "{} fusions".format(Gene.query.get(gene_id).label)
+        return "{} fusions".format(db.session.get(Gene, gene_id).label)
 
     return DataTable(
         query,
@@ -527,7 +528,7 @@ def get_cell_line_selector_lines_table():
     query = CellLine.all_table_query()
 
     def get_data():
-        df = pd.read_sql(query.statement, query.session.connection())
+        df = pd.read_sql(query.statement, db.session.connection())
         # if we have lineage pages we want to link to, make the display name a separate column and keep the original lineage column for links
         df["lineage"] = df["lineage"].apply(Lineage.get_display_name)
         df["lineage_level"] = "lineage_" + df["lineage_level"].astype(str)

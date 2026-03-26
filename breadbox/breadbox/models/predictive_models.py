@@ -69,3 +69,4 @@ class PredictiveModelResult(Base, UUIDMixin):
     predictions_dataset = relationship("Dataset", foreign_keys=[predictions_dataset_id])
 
     filename: Mapped[str] = mapped_column(String, nullable=False)
+    etag: Mapped[str] = mapped_column(String, nullable=False)

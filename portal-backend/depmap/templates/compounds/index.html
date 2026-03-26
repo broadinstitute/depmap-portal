@@ -20,7 +20,8 @@ endblock content_class %} {% block content %}
     "predictabilityCustomDownloadsLink": {{ predictability_custom_downloads_link|tojson|safe }},
     "predictabilityMethodologyLink": {{ predictability_methodology_link|tojson|safe }},
     "howToImg": "{{ url_for("static", filename="img/celfie/celfie-tutorial.png") }}",
-    "showEnrichedLineages": {{ show_enriched_lineages|tojson|safe  }}
+    "showEnrichedLineages": {{ show_enriched_lineages|tojson|safe  }},
+    "compoundUnits": {{ compound_units|tojson|safe  }}
   }
 </script>
 <script src="{{ webpack_url('compoundPage.js') }}"></script>

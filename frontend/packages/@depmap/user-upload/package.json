@@ -7,9 +7,8 @@
     "test": "echo 'no tests to run'"
   },
   "dependencies": {
-    "@depmap/compute": "1.0.0",
     "@depmap/common-components": "1.0.0",
-    "@depmap/user-upload": "1.0.0",
+    "@depmap/types": "1.0.0",
     "react-bootstrap": "^0.32.3"
   },
   "devDependencies": {

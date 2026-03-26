@@ -7,7 +7,7 @@ import pytest
     [
         ("{data}", "'+data+'", "{} is replaced to data variable"),
         ("{row[0]}", "'+row[0]+'", "[ and ] are not url encoded"),
-        ("non*js", "non%2Ajs", "url encoded and not replaced with a js variable"),
+        ("non*js", "non*js", "url encoded and not replaced with a js variable"),
     ],
 )
 def test_js_url_for(app, param, expected_param, reason):

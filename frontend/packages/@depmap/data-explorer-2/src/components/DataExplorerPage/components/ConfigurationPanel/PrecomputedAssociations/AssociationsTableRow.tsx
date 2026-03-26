@@ -18,7 +18,7 @@ interface Props {
     dataset_id: string,
     slice_label: string,
     slice_type: string,
-    given_id?: string
+    given_id: string
   ) => void;
 
   datasetLookup: DatasetLookup;

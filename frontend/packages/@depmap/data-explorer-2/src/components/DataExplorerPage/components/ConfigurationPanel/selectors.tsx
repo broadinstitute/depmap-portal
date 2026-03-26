@@ -5,12 +5,10 @@ import {
   ColorByValue,
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfig,
-  DataExplorerPlotConfigDimension,
+  DataExplorerPlotConfigDimensionV2,
   DataExplorerPlotType,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
-import { deprecatedDataExplorerAPI } from "../../../../services/deprecatedDataExplorerAPI";
 import {
   getDimensionTypeLabel,
   pluralize,
@@ -18,7 +16,6 @@ import {
 } from "../../../../utils/misc";
 import renderConditionally from "../../../../utils/render-conditionally";
 import PlotConfigSelect from "../../../PlotConfigSelect";
-import DimensionSelectV1 from "../../../DimensionSelect";
 import DimensionSelectV2 from "../../../DimensionSelectV2";
 import HelpTip from "../HelpTip";
 import styles from "../../styles/ConfigurationPanel.scss";
@@ -159,30 +156,18 @@ export function ColorByTypeSelector({
   const [sliceTypeLabel, setSliceTypeLabel] = useState(
     getDimensionTypeLabel(slice_type)
   );
-  const [hasLegacyColorProperty, setHasLegacyColorProperty] = useState(false);
-
   useEffect(() => {
     (async () => {
-      if (!isBreadboxOnlyMode) {
-        const keyedSlices = await deprecatedDataExplorerAPI.fetchMetadataSlices(
-          slice_type
-        );
-        const slices = Object.values(keyedSlices);
-        setHasLegacyColorProperty(
-          slices.some((slice) => !slice.isHighCardinality)
-        );
-      } else {
-        cached(breadboxAPI)
-          .getDimensionTypes()
-          // HACK: `getDimensionTypeLabel` is synchronous when it should be async.
-          // This is to keep some legacy code working. It falls back to using the type `name`
-          // instead of `display_name` until `getDimensionTypes()` has been cached.
-          .then(() => {
-            setTimeout(() => {
-              setSliceTypeLabel(getDimensionTypeLabel(slice_type));
-            });
+      cached(breadboxAPI)
+        .getDimensionTypes()
+        // HACK: `getDimensionTypeLabel` is synchronous when it should be async.
+        // This is to keep some legacy code working. It falls back to using the type `name`
+        // instead of `display_name` until `getDimensionTypes()` has been cached.
+        .then(() => {
+          setTimeout(() => {
+            setSliceTypeLabel(getDimensionTypeLabel(slice_type));
           });
-      }
+        });
     })();
   }, [slice_type]);
 
@@ -206,36 +191,21 @@ export function ColorByTypeSelector({
     );
   }
 
-  if (isBreadboxOnlyMode || hasLegacyColorProperty || value === "property") {
-    options.property = `${sliceTypeLabel} Annotation`;
-    helpContent.push(
-      <p key={2}>
-        Choose <b>{sliceTypeLabel} Annotation</b> to color by major properties
-        of the {sliceTypeLabel}, such as selectivity for genes or lineage for
-        models.
-      </p>
-    );
-  }
+  options.property = `${sliceTypeLabel} Annotation`;
+  helpContent.push(
+    <p key={2}>
+      Choose <b>{sliceTypeLabel} Annotation</b> to color by major properties of
+      the {sliceTypeLabel}, such as selectivity for genes or lineage for models.
+    </p>
+  );
 
-  if (!isBreadboxOnlyMode && slice_type !== "other") {
-    options.custom = "Matrix Data";
-    helpContent.push(
-      <p key={3}>
-        Choose <b>Matrix data</b> to treat color as a third axis, letting you
-        choose any data type that could have been an axis.
-      </p>
-    );
-  }
-
-  if (isBreadboxOnlyMode) {
-    options.custom = "Dataset";
-    helpContent.push(
-      <p key={3}>
-        Choose <b>Dataset</b> to treat color as a third axis, letting you choose
-        any data type that could have been an axis.
-      </p>
-    );
-  }
+  options.custom = "Dataset";
+  helpContent.push(
+    <p key={3}>
+      Choose <b>Dataset</b> to treat color as a third axis, letting you choose
+      any data type that could have been an axis.
+    </p>
+  );
 
   return (
     <div ref={ref} className={styles.colorBySelector}>
@@ -258,14 +228,12 @@ export function ColorByTypeSelector({
         onChange={(nextValue) => {
           onChange(nextValue as DataExplorerPlotConfig["color_by"]);
 
-          if (isBreadboxOnlyMode) {
-            setTimeout(() => {
-              ref.current?.parentElement?.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest",
-              });
-            }, 0);
-          }
+          setTimeout(() => {
+            ref.current?.parentElement?.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }, 0);
         }}
       />
     </div>
@@ -305,10 +273,6 @@ export function SortBySelector({
   );
 }
 
-const DimensionSelect = isBreadboxOnlyMode
-  ? ((DimensionSelectV2 as unknown) as typeof DimensionSelectV1)
-  : DimensionSelectV1;
-
 export function ColorByDimensionSelect({
   plot_type,
   index_type,
@@ -321,8 +285,8 @@ export function ColorByDimensionSelect({
 }: {
   plot_type: string;
   index_type: string | null;
-  value: Partial<DataExplorerPlotConfigDimension> | null;
-  onChange: (nextValue: Partial<DataExplorerPlotConfigDimension>) => void;
+  value: Partial<DataExplorerPlotConfigDimensionV2> | null;
+  onChange: (nextValue: Partial<DataExplorerPlotConfigDimensionV2>) => void;
   onClickCreateContext: () => void;
   onClickSaveAsContext: () => void;
   sortByValue: string;
@@ -331,11 +295,7 @@ export function ColorByDimensionSelect({
   const [showSortBy, setShowSortBy] = useState(false);
 
   useEffect(() => {
-    if (
-      isBreadboxOnlyMode &&
-      ["density_1d", "waterfall"].includes(plot_type) &&
-      value?.dataset_id
-    ) {
+    if (["density_1d", "waterfall"].includes(plot_type) && value?.dataset_id) {
       cached(breadboxAPI)
         .getDataset(value.dataset_id)
         .then((d) => {
@@ -348,19 +308,13 @@ export function ColorByDimensionSelect({
     }
   }, [plot_type, value]);
 
-  const v2Props = isBreadboxOnlyMode
-    ? {
-        allowNullFeatureType: true,
-        allowCategoricalValueType: true,
-      }
-    : {};
-
   return (
     <>
-      <DimensionSelect
-        {...v2Props}
+      <DimensionSelectV2
+        allowNullFeatureType
+        allowCategoricalValueType
         className={styles.customColorDimension}
-        index_type={index_type || null}
+        index_type={index_type!}
         value={value}
         onChange={onChange}
         onClickCreateContext={onClickCreateContext}

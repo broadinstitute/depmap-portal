@@ -1,7 +1,7 @@
 /* eslint-disable */
 import * as React from "react";
 import cx from "classnames";
-import { CeleryTaskState, CeleryTask } from "@depmap/compute";
+import { CeleryTaskState, CeleryTask } from "@depmap/types";
 import styles from "../styles/ProgressTracker.scss";
 
 function later(delay: number): Promise<any> {

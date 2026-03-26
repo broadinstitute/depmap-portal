@@ -50,6 +50,15 @@
   margin-top: 20px;
 }
 
+.contextNameInput {
+  margin-left: 10px;
+  min-width: 240px;
+
+  &.longName {
+    min-width: 659px;
+  }
+}
+
 .TopLevelExpression {
   & > .BooleanExpression {
     & > .boolSubexpressions {

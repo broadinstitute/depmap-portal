@@ -5,6 +5,7 @@ import pandas as pd
 from flask import url_for
 from sqlalchemy import types
 
+from depmap.extensions import db
 from depmap.partials.data_frame_display import DataFrameDisplay
 
 
@@ -303,9 +304,9 @@ class DataTable:
         if isinstance(self.data_or_query, DataTableData):
             df = self.data_or_query.get_data()[self.original_cols]
         else:
-            df = pd.read_sql(
-                self.data_or_query.statement, self.data_or_query.session.connection()
-            )[self.original_cols]
+            df = pd.read_sql(self.data_or_query.statement, db.session.connection())[
+                self.original_cols
+            ]
 
         # rename columns
         # this is kinda scary, and relies on [self.original_cols] in the pd.read_sql line above

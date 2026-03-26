@@ -1,5 +1,5 @@
 from flask import url_for, current_app
-from flask_restplus import Api
+from flask_restx import Api
 
 
 class ApiWithUrlScheme(Api):

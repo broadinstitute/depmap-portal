@@ -1,10 +1,7 @@
 import React from "react";
-import { ContextPath, DataExplorerContext, FilterKey } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
-import ContextSelector from "../../../ContextSelector";
-import DatasetMetadataSelector from "../../../DatasetMetadataSelector";
-import SliceLabelSelectV1 from "../../../DimensionSelect/SliceLabelSelect";
-import SliceLabelSelectV2 from "../../../DimensionSelectV2/SliceSelect";
+import { ContextPath, DataExplorerContextV2, FilterKey } from "@depmap/types";
+import ContextSelectorV2 from "../../../ContextSelectorV2";
+import SliceSelect from "../../../DimensionSelectV2/SliceSelect";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import {
@@ -15,17 +12,13 @@ import {
 import ColorByAnnotationSelect from "./ColorByAnnotationSelect";
 import styles from "../../styles/ConfigurationPanel.scss";
 
-const SliceLabelSelect = isBreadboxOnlyMode
-  ? ((SliceLabelSelectV2 as unknown) as typeof SliceLabelSelectV1)
-  : SliceLabelSelectV1;
-
 interface Props {
   show: boolean;
   plot: any;
   dispatch: (action: PlotConfigReducerAction) => void;
   onClickCreateContext: (pathToCreate: ContextPath) => void;
   onClickSaveAsContext: (
-    contextToEdit: DataExplorerContext,
+    contextToEdit: DataExplorerContextV2,
     pathToSave: ContextPath
   ) => void;
 }
@@ -76,28 +69,33 @@ function ColorByViewOptions({
       <div className={styles.colorByContext}>
         {(["color1", "color2"] as FilterKey[]).map((filterKey) => (
           <React.Fragment key={filterKey}>
-            <SliceLabelSelect
+            <SliceSelect
               show={color_by === "raw_slice"}
-              units={null}
+              isUnknownDataset={false}
+              isLoading={false}
               dataType={null}
               dataset_id={dataset_id}
+              index_type={null}
               slice_type={index_type as string}
               value={filters?.[filterKey]}
               onChange={(filter) => {
                 dispatch({
                   type: "select_filter",
-                  payload: { key: filterKey, filter },
+                  payload: {
+                    key: filterKey,
+                    filter: (filter as unknown) as DataExplorerContextV2,
+                  },
                 });
               }}
               swatchColor={
                 filterKey === "color1" ? palette.compare1 : palette.compare2
               }
             />
-            <ContextSelector
+            <ContextSelectorV2
               show={color_by === "aggregated_slice"}
               enable={color_by === "aggregated_slice"}
               value={filters?.[filterKey]}
-              context_type={index_type}
+              dimension_type={index_type}
               swatchColor={
                 filterKey === "color1" ? palette.compare1 : palette.compare2
               }
@@ -117,20 +115,8 @@ function ColorByViewOptions({
           </React.Fragment>
         ))}
       </div>
-      <DatasetMetadataSelector
-        show={!isBreadboxOnlyMode && color_by === "property"}
-        enable={color_by === "property"}
-        slice_type={index_type}
-        value={metadata?.color_property?.slice_id}
-        onChange={(slice_id: string | null) => {
-          dispatch({
-            type: "select_legacy_color_property",
-            payload: { slice_id },
-          });
-        }}
-      />
       <ColorByAnnotationSelect
-        show={isBreadboxOnlyMode && color_by === "property"}
+        show={color_by === "property"}
         dimension_type={index_type as string}
         value={metadata?.color_property}
         onChange={(sliceQuery) => {
@@ -148,7 +134,7 @@ function ColorByViewOptions({
                 type: "select_filter",
                 payload: {
                   key: "color1" as FilterKey,
-                  filter: (context as unknown) as DataExplorerContext,
+                  filter: (context as unknown) as DataExplorerContextV2,
                 },
               },
             ],

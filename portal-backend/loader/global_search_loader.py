@@ -1,4 +1,5 @@
 from flask import current_app
+from sqlalchemy import text
 from depmap.download.models import DownloadFileGlobalSearch
 from depmap.extensions import db
 from depmap.global_search.models import (
@@ -20,7 +21,7 @@ def load_global_search_index():
 
 
 def _execute(stmt):
-    db.session.connection().execute(stmt)
+    db.session.execute(text(stmt))
 
 
 def __load_compound_search_index():
@@ -55,12 +56,14 @@ def __load_compound_search_index():
                 (target_or_mechanism.strip(), compound.entity_id, compound.entity_id)
             )
     if len(values) > 0:
-        db.session.connection().execute(
-            """
+        db.session.execute(
+            text(
+                """
             insert into global_search_index (label, type, compound_id, entity_id)
-            values (?, 'compound_target_or_mechanism', ?, ?)
-        """,
-            values,
+            values (:label, 'compound_target_or_mechanism', :compound_id, :entity_id)
+        """
+            ),
+            [{"label": v[0], "compound_id": v[1], "entity_id": v[2]} for v in values],
         )
 
     stmt = """

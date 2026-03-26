@@ -23,7 +23,6 @@ module.exports = {
     contextExplorer: "./src/apps/contextExplorer.tsx",
     dataPage: "./src/apps/dataPage.tsx",
     resourcesPage: "./src/apps/resourcesPage.tsx",
-    secretDataViewer: "./src/apps/secretDataViewer.tsx",
     peddepPage: "./src/apps/peddepPage.tsx",
     anchorScreenDashboard: "./src/apps/anchorScreenDashboard.tsx",
     resistanceScreenDashboard: "./src/apps/resistanceScreenDashboard.tsx",

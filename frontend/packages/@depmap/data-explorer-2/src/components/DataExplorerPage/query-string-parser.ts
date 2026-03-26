@@ -1,7 +1,7 @@
 import { isCompleteExpression, isSampleTypeSync } from "../../utils/misc";
 import { legacyPortalIdToBreadboxGivenId } from "../../utils/slice-id";
 import {
-  DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerDatasetDescriptor,
   DimensionKey,
   FilterKey,
@@ -10,6 +10,15 @@ import {
 import { isCompletePlot } from "./validation";
 
 type Datasets = Record<string, DataExplorerDatasetDescriptor[]>;
+
+// Legacy contexts renamed `dimension_type` to `context_type` and did not have
+// a `vars` property (variables were interpreted as raw slice ID strings
+// instead of named references to SliceQuery objects).
+export type LegacyDataExplorerContext = {
+  name: string;
+  context_type: string;
+  expr: Record<string, any> | boolean;
+};
 
 const findDataset = (
   dataset_id: string,
@@ -129,7 +138,9 @@ const makeSampleParser = (dimensionKey: DimensionKey) => (
   return p;
 };
 
-const isSingleSlice = (context: DataExplorerContext) => {
+const isSingleSlice = (context: {
+  expr: LegacyDataExplorerContext["expr"];
+}) => {
   const { expr } = context;
 
   return (
@@ -146,7 +157,7 @@ const makeContextParser = (dimensionKey: DimensionKey) => (
   encodedContext: string
 ) => {
   const p = { ...partialPlot };
-  let context: DataExplorerContext;
+  let context: DataExplorerContextV2;
 
   try {
     context = JSON.parse(decodeURIComponent(encodedContext));
@@ -154,10 +165,12 @@ const makeContextParser = (dimensionKey: DimensionKey) => (
     throw new Error(`Invalid context`);
   }
 
+  const asLegacyContext = (context as unknown) as LegacyDataExplorerContext;
+
   if (
     !context.name ||
-    !context.context_type ||
-    !isCompleteExpression(context.expr)
+    !isCompleteExpression(context.expr) ||
+    ![context.dimension_type, asLegacyContext.context_type].some(Boolean)
   ) {
     throw new Error("Invalid context");
   }
@@ -165,7 +178,8 @@ const makeContextParser = (dimensionKey: DimensionKey) => (
   p.dimensions = p.dimensions || {};
   p.dimensions[dimensionKey] = p.dimensions[dimensionKey] || {};
 
-  p.dimensions[dimensionKey]!.slice_type = context.context_type;
+  p.dimensions[dimensionKey]!.slice_type =
+    context.dimension_type || asLegacyContext.context_type;
   p.dimensions[dimensionKey]!.context = context;
 
   if (isSingleSlice(context)) {

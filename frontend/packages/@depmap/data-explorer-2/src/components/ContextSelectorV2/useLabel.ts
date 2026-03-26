@@ -7,14 +7,14 @@ export default function useLabel(
     | React.ReactNode
     | ((dimensionType: DimensionType | null) => string)
     | undefined,
-  context_type: string | null
+  dimension_type: string | null
 ) {
   const [dimensionType, setDimensionType] = useState<
     DimensionType | null | undefined
   >(undefined);
 
   useEffect(() => {
-    if (context_type === null) {
+    if (dimension_type === null) {
       setDimensionType(null);
       return;
     }
@@ -22,12 +22,12 @@ export default function useLabel(
     cached(breadboxAPI)
       .getDimensionTypes()
       .then((types) => {
-        const typeInfo = types.find((t) => t.name === context_type);
+        const typeInfo = types.find((t) => t.name === dimension_type);
 
         if (typeInfo) {
           setDimensionType(typeInfo);
         } else {
-          const errorMsg = `Unknown dimension type "${context_type}"`;
+          const errorMsg = `Unknown dimension type "${dimension_type}"`;
           throw new Error(errorMsg);
         }
       })
@@ -36,7 +36,7 @@ export default function useLabel(
         const errorMsg = "Failed to fetch dimension types from Breadbox";
         throw new Error(errorMsg);
       });
-  }, [context_type]);
+  }, [dimension_type]);
 
   if (typeof label === "function") {
     return dimensionType !== undefined ? label(dimensionType) : "...";

@@ -1,7 +1,6 @@
 import stableStringify from "json-stable-stringify";
 import { getUrlPrefix, isElara } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 import getContextHash from "./get-context-hash";
 
 // *****************************************************************************
@@ -36,10 +35,6 @@ const fallbackInMemoryCache: Record<
 // implements the same set of endpoints but stores them in its database
 // instead.
 const getCasUrl = () => {
-  if (!isBreadboxOnlyMode) {
-    return `${getUrlPrefix()}/cas`;
-  }
-
   return isElara
     ? `${getUrlPrefix()}/temp/cas`
     : `${getUrlPrefix()}/breadbox/temp/cas`;
@@ -83,21 +78,14 @@ export async function persistContext(
     fallbackInMemoryCache[hash] = context;
   }
 
-  const url = isBreadboxOnlyMode ? getCasUrl() : `${getCasUrl()}/`;
+  const url = getCasUrl();
   const options = {
     method: "POST",
-    headers: isBreadboxOnlyMode
-      ? {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        }
-      : {
-          Accept: "*/*",
-          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-        },
-    body: isBreadboxOnlyMode
-      ? JSON.stringify({ value: json })
-      : new URLSearchParams({ value: json }),
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ value: json }),
   };
 
   if (cacheSuccess) {
@@ -178,10 +166,6 @@ export async function fetchContext(
   }
 
   if (requestFailed) {
-    if (!isBreadboxOnlyMode) {
-      throw new Error(`Failed to fetch context with hash "${hash}".`);
-    }
-
     // Retry the request against the legacy Portal API (Breadbox is supposed to
     // do this automatically but sometimes it doesn't work).
     window.console.warn("Retrying the request using the legacy Portal API.");

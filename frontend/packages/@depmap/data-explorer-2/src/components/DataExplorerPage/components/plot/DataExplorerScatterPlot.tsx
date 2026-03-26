@@ -38,7 +38,7 @@ interface Props {
   linreg_by_group: LinRegInfo[] | null;
   onClickColorByContext: (context: DataExplorerContextV2) => void;
   onClickSaveSelectionAsContext: (
-    context_type: string,
+    dimension_type: string,
     selectedLabels: Set<string>
   ) => void;
   onClickVisualizeSelected: (
