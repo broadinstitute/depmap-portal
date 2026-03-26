@@ -48,20 +48,7 @@ class DataPrepPipelineRunner(PipelineRunner):
         else:
             return conseq_files["internal"]
 
-    def handle_special_features(self, config):
-        """Preprocess templates to generate DO-NOT-EDIT-ME files before run."""
-        templates = self.config_data["pipelines"]["data_prep"]["templates"]
-
-        template_key = "external" if config["is_external"] else "internal"
-        template = templates[template_key]["input"]
-        output = templates[template_key]["output"]
-
-        self.run_via_container(
-            f"python ../preprocess_taiga_ids.py {template} {output}", config
-        )
-
-    def handle_post_run_tasks(self, config):
-        """After conseq finishes, log dataset usage."""
+    def handle_dataset_tracking(self, config):
         self.track_dataset_usage_from_conseq("pipeline/data-prep-pipeline")
 
 

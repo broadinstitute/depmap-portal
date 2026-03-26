@@ -165,6 +165,8 @@ class PreprocessingPipelineRunner(PipelineRunner):
                 f"conseq export {config['conseq_file']} {config['export_path']}", config
             )
         self.run_via_container("conseq report html", config)
+
+    def handle_dataset_tracking(self, config):
         self.track_dataset_usage_from_conseq("pipeline/preprocessing-pipeline")
 
 

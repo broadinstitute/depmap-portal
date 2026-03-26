@@ -125,7 +125,11 @@ class PipelineRunner(ABC):
         version_files = list(pipeline_path.glob("*-DO-NOT-EDIT-ME"))
 
         if not version_files:
-            raise ValueError(f"No *-DO-NOT-EDIT-ME files found in {pipeline_dir}")
+            print(
+                f"WARNING: No *-DO-NOT-EDIT-ME files found in {pipeline_dir}. "
+                "Dataset usage will not be tracked for this run."
+            )
+            return
 
         for version_file in version_files:
             assert version_file.exists(), f"Version file does not exist: {version_file}"
@@ -142,9 +146,9 @@ class PipelineRunner(ABC):
                     self.log_dataset_usage(release_taiga_id)
                     return
 
-        raise ValueError(
-            f"Release taiga ID not found in any *-DO-NOT-EDIT-ME files in {pipeline_dir}. "
-            "Please check the files and try again."
+        print(
+            f"WARNING: RELEASE_TAIGA_ID not found in any *-DO-NOT-EDIT-ME files "
+            f"in {pipeline_dir}. Dataset usage will not be tracked for this run."
         )
 
     def add_common_arguments(self, parser):
@@ -248,9 +252,9 @@ class PipelineRunner(ABC):
         """Get the conseq file to use for this pipeline."""
         pass
 
-    @abstractmethod
     def handle_special_features(self, config):
-        """Handle pipeline-specific features like START_WITH, override files, etc."""
+        """Handle pipeline-specific features like START_WITH, override files, etc.
+        Override in subclasses that need pre-run setup. No-op by default."""
         pass
 
     def run(self, script_file_path):
@@ -278,28 +282,31 @@ class PipelineRunner(ABC):
 
         config["conseq_file"] = self.get_conseq_file(config)
 
-        if config.get("manually_run_conseq"):
-            conseq_args = config.get("conseq_args", [])
-            print(f"executing: conseq {' '.join(conseq_args)}")
-            result = self.run_via_container(
-                f"conseq -D is_dev=False {' '.join(conseq_args)}", config
-            )
-            run_exit_status = result.returncode
-        else:
-            # Clean up unused directories from past runs
-            result = self.run_via_container("conseq gc", config)
-            assert result.returncode == 0, "Conseq gc failed"
+        try:
+            if config.get("manually_run_conseq"):
+                conseq_args = config.get("conseq_args", [])
+                print(f"executing: conseq {' '.join(conseq_args)}")
+                result = self.run_via_container(
+                    f"conseq -D is_dev=False {' '.join(conseq_args)}", config
+                )
+                run_exit_status = result.returncode
+            else:
+                # Clean up unused directories from past runs
+                result = self.run_via_container("conseq gc", config)
+                assert result.returncode == 0, "Conseq gc failed"
 
-            # Build and run main conseq command
-            conseq_run_cmd = self.build_conseq_run_command(config)
-            result = self.run_via_container(conseq_run_cmd, config)
-            run_exit_status = result.returncode
+                # Build and run main conseq command
+                conseq_run_cmd = self.build_conseq_run_command(config)
+                result = self.run_via_container(conseq_run_cmd, config)
+                run_exit_status = result.returncode
 
-            # Handle post-run tasks (export, reports, etc.)
-            self.handle_post_run_tasks(config)
+                # Handle post-run tasks (export, reports, etc.)
+                self.handle_post_run_tasks(config)
 
-            # Copy the latest logs
-            self.backup_conseq_logs(config["state_path"], config["log_destination"])
+                # Copy the latest logs
+                self.backup_conseq_logs(config["state_path"], config["log_destination"])
+        finally:
+            self.handle_dataset_tracking(config)
 
         print("Pipeline run complete")
         subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
@@ -332,4 +339,9 @@ class PipelineRunner(ABC):
     def handle_post_run_tasks(self, config):
         """Handle post-run tasks like export and report generation."""
         # Default implementation - can be overridden by specific pipelines
+        pass
+
+    def handle_dataset_tracking(self, config):
+        """Track dataset usage. Called in a finally block so it runs on success or failure.
+        Override in subclasses that need dataset tracking. No-op by default."""
         pass
