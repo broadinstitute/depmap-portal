@@ -392,17 +392,18 @@ def get_starting_predictive_model_id():
         return 1
 
 
-def load_predictive_background_from_db(dataset_enum_name):
-    dataset = Dataset.get_dataset_by_name(dataset_enum_name, must=True)
+def load_predictive_background_from_db(dataset_given_id):
     background = [
         x
         for (x,) in db.session.query(func.max(PredictiveModel.pearson))
-        .filter_by(dataset_id=dataset.dataset_id)
-        .group_by("entity_id")
+        .filter_by(dataset_given_id=dataset_given_id)
+        .group_by("pred_model_feature_id")
         .all()
     ]
     db.session.add(
-        PredictiveBackground(dataset=dataset, background=json_dumps(background))
+        PredictiveBackground(
+            dataset_given_id=dataset_given_id, background=json_dumps(background)
+        )
     )
 
 

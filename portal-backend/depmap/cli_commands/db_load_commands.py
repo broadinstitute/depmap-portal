@@ -59,6 +59,7 @@ from loader.predictability_loader import (
     load_predictive_background_from_db,
     load_predictive_background_from_file,
     load_predictive_model_csv,
+    lookup_breadbox_dataset_given_id,
 )
 from loader.gcs import GCSCache
 
@@ -789,7 +790,8 @@ def _load_real_data(
                 load_predictive_model_csv(
                     file_path, dataset_enum.name, feature_metadata_path
                 )
-                load_predictive_background_from_db(dataset_enum.name)
+                dataset_given_id = lookup_breadbox_dataset_given_id(dataset_enum.name)
+                load_predictive_background_from_db(dataset_given_id)
 
     with checkpoint("match-related") as needed:
         if needed:
