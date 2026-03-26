@@ -620,7 +620,7 @@ def get_sensitivity_html(
 
 
 def get_availability_html(
-    compound: Entity, compound_experiment_and_datasets, query_params_dict={}
+    compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
     div_id = str(uuid.uuid4())
 
