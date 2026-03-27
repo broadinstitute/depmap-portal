@@ -14,7 +14,7 @@ from flask import (
 from sqlalchemy import func
 from oauth2client.service_account import ServiceAccountCredentials
 from typing import Any, List, Dict, Literal, Tuple, Union
-from flask_restplus import Api, Resource, fields
+from flask_restx import Api, Resource, fields
 
 from depmap import data_access
 from depmap.download.models import (
@@ -39,16 +39,6 @@ from depmap.utilities.data_access_log import log_download_file_access
 blueprint = Blueprint(
     "download", __name__, url_prefix="/download", static_folder="../static"
 )
-
-restplus = Api(
-    blueprint,
-    validate=True,
-    decorators=[csrf_protect.exempt],  # this is needed for this particular endpoint
-    title="Internal restplus endpoints",
-    version="1.0",
-    description="These are endpoints that use restplus to better document and define contracts. This is not a user-facing interface.",
-)
-restplus.errorhandler(Exception)(restplus_handle_exception)
 
 
 def _redirect_to_new_data_page(tab: str = "allData"):
@@ -274,8 +264,22 @@ def data_slicer_download():
         full_file_path,
         mimetype="text/csv",
         as_attachment=True,
-        attachment_filename=filename_for_user,
+        download_name=filename_for_user,
     )
+
+
+# Api is created after the blueprint routes above so that its automatic root
+# endpoint (which returns 404) does not shadow @blueprint.route("/").
+restplus = Api(
+    blueprint,
+    validate=True,
+    doc=False,  # type: ignore[arg-type]  # flask-restx accepts False to disable Swagger UI
+    decorators=[csrf_protect.exempt],  # this is needed for this particular endpoint
+    title="Internal restplus endpoints",
+    version="1.0",
+    description="These are endpoints that use restplus to better document and define contracts. This is not a user-facing interface.",
+)
+restplus.errorhandler(Exception)(restplus_handle_exception)
 
 
 @restplus.route("/data_slicer/validate_features")

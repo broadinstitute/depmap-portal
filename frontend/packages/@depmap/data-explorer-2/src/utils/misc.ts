@@ -8,13 +8,12 @@ import {
   PartialDataExplorerPlotConfigDimensionV2,
   SliceQuery,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 
 // HACK: Stash a reference to `dimensionTypes`
 // so these utils can be called synchronously.
 let dimensionTypes = null as DimensionType[] | null;
 
-if (isBreadboxOnlyMode && !process.env.JEST_WORKER_ID) {
+if (!process.env.JEST_WORKER_ID) {
   cached(breadboxAPI)
     .getDimensionTypes()
     .then((result) => {

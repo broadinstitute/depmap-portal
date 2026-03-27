@@ -538,7 +538,7 @@ def get_description_html(entity):
             "entrez_id": entity.entrez_id,
             "symbol": entity.symbol,
             "full_name": entity.name,
-            "aka": ", ".join([alias.alias for alias in entity.entity_alias.all()]),
+            "aka": ", ".join([alias.alias for alias in entity.entity_alias]),
             "ensembl_id": entity.ensembl_id,  # lazy to rename, this isn't just entrez
             "hngc_id": entity.hgnc_id,
         },
@@ -620,7 +620,7 @@ def get_sensitivity_html(
 
 
 def get_availability_html(
-    compound: Entity, compound_experiment_and_datasets, query_params_dict={}
+    compound: Compound, compound_experiment_and_datasets, query_params_dict={}
 ):
     div_id = str(uuid.uuid4())
 

@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 from depmap.database import Column, Model, String
 

@@ -125,7 +125,7 @@ function AllSelects({
         }}
         value={context || null}
         onChange={onChangeContext}
-        context_type={slice_type || ""}
+        dimension_type={slice_type || ""}
         includeAllInOptions={includeAllInContextOptions}
         onClickCreateContext={onClickCreateContext}
         onClickSaveAsContext={onClickSaveAsContext}

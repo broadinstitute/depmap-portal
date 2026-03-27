@@ -7,7 +7,7 @@ import zipfile
 import numpy as np
 import pandas as pd
 from flask import Blueprint, current_app, jsonify, render_template, request, send_file
-from flask_restplus import Api, Resource, fields
+from flask_restx import Api, Resource, fields
 
 from depmap.celligner.models import (
     CellignerDistanceColIndex,
@@ -29,15 +29,6 @@ from loader.celligner_loader import (
 blueprint = Blueprint(
     "celligner", __name__, url_prefix="/celligner", static_folder="../static"
 )
-
-restplus = Api(
-    blueprint,
-    validate=True,
-    title="Internal restplus endpoints",
-    version="1.0",
-    description="These are endpoints that use restplus to better document and define contracts. This is not a user-facing interface.",
-)
-restplus.errorhandler(Exception)(restplus_handle_exception)
 
 
 def _flatten_subtype_lists(grp):
@@ -199,10 +190,26 @@ def download_celligner_files():
 
     memory_file.seek(0)
 
-    return send_file(
-        memory_file, attachment_filename="celligner.zip", as_attachment=True
-    )
+    return send_file(memory_file, download_name="celligner.zip", as_attachment=True)
 
+
+# When Api(blueprint, ...) is called, flask-restx registers a root endpoint at the blueprint's / path.
+# This endpoint always returns 404 (its render_root() method calls self.abort(HTTPStatus.NOT_FOUND)).
+# Separately, @blueprint.route("/") registers the actual Celligner view at the same path.
+# In the old Flask 1.1 + flask-restplus combination, the blueprint's route happened to win due to
+# registration ordering. After upgrading to Flask 3.x + flask-restx, the blueprint registration
+# behavior changed and the Api's root endpoint now takes precedence, shadowing the Celligner app.
+# So here Api is created after the blueprint routes above so that its automatic root
+# endpoint (which returns 404) does not shadow @blueprint.route("/").
+restplus = Api(
+    blueprint,
+    validate=True,
+    doc=False,  # type: ignore[arg-type]  # flask-restx accepts False to disable Swagger UI
+    title="Internal restplus endpoints",
+    version="1.0",
+    description="These are endpoints that use restplus to better document and define contracts. This is not a user-facing interface.",
+)
+restplus.errorhandler(Exception)(restplus_handle_exception)
 
 CellLineSelectorColorMap = restplus.model(
     "CellLineSelectorColorMap",

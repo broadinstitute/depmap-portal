@@ -17,7 +17,7 @@ import {
 import { breadboxAPI } from "@depmap/api";
 import { toPortalLink } from "@depmap/globals";
 import { ProgressTracker } from "@depmap/common-components";
-import { CeleryTask, ComputeResponse } from "@depmap/compute";
+import { CeleryTask, ComputeResponse } from "@depmap/types";
 import {
   SuccessUploadTask,
   UploadFormat,

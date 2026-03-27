@@ -1,0 +1,111 @@
+version: 2
+updates:
+  # --- Python (pip / Poetry) ecosystems ---
+  # open-pull-requests-limit: 0 disables version-update PRs;
+  # only security-update PRs will be created.
+  # Groups with applies-to: security-updates bundle all security
+  # fixes per ecosystem directory into one PR.
+
+  - package-ecosystem: "pip"
+    directory: "/breadbox"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-pip-breadbox:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/breadbox-client"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-pip-breadbox-client:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/breadbox-client-generator"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-pip-breadbox-client-generator:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/packed-cor-tables"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-pip-packed-cor-tables:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/pipeline/build-pipeline-docker-images/pipeline-run-docker"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-pip-pipeline-run-docker:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/portal-backend"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-pip-portal-backend:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "pip"
+    directory: "/smiles-to-svg"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-pip-smiles-to-svg:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  # --- npm (Yarn) ecosystems ---
+
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-npm-frontend:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: "npm"
+    directory: "/portal-backend/depmap"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-npm-portal-backend:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  # --- GitHub Actions ---
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      all-security-github-actions:
+        applies-to: security-updates
+        patterns: ["*"]

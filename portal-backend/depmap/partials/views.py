@@ -8,7 +8,7 @@ from flask import Blueprint, Response, request
 from depmap import data_access
 from depmap.dataset.models import BiomarkerDataset
 from depmap.entity.models import Entity
-from depmap.extensions import cache_without_user_permissions
+from depmap.extensions import cache_without_user_permissions, db
 from depmap.partials.data_table.factories import get_data_table
 from depmap.partials.entity_summary.models import (
     format_strip_plot,
@@ -82,7 +82,7 @@ def entity_summary_json_data():
     """
     # Note: this entity ID param is NOT what breadbox uses as feature IDs.
     entity_id = request.args.get("entity_id")
-    entity = Entity.query.get(entity_id)  # Compound, Gene
+    entity = db.session.get(Entity, entity_id)  # Compound, Gene
     dataset_id = request.args.get("dep_enum_name")  # Dataset ID
     size_dataset_id = request.args.get(
         "size_biom_enum_name"
@@ -133,7 +133,7 @@ def entity_summary_download():
     size_dataset_id = request.args.get("size_biom_enum_name")
     color = request.args.get("color")
 
-    entity = Entity.query.get(entity_id)
+    entity = db.session.get(Entity, entity_id)
     if size_dataset_id == "none":
         size_dataset_enum = None
     else:

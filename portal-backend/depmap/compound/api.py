@@ -7,7 +7,7 @@ from depmap.compound.views.index import (
     get_corr_analysis_options,
     get_heatmap_dose_curves_tab_drc_options,
 )
-from flask_restplus import Namespace, Resource
+from flask_restx import Namespace, Resource
 from flask import request
 
 namespace = Namespace("compound", description="View compound data in the portal")

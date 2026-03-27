@@ -1,6 +1,7 @@
 export enum DataPageDataType {
   CRISPR_Achilles_Broad = "CRISPR_Achilles_Broad",
   CRISPR_Score_Sanger = "CRISPR_Score_Sanger",
+  CRISPR_Biogrid = "CRISPR_Biogrid",
   CRISPR_ParalogsScreens = "CRISPR_ParalogsScreens",
   RNAi_Marcotte = "RNAi_Marcotte",
   RNAi_Achilles_Broad = "RNAi_Achilles_Broad",
@@ -15,7 +16,8 @@ export enum DataPageDataType {
   Drug_Repurposing_Broad = "Drug_Repurposing_Broad",
   Drug_GDSC_Sanger = "Drug_GDSC_Sanger",
   Drug_OncRef_Broad = "Drug_OncRef_Broad",
-  Proteomics_Olink = "Proteomics_Olink",
+  Proteomics_Olink_Lysate = "Proteomics_Olink_Lysate",
+  Proteomics_Olink_Media = "Proteomics_Olink_Media",
   Proteomics_RPPA_CCLE = "Proteomics_RPPA_CCLE",
   Proteomics_MS_CCLE = "Proteomics_MS_CCLE",
   Proteomics_MS_Sanger = "Proteomics_MS_Sanger",

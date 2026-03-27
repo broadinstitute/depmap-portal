@@ -3,8 +3,9 @@ from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
+import sqlalchemy
 from flask import current_app
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 from depmap.database import (
     Column,
@@ -29,7 +30,7 @@ class GeneSeries(pd.Series):
     @property
     def genes(self):
         index = self.index.values.tolist()
-        genes = [Gene.query.get(entity_id) for entity_id in index]
+        genes = [db.session.get(Gene, entity_id) for entity_id in index]
         return genes
 
     @property
@@ -61,8 +62,17 @@ class Matrix(Model):
     __tablename__ = "matrix"
     matrix_id = Column(Integer, primary_key=True, autoincrement=True)
     file_path = Column(Text, nullable=False)
-    row_index: "RowMatrixIndex" = db.relationship("RowMatrixIndex", lazy="dynamic")
-    col_index: "ColMatrixIndex" = db.relationship("ColMatrixIndex", lazy="dynamic")
+    _row_index = db.relationship("RowMatrixIndex", lazy="select")
+    _col_index = db.relationship("ColMatrixIndex", lazy="select")
+
+    @property
+    def row_index(self):
+        return RowMatrixIndex.query.filter_by(matrix_id=self.matrix_id)
+
+    @property
+    def col_index(self):
+        return ColMatrixIndex.query.filter_by(matrix_id=self.matrix_id)
+
     min = Column(
         Float
     )  # should be nullable=False, no constraint for easier migration + additional checkpoint
@@ -89,8 +99,8 @@ class Matrix(Model):
         return os.path.join(current_app.config["WEBAPP_DATA_DIR"], self.file_path)
 
     @classmethod
-    def get_by_id(self, matrix_id):
-        return Matrix.query.get(matrix_id)
+    def get_by_id(cls, matrix_id):
+        return db.session.get(Matrix, matrix_id)
 
     def get_entity_by_label(self, entity_label, must=True):
         q = self.row_index.join(Entity).filter(Entity.label == entity_label)
@@ -292,7 +302,9 @@ class Matrix(Model):
 class RowMatrixIndex(Model):
     __tablename__ = "row_matrix_index"
 
-    __table_args__ = (db.Index("ix_row_matrix_index_1", "entity_id", "matrix_id"),)
+    __table_args__ = (
+        sqlalchemy.Index("ix_row_matrix_index_1", "entity_id", "matrix_id"),
+    )
 
     row_matrix_index_id = Column(Integer, primary_key=True, autoincrement=True)
     index = Column(Integer, nullable=False)
@@ -305,7 +317,7 @@ class RowMatrixIndex(Model):
         "Matrix",
         foreign_keys="RowMatrixIndex.matrix_id",
         uselist=False,
-        overlaps="row_index",
+        overlaps="_row_index",
     )
     owner_id = Column(Integer, nullable=False)
 
@@ -324,6 +336,6 @@ class ColMatrixIndex(Model):
         "Matrix",
         foreign_keys="ColMatrixIndex.matrix_id",
         uselist=False,
-        overlaps="col_index",
+        overlaps="_col_index",
     )
     owner_id = Column(Integer, nullable=False)

@@ -7,10 +7,11 @@ import threading
 from collections import defaultdict
 from typing import Dict, List, Optional, Type, TypeVar, Union
 
-import flask_sqlalchemy
 import sqlalchemy
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlalchemy import Integer, Float, String, Boolean, Text, ForeignKey, Column
+from sqlalchemy.orm import relationship
 
 from .extensions import db
 
@@ -18,27 +19,12 @@ log = logging.getLogger(__name__)
 
 """Database module, including the SQLAlchemy database object and DB-related utilities."""
 
-# Alias common SQLAlchemy names
-Column = sqlalchemy.Column
-relationship = db.relationship
-Integer: Type[sqlalchemy.Integer] = db.Integer
-ForeignKey: Type[sqlalchemy.ForeignKey] = db.ForeignKey
-Float: Type[sqlalchemy.Float] = db.Float
-String: Type[sqlalchemy.String] = db.String
-Boolean: Type[sqlalchemy.Boolean] = db.Boolean
-Text: Type[sqlalchemy.Text] = db.Text
-
-
-DBModel: flask_sqlalchemy.Model = db.Model
-# "Generic" type
 T = TypeVar("T", bound="Model")
-# Import this one to avoid mypy errors + use typed helper methods
-class Model(DBModel):
-    __abstract__ = True
 
-    # @classmethod
-    # def get(cls: Type[T], id: str) -> T:
-    #     return cls.query.get(id)
+
+class Model(db.Model):
+    __abstract__ = True
+    __allow_unmapped__ = True
 
     @classmethod
     def get_by(cls: Type[T], **kw) -> Optional[T]:

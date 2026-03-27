@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
 import { DropdownButton, MenuItem } from "react-bootstrap";
 import { Tooltip } from "@depmap/common-components";
-import { isBreadboxOnlyMode } from "../../isBreadboxOnlyMode";
 import styles from "../../styles/ContextManager.scss";
 
 interface Props {
@@ -35,10 +34,7 @@ function MoreOptionsButton({ onClickDelete, onClickDownload }: Props) {
             }
           }}
         >
-          {/* FIXME: We could support this by showing the new SliceTable view */}
-          {!isBreadboxOnlyMode && (
-            <MenuItem onClick={onClickDownload}>Download…</MenuItem>
-          )}
+          <MenuItem onClick={onClickDownload}>Download…</MenuItem>
           <MenuItem className={styles.deleteContext} onClick={onClickDelete}>
             Delete
           </MenuItem>

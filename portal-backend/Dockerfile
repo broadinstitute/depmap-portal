@@ -23,9 +23,10 @@ RUN apt-get update -y && apt-get install -y --no-install-recommends \
 # Install pyenv to /opt/pyenv
 RUN curl https://pyenv.run | bash
 
-# Install Python 3.9 with shared library support (required by some packages)
+# Read Python version from .python-version so it stays in sync with local dev
+COPY .python-version /tmp/.python-version
 ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
-RUN pyenv install 3.9 && pyenv global 3.9
+RUN pyenv install "$(cat /tmp/.python-version)" && pyenv global "$(cat /tmp/.python-version)"
 
 # Create python3.9 venv at /python3.9 for compatibility with existing PATH expectations
 RUN python -m venv /python3.9

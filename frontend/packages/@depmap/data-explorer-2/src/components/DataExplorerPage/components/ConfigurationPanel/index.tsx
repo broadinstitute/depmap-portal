@@ -1,10 +1,9 @@
 import React from "react";
 import {
   ContextPath,
-  DataExplorerContext,
+  DataExplorerContextV2,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../../isBreadboxOnlyMode";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import PlotConfiguration from "./PlotConfiguration";
 import AnalysisResult from "./AnalysisResult";
@@ -19,18 +18,12 @@ interface Props {
   dispatch: (action: PlotConfigReducerAction) => void;
   onClickCreateContext: (path: ContextPath) => void;
   onClickSaveAsContext: (
-    contextToEdit: DataExplorerContext,
+    contextToEdit: DataExplorerContextV2,
     pathToSave: ContextPath
   ) => void;
   onClickCopyAxisConfig: () => void;
   onClickSwapAxisConfigs: () => void;
 }
-
-const xFeatureTypeHasAssociations = (slice_type?: string) => {
-  return isBreadboxOnlyMode
-    ? true
-    : ["gene", "compound_experiment"].includes(slice_type as string);
-};
 
 function ConfigurationPanel({
   plot,
@@ -45,8 +38,7 @@ function ConfigurationPanel({
       plot.dimensions?.x &&
       plot.dimensions.x.context &&
       plot.dimensions.x.dataset_id &&
-      plot.dimensions.x.axis_type === "raw_slice" &&
-      xFeatureTypeHasAssociations(plot.dimensions.x.slice_type)
+      plot.dimensions.x.axis_type === "raw_slice"
   );
 
   return (

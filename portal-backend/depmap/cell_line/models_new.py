@@ -46,10 +46,8 @@ def add_depmap_model_table_columns(query):
             DepmapModel.cell_line_name,
         )
         .add_columns(
-            sqlalchemy.column('"lineage".name', is_literal=True).label("lineage"),
-            sqlalchemy.column('"lineage".level', is_literal=True).label(
-                "lineage_level"
-            ),
+            sqlalchemy.literal_column('"lineage".name').label("lineage"),
+            sqlalchemy.literal_column('"lineage".level').label("lineage_level"),
         )
     )
     return table_query
@@ -134,9 +132,7 @@ class DepmapModel(Model):
         All cell lines have a level 1 lineage, even if it may be "unknown"
         """
         # TODO: When the DepmapModel table replaces CellLine, this needs to change to iterate self.oncotree_lineage
-        return next(
-            lineage for lineage in self.cell_line.lineage.all() if lineage.level == 1
-        )
+        return next(lineage for lineage in self.cell_line.lineage if lineage.level == 1)
 
     def lineage_is_unknown(self):
         """
@@ -301,7 +297,7 @@ class DepmapModel(Model):
             .with_entities(DepmapModel.model_id, DepmapModel.stripped_cell_line_name)
         )
 
-        cell_lines = pd.read_sql(query.statement, query.session.connection())
+        cell_lines = pd.read_sql(query.statement, db.session.connection())
         cell_lines_dict = dict(
             zip(
                 cell_lines["model_id"].values,

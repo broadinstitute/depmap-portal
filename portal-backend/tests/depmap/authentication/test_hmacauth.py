@@ -70,7 +70,7 @@ def test_request_signature_post(auth):
         "SERVER_PORT": "80",
         "PATH_INFO": "/foo/bar",
         "CONTENT_TYPE": "application/json",
-        "CONTENT_LENGTH": len(payload),
+        "CONTENT_LENGTH": str(len(payload)),
         "HTTP_CONTENT_MD5": "deadbeef",
         "HTTP_DATE": "2015-09-28",
         "HTTP_AUTHORIZATION": "trust me",

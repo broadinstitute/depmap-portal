@@ -340,7 +340,6 @@ def _convert_parquet_to_sqlite(df: pd.DataFrame, output_path: str):
             rank INTEGER NOT NULL,
             feature_dataset_id TEXT NOT NULL,
             feature_given_id TEXT NOT NULL,
-            feature_label TEXT,
             importance REAL NOT NULL,
             correlation_with_actual REAL NOT NULL,
             PRIMARY KEY (actuals_feature_given_id, rank)
@@ -365,36 +364,23 @@ def _convert_parquet_to_sqlite(df: pd.DataFrame, output_path: str):
             dataset_id_col = f"feature_{rank}_dataset_id"
             importance_col = f"feature_{rank}_importance"
             correlation_col = f"feature_{rank}_correlation"
-            label_col = f"feature_{rank}_label"
 
             given_id_val = row.get(given_id_col)
-            if given_id_val is None or (
-                isinstance(given_id_val, float) and pd.isna(given_id_val)
-            ):
+            if given_id_val is None or pd.isna(given_id_val):
                 break
-
-            feature_label = row.get(label_col) if label_col in row else None
-            # Normalize feature_label to None if it's NaN
-            if (
-                feature_label is not None
-                and isinstance(feature_label, float)
-                and pd.isna(feature_label)
-            ):
-                feature_label = None
 
             cursor.execute(
                 """
                 INSERT INTO top_features
                 (actuals_feature_given_id, rank, feature_dataset_id, feature_given_id,
-                 feature_label, importance, correlation_with_actual)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                 importance, correlation_with_actual)
+                VALUES (?, ?, ?, ?, ?, ? )
             """,
                 (
                     feature_id,
                     rank,
                     row[dataset_id_col],
                     row[given_id_col],
-                    feature_label,
                     row[importance_col],
                     row[correlation_col],
                 ),
@@ -546,7 +532,7 @@ def _read_model_fit_from_sqlite(
     # Get top features
     cursor.execute(
         """
-        SELECT rank, feature_dataset_id, feature_given_id, feature_label,
+        SELECT rank, feature_dataset_id, feature_given_id,
                importance, correlation_with_actual
         FROM top_features
         WHERE actuals_feature_given_id = ?
@@ -562,9 +548,8 @@ def _read_model_fit_from_sqlite(
                 rank=row[0],
                 feature_dataset_id=row[1],
                 feature_given_id=row[2],
-                feature_label=row[3],
-                importance=row[4],
-                correlation_with_actual=row[5],
+                importance=row[3],
+                correlation_with_actual=row[4],
             )
         )
 

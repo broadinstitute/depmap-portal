@@ -21,8 +21,8 @@ describe("plotConfigReducer", () => {
 
     const nextPlot = plotConfigReducer(plot, action);
 
-    expect(nextPlot.dimensions.x).toBeDefined();
-    expect(nextPlot.dimensions.y).not.toBeDefined();
+    expect(nextPlot.dimensions!.x).toBeDefined();
+    expect(nextPlot.dimensions!.y).not.toBeDefined();
   });
 
   it("should clear the context selection if is set to 'All' with a correlation heatmap", () => {
@@ -35,8 +35,9 @@ describe("plotConfigReducer", () => {
           aggregation: "mean" as const,
           context: {
             name: "All",
-            context_type: "gene",
+            dimension_type: "gene",
             expr: true,
+            vars: {},
           },
           dataset_id: "Chronos_Combined",
           slice_type: "gene",
@@ -50,7 +51,7 @@ describe("plotConfigReducer", () => {
     };
 
     const nextPlot = plotConfigReducer(plot, action);
-    expect(nextPlot.dimensions.x.context).not.toBeDefined();
+    expect(nextPlot.dimensions?.x?.context).not.toBeDefined();
   });
 
   it("should always set `aggregation` to 'correlation' when switching to a correlation heatmap", () => {
@@ -64,9 +65,16 @@ describe("plotConfigReducer", () => {
           dataset_id: "Chronos_Combined",
           slice_type: "gene",
           context: {
-            context_type: "gene",
+            dimension_type: "gene",
             expr: {
               in: [{ var: "entity_label" }, ["DNA2", "RPL13A", "RPL34"]],
+            },
+            vars: {
+              entitiy_label: {
+                dataset_id: "gene_metadata",
+                identifier_type: "column" as const,
+                identifier: "label",
+              },
             },
             name: "abc",
           } as any,
@@ -79,7 +87,7 @@ describe("plotConfigReducer", () => {
       payload: "correlation_heatmap",
     });
 
-    expect(nextPlot.dimensions.x.aggregation).toBe("correlation");
+    expect(nextPlot.dimensions?.x?.aggregation).toBe("correlation");
   });
 
   it("should never have `aggregation` set to 'correlation' unless the plot_type is 'correlation_heatmap'", () => {
@@ -94,9 +102,16 @@ describe("plotConfigReducer", () => {
           slice_type: "gene",
           context: {
             name: "test",
-            context_type: "gene",
+            dimension_type: "gene",
             expr: {
               in: [{ var: "entity_label" }, ["DNA2", "RPL13A", "RPL34"]],
+            },
+            vars: {
+              entitiy_label: {
+                dataset_id: "gene_metadata",
+                identifier_type: "column" as const,
+                identifier: "label",
+              },
             },
           } as any,
         },
@@ -107,18 +122,18 @@ describe("plotConfigReducer", () => {
       type: "select_plot_type",
       payload: "density_1d",
     });
-    expect(nextPlot.dimensions.x.aggregation).not.toBe("correlation");
+    expect(nextPlot.dimensions?.x?.aggregation).not.toBe("correlation");
 
     nextPlot = plotConfigReducer(plot, {
       type: "select_plot_type",
       payload: "scatter",
     });
-    expect(nextPlot.dimensions.x.aggregation).not.toBe("correlation");
+    expect(nextPlot.dimensions?.x?.aggregation).not.toBe("correlation");
 
     nextPlot = plotConfigReducer(plot, {
       type: "select_plot_type",
       payload: "waterfall",
     });
-    expect(nextPlot.dimensions.x.aggregation).not.toBe("correlation");
+    expect(nextPlot.dimensions?.x?.aggregation).not.toBe("correlation");
   });
 });

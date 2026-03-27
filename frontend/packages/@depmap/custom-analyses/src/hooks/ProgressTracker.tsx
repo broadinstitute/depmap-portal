@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ProgressBar } from "react-bootstrap";
-import { CeleryTask, CeleryTaskState } from "@depmap/compute";
-import { ErrorTypeError } from "@depmap/types";
+import { CeleryTask, CeleryTaskState, ErrorTypeError } from "@depmap/types";
 
 interface Props {
   getTaskStatus: () => Promise<CeleryTask>;

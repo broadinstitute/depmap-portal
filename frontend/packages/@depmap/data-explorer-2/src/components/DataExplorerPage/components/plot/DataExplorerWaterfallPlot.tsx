@@ -36,7 +36,7 @@ interface Props {
   plotConfig: DataExplorerPlotConfig;
   onClickColorByContext: (context: DataExplorerContextV2) => void;
   onClickSaveSelectionAsContext: (
-    context_type: string,
+    dimension_type: string,
     selectedLabels: Set<string>
   ) => void;
   onClickVisualizeSelected: (

@@ -70,7 +70,7 @@
   width: 256px;
 }
 
-.downloadModalLabel {
-  margin-top: 20px;
-  margin-right: 20px;
+.downloadContextTable {
+  display: flex;
+  height: calc(100vh - 209px);
 }

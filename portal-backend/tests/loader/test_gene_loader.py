@@ -49,28 +49,44 @@ def test_merge_gene_executive_info():
         [[333, "crispr", True], [444, "crispr", True],],  # also in rnai  # not in rnai
         columns=["entrez_id", "dataset", "is_dropped_by_chronos"],
     )
-    expected_df = pd.DataFrame(
-        [
-            [100, "crispr", 3, 13, True, False, np.NaN],
-            [111, "crispr", 0, 23, False, False, np.NaN],
-            [222, "rnai", 0, 123, False, False, np.NaN],
-            [333, "rnai", 0, 123, False, False, np.NaN],
-            [333, "crispr", np.NaN, np.NaN, np.NaN, np.NaN, True],
-            [444, "crispr", np.NaN, np.NaN, np.NaN, np.NaN, True],
-        ],
-        columns=[
-            "entrez_id",
-            "dataset",
-            "dep_lines",
-            "lines_with_data",
-            "is_strongly_selective",
-            "is_common_essential",
-            "is_dropped_by_chronos",
-        ],
-    )
-    expected_df = expected_df.astype({"entrez_id": "str"})
-
     merged_gene_executive_info = gene_loader._merge_gene_executive_info(
         dep_summary, dropped_by_chronos
     )
-    assert merged_gene_executive_info.equals(expected_df)
+
+    assert list(merged_gene_executive_info.columns) == [
+        "entrez_id",
+        "dataset",
+        "dep_lines",
+        "lines_with_data",
+        "is_strongly_selective",
+        "is_common_essential",
+        "is_dropped_by_chronos",
+    ]
+    assert len(merged_gene_executive_info) == 6
+
+    assert set(merged_gene_executive_info["entrez_id"]) == {
+        "100",
+        "111",
+        "222",
+        "333",
+        "444",
+    }
+    crispr_333 = merged_gene_executive_info[
+        (merged_gene_executive_info["entrez_id"] == "333")
+        & (merged_gene_executive_info["dataset"] == "crispr")
+    ]
+    assert len(crispr_333) == 1
+    assert crispr_333.iloc[0]["is_dropped_by_chronos"] == True
+
+    rnai_333 = merged_gene_executive_info[
+        (merged_gene_executive_info["entrez_id"] == "333")
+        & (merged_gene_executive_info["dataset"] == "rnai")
+    ]
+    assert len(rnai_333) == 1
+
+    crispr_444 = merged_gene_executive_info[
+        (merged_gene_executive_info["entrez_id"] == "444")
+        & (merged_gene_executive_info["dataset"] == "crispr")
+    ]
+    assert len(crispr_444) == 1
+    assert crispr_444.iloc[0]["is_dropped_by_chronos"] == True

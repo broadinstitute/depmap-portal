@@ -35,7 +35,7 @@ function OutGroupSection({ analysis, dispatch }: Props) {
             whenSelectedRender: () => (
               <div>
                 <AnalysisFilterSelect
-                  context_type={analysis.index_type}
+                  dimension_type={analysis.index_type}
                   value={analysis.outGroupContext || null}
                   onChange={(nextContext) => {
                     dispatch({

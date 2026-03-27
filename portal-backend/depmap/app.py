@@ -7,7 +7,6 @@ import json
 import os
 
 import flask
-import pandas as pd
 from flask import (
     Flask,
     current_app,
@@ -15,7 +14,7 @@ from flask import (
     render_template,
     request,
 )
-from flask.json import JSONEncoder
+from flask.json.provider import DefaultJSONProvider
 from werkzeug.routing import RequestRedirect
 
 from depmap.access_control import initialize_request_user, load_auth_config_for_app
@@ -57,7 +56,6 @@ from depmap.extensions import (
     debug_toolbar,
     exception_reporter,
     humanize,
-    login_manager,
     markdown,
     methylation_db,
     breadbox,
@@ -97,8 +95,6 @@ from flask_hunter_profile.flask_blueprint import (
 from depmap.custom_analyses.views import blueprint as custom_analyses_blueprint
 
 log = logging.getLogger(__name__)
-
-pd.set_option("mode.use_inf_as_na", False)
 
 
 def _fix_disabled_loggers(logger_names):
@@ -237,13 +233,14 @@ def register_extensions(app: Flask):
     in_memory_cache.init_app(app, config={"CACHE_TYPE": "simple"})
     db.init_app(app)
     csrf_protect.init_app(app)
-    login_manager.init_app(app)
     debug_toolbar.init_app(app)
     methylation_db.init_app(app)
     cansar.init_app(app)
     breadbox.init_app(app)
 
-    exception_reporter.init_app(app, service_name="depmap-" + app.config["ENV"])
+    exception_reporter.init_app(
+        app, service_name="depmap-" + app.config.get("ENV", "unknown")
+    )
     markdown(app)
     humanize(app)
 
@@ -439,12 +436,18 @@ def register_commands(app: Flask):
     app.cli.add_command(spawn_commands.webpack)
 
 
-def register_json_encoder(app: Flask):
-    def encoder_default_disallow_nan(*args, **kwargs):
-        kwargs["allow_nan"] = False
-        return JSONEncoder(*args, **kwargs)
+class DisallowNanJSONProvider(DefaultJSONProvider):
+    ensure_ascii = False
+    sort_keys = True
 
-    app.json_encoder = encoder_default_disallow_nan
+    def dumps(self, obj, **kwargs):
+        kwargs["allow_nan"] = False
+        return super().dumps(obj, **kwargs)
+
+
+def register_json_encoder(app: Flask):
+    app.json_provider_class = DisallowNanJSONProvider
+    app.json = DisallowNanJSONProvider(app)
 
 
 @in_memory_cache.cached(timeout=0, key_prefix="webpack_manifest")
@@ -471,7 +474,7 @@ def webpack_url(name):
     # URL. We provide a dummy one rather than hitting the file system to look
     # for Webpack output files (which may not exist if pytest is running
     # locally).
-    if current_app.config["ENV"] == "test":
+    if current_app.config.get("ENV") == "test":
         return "dummy.js"
 
     # Otherwise, look up the hashed filename and serve from the Webpack output

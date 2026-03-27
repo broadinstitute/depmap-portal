@@ -1,24 +1,18 @@
 import React, { useRef, useState } from "react";
 import {
-  DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerPlotConfig,
   ContextPath,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
 import {
   negateContext,
   saveContextToLocalStorageAndPersist,
 } from "../../../utils/context";
-import ContextBuilderModal from "../../ContextBuilder/ContextBuilderModal";
 import ContextBuilderV2 from "../../ContextBuilderV2";
 import { plotToQueryString, plotsAreEquivalentWhenSerialized } from "../utils";
 import { isCompletePlot } from "../validation";
 
-const ContextBuilder = isBreadboxOnlyMode
-  ? (ContextBuilderV2 as any)
-  : ContextBuilderModal;
-
-type SaveCallback = (context: DataExplorerContext) => void;
+type SaveCallback = (context: DataExplorerContextV2) => void;
 const noop = () => {};
 
 export default function useContextBuilder(
@@ -26,13 +20,15 @@ export default function useContextBuilder(
   setPlot: (config: DataExplorerPlotConfig) => void
 ) {
   const [showContextModal, setShowContextModal] = useState(false);
-  const contextToEdit = useRef<DataExplorerContext | { context_type: string }>({
-    context_type: "depmap_model",
+  const contextToEdit = useRef<
+    DataExplorerContextV2 | { dimension_type: string }
+  >({
+    dimension_type: "depmap_model",
   });
   const onClickSave = useRef<SaveCallback | null>(noop);
 
   const saveContext = async (
-    context: DataExplorerContext,
+    context: DataExplorerContextV2,
     path: ContextPath | null,
     isNew: boolean,
     wasNegatedContext: boolean
@@ -90,19 +86,19 @@ export default function useContextBuilder(
   };
 
   const onClickCreateContext = (path: ContextPath) => {
-    let context_type;
+    let dimension_type;
 
     if (path[0] === "dimensions") {
       const [, key] = path;
       const { dimensions } = plot;
-      context_type = dimensions[key]!.slice_type;
+      dimension_type = dimensions[key]!.slice_type;
     } else {
-      context_type = plot.index_type;
+      dimension_type = plot.index_type;
     }
 
-    contextToEdit.current = { context_type };
+    contextToEdit.current = { dimension_type };
 
-    onClickSave.current = (newContext: DataExplorerContext) => {
+    onClickSave.current = (newContext: DataExplorerContextV2) => {
       saveContext(newContext, path, true, false);
     };
 
@@ -110,7 +106,7 @@ export default function useContextBuilder(
   };
 
   const onClickSaveAsContext = (
-    context: DataExplorerContext,
+    context: DataExplorerContextV2,
     path: ContextPath | null
   ) => {
     const isNegated = Boolean(
@@ -119,7 +115,7 @@ export default function useContextBuilder(
 
     contextToEdit.current = isNegated ? negateContext(context) : context;
 
-    onClickSave.current = (newContext: DataExplorerContext) => {
+    onClickSave.current = (newContext: DataExplorerContextV2) => {
       saveContext(newContext, path, false, isNegated);
     };
 
@@ -130,7 +126,7 @@ export default function useContextBuilder(
     onClickCreateContext,
     onClickSaveAsContext,
     ContextBuilder: () => (
-      <ContextBuilder
+      <ContextBuilderV2
         show={showContextModal}
         context={contextToEdit.current}
         onClickSave={onClickSave.current as SaveCallback}
