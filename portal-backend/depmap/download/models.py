@@ -10,36 +10,6 @@ from depmap.taiga_id.models import TaigaAlias, NoSuchTaigaAlias
 from depmap.access_control import get_owner_id_from_group_display_name
 
 
-class DataGroup(Enum):
-    """
-    Use for grouping datasets in All Data Overview Data Availability graph
-    """
-
-    drug = "drug"
-    rnai = "rnai"
-    proteomics = "proteomics"
-    sequencing = "sequencing"
-    crispr = "crispr"
-    methylation = "methylation"
-    uncategorized = "uncategorized"
-
-    @property
-    def display_name(self):
-        return {
-            DataGroup.drug: "Drug Screens",
-            DataGroup.rnai: "RNAi Screens",
-            DataGroup.proteomics: "Proteomics",
-            DataGroup.sequencing: "Sequencing",
-            DataGroup.crispr: "CRISPR Screens",
-            DataGroup.methylation: "Methylation",
-            DataGroup.uncategorized: "Other Datasets",
-        }[self]
-
-    @staticmethod
-    def get_all_display_names():
-        return [type.display_name for type in DataGroup]
-
-
 class FileType(Enum):
     """
     All these are just stable identifiers
