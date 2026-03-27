@@ -7,7 +7,6 @@ import json
 import os
 
 import flask
-import pandas as pd
 from flask import (
     Flask,
     current_app,
@@ -57,7 +56,6 @@ from depmap.extensions import (
     debug_toolbar,
     exception_reporter,
     humanize,
-    login_manager,
     markdown,
     methylation_db,
     breadbox,
@@ -97,8 +95,6 @@ from flask_hunter_profile.flask_blueprint import (
 from depmap.custom_analyses.views import blueprint as custom_analyses_blueprint
 
 log = logging.getLogger(__name__)
-
-pd.set_option("mode.use_inf_as_na", False)
 
 
 def _fix_disabled_loggers(logger_names):
@@ -237,7 +233,6 @@ def register_extensions(app: Flask):
     in_memory_cache.init_app(app, config={"CACHE_TYPE": "simple"})
     db.init_app(app)
     csrf_protect.init_app(app)
-    login_manager.init_app(app)
     debug_toolbar.init_app(app)
     methylation_db.init_app(app)
     cansar.init_app(app)

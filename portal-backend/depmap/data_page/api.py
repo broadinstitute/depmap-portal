@@ -142,7 +142,7 @@ def _get_all_data_avail_df() -> pd.DataFrame:
     path = os.path.join(source_dir, "data_page_summary", ALL_DATA_AVAIL_FILE)
     overall_summary = pd.read_csv(path, index_col="ModelID")
 
-    if current_app.config.get("ENABLED_FEATURES").temp_paralogs_id_hack:
+    if current_app.config["ENABLED_FEATURES"].temp_paralogs_id_hack:
         overall_summary = temp_update_paralogs_avail.update_paralogs_avail(
             overall_summary
         )
