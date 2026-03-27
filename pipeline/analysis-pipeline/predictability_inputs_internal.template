@@ -41,7 +41,7 @@ add-if-missing {
 add-if-missing {
     "type": "target_matrix",
     "label": "rnai",
-    "source_dataset_id": "predictability-legacy-datasets-8c54.14/RNAiDep"
+    "source_dataset_id": "reformatted-rnai-a6ab.1/RNAi_gene_effect"
 }
 
 add-if-missing {
@@ -69,7 +69,7 @@ add-if-missing {
     "type": "feature",
     "label": "rnai_confounder",
     "category": "confounder",
-    "source_dataset_id": "confounders-f38f.2/demeter2-combined-v12-confounders"
+    "source_dataset_id": "confounders-f38f.3/demeter2-combined-v12-confounders"
 }
 
 add-if-missing {

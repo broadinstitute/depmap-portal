@@ -5,9 +5,9 @@ import os
 import math
 from typing import List, Dict, Any, Optional
 
-# lets get CRISPR fully working before tackling the others
+# lets get CRISPR and rnai fully working before tackling the others
 # screens = ["crispr", "rnai", "oncref"]
-screens = ["crispr"]
+screens = ["crispr", "rnai"]
 
 def generate_daintree_configs(
     model_config_path: str, input_config_path: str, test_only_first_n: Optional[int]
@@ -62,16 +62,7 @@ def generate_daintree_configs(
 
             # Set target based on screen type
             target = screen
-            if screen == "crispr":
-                target_key = "crispr_gene_effect"
-            elif screen == "rnai":
-                target_key = "rnai"
-            elif screen == "oncref":
-                target_key = "oncref"
-            else:
-                raise Exception(f"unknown: {screen}")
-
-            target_input = input_config[target_key]
+            target_input = input_config[target]
 
             output_json["data"][target] = {
                 "taiga_id": target_input["source_dataset_id"],
