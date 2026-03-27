@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { DataExplorerContext, DataExplorerPlotConfig } from "@depmap/types";
+import { DataExplorerContextV2, DataExplorerPlotConfig } from "@depmap/types";
 import { usePlotData } from "../hooks";
 import DataExplorerScatterPlot from "./plot/DataExplorerScatterPlot";
 import DataExplorerDensity1DPlot from "./plot/DataExplorerDensity1DPlot";
@@ -16,10 +16,10 @@ interface Props {
     selectedLabels: Set<string>
   ) => void;
   onClickSaveSelectionAsContext: (
-    context_type: string,
+    dimension_type: string,
     selectedLabels: Set<string>
   ) => void;
-  onClickColorByContext: (context: DataExplorerContext) => void;
+  onClickColorByContext: (context: DataExplorerContextV2) => void;
   onClickShowDensityFallback: () => void;
   feedbackUrl: string | null;
   contactEmail: string;

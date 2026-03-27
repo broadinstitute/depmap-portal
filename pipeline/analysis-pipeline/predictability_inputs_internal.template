@@ -1,0 +1,143 @@
+# TODO: Move these variables out of this file. They really should be provided from some common location shared by all pipelines
+# SET_TAIGA_PREPROCESSOR virtual_permaname "test-pred-internal-26q1-59eb.6"
+# SET_TAIGA_PREPROCESSOR last_abs_cn_dataset_id "internal-24q4-8c04.118"
+
+# Destination Taiga ID
+add-if-missing {
+ "type": "release_taiga_id",
+ "dataset_id": PREPROCESS_FORMAT_STR("{virtual_permaname}")
+}
+
+# Model
+add-if-missing {
+  "type": "model",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "Model") 
+}
+
+# Driver Events
+add-if-missing {
+  "type": "mutations",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutations") 
+}
+
+# CRISPR Confounders
+add-if-missing {
+  "type": "achilles_screen_qc_report",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesScreenQCReport") 
+}
+
+add-if-missing {
+  "type": "crispr_screen_map",
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRScreenMap") 
+}
+
+# Target Matrices
+add-if-missing {
+    "type": "target_matrix",
+    "label": "crispr",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect")
+}
+
+add-if-missing {
+    "type": "target_matrix",
+    "label": "rnai",
+    "source_dataset_id": "reformatted-rnai-a6ab.1/RNAi_gene_effect"
+}
+
+add-if-missing {
+    "type": "target_matrix",
+    "label": "oncref",
+    "source_dataset_id":  PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLumLog2AUCMatrix")
+}
+
+# Feature Matrices
+add-if-missing {
+    "type": "feature",
+    "label": "lineage",
+    "category": "lineage",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "SubtypeMatrix")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "crispr_confounder",
+    "category": "confounder",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRConfounders")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "rnai_confounder",
+    "category": "confounder",
+    "source_dataset_id": "confounders-f38f.3/demeter2-combined-v12-confounders"
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "oncref_confounder",
+    "category": "confounder",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PRISMOncologyReferenceLumConfounderMatrix")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "driver_events",
+    "category": "driverevents",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PredictabilityDriverEventsTransformed")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "armlevel_cna",
+    "category": "armlevel",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(last_abs_cn_dataset_id, "OmicsArmLevelCNA")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "cytoband_cn",
+    "category": "cytoband",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PredictabilityGeneticDerangementTransformed")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "genetic_signature",
+    "category": "geneticsignature",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsGlobalSignatures")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "mutations_hotspot",
+    "category": "gene",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixHotspot")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "mutations_damaging",
+    "category": "gene",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixDamaging")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "gene_cn",
+    "category": "gene",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "PortalOmicsCNGeneLog2")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "loh",
+    "category": "gene",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(last_abs_cn_dataset_id, "OmicsLoH")
+}
+
+add-if-missing {
+    "type": "feature",
+    "label": "rnaseq",
+    "category": "gene",
+    "source_dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionTPMLogp1HumanProteinCodingGenes")
+}

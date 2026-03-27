@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { enabledFeatures } from "@depmap/globals";
+import { isElara } from "@depmap/globals";
 import {
-  DataExplorerContext,
+  DataExplorerContextV2,
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
   LinRegInfo,
@@ -36,9 +36,9 @@ interface Props {
   data: DataExplorerPlotResponse | null;
   isLoading: boolean;
   linreg_by_group: LinRegInfo[] | null;
-  onClickColorByContext: (context: DataExplorerContext) => void;
+  onClickColorByContext: (context: DataExplorerContextV2) => void;
   onClickSaveSelectionAsContext: (
-    context_type: string,
+    dimension_type: string,
     selectedLabels: Set<string>
   ) => void;
   onClickVisualizeSelected: (
@@ -427,7 +427,7 @@ function DataExplorerScatterPlot({
               }}
             />
           </StackableSection>
-          {enabledFeatures.gene_tea && plotConfig.index_type === "gene" ? (
+          {!isElara && plotConfig.index_type === "gene" ? (
             <StackableSection
               title="GeneTEA Enriched Terms"
               minHeight={200}

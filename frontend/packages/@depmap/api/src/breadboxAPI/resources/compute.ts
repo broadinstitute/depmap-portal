@@ -1,4 +1,4 @@
-import { ComputeResponse, UnivariateAssociationsParams } from "@depmap/compute";
+import { ComputeResponse, UnivariateAssociationsParams } from "@depmap/types";
 import { postJson } from "../client";
 
 type UnivariateAssociationsParamsBB = Omit<

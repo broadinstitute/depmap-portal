@@ -2,6 +2,7 @@ import os
 from typing import List, Union
 
 from depmap import data_access
+from depmap.data_page import temp_update_paralogs_avail
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
@@ -20,6 +21,7 @@ DATA_ORDER = [
     "CRISPR_Achilles_Broad",
     "CRISPR_Score_Sanger",
     "CRISPR_ParalogsScreens",
+    "CRISPR_Biogrid",
     "RNAi_Marcotte",
     "RNAi_Achilles_Broad",
     "RNAi_Drive_Novartis",
@@ -33,7 +35,8 @@ DATA_ORDER = [
     "Drug_Repurposing_Broad",
     "Drug_GDSC_Sanger",
     "Drug_OncRef_Broad",
-    "Proteomics_Olink",
+    "Proteomics_Olink_Lysate",
+    "Proteomics_Olink_Media",
     "Proteomics_RPPA_CCLE",
     "Proteomics_MS_CCLE",
     "Proteomics_MS_Sanger",
@@ -91,6 +94,7 @@ def _get_data_type_url_mapping(data_types: List[str]):
         # a url for crispr sanger, but we do not want this url to show up in the data availability graph.
         "CRISPR_Score_Sanger": None,
         "CRISPR_ParalogsScreens": None,
+        "CRISPR_Biogrid": None,
         "RNAi_Marcotte": None,
         "RNAi_Achilles_Broad": _get_dataset_url(DependencyEnum.RNAi_merged.name),
         "RNAi_Drive_Novartis": _get_dataset_url(DependencyEnum.RNAi_Nov_DEM.name),
@@ -106,7 +110,8 @@ def _get_data_type_url_mapping(data_types: List[str]):
         ),
         "Drug_GDSC_Sanger": _get_dataset_url(DependencyEnum.GDSC2_AUC.name),
         "Drug_OncRef_Broad": _get_dataset_url(DependencyEnum.Prism_oncology_AUC.name),
-        "Proteomics_Olink": None,
+        "Proteomics_Olink_Lysate": None,
+        "Proteomics_Olink_Media": None,
         "Proteomics_RPPA_CCLE": _get_dataset_url(
             BiomarkerEnum.rppa.name, isDependencyDataset=False
         ),
@@ -136,6 +141,12 @@ def _get_all_data_avail_df() -> pd.DataFrame:
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     path = os.path.join(source_dir, "data_page_summary", ALL_DATA_AVAIL_FILE)
     overall_summary = pd.read_csv(path, index_col="ModelID")
+
+    if current_app.config["ENABLED_FEATURES"].temp_paralogs_id_hack:
+        overall_summary = temp_update_paralogs_avail.update_paralogs_avail(
+            overall_summary
+        )
+
     return overall_summary
 
 

@@ -1,4 +1,4 @@
-import { CeleryTask } from "@depmap/compute";
+import { CeleryTask } from "@depmap/types";
 import {
   ExportDataQuery,
   ExportMergedDataQuery,

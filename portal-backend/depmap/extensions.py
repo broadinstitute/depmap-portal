@@ -5,7 +5,6 @@ from flask_bcrypt import Bcrypt
 from flask_caching import Cache
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_humanize import Humanize
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 import markdown as _markdown_lib
@@ -20,7 +19,6 @@ from functools import wraps
 
 bcrypt = Bcrypt()
 csrf_protect = CSRFProtect()
-login_manager = LoginManager()
 db = SQLAlchemy()
 cache = Cache()
 in_memory_cache = Cache()
@@ -38,7 +36,6 @@ def markdown(app):
 
 humanize = Humanize
 
-login_manager.user_loader(lambda _user_id: None)
 methylation_db = MethylationDbExtension()
 cansar = CansarExtension()
 breadbox = BreadboxClientExtension()

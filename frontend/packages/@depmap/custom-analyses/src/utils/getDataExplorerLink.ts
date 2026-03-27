@@ -1,9 +1,8 @@
 import qs from "qs";
 import { breadboxAPI, cached } from "@depmap/api";
-import { ComputeResponseResult } from "@depmap/compute";
 import { persistContext } from "@depmap/data-explorer-2";
 import { isElara } from "@depmap/globals";
-import { DataExplorerContextV2 } from "@depmap/types";
+import { ComputeResponseResult, DataExplorerContextV2 } from "@depmap/types";
 import {
   AnalysisConfiguration,
   PearsonCorrelationConfiguration,

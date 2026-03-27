@@ -5,18 +5,18 @@ import { DataExplorerContextV2 } from "@depmap/types";
 import styles from "../../../styles/CustomAnalysesPage.scss";
 
 interface Props {
-  context_type: string;
+  dimension_type: string;
   value: DataExplorerContextV2 | null;
   onChange: (nextContext: DataExplorerContextV2 | null) => void;
 }
 
-function AnalysisFilterSelect({ context_type, value, onChange }: Props) {
+function AnalysisFilterSelect({ dimension_type, value, onChange }: Props) {
   const handleClickCreateContext = () => {
-    DepMap.saveNewContext({ context_type }, null, onChange);
+    DepMap.saveNewContext({ dimension_type }, null, onChange);
   };
 
   const handleClickSaveAsContext = () => {
-    DepMap.saveNewContext(value, null, onChange);
+    DepMap.saveNewContext(value || { dimension_type }, null, onChange);
   };
 
   return (
@@ -26,7 +26,7 @@ function AnalysisFilterSelect({ context_type, value, onChange }: Props) {
         enable
         value={value}
         onChange={onChange}
-        context_type={context_type}
+        dimension_type={dimension_type}
         onClickCreateContext={handleClickCreateContext}
         onClickSaveAsContext={handleClickSaveAsContext}
         selectClassName={styles.AnalysisContextSelect}

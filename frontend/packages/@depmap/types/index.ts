@@ -89,6 +89,8 @@ export type * from "./src/data-explorer-2";
 export type * from "./src/interactive";
 export type * from "./src/cell-line";
 export type * from "./src/compounds";
+export type * from "./src/celery";
+export type * from "./src/compute";
 
 export type { UploadFileResponse } from "./src/UploadFileResponse";
 export type { SliceQuery } from "./src/SliceQuery";

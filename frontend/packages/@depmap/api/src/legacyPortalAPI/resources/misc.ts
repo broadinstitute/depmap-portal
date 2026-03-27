@@ -1,10 +1,7 @@
-import { CellLineSelectorLines } from "@depmap/cell-line-selector";
 import {
-  CeleryTask,
   ComputeResponse,
   UnivariateAssociationsParams,
-} from "@depmap/compute";
-import {
+  CeleryTask,
   CompoundDosePredictiveModelResults,
   ScreenType,
   GenePredictiveModelResults,
@@ -18,12 +15,6 @@ export function getFeedbackUrl() {
 
 export function getTaskStatus(id: string) {
   return getJson<CeleryTask>(uri`/api/task/${id}`);
-}
-
-export function getCellLineSelectorLines() {
-  return getJson<CellLineSelectorLines>(
-    "/partials/data_table/cell_line_selector_lines"
-  );
 }
 
 export function computeUnivariateAssociations(

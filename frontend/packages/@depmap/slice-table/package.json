@@ -14,7 +14,7 @@
     "@depmap/react-table": "1.0.0",
     "@depmap/types": "1.0.0",
     "classnames": "^2.3.1",
-    "papaparse": "^4.6.0",
+    "papaparse": "^5.5.3",
     "react-bootstrap": "^0.32.3"
   },
   "devDependencies": {

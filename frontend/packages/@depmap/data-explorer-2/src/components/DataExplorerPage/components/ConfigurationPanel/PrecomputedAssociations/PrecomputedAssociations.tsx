@@ -15,7 +15,8 @@ interface Props {
   onSelectY: (
     other_dataset_id: string,
     other_entity_label: string,
-    other_entity_type: string
+    other_entity_type: string,
+    given_id: string
   ) => void;
   sectionRef: React.MutableRefObject<HTMLDivElement | null>;
 }

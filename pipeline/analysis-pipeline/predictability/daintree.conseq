@@ -1,0 +1,142 @@
+# Three Steps:
+# 1. Generate a daintree input config file for each model and screen
+# 2. Run the model fitting
+# 3. Combine the output config files
+
+let sparkles_path = "PYTHONUNBUFFERED=1 sparkles"
+let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.3.0"
+
+# Change the artifact below to run on a small subset of the full config (useful just for testing). Set all to "yes" 
+# for normal operation, or "no" for doing a subset of the normal work
+add-if-missing {
+    "type": "daintree-test-run-flags", 
+    "run_all_configs": "yes",
+    "fit_all_actuals": "yes"
+}
+
+# creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
+rule process_model_config:
+    inputs:
+        # Model config yaml file
+        model_config=fileref("model-config.yaml"),
+
+        # Target matrices
+        crispr={"type": "target_matrix", "label": "crispr"},
+        rnai={"type": "target_matrix", "label": "rnai"},
+        oncref={"type": "target_matrix", "label": "oncref"},
+
+        # Features
+        lineage={"type": "feature", "label": "lineage"},
+        crispr_confounder={"type": "feature", "label": "crispr_confounder"},
+        rnai_confounder={"type": "feature", "label": "rnai_confounder"},
+        oncref_confounder={"type": "feature", "label": "oncref_confounder"},
+        driver_events={"type": "feature", "label": "driver_events"},
+        armlevel_cna={"type": "feature", "label": "armlevel_cna"},
+        cytoband_cn={"type": "feature", "label": "cytoband_cn"},
+        genetic_signature={"type": "feature", "label": "genetic_signature"},
+        mutations_hotspot={"type": "feature", "label": "mutations_hotspot"},
+        mutations_damaging={"type": "feature", "label": "mutations_damaging"},
+        gene_cn={"type": "feature", "label": "gene_cn"},
+        loh={"type": "feature", "label": "loh"},
+        rnaseq={"type": "feature", "label": "rnaseq"},
+
+        # Script to generate daintree input config file
+        script=fileref("scripts/generate_daintree_input_configs.py"),
+
+        # whether this is a test run or not
+        is_test_run={"type": "daintree-test-run-flags"}
+
+    run "python" with """
+    import json
+
+    config_dict = {{inputs}}
+    with open("daintree_input_config.json", 'w') as f:
+        json.dump(config_dict, f, indent=2)   
+
+    """
+    run """python3 {{ inputs.script.filename }} \
+    --model_config {{ inputs.model_config.filename }} \
+    --input_config 'daintree_input_config.json' {% if inputs.is_test_run.run_all_configs == 'no' %}--test-only-first-n 3{% endif %}"""
+
+# this is the heart of running daintree: For each daintree config, run the workflow and produce an artifact per run.
+rule run_fit_models:
+    resources: {'slots': "0.5"} # let up to 2 of these run in parallel
+    inputs:
+        daintree_input_config={
+          "type": "daintree_input_config"
+          },
+        release_taiga_id={
+          "type": "release_taiga_id"
+          },
+        sparkles_config=fileref("../../sparkles-config"),
+        create_workflow_script=fileref("scripts/create_daintree_workflow.py"),
+        daintree_preprocess_script=fileref("scripts/daintree_preprocess.py"),
+        # whether this is a test run or not
+        is_test_run={"type": "daintree-test-run-flags"}
+
+    run "cp {{ inputs.sparkles_config.filename }} .sparkles"
+    run "mkdir -p extra_python_files"
+    run "cp {{ inputs.daintree_preprocess_script.filename }} extra_python_files/daintree_preprocess.py"
+
+    run """python3 {{ inputs.create_workflow_script.filename }} \
+        --config {{ inputs.daintree_input_config.filename }} \
+        --out workflow.json \
+        --nfolds 5 \
+        --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 10{% endif %} \
+        --extra-python-files extra_python_files"""
+
+    run """{{config.sparkles_path}} workflow run \
+      --nodes 300 \
+      --retry \
+      --add-hash-to-job-id \
+      -i {{ config.daintree_docker_image }} \
+      daintree-fit-v1 workflow.json"""
+
+    # reformat daintree-output into artifacts conseq will understand
+    run "python3" with """
+    import json
+
+    with open("daintree-output.json", "rt") as fd:
+        result = json.load(fd)
+
+    with open("results.json", "wt") as fd:
+        fd.write(json.dumps(
+            {"outputs": [
+                {
+                    "type": "daintree_output",
+                    "model_name": {{ inputs.daintree_input_config.model_name | quoted }},
+                    "screen_name": {{ inputs.daintree_input_config.screen_name | quoted }},
+                    "sparkles_job_name": {"$value": result["sparkles_job_name"]},
+                    "daintree_input_config_filename": {{ inputs.daintree_input_config.filename | quoted }},
+                    "features_metadata_filename" : {"$file_url": result["features_metadata_path"]},
+                    "ensemble_filename" : {"$file_url": result["ensemble_path"]},
+                    "predictions_filename": {"$file_url": result["predictions_path"]}}
+            ]}))
+    """
+
+# export all daintree outputs into a form which is digestible to the breadbox loader. 
+# For the breadbox loader, we'll want to refer to all data by taiga_id. How about we do three passes:
+# 1. write out model config json file (this is information about the model configs for breadbox's purposes)
+# 2. export an artifact which contains all the info we need, but has references to daintree files. This seems like it's just the fit process we have today.
+# 3. upload each to taiga and but this one has a taiga_id in place of file paths.
+# 4. merge all features_metadata_filenames together
+# Then we publish the model config artifact and the list of daintree taiga artifacts
+
+rule merge_feature_metadata_files:
+    # takes all of the feature metadata from all the daintree outputs and merges them into a single table
+    # since the mapping between feature name -> taiga_id, given_id, etc should be the same across all runs
+    inputs:
+        outputs = all{"type": "daintree_output"},
+        script = fileref("scripts/merge_feature_metadata.py")
+    outputs:
+        {
+          "type": "daintree-feature-metadata",
+          "filename": {"$filename": "feature_metadata.csv"}
+        }
+    run "bash" with """
+        cat > artifacts.json <<EOF
+        {{ inputs.outputs | quoted }}
+        EOF
+    """
+    run "python {{inputs.script.filename}} artifacts.json feature_metadata.csv"
+

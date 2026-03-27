@@ -1,8 +1,6 @@
 {
   "extends": "../../tsconfig.base.json",
   "references": [
-    { "path": "../cell-line-selector" },
-    { "path": "../compute" },
     { "path": "../data-slicer" },
     { "path": "../globals" },
     { "path": "../types" },

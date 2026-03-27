@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@depmap/globals": "1.0.0",
-    "@depmap/utils": "1.0.0",
     "depmap-shared": "../depmap-shared/"
   },
   "devDependencies": {

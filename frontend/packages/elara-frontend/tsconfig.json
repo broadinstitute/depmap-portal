@@ -9,7 +9,6 @@
   "references": [
     { "path": "../@depmap/annotation-type-selector" },
     { "path": "../@depmap/api" },
-    { "path": "../@depmap/cell-line-selector" },
     { "path": "../@depmap/common-components" },
     { "path": "../@depmap/compute" },
     { "path": "../@depmap/custom-analyses" },

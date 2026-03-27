@@ -1,16 +1,16 @@
 import React, { useState } from "react";
+import { breadboxAPI, cached } from "@depmap/api";
 import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
 import {
-  ContextSelector,
-  deprecatedDataExplorerAPI,
+  ContextSelectorV2,
   getDimensionTypeLabel,
   pluralize,
 } from "@depmap/data-explorer-2";
 import { DepMap } from "@depmap/globals";
-import { DataExplorerContext } from "@depmap/types";
+import { DataExplorerContextV2 } from "@depmap/types";
 
 export default async function promptForSelectionFromContext(
   allPossibleLabels: Set<string>,
@@ -23,7 +23,7 @@ export default async function promptForSelectionFromContext(
       value,
       onChange,
       updateAcceptText,
-    }: PromptComponentProps<DataExplorerContext | null>) => {
+    }: PromptComponentProps<DataExplorerContextV2 | null>) => {
       const [stats, setStats] = useState<{
         total: number;
         notFound: number;
@@ -37,7 +37,9 @@ export default async function promptForSelectionFromContext(
         return [n.toLocaleString(), n === 1 ? entity : entities].join(" ");
       };
 
-      const handleChange = async (nextContext: DataExplorerContext | null) => {
+      const handleChange = async (
+        nextContext: DataExplorerContextV2 | null
+      ) => {
         onChange(nextContext);
 
         if (!nextContext) {
@@ -46,7 +48,7 @@ export default async function promptForSelectionFromContext(
           return;
         }
 
-        const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(
+        const { labels } = await cached(breadboxAPI).evaluateContext(
           nextContext
         );
         const contextLabels = new Set(labels);
@@ -74,20 +76,20 @@ export default async function promptForSelectionFromContext(
 
       return (
         <div>
-          <ContextSelector
+          <ContextSelectorV2
             show
             enable
             value={value}
             onChange={handleChange}
             onClickCreateContext={() => {
               DepMap.saveNewContext(
-                { context_type: indexType },
-                null,
+                { dimension_type: indexType },
+                undefined,
                 handleChange
               );
             }}
             label="Choose a context"
-            context_type={indexType}
+            dimension_type={indexType}
             onClickSaveAsContext={() => {}}
             includeAllInOptions={false}
           />
@@ -116,7 +118,7 @@ export default async function promptForSelectionFromContext(
     return null;
   }
 
-  const labels = await deprecatedDataExplorerAPI.evaluateLegacyContext(context);
+  const { labels } = await cached(breadboxAPI).evaluateContext(context);
   const contextLabels = new Set(labels);
   const matchingLabels = [...allPossibleLabels].filter((label) => {
     return allPossibleLabels.has(label) && contextLabels.has(label);

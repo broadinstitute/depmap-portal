@@ -7,19 +7,7 @@ import {
 import { breadboxAPI, legacyPortalAPI, cached } from "@depmap/api";
 import { TableFormattedData } from "../types";
 import { fetchMetadata } from "../fetchDataHelpers";
-
-function getKeysByValue<T extends Record<string, any>>(
-  obj: T,
-  value: any
-): (keyof T)[] {
-  const keys: (keyof T)[] = [];
-  for (const key in obj) {
-    if (Object.prototype.hasOwnProperty.call(obj, key) && obj[key] === value) {
-      keys.push(key);
-    }
-  }
-  return keys;
-}
+import { getKeysByValue } from "../utils";
 
 function buildTableData(
   viabilityAtDose: any,
@@ -35,10 +23,10 @@ function buildTableData(
     const modelValues = modelValuesRaw as Record<string, number | null>;
     Object.entries(modelValues).forEach(([model, log2Viability]) => {
       if (log2Viability !== null) {
-        // wrap toFixed(4) in the parse float and then convert back to number to avoid trailing zeros (e.g. 3.0000)
+        // wrap toPrecision(4) in the parse float and then convert back to number to avoid trailing zeros (e.g. 3.0000)
         // while still rounding long decimal points like 0.123456789 to 0.1234
         const dose = parseFloat(
-          dosefMetadata.Dose[label].toFixed(4)
+          dosefMetadata.Dose[label].toPrecision(4)
         ).toString();
 
         const unit = dosefMetadata.DoseUnit[label];

@@ -707,10 +707,8 @@ transcription_start_site_loader.py: error: No parameter named "gene_id" (reportC
 transcription_start_site_loader.py: error: No parameter named "label" (reportCallIssue)
 transcription_start_site_loader.py: error: No parameter named "three_prime_position" (reportCallIssue)
 util.py: error: Expression of type "None" cannot be assigned to parameter of type "Client"
-util.py: error: Type "None" is not assignable to return type "str"
-utils.py: error: "abs_dest_path" is possibly unbound (reportPossiblyUnboundVariable)
-utils.py: error: "base_name" is possibly unbound (reportPossiblyUnboundVariable)
-utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote"
+util.py: error: Expression of type "None" cannot be assigned to return type "str"
+utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
 utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "path" of type "List[str]" in function "__init__"
 utils.py: error: Cannot assign to attribute "_depmap_interactive_config" for class "Flask"
 utils.py: error: Cannot assign to attribute "_depmap_taiga_id_to_download_url" for class "Flask"

@@ -4,7 +4,8 @@ import {
   ContextExplorerDatasets,
   ContextNameInfo,
   ContextNode,
-  DataExplorerContext,
+  DataExplorerContextV2,
+  SliceQuery,
 } from "@depmap/types";
 import qs from "qs";
 import { Filter } from "src/common/models/discoveryAppFilters";
@@ -184,7 +185,7 @@ export function getDataExplorerContextFromSelections(
   selectedContextNameInfo: ContextNameInfo,
   checkedDatatypes: Set<string>,
   selectedContextDepmapIds: string[]
-): DataExplorerContext {
+): DataExplorerContextV2 {
   const selectedContextCode = selectedContextNameInfo.subtype_code;
   const selectedDataTypes = [...checkedDatatypes].join(" ");
   const de2ContextName =
@@ -197,32 +198,25 @@ export function getDataExplorerContextFromSelections(
   // on whether the cell line has data available in CRISPR, RNAi, RNASeq, WES, WGS, and PRISM).
   // We add a depmapId list to the context we build off of Context Explorer to ensure the cell lines
   // in Context Explorer match the cell lines shown in Data Explorer 2 using a Context Explorer Context.
-  const exp =
-    selectedContextCode === "All" || checkedDatatypes.size > 0
-      ? {
-          and: [
-            {
-              in: [{ var: "entity_label" }, selectedContextDepmapIds],
-            },
-          ],
-        }
-      : {
-          and: [
-            {
-              "==": [
-                {
-                  var: `slice/Context_Matrix/${selectedContextCode}/label`,
-                },
-                1,
-              ],
-            },
-          ],
-        };
-
   const context = {
     name: de2ContextName,
-    context_type: "depmap_model",
-    expr: exp,
+    dimension_type: "depmap_model",
+    expr:
+      selectedContextCode === "All" || checkedDatatypes.size > 0
+        ? { in: [{ var: "entity_label" }, selectedContextDepmapIds] }
+        : { "==": [{ var: "selected_code" }, 1] },
+    vars: {
+      entity_label: {
+        dataset_id: "depmap_model_metadata",
+        identifier_type: "column" as const,
+        identifier: "label",
+      },
+      selected_code: {
+        dataset_id: "subtype_matrix",
+        identifier_type: "feature_id" as const,
+        identifier: selectedContextCode,
+      },
+    },
   };
 
   return context;
@@ -232,69 +226,83 @@ export function getGeneDependencyContexts(
   selectedContextCode: string,
   outgroup: { value: string; label: string }
 ): {
-  inGroupContext: DataExplorerContext;
-  outGroupContext: DataExplorerContext;
+  inGroupContext: DataExplorerContextV2;
+  outGroupContext: DataExplorerContextV2;
 } {
-  const context_type = "depmap_model";
-  const inGroupSliceId = `slice/Context_Matrix/${selectedContextCode}/label`;
+  const dimension_type = "depmap_model";
 
-  const exp = {
-    and: [
-      {
-        "==": [
-          {
-            var: inGroupSliceId,
-          },
-          1,
-        ],
-      },
-    ],
+  const selected_code: SliceQuery = {
+    dataset_id: "subtype_matrix",
+    identifier_type: "feature_id",
+    identifier: selectedContextCode,
   };
 
   const inGroupContext = {
-    name: `${selectedContextCode}`,
-    context_type,
-    expr: exp,
+    name: selectedContextCode,
+    dimension_type,
+    expr: { "==": [{ var: "selected_code" }, 1] },
+    vars: { selected_code },
   };
 
   function getOutgroupContext(
     outgroupCode: string,
     outGroupLabel: string,
     ingroupName: string
-  ) {
-    const outGroupSliceId = `slice/Context_Matrix/${outgroupCode}/label`;
-    const outGroupHemeExp = [
-      { "==": [{ var: `slice/Context_Matrix/MYELOID/label` }, 1] },
-      { "==": [{ var: `slice/Context_Matrix/LYMPH/label` }, 1] },
-    ];
-
+  ): DataExplorerContextV2 {
     switch (outgroupCode) {
       case "All Others":
         return {
           name: `Not ${ingroupName}`,
-          context_type: "depmap_model",
-          expr: {
-            and: [{ "==": [{ var: inGroupSliceId }, 0] }],
-          },
+          dimension_type,
+          expr: { "==": [{ var: "selected_code" }, 0] },
+          vars: { selected_code },
         };
       case "Other Heme":
         return {
-          name: `${outGroupLabel}`,
-          context_type: "depmap_model",
+          name: outGroupLabel,
+          dimension_type,
           expr: {
-            and: [{ "==": [{ var: inGroupSliceId }, 0] }],
-            or: [outGroupHemeExp[0], outGroupHemeExp[1]],
+            and: [
+              { "==": [{ var: "selected_code" }, 0] },
+              {
+                or: [
+                  { "==": [{ var: "MYELOID" }, 1] },
+                  { "==": [{ var: "LYMPH" }, 1] },
+                ],
+              },
+            ],
+          },
+          vars: {
+            selected_code,
+            MYELOID: {
+              dataset_id: "subtype_matrix",
+              identifier_type: "feature_id" as const,
+              identifier: "MYELOID",
+            },
+            LYMPH: {
+              dataset_id: "subtype_matrix",
+              identifier_type: "feature_id" as const,
+              identifier: "LYMPH",
+            },
           },
         };
       default:
         return {
-          name: `${outGroupLabel}`,
-          context_type: "depmap_model",
+          name: outGroupLabel,
+          dimension_type,
           expr: {
             and: [
-              { "==": [{ var: inGroupSliceId }, 0] },
-              { "==": [{ var: outGroupSliceId }, 1] },
+              { "==": [{ var: "selected_code" }, 0] },
+              { "==": [{ var: "outgroup_code" }, 1] },
             ],
+          },
+          vars: {
+            selected_code,
+            outgroup_code: {
+              dataset_id: "subtype_matrix",
+              identifier_type: "feature_id" as const,
+              identifier: outgroupCode,
+            },
           },
         };
     }

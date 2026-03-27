@@ -14,7 +14,7 @@ const ElaraContextManager = React.lazy(
 export default function launchContextManagerModal(options?: {
   initialContextType: string;
 }) {
-  const container = document.getElementById("cell_line_selector_modal");
+  const container = document.getElementById("modal-container");
   const hide = () => ReactDOM.unmountComponentAtNode(container as HTMLElement);
 
   // Unmount a previous instance if any (otherwise this is a no-op).

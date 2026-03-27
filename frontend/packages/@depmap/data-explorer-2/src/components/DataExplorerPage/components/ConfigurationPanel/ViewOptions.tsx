@@ -3,7 +3,7 @@ import qs from "qs";
 import {
   ContextPath,
   FilterKey,
-  DataExplorerContext,
+  DataExplorerContextV2,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
@@ -22,7 +22,7 @@ interface Props {
   dispatch: (action: PlotConfigReducerAction) => void;
   onClickCreateContext: (pathToCreate: ContextPath) => void;
   onClickSaveAsContext: (
-    contextToEdit: DataExplorerContext,
+    contextToEdit: DataExplorerContextV2,
     pathToSave: ContextPath
   ) => void;
 }
