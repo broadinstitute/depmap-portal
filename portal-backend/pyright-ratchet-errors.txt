@@ -203,7 +203,6 @@ executive.py: error: Argument of type "Column[int]" cannot be assigned to parame
 executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "get_all_models"
 executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "get_top_models_features"
 executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_label_or_id" of type "str | int" in function "get_values_by_entity"
-executive.py: error: Argument of type "Column[str]" cannot be assigned to parameter "compound_id" of type "str" in function "get_all_datasets_containing_compound"
 executive.py: error: Argument of type "Column[str]" cannot be assigned to parameter "key" of type "str" in function "__getitem__"
 executive.py: error: Argument of type "DependencyDataset | None" cannot be assigned to parameter "filter_dataset" of type "DependencyDataset" in function "get_predictive_models_for_compound"
 executive.py: error: Argument of type "str | Any" cannot be assigned to parameter "value" of type "list[Unknown]" in function "__setitem__"
@@ -707,8 +706,8 @@ transcription_start_site_loader.py: error: No parameter named "gene_id" (reportC
 transcription_start_site_loader.py: error: No parameter named "label" (reportCallIssue)
 transcription_start_site_loader.py: error: No parameter named "three_prime_position" (reportCallIssue)
 util.py: error: Expression of type "None" cannot be assigned to parameter of type "Client"
-util.py: error: Expression of type "None" cannot be assigned to return type "str"
-utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
+util.py: error: Type "None" is not assignable to return type "str"
+utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote"
 utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "path" of type "List[str]" in function "__init__"
 utils.py: error: Cannot assign to attribute "_depmap_interactive_config" for class "Flask"
 utils.py: error: Cannot assign to attribute "_depmap_taiga_id_to_download_url" for class "Flask"
