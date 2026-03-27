@@ -10,14 +10,14 @@ runs:
       shell: bash
 
     - name: "Install and configure Poetry"
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@76e04a911780d5b312d89783f7b1cd627778900a # v1.4.1
       with:
         version: 1.8.2
         virtualenvs-create: true
         virtualenvs-in-project: true
 
     - name: "Set up poetry cache"
-      uses: actions/cache@v3
+      uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
       id: cached-poetry-dependencies
       with:
         path: "${{ steps.poetry-cachedir.outputs.POETRY_CACHEDIR }}"

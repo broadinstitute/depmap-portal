@@ -23,9 +23,9 @@ jobs:
   run-frontend-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Setup Node 19.4.0
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
           node-version: 19.4.0
       - name: Install yarn dependencies
@@ -38,12 +38,12 @@ jobs:
   build-docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Get yarn cache directory path
         id: yarn-cache-dir-path
         run: echo "dir=$(yarn --cwd frontend cache dir)" >> $GITHUB_OUTPUT
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
         id: yarn-cache # use this to check for `cache-hit` (`steps.yarn-cache.outputs.cache-hit != 'true'`)
         with:
           path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
@@ -56,7 +56,7 @@ jobs:
           echo "SHA=\"${{ github.sha }}\"" > portal-backend/depmap/settings/build.py
           echo "BUILD=\"${{ github.run_number	}}\"" >> portal-backend/depmap/settings/build.py
       - name: Login to Artifact Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           registry: us-central1-docker.pkg.dev
           username: _json_key
@@ -77,9 +77,9 @@ jobs:
       matrix:
         pytest-group: [1, 2, 3, 4, 5]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Login to Artifact Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           registry: us-central1-docker.pkg.dev
           username: _json_key
@@ -87,7 +87,7 @@ jobs:
       - name: Pull Docker image
         run: docker pull ${{ env.ARTIFACT_REGISTRY_REPO }}:${{ env.DOCKER_TAG }}
       - name: Get pytest durations
-        uses: actions/cache@v3
+        uses: actions/cache@6f8efc29b200d32929f49075959781ed54ec270c # v3.5.0
         with:
           path: .test_durations
           key: ${{ runner.os }}-pytest-durations
@@ -100,9 +100,9 @@ jobs:
       - run-pytest
       - run-frontend-tests
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
       - name: Login to Artifact Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           registry: us-central1-docker.pkg.dev
           username: _json_key
