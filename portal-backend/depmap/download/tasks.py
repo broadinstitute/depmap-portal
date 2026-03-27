@@ -13,6 +13,7 @@ from flask import current_app, url_for
 
 from depmap import data_access
 from depmap.access_control import assume_user
+from depmap.extensions import db
 from depmap.cell_line.models import CellLine, Lineage
 from depmap.compute.celery import app
 from depmap.utilities.exception import UserError
@@ -418,7 +419,7 @@ def _add_dataset_name_to_df_row_names(df, dataset_id):
 
 def _get_cell_line_metadata_df():
     query = CellLine.get_cell_line_metadata_query()
-    df = pd.read_sql(query.statement, query.session.connection())
+    df = pd.read_sql(query.statement, db.session.connection())
     df["lineage"] = df["lineage"].apply(Lineage.get_display_name)
     df["lineage_level"] = "lineage_" + df["lineage_level"].astype(str)
     inds = df.columns.difference(["lineage_level", "lineage"]).tolist()

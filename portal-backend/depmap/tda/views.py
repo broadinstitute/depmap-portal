@@ -126,8 +126,5 @@ def get_tda_table_download():
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     path = os.path.join(source_dir, TDA_SUMMARY_FILE)
     return send_file(
-        path,
-        mimetype="text/csv",
-        attachment_filename=TDA_SUMMARY_FILE,
-        as_attachment=True,
+        path, mimetype="text/csv", download_name=TDA_SUMMARY_FILE, as_attachment=True,
     )

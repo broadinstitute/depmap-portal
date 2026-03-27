@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { DataExplorerContextV2 } from "@depmap/types";
+
 function makeMockEnabledFeatures() {
   (window as any).enabledFeaturesOverrides = {
     elara: false,
@@ -114,16 +116,40 @@ export const errorHandler: {
   report: (message: string) => void;
 } = (window as any).errorHandler;
 
+// eslint-disable-next-line @typescript-eslint/ban-types
+type DepmapGlobalObject = Record<string, Function> & {
+  saveNewContext: (
+    context:
+      | DataExplorerContextV2
+      | {
+          dimension_type: string;
+          name?: never;
+          expr?: never;
+          vars?: never;
+          contexts?: never;
+        },
+    onHide?: null | (() => void),
+    onSave?: null | ((context: DataExplorerContextV2, hash: string) => void),
+    startInTableView?: boolean
+  ) => void;
+
+  editContext: (context: DataExplorerContextV2, hash: string) => void;
+
+  repairContext: (
+    context: DataExplorerContextV2,
+    startInTableView?: boolean
+  ) => Promise<DataExplorerContextV2 | null>;
+};
+
 // The DepMap global is created by the portal-frontend's Webpack config.
 // There is no equivalent in elara-frontend and should be avoided there.
 // This is "set" by Webpack as part of its module loader.
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/portal-frontend/webpack.common.js#L7-L13
 // All exported functions in this file become its properties:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/frontend/packages/portal-frontend/src/index.tsx
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const DepMap: Record<string, Function> =
+export const DepMap =
   "Proxy" in window
-    ? new Proxy(
+    ? (new Proxy(
         {},
         {
           get(_, prop) {
@@ -150,7 +176,7 @@ export const DepMap: Record<string, Function> =
             throw new Error(message);
           },
         }
-      )
+      ) as DepmapGlobalObject)
     : // eslint-disable-next-line @typescript-eslint/no-use-before-define
       polyfillProxy();
 
@@ -180,5 +206,5 @@ function polyfillProxy() {
     });
   });
 
-  return proxy;
+  return proxy as DepmapGlobalObject;
 }

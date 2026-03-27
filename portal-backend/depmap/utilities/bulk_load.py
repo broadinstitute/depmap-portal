@@ -3,6 +3,7 @@ import logging
 from depmap.extensions import db
 import json
 import sqlalchemy
+from sqlalchemy.exc import IntegrityError
 import csv
 
 log = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ def batch_load_from_generator(
         for chunk in chunk_iter(generator(pbar), batch_size):
             try:
                 connection.execute(insert_stmt, chunk)
-            except sqlalchemy.exc.IntegrityError as ex:
+            except IntegrityError as ex:
                 if dump_name is None:
                     dump_name = "bad_{}".format(table_name)
                 dump_csv = dump_name + ".csv"
@@ -41,11 +42,13 @@ def batch_load_from_generator(
 def _dump_table_to_csv(connection, table_name, dump_name):
     with open(dump_name, "wt") as fd:
         w = csv.writer(fd)
-        result = connection.execute("select * from {}".format(table_name))
+        result = connection.execute(
+            sqlalchemy.text("select * from {}".format(table_name))
+        )
         header_written = False
         for row in result:
             if not header_written:
-                w.writerow(row.keys())
+                w.writerow(row._fields)
                 header_written = True
             w.writerow([str(x) for x in row])
 

@@ -78,7 +78,7 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
     )
     empty_db_mock_downloads.session.flush()
 
-    assert len(cell_line_1.cell_line.lineage.all()) == 1
+    assert len(cell_line_1.cell_line.lineage) == 1
     assert cell_line_1.cell_line_name != "name_1"
 
     # line_1 updated to have lineage test, no aliases, and new arxspan_id
@@ -123,8 +123,8 @@ def test_insert_or_update_cell_lines(empty_db_mock_downloads):
 
     # line 1 was updated, and context is fine
     cell_line_1 = CellLine.get_by_depmap_id("line_1")
-    assert len(cell_line_1.lineage.all()) == 1
-    assert cell_line_1.lineage.all()[0].name == "test"
+    assert len(cell_line_1.lineage) == 1
+    assert cell_line_1.lineage[0].name == "test"
     # assert cell_line_1.cell_line_name == 'name_1'
 
     context = SubtypeContext.get_by_code("test_context")

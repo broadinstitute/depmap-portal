@@ -303,14 +303,19 @@ export default class CellignerGraph extends React.Component<Props, State> {
         pointVisibility[index] === true
     );
 
-    const exp = {
-      in: [{ var: "entity_label" }, [...new Set(selectedModelIds)]],
-    };
-
     const context = {
       name: "",
-      context_type: "depmap_model",
-      expr: exp,
+      dimension_type: "depmap_model",
+      expr: {
+        in: [{ var: "entity_label" }, [...new Set(selectedModelIds)]],
+      },
+      vars: {
+        entity_label: {
+          dataset_id: "depmap_model_metadata",
+          identifier_type: "column" as const,
+          identifier: "label",
+        },
+      },
     };
 
     saveNewContext(context);

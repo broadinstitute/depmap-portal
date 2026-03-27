@@ -23,10 +23,10 @@ function buildTableData(
     const modelValues = modelValuesRaw as Record<string, number | null>;
     Object.entries(modelValues).forEach(([model, log2Viability]) => {
       if (log2Viability !== null) {
-        // wrap toFixed(4) in the parse float and then convert back to number to avoid trailing zeros (e.g. 3.0000)
+        // wrap toPrecision(4) in the parse float and then convert back to number to avoid trailing zeros (e.g. 3.0000)
         // while still rounding long decimal points like 0.123456789 to 0.1234
         const dose = parseFloat(
-          dosefMetadata.Dose[label].toFixed(4)
+          dosefMetadata.Dose[label].toPrecision(4)
         ).toString();
 
         const unit = dosefMetadata.DoseUnit[label];

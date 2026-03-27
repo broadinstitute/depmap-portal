@@ -1,6 +1,6 @@
 import React from "react";
-import ContextNameForm from "../../ContextBuilder/ContextNameForm";
 import { useContextBuilderState } from "../state/ContextBuilderState";
+import ContextNameForm from "./ContextNameForm";
 
 function NameInput() {
   const {

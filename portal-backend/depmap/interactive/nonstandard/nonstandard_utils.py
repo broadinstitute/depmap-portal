@@ -4,9 +4,7 @@ import pandas as pd
 from typing import List, Dict, Tuple
 
 from depmap.database import db
-from depmap.interactive.common_utils import (
-    RowSummary,
-)
+from depmap.interactive.common_utils import RowSummary
 from depmap.interactive.config.utils import (
     get_entity_class,
     is_transpose,
@@ -108,7 +106,11 @@ def get_all_row_indices_labels_entity_ids(dataset_id):
     entity_class = get_entity_class(dataset_id)
     query = NonstandardMatrix.query.filter(
         NonstandardMatrix.nonstandard_dataset_id == dataset_id
-    ).join(RowNonstandardMatrix)
+    ).join(
+        RowNonstandardMatrix,
+        RowNonstandardMatrix.nonstandard_matrix_id
+        == NonstandardMatrix.nonstandard_matrix_id,
+    )
 
     if entity_class is None:
         query = query.with_entities(

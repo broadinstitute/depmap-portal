@@ -13,7 +13,7 @@ interface Props {
     dataset_id: string,
     slice_label: string,
     slice_type: string,
-    given_id?: string
+    given_id: string
   ) => void;
   staticContentRef: React.RefObject<HTMLDivElement>;
   hiddenDatasets: Set<string>;

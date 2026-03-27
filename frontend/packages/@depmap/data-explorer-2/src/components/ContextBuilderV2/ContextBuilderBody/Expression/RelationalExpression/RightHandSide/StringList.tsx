@@ -29,6 +29,12 @@ interface Props {
   onClickShowSlicePreview: () => void;
 }
 
+declare global {
+  interface Window {
+    clipboardData: DataTransfer;
+  }
+}
+
 const selectStyles: ReactSelectProps["styles"] = {
   control: (base) => ({
     ...base,

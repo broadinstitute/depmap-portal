@@ -1,7 +1,7 @@
 import time
 import json
 from flask import jsonify
-from flask_restplus import fields
+from flask_restx import fields
 from enum import Enum
 
 from depmap.utilities.exception import UserError, CeleryException

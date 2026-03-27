@@ -10,7 +10,7 @@ interface GeneContextCreationParams {
   onComplete: () => void;
 }
 
-const saveContext = async (
+const saveContext = (
   contextName: string,
   geneList: string[],
   onComplete: () => void
@@ -18,8 +18,15 @@ const saveContext = async (
   DepMap.saveNewContext(
     {
       name: contextName,
-      context_type: "gene",
+      dimension_type: "gene",
       expr: { in: [{ var: "entity_label" }, geneList] },
+      vars: {
+        entity_label: {
+          dataset_id: "gene_metadata",
+          identifier_type: "column" as const,
+          identifier: "label",
+        },
+      },
     },
     onComplete
   );
@@ -40,7 +47,7 @@ export const useGeneContextCreation = ({
     );
 
     if (finalGenes.length > 0) {
-      await saveContext(name, finalGenes, onComplete);
+      saveContext(name, finalGenes, onComplete);
     }
 
     return finalGenes;

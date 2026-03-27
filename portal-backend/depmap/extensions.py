@@ -5,10 +5,10 @@ from flask_bcrypt import Bcrypt
 from flask_caching import Cache
 from flask_debugtoolbar import DebugToolbarExtension
 from flask_humanize import Humanize
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from flaskext.markdown import Markdown
+import markdown as _markdown_lib
+from markupsafe import Markup
 
 from .utilities.gcs_reporter import ExceptionReporter
 
@@ -19,14 +19,23 @@ from functools import wraps
 
 bcrypt = Bcrypt()
 csrf_protect = CSRFProtect()
-login_manager = LoginManager()
 db = SQLAlchemy()
 cache = Cache()
 in_memory_cache = Cache()
 debug_toolbar = DebugToolbarExtension()
 exception_reporter = ExceptionReporter()
-markdown = Markdown
+
+
+def markdown(app):
+    md = _markdown_lib.Markdown()
+
+    @app.template_filter("markdown")
+    def markdown_filter(text):
+        return Markup(md.convert(text))
+
+
 humanize = Humanize
+
 methylation_db = MethylationDbExtension()
 cansar = CansarExtension()
 breadbox = BreadboxClientExtension()

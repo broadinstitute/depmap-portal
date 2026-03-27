@@ -1,11 +1,10 @@
-import { LocalStorageListStore } from "@depmap/cell-line-selector";
+import { LocalStorageListStore } from "./compatibility/ListStorage";
 import { isElara } from "@depmap/globals";
 import type {
   DataExplorerContext,
   DataExplorerContextV2,
   StoredContexts,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../isBreadboxOnlyMode";
 import { persistContext } from "./context-storage";
 import getContextHash from "./get-context-hash";
 
@@ -65,11 +64,7 @@ export function loadContextsFromLocalStorage(context_type: string) {
   const contexts: StoredContexts = json ? JSON.parse(json) : {};
 
   Object.entries(contexts).forEach(([contextHash, context]) => {
-    // Hide any V2 contexts from the legacy interface. This check can be
-    // removed after we fully migrate to Breadbox.
-    const isCompatible = isBreadboxOnlyMode || context.version !== 2;
-
-    if (context.context_type === context_type && isCompatible) {
+    if (context.context_type === context_type) {
       out[contextHash] = context;
     }
   });

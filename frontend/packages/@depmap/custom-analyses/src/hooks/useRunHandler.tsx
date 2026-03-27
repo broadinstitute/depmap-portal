@@ -5,7 +5,7 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
-import { ComputeResponseResult } from "@depmap/compute";
+import { ComputeResponseResult } from "@depmap/types";
 import {
   runPearsonCorrelationAnalysis,
   runTwoClassComparisonAnalysis,

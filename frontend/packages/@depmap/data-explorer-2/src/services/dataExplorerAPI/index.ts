@@ -1,13 +1,11 @@
-import { isBreadboxOnlyMode } from "../../isBreadboxOnlyMode";
 import * as identifiers from "./identifiers";
 import * as variables from "./variables";
 import * as breadboxMethods from "./breadboxMethods";
-import * as portalMethods from "./portalMethods";
 
 export const dataExplorerAPI = {
   ...identifiers,
   ...variables,
-  ...(isBreadboxOnlyMode ? breadboxMethods : portalMethods),
+  ...breadboxMethods,
 };
 
 type Api = typeof dataExplorerAPI;

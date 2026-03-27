@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+from depmap.extensions import db
 from depmap.context.models_new import (
     SubtypeContext,
     SubtypeContextEntity,
@@ -216,7 +217,7 @@ def test_get_subtype_tree_query(empty_db_mock_downloads):
     query = SubtypeNode.get_subtype_tree_by_models_query(
         tree_type=TreeType.Lineage.value, level_0_subtype_code=bone_code
     )
-    df = pd.read_sql(query.statement, query.session.connection())
+    df = pd.read_sql(query.statement, db.session.connection())
     tree_nodes = df.to_dict("records")
 
     assert len(tree_nodes) == 13
@@ -322,7 +323,7 @@ def test_get_subtype_tree_query_molecular_subtypes(empty_db_mock_downloads):
     query = SubtypeNode.get_subtype_tree_by_models_query(
         tree_type=TreeType.MolecularSubtype.value, level_0_subtype_code=parent_code
     )
-    df = pd.read_sql(query.statement, query.session.connection())
+    df = pd.read_sql(query.statement, db.session.connection())
     tree_nodes = df.to_dict("records")
     assert len(tree_nodes) == 3
 

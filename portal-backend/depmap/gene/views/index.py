@@ -159,7 +159,7 @@ def _get_gene_page_template_parameters(gene_symbol):
             "entrez_id": gene.entrez_id,
             "symbol": gene.symbol,
             "full_name": gene.name,
-            "aka": ", ".join([alias.alias for alias in gene.entity_alias.all()]),
+            "aka": ", ".join([alias.alias for alias in gene.entity_alias]),
             "ensembl_id": gene.ensembl_id,
             "hngc_id": gene.hgnc_id,
         },

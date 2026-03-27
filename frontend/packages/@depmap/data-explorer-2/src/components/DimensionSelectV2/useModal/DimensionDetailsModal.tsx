@@ -81,20 +81,24 @@ function DimensionDetailsModal({
           valueTypes={valueTypes}
           hiddenDatasets={hiddenDatasets}
           onClickCreateContext={() => {
-            const context_type = dimension.slice_type;
+            const dimension_type = dimension.slice_type as string;
 
             const onSave = (context: DataExplorerContextV2) => {
               setDimension((prev) => ({ ...prev, context }));
             };
 
-            DepMap.saveNewContext({ context_type }, null, onSave);
+            DepMap.saveNewContext({ dimension_type }, null, onSave);
           }}
           onClickSaveAsContext={() => {
             const onSave = (context: DataExplorerContextV2) => {
               setDimension((prev) => ({ ...prev, context }));
             };
 
-            DepMap.saveNewContext(dimension.context, null, onSave);
+            DepMap.saveNewContext(
+              dimension.context as DataExplorerContextV2,
+              null,
+              onSave
+            );
           }}
         />
         <DatasetDetails isLoading={isLoading} description={description} />

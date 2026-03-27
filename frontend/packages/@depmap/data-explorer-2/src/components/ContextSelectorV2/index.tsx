@@ -13,7 +13,7 @@ import styles from "../../styles/ContextSelector.scss";
 interface Props {
   enable: boolean;
   value: DataExplorerContextV2 | null;
-  context_type: string;
+  dimension_type: string;
   onClickCreateContext: () => void;
   onClickSaveAsContext: () => void;
   onChange: (
@@ -29,7 +29,7 @@ interface Props {
 
 function ContextSelectorV2({
   enable,
-  context_type,
+  dimension_type,
   onClickCreateContext,
   onClickSaveAsContext,
   value,
@@ -40,8 +40,8 @@ function ContextSelectorV2({
   hasError = false,
   selectClassName = undefined,
 }: Props) {
-  if (!context_type) {
-    throw new Error("`context_type` is required!");
+  if (!dimension_type) {
+    throw new Error("`dimension_type` is required!");
   }
 
   const [isLoadingContext, setIsLoadingContext] = useState(false);
@@ -51,19 +51,19 @@ function ContextSelectorV2({
     hashWithPrefix,
     hashOfSelectedValue,
     shouldShowSaveButton,
-  } = useContextHash(value, context_type);
-  const options = useOptions(value, context_type, includeAllInOptions);
+  } = useContextHash(value, dimension_type);
+  const options = useOptions(value, dimension_type, includeAllInOptions);
   const handleChange = useChangeHandler(
-    context_type,
+    dimension_type,
     onChange,
     onClickCreateContext,
     value,
     hashOfSelectedValue,
     setIsLoadingContext
   );
-  const resolvedLabel = useLabel(label, context_type);
+  const resolvedLabel = useLabel(label, dimension_type);
   const placeholder = usePlaceholder(
-    context_type,
+    dimension_type,
     isLoadingContext || isLoadingHash
   );
   const { evalFailed, reactKey } = useGlobalEvents(
@@ -84,7 +84,7 @@ function ContextSelectorV2({
         hasError={hasError || evalFailed}
         placeholder={placeholder}
         options={options}
-        enable={enable && context_type !== "other"}
+        enable={enable && dimension_type !== "other"}
         value={hashWithPrefix}
         isLoading={isLoadingContext || isLoadingHash}
         swatchColor={swatchColor}

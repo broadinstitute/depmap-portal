@@ -8,9 +8,14 @@ import styles from "../../styles/DataExplorer2.scss";
 const handleClickAdherentGrowthPattern = () => {
   DepMap.saveNewContext({
     name: "Adherent",
-    context_type: "depmap_model",
-    expr: {
-      "==": [{ var: "slice/growth_pattern/all/label" }, "Adherent"],
+    dimension_type: "depmap_model",
+    expr: { "==": [{ var: "0" }, "Adherent"] },
+    vars: {
+      0: {
+        dataset_id: "depmap_model_metadata",
+        identifier_type: "column" as const,
+        identifier: "0",
+      },
     },
   });
 };
@@ -18,9 +23,14 @@ const handleClickAdherentGrowthPattern = () => {
 const handleClickSuspensionGrowthPattern = () => {
   DepMap.saveNewContext({
     name: "Suspension",
-    context_type: "depmap_model",
-    expr: {
-      "==": [{ var: "slice/growth_pattern/all/label" }, "Suspension"],
+    dimension_type: "depmap_model",
+    expr: { "==": [{ var: "0" }, "Adherent"] },
+    vars: {
+      0: {
+        dataset_id: "depmap_model_metadata",
+        identifier_type: "column" as const,
+        identifier: "Suspension",
+      },
     },
   });
 };

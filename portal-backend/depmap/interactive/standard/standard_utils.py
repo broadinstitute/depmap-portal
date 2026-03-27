@@ -2,9 +2,7 @@
 Utils for standard axes datasets
 Non-axes datasets are handled in interactive_utils
 """
-from depmap.interactive.common_utils import (
-    RowSummary,
-)
+from depmap.interactive.common_utils import RowSummary
 from depmap.interactive.config.utils import (
     get_matrix_id,
     is_transpose,
@@ -26,7 +24,7 @@ def get_all_row_indices_labels_entity_ids(dataset_id):
     return [
         RowSummary(*x)
         for x in Matrix.query.filter_by(matrix_id=matrix_id)
-        .join(RowMatrixIndex)
+        .join(RowMatrixIndex, RowMatrixIndex.matrix_id == Matrix.matrix_id)
         .join(Entity)
         .with_entities(RowMatrixIndex.index, Entity.entity_id, Entity.label)
         .all()
@@ -38,7 +36,7 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
     return [
         row[0]
         for row in Matrix.query.filter_by(matrix_id=matrix_id)
-        .join(ColMatrixIndex)
+        .join(ColMatrixIndex, ColMatrixIndex.matrix_id == Matrix.matrix_id)
         .with_entities(ColMatrixIndex.depmap_id)
         .all()
     ]
@@ -46,7 +44,7 @@ def get_dataset_sample_ids(dataset_id: str) -> list[str]:
 
 def get_subsetted_df(dataset_id, row_indices, col_indices):
     transpose = is_transpose(dataset_id)
-    matrix = Matrix.query.get(get_matrix_id(dataset_id))
+    matrix = db.session.get(Matrix, get_matrix_id(dataset_id))
     df = matrix.get_subsetted_df(row_indices, col_indices, transpose)
     return df
 
@@ -72,7 +70,7 @@ def get_row_of_values(dataset_id, entity_label_or_context_name):
 
     Series is used to filter, color, or plot values
     """
-    matrix = Matrix.query.get(get_matrix_id(dataset_id))
+    matrix = db.session.get(Matrix, get_matrix_id(dataset_id))
     return matrix.get_cell_line_values_and_depmap_ids(
         entity_label_or_context_name, by_label=True
     )

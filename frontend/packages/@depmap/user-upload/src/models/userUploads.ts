@@ -3,7 +3,7 @@ import {
   ProgressCeleryTask,
   SuccessCeleryTask,
   FailedCeleryTask,
-} from "@depmap/compute";
+} from "@depmap/types";
 
 export enum UploadFormat {
   Taiga = "taiga",

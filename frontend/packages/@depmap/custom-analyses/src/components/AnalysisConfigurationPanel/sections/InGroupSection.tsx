@@ -21,7 +21,7 @@ function InGroupSection({ analysis, dispatch }: Props) {
   return (
     <Section title={`Select “in” group ${entities}`}>
       <AnalysisFilterSelect
-        context_type={analysis.index_type}
+        dimension_type={analysis.index_type}
         value={analysis.inGroupContext || null}
         onChange={(nextContext) => {
           dispatch({
