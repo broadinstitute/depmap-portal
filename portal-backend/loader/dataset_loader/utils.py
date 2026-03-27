@@ -79,6 +79,8 @@ def add_tabular_dataset(name_enum, taiga_id):
 
 def get_unique_filename(label, dest_dir, suffix=".hdf5"):
     # use label to construct a meaningful name, but add an index to avoid colliding with existing file
+    base_name = ""
+    abs_dest_path = ""
     for i in range(100):
         base_name = f"{label}-{i}.{suffix}"
         abs_dest_path = os.path.join(dest_dir, base_name)

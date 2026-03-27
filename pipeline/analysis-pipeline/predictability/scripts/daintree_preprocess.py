@@ -1,6 +1,10 @@
 columns_to_drop = ['SequencingID', 'ModelConditionID', 'IsDefaultEntryForModel',
        'IsDefaultEntryForMC']
 
+def assert_index_looks_like_model_ids(df):
+    for x in df.index:
+        assert x.startswith("ACH-")
+
 def index_by_model(df):
     print("calling index_by_model on df:")
     print(df)
@@ -10,6 +14,7 @@ def index_by_model(df):
         df = df[df['IsDefaultEntryForModel'] == 'Yes']
         df = df.set_index('ModelID')
         df = df.drop(columns=columns_to_drop).copy()
+    assert_index_looks_like_model_ids(df)
     return (df)
 
 def drop_sparse_columns(df):
@@ -24,4 +29,5 @@ def drop_sparse_columns(df):
     print(f"Dropping {sum(columns_to_drop)} columns")
     df = df.loc[:,df.columns[~columns_to_drop]]
 
+    assert_index_looks_like_model_ids(df)
     return df.copy()

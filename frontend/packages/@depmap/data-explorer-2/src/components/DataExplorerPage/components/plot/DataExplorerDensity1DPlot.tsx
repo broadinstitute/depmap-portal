@@ -37,7 +37,7 @@ interface Props {
     selectedLabels: Set<string>
   ) => void;
   onClickSaveSelectionAsContext: (
-    context_type: string,
+    dimension_type: string,
     selectedLabels: Set<string>
   ) => void;
   onClickColorByContext: (context: DataExplorerContextV2) => void;

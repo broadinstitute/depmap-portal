@@ -2,7 +2,7 @@ import React from "react";
 import { Button, Modal } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
-import ContextNameForm from "../ContextBuilder/ContextNameForm";
+import ContextNameForm from "./ContextBuilderBody/ContextNameForm";
 import ContextBuilderHeader from "./ContextBuilderHeader";
 import styles from "../../styles/ContextBuilderV2.scss";
 

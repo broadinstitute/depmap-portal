@@ -1,8 +1,4 @@
 {
   "extends": "../../tsconfig.base.json",
-  "references": [
-    { "path": "../compute" },
-    { "path": "../common-components" },
-    { "path": "../user-upload" }
-  ]
+  "references": [{ "path": "../common-components" }, { "path": "../types" }]
 }

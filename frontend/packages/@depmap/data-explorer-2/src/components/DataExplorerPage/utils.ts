@@ -17,7 +17,6 @@ import {
   isValidSliceQuery,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../isBreadboxOnlyMode";
 import { dataExplorerAPI } from "../../services/dataExplorerAPI";
 import {
   contextsMatch,
@@ -62,7 +61,7 @@ export function toRelatedPlot(
   );
 
   const toSliceName = (label: string, slice_type: string) => {
-    if (isBreadboxOnlyMode && slice_type === "depmap_model") {
+    if (slice_type === "depmap_model") {
       return idToLabelMap[label];
     }
 
@@ -70,69 +69,45 @@ export function toRelatedPlot(
   };
 
   const toVarEqualityExpression = (label: string, slice_type: string) => {
-    if (isBreadboxOnlyMode) {
-      let given_id = labelToIdMap[label];
+    let given_id = labelToIdMap[label];
 
-      if (
-        (plot.plot_type === "correlation_heatmap" &&
-          slice_type === "depmap_model") ||
-        (plot.plot_type !== "correlation_heatmap" &&
-          plot.index_type === "depmap_model")
-      ) {
-        given_id = label;
-      }
-
-      return { "==": [{ var: "given_id" }, given_id] };
+    if (
+      (plot.plot_type === "correlation_heatmap" &&
+        slice_type === "depmap_model") ||
+      (plot.plot_type !== "correlation_heatmap" &&
+        plot.index_type === "depmap_model")
+    ) {
+      given_id = label;
     }
 
-    return { "==": [{ var: "entity_label" }, label] };
+    return { "==": [{ var: "given_id" }, given_id] };
   };
 
   const toVarInclusionExpression = (labels: string[]) => {
-    if (isBreadboxOnlyMode) {
-      const ids =
-        plot.index_type === "depmap_model"
-          ? labels
-          : labels.map((label) => labelToIdMap[label]);
+    const ids =
+      plot.index_type === "depmap_model"
+        ? labels
+        : labels.map((label) => labelToIdMap[label]);
 
-      return { in: [{ var: "given_id" }, ids] };
-    }
-
-    return { in: [{ var: "entity_label" }, labels] };
+    return { in: [{ var: "given_id" }, ids] };
   };
 
   const toSingleSliceContext = (slice_type: string, label: string) => {
-    if (isBreadboxOnlyMode) {
-      return {
-        name: toSliceName(label, slice_type),
-        dimension_type: slice_type,
-        expr: toVarEqualityExpression(label, slice_type),
-        vars: {},
-      };
-    }
-
     return {
       name: toSliceName(label, slice_type),
-      context_type: slice_type,
+      dimension_type: slice_type,
       expr: toVarEqualityExpression(label, slice_type),
+      vars: {},
     };
   };
 
   const toMultiSliceContext = (slice_type: string, labels: string[]) => {
-    if (isBreadboxOnlyMode) {
-      return {
-        name: defaultContextName(selectedLabels.size),
-        dimension_type: slice_type,
-        expr: toVarInclusionExpression(labels),
-        vars: {},
-      } as DataExplorerContextV2;
-    }
-
     return {
       name: defaultContextName(selectedLabels.size),
-      context_type: slice_type,
+      dimension_type: slice_type,
       expr: toVarInclusionExpression(labels),
-    } as DataExplorerContext;
+      vars: {},
+    };
   };
 
   // correlation_heatmap -> any
@@ -209,7 +184,7 @@ export function toRelatedPlot(
           // they could be different. Should we force them to be the same?
           slice_type,
           dataset_id,
-          context: context as DataExplorerContext,
+          context,
           aggregation: "correlation",
         },
       },
@@ -442,16 +417,20 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
               };
             };
 
-        const context =
+        const maybeLegacyContext =
           "hash" in dimension.context
             ? await fetchContext(dimension.context.hash)
             : dimension.context;
+
+        const context = !isV2Context(maybeLegacyContext)
+          ? await convertContextV1toV2(maybeLegacyContext)
+          : maybeLegacyContext;
 
         nextDimensions[dimensionKey] = {
           ...dimension,
           context:
             "negated" in dimension.context && dimension.context.negated
-              ? negateContext(context as DataExplorerContext)
+              ? negateContext(context)
               : context,
         };
       }
@@ -464,18 +443,22 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
     await Promise.all(
       (Object.keys(plot.filters) as FilterKey[]).map(async (filterKey) => {
         const filter = plot.filters![filterKey] as
-          | DataExplorerContext
+          | DataExplorerContextV2
           | {
               hash: string;
               negated: boolean;
             };
 
-        const context =
+        const maybeLegacyContext =
           "hash" in filter ? await fetchContext(filter.hash) : filter;
+
+        const context = !isV2Context(maybeLegacyContext)
+          ? await convertContextV1toV2(maybeLegacyContext)
+          : maybeLegacyContext;
 
         nextFilters[filterKey] =
           "negated" in filter && filter.negated
-            ? negateContext(context as DataExplorerContext)
+            ? negateContext(context)
             : context;
       })
     );
@@ -488,9 +471,7 @@ async function replaceHashesWithContexts(plot: DataExplorerPlotConfig | null) {
   };
 }
 
-const isTrivialContext = (
-  context: DataExplorerContext | DataExplorerContextV2
-) => {
+const isTrivialContext = (context: DataExplorerContextV2) => {
   // FIXME: Figure out why this is happening.
   if (!context || !context.expr) {
     return true;
@@ -505,12 +486,14 @@ const isTrivialContext = (
 };
 
 const toContextDescriptor = async (
-  context: DataExplorerContext | DataExplorerContextV2
+  inputContext: DataExplorerContext | DataExplorerContextV2
 ) => {
+  const context = !isV2Context(inputContext)
+    ? await convertContextV1toV2(inputContext)
+    : inputContext;
+
   const negated = isNegatedContext(context);
-  const contextToHash = negated
-    ? negateContext(context as DataExplorerContext)
-    : context;
+  const contextToHash = negated ? negateContext(context) : context;
 
   if (isTrivialContext(contextToHash)) {
     return context;
@@ -635,13 +618,13 @@ async function convertAllLegacyContexts(plot: DataExplorerPlotConfig | null) {
           const dimension = plot.dimensions[dimensionKey];
           let context = dimension!.context;
 
-          if (isBreadboxOnlyMode && !isV2Context(context)) {
+          if (!isV2Context(context)) {
             const convertedContext = await convertContextV1toV2(context);
             replaceLegacyContextIfExistsInLocalStorage(
               context,
               convertedContext
             );
-            context = (convertedContext as unknown) as DataExplorerContext;
+            context = convertedContext;
           }
 
           nextDimensions[dimensionKey] = { ...dimension, context };
@@ -658,7 +641,7 @@ async function convertAllLegacyContexts(plot: DataExplorerPlotConfig | null) {
         const filter = plot.filters![filterKey];
         let context = filter!;
 
-        if (isBreadboxOnlyMode && !isV2Context(context)) {
+        if (!isV2Context(context)) {
           const convertedContext = await convertContextV1toV2(context);
           replaceLegacyContextIfExistsInLocalStorage(context, convertedContext);
           context = convertedContext;
@@ -679,18 +662,6 @@ async function convertAllLegacyContexts(plot: DataExplorerPlotConfig | null) {
 export async function makePlotConfigBreadboxModeCompatible(
   legacyPlot: DataExplorerPlotConfig
 ) {
-  if (!isBreadboxOnlyMode) {
-    window.console.log(
-      [
-        "`makePlotConfigBreadboxModeCompatible` called without Breadbox mode",
-        "enabled! This was probably done in error. Ignoring and retaining",
-        "legacy format.",
-      ].join(" ")
-    );
-
-    return legacyPlot;
-  }
-
   let plot = JSON.parse(JSON.stringify(legacyPlot));
   plot = await convertAllLegacyContexts(plot);
 
@@ -835,7 +806,7 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
   plot = replaceLegacyPropertyNames(plot);
   plot = await replaceHashesWithContexts(plot);
 
-  if (plot && isBreadboxOnlyMode) {
+  if (plot) {
     plot = await makePlotConfigBreadboxModeCompatible(plot);
   }
 
@@ -854,7 +825,7 @@ export function plotsAreEquivalentWhenSerialized(
 
 export function findPathsToContext(
   plot: DataExplorerPlotConfig,
-  context: DataExplorerContext
+  context: DataExplorerContextV2
 ) {
   const paths: ContextPath[] = [];
 

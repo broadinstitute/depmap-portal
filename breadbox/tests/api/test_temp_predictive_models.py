@@ -231,7 +231,7 @@ def test_bulk_load_and_query(
         json={
             "file_ids": file_ids,
             "md5": md5,
-            "etag": "dummy-etag",
+            "etag": "mock-etag",
             "predictions_dataset_id": predictions_dataset.id,
         },
         headers=admin_headers,

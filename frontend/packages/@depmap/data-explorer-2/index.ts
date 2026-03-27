@@ -1,22 +1,12 @@
-export { default as ContextSelector } from "./src/components/ContextSelector";
 export { default as ContextSelectorV2 } from "./src/components/ContextSelectorV2";
-export { default as SliceLabelSelector } from "./src/components/SliceLabelSelector";
 export { default as PlotConfigSelect } from "./src/components/PlotConfigSelect";
 export { default as renderConditionally } from "./src/utils/render-conditionally";
-export { default as DimensionSelect } from "./src/components/DimensionSelect";
 export { default as DimensionSelectV2 } from "./src/components/DimensionSelectV2";
-export { default as SliceLabelSelect } from "./src/components/DimensionSelect/SliceLabelSelect";
-export { default as ContextBuilderModal } from "./src/components/ContextBuilder/ContextBuilderModal";
 export { default as ContextBuilderV2 } from "./src/components/ContextBuilderV2";
 export { default as ContextManager } from "./src/components/ContextManager";
-export { default as DatasetMetadataSelector } from "./src/components/DatasetMetadataSelector";
 export { default as AnnotationSelect } from "./src/components/AnnotationSelect";
 export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";
 export { default as ContextTypeSelect } from "./src/components/ContextManager/ContextTypeSelect";
-
-export { isBreadboxOnlyMode } from "./src/isBreadboxOnlyMode";
-export { deprecatedDataExplorerAPI } from "./src/services/deprecatedDataExplorerAPI";
-export type { DeprecatedDataExplorerApiResponse } from "./src/services/deprecatedDataExplorerAPI";
 
 export {
   DataExplorerSettingsProvider,
@@ -39,6 +29,8 @@ export {
   saveContextToLocalStorageAndPersist,
 } from "./src/utils/context";
 
+export { convertContextV1toV2 } from "./src/utils/context-converter";
+
 export { fetchContext, persistContext } from "./src/utils/context-storage";
 
 export {
@@ -57,7 +49,7 @@ export {
   urlLibEncode,
 } from "./src/utils/misc";
 
-export { persistLegacyListAsContext } from "./src/components/ContextSelector/context-selector-utils";
+export { persistLegacyListAsContext } from "./src/utils/persistLegacyListAsContext";
 
 export { default as DensityPlot } from "./src/components/DataExplorerPage/components/plot/prototype/PrototypeDensity1D";
 

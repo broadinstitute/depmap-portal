@@ -1,7 +1,7 @@
 import React from "react";
 import {
   PartialDataExplorerPlotConfig,
-  DataExplorerContext,
+  DataExplorerContextV2,
   ContextPath,
 } from "@depmap/types";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
@@ -15,7 +15,7 @@ interface Props {
   dispatch: (action: PlotConfigReducerAction) => void;
   onClickCreateContext: (pathToCreate: ContextPath) => void;
   onClickSaveAsContext: (
-    contextToEdit: DataExplorerContext,
+    contextToEdit: DataExplorerContextV2,
     pathToSave: ContextPath
   ) => void;
 }

@@ -31,11 +31,12 @@ def test_get_data_availability(populated_db):
             "all_depmap_ids",
         ]
 
-        assert len(data_availablity["values"]) == 23
+        assert len(data_availablity["values"]) == 25
         assert data_availablity["data_types"] == [
             "CRISPR_Achilles_Broad",
             "CRISPR_Score_Sanger",
             "CRISPR_ParalogsScreens",
+            "CRISPR_Biogrid",
             "RNAi_Marcotte",
             "RNAi_Achilles_Broad",
             "RNAi_Drive_Novartis",
@@ -49,7 +50,8 @@ def test_get_data_availability(populated_db):
             "Drug_Repurposing_Broad",
             "Drug_GDSC_Sanger",
             "Drug_OncRef_Broad",
-            "Proteomics_Olink",
+            "Proteomics_Olink_Lysate",
+            "Proteomics_Olink_Media",
             "Proteomics_RPPA_CCLE",
             "Proteomics_MS_CCLE",
             "Proteomics_MS_Sanger",

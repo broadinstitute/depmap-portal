@@ -3,7 +3,7 @@ import { breadboxAPI, cached } from "@depmap/api";
 import { DimensionType } from "@depmap/types";
 
 export default function usePlaceholder(
-  context_type: string | null,
+  dimension_type: string | null,
   isLoading: boolean
 ) {
   const [dimensionType, setDimensionType] = useState<
@@ -11,7 +11,7 @@ export default function usePlaceholder(
   >(undefined);
 
   useEffect(() => {
-    if (context_type === null) {
+    if (dimension_type === null) {
       setDimensionType(null);
       return;
     }
@@ -19,12 +19,12 @@ export default function usePlaceholder(
     cached(breadboxAPI)
       .getDimensionTypes()
       .then((types) => {
-        const typeInfo = types.find((t) => t.name === context_type);
+        const typeInfo = types.find((t) => t.name === dimension_type);
 
         if (typeInfo) {
           setDimensionType(typeInfo);
         } else {
-          const errorMsg = `Unknown dimension type "${context_type}"`;
+          const errorMsg = `Unknown dimension type "${dimension_type}"`;
           throw new Error(errorMsg);
         }
       })
@@ -33,7 +33,7 @@ export default function usePlaceholder(
         const errorMsg = "Failed to fetch dimension types from Breadbox";
         throw new Error(errorMsg);
       });
-  }, [context_type]);
+  }, [dimension_type]);
 
   if (isLoading) {
     return "";

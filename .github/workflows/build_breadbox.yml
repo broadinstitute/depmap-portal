@@ -34,12 +34,12 @@ jobs:
   build-docker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
       - name: Update build id
         run: |
           echo "SHA=\"${{ github.sha }}\"" > breadbox/build.py
       - name: Login to Artifact Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           registry: us-central1-docker.pkg.dev
           username: _json_key
@@ -60,9 +60,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-docker
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
       - name: Login to Artifact Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           registry: us-central1-docker.pkg.dev
           username: _json_key
@@ -80,9 +80,9 @@ jobs:
       - build-docker
       - run-pytest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2.7.0
       - name: Login to Artifact Registry
-        uses: docker/login-action@v2
+        uses: docker/login-action@465a07811f14bebb1938fbed4728c6a1ff8901fc # v2.2.0
         with:
           registry: us-central1-docker.pkg.dev
           username: _json_key

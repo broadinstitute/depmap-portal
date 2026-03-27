@@ -10,7 +10,6 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@depmap/compute": "1.0.0",
     "classnames": "^2.3.1",
     "github-markdown-css": "^5.8.1",
     "histoslider": "^2.0.14",

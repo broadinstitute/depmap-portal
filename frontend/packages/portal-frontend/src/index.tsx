@@ -10,18 +10,11 @@ import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import { WideTableProps } from "@depmap/wide-table";
 
-import {
-  DataExplorerContext,
-  DataExplorerContextV2,
-  DatasetOption,
-} from "@depmap/types";
+import { DataExplorerContextV2, DatasetOption } from "@depmap/types";
 
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import {
-  initializeDevContexts,
-  isBreadboxOnlyMode,
-} from "@depmap/data-explorer-2";
+import { initializeDevContexts } from "@depmap/data-explorer-2";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
@@ -168,11 +161,8 @@ export function launchContextManagerModal(options?: {
   );
 }
 
-export function editContext(
-  context: DataExplorerContext | DataExplorerContextV2,
-  hash: string
-) {
-  const container = document.getElementById("cell_line_selector_modal");
+export function editContext(context: DataExplorerContextV2, hash: string) {
+  const container = document.getElementById("modal-container");
   const unmount = () =>
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
   unmount();
@@ -189,7 +179,7 @@ export function repairContext(
   context: DataExplorerContextV2,
   startInTableView?: boolean
 ): Promise<DataExplorerContextV2 | null> {
-  const container = document.getElementById("cell_line_selector_modal");
+  const container = document.getElementById("modal-container");
 
   const unmount = () => {
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
@@ -225,9 +215,17 @@ export function repairContext(
 }
 
 export function saveNewContext(
-  context: DataExplorerContext | DataExplorerContextV2,
-  onHide?: () => void,
-  onSave?: (context: DataExplorerContext, hash: string) => void,
+  context:
+    | DataExplorerContextV2
+    | {
+        dimension_type: string;
+        name?: never;
+        expr?: never;
+        vars?: never;
+        contexts?: never;
+      },
+  onHide?: null | (() => void),
+  onSave?: null | ((context: DataExplorerContextV2, hash: string) => void),
   startInTableView?: boolean
 ) {
   const container = document.getElementById("modal-container");
@@ -241,7 +239,7 @@ export function saveNewContext(
         context={context}
         hash={null}
         startInTableView={startInTableView}
-        onSave={onSave}
+        onSave={onSave || undefined}
         onHide={() => {
           if (onHide) {
             onHide();
@@ -256,35 +254,31 @@ export function saveNewContext(
 }
 
 export function launchCellLineSelectorModal() {
-  if (!isBreadboxOnlyMode) {
-    launchContextManagerModal({
-      initialContextType: "depmap_model",
-      showHelpText: true,
-    });
-  } else {
-    saveNewContext(
-      ({
-        dimension_type: "depmap_model",
-        // These are unreferenced so they will be normalized away on save.
-        // They are just here to add more info to the table.
-        vars: {
-          oncotree1: {
-            dataset_id: "depmap_model_metadata",
-            identifier_type: "column",
-            identifier: "OncotreeLineage",
-          },
-          oncotree2: {
-            dataset_id: "depmap_model_metadata",
-            identifier_type: "column",
-            identifier: "OncotreeSubtype",
-          },
+  saveNewContext(
+    ({
+      name: "",
+      dimension_type: "depmap_model",
+      expr: null,
+      // These slices are unreferenced so they will be normalized away on save.
+      // They are just here to add more info to the table (which automatically
+      // creates columns for all variables).
+      vars: {
+        oncotree1: {
+          dataset_id: "depmap_model_metadata",
+          identifier_type: "column",
+          identifier: "OncotreeLineage",
         },
-      } as unknown) as DataExplorerContextV2,
-      () => {},
-      () => {},
-      true
-    );
-  }
+        oncotree2: {
+          dataset_id: "depmap_model_metadata",
+          identifier_type: "column",
+          identifier: "OncotreeSubtype",
+        },
+      },
+    } as unknown) as DataExplorerContextV2,
+    null,
+    null,
+    true
+  );
 }
 
 export function initEnrichmentTile(

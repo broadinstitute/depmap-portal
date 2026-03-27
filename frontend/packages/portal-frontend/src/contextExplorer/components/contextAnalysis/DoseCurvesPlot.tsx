@@ -183,7 +183,7 @@ const getTraces = (
         )}<br><b>slope:</b> ${curves.data[index].slope.toFixed(3)}`
       ),
       hovertemplate:
-        "<b>Dose:</b> %{x:.3f}<br>" +
+        "<b>Dose:</b> %{x:.4g}<br>" +
         "<b>Viability</b>: %{y:.3f}<br>" +
         "%{text}",
       type: "curve",

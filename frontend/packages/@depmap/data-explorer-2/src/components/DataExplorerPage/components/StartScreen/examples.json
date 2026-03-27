@@ -10,15 +10,16 @@
         "aggregation": "first",
         "context": {
           "name": "VPS4A",
-          "context_type": "gene",
+          "dimension_type": "gene",
           "expr": {
             "==": [
               {
-                "var": "entity_label"
+                "var": "given_id"
               },
-              "VPS4A"
+              "27183"
             ]
-          }
+          },
+          "vars": {}
         }
       },
       "y": {
@@ -28,15 +29,16 @@
         "aggregation": "first",
         "context": {
           "name": "VPS4B",
-          "context_type": "gene",
+          "dimension_type": "gene",
           "expr": {
             "==": [
               {
-                "var": "entity_label"
+                "var": "given_id"
               },
-              "VPS4B"
+              "9525"
             ]
-          }
+          },
+          "vars": {}
         }
       }
     }
@@ -51,13 +53,13 @@
         "slice_type": "depmap_model",
         "axis_type": "aggregated_slice",
         "context": {
-          "context_type": "depmap_model",
+          "dimension_type": "depmap_model",
           "expr": {
             "and": [
               {
                 ">": [
                   {
-                    "var": "slice/ssgsea/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION/label"
+                    "var": "0"
                   },
                   0.25
                 ]
@@ -65,14 +67,30 @@
               {
                 "==": [
                   {
-                    "var": "slice/growth_pattern/all/label"
+                    "var": "1"
                   },
                   "Adherent"
                 ]
               }
             ]
           },
-          "name": "Mesenchymal"
+          "name": "Mesenchymal",
+          "vars": {
+            "0": {
+              "dataset_id": "ssgsea",
+              "identifier": "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION",
+              "identifier_type": "feature_label",
+              "label": "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION",
+              "slice_type": null,
+              "source": "custom"
+            },
+            "1": {
+              "dataset_id": "depmap_model_metadata",
+              "identifier": "GrowthPattern",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
         },
         "aggregation": "mean"
       },
@@ -82,13 +100,13 @@
         "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
-          "context_type": "depmap_model",
+          "dimension_type": "depmap_model",
           "expr": {
             "and": [
               {
                 "<": [
                   {
-                    "var": "slice/ssgsea/HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION/label"
+                    "var": "0"
                   },
                   0
                 ]
@@ -96,20 +114,38 @@
               {
                 "==": [
                   {
-                    "var": "slice/growth_pattern/all/label"
+                    "var": "1"
                   },
                   "Adherent"
                 ]
               }
             ]
           },
-          "name": "Epithelial"
+          "name": "Epithelial",
+          "vars": {
+            "0": {
+              "dataset_id": "ssgsea",
+              "identifier": "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION",
+              "identifier_type": "feature_label",
+              "label": "HALLMARK_EPITHELIAL_MESENCHYMAL_TRANSITION",
+              "slice_type": null,
+              "source": "custom"
+            },
+            "1": {
+              "dataset_id": "depmap_model_metadata",
+              "identifier": "GrowthPattern",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
         }
       }
     },
     "metadata": {
       "color_property": {
-        "slice_id": "slice/gene_selectivity/all/label"
+        "dataset_id": "gene_metadata",
+        "identifier_type": "column",
+        "identifier": "selectivity"
       }
     }
   },
@@ -124,7 +160,7 @@
         "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
-          "context_type": "depmap_model",
+          "dimension_type": "depmap_model",
           "expr": {
             "and": [
               {
@@ -132,7 +168,7 @@
                   {
                     ">": [
                       {
-                        "var": "slice/mutations_damaging/RB1/label"
+                        "var": "0"
                       },
                       0
                     ]
@@ -140,7 +176,7 @@
                   {
                     ">": [
                       {
-                        "var": "slice/mutations_hotspot/RB1/label"
+                        "var": "1"
                       },
                       0
                     ]
@@ -148,7 +184,7 @@
                   {
                     "<=": [
                       {
-                        "var": "slice/copy_number_relative/RB1/label"
+                        "var": "2"
                       },
                       0.6
                     ]
@@ -158,14 +194,46 @@
               {
                 "==": [
                   {
-                    "var": "slice/growth_pattern/all/label"
+                    "var": "3"
                   },
                   "Adherent"
                 ]
               }
             ]
           },
-          "name": "RB1Loss"
+          "name": "RB1Loss",
+          "vars": {
+            "0": {
+              "dataset_id": "mutations_damaging",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "1": {
+              "dataset_id": "mutations_hotspot",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "2": {
+              "dataset_id": "copy_number_relative",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "3": {
+              "dataset_id": "depmap_model_metadata",
+              "identifier": "GrowthPattern",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
         }
       },
       "y": {
@@ -174,7 +242,7 @@
         "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
-          "context_type": "depmap_model",
+          "dimension_type": "depmap_model",
           "expr": {
             "and": [
               {
@@ -182,7 +250,7 @@
                   {
                     "<=": [
                       {
-                        "var": "slice/mutations_damaging/RB1/label"
+                        "var": "0"
                       },
                       0
                     ]
@@ -190,7 +258,7 @@
                   {
                     "<=": [
                       {
-                        "var": "slice/mutations_hotspot/RB1/label"
+                        "var": "1"
                       },
                       0
                     ]
@@ -198,7 +266,7 @@
                   {
                     ">": [
                       {
-                        "var": "slice/copy_number_relative/RB1/label"
+                        "var": "2"
                       },
                       0.6
                     ]
@@ -208,14 +276,46 @@
               {
                 "==": [
                   {
-                    "var": "slice/growth_pattern/all/label"
+                    "var": "3"
                   },
                   "Adherent"
                 ]
               }
             ]
           },
-          "name": "RB1NoLoss"
+          "name": "RB1NoLoss",
+          "vars": {
+            "0": {
+              "dataset_id": "mutations_damaging",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "1": {
+              "dataset_id": "mutations_hotspot",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "2": {
+              "dataset_id": "copy_number_relative",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "3": {
+              "dataset_id": "depmap_model_metadata",
+              "identifier": "GrowthPattern",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
         }
       },
       "color": {
@@ -224,7 +324,7 @@
         "axis_type": "aggregated_slice",
         "aggregation": "mean",
         "context": {
-          "context_type": "depmap_model",
+          "dimension_type": "depmap_model",
           "expr": {
             "and": [
               {
@@ -232,7 +332,7 @@
                   {
                     ">": [
                       {
-                        "var": "slice/mutations_damaging/RB1/label"
+                        "var": "0"
                       },
                       0
                     ]
@@ -240,7 +340,7 @@
                   {
                     ">": [
                       {
-                        "var": "slice/mutations_hotspot/RB1/label"
+                        "var": "1"
                       },
                       0
                     ]
@@ -248,7 +348,7 @@
                   {
                     "<=": [
                       {
-                        "var": "slice/copy_number_relative/RB1/label"
+                        "var": "2"
                       },
                       0.6
                     ]
@@ -258,14 +358,46 @@
               {
                 "==": [
                   {
-                    "var": "slice/growth_pattern/all/label"
+                    "var": "3"
                   },
                   "Adherent"
                 ]
               }
             ]
           },
-          "name": "RB1Loss"
+          "name": "RB1Loss",
+          "vars": {
+            "0": {
+              "dataset_id": "mutations_damaging",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "1": {
+              "dataset_id": "mutations_hotspot",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "2": {
+              "dataset_id": "copy_number_relative",
+              "identifier": "RB1",
+              "identifier_type": "feature_label",
+              "label": "RB1",
+              "slice_type": "gene",
+              "source": "custom"
+            },
+            "3": {
+              "dataset_id": "depmap_model_metadata",
+              "identifier": "GrowthPattern",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
         }
       }
     }
@@ -374,8 +506,9 @@
         "aggregation": "mean",
         "context": {
           "name": "All",
-          "context_type": "depmap_model",
-          "expr": true
+          "dimension_type": "depmap_model",
+          "expr": true,
+          "vars": {}
         }
       },
       "y": {
@@ -385,14 +518,17 @@
         "aggregation": "mean",
         "context": {
           "name": "All",
-          "context_type": "depmap_model",
-          "expr": true
+          "dimension_type": "depmap_model",
+          "expr": true,
+          "vars": {}
         }
       }
     },
     "metadata": {
       "color_property": {
-        "slice_id": "slice/gene_essentiality/all/label"
+        "dataset_id": "gene_metadata",
+        "identifier_type": "column",
+        "identifier": "essentiality"
       }
     }
   },
@@ -406,11 +542,11 @@
         "dataset_id": "Chronos_Combined",
         "aggregation": "correlation",
         "context": {
-          "context_type": "gene",
+          "dimension_type": "gene",
           "expr": {
             "in": [
               {
-                "var": "entity_label"
+                "var": "0"
               },
               [
                 "CAD",
@@ -428,7 +564,15 @@
               ]
             ]
           },
-          "name": "DeNovoPyrimidine"
+          "name": "DeNovoPyrimidine",
+          "vars": {
+            "0": {
+              "dataset_id": "gene_metadata",
+              "identifier": "label",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
         }
       }
     }

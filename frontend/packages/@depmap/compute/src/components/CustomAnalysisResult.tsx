@@ -8,7 +8,7 @@ import {
   LongTable,
   onRowClickParam,
 } from "@depmap/long-table";
-import { ComputeResponseResult, AnalysisType } from "@depmap/compute";
+import { ComputeResponseResult, AnalysisType } from "@depmap/types";
 import { assert } from "@depmap/utils";
 import SaveContextButton, { SelectionState } from "./SaveContextButton";
 

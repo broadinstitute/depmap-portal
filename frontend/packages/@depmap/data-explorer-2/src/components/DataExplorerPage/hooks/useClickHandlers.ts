@@ -2,11 +2,9 @@ import React, { useCallback } from "react";
 import omit from "lodash.omit";
 import {
   ContextPath,
-  DataExplorerContext,
   DataExplorerContextV2,
   DataExplorerPlotConfig,
 } from "@depmap/types";
-import { isBreadboxOnlyMode } from "../../../isBreadboxOnlyMode";
 import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import { logDirectPlotChange } from "../debug";
 import {
@@ -23,55 +21,45 @@ export default function useClickHandlers(
   plot: DataExplorerPlotConfig,
   setPlot: (config: DataExplorerPlotConfig) => void,
   onClickSaveAsContext: (
-    context: DataExplorerContext,
+    context: DataExplorerContextV2,
     path: ContextPath | null
   ) => void
 ) {
   const handleClickSaveSelectionAsContext = async (
-    context_type: string,
+    dimension_type: string,
     selectedLabels: Set<string>
   ) => {
     const labels = [...selectedLabels];
 
-    if (isBreadboxOnlyMode) {
-      const identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
-        context_type
-      );
-      const labelToIdMap = Object.fromEntries(
-        identifiers.map(({ label, id }) => [label, id])
-      );
+    const identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
+      dimension_type
+    );
+    const labelToIdMap = Object.fromEntries(
+      identifiers.map(({ label, id }) => [label, id])
+    );
 
-      // "depmap_model" is a confusing type because its IDs were considered
-      // labels by the legacy portal.
-      let labelsAreDemapIds = plot.index_type === "depmap_model";
+    // "depmap_model" is a confusing type because its IDs were considered
+    // labels by the legacy portal.
+    let labelsAreDemapIds = plot.index_type === "depmap_model";
 
-      // To add an extra layer of confusion, this plot type's index isn't
-      // really a proper index.
-      if (plot.plot_type === "correlation_heatmap") {
-        labelsAreDemapIds = !labelsAreDemapIds;
-      }
-
-      const ids = labelsAreDemapIds
-        ? labels
-        : labels.map((label) => labelToIdMap[label]);
-
-      const context = {
-        name: defaultContextName(selectedLabels.size),
-        dimension_type: context_type,
-        expr: { in: [{ var: "given_id" }, ids] },
-        vars: {},
-      };
-
-      onClickSaveAsContext((context as unknown) as DataExplorerContext, null);
-    } else {
-      const context = {
-        name: defaultContextName(selectedLabels.size),
-        context_type,
-        expr: { in: [{ var: "entity_label" }, labels] },
-      };
-
-      onClickSaveAsContext(context, null);
+    // To add an extra layer of confusion, this plot type's index isn't
+    // really a proper index.
+    if (plot.plot_type === "correlation_heatmap") {
+      labelsAreDemapIds = !labelsAreDemapIds;
     }
+
+    const ids = labelsAreDemapIds
+      ? labels
+      : labels.map((label) => labelToIdMap[label]);
+
+    const context = {
+      name: defaultContextName(selectedLabels.size),
+      dimension_type,
+      expr: { in: [{ var: "given_id" }, ids] },
+      vars: {},
+    };
+
+    onClickSaveAsContext(context, null);
   };
 
   const handleClickVisualizeSelected = useCallback(
@@ -81,18 +69,15 @@ export default function useClickHandlers(
       }
 
       const isModifierPressed = e.shiftKey || e.ctrlKey || e.metaKey;
-      let identifiers: { id: string; label: string }[] = [];
 
-      if (isBreadboxOnlyMode) {
-        const dimensionType =
-          plot.plot_type === "correlation_heatmap"
-            ? plot.dimensions.x!.slice_type
-            : plot.index_type;
+      const dimensionType =
+        plot.plot_type === "correlation_heatmap"
+          ? plot.dimensions.x!.slice_type
+          : plot.index_type;
 
-        identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
-          dimensionType
-        );
-      }
+      const identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
+        dimensionType
+      );
 
       const nextPlot = toRelatedPlot(plot, selectedLabels, identifiers);
       const queryString = await plotToQueryString(nextPlot, ["task"]);

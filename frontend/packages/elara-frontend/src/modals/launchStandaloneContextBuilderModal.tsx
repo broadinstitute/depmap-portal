@@ -27,7 +27,7 @@ export default function launchStandaloneContextBuilderModal(
   // Call when saved and when dismissed.
   onHide?: (() => void) | null
 ) {
-  const container = document.getElementById("cell_line_selector_modal");
+  const container = document.getElementById("modal-container");
   const hide = () => ReactDOM.unmountComponentAtNode(container as HTMLElement);
 
   // Unmount a previous instance if any (otherwise this is a no-op).

@@ -7,7 +7,6 @@ import json
 import os
 
 import flask
-import pandas as pd
 from flask import (
     Flask,
     current_app,
@@ -57,7 +56,6 @@ from depmap.extensions import (
     debug_toolbar,
     exception_reporter,
     humanize,
-    login_manager,
     markdown,
     methylation_db,
     breadbox,
@@ -235,7 +233,6 @@ def register_extensions(app: Flask):
     in_memory_cache.init_app(app, config={"CACHE_TYPE": "simple"})
     db.init_app(app)
     csrf_protect.init_app(app)
-    login_manager.init_app(app)
     debug_toolbar.init_app(app)
     methylation_db.init_app(app)
     cansar.init_app(app)

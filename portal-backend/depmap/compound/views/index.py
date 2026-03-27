@@ -90,6 +90,13 @@ def view_compound(name):
             compound.label,
         )
         or data_access.dataset_exists(
+            ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix.name
+        )
+        and data_access.valid_row(
+            ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix.name,
+            compound.label,
+        )
+        or data_access.dataset_exists(
             ContextExplorerDatasets.Rep_all_single_pt_per_compound.name
         )
         and data_access.valid_row(

@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@depmap/api": "1.0.0",
-    "@depmap/cell-line-selector": "1.0.0",
     "@depmap/common-components": "1.0.0",
     "@depmap/compute": "1.0.0",
     "@depmap/data-slicer": "1.0.0",
