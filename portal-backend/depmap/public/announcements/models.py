@@ -2,8 +2,8 @@ from pydantic import BaseModel, Field, validator
 import markdown
 from datetime import datetime
 
-
-def markdown_to_html(text):
+# added cls to the function to satisfy pydantic v1, in v2 this has changed significantly
+def markdown_to_html(cls, text):
     html = markdown.markdown(text)
     return html
 
