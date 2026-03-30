@@ -303,3 +303,53 @@ add-if-missing {
  'feature_id_format': 'compound',
  'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
  }
+
+# Biomarker (or characterization) assays
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'copy_number_relative',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalOmicsCNGeneLog2"),
+ 'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'expression',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
+ 'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'mutations_damaging',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixDamaging"),
+ 'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'mutations_hotspot',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixHotspot"),
+ 'feature_id_format': 'gene'
+}
+
+# TODO: Add fusion matrix. This needs to wait for the fusion matrix to be added to
+# the release dataset (which was added as part of the "predictability" changes)
+# and updating the breadbox config.
+# add-if-missing {
+# 'type': 'cor-analysis-b',
+# 'given_id': 'fusions_matrix',
+# 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, ""),
+# 'feature_id_format': '',
+# }
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'subtype_matrix',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "SubtypeMatrix"),
+ 'feature_id_format': 'label',
+ }
+
+# End of correlation pair configuration
+
