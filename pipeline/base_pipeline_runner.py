@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import subprocess
@@ -8,6 +9,7 @@ import yaml
 from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
+from typing import Any
 
 from pipeline_config import BasePipelineSpecificConfig, PipelineConfig
 
@@ -231,22 +233,22 @@ class PipelineRunner(ABC):
         return subprocess.run(docker_cmd)
 
     @abstractmethod
-    def create_argument_parser(self):
+    def create_argument_parser(self) -> argparse.ArgumentParser:
         """Create and return the argument parser for this pipeline."""
         pass
 
     @abstractmethod
-    def get_pipeline_config(self, args):
+    def get_pipeline_config(self, args: argparse.Namespace) -> dict[str, Any]:
         """Return pipeline-specific configuration."""
         pass
 
     @abstractmethod
-    def get_conseq_file(self, config):
+    def get_conseq_file(self, config: dict[str, Any]) -> str:
         """Get the conseq file to use for this pipeline."""
         pass
 
     @abstractmethod
-    def handle_special_features(self, config):
+    def handle_special_features(self, config: dict[str, Any]) -> None:
         """Handle pipeline-specific features like START_WITH, override files, etc."""
         pass
 
