@@ -1,54 +1,34 @@
 import argparse
-import os
-import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from base_pipeline_runner import PipelineRunner
 
 
 class DataPrepPipelineRunner(PipelineRunner):
-    def create_argument_parser(self):
+    def create_argument_parser(self) -> argparse.ArgumentParser:
         parser = argparse.ArgumentParser(description="Run data prep pipeline")
-
-        # Add common arguments
         self.add_common_arguments(parser)
-
-        # Add data-prep-specific arguments
-        parser.add_argument(
-            "--external",
-            action="store_true",
-            help="Run external pipeline (default is internal)",
-        )
-        parser.add_argument(
-            "--publish",
-            action="store_true",
-            help="Publish data-prep-pipeline generated files to Taiga",
-        )
         return parser
 
-    def get_pipeline_config(self, args):
-        # Build common config
-        config = self.build_common_config(args, self.config.pipelines.data_prep)
-        # Add data-prep-specific config
-        config["is_external"] = args.external
-        config["publish_data_prep"] = args.publish
+    def get_pipeline_config(self, args: argparse.Namespace) -> dict[str, Any]:
+        return self.build_common_config(args, self.config.pipelines.data_prep)
 
-        return config
-
-    def get_conseq_file(self, config):
-        """Get conseq file for data prep pipeline."""
-        conseq_files = self.config.pipelines.data_prep.conseq_files
-
-        if config["is_external"]:
-            return conseq_files["external"]
-        else:
-            return conseq_files["internal"]
-
-    def handle_post_run_tasks(self, config):
-        """After conseq finishes, log dataset usage."""
-        self.track_dataset_usage_from_conseq("pipeline/data-prep-pipeline")
+    def get_conseq_file(self, config: dict[str, Any]) -> str:
+        assert self.script_path is not None
+        env_mapping = self.config.pipelines.data_prep.env_mapping
+        mapped_env = self.map_environment_name(config["env_name"], env_mapping)
+        original_conseq = f"data_prep_pipeline/run_{mapped_env}.conseq"
+        pipeline_dir = str(self.script_path.parent)
+        if config.get("publish_dest"):
+            conseq_file = self.create_override_conseq_file(
+                pipeline_dir, original_conseq, config["publish_dest"]
+            )
+            print(f"Created override conseq file: {conseq_file}")
+            return conseq_file
+        return original_conseq
 
 
 if __name__ == "__main__":

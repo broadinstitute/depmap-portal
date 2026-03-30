@@ -9,7 +9,7 @@ import yaml
 from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from pipeline_config import BasePipelineSpecificConfig, PipelineConfig
 
@@ -18,8 +18,8 @@ class PipelineRunner(ABC):
     """Base class for all pipeline runners."""
 
     def __init__(self):
-        self.script_path = None
-        self.pipeline_name = None
+        self.script_path: Optional[Path] = None
+        self.pipeline_name: Optional[str] = None
         self.pipeline_run_id = str(uuid.uuid4())
         self.config = self._load_config()
 
@@ -166,6 +166,21 @@ class PipelineRunner(ABC):
         parser.add_argument(
             "--image", help="If set, use this docker image when running the pipeline"
         )
+        parser.add_argument(
+            "--publish-dest",
+            help="GCS path for publishing; presence enables publishing",
+        )
+        parser.add_argument(
+            "--start-with", help="Start with existing export from GCS path"
+        )
+        parser.add_argument(
+            "--manually-run-conseq",
+            action="store_true",
+            help="If set, conseq_args are passed directly to conseq",
+        )
+        parser.add_argument(
+            "conseq_args", nargs="*", help="Parameters to pass to conseq"
+        )
 
     def build_common_config(self, args, pipeline_cfg: BasePipelineSpecificConfig):
         """Build common configuration dictionary that all pipelines share."""
@@ -178,6 +193,10 @@ class PipelineRunner(ABC):
             "state_path": pipeline_cfg.state_path,
             "log_destination": pipeline_cfg.log_destination,
             "working_dir": pipeline_cfg.working_dir,
+            "publish_dest": args.publish_dest,
+            "start_with": args.start_with,
+            "manually_run_conseq": args.manually_run_conseq,
+            "conseq_args": args.conseq_args,
         }
 
         self.check_credentials(config["creds_dir"])
@@ -232,6 +251,37 @@ class PipelineRunner(ABC):
 
         return subprocess.run(docker_cmd)
 
+    def map_environment_name(self, env_name: str, env_mapping: dict[str, str]) -> str:
+        """Map a user-facing environment name to the name used in conseq filenames."""
+        if env_name.startswith("test-"):
+            return env_mapping["test-prefix"]
+        return env_mapping.get(env_name, env_name)
+
+    def create_override_conseq_file(
+        self, pipeline_dir: str, original_conseq: str, publish_dest: str
+    ) -> str:
+        """Create an override conseq file that injects a custom publish_dest.
+
+        Args:
+            pipeline_dir: local path to the pipeline directory (host filesystem)
+            original_conseq: path to the original conseq file relative to pipeline_dir
+            publish_dest: the publish destination value to inject
+
+        Returns the filename of the override file, relative to pipeline_dir.
+        """
+        override_name = f"overriden-{Path(original_conseq).name}"
+
+        with open(f"{pipeline_dir}/{override_name}", "w") as f:
+            f.write(f'let publish_dest = "{publish_dest}"\n')
+
+        with open(f"{pipeline_dir}/{original_conseq}", "r") as original:
+            with open(f"{pipeline_dir}/{override_name}", "a") as override:
+                for line in original:
+                    if not line.strip().startswith("let publish_dest"):
+                        override.write(line)
+
+        return override_name
+
     @abstractmethod
     def create_argument_parser(self) -> argparse.ArgumentParser:
         """Create and return the argument parser for this pipeline."""
@@ -247,10 +297,48 @@ class PipelineRunner(ABC):
         """Get the conseq file to use for this pipeline."""
         pass
 
-    @abstractmethod
     def handle_special_features(self, config: dict[str, Any]) -> None:
-        """Handle pipeline-specific features like START_WITH, override files, etc."""
-        pass
+        """Handle pre-run features. Subclasses should call super() after their own logic."""
+        assert self.script_path is not None
+        if config.get("start_with"):
+            print(f"Starting with existing export: {config['start_with']}")
+            subprocess.run(
+                ["sudo", "chown", "-R", "ubuntu", str(self.script_path.parent)],
+                check=True,
+            )
+            subprocess.run(
+                ["rm", "-rf", str(self.script_path.parent / "state")], check=True
+            )
+
+            with tempfile.TemporaryDirectory() as temp_home:
+                env_with_temp_home = {**os.environ, "HOME": temp_home}
+
+                subprocess.run(
+                    [
+                        "gcloud",
+                        "auth",
+                        "activate-service-account",
+                        "--key-file",
+                        f"{config['creds_dir']}/depmap-pipeline-runner.json",
+                    ],
+                    check=True,
+                    env=env_with_temp_home,
+                )
+
+                subprocess.run(
+                    [
+                        "gcloud",
+                        "storage",
+                        "cp",
+                        config["start_with"],
+                        str(self.script_path.parent / "downloaded-export.conseq"),
+                    ],
+                    check=True,
+                    env=env_with_temp_home,
+                )
+
+            self.run_via_container("conseq run downloaded-export.conseq", config)
+            self.run_via_container("conseq forget --regex 'publish.*'", config)
 
     def run(self, script_file_path):
         """Main entry point for running the pipeline."""
@@ -321,14 +409,14 @@ class PipelineRunner(ABC):
             cmd_parts.append(f"-D S3_STAGING_URL={config['s3_staging_url']}")
         if config.get("publish_dest"):
             cmd_parts.append(f"-D publish_dest=\"{config['publish_dest']}\"")
-        if config.get("publish_data_prep"):
             cmd_parts.append("-D publish_data_prep=True")
 
         conseq_args = config.get("conseq_args", [])
         cmd_parts.extend([config["conseq_file"], " ".join(conseq_args)])
         return " ".join(cmd_parts)
 
-    def handle_post_run_tasks(self, config):
-        """Handle post-run tasks like export and report generation."""
-        # Default implementation - can be overridden by specific pipelines
-        pass
+    def handle_post_run_tasks(self, config: dict[str, Any]) -> None:
+        """Handle post-run tasks. Subclasses should call super() after their own logic."""
+        assert self.script_path is not None
+        self.run_via_container("conseq report html", config)
+        self.track_dataset_usage_from_conseq(str(self.script_path.parent))

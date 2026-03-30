@@ -47,10 +47,11 @@ class BasePipelineSpecificConfig(BaseModel):
     state_path: str
     log_destination: str
     working_dir: str
+    env_mapping: Dict[str, str]
 
 
 class PreprocessingPipelineSpecificConfig(BasePipelineSpecificConfig):
-    env_mapping: Dict[str, str]
+    pass
 
 
 class DataPrepTemplateConfig(BaseModel):
@@ -65,7 +66,6 @@ class DataPrepTemplates(BaseModel):
 
 class DataPrepPipelineSpecificConfig(BasePipelineSpecificConfig):
     templates: DataPrepTemplates
-    conseq_files: Dict[str, str]
 
 
 class PipelinesConfig(BaseModel):
