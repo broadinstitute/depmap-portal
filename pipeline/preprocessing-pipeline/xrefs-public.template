@@ -2,7 +2,8 @@
 
 add-if-missing {
     "type": "depmap_data_taiga_id",
-    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname)
+    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname),
+    "release_label": "{{config.RELEASE_LABEL}}"
 }
 
 # The following 3 artifacts are necessary for the Context Explorer preprocessing
