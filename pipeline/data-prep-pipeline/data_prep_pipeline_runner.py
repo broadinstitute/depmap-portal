@@ -8,11 +8,6 @@ from base_pipeline_runner import PipelineRunner
 
 
 class DataPrepPipelineRunner(PipelineRunner):
-    def create_argument_parser(self) -> argparse.ArgumentParser:
-        parser = argparse.ArgumentParser(description="Run data prep pipeline")
-        self.add_common_arguments(parser)
-        return parser
-
     def get_pipeline_config(self, args: argparse.Namespace) -> dict[str, Any]:
         return self.build_common_config(args, self.config.pipelines.data_prep)
 

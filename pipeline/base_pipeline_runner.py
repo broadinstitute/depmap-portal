@@ -149,39 +149,6 @@ class PipelineRunner(ABC):
             "Please check the files and try again."
         )
 
-    def add_common_arguments(self, parser):
-        """Add common CLI arguments that all pipelines share."""
-        defaults = self.config.defaults
-
-        parser.add_argument("env_name", help="Name of environment")
-        parser.add_argument("job_name", help="Name to use for job")
-        parser.add_argument(
-            "--taiga-dir", default=defaults.taiga_dir, help="Taiga directory path"
-        )
-        parser.add_argument(
-            "--creds-dir",
-            default=defaults.creds_dir,
-            help="Pipeline runner credentials directory",
-        )
-        parser.add_argument(
-            "--image", help="If set, use this docker image when running the pipeline"
-        )
-        parser.add_argument(
-            "--publish-dest",
-            help="GCS path for publishing; presence enables publishing",
-        )
-        parser.add_argument(
-            "--start-with", help="Start with existing export from GCS path"
-        )
-        parser.add_argument(
-            "--manually-run-conseq",
-            action="store_true",
-            help="If set, conseq_args are passed directly to conseq",
-        )
-        parser.add_argument(
-            "conseq_args", nargs="*", help="Parameters to pass to conseq"
-        )
-
     def build_common_config(self, args, pipeline_cfg: BasePipelineSpecificConfig):
         """Build common configuration dictionary that all pipelines share."""
         config = {
@@ -282,10 +249,42 @@ class PipelineRunner(ABC):
 
         return override_name
 
-    @abstractmethod
     def create_argument_parser(self) -> argparse.ArgumentParser:
-        """Create and return the argument parser for this pipeline."""
-        pass
+        parser = argparse.ArgumentParser(
+            description="Run preprocessing pipeline (Jenkins style)"
+        )
+        defaults = self.config.defaults
+
+        parser.add_argument("env_name", help="Name of environment")
+        parser.add_argument("job_name", help="Name to use for job")
+        parser.add_argument(
+            "--taiga-dir", default=defaults.taiga_dir, help="Taiga directory path"
+        )
+        parser.add_argument(
+            "--creds-dir",
+            default=defaults.creds_dir,
+            help="Pipeline runner credentials directory",
+        )
+        parser.add_argument(
+            "--image", help="If set, use this docker image when running the pipeline"
+        )
+        parser.add_argument(
+            "--publish-dest",
+            help="GCS path for publishing; presence enables publishing",
+        )
+        parser.add_argument(
+            "--start-with", help="Start with existing export from GCS path"
+        )
+        parser.add_argument(
+            "--manually-run-conseq",
+            action="store_true",
+            help="If set, conseq_args are passed directly to conseq",
+        )
+        parser.add_argument(
+            "conseq_args", nargs="*", help="Parameters to pass to conseq"
+        )
+        parser.add_argument("--export-path", help="Export path for conseq export")
+        return parser
 
     @abstractmethod
     def get_pipeline_config(self, args: argparse.Namespace) -> dict[str, Any]:
@@ -299,6 +298,7 @@ class PipelineRunner(ABC):
 
     def handle_special_features(self, config: dict[str, Any]) -> None:
         """Handle pre-run features. Subclasses should call super() after their own logic."""
+
         assert self.script_path is not None
         if config.get("start_with"):
             print(f"Starting with existing export: {config['start_with']}")
@@ -420,3 +420,7 @@ class PipelineRunner(ABC):
         assert self.script_path is not None
         self.run_via_container("conseq report html", config)
         self.track_dataset_usage_from_conseq(str(self.script_path.parent))
+        if config.get("export_path"):
+            self.run_via_container(
+                f"conseq export {config['conseq_file']} {config['export_path']}", config
+            )
