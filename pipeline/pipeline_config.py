@@ -79,3 +79,27 @@ class PipelineConfig(BaseModel):
     docker: DockerConfig
     conseq: ConseqConfig
     pipelines: PipelinesConfig
+
+
+class CommonConfig(BaseModel):
+    """Common configuration shared across all pipeline runs."""
+
+    env_name: str
+    job_name: str
+    taiga_dir: str
+    creds_dir: str
+    image: Optional[str] = None
+    docker_image: str
+    commit_sha: str
+    state_path: str
+    log_destination: str
+    working_dir: str
+    publish_dest: Optional[str] = None
+    start_with: Optional[str] = None
+    manually_run_conseq: bool = False
+    conseq_args: List[str] = Field(default_factory=list)
+    # Set after initial build
+    conseq_file: Optional[str] = None
+    # Pipeline-specific optional fields
+    export_path: Optional[str] = None
+    s3_staging_url: Optional[str] = None

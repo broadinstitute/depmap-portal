@@ -1,20 +1,20 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Any
 
 # Add parent directory to path to import base class
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from base_pipeline_runner import PipelineRunner
+from pipeline_config import CommonConfig
 
 
 class PreprocessingPipelineRunner(PipelineRunner):
     """Pipeline runner for preprocessing pipeline."""
 
-    def get_pipeline_config(self, args: argparse.Namespace) -> dict[str, Any]:
+    def get_pipeline_config(self, args: argparse.Namespace) -> CommonConfig:
         """Get configuration for preprocessing pipeline."""
         config = self.build_common_config(args, self.config.pipelines.preprocessing)
-        config["export_path"] = args.export_path
+        config.export_path = args.export_path
         return config
 
 

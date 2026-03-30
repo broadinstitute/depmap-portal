@@ -1,14 +1,14 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Any
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from base_pipeline_runner import PipelineRunner
+from pipeline_config import CommonConfig
 
 
 class DataPrepPipelineRunner(PipelineRunner):
-    def get_pipeline_config(self, args: argparse.Namespace) -> dict[str, Any]:
+    def get_pipeline_config(self, args: argparse.Namespace) -> CommonConfig:
         return self.build_common_config(args, self.config.pipelines.data_prep)
 
 
