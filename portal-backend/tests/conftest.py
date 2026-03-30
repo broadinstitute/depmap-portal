@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Defines fixtures available to all tests."""
 
+pytest_plugins = ("celery.contrib.pytest",)
+
 import os
 import pytest
 import shutil

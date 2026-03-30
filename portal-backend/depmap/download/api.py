@@ -3,7 +3,7 @@ import csv
 from io import StringIO
 from depmap.dataset.models import Mutation, TabularDataset
 from depmap.download.utils import get_download_url
-from oauth2client.service_account import ServiceAccountCredentials
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from typing import List
 from datetime import datetime
 from flask import request, current_app, make_response
@@ -42,7 +42,7 @@ class BulkFilesCsv(
         # This was written primarily in response to DMC requests for a way to bulk access all downloads.
         log_bulk_download_csv()
         show_taiga = current_app.config["SHOW_TAIGA_IN_BULK_DOWNLOADS"]
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        credentials = ServiceAccountCredentials.from_service_account_file(
             current_app.config["DOWNLOADS_KEY"]
         )
         downloads: List[DownloadRelease] = get_download_list()

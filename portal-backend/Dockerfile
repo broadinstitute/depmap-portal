@@ -26,10 +26,12 @@ RUN curl https://pyenv.run | bash
 # Read Python version from .python-version so it stays in sync with local dev
 COPY .python-version /tmp/.python-version
 ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
-RUN pyenv install "$(cat /tmp/.python-version)" && pyenv global "$(cat /tmp/.python-version)"
-
-# Create python3.9 venv at /python3.9 for compatibility with existing PATH expectations
-RUN python -m venv /python3.9
+RUN PYTHON_VERSION="$(cat /tmp/.python-version)" \
+    && pyenv install "$PYTHON_VERSION" \
+    && pyenv global "$PYTHON_VERSION" \
+    && PYTHON_MAJOR_MINOR="$(echo "$PYTHON_VERSION" | cut -d. -f1,2)" \
+    && python -m venv "/python${PYTHON_MAJOR_MINOR}" \
+    && ln -s "/python${PYTHON_MAJOR_MINOR}" /python-venv
 
 # create cds-service user and group
 RUN groupadd -g 990 cds-service
@@ -45,13 +47,13 @@ RUN mkdir -p /depmap && chown -R depmap:cds-service /depmap
 RUN mkdir -p /data1/taiga && chown -R depmap:cds-service /data1/taiga
 
 ENV ORIG_PATH="${PATH}"
-ENV PATH="/python3.9/bin:${PATH}"
+ENV PATH="/python-venv/bin:${PATH}"
 ENV FLASK_APP=autoapp.py
 ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 
 # Install requirements
-RUN pip install poetry==1.5.1 && poetry config virtualenvs.in-project true
+RUN pip install "poetry>=2.0,<3.0" && poetry config virtualenvs.in-project true
 
 RUN mkdir -p /install
 ADD dist/additional-files.tar.gz /install
