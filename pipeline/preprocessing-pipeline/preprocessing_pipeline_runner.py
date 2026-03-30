@@ -24,5 +24,5 @@ if __name__ == "__main__":
     pipeline_config = load_pipeline_config()
     parser = create_argument_parser(pipeline_config.defaults)
     args = parser.parse_args()
-    runner = PreprocessingPipelineRunner(dryrun=args.dryrun)
-    runner.run(Path(__file__), args)
+    runner = PreprocessingPipelineRunner(dryrun=args.dryrun, script_path=Path(__file__))
+    runner.run(args)

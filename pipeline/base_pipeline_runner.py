@@ -62,12 +62,12 @@ def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
 class PipelineRunner(ABC):
     """Base class for all pipeline runners."""
 
-    def __init__(self, dryrun: bool = False):
+    def __init__(self, dryrun: bool, script_path: Path):
         self.dryrun = dryrun
-        self.script_path: Optional[Path] = None
-        self.pipeline_name: Optional[str] = None
         self.pipeline_run_id = str(uuid.uuid4())
+        self.script_path = script_path
         self.config = load_pipeline_config()
+        self.pipeline_name = self.script_path.parent.name
 
     def subprocess_run(self, cmd: list, **kwargs) -> subprocess.CompletedProcess:
         """Run a subprocess, or print the command if in dryrun mode."""
@@ -193,12 +193,20 @@ class PipelineRunner(ABC):
 
     def build_common_config(self, args, pipeline_cfg: BasePipelineSpecificConfig):
         """Build common configuration dictionary that all pipelines share."""
+
+        docker_image = args.image or self.read_docker_image_name(
+            self.script_path.parent
+        )
+        commit_sha = self.get_git_commit_sha()
+
         config = {
             "env_name": args.env_name,
             "job_name": args.job_name,
             "taiga_dir": args.taiga_dir,
             "creds_dir": args.creds_dir,
             "image": args.image,
+            "docker_image": docker_image,
+            "commit_sha": commit_sha,
             "state_path": pipeline_cfg.state_path,
             "log_destination": pipeline_cfg.log_destination,
             "working_dir": pipeline_cfg.working_dir,
@@ -354,22 +362,14 @@ class PipelineRunner(ABC):
             self.run_via_container("conseq run downloaded-export.conseq", config)
             self.run_via_container("conseq forget --regex 'publish.*'", config)
 
-    def run(self, script_file_path: Path, args: argparse.Namespace) -> None:
+    def run(self, args: argparse.Namespace) -> None:
         """Main entry point for running the pipeline."""
-        self.script_path = Path(script_file_path)
-        self.pipeline_name = self.script_path.parent.name
 
         print(f"Pipeline run ID: {self.pipeline_run_id}")
 
         config = self.get_pipeline_config(args)
 
-        docker_image = config.get("image") or self.read_docker_image_name(
-            self.script_path.parent
-        )
-        config["docker_image"] = docker_image
-        config["commit_sha"] = self.get_git_commit_sha()
-
-        self.pull_docker_image(docker_image)
+        self.pull_docker_image(config["docker_image"])
 
         self.backup_conseq_logs(config["state_path"], config["log_destination"])
         self.handle_special_features(config)
