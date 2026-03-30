@@ -296,10 +296,19 @@ class PipelineRunner(ABC):
         """Return pipeline-specific configuration."""
         pass
 
-    @abstractmethod
     def get_conseq_file(self, config: dict[str, Any]) -> str:
-        """Get the conseq file to use for this pipeline."""
-        pass
+        assert self.script_path is not None
+        env_mapping = self.config.pipelines.data_prep.env_mapping
+        mapped_env = self.map_environment_name(config["env_name"], env_mapping)
+        pipeline_dir = str(self.script_path.parent)
+        original_conseq = f"{pipeline_dir}/run_{mapped_env}.conseq"
+        if config.get("publish_dest"):
+            conseq_file = self.create_override_conseq_file(
+                pipeline_dir, original_conseq, config["publish_dest"]
+            )
+            print(f"Created override conseq file: {conseq_file}")
+            return conseq_file
+        return original_conseq
 
     def handle_special_features(self, config: dict[str, Any]) -> None:
         """Handle pre-run features. Subclasses should call super() after their own logic."""
