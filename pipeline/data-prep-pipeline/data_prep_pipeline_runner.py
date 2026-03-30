@@ -10,8 +10,6 @@ from base_pipeline_runner import PipelineRunner
 
 class DataPrepPipelineRunner(PipelineRunner):
     def create_argument_parser(self):
-        defaults = self.config_data["defaults"]
-
         parser = argparse.ArgumentParser(description="Run data prep pipeline")
 
         # Add common arguments
@@ -32,7 +30,7 @@ class DataPrepPipelineRunner(PipelineRunner):
 
     def get_pipeline_config(self, args):
         # Build common config
-        config = self.build_common_config(args, "data_prep")
+        config = self.build_common_config(args, self.config.pipelines.data_prep)
         # Add data-prep-specific config
         config["is_external"] = args.external
         config["publish_data_prep"] = args.publish
@@ -41,7 +39,7 @@ class DataPrepPipelineRunner(PipelineRunner):
 
     def get_conseq_file(self, config):
         """Get conseq file for data prep pipeline."""
-        conseq_files = self.config_data["pipelines"]["data_prep"]["conseq_files"]
+        conseq_files = self.config.pipelines.data_prep.conseq_files
 
         if config["is_external"]:
             return conseq_files["external"]

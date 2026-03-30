@@ -15,7 +15,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def map_environment_name(self, env_name):
         """Map environment names to actual conseq file names."""
-        env_mapping = self.config_data["pipelines"]["preprocessing"]["env_mapping"]
+        env_mapping = self.config.pipelines.preprocessing.env_mapping
 
         # Handle test- prefix
         if env_name.startswith("test-"):
@@ -27,8 +27,6 @@ class PreprocessingPipelineRunner(PipelineRunner):
 
     def create_argument_parser(self):
         """Create argument parser for preprocessing pipeline."""
-        defaults = self.config_data["defaults"]
-
         parser = argparse.ArgumentParser(
             description="Run preprocessing pipeline (Jenkins style)"
         )
@@ -57,7 +55,7 @@ class PreprocessingPipelineRunner(PipelineRunner):
     def get_pipeline_config(self, args):
         """Get configuration for preprocessing pipeline."""
         # Build common config
-        config = self.build_common_config(args, "preprocessing")
+        config = self.build_common_config(args, self.config.pipelines.preprocessing)
 
         # Add preprocessing-specific config
         config.update(

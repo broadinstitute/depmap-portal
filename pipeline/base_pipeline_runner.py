@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
 
+from pipeline_config import BasePipelineSpecificConfig, PipelineConfig
+
 
 class PipelineRunner(ABC):
     """Base class for all pipeline runners."""
@@ -17,18 +19,18 @@ class PipelineRunner(ABC):
         self.script_path = None
         self.pipeline_name = None
         self.pipeline_run_id = str(uuid.uuid4())
-        self.config_data = self._load_config()
+        self.config = self._load_config()
 
-    def _load_config(self):
+    def _load_config(self) -> PipelineConfig:
         """Load pipeline configuration from YAML file."""
         config_path = Path(__file__).parent / "pipeline_config.yaml"
         assert config_path.exists(), f"Config file not found: {config_path}"
 
         with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
+            raw = yaml.safe_load(f)
 
-        assert config, "Config file is empty or invalid"
-        return config
+        assert raw, "Config file is empty or invalid"
+        return PipelineConfig.model_validate(raw)
 
     def get_git_commit_sha(self):
         """Get the current git commit SHA."""
@@ -88,9 +90,7 @@ class PipelineRunner(ABC):
 
     def check_credentials(self, creds_dir):
         """Check that required credential files exist."""
-        required_files = self.config_data["credentials"]["required_files"]
-
-        for filename in required_files:
+        for filename in self.config.credentials.required_files:
             filepath = Path(creds_dir) / filename
             if not filepath.exists():
                 raise FileNotFoundError(f"Could not find required file: {filepath}")
@@ -149,35 +149,33 @@ class PipelineRunner(ABC):
 
     def add_common_arguments(self, parser):
         """Add common CLI arguments that all pipelines share."""
-        defaults = self.config_data["defaults"]
+        defaults = self.config.defaults
 
         parser.add_argument("env_name", help="Name of environment")
         parser.add_argument("job_name", help="Name to use for job")
         parser.add_argument(
-            "--taiga-dir", default=defaults["taiga_dir"], help="Taiga directory path"
+            "--taiga-dir", default=defaults.taiga_dir, help="Taiga directory path"
         )
         parser.add_argument(
             "--creds-dir",
-            default=defaults["creds_dir"],
+            default=defaults.creds_dir,
             help="Pipeline runner credentials directory",
         )
         parser.add_argument(
             "--image", help="If set, use this docker image when running the pipeline"
         )
 
-    def build_common_config(self, args, pipeline_name):
+    def build_common_config(self, args, pipeline_cfg: BasePipelineSpecificConfig):
         """Build common configuration dictionary that all pipelines share."""
-        pipeline_cfg = self.config_data["pipelines"][pipeline_name]
-
         config = {
             "env_name": args.env_name,
             "job_name": args.job_name,
             "taiga_dir": args.taiga_dir,
             "creds_dir": args.creds_dir,
             "image": args.image,
-            "state_path": pipeline_cfg["state_path"],
-            "log_destination": pipeline_cfg["log_destination"],
-            "working_dir": pipeline_cfg["working_dir"],
+            "state_path": pipeline_cfg.state_path,
+            "log_destination": pipeline_cfg.log_destination,
+            "working_dir": pipeline_cfg.working_dir,
         }
 
         self.check_credentials(config["creds_dir"])
@@ -186,43 +184,42 @@ class PipelineRunner(ABC):
     def run_via_container(self, command, config):
         """Run command inside Docker container with pipeline-specific configuration."""
         cwd = os.getcwd()
-        docker_cfg = self.config_data["docker"]
-        volumes = docker_cfg["volumes"]
-        env_vars = docker_cfg["env_vars"]
-        cred_files = self.config_data["credentials"]["required_files"]
+        docker_cfg = self.config.docker
+        volumes = docker_cfg.volumes
+        cred_files = self.config.credentials.required_files
 
         # Start building docker command
         docker_cmd = ["docker", "run"]
 
         # Add pipeline-specific options (e.g., security settings)
-        pipeline_options = docker_cfg["options"].get(self.pipeline_name, {})
-        if "security_opt" in pipeline_options:
-            docker_cmd.extend(["--security-opt", pipeline_options["security_opt"]])
+        pipeline_options = docker_cfg.options.get(self.pipeline_name)
+        if pipeline_options and pipeline_options.security_opt:
+            docker_cmd.extend(["--security-opt", pipeline_options.security_opt])
 
         # Add common options
         docker_cmd.extend(
             [
                 "--rm",
                 "-v",
-                f"{cwd}:{volumes['work_dir']}",
+                f"{cwd}:{volumes.work_dir}",
                 "-w",
                 config["working_dir"],
                 "-v",
-                f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
+                f"{config['creds_dir']}/{cred_files[0]}:{volumes.aws_keys}",
                 "-v",
-                f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
+                f"{config['creds_dir']}/{cred_files[1]}:{volumes.sparkles_cache}",
                 "-v",
-                f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
+                f"{config['creds_dir']}/{cred_files[2]}:{volumes.google_creds}",
                 "-v",
-                f"{config['taiga_dir']}:{volumes['taiga']}",
+                f"{config['taiga_dir']}:{volumes.taiga}",
                 "-e",
-                f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
+                f"GOOGLE_APPLICATION_CREDENTIALS={docker_cfg.env_vars.google_application_credentials}",
                 "--name",
                 config["job_name"],
                 config["docker_image"],
                 "bash",
                 "-c",
-                f"source {volumes['aws_keys']} && {command}",
+                f"source {volumes.aws_keys} && {command}",
             ]
         )
 
@@ -307,13 +304,13 @@ class PipelineRunner(ABC):
 
     def build_conseq_run_command(self, config):
         """Build the main conseq run command."""
-        conseq_cfg = self.config_data["conseq"]
-        common_args = " ".join(conseq_cfg["common_args"])
+        conseq_cfg = self.config.conseq
+        common_args = " ".join(conseq_cfg.common_args)
 
         cmd_parts = [
             f"conseq run --addlabel commitsha={config['commit_sha']}",
-            f"{common_args} --maxfail {conseq_cfg['max_fail']}",
-            f"-D sparkles_path={conseq_cfg['sparkles_path']}",
+            f"{common_args} --maxfail {conseq_cfg.max_fail}",
+            f"-D sparkles_path={conseq_cfg.sparkles_path}",
             "-D is_dev=False",
         ]
 
