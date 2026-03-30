@@ -436,12 +436,12 @@ class PipelineRunner(ABC):
 
     def handle_post_run_tasks(self, config: CommonConfig) -> None:
         """Handle post-run tasks. Subclasses should call super() after their own logic."""
-        assert self.script_path is not None
         self.run_via_container("conseq report html", config)
         if self.dryrun:
             print("[dryrun] skipping track_dataset_usage")
         else:
             self.track_dataset_usage_from_conseq(str(self.script_path.parent))
+
         if config.export_path:
             assert config.conseq_file is not None
             self.run_via_container(
