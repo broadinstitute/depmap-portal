@@ -13,6 +13,8 @@ from typing import Any, Optional
 
 from pipeline_config import BasePipelineSpecificConfig, DefaultsConfig, PipelineConfig
 
+import re
+
 
 def load_pipeline_config() -> PipelineConfig:
     """Load pipeline configuration from the shared YAML file."""
@@ -76,7 +78,7 @@ class PipelineRunner(ABC):
 
     def get_git_commit_sha(self):
         """Get the current git commit SHA."""
-        result = self.subprocess_run(
+        result = subprocess.run(
             ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
         )
         return result.stdout.strip()
@@ -163,8 +165,6 @@ class PipelineRunner(ABC):
 
     def track_dataset_usage_from_conseq(self, pipeline_dir):
         """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
-        import re
-
         pipeline_path = Path(pipeline_dir)
         version_files = list(pipeline_path.glob("*-DO-NOT-EDIT-ME"))
 
@@ -421,7 +421,10 @@ class PipelineRunner(ABC):
         """Handle post-run tasks. Subclasses should call super() after their own logic."""
         assert self.script_path is not None
         self.run_via_container("conseq report html", config)
-        self.track_dataset_usage_from_conseq(str(self.script_path.parent))
+        if self.dryrun:
+            print("[dryrun] skipping track_dataset_usage")
+        else:
+            self.track_dataset_usage_from_conseq(str(self.script_path.parent))
         if config.get("export_path"):
             self.run_via_container(
                 f"conseq export {config['conseq_file']} {config['export_path']}", config
