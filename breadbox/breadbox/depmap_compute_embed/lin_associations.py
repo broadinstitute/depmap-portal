@@ -102,7 +102,7 @@ def robust_linear_model(X, y):
 
     S = X * yc
 
-    n = n = (~S.mask).sum(axis=0)
+    n = (~S.mask).sum(axis=0)
     muS = S.mean(axis=0) * n / (n - 1)
     sigmaS = np.sqrt(((S - muS) ** 2).mean(axis=0))
     X.mask = X.mask | ~np.isfinite(S)
