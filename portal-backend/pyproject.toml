@@ -18,7 +18,7 @@ python = "^3.13"
 Flask = "^3.1"
 Werkzeug="^3.1"
 #itsdangerous==1.1.0
-requests="^2.27.1"
+requests="^2.33.0"
 Flask-SQLAlchemy="^3.1"
 Flask-WTF="^1.2"
 WTForms="^3.0.1"
@@ -37,7 +37,7 @@ seaborn="^0.13"
 statsmodels="^0.14"
 scikit-learn="^1.5"
 h5py="^3.12"
-Pillow="^11.0"
+Pillow="^12.1"
 pyarrow="^18.0"
 json-logic="^0.7.0-alpha"
 
@@ -123,7 +123,7 @@ isort="^5.13"
 pep8-naming="^0.14"
 tqdm="^4.63.0"
 # if you change the version of black, also update the version in .pre-commit-config.yaml
-black="^24.0"
+black="^26.3"
 # sqlalchemy-stubs removed: SQLAlchemy 2.0 includes its own type stubs
 
 # Git workflow
