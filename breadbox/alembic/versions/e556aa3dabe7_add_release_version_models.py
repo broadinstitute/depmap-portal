@@ -93,6 +93,7 @@ def upgrade():
         "release_pipeline",
         sa.Column("release_version_id", sa.String(), nullable=False),
         sa.Column("pipeline_name", sa.String(), nullable=False),
+        sa.Column("description", sa.String(), nullable=True),
         sa.Column("id", sa.String(length=36), nullable=False),
         sa.ForeignKeyConstraint(
             ["release_version_id"],

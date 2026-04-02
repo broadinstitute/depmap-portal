@@ -41,6 +41,7 @@ class ReleasePipeline(Base, UUIDMixin):
         String, ForeignKey("release_version.id", ondelete="CASCADE"), nullable=False
     )
     pipeline_name: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     release_version: Mapped["ReleaseVersion"] = relationship(
         "ReleaseVersion", back_populates="pipelines"

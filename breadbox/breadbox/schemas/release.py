@@ -10,6 +10,7 @@ class ReleasePipelineSchema(BaseModel):
 
     id: UUID
     pipeline_name: Annotated[str, Field(description="Name of the pipeline used")]
+    description: Optional[str] = None
 
 
 class ReleaseFileSchema(BaseModel):
