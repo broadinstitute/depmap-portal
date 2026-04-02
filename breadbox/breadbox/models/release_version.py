@@ -27,7 +27,7 @@ class ReleaseVersion(Base, UUIDMixin):
         "ReleaseFile", back_populates="release_version", cascade="all, delete-orphan"
     )
 
-    pipelines: Mapped[List["ReleasePipeline"]] = relationship(
+    release_pipelines: Mapped[List["ReleasePipeline"]] = relationship(
         "ReleasePipeline",
         back_populates="release_version",
         cascade="all, delete-orphan",
@@ -44,7 +44,7 @@ class ReleasePipeline(Base, UUIDMixin):
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     release_version: Mapped["ReleaseVersion"] = relationship(
-        "ReleaseVersion", back_populates="pipelines"
+        "ReleaseVersion", back_populates="release_pipelines"
     )
 
 

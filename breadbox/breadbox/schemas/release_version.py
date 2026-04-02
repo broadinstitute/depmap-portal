@@ -85,7 +85,9 @@ class ReleaseVersionResponse(BaseModel):
     data_type: Annotated[str, Field(description="e.g. 'crispr'")]
 
     files: Annotated[List[ReleaseFileSchema], Field(default_factory=list)]
-    pipelines: Annotated[List[ReleasePipelineSchema], Field(default_factory=list)]
+    release_pipelines: Annotated[
+        List[ReleasePipelineSchema], Field(default_factory=list)
+    ]
 
 
 class CreateReleaseVersionParams(BaseModel):
