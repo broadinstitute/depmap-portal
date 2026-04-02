@@ -14,4 +14,4 @@ from breadbox.models.predictive_models import (
     PredictiveModelConfig,
     PredictiveModelResult,
 )
-from breadbox.models.release import ReleaseVersion, ReleaseFile, ReleasePipeline
+from breadbox.models.release_version import ReleaseVersion, ReleaseFile, ReleasePipeline
