@@ -79,22 +79,23 @@ class ReleaseFile(Base, UUIDMixin):
     )
 
 
-class ReleaseSearchIndex(Base):
+class ReleaseFileSearchIndex(Base):
     """
-    FTS5 Virtual Table.
+    FTS5 Virtual Table - File Level Indexing.
+    Each row in this table represents one ReleaseFile.
     """
 
-    __tablename__ = "release_search_index"
-
-    # Avoid treating this as a standard table
+    __tablename__ = "release_file_search_index"
     __table_args__ = {"info": {"skip_autogenerate": True}}
 
-    # Map to the hidden 'rowid' column to link to ReleaseVersion.id
-    # We use primary_key=True so SQLAlchemy can track the identity
+    # rowid maps to ReleaseFile.id
     rowid: Mapped[str] = mapped_column(primary_key=True)
 
-    version_name: Mapped[str] = mapped_column(String)
+    # File-specific metadata
+    file_name: Mapped[str] = mapped_column(String)
+    file_description: Mapped[str] = mapped_column(String)
+    file_datatype: Mapped[str] = mapped_column(String)
+    release_version_name: Mapped[str] = mapped_column(String)
     release_name: Mapped[str] = mapped_column(String)
-    description: Mapped[str] = mapped_column(String)
-    file_names: Mapped[str] = mapped_column(String)
-    content_hash: Mapped[str] = mapped_column(String(32))
+    release_version_description: Mapped[str] = mapped_column(String)
+    release_version_content_hash: Mapped[str] = mapped_column(String(32))

@@ -20,13 +20,15 @@ def upgrade():
     # 1. Add the Virtual Table
     op.execute(
         """
-        CREATE VIRTUAL TABLE IF NOT EXISTS release_search_index USING fts5(
-            version_name,
-            release_name,
-            description,
-            file_names,
-            content_hash,
-            tokenize='unicode61'
+        CREATE VIRTUAL TABLE IF NOT EXISTS release_file_search_index USING fts5(
+        file_name,
+        file_description,
+        file_datatype,
+        release_version_name,
+        release_name,
+        release_version_description,
+        release_version_content_hash,
+        tokenize='unicode61'
         );
     """
     )
@@ -120,4 +122,4 @@ def downgrade():
 
     op.drop_table("release_version")
     # ### end Alembic commands ###
-    op.execute("DROP TABLE IF EXISTS release_search_index")
+    op.execute("DROP TABLE IF EXISTS release_file_search_index")
