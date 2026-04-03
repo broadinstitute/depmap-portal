@@ -22,6 +22,16 @@ if [ "$DEPMAP_DEPLOY_BRANCH" == "" ]; then
     exit 1
 fi
 
+# run poetry if the lock file has changed
+POETRY_LOCK_HASH_FILE="${SCRIPT_HOME}/.poetry-lock-sha256"
+POETRY_LOCK_HASH=$(sha256sum ${SCRIPT_HOME}/poetry.lock | awk '{print $1}')
+if [ -f "$POETRY_LOCK_HASH_FILE" ] && [ "$(cat "$POETRY_LOCK_HASH_FILE")" = "$POETRY_LOCK_HASH" ]; then
+    echo "Poetry lock unchanged -- skipping install"
+else
+    cd "$SCRIPT_HOME"
+    poetry install
+    echo "$POETRY_LOCK_HASH" > "$POETRY_LOCK_HASH_FILE"
+fi
 
 # ==============================================
 # CHECKOUT DEPLOY REPO
