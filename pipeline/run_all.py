@@ -3,7 +3,7 @@ import sys
 
 
 def run(cmd):
-    print(f"Executing {' '.join(args)}")
+    print(f"Executing {' '.join(cmd)}")
     subprocess.run(cmd, check=True)
 
 
