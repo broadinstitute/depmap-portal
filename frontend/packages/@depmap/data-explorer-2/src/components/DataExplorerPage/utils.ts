@@ -751,8 +751,16 @@ export async function makePlotConfigBreadboxModeCompatible(
               context: {
                 name: nextValue.identifier,
                 dimension_type: slice_type,
-                expr: { "==": [{ var: "given_id" }, nextValue.identifier] },
-                vars: {},
+                expr: { "==": [{ var: "entity_label" }, nextValue.identifier] },
+                vars: {
+                  entity_label: {
+                    dataset_id: maybeFallbackToMetadataDatasetNonGivenId(
+                      `${slice_type}_metadata`
+                    ),
+                    identifier_type: "column" as const,
+                    identifier: "label",
+                  },
+                },
               },
             } as unknown) as DataExplorerPlotConfigDimension;
             delete plot.metadata[key];
