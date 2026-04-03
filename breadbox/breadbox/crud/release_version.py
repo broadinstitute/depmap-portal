@@ -19,14 +19,10 @@ log = logging.getLogger(__name__)
 
 
 def get_release_version(
-    db: SessionWithUser,
-    release_version_id: Union[str, UUID],
-    include_files: bool = True,
+    db: SessionWithUser, release_version_id: UUID, include_files: bool = True,
 ) -> Optional[ReleaseVersion]:
     """Get a release version by its UUID, optionally eager-loading files."""
-    query = db.query(ReleaseVersion).filter(
-        ReleaseVersion.id == str(release_version_id)
-    )
+    query = db.query(ReleaseVersion).filter(ReleaseVersion.id == release_version_id)
 
     if include_files:
         query = query.options(joinedload(ReleaseVersion.files))
