@@ -98,35 +98,22 @@ def create_release_version(
     db.flush()
 
     # 2. Create the Associated Pipelines
-    if hasattr(params, "pipelines") and params.pipelines:
-        for p in params.pipelines:
-            pipeline = ReleasePipeline(
-                release_version_id=release_version.id,
-                pipeline_name=p.pipeline_name,
-                description=p.description,
-            )
-            db.add(pipeline)
+    for p in params.release_pipelines:
+        pipeline = ReleasePipeline(
+            release_version_id=release_version.id,
+            pipeline_name=p.pipeline_name,
+            description=p.description,
+        )
+        db.add(pipeline)
 
     # 3. Create the Associated Files
     created_files = []
-    if hasattr(params, "files") and params.files:
-        for f in params.files:
-            release_file = ReleaseFile(
-                release_version_id=release_version.id,
-                file_name=f.file_name,
-                datatype=f.datatype,
-                size=f.size,
-                description=f.description,
-                bucket_url=f.bucket_url,
-                taiga_id=f.taiga_id,
-                canonical_taiga_id=f.canonical_taiga_id,
-                md5_hash=f.md5_hash,
-                version=f.version,
-                pipeline_name=f.pipeline_name,
-                is_main_file=f.is_main_file,
-            )
-            db.add(release_file)
-            created_files.append(release_file)
+    for f in params.files:
+        release_file = ReleaseFile(
+            **f.model_dump(), release_version_id=release_version.id
+        )
+        db.add(release_file)
+        created_files.append(release_file)
 
         db.flush()
 

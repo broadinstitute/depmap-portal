@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from breadbox.breadbox.api.dependencies import get_db_with_user
+from breadbox.api.dependencies import get_db_with_user
 from breadbox.db.session import SessionWithUser
 
 # Separated from release-versions to reduce confusion about the level

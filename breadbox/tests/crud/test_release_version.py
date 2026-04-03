@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from typing import Optional
-from breadbox.breadbox.models.release_version import ReleaseFileSearchIndex
+from breadbox.models.release_version import ReleaseFileSearchIndex
 from breadbox.db.session import SessionWithUser
 from breadbox.crud.release_version import (
     get_release_version,
@@ -90,13 +90,24 @@ def test_delete_release_version_cascade_and_search_sync(minimal_db: SessionWithU
     Test that deleting a release version cleans up files, pipelines, 
     and the FTS5 Search Index.
     """
-    # 1. Create a release version, including file
-    # Note: factories.release_version populates the FTS index
-    release = factories.release_version(minimal_db, version_name="Delete")
-    file = factories.release_file(minimal_db, release, file_name="target_file.csv")
+    file_metadata = [
+        {
+            "file_name": "target_file.csv",
+            "datatype": "crispr",
+            "is_main_file": True,
+            "md5_hash": "0" * 32,
+        }
+    ]
+
+    # 1. Create the version and the file together
+    release = factories.release_version(
+        minimal_db, version_name="Delete", files=file_metadata
+    )
+
+    minimal_db.refresh(release)
 
     release_id = release.id
-    file_id = file.id
+    file_id = release.files[0].id
 
     # 2. Verify Search Index is initially populated
     initial_search = (
@@ -157,9 +168,9 @@ def test_get_release_versions_filtering(minimal_db: SessionWithUser):
 
     # Test 1: Filter by release_name
     # Should find both v1 and v2 of Project A
-    alpha_results = get_release_versions(minimal_db, release_name="Project A")
-    assert len(alpha_results) == 2
-    assert all(r.release_name == "Project A" for r in alpha_results)
+    project_a_results = get_release_versions(minimal_db, release_name="Project A")
+    assert len(project_a_results) == 2
+    assert all(r.release_name == "Project A" for r in project_a_results)
 
     # Test 2: Filter by datatype
     # Should find Project A v1 and Project A v2 (CRISPR), but not B (RNAseq)
@@ -185,7 +196,7 @@ def test_get_release_versions_filtering(minimal_db: SessionWithUser):
     # Test 4: Combined Filter (Datatype + Release Name)
     # Project A CRISPR files
     combined_results = get_release_versions(
-        minimal_db, release_name="Project Alpha", datatype="crispr"
+        minimal_db, release_name="Project A", datatype="crispr"
     )
     assert len(combined_results) == 2
 

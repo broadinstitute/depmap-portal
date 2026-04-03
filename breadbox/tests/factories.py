@@ -4,7 +4,8 @@ from typing import Any, Dict, List, Optional, Union
 import typing
 from breadbox.api.groups import add_group
 import breadbox.api.dimension_types as types_api
-from breadbox.breadbox.models.release_version import (
+from breadbox.schemas.release_version import ReleaseFileSchema
+from breadbox.models.release_version import (
     ReleaseFile,
     ReleasePipeline,
     ReleaseVersion,
@@ -508,7 +509,8 @@ def release_version(
     Factory to create a ReleaseVersion with its associated nested entities.
     Ensure Search Index consistency.
     """
-
+    actual_files = _handle_call_if_omitted(files)
+    file_objs = [ReleaseFileSchema(**f) for f in actual_files]
     params = CreateReleaseVersionParams(
         version_name=version_name,
         release_name=release_name,
@@ -518,7 +520,7 @@ def release_version(
         citation=citation,
         funding=funding,
         terms=terms,
-        files=_handle_call_if_omitted(files),
+        files=file_objs,
         pipelines=_handle_call_if_omitted(pipelines),
     )
 

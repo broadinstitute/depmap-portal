@@ -3,7 +3,7 @@ from typing import List, Optional, Annotated
 from logging import getLogger
 from fastapi import APIRouter, Depends, HTTPException, Response, Body, Query
 
-from breadbox.breadbox.api.dependencies import get_db_with_user
+from breadbox.api.dependencies import get_db_with_user
 from breadbox.db.session import SessionWithUser
 from breadbox.db.util import transaction
 from breadbox.schemas.custom_http_exception import UserError
@@ -13,8 +13,6 @@ from ..models.release_version import ReleaseVersion
 from ..schemas.release_version import (
     ReleaseVersionResponse,
     CreateReleaseVersionParams,
-    # You might want a simpler schema for the list view
-    ReleaseVersionSummary,
 )
 
 router = APIRouter(prefix="/release-versions", tags=["release-versions"])
@@ -37,7 +35,7 @@ def _get_required_release_version(
 @router.get(
     "/",
     operation_id="get_release_versions",
-    response_model=List[ReleaseVersionSummary],
+    response_model=List[ReleaseVersionResponse],
 )
 def get_release_versions(
     release_name: Optional[str] = Query(None, description="Filter by grouping name"),
