@@ -4,7 +4,7 @@ rule update_hgnc_gene_table:
         crispr_inferred_common_essentials={"type": "crispr-inferred-common-essentials"},
         crispr_gene_effect={"type": "raw-dep-matrix", "label": "Chronos_Combined"},
         crispr_gene_dependency={"type": "raw-dep-prob-matrix", "label": "Chronos_Combined"},
-        script=fileref('../scripts/hgnc_gene_table/add_ce_and_selectivity.py'),
+        script=fileref('scripts/hgnc_gene_table/add_ce_and_selectivity.py'),
     outputs:{
         "type": "gene",
         "filename": {"$filename": "hgnc_gene_table.csv"},

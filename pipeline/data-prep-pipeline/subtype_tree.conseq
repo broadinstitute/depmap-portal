@@ -4,7 +4,7 @@ rule create_subtype_tree:
         oncotree={"type": "oncotree"},
         molecular_subtypes={"type": "omics_inferred_molecular_subtype"},
         genetic_subtype_whitelist={"type": "lineage_tree_genetic_subtype_whitelist"},
-        script=fileref('../scripts/subtype_tree/create_subtype_tree.py'),
+        script=fileref('scripts/subtype_tree/create_subtype_tree.py'),
     outputs:
         {
             "type": "subtype_tree",
@@ -18,7 +18,7 @@ rule create_context_matrix:
         model={"type": "model"},
         molecular_subtypes={"type": "omics_inferred_molecular_subtype"},
         subtype_tree={"type": "subtype_tree"},
-        script=fileref('../scripts/subtype_tree/create_context_matrix.py'),
+        script=fileref('scripts/subtype_tree/create_context_matrix.py'),
     outputs:
         {
             "type": "context_matrix",
