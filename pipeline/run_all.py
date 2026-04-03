@@ -8,11 +8,8 @@ def run(cmd):
 
 
 # run the two pipelines passing all args to them
-run([sys.executable, "data-prep-pipeline/data_prep_pipeline_runner.py", sys.argv[1:]])
+run([sys.executable, "data-prep-pipeline/data_prep_pipeline_runner.py"] + sys.argv[1:])
 run(
-    [
-        sys.executable,
-        "preprocessing-pipeline/preprocessing_pipeline_runner.py",
-        sys.argv[1:],
-    ]
+    [sys.executable, "preprocessing-pipeline/preprocessing_pipeline_runner.py"]
+    + sys.argv[1:]
 )
