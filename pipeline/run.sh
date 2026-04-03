@@ -10,13 +10,18 @@ set -ex
 #  - the depmap-deploy-repo is checked out into the right place
 #  - our current working directory is the 'pipeline' directory
 
+# first start by figuring out where this run.sh script is so we can make all paths relative to that
+SCRIPT_HOME="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
+
+if [ -e "${SCRIPT_HOME}/.env" ]; then
+    source "${SCRIPT_HOME}/.env"
+fi
+
 if [ "$DEPMAP_DEPLOY_BRANCH" == "" ]; then
     echo "the environment variable DEPMAP_DEPLOY_BRANCH must be set to run this script"
     exit 1
 fi
 
-# first start by figuring out where this run.sh script is so we can make all paths relative to that
-SCRIPT_HOME="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
 
 # ==============================================
 # CHECKOUT DEPLOY REPO
