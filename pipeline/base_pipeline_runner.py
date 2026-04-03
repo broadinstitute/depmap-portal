@@ -34,8 +34,8 @@ def load_pipeline_config() -> PipelineConfig:
 def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
     """Create the shared argument parser for all pipeline runners."""
     parser = argparse.ArgumentParser(description="Run pipeline")
-    parser.add_argument("env_name", help="Name of environment")
-    parser.add_argument("job_name", help="Name to use for job")
+    parser.add_argument("--deploy-name", help="Name of environment")
+    parser.add_argument("--docker-job-name", help="Name to use for job")
     parser.add_argument(
         "--taiga-dir", default=defaults.taiga_dir, help="Taiga directory path"
     )
@@ -48,7 +48,7 @@ def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
         "--image", help="If set, use this docker image when running the pipeline"
     )
     parser.add_argument(
-        "--publish-dest", help="GCS path for publishing; presence enables publishing"
+        "--destination", help="GCS path for publishing; presence enables publishing"
     )
     parser.add_argument("--start-with", help="Start with existing export from GCS path")
     parser.add_argument(
@@ -207,8 +207,8 @@ class PipelineRunner(ABC):
         commit_sha = self.get_git_commit_sha()
 
         config = CommonConfig(
-            env_name=args.env_name,
-            job_name=args.job_name,
+            env_name=args.deploy_name,
+            job_name=args.docker_job_name,
             taiga_dir=args.taiga_dir,
             creds_dir=args.creds_dir,
             image=args.image,
@@ -217,7 +217,7 @@ class PipelineRunner(ABC):
             state_path=pipeline_cfg.state_path,
             log_destination=pipeline_cfg.log_destination,
             working_dir=pipeline_cfg.working_dir,
-            publish_dest=args.publish_dest,
+            publish_dest=args.destination,
             start_with=args.start_with,
             manually_run_conseq=args.manually_run_conseq,
             conseq_args=args.conseq_args,
