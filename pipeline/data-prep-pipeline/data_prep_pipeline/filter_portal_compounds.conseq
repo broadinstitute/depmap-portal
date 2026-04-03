@@ -8,9 +8,10 @@
 rule filter-portal-compounds:
     inputs:
         repsdrug_matrix={"type": "repsdrug_matrix"},
-        repsdrug_auc_matrix={"type": "repsdrug_auc_matrix"},
+        repsdrug_log2_viability_collapsed_conditions={"type": "repsdrug_log2_viability_collapsed_conditions"},
         portal_compounds={"type": "portal_compounds"},
-        prism_oncology_reference_lum_log2_auc_matrix=all{"type"~ "prism_oncology_reference_lum_log2_auc_matrix|prism_oncology_reference_seq_log2_auc_matrix|stub-artifact"},
+        prism_oncology_reference_lum_log2_auc_matrix=all{"type"~ "prism_oncology_reference_lum_log2_auc_matrix|stub-artifact"},
+        prism_oncology_reference_seq_log2_auc_matrix=all{"type"~ "prism_oncology_reference_seq_log2_auc_matrix|stub-artifact"},
         script=fileref('../scripts/portal_compounds/filter_portal_compounds.py'),
     outputs:
         {
@@ -20,11 +21,13 @@ rule filter-portal-compounds:
         }
 
     run "python3 {{inputs.script.filename}} \
-        {{inputs.repsdrug_matrix.dataset_id}} \
-        {{inputs.repsdrug_auc_matrix.dataset_id}} \
         {{inputs.portal_compounds.dataset_id}} \
+        --index-of-matrix {{inputs.repsdrug_matrix.dataset_id}} \
+        --sample-id-of-table {{inputs.repsdrug_log2_viability_collapsed_conditions.dataset_id}} \
         {% if inputs.prism_oncology_reference_lum_log2_auc_matrix|length > 1 %} \
-        --prism_oncology_reference_lum_log2_auc_matrix_taiga_id {{(inputs.prism_oncology_reference_lum_log2_auc_matrix|selectattr('type', 'equalto', 'prism_oncology_reference_lum_log2_auc_matrix')|first).dataset_id}} \
-        --prism_oncology_reference_seq_log2_auc_matrix_taiga_id {{(inputs.prism_oncology_reference_lum_log2_auc_matrix|selectattr('type', 'equalto', 'prism_oncology_reference_seq_log2_auc_matrix')|first).dataset_id}} \
+        --sample-id-of-table {{(inputs.prism_oncology_reference_lum_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
+        {% endif %} \
+        {% if inputs.prism_oncology_reference_seq_log2_auc_matrix|length > 1 %} \
+        --sample-id-of-table {{(inputs.prism_oncology_reference_seq_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
         {% endif %} \
         filtered_portal_compounds.csv"

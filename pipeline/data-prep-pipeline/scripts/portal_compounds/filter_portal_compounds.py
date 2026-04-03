@@ -1,7 +1,8 @@
+import collections
 import argparse
 import pandas as pd
 from taigapy import create_taiga_client_v3
-from typing import Set
+from typing import Set, Dict, List
 
 
 def filter_sample_ids(sample_ids: str, brd_ids: Set[str]) -> str:
@@ -30,12 +31,11 @@ def filter_portal_compounds(df: pd.DataFrame, brd_ids: Set[str]) -> pd.DataFrame
     specified rules. Rows with empty SampleIDs are removed.
     """
     df = df.copy()
-    # Use apply to filter SampleIDs
+
     df["SampleIDs"] = df["SampleIDs"].apply(
         lambda x: filter_sample_ids(x, brd_ids) if pd.notna(x) else ""
     )
 
-    # Remove rows with empty SampleIDs
     df_filtered = df[df["SampleIDs"] != ""]
 
     assert not df_filtered.empty, "Filtered DataFrame is empty after filtering"
@@ -43,90 +43,109 @@ def filter_portal_compounds(df: pd.DataFrame, brd_ids: Set[str]) -> pd.DataFrame
     return df_filtered
 
 
-if __name__ == "__main__":
+def check_for_all_ids(df, brd_id_to_sources: Dict[str, List[str]]):
+    remaining_sample_ids = set()
+    for sample_ids in df["SampleIDs"]:
+        remaining_sample_ids.update(sample_ids.split(";"))
+
+    missing_count = 0
+    for brd_id, sources in brd_id_to_sources.items():
+        if brd_id not in remaining_sample_ids:
+            print(f"Could not find {brd_id} which was referenced in {sources}")
+            missing_count += 1
+    assert missing_count < 120, f"{missing_count} missing IDs"
+
+
+def collect_brd_ids(tc, matrices, tables, column_matrices):
+    """
+    Collect BRD sample IDs from multiple data sources:
+    - matrices: Taiga IDs of matrices whose .index contains BRD IDs
+    - tables: Taiga IDs of tables whose 'SampleID' column contains BRD IDs
+    - column_matrices: Taiga IDs of matrices whose .columns contain BRD IDs
+                       (prefixed with 'BRD:' for normalization)
+    """
+    brd_ids = set()
+    brd_sources = collections.defaultdict(list)
+
+    def add_brd_ids(ids, source):
+        for brd_id in ids:
+            if brd_id.startswith("PRC-"):
+                brd_id = "BRD:" + brd_id
+            if brd_id.startswith("BRD:"):
+                brd_ids.add(brd_id)
+                brd_sources[brd_id].append(source)
+            else:
+                raise Exception(f"Invalid BRD ID: {brd_id} in {source}")
+
+    for matrix_taiga_id in matrices:
+        print(f"Getting {matrix_taiga_id} for index")
+        matrix = tc.get(matrix_taiga_id)
+        add_brd_ids(matrix.index, matrix_taiga_id)
+
+    for table_taiga_id in tables:
+        print(f"Getting {table_taiga_id} for SampleID column")
+        table = tc.get(table_taiga_id)
+        add_brd_ids(table["SampleID"], table_taiga_id)
+
+    for matrix_taiga_id in column_matrices:
+        print(f"Getting {matrix_taiga_id} for columns")
+        matrix = tc.get(matrix_taiga_id)
+        add_brd_ids(["BRD:" + col for col in matrix.columns], matrix_taiga_id)
+
+    return brd_ids, brd_sources
+
+
+def main():
     parser = argparse.ArgumentParser(
         description="Filter portal compounds data and upload to Taiga."
     )
     parser.add_argument(
-        "repsdrug_matrix_taiga_id",
-        help="Taiga ID of PRISM Repurposing primary screen data",
+        "master_portal_compounds_taiga_id",
+        help="Taiga ID of the full merged list of all compounds",
     )
     parser.add_argument(
-        "repsdrug_auc_matrix_taiga_id",
-        help="Taiga ID of PRISM Repurposing secondary screen data",
+        "--index-of-matrix",
+        help="Taiga ID of a matrix whose row index contains BRD sample IDs",
+        action="append",
     )
     parser.add_argument(
-        "portal_compounds_taiga_id", help="Taiga ID of portal compounds data"
+        "--sample-id-of-table",
+        help="Taiga ID of a table whose 'SampleID' column contains BRD sample IDs",
+        action="append",
     )
     parser.add_argument(
-        "--prism_oncology_reference_lum_log2_auc_matrix_taiga_id",
-        help="Taiga ID of the PRISMOncologyReferenceLumLog2AUCMatrix (optional)",
-        default=None,
+        "--column-of-matrix",
+        help="Taiga ID of a matrix whose columns contain BRD sample IDs (will be prefixed with 'BRD:')",
+        action="append",
     )
-    parser.add_argument(
-        "--prism_oncology_reference_seq_log2_auc_matrix_taiga_id",
-        help="Taiga ID of the PRISMOncologyReferenceSeqLog2AUCMatrix (optional)",
-        default=None,
-    )
-    parser.add_argument("output", help="Path to write the output")
+    parser.add_argument("output", help="Path to write the output CSV")
 
     args = parser.parse_args()
     tc = create_taiga_client_v3()
 
-    print("Getting PRISM Repurposing primary screen data...")
-    repsdrug_matrix = tc.get(args.repsdrug_matrix_taiga_id)
-    assert not repsdrug_matrix.index.empty, "repsdrug_matrix index is empty"
-
-    print("Getting PRISM Repurposing secondary screen data...")
-    repsdrug_auc = tc.get(args.repsdrug_auc_matrix_taiga_id)
-
-    print("Getting portal compounds data...")
-    portal_compounds_df = tc.get(args.portal_compounds_taiga_id)
-    assert not portal_compounds_df.empty, "portal_compounds_df is empty"
-
-    if (
-        args.prism_oncology_reference_lum_log2_auc_matrix_taiga_id is None
-        or args.prism_oncology_reference_lum_log2_auc_matrix_taiga_id.startswith(
-            "public"
-        )
-    ):
-        oncref_lum_log2_auc_matrix = pd.DataFrame()
-    else:
-        print("Getting oncref lum log2 AUC matrix data...")
-        oncref_lum_log2_auc_matrix = tc.get(
-            args.prism_oncology_reference_lum_log2_auc_matrix_taiga_id
-        )
-        assert (
-            not oncref_lum_log2_auc_matrix.columns.empty
-        ), "oncref_lum_log2_auc_matrix columns are empty"
-
-    if (
-        args.prism_oncology_reference_seq_log2_auc_matrix_taiga_id is None
-        or args.prism_oncology_reference_seq_log2_auc_matrix_taiga_id.startswith(
-            "public"
-        )
-    ):
-        oncref_seq_log2_auc_matrix = pd.DataFrame()
-    else:
-        print("Getting oncref seq log2 AUC matrix data...")
-        oncref_seq_log2_auc_matrix = tc.get(
-            args.prism_oncology_reference_seq_log2_auc_matrix_taiga_id
-        )
-        assert (
-            not oncref_seq_log2_auc_matrix.columns.empty
-        ), "oncref_seq_log2_auc_matrix columns are empty"
-
-    print("Computing IDs for filtering...")
-    brd_ids = (
-        set(repsdrug_matrix.index)
-        .union(repsdrug_auc.index)
-        .union(["BRD:" + x for x in oncref_lum_log2_auc_matrix.columns])
-        .union(["BRD:" + x for x in oncref_seq_log2_auc_matrix.columns])
+    brd_ids, brd_sources = collect_brd_ids(
+        tc,
+        matrices=args.index_of_matrix or [],
+        tables=args.sample_id_of_table or [],
+        column_matrices=args.column_of_matrix or [],
     )
+
+    print(f"Collected {len(brd_ids)} unique BRD IDs from input sources")
+
+    portal_compounds_df = tc.get(args.master_portal_compounds_taiga_id)
+    assert not portal_compounds_df.empty, "portal_compounds_df is empty"
 
     print("Filtering portal compounds data...")
     portal_compounds_filtered = filter_portal_compounds(portal_compounds_df, brd_ids)
-    print("Filtered portal compounds data")
+    print(
+        f"Filtered: {len(portal_compounds_filtered)} compounds retained "
+        f"(from {len(portal_compounds_df)} total)"
+    )
 
-    if portal_compounds_filtered is not None:
-        portal_compounds_filtered.to_csv(args.output, index=False)
+    check_for_all_ids(portal_compounds_filtered, brd_sources)
+
+    portal_compounds_filtered.to_csv(args.output, index=False)
+
+
+if __name__ == "__main__":
+    main()
