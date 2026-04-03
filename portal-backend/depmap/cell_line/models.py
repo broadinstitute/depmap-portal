@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """Cell line models."""
 import re
-from typing import Optional
+from typing import List, Optional
 
 import pandas as pd
 import sqlalchemy
-from sqlalchemy.orm import backref as sa_backref
+from sqlalchemy import ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, backref as sa_backref, mapped_column, relationship
 
-from depmap.database import Column, ForeignKey, Integer, Model, String, db, relationship
+from depmap.database import Model, db
 
 
 # CellLine.all_table_query() within get_cell_line_selector_lines_table for getting
@@ -61,49 +62,69 @@ class CellLine(Model):
 
     __tablename__ = "cell_line"
 
-    depmap_id = Column(String, primary_key=True)
-    cell_line_name = Column(String, index=True, unique=True, nullable=True)
-    cell_line_alias = db.relationship("CellLineAlias", lazy="select")
-    cell_line_display_name = Column(String, nullable=False)  # stripped cell line name
+    depmap_id: Mapped[str] = mapped_column(String, primary_key=True)
+    cell_line_name: Mapped[Optional[str]] = mapped_column(
+        String, index=True, unique=True
+    )
+    cell_line_alias: Mapped[List["CellLineAlias"]] = relationship(
+        "CellLineAlias", lazy="select"
+    )
+    cell_line_display_name: Mapped[str] = mapped_column(
+        String
+    )  # stripped cell line name
 
-    wtsi_master_cell_id = Column(Integer, index=True)  # wtsi is wellcome trust sanger
-    cell_line_passport_id = Column(
+    wtsi_master_cell_id: Mapped[Optional[int]] = mapped_column(
+        Integer, index=True
+    )  # wtsi is wellcome trust sanger
+    cell_line_passport_id: Mapped[Optional[str]] = mapped_column(
         String, index=True
     )  # Sanger cell line passport is Sanger ID in https://cellmodelpassports.sanger.ac.uk/
-    cosmic_id = Column(Integer, index=True)
+    cosmic_id: Mapped[Optional[int]] = mapped_column(Integer, index=True)
 
-    lineage = db.relationship("Lineage", lazy="select")
+    lineage: Mapped[List["Lineage"]] = relationship("Lineage", lazy="select")
 
-    primary_disease_id = Column(
+    primary_disease_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("primary_disease.primary_disease_id")
     )
-    primary_disease = relationship("PrimaryDisease", backref=__tablename__)
+    primary_disease: Mapped[Optional["PrimaryDisease"]] = relationship(
+        "PrimaryDisease", backref=__tablename__
+    )
 
-    disease_subtype_id = Column(
+    disease_subtype_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("disease_subtype.disease_subtype_id")
     )
-    disease_subtype = relationship("DiseaseSubtype", backref=__tablename__)
+    disease_subtype: Mapped[Optional["DiseaseSubtype"]] = relationship(
+        "DiseaseSubtype", backref=__tablename__
+    )
 
-    tumor_type_id = Column(Integer, ForeignKey("tumor_type.tumor_type_id"))
-    tumor_type = relationship(
+    tumor_type_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("tumor_type.tumor_type_id")
+    )
+    tumor_type: Mapped[Optional["TumorType"]] = relationship(
         "TumorType", backref=__tablename__
     )  # is primary/metastasis
 
-    culture_medium_id = Column(Integer, ForeignKey("culture_medium.culture_medium_id"))
-    culture_medium = relationship(
+    culture_medium_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("culture_medium.culture_medium_id")
+    )
+    culture_medium: Mapped[Optional["CultureMedium"]] = relationship(
         "CultureMedium", backref=__tablename__
     )  # currently not loaded
 
-    conditions_id = Column(Integer, ForeignKey("conditions.conditions_id"))
-    conditions = relationship("Conditions", backref=__tablename__)
+    conditions_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("conditions.conditions_id")
+    )
+    conditions: Mapped[Optional["Conditions"]] = relationship(
+        "Conditions", backref=__tablename__
+    )
 
-    catalog_number = Column(String, nullable=True)
-    gender = Column(String)
-    growth_pattern = Column(String)
-    source = Column(String)
-    rrid = Column(String)  # used for cellosaurus
-    image_filename = Column(String)
-    comments = Column(String)
+    catalog_number: Mapped[Optional[str]] = mapped_column(String)
+    gender: Mapped[Optional[str]] = mapped_column(String)
+    growth_pattern: Mapped[Optional[str]] = mapped_column(String)
+    source: Mapped[Optional[str]] = mapped_column(String)
+    rrid: Mapped[Optional[str]] = mapped_column(String)  # used for cellosaurus
+    image_filename: Mapped[Optional[str]] = mapped_column(String)
+    comments: Mapped[Optional[str]] = mapped_column(String)
 
     def __eq__(self, other):
         if isinstance(other, CellLine):
@@ -208,7 +229,7 @@ class CellLine(Model):
     @staticmethod
     def get_valid_cell_line_names_in(cell_line_names):
         """
-        Returns (valid) cell line names contained in the provided list/set cell_line_names 
+        Returns (valid) cell line names contained in the provided list/set cell_line_names
         """
         q = (
             db.session.query(CellLine)
@@ -453,10 +474,12 @@ class CellLine(Model):
 
 class CellLineAlias(Model):
     __tablename__ = "cell_line_alias"
-    cell_line_alias_id = Column(Integer(), primary_key=True, autoincrement=True)
-    alias = Column(String(), nullable=False, index=True)
-    depmap_id = Column(Integer(), ForeignKey("cell_line.depmap_id"), nullable=False)
-    cell_line = relationship(
+    cell_line_alias_id: Mapped[int] = mapped_column(
+        Integer(), primary_key=True, autoincrement=True
+    )
+    alias: Mapped[str] = mapped_column(String(), index=True)
+    depmap_id: Mapped[int] = mapped_column(Integer(), ForeignKey("cell_line.depmap_id"))
+    cell_line: Mapped[Optional["CellLine"]] = relationship(
         "CellLine",
         foreign_keys="CellLineAlias.depmap_id",
         uselist=False,
@@ -466,11 +489,13 @@ class CellLineAlias(Model):
 
 class Lineage(Model):
     __tablename__ = "lineage"
-    lineage_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, nullable=False, index=True)
-    level = Column(Integer, nullable=False, index=True)
-    depmap_id = Column(String, ForeignKey("cell_line.depmap_id"), nullable=False)
-    cell_line = relationship(
+    lineage_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    name: Mapped[str] = mapped_column(String, index=True)
+    level: Mapped[int] = mapped_column(Integer, index=True)
+    depmap_id: Mapped[str] = mapped_column(String, ForeignKey("cell_line.depmap_id"))
+    cell_line: Mapped["CellLine"] = relationship(
         "CellLine", foreign_keys="Lineage.depmap_id", uselist=False, overlaps="lineage"
     )
 
@@ -590,8 +615,10 @@ class PrimaryDisease(Model):
 
     __tablename__ = "primary_disease"
 
-    primary_disease_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String, unique=True)
+    primary_disease_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    name: Mapped[Optional[str]] = mapped_column(String, unique=True)
 
 
 class DiseaseSubtype(Model):
@@ -599,22 +626,28 @@ class DiseaseSubtype(Model):
 
     __tablename__ = "disease_subtype"
 
-    disease_subtype_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String)
+    disease_subtype_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    name: Mapped[Optional[str]] = mapped_column(String)
 
-    primary_disease_id = Column(
+    primary_disease_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("primary_disease.primary_disease_id")
     )
-    primary_disease = relationship("PrimaryDisease", backref=__tablename__)
+    primary_disease: Mapped[Optional["PrimaryDisease"]] = relationship(
+        "PrimaryDisease", backref=__tablename__
+    )
 
 
 class TumorType(Model):
     """Tumor types i.e. primary or metastasis"""
 
     __tablename__ = "tumor_type"
-    tumor_type_id = Column(Integer, primary_key=True, autoincrement=True)
+    tumor_type_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
 
-    name = Column(String)
+    name: Mapped[Optional[str]] = mapped_column(String)
 
 
 # Fixme remove, not used because data not available
@@ -623,9 +656,11 @@ class Conditions(Model):
 
     __tablename__ = "conditions"
 
-    conditions_id = Column(Integer, primary_key=True, autoincrement=True)
+    conditions_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
 
-    name = Column(String)
+    name: Mapped[Optional[str]] = mapped_column(String)
 
 
 # Fixme remove, not used because data not available
@@ -634,9 +669,11 @@ class CultureMedium(Model):
 
     __tablename__ = "culture_medium"
 
-    culture_medium_id = Column(Integer, primary_key=True, autoincrement=True)
+    culture_medium_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
 
-    name = Column(String)
+    name: Mapped[Optional[str]] = mapped_column(String)
 
 
 class Source(Model):
@@ -644,8 +681,10 @@ class Source(Model):
 
     __tablename__ = "source"
 
-    source_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String)
+    source_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    name: Mapped[Optional[str]] = mapped_column(String)
 
 
 class STRProfile(Model):
@@ -653,36 +692,38 @@ class STRProfile(Model):
 
     __tablename__ = "str_profile"
 
-    str_profile_id = Column(Integer, primary_key=True, autoincrement=True)
-
-    depmap_id = Column(
-        String, ForeignKey("cell_line.depmap_id"), nullable=False, unique=True
+    str_profile_id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
     )
-    cell_line = relationship(
+
+    depmap_id: Mapped[str] = mapped_column(
+        String, ForeignKey("cell_line.depmap_id"), unique=True
+    )
+    cell_line: Mapped["CellLine"] = relationship(
         "CellLine",
         foreign_keys="STRProfile.depmap_id",
         uselist=False,
         backref=sa_backref("str_profile", uselist=False),
     )
 
-    notation = Column(String)
-    d3s1358 = Column(String)
-    th01 = Column(String)
-    d21s11 = Column(String)
-    d18s51 = Column(String)
-    penta_e = Column(String)
-    d5s818 = Column(String)
-    d13s317 = Column(String)
-    d7s820 = Column(String)
-    d16s539 = Column(String)
-    csf1po = Column(String)
-    penta_d = Column(String)
-    vwa = Column(String)
-    d8s1179 = Column(String)
-    tpox = Column(String)
-    fga = Column(String)
-    amel = Column(String)
-    mouse = Column(String)
+    notation: Mapped[Optional[str]] = mapped_column(String)
+    d3s1358: Mapped[Optional[str]] = mapped_column(String)
+    th01: Mapped[Optional[str]] = mapped_column(String)
+    d21s11: Mapped[Optional[str]] = mapped_column(String)
+    d18s51: Mapped[Optional[str]] = mapped_column(String)
+    penta_e: Mapped[Optional[str]] = mapped_column(String)
+    d5s818: Mapped[Optional[str]] = mapped_column(String)
+    d13s317: Mapped[Optional[str]] = mapped_column(String)
+    d7s820: Mapped[Optional[str]] = mapped_column(String)
+    d16s539: Mapped[Optional[str]] = mapped_column(String)
+    csf1po: Mapped[Optional[str]] = mapped_column(String)
+    penta_d: Mapped[Optional[str]] = mapped_column(String)
+    vwa: Mapped[Optional[str]] = mapped_column(String)
+    d8s1179: Mapped[Optional[str]] = mapped_column(String)
+    tpox: Mapped[Optional[str]] = mapped_column(String)
+    fga: Mapped[Optional[str]] = mapped_column(String)
+    amel: Mapped[Optional[str]] = mapped_column(String)
+    mouse: Mapped[Optional[str]] = mapped_column(String)
 
     def to_dict(self):
         str_profile_dict = {
