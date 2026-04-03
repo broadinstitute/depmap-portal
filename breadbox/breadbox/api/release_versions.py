@@ -49,6 +49,10 @@ def get_release_versions(
         None,
         description="Filter releases published on or before this date (YYYY-MM-DD)",
     ),
+    include_files: bool = Query(
+        False,
+        description="If true, includes the list of files for each release in the response.",
+    ),
     db: SessionWithUser = Depends(get_db_with_user),
 ):
     """
@@ -60,6 +64,7 @@ def get_release_versions(
         datatype=datatype,
         start_date=start_date,
         end_date=end_date,
+        include_files=include_files,
     )
 
 

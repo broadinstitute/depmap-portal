@@ -4,6 +4,7 @@ from typing import Optional, List, Union
 from uuid import UUID
 
 from sqlalchemy import and_
+from sqlalchemy.orm import joinedload
 
 from breadbox.db.session import SessionWithUser
 from ..models.release_version import (
@@ -34,11 +35,15 @@ def get_release_versions(
     datatype: Optional[str] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    include_files: bool = False,
 ) -> List[ReleaseVersion]:
     """
     Get release versions with optional filtering by name, datatype, and date range.
     """
     query = db.query(ReleaseVersion)
+
+    if include_files:
+        query = query.options(joinedload(ReleaseVersion.files))
 
     if release_name:
         query = query.filter(ReleaseVersion.release_name == release_name)

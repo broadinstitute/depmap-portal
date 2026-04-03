@@ -7,7 +7,7 @@ from breadbox.crud.release_version import (
     get_release_versions,
     delete_release_version,
 )
-from breadbox.models.release_version import ReleaseVersion, ReleaseFile, ReleasePipeline
+from breadbox.models.release_version import ReleaseVersion, ReleaseFile
 from tests import factories
 
 
@@ -213,3 +213,41 @@ def test_get_release_versions_filtering(minimal_db: SessionWithUser):
     assert len(triple_filter_results) == 1
     assert triple_filter_results[0].id == release_c.id
     assert triple_filter_results[0].version_name == "v2"
+
+
+from sqlalchemy import inspect
+
+
+def test_get_release_versions_include_files_toggle(minimal_db: SessionWithUser):
+    """
+    Test that include_files=True eagerly loads files, 
+    and include_files=False behaves as expected.
+    """
+    # 1. Create a release with one file
+    file_name = "data.csv"
+    factories.release_version(
+        minimal_db,
+        version_name="IncludeTest",
+        files=[{"file_name": file_name, "datatype": "crispr", "is_main_file": True}],
+    )
+
+    # Case 1: include_files=False (Default)
+    results_no_files = get_release_versions(minimal_db, include_files=False)
+    assert len(results_no_files) == 1
+
+    # Verify the 'files' relationship is NOT loaded yet.
+    inspected_no_files = inspect(results_no_files[0])
+    assert "files" in inspected_no_files.unloaded
+
+    # Case 2: include_files=True
+
+    results_with_files = get_release_versions(minimal_db, include_files=True)
+    assert len(results_with_files) == 1
+
+    # Verify the data is present
+    assert len(results_with_files[0].files) == 1
+    assert results_with_files[0].files[0].file_name == file_name
+
+    # Verify the 'files' relationship IS already loaded
+    inspected_with_files = inspect(results_with_files[0])
+    assert "files" not in inspected_with_files.unloaded

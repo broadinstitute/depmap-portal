@@ -81,7 +81,9 @@ class ReleaseVersionResponse(BaseModel):
     terms: Annotated[
         Optional[str], Field(description="Terms of use and embargo text")
     ] = None
-    files: Annotated[List[ReleaseFileSchema], Field(default_factory=list)]
+    files: Annotated[
+        Optional[List[ReleaseFileSchema]], Field(default_factory=list)
+    ] = []
     release_pipelines: Annotated[
         List[ReleasePipelineSchema], Field(default_factory=list)
     ]
