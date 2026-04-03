@@ -246,11 +246,9 @@ class PipelineRunner(ABC):
             [
                 "--rm",
                 "-v",
-                f"{cwd}:{volumes.work_dir}",
+                f"{cwd}:{cwd}",
                 "-w",
-                config.working_dir,
-                "-v",
-                f"{config.creds_dir}/{cred_files[0]}:{volumes.aws_keys}",
+                cwd,
                 "-v",
                 f"{config.creds_dir}/{cred_files[1]}:{volumes.sparkles_cache}",
                 "-v",
@@ -264,7 +262,7 @@ class PipelineRunner(ABC):
                 config.docker_image,
                 "bash",
                 "-c",
-                f"source {volumes.aws_keys} && {command}",
+                command,
             ]
         )
 
