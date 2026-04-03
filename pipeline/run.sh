@@ -10,7 +10,7 @@ set -ex
 #  - the depmap-deploy-repo is checked out into the right place
 #  - our current working directory is the 'pipeline' directory
 
-if [ "$DEPMAP_DEPLOY_BRANCH" == "" ];
+if [ "$DEPMAP_DEPLOY_BRANCH" == "" ]; fi
     echo "the environment variable DEPMAP_DEPLOY_BRANCH must be set to run this script"
     exit 1
 fi
