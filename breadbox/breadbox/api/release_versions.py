@@ -76,6 +76,10 @@ def get_release_versions(
 def get_release_version(
     release_version_id: str,
     response: Response,
+    include_files: bool = Query(
+        True,
+        description="If false, leaves off the list of files for each release in the response.",
+    ),
     db: SessionWithUser = Depends(get_db_with_user),
     if_none_match: Optional[str] = Depends(lambda r: r.headers.get("If-None-Match")),
 ):
@@ -83,7 +87,9 @@ def get_release_version(
     Get full metadata for a specific release version.
     Includes ETag support via content_hash.
     """
-    release = _get_required_release_version(db, release_version_id)
+    release = _get_required_release_version(
+        db=db, release_version_id=release_version_id, include_files=include_files
+    )
 
     # ETag / 304 logic
     etag = f'"{release.content_hash}"'

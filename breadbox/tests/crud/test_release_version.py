@@ -9,6 +9,7 @@ from breadbox.crud.release_version import (
 )
 from breadbox.models.release_version import ReleaseVersion, ReleaseFile
 from tests import factories
+from sqlalchemy import inspect
 
 
 def test_get_release_version(minimal_db: SessionWithUser):
@@ -251,3 +252,38 @@ def test_get_release_versions_include_files_toggle(minimal_db: SessionWithUser):
     # Verify the 'files' relationship IS already loaded
     inspected_with_files = inspect(results_with_files[0])
     assert "files" not in inspected_with_files.unloaded
+
+
+from sqlalchemy import inspect
+
+
+def test_get_release_version_include_files_toggle(minimal_db: SessionWithUser):
+    """
+    Test that get_release_version correctly toggles eager loading with include_files
+    for a single release UUID.
+    """
+    # 1. Create a release with one file
+    file_name = "detail.csv"
+    release = factories.release_version(
+        minimal_db,
+        files=[{"file_name": file_name, "datatype": "crispr", "is_main_file": True}],
+    )
+
+    # 2. Case A: include_files=False
+    retrieved_no_files = get_release_version(
+        minimal_db, release.id, include_files=False
+    )
+
+    inspected_no_files = inspect(retrieved_no_files)
+    # 'files' SHOULD be in the unloaded set (Lazy Loading)
+    assert "files" in inspected_no_files.unloaded
+
+    # 3. Case B: include_files=True
+    retrieved_with_files = get_release_version(
+        minimal_db, release.id, include_files=True
+    )
+
+    inspected_with_files = inspect(retrieved_with_files)
+    # 'files' SHOULD NOT be in the unloaded set (Eager Loading)
+    assert "files" not in inspected_with_files.unloaded
+    assert retrieved_with_files.files[0].file_name == file_name
