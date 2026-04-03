@@ -1,8 +1,14 @@
-from typing import Any, List, Optional, Union
+from datetime import date
+from typing import Any, Dict, List, Optional, Union
 
 import typing
 from breadbox.api.groups import add_group
 import breadbox.api.dimension_types as types_api
+from breadbox.breadbox.models.release_version import (
+    ReleaseFile,
+    ReleasePipeline,
+    ReleaseVersion,
+)
 from breadbox.models.group import Group
 from breadbox.service.dataset import add_dimension_type, add_tabular_dataset
 from breadbox.crud.data_type import add_data_type
@@ -31,6 +37,11 @@ from breadbox.schemas.dataset import ColumnMetadata, AnnotationType
 from breadbox.schemas.dataset import TabularDatasetIn
 import uuid
 import breadbox.crud.dimension_types as types_crud
+from breadbox.schemas.release_version import CreateReleaseVersionParams
+from breadbox.models.release_version import ReleaseFile
+from breadbox.models.release_version import ReleasePipeline
+from breadbox.crud import release_version as release_version_crud
+
 import pandas as pd
 import hashlib
 
@@ -478,3 +489,79 @@ def file_ids_and_md5_hash(client, file):
         hasher.update(chunk)
     hash = hasher.hexdigest()
     return tabular_file_ids, hash
+
+
+def release_version(
+    db: SessionWithUser,
+    version_name: str = "26Q1",
+    release_name: str = "DepMap Public",
+    version_date: date = _CallIfOmitted(date.today),
+    description: str = "Test release description",
+    content_hash: str = "00000000000000000000000000000000",
+    citation: Optional[str] = None,
+    funding: Optional[str] = None,
+    terms: Optional[str] = None,
+    files: List[Dict] = _CallIfOmitted(list),
+    pipelines: List[Dict] = _CallIfOmitted(list),
+) -> ReleaseVersion:
+    """
+    Factory to create a ReleaseVersion with its associated nested entities.
+    Ensure Search Index consistency.
+    """
+
+    params = CreateReleaseVersionParams(
+        version_name=version_name,
+        release_name=release_name,
+        version_date=_handle_call_if_omitted(version_date),
+        description=description,
+        content_hash=content_hash,
+        citation=citation,
+        funding=funding,
+        terms=terms,
+        files=_handle_call_if_omitted(files),
+        pipelines=_handle_call_if_omitted(pipelines),
+    )
+
+    # Use CRUD to create so that FTS5 search index is populated
+    return release_version_crud.create_release_version(db, params)
+
+
+def release_file(
+    db: SessionWithUser,
+    release_version: ReleaseVersion,
+    file_name: str = "test_file.csv",
+    datatype: str = "crispr",
+    is_main_file: bool = True,
+    **kwargs,
+) -> ReleaseFile:
+
+    file = ReleaseFile(
+        release_version_id=release_version.id,
+        file_name=file_name,
+        datatype=datatype,
+        is_main_file=is_main_file,
+        size=kwargs.get("size", "10MB"),
+        bucket_url=kwargs.get("bucket_url"),
+        md5_hash=kwargs.get("md5_hash", "0" * 32),
+        pipeline_name=kwargs.get("pipeline_name", "Test Pipeline"),
+    )
+    db.add(file)
+    db.flush()
+    return file
+
+
+def release_pipeline(
+    db: SessionWithUser,
+    release_version: ReleaseVersion,
+    pipeline_name: str = "Test Pipeline",
+    description: str = "Pipeline description",
+) -> ReleasePipeline:
+
+    pipeline = ReleasePipeline(
+        release_version_id=release_version.id,
+        pipeline_name=pipeline_name,
+        description=description,
+    )
+    db.add(pipeline)
+    db.flush()
+    return pipeline

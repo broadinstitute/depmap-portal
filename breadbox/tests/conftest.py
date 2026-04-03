@@ -5,7 +5,7 @@ import os
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from fastapi.exceptions import HTTPException
 
@@ -175,6 +175,26 @@ def private_group(client: TestClient, settings: Settings):
 def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_group):
     "A database which has the public group and one feature type and one sample type defined"
     admin_user = settings.admin_users[0]
+
+    # 1. Manually create the FTS5 Virtual Table
+    # This is required because metadata.create_all() ignores virtual tables
+    db.execute(
+        text(
+            """
+        CREATE VIRTUAL TABLE IF NOT EXISTS release_file_search_index USING fts5(
+            file_name,
+            file_description,
+            file_datatype,
+            release_version_name,
+            release_name,
+            release_version_description,
+            release_version_content_hash,
+            tokenize='unicode61'
+        );
+    """
+        )
+    )
+
     add_data_type(db, "User upload")
     add_dimension_type(
         db,
