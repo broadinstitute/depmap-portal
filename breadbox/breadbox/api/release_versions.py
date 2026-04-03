@@ -38,7 +38,9 @@ def _get_required_release_version(
     response_model=List[ReleaseVersionResponse],
 )
 def get_release_versions(
-    release_name: Optional[str] = Query(None, description="Filter by grouping name"),
+    release_name: Optional[str] = Query(
+        None, description="Filter by general release name (e.g. Depmap Public)"
+    ),
     datatype: Optional[str] = Query(
         None, description="Filter by file datatype (e.g. 'crispr')"
     ),
@@ -128,7 +130,6 @@ def create_release_version(
             )
             return new_release_version
     except Exception as e:
-        log.error(f"Failed to create release version: {e}")
         raise UserError(f"Failed to create release version: {str(e)}")
 
 
