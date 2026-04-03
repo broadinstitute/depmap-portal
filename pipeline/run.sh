@@ -33,4 +33,4 @@ fi
 
 # Execute the remainder as shell command.
 cd "$SCRIPT_HOME"
-poetry "$@"
+exec poetry run "$@"
