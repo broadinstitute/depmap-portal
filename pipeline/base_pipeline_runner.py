@@ -293,13 +293,11 @@ class PipelineRunner(ABC):
 
         Returns the filename of the override file, relative to pipeline_dir.
         """
-        override_name = f"overriden-{Path(original_conseq).name}"
+        override_name = f"{original_conseq}.patched"
 
-        with open(f"{pipeline_dir}/{override_name}", "w") as f:
-            f.write(f'let publish_dest = "{publish_dest}"\n')
-
-        with open(f"{pipeline_dir}/{original_conseq}", "r") as original:
-            with open(f"{pipeline_dir}/{override_name}", "a") as override:
+        with open(original_conseq, "r") as original:
+            with open(override_name, "w") as override:
+                override.write(f'let publish_dest = "{publish_dest}"\n')
                 for line in original:
                     if not line.strip().startswith("let publish_dest"):
                         override.write(line)
