@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import subprocess
@@ -8,27 +9,77 @@ import yaml
 from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
+
+from pipeline_config import (
+    BasePipelineSpecificConfig,
+    CommonConfig,
+    DefaultsConfig,
+    PipelineConfig,
+)
+
+import re
+
+
+def load_pipeline_config() -> PipelineConfig:
+    """Load pipeline configuration from the shared YAML file."""
+    config_path = Path(__file__).parent / "pipeline_config.yaml"
+    assert config_path.exists(), f"Config file not found: {config_path}"
+    with open(config_path, "r") as f:
+        raw = yaml.safe_load(f)
+    assert raw, "Config file is empty or invalid"
+    return PipelineConfig.model_validate(raw)
+
+
+def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
+    """Create the shared argument parser for all pipeline runners."""
+    parser = argparse.ArgumentParser(description="Run pipeline")
+    parser.add_argument("env_name", help="Name of environment")
+    parser.add_argument("job_name", help="Name to use for job")
+    parser.add_argument(
+        "--taiga-dir", default=defaults.taiga_dir, help="Taiga directory path"
+    )
+    parser.add_argument(
+        "--creds-dir",
+        default=defaults.creds_dir,
+        help="Pipeline runner credentials directory",
+    )
+    parser.add_argument(
+        "--image", help="If set, use this docker image when running the pipeline"
+    )
+    parser.add_argument(
+        "--publish-dest", help="GCS path for publishing; presence enables publishing"
+    )
+    parser.add_argument("--start-with", help="Start with existing export from GCS path")
+    parser.add_argument(
+        "--manually-run-conseq",
+        action="store_true",
+        help="If set, conseq_args are passed directly to conseq",
+    )
+    parser.add_argument("conseq_args", nargs="*", help="Parameters to pass to conseq")
+    parser.add_argument("--export-path", help="Export path for conseq export")
+    parser.add_argument(
+        "--dryrun", action="store_true", help="Print commands instead of running them",
+    )
+    return parser
 
 
 class PipelineRunner(ABC):
     """Base class for all pipeline runners."""
 
-    def __init__(self):
-        self.script_path = None
-        self.pipeline_name = None
+    def __init__(self, dryrun: bool, script_path: Path):
+        self.dryrun = dryrun
         self.pipeline_run_id = str(uuid.uuid4())
-        self.config_data = self._load_config()
+        self.script_path = script_path
+        self.config = load_pipeline_config()
+        self.pipeline_name = self.script_path.parent.name
 
-    def _load_config(self):
-        """Load pipeline configuration from YAML file."""
-        config_path = Path(__file__).parent / "pipeline_config.yaml"
-        assert config_path.exists(), f"Config file not found: {config_path}"
-
-        with open(config_path, "r") as f:
-            config = yaml.safe_load(f)
-
-        assert config, "Config file is empty or invalid"
-        return config
+    def subprocess_run(self, cmd: list, **kwargs) -> subprocess.CompletedProcess:
+        """Run a subprocess, or print the command if in dryrun mode."""
+        if self.dryrun:
+            print(f"[dryrun] {' '.join(str(a) for a in cmd)}")
+            return subprocess.CompletedProcess(cmd, 0)
+        return subprocess.run(cmd, **kwargs)
 
     def get_git_commit_sha(self):
         """Get the current git commit SHA."""
@@ -74,13 +125,13 @@ class PipelineRunner(ABC):
         with open(temp_file, "w") as f:
             for cmd in find_commands:
                 assert cmd, "Find command cannot be empty"
-                result = subprocess.run(
+                result = self.subprocess_run(
                     cmd, cwd=state_dir, capture_output=True, text=True, check=True
                 )
                 f.write(result.stdout)
 
-        subprocess.run(
-            ["rsync", "-a", state_path, log_destination, f"--files-from={temp_file}",],
+        self.subprocess_run(
+            ["rsync", "-a", state_path, log_destination, f"--files-from={temp_file}"],
             check=True,
         )
 
@@ -88,9 +139,7 @@ class PipelineRunner(ABC):
 
     def check_credentials(self, creds_dir):
         """Check that required credential files exist."""
-        required_files = self.config_data["credentials"]["required_files"]
-
-        for filename in required_files:
+        for filename in self.config.credentials.required_files:
             filepath = Path(creds_dir) / filename
             if not filepath.exists():
                 raise FileNotFoundError(f"Could not find required file: {filepath}")
@@ -103,7 +152,9 @@ class PipelineRunner(ABC):
                 **os.environ,
                 "GOOGLE_APPLICATION_CREDENTIALS": "/etc/google/auth/application_default_credentials.json",
             }
-            subprocess.run(["docker", "pull", docker_image], check=True, env=env_vars)
+            self.subprocess_run(
+                ["docker", "pull", docker_image], check=True, env=env_vars
+            )
 
     def log_dataset_usage(self, dataset_taiga_id):
         """Print dataset usage information."""
@@ -119,8 +170,6 @@ class PipelineRunner(ABC):
 
     def track_dataset_usage_from_conseq(self, pipeline_dir):
         """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
-        import re
-
         pipeline_path = Path(pipeline_dir)
         version_files = list(pipeline_path.glob("*-DO-NOT-EDIT-ME"))
 
@@ -147,82 +196,75 @@ class PipelineRunner(ABC):
             "Please check the files and try again."
         )
 
-    def add_common_arguments(self, parser):
-        """Add common CLI arguments that all pipelines share."""
-        defaults = self.config_data["defaults"]
+    def build_common_config(
+        self, args, pipeline_cfg: BasePipelineSpecificConfig
+    ) -> CommonConfig:
+        """Build common configuration that all pipelines share."""
 
-        parser.add_argument("env_name", help="Name of environment")
-        parser.add_argument("job_name", help="Name to use for job")
-        parser.add_argument(
-            "--taiga-dir", default=defaults["taiga_dir"], help="Taiga directory path"
+        docker_image = args.image or self.read_docker_image_name(
+            self.script_path.parent
         )
-        parser.add_argument(
-            "--creds-dir",
-            default=defaults["creds_dir"],
-            help="Pipeline runner credentials directory",
+        commit_sha = self.get_git_commit_sha()
+
+        config = CommonConfig(
+            env_name=args.env_name,
+            job_name=args.job_name,
+            taiga_dir=args.taiga_dir,
+            creds_dir=args.creds_dir,
+            image=args.image,
+            docker_image=docker_image,
+            commit_sha=commit_sha,
+            state_path=pipeline_cfg.state_path,
+            log_destination=pipeline_cfg.log_destination,
+            working_dir=pipeline_cfg.working_dir,
+            publish_dest=args.publish_dest,
+            start_with=args.start_with,
+            manually_run_conseq=args.manually_run_conseq,
+            conseq_args=args.conseq_args,
         )
-        parser.add_argument(
-            "--image", help="If set, use this docker image when running the pipeline"
-        )
 
-    def build_common_config(self, args, pipeline_name):
-        """Build common configuration dictionary that all pipelines share."""
-        pipeline_cfg = self.config_data["pipelines"][pipeline_name]
-
-        config = {
-            "env_name": args.env_name,
-            "job_name": args.job_name,
-            "taiga_dir": args.taiga_dir,
-            "creds_dir": args.creds_dir,
-            "image": args.image,
-            "state_path": pipeline_cfg["state_path"],
-            "log_destination": pipeline_cfg["log_destination"],
-            "working_dir": pipeline_cfg["working_dir"],
-        }
-
-        self.check_credentials(config["creds_dir"])
+        self.check_credentials(config.creds_dir)
         return config
 
-    def run_via_container(self, command, config):
+    def run_via_container(self, command, config: CommonConfig):
         """Run command inside Docker container with pipeline-specific configuration."""
         cwd = os.getcwd()
-        docker_cfg = self.config_data["docker"]
-        volumes = docker_cfg["volumes"]
-        env_vars = docker_cfg["env_vars"]
-        cred_files = self.config_data["credentials"]["required_files"]
+        docker_cfg = self.config.docker
+        volumes = docker_cfg.volumes
+        cred_files = self.config.credentials.required_files
 
         # Start building docker command
         docker_cmd = ["docker", "run"]
 
         # Add pipeline-specific options (e.g., security settings)
-        pipeline_options = docker_cfg["options"].get(self.pipeline_name, {})
-        if "security_opt" in pipeline_options:
-            docker_cmd.extend(["--security-opt", pipeline_options["security_opt"]])
+        pipeline_options = docker_cfg.options.get(self.pipeline_name)
+        if pipeline_options and pipeline_options.security_opt:
+            docker_cmd.extend(["--security-opt", pipeline_options.security_opt])
 
         # Add common options
         docker_cmd.extend(
             [
                 "--rm",
                 "-v",
-                f"{cwd}:{volumes['work_dir']}",
+                f"{cwd}:{volumes.work_dir}",
                 "-w",
-                config["working_dir"],
+                config.working_dir,
                 "-v",
-                f"{config['creds_dir']}/{cred_files[0]}:{volumes['aws_keys']}",
+                f"{config.creds_dir}/{cred_files[0]}:{volumes.aws_keys}",
                 "-v",
-                f"{config['creds_dir']}/{cred_files[1]}:{volumes['sparkles_cache']}",
+                f"{config.creds_dir}/{cred_files[1]}:{volumes.sparkles_cache}",
                 "-v",
-                f"{config['creds_dir']}/{cred_files[2]}:{volumes['google_creds']}",
+                f"{config.creds_dir}/{cred_files[2]}:{volumes.google_creds}",
                 "-v",
-                f"{config['taiga_dir']}:{volumes['taiga']}",
+                f"{config.taiga_dir}:{volumes.taiga}",
                 "-e",
-                f"GOOGLE_APPLICATION_CREDENTIALS={env_vars['GOOGLE_APPLICATION_CREDENTIALS']}",
+                f"GOOGLE_APPLICATION_CREDENTIALS={docker_cfg.env_vars.google_application_credentials}",
                 "--name",
-                config["job_name"],
-                config["docker_image"],
+                config.job_name,
+                config.docker_image,
                 "bash",
                 "-c",
-                f"source {volumes['aws_keys']} && {command}",
+                f"source {volumes.aws_keys} && {command}",
             ]
         )
 
@@ -231,58 +273,120 @@ class PipelineRunner(ABC):
         print(f"  {command}")
         print("=" * 50)
 
-        return subprocess.run(docker_cmd)
+        return self.subprocess_run(docker_cmd)
+
+    def map_environment_name(self, env_name: str, env_mapping: dict[str, str]) -> str:
+        """Map a user-facing environment name to the name used in conseq filenames."""
+        if env_name.startswith("test-"):
+            return env_mapping["test-prefix"]
+        return env_mapping.get(env_name, env_name)
+
+    def create_override_conseq_file(
+        self, pipeline_dir: str, original_conseq: str, publish_dest: str
+    ) -> str:
+        """Create an override conseq file that injects a custom publish_dest.
+
+        Args:
+            pipeline_dir: local path to the pipeline directory (host filesystem)
+            original_conseq: path to the original conseq file relative to pipeline_dir
+            publish_dest: the publish destination value to inject
+
+        Returns the filename of the override file, relative to pipeline_dir.
+        """
+        override_name = f"overriden-{Path(original_conseq).name}"
+
+        with open(f"{pipeline_dir}/{override_name}", "w") as f:
+            f.write(f'let publish_dest = "{publish_dest}"\n')
+
+        with open(f"{pipeline_dir}/{original_conseq}", "r") as original:
+            with open(f"{pipeline_dir}/{override_name}", "a") as override:
+                for line in original:
+                    if not line.strip().startswith("let publish_dest"):
+                        override.write(line)
+
+        return override_name
 
     @abstractmethod
-    def create_argument_parser(self):
-        """Create and return the argument parser for this pipeline."""
-        pass
-
-    @abstractmethod
-    def get_pipeline_config(self, args):
+    def get_pipeline_config(self, args: argparse.Namespace) -> CommonConfig:
         """Return pipeline-specific configuration."""
         pass
 
-    @abstractmethod
-    def get_conseq_file(self, config):
-        """Get the conseq file to use for this pipeline."""
-        pass
+    def get_conseq_file(self, config: CommonConfig) -> str:
+        assert self.script_path is not None
+        env_mapping = self.config.pipelines.data_prep.env_mapping
+        mapped_env = self.map_environment_name(config.env_name, env_mapping)
+        pipeline_dir = str(self.script_path.parent)
+        original_conseq = f"{pipeline_dir}/run_{mapped_env}.conseq"
+        if config.publish_dest:
+            conseq_file = self.create_override_conseq_file(
+                pipeline_dir, original_conseq, config.publish_dest
+            )
+            print(f"Created override conseq file: {conseq_file}")
+            return conseq_file
+        return original_conseq
 
-    def handle_special_features(self, config):
-        """Handle pipeline-specific features like START_WITH, override files, etc.
-        Override in subclasses that need pre-run setup. No-op by default."""
-        pass
+    def handle_special_features(self, config: CommonConfig) -> None:
+        """Handle pre-run features. Subclasses should call super() after their own logic."""
 
-    def run(self, script_file_path):
+        assert self.script_path is not None
+        if config.start_with:
+            print(f"Starting with existing export: {config.start_with}")
+            self.subprocess_run(
+                ["sudo", "chown", "-R", "ubuntu", str(self.script_path.parent)],
+                check=True,
+            )
+            self.subprocess_run(
+                ["rm", "-rf", str(self.script_path.parent / "state")], check=True
+            )
+
+            with tempfile.TemporaryDirectory() as temp_home:
+                env_with_temp_home = {**os.environ, "HOME": temp_home}
+
+                self.subprocess_run(
+                    [
+                        "gcloud",
+                        "auth",
+                        "activate-service-account",
+                        "--key-file",
+                        f"{config.creds_dir}/depmap-pipeline-runner.json",
+                    ],
+                    check=True,
+                    env=env_with_temp_home,
+                )
+
+                self.subprocess_run(
+                    [
+                        "gcloud",
+                        "storage",
+                        "cp",
+                        config.start_with,
+                        str(self.script_path.parent / "downloaded-export.conseq"),
+                    ],
+                    check=True,
+                    env=env_with_temp_home,
+                )
+
+            self.run_via_container("conseq run downloaded-export.conseq", config)
+            self.run_via_container("conseq forget --regex 'publish.*'", config)
+
+    def run(self, args: argparse.Namespace) -> None:
         """Main entry point for running the pipeline."""
-        self.script_path = Path(script_file_path)
-        self.pipeline_name = self.script_path.parent.name
 
         print(f"Pipeline run ID: {self.pipeline_run_id}")
 
-        parser = self.create_argument_parser()
-        args = parser.parse_args()
-
         config = self.get_pipeline_config(args)
 
-        docker_image = config.get("image") or self.read_docker_image_name(
-            self.script_path.parent
-        )
-        config["docker_image"] = docker_image
-        config["commit_sha"] = self.get_git_commit_sha()
+        self.pull_docker_image(config.docker_image)
 
-        self.pull_docker_image(docker_image)
-
-        self.backup_conseq_logs(config["state_path"], config["log_destination"])
+        self.backup_conseq_logs(config.state_path, config.log_destination)
         self.handle_special_features(config)
 
-        config["conseq_file"] = self.get_conseq_file(config)
+        config.conseq_file = self.get_conseq_file(config)
 
-        if config.get("manually_run_conseq"):
-            conseq_args = config.get("conseq_args", [])
-            print(f"executing: conseq {' '.join(conseq_args)}")
+        if config.manually_run_conseq:
+            print(f"executing: conseq {' '.join(config.conseq_args)}")
             result = self.run_via_container(
-                f"conseq -D is_dev=False {' '.join(conseq_args)}", config
+                f"conseq -D is_dev=False {' '.join(config.conseq_args)}", config
             )
             run_exit_status = result.returncode
         else:
@@ -299,37 +403,47 @@ class PipelineRunner(ABC):
             self.handle_post_run_tasks(config)
 
             # Copy the latest logs
-            self.backup_conseq_logs(config["state_path"], config["log_destination"])
+            self.backup_conseq_logs(config.state_path, config.log_destination)
 
         print("Pipeline run complete")
-        subprocess.run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
+        self.subprocess_run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
         sys.exit(run_exit_status)
 
-    def build_conseq_run_command(self, config):
+    def build_conseq_run_command(self, config: CommonConfig) -> str:
         """Build the main conseq run command."""
-        conseq_cfg = self.config_data["conseq"]
-        common_args = " ".join(conseq_cfg["common_args"])
+        conseq_cfg = self.config.conseq
+        common_args = " ".join(conseq_cfg.common_args)
 
         cmd_parts = [
-            f"conseq run --addlabel commitsha={config['commit_sha']}",
-            f"{common_args} --maxfail {conseq_cfg['max_fail']}",
-            f"-D sparkles_path={conseq_cfg['sparkles_path']}",
+            f"conseq run --addlabel commitsha={config.commit_sha}",
+            f"{common_args} --maxfail {conseq_cfg.max_fail}",
+            f"-D sparkles_path={conseq_cfg.sparkles_path}",
             "-D is_dev=False",
         ]
 
         # Add pipeline-specific options
-        if config.get("s3_staging_url"):
-            cmd_parts.append(f"-D S3_STAGING_URL={config['s3_staging_url']}")
-        if config.get("publish_dest"):
-            cmd_parts.append(f"-D publish_dest=\"{config['publish_dest']}\"")
-        if config.get("publish_data_prep"):
+        if config.s3_staging_url:
+            cmd_parts.append(f"-D S3_STAGING_URL={config.s3_staging_url}")
+        if config.publish_dest:
+            cmd_parts.append(f'-D publish_dest="{config.publish_dest}"')
             cmd_parts.append("-D publish_data_prep=True")
 
-        conseq_args = config.get("conseq_args", [])
-        cmd_parts.extend([config["conseq_file"], " ".join(conseq_args)])
+        assert (
+            config.conseq_file is not None
+        ), "conseq_file must be set before building run command"
+        cmd_parts.extend([config.conseq_file, " ".join(config.conseq_args)])
         return " ".join(cmd_parts)
 
-    def handle_post_run_tasks(self, config):
-        """Handle post-run tasks like export and report generation."""
-        # Default implementation - can be overridden by specific pipelines
-        pass
+    def handle_post_run_tasks(self, config: CommonConfig) -> None:
+        """Handle post-run tasks. Subclasses should call super() after their own logic."""
+        self.run_via_container("conseq report html", config)
+        if self.dryrun:
+            print("[dryrun] skipping track_dataset_usage")
+        else:
+            self.track_dataset_usage_from_conseq(str(self.script_path.parent))
+
+        if config.export_path:
+            assert config.conseq_file is not None
+            self.run_via_container(
+                f"conseq export {config.conseq_file} {config.export_path}", config
+            )

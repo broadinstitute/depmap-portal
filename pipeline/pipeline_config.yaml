@@ -66,6 +66,11 @@ pipelines:
     log_destination: data-prep-logs
     working_dir: /work/pipeline/data-prep-pipeline
 
+    # Environment name mapping
+    env_mapping:
+      internal: internal
+      external: external
+
     # Template files for external/internal runs
     templates:
       external:
@@ -74,8 +79,3 @@ pipelines:
       internal:
         input: release_inputs_internal.template
         output: release_inputs_internal-DO-NOT-EDIT-ME
-
-    # Conseq files
-    conseq_files:
-      external: data_prep_pipeline/run_external.conseq
-      internal: data_prep_pipeline/run_internal.conseq
