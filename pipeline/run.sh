@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status
-set -x
+set -e
 
 # This script is intended to a very thin shell which is responsible for 
 # getting the environment set up enough to be able to run some command
