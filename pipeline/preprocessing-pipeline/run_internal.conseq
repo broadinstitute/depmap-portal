@@ -1,0 +1,16 @@
+# the publish_dest variable is overriden when this is run from the preprocessing job in jenkins
+# so the value below should be ignored.
+let publish_dest = "INVALID"
+
+# canonicalize taiga IDs in the config file
+eval """
+import subprocess
+import os
+
+template=f"{rules.vars['SCRIPT_DIR']}/../../depmap-deploy/non-public-pipeline-files/preprocessing-pipeline/xrefs-internal.template"
+assert os.path.exists(template), f"Could not find template {repr(template)}"
+subprocess.check_call(["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "xrefs-internal-DO-NOT-EDIT-ME"])
+"""
+
+include "xrefs-internal-DO-NOT-EDIT-ME"
+include "_run_common.conseq"

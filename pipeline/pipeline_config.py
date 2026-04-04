@@ -47,7 +47,6 @@ class BasePipelineSpecificConfig(BaseModel):
     state_path: str
     log_destination: str
     working_dir: str
-    env_mapping: Dict[str, str]
 
 
 class PreprocessingPipelineSpecificConfig(BasePipelineSpecificConfig):

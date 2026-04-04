@@ -46,30 +46,10 @@ pipelines:
     log_destination: preprocess-logs
     working_dir: /work/pipeline/preprocessing-pipeline
 
-    # Environment name mapping
-    env_mapping:
-      qa: iqa
-      istaging: internal
-      internal: internal
-      dqa: dmc
-      dstaging: dmc
-      dmc: dmc
-      pstaging: dmc
-      peddep: dmc
-      xqa: external
-      xstaging: external
-      external: external
-      test-prefix: iqa # Any env starting with "test-" maps to this
-
   data_prep:
     state_path: pipeline/data-prep-pipeline/state
     log_destination: data-prep-logs
     working_dir: /work/pipeline/data-prep-pipeline
-
-    # Environment name mapping
-    env_mapping:
-      internal: internal
-      external: external
 
     # Template files for external/internal runs
     templates:

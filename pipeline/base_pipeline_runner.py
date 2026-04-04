@@ -229,6 +229,9 @@ class PipelineRunner(ABC):
     def run_via_container(self, command, config: CommonConfig):
         """Run command inside Docker container with pipeline-specific configuration."""
         cwd = os.getcwd()
+        base_dir = os.path.dirname(os.path.dirname(cwd)) # include two directories up to make sure we also have access to depmap_deploy
+        assert config.conseq_file is not None
+        working_dir = os.path.dirname(config.conseq_file)
         docker_cfg = self.config.docker
         volumes = docker_cfg.volumes
         cred_files = self.config.credentials.required_files
@@ -246,9 +249,9 @@ class PipelineRunner(ABC):
             [
                 "--rm",
                 "-v",
-                f"{cwd}:{cwd}",
+                f"{base_dir}:{base_dir}",
                 "-w",
-                cwd,
+                working_dir,
                 "-v",
                 f"{config.creds_dir}/{cred_files[1]}:{volumes.sparkles_cache}",
                 "-v",
@@ -273,8 +276,25 @@ class PipelineRunner(ABC):
 
         return self.subprocess_run(docker_cmd)
 
-    def map_environment_name(self, env_name: str, env_mapping: dict[str, str]) -> str:
+    def map_environment_name(self, env_name: str) -> str:
         """Map a user-facing environment name to the name used in conseq filenames."""
+
+        # Environment name mapping
+        env_mapping = {
+    
+      "iqa": "internal",
+      "istaging": "internal",
+      "internal": "internal",
+      "dqa": "dmc",
+      "dstaging": "dmc",
+      "pstaging": "dmc",
+      "peddep": "dmc",
+      "xqa": "external",
+      "xstaging": "external",
+      "test-prefix": "iqa" # Any env starting with "test-" maps to this
+
+        }
+
         if env_name.startswith("test-"):
             return env_mapping["test-prefix"]
         return env_mapping.get(env_name, env_name)
@@ -309,9 +329,10 @@ class PipelineRunner(ABC):
 
     def get_conseq_file(self, config: CommonConfig) -> str:
         assert self.script_path is not None
-        env_mapping = self.config.pipelines.data_prep.env_mapping
-        mapped_env = self.map_environment_name(config.env_name, env_mapping)
+        mapped_env = self.map_environment_name(config.env_name)
+        print(f"env_name={config.env_name}, mapped_env={mapped_env}")
         pipeline_dir = str(self.script_path.parent)
+        print("*********", mapped_env)
         original_conseq = f"{pipeline_dir}/run_{mapped_env}.conseq"
         if config.publish_dest:
             conseq_file = self.create_override_conseq_file(
