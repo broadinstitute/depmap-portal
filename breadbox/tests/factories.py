@@ -521,7 +521,7 @@ def release_version(
         funding=funding,
         terms=terms,
         files=file_objs,
-        pipelines=_handle_call_if_omitted(pipelines),
+        release_pipelines=_handle_call_if_omitted(pipelines),
     )
 
     # Use CRUD to create so that FTS5 search index is populated

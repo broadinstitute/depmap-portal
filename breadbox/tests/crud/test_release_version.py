@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from typing import Optional
+from uuid import uuid4
 from breadbox.models.release_version import ReleaseFileSearchIndex
 from breadbox.db.session import SessionWithUser
 from breadbox.crud.release_version import (
@@ -24,7 +25,8 @@ def test_get_release_version(minimal_db: SessionWithUser):
     assert retrieved.version_name == "26Q1"
 
     # Test non-existent ID
-    assert get_release_version(minimal_db, "non-existent-uuid") is None
+    random_id = uuid4()
+    assert get_release_version(minimal_db, random_id) is None
 
 
 def test_get_release_versions_date_ranges(minimal_db: SessionWithUser):
@@ -286,4 +288,5 @@ def test_get_release_version_include_files_toggle(minimal_db: SessionWithUser):
     inspected_with_files = inspect(retrieved_with_files)
     # 'files' SHOULD NOT be in the unloaded set (Eager Loading)
     assert "files" not in inspected_with_files.unloaded
+    assert retrieved_with_files is not None
     assert retrieved_with_files.files[0].file_name == file_name

@@ -18,6 +18,21 @@ from ..schemas.release_version import CreateReleaseVersionParams
 log = logging.getLogger(__name__)
 
 
+def get_release_version_by_release_name_and_version(
+    db: SessionWithUser, release_name: str, version_name: str,
+) -> Optional[ReleaseVersion]:
+    """
+    Find a specific version of a named release group, 
+    optionally eager-loading associated files.
+    """
+    query = db.query(ReleaseVersion).filter(
+        ReleaseVersion.release_name == release_name,
+        ReleaseVersion.version_name == version_name,
+    )
+
+    return query.one_or_none()
+
+
 def get_release_version(
     db: SessionWithUser, release_version_id: UUID, include_files: bool = True,
 ) -> Optional[ReleaseVersion]:

@@ -1,6 +1,7 @@
 from datetime import date
 from typing import List, Optional, Annotated
 from logging import getLogger
+from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, Body, Query
 
 from breadbox.api.dependencies import get_db_with_user
@@ -20,10 +21,12 @@ log = getLogger(__name__)
 
 
 def _get_required_release_version(
-    db: SessionWithUser, release_version_id: str
+    db: SessionWithUser, release_version_id: UUID, include_files: bool = False
 ) -> ReleaseVersion:
     """Helper to fetch a release_version or raise 404"""
-    release_version = release_version_crud.get_release_version(db, release_version_id)
+    release_version = release_version_crud.get_release_version(
+        db=db, release_version_id=release_version_id, include_files=include_files
+    )
     if release_version is None:
         raise HTTPException(
             status_code=404,
@@ -76,7 +79,7 @@ def get_release_versions(
     response_model=ReleaseVersionResponse,
 )
 def get_release_version(
-    release_version_id: str,
+    release_version_id: UUID,
     response: Response,
     include_files: bool = Query(
         True,
@@ -137,13 +140,15 @@ def create_release_version(
     "/{release_version_id}", operation_id="delete_release_version",
 )
 def delete_release_version(
-    release_version_id: str, db: SessionWithUser = Depends(get_db_with_user),
+    release_version_id: UUID, db: SessionWithUser = Depends(get_db_with_user),
 ):
     """
     Delete a release version. Associated files and pipelines will be 
     deleted automatically via cascade.
     """
-    release = _get_required_release_version(db, release_version_id)
+    release = _get_required_release_version(
+        db=db, release_version_id=release_version_id
+    )
 
     with transaction(db):
         release_version_crud.delete_release_version(db, release)
