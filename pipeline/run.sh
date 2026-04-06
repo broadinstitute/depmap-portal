@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Exit immediately if a command exits with a non-zero status
-set -ex
+set -e
 
 # This script is intended to a very thin shell which is responsible for 
 # getting the environment set up enough to be able to run some command
@@ -10,13 +10,28 @@ set -ex
 #  - the depmap-deploy-repo is checked out into the right place
 #  - our current working directory is the 'pipeline' directory
 
-if [ "$DEPMAP_DEPLOY_BRANCH" == "" ];
+# first start by figuring out where this run.sh script is so we can make all paths relative to that
+SCRIPT_HOME="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
+
+if [ -e "${SCRIPT_HOME}/.env" ]; then
+    source "${SCRIPT_HOME}/.env"
+fi
+
+if [ "$DEPMAP_DEPLOY_BRANCH" == "" ]; then
     echo "the environment variable DEPMAP_DEPLOY_BRANCH must be set to run this script"
     exit 1
 fi
 
-# first start by figuring out where this run.sh script is so we can make all paths relative to that
-SCRIPT_HOME="$(cd "$(dirname "$(realpath "${BASH_SOURCE[0]}")")" && pwd)"
+# run poetry if the lock file has changed
+POETRY_LOCK_HASH_FILE="${SCRIPT_HOME}/.poetry-lock-sha256"
+POETRY_LOCK_HASH=$(sha256sum ${SCRIPT_HOME}/poetry.lock | awk '{print $1}')
+if [ -f "$POETRY_LOCK_HASH_FILE" ] && [ "$(cat "$POETRY_LOCK_HASH_FILE")" = "$POETRY_LOCK_HASH" ]; then
+    echo "Poetry lock unchanged -- skipping install"
+else
+    cd "$SCRIPT_HOME"
+    poetry install
+    echo "$POETRY_LOCK_HASH" > "$POETRY_LOCK_HASH_FILE"
+fi
 
 # ==============================================
 # CHECKOUT DEPLOY REPO
@@ -33,4 +48,4 @@ fi
 
 # Execute the remainder as shell command.
 cd "$SCRIPT_HOME"
-poetry "$@"
+exec poetry run "$@"

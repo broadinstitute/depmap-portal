@@ -2,7 +2,7 @@ rule transform_genetic_derangement:
     inputs:
         cngene_log2={"type": "cngene_log2"},
         gene={"type": "gene"},
-        script=fileref('../scripts/predictability/transform_genetic_derangement.py'),
+        script=fileref('scripts/predictability/transform_genetic_derangement.py'),
     outputs:
         {
             "type": "predictability_genetic_derangement",
@@ -15,8 +15,8 @@ rule transform_driver_events:
     inputs:
         mutations={"type": "mutations"},
         oncokb_annotated={"type": "oncokb_annotated"},
-        script=fileref('../scripts/predictability/transform_driver_events.py'),
-        update_taiga_script=fileref('upload_to_taiga.py')
+        script=fileref('scripts/predictability/transform_driver_events.py'),
+        update_taiga_script=fileref('scripts/upload_to_taiga.py')
     outputs:
         {
             "type": "predictability_driver_events",
@@ -29,7 +29,7 @@ rule transform_fusion:
     inputs:
         fusion={"type": "fusion"},
         gene={"type": "gene"},
-        script=fileref('../../preprocessing-pipeline/scripts/make_fusions_matrix.py'),
+        script=fileref('../preprocessing-pipeline/scripts/make_fusions_matrix.py'),
     outputs:
         {
             "type": "predictability_fusion",
@@ -43,7 +43,7 @@ rule transform_crispr_confounders:
         model={"type": "model"},
         achilles_screen_qc_report={"type": "achilles_screen_qc_report"},
         crispr_screen_map={"type": "crispr_screen_map"},
-        script=fileref('../scripts/predictability/transform_crispr_confounders.py'),
+        script=fileref('scripts/predictability/transform_crispr_confounders.py'),
     outputs:
         {
             "type": "predictability_crispr_confounders",

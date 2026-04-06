@@ -42,12 +42,11 @@ if [ "$DEPMAP_DEPLOY_BRANCH" == "" ]; then
 fi
 
 # ==============================================
-# CLEANUP PREVIOUS RUNS
+# CLEANUP PREVIOUS RUNS (in case something failed and they got left behind. Otherwise later commands will fail)
 # ==============================================
 echo "Cleaning up previous Docker containers..."
 set +e  # Don't exit on error for cleanup
-docker kill "depmap-data-prep-pipeline-run-${JOB_NAME}" 2>/dev/null || true
-docker kill "depmap-preprocessing-pipeline-run-${JOB_NAME}" 2>/dev/null || true
+docker kill "${JOB_NAME}" 2>/dev/null || true
 set -e  # Re-enable exit on error
 
 # ==============================================
@@ -63,33 +62,55 @@ fi
 ( cd depmap-deploy && git checkout "$DEPMAP_DEPLOY_BRANCH" )
 
 # ==============================================
-# DATA PREP PIPELINE
+# DELETE FILES FROM OLD RUNS (if necessary)
 # ==============================================
-echo "==================== DATA PREP PIPELINE ===================="
 
 if [ "$CLEAN_START" = "true" ] && [ -d "pipeline/data-prep-pipeline/state" ]; then
     echo "Cleaning data prep pipeline state..."
     sudo chown -f -R ubuntu pipeline/data-prep-pipeline/state || true
     rm -rf pipeline/data-prep-pipeline/state
+
+    echo "Cleaning preprocessing pipeline state..."
+    sudo chown -f -R ubuntu pipeline/preprocessing-pipeline/state || true
+    rm -rf pipeline/preprocessing-pipeline/state
 fi
+
+# ==============================================
+# DETERMINE PIPELINE ARGS
+# ==============================================
+
+# Build pipeline command with optional flags
+RUN_PIPELINE_ARGS=" ${ENV_NAME} ${JOB_NAME}"
+
+if [ "$PUBLISH_DEST" != "" ]; then
+    RUN_PIPELINE_ARGS="$RUN_PIPELINE_ARGS --publish-dest ${PUBLISH_DEST}"
+fi
+
+if [ "$EXPORT_PATH" != "" ]; then
+    RUN_PIPELINE_ARGS="$RUN_PIPELINE_ARGS --export-path ${EXPORT_PATH}"
+fi
+
+if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
+    RUN_PIPELINE_ARGS="$RUN_PIPELINE_ARGS --manually-run-conseq ${CONSEQ_ARGS}"
+fi
+
+if [ "$START_WITH" != "" ]; then
+    RUN_PIPELINE_ARGS="$RUN_PIPELINE_ARGS --start-with ${START_WITH}"
+fi
+
+# ==============================================
+# DATA PREP PIPELINE
+# ==============================================
+echo "==================== DATA PREP PIPELINE ===================="
+
 
 # Copy non-public conseq files to the pipeline directory
 echo "Syncing non-public pipeline files..."
 rsync -av depmap-deploy/non-public-pipeline-files/ pipeline/
 
-# Build data prep pipeline command with optional flags
-DATA_PREP_CMD="python pipeline/data-prep-pipeline/data_prep_pipeline_runner.py ${ENV_NAME} depmap-data-prep-pipeline-run-${JOB_NAME}"
-
-if [ "$PUBLISH_DATA_PREP_FILES" = "true" ]; then
-    DATA_PREP_CMD="$DATA_PREP_CMD --publish"
-    echo "Publishing of data-prep-pipeline generated files is ENABLED"
-else
-    echo "Publishing of data-prep-pipeline generated files is DISABLED"
-fi
-
 # Run the Python data prep pipeline script
 echo "Starting data prep pipeline..."
-$DATA_PREP_CMD
+python pipeline/data-prep-pipeline/data_prep_pipeline_runner.py ${RUN_PIPELINE_ARGS}
 
 # Check if data prep pipeline succeeded
 if [ $? -ne 0 ]; then
@@ -104,42 +125,12 @@ echo "Data prep pipeline completed successfully."
 # ==============================================
 echo "==================== PREPROCESSING PIPELINE ===================="
 
-# export PREPROCESSING_PUBLISH_DEST="gs://preprocessing-pipeline-outputs/depmap-pipeline-25q4/preprocessing-pipeline-iqa/publish"
-# export PREPROCESSING_EXPORT_PATH="gs://preprocessing-pipeline-outputs/depmap-pipeline-25q4/preprocessing-pipeline-iqa/export"
-
-if [ "$CLEAN_START" = "true" ] && [ -d "pipeline/preprocessing-pipeline/state" ]; then
-    echo "Cleaning preprocessing pipeline state..."
-    sudo chown -f -R ubuntu pipeline/preprocessing-pipeline/state || true
-    rm -rf pipeline/preprocessing-pipeline/state
-fi
-
 echo "Syncing non-public pipeline files..."
 rsync -av depmap-deploy/non-public-pipeline-files/ pipeline/
 
-# Build preprocessing pipeline command
-PREPROCESSING_CMD="python pipeline/preprocessing-pipeline/preprocessing_pipeline_runner.py \
-    ${ENV_NAME} \
-    depmap-preprocessing-pipeline-run-${JOB_NAME}"
-
-if [ "$PREPROCESSING_PUBLISH_DEST" != "" ]; then
-    PREPROCESSING_CMD="$PREPROCESSING_CMD --publish-dest ${PREPROCESSING_PUBLISH_DEST}"
-fi
-
-if [ "$PREPROCESSING_EXPORT_PATH" != "" ]; then
-    PREPROCESSING_CMD="$PREPROCESSING_CMD --export-path ${PREPROCESSING_EXPORT_PATH}"
-fi
-
-if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
-    PREPROCESSING_CMD="$PREPROCESSING_CMD --manually-run-conseq ${CONSEQ_ARGS}"
-fi
-
-if [ "$START_WITH" != "" ]; then
-    PREPROCESSING_CMD="$PREPROCESSING_CMD --start-with ${START_WITH}"
-fi
-
 # Run the Python preprocessing pipeline script  
 echo "Starting preprocessing pipeline..."
-eval $PREPROCESSING_CMD
+python pipeline/preprocessing-pipeline/preprocessing_pipeline_runner.py ${RUN_PIPELINE_ARGS}
 
 # Check if preprocessing pipeline succeeded
 if [ $? -ne 0 ]; then

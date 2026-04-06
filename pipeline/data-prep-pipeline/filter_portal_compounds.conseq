@@ -12,7 +12,7 @@ rule filter-portal-compounds:
         portal_compounds={"type": "portal_compounds"},
         prism_oncology_reference_lum_log2_auc_matrix=all{"type"~ "prism_oncology_reference_lum_log2_auc_matrix|stub-artifact"},
         prism_oncology_reference_seq_log2_auc_matrix=all{"type"~ "prism_oncology_reference_seq_log2_auc_matrix|stub-artifact"},
-        script=fileref('../scripts/portal_compounds/filter_portal_compounds.py'),
+        script=fileref('scripts/portal_compounds/filter_portal_compounds.py'),
     outputs:
         {
             "type": "filtered_portal_compounds",

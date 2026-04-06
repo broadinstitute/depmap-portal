@@ -1,0 +1,9 @@
+include "update_hgnc_gene_table.conseq"
+include "cngene_log_2_transformation.conseq"
+include "filter_portal_compounds.conseq"
+include "subtype_tree.conseq"
+include "predictability.conseq"
+
+if "config.get('is_dev', 'True') != 'True' and config.get('publish_data_prep', 'False') == 'True'":
+  include "publish.conseq"
+endif

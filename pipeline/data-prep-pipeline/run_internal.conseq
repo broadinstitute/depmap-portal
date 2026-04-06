@@ -1,0 +1,15 @@
+# canonicalize taiga IDs in the config file
+eval """
+import subprocess
+import os
+
+template=f"{rules.vars['SCRIPT_DIR']}/../../depmap-deploy/non-public-pipeline-files/data-prep-pipeline/release_inputs_internal.template"
+assert os.path.exists(template), f"Could not find {repr(template)}"
+subprocess.check_call(["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "release_inputs_internal-DO-NOT-EDIT-ME"])
+
+print ("-----------------")
+print(os.getcwd())
+"""
+
+include "release_inputs_internal-DO-NOT-EDIT-ME"
+include "run_common.conseq"
