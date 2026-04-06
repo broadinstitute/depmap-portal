@@ -92,7 +92,7 @@ class PipelineRunner:
 
     def read_docker_image_name(self, script_dir):
         """Load Docker image name from image-name file."""
-        image_name_file = script_dir.parent / "image-name"
+        image_name_file = script_dir / "image-name"
         assert (
             image_name_file.exists()
         ), f"Could not find image-name file in {script_dir.parent}"
