@@ -478,7 +478,7 @@ class CellLineAlias(Model):
         Integer(), primary_key=True, autoincrement=True
     )
     alias: Mapped[str] = mapped_column(String(), index=True)
-    depmap_id: Mapped[int] = mapped_column(Integer(), ForeignKey("cell_line.depmap_id"))
+    depmap_id: Mapped[str] = mapped_column(String(), ForeignKey("cell_line.depmap_id"))
     cell_line: Mapped[Optional["CellLine"]] = relationship(
         "CellLine",
         foreign_keys="CellLineAlias.depmap_id",
