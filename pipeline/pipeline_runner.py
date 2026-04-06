@@ -311,6 +311,7 @@ class PipelineRunner:
 
         Returns the filename of the override file, relative to pipeline_dir.
         """
+        original_conseq = f"{pipeline_dir}/{original_conseq}"
         override_name = f"{original_conseq}.patched"
 
         with open(original_conseq, "r") as original:
