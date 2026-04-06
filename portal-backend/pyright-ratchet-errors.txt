@@ -28,8 +28,8 @@ api.py: error: Argument of type "str | None" cannot be assigned to parameter "fe
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "feature_type" of type "str" in function "get_organized_contexts"
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "feature_type" of type "str" in function "get_sig_context_dataframe"
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "in_group" of type "str" in function "_get_analysis_data_table"
-api.py: error: Argument of type "str | None" cannot be assigned to parameter "level_0_subtype_code" of type "str" in function "get_context_explorer_lineage_trees_and_table_data"
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "level" of type "int" in function "get_context_dose_curves"
+api.py: error: Argument of type "str | None" cannot be assigned to parameter "level_0_subtype_code" of type "str" in function "get_context_explorer_lineage_trees_and_table_data"
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "out_group_type" of type "str" in function "_get_analysis_data_table"
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "out_group_type" of type "str" in function "get_context_dose_curves"
 api.py: error: Argument of type "str | None" cannot be assigned to parameter "replicate_dataset_name" of type "str" in function "get_dose_response_curves_per_model"
@@ -65,12 +65,13 @@ box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to p
 box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to parameter "level_0" of type "str" in function "get_context_plot_box_data"
 box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to parameter "row_name" of type "str" in function "valid_row"
 box_plot_utils.py: error: Argument of type "Column[str]" cannot be assigned to parameter "selected_code" of type "str" in function "get_path_to_node"
-box_plot_utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "subtype_codes" of type "List[str]" in function "get_model_ids_for_node_branch"
 box_plot_utils.py: error: Argument of type "Unknown | Column[str]" cannot be assigned to parameter "value" of type "str" in function "index"
+box_plot_utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "subtype_codes" of type "List[str]" in function "get_model_ids_for_node_branch"
 breadbox_dao.py: error: Type "NDFrame | Unknown" is not assignable to return type "Series"
 categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
 categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
 categories.py: error: Method "_get_na_value" overrides class "CategoryConfig" in an incompatible manner
+cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
 cell_line_loader.py: error: "cell_line_alias" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "cell_line_display_name" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "cell_line_passport_id" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -81,7 +82,6 @@ cell_line_loader.py: error: "gender" is not a known attribute of "None" (reportO
 cell_line_loader.py: error: "image_filename" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "lineage" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "primary_disease" is not a known attribute of "None" (reportOptionalMemberAccess)
-cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
 cell_line_loader.py: error: "rrid" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "source" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "tumor_type" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -129,8 +129,8 @@ compound_dose_replicate_loader.py: error: No parameter named "is_masked" (report
 compound_dose_replicate_loader.py: error: No parameter named "label" (reportCallIssue)
 compound_dose_replicate_loader.py: error: No parameter named "replicate" (reportCallIssue)
 compound_loader.py: error: No parameter named "alias" (reportCallIssue)
-compound_loader.py: error: No parameter named "compound_id" (reportCallIssue)
 compound_loader.py: error: No parameter named "compound" (reportCallIssue)
+compound_loader.py: error: No parameter named "compound_id" (reportCallIssue)
 compound_loader.py: error: No parameter named "entity_alias" (reportCallIssue)
 compound_loader.py: error: No parameter named "inchikey" (reportCallIssue)
 compound_loader.py: error: No parameter named "label" (reportCallIssue)
@@ -138,8 +138,8 @@ compound_loader.py: error: No parameter named "smiles" (reportCallIssue)
 compound_loader.py: error: No parameter named "target_gene" (reportCallIssue)
 compound_loader.py: error: No parameter named "target_or_mechanism" (reportCallIssue)
 compound_loader.py: error: No parameter named "units" (reportCallIssue)
-compound_loader.py: error: No parameter named "xref_type" (reportCallIssue)
 compound_loader.py: error: No parameter named "xref" (reportCallIssue)
+compound_loader.py: error: No parameter named "xref_type" (reportCallIssue)
 conftest.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "obj" of type "DataclassInstance" in function "asdict"
 conftest.py: error: Cannot assign to attribute "app" for class "SQLAlchemy"
 conftest.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
@@ -166,8 +166,8 @@ db_load_commands.py: error: No parameter named "canonical_taiga_id" (reportCallI
 db_load_commands.py: error: No parameter named "taiga_id" (reportCallIssue)
 depmap_model_loader.py: error: No parameter named "age_category" (reportCallIssue)
 depmap_model_loader.py: error: No parameter named "ccle_name" (reportCallIssue)
-depmap_model_loader.py: error: No parameter named "cell_line_name" (reportCallIssue)
 depmap_model_loader.py: error: No parameter named "cell_line" (reportCallIssue)
+depmap_model_loader.py: error: No parameter named "cell_line_name" (reportCallIssue)
 depmap_model_loader.py: error: No parameter named "depmap_model" (reportCallIssue)
 depmap_model_loader.py: error: No parameter named "image_filename" (reportCallIssue)
 depmap_model_loader.py: error: No parameter named "json_encoded_metadata" (reportCallIssue)
@@ -198,42 +198,33 @@ executive.py: error: "num_dependent_cell_lines" is not a known attribute of "Non
 executive.py: error: "num_lines_with_data" is not a known attribute of "None" (reportOptionalMemberAccess)
 executive.py: error: "plot_param" is possibly unbound (reportPossiblyUnboundVariable)
 executive.py: error: Argument of type "Column[DependencyEnum]" cannot be assigned to parameter "dataset_name" of type "DependencyEnum" in function "get"
-executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "dataset_id" of type "int" in function "get_all_models"
-executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "dataset_id" of type "int" in function "get_top_models_features"
-executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "get_all_models"
-executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "get_top_models_features"
 executive.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_label_or_id" of type "str | int" in function "get_values_by_entity"
 executive.py: error: Argument of type "Column[str]" cannot be assigned to parameter "key" of type "str" in function "__getitem__"
-executive.py: error: Argument of type "Column[Unknown]" cannot be assigned to parameter "x" of type "ConvertibleToFloat" in function "__new__"
-executive.py: error: Argument of type "DependencyDataset | None" cannot be assigned to parameter "filter_dataset" of type "DependencyDataset" in function "get_predictive_models_for_compound"
 executive.py: error: Argument of type "str | Any" cannot be assigned to parameter "value" of type "list[Unknown]" in function "__setitem__"
 executive.py: error: Argument to class must be a base class (reportGeneralTypeIssues)
 executive.py: error: Cannot access attribute "get_top_models_features" for class "type[TDPredictiveModel]"
 executive.py: error: Cannot access attribute "name" for class "None"
-executive.py: error: Expression of type "None" cannot be assigned to parameter of type "DependencyDataset"
 executive.py: error: Incorrect keyword arguments for __init_subclass__ method (reportGeneralTypeIssues)
 executive.py: error: Invalid conditional operand of type "Column[bool] | None"
-executive.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 executive.py: error: No parameter named "labels" (reportCallIssue)
 executive.py: error: No parameter named "total" (reportCallIssue)
 executive.py: error: Type "dict[Any, Any]" is not assignable to declared type "CrisprDepDistInfo" (reportAssignmentType)
 executive.py: error: Type "dict[Any, Any]" is not assignable to declared type "GeneExecutiveInfoDict" (reportAssignmentType)
-executive.py: error: Type "tuple[CompoundExperiment | None, DependencyDataset | None]" is not assignable to return type "Tuple[CompoundExperiment, DependencyDataset]"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "forced_update" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "hash_method" of type "(...) -> Unknown" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "key_prefix" of type "str" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "make_cache_key" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "response_filter" of type "((...) -> Unknown) | None" in function "cached"
 extensions.py: error: Argument of type "bool" cannot be assigned to parameter "unless" of type "((...) -> Unknown) | None" in function "cached"
-factories.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 factories.py: error: "LazyAttribute" is not exported from module "factory" (reportPrivateImportUsage)
 factories.py: error: "Meta" overrides symbol of same name in class "DatasetFactory"
 factories.py: error: "Meta" overrides symbol of same name in class "SQLAlchemyModelFactory"
 factories.py: error: "SelfAttribute" is not exported from module "factory" (reportPrivateImportUsage)
 factories.py: error: "Sequence" is not exported from module "factory" (reportPrivateImportUsage)
 factories.py: error: "SubFactory" is not exported from module "factory" (reportPrivateImportUsage)
-factories.py: error: Argument of type "flask_sqlalchemy.query.Query | sqlalchemy.orm.query.Query[Any]" cannot be assigned to parameter "query" of type "MutationTableSpec" in function "format_mutations_table"
+factories.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 factories.py: error: Argument of type "Query[Any]" cannot be assigned to parameter "query" of type "MutationTableSpec" in function "format_mutations_table"
+factories.py: error: Argument of type "flask_sqlalchemy.query.Query | sqlalchemy.orm.query.Query[Any]" cannot be assigned to parameter "query" of type "MutationTableSpec" in function "format_mutations_table"
 factories.py: error: Cannot access attribute "columns" for class "FromStatement[Any]"
 factories.py: error: Cannot access attribute "columns" for class "UpdateBase"
 factories.py: error: Cannot access attribute "statement" for class "MutationTableSpec*"
@@ -278,23 +269,19 @@ get_and_process_data.py: error: "col_index" is not a known attribute of "None" (
 global_search_loader.py: error: No parameter named "download_file" (reportCallIssue)
 global_search_loader.py: error: No parameter named "label" (reportCallIssue)
 global_search_loader.py: error: No parameter named "subtype_context_search" (reportCallIssue)
-hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 hdf5_utils.py: error: "Datatype" is not iterable
+hdf5_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
 hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "arr" of type "ArrayLike" in function "apply_along_axis"
 hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "iterable" of type "Iterable[_T@list]" in function "__init__"
 hdf5_utils.py: error: Argument of type "Group | Dataset | Datatype" cannot be assigned to parameter "iterable" of type "Iterable[_T@list]" in function "__init__"
+hdf5_utils.py: error: Argument of type "NDArray[Any]" cannot be assigned to parameter "x1" of type "_ScalarLike_co" in function "__call__"
 hdf5_utils.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
 hdf5_utils.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
-hdf5_utils.py: error: Argument of type "NDArray[Any]" cannot be assigned to parameter "x1" of type "_ScalarLike_co" in function "__call__"
 hdf5_utils.py: error: Cannot access attribute "shape" for class "Datatype"
 hdf5_utils.py: error: Cannot access attribute "shape" for class "Group"
 hdf5_utils.py: error: No overloads for "__call__" match the provided arguments (reportCallIssue)
 hdf5_utils.py: error: No overloads for "apply_along_axis" match the provided arguments (reportCallIssue)
 index.py: error: Argument of type "(model: PredictiveModel) -> (int | None)" cannot be assigned to parameter "key" of type "(PredictiveModel) -> SupportsRichComparison" in function "sort"
-index.py: error: Argument of type "Column[int]" cannot be assigned to parameter "compound_id" of type "int" in function "get_compound_experiment_priority_sorted_datasets_with_compound"
-index.py: error: Argument of type "Column[int]" cannot be assigned to parameter "dataset_id" of type "int" in function "get_all_models"
-index.py: error: Argument of type "Column[int]" cannot be assigned to parameter "dataset_id" of type "int" in function "get_top_models_features"
-index.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "get_relation_to_entity"
 index.py: error: Argument of type "Column[str]" cannot be assigned to parameter "compound_id" of type "str" in function "get_all_datasets_containing_compound"
 index.py: error: Argument of type "Column[str]" cannot be assigned to parameter "compound_id" of type "str" in function "get_heatmap_dose_curves_tab_drc_options"
 index.py: error: Argument of type "Column[str]" cannot be assigned to parameter "compound_id" of type "str" in function "get_predictive_models_for_compound"
@@ -308,14 +295,10 @@ index.py: error: Argument of type "Column[str]" cannot be assigned to parameter 
 index.py: error: Argument of type "Column[str]" cannot be assigned to parameter "pred_model_feature_id" of type "str" in function "get_interactive_url_for_entity"
 index.py: error: Argument of type "Column[str]" cannot be assigned to parameter "pred_model_feature_id" of type "str" in function "get_relation_to_entity"
 index.py: error: Argument of type "Column[str]" cannot be assigned to parameter "row_name" of type "str" in function "valid_row"
-index.py: error: Argument of type "DependencyDataset | None" cannot be assigned to parameter "object" of type "DependencyDataset" in function "append"
 index.py: error: Argument of type "str | None" cannot be assigned to parameter "pred_model_feature_type" of type "str" in function "get_relation_to_entity"
 index.py: error: Argument of type "str | None" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
 index.py: error: Cannot access attribute "any" for class "List[Gene]"
 index.py: error: Cannot access attribute "entrez_id" for class "Entity"
-index.py: error: Cannot access attribute "has" for class "DependencyDataset"
-index.py: error: Cannot access attribute "has" for class "Entity"
-index.py: error: Invalid conditional operand of type "Column[int]"
 index.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 initialize_auth_config.py: error: Argument of type "type[GroupAuthConfig]" cannot be assigned to parameter "groups" of type "List[GroupAuthConfig]" in function "_create_authorization_config"
 initialize_current_auth.py: error: Argument of type "str | None" cannot be assigned to parameter "user_id_override" of type "str" in function "_setup_current_authorizations"
@@ -361,20 +344,18 @@ mock_gcs.py: error: Argument of type "str | None" cannot be assigned to paramete
 mock_gcs.py: error: Cannot assign to attribute "_content" for class "MockBlob*"
 mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "MockClient"
 mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
-models_new.py: error: Invalid conditional operand of type "Column[str]"
-models_new.py: error: Method "__eq__" overrides class "object" in an incompatible manner
-models_new.py: error: Type "Column[str]" is not assignable to return type "str | None"
-models_new.py: error: Type "DepmapModel | None" is not assignable to return type "DepmapModel"
-models_new.py: error: Type "Series | Unknown | DataFrame" is not assignable to return type "Series"
+models.py: error: "RelationshipProperty[Any]" is not iterable
 models.py: error: "config" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: "depmap_ids" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: "display_name" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: "entity_type" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: "group" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: "matrix" is not a known attribute of "None" (reportOptionalMemberAccess)
-models.py: error: "RelationshipProperty[Any]" is not iterable
 models.py: error: "taiga_id" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: Argument of type "ArrayLike | float | Number | number[Any, int | float | complex] | Index | Series | Unknown | ArrowExtensionArray | NAType | NaTType | Timestamp | Timedelta | Any | DatetimeIndex | TimedeltaIndex | BooleanArray | FloatingArray | IntegerArray | ndarray[_AnyShape, dtype[signedinteger[_64Bit]]]" cannot be assigned to parameter "x" of type "ConvertibleToFloat" in function "__new__"
+models.py: error: Argument of type "ColumnElement[bool] | Literal[False]" cannot be assigned to parameter "criterion" of type "_ColumnExpressionArgument[bool]" in function "filter"
+models.py: error: Argument of type "Column[TabularEnum]" cannot be assigned to parameter "key" of type "BiomarkerEnum | DependencyEnum | TabularEnum" in function "__getitem__"
+models.py: error: Argument of type "Column[TabularEnum]" cannot be assigned to parameter "key" of type "TabularEnum" in function "__getitem__"
 models.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "get"
 models.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "integrate_size_and_label_data"
 models.py: error: Argument of type "Column[int]" cannot be assigned to parameter "entity_id" of type "int" in function "legacy_dataset_contains_entity"
@@ -382,9 +363,9 @@ models.py: error: Argument of type "Column[str] | str" cannot be assigned to par
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "dataset_given_id" of type "str" in function "get_correlation_for_entity"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_feature_type"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_label"
+models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "feature" of type "str" in function "get_row_of_values"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "feature_label" of type "str" in function "get_entity_summary_metadata"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "feature_label" of type "str" in function "get_feature_data"
-models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "feature" of type "str" in function "get_row_of_values"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "file_path" of type "str" in function "get_row_of_values"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "key" of type "str" in function "get"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "paths" of type "BytesPath" in function "join"
@@ -392,22 +373,18 @@ models.py: error: Argument of type "Column[str]" cannot be assigned to parameter
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "pred_model_feature_id" of type "str" in function "get_correlation_for_entity"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "pred_model_feature_id" of type "str" in function "get_interactive_url_for_entity"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads"
-models.py: error: Argument of type "Column[TabularEnum]" cannot be assigned to parameter "key" of type "BiomarkerEnum | DependencyEnum | TabularEnum" in function "__getitem__"
-models.py: error: Argument of type "Column[TabularEnum]" cannot be assigned to parameter "key" of type "TabularEnum" in function "__getitem__"
-models.py: error: Argument of type "ColumnElement[bool] | Literal[False]" cannot be assigned to parameter "criterion" of type "_ColumnExpressionArgument[bool]" in function "filter"
 models.py: error: Argument of type "List[str] | None" cannot be assigned to parameter "obj" of type "Sized" in function "len"
-models.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
 models.py: error: Argument of type "RelationshipProperty[Any]" cannot be assigned to parameter "onclause" of type "_OnClauseArgument | None" in function "join"
 models.py: error: Argument of type "RelationshipProperty[Any]" cannot be assigned to parameter "onclause" of type "_OnClauseArgument | None" in function "outerjoin"
-models.py: error: Argument of type "str | None" cannot be assigned to parameter "pred_model_feature_type" of type "str" in function "get_relation_to_entity"
 models.py: error: Argument of type "Unknown | Column[int]" cannot be assigned to parameter "index" of type "int" in function "get_row_of_values"
+models.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
+models.py: error: Argument of type "str | None" cannot be assigned to parameter "pred_model_feature_type" of type "str" in function "get_relation_to_entity"
 models.py: error: Cannot access attribute "__table__" for class "type[Fusion]"
 models.py: error: Cannot access attribute "__table__" for class "type[Mutation]"
 models.py: error: Cannot access attribute "__table__" for class "type[Translocation]"
 models.py: error: Cannot access attribute "apply" for class "ndarray[_AnyShape, dtype[Any]]"
 models.py: error: Cannot access attribute "cell_line" for class "_CellLine*"
 models.py: error: Cannot access attribute "compound" for class "_Compound*"
-models.py: error: Cannot access attribute "compound" for class "Entity"
 models.py: error: Cannot access attribute "dataset" for class "Matrix*"
 models.py: error: Cannot access attribute "download_file" for class "_File*"
 models.py: error: Cannot access attribute "gene" for class "_Gene*"
@@ -444,16 +421,7 @@ models.py: error: No parameter named "transpose" (reportCallIssue)
 models.py: error: No parameter named "uuid" (reportCallIssue)
 models.py: error: Object of type "None" cannot be used as iterable value (reportOptionalIterable)
 models.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "DependencyDataset"
-models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "Entity"
-models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "List[Gene]"
-models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "List[PredictiveFeatureResult]"
-models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "Matrix"
-models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "PredictiveFeature"
-models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "PredictiveModel"
 models.py: error: Type "CellLine | None" is not assignable to return type "CellLine"
-models.py: error: Type "list[DependencyDataset | None]" is not assignable to return type "List[DependencyDataset]" (reportReturnType)
-models.py: error: Type "List[Row[Tuple[CompoundExperiment, DependencyDataset]]]" is not assignable to return type "List[Tuple[CompoundExperiment, DependencyDataset]]"
 models.py: error: Type "List[Row[Tuple[int, str]]]" is not assignable to return type "list[tuple[int, str]]"
 models.py: error: Type "List[Self@Dataset]" is not assignable to return type "List[Dataset]"
 models.py: error: Type "Unknown | None" is not assignable to return type "Compound"
@@ -462,6 +430,16 @@ models.py: error: Type "Unknown | None" is not assignable to return type "Entity
 models.py: error: Type "Unknown | None" is not assignable to return type "Gene"
 models.py: error: Type "Unknown | None" is not assignable to return type "GenericEntity"
 models.py: error: Type "Unknown | ReleaseTerms | MockTerms" is not assignable to return type "ReleaseTerms"
+models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "List[Gene]"
+models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "List[PredictiveFeatureResult]"
+models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "Matrix"
+models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "PredictiveFeature"
+models.py: error: Type "_RelationshipDeclared[Any]" is not assignable to declared type "PredictiveModel"
+models_new.py: error: Invalid conditional operand of type "Column[str]"
+models_new.py: error: Method "__eq__" overrides class "object" in an incompatible manner
+models_new.py: error: Type "Column[str]" is not assignable to return type "str | None"
+models_new.py: error: Type "DepmapModel | None" is not assignable to return type "DepmapModel"
+models_new.py: error: Type "Series | Unknown | DataFrame" is not assignable to return type "Series"
 nonstandard_loader.py: error: No parameter named "entity_id" (reportCallIssue)
 nonstandard_loader.py: error: No parameter named "index" (reportCallIssue)
 nonstandard_utils.py: error: "__getitem__" method not defined on type "Datatype" (reportIndexIssue)
@@ -476,15 +454,14 @@ overrides.py: error: Cannot access attribute "WEBAPP_DATA_DIR" for class "str"
 parse_downloads.py: error: Argument of type "Any | None" cannot be assigned to parameter "sources" of type "Dict[str, Any]" in function "get_sources"
 parse_downloads.py: error: Argument of type "Any | None" cannot be assigned to parameter "stats" of type "List[Dict[str, Any]]" in function "get_summary_stats"
 parse_downloads.py: error: Argument of type "dict[str, Any | None]" cannot be assigned to parameter "__map" of type "SummaryStatsDict" in function "__init__"
-parse_downloads.py: error: Type "Any | None" is not assignable to declared type "date"
 parse_downloads.py: error: Type "Any | None" is not assignable to declared type "RetractedUrl | str"
+parse_downloads.py: error: Type "Any | None" is not assignable to declared type "date"
 parse_downloads.py: error: Type "List[dict[Unknown, Unknown]]" is not assignable to return type "str"
 parse_downloads.py: error: Type "None" is not assignable to return type "List[FileSource]"
 parse_downloads.py: error: Type "tuple[Unknown | None, DownloadRelease]" is not assignable to return type "Tuple[str, DownloadRelease]"
-parse_resources.py: error: Argument of type "Any | None" cannot be assigned to parameter "link_label" of type "str" in function "__init__"
 parse_resources.py: error: Argument of type "Any | None" cannot be assigned to parameter "link" of type "str" in function "__init__"
+parse_resources.py: error: Argument of type "Any | None" cannot be assigned to parameter "link_label" of type "str" in function "__init__"
 parse_resources.py: error: Type "List[Dict[str, List[Unknown] | str | Dict[Unknown, Unknown]]] | None" is not assignable to declared type "List[Dict[str, Any]]"
-predictability_loader.py: error: "dataset_id" is not a known attribute of "None" (reportOptionalMemberAccess)
 predictability_loader.py: error: Argument of type "BiomarkerDataset | None" cannot be assigned to parameter "value" of type "BiomarkerDataset" in function "__setitem__"
 predictability_loader.py: error: Argument of type "Dataset | None" cannot be assigned to parameter "dataset" of type "Dataset" in function "_load_predictive_models"
 predictability_loader.py: error: Argument of type "list[str]" cannot be assigned to parameter "usecols" of type "UsecolsArgType[Unknown]" in function "read_csv"
@@ -497,7 +474,6 @@ predictability_loader.py: error: No overloads for "read_csv" match the provided 
 predictability_loader.py: error: No parameter named "background" (reportCallIssue)
 predictability_loader.py: error: No parameter named "dataset_given_id" (reportCallIssue)
 predictability_loader.py: error: No parameter named "dataset_id" (reportCallIssue)
-predictability_loader.py: error: No parameter named "dataset" (reportCallIssue)
 predictability_loader.py: error: No parameter named "feature_id" (reportCallIssue)
 predictability_loader.py: error: No parameter named "feature_name" (reportCallIssue)
 predictability_loader.py: error: Type "Column[int] | None" is not assignable to return type "Gene | CompoundExperiment | None"
@@ -569,7 +545,6 @@ task_utils.py: error: Argument of type "HTTPResponse | Any" cannot be assigned t
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas"
 tasks.py: error: Argument of type "dict[Column[str], Column[str]]" cannot be assigned to parameter "func" of type "PythonFuncType" in function "map"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
-tda_loader.py: error: "dataset_id" is not a known attribute of "None" (reportOptionalMemberAccess)
 tda_loader.py: error: "groups" is not a known attribute of "None" (reportOptionalMemberAccess)
 tda_loader.py: error: Argument of type "dict[str, list[Unknown]]" cannot be assigned to parameter "segmentdata" of type "dict[Literal['red', 'green', 'blue', 'alpha'], Sequence[tuple[float, ...]]]" in function "__init__"
 tda_loader.py: error: Argument of type "list[Unknown | None]" cannot be assigned to parameter "iterable" of type "Iterable[str]" in function "join"
@@ -584,6 +559,7 @@ test_api.py: error: "NaN" is not a known attribute of module "numpy" (reportAttr
 test_app.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
 test_app.py: error: Argument of type "list[int]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_box_plot_utils.py: error: Invalid conditional operand of type "ColumnElement[bool] | Literal[False]"
+test_cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
 test_cell_line_loader.py: error: "__getitem__" method not defined on type "RelationshipProperty[Any]" (reportIndexIssue)
 test_cell_line_loader.py: error: "catalog_number" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_alias" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -591,7 +567,6 @@ test_cell_line_loader.py: error: "cell_line_name" is not a known attribute of "N
 test_cell_line_loader.py: error: "gender" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "growth_pattern" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "lineage" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
 test_cell_line_loader.py: error: "source" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: Argument of type "RelationshipProperty[Any]" cannot be assigned to parameter "obj" of type "Sized" in function "len"
 test_cell_line_loader.py: error: Invalid conditional operand of type "ColumnElement[bool]"
@@ -599,20 +574,18 @@ test_context_analysis.py: error: "keys" is not a known attribute of "None" (repo
 test_context_analysis.py: error: Argument of type "list[NoReturn]" cannot be assigned to parameter "models" of type "List[DepmapModelFactory]" in function "_setup_dose_response_curves"
 test_context_analysis.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_context_analysis.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-test_dataset_loader_add_dataset.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_dataset_loader.py: error: "matrix" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_dataset_loader.py: error: Argument of type "DatasetLabel | DepDatasetMeta | TabularDatasetMeta" cannot be assigned to parameter "dataset_metadata" of type "DepDatasetMeta" in function "load_compound_dose_replicate_dataset"
 test_dataset_loader.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 test_dataset_loader.py: error: Invalid conditional operand of type "ColumnElement[bool]"
+test_dataset_loader_add_dataset.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
 test_db.py: error: No parameter named "value" (reportCallIssue)
-test_executive.py: error: "keys" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_executive.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
-test_executive.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
-test_factories_views.py: error: "entity_id" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_factories_views.py: error: "model_id" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_factories.py: error: "cell_line_1" is unbound (reportUnboundVariable)
 test_factories.py: error: "entity" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_factories.py: error: Cannot access attribute "depmap_id" for class "Unbound" (reportAttributeAccessIssue)
+test_factories_views.py: error: "entity_id" is not a known attribute of "None" (reportOptionalMemberAccess)
+test_factories_views.py: error: "model_id" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_foreign_key_constraint.py: error: No parameter named "display_name" (reportCallIssue)
 test_foreign_key_constraint.py: error: No parameter named "download_file" (reportCallIssue)
 test_foreign_key_constraint.py: error: No parameter named "matrix_id" (reportCallIssue)
@@ -666,15 +639,14 @@ test_match_related_loader.py: error: Argument of type "Column[int]" cannot be as
 test_match_related_loader.py: error: Cannot access attribute "entrez_id" for class "Entity"
 test_match_related_loader.py: error: Cannot access attribute "symbol" for class "Entity"
 test_match_related_loader.py: error: Cannot access attribute "values" for class "ndarray[_AnyShape, dtype[Any]]"
-test_models_new.py: error: Invalid conditional operand of type "ColumnElement[bool]"
+test_models.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
+test_models.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
+test_models.py: error: "NoReturn" is not iterable (reportGeneralTypeIssues)
 test_models.py: error: "cell_line_name" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_models.py: error: "columns" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_models.py: error: "dataset_id" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_models.py: error: "get_cell_line_values_and_depmap_ids" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_models.py: error: "name" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_models.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
-test_models.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
-test_models.py: error: "NoReturn" is not iterable (reportGeneralTypeIssues)
 test_models.py: error: Argument of type "DataFrame | None" cannot be assigned to parameter "obj" of type "Sized" in function "len"
 test_models.py: error: Argument of type "list[NoReturn]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_models.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
@@ -706,18 +678,15 @@ test_models.py: error: No parameter named "primary_disease" (reportCallIssue)
 test_models.py: error: No parameter named "protein" (reportCallIssue)
 test_models.py: error: No parameter named "tumor_type" (reportCallIssue)
 test_models.py: error: Object of type "None" is not subscriptable (reportOptionalSubscript)
+test_models_new.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 test_new_dose_curve_utils.py: error: Argument of type "list[NoReturn]" cannot be assigned to parameter "models" of type "List[DepmapModelFactory]" in function "_setup_dose_response_curves"
 test_new_dose_curve_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_nonstandard_loader.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_parse_downloads.py: error: "stats" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_predictability_loader.py: error: "dataset_id" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_predictability_loader.py: error: "entity_id" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_predictability_loader.py: error: "name" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_predictability_loader.py: error: Argument of type "Literal[DependencyEnum.Chronos_Combined]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 test_str_loader.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 test_tasks.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
-test_views.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_views.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
+test_views.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 transcription_start_site_loader.py: error: No parameter named "average_coverage" (reportCallIssue)
 transcription_start_site_loader.py: error: No parameter named "chromosome" (reportCallIssue)
 transcription_start_site_loader.py: error: No parameter named "five_prime_position" (reportCallIssue)
@@ -725,13 +694,9 @@ transcription_start_site_loader.py: error: No parameter named "gene_id" (reportC
 transcription_start_site_loader.py: error: No parameter named "label" (reportCallIssue)
 transcription_start_site_loader.py: error: No parameter named "three_prime_position" (reportCallIssue)
 util.py: error: Expression of type "None" cannot be assigned to parameter of type "Client"
-util.py: error: Expression of type "None" cannot be assigned to return type "str"
 util.py: error: Type "None" is not assignable to return type "str"
-utils.py: error: "abs_dest_path" is possibly unbound (reportPossiblyUnboundVariable)
-utils.py: error: "base_name" is possibly unbound (reportPossiblyUnboundVariable)
-utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "path" of type "List[str]" in function "__init__"
 utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote"
-utils.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "string" of type "bytes | bytearray" in function "quote" (reportArgumentType)
+utils.py: error: Argument of type "list[Column[str]]" cannot be assigned to parameter "path" of type "List[str]" in function "__init__"
 utils.py: error: Cannot assign to attribute "_depmap_interactive_config" for class "Flask"
 utils.py: error: Cannot assign to attribute "_depmap_taiga_id_to_download_url" for class "Flask"
 utils.py: error: Invalid conditional operand of type "ColumnElement[bool]"
@@ -770,11 +735,12 @@ views.py: error: Argument of type "Column[str]" cannot be assigned to parameter 
 views.py: error: Argument of type "Entity | None" cannot be assigned to parameter "entity" of type "Entity" in function "get_download_data"
 views.py: error: Argument of type "FileStorage | None" cannot be assigned to parameter "upload_file" of type "FileStorage" in function "write_upload_to_local_file"
 views.py: error: Argument of type "Group | Dataset | Datatype | Unknown" cannot be assigned to parameter "value" of type "ArrayLike" in function "__setitem__"
-views.py: error: Argument of type "list[DependencyDataset | None]" cannot be assigned to parameter "datasets" of type "List[DependencyDataset]" in function "format_predictability_tile"
 views.py: error: Argument of type "Literal['val']" cannot be assigned to parameter "mapper" of type "Renamer | None" in function "rename"
 views.py: error: Argument of type "Literal[DependencyEnum.Avana]" cannot be assigned to parameter "dependency_dataset_name" of type "str" in function "get_dataset_by_name"
 views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "get_stats_for_dataframe"
 views.py: error: Argument of type "Series | Unknown | DataFrame" cannot be assigned to parameter "df" of type "DataFrame" in function "jsonify_df"
+views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "get_root_category_subcategory_topics"
+views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "refresh_all_category_topics"
 views.py: error: Argument of type "set[str]" cannot be assigned to parameter "values" of type "Series | DataFrame | Sequence[Unknown] | Mapping[Unknown, Unknown]" in function "isin"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "dataset_id" of type "str" in function "get_dataset_taiga_id"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "dataset_id" of type "str" in function "get_download_data"
@@ -787,8 +753,6 @@ views.py: error: Argument of type "str | None" cannot be assigned to parameter "
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads"
 views.py: error: Argument of type "str | None" cannot be assigned to parameter "s" of type "str | bytes" in function "loads"
 views.py: error: Argument of type "str" cannot be assigned to parameter "_external" of type "bool | None" in function "url_for"
-views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "get_root_category_subcategory_topics"
-views.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "category_slug" of type "str" in function "refresh_all_category_topics"
 views.py: error: Argument to class must be a base class (reportGeneralTypeIssues)
 views.py: error: Cannot access attribute "any" for class "List[Gene]"
 views.py: error: Cannot access attribute "apply" for class "FunctionType"
@@ -798,7 +762,6 @@ views.py: error: Cannot access attribute "rename" for class "float"
 views.py: error: Cannot access attribute "rename" for class "int"
 views.py: error: Cannot access attribute "symbol" for class "Entity"
 views.py: error: Cannot access attribute "values" for class "ndarray[_AnyShape, dtype[Any]]"
-views.py: error: Expression of type "None" cannot be assigned to parameter of type "List[Tuple[CompoundExperiment, DependencyDataset]]"
 views.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 views.py: error: No overloads for "__setitem__" match the provided arguments (reportCallIssue)
 views.py: error: No overloads for "join" match the provided arguments (reportCallIssue)
