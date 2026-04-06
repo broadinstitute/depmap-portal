@@ -113,7 +113,6 @@ def test_delete_release_version_cascade_and_search_sync(minimal_db: SessionWithU
     file_id = release.files[0].id
 
     # 2. Verify Search Index is initially populated
-    # CHANGE: Filter by file_id (string/UUID) instead of rowid (integer)
     initial_search = (
         minimal_db.query(ReleaseFileSearchIndex)
         .filter(ReleaseFileSearchIndex.file_id == file_id)
@@ -134,7 +133,6 @@ def test_delete_release_version_cascade_and_search_sync(minimal_db: SessionWithU
     assert minimal_db.query(ReleaseFile).get(file_id) is None
 
     # 5. Assert Search Index is in sync
-    # CHANGE: Filter by file_id
     deleted_search = (
         minimal_db.query(ReleaseFileSearchIndex)
         .filter(ReleaseFileSearchIndex.file_id == file_id)
