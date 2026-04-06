@@ -95,7 +95,6 @@ pre_js = Bundle(  # js that is included in the header
 
 js_cdns = [
     "//cdn.jsdelivr.net/npm/bootstrap@3.3.7/dist/js/bootstrap.min.js",
-    "//cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.8.1/bootstrap-slider.min.js",
     "//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/js/jquery.dataTables.min.js",
     "https://cdnjs.cloudflare.com/ajax/libs/datatables/1.10.13/js/dataTables.bootstrap.min.js",
@@ -113,7 +112,6 @@ js_cdns = [
 # they occur at the end of loading the DOM
 
 js = Bundle(
-    "libs/bootstrap-3-typeahead/bootstrap3-typeahead.js",  # looks like no cdn
     "js/dataTableSort.js",
     "js/colorOpacityUtils.js",
     "js/jQueryActual.js",
