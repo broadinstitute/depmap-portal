@@ -231,20 +231,19 @@ def test_get_release_versions_include_files_toggle(minimal_db: SessionWithUser):
         files=[{"file_name": file_name, "datatype": "crispr", "is_main_file": True}],
     )
 
-    # Push to DB and clear session cache so the query is "cold"
     minimal_db.flush()
     minimal_db.expunge_all()
 
-    # --- Case 1: include_files=False ---
+    # Case 1: include_files=False
     results_no_files = get_release_versions(minimal_db, include_files=False)
     assert len(results_no_files) == 1
 
     # With noload, the attribute is considered "loaded" as an empty list.
     assert len(results_no_files[0].files) == 0
-    # Technical check: Verify 'files' is NOT in the 'unloaded' set because noload handled it.
+    # Verify 'files' is NOT in the 'unloaded' set because noload handled it.
     assert "files" not in inspect(results_no_files[0]).unloaded
 
-    # --- Case 2: include_files=True ---
+    # Case 2: include_files=True
     minimal_db.expunge_all()  # Reset session again
 
     results_with_files = get_release_versions(minimal_db, include_files=True)
@@ -252,7 +251,7 @@ def test_get_release_versions_include_files_toggle(minimal_db: SessionWithUser):
     assert len(results_with_files[0].files) == 1
     assert results_with_files[0].files[0].file_name == file_name
 
-    # Technical check: Verify the 'files' relationship is loaded with actual data
+    # Verify the 'files' relationship is loaded with actual data
     assert "files" not in inspect(results_with_files[0]).unloaded
 
 

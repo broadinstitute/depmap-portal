@@ -90,7 +90,7 @@ class TestGet:
         minimal_db.flush()
         minimal_db.expunge_all()
 
-        # 2. include_files=True (or default if you set it to True)
+        # 2. include_files=True
         resp_with_files = client.get(
             f"/release-versions/{release_version_id}?include_files=True"
         )
