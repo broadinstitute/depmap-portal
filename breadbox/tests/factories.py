@@ -496,14 +496,14 @@ def release_version(
     db: SessionWithUser,
     version_name: str = "26Q1",
     release_name: str = "DepMap Public",
-    version_date: date = _CallIfOmitted(date.today),
+    version_date=_CallIfOmitted(date.today),
     description: str = "Test release description",
     content_hash: str = "00000000000000000000000000000000",
     citation: Optional[str] = None,
     funding: Optional[str] = None,
     terms: Optional[str] = None,
-    files: List[Dict] = _CallIfOmitted(list),
-    pipelines: List[Dict] = _CallIfOmitted(list),
+    files=_CallIfOmitted(list),
+    pipelines=_CallIfOmitted(list),
 ) -> ReleaseVersion:
     """
     Factory to create a ReleaseVersion with its associated nested entities.
