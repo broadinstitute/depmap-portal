@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 class ReleasePipelineSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
     pipeline_name: Annotated[str, Field(description="Name of the pipeline used")]
     description: Optional[str] = None
 
