@@ -6,13 +6,11 @@ import sys
 import tempfile
 import uuid
 import yaml
-from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
 from pipeline_config import (
-    BasePipelineSpecificConfig,
     CommonConfig,
     DefaultsConfig,
     PipelineConfig,
@@ -61,10 +59,14 @@ def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
     parser.add_argument(
         "--dryrun", action="store_true", help="Print commands instead of running them",
     )
+    parser.add_argument(
+        "--working-dir",
+        help="The directory where the run_XXX.conseq file is contained for the pipeline you wish to run",
+    )
     return parser
 
 
-class PipelineRunner(ABC):
+class PipelineRunner:
     """Base class for all pipeline runners."""
 
     def __init__(self, dryrun: bool, script_path: Path):
@@ -196,15 +198,14 @@ class PipelineRunner(ABC):
             "Please check the files and try again."
         )
 
-    def build_common_config(
-        self, args, pipeline_cfg: BasePipelineSpecificConfig
-    ) -> CommonConfig:
+    def build_common_config(self, args) -> CommonConfig:
         """Build common configuration that all pipelines share."""
 
         docker_image = args.image or self.read_docker_image_name(
             self.script_path.parent
         )
         commit_sha = self.get_git_commit_sha()
+        working_dir = args.working_dir
 
         config = CommonConfig(
             env_name=args.deploy_name,
@@ -214,9 +215,8 @@ class PipelineRunner(ABC):
             image=args.image,
             docker_image=docker_image,
             commit_sha=commit_sha,
-            state_path=pipeline_cfg.state_path,
-            log_destination=pipeline_cfg.log_destination,
-            working_dir=pipeline_cfg.working_dir,
+            state_path=f"{working_dir}/state",
+            working_dir=working_dir,
             publish_dest=args.destination,
             start_with=args.start_with,
             manually_run_conseq=args.manually_run_conseq,
@@ -229,7 +229,9 @@ class PipelineRunner(ABC):
     def run_via_container(self, command, config: CommonConfig):
         """Run command inside Docker container with pipeline-specific configuration."""
         cwd = os.getcwd()
-        base_dir = os.path.dirname(os.path.dirname(cwd)) # include two directories up to make sure we also have access to depmap_deploy
+        base_dir = os.path.dirname(
+            os.path.dirname(cwd)
+        )  # include two directories up to make sure we also have access to depmap_deploy
         assert config.conseq_file is not None
         working_dir = os.path.dirname(config.conseq_file)
         docker_cfg = self.config.docker
@@ -281,18 +283,16 @@ class PipelineRunner(ABC):
 
         # Environment name mapping
         env_mapping = {
-    
-      "iqa": "internal",
-      "istaging": "internal",
-      "internal": "internal",
-      "dqa": "dmc",
-      "dstaging": "dmc",
-      "pstaging": "dmc",
-      "peddep": "dmc",
-      "xqa": "external",
-      "xstaging": "external",
-      "test-prefix": "iqa" # Any env starting with "test-" maps to this
-
+            "iqa": "internal",
+            "istaging": "internal",
+            "internal": "internal",
+            "dqa": "dmc",
+            "dstaging": "dmc",
+            "pstaging": "dmc",
+            "peddep": "dmc",
+            "xqa": "external",
+            "xstaging": "external",
+            "test-prefix": "iqa",  # Any env starting with "test-" maps to this
         }
 
         if env_name.startswith("test-"):
@@ -322,10 +322,8 @@ class PipelineRunner(ABC):
 
         return override_name
 
-    @abstractmethod
     def get_pipeline_config(self, args: argparse.Namespace) -> CommonConfig:
-        """Return pipeline-specific configuration."""
-        pass
+        return self.build_common_config(args)
 
     def get_conseq_file(self, config: CommonConfig) -> str:
         assert self.script_path is not None
@@ -395,7 +393,7 @@ class PipelineRunner(ABC):
 
         self.pull_docker_image(config.docker_image)
 
-        self.backup_conseq_logs(config.state_path, config.log_destination)
+        # self.backup_conseq_logs(config.state_path, config.log_destination)
         self.handle_special_features(config)
 
         config.conseq_file = self.get_conseq_file(config)
@@ -464,3 +462,15 @@ class PipelineRunner(ABC):
             self.run_via_container(
                 f"conseq export {config.conseq_file} {config.export_path}", config
             )
+
+
+def main():
+    pipeline_config = load_pipeline_config()
+    parser = create_argument_parser(pipeline_config.defaults)
+    args = parser.parse_args()
+    runner = PipelineRunner(dryrun=args.dryrun, script_path=Path(__file__))
+    runner.run(args)
+
+
+if __name__ == "__main__":
+    main()
