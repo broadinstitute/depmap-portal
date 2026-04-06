@@ -178,10 +178,12 @@ def minimal_db(db: SessionWithUser, settings: Settings, public_group, transient_
 
     # 1. Manually create the FTS5 Virtual Table
     # This is required because metadata.create_all() ignores virtual tables
+    db.execute(text("DROP TABLE IF EXISTS release_file_search_index;"))
     db.execute(
         text(
             """
         CREATE VIRTUAL TABLE IF NOT EXISTS release_file_search_index USING fts5(
+            file_id,
             file_name,
             file_description,
             file_datatype,

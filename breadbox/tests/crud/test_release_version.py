@@ -10,7 +10,7 @@ from breadbox.crud.release_version import (
 )
 from breadbox.models.release_version import ReleaseVersion, ReleaseFile
 from tests import factories
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 
 
 def test_get_release_version(minimal_db: SessionWithUser):
@@ -91,7 +91,7 @@ def test_get_release_versions_date_ranges(minimal_db: SessionWithUser):
 def test_delete_release_version_cascade_and_search_sync(minimal_db: SessionWithUser):
     """
     Test that deleting a release version cleans up files, pipelines, 
-    and the FTS5 Search Index.
+    and the FTS5 Search Index using the new file_id column.
     """
     file_metadata = [
         {
@@ -107,23 +107,26 @@ def test_delete_release_version_cascade_and_search_sync(minimal_db: SessionWithU
         minimal_db, version_name="Delete", files=file_metadata
     )
 
-    minimal_db.refresh(release)
+    minimal_db.flush()
 
     release_id = release.id
     file_id = release.files[0].id
 
     # 2. Verify Search Index is initially populated
+    # CHANGE: Filter by file_id (string/UUID) instead of rowid (integer)
     initial_search = (
         minimal_db.query(ReleaseFileSearchIndex)
-        .filter(ReleaseFileSearchIndex.rowid == file_id)
+        .filter(ReleaseFileSearchIndex.file_id == file_id)
         .one_or_none()
     )
     assert initial_search is not None
     assert initial_search.file_name == "target_file.csv"
 
     # 3. Deletion
-    # This should trigger both the DB cascade and our manual FTS cleanup
+    # This triggers both the DB cascade and our manual FTS cleanup in CRUD
     delete_release_version(minimal_db, release)
+
+    # Sync again after delete
     minimal_db.flush()
 
     # 4. Assert Data is gone
@@ -131,10 +134,10 @@ def test_delete_release_version_cascade_and_search_sync(minimal_db: SessionWithU
     assert minimal_db.query(ReleaseFile).get(file_id) is None
 
     # 5. Assert Search Index is in sync
-    # If this fails, it means we have "orphaned" search results pointing to non-existent files
+    # CHANGE: Filter by file_id
     deleted_search = (
         minimal_db.query(ReleaseFileSearchIndex)
-        .filter(ReleaseFileSearchIndex.rowid == file_id)
+        .filter(ReleaseFileSearchIndex.file_id == file_id)
         .one_or_none()
     )
     assert deleted_search is None

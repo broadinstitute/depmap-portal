@@ -3,7 +3,7 @@ import logging
 from typing import Optional, List, Union
 from uuid import UUID
 
-from sqlalchemy import and_, exists
+from sqlalchemy import and_, exists, text
 from sqlalchemy.orm import joinedload, noload
 
 from breadbox.db.session import SessionWithUser
@@ -163,7 +163,7 @@ def delete_release_version(db: SessionWithUser, release: ReleaseVersion):
 
     # sync FTS5 Index
     db.query(ReleaseFileSearchIndex).filter(
-        ReleaseFileSearchIndex.rowid.in_(file_ids)
+        ReleaseFileSearchIndex.file_id.in_(file_ids)
     ).delete(synchronize_session=False)
 
     db.delete(release)
@@ -181,7 +181,7 @@ def _update_search_index(
     for file in files:
         search_entries.append(
             ReleaseFileSearchIndex(
-                rowid=file.id,
+                file_id=file.id,
                 file_name=file.file_name,
                 file_description=file.description or "",
                 file_datatype=file.datatype,
@@ -196,16 +196,15 @@ def _update_search_index(
     db.flush()
 
 
-# TODO: Fine tune the exact behavior of FTS in phase 3.
-def search_release_files(db: SessionWithUser, query_string: str) -> List[dict]:
+def search_release_files(
+    db: SessionWithUser, q: str, limit: int = 50, offset: int = 0
+) -> List[dict]:
     """
     Perform a full-text search against the FTS5 index.
     Returns results as a list of dictionaries including the file ID.
     """
-    search_results = (
-        db.query(ReleaseFileSearchIndex)
-        .filter(ReleaseFileSearchIndex.rowid.op("MATCH")(query_string))
-        .all()
+    query = db.query(ReleaseFileSearchIndex).filter(
+        ReleaseFileSearchIndex.file_name.match(q)
     )
 
-    return search_results
+    return query.limit(limit).offset(offset).all()

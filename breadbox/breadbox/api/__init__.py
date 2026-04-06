@@ -4,6 +4,7 @@ from breadbox.config import get_settings
 from .uploads import router as uploads_router
 from .datasets import router as datasets_router
 from .release_versions import router as release_versions_router
+from .release_files import router as release_files_router
 from .dataset_uploads import router as dataset_uploads_router
 from .downloads import router as downloads_router
 from .groups import router as groups_router
@@ -21,6 +22,7 @@ from breadbox.schemas.custom_http_exception import ERROR_RESPONSES
 api_router = APIRouter(responses=ERROR_RESPONSES)  # type: ignore
 api_router.include_router(datasets_router)
 api_router.include_router(release_versions_router)
+api_router.include_router(release_files_router)
 api_router.include_router(dataset_uploads_router)
 api_router.include_router(uploads_router)
 api_router.include_router(downloads_router)

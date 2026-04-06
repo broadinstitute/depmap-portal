@@ -126,3 +126,16 @@ class CreateReleaseVersionParams(BaseModel):
             raise ValueError(
                 "content_hash must be a valid 32-character hexadecimal string"
             )
+
+
+class ReleaseFileSearchResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str = Field(..., alias="file_id")
+    file_name: str
+    file_description: str
+    file_datatype: str
+    release_version_name: str
+    release_name: str
+    release_version_description: str
+    release_version_content_hash: str
