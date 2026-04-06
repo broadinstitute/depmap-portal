@@ -4,13 +4,16 @@ from taigapy import create_taiga_client_v3
 import json
 import os
 import logging
+import argparse
 
 log = logging.getLogger(__name__)
+
 
 class UserError(Exception):
     def __init__(self, message) -> None:
         super().__init__(message)
         self.message = message
+
 
 # this script exists to rewrite any Taiga IDs into their canonical form. (This allows conseq to recognize when data files are the same by just comparing taiga IDs)
 #
@@ -121,10 +124,40 @@ def rewrite_file(in_name, out_name):
         _rewrite_stream(vars, in_name, lines, out_fd)
 
 
+def search_ancestors(filename):
+    ancestor_dir = os.getcwd()
+    checked_paths = []
+    while True:
+        possible_path = os.path.join(ancestor_dir, filename)
+        checked_paths.append(possible_path)
+        if os.path.exists(possible_path):
+            return possible_path
+        next_dir = os.path.dirname(ancestor_dir)
+        if next_dir == ancestor_dir:
+            raise Exception(
+                f"Could not find {filename} (checked {', '.join(checked_paths)})"
+            )
+        ancestor_dir = next_dir
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("src_file")
+    parser.add_argument("dst_file")
+    parser.add_argument(
+        "--search-ancestors",
+        help="if set, looks for src_file in an ancestor folder",
+        action="store_true",
+    )
+
+    arg = parser.parse_args()
+    dst_file = arg.dst_file
+    src_file = arg.src_file
+    if arg.search_ancestors:
+        src_file = search_ancestors(src_file)
+
     try:
-        rewrite_file(sys.argv[1], sys.argv[2])
+        rewrite_file(src_file, dst_file)
     except UserError as err:
         log.error(err.message)
         sys.exit(1)
-

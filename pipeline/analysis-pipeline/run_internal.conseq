@@ -1,14 +1,10 @@
 # use the preprocess script to canonicalize taiga IDs all of input artifacts.
 eval """
-print("This is temporarily hardcoded to use predictability_inputs_internal.template and needs to be changed to work with any environment")
 import subprocess
 import sys
 
-preprocessor = f"../preprocess_taiga_ids.py"
-
-cmd = ["python", preprocessor, 
-        f"predictability_inputs_internal.template", 
-        f"predictability_inputs_internal-DO-NOT-EDIT-ME"]
+template=f"depmap-deploy/non-public-pipeline-files/analysis-pipeline/release_inputs_internal.template"
+cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "release_inputs_internal-DO-NOT-EDIT-ME", "--search-ancestors"]
 
 print(f"Preprocessing templates by running {' '.join(cmd)}...")
 try:
@@ -18,5 +14,5 @@ except subprocess.CalledProcessError:
     sys.exit(1)
 """
 # read the file that was generated from the command above to add the artifacts with canonicalized taiga IDs
-include "predictability_inputs_internal-DO-NOT-EDIT-ME"
+include "release_inputs_internal-DO-NOT-EDIT-ME"
 include "common.conseq"
