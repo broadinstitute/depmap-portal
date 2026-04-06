@@ -218,15 +218,12 @@ def test_get_release_versions_filtering(minimal_db: SessionWithUser):
     assert triple_filter_results[0].version_name == "v2"
 
 
-from sqlalchemy import inspect
-
-
 def test_get_release_versions_include_files_toggle(minimal_db: SessionWithUser):
     """
     Test that include_files=True eagerly loads files, 
-    and include_files=False behaves as expected.
+    and include_files=False (using noload) returns an empty list.
     """
-    # 1. Create a release with one file
+    # 1. Setup
     file_name = "data.csv"
     factories.release_version(
         minimal_db,
@@ -234,29 +231,29 @@ def test_get_release_versions_include_files_toggle(minimal_db: SessionWithUser):
         files=[{"file_name": file_name, "datatype": "crispr", "is_main_file": True}],
     )
 
-    # Case 1: include_files=False (Default)
+    # Push to DB and clear session cache so the query is "cold"
+    minimal_db.flush()
+    minimal_db.expunge_all()
+
+    # --- Case 1: include_files=False ---
     results_no_files = get_release_versions(minimal_db, include_files=False)
     assert len(results_no_files) == 1
 
-    # Verify the 'files' relationship is NOT loaded yet.
-    inspected_no_files = inspect(results_no_files[0])
-    assert "files" in inspected_no_files.unloaded
+    # With noload, the attribute is considered "loaded" as an empty list.
+    assert len(results_no_files[0].files) == 0
+    # Technical check: Verify 'files' is NOT in the 'unloaded' set because noload handled it.
+    assert "files" not in inspect(results_no_files[0]).unloaded
 
-    # Case 2: include_files=True
+    # --- Case 2: include_files=True ---
+    minimal_db.expunge_all()  # Reset session again
 
     results_with_files = get_release_versions(minimal_db, include_files=True)
     assert len(results_with_files) == 1
-
-    # Verify the data is present
     assert len(results_with_files[0].files) == 1
     assert results_with_files[0].files[0].file_name == file_name
 
-    # Verify the 'files' relationship IS already loaded
-    inspected_with_files = inspect(results_with_files[0])
-    assert "files" not in inspected_with_files.unloaded
-
-
-from sqlalchemy import inspect
+    # Technical check: Verify the 'files' relationship is loaded with actual data
+    assert "files" not in inspect(results_with_files[0]).unloaded
 
 
 def test_get_release_version_include_files_toggle(minimal_db: SessionWithUser):
@@ -264,29 +261,34 @@ def test_get_release_version_include_files_toggle(minimal_db: SessionWithUser):
     Test that get_release_version correctly toggles eager loading with include_files
     for a single release UUID.
     """
-    # 1. Create a release with one file
+    # 1. Setup
     file_name = "detail.csv"
     release = factories.release_version(
         minimal_db,
         files=[{"file_name": file_name, "datatype": "crispr", "is_main_file": True}],
     )
+    release_id = release.id
+    minimal_db.flush()
+    minimal_db.expunge_all()
 
     # 2. Case A: include_files=False
     retrieved_no_files = get_release_version(
-        minimal_db, release.id, include_files=False
+        minimal_db, release_id, include_files=False
     )
+    assert retrieved_no_files is not None
 
-    inspected_no_files = inspect(retrieved_no_files)
-    # 'files' SHOULD be in the unloaded set (Lazy Loading)
-    assert "files" in inspected_no_files.unloaded
+    # noload ensures the collection is empty and no lazy-load will trigger
+    assert len(retrieved_no_files.files) == 0
+    assert "files" not in inspect(retrieved_no_files).unloaded
 
     # 3. Case B: include_files=True
+    minimal_db.expunge_all()  # Reset session to force a fresh JOIN query
+
     retrieved_with_files = get_release_version(
-        minimal_db, release.id, include_files=True
+        minimal_db, release_id, include_files=True
     )
 
-    inspected_with_files = inspect(retrieved_with_files)
-    # 'files' SHOULD NOT be in the unloaded set (Eager Loading)
-    assert "files" not in inspected_with_files.unloaded
     assert retrieved_with_files is not None
+    assert len(retrieved_with_files.files) == 1
     assert retrieved_with_files.files[0].file_name == file_name
+    assert "files" not in inspect(retrieved_with_files).unloaded

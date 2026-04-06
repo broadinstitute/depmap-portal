@@ -1,8 +1,7 @@
-import pytest
 from datetime import date, timedelta
 from fastapi.testclient import TestClient
 from breadbox.db.session import SessionWithUser
-from ..utils import assert_status_ok, assert_status_not_ok
+from ..utils import assert_status_ok
 from tests import factories
 
 
@@ -68,6 +67,35 @@ class TestGet:
         response = client.get("/release-versions/non-existent-uuid")
         assert response.status_code == 404
 
+    def test_get_release_version_include_files_toggle(
+        self, client: TestClient, minimal_db: SessionWithUser
+    ):
+        """Verify that the include_files query param actually toggles the file list."""
+        release = factories.release_version(
+            minimal_db,
+            files=[
+                {"file_name": "test.csv", "datatype": "crispr", "is_main_file": True}
+            ],
+        )
+        release_version_id = str(release.id)
+        minimal_db.flush()
+        minimal_db.expunge_all()
+
+        # 1. include_files=False
+        resp_no_files = client.get(
+            f"/release-versions/{release_version_id}?include_files=False"
+        )
+        assert len(resp_no_files.json().get("files", [])) == 0
+
+        minimal_db.flush()
+        minimal_db.expunge_all()
+
+        # 2. include_files=True (or default if you set it to True)
+        resp_with_files = client.get(
+            f"/release-versions/{release_version_id}?include_files=True"
+        )
+        assert len(resp_with_files.json()["files"]) == 1
+
 
 class TestPost:
     def test_create_release_version_success(
@@ -75,7 +103,7 @@ class TestPost:
     ):
         """Test successful creation of a release version."""
         payload = {
-            "version_name": "24Q1",
+            "version_name": "26Q1",
             "release_name": "Public",
             "description": "New release",
             "content_hash": "a" * 32,
@@ -87,7 +115,7 @@ class TestPost:
         response = client.post("/release-versions/", json=payload)
         assert_status_ok(response)
         data = response.json()
-        assert data["version_name"] == "24Q1"
+        assert data["version_name"] == "26Q1"
         assert len(data["files"]) == 1
 
     def test_create_release_version_conflict(
