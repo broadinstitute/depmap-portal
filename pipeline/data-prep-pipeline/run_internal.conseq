@@ -1,22 +1,18 @@
-# canonicalize taiga IDs in the config file
+# use the preprocess script to canonicalize taiga IDs all of input artifacts.
 eval """
 import subprocess
-import os
+import sys
 
-# find the depmap-deploy directory. For devs, these two are checked out as siblings. For jenkins, it's checked out as a child of the repo checkout
-depmap_deploy_root = None
-for possible_root in [f"{rules.vars['SCRIPT_DIR']}/../../depmap-deploy", f"{rules.vars['SCRIPT_DIR']}/../../../depmap-deploy"]:
-    if os.path.exists(possible_root):
-        depmap_deploy_root = possible_root
-assert depmap_deploy_root is not None, "Could not find depmap-deploy checkout"
+template=f"depmap-deploy/non-public-pipeline-files/data-prep-pipeline/release_inputs_internal.template"
+cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "release_inputs_internal-DO-NOT-EDIT-ME", "--search-ancestors"]
 
-template=f"{depmap_deploy_root}/non-public-pipeline-files/data-prep-pipeline/release_inputs_internal.template"
-assert os.path.exists(template), f"Could not find {repr(template)}"
-subprocess.check_call(["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "release_inputs_internal-DO-NOT-EDIT-ME"])
-
-print ("-----------------")
-print(os.getcwd())
+print(f"Preprocessing templates by running {' '.join(cmd)}...")
+try:
+   subprocess.check_call(cmd)
+except subprocess.CalledProcessError:
+    print(f"running \"{' '.join(cmd)}\" failed. Aborting")
+    sys.exit(1)
 """
-
+# read the file that was generated from the command above to add the artifacts with canonicalized taiga IDs
 include "release_inputs_internal-DO-NOT-EDIT-ME"
-include "run_common.conseq"
+include "common.conseq"
