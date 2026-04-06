@@ -38,22 +38,14 @@ class PostSummaryOut(BaseModel):
         from_attributes = True
 
 
-class MenuIn(BaseModel):
+class Menu(BaseModel):
     slug: str
     title: str
-    child_menus: List["MenuIn"] = []
-    posts: List[str] = []  # list of post slugs
-
-
-class MenuOut(BaseModel):
-    slug: str
-    title: str
-    child_menus: List["MenuOut"] = []
+    child_menus: List["Menu"] = []
     posts: List[str] = []  # list of post slugs
 
     class Config:
         from_attributes = True
 
 
-MenuIn.model_rebuild()
-MenuOut.model_rebuild()
+Menu.model_rebuild()

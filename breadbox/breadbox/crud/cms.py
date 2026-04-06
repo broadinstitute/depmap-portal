@@ -3,19 +3,17 @@ from typing import List, Optional, Union
 from sqlalchemy.orm import Session
 
 from breadbox.models.cms import CmsMenu, CmsMenuPost, CmsPost
-from breadbox.schemas.cms import MenuIn, MenuOut, PostIn, PostOut, PostSummaryOut
+from breadbox.schemas.cms import Menu, PostIn, PostOut, PostSummaryOut
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 
 
-def _build_menu_out(menu: CmsMenu) -> MenuOut:
+def _build_menu_out(menu: CmsMenu) -> Menu:
     posts = [link.post.slug for link in menu.post_links]
     child_menus = [_build_menu_out(child) for child in menu.children]
-    return MenuOut(
-        slug=menu.slug, title=menu.title, child_menus=child_menus, posts=posts
-    )
+    return Menu(slug=menu.slug, title=menu.title, child_menus=child_menus, posts=posts)
 
 
-def get_menu(db: Session) -> List[MenuOut]:
+def get_menu(db: Session) -> List[Menu]:
     roots = (
         db.query(CmsMenu)
         .filter(CmsMenu.parent_id == None)
@@ -26,7 +24,7 @@ def get_menu(db: Session) -> List[MenuOut]:
 
 
 def _insert_menu_nodes(
-    db: Session, items: List[MenuIn], parent_id: Optional[str], post_slug_to_id: dict,
+    db: Session, items: List[Menu], parent_id: Optional[str], post_slug_to_id: dict,
 ) -> None:
     for order_index, item in enumerate(items):
         node = CmsMenu(
@@ -49,7 +47,7 @@ def _insert_menu_nodes(
         _insert_menu_nodes(db, item.child_menus, node.id, post_slug_to_id)
 
 
-def set_menu(db: Session, menu_data: List[MenuIn]) -> List[MenuOut]:
+def set_menu(db: Session, menu_data: List[Menu]) -> List[Menu]:
     # Delete all existing menu rows (cascade handles children and post_links)
     db.query(CmsMenu).filter(CmsMenu.parent_id == None).delete(
         synchronize_session=False

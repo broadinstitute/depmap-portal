@@ -5,22 +5,22 @@ from fastapi import APIRouter, Depends
 from breadbox.api.dependencies import get_admin_user, get_db_with_user, get_user
 from breadbox.crud import cms as cms_crud
 from breadbox.db.session import SessionWithUser
-from breadbox.schemas.cms import MenuIn, MenuOut, PostIn, PostOut, PostSummaryOut
+from breadbox.schemas.cms import Menu, PostIn, PostOut, PostSummaryOut
 from breadbox.db.util import transaction
 
 router = APIRouter(prefix="/cms", tags=["cms"])
 
 
-@router.get("/menu", operation_id="get_cms_menu", response_model=List[MenuOut])
+@router.get("/menu", operation_id="get_cms_menu", response_model=List[Menu])
 def get_menu(
     db: SessionWithUser = Depends(get_db_with_user), user: str = Depends(get_user),
 ):
     return cms_crud.get_menu(db)
 
 
-@router.post("/menu", operation_id="set_cms_menu", response_model=List[MenuOut])
+@router.post("/menu", operation_id="set_cms_menu", response_model=List[Menu])
 def set_menu(
-    body: List[MenuIn],
+    body: List[Menu],
     db: SessionWithUser = Depends(get_db_with_user),
     user: str = Depends(get_admin_user),
 ):
