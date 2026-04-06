@@ -71,7 +71,6 @@ breadbox_dao.py: error: Type "NDFrame | Unknown" is not assignable to return typ
 categories.py: error: Argument of type "Unknown | None" cannot be assigned to parameter "x" of type "ConvertibleToInt" in function "__new__"
 categories.py: error: Method "_get_na_label" overrides class "CategoryConfig" in an incompatible manner
 categories.py: error: Method "_get_na_value" overrides class "CategoryConfig" in an incompatible manner
-cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
 cell_line_loader.py: error: "cell_line_alias" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "cell_line_display_name" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "cell_line_passport_id" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -86,10 +85,6 @@ cell_line_loader.py: error: "rrid" is not a known attribute of "None" (reportOpt
 cell_line_loader.py: error: "source" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "tumor_type" is not a known attribute of "None" (reportOptionalMemberAccess)
 cell_line_loader.py: error: "wtsi_master_cell_id" is not a known attribute of "None" (reportOptionalMemberAccess)
-cell_line_loader.py: error: Cannot assign to attribute "cell_line_alias" for class "CellLine"
-cell_line_loader.py: error: Cannot assign to attribute "cell_line_display_name" for class "CellLine"
-cell_line_loader.py: error: Cannot assign to attribute "lineage" for class "CellLine"
-cell_line_loader.py: error: Cannot assign to attribute "rrid" for class "CellLine"
 cell_line_loader.py: error: No parameter named "alias" (reportCallIssue)
 cell_line_loader.py: error: No parameter named "catalog_number" (reportCallIssue)
 cell_line_loader.py: error: No parameter named "cell_line_alias" (reportCallIssue)
@@ -344,7 +339,6 @@ mock_gcs.py: error: Argument of type "str | None" cannot be assigned to paramete
 mock_gcs.py: error: Cannot assign to attribute "_content" for class "MockBlob*"
 mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "MockClient"
 mock_gcs.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
-models.py: error: "RelationshipProperty[Any]" is not iterable
 models.py: error: "config" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: "depmap_ids" is not a known attribute of "None" (reportOptionalMemberAccess)
 models.py: error: "display_name" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -374,8 +368,6 @@ models.py: error: Argument of type "Column[str]" cannot be assigned to parameter
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "pred_model_feature_id" of type "str" in function "get_interactive_url_for_entity"
 models.py: error: Argument of type "Column[str]" cannot be assigned to parameter "s" of type "str | bytes | bytearray" in function "loads"
 models.py: error: Argument of type "List[str] | None" cannot be assigned to parameter "obj" of type "Sized" in function "len"
-models.py: error: Argument of type "RelationshipProperty[Any]" cannot be assigned to parameter "onclause" of type "_OnClauseArgument | None" in function "join"
-models.py: error: Argument of type "RelationshipProperty[Any]" cannot be assigned to parameter "onclause" of type "_OnClauseArgument | None" in function "outerjoin"
 models.py: error: Argument of type "Unknown | Column[int]" cannot be assigned to parameter "index" of type "int" in function "get_row_of_values"
 models.py: error: Argument of type "list[str]" cannot be assigned to parameter "columns" of type "Axes | None" in function "__init__"
 models.py: error: Argument of type "str | None" cannot be assigned to parameter "pred_model_feature_type" of type "str" in function "get_relation_to_entity"
@@ -396,7 +388,6 @@ models.py: error: Cannot assign to attribute "funding" for class "DownloadReleas
 models.py: error: Expression of type "None" cannot be assigned to parameter of type "Dict[int, GroupAuthConfig]"
 models.py: error: Expression of type "None" cannot be assigned to parameter of type "str"
 models.py: error: Invalid conditional operand of type "ColumnElement[bool]"
-models.py: error: Method "__eq__" overrides class "object" in an incompatible manner
 models.py: error: Method "get_dataset_by_name" overrides class "Dataset" in an incompatible manner
 models.py: error: Method "get_description" overrides class "_Compound" in an incompatible manner
 models.py: error: Method "has_cell_line" overrides class "Dataset" in an incompatible manner
@@ -543,7 +534,6 @@ taiga_id_loader.py: error: No parameter named "taiga_id" (reportCallIssue)
 task_utils.py: error: Argument of type "FileStorage" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
 task_utils.py: error: Argument of type "HTTPResponse | Any" cannot be assigned to parameter "fileobj" of type "IO[Unknown]" in function "write_fileobj_to_local_file"
 tasks.py: error: Argument of type "ArrayLike" cannot be assigned to parameter "column_labels" of type "List[str] | None" in function "_handle_df_nas"
-tasks.py: error: Argument of type "dict[Column[str], Column[str]]" cannot be assigned to parameter "func" of type "PythonFuncType" in function "map"
 tasks.py: error: Argument of type "list[Unknown]" cannot be assigned to parameter "gene_ids" of type "MutationTableSpec" in function "get_subsetted_mutations_df_by_ids"
 tda_loader.py: error: "groups" is not a known attribute of "None" (reportOptionalMemberAccess)
 tda_loader.py: error: Argument of type "dict[str, list[Unknown]]" cannot be assigned to parameter "segmentdata" of type "dict[Literal['red', 'green', 'blue', 'alpha'], Sequence[tuple[float, ...]]]" in function "__init__"
@@ -559,8 +549,6 @@ test_api.py: error: "NaN" is not a known attribute of module "numpy" (reportAttr
 test_app.py: error: "NaN" is unknown import symbol (reportAttributeAccessIssue)
 test_app.py: error: Argument of type "list[int]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_box_plot_utils.py: error: Invalid conditional operand of type "ColumnElement[bool] | Literal[False]"
-test_cell_line_loader.py: error: "RelationshipProperty[Any]" is not iterable
-test_cell_line_loader.py: error: "__getitem__" method not defined on type "RelationshipProperty[Any]" (reportIndexIssue)
 test_cell_line_loader.py: error: "catalog_number" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_alias" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "cell_line_name" is not a known attribute of "None" (reportOptionalMemberAccess)
@@ -568,8 +556,6 @@ test_cell_line_loader.py: error: "gender" is not a known attribute of "None" (re
 test_cell_line_loader.py: error: "growth_pattern" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "lineage" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_cell_line_loader.py: error: "source" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_cell_line_loader.py: error: Argument of type "RelationshipProperty[Any]" cannot be assigned to parameter "obj" of type "Sized" in function "len"
-test_cell_line_loader.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 test_context_analysis.py: error: "keys" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_context_analysis.py: error: Argument of type "list[NoReturn]" cannot be assigned to parameter "models" of type "List[DepmapModelFactory]" in function "_setup_dose_response_curves"
 test_context_analysis.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
@@ -653,7 +639,6 @@ test_models.py: error: Argument of type "list[Unknown]" cannot be assigned to pa
 test_models.py: error: Cannot access attribute "columns" for class "FromStatement[Unknown]"
 test_models.py: error: Cannot access attribute "columns" for class "UpdateBase"
 test_models.py: error: Cannot access attribute "name" for class "Dataset"
-test_models.py: error: Invalid conditional operand of type "ColumnElement[bool] | Literal[False]"
 test_models.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 test_models.py: error: No parameter named "alias" (reportCallIssue)
 test_models.py: error: No parameter named "cell_line_display_name" (reportCallIssue)
@@ -683,7 +668,6 @@ test_new_dose_curve_utils.py: error: Argument of type "list[NoReturn]" cannot be
 test_new_dose_curve_utils.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_nonstandard_loader.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
 test_parse_downloads.py: error: "stats" is not a known attribute of "None" (reportOptionalMemberAccess)
-test_str_loader.py: error: Invalid conditional operand of type "ColumnElement[bool]"
 test_tasks.py: error: Argument of type "list[str]" cannot be assigned to parameter "index" of type "Axes | None" in function "__init__"
 test_views.py: error: "NaN" is not a known attribute of module "numpy" (reportAttributeAccessIssue)
 test_views.py: error: "label" is not a known attribute of "None" (reportOptionalMemberAccess)
