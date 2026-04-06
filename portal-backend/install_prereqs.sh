@@ -33,9 +33,6 @@ poetry install
 python ../depmap-shared/generate-py ../depmap-shared/color_palette.json depmap/utilities/_color_palette.py
 python ../depmap-shared/generate-ts-from-schema.py ../pipeline/scripts/format_models.py schema ModelAnnotation ../frontend/packages/portal-frontend/src/cellLine/models/ModelAnnotation.ts
 
-# install static assets used by depmap
-yarn --cwd depmap install --modules-folder static/libs
-
 # install modules needed by React frontend
 yarn --cwd ../frontend install
 
