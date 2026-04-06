@@ -208,7 +208,7 @@ def map_ccle_index_to_depmap_id(df: pd.DataFrame) -> pd.DataFrame:
 
     # Overwrite the existing index column with the new values
     df[index_col_name] = df[index_col_name].map(
-        lambda key: ccle_to_depmap_id_mapping[key]
+        lambda key: ccle_to_depmap_id_mapping.get(key)
     )
     # Drop any rows which don't exist in the mapping.
     df = df.dropna(subset=[index_col_name])
