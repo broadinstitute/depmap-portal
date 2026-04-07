@@ -15,4 +15,4 @@ except subprocess.CalledProcessError:
 """
 # read the file that was generated from the command above to add the artifacts with canonicalized taiga IDs
 include "xrefs_internal-DO-NOT-EDIT-ME"
-include "common.conseq"
+include "_run_common.conseq"
