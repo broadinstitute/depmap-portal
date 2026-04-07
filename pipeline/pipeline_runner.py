@@ -169,13 +169,13 @@ class PipelineRunner:
         print(json.dumps(final_log, indent=2))
         print("=" * 50)
 
-    def track_dataset_usage_from_conseq(self, pipeline_dir):
+    def track_dataset_usage_from_conseq(self, working_dir):
         """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
-        pipeline_path = Path(pipeline_dir)
+        pipeline_path = Path(working_dir)
         version_files = list(pipeline_path.glob("*-DO-NOT-EDIT-ME"))
 
         if not version_files:
-            raise ValueError(f"No *-DO-NOT-EDIT-ME files found in {pipeline_dir}")
+            raise ValueError(f"No *-DO-NOT-EDIT-ME files found in {working_dir}")
 
         for version_file in version_files:
             assert version_file.exists(), f"Version file does not exist: {version_file}"
@@ -193,7 +193,7 @@ class PipelineRunner:
                     return
 
         raise ValueError(
-            f"Release taiga ID not found in any *-DO-NOT-EDIT-ME files in {pipeline_dir}. "
+            f"Release taiga ID not found in any *-DO-NOT-EDIT-ME files in {working_dir}. "
             "Please check the files and try again."
         )
 
@@ -453,7 +453,7 @@ class PipelineRunner:
         if self.dryrun:
             print("[dryrun] skipping track_dataset_usage")
         else:
-            self.track_dataset_usage_from_conseq(str(self.script_path.parent))
+            self.track_dataset_usage_from_conseq(config.working_dir)
 
         if config.export_path:
             assert config.conseq_file is not None
