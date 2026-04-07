@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 from breadbox.db.session import SessionWithUser
 from tests import factories
 from tests.utils import assert_status_ok
@@ -75,3 +76,82 @@ class TestSearchReleaseFiles:
         response = client.get("/release-files/search?q=nonexistent_term")
         assert_status_ok(response)
         assert response.json() == []
+
+    def test_search_description_field(
+        self, client: TestClient, minimal_db: SessionWithUser
+    ):
+        # Setup: Keyword 'secret' is ONLY in the description
+        factories.release_version(
+            minimal_db,
+            files=[
+                {
+                    "file_name": "data.csv",
+                    "datatype": "test",
+                    "description": "This contains the secret results",
+                }
+            ],
+        )
+        minimal_db.flush()
+        minimal_db.expire_all()
+
+        # Search for 'secret'
+        response = client.get("/release-files/search?q=secret")
+        results = response.json()
+
+        assert len(results) == 1
+        assert results[0]["file_name"] == "data.csv"
+
+    def test_search_global_across_all_metadata(
+        self, client: TestClient, minimal_db: SessionWithUser
+    ):
+        """
+        Verify that a single keyword query 'lung' finds matches in 
+        filenames, datatypes, and descriptions.
+        """
+        # 1. Match in File Name
+        factories.release_version(
+            minimal_db,
+            version_name="Rel_1",
+            files=[{"file_name": "lung_cancer_genomics.csv", "datatype": "misc"}],
+        )
+
+        # 2. Match in Datatype
+        factories.release_version(
+            minimal_db,
+            version_name="Rel_2",
+            files=[{"file_name": "expression.csv", "datatype": "lung_biology"}],
+        )
+
+        # 3. Match in Description
+        factories.release_version(
+            minimal_db,
+            version_name="Rel_3",
+            files=[
+                {
+                    "file_name": "metadata.json",
+                    "datatype": "clinical",
+                    "description": "Patient samples collected from lung tissue",
+                }
+            ],
+        )
+
+        # 4. Match in Release Version Name
+        factories.release_version(
+            minimal_db,
+            version_name="Lung_Atlas_v2",
+            files=[{"file_name": "atlas.csv", "datatype": "rna"}],
+        )
+
+        # Search for the global keyword
+        response = client.get("/release-files/search?q=lung")
+        results = response.json()
+
+        # We expect 4 unique files back
+        assert len(results) == 4
+
+        # Verify match locations
+        found_files = {r["file_name"] for r in results}
+        assert "lung_cancer_genomics.csv" in found_files
+        assert "expression.csv" in found_files
+        assert "metadata.json" in found_files
+        assert "atlas.csv" in found_files

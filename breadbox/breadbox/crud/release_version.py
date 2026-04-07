@@ -187,8 +187,13 @@ def search_release_files(
     Perform a full-text search against the FTS5 index.
     Returns results as a list of dictionaries including the file ID.
     """
-    query = db.query(ReleaseFileSearchIndex).filter(
-        ReleaseFileSearchIndex.file_name.match(q)
-    )
+    sql_filter = text("release_file_search_index MATCH :query")
 
-    return query.limit(limit).offset(offset).all()
+    return (
+        db.query(ReleaseFileSearchIndex)
+        .filter(sql_filter)
+        .params(query=q)
+        .limit(limit)
+        .offset(offset)
+        .all()
+    )
