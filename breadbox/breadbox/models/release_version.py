@@ -88,8 +88,11 @@ class ReleaseFileSearchIndex(Base):
     __tablename__ = "release_file_search_index"
     __table_args__ = {"info": {"skip_autogenerate": True}}
 
-    # rowid maps to ReleaseFile.id
-    rowid: Mapped[str] = mapped_column(primary_key=True)
+    # rowid MUST be an int for FTS5
+    rowid: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    # Store the actual File UUID here instead of directly on rowid
+    file_id: Mapped[str] = mapped_column(String)
 
     # File-specific metadata
     file_name: Mapped[str] = mapped_column(String)

@@ -3,8 +3,8 @@ import logging
 from typing import Optional, List, Union
 from uuid import UUID
 
-from sqlalchemy import and_
-from sqlalchemy.orm import joinedload
+from sqlalchemy import and_, exists, text
+from sqlalchemy.orm import joinedload, noload
 
 from breadbox.db.session import SessionWithUser
 from ..models.release_version import (
@@ -22,8 +22,7 @@ def get_release_version_by_release_name_and_version(
     db: SessionWithUser, release_name: str, version_name: str,
 ) -> Optional[ReleaseVersion]:
     """
-    Find a specific version of a named release group, 
-    optionally eager-loading associated files.
+    Find a specific version of a named release group.
     """
     query = db.query(ReleaseVersion).filter(
         ReleaseVersion.release_name == release_name,
@@ -45,6 +44,8 @@ def get_release_version(
 
     if include_files:
         query = query.options(joinedload(ReleaseVersion.files))
+    else:
+        query = query.options(noload(ReleaseVersion.files))
 
     return query.one_or_none()
 
@@ -62,19 +63,23 @@ def get_release_versions(
     """
     query = db.query(ReleaseVersion)
 
+    # 1. Handle Eager vs No Loading of files
     if include_files:
         query = query.options(joinedload(ReleaseVersion.files))
+    else:
+        query = query.options(noload(ReleaseVersion.files))
 
     if release_name:
         query = query.filter(ReleaseVersion.release_name == release_name)
 
     if datatype:
-        # We join with ReleaseFile to filter by the datatype of its children
-        query = (
-            query.join(ReleaseVersion.files)
-            .filter(ReleaseFile.datatype == datatype)
-            .distinct()
+        # We look for any ReleaseVersion that has at least one file
+        # matching the requested datatype.
+        file_exists = exists().where(
+            ReleaseFile.release_version_id == ReleaseVersion.id,
+            ReleaseFile.datatype == datatype,
         )
+        query = query.filter(file_exists)
 
     if start_date:
         query = query.filter(ReleaseVersion.version_date >= start_date)
@@ -158,7 +163,7 @@ def delete_release_version(db: SessionWithUser, release: ReleaseVersion):
 
     # sync FTS5 Index
     db.query(ReleaseFileSearchIndex).filter(
-        ReleaseFileSearchIndex.rowid.in_(file_ids)
+        ReleaseFileSearchIndex.file_id.in_(file_ids)
     ).delete(synchronize_session=False)
 
     db.delete(release)
@@ -176,7 +181,7 @@ def _update_search_index(
     for file in files:
         search_entries.append(
             ReleaseFileSearchIndex(
-                rowid=file.id,
+                file_id=file.id,
                 file_name=file.file_name,
                 file_description=file.description or "",
                 file_datatype=file.datatype,
@@ -191,16 +196,15 @@ def _update_search_index(
     db.flush()
 
 
-# TODO: Fine tune the exact behavior of FTS in phase 3.
-def search_release_files(db: SessionWithUser, query_string: str) -> List[dict]:
+def search_release_files(
+    db: SessionWithUser, q: str, limit: int = 50, offset: int = 0
+) -> List[dict]:
     """
     Perform a full-text search against the FTS5 index.
     Returns results as a list of dictionaries including the file ID.
     """
-    search_results = (
-        db.query(ReleaseFileSearchIndex)
-        .filter(ReleaseFileSearchIndex.rowid.op("MATCH")(query_string))
-        .all()
+    query = db.query(ReleaseFileSearchIndex).filter(
+        ReleaseFileSearchIndex.file_name.match(q)
     )
 
-    return search_results
+    return query.limit(limit).offset(offset).all()
