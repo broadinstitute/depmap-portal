@@ -91,7 +91,49 @@ export interface CompoundSummaryResponse {
 }
 
 /**
- * Represents the metadata for a single dataset's availability as
+ * Represents the importance of an individual feature within a predictive model.
+ */
+export interface PredictabilityFeature {
+  name: string;
+  importance: number; // 0 to 1
+  correlation: number | null; // Pearson correlation coefficient
+  type: string; // e.g., 'Target', 'Expression', 'Mutation'
+  related_type?: string; // Used for the icon filename
+  interactive_url?: string;
+}
+
+export interface TopModel {
+  model_pearson: number;
+  feature_name: string;
+  feature_type: string;
+  model_label: string;
+}
+
+export interface PredictabilityPlotData {
+  label: string;
+  type: string;
+  color: string;
+  query_value: number;
+  percentile: string;
+  background_values: number[];
+}
+
+export interface PredictabilityTable {
+  type: string;
+  dataset: string; // Display name
+  dataset_given_id?: string;
+  top_models: TopModel[];
+}
+
+export interface PredictabilityTileData {
+  plot_data: PredictabilityPlotData[];
+  overall_top_model: {
+    type: string;
+    features: PredictabilityFeature[];
+  };
+  tables: PredictabilityTable[];
+}
+/* Represents the metadata for a single dataset's availability as
  * defined in the drc_compound_datasets constant.
  */
 export interface DatasetAvailabilityMetadata {

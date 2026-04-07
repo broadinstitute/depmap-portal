@@ -2,7 +2,8 @@
 
 add-if-missing {
     "type": "depmap_data_taiga_id",
-    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname)
+    "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname),
+    "release_label": "{{config.RELEASE_LABEL}}"
 }
 
 # The following 3 artifacts are necessary for the Context Explorer preprocessing
@@ -214,3 +215,141 @@ add-if-missing {
   "label": "compound_metadata",
   "format": "csv"
 }
+
+# Start of correlation pair configuration
+
+# all the artifacts with type cor-analysis-a will be correlated with all the artifacts
+# with cor-analysis-b. Generally all cor-analysis-a datasets are functional assays
+# and cor-analysis-b are all characterization assays.
+
+add-if-missing {
+'type': 'cor-analysis-a',
+'given_id': 'Chronos_Combined',
+'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRGeneEffect"),
+'feature_id_format': 'gene'
+}
+
+add-if-missing {
+'type': 'cor-analysis-a',
+'given_id': 'RNAi_merged',
+'taiga_id': "reformatted-rnai-a6ab.1/RNAi_gene_effect",
+'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'GDSC1_Viability',
+ 'taiga_id': 'processed-gdsc-ee73.4/GDSC1Log2ViabilityCollapsedMatrix',
+ 'feature_id_format': 'compound+dose',
+ 'features_taiga_id': "processed-gdsc-ee73.4/GDSC1Log2ViabilityCollapsedConditions",
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'GDSC1_log2AUC_collapsed',
+ 'taiga_id': "processed-gdsc-ee73.4/GDSC1Log2AUCMatrix",
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+ }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'GDSC2_Viability',
+ 'taiga_id': 'processed-gdsc-ee73.4/GDSC2Log2ViabilityCollapsedMatrix',
+ 'feature_id_format': 'compound+dose',
+ 'features_taiga_id': "processed-gdsc-ee73.4/GDSC2Log2ViabilityCollapsedConditions",
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'GDSC2_log2AUC_collapsed',
+ 'taiga_id': "processed-gdsc-ee73.4/GDSC2Log2AUCMatrix",
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+ }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'CTRP_Viability',
+ 'taiga_id': 'processed-ctd2-c6f3.3/CTRPLog2ViabilityCollapsedMatrix',
+ 'feature_id_format': 'compound+dose',
+ 'features_taiga_id': "processed-ctd2-c6f3.3/CTRPLog2ViabilityCollapsedConditions",
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'CTRP_log2AUC_collapsed',
+ 'taiga_id': 'processed-ctd2-c6f3.3/CTRPLog2AUCMatrix',
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+ }
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'REPURPOSING_Viability',
+ 'taiga_id': 'processed-repurposing-secondary-e3aa.3/REPURPOSINGLog2ViabilityCollapsedMatrix',
+ 'feature_id_format': 'compound+dose',
+ 'features_taiga_id': "processed-repurposing-secondary-e3aa.3/REPURPOSINGLog2ViabilityCollapsedConditions",
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-a',
+ 'given_id': 'REPURPOSING_log2AUC_collapsed',
+ 'taiga_id': 'processed-repurposing-secondary-e3aa.3/REPURPOSINGLog2AUCMatrix',
+ 'feature_id_format': 'compound',
+ 'compounds_taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalCompounds")
+ }
+
+# Biomarker (or characterization) assays
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'copy_number_relative',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "PortalOmicsCNGeneLog2"),
+ 'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'expression',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsExpressionTPMLogp1HumanProteinCodingGenes"),
+ 'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'mutations_damaging',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixDamaging"),
+ 'feature_id_format': 'gene'
+}
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'mutations_hotspot',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "OmicsSomaticMutationsMatrixHotspot"),
+ 'feature_id_format': 'gene'
+}
+
+# TODO: Add fusion matrix. This needs to wait for the fusion matrix to be added to
+# the release dataset (which was added as part of the "predictability" changes)
+# and updating the breadbox config.
+# add-if-missing {
+# 'type': 'cor-analysis-b',
+# 'given_id': 'fusions_matrix',
+# 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, ""),
+# 'feature_id_format': '',
+# }
+
+add-if-missing {
+ 'type': 'cor-analysis-b',
+ 'given_id': 'subtype_matrix',
+ 'taiga_id': PREPROCESS_TAIGA_ID(virtual_permaname, "SubtypeMatrix"),
+ 'feature_id_format': 'label',
+ }
+
+# End of correlation pair configuration
+

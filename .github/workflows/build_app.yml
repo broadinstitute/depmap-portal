@@ -14,6 +14,7 @@ on:
       - "test-*"
       - "backend-package-upgrade-26q1"
       - "backend-package-upgrade-26q1-phase1"
+      - "backend-package-upgrade-26q1-phase2"
 
 env:
   ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap

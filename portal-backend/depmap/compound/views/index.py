@@ -59,18 +59,20 @@ def view_compound(name):
         [alias for alias in aliases if alias.lower() != name.lower()]
     )
 
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound.entity_id
-    )
-    has_predictability: bool = len(
-        get_predictive_models_for_compound(compound_experiment_and_datasets)
-    ) != 0
-
     # Figure out membership in different datasets
     compound_datasets = data_access.get_all_datasets_containing_compound(
         compound.compound_id
     )
     has_datasets = len(compound_datasets) != 0
+
+    dataset_given_ids = [
+        d.given_id for d in compound_datasets if d.given_id is not None
+    ]
+    has_predictability: bool = has_datasets and len(
+        get_predictive_models_for_compound(
+            dataset_given_ids=dataset_given_ids, compound_id=compound.compound_id
+        )
+    ) != 0
 
     heatmap_dataset_options = get_heatmap_dose_curves_tab_drc_options(
         compound_label=compound.label, compound_id=compound.compound_id
@@ -182,49 +184,46 @@ def get_predictive_table():
     compound_label = request.args.get("compoundLabel")
     compound = Compound.get_by_label(compound_label)
 
-    compound_experiment_and_datasets = DependencyDataset.get_compound_experiment_priority_sorted_datasets_with_compound(
-        compound.entity_id
-    )
-    sorted_compound_experiment_and_datasets = sorted(
-        compound_experiment_and_datasets,
-        key=lambda x: x[1].priority if x[1].priority else 999,
+    sorted_datasets_with_compound = data_access.get_all_datasets_containing_compound(
+        compound.compound_id
     )
 
-    # Sorted by compound experiment ID then model label
-    sorted_models_for_compound_experiments = get_predictive_models_for_compound(
-        sorted_compound_experiment_and_datasets
+    sorted_dataset_given_ids = [
+        d.given_id for d in sorted_datasets_with_compound if d.given_id is not None
+    ]
+
+    sorted_models_for_compound = get_predictive_models_for_compound(
+        compound_id=compound.compound_id, dataset_given_ids=sorted_dataset_given_ids
     )
 
-    models_grouped_by_compound_experiment_and_dataset = groupby(
-        sorted_models_for_compound_experiments, key=lambda x: (x[0], x[1].dataset)
+    models_grouped_by_dataset = groupby(
+        sorted_models_for_compound, key=lambda x: x.dataset_given_id
     )
 
     data = []
-    for (
-        (compound_experiment, dataset),
-        ce_and_models,
-    ) in models_grouped_by_compound_experiment_and_dataset:
+    for dataset_given_id, models in models_grouped_by_dataset:
         models_and_results = []
-        for ce, model in ce_and_models:
+
+        for model in models:
             sorted_feature_results: List[PredictiveFeatureResult] = sorted(
                 model.feature_results, key=lambda result: result.rank
             )
             results = []
             for feature_result in sorted_feature_results:
                 related_type = feature_result.feature.get_relation_to_entity(
-                    ce.entity_id
+                    compound.compound_id, "compound_v2"
                 )
 
                 row = {
                     "featureName": feature_result.feature.feature_name,
                     "featureImportance": feature_result.importance,
                     "correlation": feature_result.feature.get_correlation_for_entity(
-                        model.dataset, ce
+                        model.dataset_given_id, compound.compound_id
                     ),
                     "featureType": feature_result.feature.feature_type,
                     "relatedType": related_type,
                     "interactiveUrl": feature_result.feature.get_interactive_url_for_entity(
-                        model.dataset, ce
+                        model.dataset_given_id, compound.compound_id
                     ),
                 }
                 results.append(row)
@@ -237,19 +236,22 @@ def get_predictive_table():
             }[model.label]
 
             row = {
-                "compoundExperimentId": ce.xref_full,
+                "compoundId": compound.compound_id,
                 "modelCorrelation": model.pearson,
                 "results": results,
                 "modelName": model_label,
             }
             models_and_results.append(row)
+
+        dataset_label = data_access.get_dataset_label(dataset_given_id)
         data.append(
             {
-                "screen": dataset.display_name,
-                "compoundExperimentId": compound_experiment.xref_full,
+                "screen": dataset_label,
+                "compoundId": compound.compound_id,
                 "modelsAndResults": models_and_results,
             }
         )
+
     return jsonify(data)
 
 
@@ -257,14 +259,11 @@ def get_predictive_table():
 def get_predictability_files():
     source_dir = current_app.config["WEBAPP_DATA_DIR"]
     predictability_path = os.path.join(source_dir, "predictability")
-    # Find all predictive models for drug screen datasets which have compounds or compound experiments as features and get the dataset enum
-    # Note: It seems predictive models have relationship with DependencyDataset and are usually compound experiments features?
-    drug_screen_enums_with_predictabilities = (
+    # Find all predictive models for drug screen datasets which have compounds as features and get the dataset given id
+    drug_screen_given_ids_with_predictabilities = (
         PredictiveModel.query.filter(
-            PredictiveModel.dataset.has(data_type="drug_screen")
+            PredictiveModel.pred_model_feature_type == "compound_v2"
         )
-        .join(DependencyDataset)
-        .with_entities(DependencyDataset.name)
         .distinct()
         .all()
     )
@@ -278,13 +277,13 @@ def get_predictability_files():
             delete=False, dir=os.path.dirname(os.path.abspath(predictability_path))
         ) as tmpfile:
             with zipfile.ZipFile(tmpfile, "w") as zf:
-                for (enum,) in drug_screen_enums_with_predictabilities:
+                for (given_id,) in drug_screen_given_ids_with_predictabilities:
                     zf.write(
                         os.path.join(
                             predictability_path,
-                            f"{enum.name}_predictability_results.csv",
+                            f"{given_id}_predictability_results.csv",
                         ),
-                        arcname=f"{enum.name}_predictability_results.csv",
+                        arcname=f"{given_id}_predictability_results.csv",
                     )
                 zf.close()
                 # Move zip file in tmpdir to predictabilty results path

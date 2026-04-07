@@ -56,7 +56,7 @@ export function getPredictiveTableCompound(compoundLabel: string) {
   return getJson<
     Array<{
       screen: string;
-      compoundExperimentId: string;
+      compoundId: string;
       modelsAndResults: Array<CompoundDosePredictiveModelResults>;
     }>
   >(`/compound/api/predictive`, {

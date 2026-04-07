@@ -121,9 +121,26 @@ def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taig
     ]
 
     # assert that the columns are compound-sample IDs
-    assert set(repurposing_matrix_samples.columns).issubset(
+    missing_from_portal = set(repurposing_matrix_samples.columns) - set(
         sample_id_to_compound_id_map.keys()
     )
+    if missing_from_portal:
+        print(
+            f"ERROR: {len(missing_from_portal)} compound sample IDs in repurposing matrix are not in PortalCompounds."
+        )
+        print(f"Missing IDs (first 20): {sorted(missing_from_portal)[:20]}")
+        print(f"Total repurposing columns: {len(repurposing_matrix_samples.columns)}")
+        print(f"Total PortalCompounds sample IDs: {len(sample_id_to_compound_id_map)}")
+        # Show a few examples from each side for comparison
+        print(
+            f"Sample repurposing columns (first 5): {sorted(repurposing_matrix_samples.columns)[:5]}"
+        )
+        print(
+            f"Sample PortalCompounds keys (first 5): {sorted(sample_id_to_compound_id_map.keys())[:5]}"
+        )
+    assert set(repurposing_matrix_samples.columns).issubset(
+        sample_id_to_compound_id_map.keys()
+    ), f"{len(missing_from_portal)} compound sample IDs in repurposing matrix not found in PortalCompounds. First 10: {sorted(missing_from_portal)[:10]}"
 
     repurposing_matrix = repurposing_matrix_samples.rename(
         columns=sample_id_to_compound_id_map
@@ -373,10 +390,10 @@ def get_id_or_file_name(possible_id, id_key="dataset_id"):
 
 ##### Entry points into this code. Each calc_..._enrichment function is invokable from the command line
 
-## OncRef Luminex and OncRef Sequencing will use the same code. Below are wrappers 
+## OncRef Luminex and OncRef Sequencing will use the same code. Below are wrappers
 ## around the shared function
 def oncref_lum_context_analysis(
-    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id    
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id
 ):
     return oncref_context_analysis(
         tc,
@@ -384,11 +401,12 @@ def oncref_lum_context_analysis(
         context_matrix,
         oncref_auc_taiga_id,
         portal_compounds_taiga_id,
-        ONCREF_DATASET_NAME
+        ONCREF_DATASET_NAME,
     )
+
 
 def oncref_seq_context_analysis(
-    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id    
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id
 ):
     return oncref_context_analysis(
         tc,
@@ -396,11 +414,17 @@ def oncref_seq_context_analysis(
         context_matrix,
         oncref_auc_taiga_id,
         portal_compounds_taiga_id,
-        ONCREF_SEQ_DATASET_NAME
+        ONCREF_SEQ_DATASET_NAME,
     )
 
+
 def oncref_context_analysis(
-    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id, oncref_dataset_name
+    tc,
+    subtype_tree,
+    context_matrix,
+    oncref_auc_taiga_id,
+    portal_compounds_taiga_id,
+    oncref_dataset_name,
 ):
     # for OncRef we compute the t-test on the logged AUCs,
     # but want to set the mean_in and mean_out columns based on

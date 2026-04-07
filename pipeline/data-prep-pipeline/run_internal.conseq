@@ -1,0 +1,18 @@
+# use the preprocess script to canonicalize taiga IDs all of input artifacts.
+eval """
+import subprocess
+import sys
+
+template=f"depmap-deploy/non-public-pipeline-files/data-prep-pipeline/release_inputs_internal.template"
+cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "release_inputs_internal-DO-NOT-EDIT-ME", "--search-ancestors"]
+
+print(f"Preprocessing templates by running {' '.join(cmd)}...")
+try:
+   subprocess.check_call(cmd)
+except subprocess.CalledProcessError:
+    print(f"running \"{' '.join(cmd)}\" failed. Aborting")
+    sys.exit(1)
+"""
+# read the file that was generated from the command above to add the artifacts with canonicalized taiga IDs
+include "release_inputs_internal-DO-NOT-EDIT-ME"
+include "common.conseq"

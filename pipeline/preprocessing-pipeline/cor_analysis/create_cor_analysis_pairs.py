@@ -4,6 +4,13 @@ import argparse
 import json
 import hashlib
 
+skip_if_missing = [
+    "PRISMOncologyReferenceLog2AUCMatrix",
+    "Prism_oncology_viability",
+    "PRISMOncologyReferenceSeqLog2AUCMatrix",
+    "Prism_oncology_seq_viability",
+]
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -13,8 +20,6 @@ def main():
 
     with open(args.in_filename, "rt") as fd:
         inputs = json.load(fd)
-        print("warning: ignoring input: ", inputs)
-        # todo change this so we take the taiga IDs from inputs
 
     def make_functional_with_biomarker_pairs():
         for mat_a in inputs["a_set"]:
@@ -38,12 +43,19 @@ def main():
             "GDSC2_log2AUC_collapsed",
         ]:
             for genetic_perturbation_given_id in ["Chronos_Combined", "RNAi_merged"]:
-                yield by_given_id[drug_given_id], by_given_id[
-                    genetic_perturbation_given_id
-                ]
-                yield by_given_id[genetic_perturbation_given_id], by_given_id[
-                    drug_given_id
-                ]
+
+                if (
+                    drug_given_id in skip_if_missing
+                    and drug_given_id not in by_given_id
+                ):
+                    print(f"{drug_given_id} not found -- skipping...")
+                else:
+                    yield by_given_id[drug_given_id], by_given_id[
+                        genetic_perturbation_given_id
+                    ]
+                    yield by_given_id[genetic_perturbation_given_id], by_given_id[
+                        drug_given_id
+                    ]
 
     def make_artifact(a, b):
         artifact = {"type": "cor_input_pair"}

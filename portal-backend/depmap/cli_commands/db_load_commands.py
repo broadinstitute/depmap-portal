@@ -59,6 +59,7 @@ from loader.predictability_loader import (
     load_predictive_background_from_db,
     load_predictive_background_from_file,
     load_predictive_model_csv,
+    lookup_breadbox_dataset_given_id,
 )
 from loader.gcs import GCSCache
 
@@ -789,7 +790,8 @@ def _load_real_data(
                 load_predictive_model_csv(
                     file_path, dataset_enum.name, feature_metadata_path
                 )
-                load_predictive_background_from_db(dataset_enum.name)
+                dataset_given_id = lookup_breadbox_dataset_given_id(dataset_enum.name)
+                load_predictive_background_from_db(dataset_given_id)
 
     with checkpoint("match-related") as needed:
         if needed:
@@ -1182,12 +1184,6 @@ def load_sample_data(
                 "rnai_predictive_models.csv",
                 "rnai_predictive_models_feature_metadata.csv",
                 "RNAi_fit_distribution.csv",
-            ),
-            (
-                DependencyDataset.DependencyEnum.Rep1M.name,
-                "rep1m_predictive_models.csv",
-                "rep1m_predictive_models_feature_metadata.csv",
-                "rep1m_fit_distribution.csv",
             ),
             # NOTE: Set predictability data to be same as repurposing primary so don't need to generate sample data since script subset_predictive_models_and_features.py to do so isn't working
             (

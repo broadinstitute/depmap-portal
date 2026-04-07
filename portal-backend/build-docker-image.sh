@@ -35,9 +35,6 @@ if [[ "$RUN_YARN" == "true" ]]; then
     # Build webpack
     ( cd ../frontend && yarn build:portal  )
 
-    # Build depmap node modules
-    yarn --cwd depmap install --modules-folder static/libs
-
     # Update build id
     #echo "SHA: ${{ github.sha }} Build: ${{ github.run_number	}}" > depmap/templates/build_info.html
     #echo "SHA=\"${{ github.sha }}\"" > depmap/settings/build.py

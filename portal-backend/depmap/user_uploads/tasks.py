@@ -27,18 +27,12 @@ from breadbox_facade import BreadboxException
 from depmap import data_access
 from depmap.compute.celery import app
 from depmap.cell_line.models import CellLine
-from depmap.interactive.nonstandard.models import (
-    CellLineNameType,
-)
+from depmap.interactive.nonstandard.models import CellLineNameType
 from depmap.utilities import hdf5_utils
 from depmap.utilities.hashing_utils import hash_df
 from depmap.utilities.exception import UserError
-from depmap.user_uploads.utils import (
-    get_task,
-)
-from depmap.access_control import (
-    PUBLIC_ACCESS_GROUP,
-)
+from depmap.user_uploads.utils import get_task
+from depmap.access_control import PUBLIC_ACCESS_GROUP
 
 
 def update_state(
@@ -72,13 +66,13 @@ def _upload_transient_csv(
         raise UserError("Invalid input: Display name cannot be empty")
     if units is None:
         raise UserError("Invalid input: Units cannot be empty")
-    
-    # Read and validate data from CSV, 
+
+    # Read and validate data from CSV,
     # Ensure the dataframe is in the format Breadbox expects
     df = read_and_validate_csv_shape(csv_path, single_column, is_transpose)
 
     # In order to support legacy PRISM datasets which may be diplayed in the portal,
-    # we still need to support uploads which are indexed by CCLE Name instead of depmap ID. 
+    # we still need to support uploads which are indexed by CCLE Name instead of depmap ID.
     cell_line_name_type = get_cell_line_name_type(df, is_transpose)
     warnings = validate_df_indices(df, cell_line_name_type)
     if cell_line_name_type == CellLineNameType.ccle_name:
@@ -115,7 +109,6 @@ def _upload_transient_csv(
     }
 
 
-
 @app.task(bind=True)
 def upload_transient_csv(
     self: celery.Task,
@@ -130,7 +123,9 @@ def upload_transient_csv(
     )
 
 
-def read_and_validate_csv_shape(csv_path: str, single_column: bool = False, is_transpose = True):
+def read_and_validate_csv_shape(
+    csv_path: str, single_column: bool = False, is_transpose=True
+):
     """
     Read the CSV from file. If the CSV is expected to be a single column, 
     validate that is actually the case.
@@ -186,27 +181,35 @@ def convert_to_empty_string_if_nan(x):
         return x
 
 
-def get_matching_cell_line_entities(cell_line_name_type: CellLineNameType, cell_line_names: list[str]) -> list[CellLine]:
+def get_matching_cell_line_entities(
+    cell_line_name_type: CellLineNameType, cell_line_names: list[str]
+) -> list[CellLine]:
     return CellLine.query.filter(
         getattr(CellLine, cell_line_name_type.db_col_name).in_(cell_line_names)
     ).all()
 
-    
+
 def map_ccle_index_to_depmap_id(df: pd.DataFrame) -> pd.DataFrame:
     """
     Update the index to use depmap_ids instead of ccle_names.
     Drop any rows that don't have matching records in the database
     (we've already generated warnings about any rows were this is the case).
     """
-    index_col_name: str = df.columns[0] # pyright: ignore
+    index_col_name: str = df.columns[0]  # pyright: ignore
 
     # Load a mapping between the old index and the new
     cell_line_names = list(df[index_col_name])
-    cell_lines = get_matching_cell_line_entities(CellLineNameType.ccle_name, cell_line_names)
-    ccle_to_depmap_id_mapping = {cell_line.cell_line_name: cell_line.depmap_id for cell_line in cell_lines}
+    cell_lines = get_matching_cell_line_entities(
+        CellLineNameType.ccle_name, cell_line_names
+    )
+    ccle_to_depmap_id_mapping = {
+        cell_line.cell_line_name: cell_line.depmap_id for cell_line in cell_lines
+    }
 
     # Overwrite the existing index column with the new values
-    df[index_col_name] = df[index_col_name].map(ccle_to_depmap_id_mapping)
+    df[index_col_name] = df[index_col_name].map(
+        lambda key: ccle_to_depmap_id_mapping.get(key)
+    )
     # Drop any rows which don't exist in the mapping.
     df = df.dropna(subset=[index_col_name])
     return df
@@ -293,7 +296,9 @@ def get_cell_line_name_type(df, is_transpose):
 
     assert all(
         [type(name) == str for name in cell_line_names]
-    ), "The passed df should have had NaNs in the index filled in. {}".format(cell_line_names)
+    ), "The passed df should have had NaNs in the index filled in. {}".format(
+        cell_line_names
+    )
     nonempty_names = [name for name in cell_line_names if name != ""]
 
     if len(nonempty_names) == 0:
@@ -308,4 +313,3 @@ def get_cell_line_name_type(df, is_transpose):
         return CellLineNameType.depmap_id
     else:
         return CellLineNameType.ccle_name
-

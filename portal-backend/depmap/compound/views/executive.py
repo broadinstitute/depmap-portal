@@ -86,47 +86,19 @@ def get_order(
 
 
 def get_predictive_models_for_compound(
-    compound_experiment_and_datasets: List[
-        Tuple[CompoundExperiment, DependencyDataset]
-    ],
-    filter_dataset: DependencyDataset = None,
-) -> List[Tuple[CompoundExperiment, PredictiveModel]]:
-    if filter_dataset:
-        dataset_id = filter_dataset.dataset_id
-        compound_experiment_and_datasets = [
-            t for t in compound_experiment_and_datasets if t[1].dataset_id == dataset_id
-        ]
+    compound_id: str, dataset_given_ids: List[str]
+) -> List[PredictiveModel]:
 
     model_order = {"Core_omics": 1, "Extended_omics": 2, "DNA_based": 3}
-    models_for_compound_experiments = []
+    models_for_compound = []
 
-    if len(compound_experiment_and_datasets) != 0:
-        for compound_experiment, dataset in compound_experiment_and_datasets:
-            models = PredictiveModel.get_all_models(
-                dataset.dataset_id, compound_experiment.entity_id
-            )
-            models = sorted(models, key=lambda model: model_order[model.label])
+    for given_id in dataset_given_ids:
+        models = PredictiveModel.get_all_models(
+            dataset_given_id=given_id, pred_model_feature_id=compound_id
+        )
+        models = sorted(models, key=lambda model: model_order[model.label])
 
-            for model in models:
-                models_for_compound_experiments.append((compound_experiment, model))
-    return models_for_compound_experiments
+        for model in models:
+            models_for_compound.append(model)
 
-
-def get_best_compound_predictability(
-    compound_experiment_and_datasets: List[
-        Tuple[CompoundExperiment, DependencyDataset]
-    ],
-    dataset: Optional[DependencyDataset],
-) -> Tuple[CompoundExperiment, DependencyDataset]:
-    models_for_compound_experiments = get_predictive_models_for_compound(
-        compound_experiment_and_datasets, dataset
-    )
-    best_model_compound_experiment = None
-    best_model_pearson = 0.0
-    best_predictive_model_dataset = None
-    for compound_experiment, model in models_for_compound_experiments:
-        if model.pearson >= best_model_pearson:
-            best_model_pearson = float(model.pearson)
-            best_model_compound_experiment = compound_experiment
-            best_predictive_model_dataset = model.dataset
-    return (best_model_compound_experiment, best_predictive_model_dataset)
+    return models_for_compound
