@@ -252,7 +252,7 @@ class PipelineRunner:
                 "-v",
                 f"{base_dir}:{base_dir}",
                 "-w",
-                working_dir,
+                os.path.abspath(working_dir),
                 "-v",
                 f"{config.creds_dir}/{cred_files[1]}:{volumes.sparkles_cache}",
                 "-v",
@@ -272,7 +272,7 @@ class PipelineRunner:
 
         print("=" * 50)
         print(f"{self.pipeline_name} Pipeline Runner command:")
-        print(f"  {command}")
+        print(f"  {' '.join(docker_cmd)}")
         print("=" * 50)
 
         return self.subprocess_run(docker_cmd)
@@ -334,8 +334,9 @@ class PipelineRunner:
                 original_conseq, config.publish_dest
             )
             print(f"Created override conseq file: {conseq_file}")
-            return conseq_file
-        return original_conseq
+        else: 
+            conseq_file = original_conseq
+        return os.path.abspath(conseq_file)
 
     def handle_special_features(self, config: CommonConfig) -> None:
         """Handle pre-run features. Subclasses should call super() after their own logic."""
