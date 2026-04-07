@@ -90,22 +90,6 @@ def get_release_versions(
     return query.order_by(ReleaseVersion.version_date.desc()).all()
 
 
-def get_release_by_name_and_version(
-    db: SessionWithUser, release_name: str, version_name: str
-) -> Optional[ReleaseVersion]:
-    """Check for an existing specific version within a release group."""
-    return (
-        db.query(ReleaseVersion)
-        .filter(
-            and_(
-                ReleaseVersion.release_name == release_name,
-                ReleaseVersion.version_name == version_name,
-            )
-        )
-        .one_or_none()
-    )
-
-
 def create_release_version(
     db: SessionWithUser, params: CreateReleaseVersionParams
 ) -> ReleaseVersion:
