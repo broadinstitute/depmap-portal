@@ -62,9 +62,8 @@ class ReleaseFile(Base, UUIDMixin):
     size: Mapped[Optional[str]] = mapped_column(String, nullable=True)  # e.g., "1.2GB"
     description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
-    bucket_url: Mapped[Optional[str]] = mapped_column(
-        String, nullable=True, info={"description": "gs path. empty means retracted"}
-    )
+    # gs path. empty means retracted
+    bucket_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     canonical_taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     md5_hash: Mapped[Optional[str]] = mapped_column(String(32), nullable=True)
