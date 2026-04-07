@@ -8,7 +8,6 @@ import uuid
 import yaml
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
 
 from pipeline_config import (
     CommonConfig,
@@ -300,7 +299,7 @@ class PipelineRunner:
         return env_mapping.get(env_name, env_name)
 
     def create_override_conseq_file(
-        self, pipeline_dir: str, original_conseq: str, publish_dest: str
+        self, original_conseq: str, publish_dest: str
     ) -> str:
         """Create an override conseq file that injects a custom publish_dest.
 
@@ -311,7 +310,6 @@ class PipelineRunner:
 
         Returns the filename of the override file, relative to pipeline_dir.
         """
-        original_conseq = f"{pipeline_dir}/{original_conseq}"
         override_name = f"{original_conseq}.patched"
 
         with open(original_conseq, "r") as original:
@@ -330,12 +328,10 @@ class PipelineRunner:
         assert self.script_path is not None
         mapped_env = self.map_environment_name(config.env_name)
         print(f"env_name={config.env_name}, mapped_env={mapped_env}")
-        pipeline_dir = str(self.script_path.parent)
-        print("*********", mapped_env)
-        original_conseq = f"{pipeline_dir}/run_{mapped_env}.conseq"
+        original_conseq = f"{config.working_dir}/run_{mapped_env}.conseq"
         if config.publish_dest:
             conseq_file = self.create_override_conseq_file(
-                pipeline_dir, original_conseq, config.publish_dest
+                original_conseq, config.publish_dest
             )
             print(f"Created override conseq file: {conseq_file}")
             return conseq_file
