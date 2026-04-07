@@ -1,8 +1,8 @@
-"""add_release_version_models
+"""Add release version models
 
-Revision ID: e556aa3dabe7
-Revises: a1b2c3d4e5f6
-Create Date: 2026-04-02 11:26:00.595987
+Revision ID: a33ed87f86ff
+Revises: 0c0dd1a8925c
+Create Date: 2026-04-07 18:23:02.276428
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = "e556aa3dabe7"
-down_revision = "a1b2c3d4e5f6"
+revision = "a33ed87f86ff"
+down_revision = "0c0dd1a8925c"
 branch_labels = None
 depends_on = None
 
@@ -21,6 +21,7 @@ def upgrade():
     op.execute(
         """
         CREATE VIRTUAL TABLE IF NOT EXISTS release_file_search_index USING fts5(
+        file_id,
         file_name,
         file_description,
         file_datatype,
@@ -45,6 +46,9 @@ def upgrade():
         sa.Column("terms", sa.String(), nullable=True),
         sa.Column("id", sa.String(length=36), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_release_version")),
+        sa.UniqueConstraint(
+            "version_name", "release_name", name=op.f("uq_release_version_version_name")
+        ),
     )
     with op.batch_alter_table("release_version", schema=None) as batch_op:
         batch_op.create_index(
@@ -121,5 +125,5 @@ def downgrade():
         batch_op.drop_index(batch_op.f("ix_release_version_content_hash"))
 
     op.drop_table("release_version")
-    # ### end Alembic commands ###
     op.execute("DROP TABLE IF EXISTS release_file_search_index")
+    # ### end Alembic commands ###
