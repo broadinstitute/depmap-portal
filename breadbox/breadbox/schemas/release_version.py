@@ -8,7 +8,6 @@ from pydantic import BaseModel, Field, field_validator, ConfigDict
 class ReleasePipelineSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
     pipeline_name: Annotated[str, Field(description="Name of the pipeline used")]
     description: Optional[str] = None
 
@@ -16,7 +15,6 @@ class ReleasePipelineSchema(BaseModel):
 class ReleaseFileSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-    id: UUID
     file_name: Annotated[str, Field(description="The name of the file when downloaded")]
     datatype: Annotated[str, Field(description="The type of data, e.g., 'crispr'")]
     size: Annotated[
@@ -82,9 +80,9 @@ class ReleaseVersionResponse(BaseModel):
     terms: Annotated[
         Optional[str], Field(description="Terms of use and embargo text")
     ] = None
-    data_type: Annotated[str, Field(description="e.g. 'crispr'")]
-
-    files: Annotated[List[ReleaseFileSchema], Field(default_factory=list)]
+    files: Annotated[
+        Optional[List[ReleaseFileSchema]], Field(default_factory=list)
+    ] = []
     release_pipelines: Annotated[
         List[ReleasePipelineSchema], Field(default_factory=list)
     ]
@@ -110,14 +108,13 @@ class CreateReleaseVersionParams(BaseModel):
     citation: Optional[str] = None
     funding: Optional[str] = None
     terms: Optional[str] = None
-    data_type: Annotated[str, Field(description="e.g. 'crispr'")]
 
-    file_ids: Annotated[
-        List[UUID], Field(description="List of file UUIDs to attach to this release")
-    ] = []
-
+    files: Annotated[List[ReleaseFileSchema], Field(default_factory=list)]
     content_hash: Annotated[
         str, Field(min_length=32, max_length=32, description="MD5 fingerprint")
+    ]
+    release_pipelines: Annotated[
+        List[ReleasePipelineSchema], Field(default_factory=list)
     ]
 
     @field_validator("content_hash")
@@ -129,3 +126,16 @@ class CreateReleaseVersionParams(BaseModel):
             raise ValueError(
                 "content_hash must be a valid 32-character hexadecimal string"
             )
+
+
+class ReleaseFileSearchResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str = Field(..., alias="file_id")
+    file_name: str
+    file_description: str
+    file_datatype: str
+    release_version_name: str
+    release_name: str
+    release_version_description: str
+    release_version_content_hash: str

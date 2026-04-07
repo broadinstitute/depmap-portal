@@ -1,5 +1,5 @@
 from typing import List, Optional
-from sqlalchemy import String, Integer, Boolean, Date, ForeignKey
+from sqlalchemy import String, Integer, Boolean, Date, ForeignKey, UniqueConstraint
 from datetime import date
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -8,6 +8,7 @@ from breadbox.db.base_class import Base, UUIDMixin
 
 class ReleaseVersion(Base, UUIDMixin):
     __tablename__ = "release_version"
+    __table_args__ = (UniqueConstraint("version_name", "release_name"),)
 
     version_name: Mapped[str] = mapped_column(String, nullable=False, index=True)
     version_date: Mapped[date] = mapped_column(Date, nullable=False)
@@ -88,8 +89,11 @@ class ReleaseFileSearchIndex(Base):
     __tablename__ = "release_file_search_index"
     __table_args__ = {"info": {"skip_autogenerate": True}}
 
-    # rowid maps to ReleaseFile.id
-    rowid: Mapped[str] = mapped_column(primary_key=True)
+    # rowid MUST be an int for FTS5
+    rowid: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+    # Store the actual File UUID here instead of directly on rowid
+    file_id: Mapped[str] = mapped_column(String)
 
     # File-specific metadata
     file_name: Mapped[str] = mapped_column(String)
