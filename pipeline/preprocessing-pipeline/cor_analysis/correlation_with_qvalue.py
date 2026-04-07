@@ -280,11 +280,16 @@ def _calc_cor_pq_values(n, c):
     dist = stats.beta(n / 2 - 1, n / 2 - 1, loc=-1, scale=2)
     p = 2 * dist.cdf(-abs(c))
 
+    if np.isnan(p).all():
+        # if p is all NaN, there's really no point in doing the rest
+        # and the assert below will fail. Instead, just return the matrix of NaNs
+        return p, p
+
     # dist.cdf appears to be occasionally returning 1+eplison (epsilon=7e-14) which appears within
     # rounding error tolerances. However stats.false_discovery_control blows up if anything exceeds [0,1]
     # so, let's verify that we aren't too far off and then clip
-    assert np.nanmax(p) - 1.0 < 1e-10
-    assert 0 - np.nanmin(p) < 1e-10
+    assert np.nanmax(p) - 1.0 < 1e-10, f"invalid max p-value {np.nanmax(p)}"
+    assert 0 - np.nanmin(p) < 1e-10, f"invalid min p-value {np.nanmin(p)}"
     p = np.clip(p, 0.0, 1.0)
 
     q = np.apply_along_axis(fdr_correct_column, axis=0, arr=p)
