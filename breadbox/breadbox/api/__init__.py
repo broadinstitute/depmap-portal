@@ -15,6 +15,7 @@ from .user import router as user_router
 from .metadata import router as metadata_router
 from .temp import router as temp_router
 from .health_check import router as health_check_router
+from .cms import router as cms_router
 from breadbox.schemas.custom_http_exception import ERROR_RESPONSES
 
 api_router = APIRouter(responses=ERROR_RESPONSES)  # type: ignore
@@ -32,3 +33,4 @@ api_router.include_router(user_router)
 api_router.include_router(metadata_router)
 api_router.include_router(health_check_router)
 api_router.include_router(temp_router)
+api_router.include_router(cms_router)

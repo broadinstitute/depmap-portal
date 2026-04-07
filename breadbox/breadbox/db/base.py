@@ -14,3 +14,4 @@ from breadbox.models.predictive_models import (
     PredictiveModelConfig,
     PredictiveModelResult,
 )
+from breadbox.models.cms import CmsPost, CmsMenu, CmsMenuPost

@@ -2,7 +2,7 @@ from fastapi import Depends, HTTPException, Request
 
 from ..crud import dataset as dataset_crud
 from breadbox.db.session import SessionLocalWithUser, SessionWithUser
-from breadbox.config import get_settings
+from breadbox.config import Settings, get_settings
 from breadbox.schemas.custom_http_exception import DatasetNotFoundError
 import os
 from breadbox.utils.caching import create_caching_caller
@@ -48,6 +48,13 @@ def get_user(request: Request) -> str:
     if user is None:
         raise HTTPException(401, "User cannot be null")
 
+    return user
+
+
+def get_admin_user(request: Request, settings: Settings = Depends(get_settings)) -> str:
+    user = get_user(request)
+    if user not in settings.admin_users:
+        raise HTTPException(403, "Admin access required")
     return user
 
 
