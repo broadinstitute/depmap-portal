@@ -105,39 +105,7 @@ class PipelineRunner:
 
         raise ValueError(f"Could not find DOCKER_IMAGE= in {image_name_file}")
 
-    def backup_conseq_logs(self, state_path, log_destination):
-        """Copy all logs to specified directory."""
-        state_dir = Path(state_path)
-        if not state_dir.exists():
-            return
-
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
-            temp_file = f.name
-
-        assert temp_file, "Temporary file name cannot be empty"
-        assert os.path.exists(temp_file), f"Temporary file was not created: {temp_file}"
-
-        find_commands = [
-            ["find", ".", "-name", "std*.txt"],
-            ["find", ".", "-name", "*.sh"],
-            ["find", ".", "-name", "*.log"],
-        ]
-
-        with open(temp_file, "w") as f:
-            for cmd in find_commands:
-                assert cmd, "Find command cannot be empty"
-                result = self.subprocess_run(
-                    cmd, cwd=state_dir, capture_output=True, text=True, check=True
-                )
-                f.write(result.stdout)
-
-        self.subprocess_run(
-            ["rsync", "-a", state_path, log_destination, f"--files-from={temp_file}"],
-            check=True,
-        )
-
-        os.unlink(temp_file)
-
+    
     def check_credentials(self, creds_dir):
         """Check that required credential files exist."""
         for filename in self.config.credentials.required_files:
@@ -391,7 +359,6 @@ class PipelineRunner:
 
         self.pull_docker_image(config.docker_image)
 
-        # self.backup_conseq_logs(config.state_path, config.log_destination)
         self.handle_special_features(config)
 
         config.conseq_file = self.get_conseq_file(config)
@@ -414,9 +381,6 @@ class PipelineRunner:
 
             # Handle post-run tasks (export, reports, etc.)
             self.handle_post_run_tasks(config)
-
-            # Copy the latest logs
-            self.backup_conseq_logs(config.state_path, config.log_destination)
 
         print("Pipeline run complete")
         self.subprocess_run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
