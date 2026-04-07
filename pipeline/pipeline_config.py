@@ -43,16 +43,6 @@ class ConseqConfig(BaseModel):
     gc_enabled: bool
 
 
-class BasePipelineSpecificConfig(BaseModel):
-    state_path: str
-    log_destination: str
-    working_dir: str
-
-
-class PreprocessingPipelineSpecificConfig(BasePipelineSpecificConfig):
-    pass
-
-
 class DataPrepTemplateConfig(BaseModel):
     input: str
     output: str
@@ -63,21 +53,11 @@ class DataPrepTemplates(BaseModel):
     internal: DataPrepTemplateConfig
 
 
-class DataPrepPipelineSpecificConfig(BasePipelineSpecificConfig):
-    templates: DataPrepTemplates
-
-
-class PipelinesConfig(BaseModel):
-    preprocessing: PreprocessingPipelineSpecificConfig
-    data_prep: DataPrepPipelineSpecificConfig
-
-
 class PipelineConfig(BaseModel):
     defaults: DefaultsConfig
     credentials: CredentialsConfig
     docker: DockerConfig
     conseq: ConseqConfig
-    pipelines: PipelinesConfig
 
 
 class CommonConfig(BaseModel):
@@ -91,7 +71,6 @@ class CommonConfig(BaseModel):
     docker_image: str
     commit_sha: str
     state_path: str
-    log_destination: str
     working_dir: str
     publish_dest: Optional[str] = None
     start_with: Optional[str] = None

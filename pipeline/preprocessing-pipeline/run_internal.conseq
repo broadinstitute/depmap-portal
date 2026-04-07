@@ -1,16 +1,18 @@
-# the publish_dest variable is overriden when this is run from the preprocessing job in jenkins
-# so the value below should be ignored.
-let publish_dest = "INVALID"
-
-# canonicalize taiga IDs in the config file
+# use the preprocess script to canonicalize taiga IDs all of input artifacts.
 eval """
 import subprocess
-import os
+import sys
 
-template=f"{rules.vars['SCRIPT_DIR']}/../../depmap-deploy/non-public-pipeline-files/preprocessing-pipeline/xrefs-internal.template"
-assert os.path.exists(template), f"Could not find template {repr(template)}"
-subprocess.check_call(["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "xrefs-internal-DO-NOT-EDIT-ME"])
+template=f"depmap-deploy/non-public-pipeline-files/preprocessing-pipeline/xrefs-internal.template"
+cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "xrefs_internal-DO-NOT-EDIT-ME", "--search-ancestors"]
+
+print(f"Preprocessing templates by running {' '.join(cmd)}...")
+try:
+   subprocess.check_call(cmd)
+except subprocess.CalledProcessError:
+    print(f"running \"{' '.join(cmd)}\" failed. Aborting")
+    sys.exit(1)
 """
-
-include "xrefs-internal-DO-NOT-EDIT-ME"
+# read the file that was generated from the command above to add the artifacts with canonicalized taiga IDs
+include "xrefs_internal-DO-NOT-EDIT-ME"
 include "_run_common.conseq"

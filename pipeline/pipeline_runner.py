@@ -6,13 +6,10 @@ import sys
 import tempfile
 import uuid
 import yaml
-from abc import ABC, abstractmethod
 from pathlib import Path
 from datetime import datetime
-from typing import Optional
 
 from pipeline_config import (
-    BasePipelineSpecificConfig,
     CommonConfig,
     DefaultsConfig,
     PipelineConfig,
@@ -61,10 +58,14 @@ def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
     parser.add_argument(
         "--dryrun", action="store_true", help="Print commands instead of running them",
     )
+    parser.add_argument(
+        "--working-dir",
+        help="The directory where the run_XXX.conseq file is contained for the pipeline you wish to run",
+    )
     return parser
 
 
-class PipelineRunner(ABC):
+class PipelineRunner:
     """Base class for all pipeline runners."""
 
     def __init__(self, dryrun: bool, script_path: Path):
@@ -90,7 +91,7 @@ class PipelineRunner(ABC):
 
     def read_docker_image_name(self, script_dir):
         """Load Docker image name from image-name file."""
-        image_name_file = script_dir.parent / "image-name"
+        image_name_file = script_dir / "image-name"
         assert (
             image_name_file.exists()
         ), f"Could not find image-name file in {script_dir.parent}"
@@ -104,39 +105,7 @@ class PipelineRunner(ABC):
 
         raise ValueError(f"Could not find DOCKER_IMAGE= in {image_name_file}")
 
-    def backup_conseq_logs(self, state_path, log_destination):
-        """Copy all logs to specified directory."""
-        state_dir = Path(state_path)
-        if not state_dir.exists():
-            return
-
-        with tempfile.NamedTemporaryFile(mode="w", delete=False) as f:
-            temp_file = f.name
-
-        assert temp_file, "Temporary file name cannot be empty"
-        assert os.path.exists(temp_file), f"Temporary file was not created: {temp_file}"
-
-        find_commands = [
-            ["find", ".", "-name", "std*.txt"],
-            ["find", ".", "-name", "*.sh"],
-            ["find", ".", "-name", "*.log"],
-        ]
-
-        with open(temp_file, "w") as f:
-            for cmd in find_commands:
-                assert cmd, "Find command cannot be empty"
-                result = self.subprocess_run(
-                    cmd, cwd=state_dir, capture_output=True, text=True, check=True
-                )
-                f.write(result.stdout)
-
-        self.subprocess_run(
-            ["rsync", "-a", state_path, log_destination, f"--files-from={temp_file}"],
-            check=True,
-        )
-
-        os.unlink(temp_file)
-
+    
     def check_credentials(self, creds_dir):
         """Check that required credential files exist."""
         for filename in self.config.credentials.required_files:
@@ -168,13 +137,13 @@ class PipelineRunner(ABC):
         print(json.dumps(final_log, indent=2))
         print("=" * 50)
 
-    def track_dataset_usage_from_conseq(self, pipeline_dir):
+    def track_dataset_usage_from_conseq(self, working_dir):
         """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
-        pipeline_path = Path(pipeline_dir)
+        pipeline_path = Path(working_dir)
         version_files = list(pipeline_path.glob("*-DO-NOT-EDIT-ME"))
 
         if not version_files:
-            raise ValueError(f"No *-DO-NOT-EDIT-ME files found in {pipeline_dir}")
+            raise ValueError(f"No *-DO-NOT-EDIT-ME files found in {working_dir}")
 
         for version_file in version_files:
             assert version_file.exists(), f"Version file does not exist: {version_file}"
@@ -192,19 +161,18 @@ class PipelineRunner(ABC):
                     return
 
         raise ValueError(
-            f"Release taiga ID not found in any *-DO-NOT-EDIT-ME files in {pipeline_dir}. "
+            f"Release taiga ID not found in any *-DO-NOT-EDIT-ME files in {working_dir}. "
             "Please check the files and try again."
         )
 
-    def build_common_config(
-        self, args, pipeline_cfg: BasePipelineSpecificConfig
-    ) -> CommonConfig:
+    def build_common_config(self, args) -> CommonConfig:
         """Build common configuration that all pipelines share."""
 
         docker_image = args.image or self.read_docker_image_name(
             self.script_path.parent
         )
         commit_sha = self.get_git_commit_sha()
+        working_dir = args.working_dir
 
         config = CommonConfig(
             env_name=args.deploy_name,
@@ -214,9 +182,8 @@ class PipelineRunner(ABC):
             image=args.image,
             docker_image=docker_image,
             commit_sha=commit_sha,
-            state_path=pipeline_cfg.state_path,
-            log_destination=pipeline_cfg.log_destination,
-            working_dir=pipeline_cfg.working_dir,
+            state_path=f"{working_dir}/state",
+            working_dir=working_dir,
             publish_dest=args.destination,
             start_with=args.start_with,
             manually_run_conseq=args.manually_run_conseq,
@@ -229,7 +196,9 @@ class PipelineRunner(ABC):
     def run_via_container(self, command, config: CommonConfig):
         """Run command inside Docker container with pipeline-specific configuration."""
         cwd = os.getcwd()
-        base_dir = os.path.dirname(os.path.dirname(cwd)) # include two directories up to make sure we also have access to depmap_deploy
+        base_dir = os.path.dirname(
+            os.path.dirname(cwd)
+        )  # include two directories up to make sure we also have access to depmap_deploy
         assert config.conseq_file is not None
         working_dir = os.path.dirname(config.conseq_file)
         docker_cfg = self.config.docker
@@ -251,7 +220,7 @@ class PipelineRunner(ABC):
                 "-v",
                 f"{base_dir}:{base_dir}",
                 "-w",
-                working_dir,
+                os.path.abspath(working_dir),
                 "-v",
                 f"{config.creds_dir}/{cred_files[1]}:{volumes.sparkles_cache}",
                 "-v",
@@ -271,7 +240,7 @@ class PipelineRunner(ABC):
 
         print("=" * 50)
         print(f"{self.pipeline_name} Pipeline Runner command:")
-        print(f"  {command}")
+        print(f"  {' '.join(docker_cmd)}")
         print("=" * 50)
 
         return self.subprocess_run(docker_cmd)
@@ -281,18 +250,16 @@ class PipelineRunner(ABC):
 
         # Environment name mapping
         env_mapping = {
-    
-      "iqa": "internal",
-      "istaging": "internal",
-      "internal": "internal",
-      "dqa": "dmc",
-      "dstaging": "dmc",
-      "pstaging": "dmc",
-      "peddep": "dmc",
-      "xqa": "external",
-      "xstaging": "external",
-      "test-prefix": "iqa" # Any env starting with "test-" maps to this
-
+            "iqa": "internal",
+            "istaging": "internal",
+            "internal": "internal",
+            "dqa": "dmc",
+            "dstaging": "dmc",
+            "pstaging": "dmc",
+            "peddep": "dmc",
+            "xqa": "external",
+            "xstaging": "external",
+            "test-prefix": "iqa",  # Any env starting with "test-" maps to this
         }
 
         if env_name.startswith("test-"):
@@ -300,7 +267,7 @@ class PipelineRunner(ABC):
         return env_mapping.get(env_name, env_name)
 
     def create_override_conseq_file(
-        self, pipeline_dir: str, original_conseq: str, publish_dest: str
+        self, original_conseq: str, publish_dest: str
     ) -> str:
         """Create an override conseq file that injects a custom publish_dest.
 
@@ -322,25 +289,22 @@ class PipelineRunner(ABC):
 
         return override_name
 
-    @abstractmethod
     def get_pipeline_config(self, args: argparse.Namespace) -> CommonConfig:
-        """Return pipeline-specific configuration."""
-        pass
+        return self.build_common_config(args)
 
     def get_conseq_file(self, config: CommonConfig) -> str:
         assert self.script_path is not None
         mapped_env = self.map_environment_name(config.env_name)
         print(f"env_name={config.env_name}, mapped_env={mapped_env}")
-        pipeline_dir = str(self.script_path.parent)
-        print("*********", mapped_env)
-        original_conseq = f"{pipeline_dir}/run_{mapped_env}.conseq"
+        original_conseq = f"{config.working_dir}/run_{mapped_env}.conseq"
         if config.publish_dest:
             conseq_file = self.create_override_conseq_file(
-                pipeline_dir, original_conseq, config.publish_dest
+                original_conseq, config.publish_dest
             )
             print(f"Created override conseq file: {conseq_file}")
-            return conseq_file
-        return original_conseq
+        else: 
+            conseq_file = original_conseq
+        return os.path.abspath(conseq_file)
 
     def handle_special_features(self, config: CommonConfig) -> None:
         """Handle pre-run features. Subclasses should call super() after their own logic."""
@@ -395,7 +359,6 @@ class PipelineRunner(ABC):
 
         self.pull_docker_image(config.docker_image)
 
-        self.backup_conseq_logs(config.state_path, config.log_destination)
         self.handle_special_features(config)
 
         config.conseq_file = self.get_conseq_file(config)
@@ -418,9 +381,6 @@ class PipelineRunner(ABC):
 
             # Handle post-run tasks (export, reports, etc.)
             self.handle_post_run_tasks(config)
-
-            # Copy the latest logs
-            self.backup_conseq_logs(config.state_path, config.log_destination)
 
         print("Pipeline run complete")
         self.subprocess_run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
@@ -457,10 +417,22 @@ class PipelineRunner(ABC):
         if self.dryrun:
             print("[dryrun] skipping track_dataset_usage")
         else:
-            self.track_dataset_usage_from_conseq(str(self.script_path.parent))
+            self.track_dataset_usage_from_conseq(config.working_dir)
 
         if config.export_path:
             assert config.conseq_file is not None
             self.run_via_container(
                 f"conseq export {config.conseq_file} {config.export_path}", config
             )
+
+
+def main():
+    pipeline_config = load_pipeline_config()
+    parser = create_argument_parser(pipeline_config.defaults)
+    args = parser.parse_args()
+    runner = PipelineRunner(dryrun=args.dryrun, script_path=Path(__file__))
+    runner.run(args)
+
+
+if __name__ == "__main__":
+    main()
