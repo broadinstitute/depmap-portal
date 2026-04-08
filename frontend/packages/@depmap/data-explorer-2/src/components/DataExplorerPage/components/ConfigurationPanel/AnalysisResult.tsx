@@ -206,33 +206,43 @@ function AnalysisResult({ plot, dispatch }: Props) {
                   result.data[0].vectorId.split("/")?.[1]
                 );
 
-                const dimTypes = await cached(breadboxAPI).getDimensionTypes();
-                const datasets = await cached(breadboxAPI).getDatasets();
-                const metadataDataset = resolveMetadataGivenId(
-                  sliceType!,
-                  dimTypes,
-                  datasets
-                );
+                const vars: Record<string, object> = {};
 
-                if (!metadataDataset) {
-                  window.console.warn(
-                    "Could not find metadata dataset for dimension type",
-                    `"${sliceType}".`
+                if (sliceType !== null) {
+                  const bb = cached(breadboxAPI);
+                  const datasets = await bb.getDatasets();
+                  const dimTypes = await bb.getDimensionTypes();
+                  const metadataDataset = resolveMetadataGivenId(
+                    sliceType,
+                    dimTypes,
+                    datasets
                   );
-                  return;
+
+                  if (!metadataDataset) {
+                    window.console.warn(
+                      "Could not find metadata dataset for dimension type",
+                      `"${sliceType}".`
+                    );
+                    return;
+                  }
+
+                  vars.entity_label = {
+                    dataset_id: metadataDataset,
+                    identifier_type: "column" as const,
+                    identifier: "label",
+                  };
                 }
 
                 const context = {
                   name: slice_label,
                   dimension_type: sliceType,
-                  expr: { "==": [{ var: "entity_label" }, slice_label] },
-                  vars: {
-                    entity_label: {
-                      dataset_id: metadataDataset,
-                      identifier_type: "column" as const,
-                      identifier: "label",
-                    },
+                  expr: {
+                    "==": [
+                      { var: sliceType ? "entity_label" : "given_id" },
+                      slice_label,
+                    ],
                   },
+                  vars,
                 };
 
                 dispatch({
