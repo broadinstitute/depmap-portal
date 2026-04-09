@@ -13,6 +13,18 @@ ContextExpression = Annotated[
 ]
 
 
+class SliceQueryRef(BaseModel):
+    """A reference to a slice of data in a dataset."""
+
+    dataset_id: str
+    identifier: str
+    identifier_type: str
+    reindex_through: Optional["SliceQueryRef"] = None
+
+    class Config:
+        extra = "ignore"
+
+
 class Context(BaseModel):
     # Context expression examples:
     # - { "!": [ { "var": "model1_lineage" }, "Breast" ] }
