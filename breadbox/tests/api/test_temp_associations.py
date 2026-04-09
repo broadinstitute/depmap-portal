@@ -13,6 +13,64 @@ import pytest
 import packed_cor_tables
 
 
+def test_compute_associations_for_slice(
+    client: TestClient, minimal_db: SessionWithUser, settings
+):
+    """
+    Test that POST /temp/associations/compute returns correlations between all features
+    in a dataset and a reference profile (specified by a slice query).
+    """
+    # Create a dataset with three features and two samples.
+    # Use feature_type=None so given_id == label (no metadata lookup needed).
+    values = np.array(
+        [
+            [1.0, 3.0, 4.0],  # ACH-1: feat_ref=1, feat_a=3, feat_b=4
+            [2.0, 4.0, 3.0],  # ACH-2: feat_ref=2, feat_a=4, feat_b=3
+        ]
+    )
+    data_file = factories.matrix_csv_data_file_with_values(
+        feature_ids=["feat_ref", "feat_a", "feat_b"],
+        sample_ids=["ACH-1", "ACH-2"],
+        values=values,
+    )
+    dataset = factories.matrix_dataset(
+        minimal_db,
+        settings,
+        feature_type=None,
+        sample_type="depmap_model",
+        data_file=data_file,
+    )
+    minimal_db.commit()
+
+    # Correlate all features in `dataset` against feat_ref
+    response = client.post(
+        "/temp/associations/compute",
+        json={
+            "dataset_id": dataset.id,
+            "slice_query": {
+                "identifier_type": "feature_id",
+                "dataset_id": dataset.id,
+                "identifier": "feat_ref",
+            },
+        },
+    )
+
+    assert_status_ok(response)
+    body = response.json()
+    assert set(body.keys()) == {"label", "given_id", "cor"}
+
+    # Results should be sorted by cor ascending
+    assert body["cor"] == sorted(body["cor"])
+
+    # All three features should be present
+    assert set(body["given_id"]) == {"feat_ref", "feat_a", "feat_b"}
+
+    result = dict(zip(body["given_id"], body["cor"]))
+    assert result["feat_ref"] == pytest.approx(1.0)
+    assert result["feat_a"] == pytest.approx(1.0)
+    assert result["feat_b"] == pytest.approx(-1.0)
+
+
 def test_associations(
     client: TestClient, minimal_db: SessionWithUser, public_group, settings, tmpdir
 ):
