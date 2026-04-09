@@ -75,7 +75,7 @@ def _to_internal_slice_query(ref: SliceQueryRef) -> SliceQuery:
     return SliceQuery(
         dataset_id=ref.dataset_id,
         identifier=ref.identifier,
-        identifier_type=ref.identifier_type,
+        identifier_type=ref.identifier_type.value,
         reindex_through=_to_internal_slice_query(ref.reindex_through)
         if ref.reindex_through
         else None,

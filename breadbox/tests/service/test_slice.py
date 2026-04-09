@@ -14,6 +14,7 @@ from breadbox.schemas.custom_http_exception import UserError
 
 from breadbox.depmap_compute_embed.slice import SliceQuery
 
+from typing import cast
 from tests import factories
 
 
@@ -288,7 +289,9 @@ def test_resolve_rejects_non_column_intermediate():
     )
     with pytest.raises(UserError, match="identifier_type 'column'"):
         # db and filestore_location won't be reached because validation fails first
-        _resolve_reindex_chain(None, None, leaf)
+        _resolve_reindex_chain(
+            cast(SessionWithUser, None), cast(str, None), leaf,
+        )
 
 
 def test_resolve_allows_non_column_leaf():
@@ -306,7 +309,9 @@ def test_resolve_allows_non_column_leaf():
     )
     # Should fail on DB access (None db), not on validation
     with pytest.raises(Exception) as exc_info:
-        _resolve_reindex_chain(None, None, leaf)
+        _resolve_reindex_chain(
+            cast(SessionWithUser, None), cast(str, None), leaf,
+        )
     assert "identifier_type 'column'" not in str(exc_info.value)
 
 
