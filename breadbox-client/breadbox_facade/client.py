@@ -56,6 +56,10 @@ from breadbox_client.api.temp import delete_predictive_model_configs as delete_p
 from breadbox_client.api.temp import get_predictive_models_for_feature as get_predictive_models_for_feature_client
 from breadbox_client.api.temp import bulk_load_predictive_model_results as bulk_load_predictive_model_results_client
 from breadbox_client.api.temp import delete_predictive_model_results as delete_predictive_model_results_client
+from breadbox_client.api.release_versions import get_release_versions as get_release_versions_client
+from breadbox_client.api.release_versions import get_release_version as get_release_version_client
+from breadbox_client.api.release_versions import create_release_version as create_release_version_client
+from breadbox_client.api.release_versions import delete_release_version as delete_release_version_client
 
 from breadbox_client.models import (
     AccessType,
@@ -110,6 +114,9 @@ from breadbox_client.models import (
     PredictiveModelConfigOut,
     PredictiveModelResultOut,
     PredictiveModelsResponse,
+    ReleaseVersionResponse,
+    CreateReleaseVersionParams, 
+    ReleaseVersionResponse
 )
 
 from breadbox_client.types import UNSET, Unset, File, Response
@@ -609,6 +616,53 @@ class BBClient:
         request_body = SqlQuery(sql=sql)
         breadbox_response = query_sql.sync_detailed(client=self.client, body=request_body)
         return self._parse_client_response(breadbox_response)
+    
+    # RELEASE VERSIONS
+    
+    def get_release_versions(self, release_name: Union[Optional[str], Unset] = UNSET, datatype: Union[Optional[str], Unset] = UNSET, start_date: Union[Optional[str], Unset] = UNSET, end_date: Union[Optional[str], Unset] = UNSET, include_files: bool = False ) -> List[ReleaseVersionResponse]:
+        """Get all release versions with options to filter by release_name, datatype, start_date, end_date, include_files."""
+        breadbox_response = get_release_versions_client.sync_detailed(client=self.client,release_name=release_name,
+        datatype=datatype,
+        start_date=start_date,
+        end_date=end_date,
+        include_files=include_files )
+        return self._parse_client_response(breadbox_response)
+
+    
+    def get_release_version(self, include_files: bool = False) -> ReleaseVersionResponse:
+        """Get a single release with the option to include_files."""
+        breadbox_response = get_release_version_client.sync_detailed(client=self.client, include_files=include_files)
+        return self._parse_client_response(breadbox_response)
+        
+    def create_release_version(self, params: CreateReleaseVersionParams) -> ReleaseVersionResponse:
+        """Create a new release version including its associated files and pipelines."""
+        
+        body = CreateReleaseVersionParams(
+            version_name=params.version_name,
+            release_name=params.release_name,
+            version_date=params.version_date,
+            description=params.description if params.description else UNSET,
+            citation=params.citation if params.citation else UNSET,
+            funding=params.funding if params.funding else UNSET,
+            terms=params.terms if params.terms else UNSET,
+            files=params.files,
+            content_hash=params.content_hash,
+            release_pipelines=params.release_pipelines,
+        )
+        breadbox_response = create_release_version_client.sync_detailed(
+            client=self.client, 
+            body=body
+        )
+
+        return self._parse_client_response(breadbox_response)
+        
+    def delete_release_version(self, release_version_id: str) -> dict[str, str]:
+        """
+        Delete a release version. Associated files and pipelines will be 
+        deleted automatically via cascade.
+        """
+        breadbox_response = delete_release_version_client.sync_detailed(client=self.client, release_version_id=release_version_id)
+        return self._parse_client_response(breadbox_response)
 
     # PREDICTIVE MODELS
 
@@ -769,3 +823,5 @@ class BBClient:
     def is_ok(self):
         response = ok.sync_detailed(client=self.client)
         return response
+
+
