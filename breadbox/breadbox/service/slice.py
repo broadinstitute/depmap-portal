@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import List
+from logging import getLogger
 
 import pandas as pd
 
@@ -26,6 +27,7 @@ from breadbox.crud.dimension_ids import (
     get_dataset_feature_by_given_id,
 )
 
+log = getLogger(__name__)
 
 _MAX_REINDEX_DEPTH = 10
 
@@ -135,16 +137,35 @@ def _resolve_reindex_chain(
                 f"identifier '{step.identifier}'."
             )
 
-    # Load each step's data as a simple (non-chained) slice query
+    # Load each step's data as a simple (non-chained) slice query. Wrap each
+    # call in a try/except so any failure (missing column, missing dataset,
+    # etc.) is re-raised with chain context, making it obvious which step of
+    # the reindex_through traversal failed.
     series_chain: List[pd.Series] = []
-    for step in chain:
+    for i, step in enumerate(chain):
+        if i == 0:
+            role = "root"
+        elif i == len(chain) - 1:
+            role = "leaf"
+        else:
+            role = f"intermediate step {i}"
+
         simple_query = SliceQuery(
             dataset_id=step.dataset_id,
             identifier=step.identifier,
             identifier_type=step.identifier_type,
         )
-        series_chain.append(get_slice_data(db, filestore_location, simple_query))
-
+        try:
+            series_chain.append(get_slice_data(db, filestore_location, simple_query))
+        except Exception as e:
+            message = (
+                f"Failed to resolve reindex_through chain at {role} "
+                f"(dataset_id={step.dataset_id!r}, "
+                f"identifier={step.identifier!r}, "
+                f"identifier_type={step.identifier_type!r}): {e}"
+            )
+            log.warning(message, exc_info=True)
+            raise UserError(message) from e
     # Compose: root maps root_ids → step1_ids, step1 maps step1_ids → step2_ids, etc.
     # The leaf maps final_ids → values. Chaining .map() yields root_ids → values.
     result = series_chain[0]
