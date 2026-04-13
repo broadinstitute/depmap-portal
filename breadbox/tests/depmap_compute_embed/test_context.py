@@ -6,6 +6,20 @@ from breadbox.depmap_compute_embed.slice import SliceQuery
 # These tests ensure that behavior is continuing to work as expected.
 
 
+def expressions_are_equivalent(boolean_value, json_logic_expr):
+    context = {
+        "dimension_type": "dummy",
+        "expr": json_logic_expr,
+    }
+
+    # These expressions don't use variables (just pure logic)
+    get_slice_data_mock = lambda _: pd.Series(dtype=object)
+    get_labels_by_id_mock = lambda _: {"dummy_id": "dummy_label"}
+    evaluator = ContextEvaluator(context, get_slice_data_mock, get_labels_by_id_mock)
+
+    return evaluator._is_match("dummy_id") == boolean_value
+
+
 def test_operator__not_in():
     assert expressions_are_equivalent(
         # python
@@ -75,19 +89,6 @@ def test_operator__not_has_any():
     )
 
 
-def expressions_are_equivalent(boolean_value, json_logic_expr):
-    context = {"context_type": "don't care", "expr": json_logic_expr}
-
-    # These expressions don't use variables (just pure logic)
-    var_name = "dummy variable"
-    get_slice_data_mock = lambda _: pd.Series(dtype=object)
-    result = ContextEvaluator(context, get_slice_data_mock).is_match(
-        var_name
-    )  # pyright: ignore
-
-    return result == boolean_value
-
-
 # ============================================================
 # Tests for reindex_through passthrough in ContextEvaluator
 # ============================================================
@@ -136,11 +137,17 @@ def test_context_evaluator_with_reindex_through():
         # Return data as if the chain was already resolved to screen_pair IDs
         return pd.Series({"PAIR_1": "Breast", "PAIR_2": "Lung", "PAIR_3": "Breast"})
 
-    evaluator = ContextEvaluator(context, mock_get_slice_data)
-    matches = [pid for pid in ["PAIR_1", "PAIR_2", "PAIR_3"] if evaluator.is_match(pid)]
+    mock_get_labels = lambda dim_type: {
+        "PAIR_1": "Pair 1",
+        "PAIR_2": "Pair 2",
+        "PAIR_3": "Pair 3",
+    }
+
+    evaluator = ContextEvaluator(context, mock_get_slice_data, mock_get_labels)
+    result = evaluator.evaluate()
 
     # Only screen_pairs with Lineage == "Breast" should match
-    assert matches == ["PAIR_1", "PAIR_3"]
+    assert sorted(result.ids) == ["PAIR_1", "PAIR_3"]
 
 
 def test_context_evaluator_without_reindex_through_still_works():
@@ -163,16 +170,22 @@ def test_context_evaluator_without_reindex_through_still_works():
         assert sq.reindex_through is None
         return pd.Series({"MODEL_A": "Breast", "MODEL_B": "Lung"})
 
-    evaluator = ContextEvaluator(context, mock_get_slice_data)
-    matches = [mid for mid in ["MODEL_A", "MODEL_B"] if evaluator.is_match(mid)]
+    mock_get_labels = lambda dim_type: {
+        "MODEL_A": "Model A",
+        "MODEL_B": "Model B",
+    }
 
-    assert matches == ["MODEL_A"]
+    evaluator = ContextEvaluator(context, mock_get_slice_data, mock_get_labels)
+    result = evaluator.evaluate()
+
+    assert result.ids == ["MODEL_A"]
 
 
 def test_context_evaluator_reindex_through_ignored_fields():
     """
-    _dict_to_slice_query only reads the three core fields + reindex_through
-    from each var dict, so any extra fields are silently dropped.
+    SliceQueryRef has extra='ignore', so unknown fields in the vars dict
+    should be silently dropped. This also verifies that only the three core
+    fields + reindex_through are passed through.
     """
     context = {
         "dimension_type": "dummy",
@@ -198,5 +211,8 @@ def test_context_evaluator_reindex_through_ignored_fields():
         assert sq.reindex_through.dataset_id == "root_ds"
         return pd.Series({"id1": "yes"})
 
-    evaluator = ContextEvaluator(context, mock_get_slice_data)
-    assert evaluator.is_match("id1") is True
+    mock_get_labels = lambda _: {"id1": "Label 1"}
+
+    evaluator = ContextEvaluator(context, mock_get_slice_data, mock_get_labels)
+    result = evaluator.evaluate()
+    assert result.ids == ["id1"]
