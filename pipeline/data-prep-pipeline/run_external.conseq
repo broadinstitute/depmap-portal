@@ -8,4 +8,4 @@ subprocess.check_call(["python", "../preprocess_taiga_ids.py", "release_inputs_e
 """
 
 include "release_inputs_external-DO-NOT-EDIT-ME"
-include "data_prep_pipeline/run_common.conseq"
+include "common.conseq"
