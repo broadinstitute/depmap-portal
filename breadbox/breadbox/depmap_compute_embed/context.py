@@ -27,6 +27,23 @@ operations.update(
             if isinstance(a, list) and isinstance(b, list)
             else True
         ),
+        # Unary null-checking operators. These are necessary because the
+        # implicit complement desugaring (below) closes off the old accidental
+        # way of matching null values through negated operators.
+        "is_null": lambda a: a is None,
+        "not_null": lambda a: a is not None,
+        # Note: When used with {"var": ...} references, !in, !has_any, and !=
+        # are desugared by _resolve_complements into null-guarded negations
+        # during ContextEvaluator.__init__. This prevents null values from being
+        # incorrectly matched (e.g. null !in ["a", "b"] would otherwise be True).
+        #
+        # Note: "complement" is not an operator users write directly — it is
+        # synthesized by the UI when a user selects the "NOT My Context" version
+        # of a positive context for use as an outgroup in a two-class comparison.
+        # It is desugared by _resolve_complements into a null-guarded negation
+        # so that the synthesized outgroup respects the same data-completeness
+        # gates as the positive. See _resolve_complements for the full rules.
+        #
         # Note: {"context": "<name>"} references are not standard JsonLogic.
         # They are resolved during ContextEvaluator.__init__ by
         # _resolve_context_refs, which recursively evaluates the named
@@ -143,6 +160,9 @@ class ContextEvaluator:
 
         # Resolve { "context": "<name>" } references into flat ID lists
         self.expr = self._resolve_context_refs(self.expr, context.get("contexts", {}))
+
+        # Desugar negated operators and complement into null-guarded negations
+        self.expr = _resolve_complements(self.expr)
 
         # Validate that all var references in the expression are defined
         _validate_var_refs(self.expr, self.slice_data)
@@ -272,3 +292,122 @@ def _validate_var_refs(expr, slice_data: dict):
                 f"Expression references var '{name}' but it is not defined "
                 f"in 'vars'. Defined vars: {defined}"
             )
+
+
+# Negated operators that should be desugared into null-guarded negations.
+# This prevents null values from being incorrectly matched by negated operators
+# (e.g. null !in ["Breast", "Lung"] would otherwise evaluate to True).
+_NEGATED_OPS = {"!in": "in", "!has_any": "has_any", "!=": "=="}
+
+
+# is_null is the only operator whose correct behavior on null is to return
+# True. Every other operator (==, >, in, has_any, and even not_null) returns
+# False on null, which is what makes null-guarding them safe. Null-guarding
+# is_null would destroy its meaning: complement(is_null(x)) without a guard
+# is "entities where x is not null," which is sensible; with a guard it
+# excludes every entity with null x, which is exactly the wrong answer.
+#
+# not_null is deliberately NOT in this set. In practice, not_null is most
+# commonly used as a gate inside a larger AND expression (e.g. "entities
+# where lineage is known AND expression > 5"), and users expect the
+# complement of such an expression to preserve that gate — otherwise the
+# positive group and the complement aren't a clean partition of the
+# entities the user actually cared about.
+_NULL_CHECK_OPS = {"is_null"}
+
+
+def _collect_data_vars(expr) -> set[str]:
+    """Like _collect_vars, but skips vars that appear only inside is_null
+    subexpressions. Used when computing null guards for complement
+    desugaring, where is_null must pass through unmodified."""
+    if isinstance(expr, dict):
+        if "var" in expr:
+            return {expr["var"]}
+        op = next(iter(expr))
+        if op in _NULL_CHECK_OPS:
+            return set()
+        return set().union(*(_collect_data_vars(v) for v in expr.values()))
+    if isinstance(expr, list):
+        return set().union(*(_collect_data_vars(x) for x in expr), set())
+    return set()
+
+
+def _resolve_complements(expr):
+    """
+    Desugars negated operators (!in, !has_any, !=) and explicit "complement"
+    nodes into null-guarded negations.
+    For example:
+        {"!in": [{"var": "0"}, ["Breast", "Lung"]]}
+    becomes:
+        {"and": [{"not_null": [{"var": "0"}]}, {"!": {"in": [{"var": "0"}, ["Breast", "Lung"]]}}]}
+
+    Design note — why operators are treated asymmetrically:
+
+    The ContextEvaluator powers a UI where every user-defined "positive"
+    context is automatically paired with an auto-synthesized "NOT" version,
+    presented as a separate outgroup option in the context picker. Users
+    building two-class comparisons rely on this pairing: they select their
+    positive group from a "my contexts" list and the negative group from
+    a parallel "out groups" list, and they expect the two to form a clean
+    partition of the entities they actually cared about.
+
+    This means `complement` isn't an operator users write — it's one the
+    system synthesizes to implement "NOT My Context." The rules below are
+    what make that synthesis produce results that match user intuition
+    for every possible shape of positive context.
+
+    Every operator in JsonLogic returns False on null input EXCEPT is_null,
+    which returns True. That single fact is what makes null-guarding safe
+    for most operators and unsafe for is_null:
+
+    - For !=, !in, !has_any, and any expression wrapped in "complement":
+      a null input would flip to True under plain negation, matching
+      entities the user didn't intend to include. Null-guarding prevents
+      that by requiring the var to be present before the negated clause
+      can fire.
+
+    - For is_null specifically: null-guarding destroys the operator's
+      meaning. complement(is_null(x)) should mean "entities where x is
+      not null," but under a null guard it becomes "entities where x is
+      not null AND x is not null AND it isn't the case that x is null,"
+      which excludes every entity with null x — exactly the ones the
+      inner is_null was identifying. So is_null is exempted from null
+      guards via _NULL_CHECK_OPS and _collect_data_vars.
+
+    not_null is deliberately NOT exempted, even though it looks symmetric
+    to is_null. It returns False on null like every other operator, so
+    null-guarding it is safe. More importantly, the common use case for
+    not_null is as a data-completeness gate inside a larger AND expression
+    (e.g. "entities where lineage is known AND expression > 5" as part of
+    a two-class comparison). Users expect the complement of such an
+    expression to preserve that gate — otherwise the positive group and
+    the complement aren't a clean partition of the entities the user
+    actually cared about. Null-guarding not_null is what makes that work.
+
+    The operators look symmetric at the syntax level but are asymmetric
+    in their relationship to missing data. See test_operator__complement_*
+    for the tests that pin this down.
+    """
+    if isinstance(expr, dict):
+        op = next(iter(expr))
+        if op in _NEGATED_OPS:
+            positive_op = _NEGATED_OPS[op]
+            inner = _resolve_complements(expr[op])
+            vars_used = sorted(_collect_data_vars(inner) - {"given_id"})
+            null_guards = [{"not_null": [{"var": v}]} for v in vars_used]
+            negated = {"!": {positive_op: inner}}
+            if not null_guards:
+                return negated
+            return {"and": [*null_guards, negated]}
+        if op == "complement":
+            inner = _resolve_complements(expr["complement"])
+            vars_used = sorted(_collect_data_vars(inner) - {"given_id"})
+            null_guards = [{"not_null": [{"var": v}]} for v in vars_used]
+            negated = {"!": inner}
+            if not null_guards:
+                return negated
+            return {"and": [*null_guards, negated]}
+        return {k: _resolve_complements(v) for k, v in expr.items()}
+    if isinstance(expr, list):
+        return [_resolve_complements(x) for x in expr]
+    return expr
