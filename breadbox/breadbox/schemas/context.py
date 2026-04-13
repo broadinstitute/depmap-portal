@@ -31,9 +31,14 @@ class Context(BaseModel):
     # - { "!": [ { "var": "model1_lineage" }, "Breast" ] }
     # - { "==": [ { "var": "entity_id"}, "ACH-000001" ] }
     # - { ">": [ {"var": "model2_expression"}, 0.5 ] }
+    # - { "in": [ { "var": "gene_1" }, { "context": "selective" } ] }
     # - True
     expr: ContextExpression
     name: Optional[str] = None
     dimension_type: str
-    # This vars field is a dictionary of variable names to slice queries
-    vars: dict[str, dict[str, str]] = {}
+    # Maps variable names to slice queries, referenced in expr via { "var": "<name>" }
+    vars: dict[str, SliceQueryRef] = {}
+    # Maps context names to nested context definitions, referenced in expr via
+    # { "context": "<name>" }. Inner contexts can themselves define their own
+    # vars and contexts, enabling recursive nesting.
+    contexts: dict[str, "Context"] = {}
