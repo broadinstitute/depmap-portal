@@ -29,7 +29,7 @@ def lin_associations_wrapper(features, profile, profile_is_dependent) -> pd.Data
     assert isinstance(valid_var_cols, pd.Series)
     outmask = pd.Series(data=df["mask"].to_numpy(), index=valid_var_cols.index)
     outmask = outmask & valid_var_cols
-    df = df[pd.Index(outmask)]
+    df = df[outmask.to_numpy()]
     df["Index"] = df.index
     df["dep.var"] = np.nan
     df["ind.var"] = np.nan
@@ -102,7 +102,7 @@ def robust_linear_model(X, y):
 
     S = X * yc
 
-    n = (~np.isnan(S.data)).sum(axis=0)
+    n = (~S.mask).sum(axis=0)
     muS = S.mean(axis=0) * n / (n - 1)
     sigmaS = np.sqrt(((S - muS) ** 2).mean(axis=0))
     X.mask = X.mask | ~np.isfinite(S)
@@ -119,8 +119,22 @@ def robust_linear_model(X, y):
         (np.sqrt((n - d) / (1 / (rho ** 2) - 1))), n - d
     )
 
-    q_val = stats.false_discovery_control(p_val)
-    q_val_homoskedastic = stats.false_discovery_control(p_val_homoskedastic)
+    outmask = ~(rho.mask | (n - d < 4))
+
+    # Only compute FDR on valid p-values
+    q_val = np.full_like(p_val, np.nan)
+    q_val_homoskedastic = np.full_like(p_val_homoskedastic, np.nan)
+
+    if np.any(outmask):
+        # Get valid p-values (where mask is True)
+        valid_p = p_val[outmask]
+        valid_p_homo = p_val_homoskedastic[outmask]
+        
+        # Only run FDR if there are finite p-values
+        if np.any(np.isfinite(valid_p)):
+            q_val[outmask] = stats.false_discovery_control(valid_p)
+        if np.any(np.isfinite(valid_p_homo)):
+            q_val_homoskedastic[outmask] = stats.false_discovery_control(valid_p_homo)
 
     # generate robustness score
     _S = S / np.nansum(S, axis=0)
@@ -143,7 +157,6 @@ def robust_linear_model(X, y):
         "varX": varX.data,
         "varY": varY.data,
     }
-    outmask = ~(rho.mask | (n - 2 < 4))
     out = {
         "betahat": beta.data,
         "sebetahat": beta_se.data,
