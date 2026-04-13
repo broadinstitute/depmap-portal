@@ -29,6 +29,20 @@ operations.update(
 )
 
 
+def _dict_to_slice_query(d: dict) -> SliceQuery:
+    """Convert a raw dict (from a deserialized Context) to a SliceQuery dataclass,
+    including any nested reindex_through chain."""
+    reindex_through = None
+    if d.get("reindex_through") is not None:
+        reindex_through = _dict_to_slice_query(d["reindex_through"])
+    return SliceQuery(
+        dataset_id=d["dataset_id"],
+        identifier=d["identifier"],
+        identifier_type=d["identifier_type"],
+        reindex_through=reindex_through,
+    )
+
+
 class ContextEvaluator:
     """
     Instantiated for a specific context. 
@@ -48,6 +62,19 @@ class ContextEvaluator:
                       "dataset_id": "depmap_model_metadata",
                       "identifier": "OncotreeLineage",
                       "identifier_type": "column"
+                  }
+              }
+              Vars may also include a `reindex_through` field for FK-chain traversal:
+              {
+                  "var1": {
+                      "dataset_id": "depmap_model_metadata",
+                      "identifier": "OncotreeLineage",
+                      "identifier_type": "column",
+                      "reindex_through": {
+                          "dataset_id": "screen_metadata",
+                          "identifier": "ModelID",
+                          "identifier_type": "column"
+                      }
                   }
               }
         """
@@ -122,11 +149,7 @@ class _JsonLogicVarLookup(dict):
         else:
             if var_name not in self.cache:
                 try:
-                    # fmt: off
-                    slice_query = SliceQuery(
-                        **self.slice_query_vars[var_name] # pyright: ignore
-                    )
-                    # fmt: on
+                    slice_query = _dict_to_slice_query(self.slice_query_vars[var_name])
                     self.cache[var_name] = self.get_slice_data(slice_query).to_dict()
                 except (KeyError, TypeError, ValueError) as e:
                     raise LookupError(e)
@@ -139,7 +162,6 @@ class _JsonLogicVarLookup(dict):
     # https://github.com/nadirizr/json-logic-py/blob/master/json_logic/__init__.py#L180
     def __bool__(self):
         return True
-
 
 
 def _encode_dots_in_vars(expr: dict):

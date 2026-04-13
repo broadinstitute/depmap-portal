@@ -1,5 +1,6 @@
 from pydantic import Field, BaseModel
 from typing import Annotated, Any, Optional, Union
+from breadbox.schemas.dataset import SliceQueryIdentifierType
 
 
 class ContextMatchResponse(BaseModel):
@@ -11,6 +12,18 @@ class ContextMatchResponse(BaseModel):
 ContextExpression = Annotated[
     Union[bool, dict[str, Any]], Field(union_mode="left_to_right")
 ]
+
+
+class SliceQueryRef(BaseModel):
+    """A reference to a slice of data in a dataset."""
+
+    dataset_id: str
+    identifier: str
+    identifier_type: SliceQueryIdentifierType
+    reindex_through: Optional["SliceQueryRef"] = None
+
+    class Config:
+        extra = "ignore"
 
 
 class Context(BaseModel):

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 from urllib.parse import unquote
 
@@ -11,6 +11,7 @@ class SliceQuery:
     identifier_type: Literal[
         "feature_id", "feature_label", "sample_id", "sample_label", "column"
     ]
+    reindex_through: Optional["SliceQuery"] = None
 
 
 def decode_slice_id(slice_id) -> tuple[str, str, str]:
