@@ -1,4 +1,5 @@
 import React from "react";
+import { WordBreaker } from "@depmap/common-components";
 import { toPortalLink } from "@depmap/globals";
 import SliceTable from "@depmap/slice-table";
 import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
@@ -62,25 +63,37 @@ function ResistanceScreenDashboard() {
               "PairedAnchorGeneEffectFDR",
             ])
           }
-          implicitFilter={({ id }) => {
-            if (!metadata) {
-              return false;
-            }
+          implicitFilter={({ getValue }) => {
+            const comparisonType = getValue({
+              dataset_id: "PairedResScreenTable",
+              identifier_type: "column",
+              identifier: "ComparisonType",
+            }) as string;
 
             return [
               "drug adapted",
               "genetic knock out",
               "genetic knock-in",
-            ].includes(metadata.ComparisonType[id]);
+            ].includes(comparisonType);
           }}
           getColumnDisplayOptions={(sliceQuery) => {
+            const header = () => <WordBreaker text={sliceQuery.identifier} />;
+
             switch (sliceQuery.identifier) {
               case "PairID":
                 return { width: 100 };
 
               case "CtrlArmModelID":
               case "TestArmModelID":
-                return { width: 125 };
+                return { header, width: 125 };
+
+              case "CtrlArmStrippedCellLineName":
+              case "TestArmStrippedCellLineName":
+              case "OncotreeLineage":
+              case "CulturedDrugResistance":
+              case "EngineeredModelDetails":
+              case "ComparisonType":
+                return { header };
 
               default:
                 return null;

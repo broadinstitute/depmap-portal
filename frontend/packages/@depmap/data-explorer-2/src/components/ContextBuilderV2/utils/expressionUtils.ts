@@ -3,29 +3,45 @@ import { DataExplorerApiResponse } from "../../../services/dataExplorerAPI";
 
 export const MAX_CONDITIONS = 10;
 
+// The order of these keys matters. Changing them will change
+// the order of the options in the Operator dropdown list.
 export const opLabels = {
+  // binary
   "==": "is",
   "!=": "is not",
-  in: "is in list",
-  "!in": "is not in list",
-  or: "or",
-  and: "and",
   "<": "<",
   "<=": "≤",
   ">": ">",
   ">=": "≥",
+
+  // variadic
+  in: "is in list",
+  "!in": "is not in list",
   has_any: "has any of",
   "!has_any": "has none of",
+
+  // unary
+  not_null: "has a value",
+  is_null: "has no value",
 };
 
 export type OperatorType = keyof typeof opLabels;
 
-const supportedOperators = new Set(Object.keys(opLabels));
+const supportedOperators = new Set(["and", "or", ...Object.keys(opLabels)]);
 
 export const operatorsByValueType = {
-  continuous: new Set(["<", "<=", ">", ">=", "==", "!="]),
-  text: new Set(["==", "!=", "in", "!in"]),
-  categorical: new Set(["==", "!=", "in", "!in"]),
+  continuous: new Set([
+    "<",
+    "<=",
+    ">",
+    ">=",
+    "==",
+    "!=",
+    "is_null",
+    "not_null",
+  ]),
+  text: new Set(["==", "!=", "in", "!in", "is_null", "not_null"]),
+  categorical: new Set(["==", "!=", "in", "!in", "is_null", "not_null"]),
   list_strings: new Set(["has_any", "!has_any"]),
 };
 
@@ -40,6 +56,19 @@ export const defaultOperatorByValueType: Record<ValueType, OperatorType> = {
 
 export const isListOperator = (op: OperatorType) => {
   return ["in", "!in", "has_any", "!has_any"].includes(op);
+};
+
+export const isUnaryOperator = (op: OperatorType) => {
+  return ["is_null", "not_null"].includes(op);
+};
+
+export const isEmbeddedContextExpression = (expr: unknown) => {
+  return (
+    expr !== null &&
+    !Array.isArray(expr) &&
+    typeof expr === "object" &&
+    "context" in expr
+  );
 };
 
 export const getOperator = (expr: Expr): OperatorType => {
@@ -64,7 +93,10 @@ export const isBoolean = (expr: Expr): expr is Record<"and" | "or", Expr[]> => {
 
 export type RelationExpr = Record<
   OperatorType,
-  [{ var: string } | null, string | string[] | number | null]
+  [
+    { var: string } | null,
+    string | string[] | number | { context: string | null } | null
+  ]
 >;
 
 export const isRelation = (expr: Expr): expr is RelationExpr => {
@@ -78,6 +110,26 @@ export const isRelation = (expr: Expr): expr is RelationExpr => {
 const isVar = (expr: Expr): expr is Record<"var", string> => {
   return expr !== null && typeof expr === "object" && "var" in expr;
 };
+
+export function getContextNames(expr: Expr): string[] {
+  const names: string[] = [];
+
+  function walk(node: unknown) {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+    } else if (node !== null && typeof node === "object") {
+      const obj = node as Record<string, unknown>;
+      if ("context" in obj && typeof obj.context === "string") {
+        names.push(obj.context);
+      } else {
+        Object.values(obj).forEach(walk);
+      }
+    }
+  }
+
+  walk(expr);
+  return names;
+}
 
 export const getVariableNames = (expr: Expr) => {
   const varNames: string[] = [];
@@ -115,15 +167,30 @@ export const makeCompatibleExpression = (
   const value = expr[op][1];
   const value_type = domain.value_type;
 
+  const isUnaryOp = isUnaryOperator(op);
+  const isReference = domain.references !== null;
+  const isContextValue =
+    value && typeof value === "object" && "dimension_type" in value;
+  const badContext = isContextValue && (!isReference || !isListOperator(op));
+
   let nextOp = op;
   let nextValue = value;
 
-  if (value == null || !operatorsByValueType[value_type].has(op)) {
+  if (
+    (!isUnaryOp && value == null) ||
+    !operatorsByValueType[value_type].has(op) ||
+    badContext
+  ) {
     nextValue = null;
     nextOp = defaultOperatorByValueType[value_type];
   }
 
-  if (value_type === "continuous") {
+  if (isReference) {
+    nextOp = "in";
+    nextValue = isContextValue ? value : { context: null };
+  }
+
+  if (!isUnaryOp && value_type === "continuous") {
     const { min, max, isBinary, isBinaryish, isAllIntegers } = domain;
 
     if (isBinary && !["==", "!="].includes(nextOp)) {
@@ -154,7 +221,7 @@ export const makeCompatibleExpression = (
     }
   }
 
-  if (value_type === "text" || value_type === "categorical") {
+  if (!isReference && (value_type === "text" || value_type === "categorical")) {
     if (nextValue && Array.isArray(nextValue)) {
       nextValue = nextValue.filter((val) =>
         domain.unique_values?.includes(val)

@@ -3,17 +3,21 @@ import { isValidSliceQuery } from "@depmap/types";
 import { DataExplorerApiResponse } from "../../../../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import {
+  isEmbeddedContextExpression,
   isListOperator,
+  isUnaryOperator,
   OperatorType,
 } from "../../../../utils/expressionUtils";
 import StringConstant from "./StringConstant";
 import StringList from "./StringList";
 import NumberInput from "./NumberInput";
+import EmbeddedContext from "./EmbeddedContext";
 import useSlicePreview from "./useSlicePreview";
+import styles from "../../../../../../styles/ContextBuilderV2.scss";
 
 interface Props {
   op: OperatorType;
-  expr: string | string[] | number | null;
+  expr: string | string[] | number | { context: string | null } | null;
   path: (string | number)[];
   varName: string | null;
   isLoading: boolean;
@@ -39,6 +43,30 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
     path,
     variable,
   });
+
+  // Unary operators have no RHS but we do show a "see plot" button.
+  if (isUnaryOperator(op)) {
+    return (
+      <button
+        type="button"
+        className={styles.unaryOpDetailsButton}
+        onClick={handleClickShowSlicePreview}
+      >
+        see plot
+      </button>
+    );
+  }
+
+  if (isEmbeddedContextExpression(expr)) {
+    return (
+      <EmbeddedContext
+        expr={expr as { context: string | null } | null}
+        path={path}
+        domain={domain as { references: string } | null}
+        isLoading={isLoading}
+      />
+    );
+  }
 
   if (isListOperator(op)) {
     return (

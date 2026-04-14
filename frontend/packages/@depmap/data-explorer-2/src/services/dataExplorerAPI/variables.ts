@@ -1,5 +1,9 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { AnnotationType, DataExplorerContextVariable } from "@depmap/types";
+import {
+  AnnotationType,
+  DataExplorerContextVariable,
+  SliceQuery,
+} from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
 import wellKnownDatasets from "../../constants/wellKnownDatasets";
 import { getDimensionDataWithoutLabels } from "./helpers";
@@ -8,19 +12,41 @@ export async function fetchVariableDomain(
   variable: DataExplorerContextVariable
 ) {
   const { dataset_id, identifier, identifier_type } = variable;
-  const sliceQuery = { dataset_id, identifier, identifier_type };
+
+  // Build the full SliceQuery, preserving chain info for the data fetch.
+  // getDimensionDataWithoutLabels delegates to the chain-aware endpoint when
+  // reindex_through is present.
+  const sliceQuery: SliceQuery = {
+    dataset_id,
+    identifier,
+    identifier_type,
+    ...(variable.reindex_through
+      ? { reindex_through: variable.reindex_through }
+      : {}),
+  };
+
+  let dimension_type: string;
   let value_type: AnnotationType | undefined;
+  let references: string | null = null;
 
   const datasets = await cached(breadboxAPI).getDatasets();
   const dataset = datasets.find((d) => {
     return d.id === dataset_id || d.given_id === dataset_id;
   });
 
-  if (dataset && dataset.format === "matrix_dataset") {
-    value_type = dataset.value_type as AnnotationType;
+  if (!dataset) {
+    throw new Error(`Unknown dataset "${dataset_id}"`);
   }
 
-  if (dataset && dataset.format === "tabular_dataset") {
+  if (dataset.format === "matrix_dataset") {
+    dimension_type = ["feature_id", "feature_label"].includes(identifier_type)
+      ? dataset.feature_type_name
+      : dataset.sample_type_name;
+
+    value_type = dataset.value_type as AnnotationType;
+  } else {
+    dimension_type = dataset.index_type_name;
+
     if (identifier_type !== "column") {
       throw new Error(
         `Can't look up identifier_type "${identifier_type}"` +
@@ -37,6 +63,7 @@ export async function fetchVariableDomain(
     }
 
     value_type = column.col_type;
+    references = column.references;
   }
 
   let data = {
@@ -47,8 +74,7 @@ export async function fetchVariableDomain(
     data = await getDimensionDataWithoutLabels(sliceQuery);
 
     if (data.values.length === 0) {
-      window.console.error({ sliceQuery });
-      throw new Error("Slice query returned empty data!");
+      window.console.warn("Slice query returned empty data!", { sliceQuery });
     }
   } catch {
     window.console.error({ sliceQuery });
@@ -62,7 +88,9 @@ export async function fetchVariableDomain(
 
     return Promise.resolve({
       unique_values: [...new Set(stringValues)].sort(compareCaseInsensitive),
+      dimension_type,
       value_type,
+      references,
     });
   }
 
@@ -108,7 +136,9 @@ export async function fetchVariableDomain(
       isBinary,
       isBinaryish,
       isAllIntegers,
+      dimension_type,
       value_type,
+      references,
     });
   }
 
@@ -147,7 +177,9 @@ export async function fetchVariableDomain(
 
     return Promise.resolve({
       unique_values,
+      dimension_type,
       value_type,
+      references,
     });
   }
 

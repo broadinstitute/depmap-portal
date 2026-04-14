@@ -17,7 +17,8 @@ const compareContextEntries = (
 export default function useOptions(
   value: DataExplorerContext | DataExplorerContextV2 | null,
   dimension_type: string,
-  includeAllInOptions: boolean
+  includeAllInOptions: boolean,
+  linkToContextManager: boolean
 ) {
   const loadedContexts: Record<string, DataExplorerContextV2> = dimension_type
     ? loadContextsFromLocalStorage(dimension_type)
@@ -83,7 +84,7 @@ export default function useOptions(
   }, [value, hashOfSelectedValue, isKnownContext]);
 
   return useMemo(() => {
-    return [
+    const specialOptions = [
       includeAllInOptions ? { label: "All", value: "all" } : null,
 
       { label: "New", value: "new" },
@@ -92,20 +93,25 @@ export default function useOptions(
         ? { label: "Edit current…", value: "edit" }
         : null,
 
-      Object.keys(loadedContexts).length > 0
+      linkToContextManager && Object.keys(loadedContexts).length > 0
         ? { label: "Manage my contexts…", value: "manage" }
         : null,
 
       unsavedOptions
         ? { label: "Unsaved Contexts", options: unsavedOptions }
         : null,
+    ].filter(Boolean);
 
+    const contexts = [
       { label: "My Contexts", options: userContextOptions },
       { label: "Out Groups", options: outGroupOptions },
-    ].filter(Boolean) as object[];
+    ];
+
+    return [...(specialOptions as typeof contexts), ...contexts];
   }, [
     hashOfSelectedValue,
     includeAllInOptions,
+    linkToContextManager,
     loadedContexts,
     outGroupOptions,
     shouldShowSaveButton,

@@ -62,7 +62,20 @@ function ContextBuilderTableView() {
         );
       });
 
-      setTableOnlySlices(tableSlices);
+      // Bail out when nothing actually changed. SliceTable may re-fire
+      // onChangeSlices on prop-identity churn (e.g. when handleChangeSlices
+      // itself gets a new identity after `uniqueVariableSlices` recomputes),
+      // and blindly calling setTableOnlySlices with a fresh array would
+      // feed a re-render loop.
+      setTableOnlySlices((prev) => {
+        if (
+          prev.length === tableSlices.length &&
+          prev.every((s, i) => areSliceQueriesEqual(s, tableSlices[i]))
+        ) {
+          return prev;
+        }
+        return tableSlices;
+      });
     },
     [uniqueVariableSlices, setTableOnlySlices]
   );
@@ -133,6 +146,7 @@ function ContextBuilderTableView() {
         index_type_name={dimension_type}
         onChangeSlices={handleChangeSlices}
         enableRowSelection
+        enableMultiRowSelection
         onChangeRowSelection={handleChangeRowSelection}
         renderCustomControls={() => {
           return isManualSelectMode ? (

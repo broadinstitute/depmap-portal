@@ -1,25 +1,32 @@
 import React, { useEffect, useRef, useState } from "react";
-import { DataExplorerContextV2 } from "@depmap/types";
-import PlotConfigSelect from "../../PlotConfigSelect";
-import { fetchDatasetIdentifiers } from "../api-helpers";
-import { SLICE_TYPE_NULL } from "../useDimensionStateManager/types";
-import { getIdentifier, toOutputValue } from "./utils";
+import ReactWindowedSelect from "react-windowed-select";
+import extendReactSelect from "../../utils/extend-react-select";
+import { SliceSelection } from "./types";
+import { fetchDatasetFeatures } from "./api-helpers";
 import formatOptionLabel from "./formatOptionLabel";
 
 type Option = { label: string; value: string };
 
+const Select = extendReactSelect(ReactWindowedSelect);
+
 interface Props {
   dataset_id: string | null;
-  value: DataExplorerContextV2 | null;
-  onChange: (context: DataExplorerContextV2 | null) => void;
+  value: SliceSelection | null;
+  onChange: (selection: SliceSelection | null) => void;
+  label?: string;
+  placeholder?: string;
   selectClassName?: string;
+  menuPortalTarget?: HTMLElement | null;
 }
 
 function DatasetSpecificSliceSelect({
   dataset_id,
   value,
   onChange,
+  label = "Feature",
+  placeholder = "Select a feature…",
   selectClassName = undefined,
+  menuPortalTarget = undefined,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [options, setOptions] = useState<Option[]>([]);
@@ -34,14 +41,15 @@ function DatasetSpecificSliceSelect({
     if (dataset_id) {
       setIsLoading(true);
 
-      fetchDatasetIdentifiers(SLICE_TYPE_NULL, dataset_id).then(
-        (identifiers) => {
-          setOptions(
-            identifiers.map(({ id, label }) => ({ value: id, label }))
-          );
-          setIsLoading(false);
-        }
-      );
+      fetchDatasetFeatures(dataset_id).then((identifiers) => {
+        setOptions(
+          identifiers.map(({ id, label: idLabel }) => ({
+            value: id,
+            label: idLabel,
+          }))
+        );
+        setIsLoading(false);
+      });
     } else {
       setOptions([]);
       setIsLoading(false);
@@ -52,30 +60,25 @@ function DatasetSpecificSliceSelect({
     return null;
   }
 
-  const displayValue = !value
-    ? null
-    : { value: getIdentifier(value) as string, label: value.name };
+  const displayValue = !value ? null : { value: value.id, label: value.label };
 
   return (
-    <PlotConfigSelect
-      show
-      enable
-      isClearable
-      label="Feature"
+    <Select
+      label={label}
       className={selectClassName}
-      placeholder="Select a feature…"
+      placeholder={placeholder}
       menuWidth={310}
       isLoading={isLoading}
       value={displayValue}
       options={options}
       formatOptionLabel={formatOptionLabel}
-      onChangeUsesWrappedValue
-      onChange={(selectedOption) => {
+      isClearable
+      menuPortalTarget={menuPortalTarget}
+      onChange={(selectedOption: Option | null | undefined) => {
         onChange(
-          toOutputValue(
-            null,
-            selectedOption as Option | null
-          ) as DataExplorerContextV2 | null
+          selectedOption
+            ? { id: selectedOption.value, label: selectedOption.label }
+            : null
         );
       }}
       isEditable

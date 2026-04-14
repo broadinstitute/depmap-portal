@@ -58,6 +58,7 @@ function RelationalExpression({ expr, path, isLastOfList }: Props) {
         isAllIntegers={
           domain?.value_type === "continuous" && domain.isAllIntegers
         }
+        isReference={domain?.references != null}
         isLoading={isLoading}
       />
       <div className={styles.rhsWrapper}>

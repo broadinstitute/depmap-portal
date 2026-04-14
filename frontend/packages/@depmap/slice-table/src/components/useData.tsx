@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import { ExternalLink, WordBreaker } from "@depmap/common-components";
 import { isElara, toPortalLink } from "@depmap/globals";
+import { serializeSliceQuery } from "@depmap/selects";
 import Papa from "papaparse";
 import type {
   Dataset,
@@ -33,8 +34,11 @@ interface Parameters {
 }
 
 // Types for better code clarity
-type DatasetResponse = Record<string, Record<string, string | number>>;
-type LabelLookup = { id: string; label: string }[];
+type SliceResponse = {
+  ids: string[];
+  labels: string[];
+  values: (string | number | null)[];
+};
 type ColumnRenames = Record<string, string>;
 
 export interface RowFilters {
@@ -74,6 +78,7 @@ interface AlignedData {
   data: Record<string, string | number | undefined>[];
   loading: boolean;
   error: string | null;
+  entityLabel: string;
   exportToCsv: (options?: {
     rowFilter?: (row: Record<string, string | number | undefined>) => boolean;
     // When provided, the exported rows are ordered to match this array.
@@ -87,14 +92,16 @@ interface AlignedData {
 
 /**
  * Generates a unique column key for table data alignment.
- * This ensures that the same identifier from different datasets gets unique column keys.
+ * This ensures that the same identifier from different datasets gets unique
+ * column keys, and that reindex_through chains are distinguished from flat
+ * queries to the same leaf column.
  */
 export function createUniqueColumnKey(slice: SliceQuery): string {
-  if (slice.identifier === "label") {
+  if (slice.identifier === "label" && !slice.reindex_through) {
     return "label";
   }
 
-  return `${slice.dataset_id}__${slice.identifier_type}__${slice.identifier}`;
+  return serializeSliceQuery(slice);
 }
 
 /**
@@ -206,7 +213,12 @@ function buildSlicesToFetch(
   };
 
   // We always add an `id` and `label` column so filter out any redundancies.
+  // Reindexed slices can never collide with the table's own metadata columns.
   const novelSlices = userSlices.filter((s) => {
+    if (s.reindex_through) {
+      return true;
+    }
+
     if (s.identifier_type !== "column") {
       return true;
     }
@@ -218,70 +230,71 @@ function buildSlicesToFetch(
 }
 
 /**
- * Determines the appropriate API call and parameters for fetching a data slice.
+ * Fetches the data for a single slice using the dimension data API.
  *
- * The fetch strategy depends on:
- * - Slice type: "column" uses tabular API, others use matrix API
- * - Index axis: determines whether we're querying by sample or feature
- * - Identifier type: determines whether to use ID or label for lookup
+ * This handles all slice types uniformly — tabular columns, matrix
+ * features/samples, and reindex_through chains — by delegating to
+ * the backend's dimension data endpoint.
  */
-function createDataFetchPromise(slice: SliceQuery, indexType: DimensionType) {
-  if (slice.identifier_type === "column") {
-    // Tabular dataset: fetch specific columns
-    return cached(breadboxAPI).getTabularDatasetData(slice.dataset_id, {
-      columns: [slice.identifier],
-    });
-  }
-
-  if (indexType.axis === "sample") {
-    // Matrix dataset, sample axis: we're querying for features
-    if (["sample_id", "sample_label"].includes(slice.identifier_type)) {
-      throw new Error(
-        `Slice identifier_type "${slice.identifier_type}" is incompatible with sample axis index type`
-      );
-    }
-
-    return cached(breadboxAPI).getMatrixDatasetData(slice.dataset_id, {
-      feature_identifier:
-        slice.identifier_type === "feature_id" ? "id" : "label",
-      features: [slice.identifier],
-    });
-  }
-
-  // Matrix dataset, feature axis: we're querying for samples
-  if (["feature_id", "feature_label"].includes(slice.identifier_type)) {
-    throw new Error(
-      `Slice identifier_type "${slice.identifier_type}" is incompatible with feature axis index type`
-    );
-  }
-
-  return cached(breadboxAPI).getMatrixDatasetData(slice.dataset_id, {
-    sample_identifier: slice.identifier_type === "sample_id" ? "id" : "label",
-    samples: [slice.identifier],
-  });
+function createDataFetchPromise(slice: SliceQuery): Promise<SliceResponse> {
+  return cached(breadboxAPI).getDimensionData(slice);
 }
 
 /**
- * Creates the appropriate promise for fetching label information for a slice.
+ * Resolves a human-readable display label for a slice.
  *
- * For tabular datasets, we create a simple mapping from identifier to itself.
- * For matrix datasets, we fetch the full feature/sample metadata to get labels.
+ * For reindex_through chains, composes the outermost link's column name
+ * with the fully-resolved leaf label (e.g. "TestArmScreenID › KRAS").
+ * Intermediate "door" links are collapsed — they don't represent user
+ * decision points, so including them only adds noise.
+ *
+ * For tabular columns, the identifier is already the column name.
+ *
+ * For matrix features/samples, fetches metadata to find the label
+ * corresponding to the identifier.
  */
-function createLabelFetchPromise(
+async function resolveDisplayLabel(
   slice: SliceQuery,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   indexType: DimensionType
-): Promise<LabelLookup> {
+): Promise<string> {
+  if (slice.reindex_through) {
+    const rootLabel = await resolveLeafLabel(slice);
+    // Walk to the deepest reindex_through — that's the hop adjacent to
+    // the query dimension, which is the meaningful "door" the user chose.
+    // Shallower hops are intermediate plumbing and get collapsed.
+    let deepest = slice.reindex_through;
+    while (deepest.reindex_through) {
+      deepest = deepest.reindex_through;
+    }
+    return `${deepest.identifier} › ${rootLabel}`;
+  }
+
+  return resolveLeafLabel(slice);
+}
+
+/**
+ * Resolves the label for a single (non-chain) slice. For tabular columns
+ * the identifier is the column name; for matrix features/samples we look
+ * up the label from the dataset's own metadata.
+ *
+ * Axis is derived from `identifier_type` rather than an outer `indexType`,
+ * because for reindex_through chains the leaf's dataset has no relation
+ * to the query dimension's axis.
+ */
+async function resolveLeafLabel(slice: SliceQuery): Promise<string> {
   if (slice.identifier_type === "column") {
-    // For tabular datasets, the identifier is the label
-    return Promise.resolve([{ id: slice.identifier, label: slice.identifier }]);
+    return slice.identifier;
   }
 
-  // For matrix datasets, fetch the appropriate metadata
-  if (indexType.axis === "sample") {
-    return cached(breadboxAPI).getDatasetFeatures(slice.dataset_id);
-  }
+  const isFeatureAxis = slice.identifier_type.startsWith("feature");
+  const metadata = isFeatureAxis
+    ? await cached(breadboxAPI).getDatasetFeatures(slice.dataset_id)
+    : await cached(breadboxAPI).getDatasetSamples(slice.dataset_id);
 
-  return cached(breadboxAPI).getDatasetSamples(slice.dataset_id);
+  const idOrLabel = slice.identifier_type.endsWith("_id") ? "id" : "label";
+  const match = metadata.find((item) => item[idOrLabel] === slice.identifier);
+  return match?.label || slice.identifier;
 }
 
 const truncateMiddle = (str: string, maxLength = 45): string => {
@@ -309,8 +322,8 @@ const truncateMiddle = (str: string, maxLength = 45): string => {
  * 3. Generates table column definitions with proper headers and metadata
  */
 function transformToTableData(
-  dataResponses: DatasetResponse[],
-  labelResponses: LabelLookup[],
+  dataResponses: SliceResponse[],
+  displayLabels: string[],
   slices: SliceQuery[],
   viewOnlySlices: Set<SliceQuery> | undefined,
   datasets: Dataset[],
@@ -327,28 +340,15 @@ function transformToTableData(
 
   // Process each data response and collect row IDs
   dataResponses.forEach((response, index) => {
-    const firstKey = Object.keys(response)[0];
-    let keyedValues: Record<string, string | number | null> = {};
-
-    if (Object.keys(response).length === 0) {
-      return;
-    }
-
-    if (Object.keys(response).length === 1) {
-      keyedValues = response[firstKey];
-    } else {
-      const firstNestedKey = Object.keys(response[firstKey])[0];
-      keyedValues = Object.fromEntries(
-        Object.entries(response).map(([key, value]) => [
-          key,
-          value[firstNestedKey],
-        ])
-      );
-    }
-
     const uniqueKey = columnKeys[index];
-    columnData[uniqueKey] = keyedValues;
-    Object.keys(keyedValues).forEach((id) => allRowIds.add(id));
+    const keyed: Record<string, string | number | null> = {};
+
+    for (let i = 0; i < response.ids.length; i++) {
+      keyed[response.ids[i]] = response.values[i];
+      allRowIds.add(response.ids[i]);
+    }
+
+    columnData[uniqueKey] = keyed;
   });
 
   // Step 2: Build data rows
@@ -417,11 +417,7 @@ function transformToTableData(
   const dataColumns = slices.map((slice, index) => {
     const columnKey = columnKeys[index];
 
-    // Find the display label for this slice
-    const labelData = labelResponses[index];
-    let displayLabel =
-      labelData.find((item) => item.id === slice.identifier)?.label ||
-      slice.identifier;
+    let displayLabel = displayLabels[index];
 
     // Special case: use the readable name for the label column (always first slice)
     if (index === 0 && slice.identifier === "label") {
@@ -436,9 +432,19 @@ function transformToTableData(
       throw new Error(`Unknown dataset "${slice.dataset_id}"`);
     }
 
-    // Find the dataset name (empty for tabular datasets)
+    // Suppress the dataset name only when the column comes from the index
+    // type's own metadata dataset — otherwise a tabular column from a
+    // non-metadata table (e.g. "Anchor Screen Table") would render with an
+    // ambiguous header that hides why its data are sparse.
+    const isMetadataDataset =
+      dataset.id === indexType.metadata_dataset_id ||
+      dataset.given_id === indexType.metadata_dataset_id ||
+      dataset.given_id?.endsWith("_metadata");
+
     const datasetName =
-      slice.identifier_type === "column" ? "" : dataset.name || "";
+      slice.identifier_type === "column" && isMetadataDataset
+        ? ""
+        : dataset.name || "";
 
     // Find the dataset units (empty for tabular datasets)
     const units =
@@ -570,6 +576,7 @@ export default function useAlignedData({
     data: [],
     loading: false,
     error: null,
+    entityLabel: "",
     exportToCsv: () => "",
   });
 
@@ -709,21 +716,23 @@ export default function useAlignedData({
 
         // Create all the fetch promises
         const dataPromises = slicesToFetch.map((slice) =>
-          createDataFetchPromise(slice, indexType)
-        );
-
-        const labelPromises = slicesToFetch.map((slice) =>
-          createLabelFetchPromise(slice, indexType)
+          createDataFetchPromise(slice)
         );
 
         const datasetsPromise = cached(breadboxAPI).getDatasets();
 
         // Execute all fetches in parallel
-        const [dataResponses, labelResponses, datasets] = await Promise.all([
+        const [dataResponses, datasets] = await Promise.all([
           Promise.all(dataPromises),
-          Promise.all(labelPromises),
           datasetsPromise,
         ]);
+
+        if (isCancelled) return;
+
+        // Resolve display labels for each slice
+        const displayLabels = await Promise.all(
+          slicesToFetch.map((slice) => resolveDisplayLabel(slice, indexType))
+        );
 
         if (isCancelled) return;
 
@@ -762,7 +771,7 @@ export default function useAlignedData({
         // Transform the responses into table data
         const { data, columns } = transformToTableData(
           dataResponses,
-          labelResponses,
+          displayLabels,
           slicesToFetch,
           viewOnlySlices,
           datasets as Dataset[],
@@ -777,6 +786,7 @@ export default function useAlignedData({
           ...prev,
           data,
           columns,
+          entityLabel: indexType.display_name || indexType.name,
           loading: false,
           error: null,
         }));
@@ -807,6 +817,7 @@ export default function useAlignedData({
     data: state.data,
     loading: state.loading,
     error: state.error,
+    entityLabel: state.entityLabel,
     exportToCsv,
   };
 }

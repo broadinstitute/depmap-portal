@@ -162,10 +162,12 @@ export function launchContextManagerModal(options?: {
 }
 
 export function editContext(context: DataExplorerContextV2, hash: string) {
-  const container = document.getElementById("modal-container");
-  const unmount = () =>
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const unmount = () => {
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
-  unmount();
+    container.remove();
+  };
 
   ReactDOM.render(
     <React.Suspense fallback={null}>
@@ -228,10 +230,12 @@ export function saveNewContext(
   onSave?: null | ((context: DataExplorerContextV2, hash: string) => void),
   startInTableView?: boolean
 ) {
-  const container = document.getElementById("modal-container");
-  const unmount = () =>
+  const container = document.createElement("div");
+  document.body.appendChild(container);
+  const unmount = () => {
     ReactDOM.unmountComponentAtNode(container as HTMLElement);
-  unmount();
+    container.remove();
+  };
 
   ReactDOM.render(
     <React.Suspense fallback={null}>

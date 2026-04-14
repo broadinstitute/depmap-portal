@@ -13,25 +13,30 @@
   }
 }
 
-:global {
-  #modal-container[data-modal-stacking-mode="exclusive"] {
-    & ~ div[role="dialog"] {
-      // Detect when the modal has a sibling later in the DOM. That suggests it
-      // has launched another modal that should take precedence.
-      &:has(~ div[role="dialog"]) {
-        .modal-content {
-          display: none;
-        }
-      }
-
-      // Hide the backdrop of that later sibling so there is only one backdrop
-      // at a time.
-      & ~ div[role="dialog"] {
-        .modal-backdrop {
-          display: none;
-        }
-      }
+// Temporarily hide the Context Builder modal
+// when there is another one stacked on top of it.
+:global .context-builder {
+  &:has(~ .context-builder) {
+    .modal-content {
+      visibility: hidden;
+      transform: translate(0, -25%);
+      opacity: 0;
     }
+  }
+
+  &:not(:has(~ .context-builder)) {
+    .modal-content {
+      transform: translate(0, 0);
+      opacity: 1;
+      transition: transform 0.3s ease-out, opacity 0.15s linear;
+    }
+  }
+}
+
+// Never allow modal backdrops to stack.
+:global div[role="dialog"] ~ div[role="dialog"] {
+  .modal-backdrop {
+    display: none;
   }
 }
 
@@ -167,9 +172,26 @@
   }
 }
 
+.VariableAnnotationSelect {
+  display: contents;
+
+  div[data-spacer] {
+    min-width: 300px;
+  }
+}
+
 .Operator {
   margin-top: 22px;
-  max-width: 108px;
+  max-width: 80px;
+
+  &.list,
+  &.unary {
+    max-width: unset;
+  }
+
+  &.context {
+    max-width: 110px;
+  }
 }
 
 .rhsWrapper {
@@ -207,6 +229,15 @@
     outline: 5px auto -webkit-focus-ring-color;
     outline-offset: 3px;
   }
+}
+
+.unaryOpDetailsButton {
+  @extend .detailsButton;
+  position: relative;
+  display: inline;
+  width: 114px;
+  left: -53px;
+  top: -20px;
 }
 
 .hideLongListButton {

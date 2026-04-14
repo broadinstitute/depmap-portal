@@ -1,42 +1,39 @@
 import React, { useEffect, useMemo, useRef } from "react";
-import VanillaAsycSelect from "react-select/async";
+import VanillaAsyncSelect from "react-select/async";
 import { WindowedMenuList } from "react-windowed-select";
-import { DataExplorerContextV2 } from "@depmap/types";
-import extendReactSelect from "../../../utils/extend-react-select";
-import {
-  useDefaultOptions,
-  useLabel,
-  usePlaceholder,
-  useSearch,
-} from "./hooks";
-import { getIdentifier, toOutputValue } from "./utils";
+import extendReactSelect from "../../utils/extend-react-select";
+import { SliceSelection } from "./types";
+import { useDefaultOptions, useSearch } from "./hooks";
 import formatOptionLabel from "./formatOptionLabel";
 
-const AsyncSelect = extendReactSelect(VanillaAsycSelect);
+const AsyncSelect = extendReactSelect(VanillaAsyncSelect);
 
 interface Props {
-  index_type: string | null;
-  slice_type: string; // NOT compatible with SLICE_TYPE_NULL
+  slice_type: string;
   dataset_id: string | null;
-  value: DataExplorerContextV2 | null;
-  onChange: (context: DataExplorerContextV2 | null) => void;
   dataType: string | null;
-  isLoading: boolean;
-  //  units: string | null;
+  value: SliceSelection | null;
+  onChange: (selection: SliceSelection | null) => void;
+  label?: string;
+  placeholder?: string;
+  isLoading?: boolean;
   swatchColor?: string;
   selectClassName?: string;
+  menuPortalTarget?: HTMLElement | null;
 }
 
 function SearchIndexAwareSliceSelect({
-  index_type,
-  dataType,
   slice_type,
+  dataType,
   dataset_id,
   value,
   onChange,
-  isLoading,
+  label = "Dimension",
+  placeholder = "Select…",
+  isLoading = false,
   swatchColor = undefined,
   selectClassName = undefined,
+  menuPortalTarget = undefined,
 }: Props) {
   const searchQuery = useRef("");
 
@@ -44,10 +41,7 @@ function SearchIndexAwareSliceSelect({
     searchQuery.current = "";
   }, [slice_type, dataType, dataset_id]);
 
-  const displayValue = !value
-    ? null
-    : { value: getIdentifier(value) as string, label: value.name };
-
+  const displayValue = !value ? null : { value: value.id, label: value.label };
   const loadOptions = useSearch(slice_type, dataType, dataset_id);
 
   const { defaultOptions, isLoadingDefaultOptions } = useDefaultOptions(
@@ -61,8 +55,6 @@ function SearchIndexAwareSliceSelect({
       return false;
     }
 
-    const identifier = getIdentifier(value) as string;
-
     for (let i = 0; i < defaultOptions.length; i += 1) {
       const opt = defaultOptions[i] as {
         label: string;
@@ -70,7 +62,7 @@ function SearchIndexAwareSliceSelect({
         isDisabled: boolean;
       };
 
-      if (identifier === opt.value || identifier === opt.label) {
+      if (value.id === opt.value || value.id === opt.label) {
         if (opt.isDisabled) {
           searchQuery.current = opt.label;
         }
@@ -82,20 +74,18 @@ function SearchIndexAwareSliceSelect({
     return true;
   }, [dataset_id, value, isLoadingDefaultOptions, defaultOptions]);
 
-  const label = useLabel(index_type);
-  const placeholder = usePlaceholder(slice_type);
-
   return (
     <AsyncSelect
       label={!swatchColor ? label : null}
       className={selectClassName}
       value={displayValue}
       hasError={invalidValue}
-      onChange={(option) =>
-        onChange(
-          toOutputValue(slice_type, option) as DataExplorerContextV2 | null
-        )
-      }
+      menuPortalTarget={menuPortalTarget}
+      onChange={(
+        option: { value: string; label: string } | null | undefined
+      ) => {
+        onChange(option ? { id: option.value, label: option.label } : null);
+      }}
       menuWidth={310}
       placeholder={placeholder}
       isLoading={isLoading || isLoadingDefaultOptions}
@@ -103,13 +93,12 @@ function SearchIndexAwareSliceSelect({
       defaultOptions={defaultOptions}
       formatOptionLabel={formatOptionLabel}
       components={{ MenuList: WindowedMenuList }}
-      // cacheOptions={`${slice_type}-${dataType}-${units}-${dataset_id}`}
       cacheOptions={`${slice_type}-${dataType}-${dataset_id}`}
       swatchColor={swatchColor}
       isClearable
       isEditable
       editableInputValue={searchQuery.current}
-      onEditInputValue={(editedText) => {
+      onEditInputValue={(editedText: string) => {
         searchQuery.current = editedText;
       }}
     />

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AnnotationSelect } from "@depmap/data-explorer-2";
-import { SliceQuery } from "@depmap/types";
+import React, { useMemo, useRef } from "react";
+import { AnnotationSelect } from "@depmap/selects";
+import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
 
 interface Props {
   value: SliceQuery | null;
@@ -21,64 +21,36 @@ function AddColumnAnnotationSelect({
 }: Props) {
   const initialValue = useRef(value);
 
-  const [tempPartialValue, setTempPartialValue] = useState<
-    Partial<SliceQuery>
-  >();
+  const disabledSlices = useMemo(() => {
+    const slicesToKeepEnabled = [value, initialValue.current].filter(Boolean);
 
-  useEffect(() => {
-    if (value) {
-      setTempPartialValue(value);
-    }
-  }, [value]);
+    return (existingSlices || []).filter((s1) =>
+      slicesToKeepEnabled.every((s2) => !areSliceQueriesEqual(s1, s2!))
+    );
+  }, [existingSlices, value]);
 
-  const disabledAnnotations = useMemo(() => {
-    const out = new Set<string>();
-
-    for (const slice of existingSlices || []) {
-      if (
-        slice.dataset_id === tempPartialValue?.dataset_id &&
-        slice.identifier !== tempPartialValue?.identifier &&
-        slice.identifier !== initialValue.current?.identifier
-      ) {
-        out.add(slice.identifier);
-      }
-    }
-
-    return out;
-  }, [existingSlices, tempPartialValue]);
-
-  const hiddenAnnotations = useMemo(() => {
-    return new Set(["label", idColumnLabel]);
-  }, [idColumnLabel]);
+  const hiddenSlices = useMemo(() => {
+    return [
+      {
+        dataset_id: `${index_type_name}_metadata`,
+        identifier_type: "column" as const,
+        identifier: idColumnLabel,
+      },
+    ];
+  }, [idColumnLabel, index_type_name]);
 
   return (
     <AnnotationSelect
-      isClearable
-      dimension_type={index_type_name}
-      dataset_id={tempPartialValue?.dataset_id || null}
-      identifier={tempPartialValue?.identifier || null}
-      identifierDisplayLabel={null}
+      index_type={index_type_name}
+      value={value}
+      onChange={onChange}
       hiddenDatasets={hiddenDatasets}
-      disabledAnnotations={disabledAnnotations}
-      hiddenAnnotations={hiddenAnnotations}
-      onChangeSourceDataset={(dataset_id, identifier_type) => {
-        onChange(null);
-        setTempPartialValue({ dataset_id, identifier_type });
-      }}
-      onChangeAnnotationSlice={async (identifier: string | null) => {
-        if (!identifier) {
-          onChange(null);
-          setTempPartialValue((prev) => ({
-            ...prev,
-            identifier: undefined,
-          }));
-          return;
-        }
-
-        const prevTpv = tempPartialValue;
-        const nextValue = { ...prevTpv, identifier } as SliceQuery;
-        onChange(nextValue);
-      }}
+      disabledSlices={disabledSlices}
+      hiddenSlices={hiddenSlices}
+      // isClearable
+      menuPortalTarget={
+        document.querySelector("#modal-container") as HTMLElement
+      }
     />
   );
 }

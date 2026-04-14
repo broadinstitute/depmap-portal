@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
+import { Checkbox } from "react-bootstrap";
 import BarChart from "./BarChart";
 import shouldUseLogScale from "./shouldUseLogScale";
 import styles from "../../styles/AddColumnModal.scss";
@@ -7,6 +8,13 @@ interface Props {
   dataValues: (string | number | string[])[];
   xAxisTitle: string;
   hoverLabel: string;
+  initiallyShowNulls: boolean;
+  entityLabel?: string;
+  // Override for the percentage denominator. When omitted, the total is
+  // derived from dataValues.length. Callers can pass an unfiltered total
+  // so percentages reflect "fraction of all entities" even when dataValues
+  // has been scoped to a filtered subset.
+  totalCount?: number;
   getCategoricalFilterProps?: () => {
     selectionMode: "single" | "multiple";
     initialSelectedValues: Set<string | number>;
@@ -18,6 +26,9 @@ function CategoricalDataPreview({
   dataValues,
   xAxisTitle,
   hoverLabel,
+  initiallyShowNulls,
+  entityLabel = "",
+  totalCount: totalCountProp = undefined,
   getCategoricalFilterProps = undefined,
 }: Props) {
   const filterProps = getCategoricalFilterProps?.();
@@ -30,19 +41,27 @@ function CategoricalDataPreview({
   } = filterProps || {};
 
   const [selectedValues, setSelectedValues] = useState(initialSelectedValues);
+  const [showNulls, setShowNulls] = useState(initiallyShowNulls);
 
-  const { plotData, valueToOriginal } = useMemo(() => {
+  const nullCount = useMemo(() => {
+    if (!dataValues) return 0;
+    return dataValues.filter((v) => v === undefined || v === null).length;
+  }, [dataValues]);
+
+  const totalCount = totalCountProp ?? (dataValues ? dataValues.length : 0);
+
+  const { plotData, valueToOriginal, naIndex } = useMemo(() => {
     if (!dataValues) {
       return {
         plotData: { x: [] as string[], y: [] as number[] },
         valueToOriginal: new Map<string, string | number>(),
+        naIndex: -1,
       };
     }
 
     const countsByValue = new Map<string | number, number>();
 
     dataValues.flat().forEach((val: string | number | undefined) => {
-      // TODO: Add an option to show NAs instead of always ignoring them.
       if (val !== undefined) {
         countsByValue.set(val, (countsByValue.get(val) ?? 0) + 1);
       }
@@ -59,14 +78,23 @@ function CategoricalDataPreview({
       valToOrig.set(`${value}`, value);
     });
 
+    const x = entries.map(([value]) => `${value}`);
+    const y = entries.map(([, count]) => count);
+
+    if (showNulls && nullCount > 0) {
+      // Insert at the correct position to maintain descending sort order.
+      const insertAt = y.findIndex((count) => count <= nullCount);
+      const pos = insertAt === -1 ? y.length : insertAt;
+      x.splice(pos, 0, "N/A");
+      y.splice(pos, 0, nullCount);
+    }
+
     return {
-      plotData: {
-        x: entries.map(([value]) => `${value}`), // strings for Plotly
-        y: entries.map(([, count]) => count),
-      },
+      plotData: { x, y },
       valueToOriginal: valToOrig,
+      naIndex: showNulls && nullCount > 0 ? x.indexOf("N/A") : -1,
     };
-  }, [dataValues]);
+  }, [dataValues, showNulls, nullCount]);
 
   const useLogScale = useMemo(() => {
     return shouldUseLogScale(plotData.y);
@@ -108,17 +136,33 @@ function CategoricalDataPreview({
     [onChangeSelectedValues, plotData.x, valueToOriginal]
   );
 
+  const disabledIndices = useMemo(() => {
+    return naIndex >= 0 ? new Set([naIndex]) : undefined;
+  }, [naIndex]);
+
   return (
     <div className={styles.CategoricalDataPreview}>
       <BarChart
         data={plotData}
         xAxisTitle={xAxisTitle}
         hoverLabel={hoverLabel}
+        entityLabel={entityLabel}
+        totalCount={totalCount}
         useLogScale={useLogScale}
+        disabledIndices={disabledIndices}
         selectedPoints={withFilter ? selectedPoints : undefined}
         selectionMode={withFilter ? selectionMode : undefined}
         onSelect={withFilter ? handleSelect : undefined}
       />
+      {nullCount > 0 && (
+        <Checkbox
+          className={styles.showNulls}
+          checked={showNulls}
+          onChange={() => setShowNulls(!showNulls)}
+        >
+          Show N/A values
+        </Checkbox>
+      )}
       {withFilter && (
         <div className={styles.helpText}>
           Click a bar to select a value.

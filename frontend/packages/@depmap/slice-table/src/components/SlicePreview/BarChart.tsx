@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useRef, useState } from "react";
-import { usePlotlyLoader } from "@depmap/data-explorer-2";
+import {
+  pluralize,
+  uncapitalize,
+  usePlotlyLoader,
+} from "@depmap/data-explorer-2";
 import type {
   Config,
   Layout,
@@ -14,7 +18,10 @@ interface Props {
   data: { x: string[]; y: number[] };
   hoverLabel: string;
   xAxisTitle: string;
+  entityLabel?: string;
+  totalCount?: number;
   useLogScale?: boolean;
+  disabledIndices?: Set<number>;
   selectionMode?: "single" | "multiple" | "none";
   selectedPoints?: Set<number>;
   onSelect?: (pointIndices: number[]) => void;
@@ -88,7 +95,10 @@ function PrototypeBarChart({
   data,
   xAxisTitle,
   hoverLabel,
+  entityLabel = "",
+  totalCount = 0,
   useLogScale = false,
+  disabledIndices = undefined,
   selectionMode = "none",
   selectedPoints = undefined,
   onSelect = () => {},
@@ -103,6 +113,8 @@ function PrototypeBarChart({
     yaxis: undefined,
   });
 
+  const prevDataRef = useRef(data);
+
   useEffect(() => {
     if (onLoad && ref.current) {
       onLoad(ref.current);
@@ -112,18 +124,57 @@ function PrototypeBarChart({
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
 
+    // Reset cached axes when data changes so new tickvals/ticktext take
+    // effect (e.g. when the N/A bar is toggled). Preserve axes across
+    // re-renders caused by other deps like dragmode.
+    if (prevDataRef.current !== data) {
+      axes.current = { xaxis: undefined, yaxis: undefined };
+      prevDataRef.current = data;
+    }
+
+    const truncLabel = truncate(45);
+    const showPercentage = entityLabel && totalCount > 0;
+    const entities = pluralize(uncapitalize(entityLabel));
+
     const plotlyData = [
       {
         type: "bar" as const,
         x: data.x,
         y: data.y,
-        customdata: data.x.map(truncate(45)),
-        marker: { color: "#1f77b4" },
+        customdata: data.x.map((label, i) => {
+          const count = data.y[i];
+          let pctLabel = "0";
+
+          if (totalCount > 0 && count > 0) {
+            const pct = (count / totalCount) * 100;
+
+            if (count === totalCount) {
+              pctLabel = "100";
+            } else if (pct > 99) {
+              pctLabel = "> 99";
+            } else if (pct < 1) {
+              pctLabel = "< 1";
+            } else {
+              pctLabel = `${Math.round(pct)}`;
+            }
+          }
+
+          return [truncLabel(label), pctLabel];
+        }),
+        marker: {
+          color: disabledIndices
+            ? data.x.map((_, i) =>
+                disabledIndices.has(i) ? "#cccccc" : "#1f77b4"
+              )
+            : "#1f77b4",
+        },
         selected: { opacity: 1 },
         unselected: {
           marker: { opacity: selectionMode === "none" ? 1 : 0.5 },
         },
-        hovertemplate: `${hoverLabel}: %{customdata}<br>count: %{y:,}<extra></extra>`,
+        hovertemplate: showPercentage
+          ? `${hoverLabel}: %{customdata[0]}<br>count: %{y:,} (%{customdata[1]}% of ${entities})<extra></extra>`
+          : `${hoverLabel}: %{customdata[0]}<br>count: %{y:,}<extra></extra>`,
         selectedpoints: selectedPoints ? [...selectedPoints] : [],
         showlegend: false,
       },
@@ -235,6 +286,10 @@ function PrototypeBarChart({
 
       const { pointIndex } = e.points[0];
 
+      if (disabledIndices?.has(pointIndex)) {
+        return;
+      }
+
       const anyModifier =
         e.event.ctrlKey || e.event.metaKey || e.event.shiftKey;
 
@@ -267,7 +322,7 @@ function PrototypeBarChart({
         selectedIndices.add(pointIndex);
       }
 
-      onSelect([...selectedIndices]);
+      onSelect([...selectedIndices].filter((i) => !disabledIndices?.has(i)));
     });
 
     on("plotly_selected", (e: PlotSelectionEvent) => {
@@ -275,7 +330,11 @@ function PrototypeBarChart({
         return;
       }
 
-      onSelect(e.points.map(({ pointIndex }) => pointIndex));
+      const indices = e.points
+        .map(({ pointIndex }) => pointIndex)
+        .filter((i) => !disabledIndices?.has(i));
+
+      onSelect(indices);
     });
 
     // https://github.com/plotly/plotly.js/blob/55dda47/src/lib/prepare_regl.js
@@ -295,7 +354,10 @@ function PrototypeBarChart({
     dragmode,
     xAxisTitle,
     hoverLabel,
+    entityLabel,
+    totalCount,
     useLogScale,
+    disabledIndices,
     selectionMode,
     selectedPoints,
     onSelect,

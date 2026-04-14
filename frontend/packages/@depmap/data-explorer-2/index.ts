@@ -4,7 +4,6 @@ export { default as renderConditionally } from "./src/utils/render-conditionally
 export { default as DimensionSelectV2 } from "./src/components/DimensionSelectV2";
 export { default as ContextBuilderV2 } from "./src/components/ContextBuilderV2";
 export { default as ContextManager } from "./src/components/ContextManager";
-export { default as AnnotationSelect } from "./src/components/AnnotationSelect";
 export { default as DataExplorerPage } from "./src/components/DataExplorerPage/components/DataExplorer2";
 export { default as ContextTypeSelect } from "./src/components/ContextManager/ContextTypeSelect";
 
