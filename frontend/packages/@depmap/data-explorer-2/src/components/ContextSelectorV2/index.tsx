@@ -23,6 +23,7 @@ interface Props {
   label?: React.ReactNode | ((dimensionType: DimensionType | null) => string);
   swatchColor?: string;
   includeAllInOptions?: boolean;
+  linkToContextManager?: boolean;
   hasError?: boolean;
   selectClassName?: string;
 }
@@ -37,6 +38,7 @@ function ContextSelectorV2({
   label = null,
   swatchColor = undefined,
   includeAllInOptions = false,
+  linkToContextManager = false,
   hasError = false,
   selectClassName = undefined,
 }: Props) {
@@ -52,7 +54,12 @@ function ContextSelectorV2({
     hashOfSelectedValue,
     shouldShowSaveButton,
   } = useContextHash(value, dimension_type);
-  const options = useOptions(value, dimension_type, includeAllInOptions);
+  const options = useOptions(
+    value,
+    dimension_type,
+    includeAllInOptions,
+    linkToContextManager
+  );
   const handleChange = useChangeHandler(
     dimension_type,
     onChange,

@@ -1,28 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { breadboxAPI } from "@depmap/api";
-import { useDimensionType } from "../../../utils/misc";
-import { fetchDimensionIdentifiers } from "../api-helpers";
+import { fetchDimensionIdentifiers } from "./api-helpers";
 import convertSearchResultToOptions from "./convertSearchResultToOptions";
 import { tokenize } from "./utils";
 
-export const useLabel = (index_type: string | null) => {
-  const { dimensionType, isDimensionTypeLoading } = useDimensionType(
-    index_type
-  );
-
-  if (isDimensionTypeLoading) {
-    return "...";
-  }
-
-  if (!dimensionType) {
-    return "Dimension";
-  }
-
-  return dimensionType.axis === "sample" ? "Feature" : "Sample";
-};
-
 export const useDefaultOptions = (
-  slice_type: string, // NOT compatible with SLICE_TYPE_NULL
+  slice_type: string,
   dataType: string | null,
   dataset_id: string | null
 ) => {
@@ -68,7 +51,7 @@ export const useDefaultOptions = (
 };
 
 export const useSearch = (
-  slice_type: string, // NOT compatible with SLICE_TYPE_NULL
+  slice_type: string,
   dataType: string | null,
   dataset_id: string | null
 ) => {
@@ -92,18 +75,4 @@ export const useSearch = (
     },
     [slice_type, dataType, dataset_id]
   );
-};
-
-export const usePlaceholder = (
-  slice_type: string // NOT compatible with SLICE_TYPE_NULL
-) => {
-  const { dimensionType, isDimensionTypeLoading } = useDimensionType(
-    slice_type
-  );
-
-  if (isDimensionTypeLoading || !dimensionType) {
-    return "Select…";
-  }
-
-  return `Choose ${dimensionType.display_name}…`;
 };

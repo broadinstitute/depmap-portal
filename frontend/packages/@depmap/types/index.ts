@@ -43,6 +43,7 @@ export type {
 
 export type {
   AnnotationTypingInput,
+  ColumnMetadata,
   DimensionMetadata,
   DimensionMetadataTableData,
   SearchDimenionsRequest,

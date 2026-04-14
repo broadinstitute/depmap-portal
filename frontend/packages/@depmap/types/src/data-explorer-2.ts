@@ -34,6 +34,7 @@ export type DataExplorerContextV2 = {
   dimension_type: string;
   expr: DataExplorerContextExpression;
   vars: Record<string, DataExplorerContextVariable>;
+  contexts?: Record<string, DataExplorerContextV2>;
 };
 
 export type DataExplorerAnonymousContext = Omit<DataExplorerContext, "name">;

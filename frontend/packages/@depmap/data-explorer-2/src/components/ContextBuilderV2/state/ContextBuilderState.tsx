@@ -17,8 +17,14 @@ import {
   TabularDataset,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
-import { Expr, isBoolean, flattenExpr } from "../utils/expressionUtils";
+import {
+  Expr,
+  isBoolean,
+  flattenExpr,
+  getContextNames,
+} from "../utils/expressionUtils";
 import simplifyVarNames from "../utils/simplifyVarNames";
+import { contextToReindexChains } from "../utils/contextChains";
 import useInitializer from "./useInitializer";
 import expressionReducer, { ExprReducerAction } from "./expressionReducer";
 
@@ -38,6 +44,10 @@ const ContextBuilderState = createContext({
   },
   deleteVar: (keyToRemove: string) => {
     window.console.log("deleteVar", { keyToRemove });
+  },
+  embeddedContexts: {} as Record<string, DataExplorerContextV2>,
+  setEmbeddedContext: (key: string, value: DataExplorerContextV2) => {
+    window.console.log("setEmbeddedContext", { key, value });
   },
   dispatch: (() => {}) as React.Dispatch<ExprReducerAction>,
   onClickSave: () => {},
@@ -84,6 +94,11 @@ export const ContextBuilderStateProvider = ({
   const [vars, setVars] = useState<
     Record<string, Partial<DataExplorerContextVariable>>
   >(contextToEdit.vars || {});
+
+  const [embeddedContexts, setEmbeddedContexts] = useState<
+    Record<string, DataExplorerContextV2>
+  >(contextToEdit.contexts || {});
+
   const [shouldShowValidation, setShouldShowValidation] = useState(false);
   const [mainExpr, dispatch] = useReducer(
     expressionReducer,
@@ -97,6 +112,38 @@ export const ContextBuilderStateProvider = ({
     []
   );
 
+  const deleteVar = useCallback((keyToRemove: string) => {
+    setVars((prev) => {
+      const { [keyToRemove]: _, ...next } = prev;
+      return next;
+    });
+  }, []);
+
+  const setEmbeddedContext = useCallback(
+    (key: string, value: DataExplorerContextV2) => {
+      setEmbeddedContexts((prev) => ({ ...prev, [key]: value }));
+    },
+    []
+  );
+
+  // Purge embedded contexts that are no longer referenced in the expression.
+  // Bail out early when nothing would actually be filtered so we preserve
+  // the object reference — this avoids churning downstream memos that now
+  // depend on `embeddedContexts` (notably `uniqueVariableSlices`).
+  useEffect(() => {
+    const referencedNames = new Set(getContextNames(mainExpr));
+
+    setEmbeddedContexts((prev) => {
+      const keys = Object.keys(prev);
+      if (keys.every((k) => referencedNames.has(k))) {
+        return prev;
+      }
+      return Object.fromEntries(
+        Object.entries(prev).filter(([key]) => referencedNames.has(key))
+      );
+    });
+  }, [mainExpr]);
+
   const {
     isInitializing,
     initializationError,
@@ -109,13 +156,6 @@ export const ContextBuilderStateProvider = ({
     setVar,
     dispatch
   );
-
-  const deleteVar = useCallback((keyToRemove: string) => {
-    setVars((prev) => {
-      const { [keyToRemove]: _, ...next } = prev;
-      return next;
-    });
-  }, []);
 
   const fullySpecifiedVars = useMemo(
     () =>
@@ -143,6 +183,10 @@ export const ContextBuilderStateProvider = ({
       vars: vars as Record<string, DataExplorerContextVariable>,
     });
 
+    if (Object.keys(embeddedContexts).length > 0) {
+      nextContext.contexts = embeddedContexts;
+    }
+
     onChangeContext(nextContext);
   }, [
     contextToEdit,
@@ -151,6 +195,7 @@ export const ContextBuilderStateProvider = ({
     onChangeContext,
     name,
     vars,
+    embeddedContexts,
   ]);
 
   const isEmptyExpression = useMemo(() => {
@@ -185,7 +230,7 @@ export const ContextBuilderStateProvider = ({
   const [showTableView, setShowTableView] = useState(startInTableView);
   const [tableOnlySlices, setTableOnlySlices] = useState<SliceQuery[]>([]);
 
-  // When switching to table view, thow out any incomplete rules.
+  // When switching to table view, throw out any incomplete rules.
   useEffect(() => {
     if (
       showTableView &&
@@ -205,35 +250,43 @@ export const ContextBuilderStateProvider = ({
     }
   }, [mainExpr, showTableView]);
 
-  const uniqueVariableSlices = useMemo(() => {
-    const jsonSlices = [...fullySpecifiedVars].map((varName) => {
-      const { dataset_id, identifier, identifier_type, slice_type } = vars[
-        varName
-      ];
+  // Step 1: produce a canonical serialized form. This recomputes whenever
+  // the inputs change, but it produces a primitive string — so the next
+  // memo only re-runs when the *content* is actually different.
+  const uniqueVariableSlicesKey = useMemo(() => {
+    const completeVars = Object.fromEntries(
+      [...fullySpecifiedVars].map((k) => [k, vars[k]])
+    ) as Record<string, DataExplorerContextVariable>;
 
-      let resolvedIdType = identifier_type;
-
-      // Edge case: for `null` feature types, the id and label are the
-      // same so we want to consider the slices to be equivalent as well.
-      if (slice_type === null) {
-        resolvedIdType = "feature_id";
-      }
-
-      return JSON.stringify({
-        dataset_id,
-        identifier,
-        identifier_type: resolvedIdType,
-      });
+    const chains = contextToReindexChains({
+      expr: mainExpr as DataExplorerContextV2["expr"],
+      vars: completeVars,
+      contexts: embeddedContexts,
     });
 
-    return [...new Set(jsonSlices)].map((s) => JSON.parse(s) as SliceQuery);
-  }, [fullySpecifiedVars, vars]);
+    const seen = new Set<string>();
+    for (const chain of chains) {
+      seen.add(JSON.stringify(chain));
+    }
+    return [...seen].sort().join("\n");
+  }, [fullySpecifiedVars, vars, mainExpr, embeddedContexts]);
+
+  // Step 2: parse back into SliceQuery[]. Depends only on the string key,
+  // so when mainExpr dispatches produce structurally-identical chains,
+  // this memo returns its previous (referentially stable) array.
+  const uniqueVariableSlices = useMemo<SliceQuery[]>(() => {
+    if (!uniqueVariableSlicesKey) return [];
+    return uniqueVariableSlicesKey
+      .split("\n")
+      .map((s) => JSON.parse(s) as SliceQuery);
+  }, [uniqueVariableSlicesKey]);
 
   const [isReadyToSave, setIsReadyToSave] = useState(false);
 
   const manualModeRestorePoint = useRef({
     expr: null as Expr | null,
     prevVars: null as typeof vars | null,
+    prevEmbeddedContexts: null as Record<string, DataExplorerContextV2> | null,
     prevTableOnlySlices: tableOnlySlices,
   });
 
@@ -249,6 +302,7 @@ export const ContextBuilderStateProvider = ({
           manualModeRestorePoint.current = {
             expr: lastValidExpressionRef.current,
             prevVars: lastValidVars.current,
+            prevEmbeddedContexts: embeddedContexts,
             prevTableOnlySlices: prev,
           };
 
@@ -283,7 +337,14 @@ export const ContextBuilderStateProvider = ({
         });
       }
     },
-    [metadataDataset, metadataIdColumn, setVars, uniqueVariableSlices, vars]
+    [
+      embeddedContexts,
+      metadataDataset,
+      metadataIdColumn,
+      setVars,
+      uniqueVariableSlices,
+      vars,
+    ]
   );
 
   const isManualSelectMode =
@@ -299,12 +360,20 @@ export const ContextBuilderStateProvider = ({
     const {
       expr,
       prevVars,
+      prevEmbeddedContexts,
       prevTableOnlySlices,
     } = manualModeRestorePoint.current;
 
     if (expr && prevVars) {
       dispatch({ type: "update-value", payload: { path: [], value: expr } });
       setVars(prevVars);
+      // Restore embedded contexts alongside the expression. The purge
+      // effect cleared them when we entered manual-mode (the list expr
+      // has no context refs), so without this the restored expression
+      // would reference context hashes that no longer exist.
+      if (prevEmbeddedContexts) {
+        setEmbeddedContexts(prevEmbeddedContexts);
+      }
     }
 
     setTableOnlySlices(prevTableOnlySlices);
@@ -320,6 +389,8 @@ export const ContextBuilderStateProvider = ({
         setVar,
         deleteVar,
         fullySpecifiedVars,
+        embeddedContexts,
+        setEmbeddedContext,
         dispatch,
         shouldShowValidation,
         onClickSave,

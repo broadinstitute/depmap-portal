@@ -1,6 +1,7 @@
 import React, { useCallback } from "react";
 import qs from "qs";
 import {
+  showInfoModal,
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
@@ -11,11 +12,12 @@ import { usePlotlyLoader } from "../../../../../../contexts/PlotlyLoaderContext"
 import { useContextBuilderState } from "../../../../state/ContextBuilderState";
 import {
   isListOperator,
+  isUnaryOperator,
   OperatorType,
 } from "../../../../utils/expressionUtils";
 
 interface Props {
-  expr: string | string[] | number | null;
+  expr: string | string[] | number | { context: string | null } | null;
   op: OperatorType;
   path: (string | number)[];
   variable: Partial<DataExplorerContextVariable> | null;
@@ -37,6 +39,8 @@ const openInGeneTea = (genes: string[]) => {
   window.open(url, "_blank", "noreferrer");
 };
 
+const showNullValuesPreview = () => {};
+
 function useSlicePreview({ expr, op, path, variable }: Props) {
   const PlotlyLoader = usePlotlyLoader();
   const { dimension_type, dispatch } = useContextBuilderState();
@@ -46,6 +50,30 @@ function useSlicePreview({ expr, op, path, variable }: Props) {
 
     if (!isElara && isGeneList(variable as SliceQuery)) {
       openInGeneTea(expr as string[]);
+      return;
+    }
+
+    if (isUnaryOperator(op)) {
+      showNullValuesPreview();
+
+      showInfoModal({
+        title: `${variable!.label || variable!.identifier} distribution`,
+        content: (
+          <SlicePreview
+            value={variable as SliceQuery}
+            index_type_name={dimension_type}
+            PlotlyLoader={PlotlyLoader}
+            initiallyShowNulls
+          />
+        ),
+      });
+
+      return;
+    }
+
+    // FIXME: Can we support embedded contexts somehow?
+    if (expr !== null && typeof expr === "object" && !Array.isArray(expr)) {
+      window.alert("embedded contexts not supported!");
       return;
     }
 

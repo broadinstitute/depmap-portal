@@ -26,7 +26,13 @@ async function copyToClipboard(context: PartialDeep<DataExplorerContextV2>) {
 }
 
 const DebugInfo = () => {
-  const { mainExpr, vars, dimension_type, name } = useContextBuilderState();
+  const {
+    mainExpr,
+    vars,
+    dimension_type,
+    embeddedContexts,
+    name,
+  } = useContextBuilderState();
   const [varDomains, setVarDomains] = useState<object>({});
 
   useEffect(() => {
@@ -84,6 +90,10 @@ const DebugInfo = () => {
       <pre>
         <code>{jsonBeautify(vars, null!, 2, 80)}</code>
       </pre>
+      <h5>embedded contexts</h5>
+      <pre>
+        <code>{jsonBeautify(embeddedContexts, null!, 2, 80)}</code>
+      </pre>
       <h5>var domains</h5>
       <pre className={styles.debugVarDomains}>
         <code>
@@ -101,6 +111,9 @@ const DebugInfo = () => {
             dimension_type,
             expr: mainExpr as DataExplorerContextV2["expr"],
             vars,
+            ...(Object.keys(embeddedContexts).length > 0
+              ? { contexts: embeddedContexts }
+              : {}),
           });
         }}
       >

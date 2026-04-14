@@ -1,5 +1,9 @@
 import { breadboxAPI, cached } from "@depmap/api";
-import { AnnotationType, DataExplorerContextVariable } from "@depmap/types";
+import {
+  AnnotationType,
+  DataExplorerContextVariable,
+  SliceQuery,
+} from "@depmap/types";
 import { compareCaseInsensitive } from "@depmap/utils";
 import wellKnownDatasets from "../../constants/wellKnownDatasets";
 import { getDimensionDataWithoutLabels } from "./helpers";
@@ -8,8 +12,24 @@ export async function fetchVariableDomain(
   variable: DataExplorerContextVariable
 ) {
   const { dataset_id, identifier, identifier_type } = variable;
-  const sliceQuery = { dataset_id, identifier, identifier_type };
+
+  // Build the full SliceQuery, preserving chain info for the data fetch.
+  // getDimensionDataWithoutLabels delegates to the chain-aware endpoint when
+  // reindex_through is present.
+  const sliceQuery: SliceQuery = {
+    dataset_id,
+    identifier,
+    identifier_type,
+    ...(variable.reindex_through
+      ? { reindex_through: variable.reindex_through }
+      : {}),
+  };
+
+  // The root of a SliceQuery always describes the data column itself —
+  // reindex_through only describes FK hops for reindexing. So dataset_id
+  // and identifier here are already correct for the metadata lookup.
   let value_type: AnnotationType | undefined;
+  let references: string | null = null;
 
   const datasets = await cached(breadboxAPI).getDatasets();
   const dataset = datasets.find((d) => {
@@ -37,6 +57,7 @@ export async function fetchVariableDomain(
     }
 
     value_type = column.col_type;
+    references = column.references;
   }
 
   let data = {
@@ -47,8 +68,7 @@ export async function fetchVariableDomain(
     data = await getDimensionDataWithoutLabels(sliceQuery);
 
     if (data.values.length === 0) {
-      window.console.error({ sliceQuery });
-      throw new Error("Slice query returned empty data!");
+      window.console.warn("Slice query returned empty data!", { sliceQuery });
     }
   } catch {
     window.console.error({ sliceQuery });
@@ -63,6 +83,7 @@ export async function fetchVariableDomain(
     return Promise.resolve({
       unique_values: [...new Set(stringValues)].sort(compareCaseInsensitive),
       value_type,
+      references,
     });
   }
 
@@ -109,6 +130,7 @@ export async function fetchVariableDomain(
       isBinaryish,
       isAllIntegers,
       value_type,
+      references,
     });
   }
 
@@ -148,6 +170,7 @@ export async function fetchVariableDomain(
     return Promise.resolve({
       unique_values,
       value_type,
+      references,
     });
   }
 

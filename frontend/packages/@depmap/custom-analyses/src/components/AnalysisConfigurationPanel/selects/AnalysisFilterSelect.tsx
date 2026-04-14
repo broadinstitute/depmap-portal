@@ -30,6 +30,7 @@ function AnalysisFilterSelect({ dimension_type, value, onChange }: Props) {
         onClickCreateContext={handleClickCreateContext}
         onClickSaveAsContext={handleClickSaveAsContext}
         selectClassName={styles.AnalysisContextSelect}
+        linkToContextManager
       />
     </div>
   );

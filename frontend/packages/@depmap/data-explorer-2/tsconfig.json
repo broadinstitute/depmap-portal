@@ -7,6 +7,8 @@
     { "path": "../data-slicer" },
     { "path": "../downloads" },
     { "path": "../globals" },
+    { "path": "../selects" },
+    { "path": "../statistics" },
     { "path": "../types" },
     { "path": "../user-upload" },
     { "path": "../utils" }

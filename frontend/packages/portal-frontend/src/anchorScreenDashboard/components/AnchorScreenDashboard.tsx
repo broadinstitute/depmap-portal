@@ -1,4 +1,5 @@
 import React from "react";
+import { WordBreaker } from "@depmap/common-components";
 import { toPortalLink } from "@depmap/globals";
 import SliceTable from "@depmap/slice-table";
 import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
@@ -72,23 +73,28 @@ function AnchorScreenDashboard() {
             return metadata.ComparisonType[id] === "drug-anchor";
           }}
           getColumnDisplayOptions={(sliceQuery) => {
+            const header = () => <WordBreaker text={sliceQuery.identifier} />;
+
             switch (sliceQuery.identifier) {
               case "PairID":
-                return { width: 100 };
+                return { header, width: 100 };
 
               case "ModelID":
-                return { width: 125 };
+                return { header, width: 125 };
+
+              case "StrippedCellLineName":
+              case "OncotreeLineage":
+              case "DrugConcentration":
+                return { header };
 
               case "Drug":
-                return {
-                  cell: CompoundLink,
-                };
+                return { header, cell: CompoundLink };
 
               case "TestArmAvgCPD":
-                return { width: 140 };
+                return { header, width: 140 };
 
               case "ControlArmAvgCPD":
-                return { width: 140 };
+                return { header, width: 140 };
 
               case "PercentCPDChange":
                 return {

@@ -1,5 +1,14 @@
 @import "mixins";
 
+:global {
+  div[role="dialog"]:has(~ div[role="dialog"]) {
+    .modal-content {
+      filter: brightness(0.5);
+      transition: filter 0.3s ease;
+    }
+  }
+}
+
 .DimensionSelect {
   & > div:not(:first-child) {
     margin-top: 10px;
@@ -61,27 +70,6 @@
   margin-top: 5px;
   padding-left: 9px;
   word-break: break-word;
-}
-
-:global #dimension-details-modal {
-  & ~ div[role="dialog"] {
-    // If a modal has a later sibling, hide its content (that one has taken
-    // priority)
-    &:has(~ div[role="dialog"]) {
-      .modal-content {
-        display: none;
-      }
-    }
-
-    // Now we're showing the only content of the later sibling but we also want
-    // to hide its backdrop. The idea is to reuse the first backdrop so there's
-    // no awkward transition where it fades out for a split second.
-    & ~ div[role="dialog"] {
-      .modal-backdrop {
-        display: none;
-      }
-    }
-  }
 }
 
 .DimensionDetailsModal {

@@ -5,7 +5,7 @@ import DataTypeSelect from "./DataTypeSelect";
 import UnitsSelect from "./UnitsSelect";
 import SliceTypeSelect from "./SliceTypeSelect";
 import AxisTypeToggle from "./AxisTypeToggle";
-import SliceSelect from "./SliceSelect";
+import DimensionSliceSelect from "./DimensionSliceSelect";
 import DataVersionSelect from "./DataVersionSelect";
 import AggregationSelect from "./AggregationSelect";
 import useDimensionStateManager from "./useDimensionStateManager";
@@ -101,10 +101,11 @@ function AllSelects({
         slice_type={slice_type}
         dataset_id={dataset_id}
       />
-      <SliceSelect
+      <DimensionSliceSelect
         show={axis_type === "raw_slice"}
         index_type={index_type}
         dataType={dataType}
+        units={null} // FIXME
         slice_type={slice_type}
         dataset_id={dataset_id || null}
         value={context || null}
@@ -115,6 +116,7 @@ function AllSelects({
       />
       <ContextSelectorV2
         enable
+        linkToContextManager
         show={axis_type === "aggregated_slice" && slice_type != null}
         label={(dimensionType) => {
           if (!dimensionType) {

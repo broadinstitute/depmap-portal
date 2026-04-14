@@ -12,6 +12,7 @@
     "@depmap/data-explorer-2": "1.0.0",
     "@depmap/globals": "1.0.0",
     "@depmap/react-table": "1.0.0",
+    "@depmap/selects": "1.0.0",
     "@depmap/types": "1.0.0",
     "classnames": "^2.3.1",
     "papaparse": "^5.5.3",

@@ -16,6 +16,7 @@ interface Props {
   value: SliceQuery | null;
   PlotlyLoader: ReturnType<typeof usePlotlyLoader>;
   extraHoverData?: Record<string, string>;
+  initiallyShowNulls?: boolean;
   getContinuousFilterProps?: () => {
     hasFixedMin: boolean;
     hasFixedMax: boolean;
@@ -37,6 +38,7 @@ function SlicePreview({
   value,
   PlotlyLoader,
   extraHoverData = undefined,
+  initiallyShowNulls = false,
   getContinuousFilterProps = undefined,
   getCategoricalFilterProps = undefined,
 }: Props) {
@@ -47,6 +49,7 @@ function SlicePreview({
     loading,
     data: previewData,
     columns: previewColumns,
+    entityLabel,
   } = useData({ index_type_name, slices });
 
   const column = useMemo(
@@ -124,7 +127,9 @@ function SlicePreview({
               dataValues={values as (number | string | string[])[]}
               xAxisTitle={xAxisTitle}
               hoverLabel={idLabel}
+              entityLabel={entityLabel}
               getCategoricalFilterProps={getCategoricalFilterProps}
+              initiallyShowNulls={initiallyShowNulls}
             />
           )}
         </div>

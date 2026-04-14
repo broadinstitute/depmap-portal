@@ -37,7 +37,7 @@ module.exports = {
     "@typescript-eslint/indent": "off",
     "@typescript-eslint/naming-convention": "off",
     "@typescript-eslint/no-explicit-any": "warn",
-    // "@typescript-eslint/no-use-before-define": "off",
+    "@typescript-eslint/no-use-before-define": ["error", { functions: false }],
     "@typescript-eslint/quotes": "off",
     "arrow-body-style": "off",
     "class-methods-use-this": "off",

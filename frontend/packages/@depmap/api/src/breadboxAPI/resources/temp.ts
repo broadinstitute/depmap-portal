@@ -38,6 +38,7 @@ export async function evaluateContext(
   if (
     typeof context.expr !== "boolean" &&
     "in" in context.expr &&
+    Array.isArray(context.expr.in[1]) &&
     Object.keys(context.vars).length > 0
   ) {
     const slice = Object.values(context.vars)[0];
@@ -73,22 +74,6 @@ export async function evaluateContext(
     }
   }
 
-  const varsAsSliceQueries = Object.fromEntries(
-    Object.entries(context.vars).map(([varName, variable]) => [
-      varName,
-      {
-        // The `DataExplorerContextVariable` type has some extra fields that
-        // aren't part of the SliceQuery format. We'll only include the
-        // relevant fields so the backend doesn't get confused.
-        dataset_id: variable.dataset_id,
-        identifier: variable.identifier,
-        identifier_type: variable.identifier_type,
-      },
-    ])
-  );
-
-  const contextToEval = { ...context, vars: varsAsSliceQueries };
-
   const response = await postJson<
     | {
         ids: string[];
@@ -105,7 +90,7 @@ export async function evaluateContext(
           error_type: string;
         };
       }
-  >("/temp/context", contextToEval);
+  >("/temp/context", context);
 
   if ("detail" in response) {
     window.console.warn("Could not evaluate context", context);

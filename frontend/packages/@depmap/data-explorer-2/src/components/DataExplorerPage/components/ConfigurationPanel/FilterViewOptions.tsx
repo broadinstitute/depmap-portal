@@ -38,6 +38,7 @@ function FilterViewOptions({
         <ContextSelectorV2
           key={filterKey}
           show
+          linkToContextManager
           includeAllInOptions={includeAllInOptions}
           label={labels[index] || undefined}
           enable={!!index_type}

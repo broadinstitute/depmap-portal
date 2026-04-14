@@ -9,6 +9,15 @@ import { SliceQuery } from "@depmap/types";
 // challenge. The responses are sometimes so large that nginx refuses to serve
 // them.
 export async function getDimensionDataWithoutLabels(slice: SliceQuery) {
+  // Chain queries (with reindex_through) must use the chain-aware endpoint,
+  // which resolves FK joins server-side. The response includes labels we don't
+  // need, but chain queries are metadata/annotation columns in practice — not
+  // 100K-element transcript slices — so the overhead is acceptable.
+  if (slice.reindex_through) {
+    const { ids, values } = await cached(breadboxAPI).getDimensionData(slice);
+    return { ids, values };
+  }
+
   if (slice.identifier_type === "column") {
     const wrapper = await cached(breadboxAPI).getTabularDatasetData(
       slice.dataset_id,
