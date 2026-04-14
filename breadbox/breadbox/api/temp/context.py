@@ -1,10 +1,10 @@
 from typing import Annotated
-from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
-from fastapi import Body, Depends, HTTPException
+from logging import getLogger
+from fastapi import Body, Depends
 
+from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
-from breadbox.crud import dimension_types as types_crud
 from breadbox.schemas.custom_http_exception import UserError
 from breadbox.db.session import SessionWithUser
 from breadbox.schemas.context import (
@@ -16,6 +16,8 @@ from breadbox.service import slice as slice_service
 from breadbox.depmap_compute_embed.context import ContextEvaluator
 
 from .router import router
+
+log = getLogger(__name__)
 
 
 @router.post(
@@ -36,29 +38,28 @@ def evaluate_context(
     Also get the total number of "candidate" records (all records with labels belonging to the dimension type).
     Requests must be in the version 2 context format.
     """
-    slice_loader_function = lambda slice_query: slice_service.get_slice_data(
-        db, settings.filestore_location, slice_query
-    )
-    context_evaluator = ContextEvaluator(context.dict(), slice_loader_function)
 
-    # Load all dimension labels and ids
-    all_labels_by_id = get_dimension_type_labels_by_id(db, context.dimension_type)
+    def slice_loader(slice_query):
+        return slice_service.get_slice_data(
+            db, settings.filestore_location, slice_query
+        )
 
-    # Evaluate each against the context
-    matching_ids = []
-    matching_labels = []
+    def label_loader(dimension_type):
+        return get_dimension_type_labels_by_id(db, dimension_type)
+
     try:
-        for given_id, label in all_labels_by_id.items():
-            if context_evaluator.is_match(given_id):
-                matching_ids.append(given_id)
-                matching_labels.append(label)
+        evaluator = ContextEvaluator(context.dict(), slice_loader, label_loader)
+        result = evaluator.evaluate()
     except LookupError as e:
-        # This happens when the request is malformed
-        # TODO: Should this be returning a FEATURE_NOT_FOUND or SAMPLE_NOT_FOUND error instead?
-        raise UserError(f"Encountered lookup error: {e}")
+        raise UserError(f"Encountered lookup error: {e}") from e
+    except (ValueError, TypeError) as e:
+        log.error(
+            "Context evaluation failed: %s\nContext: %s",
+            e,
+            context.model_dump_json(indent=2),
+        )
+        raise UserError(f"Context evaluation error: {e}") from e
 
     return ContextMatchResponse(
-        ids=matching_ids,
-        labels=matching_labels,
-        num_candidates=len(all_labels_by_id.keys()),
+        ids=result.ids, labels=result.labels, num_candidates=result.num_candidates,
     )
