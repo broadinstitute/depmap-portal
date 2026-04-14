@@ -57,6 +57,7 @@ from ..schemas.dataset import (
     DimensionDataResponse,
     SliceQueryIdentifierType,
 )
+from breadbox.schemas.context import SliceQueryRef
 from breadbox.service import dataset as dataset_service
 from breadbox.service import metadata as metadata_service
 from breadbox.service import slice as slice_service
@@ -67,6 +68,26 @@ from ..utils.caching import CachingCaller
 
 router = APIRouter(prefix="/datasets", tags=["datasets"])
 log = getLogger(__name__)
+
+
+def _to_internal_slice_query(ref: SliceQueryRef) -> SliceQuery:
+    """Convert a Pydantic SliceQueryRef to the internal SliceQuery dataclass."""
+    return SliceQuery(
+        dataset_id=ref.dataset_id,
+        identifier=ref.identifier,
+        identifier_type=ref.identifier_type.value,
+        reindex_through=_to_internal_slice_query(ref.reindex_through)
+        if ref.reindex_through
+        else None,
+    )
+
+
+def _get_root_query(sq: SliceQuery) -> SliceQuery:
+    """Chase reindex_through to find the root (innermost) step in the chain."""
+    current = sq
+    while current.reindex_through is not None:
+        current = current.reindex_through
+    return current
 
 
 @router.get(
@@ -411,7 +432,13 @@ def get_dimensions(
     response_model=DimensionDataResponse,
 )
 def get_dimension_data(
-    # The request body should be a SliceQuery with the following three fields:
+    # TODO: This endpoint inlines the SliceQuery fields as individual Body() params
+    # instead of referencing the SliceQuery schema directly. This is historical drift.
+    # We're keeping it this way for now to avoid breaking the auto-generated Breadbox
+    # Python client and the Breadbox Facade, which may depend on the Body_get_dimension_data
+    # schema name and structure. Once we've confirmed those consumers can handle the
+    # change, we should refactor this to accept a single SliceQuery (or SliceQueryRef)
+    # body parameter, which would also make the OpenAPI spec self-documenting.
     dataset_id: Annotated[str, Body(description="The UUID or given ID of a dataset.")],
     identifier: Annotated[
         str,
@@ -425,6 +452,12 @@ def get_dimension_data(
             description="Denotes the type of identifier being used and the axis being queried."
         ),
     ],
+    reindex_through: Annotated[
+        Optional[SliceQueryRef],
+        Body(
+            description="Optional chain of FK joins to reindex the result by a different dimension type."
+        ),
+    ] = None,
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
@@ -435,11 +468,21 @@ def get_dimension_data(
         dataset_id=dataset_id,
         identifier=identifier,
         identifier_type=identifier_type.name,
+        reindex_through=_to_internal_slice_query(reindex_through)
+        if reindex_through
+        else None,
     )
     slice_values_by_id = slice_service.get_slice_data(
         db, settings.filestore_location, parsed_slice_query
     )
-    labels_by_id = metadata_service.get_labels_for_slice_type(db, parsed_slice_query)
+
+    # When reindex_through is present, the result is indexed by the root's entity IDs,
+    # so labels must come from the root's dimension type, not the leaf's.
+    label_query = parsed_slice_query
+    if parsed_slice_query.reindex_through is not None:
+        label_query = _get_root_query(parsed_slice_query)
+
+    labels_by_id = metadata_service.get_labels_for_slice_type(db, label_query)
 
     # Only the values which have corresponding metadata should be returned
     all_dataset_given_ids = slice_values_by_id.index.to_list()
