@@ -18,6 +18,7 @@ interface Props {
   };
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
   enableRowSelection?: boolean;
+  enableMultiRowSelection?: boolean;
   onChangeRowSelection?: (nextRowSelection: Record<string, boolean>) => void;
   hideIdColumn?: boolean;
   hideLabelColumn?: boolean;
@@ -36,7 +37,11 @@ interface Props {
   getColumnDisplayOptions?: (
     sliceQuery: SliceQuery
   ) => import("./useData").ColumnDisplayOptions | null;
+  // Custom controls will appear at the top of the table (to left of the search
+  // bar).
   renderCustomControls?: () => React.ReactNode;
+  // Custom actions will appear at the botom of the table (to the right of "Add
+  // column").
   renderCustomActions?: () => React.ReactNode;
   downloadFilename?: string;
   // An implicit filter that is always applied and invisible to the end user.
@@ -71,6 +76,7 @@ function SliceTable({
   getInitialState = () => ({}),
   onChangeSlices = NOOP,
   enableRowSelection = false,
+  enableMultiRowSelection = false,
   onChangeRowSelection = NOOP,
   hideIdColumn = false,
   hideLabelColumn = false,
@@ -135,6 +141,7 @@ function SliceTable({
     handleClickFilterButton,
     shouldShowLabelColumn,
     numFiltersApplied,
+    sliceDataCacheRef,
   } = useSliceTableState({
     index_type_name,
     initialSlices,
@@ -174,8 +181,10 @@ function SliceTable({
       return data;
     }
 
-    return data.filter(filterPredicate(columns, implicitFilter));
-  }, [data, columns, implicitFilter]);
+    return data.filter(
+      filterPredicate(columns, implicitFilter, sliceDataCacheRef.current)
+    );
+  }, [data, columns, implicitFilter, sliceDataCacheRef]);
 
   return (
     <div className={styles.SliceTable}>
@@ -209,7 +218,7 @@ function SliceTable({
         onRowSelectionChange={setRowSelection}
         getRowId={getRowId}
         enableRowSelection={enableRowSelection}
-        enableMultiRowSelection
+        enableMultiRowSelection={enableMultiRowSelection}
         enableStickyFirstColumn
         columnVisibility={{
           id: !hideIdColumn,

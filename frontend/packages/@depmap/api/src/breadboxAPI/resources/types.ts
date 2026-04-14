@@ -43,7 +43,6 @@ export function getDimensionTypeIdentifiers(
   dimTypeName: string,
   params?: {
     data_type?: string;
-    // NOTE: This is known to affect performance.
     show_only_dimensions_in_datasets?: boolean;
   }
 ) {

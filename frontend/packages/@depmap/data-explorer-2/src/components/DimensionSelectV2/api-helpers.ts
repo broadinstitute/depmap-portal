@@ -15,6 +15,7 @@ export async function fetchDimensionIdentifiers(
 
   return cached(breadboxAPI).getDimensionTypeIdentifiers(dimensionTypeName, {
     data_type: dataType,
+    show_only_dimensions_in_datasets: true,
   });
 }
 

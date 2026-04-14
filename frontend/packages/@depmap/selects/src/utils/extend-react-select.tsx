@@ -8,7 +8,7 @@ import React, {
 import cx from "classnames";
 import ReactSelect, { Props as ReactSelectProps } from "react-select";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
-import OptimizedSelectOption from "../components/OptimizedSelectOption";
+import OptimizedSelectOption from "./OptimizedSelectOption";
 import styles from "../styles/ExtendedSelect.scss";
 
 export interface ExtendedSelectProps {

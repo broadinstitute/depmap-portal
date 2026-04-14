@@ -96,12 +96,15 @@ export default async function checkPlottable({
 
   if (confirmed) {
     const operator = domain.value_type === "list_strings" ? "has_any" : "in";
+    const rhs = domain.references ? { context: null } : [];
 
     DepMap.saveNewContext(
       {
         name: `${sliceQuery.identifier} list`,
         dimension_type,
-        expr: { [operator]: [{ var: "0" }, []] },
+        expr: {
+          [operator]: [{ var: "0" }, rhs],
+        },
         vars: { 0: { ...sliceQuery, source: "property" } },
       },
       null,

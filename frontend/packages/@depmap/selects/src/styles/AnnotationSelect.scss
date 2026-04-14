@@ -1,0 +1,673 @@
+/* ── Theme variables ─────────────────────────────────────────── */
+
+.root {
+  --font-mono: ui-monospace, monospace;
+
+  /* Neutral palette */
+  --bg: #ffffff;
+  --bg-subtle: #f8fafc;
+  --bg-muted: #e7eef5;
+  --border: #cccccc;
+  --border-focus: hsl(0, 0%, 70%);
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
+  /* Door (pastel violet) */
+  --door-bg: #ede9fe;
+  --door-border: #c4b5fd;
+  --door-text: #5b21b6;
+  --door-hover-bg: #ddd6fe;
+  --door-hover-border: #a78bfa;
+
+  /* Selected row (blue) */
+  --selected-bg: #eff6ff;
+  --selected-text: #1e40af;
+
+  /* Table handoff (amber) */
+  --tbl-bg: #fffbeb;
+  --tbl-border: #fde68a;
+  --tbl-text: #92400e;
+  --tbl-hover-bg: #fef3c7;
+  --tbl-hover-border: #fcd34d;
+
+  /* Resolved property (green) */
+  --resolved-bg: #f0fdf4;
+  --resolved-border: #86efac;
+  --resolved-text: #166534;
+  --resolved-x: #6ee7b7;
+  --resolved-x-hover: #22c55e;
+
+  /* Resolved table handoff (amber) */
+  --handoff-bg: #fffbeb;
+  --handoff-border: #fcd34d;
+  --handoff-text: #92400e;
+  --handoff-x: #fbbf24;
+  --handoff-x-hover: #f59e0b;
+
+  /* Table badge — warm neutral that reads against gray headers */
+  --table-badge-bg: #fff7ed;
+  --table-badge-text: #9a3412;
+  --table-badge-border: #fed7aa;
+
+  font-size: 14px;
+  color: var(--text);
+
+  div[data-spacer] {
+    height: 10px;
+  }
+}
+
+/* Dimension type colors are applied via inline CSS variables from DimBadge.tsx.
+   Elements using dim colors reference var(--dim-bg), var(--dim-fg), var(--dim-border). */
+
+/* ── Shared sub-components ──────────────────────────────────── */
+
+/* DimBadge — small colored pill for dimension type */
+.dimBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  background: var(--dim-bg);
+  color: var(--dim-fg);
+  border: 1px solid var(--dim-border);
+}
+
+/* TableBadge — warm neutral pill for table name */
+.tableBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+  background: var(--table-badge-bg);
+  color: var(--table-badge-text);
+  border: 1px solid var(--table-badge-border);
+}
+
+/* Count hint — e.g. "10 + 3 FK" */
+.countHint {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-left: 6px;
+}
+
+/* Section label within dropdown */
+.sectionLabel {
+  padding: 6px 12px 2px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+}
+
+/* ChainViz — horizontal chain of code pills with arrows */
+.chainViz {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.chainNode {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 16px;
+  background: var(--bg-muted);
+  color: var(--text-muted);
+}
+
+.chainArrow {
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+/* Clear (×) button */
+.clearBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* ── Annotation Combobox ──────────────────────────── */
+
+.combobox {
+  position: relative;
+  width: 162px;
+}
+
+.comboboxTrigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  font-size: 13px;
+  color: var(--text);
+  text-align: left;
+  outline: none;
+
+  &:hover {
+    border-color: var(--border-focus);
+  }
+
+  &:focus-visible {
+    border-color: #2684ff;
+    box-shadow: 0 0 0 1px #2684ff;
+  }
+
+  &:focus-within {
+    border-color: #2684ff;
+    box-shadow: 0 0 0 1px #2684ff;
+  }
+
+  &[data-open="true"] {
+    padding-left: 10px;
+    border-color: #2684ff;
+    box-shadow: 0 0 0 1px #2684ff;
+  }
+
+  &:focus,
+  &:focus-visible,
+  &[data-open="true"] {
+    .comboboxCaret svg path,
+    .comboboxClear svg path {
+      fill: #666;
+    }
+  }
+}
+
+.comboboxPlaceholder {
+  color: hsl(0, 0%, 50%);
+  margin-left: 2px;
+  margin-right: 2px;
+  font-size: 12px;
+  cursor: default;
+}
+
+.comboboxSearchInput {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+  padding: 0;
+  cursor: default;
+  font-size: 12px;
+
+  &::placeholder {
+    color: #808080;
+  }
+}
+
+.comboboxGhostValue {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+  margin-left: -2px;
+  margin-right: -4px;
+}
+
+.comboboxCaret {
+  margin-left: auto;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  border-left: 1px solid #ccc;
+  height: 20px;
+
+  & svg {
+    position: relative;
+    left: 4px;
+
+    path {
+      fill: #ccc;
+      transition: fill 0.3s ease;
+    }
+
+    &:hover path {
+      fill: #999;
+    }
+  }
+}
+
+.comboboxSpinner {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  flex-shrink: 0;
+  border: 2px solid var(--border);
+  border-top-color: var(--text-faint);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Populated value display (react-select style) */
+.comboboxValue {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  color: var(--text);
+  font-size: 12px;
+  margin-right: -4px;
+  cursor: default;
+
+  & > span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.comboboxClear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 4px;
+  margin-right: 4px;
+  border: none;
+  border-radius: 3px;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+  cursor: default;
+
+  & svg {
+    path {
+      fill: #ccc;
+      transition: fill 0.3s ease;
+    }
+
+    &:hover path {
+      fill: #999;
+    }
+  }
+}
+
+.dropdown {
+  position: absolute;
+  z-index: 100;
+  left: 0;
+  top: calc(100% + 7px);
+  min-width: 550px;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-focus);
+  border-radius: 6px;
+  background: var(--bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+
+  &[data-placement="top"] {
+    top: auto;
+    bottom: calc(100% + 7px);
+  }
+
+  &[data-portaled] {
+    position: static;
+    z-index: auto;
+    left: auto;
+    top: auto;
+    bottom: auto;
+    min-width: auto;
+    max-width: none;
+  }
+}
+
+.dropdownBody {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Breadcrumb trail — sits above the scrollable body */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-top-left-radius: 6px;
+  border-top-right-radius: 6px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.breadcrumbNode {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+
+  &:hover {
+    background: var(--bg-muted);
+    color: var(--text);
+  }
+
+  &[data-current="true"] {
+    background: var(--bg-muted);
+    color: var(--text);
+    font-weight: 600;
+    cursor: default;
+  }
+}
+
+.breadcrumbSep {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-faint);
+}
+
+/* Search within dropdown */
+.searchBox {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.searchInput {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: var(--text);
+  background: transparent;
+
+  &::placeholder {
+    color: var(--text-faint);
+  }
+}
+
+/* ── Door buttons (Navigate through) ─────────────────────────── */
+
+.doorList {
+  padding: 4px 8px 10px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.doorBtn {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 2px 10px;
+  border: 1px solid var(--dim-border);
+  border-radius: 6px;
+  background: var(--dim-bg);
+  font-size: 13px;
+  color: var(--dim-fg);
+  margin-bottom: 8px;
+  text-align: left;
+  transition: background 0.08s, border-color 0.08s, filter 0.08s;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+
+  & svg {
+    position: relative;
+    top: 2px;
+  }
+}
+
+.doorBody {
+  flex: 1 1 0%;
+}
+
+.doorColName {
+  font-family: var(--font-mono);
+  font-weight: 500;
+}
+
+.doorTarget {
+  font-weight: 400;
+  opacity: 0.6;
+  margin-left: 6px;
+}
+
+.doorChevron {
+  flex-shrink: 0;
+  opacity: 0.4;
+  margin-left: auto;
+}
+
+/* ── Table handoff buttons (Continue to table) ──────────────── */
+
+.tableList {
+  padding: 4px 8px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tableBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 10px;
+  border: 1px solid var(--tbl-border);
+  border-radius: 6px;
+  background: var(--tbl-bg);
+  font-size: 13px;
+  color: var(--tbl-text);
+  margin-bottom: 4px;
+  text-align: left;
+  transition: background 0.1s, border-color 0.1s;
+
+  & svg {
+    position: relative;
+    top: 2px;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &:hover {
+    background: var(--tbl-hover-bg);
+    border-color: var(--tbl-hover-border);
+  }
+}
+
+.tableName {
+  font-weight: 500;
+}
+
+/* ── Properties (grouped column list) ────────────────────────── */
+
+.propertiesList {
+  padding: 0;
+}
+
+.columnGroupHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  color: var(--text-faint);
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.columnCount {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-left: auto;
+}
+
+.columnRow {
+  display: flex;
+  align-items: center;
+  padding: 5px 12px 5px 20px;
+  font-size: 13px;
+  transition: background 0.05s;
+
+  &[data-focused="true"] {
+    background-color: rgb(222, 235, 255);
+  }
+
+  &[data-selected="true"] {
+    background: #2684ff;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  &[data-selected="true"][data-focused="true"] {
+    background: #2670d8;
+  }
+
+  &[data-disabled="true"] {
+    opacity: 0.45;
+    cursor: default;
+
+    &[data-focused="true"] {
+      background: transparent;
+    }
+  }
+}
+
+.columnName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.columnVia {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+
+.noResults {
+  padding: 12px 20px;
+  font-size: 13px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* ── Resolved states ─────────────────────────────────────────── */
+
+.resolvedCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.resolvedProperty {
+  composes: resolvedCard;
+  background: var(--resolved-bg);
+  border: 1px solid var(--resolved-border);
+  color: var(--resolved-text);
+
+  .clearBtn {
+    color: var(--resolved-x);
+
+    &:hover {
+      color: var(--resolved-x-hover);
+    }
+  }
+}
+
+.resolvedHandoff {
+  composes: resolvedCard;
+  background: var(--handoff-bg);
+  border: 1px solid var(--handoff-border);
+  color: var(--handoff-text);
+
+  .clearBtn {
+    color: var(--handoff-x);
+
+    &:hover {
+      color: var(--handoff-x-hover);
+    }
+  }
+}
+
+.resolvedBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.resolvedLabel {
+  font-weight: 500;
+}
+
+/* ── Menu Portal — inherits theme vars when rendered outside .root ── */
+
+.menuPortal {
+  composes: root;
+}
+
+/* ── misc ────────────────────────────────────────────────────── */
+.selectorLabel {
+  text-align: start;
+  font-size: 12px;
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}

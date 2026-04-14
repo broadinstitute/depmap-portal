@@ -20,6 +20,7 @@ import {
   MatrixDataset,
   SliceQuery,
 } from "@depmap/types";
+import { resolveDisplayLabel, serializeSliceQuery } from "@depmap/selects";
 import { isContextAll } from "../../utils/context";
 import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
 import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
@@ -90,6 +91,9 @@ async function fetchValueType(
     return "continuous";
   }
 
+  // The root of a SliceQuery always describes the data column itself —
+  // reindex_through only describes FK hops for reindexing. So dataset_id
+  // and identifier here are already correct for the value type lookup.
   const { dataset_id } = dimensionOrSliceQuery;
 
   const dataset = await cached(breadboxAPI).getDataset(dataset_id);
@@ -133,66 +137,86 @@ const isPrimaryMetatadata = (dataset?: Dataset) => {
   return dataset.given_id === `${dataset.index_type_name}_metadata`;
 };
 
-function contextVariablesAsMetadata(filters?: DataExplorerFilters) {
-  const colorMetadata = {} as DataExplorerMetadata;
-  const uniqueVars = new Set<string>();
+/**
+ * Build the full set of metadata SliceQueries to fetch for a plot. This
+ * includes user-selected metadata (e.g. color_property), hardcoded extra
+ * metadata for hover tips, and variables extracted from filter contexts.
+ *
+ * Deduplication is handled in one place via serializeSliceQuery: entries
+ * are added in priority order (user selections > extra metadata > context
+ * vars) and later entries that match an already-tracked query are skipped.
+ */
+function buildExtendedMetadata(
+  index_type: string,
+  metadata?: DataExplorerMetadata,
+  filters?: DataExplorerFilters
+): DataExplorerMetadata {
+  const result = {} as DataExplorerMetadata;
+  const seen = new Set<string>();
 
-  for (const filter of Object.values(
-    filters || {}
-  ) as DataExplorerContextV2[]) {
-    Object.values(filter.vars).forEach((variable) => {
-      if (
-        variable.dataset_id === "depmap_model_metadata" &&
-        (variable.identifier === "OncotreeLineage" ||
-          variable.identifier === "OncotreePrimaryDisease")
-      ) {
-        return;
+  // Helper: add a query under `key` if it's not already tracked.
+  const addIfNew = (key: string, query: SliceQuery) => {
+    const serialized = serializeSliceQuery(query);
+    if (!seen.has(serialized)) {
+      seen.add(serialized);
+      result[key] = query;
+    }
+  };
+
+  // 1. User-selected metadata has highest priority.
+  if (metadata) {
+    for (const [key, entry] of Object.entries(metadata)) {
+      if ("dataset_id" in entry) {
+        addIfNew(key, entry as SliceQuery);
+      } else {
+        // Legacy entries (e.g. { slice_id }) — pass through as-is.
+        result[key] = entry;
       }
+    }
+  }
 
-      // Keep only the relevant properties.
-      const asSliceQuery = {
-        dataset_id: variable.dataset_id,
-        identifier: variable.identifier,
-        identifier_type: variable.identifier_type,
-      };
+  // 2. Hardcoded extra metadata for depmap_model hover tips.
+  if (index_type === "depmap_model") {
+    addIfNew("extra1", {
+      dataset_id: "depmap_model_metadata",
+      identifier_type: "column",
+      identifier: "OncotreePrimaryDisease",
+    });
 
-      uniqueVars.add(JSON.stringify(asSliceQuery));
+    addIfNew("extra2", {
+      dataset_id: "depmap_model_metadata",
+      identifier_type: "column",
+      identifier: "OncotreeLineage",
     });
   }
 
-  [...uniqueVars].forEach((stringVar, i) => {
-    colorMetadata[`context_var_${i}`] = JSON.parse(stringVar);
-  });
-
-  return colorMetadata;
-}
-
-function getExtraMetadata(index_type: string, metadata?: DataExplorerMetadata) {
-  const extraMetadata = {} as DataExplorerMetadata;
-  // HACK: Always include this info about models so we can show it in hover
-  // tips. In the future, we should make it configurable what information is
-  // shown there.
-  if (index_type === "depmap_model") {
-    const color_property = metadata?.color_property as SliceQuery | undefined;
-
-    if (color_property?.identifier !== "OncotreePrimaryDisease") {
-      extraMetadata.extra1 = {
-        dataset_id: "depmap_model_metadata",
-        identifier_type: "column",
-        identifier: "OncotreePrimaryDisease",
+  // 3. Variables extracted from filter contexts (lowest priority — these
+  //    are supplementary hover-tip info and should not duplicate anything
+  //    already tracked above).
+  let contextVarIndex = 0;
+  for (const filter of Object.values(
+    filters || {}
+  ) as DataExplorerContextV2[]) {
+    for (const variable of Object.values(filter.vars)) {
+      const asSliceQuery: SliceQuery = {
+        dataset_id: variable.dataset_id,
+        identifier: variable.identifier,
+        identifier_type: variable.identifier_type,
+        ...(variable.reindex_through
+          ? { reindex_through: variable.reindex_through }
+          : {}),
       };
-    }
 
-    if (color_property?.identifier !== "OncotreeLineage") {
-      extraMetadata.extra2 = {
-        dataset_id: "depmap_model_metadata",
-        identifier_type: "column",
-        identifier: "OncotreeLineage",
-      };
+      const serialized = serializeSliceQuery(asSliceQuery);
+      if (!seen.has(serialized)) {
+        seen.add(serialized);
+        result[`context_var_${contextVarIndex}`] = asSliceQuery;
+        contextVarIndex += 1;
+      }
     }
   }
 
-  return extraMetadata;
+  return result;
 }
 
 export async function fetchPlotDimensions(
@@ -201,11 +225,7 @@ export async function fetchPlotDimensions(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
-  const extendedMetadata = {
-    ...metadata,
-    ...contextVariablesAsMetadata(filters),
-    ...getExtraMetadata(index_type, metadata),
-  };
+  const extendedMetadata = buildExtendedMetadata(index_type, metadata, filters);
 
   // Pre-fetch data we know we'll need below. This only works because
   // postJson() caches the Promises. When we later repeat each fetch with an
@@ -571,7 +591,7 @@ export async function fetchPlotDimensions(
         // fake it too like a color dimension instead.
         if (key === "color_property" && value_type === "continuous") {
           out.dimensions.color = ({
-            axis_label: sliceQuery.label || sliceQuery.identifier,
+            axis_label: resolveDisplayLabel(sliceQuery, index_type),
             dataset_id: sliceQuery.dataset_id,
             dataset_label,
             slice_type: null,
@@ -583,7 +603,7 @@ export async function fetchPlotDimensions(
         }
 
         out.metadata[key] = {
-          label: sliceQuery.label || sliceQuery.identifier,
+          label: resolveDisplayLabel(sliceQuery, index_type),
           slice_id: "TODO: remove references to slice_id !",
           sliceQuery,
           value_type,

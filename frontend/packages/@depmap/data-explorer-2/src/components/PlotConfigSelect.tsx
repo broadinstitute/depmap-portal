@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { createFilter, Props as ReactSelectProps } from "react-select";
+import { extendReactSelect } from "@depmap/selects";
 import ReactWindowedSelect from "react-windowed-select";
-import extendReactSelect from "../utils/extend-react-select";
 import renderConditionally from "../utils/render-conditionally";
 
 interface Props extends Omit<ReactSelectProps, "options"> {
