@@ -8,6 +8,7 @@ interface Props {
   PlotlyLoader: any;
   sliceQuery: SliceQuery;
   extraHoverData?: Record<string, string>;
+  visibleRowIds?: Set<string>;
 }
 
 function showDataSlicePreview({
@@ -15,6 +16,7 @@ function showDataSlicePreview({
   PlotlyLoader,
   sliceQuery,
   extraHoverData,
+  visibleRowIds,
 }: Props) {
   showInfoModal({
     title: "View column",
@@ -24,6 +26,7 @@ function showDataSlicePreview({
         index_type_name={index_type_name}
         PlotlyLoader={PlotlyLoader}
         extraHoverData={extraHoverData}
+        visibleRowIds={visibleRowIds}
       />
     ),
   });

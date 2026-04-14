@@ -285,6 +285,8 @@ export function useSliceTableState({
   );
 
   const handleClickAddColumn = useCallback(async () => {
+    const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+
     const newSlice = await chooseDataSlice({
       index_type_name,
       PlotlyLoader,
@@ -292,6 +294,7 @@ export function useSliceTableState({
       idColumnLabel,
       hiddenDatasets,
       extraHoverData: buildExtraHoverData(""),
+      visibleRowIds,
     });
 
     if (newSlice) {
@@ -310,6 +313,7 @@ export function useSliceTableState({
     PlotlyLoader,
     slices,
     buildExtraHoverData,
+    tableRef,
   ]);
 
   const handleClickEditColumn = useCallback(
@@ -328,6 +332,8 @@ export function useSliceTableState({
         ? "property"
         : "custom";
 
+      const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+
       const editedSlice = await chooseDataSlice({
         defaultValue,
         initialSource,
@@ -337,6 +343,7 @@ export function useSliceTableState({
         idColumnLabel,
         hiddenDatasets,
         extraHoverData: buildExtraHoverData(column.id),
+        visibleRowIds,
       });
 
       if (editedSlice) {
@@ -354,19 +361,23 @@ export function useSliceTableState({
       PlotlyLoader,
       slices,
       buildExtraHoverData,
+      tableRef,
     ]
   );
 
   const handleClickViewColumn = useCallback(
     async (column: typeof columns[number]) => {
+      const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+
       showDataSlicePreview({
         index_type_name,
         PlotlyLoader,
         sliceQuery: column.meta.sliceQuery,
         extraHoverData: buildExtraHoverData(column.id),
+        visibleRowIds,
       });
     },
-    [index_type_name, PlotlyLoader, buildExtraHoverData]
+    [index_type_name, PlotlyLoader, buildExtraHoverData, tableRef]
   );
 
   const extendedColumns = useMemo(() => {

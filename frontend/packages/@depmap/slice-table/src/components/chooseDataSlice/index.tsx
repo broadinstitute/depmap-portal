@@ -17,6 +17,7 @@ interface Props {
   initialSource?: "property" | "custom";
   hiddenDatasets?: Set<string>;
   extraHoverData?: Record<string, string>;
+  visibleRowIds?: Set<string>;
 }
 
 function chooseDataSlice({
@@ -28,6 +29,7 @@ function chooseDataSlice({
   initialSource = "property",
   hiddenDatasets = undefined,
   extraHoverData,
+  visibleRowIds = undefined,
 }: Props) {
   const isEditMode = defaultValue !== null;
 
@@ -61,6 +63,7 @@ function chooseDataSlice({
               value={value}
               PlotlyLoader={PlotlyLoader}
               extraHoverData={extraHoverData}
+              visibleRowIds={visibleRowIds}
             />
           </div>
         </div>

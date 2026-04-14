@@ -10,6 +10,11 @@ interface Props {
   hoverLabel: string;
   initiallyShowNulls: boolean;
   entityLabel?: string;
+  // Override for the percentage denominator. When omitted, the total is
+  // derived from dataValues.length. Callers can pass an unfiltered total
+  // so percentages reflect "fraction of all entities" even when dataValues
+  // has been scoped to a filtered subset.
+  totalCount?: number;
   getCategoricalFilterProps?: () => {
     selectionMode: "single" | "multiple";
     initialSelectedValues: Set<string | number>;
@@ -23,6 +28,7 @@ function CategoricalDataPreview({
   hoverLabel,
   initiallyShowNulls,
   entityLabel = "",
+  totalCount: totalCountProp = undefined,
   getCategoricalFilterProps = undefined,
 }: Props) {
   const filterProps = getCategoricalFilterProps?.();
@@ -42,7 +48,7 @@ function CategoricalDataPreview({
     return dataValues.filter((v) => v === undefined || v === null).length;
   }, [dataValues]);
 
-  const totalCount = dataValues ? dataValues.length : 0;
+  const totalCount = totalCountProp ?? (dataValues ? dataValues.length : 0);
 
   const { plotData, valueToOriginal, naIndex } = useMemo(() => {
     if (!dataValues) {
