@@ -21,8 +21,8 @@ export const opLabels = {
   "!has_any": "has none of",
 
   // unary
-  is_null: "has no value",
   not_null: "has a value",
+  is_null: "has no value",
 };
 
 export type OperatorType = keyof typeof opLabels;

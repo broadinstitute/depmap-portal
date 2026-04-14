@@ -233,20 +233,28 @@ export function flattenSliceQuery(query: SliceQuery): ChainStep[] {
  * schema. For now, we show the first hop and the leaf, which covers
  * the most common case (one door hop + auto-flattening).
  */
-export function displayLabelFromSliceQuery(query: SliceQuery): string {
+export function displayLabelFromSliceQuery(
+  query: SliceQuery,
+  idToLabel?: Record<string, string>
+): string {
   const steps = flattenSliceQuery(query);
 
+  // The root SliceQuery's identifier is always the leaf of the chain. When
+  // its identifier_type is an id-based type (e.g. "feature_id"/"sample_id"),
+  // callers can pass an idToLabel map to substitute the human-readable label.
+  // A miss falls back to the raw identifier, preserving prior behavior.
+  const leafLabel = idToLabel?.[query.identifier] ?? query.identifier;
+
   if (steps.length <= 1) {
-    return query.identifier;
+    return leafLabel;
   }
 
   // Show first hop identifier + leaf identifier.
   // For deeper chains, include intermediate explicit hops if we had
   // cardinality info. For now, first › last is clear enough.
   const first = steps[0].identifier;
-  const last = steps[steps.length - 1].identifier;
 
-  return `${first} › ${last}`;
+  return `${first} › ${leafLabel}`;
 }
 
 /**
@@ -396,13 +404,21 @@ export function deriveNavStateFromValue(
  * full collapsed label (door hops + supplemental table + leaf column).
  * Without schema data (or if resolution fails), it falls back to a simpler
  * "first › last" label derived from the SliceQuery structure alone.
+ *
+ * An optional `idToLabel` map can be supplied to substitute the leaf
+ * identifier for a human-readable label when it's an id-based type (e.g.
+ * `feature_id`/`sample_id`). A miss (or an absent map) falls through to
+ * the raw identifier, which matches prior behavior.
  */
 export function resolveDisplayLabel(
   query: SliceQuery,
   index_type?: string,
   tablesByDim?: Record<string, TableDescriptor[]>,
-  dimTypeMap?: Record<string, DimensionTypeDescriptor>
+  dimTypeMap?: Record<string, DimensionTypeDescriptor>,
+  idToLabel?: Record<string, string>
 ): string {
+  const leafLabel = idToLabel?.[query.identifier] ?? query.identifier;
+
   if (index_type && tablesByDim && dimTypeMap) {
     try {
       const nav = deriveNavStateFromValue(
@@ -413,7 +429,7 @@ export function resolveDisplayLabel(
       );
 
       return displayLabelFromNavState(
-        query.identifier,
+        leafLabel,
         nav.hops,
         nav.supplementalTable?.tableName ?? null
       );
@@ -422,5 +438,5 @@ export function resolveDisplayLabel(
     }
   }
 
-  return displayLabelFromSliceQuery(query);
+  return displayLabelFromSliceQuery(query, idToLabel);
 }

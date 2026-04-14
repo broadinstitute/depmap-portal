@@ -155,7 +155,6 @@ export interface DataExplorerPlotResponse {
       "color_property" | string,
       {
         label: string;
-        slice_id: string; // TODO: Remove this
         sliceQuery?: SliceQuery;
         dataset_label?: string;
         units?: string;

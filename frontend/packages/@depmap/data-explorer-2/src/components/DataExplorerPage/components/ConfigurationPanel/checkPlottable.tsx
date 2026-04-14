@@ -1,6 +1,7 @@
 import React from "react";
 import { getConfirmation, showInfoModal } from "@depmap/common-components";
 import { DepMap } from "@depmap/globals";
+import { displayLabelFromSliceQuery } from "@depmap/selects";
 import { DataExplorerContextV2, SliceQuery } from "@depmap/types";
 import {
   dataExplorerAPI,
@@ -63,6 +64,8 @@ export default async function checkPlottable({
     window.dispatchEvent(new Event("dx2_start_load_event"));
     domain = await dataExplorerAPI.fetchVariableDomain(sliceQuery);
   } catch (e) {
+    window.console.error(e);
+
     showInfoModal({
       title: "Error loading data",
       content: (
@@ -80,6 +83,27 @@ export default async function checkPlottable({
 
   if (domain.value_type === "continuous") {
     return true;
+  }
+
+  if (domain.unique_values.length === 0) {
+    // It's not entirely exceptional for a re-indexed column to lack any
+    // values. We'll consider this plottable (it will just label everything as
+    // N/A).
+    if (domain.dimension_type !== dimension_type) {
+      return true;
+    }
+
+    showInfoModal({
+      title: "Missing data!",
+      content: (
+        <div>
+          The column “<b>{displayLabelFromSliceQuery(sliceQuery)}</b>” appears
+          to lack any values. This could indicate a problem with the database.
+        </div>
+      ),
+    });
+
+    return false;
   }
 
   if (

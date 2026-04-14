@@ -7,3 +7,8 @@ export {
   resolveDisplayLabel,
   serializeSliceQuery,
 } from "./src/components/AnnotationSelect/sliceQueryUtils";
+
+export {
+  buildDimTypeMap,
+  buildTablesByDim,
+} from "./src/components/AnnotationSelect/schemaHelpers";

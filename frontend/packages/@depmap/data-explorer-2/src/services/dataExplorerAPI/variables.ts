@@ -25,9 +25,7 @@ export async function fetchVariableDomain(
       : {}),
   };
 
-  // The root of a SliceQuery always describes the data column itself —
-  // reindex_through only describes FK hops for reindexing. So dataset_id
-  // and identifier here are already correct for the metadata lookup.
+  let dimension_type: string;
   let value_type: AnnotationType | undefined;
   let references: string | null = null;
 
@@ -36,11 +34,19 @@ export async function fetchVariableDomain(
     return d.id === dataset_id || d.given_id === dataset_id;
   });
 
-  if (dataset && dataset.format === "matrix_dataset") {
-    value_type = dataset.value_type as AnnotationType;
+  if (!dataset) {
+    throw new Error(`Unknown dataset "${dataset_id}"`);
   }
 
-  if (dataset && dataset.format === "tabular_dataset") {
+  if (dataset.format === "matrix_dataset") {
+    dimension_type = ["feature_id", "feature_label"].includes(identifier_type)
+      ? dataset.feature_type_name
+      : dataset.sample_type_name;
+
+    value_type = dataset.value_type as AnnotationType;
+  } else {
+    dimension_type = dataset.index_type_name;
+
     if (identifier_type !== "column") {
       throw new Error(
         `Can't look up identifier_type "${identifier_type}"` +
@@ -82,6 +88,7 @@ export async function fetchVariableDomain(
 
     return Promise.resolve({
       unique_values: [...new Set(stringValues)].sort(compareCaseInsensitive),
+      dimension_type,
       value_type,
       references,
     });
@@ -129,6 +136,7 @@ export async function fetchVariableDomain(
       isBinary,
       isBinaryish,
       isAllIntegers,
+      dimension_type,
       value_type,
       references,
     });
@@ -169,6 +177,7 @@ export async function fetchVariableDomain(
 
     return Promise.resolve({
       unique_values,
+      dimension_type,
       value_type,
       references,
     });

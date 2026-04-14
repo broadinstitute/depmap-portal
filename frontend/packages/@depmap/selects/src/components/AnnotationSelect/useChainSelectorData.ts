@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import type { Dataset, TabularDataset, MatrixDataset } from "@depmap/types";
 import type { DimensionTypeDescriptor, TableDescriptor } from "./types";
+import { buildDimTypeMap, buildTablesByDim } from "./schemaHelpers";
 
 /**
  * A source entry for Widget 1, representing either a tabular or matrix
@@ -66,13 +67,7 @@ export default function useChainSelectorData(index_type: string) {
   }, [index_type]);
 
   // Map from dim type name → descriptor.
-  const dimTypeMap = useMemo(() => {
-    const map: Record<string, DimensionTypeDescriptor> = {};
-    for (const dt of dimTypes) {
-      map[dt.name] = dt;
-    }
-    return map;
-  }, [dimTypes]);
+  const dimTypeMap = useMemo(() => buildDimTypeMap(dimTypes), [dimTypes]);
 
   // All tabular datasets (any dim type) for FK chain walking.
   const tabularDatasets = useMemo(() => {
@@ -82,24 +77,9 @@ export default function useChainSelectorData(index_type: string) {
   }, [allDatasets]);
 
   // All tabular datasets grouped by index_type_name → TableDescriptor[].
-  const tablesByDim = useMemo(() => {
-    const map: Record<string, TableDescriptor[]> = {};
-
-    for (const d of tabularDatasets) {
-      if (!map[d.index_type_name]) {
-        map[d.index_type_name] = [];
-      }
-
-      map[d.index_type_name].push({
-        id: d.id,
-        given_id: d.given_id,
-        name: d.name,
-        columns: d.columns_metadata,
-      });
-    }
-
-    return map;
-  }, [tabularDatasets]);
+  const tablesByDim = useMemo(() => buildTablesByDim(allDatasets), [
+    allDatasets,
+  ]);
 
   // The primary metadata dataset ID for this index type.
   const metadataDatasetId = dimTypeMap[index_type]?.metadata_dataset_id ?? null;

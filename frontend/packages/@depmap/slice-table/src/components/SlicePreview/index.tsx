@@ -115,6 +115,7 @@ function SlicePreview({
       : "categorical";
 
   const values = scopedData.map((row) => row[column.id]);
+  const isEmpty = scopedData.every((row) => row[column.id] === undefined);
   const { idLabel, units, datasetName } = column.meta;
   const isFiltered =
     visibleRowIds !== undefined && scopedData.length < previewData.length;
@@ -146,7 +147,7 @@ function SlicePreview({
               entityLabel={entityLabel}
               totalCount={previewData.length}
               getCategoricalFilterProps={getCategoricalFilterProps}
-              initiallyShowNulls={initiallyShowNulls}
+              initiallyShowNulls={initiallyShowNulls || isEmpty}
             />
           )}
         </div>

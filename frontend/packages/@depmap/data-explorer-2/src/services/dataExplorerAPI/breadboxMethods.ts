@@ -20,7 +20,12 @@ import {
   MatrixDataset,
   SliceQuery,
 } from "@depmap/types";
-import { resolveDisplayLabel, serializeSliceQuery } from "@depmap/selects";
+import {
+  buildDimTypeMap,
+  buildTablesByDim,
+  resolveDisplayLabel,
+  serializeSliceQuery,
+} from "@depmap/selects";
 import { isContextAll } from "../../utils/context";
 import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
 import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
@@ -494,6 +499,61 @@ export async function fetchPlotDimensions(
     };
 
     const datasets = await cached(breadboxAPI).getDatasets();
+    const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+    const dimTypeMap = buildDimTypeMap(dimTypes);
+    const tablesByDim = buildTablesByDim(datasets);
+
+    // Build per-metadata-key id->label maps for slices whose leaf identifier
+    // is an id-based type (feature_id / sample_id). These let
+    // `resolveDisplayLabel` surface the human-readable label for the leaf
+    // instead of the raw id. Slices with other identifier types get no map
+    // and fall through to existing behavior.
+    const metadataIdToLabel: Record<
+      string,
+      Record<string, string> | undefined
+    > = {};
+
+    await Promise.all(
+      Object.entries(extendedMetadata).map(async ([key, entry]) => {
+        if (!isValidSliceQuery(entry as SliceQuery)) {
+          return;
+        }
+
+        const sq = entry as SliceQuery;
+
+        if (
+          sq.identifier_type !== "feature_id" &&
+          sq.identifier_type !== "sample_id"
+        ) {
+          return;
+        }
+
+        const dataset = datasets.find(
+          (d) => d.id === sq.dataset_id || d.given_id === sq.dataset_id
+        );
+
+        if (!dataset || dataset.format !== "matrix_dataset") {
+          return;
+        }
+
+        const dimTypeName =
+          sq.identifier_type === "feature_id"
+            ? dataset.feature_type_name
+            : dataset.sample_type_name;
+
+        if (!dimTypeName) {
+          return;
+        }
+
+        const identifiers = await cached(
+          breadboxAPI
+        ).getDimensionTypeIdentifiers(dimTypeName);
+
+        metadataIdToLabel[key] = Object.fromEntries(
+          identifiers.map(({ id, label }) => [id, label])
+        );
+      })
+    );
 
     const axisLabels = {
       x: await fetchAxisLabel(dimensions?.x),
@@ -591,7 +651,13 @@ export async function fetchPlotDimensions(
         // fake it too like a color dimension instead.
         if (key === "color_property" && value_type === "continuous") {
           out.dimensions.color = ({
-            axis_label: resolveDisplayLabel(sliceQuery, index_type),
+            axis_label: resolveDisplayLabel(
+              sliceQuery,
+              index_type,
+              tablesByDim,
+              dimTypeMap,
+              metadataIdToLabel[key]
+            ),
             dataset_id: sliceQuery.dataset_id,
             dataset_label,
             slice_type: null,
@@ -603,8 +669,13 @@ export async function fetchPlotDimensions(
         }
 
         out.metadata[key] = {
-          label: resolveDisplayLabel(sliceQuery, index_type),
-          slice_id: "TODO: remove references to slice_id !",
+          label: resolveDisplayLabel(
+            sliceQuery,
+            index_type,
+            tablesByDim,
+            dimTypeMap,
+            metadataIdToLabel[key]
+          ),
           sliceQuery,
           value_type,
           units,
