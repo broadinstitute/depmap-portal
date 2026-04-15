@@ -7,7 +7,7 @@ from depmap.context_explorer.utils import get_path_to_node
 from depmap.context_explorer import box_plot_utils, dose_curve_utils
 from depmap.tda.views import convert_series_to_json_safe_list
 from flask_restplus import Namespace, Resource
-from flask import current_app, request, url_for
+from flask import abort, current_app, request, url_for
 import pandas as pd
 from depmap.context_explorer.models import (
     ContextAnalysis,
@@ -611,6 +611,10 @@ class EnrichedLineagesTile(
         tree_type = request.args.get("tree_type")
         feature_id = request.args.get("feature_id")
         feature_type = request.args.get("feature_type")
+
+        # Expect entrez_ids for feature_type=gene feature_ids. Anything else is an invalid request.
+        if feature_type == "gene" and not str(feature_id).isdigit():
+            abort(404)
 
         return _get_enriched_lineages_tile_with_caching(
             tree_type, feature_id, feature_type
