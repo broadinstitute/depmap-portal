@@ -529,7 +529,15 @@ def get_organized_contexts(
 def get_gene_enriched_lineages_feature_dataset_metadata(
     feature_id: str,
 ) -> Optional[dict]:
-    gene = Gene.get_gene_by_entrez(int(feature_id))
+    # BACKWARDS COMPATIBILITY: We recently switched from using gene symbols (labels)
+    # to Entrez IDs as the feature_id. Because of caching upstream, older rendered HTML
+    # still contains symbols in the JS calls. We must support both until the persistent cache is
+    # flushed or expires.
+    gene = (
+        Gene.get_by_label(feature_id)
+        if not str(feature_id).isdigit()
+        else Gene.get_gene_by_entrez(int(feature_id))
+    )
 
     assert gene is not None
 
@@ -543,7 +551,7 @@ def get_gene_enriched_lineages_feature_dataset_metadata(
     dataset_display_name = dataset.label
 
     return {
-        "feature_id": feature_id,
+        "feature_id": gene.entrez_id,
         "dataset_given_id": dataset_name,
         "label": gene.label,
         "dataset_display_name": dataset_display_name,
