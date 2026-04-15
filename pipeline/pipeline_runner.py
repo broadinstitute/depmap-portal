@@ -62,6 +62,11 @@ def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
         "--working-dir",
         help="The directory where the run_XXX.conseq file is contained for the pipeline you wish to run",
     )
+    parser.add_argument(
+        "--staging-url",
+        default="gs://preprocessing-pipeline-outputs/conseq/depmap",
+        help="The staging directory that conseq should use for hosting CAS in the cloud",
+    )
     return parser
 
 
@@ -105,7 +110,6 @@ class PipelineRunner:
 
         raise ValueError(f"Could not find DOCKER_IMAGE= in {image_name_file}")
 
-    
     def check_credentials(self, creds_dir):
         """Check that required credential files exist."""
         for filename in self.config.credentials.required_files:
@@ -185,6 +189,7 @@ class PipelineRunner:
             state_path=f"{working_dir}/state",
             working_dir=working_dir,
             publish_dest=args.destination,
+            s3_staging_url=args.staging_url,
             start_with=args.start_with,
             manually_run_conseq=args.manually_run_conseq,
             conseq_args=args.conseq_args,
@@ -302,7 +307,7 @@ class PipelineRunner:
                 original_conseq, config.publish_dest
             )
             print(f"Created override conseq file: {conseq_file}")
-        else: 
+        else:
             conseq_file = original_conseq
         return os.path.abspath(conseq_file)
 
@@ -399,8 +404,7 @@ class PipelineRunner:
         ]
 
         # Add pipeline-specific options
-        if config.s3_staging_url:
-            cmd_parts.append(f"-D S3_STAGING_URL={config.s3_staging_url}")
+        cmd_parts.append(f"-D S3_STAGING_URL={config.s3_staging_url}")
         if config.publish_dest:
             cmd_parts.append(f'-D publish_dest="{config.publish_dest}"')
             cmd_parts.append("-D publish_data_prep=True")

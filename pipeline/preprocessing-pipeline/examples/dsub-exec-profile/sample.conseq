@@ -1,5 +1,4 @@
 let DSUB_JOB_ID_PATTERN="""(?:(?:Job: )|(?:Launched job-id: ))(\S+).*"""
-let S3_STAGING_URL = "gs://preprocessing-pipeline-outputs/conseq/depmap"
 
 exec-profile dsub-testimg {
   "type": "async-delegate",

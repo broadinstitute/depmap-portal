@@ -71,6 +71,7 @@ class CommonConfig(BaseModel):
     docker_image: str
     commit_sha: str
     state_path: str
+    s3_staging_url: str
     working_dir: str
     publish_dest: Optional[str] = None
     start_with: Optional[str] = None
@@ -80,4 +81,3 @@ class CommonConfig(BaseModel):
     conseq_file: Optional[str] = None
     # Pipeline-specific optional fields
     export_path: Optional[str] = None
-    s3_staging_url: Optional[str] = None
