@@ -21,7 +21,7 @@ rule publish_daintree_results_to_taiga:
             --config {{inputs.daintree_output.model_name }} \
             --ensemble_csv {{ inputs.daintree_output.ensemble_filename }} \
             --predictions_matrix_csv {{ inputs.daintree_output.predictions_filename }} \
-            --dest_permaname {{ config.dest_permaname }} 
+            --dest_permaname {{ config.RELEASE_PERMANAME }} 
     """
 
 # the above resulted in artifacts of type breadbox-daintree-output. We want to collect all of them in one place for the breadbox loader to pull down
