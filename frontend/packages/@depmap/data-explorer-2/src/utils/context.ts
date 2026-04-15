@@ -260,6 +260,7 @@ export function negateContext(
       dimension_type: context.dimension_type,
       expr,
       vars: context.vars,
+      ...(context.contexts ? { contexts: context.contexts } : null),
     };
   }
 
