@@ -9,63 +9,79 @@ def create_sparkles_workflow(
     out: Optional[str],
     test: bool,
     nfolds: int,
+    ncpus: int,
     models_per_task: int,
     test_first_n_tasks: Optional[int],
-    extra_python_files: Optional[str]
+    extra_python_files: Optional[str],
 ):
     extra_python_path_dir = "extra_python_files"
 
     from glob import glob
+
     python_path_parameter = []
     python_files_to_localize = []
     if extra_python_files:
         for filename in glob(f"{extra_python_files}/*.py"):
-            python_files_to_localize.append({"src": filename, "dst": os.path.join(extra_python_path_dir, os.path.basename(filename))})
-        python_path_parameter =             [ "--python-path", extra_python_path_dir,]
+            python_files_to_localize.append(
+                {
+                    "src": filename,
+                    "dst": os.path.join(
+                        extra_python_path_dir, os.path.basename(filename)
+                    ),
+                }
+            )
+        python_path_parameter = [
+            "--python-path",
+            extra_python_path_dir,
+        ]
 
-
-
-    prepare_command = ([
-        "daintree-runner"] + python_path_parameter +
-    [
-        "prepare-and-partition",
-        "--input-config",
-        "model_config.json",
-        "--out",
-        "out",
-        "--models-per-task",
-        str(models_per_task),
-    ])
+    prepare_command = (
+        ["daintree-runner"]
+        + python_path_parameter
+        + [
+            "prepare-and-partition",
+            "--input-config",
+            "model_config.json",
+            "--out",
+            "out",
+            "--models-per-task",
+            str(models_per_task),
+        ]
+    )
 
     if test_first_n_tasks:
-        prepare_command +=         ["--test-first-n-tasks", str(test_first_n_tasks)]
+        prepare_command += ["--test-first-n-tasks", str(test_first_n_tasks)]
     if test:
         prepare_command.append("--test")
-    
 
-    fit_model_command = ([
-                    "daintree-core" ]
-    + python_path_parameter +
-    ["fit-model",
-                    "--x",
-                    "out/X.ftr",
-                    "--y",
-                    "out/target_matrix.ftr",
-                    "--model-config",
-                    "{parameter.model_config}",
-                    "--n-folds",
-                    str(nfolds),
-                    "--target-range",
-                    "{parameter.start_index}",
-                    "{parameter.end_index}",
-                    "--model",
-                    "{parameter.model_name}",
-                ])
+    fit_model_command = (
+        ["daintree-core"]
+        + python_path_parameter
+        + [
+            "fit-model",
+            "--x",
+            "out/X.ftr",
+            "--y",
+            "out/target_matrix.ftr",
+            "--model-config",
+            "{parameter.model_config}",
+            "--n-folds",
+            str(nfolds),
+            "--cpus",
+            str(ncpus),
+            "--target-range",
+            "{parameter.start_index}",
+            "{parameter.end_index}",
+            "--model",
+            "{parameter.model_name}",
+        ]
+    )
 
     taiga_token = _find_taiga_token()
 
     workflow = {
-        "paths_to_localize": [{"src": taiga_token, "dst": ".taiga-token"}] + python_files_to_localize,
+        "paths_to_localize": [{"src": taiga_token, "dst": ".taiga-token"}]
+        + python_files_to_localize,
         "steps": [
             {
                 "command": prepare_command,
@@ -131,6 +147,7 @@ def main():
     )
 
     parser.add_argument("--nfolds", default=5, type=int)
+    parser.add_argument("--ncpus", default=1, type=int)
 
     parser.add_argument(
         "--models-per-task",
@@ -153,7 +170,7 @@ def main():
 
     parser.add_argument(
         "--extra-python-files",
-        help="Path to directory which contains transforms that daintree will use"
+        help="Path to directory which contains transforms that daintree will use",
     )
 
     args = parser.parse_args()
@@ -162,9 +179,10 @@ def main():
         out=args.out,
         test=args.test,
         nfolds=args.nfolds,
+        ncpus=args.ncpus,
         models_per_task=args.models_per_task,
         test_first_n_tasks=args.test_first_n_tasks,
-        extra_python_files=args.extra_python_files
+        extra_python_files=args.extra_python_files,
     )
 
 
