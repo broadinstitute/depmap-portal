@@ -1,0 +1,10 @@
+[config]
+default_url_prefix=gs://dpp-sparkles/depmap-pipeline
+project=depmap-portal-pipeline
+region=us-central1
+machine_type=n4-standard-4
+boot_volume_in_gb=40
+default_image=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:invalid
+sparklesworker_image=us-central1-docker.pkg.dev/cds-docker-containers/docker/sparklesworker:5.8.2-test
+mount_1_type=hyperdisk-balanced
+mount_1_size_in_gb=50
