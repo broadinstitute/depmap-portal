@@ -193,6 +193,7 @@ class PipelineRunner:
             start_with=args.start_with,
             manually_run_conseq=args.manually_run_conseq,
             conseq_args=args.conseq_args,
+            export_path=args.export_path,
         )
 
         self.check_credentials(config.creds_dir)

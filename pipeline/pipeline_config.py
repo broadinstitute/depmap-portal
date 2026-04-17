@@ -77,7 +77,5 @@ class CommonConfig(BaseModel):
     start_with: Optional[str] = None
     manually_run_conseq: bool = False
     conseq_args: List[str] = Field(default_factory=list)
-    # Set after initial build
     conseq_file: Optional[str] = None
-    # Pipeline-specific optional fields
     export_path: Optional[str] = None
