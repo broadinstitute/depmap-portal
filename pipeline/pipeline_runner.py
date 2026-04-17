@@ -1,5 +1,6 @@
 import argparse
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -8,6 +9,9 @@ import uuid
 import yaml
 from pathlib import Path
 from datetime import datetime
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+log = logging.getLogger(__name__)
 
 from pipeline_config import (
     CommonConfig,
@@ -83,7 +87,7 @@ class PipelineRunner:
     def subprocess_run(self, cmd: list, **kwargs) -> subprocess.CompletedProcess:
         """Run a subprocess, or print the command if in dryrun mode."""
         if self.dryrun:
-            print(f"[dryrun] {' '.join(str(a) for a in cmd)}")
+            log.info("[dryrun] %s", " ".join(str(a) for a in cmd))
             return subprocess.CompletedProcess(cmd, 0)
         return subprocess.run(cmd, **kwargs)
 
@@ -120,7 +124,7 @@ class PipelineRunner:
     def pull_docker_image(self, docker_image):
         """Pull Docker image if it has a registry path."""
         if docker_image and "/" in docker_image:
-            print("Pulling Docker image...")
+            log.info("Pulling Docker image...")
             env_vars = {
                 **os.environ,
                 "GOOGLE_APPLICATION_CREDENTIALS": "/etc/google/auth/application_default_credentials.json",
@@ -137,9 +141,9 @@ class PipelineRunner:
             "pipeline": self.pipeline_name,
             "timestamp": datetime.now().astimezone().isoformat(),
         }
-        print("=" * 50)
-        print(json.dumps(final_log, indent=2))
-        print("=" * 50)
+        log.info("=" * 50)
+        log.info(json.dumps(final_log, indent=2))
+        log.info("=" * 50)
 
     def track_dataset_usage_from_conseq(self, working_dir):
         """Track dataset usage from DO-NOT-EDIT-ME files and log to usage tracker."""
@@ -243,10 +247,10 @@ class PipelineRunner:
             ]
         )
 
-        print("=" * 50)
-        print(f"{self.pipeline_name} Pipeline Runner command:")
-        print(f"  {' '.join(docker_cmd)}")
-        print("=" * 50)
+        log.info("=" * 50)
+        log.info("%s Pipeline Runner command:", self.pipeline_name)
+        log.info("  %s", " ".join(docker_cmd))
+        log.info("=" * 50)
 
         return self.subprocess_run(docker_cmd)
 
@@ -300,13 +304,13 @@ class PipelineRunner:
     def get_conseq_file(self, config: CommonConfig) -> str:
         assert self.script_path is not None
         mapped_env = self.map_environment_name(config.env_name)
-        print(f"env_name={config.env_name}, mapped_env={mapped_env}")
+        log.info("env_name=%s, mapped_env=%s", config.env_name, mapped_env)
         original_conseq = f"{config.working_dir}/run_{mapped_env}.conseq"
         if config.publish_dest:
             conseq_file = self.create_override_conseq_file(
                 original_conseq, config.publish_dest
             )
-            print(f"Created override conseq file: {conseq_file}")
+            log.info("Created override conseq file: %s", conseq_file)
         else:
             conseq_file = original_conseq
         return os.path.abspath(conseq_file)
@@ -316,7 +320,7 @@ class PipelineRunner:
 
         assert self.script_path is not None
         if config.start_with:
-            print(f"Starting with existing export: {config.start_with}")
+            log.info("Starting with existing export: %s", config.start_with)
             self.subprocess_run(
                 ["sudo", "chown", "-R", "ubuntu", str(self.script_path.parent)],
                 check=True,
@@ -358,7 +362,7 @@ class PipelineRunner:
     def run(self, args: argparse.Namespace) -> None:
         """Main entry point for running the pipeline."""
 
-        print(f"Pipeline run ID: {self.pipeline_run_id}")
+        log.info("Pipeline run ID: %s", self.pipeline_run_id)
 
         config = self.get_pipeline_config(args)
 
@@ -369,7 +373,7 @@ class PipelineRunner:
         config.conseq_file = self.get_conseq_file(config)
 
         if config.manually_run_conseq:
-            print(f"executing: conseq {' '.join(config.conseq_args)}")
+            log.info("executing: conseq %s", " ".join(config.conseq_args))
             result = self.run_via_container(
                 f"conseq -D is_dev=False {' '.join(config.conseq_args)}", config
             )
@@ -387,7 +391,7 @@ class PipelineRunner:
             # Handle post-run tasks (export, reports, etc.)
             self.handle_post_run_tasks(config)
 
-        print("Pipeline run complete")
+        log.info("Pipeline run complete")
         self.subprocess_run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
         sys.exit(run_exit_status)
 
@@ -419,7 +423,7 @@ class PipelineRunner:
         """Handle post-run tasks. Subclasses should call super() after their own logic."""
         self.run_via_container("conseq report html", config)
         if self.dryrun:
-            print("[dryrun] skipping track_dataset_usage")
+            log.info("[dryrun] skipping track_dataset_usage")
         else:
             self.track_dataset_usage_from_conseq(config.working_dir)
 
