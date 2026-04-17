@@ -81,15 +81,24 @@ rule run_fit_models:
     run """python3 {{ inputs.create_workflow_script.filename }} \
         --config {{ inputs.daintree_input_config.filename }} \
         --out workflow.json \
+        --ncpus 4 \
         --nfolds 5 \
         --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 10{% endif %} \
         --extra-python-files extra_python_files"""
 
-    run """{{config.sparkles_path}} workflow run \
-      --nodes 300 \
-      --retry \
-      --add-hash-to-job-id \
-      -i {{ config.daintree_docker_image }} \
+    # okay, run sparkles workflow -- but this command is run by check_daintree_cache.py. The script will first see if we already have
+    # a computed result, and if so, it skip running the command. However, also check to see if either of our testing flags are in place. 
+    # if either testing flag is set, skip the whole caching script
+    run """{% if inputs.is_test_run.run_all_configs == 'no' && inputs.is_test_run.fit_all_actuals == 'no' %}python3 {{ inputs.check_daintree_cache.filename }} \
+      --no-run \
+      --expected-output daintree-output.json \
+      --cache-root {{config.S3_STAGING_URL}}/daintree-cache \
+      {{ inputs.daintree_input_config.filename }} \
+        {% endif %}{{config.sparkles_path}} workflow run \
+        --nodes 300 \
+        --retry \
+        --add-hash-to-job-id \
+        -i {{ config.daintree_docker_image }} \
       daintree-fit-v1 workflow.json"""
 
     # reformat daintree-output into artifacts conseq will understand
