@@ -277,7 +277,7 @@ class PipelineRunner:
         return env_mapping.get(env_name, env_name)
 
     def create_override_conseq_file(
-        self, original_conseq: str, publish_dest: str
+        self, original_conseq: str, publish_dest: str, staging_url: str
     ) -> str:
         """Create an override conseq file that injects a custom publish_dest.
 
@@ -293,6 +293,7 @@ class PipelineRunner:
         with open(original_conseq, "r") as original:
             with open(override_name, "w") as override:
                 override.write(f'let publish_dest = "{publish_dest}"\n')
+                override.write(f'let S3_STAGING_URL = "{staging_url}"\n')
                 for line in original:
                     if not line.strip().startswith("let publish_dest"):
                         override.write(line)
@@ -309,7 +310,7 @@ class PipelineRunner:
         original_conseq = f"{config.working_dir}/run_{mapped_env}.conseq"
         if config.publish_dest:
             conseq_file = self.create_override_conseq_file(
-                original_conseq, config.publish_dest
+                original_conseq, config.publish_dest, config.s3_staging_url
             )
             log.info("Created override conseq file: %s", conseq_file)
         else:
@@ -408,7 +409,6 @@ class PipelineRunner:
             "-D is_dev=False",
         ]
 
-        # Add pipeline-specific options
         cmd_parts.append(f"-D S3_STAGING_URL={config.s3_staging_url}")
         if config.publish_dest:
             cmd_parts.append(f'-D publish_dest="{config.publish_dest}"')
@@ -430,6 +430,7 @@ class PipelineRunner:
 
         if config.export_path:
             assert config.conseq_file is not None
+
             self.run_via_container(
                 f"conseq export {config.conseq_file} {config.export_path}", config
             )
