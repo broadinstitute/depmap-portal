@@ -89,7 +89,7 @@ rule run_fit_models:
     # okay, run sparkles workflow -- but this command is run by check_daintree_cache.py. The script will first see if we already have
     # a computed result, and if so, it skip running the command. However, also check to see if either of our testing flags are in place. 
     # if either testing flag is set, skip the whole caching script
-    run """{% if inputs.is_test_run.run_all_configs == 'no' && inputs.is_test_run.fit_all_actuals == 'no' %}python3 {{ inputs.check_daintree_cache.filename }} \
+    run """{% if inputs.is_test_run.run_all_configs == 'no' and inputs.is_test_run.fit_all_actuals == 'no' %}python3 {{ inputs.check_daintree_cache.filename }} \
       --no-run \
       --expected-output daintree-output.json \
       --cache-root {{config.S3_STAGING_URL}}/daintree-cache \
