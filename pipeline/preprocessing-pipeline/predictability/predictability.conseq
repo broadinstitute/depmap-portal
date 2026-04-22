@@ -519,7 +519,7 @@ rule assemble_feature_matrix:
     """
 
 rule fit_predictive_model:
-    resources: {'slots': "0.01"}
+    resources: {'slots': "0.5"}
     inputs:
         match_related={'type': 'match-related-matrix-csv'},
         dep={'type': 'pred-dep-matrix-ftr',
