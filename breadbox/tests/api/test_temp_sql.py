@@ -20,6 +20,55 @@ def _assert_sql_result_eq(client, sql, expected_result, expected_status_code=200
         assert response.text == expected_result
 
 
+def test_overlapping_samples(minimal_db: SessionWithUser, settings, client: TestClient):
+    sample_ids = ["s1", "s2", "s3", "s4"]
+    factories.sample_type(
+        minimal_db, minimal_db.user, "simple_sample_type", given_ids=sample_ids
+    )
+
+    def create_matrix(name, sample_ids):
+        factories.matrix_dataset(
+            minimal_db,
+            settings,
+            sample_type="simple_sample_type",
+            feature_type=None,
+            data_file=factories.matrix_csv_data_file_with_values(
+                feature_ids=["A", "B"], sample_ids=sample_ids, values=[[1, 2], [3, 4]],
+            ),
+            dataset_name=name,
+            given_id=name,
+        )
+
+    create_matrix("matrix1", ["s1", "s2"])
+    create_matrix("matrix2", ["s2", "s3"])
+    create_matrix("matrix3", ["s2", "s4"])
+    create_matrix("matrix4", ["s2", "s1"])
+
+    assert_schema_is_valid(client)
+
+    _assert_sql_result_eq(
+        client, "select count(1) samples from matrix1_sample m1", "samples\r\n2\r\n"
+    )
+
+    _assert_sql_result_eq(
+        client,
+        "select count(1) samples from matrix1_sample m1 join matrix2_sample m2 on m1.sample_id = m2.sample_id",
+        "samples\r\n1\r\n",
+    )
+
+    _assert_sql_result_eq(
+        client,
+        "select count(1) samples from matrix1_sample m1 join matrix4_sample m4 on m1.sample_id = m4.sample_id",
+        "samples\r\n2\r\n",
+    )
+
+    _assert_sql_result_eq(
+        client,
+        "select count(1) samples from matrix1_sample m1 join matrix2_sample m2 on m1.sample_id = m2.sample_id join matrix4_sample m4 on m1.sample_id = m4.sample_id",
+        "samples\r\n1\r\n",
+    )
+
+
 def test_matrix_query(minimal_db: SessionWithUser, settings, client: TestClient):
     sample_ids = ["s1", "s2", "s3"]
     factories.sample_type(
