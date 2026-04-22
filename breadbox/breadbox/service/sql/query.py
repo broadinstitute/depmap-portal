@@ -45,6 +45,7 @@ import io
 
 SQLiteValue = Any
 import logging
+import pandas as pd
 
 log = logging.getLogger(__name__)
 
@@ -106,36 +107,43 @@ class Table:
         constraints: Sequence[tuple[int, int]],
         orderbys: Sequence[tuple[int, int]],
     ):
-        #        print(f"BestIndex {self.param_values} {constraints}")
+        """
+        Returns which "index" should be used to access the table efficiently given the following constraints and orderbys being applied.
+        If an equality constraint is being applied. May be called multiple times while sqlite evaluates different join orders. 
+        Our responsibility is to return a list (constraints_used) which describes how we would satisfy the specified constraints.
+        """
         idx_str: list[str] = []
         constraints_used = []
         for constrained_col_index, constrained_op in constraints:
             constrained_column = self.columns[constrained_col_index]
 
-            if constrained_op != apsw.SQLITE_INDEX_CONSTRAINT_EQ:
-                #                print(f"Cannot use {constrained_op} constraint on {constrained_column}. Skipping")
+            if (
+                constrained_op != apsw.SQLITE_INDEX_CONSTRAINT_EQ
+                or constrained_column in idx_str
+            ):
+                # this constraint is not one we're going to handle, so add "None" to indicate sqlite should
+                # apply this constraint itself on the returned data.
                 constraints_used.append(None)
                 continue
 
-            #            print(f"{constrained_column} is constrained by ==")
-
-            assert constrained_column not in idx_str
+            # This is the argument number for the constraintargs being passed into the Filter() function in cursor
+            # now, we can pass a number for each constraint, but we really want the column name. So, store the number
+            # as the index into an array of column names that will also be passed to the Filter() function.
             constraints_used.append(len(idx_str))
             idx_str.append(constrained_column)
 
-        #        print(f"list of constrained columns: {constraints_used} {idx_str}")
-
         if len(idx_str) == 0:
-            # no filters is more expensive than any filter
+            # Approximately how many disk operations are needed to provide the results
+            # Pretend that if we couldn't identify any column that we can index by, we'll need to fetch
+            # a huge amount so that this will be table to iterate through as a last resort.
             cost = 1000000
         else:
+            # filtering by any column will be more expensive than free. Also, reports same cost for all columns. No
+            # attempt to model selectivity or anything like that. Could be a future enhancment
             cost = 100
 
         result = (tuple(constraints_used), 0, ",".join(idx_str), False, cost)
-        #        print(f"BestIndex returning {result}")
         return result
-
-    #        return [constraints_used, 0, ",".join(idx_str), False, cost]
 
     def Open(self):
         return Cursor(self.callable, self.param_values)
@@ -155,12 +163,14 @@ class Cursor:
         print(f"Cursor.__init__: {(self.param_values)}")
 
     def Filter(self, idx_num: int, idx_str: str, args: tuple[SQLiteValue]) -> None:
-        #        print(f"Filter({idx_str}, {args}) (func params={self.param_values})")
         params: dict[str, SQLiteValue] = self.param_values.copy()
-        if idx_str is not None:
-            params.update(zip(idx_str.split(","), args))
+        if idx_str is not None and idx_str != "":
+            column_names = idx_str.split(",")
+            assert len(args) == len(
+                column_names
+            ), "There should be the same number of values for equality constraints as there are for columns being constrained"
+            params.update(zip(column_names, args))
         self.iterating = iter(self.callable(**params))
-        # proactively advance so we can tell if eof
         self.Next()
 
     def Eof(self) -> bool:
@@ -362,17 +372,12 @@ def _query_matrix_dataset_samples(
         dim_id = constraints[dim_id_type]
         print(f"Searching for {dim_id} among {dim_ids}")
         if sorted_list_contains(dim_ids, dim_id):
-            print("found")
             yield (dim_id,)
         else:
-            print("not found")
+            pass
     else:
-        print("found ids", dim_ids)
         for dim_id in dim_ids:
             yield (dim_id,)
-
-
-import pandas as pd
 
 
 def _fix_continuous_column_types(
@@ -388,7 +393,7 @@ def _fix_continuous_column_types(
 def _build_indexed_version_of_tabular_data(
     db: SessionWithUser,
     dataset: TabularDataset,
-    constraint_columns,
+    constraint_columns: list[str],
     constraints: Dict[str, Any],
 ):
     # build indexed version of table
@@ -418,8 +423,6 @@ def _build_indexed_version_of_tabular_data(
 
 
 def query_tabular_dataset(db, index_cache, columns, dataset_id, **constraints):
-    # print("dataset_id", dataset_id, constraints)
-    # start = time.time()
     # not efficient, but first goal is something that works:
 
     try:
