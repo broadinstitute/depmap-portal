@@ -177,8 +177,7 @@ export const DepMap =
           },
         }
       ) as DepmapGlobalObject)
-    : // eslint-disable-next-line @typescript-eslint/no-use-before-define
-      polyfillProxy();
+    : polyfillProxy();
 
 // Proxy has pretty good browser support (https://caniuse.com/proxy) so this
 // function is not likely to be needed. But just in case, here's an old school

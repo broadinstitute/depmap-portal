@@ -55,11 +55,12 @@ RUN curl https://pyenv.run | bash
 
 # Install Python 3.9 and 3.10 with shared library support
 ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
-RUN pyenv install 3.9 && pyenv install 3.10 && pyenv global 3.9
+RUN pyenv install 3.9 && pyenv install 3.10 && pyenv install 3.13 && pyenv global 3.9
 
 # Create symlinks for python3.9 and python3.10 so they can be called directly
 RUN ln -s $(pyenv prefix 3.9)/bin/python /usr/local/bin/python3.9 && \
-    ln -s $(pyenv prefix 3.10)/bin/python /usr/local/bin/python3.10
+    ln -s $(pyenv prefix 3.10)/bin/python /usr/local/bin/python3.10 && \
+    ln -s $(pyenv prefix 3.13)/bin/python /usr/local/bin/python3.13
 
 RUN mkdir -p /root/.taiga && mkdir -p /root/.local/bin
 
@@ -71,7 +72,7 @@ RUN python3.9 -m venv /install/dsub && \
 
 # install sparkles v5 (requires python==3.10)
 RUN python3.10 -m venv /install/sparkles && \
-    /install/sparkles/bin/pip install https://github.com/broadinstitute/sparklespray/releases/download/v5.4.1/sparklespray-5.4.1.tar.gz && \
+    /install/sparkles/bin/pip install pip sparklespray==6.0.2 --extra-index-url https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/ && \
     ln -s /install/sparkles/bin/sparkles /root/.local/bin
 
 # install gcloud SDK
@@ -85,12 +86,12 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 
 # install conseq in virtual environment
 COPY conseq-settings /root/.conseq
-RUN python3.9 -m venv /install/conseq && \
-      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/releases/download/v2.0.3/conseq-2.0.3.tar.gz && \
+RUN python3.13 -m venv /install/conseq && \
+      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/archive/refs/tags/v2.2.1.tar.gz && \
     ln -s /install/conseq/bin/conseq /root/.local/bin
 
 # copy the conseq helper into known location
-RUN cp /install/conseq/lib/python3.9/site-packages/conseq/helper.py /helper.py
+RUN cp /install/conseq/lib/python3.13/site-packages/conseq/helper.py /helper.py
 
 # install Poetry
 RUN python3.9 -m venv /install/poetry && \

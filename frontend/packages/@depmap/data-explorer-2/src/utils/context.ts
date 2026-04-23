@@ -26,7 +26,7 @@ export function isNegatedContext(
     return false;
   }
 
-  return "!" in context.expr;
+  return "complement" in context.expr;
 }
 
 export const userContextStorageKey = () => {
@@ -250,7 +250,9 @@ export function negateContext(
     : `Not ${context.name}`;
 
   const prevExpr = context.expr as any;
-  const expr = prevExpr["!"] ? prevExpr["!"] : { "!": prevExpr };
+  const expr = prevExpr.complement
+    ? prevExpr.complement
+    : { complement: prevExpr };
 
   if (isV2Context(context)) {
     return {
@@ -258,6 +260,7 @@ export function negateContext(
       dimension_type: context.dimension_type,
       expr,
       vars: context.vars,
+      ...(context.contexts ? { contexts: context.contexts } : null),
     };
   }
 

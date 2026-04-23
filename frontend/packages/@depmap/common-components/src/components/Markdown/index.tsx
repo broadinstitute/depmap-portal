@@ -9,7 +9,7 @@ export interface MarkdownRendererProps {
 
 function Markdown({ children, className = undefined }: MarkdownRendererProps) {
   return (
-    <Suspense fallback={<Spinner />}>
+    <Suspense fallback={<Spinner position="static" />}>
       <LazyMarkdownCore className={className}>{children}</LazyMarkdownCore>
     </Suspense>
   );

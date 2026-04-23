@@ -177,16 +177,6 @@ const CollapsiblePanelBody = ({
           />
         </div>
       )}
-      {file.sources.length > 0 && (
-        <>
-          <div className={styles.collapsiblePanelSubHeader}>Sources</div>
-          <div className={styles.collapsiblePanelBodySection}>
-            {file.sources.map((source) => (
-              <div key={source}>{source}</div>
-            ))}
-          </div>
-        </>
-      )}
       {release && release.citation && (
         <>
           <div className={styles.collapsiblePanelSubHeader}>

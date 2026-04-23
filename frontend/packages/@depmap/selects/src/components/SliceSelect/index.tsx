@@ -1,76 +1,69 @@
 import React from "react";
-import { DataExplorerContextV2 } from "@depmap/types";
-import renderConditionally from "../../../utils/render-conditionally";
-import {} from "../useDimensionStateManager/types";
+import { SliceSelectProps } from "./types";
 import FallbackSliceSelect from "./FallbackSliceSelect";
 import DatasetSpecificSliceSelect from "./DatasetSpecificSliceSelect";
 import SearchIndexAwareSliceSelect from "./SearchIndexAwareSliceSelect";
 
-interface Props {
-  index_type: string | null;
-  slice_type: string | null | undefined;
-  dataset_id: string | null;
-  value: DataExplorerContextV2 | null;
-  onChange: (context: DataExplorerContextV2 | null) => void;
-  dataType: string | null;
-  //  units: string | null;
-  isUnknownDataset: boolean;
-  isLoading: boolean;
-  swatchColor?: string;
-  selectClassName?: string;
-}
-
 function SliceSelect({
-  index_type,
-  dataType,
   slice_type,
-  dataset_id,
   value,
   onChange,
-  isUnknownDataset,
-  isLoading,
-  swatchColor = undefined,
-  selectClassName = undefined,
-}: Props) {
+  swatchColor,
+  selectClassName,
+  isDatasetSpecificSlice = false,
+  isUnknownDataset = false,
+  dataset_id = null,
+  dataType = null,
+  label = "Dimension",
+  placeholder = "Select…",
+  isLoading = false,
+  menuPortalTarget = undefined,
+}: SliceSelectProps) {
   if (isUnknownDataset) {
     return (
       <FallbackSliceSelect
-        index_type={index_type}
+        label={label}
         value={value}
         onChange={onChange}
         selectClassName={selectClassName}
+        menuPortalTarget={menuPortalTarget}
       />
     );
   }
 
-  if (slice_type === undefined) {
+  if (!slice_type && !isDatasetSpecificSlice) {
     return null;
   }
 
-  if (slice_type === null) {
+  if (isDatasetSpecificSlice) {
     return (
       <DatasetSpecificSliceSelect
+        label={label}
+        placeholder={placeholder}
         dataset_id={dataset_id}
         value={value}
         onChange={onChange}
         selectClassName={selectClassName}
+        menuPortalTarget={menuPortalTarget}
       />
     );
   }
 
   return (
     <SearchIndexAwareSliceSelect
-      index_type={index_type}
+      slice_type={slice_type as string}
       dataType={dataType}
-      slice_type={slice_type}
       dataset_id={dataset_id}
       value={value}
       onChange={onChange}
+      label={label}
+      placeholder={placeholder}
       isLoading={isLoading}
       swatchColor={swatchColor}
       selectClassName={selectClassName}
+      menuPortalTarget={menuPortalTarget}
     />
   );
 }
 
-export default renderConditionally(SliceSelect);
+export default SliceSelect;

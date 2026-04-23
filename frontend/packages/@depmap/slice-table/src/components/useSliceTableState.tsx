@@ -14,7 +14,7 @@ import {
   isValidSliceQuery,
   SliceQuery,
 } from "@depmap/types";
-import useData, { RowFilters } from "./useData";
+import useData, { createUniqueColumnKey, RowFilters } from "./useData";
 import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
@@ -57,7 +57,8 @@ const defaultRowFilters = {
 
 export const filterPredicate = (
   columns: ReturnType<typeof useSliceTableState>["columns"],
-  implicitFilter: Props["implicitFilter"]
+  implicitFilter: Props["implicitFilter"],
+  sliceDataCache?: Map<string, Map<string, unknown>>
 ) => {
   if (!implicitFilter) {
     return () => true;
@@ -76,7 +77,17 @@ export const filterPredicate = (
           return isValidSliceQuery(colSq) && areSliceQueriesEqual(sq, colSq);
         });
 
-        return column ? row[column.id] : undefined;
+        if (column) {
+          return row[column.id];
+        }
+
+        // Fallback: look up cached data from columns that have been removed.
+        if (sliceDataCache) {
+          const cacheKey = createUniqueColumnKey(sq);
+          return sliceDataCache.get(cacheKey)?.get(id);
+        }
+
+        return undefined;
       },
     });
   };
@@ -113,6 +124,16 @@ export function useSliceTableState({
     prevIndexTypeName.current = index_type_name;
   }, [index_type_name]);
 
+  // Cache column data so that implicitFilter's getValue callback can still
+  // resolve values for columns the user has removed. The cache is keyed by
+  // the same unique column key that useData uses, and each entry maps
+  // row IDs to cell values. Because this effect runs every time `columns`
+  // or `data` change, the cache is always populated *before* a removal
+  // causes useData to drop the column.
+  const sliceDataCacheRef = useRef<Map<string, Map<string, unknown>>>(
+    new Map()
+  );
+
   // Convert rowSelection to selectedRowIds
   const selectedRowIds = useMemo(() => {
     return new Set(
@@ -144,6 +165,31 @@ export function useSliceTableState({
     slices,
     viewOnlySlices,
   });
+
+  // Populate the slice data cache whenever columns or data change.
+  useEffect(() => {
+    const cache = sliceDataCacheRef.current;
+
+    for (const col of columns) {
+      if (!isValidSliceQuery(col.meta.sliceQuery)) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
+      const cacheKey = createUniqueColumnKey(col.meta.sliceQuery);
+      const colValues = cache.get(cacheKey) || new Map<string, unknown>();
+
+      for (const row of data) {
+        const val = row[col.id];
+
+        if (val !== undefined) {
+          colValues.set(row.id as string, val);
+        }
+      }
+
+      cache.set(cacheKey, colValues);
+    }
+  }, [columns, data]);
 
   // Build a row filter predicate that combines hide-unselected and
   // hide-incomplete. This is passed to ReactTable's `rowFilter` prop so
@@ -239,6 +285,8 @@ export function useSliceTableState({
   );
 
   const handleClickAddColumn = useCallback(async () => {
+    const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+
     const newSlice = await chooseDataSlice({
       index_type_name,
       PlotlyLoader,
@@ -246,6 +294,7 @@ export function useSliceTableState({
       idColumnLabel,
       hiddenDatasets,
       extraHoverData: buildExtraHoverData(""),
+      visibleRowIds,
     });
 
     if (newSlice) {
@@ -264,6 +313,7 @@ export function useSliceTableState({
     PlotlyLoader,
     slices,
     buildExtraHoverData,
+    tableRef,
   ]);
 
   const handleClickEditColumn = useCallback(
@@ -282,6 +332,8 @@ export function useSliceTableState({
         ? "property"
         : "custom";
 
+      const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+
       const editedSlice = await chooseDataSlice({
         defaultValue,
         initialSource,
@@ -291,6 +343,7 @@ export function useSliceTableState({
         idColumnLabel,
         hiddenDatasets,
         extraHoverData: buildExtraHoverData(column.id),
+        visibleRowIds,
       });
 
       if (editedSlice) {
@@ -308,19 +361,23 @@ export function useSliceTableState({
       PlotlyLoader,
       slices,
       buildExtraHoverData,
+      tableRef,
     ]
   );
 
   const handleClickViewColumn = useCallback(
     async (column: typeof columns[number]) => {
+      const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+
       showDataSlicePreview({
         index_type_name,
         PlotlyLoader,
         sliceQuery: column.meta.sliceQuery,
         extraHoverData: buildExtraHoverData(column.id),
+        visibleRowIds,
       });
     },
-    [index_type_name, PlotlyLoader, buildExtraHoverData]
+    [index_type_name, PlotlyLoader, buildExtraHoverData, tableRef]
   );
 
   const extendedColumns = useMemo(() => {
@@ -394,7 +451,7 @@ export function useSliceTableState({
                 message: (
                   <div>
                     Are you sure you want to remove the column{" "}
-                    <b>“{column.meta.sliceQuery.identifier}”</b>?
+                    <b>“{column.meta.idLabel}”</b>?
                   </div>
                 ),
                 yesText: "Remove",
@@ -473,7 +530,11 @@ export function useSliceTableState({
         // Apply implicit filter (scopes the dataset itself)
         if (
           implicitFilter &&
-          !filterPredicate(extendedColumns, implicitFilter)(row)
+          !filterPredicate(
+            extendedColumns,
+            implicitFilter,
+            sliceDataCacheRef.current
+          )(row)
         ) {
           return false;
         }
@@ -530,5 +591,6 @@ export function useSliceTableState({
     setRowSelection,
     shouldShowLabelColumn,
     numFiltersApplied: Object.values(rowFilters).filter(Boolean).length,
+    sliceDataCacheRef,
   };
 }

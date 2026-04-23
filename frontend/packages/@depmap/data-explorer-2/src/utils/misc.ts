@@ -75,15 +75,30 @@ export const isCompleteExpression = (expr: any) => {
     return false;
   }
 
-  const getValues = (subexpr: any) => {
-    const op = Object.keys(subexpr)[0];
-    return subexpr[op];
-  };
+  const isPopulated = (subexpr: any): boolean => {
+    if (subexpr == null) {
+      return false;
+    }
 
-  const isPopulated = (subexpr: any): boolean =>
-    Array.isArray(subexpr && getValues(subexpr))
-      ? getValues(subexpr).every(isPopulated)
-      : Boolean(subexpr || subexpr === 0);
+    if (typeof subexpr === "boolean" || typeof subexpr === "number") {
+      return true;
+    }
+
+    if (typeof subexpr === "string") {
+      return subexpr.length > 0;
+    }
+
+    if (Array.isArray(subexpr)) {
+      return subexpr.every(isPopulated);
+    }
+
+    if (typeof subexpr === "object") {
+      const values = Object.values(subexpr);
+      return values.length > 0 && values.every(isPopulated);
+    }
+
+    return false;
+  };
 
   return isPopulated(expr);
 };
@@ -240,7 +255,9 @@ export async function convertDimensionToSliceQuery(
   };
 }
 
-export const useDimensionType = (dimensionTypeName: string | null) => {
+export const useDimensionType = (
+  dimensionTypeName: string | null | undefined
+) => {
   const [dimensionType, setDimensionType] = useState<DimensionType | null>(
     null
   );
@@ -268,7 +285,7 @@ export const capitalize = (str: string) => {
 };
 
 export const uncapitalize = (str: string) => {
-  return str && str.replace(/\b[A-Z]/g, (c: string) => c.toLowerCase());
+  return str && str.replace(/\b[A-Z][^A-Z]/g, (s: string) => s.toLowerCase());
 };
 
 // FIXME: This is a rather naive implementation.

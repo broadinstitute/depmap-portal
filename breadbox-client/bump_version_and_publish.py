@@ -197,7 +197,12 @@ def rule_from_conventional_commit_type(commit_type, is_breaking):
     elif commit_type in MINOR_CONVENTIONAL_COMMIT_TYPES:
         return lambda major, minor, patch: (major, minor+1, 0)
     elif commit_type in IGNORE_CONVENTIONAL_COMMIT_TYPES:
-        return lambda major, minor, patch: (major, minor, patch)
+        # Ignored types (build, chore, ci, docs, ...) must not yield a bump
+        # rule at all. Returning a no-op lambda here causes get_bumps() to
+        # yield these commits, which then makes the script "bump" the version
+        # to the same value it already has -- tripping the assert in
+        # update_version_in_files() when the regex substitution is a no-op.
+        return None
     else:
         return None
 

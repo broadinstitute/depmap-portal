@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import { showInfoModal } from "@depmap/common-components";
-import DetailsModal from "../DimensionSelectV2/useModal/DatasetDetails";
+import DatasetDetails from "../../utils/DatasetDetails";
 
 interface Props {
   dataset_id: string;
@@ -45,7 +45,7 @@ function AnnotationDetailsModal({ dataset_id }: Props) {
 
   return (
     <div ref={ref}>
-      <DetailsModal isLoading={isLoading} description={description} />
+      <DatasetDetails isLoading={isLoading} description={description} />
     </div>
   );
 }

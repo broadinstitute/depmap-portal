@@ -6,7 +6,12 @@ import {
   SliceQuery,
 } from "@depmap/types";
 import { isCompleteExpression } from "../../../utils/misc";
-import { Expr, getVariableNames, flattenExpr } from "../utils/expressionUtils";
+import {
+  Expr,
+  getContextNames,
+  getVariableNames,
+  flattenExpr,
+} from "../utils/expressionUtils";
 import simplifyVarNames from "../utils/simplifyVarNames";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 
@@ -20,14 +25,21 @@ function useMatches(expr: Expr) {
   // requestId is incremented every time a new request starts
   const latestRequestId = useRef(0);
 
-  const { dimension_type, vars, fullySpecifiedVars } = useContextBuilderState();
+  const {
+    dimension_type,
+    vars,
+    fullySpecifiedVars,
+    embeddedContexts,
+  } = useContextBuilderState();
 
   useEffect(() => {
     const varNames = getVariableNames(expr);
+    const embeddedContextNames = getContextNames(expr);
 
     const isReady =
       isCompleteExpression(expr) &&
-      varNames.every((v) => fullySpecifiedVars.has(v));
+      varNames.every((v) => fullySpecifiedVars.has(v)) &&
+      embeddedContextNames.every((c) => c in embeddedContexts);
 
     if (!isReady) {
       setNumMatches(null);
@@ -38,6 +50,12 @@ function useMatches(expr: Expr) {
     const exprVars = Object.fromEntries(
       Object.entries(vars).filter(([key]) => varNames.includes(key))
     ) as Record<string, SliceQuery>;
+
+    const exprContexts = Object.fromEntries(
+      Object.entries(embeddedContexts).filter(([key]) =>
+        embeddedContextNames.includes(key)
+      )
+    );
 
     const requestId = ++latestRequestId.current;
 
@@ -51,6 +69,7 @@ function useMatches(expr: Expr) {
             dimension_type,
             expr: flattenExpr(expr) as DataExplorerContextExpression,
             vars: exprVars,
+            contexts: exprContexts,
           } as DataExplorerContextV2)
         );
 
@@ -72,7 +91,7 @@ function useMatches(expr: Expr) {
         }
       }
     })();
-  }, [expr, dimension_type, fullySpecifiedVars, vars]);
+  }, [expr, dimension_type, fullySpecifiedVars, vars, embeddedContexts]);
 
   return { isLoading, hasError, matchingIds, numMatches, numCandidates };
 }

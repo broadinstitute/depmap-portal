@@ -275,4 +275,4 @@ def compute_associations(
     )
     mask = ~pd.isna(with_ids["cor"])  # boolean Series
     filtered = with_ids.loc[mask]
-    return filtered.set_index("given_id")["cor"]
+    return filtered[["given_id", "label", "cor"]]

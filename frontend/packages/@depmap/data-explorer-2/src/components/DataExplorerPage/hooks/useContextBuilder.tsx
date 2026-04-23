@@ -110,7 +110,7 @@ export default function useContextBuilder(
     path: ContextPath | null
   ) => {
     const isNegated = Boolean(
-      typeof context.expr === "object" && context.expr["!"]
+      typeof context.expr === "object" && context.expr.complement
     );
 
     contextToEdit.current = isNegated ? negateContext(context) : context;

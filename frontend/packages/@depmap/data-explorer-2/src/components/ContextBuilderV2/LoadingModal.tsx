@@ -21,12 +21,15 @@ function LoadingModal({ backdrop, context, isExistingContext, onHide }: Props) {
   return (
     <Modal
       show
-      id="context-builder-modal"
       className={styles.ContextBuilder}
+      dialogClassName="context-builder"
       backdrop={backdrop}
       onHide={onHide}
       bsSize="large"
       keyboard={false}
+      onEnter={(node) => {
+        (node!.parentNode as HTMLElement).classList.add("context-builder");
+      }}
     >
       <ContextBuilderHeader
         hasExpr={"expr" in context}

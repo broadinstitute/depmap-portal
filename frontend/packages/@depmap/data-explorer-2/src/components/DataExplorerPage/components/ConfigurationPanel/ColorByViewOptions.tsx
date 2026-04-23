@@ -1,7 +1,7 @@
 import React from "react";
 import { ContextPath, DataExplorerContextV2, FilterKey } from "@depmap/types";
 import ContextSelectorV2 from "../../../ContextSelectorV2";
-import SliceSelect from "../../../DimensionSelectV2/SliceSelect";
+import DimensionSliceSelect from "../../../DimensionSelectV2/DimensionSliceSelect";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
 import {
@@ -69,8 +69,9 @@ function ColorByViewOptions({
       <div className={styles.colorByContext}>
         {(["color1", "color2"] as FilterKey[]).map((filterKey) => (
           <React.Fragment key={filterKey}>
-            <SliceSelect
+            <DimensionSliceSelect
               show={color_by === "raw_slice"}
+              units={null}
               isUnknownDataset={false}
               isLoading={false}
               dataType={null}

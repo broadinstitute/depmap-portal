@@ -1,7 +1,7 @@
 import React from "react";
 import { Highlighter, Tooltip, WordBreaker } from "@depmap/common-components";
 import { tokenize } from "./utils";
-import styles from "../../../styles/DimensionSelect.scss";
+import styles from "../../styles/SliceSelect.scss";
 
 interface Option {
   value: string;

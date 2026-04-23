@@ -3,8 +3,8 @@ export interface DimensionType {
   display_name: string;
   id_column: string;
   axis: "feature" | "sample";
-  metadata_dataset_id?: string | null;
-  properties_to_index?: string[] | null;
+  metadata_dataset_id: string | null;
+  properties_to_index: string[];
 }
 
 export interface DimensionTypeWithCounts extends DimensionType {
