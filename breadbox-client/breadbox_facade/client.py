@@ -1,4 +1,5 @@
 import base64
+from datetime import date, datetime
 import hashlib
 import io
 
@@ -619,8 +620,14 @@ class BBClient:
     
     # RELEASE VERSIONS
     
-    def get_release_versions(self, release_name: Union[Optional[str], Unset] = UNSET, datatype: Union[Optional[str], Unset] = UNSET, start_date: Union[Optional[str], Unset] = UNSET, end_date: Union[Optional[str], Unset] = UNSET, include_files: bool = False ) -> List[ReleaseVersionResponse]:
+    def get_release_versions(self, release_name: Union[Optional[str], Unset] = UNSET, datatype: Union[Optional[str], Unset] = UNSET, start_date: Union[Optional[str], Unset] = UNSET, end_date: Union[Optional[date], Unset] = UNSET, include_files: bool = False ) -> List[ReleaseVersionResponse]:
         """Get all release versions with options to filter by release_name, datatype, start_date, end_date, include_files."""
+        if isinstance(start_date, str):
+            start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+
+        if isinstance(end_date, str):
+            end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+            
         breadbox_response = get_release_versions_client.sync_detailed(client=self.client,release_name=release_name,
         datatype=datatype,
         start_date=start_date,
