@@ -24,13 +24,13 @@ include = [
 python = "^3.9"
 attrs = ">=21.3.0"
 python-dateutil = "^2.8.0"
-pytest = "^7.2.0"
 pandas = ">=1.5.1"
 httpx = "^0.28.1"
 
 [tool.poetry.group.dev.dependencies]
 pyright = "^1.1.379"
 pyarrow = ">3.0.0"
+pytest = "^7.2.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
