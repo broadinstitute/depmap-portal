@@ -638,9 +638,9 @@ class BBClient:
         return self._parse_client_response(breadbox_response)
 
     
-    def get_release_version(self, include_files: bool = False) -> ReleaseVersionResponse:
+    def get_release_version(self, release_version_id: str, include_files: bool = False) -> ReleaseVersionResponse:
         """Get a single release with the option to include_files."""
-        breadbox_response = get_release_version_client.sync_detailed(client=self.client, include_files=include_files)
+        breadbox_response = get_release_version_client.sync_detailed(client=self.client, release_version_id=release_version_id, include_files=include_files)
         return self._parse_client_response(breadbox_response)
         
     def create_release_version(self, params: CreateReleaseVersionParams) -> ReleaseVersionResponse:
