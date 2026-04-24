@@ -622,6 +622,8 @@ class BBClient:
     
     def get_release_versions(self, release_name: Union[Optional[str], Unset] = UNSET, datatype: Union[Optional[str], Unset] = UNSET, start_date: Union[Optional[str], Unset] = UNSET, end_date: Union[Optional[date], Unset] = UNSET, include_files: bool = False ) -> List[ReleaseVersionResponse]:
         """Get all release versions with options to filter by release_name, datatype, start_date, end_date, include_files."""
+        start_date_obj = None 
+        end_date_obj = None
         if isinstance(start_date, str):
             start_date_obj = datetime.strptime(start_date, "%Y-%m-%d").date()
 
