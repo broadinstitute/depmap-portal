@@ -267,7 +267,7 @@ const CompoundPageTabs = ({
                     <CorrelationAnalysis
                       compoundDatasetOptions={sortedOptions.correlation}
                       geneDatasetOptions={[]}
-                      featureName={compoundId}
+                      featureName={compoundName}
                       featureId={compoundId}
                       featureType={"compound"}
                     />
