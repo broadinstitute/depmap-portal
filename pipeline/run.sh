@@ -54,7 +54,8 @@ fi
 
 ( cd depmap-deploy && git checkout "$DEPMAP_DEPLOY_BRANCH" )
 
-IMAGE_NAME=$(cat ${SCRIPT_HOME}/image-name)
+# sets the variable DOCKER_IMAGE
+source ${SCRIPT_HOME}/image-name
 
 # Start docker container
 cd "$SCRIPT_HOME"
@@ -68,6 +69,6 @@ exec docker run --rm \
   -v ${TAIGA_HOME}:/root/.taiga \
   -e GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS} \
   --name ${DOCKER_CONTAINER_NAME} \
-  ${IMAGE_NAME} \
+  ${DOCKER_IMAGE} \
   poetry run "$@"
 
