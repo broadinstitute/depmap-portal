@@ -80,7 +80,7 @@ class PipelineRunner:
     ) -> subprocess.CompletedProcess:
         """Run a subprocess, or print the command if in dryrun mode."""
         if isinstance(cmd, str):
-            cmd = cmd.split(" ")
+            cmd = cmd.strip().split(" ")
 
         wd = kwargs.get("cwd", os.getcwd())
 
