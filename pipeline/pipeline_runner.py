@@ -82,9 +82,13 @@ class PipelineRunner:
         if isinstance(cmd, str):
             cmd = cmd.split(" ")
 
+        wd = kwargs.get("cwd", os.getcwd())
+
         if self.dryrun:
-            log.info("[dryrun] %s", " ".join(str(a) for a in cmd))
+            cmd_str = " ".join(str(a) for a in cmd)
+            log.info(f"[dryrun] in {repr(wd)} run : {cmd_str}")
             return subprocess.CompletedProcess(cmd, 0)
+
         return subprocess.run(cmd, **kwargs)
 
     def get_git_commit_sha(self):
@@ -262,12 +266,12 @@ class PipelineRunner:
             self.subprocess_run(
                 "conseq run downloaded-export.conseq",
                 check=True,
-                cwd=str(self.script_path.parent),
+                cwd=str(self.config.working_dir),
             )
             self.subprocess_run(
                 "conseq forget --regex 'publish.*'",
                 check=True,
-                cwd=str(self.script_path.parent),
+                cwd=str(self.config.working_dir),
             )
 
     def run(self, args: argparse.Namespace) -> None:
@@ -285,18 +289,18 @@ class PipelineRunner:
             log.info("executing: conseq %s", " ".join(config.conseq_args))
             result = self.subprocess_run(
                 f"conseq -D is_dev=False {' '.join(config.conseq_args)}",
-                cwd=str(self.script_path.parent),
+                cwd=str(self.config.working_dir),
             )
             run_exit_status = result.returncode
         else:
             # Clean up unused directories from past runs
-            result = self.subprocess_run("conseq gc", cwd=str(self.script_path.parent))
+            result = self.subprocess_run("conseq gc", cwd=str(self.config.working_dir))
             assert result.returncode == 0, "Conseq gc failed"
 
             # Build and run main conseq command
             conseq_run_cmd = self.build_conseq_run_command(config)
             result = self.subprocess_run(
-                conseq_run_cmd, cwd=str(self.script_path.parent)
+                conseq_run_cmd, cwd=str(self.config.working_dir)
             )
             run_exit_status = result.returncode
 
@@ -333,7 +337,7 @@ class PipelineRunner:
     def handle_post_run_tasks(self, config: CommonConfig) -> None:
         """Handle post-run tasks. Subclasses should call super() after their own logic."""
         self.subprocess_run(
-            "conseq report html", check=True, cwd=str(self.script_path.parent)
+            "conseq report html", check=True, cwd=str(self.config.working_dir)
         )
         if self.dryrun:
             log.info("[dryrun] skipping track_dataset_usage")
@@ -346,7 +350,7 @@ class PipelineRunner:
             self.subprocess_run(
                 f"conseq export {config.conseq_file} {config.export_path}",
                 check=True,
-                cwd=str(self.script_path.parent),
+                cwd=str(self.config.working_dir),
             )
 
 
