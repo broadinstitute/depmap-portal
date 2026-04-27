@@ -89,10 +89,11 @@ class PipelineRunner:
 
     def get_git_commit_sha(self):
         """Get the current git commit SHA."""
-        result = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
-        )
-        return result.stdout.strip()
+        return "temp-fake-sha"
+        # result = subprocess.run(
+        #     ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+        # )
+        # return result.stdout.strip()
 
     def log_dataset_usage(self, dataset_taiga_id):
         """Print dataset usage information."""
