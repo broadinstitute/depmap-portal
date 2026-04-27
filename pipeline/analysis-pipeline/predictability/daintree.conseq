@@ -42,6 +42,7 @@ rule process_model_config:
 
         # Script to generate daintree input config file
         script=fileref("scripts/generate_daintree_input_configs.py"),
+        check_daintree_cache=fileref("scripts/check_daintree_cache.py"),
 
         # whether this is a test run or not
         is_test_run={"type": "daintree-test-run-flags"}
