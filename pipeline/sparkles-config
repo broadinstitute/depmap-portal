@@ -6,5 +6,6 @@ machine_type=n2-highmem-2
 account=this-parameter-is-not-used-and-will-eventually-be-removed
 boot_volume_in_gb=40
 default_image=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:invalid
+sparklesworker_image=us-central1-docker.pkg.dev/cds-docker-containers/docker/sparklesworker:5.8.2-test
 mount_1_type=pd-balanced
 mount_1_size_in_gb=50
