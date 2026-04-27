@@ -42,7 +42,6 @@ rule process_model_config:
 
         # Script to generate daintree input config file
         script=fileref("scripts/generate_daintree_input_configs.py"),
-        check_daintree_cache=fileref("scripts/check_daintree_cache.py"),
 
         # whether this is a test run or not
         is_test_run={"type": "daintree-test-run-flags"}
@@ -72,6 +71,7 @@ rule run_fit_models:
         sparkles_config=fileref("../../sparkles-config-n4-standard-4"),
         create_workflow_script=fileref("scripts/create_daintree_workflow.py"),
         daintree_preprocess_script=fileref("scripts/daintree_preprocess.py"),
+        check_daintree_cache=fileref("scripts/check_daintree_cache.py"),
         # whether this is a test run or not
         is_test_run={"type": "daintree-test-run-flags"}
 
@@ -93,7 +93,7 @@ rule run_fit_models:
     run """{% if inputs.is_test_run.run_all_configs == 'yes' and inputs.is_test_run.fit_all_actuals == 'yes' %}python3 {{ inputs.check_daintree_cache.filename }} \
       --no-run \
       --expected-output daintree-output.json \
-      --cache-root {{config.S3_STAGING_URL}}/daintree-cache \
+      --cache-root {{config.S3_STAGING_URL}}/daintree-cache -- \
       {{ inputs.daintree_input_config.filename }} \
         {% endif %}{{config.sparkles_path}} workflow run \
         --nodes 300 \
