@@ -64,11 +64,6 @@ class CommonConfig(BaseModel):
     """Common configuration shared across all pipeline runs."""
 
     env_name: str
-    job_name: str
-    taiga_dir: str
-    creds_dir: str
-    image: Optional[str] = None
-    docker_image: str
     commit_sha: str
     state_path: str
     s3_staging_url: str
