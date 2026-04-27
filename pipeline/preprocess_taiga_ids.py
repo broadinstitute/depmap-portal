@@ -33,28 +33,20 @@ def _resolve_versioned_dataset_id(taiga_permaname):
     return latest_cache[taiga_permaname]
 
 
-def _rewrite_stream(vars, in_name, in_lines, out_fd, search_ancestors):
+def _rewrite_stream(vars, in_name, in_lines, out_fd, dirs_to_check):
     errors = []
     fd = out_fd
     for line in in_lines:
         m = re.match('#\\s*TAIGA_PREPROCESSOR_INCLUDE\\s+"([^"]+)"\\s*', line)
         if m is not None:
             filename = m.group(1)
-            if search_ancestors:
-                filename = _search_ancestors(filename, os.path.dirname(in_name))
-            else:
-                filename = os.path.join(os.path.dirname(in_name), filename)
-                if not os.path.exists(filename):
-                    raise UserError(
-                        f"Could not open {filename} which was included from {in_name}"
-                    )
+
+            filename = _find_template_file(filename, dirs_to_check, in_name)
 
             with open(filename, "rt") as fd_in:
                 included_lines = fd_in.readlines()
                 try:
-                    _rewrite_stream(
-                        vars, filename, included_lines, fd, search_ancestors
-                    )
+                    _rewrite_stream(vars, filename, included_lines, fd, dirs_to_check)
                 except UserError as user_error:
                     raise UserError(
                         f"Could not process {filename} (included from {in_name}) due to error: \n  {user_error.message}"
@@ -130,55 +122,80 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd, search_ancestors):
         )
 
 
-def rewrite_file(in_name, out_name, search_ancestors):
+def rewrite_file(in_name, out_name, dirs_to_check):
     with open(in_name, "rt") as fd:
         lines = fd.readlines()
 
     vars = {}
     with open(out_name, "wt") as out_fd:
-        _rewrite_stream(vars, in_name, lines, out_fd, search_ancestors)
+        _rewrite_stream(vars, in_name, lines, out_fd, dirs_to_check)
 
 
-def _search_ancestors(filename, starting_point=None):
-    starting_points = []
+def _raise_could_not_find(filename: str, checked_paths: list[str], included_from=None):
+    paths = "\n".join(["   " + x for x in checked_paths])
+    if included_from is None:
+        raise UserError(f"Could not find {filename} (checked :\n{paths})")
+    else:
+        raise UserError(
+            f"Could not find {filename} included from {included_from} (checked :\n{paths})"
+        )
 
-    if starting_point is not None:
-        starting_points.append(starting_point)
-    starting_points.append(os.getcwd())
+
+def _find_template_file(filename, dirs_to_check: list[str], included_from=None):
+    if included_from is not None:
+        dirs_to_check.insert(0, os.path.dirname(included_from))
 
     checked_paths = []
-    for ancestor_dir in starting_points:
-        while True:
-            possible_path = os.path.join(ancestor_dir, filename)
-            checked_paths.append(possible_path)
-            if os.path.exists(possible_path):
-                return possible_path
-            next_dir = os.path.dirname(ancestor_dir)
-            if next_dir == ancestor_dir:
-                break
-            ancestor_dir = next_dir
-    paths = "\n".join(["   " + x for x in checked_paths])
-    raise UserError(f"Could not find {filename} (checked :\n{paths})")
+    for dir in dirs_to_check:
+        full_path = os.path.join(dir, filename)
+        checked_paths.append(full_path)
+
+        if os.path.exists(full_path):
+            return full_path
+
+    _raise_could_not_find(filename, checked_paths, included_from)
+
+
+def _find_in_ancestor_dirs(filename: str, cur_dir: str):
+    checked_paths = []
+    while True:
+        possible_path = os.path.join(cur_dir, filename)
+        checked_paths.append(possible_path)
+        if os.path.exists(possible_path):
+            return possible_path
+        next_dir = os.path.dirname(cur_dir)
+        if next_dir == cur_dir:
+            break
+        cur_dir = next_dir
+    _raise_could_not_find(filename, checked_paths)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("src_file")
-    parser.add_argument("dst_file")
     parser.add_argument(
-        "--search-ancestors",
-        help="if set, looks for src_file in an ancestor folder",
-        action="store_true",
+        "src_file",
+        help="The template to read (path should be relative to one of the directories provided via --search)",
+    )
+    parser.add_argument("dst_file", help="Where to write the output file")
+    # this is to cope with the messy situation we find ourselves in. Some of the conseq templates are in depmap-deploy and some are in the
+    # corresponding pipeline directory. To make things worse: the jenkins checkout has depmap-deploy in a different place then a developer checkout.
+    # So, let's just specify a list of directories (And tolerate that the directories just are in some ancestor of our current working path) to search and it can check all of them.
+    parser.add_argument(
+        "--search",
+        action="append",
+        help="A directory to search for files. This name will searched the current working dir or in any ancestor",
     )
 
     arg = parser.parse_args()
     dst_file = arg.dst_file
     src_file = arg.src_file
-    if arg.search_ancestors:
-        src_file = _search_ancestors(src_file)
+
+    dirs_to_check = [_find_in_ancestor_dirs(x, os.getcwd()) for x in arg.search]
+
+    src_file = _find_template_file(src_file, dirs_to_check)
 
     try:
-        rewrite_file(src_file, dst_file, arg.search_ancestors)
+        rewrite_file(src_file, dst_file, dirs_to_check)
     except UserError as err:
         log.error(f'Got error when prococessing "{src_file}": {err.message}')
         sys.exit(1)
