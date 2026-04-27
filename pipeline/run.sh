@@ -65,7 +65,7 @@ fi
 
 ( cd depmap-deploy && git checkout "$DEPMAP_DEPLOY_BRANCH" )
 
-IMAGE_NAME=$(cat ${$SCRIPT_HOME}/image-name)
+IMAGE_NAME=$(cat ${SCRIPT_HOME}/image-name)
 
 # Start docker container
 cd "$SCRIPT_HOME"
