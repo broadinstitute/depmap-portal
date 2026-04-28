@@ -51,6 +51,12 @@ def create_app(settings: Settings):
         name="elara",
     )
 
+    app.mount(
+        f"{api_prefix}/embed",
+        SinglePageApplication(directory=pathlib.Path("breadbox/static/embed")),
+        name="embed",
+    )
+
     if settings.host_scheme_override is not None:
         scheme_override, host_override = settings.host_scheme_override.split(":", 1)
         app.add_middleware(

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { Button } from "react-bootstrap";
 import {
   DataExplorerPlotConfig,
@@ -8,6 +8,7 @@ import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import Section from "../Section";
+import useCorrelationHeatmapData from "./prototype/useCorrelationHeatmapData";
 import PrototypeCorrelationHeatmap from "./prototype/PrototypeCorrelationHeatmap";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotSelections from "./PlotSelections";
@@ -28,18 +29,6 @@ interface Props {
   ) => void;
   onClickShowDensityFallback: () => void;
 }
-
-const formatDimension = (zs: number[], i: number) =>
-  zs
-    .map((val, j) => (i > j ? undefined : val))
-    .map((val, j) => {
-      if (val !== null) {
-        return val;
-      }
-
-      return i === j ? 1 : 0;
-    })
-    .reverse();
 
 function TooManyEntitiesWarning({
   data,
@@ -81,21 +70,6 @@ function TooManyEntitiesWarning({
   );
 }
 
-// WORKAROUND: The heatmap breaks the data model. A dimension usually has a
-// `values` property that is an array of numbers. The /get_correlation endpoint
-// returns an array of arrays of numbers.
-const assert2d = (array: unknown) => {
-  if (!Array.isArray(array)) {
-    throw new Error("not an array");
-  }
-
-  if (array.length > 0 && !Array.isArray(array[0])) {
-    throw new Error("not a 2D array");
-  }
-
-  return array as number[][];
-};
-
 function DataExplorerCorrelationHeatmap({
   data,
   plotConfig,
@@ -111,48 +85,16 @@ function DataExplorerCorrelationHeatmap({
   const { plotStyles } = useDataExplorerSettings();
   const { palette, xAxisFontSize } = plotStyles;
 
-  const memoizedData = useMemo(
-    () =>
-      data && !isLoading
-        ? {
-            x: data.index_labels.slice().reverse(),
-            y: data.index_labels,
-            z: assert2d(data.dimensions.x.values).map(formatDimension),
-            z2: data.dimensions.x2
-              ? assert2d(data.dimensions.x2.values).map(formatDimension)
-              : null,
-            zLabel: `${data.dimensions.x.axis_label}<br>${data.dimensions.x.dataset_label}`,
-            z2Label: data.dimensions.x2
-              ? `${data.dimensions.x2.axis_label}<br>${data.dimensions.x2.dataset_label}`
-              : "",
-          }
-        : null,
-    [data, isLoading]
-  );
+  const {
+    heatmapData,
+    xLabels,
+    yLabels,
+    showWarning,
+  } = useCorrelationHeatmapData(data, isLoading);
 
   const handleSelectLabels = (labels: string[]) => {
     setSelectedLabels(new Set(labels));
   };
-
-  const showWarning = data?.dimensions.x?.axis_label === "cannot plot";
-
-  // If there are index_display_labels, use these for graphing
-  // so that we can prioritize cell line name over model id.
-  const memoizedXLabels = useMemo(
-    () =>
-      data && !isLoading
-        ? (data.index_display_labels || data.index_labels).slice().reverse()
-        : null,
-    [data, isLoading]
-  );
-
-  const memoizedYLabels = useMemo(
-    () =>
-      data && !isLoading
-        ? data.index_display_labels || data.index_labels
-        : null,
-    [data, isLoading]
-  );
 
   return (
     <div className={styles.DataExplorerScatterPlot}>
@@ -177,15 +119,15 @@ function DataExplorerCorrelationHeatmap({
           )}
           {data && !isLoading && !showWarning && (
             <PrototypeCorrelationHeatmap
-              data={memoizedData}
-              xLabels={memoizedXLabels!}
-              yLabels={memoizedYLabels!}
+              data={heatmapData}
+              xLabels={xLabels!}
+              yLabels={yLabels!}
               xKey="x"
               yKey="y"
               zKey="z"
-              z2Key={memoizedData!.z2 ? "z2" : undefined}
-              zLabel={memoizedData!.zLabel}
-              z2Label={memoizedData!.z2Label}
+              z2Key={heatmapData!.z2 ? "z2" : undefined}
+              zLabel={heatmapData!.zLabel}
+              z2Label={heatmapData!.z2Label}
               height="auto"
               onLoad={setPlotElement}
               onSelectLabels={handleSelectLabels}

@@ -655,6 +655,9 @@ function PrototypeScatterPlot({
       // Allows the user to move annotations (but just the tail and not the
       // whole thing).
       edits: { annotationTail: true },
+
+      displaylogo: false,
+      modeBarButtonsToRemove: ["select2d", "lasso2d"],
     };
 
     Plotly.react(plot, plotlyData, layout, config);

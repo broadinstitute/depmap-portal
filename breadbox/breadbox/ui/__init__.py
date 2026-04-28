@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Tuple
 
 from fastapi.staticfiles import StaticFiles
@@ -30,8 +31,7 @@ class SinglePageApplication(StaticFiles):
         # WORKAROUND: For some reason, this prefix gets added to paths when
         # Breadbox is running in one of our deployed environments. It doesn't
         # happen locally. Maybe it has to do with the Docker config?
-        if path.startswith("elara/"):
-            path = path.replace("elara/", "")
+        path = re.sub(r"^(elara|embed)/", "", path)
 
         full_path, stat_result = super().lookup_path(path)
 
