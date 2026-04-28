@@ -53,6 +53,30 @@ def view_data_page():
     )
 
 
+@blueprint.route("/new")
+def view_data_page2():
+    release_notes_url = current_app.config.get("RELEASE_NOTES_URL")
+    forum_url = current_app.config.get("FORUM_URL")
+
+    if request.args.get("release") == "LATEST_DEPMAP":
+        new_args: Dict[str, Any] = dict(**request.args)
+        latest = get_download_list()[0]
+        new_args["release"] = latest.name
+
+        # Weird workaround for pyright
+        tabKey: Any = "tab"
+        tabVal: Any = "allData"
+        new_args[tabKey] = tabVal
+
+        return redirect(url_for("data_page.view_data_page2", **new_args))
+
+    return render_template(
+        "data_page/index.html",
+        release_notes_url=release_notes_url,
+        forum_url=forum_url,
+    )
+
+
 @blueprint.route("/api/data")
 def get_all_data():
     """
