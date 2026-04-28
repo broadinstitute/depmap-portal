@@ -7,34 +7,16 @@ import sys
 import tempfile
 import uuid
 from typing import Union
-
-import yaml
 from pathlib import Path
 from datetime import datetime
+import re
+from pipeline_config import CommonConfig
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
 
-from pipeline_config import (
-    CommonConfig,
-    DefaultsConfig,
-    PipelineConfig,
-)
 
-import re
-
-
-def load_pipeline_config() -> PipelineConfig:
-    """Load pipeline configuration from the shared YAML file."""
-    config_path = Path(__file__).parent / "pipeline_config.yaml"
-    assert config_path.exists(), f"Config file not found: {config_path}"
-    with open(config_path, "r") as f:
-        raw = yaml.safe_load(f)
-    assert raw, "Config file is empty or invalid"
-    return PipelineConfig.model_validate(raw)
-
-
-def create_argument_parser(defaults: DefaultsConfig) -> argparse.ArgumentParser:
+def create_argument_parser() -> argparse.ArgumentParser:
     """Create the shared argument parser for all pipeline runners."""
     parser = argparse.ArgumentParser(description="Run pipeline")
     parser.add_argument("--deploy-name", help="Name of environment", required=True)
@@ -72,7 +54,6 @@ class PipelineRunner:
         self.dryrun = dryrun
         self.pipeline_run_id = str(uuid.uuid4())
         self.script_path = script_path
-        self.config = load_pipeline_config()
         self.pipeline_name = self.script_path.parent.name
 
     def subprocess_run(
@@ -311,13 +292,11 @@ class PipelineRunner:
 
     def build_conseq_run_command(self, config: CommonConfig) -> str:
         """Build the main conseq run command."""
-        conseq_cfg = self.config.conseq
-        common_args = " ".join(conseq_cfg.common_args)
 
         cmd_parts = [
             f"conseq run --addlabel commitsha={config.commit_sha}",
-            f"{common_args} --maxfail {conseq_cfg.max_fail}",
-            f"-D sparkles_path={conseq_cfg.sparkles_path}",
+            f"--no-reattach --remove-unknown-artifacts --maxfail 20",
+            f"-D sparkles_path=/install/sparkles/bin/sparkles",
             "-D is_dev=False",
         ]
 
@@ -353,8 +332,7 @@ class PipelineRunner:
 
 
 def main():
-    pipeline_config = load_pipeline_config()
-    parser = create_argument_parser(pipeline_config.defaults)
+    parser = create_argument_parser()
     args = parser.parse_args()
     runner = PipelineRunner(dryrun=args.dryrun, script_path=Path(__file__))
     runner.run(args)
