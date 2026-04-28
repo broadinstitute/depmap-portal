@@ -3,9 +3,7 @@ from .celery_task.utils import create_celery
 from .config import get_settings
 from breadbox.api.dependencies import get_user
 from fastapi import Request, status
-from fastapi.exception_handlers import (
-    http_exception_handler,
-)
+from fastapi.exception_handlers import http_exception_handler
 from .logging import configure_logging, GCPExceptionReporter
 
 configure_logging()
@@ -24,7 +22,9 @@ celery_app = create_celery()
 celery = celery_app
 
 # create the Google Cloud exception reporter class
-exception_reporter = GCPExceptionReporter(service="breadbox", env_name=settings.breadbox_env)
+exception_reporter = GCPExceptionReporter(
+    service="breadbox", env_name=settings.breadbox_env
+)
 
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -43,3 +43,6 @@ async def custom_exception_handler(request: Request, exc: Exception):
         request, status.HTTP_500_INTERNAL_SERVER_ERROR, get_user(request)
     )
     raise exc
+
+
+# force update
