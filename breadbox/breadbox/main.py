@@ -43,6 +43,3 @@ async def custom_exception_handler(request: Request, exc: Exception):
         request, status.HTTP_500_INTERNAL_SERVER_ERROR, get_user(request)
     )
     raise exc
-
-
-# force update
