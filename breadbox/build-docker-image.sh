@@ -21,6 +21,9 @@ git rev-parse HEAD > breadbox/git-sha
 yarn --cwd frontend install
 yarn --cwd frontend "build:elara"
 
+# Build the embeddable frontend
+yarn --cwd frontend "build:embed"
+
 # Build Docker image
 docker build \
  breadbox \

@@ -17,6 +17,7 @@
     "dev:portal:nocheck": "yarn workspace portal-frontend dev --env transpileOnly=true",
     "build:elara": "yarn workspace elara-frontend build",
     "build:portal": "yarn workspace portal-frontend build",
+    "build:embed": "yarn workspace embed-frontend build",
     "analyze:elara": "yarn workspace elara-frontend analyze",
     "analyze:portal": "yarn workspace portal-frontend analyze",
     "clear-eslint-cache": "rm -f node_modules/.cache/eslint-webpack-plugin/.eslintcache"

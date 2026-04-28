@@ -9,16 +9,7 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import {
-  LegendKey,
-  calcBins,
-  calcDensityStats,
-  calcVisibility,
-  categoryToDisplayName,
-  formatDataForScatterPlot,
-  getColorMap,
-  useLegendState,
-} from "./prototype/plotUtils";
+import useDensity1DPlotData from "./prototype/useDensity1DPlotData";
 import PrototypeDensity1D from "./prototype/PrototypeDensity1D";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import SectionStack, { StackableSection } from "../SectionStack";
@@ -65,6 +56,25 @@ function DataExplorerDensity1DPlot({
     xAxisFontSize,
     yAxisFontSize,
   } = plotStyles;
+
+  const {
+    formattedData,
+    continuousBins,
+    colorData,
+    legendKeysWithNoData,
+    legendState,
+    colorMap,
+    legendDisplayNames,
+    legendTitle,
+    pointVisibility,
+  } = useDensity1DPlotData(data, plotConfig, palette);
+
+  const {
+    hiddenLegendValues,
+    onClickLegendItem,
+    handleClickShowAll,
+    handleClickHideAll,
+  } = legendState;
 
   useEffect(() => {
     let timeout: number | undefined;
@@ -161,77 +171,6 @@ function DataExplorerDensity1DPlot({
       }
     },
     [data, setSelectedLabels]
-  );
-
-  const formattedData: any = useMemo(
-    () => formatDataForScatterPlot(data, plotConfig.color_by),
-    [data, plotConfig.color_by]
-  );
-
-  const continuousBins = useMemo(
-    () =>
-      formattedData?.contColorData
-        ? calcBins(formattedData.contColorData)
-        : null,
-    [formattedData]
-  );
-
-  const { sort_by } = plotConfig;
-
-  const [colorData, legendKeysWithNoData, sortedLegendKeys] = useMemo(
-    () => calcDensityStats(data, continuousBins, sort_by),
-    [data, continuousBins, sort_by]
-  );
-
-  const {
-    hiddenLegendValues,
-    onClickLegendItem,
-    handleClickShowAll,
-    handleClickHideAll,
-  } = useLegendState(plotConfig, legendKeysWithNoData);
-
-  const colorMap = useMemo(() => {
-    return getColorMap(data, plotConfig, palette, sortedLegendKeys);
-  }, [data, plotConfig, palette, sortedLegendKeys]);
-
-  const legendDisplayNames = useMemo(() => {
-    const out: Partial<Record<LegendKey, string>> = {};
-
-    if (!data) {
-      return out;
-    }
-
-    [...colorMap.keys()].forEach((key) => {
-      const name = categoryToDisplayName(key, data, continuousBins);
-      out[key] = typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
-    });
-
-    return out;
-  }, [colorMap, data, continuousBins]);
-
-  let legendTitle = "";
-
-  if (data?.dimensions?.color) {
-    legendTitle = `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`;
-  }
-
-  if (data?.metadata?.color_property) {
-    legendTitle = data.metadata.color_property.label;
-
-    if (data.metadata.dataset_label) {
-      legendTitle += `<br>${data.metadata.dataset_label}`;
-    }
-  }
-
-  const pointVisibility = useMemo(
-    () =>
-      calcVisibility(
-        data,
-        hiddenLegendValues,
-        continuousBins,
-        plotConfig.hide_points
-      ),
-    [data, hiddenLegendValues, continuousBins, plotConfig.hide_points]
   );
 
   return (

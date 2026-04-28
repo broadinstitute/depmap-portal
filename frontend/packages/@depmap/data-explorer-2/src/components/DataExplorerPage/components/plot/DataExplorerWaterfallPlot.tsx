@@ -8,19 +8,7 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import {
-  LegendKey,
-  calcBins,
-  calcVisibility,
-  categoryToDisplayName,
-  continuousValuesToLegendKeySeries,
-  findCategoricalSlice,
-  formatDataForWaterfall,
-  getColorMap,
-  getLegendKeysWithNoData,
-  sortLegendKeysWaterfall,
-  useLegendState,
-} from "./prototype/plotUtils";
+import useWaterfallPlotData from "./prototype/useWaterfallPlotData";
 import PrototypeScatterPlot from "./prototype/PrototypeScatterPlot";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotLegend from "./PlotLegend";
@@ -67,6 +55,25 @@ function DataExplorerWaterfallPlot({
     xAxisFontSize,
     yAxisFontSize,
   } = plotStyles;
+
+  const {
+    sortedLegendKeys,
+    formattedData,
+    continuousBins,
+    contLegendKeys,
+    legendKeysWithNoData,
+    legendState,
+    colorMap,
+    legendForDownload,
+    pointVisibility,
+  } = useWaterfallPlotData(data, plotConfig, palette);
+
+  const {
+    hiddenLegendValues,
+    onClickLegendItem,
+    handleClickShowAll,
+    handleClickHideAll,
+  } = legendState;
 
   useEffect(() => {
     let timeout: number | undefined;
@@ -167,110 +174,6 @@ function DataExplorerWaterfallPlot({
       }
     },
     [data, setSelectedLabels]
-  );
-
-  const sortedLegendKeys = useMemo(() => {
-    const catData = findCategoricalSlice(data);
-
-    if (!catData || !data?.dimensions?.y) {
-      return undefined;
-    }
-
-    return sortLegendKeysWaterfall(data, catData, plotConfig.sort_by) as
-      | LegendKey[]
-      | undefined;
-  }, [data, plotConfig.sort_by]);
-
-  const formattedData: {
-    annotationText: string[];
-    catColorData: (string | number | null)[] | null;
-    color1: (boolean | null)[] | null;
-    color2: (boolean | null)[] | null;
-    contColorData: (number | null)[] | null;
-    hoverText: string[];
-    x: (number | null)[] | null;
-    y: (number | null)[] | null;
-    xLabel: string | null;
-    yLabel: string | null;
-  } | null = useMemo(
-    () => formatDataForWaterfall(data, plotConfig.color_by, sortedLegendKeys),
-    [data, plotConfig, sortedLegendKeys]
-  );
-
-  const continuousBins = useMemo(
-    () =>
-      formattedData?.contColorData
-        ? calcBins(formattedData.contColorData)
-        : null,
-    [formattedData]
-  );
-
-  const [contLegendKeys] = useMemo(
-    () =>
-      formattedData?.contColorData
-        ? continuousValuesToLegendKeySeries(
-            formattedData.contColorData,
-            continuousBins
-          )
-        : [null],
-    [continuousBins, formattedData]
-  );
-
-  const legendKeysWithNoData = useMemo(() => {
-    return getLegendKeysWithNoData(data, continuousBins);
-  }, [data, continuousBins]);
-
-  const {
-    hiddenLegendValues,
-    onClickLegendItem,
-    handleClickShowAll,
-    handleClickHideAll,
-  } = useLegendState(plotConfig, legendKeysWithNoData);
-
-  const colorMap = useMemo(() => {
-    return getColorMap(data, plotConfig, palette, sortedLegendKeys);
-  }, [data, plotConfig, palette, sortedLegendKeys]);
-
-  // The plot only needs legend info if the user is downloading an image of it.
-  const legendForDownload = useMemo(() => {
-    let title = "";
-
-    if (data?.dimensions?.color) {
-      title = `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`;
-    }
-
-    if (data?.metadata?.color_property) {
-      title = data.metadata.color_property.label;
-    }
-
-    const items: { name: string; hexColor: string }[] = [];
-
-    [...colorMap.keys()].forEach((key) => {
-      if (!hiddenLegendValues.has(key)) {
-        const name = categoryToDisplayName(
-          key,
-          data as DataExplorerPlotResponse,
-          continuousBins
-        );
-        const formattedName =
-          typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
-
-        items.push({
-          name: formattedName,
-          hexColor: colorMap.get(key)!,
-        });
-      }
-    });
-
-    return {
-      title,
-      items,
-    };
-  }, [colorMap, data, continuousBins, hiddenLegendValues]);
-
-  const pointVisibility = useMemo(
-    () => calcVisibility(data, hiddenLegendValues, continuousBins),
-    [data, hiddenLegendValues, continuousBins]
   );
 
   return (

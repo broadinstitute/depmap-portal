@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "rootDir": "../"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.json"],
+  "exclude": ["**/__tests__/**", "**/__stories__/**", "**/stories/**"],
+  "references": [
+    { "path": "../@depmap/common-components" },
+    { "path": "../@depmap/data-explorer-2" },
+    { "path": "../@depmap/slice-table" },
+    { "path": "../@depmap/types" }
+  ]
+}
