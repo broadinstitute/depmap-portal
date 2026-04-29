@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import { ExternalLink, WordBreaker } from "@depmap/common-components";
-import { isElara, toPortalLink } from "@depmap/globals";
+import { isPortal, toPortalLink } from "@depmap/globals";
 import { serializeSliceQuery } from "@depmap/selects";
 import Papa from "papaparse";
 import type {
@@ -167,7 +167,7 @@ async function extractColumnRenames(
 }
 
 const isLinkable = (dimension_type?: string | null) =>
-  !isElara &&
+  isPortal &&
   dimension_type &&
   ["depmap_model", "gene", "compound_v2"].includes(dimension_type);
 

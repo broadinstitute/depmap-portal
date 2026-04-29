@@ -1,5 +1,5 @@
 import { LocalStorageListStore } from "./compatibility/ListStorage";
-import { isElara } from "@depmap/globals";
+import { isPortal } from "@depmap/globals";
 import type {
   DataExplorerContext,
   DataExplorerContextV2,
@@ -30,11 +30,7 @@ export function isNegatedContext(
 }
 
 export const userContextStorageKey = () => {
-  if (isElara) {
-    return "elara_contexts";
-  }
-
-  return "user_contexts";
+  return isPortal ? "user_contexts" : "elara_contexts";
 };
 
 export function loadContextsFromLocalStorage(context_type: string) {
@@ -44,7 +40,7 @@ export function loadContextsFromLocalStorage(context_type: string) {
   // ContextSelector component has smarts that will convert them to proper
   // contexts upon selection. This means they will gradually disappear over
   // time.
-  if (context_type === "depmap_model" && !isElara) {
+  if (context_type === "depmap_model" && isPortal) {
     const store = new LocalStorageListStore();
     store.importFromOldCellLineHighlighterIfExists();
 

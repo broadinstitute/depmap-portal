@@ -1,4 +1,4 @@
-import { getUrlPrefix, isElara } from "@depmap/globals";
+import { getUrlPrefix, isPortal } from "@depmap/globals";
 import createJsonClient from "../createJsonClient";
 
 const createAutoFailClient = () => {
@@ -45,7 +45,7 @@ const {
   deleteJson,
   postMultipart,
   patchMultipart,
-} = isElara ? createAutoFailClient() : createJsonClient(getUrlPrefix());
+} = isPortal ? createJsonClient(getUrlPrefix()) : createAutoFailClient();
 
 export {
   getJson,

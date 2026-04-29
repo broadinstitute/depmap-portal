@@ -38,18 +38,28 @@ export const depmapContactUrl: string = (window as any).depmapContactUrl;
 export const enabledFeatures: Record<string, boolean> =
   (window as any).enabledFeatures || makeMockEnabledFeatures();
 
-// Just a convenience function for looking up this flag.
-export const isElara: boolean = Boolean(enabledFeatures.elara);
+export const isPortal: boolean = Boolean(
+  document.getElementById("webpack-config")
+);
 
 export const getUrlPrefix = () => {
   if (process.env.JEST_WORKER_ID) {
     return "";
   }
 
-  if (isElara) {
+  if (enabledFeatures.elara) {
     // Detect when Elara is being served behind the DepMap Portal proxy.
     if (window.location.pathname.includes("/breadbox/elara")) {
       return window.location.pathname.replace(/\/elara\/.*$/, "");
+    }
+
+    return "";
+  }
+
+  if (enabledFeatures.embed) {
+    // Detect when Embed is being served behind the DepMap Portal proxy.
+    if (window.location.pathname.includes("/breadbox/embed")) {
+      return window.location.pathname.replace(/\/embed\/.*$/, "");
     }
 
     return "";
@@ -76,8 +86,8 @@ export const getUrlPrefix = () => {
 };
 
 export function toPortalLink(relativeUrl: string) {
-  if (isElara) {
-    throw new Error("Portal links are not supported in Elara!");
+  if (!isPortal) {
+    throw new Error("Portal links are not supported in this environment!");
   }
 
   const trimmed = relativeUrl.trim().replace(/^\//, "");
@@ -102,7 +112,13 @@ export function toStaticUrl(relativeUrl: string) {
 
   const encodedPath = path.split("/").map(encodeURIComponent).join("/");
   const assetUrl = `${encodedPath}${queryAndFragment || ""}`;
-  const staticFolder = isElara ? "elara/static" : "static";
+  const staticFolder = [
+    enabledFeatures.elara && "elara/",
+    enabledFeatures.embed && "embed/",
+    "static",
+  ]
+    .filter(Boolean)
+    .join("");
 
   return `${encodeURI(getUrlPrefix())}/${staticFolder}/${assetUrl}`;
 }
@@ -163,9 +179,11 @@ export const DepMap =
               `Cannot call \`window.DepMap.${
                 prop as string
               }()\` because that function is not defined. `,
-              isElara &&
+              enabledFeatures.elara &&
                 "Elara only supports a subset of the global DepMap object's properties.",
-              !isElara &&
+              enabledFeatures.embed &&
+                "The embeddable frontend does not support the global DepMap object.",
+              isPortal &&
                 "Only exported functions from " +
                   "frontend/packages/portal-frontend/src/index.tsx " +
                   "are callable.",

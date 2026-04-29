@@ -10,13 +10,22 @@ const EmbeddedPlot = lazy(() => import("./surfaces/EmbeddedPlot"));
 const EmbeddedTable = lazy(() => import("./surfaces/EmbeddedTable"));
 const McpView = lazy(() => import("./surfaces/McpView"));
 
-const BASE = "/embed";
-
 function App() {
   const path = window.location.pathname
     .replace(/\/index\.html$/, "")
     .replace(/\/$/, "");
-  const route = path.startsWith(BASE) ? path.slice(BASE.length) : path;
+
+  // Take everything after the LAST /embed/ segment. The frontend may be
+  // served at any depth depending on proxy configuration:
+  //   /embed/plot                            (local dev)
+  //   /portal/breadbox/embed/plot            (production, behind proxy)
+  //   /my/mock/proxy/embed/plot              (mock proxy for testing)
+  // lastIndexOf is defensive against the unlikely case where some prefix
+  // happens to contain "/embed" itself.
+  const embedIndex = path.lastIndexOf("/embed");
+  const route =
+    embedIndex >= 0 ? path.slice(embedIndex + "/embed".length) : path;
+
   let surface;
 
   switch (route) {
@@ -35,7 +44,8 @@ function App() {
     default:
       return (
         <div style={{ padding: 20 }}>
-          Please specify one of these supported routes:
+          Please specify one of these supported routes after{" "}
+          <code>/embed/</code>:
           <ul>
             <li>/plot</li>
             <li>/table</li>

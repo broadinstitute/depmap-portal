@@ -1,5 +1,5 @@
 import stableStringify from "json-stable-stringify";
-import { getUrlPrefix, isElara } from "@depmap/globals";
+import { getUrlPrefix, isPortal } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
 import getContextHash from "./get-context-hash";
 
@@ -35,9 +35,9 @@ const fallbackInMemoryCache: Record<
 // implements the same set of endpoints but stores them in its database
 // instead.
 const getCasUrl = () => {
-  return isElara
-    ? `${getUrlPrefix()}/temp/cas`
-    : `${getUrlPrefix()}/breadbox/temp/cas`;
+  return isPortal
+    ? `${getUrlPrefix()}/breadbox/temp/cas`
+    : `${getUrlPrefix()}/temp/cas`;
 };
 
 const getContextUrl = (hash: string) => {

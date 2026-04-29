@@ -5,7 +5,7 @@ import { Button } from "react-bootstrap";
 import { breadboxAPI, cached } from "@depmap/api";
 import { Spinner } from "@depmap/common-components";
 import { CustomAnalysisResult } from "@depmap/compute";
-import { isElara } from "@depmap/globals";
+import { isPortal } from "@depmap/globals";
 import {
   ComputeResponseResult,
   Dataset,
@@ -142,7 +142,9 @@ function AnalysisResult({ plot, dispatch }: Props) {
       );
     }
 
-    const baseUrl = isElara ? "../elara/custom_analysis" : "../custom_analyses";
+    const baseUrl = isPortal
+      ? "../custom_analyses"
+      : "../elara/custom_analysis";
 
     // The Custom Analyses page embeds an encoded version of all its
     // parameters into the query string so it can be easily re-run.

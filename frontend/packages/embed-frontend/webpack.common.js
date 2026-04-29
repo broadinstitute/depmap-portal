@@ -14,9 +14,7 @@ module.exports = {
       publicPath: "",
     }),
     new webpack.DefinePlugin({
-      // HACK: For now we'll simulate Elara. But there should really
-      // be an `embedded` flag or some such.
-      "window.enabledFeatures": JSON.stringify({ elara: true }),
+      "window.enabledFeatures": JSON.stringify({ embed: true }),
     }),
   ],
 
