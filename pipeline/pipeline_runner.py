@@ -69,7 +69,9 @@ class PipelineRunner:
             cmd_str = " ".join(str(a) for a in cmd)
             log.info(f"[dryrun] in {repr(wd)} run : {cmd_str}")
             return subprocess.CompletedProcess(cmd, 0)
-
+        else:
+            print("Running: ", " ".join(cmd))
+            sys.stdout.flush()
         return subprocess.run(cmd, **kwargs)
 
     def get_git_commit_sha(self):
@@ -198,7 +200,7 @@ class PipelineRunner:
             conseq_file = self.create_override_conseq_file(
                 original_conseq, config.publish_dest, config.s3_staging_url
             )
-            log.info("Created override conseq file: %s", conseq_file)
+            log.info(f"Created override conseq file: {conseq_file}")
         else:
             conseq_file = original_conseq
         return os.path.abspath(conseq_file)
@@ -300,15 +302,17 @@ class PipelineRunner:
             "-D is_dev=False",
         ]
 
-        cmd_parts.append(f"-D S3_STAGING_URL={config.s3_staging_url}")
+        if config.s3_staging_url:
+            cmd_parts.extend(["-D", f"S3_STAGING_URL={config.s3_staging_url}"])
         if config.publish_dest:
-            cmd_parts.append(f'-D publish_dest="{config.publish_dest}"')
-            cmd_parts.append("-D publish_data_prep=True")
+            cmd_parts.extend(["-D", f"publish_dest={config.publish_dest}"])
+            cmd_parts.extend(["-D", f"publish_data_prep=True"])
 
         assert (
             config.conseq_file is not None
         ), "conseq_file must be set before building run command"
-        cmd_parts.extend([config.conseq_file, " ".join(config.conseq_args)])
+        cmd_parts.extend([config.conseq_file])
+        cmd_parts.extend(config.conseq_args)
         return " ".join(cmd_parts)
 
     def handle_post_run_tasks(self, config: CommonConfig) -> None:
