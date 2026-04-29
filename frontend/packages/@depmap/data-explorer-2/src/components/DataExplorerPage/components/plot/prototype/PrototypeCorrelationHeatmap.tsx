@@ -301,6 +301,8 @@ function PrototypeCorrelationHeatmap({
     const config: Partial<Config> = {
       // Automatically resizes the plot when the window is resized.
       responsive: true,
+      displaylogo: false,
+      modeBarButtonsToRemove: ["select2d", "lasso2d"],
     };
 
     // Add a few non-standard methods to the plot for convenience.
