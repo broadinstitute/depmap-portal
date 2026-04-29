@@ -154,7 +154,11 @@ class ContextEvaluator:
         for var_name, raw_query in slice_query_vars.items():
             try:
                 slice_query = _dict_to_slice_query(raw_query)
-                self.slice_data[var_name] = get_slice_data(slice_query).to_dict()
+                series_dict = get_slice_data(slice_query).to_dict()
+                self.slice_data[var_name] = {
+                    k: (None if isinstance(v, list) and len(v) == 0 else v)
+                    for k, v in series_dict.items()
+                }
             except (KeyError, TypeError, ValueError) as e:
                 raise LookupError(e) from e
 

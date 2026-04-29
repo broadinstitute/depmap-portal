@@ -40,9 +40,9 @@ export const operatorsByValueType = {
     "is_null",
     "not_null",
   ]),
-  text: new Set(["==", "!=", "in", "!in", "is_null", "not_null"]),
-  categorical: new Set(["==", "!=", "in", "!in", "is_null", "not_null"]),
-  list_strings: new Set(["has_any", "!has_any"]),
+  text: new Set(["==", "!=", "in", "!in", "not_null", "is_null"]),
+  categorical: new Set(["==", "!=", "in", "!in", "not_null", "is_null"]),
+  list_strings: new Set(["has_any", "!has_any", "not_null", "is_null"]),
 };
 
 export type ValueType = keyof typeof operatorsByValueType;
