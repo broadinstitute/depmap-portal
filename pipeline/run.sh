@@ -57,6 +57,9 @@ fi
 # sets the variable DOCKER_IMAGE
 source ${SCRIPT_HOME}/image-name
 
+# make sure file permissions are sane at the start
+sudo chown -R ubuntu $SCRIPT_HOME
+
 # Start docker container
 cd "$SCRIPT_HOME"
 set -ex
@@ -72,3 +75,5 @@ exec docker run --rm \
   ${DOCKER_IMAGE} \
   poetry run "$@"
 
+# reset file permissions afterwards for any new files created by the user in the docker container
+sudo chown -R ubuntu $SCRIPT_HOME

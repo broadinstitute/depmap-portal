@@ -212,10 +212,6 @@ class PipelineRunner:
         if config.start_with:
             log.info("Starting with existing export: %s", config.start_with)
             self.subprocess_run(
-                ["sudo", "chown", "-R", "ubuntu", str(self.script_path.parent)],
-                check=True,
-            )
-            self.subprocess_run(
                 ["rm", "-rf", str(self.script_path.parent / "state")], check=True
             )
 
@@ -289,7 +285,6 @@ class PipelineRunner:
             self.handle_post_run_tasks(config)
 
         log.info("Pipeline run complete")
-        self.subprocess_run(["sudo", "chown", "-R", "ubuntu", "."], check=True)
         sys.exit(run_exit_status)
 
     def build_conseq_run_command(self, config: CommonConfig) -> str:
