@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 template=f"non-public-pipeline-files/preprocessing-pipeline/xrefs-internal.template"
-cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "xrefs_internal-DO-NOT-EDIT-ME", "--search", "depmap-deploy", "--search", "analysis-pipeline"]
+cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "xrefs_internal-DO-NOT-EDIT-ME", "--search", "depmap-deploy", "--search", "preprocessing-pipeline"]
 
 print(f"Preprocessing templates by running {' '.join(cmd)}...")
 try:
