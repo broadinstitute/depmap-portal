@@ -73,7 +73,7 @@ rule lrt:
     inputs:
         partitions={'type': 'lrt-partitions', 'dataset_id': dataset_id, 'label': label},
         data={'type': 'dep-matrix-csv', 'dataset_id': dataset_id, 'label': label},
-        sparkles_config=fileref('sparkles-config'),
+        sparkles_config=fileref('../sparkles-config'),
         lrt_sh=fileref('scripts/tda/lrt/lrt.sh')
     outputs: 
         {'type': 'lrt-scores', 
