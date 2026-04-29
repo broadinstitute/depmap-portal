@@ -531,7 +531,7 @@ rule fit_predictive_model:
         partition_inputs_script=fileref('scripts/partition_ensemble_inputs.py'),
         validate_jobs_script=fileref('scripts/validate_jobs_complete.py'),
         gather_ensemble_script=fileref('scripts/gather_ensemble_tasks.py'),
-        sparkles_config=fileref('../sparkles-config')
+        sparkles_config=fileref('../../sparkles-config')
     outputs: {
         'type': 'pred-models-csv',
         'filename': {'$filename': 'ensemble.csv'},
