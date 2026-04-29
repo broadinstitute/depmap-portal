@@ -72,7 +72,7 @@ RUN python3.9 -m venv /install/dsub && \
 
 # install sparkles v5 (requires python==3.10)
 RUN python3.10 -m venv /install/sparkles && \
-    /install/sparkles/bin/pip install pip sparklespray==6.0.3 --extra-index-url https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/ && \
+    /install/sparkles/bin/pip install pip sparklespray==6.0.4 --extra-index-url https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/ && \
     ln -s /install/sparkles/bin/sparkles /root/.local/bin
 
 # install gcloud SDK
