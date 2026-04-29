@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { isElara } from "@depmap/globals";
+import { isPortal } from "@depmap/globals";
 import {
   DataExplorerContextV2,
   DataExplorerPlotConfig,
@@ -273,7 +273,7 @@ function DataExplorerScatterPlot({
               }}
             />
           </StackableSection>
-          {!isElara && plotConfig.index_type === "gene" ? (
+          {isPortal && plotConfig.index_type === "gene" ? (
             <StackableSection
               title="GeneTEA Enriched Terms"
               minHeight={200}

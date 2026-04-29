@@ -1,7 +1,7 @@
 import qs from "qs";
 import { breadboxAPI, cached } from "@depmap/api";
 import { persistContext } from "@depmap/data-explorer-2";
-import { isElara } from "@depmap/globals";
+import { isPortal } from "@depmap/globals";
 import { ComputeResponseResult, DataExplorerContextV2 } from "@depmap/types";
 import {
   AnalysisConfiguration,
@@ -14,7 +14,7 @@ async function getDataExplorerLink(
   result: ComputeResponseResult
 ) {
   const firstFeature = result.data[0].label;
-  const baseUrl = isElara ? "../elara" : "../data_explorer_2";
+  const baseUrl = isPortal ? "../data_explorer_2" : "../elara";
   // Encode the current query string so this analysis can later be reproduced.
   const encodedAnalysis = btoa(window.location.search.slice(1));
 

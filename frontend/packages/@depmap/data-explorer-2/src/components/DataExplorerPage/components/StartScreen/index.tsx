@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
-import { isElara } from "@depmap/globals";
+import { isPortal } from "@depmap/globals";
 import { UploadFormat, UserUploadModal } from "@depmap/user-upload";
 import StartScreenExamples from "./StartScreenExamples";
 import styles from "../../styles/DataExplorer2.scss";
@@ -28,7 +28,7 @@ function StartScreen({ tutorialLink }: Props) {
       <div className={styles.startScreenActions}>
         <Button
           href={
-            isElara ? "./custom_analysis" : "../interactive/custom_analysis"
+            isPortal ? "../interactive/custom_analysis" : "./custom_analysis"
           }
           bsStyle="primary"
           rel="noreferrer"
@@ -40,7 +40,7 @@ function StartScreen({ tutorialLink }: Props) {
           Plot from CSV
         </Button>
       </div>
-      {!isElara && (
+      {isPortal && (
         <>
           <h3>Using Data Explorer 2.0</h3>
           <StartScreenExamples />
