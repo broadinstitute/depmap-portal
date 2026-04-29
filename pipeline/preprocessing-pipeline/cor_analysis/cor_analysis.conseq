@@ -17,7 +17,7 @@ rule run_cor_analysis_pair_v2:
     inputs:
         pair={'type': 'cor_input_pair'},
         script=fileref("correlation_with_qvalue.py"),
-        sparkles_config=fileref('../sparkles-config'),
+        sparkles_config=fileref('../../sparkles-config'),
         taiga_token={'type': 'config-file', 'name': 'taiga-token'},
     outputs:
         {
