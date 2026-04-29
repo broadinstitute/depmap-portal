@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, cast
 from logging import getLogger
 
 import pandas as pd
@@ -118,6 +118,64 @@ def _flatten_reindex_chain(leaf: SliceQuery) -> List[SliceQuery]:
     return chain
 
 
+def _chain_step(current: pd.Series, next_series: pd.Series) -> pd.Series:
+    """
+    Apply one hop of a reindex_through chain.
+
+    For each cell in `current`, treat the cell's value(s) as keys into
+    `next_series` and collect the resolved values. Handles list-valued
+    cells on either side of the join:
+
+      - If a cell in `current` is a list (e.g. an FK column like
+        antibody_v2_metadata.target_entrez_id storing a list of entrez
+        IDs per row), the lookup fans out over the list elements.
+      - If `next_series[k]` is itself a list, its elements are spliced
+        into the result.
+      - Duplicates are removed in first-occurrence order so the result
+        is stable for downstream rendering (e.g. SliceTable's join(", ")).
+
+    The output cell shape is determined per cell:
+
+      - If the input cell was a list OR any lookup yielded a list, the
+        output cell is a list (`list_strings`-shaped). Empty results
+        collapse to `None` so the caller's `dropna()` removes them.
+      - Otherwise the output is a scalar, preserving the pre-list-aware
+        behavior for fully-scalar chains.
+
+    `next_series` is materialized to a dict once per hop so lookups
+    don't depend on pandas' duplicate-index semantics, and so list cells
+    in the input never reach pandas as unhashable keys.
+    """
+    next_lookup = next_series.to_dict()
+
+    def step(cell):
+        produced_list = isinstance(cell, list)
+        keys = cell if produced_list else [cell]
+        collected: list = []
+        seen: set = set()
+        for k in keys:
+            if k is None:
+                continue
+            v = next_lookup.get(k)
+            if v is None:
+                continue
+            if isinstance(v, list):
+                produced_list = True
+                items = v
+            else:
+                items = [v]
+            for item in items:
+                if item is None or item in seen:
+                    continue
+                seen.add(item)
+                collected.append(item)
+        if produced_list:
+            return collected if collected else None
+        return collected[0] if collected else None
+
+    return cast(pd.Series, current.apply(step))
+
+
 def _resolve_reindex_chain(
     db: SessionWithUser, filestore_location: str, slice_query: SliceQuery
 ) -> pd.Series:
@@ -167,10 +225,14 @@ def _resolve_reindex_chain(
             log.warning(message, exc_info=True)
             raise UserError(message) from e
     # Compose: root maps root_ids → step1_ids, step1 maps step1_ids → step2_ids, etc.
-    # The leaf maps final_ids → values. Chaining .map() yields root_ids → values.
+    # The leaf maps final_ids → values. Chaining yields root_ids → values.
+    # _chain_step (instead of Series.map) is what makes this work for
+    # list-valued FK columns: a cell holding e.g. ["207", "208", "10000"]
+    # fans out into three lookups in the next hop and the deduplicated
+    # results are collected back into a list. See _chain_step for details.
     result = series_chain[0]
     for next_series in series_chain[1:]:
-        result = result.map(next_series)
+        result = _chain_step(result, next_series)
 
     return result.dropna()
 

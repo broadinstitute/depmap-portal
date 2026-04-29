@@ -20,6 +20,9 @@ export const opLabels = {
   has_any: "has any of",
   "!has_any": "has none of",
 
+  // membership against a resolved context's id-list (RHS is a {context} ref)
+  in_context: "is in context",
+
   // unary
   not_null: "has a value",
   is_null: "has no value",
@@ -186,7 +189,7 @@ export const makeCompatibleExpression = (
   }
 
   if (isReference) {
-    nextOp = "in";
+    nextOp = "in_context";
     nextValue = isContextValue ? value : { context: null };
   }
 
