@@ -4,7 +4,7 @@
 # 3. Combine the output config files
 
 let sparkles_path = "PYTHONUNBUFFERED=1 sparkles"
-let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.4.0"
+let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.5.0"
 
 # Change the artifact below to run on a small subset of the full config (useful just for testing). Set all to "yes" 
 # for normal operation, or "no" for doing a subset of the normal work
