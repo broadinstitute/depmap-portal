@@ -121,6 +121,51 @@ def test_operator__not_has_any_with_none():
     assert expressions_are_equivalent(True, {"!has_any": [None, None]},)
 
 
+def test_operator__in_context():
+    """in_context: list LHS overlaps with the resolved id-list on the RHS.
+    By the time the operator runs, _resolve_context_refs has replaced the
+    {"context": ...} reference with a flat list of ids, so b is always a list."""
+    # No overlap
+    assert expressions_are_equivalent(False, {"in_context": [["a", "b"], ["c", "d"]]},)
+    # Overlap on at least one element (has_any semantics)
+    assert expressions_are_equivalent(True, {"in_context": [["a", "b"], ["b", "c"]]},)
+    # Single-element list LHS — the common case after a single-target FK
+    assert expressions_are_equivalent(True, {"in_context": [["a"], ["a", "b"]]},)
+    # Empty LHS list
+    assert expressions_are_equivalent(False, {"in_context": [[], ["a", "b"]]},)
+    # Empty RHS list (e.g. inner context resolved to no matches)
+    assert expressions_are_equivalent(False, {"in_context": [["a", "b"], []]},)
+
+
+def test_operator__in_context_permissive_scalar_lhs():
+    """in_context accepts a scalar LHS as a 1-element membership check.
+    This matters because a {"var": ...} reference may resolve to either a
+    scalar (single-valued FK) or a list (list_strings column traversed via
+    reindex_through), and the UI authors the same expression in both cases."""
+    # Scalar in RHS list
+    assert expressions_are_equivalent(True, {"in_context": ["a", ["a", "b"]]},)
+    # Scalar not in RHS list
+    assert expressions_are_equivalent(False, {"in_context": ["z", ["a", "b"]]},)
+    # Scalar against empty RHS
+    assert expressions_are_equivalent(False, {"in_context": ["a", []]},)
+
+
+def test_operator__in_context_with_none():
+    """None LHS returns False, matching how has_any handles a None operand —
+    null entities are excluded from the positive group."""
+    assert expressions_are_equivalent(False, {"in_context": [None, ["a", "b"]]},)
+    assert expressions_are_equivalent(False, {"in_context": [None, []]},)
+
+
+def test_operator__in_context_with_malformed_rhs():
+    """Defensive: a non-list RHS returns False. In normal operation
+    _resolve_context_refs always produces a list, but the operator
+    shouldn't crash if something else slips through."""
+    assert expressions_are_equivalent(False, {"in_context": ["a", "a"]},)
+    assert expressions_are_equivalent(False, {"in_context": ["a", None]},)
+    assert expressions_are_equivalent(False, {"in_context": [["a"], "a"]},)
+
+
 def test_comparison_operators_with_none():
     """Standard comparison operators should handle None gracefully."""
     assert expressions_are_equivalent(True, {"!=": [None, "foo"]},)
@@ -741,3 +786,145 @@ def test_nested_context_ref_with_complement_in_inner():
     # preserved through the nested context reference. PAIR_X is excluded
     # because SOME_OTHER_GENE_NOT_IN_TABLE isn't a member of any gene group.
     assert result.ids == ["PAIR_N"]
+
+
+def test_in_context_with_list_valued_var():
+    """End-to-end: an outer context whose var resolves to a list (e.g. via a
+    list_strings FK column traversed through reindex_through) using in_context
+    to test overlap with an inner context's resolved id-list. This is the
+    motivating antibody → gene case: antibody_v2_metadata.target_entrez_id
+    holds a list of gene IDs per antibody, and the inner context filters genes
+    to a flat id-list. An antibody matches if any of its targets is in the
+    resolved set."""
+    context = {
+        "dimension_type": "antibody",
+        "expr": {"in_context": [{"var": "targets"}, {"context": "interesting_genes"}]},
+        "vars": {
+            "targets": {
+                "dataset_id": "antibody_meta",
+                "identifier": "target_gene_ids",
+                "identifier_type": "column",
+            }
+        },
+        "contexts": {
+            "interesting_genes": {
+                "dimension_type": "gene",
+                "expr": {"==": [{"var": "0"}, "interesting"]},
+                "vars": {
+                    "0": {
+                        "dataset_id": "gene_meta",
+                        "identifier": "annotation",
+                        "identifier_type": "column",
+                    }
+                },
+            }
+        },
+    }
+
+    # Antibody targets — list-shaped values, as produced by _chain_step when
+    # reindex_through traverses a list_strings column.
+    target_genes = pd.Series(
+        {
+            "AB_HIT_MULTI": ["GENE_X", "GENE_Y", "GENE_INT_1"],  # 1 of 3 matches
+            "AB_HIT_SINGLE": ["GENE_INT_2"],  # single-element matches
+            "AB_MISS": ["GENE_X", "GENE_Y"],  # no overlap
+            # AB_NULL has no entry: var resolves to None, excluded
+        }
+    )
+    gene_annotations = pd.Series(
+        {
+            "GENE_INT_1": "interesting",
+            "GENE_INT_2": "interesting",
+            "GENE_X": "boring",
+            "GENE_Y": "boring",
+        }
+    )
+
+    slice_data = {
+        ("antibody_meta", "target_gene_ids"): target_genes,
+        ("gene_meta", "annotation"): gene_annotations,
+    }
+
+    def get_slice_data(q):
+        return slice_data[(q.dataset_id, q.identifier)]
+
+    def get_labels(dim_type):
+        if dim_type == "antibody":
+            return {
+                "AB_HIT_MULTI": "Multi-target Hit",
+                "AB_HIT_SINGLE": "Single-target Hit",
+                "AB_MISS": "No Hit",
+                "AB_NULL": "No Targets",
+            }
+        if dim_type == "gene":
+            return {
+                "GENE_INT_1": "Gene Int 1",
+                "GENE_INT_2": "Gene Int 2",
+                "GENE_X": "Gene X",
+                "GENE_Y": "Gene Y",
+            }
+        raise ValueError(f"unexpected dim_type {dim_type!r}")
+
+    evaluator = ContextEvaluator(context, get_slice_data, get_labels)
+    result = evaluator.evaluate()
+
+    # AB_HIT_MULTI: targets overlap [GENE_INT_1, GENE_INT_2] on GENE_INT_1 -> match
+    # AB_HIT_SINGLE: targets overlap on GENE_INT_2 -> match
+    # AB_MISS: no overlap -> excluded
+    # AB_NULL: var is null -> excluded (the operator returns False on None LHS)
+    assert sorted(result.ids) == ["AB_HIT_MULTI", "AB_HIT_SINGLE"]
+
+
+def test_in_context_with_scalar_var():
+    """End-to-end with a scalar var — the legacy case where the FK column is
+    a single-valued reference (e.g. screen_metadata.ModelID). Same code path
+    as the list-var case but exercises the operator's permissive scalar LHS."""
+    context = {
+        "dimension_type": "screen",
+        "expr": {"in_context": [{"var": "model"}, {"context": "breast_models"}]},
+        "vars": {
+            "model": {
+                "dataset_id": "screen_meta",
+                "identifier": "ModelID",
+                "identifier_type": "column",
+            }
+        },
+        "contexts": {
+            "breast_models": {
+                "dimension_type": "model",
+                "expr": {"==": [{"var": "0"}, "Breast"]},
+                "vars": {
+                    "0": {
+                        "dataset_id": "model_meta",
+                        "identifier": "Lineage",
+                        "identifier_type": "column",
+                    }
+                },
+            }
+        },
+    }
+
+    screen_models = pd.Series(
+        {"SCREEN_BREAST": "MODEL_BREAST", "SCREEN_LUNG": "MODEL_LUNG"}
+    )
+    model_lineages = pd.Series({"MODEL_BREAST": "Breast", "MODEL_LUNG": "Lung"})
+
+    slice_data = {
+        ("screen_meta", "ModelID"): screen_models,
+        ("model_meta", "Lineage"): model_lineages,
+    }
+
+    def get_slice_data(q):
+        return slice_data[(q.dataset_id, q.identifier)]
+
+    def get_labels(dim_type):
+        if dim_type == "screen":
+            return {"SCREEN_BREAST": "Breast Screen", "SCREEN_LUNG": "Lung Screen"}
+        if dim_type == "model":
+            return {"MODEL_BREAST": "Breast Model", "MODEL_LUNG": "Lung Model"}
+        raise ValueError(f"unexpected dim_type {dim_type!r}")
+
+    evaluator = ContextEvaluator(context, get_slice_data, get_labels)
+    result = evaluator.evaluate()
+
+    assert result.ids == ["SCREEN_BREAST"]

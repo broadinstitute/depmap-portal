@@ -11,11 +11,45 @@ from typing import Callable
 from breadbox.depmap_compute_embed.slice import SliceQuery
 
 
+def _in_context(a, b):
+    """Membership of a var against the resolved id-list of a context reference.
+
+    Designed for the form
+        { "in_context": [{"var": "x"}, {"context": "<name>"}] }
+    By the time this operator runs, _resolve_context_refs has already replaced
+    the {"context": ...} node with a flat list of matching ids, so `b` is
+    always that list.
+
+    `a` is permissive: it may be a scalar (the var resolved to a single id) or
+    a list (the var resolved to a list of ids via a list_strings column,
+    typically through a reindex_through chain). Returns True iff `a` overlaps
+    `b` — for a scalar `a`, that's `a in b`; for a list `a`, that's set
+    overlap. None and other malformed shapes return False, matching how
+    has_any handles its degenerate cases.
+
+    The {"!in_context": "in_context"} entry in _NEGATED_OPS lets
+    _resolve_complements null-guard the negated form for free.
+    """
+    if not isinstance(b, list):
+        return False
+    if isinstance(a, list):
+        return not set(a).isdisjoint(set(b))
+    if a is None:
+        return False
+    return a in b
+
+
 # Custom JsonLogic operators
 operations.update(
     {
         # a more convenient version of { "!": { "in": [...] } }
         "!in": lambda a, b: not operations["in"](a, b),
+        # Membership against a resolved context's id-list. Permissive on the
+        # LHS: scalar vars and list-valued vars (e.g. from a list_strings
+        # column traversed via reindex_through) are both accepted, with set
+        # overlap semantics in the list case. See _in_context for the contract.
+        "in_context": _in_context,
+        "!in_context": lambda a, b: not operations["in_context"](a, b),
         # tests if list `a` overlaps with list `b`
         "has_any": (
             lambda a, b: not set(a).isdisjoint(set(b))
@@ -32,10 +66,11 @@ operations.update(
         # way of matching null values through negated operators.
         "is_null": lambda a: a is None,
         "not_null": lambda a: a is not None,
-        # Note: When used with {"var": ...} references, !in, !has_any, and !=
-        # are desugared by _resolve_complements into null-guarded negations
-        # during ContextEvaluator.__init__. This prevents null values from being
-        # incorrectly matched (e.g. null !in ["a", "b"] would otherwise be True).
+        # Note: When used with {"var": ...} references, !in, !has_any,
+        # !in_context, and != are desugared by _resolve_complements into
+        # null-guarded negations during ContextEvaluator.__init__. This
+        # prevents null values from being incorrectly matched (e.g.
+        # null !in ["a", "b"] would otherwise be True).
         #
         # Note: "complement" is not an operator users write directly — it is
         # synthesized by the UI when a user selects the "NOT My Context" version
@@ -301,7 +336,12 @@ def _validate_var_refs(expr, slice_data: dict):
 # Negated operators that should be desugared into null-guarded negations.
 # This prevents null values from being incorrectly matched by negated operators
 # (e.g. null !in ["Breast", "Lung"] would otherwise evaluate to True).
-_NEGATED_OPS = {"!in": "in", "!has_any": "has_any", "!=": "=="}
+_NEGATED_OPS = {
+    "!in": "in",
+    "!in_context": "in_context",
+    "!has_any": "has_any",
+    "!=": "==",
+}
 
 
 # is_null is the only operator whose correct behavior on null is to return

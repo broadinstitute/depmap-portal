@@ -7,8 +7,6 @@ import { dataExplorerAPI } from "../../../services/dataExplorerAPI";
 import { useContextBuilderState } from "../state/ContextBuilderState";
 import styles from "../../../styles/ContextBuilderV2.scss";
 
-const SHOW_DEBUG_INFO = false;
-
 type PartialDeep<T> = { [P in keyof T]?: PartialDeep<T[P]> };
 
 async function copyToClipboard(context: PartialDeep<DataExplorerContextV2>) {
@@ -25,6 +23,7 @@ async function copyToClipboard(context: PartialDeep<DataExplorerContextV2>) {
   }
 }
 
+// press Ctrl+Opt+D to bring up this debug panel
 const DebugInfo = () => {
   const {
     mainExpr,
@@ -123,4 +122,20 @@ const DebugInfo = () => {
   );
 };
 
-export default SHOW_DEBUG_INFO ? DebugInfo : () => null;
+const Wrapper = () => {
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.altKey && e.code === "KeyD") {
+        setShow((s) => !s);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  return show ? <DebugInfo /> : null;
+};
+
+export default Wrapper;

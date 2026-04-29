@@ -7,6 +7,7 @@ from breadbox.service.slice import (
     get_slice_data,
     _flatten_reindex_chain,
     _resolve_reindex_chain,
+    _chain_step,
 )
 from breadbox.models.dataset import AnnotationType
 from breadbox.schemas.dataset import ColumnMetadata
@@ -313,6 +314,104 @@ def test_resolve_allows_non_column_leaf():
             cast(SessionWithUser, None), cast(str, None), leaf,
         )
     assert "identifier_type 'column'" not in str(exc_info.value)
+
+
+# ============================================================
+# Unit tests for _chain_step
+# ============================================================
+
+
+def test_chain_step_scalar_chain():
+    """Fully scalar chain: output stays scalar (parity with the old .map() behavior)."""
+    current = pd.Series({"a": "x", "b": "y", "c": "z"})
+    nxt = pd.Series({"x": 1, "y": 2, "z": 3})
+
+    result = _chain_step(current, nxt)
+
+    assert result["a"] == 1
+    assert result["b"] == 2
+    assert result["c"] == 3
+    assert all(not isinstance(v, list) for v in result.dropna())
+
+
+def test_chain_step_list_valued_fk_dedupes_and_preserves_order():
+    """List-valued FK cells fan out, results dedup in first-occurrence order."""
+    current = pd.Series(
+        {
+            "Akt": [
+                "207",
+                "208",
+                "10000",
+            ],  # multi-element, two distinct arms after dedup
+            "ACC": ["31", "32"],  # multi-element, both map to the same arm
+            "single": ["7529"],  # single-element list — stays a list
+        }
+    )
+    nxt = pd.Series(
+        {
+            "207": "14q",
+            "208": "14q",  # same as 207, expect dedup
+            "10000": "10q",
+            "31": "1p",
+            "32": "1p",  # same as 31, expect dedup
+            "7529": "20p",
+        }
+    )
+
+    result = _chain_step(current, nxt)
+
+    # Order tracks input list order; duplicates collapse.
+    assert result["Akt"] == ["14q", "10q"]
+    assert result["ACC"] == ["1p"]
+    # Single-element lists stay lists (type stability across the column).
+    assert result["single"] == ["20p"]
+
+
+def test_chain_step_drops_empty_and_all_miss_lists():
+    """Empty list and all-elements-miss cells become None so dropna() removes them."""
+    current = pd.Series(
+        {
+            "empty": [],
+            "all_miss": ["nope1", "nope2"],
+            "partial": ["207", "nope"],  # one matching element, one missing
+        }
+    )
+    nxt = pd.Series({"207": "14q"})
+
+    result = _chain_step(current, nxt).dropna()
+
+    assert "empty" not in result.index
+    assert "all_miss" not in result.index
+    # Missing elements within an otherwise-matching list are silently skipped.
+    assert result["partial"] == ["14q"]
+
+
+def test_chain_step_list_valued_leaf_upgrades_scalar_input():
+    """Scalar input + list-valued lookup → list-valued output cell."""
+    current = pd.Series({"sp1": "g1", "sp2": "g2"})
+    nxt = pd.Series({"g1": ["AKT1", "PKB"], "g2": ["TP53"]})
+
+    result = _chain_step(current, nxt)
+
+    # Lookup-yielded list propagates; the output column is uniformly list-shaped.
+    assert result["sp1"] == ["AKT1", "PKB"]
+    assert result["sp2"] == ["TP53"]
+
+
+def test_chain_step_chained_list_propagation():
+    """Two consecutive _chain_step calls: list shape propagates through both hops."""
+    # Hop 1: list FK → scalar lookup yields a list of clusters.
+    antibody_fk = pd.Series(
+        {"Akt": ["207", "208", "10000"]}  # three targets across two clusters
+    )
+    gene_to_cluster = pd.Series({"207": "C1", "208": "C1", "10000": "C2"})
+    mid = _chain_step(antibody_fk, gene_to_cluster)
+    assert mid["Akt"] == ["C1", "C2"]  # dedup at hop 1
+
+    # Hop 2: list (from hop 1) → scalar lookup yields a list of cluster labels.
+    cluster_to_label = pd.Series({"C1": "PI3K_pathway", "C2": "AKT3_specific"})
+    final = _chain_step(mid, cluster_to_label)
+    assert final["Akt"] == ["PI3K_pathway", "AKT3_specific"]
 
 
 # ============================================================
@@ -630,3 +729,130 @@ def test_reindex_with_missing_fk_values(minimal_db: SessionWithUser, settings):
     assert set(result.index.tolist()) == {"S1", "S3"}
     assert result["S1"] == "val1"
     assert result["S3"] == "val2"
+
+
+def test_reindex_with_list_valued_fk(minimal_db: SessionWithUser, settings):
+    """
+    End-to-end: when a reindex_through hop uses a list_strings FK column
+    (e.g. antibody_v2_metadata.target_entrez_id storing a list of entrez
+    IDs per row), the chain fans out the lookup over each list element,
+    deduplicates the collected results, and yields a list_strings-shaped
+    output column. The cell values in `data_df` for a list_strings column
+    are JSON-encoded strings; they are decoded into Python lists by the
+    storage read path (see _convert_subsetted_tabular_df_dtypes).
+    """
+    user = settings.admin_users[0]
+
+    # Target dimension: gene-like, with a categorical "Arm" column that
+    # the chain will ultimately deliver indexed by antibodies.
+    factories.add_dimension_type(
+        minimal_db,
+        settings,
+        user=user,
+        name="gene-like",
+        display_name="Gene Like",
+        id_column="ID",
+        annotation_type_mapping={
+            "ID": AnnotationType.text,
+            "label": AnnotationType.text,
+            "Arm": AnnotationType.text,
+        },
+        axis="sample",
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["G1", "G2", "G3", "G4"],
+                "label": ["Gene 1", "Gene 2", "Gene 3", "Gene 4"],
+                "Arm": ["14q", "14q", "10q", "20p"],
+            }
+        ),
+    )
+
+    # Source dimension: antibody-like, with a list_strings FK column
+    # pointing at gene-like. JSON-encoded list cells emulate how
+    # list_strings columns are actually stored on disk.
+    factories.add_dimension_type(
+        minimal_db,
+        settings,
+        user=user,
+        name="antibody-like",
+        display_name="Antibody Like",
+        id_column="ID",
+        annotation_type_mapping={
+            "ID": AnnotationType.text,
+            "label": AnnotationType.text,
+            "TargetIDs": AnnotationType.list_strings,
+        },
+        axis="sample",
+        metadata_df=pd.DataFrame(
+            {
+                "ID": ["AB1", "AB2", "AB3"],
+                "label": ["Antibody 1", "Antibody 2", "Antibody 3"],
+                "TargetIDs": [
+                    '["G1", "G2", "G3"]',  # 3 targets → 2 distinct arms (14q, 10q)
+                    '["G1"]',  # single-element list — common case
+                    '["G3", "G4"]',  # 2 targets → 2 distinct arms (10q, 20p)
+                ],
+            }
+        ),
+    )
+
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        given_id="gene-like-metadata",
+        index_type_name="gene-like",
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "Arm": ColumnMetadata(col_type=AnnotationType.text),
+        },
+        data_df=pd.DataFrame(
+            {
+                "ID": ["G1", "G2", "G3", "G4"],
+                "label": ["Gene 1", "Gene 2", "Gene 3", "Gene 4"],
+                "Arm": ["14q", "14q", "10q", "20p"],
+            }
+        ),
+    )
+
+    factories.tabular_dataset(
+        minimal_db,
+        settings,
+        given_id="antibody-like-metadata",
+        index_type_name="antibody-like",
+        columns_metadata={
+            "ID": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "TargetIDs": ColumnMetadata(
+                col_type=AnnotationType.list_strings, references="gene-like"
+            ),
+        },
+        data_df=pd.DataFrame(
+            {
+                "ID": ["AB1", "AB2", "AB3"],
+                "label": ["Antibody 1", "Antibody 2", "Antibody 3"],
+                "TargetIDs": ['["G1", "G2", "G3"]', '["G1"]', '["G3", "G4"]',],
+            }
+        ),
+    )
+
+    query = SliceQuery(
+        dataset_id="gene-like-metadata",
+        identifier="Arm",
+        identifier_type="column",
+        reindex_through=SliceQuery(
+            dataset_id="antibody-like-metadata",
+            identifier="TargetIDs",
+            identifier_type="column",
+        ),
+    )
+    result = get_slice_data(minimal_db, settings.filestore_location, query)
+
+    # Result is indexed by antibody IDs:
+    #   AB1: G1=14q, G2=14q, G3=10q → ["14q", "10q"]  (dedup, order-preserving)
+    #   AB2: G1=14q                 → ["14q"]         (single-element stays a list)
+    #   AB3: G3=10q, G4=20p         → ["10q", "20p"]
+    assert set(result.index.tolist()) == {"AB1", "AB2", "AB3"}
+    assert result["AB1"] == ["14q", "10q"]
+    assert result["AB2"] == ["14q"]
+    assert result["AB3"] == ["10q", "20p"]
