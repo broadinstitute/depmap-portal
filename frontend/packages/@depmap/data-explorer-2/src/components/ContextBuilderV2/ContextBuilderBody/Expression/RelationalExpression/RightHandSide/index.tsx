@@ -51,6 +51,7 @@ function RightHandSide({ op, expr, path, varName, isLoading, domain }: Props) {
         type="button"
         className={styles.unaryOpDetailsButton}
         onClick={handleClickShowSlicePreview}
+        disabled={expr == null}
       >
         see plot
       </button>

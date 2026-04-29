@@ -119,9 +119,22 @@ function SlicePreview({
   const { idLabel, units, datasetName } = column.meta;
   const isFiltered =
     visibleRowIds !== undefined && scopedData.length < previewData.length;
-  const xAxisTitle =
-    `${idLabel} ${units}<br>${datasetName}` +
-    (isFiltered ? " <i>(filtered rows only)</i>" : "");
+
+  let xAxisTitle = `${idLabel}`;
+
+  if (units && units !== "unitless") {
+    xAxisTitle += ` (${units})`;
+  }
+
+  if (datasetName) {
+    xAxisTitle += `<br>${datasetName}`;
+  } else {
+    xAxisTitle += `<br><br>`;
+  }
+
+  if (isFiltered) {
+    xAxisTitle += " <i>(filtered rows only)</i>";
+  }
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>

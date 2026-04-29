@@ -102,7 +102,7 @@ function SliceDescription({ data }: { data: DataExplorerPlotResponse | null }) {
     return (
       <div className={styles.colorDimensionLabels}>
         <div>{label}</div>
-        {units && <div>{units}</div>}
+        {units && units !== "unitless" && <div>{units}</div>}
         {dataset_label && <div>{dataset_label}</div>}
       </div>
     );

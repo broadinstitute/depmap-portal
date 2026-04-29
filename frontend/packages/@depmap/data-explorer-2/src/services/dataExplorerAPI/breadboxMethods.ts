@@ -55,7 +55,15 @@ async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
     return d.id === dimension.dataset_id || d.given_id === dimension.dataset_id;
   });
 
-  const units = dataset && "units" in dataset ? dataset.units : "";
+  let units = "";
+
+  if (dataset && "units" in dataset) {
+    units = dataset.units;
+  }
+
+  if (units === "unitless") {
+    units = "";
+  }
 
   if (dimension.axis_type === "raw_slice") {
     return `${context.name} ${units}`;
