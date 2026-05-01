@@ -19,7 +19,7 @@ export type {
   InvalidPrioritiesByDataType,
 } from "./src/DataType";
 
-export type { ReleaseVersion } from "./src/ReleaseVersion";
+export type { ReleaseVersion, ReleaseFile } from "./src/ReleaseVersion";
 
 export type {
   DimensionType,

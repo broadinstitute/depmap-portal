@@ -1,6 +1,6 @@
 import { breadboxAPI, cached } from "@depmap/api";
 import { useEffect, useState } from "react";
-import { ReleaseVersion } from "@depmap/types"; // Adjust path to where your interface is
+import { ReleaseVersion } from "@depmap/types";
 
 function useReleaseVersions() {
   const bapi = cached(breadboxAPI);
