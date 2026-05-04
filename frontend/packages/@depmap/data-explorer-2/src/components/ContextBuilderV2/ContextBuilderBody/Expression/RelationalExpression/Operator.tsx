@@ -33,10 +33,16 @@ const buildNextExpression = (
   lhs: RelationExpr[OperatorType][0],
   rhs: RelationExpr[OperatorType][1]
 ) => {
-  // "is in context" — pseudo-operator, emits standard "in"
+  // Membership against a resolved context's id-list. Was previously a
+  // pseudo-operator that flattened to `in` at emission time; in_context is
+  // now a first-class JsonLogic operator on the backend (see
+  // breadbox/depmap_compute_embed/context.py: _in_context).
   if (nextOp === "in_context") {
     return {
-      in: [lhs, isEmbeddedContextExpression(rhs) ? rhs : { context: null }],
+      in_context: [
+        lhs,
+        isEmbeddedContextExpression(rhs) ? rhs : { context: null },
+      ],
     };
   }
 
@@ -134,12 +140,6 @@ function Operator({
     );
   }, [isAllIntegers, isReference, value_type]);
 
-  let value = op as typeof op | "in_context";
-
-  if (op === "in" && isReference) {
-    value = "in_context";
-  }
-
   return (
     <PlotConfigSelect
       show
@@ -152,7 +152,7 @@ function Operator({
         [styles.context]: isReference,
       })}
       placeholder=""
-      value={isLoading ? null : value}
+      value={isLoading ? null : op}
       options={options}
       onChange={(nextOp) => {
         const innerExpr = expr[op];

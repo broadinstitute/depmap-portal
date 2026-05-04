@@ -1,4 +1,4 @@
-import { getUrlPrefix, isElara } from "@depmap/globals";
+import { getUrlPrefix, isPortal } from "@depmap/globals";
 import createJsonClient from "../createJsonClient";
 
 const {
@@ -8,7 +8,7 @@ const {
   deleteJson,
   postMultipart,
   patchMultipart,
-} = createJsonClient(`${getUrlPrefix()}${isElara ? "" : "/breadbox"}`);
+} = createJsonClient(`${getUrlPrefix()}${isPortal ? "/breadbox" : ""}`);
 
 export {
   getJson,

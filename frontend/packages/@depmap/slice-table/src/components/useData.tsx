@@ -1,15 +1,10 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import { ExternalLink, WordBreaker } from "@depmap/common-components";
-import { isElara, toPortalLink } from "@depmap/globals";
+import { isPortal, toPortalLink } from "@depmap/globals";
 import { serializeSliceQuery } from "@depmap/selects";
 import Papa from "papaparse";
-import type {
-  Dataset,
-  DimensionType,
-  MatrixDataset,
-  SliceQuery,
-} from "@depmap/types";
+import type { Dataset, DimensionType, SliceQuery } from "@depmap/types";
 
 export interface ColumnDisplayOptions {
   header?: ({
@@ -167,7 +162,7 @@ async function extractColumnRenames(
 }
 
 const isLinkable = (dimension_type?: string | null) =>
-  !isElara &&
+  isPortal &&
   dimension_type &&
   ["depmap_model", "gene", "compound_v2"].includes(dimension_type);
 
@@ -446,11 +441,10 @@ function transformToTableData(
         ? ""
         : dataset.name || "";
 
-    // Find the dataset units (empty for tabular datasets)
     const units =
-      slice.identifier_type === "column"
-        ? ""
-        : (dataset as MatrixDataset).units || "";
+      dataset.format === "matrix_dataset"
+        ? dataset.units
+        : dataset.columns_metadata[slice.identifier]?.units;
 
     const value_type =
       dataset.format === "matrix_dataset"

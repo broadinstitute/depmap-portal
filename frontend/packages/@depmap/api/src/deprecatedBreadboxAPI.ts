@@ -1,4 +1,4 @@
-import { getUrlPrefix, isElara } from "@depmap/globals";
+import { getUrlPrefix, isPortal } from "@depmap/globals";
 import {
   FeatureType,
   FeatureTypeUpdateArgs,
@@ -8,7 +8,7 @@ import {
 import createJsonClient from "./createJsonClient";
 
 const { getJson, deleteJson, patchMultipart, postMultipart } = createJsonClient(
-  `${getUrlPrefix()}${isElara ? "" : "/breadbox"}`
+  `${getUrlPrefix()}${isPortal ? "/breadbox" : ""}`
 );
 
 function getSampleTypes() {

@@ -81,6 +81,20 @@ export async function fetchVariableDomain(
     throw new Error("Error fetching data from slice query");
   }
 
+  // A reindex_through chain that traverses a list-valued column promotes
+  // scalar leaf values into lists per cell (see breadbox _chain_step). The
+  // leaf column's declared col_type doesn't reflect that promotion, so when
+  // we have the actual data in front of us, prefer the observed shape over
+  // the declared type. Only text/categorical leaves get upgraded to
+  // list_strings here — continuous leaves promoted to lists would also need
+  // a list-aware domain-stats branch, which is a larger change out of scope.
+  if (
+    (value_type === "text" || value_type === "categorical") &&
+    data.values.some((v) => Array.isArray(v))
+  ) {
+    value_type = "list_strings" as AnnotationType;
+  }
+
   if (value_type === "text" || value_type === "categorical") {
     const stringValues = data.values.filter(
       (val) => typeof val === "string"

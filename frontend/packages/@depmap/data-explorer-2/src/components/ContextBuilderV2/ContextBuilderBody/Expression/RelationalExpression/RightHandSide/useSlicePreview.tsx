@@ -5,7 +5,7 @@ import {
   promptForValue,
   PromptComponentProps,
 } from "@depmap/common-components";
-import { isElara, toPortalLink } from "@depmap/globals";
+import { isPortal, toPortalLink } from "@depmap/globals";
 import { SlicePreview } from "@depmap/slice-table";
 import { DataExplorerContextVariable, SliceQuery } from "@depmap/types";
 import { usePlotlyLoader } from "../../../../../../contexts/PlotlyLoaderContext";
@@ -48,7 +48,7 @@ function useSlicePreview({ expr, op, path, variable }: Props) {
   const handleClickShowSlicePreview = useCallback(async () => {
     let nextValue: unknown = expr;
 
-    if (!isElara && isGeneList(variable as SliceQuery)) {
+    if (isPortal && isGeneList(variable as SliceQuery)) {
       openInGeneTea(expr as string[]);
       return;
     }

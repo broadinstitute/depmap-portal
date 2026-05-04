@@ -78,7 +78,7 @@ export function sliceIdToSliceQuery(
       return {
         dataset_id: "depmap_model_metadata",
         identifier_type: "column",
-        identifier: "CellLineName",
+        identifier: "StrippedCellLineName",
       };
 
     case "age_category":

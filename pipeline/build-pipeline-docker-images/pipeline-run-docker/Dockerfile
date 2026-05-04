@@ -72,7 +72,7 @@ RUN python3.9 -m venv /install/dsub && \
 
 # install sparkles v5 (requires python==3.10)
 RUN python3.10 -m venv /install/sparkles && \
-    /install/sparkles/bin/pip install https://github.com/broadinstitute/sparklespray/releases/download/v5.8.4/sparklespray-5.8.4.tar.gz && \
+    /install/sparkles/bin/pip install pip sparklespray==6.0.4 --extra-index-url https://us-central1-python.pkg.dev/cds-artifacts/public-python/simple/ && \
     ln -s /install/sparkles/bin/sparkles /root/.local/bin
 
 # install gcloud SDK
@@ -87,7 +87,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
 # install conseq in virtual environment
 COPY conseq-settings /root/.conseq
 RUN python3.13 -m venv /install/conseq && \
-      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/archive/refs/tags/v2.2.0.tar.gz && \
+      /install/conseq/bin/pip install https://github.com/broadinstitute/conseq/archive/refs/tags/v2.2.1.tar.gz && \
     ln -s /install/conseq/bin/conseq /root/.local/bin
 
 # copy the conseq helper into known location

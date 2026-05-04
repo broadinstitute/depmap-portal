@@ -229,6 +229,10 @@
     outline: 5px auto -webkit-focus-ring-color;
     outline-offset: 3px;
   }
+
+  &[disabled] {
+    visibility: hidden;
+  }
 }
 
 .unaryOpDetailsButton {

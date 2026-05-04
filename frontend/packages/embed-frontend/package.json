@@ -1,0 +1,30 @@
+{
+  "name": "embed-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "analyze": "webpack --config=webpack.analyze.js --progress",
+    "build": "webpack --config=webpack.prod.js",
+    "dev": "webpack serve --progress --config=webpack.dev.js",
+    "test": "echo \"No tests yet\""
+  },
+  "resolutions": {
+    "zod": "^3.25"
+  },
+  "dependencies": {
+    "@depmap/common-components": "1.0.0",
+    "@depmap/data-explorer-2": "1.0.0",
+    "@depmap/slice-table": "1.0.0",
+    "@depmap/types": "1.0.0",
+    "@modelcontextprotocol/ext-apps": "^1.1.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "react": "^16.14.0",
+    "react-dom": "^16.14.0",
+    "plotly.js": "^2.8.0"
+  },
+  "devDependencies": {
+    "@types/plotly.js": "^1.54.17",
+    "@types/react": "16.14.2",
+    "@types/react-dom": "16.9.8"
+  }
+}

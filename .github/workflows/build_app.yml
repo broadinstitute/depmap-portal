@@ -25,10 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
-      - name: Setup Node 19.4.0
+      - name: Setup Node 20.20.2
         uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3.9.1
         with:
-          node-version: 19.4.0
+          node-version: 20.20.2
       - name: Install yarn dependencies
         run: "cd frontend && NODE_OPTIONS='--openssl-legacy-provider' CI=true yarn install"
       - name: Build webpack

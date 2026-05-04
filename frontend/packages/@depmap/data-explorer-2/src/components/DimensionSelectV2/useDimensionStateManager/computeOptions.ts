@@ -534,8 +534,10 @@ export async function computeUnitsOptions(
   }
 
   const sliceAxis =
-    dimensionTypes.find((dt) => dt.name === dimension.slice_type)?.axis ||
-    "sample";
+    dimension.slice_type === null
+      ? "feature"
+      : dimensionTypes.find((dt) => dt.name === dimension.slice_type)?.axis ||
+        "sample";
 
   const unitsOptions = [
     ...new Set(
