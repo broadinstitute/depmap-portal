@@ -608,6 +608,10 @@ class EnrichedLineagesTile(
         feature_id = request.args.get("feature_id")
         feature_type = request.args.get("feature_type")
 
+        # Expect entrez_ids for feature_type=gene feature_ids. Anything else is an invalid request.
+        if feature_type == "gene" and not str(feature_id).isdigit():
+            abort(404)
+
         return _get_enriched_lineages_tile_with_caching(
             tree_type, feature_id, feature_type
         )

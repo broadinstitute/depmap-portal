@@ -513,3 +513,23 @@ def test_get_context_dose_curves_invalid_request_arguments(populated_db):
                 ),
                 content_type="application/json",
             )
+
+
+def test_enriched_lineages_tile_404_on_gene_symbol(populated_db):
+    """
+    Test that passing a gene symbol (string) instead of an Entrez ID 
+    to the enriched_lineages_tile endpoint results in a 404.
+    """
+    with populated_db.app.test_client() as c:
+        r = c.get(
+            url_for("api.context_explorer_enriched_lineages_tile"),
+            query_string={
+                "tree_type": "lineage",
+                "feature_id": "SOX10",
+                "feature_type": "gene",
+            },
+            content_type="application/json",
+        )
+
+        # Assert that the status code is indeed 404
+        assert r.status_code == 404
