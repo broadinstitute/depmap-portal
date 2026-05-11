@@ -83,8 +83,11 @@
 }
 
 .CategoricalDataPreview {
-  & > div:first-child {
+  .barChartContainer {
     min-height: 500px;
+  }
+
+  & > div:first-child {
     @extend .fadein;
   }
 }
