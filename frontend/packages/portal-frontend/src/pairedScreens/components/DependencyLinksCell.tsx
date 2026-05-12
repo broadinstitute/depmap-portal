@@ -1,10 +1,14 @@
 import React from "react";
-import type { ScreenPairMetadata } from "./useMetadata";
-import styles from "../styles/ResistanceScreenDashboard.scss";
+import type { ScreenPairMetadata } from "../hooks/useMetadata";
+import styles from "../styles/sharedDashboard.scss";
 
 interface Props {
   pairId: string;
   metadata: ScreenPairMetadata | null;
+  // Dataset IDs that drive the volcano-plot link. Anchor and resistance
+  // dashboards point at different paired-screen result datasets here.
+  volcanoXDataset: string;
+  volcanoYDataset: string;
 }
 
 const ScatterLink = ({
@@ -62,19 +66,22 @@ const ScatterLink = ({
   );
 };
 
-function PlotLinksCell({ pairId, metadata }: Props) {
+function DependencyLinksCell({
+  pairId,
+  metadata,
+  volcanoXDataset,
+  volcanoYDataset,
+}: Props) {
   if (!metadata) {
     return "...";
   }
 
-  const xDataset = "PairedResGeneEffectDiff";
-  const yDataset = "PairedResGeneEffectFDR";
   const { label } = metadata;
 
   const href =
     "../data_explorer_2/" +
-    `?xDataset=${xDataset}&xSample=${label[pairId]}` +
-    `&yDataset=${yDataset}&ySample=${label[pairId]}`;
+    `?xDataset=${volcanoXDataset}&xSample=${label[pairId]}` +
+    `&yDataset=${volcanoYDataset}&ySample=${label[pairId]}`;
 
   return (
     <span>
@@ -87,4 +94,4 @@ function PlotLinksCell({ pairId, metadata }: Props) {
   );
 }
 
-export default PlotLinksCell;
+export default DependencyLinksCell;

@@ -35,6 +35,15 @@ interface Props {
   // the distribution in sync with whatever filters are applied to the parent
   // table. When omitted, all rows are shown.
   visibleRowIds?: Set<string>;
+  // The set of rows that would be visible if the user had no filters applied
+  // (i.e. with only the table's `implicitFilter` taken into account). When
+  // provided, this is used as the baseline for the "filtered rows only"
+  // indicator: the indicator only shows if `visibleRowIds` is a strict subset
+  // of `unfilteredRowIds`. The implicit filter is invisible to the end user,
+  // so it should not on its own trigger the indicator. When omitted (no
+  // implicit filter is configured), the full preview dataset is used as the
+  // baseline.
+  unfilteredRowIds?: Set<string>;
 }
 
 function SlicePreview({
@@ -46,6 +55,7 @@ function SlicePreview({
   getContinuousFilterProps = undefined,
   getCategoricalFilterProps = undefined,
   visibleRowIds = undefined,
+  unfilteredRowIds = undefined,
 }: Props) {
   const slices = useMemo(() => (value ? [value] : []), [value]);
 
@@ -117,8 +127,19 @@ function SlicePreview({
   const values = scopedData.map((row) => row[column.id]);
   const isEmpty = scopedData.every((row) => row[column.id] === undefined);
   const { idLabel, units, datasetName } = column.meta;
+
+  // Baseline for the "filtered rows only" indicator. When `unfilteredRowIds`
+  // is provided (i.e. the parent table has an `implicitFilter`), use the
+  // count of preview rows that pass the implicit filter as the baseline.
+  // This way the indicator only fires when the user's own filters have
+  // narrowed things further — the implicit filter alone doesn't count,
+  // since it's invisible to the user.
+  const baselineCount = unfilteredRowIds
+    ? previewData.filter((row) => unfilteredRowIds.has(row.id as string)).length
+    : previewData.length;
+
   const isFiltered =
-    visibleRowIds !== undefined && scopedData.length < previewData.length;
+    visibleRowIds !== undefined && scopedData.length < baselineCount;
 
   let xAxisTitle = `${idLabel}`;
 
