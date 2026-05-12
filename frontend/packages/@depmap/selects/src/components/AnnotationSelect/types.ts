@@ -47,12 +47,17 @@ export interface Door {
 
 /**
  * A supplemental (non-primary) table reachable at some dimension type.
+ *
+ * `autoPath` records the one-to-one FK hops traversed to reach this table's
+ * dim type from the level computeLevel was invoked at. It mirrors
+ * ColumnEntry.autoPath and is empty for supplementals at the current level.
  */
 export interface SupplementalTable {
   dimType: string;
   dimDisplayName: string;
   table: TableDescriptor;
   columnCount: number;
+  autoPath: ChainHop[];
 }
 
 /**

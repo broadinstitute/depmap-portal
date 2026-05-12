@@ -105,7 +105,11 @@ export function buildSliceQuery(
   selectedColumn: string,
   columnEntry: ColumnEntry | null,
   hops: ChainHop[],
-  supplementalTable: { tableId: string; dimType: string } | null,
+  supplementalTable: {
+    tableId: string;
+    dimType: string;
+    autoPath: ChainHop[];
+  } | null,
   selectedSource: { id: string; given_id: string | null },
   index_type: string,
   tablesByDim: Record<string, TableDescriptor[]>,
@@ -132,27 +136,29 @@ export function buildSliceQuery(
     }
   }
 
-  // 2. Auto-path hops from the selected column (one-to-one traversals).
-  if (columnEntry && columnEntry.autoPath.length > 0) {
-    for (let j = 0; j < columnEntry.autoPath.length; j++) {
-      if (j === 0 && hops.length === 0) {
-        // First auto-path step with no preceding door hops:
-        // originates from the selected source table, not the primary table.
-        chain.push({
-          dataset_id: resolveDatasetId(selectedSource),
-          identifier: columnEntry.autoPath[j].throughCol,
-        });
-      } else {
-        const originDim =
-          j === 0
-            ? hops[hops.length - 1].toDim
-            : columnEntry.autoPath[j - 1].toDim;
-        const table = findPrimaryTable(originDim, tablesByDim, dimTypeMap);
-        chain.push({
-          dataset_id: table ? resolveDatasetId(table) : originDim,
-          identifier: columnEntry.autoPath[j].throughCol,
-        });
-      }
+  // 2. Trailing auto-path hops. These come from either the selected column
+  // (when picked from the properties list) or the supplemental table (when
+  // navigated into via "Continue to table"). The two cases are mutually
+  // exclusive and produce structurally identical chain steps.
+  const trailingAutoPath: ChainHop[] =
+    supplementalTable?.autoPath ?? columnEntry?.autoPath ?? [];
+
+  for (let j = 0; j < trailingAutoPath.length; j++) {
+    if (j === 0 && hops.length === 0) {
+      // First auto-path step with no preceding door hops:
+      // originates from the selected source table, not the primary table.
+      chain.push({
+        dataset_id: resolveDatasetId(selectedSource),
+        identifier: trailingAutoPath[j].throughCol,
+      });
+    } else {
+      const originDim =
+        j === 0 ? hops[hops.length - 1].toDim : trailingAutoPath[j - 1].toDim;
+      const table = findPrimaryTable(originDim, tablesByDim, dimTypeMap);
+      chain.push({
+        dataset_id: table ? resolveDatasetId(table) : originDim,
+        identifier: trailingAutoPath[j].throughCol,
+      });
     }
   }
 
@@ -313,6 +319,7 @@ export interface DerivedNavState {
     tableName: string;
     dimType: string;
     dimDisplayName: string;
+    autoPath: ChainHop[];
   } | null;
 }
 
@@ -342,8 +349,13 @@ export function deriveNavStateFromValue(
   const sourceTableId = rootMatch?.table.id ?? null;
 
   const hops: ChainHop[] = [];
+  let pendingAutoPath: ChainHop[] = [];
 
   // Walk intermediate steps (everything except the leaf) to find door hops.
+  // Auto-traversal hops (FKs with only one column to a given target) are
+  // accumulated in pendingAutoPath; the buffer resets each time a door hop
+  // is encountered, so what remains at the end is the trailing run of
+  // auto-traversals that lead from the last door (or the root) to the leaf.
   for (let i = 0; i < steps.length - 1; i++) {
     const step = steps[i];
 
@@ -370,8 +382,11 @@ export function deriveNavStateFromValue(
     if (fkCountToSameTarget >= 2) {
       // Many-to-one: this was a door hop.
       hops.push({ throughCol: col, toDim: targetDim });
+      pendingAutoPath = [];
+    } else {
+      // One-to-one: auto-traversed.
+      pendingAutoPath.push({ throughCol: col, toDim: targetDim });
     }
-    // Otherwise one-to-one: auto-traversed, not a user-visible hop.
   }
 
   // Leaf step: check if it's from a supplemental table.
@@ -389,6 +404,7 @@ export function deriveNavStateFromValue(
         tableName: leafTable.name,
         dimType: leafDimType,
         dimDisplayName: dimTypeMap[leafDimType]?.display_name ?? leafDimType,
+        autoPath: pendingAutoPath,
       };
     }
   }
