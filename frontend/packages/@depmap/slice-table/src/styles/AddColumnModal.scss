@@ -89,6 +89,11 @@
 
   & > div:first-child {
     @extend .fadein;
+
+    &.showNulls {
+      display: flex;
+      align-items: flex-end;
+    }
   }
 }
 

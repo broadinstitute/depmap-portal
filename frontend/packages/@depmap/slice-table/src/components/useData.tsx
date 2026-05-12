@@ -29,7 +29,7 @@ interface Parameters {
 }
 
 // Types for better code clarity
-type SliceResponse = {
+export type SliceResponse = {
   ids: string[];
   labels: string[];
   values: (string | number | null)[];
@@ -316,7 +316,7 @@ const truncateMiddle = (str: string, maxLength = 45): string => {
  * 2. Creates rows where each ID gets values from all slices (with null for missing data)
  * 3. Generates table column definitions with proper headers and metadata
  */
-function transformToTableData(
+export function transformToTableData(
   dataResponses: SliceResponse[],
   displayLabels: string[],
   slices: SliceQuery[],
@@ -328,26 +328,55 @@ function transformToTableData(
   idToLabelMappings: Record<string, Record<string, string>>,
   getColumnDisplayOptions?: Parameters["getColumnDisplayOptions"]
 ) {
-  // Step 1: Create unique column keys and collect all row IDs
+  // Step 1: Create unique column keys, validate IDs, and key data by ID.
+  //
+  // The label response (always at index 0 — `buildSlicesToFetch` prepends
+  // it) is keyed by the index type's canonical entity IDs. Every other
+  // response should be keyed by a subset of those: a data slice can have
+  // coverage holes, but should never include IDs that aren't part of the
+  // index type. If it does, drop the offending IDs (so the table stays
+  // coherent) and log loudly so the bug isn't invisible. This usually
+  // means a slice that should have been wrapped in `reindex_through`
+  // wasn't, or the backend returned IDs in the wrong space.
   const columnKeys = slices.map(createUniqueColumnKey);
-  const allRowIds = new Set<string>();
+  const labelIds = new Set(dataResponses[0].ids);
   const columnData: Record<string, Record<string, string | number | null>> = {};
 
-  // Process each data response and collect row IDs
+  // Process each data response, dropping foreign IDs.
   dataResponses.forEach((response, index) => {
     const uniqueKey = columnKeys[index];
     const keyed: Record<string, string | number | null> = {};
 
+    if (index > 0) {
+      const foreign = response.ids.filter((id) => !labelIds.has(id));
+      if (foreign.length > 0) {
+        const slice = slices[index];
+        // eslint-disable-next-line no-console
+        console.error(
+          `[SliceTable] Slice "${displayLabels[index]}" (dataset_id=` +
+            `"${slice.dataset_id}", identifier="${slice.identifier}") ` +
+            `returned ${foreign.length} of ${response.ids.length} IDs that ` +
+            `aren't part of the "${indexType.name}" index. These rows are ` +
+            `being dropped from the table. This usually means the slice ` +
+            `should have been wrapped in reindex_through but wasn't. ` +
+            `Foreign ID sample: ${JSON.stringify(foreign.slice(0, 5))}`
+        );
+      }
+    }
+
     for (let i = 0; i < response.ids.length; i++) {
+      if (index > 0 && !labelIds.has(response.ids[i])) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
       keyed[response.ids[i]] = response.values[i];
-      allRowIds.add(response.ids[i]);
     }
 
     columnData[uniqueKey] = keyed;
   });
 
-  // Step 2: Build data rows
-  const data = Array.from(allRowIds).map((rowId) => {
+  // Step 2: Build data rows from the canonical entity set.
+  const data = Array.from(labelIds).map((rowId) => {
     const row: Record<string, string | number | undefined> = { id: rowId };
 
     columnKeys.forEach((columnKey) => {
