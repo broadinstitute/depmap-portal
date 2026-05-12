@@ -2,6 +2,7 @@ import * as React from "react";
 import Form from "@rjsf/core";
 import {
   FieldProps,
+  getDefaultFormState,
   RegistryFieldsType,
   RJSFValidationError,
   UiSchema,
@@ -233,6 +234,25 @@ export function MatrixDatasetForm({
       },
     };
     setSchema(schemaWithOptions);
+
+    // Merge schema defaults into formData. This is necessary because the schema is
+    // built asynchronously, so RJSF never gets a chance to apply defaults on initial
+    // render. Without this, fields like `sample_type` appear pre-selected in the UI
+    // (from the schema default) but are actually undefined in formData, leaving the
+    // form in an unsubmittable state. Existing formData values take precedence over
+    // defaults, so user edits are never clobbered.
+    setFormData((prev: any) => {
+      const stripped = Object.fromEntries(
+        Object.entries(prev).filter(([, v]) => v !== null && v !== undefined)
+      );
+
+      return getDefaultFormState(
+        validator,
+        schemaWithOptions,
+        stripped,
+        schemaWithOptions
+      );
+    });
   }, [featureTypes, sampleTypes, dataTypes, groups]);
 
   React.useEffect(() => {
