@@ -1,6 +1,6 @@
 import React from "react";
 import { InfoTip, WordBreaker } from "@depmap/common-components";
-import styles from "../styles/AnchorScreenDashboard.scss";
+import styles from "src/pairedScreens/styles/sharedDashboard.scss";
 
 function PercentCPDChangeHeader({ label }: { label: string }) {
   return (

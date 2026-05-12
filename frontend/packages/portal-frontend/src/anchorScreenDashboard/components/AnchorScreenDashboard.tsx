@@ -1,17 +1,34 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
+import { Button } from "react-bootstrap";
+import { WordBreaker } from "@depmap/common-components";
 import { toPortalLink } from "@depmap/globals";
 import SliceTable from "@depmap/slice-table";
 import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
-import initialSlices from "./initialSlices.json";
-import PlotLinksHeader from "./PlotLinksHeader";
-import PlotLinksCell from "./PlotLinksCell";
+import DependencyLinksHeader from "src/pairedScreens/components/DependencyLinksHeader";
+import DependencyLinksCell from "src/pairedScreens/components/DependencyLinksCell";
+import useMetadata from "src/pairedScreens/hooks/useMetadata";
+import useUrlHighlights from "src/pairedScreens/hooks/useUrlHighlights";
+import initialSlices from "../json/initialSlices.json";
 import PercentCPDChangeHeader from "./PercentCPDChangeHeader";
 import CompoundLink from "./CompoundLink";
-import useMetadata from "./useMetadata";
-import styles from "../styles/AnchorScreenDashboard.scss";
+import styles from "src/pairedScreens/styles/sharedDashboard.scss";
 
 function AnchorScreenDashboard() {
   const metadata = useMetadata();
+  const sliceTableRef = useRef<{ forceInitialize: () => void }>(null);
+  const { highlights, clearHighlights } = useUrlHighlights();
+
+  // Re-initialize the table when highlights change (clear button or
+  // back/forward navigation). The first render is skipped because the table
+  // initializes itself with the current highlights on mount.
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    sliceTableRef.current?.forceInitialize();
+  }, [highlights]);
 
   return (
     <div>
@@ -52,8 +69,14 @@ function AnchorScreenDashboard() {
       <div className={styles.tableContainer}>
         <SliceTable
           index_type_name="screen_pair"
+          sliceTableRef={sliceTableRef}
           isLoading={!metadata}
-          getInitialState={() => ({ initialSlices })}
+          getInitialState={() => ({
+            initialSlices,
+            initialRowSelection: Object.fromEntries(
+              highlights.map((id) => [id, true])
+            ),
+          })}
           downloadFilename="anchor_screen_dashboard.csv"
           hideLabelColumn
           hiddenDatasets={
@@ -72,23 +95,28 @@ function AnchorScreenDashboard() {
             return metadata.ComparisonType[id] === "drug-anchor";
           }}
           getColumnDisplayOptions={(sliceQuery) => {
+            const header = () => <WordBreaker text={sliceQuery.identifier} />;
+
             switch (sliceQuery.identifier) {
               case "PairID":
-                return { width: 100 };
+                return { header, width: 100 };
 
               case "ModelID":
-                return { width: 125 };
+                return { header, width: 125 };
+
+              case "StrippedCellLineName":
+              case "OncotreeLineage":
+              case "DrugConcentration":
+                return { header };
 
               case "Drug":
-                return {
-                  cell: CompoundLink,
-                };
+                return { header, cell: CompoundLink };
 
               case "TestArmAvgCPD":
-                return { width: 140 };
+                return { header, width: 140, numericPrecision: 3 };
 
               case "ControlArmAvgCPD":
-                return { width: 140 };
+                return { header, width: 140, numericPrecision: 3 };
 
               case "PercentCPDChange":
                 return {
@@ -104,12 +132,53 @@ function AnchorScreenDashboard() {
           customColumns={[
             {
               width: 148,
-              header: PlotLinksHeader,
+              header: () => (
+                <DependencyLinksHeader
+                  heading={<>Comparing drug to control condition</>}
+                  tooltipTitle="Comparing drug to control condition"
+                  tooltipContent={
+                    <ul>
+                      <li>
+                        The “volcano” links will show a volcano plot of the
+                        differential dependency analysis produced by
+                        Chronos-compare. The x-axis shows difference in gene
+                        effect, negative values indicate greater dependency in
+                        the drug vs. control arm.
+                      </li>
+                      <br />
+                      <li>
+                        The “scatter” links will show a scatter plot of the drug
+                        vs the control arm gene effects.
+                      </li>
+                    </ul>
+                  }
+                />
+              ),
               cell: ({ row }) => (
-                <PlotLinksCell pairId={row.id} metadata={metadata} />
+                <DependencyLinksCell
+                  pairId={row.id}
+                  metadata={metadata}
+                  volcanoXDataset="PairedAnchorGeneEffectDiff"
+                  volcanoYDataset="PairedAnchorGeneEffectFDR"
+                />
               ),
             },
           ]}
+          renderCustomActions={() => {
+            if (highlights.length === 0) {
+              return null;
+            }
+
+            return (
+              <Button onClick={clearHighlights}>
+                <i className="glyphicon glyphicon-erase" />
+                <span>
+                  {" "}
+                  Clear highlighted {highlights.length === 1 ? "row" : "rows"}
+                </span>
+              </Button>
+            );
+          }}
         />
       </div>
     </div>

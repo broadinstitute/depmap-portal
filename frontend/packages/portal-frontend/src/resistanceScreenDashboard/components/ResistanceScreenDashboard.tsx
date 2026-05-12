@@ -1,16 +1,10 @@
 import React from "react";
 import { toPortalLink } from "@depmap/globals";
-import SliceTable from "@depmap/slice-table";
 import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
-import initialSlices from "./initialSlices.json";
-import useMetadata from "./useMetadata";
-import PlotLinksHeader from "./PlotLinksHeader";
-import PlotLinksCell from "./PlotLinksCell";
-import styles from "../styles/ResistanceScreenDashboard.scss";
+import ResistanceScreenTable from "./ResistanceScreenTable";
+import styles from "src/pairedScreens/styles/sharedDashboard.scss";
 
 function ResistanceScreenDashboard() {
-  const metadata = useMetadata();
-
   return (
     <div>
       <div className={styles.header}>
@@ -48,54 +42,7 @@ function ResistanceScreenDashboard() {
         </p>
       </div>
       <div className={styles.tableContainer}>
-        <SliceTable
-          index_type_name="screen_pair"
-          isLoading={!metadata}
-          getInitialState={() => ({ initialSlices })}
-          downloadFilename="resistance_screen_dashboard.csv"
-          hideLabelColumn
-          hiddenDatasets={
-            new Set([
-              "screen_pair_metadata",
-              "PairedAnchorScreenTable",
-              "PairedAnchorGeneEffectDiff",
-              "PairedAnchorGeneEffectFDR",
-            ])
-          }
-          implicitFilter={({ id }) => {
-            if (!metadata) {
-              return false;
-            }
-
-            return [
-              "drug adapted",
-              "genetic knock out",
-              "genetic knock-in",
-            ].includes(metadata.ComparisonType[id]);
-          }}
-          getColumnDisplayOptions={(sliceQuery) => {
-            switch (sliceQuery.identifier) {
-              case "PairID":
-                return { width: 100 };
-
-              case "CtrlArmModelID":
-              case "TestArmModelID":
-                return { width: 125 };
-
-              default:
-                return null;
-            }
-          }}
-          customColumns={[
-            {
-              width: 148,
-              header: PlotLinksHeader,
-              cell: ({ row }) => (
-                <PlotLinksCell pairId={row.id} metadata={metadata} />
-              ),
-            },
-          ]}
-        />
+        <ResistanceScreenTable />
       </div>
     </div>
   );

@@ -57,7 +57,7 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
               {modelInfo.lineage_tree
                 .sort((a, b) => a.level - b.level)
                 .map((info: SubtypeTreeInfo) => (
-                  <>
+                  <React.Fragment key={info.subtype_code}>
                     <h6 className={styles.propertyHeader}>
                       Level {info.level}
                     </h6>
@@ -69,7 +69,7 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
                     >
                       {info.node_name} ({info.subtype_code})
                     </a>
-                  </>
+                  </React.Fragment>
                 ))}
             </>
           )}
@@ -84,7 +84,7 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
                 {modelInfo.molecular_subtype_tree
                   .sort((a, b) => a.level - b.level)
                   .map((info: SubtypeTreeInfo) => (
-                    <>
+                    <React.Fragment key={info.subtype_code}>
                       <h6 className={styles.propertyHeader}>
                         Level {info.level}
                       </h6>
@@ -96,7 +96,7 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
                       >
                         {info.node_name} ({info.subtype_code})
                       </a>
-                    </>
+                    </React.Fragment>
                   ))}
               </>
             )}

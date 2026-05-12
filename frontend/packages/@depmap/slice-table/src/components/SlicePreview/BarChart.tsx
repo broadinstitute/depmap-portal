@@ -14,7 +14,10 @@ interface Props {
   data: { x: string[]; y: number[] };
   hoverLabel: string;
   xAxisTitle: string;
+  entityLabel?: string;
+  totalCount?: number;
   useLogScale?: boolean;
+  disabledIndices?: Set<number>;
   selectionMode?: "single" | "multiple" | "none";
   selectedPoints?: Set<number>;
   onSelect?: (pointIndices: number[]) => void;
@@ -88,7 +91,10 @@ function PrototypeBarChart({
   data,
   xAxisTitle,
   hoverLabel,
+  entityLabel = "",
+  totalCount = 0,
   useLogScale = false,
+  disabledIndices = undefined,
   selectionMode = "none",
   selectedPoints = undefined,
   onSelect = () => {},
@@ -295,7 +301,10 @@ function PrototypeBarChart({
     dragmode,
     xAxisTitle,
     hoverLabel,
+    entityLabel,
+    totalCount,
     useLogScale,
+    disabledIndices,
     selectionMode,
     selectedPoints,
     onSelect,

@@ -5,7 +5,11 @@ import type { RowSelectionState } from "@depmap/react-table";
 import type { SliceQuery } from "@depmap/types";
 import Controls from "./Controls";
 import Actions from "./Actions";
-import { useSliceTableState, filterPredicate } from "./useSliceTableState";
+import {
+  useSliceTableState,
+  filterPredicate,
+  CellCtx,
+} from "./useSliceTableState";
 import styles from "../styles/SliceTable.scss";
 
 interface Props {
@@ -25,7 +29,10 @@ interface Props {
   hiddenDatasets?: Set<string>;
   customColumns?: {
     header: () => React.ReactNode;
-    cell: ({ row }: { row: Record<"id", string> }) => React.ReactNode;
+    cell: (
+      cellCtx: CellCtx,
+      getValue: (sliceQuery: SliceQuery) => unknown
+    ) => React.ReactNode;
     width?: number;
   }[];
   // Per-column display customization. Called once per column during column
@@ -226,6 +233,13 @@ function SliceTable({
 
           if (aSelected && !bSelected) return -1;
           if (!aSelected && bSelected) return 1;
+
+          const aIdNum = Number(aId);
+          const bIdNum = Number(bId);
+
+          if (!Number.isNaN(aIdNum) && !Number.isNaN(bIdNum)) {
+            return aIdNum < bIdNum ? -1 : 1;
+          }
 
           return 0;
         }}

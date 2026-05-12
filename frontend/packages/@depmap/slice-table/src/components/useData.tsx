@@ -74,6 +74,7 @@ interface AlignedData {
   data: Record<string, string | number | undefined>[];
   loading: boolean;
   error: string | null;
+  entityLabel: string;
   exportToCsv: (options?: {
     rowFilter?: (row: Record<string, string | number | undefined>) => boolean;
     // When provided, the exported rows are ordered to match this array.
@@ -570,6 +571,7 @@ export default function useAlignedData({
     data: [],
     loading: false,
     error: null,
+    entityLabel: "",
     exportToCsv: () => "",
   });
 
@@ -777,6 +779,7 @@ export default function useAlignedData({
           ...prev,
           data,
           columns,
+          entityLabel: indexType.display_name || indexType.name,
           loading: false,
           error: null,
         }));
@@ -807,6 +810,7 @@ export default function useAlignedData({
     data: state.data,
     loading: state.loading,
     error: state.error,
+    entityLabel: state.entityLabel,
     exportToCsv,
   };
 }
