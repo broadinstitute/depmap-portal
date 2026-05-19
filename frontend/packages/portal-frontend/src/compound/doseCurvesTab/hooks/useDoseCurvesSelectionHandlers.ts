@@ -107,13 +107,13 @@ function useDoseCurvesSelectionHandlers(
   }, [selectedModelIds, displayNameModelIdMap]);
 
   const handleSetSelectionFromContext = useCallback(async () => {
-    const allLabels = new Set(
+    const allIds = new Set(
       doseCurveData?.curve_params.map((curveParam) => curveParam.id!)
     );
-    const labels = await compoundPagePromptForSelectionFromContext(allLabels);
-    if (labels === null) return;
-    setSelectedModelIds(labels);
-    setSelectedTableRows(labels);
+    const ids = await compoundPagePromptForSelectionFromContext(allIds);
+    if (ids === null) return;
+    setSelectedModelIds(ids);
+    setSelectedTableRows(ids);
   }, [doseCurveData]);
 
   const handleClearSelection = useCallback(() => {
