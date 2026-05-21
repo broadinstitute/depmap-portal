@@ -1,4 +1,4 @@
-from celery.bin.celery import main
+from celery.bin.celery import celery as celery_main
 import click
 import subprocess
 from flask.cli import with_appcontext
@@ -29,9 +29,9 @@ def run_worker(name, celery_args):
 
 
 def _run_worker(extra_args=[]):
-    main(
-        ["", "-A", "depmap.compute.worker.app", "worker", "-l", "info"]
-        + list(extra_args)
+    celery_main(
+        ["-A", "depmap.compute.worker.app", "worker", "-l", "info"] + list(extra_args),
+        standalone_mode=False,
     )
 
 

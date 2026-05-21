@@ -1,1 +1,3 @@
-build-pipeline-docker-images/pipeline-run-docker/image-name
+# This is also used in pipeline/jenkins-run-pipeline.sh.
+
+DOCKER_IMAGE=us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-pipeline-run:v10
