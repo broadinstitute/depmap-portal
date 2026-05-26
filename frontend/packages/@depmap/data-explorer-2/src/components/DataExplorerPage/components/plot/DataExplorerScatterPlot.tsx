@@ -26,11 +26,11 @@ interface Props {
   onClickColorByContext: (context: DataExplorerContextV2) => void;
   onClickSaveSelectionAsContext: (
     dimension_type: string,
-    selectedLabels: Set<string>
+    selectedIds: Set<string>
   ) => void;
   onClickVisualizeSelected: (
     e: React.MouseEvent,
-    selectedLabels: Set<string>
+    selectedIds: Set<string>
   ) => void;
   plotConfig: DataExplorerPlotConfig;
 }
@@ -45,9 +45,7 @@ function DataExplorerScatterPlot({
   plotConfig,
 }: Props) {
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-  const [selectedLabels, setSelectedLabels] = useState<Set<string> | null>(
-    null
-  );
+  const [selectedIds, setSelectedIds] = useState<Set<string> | null>(null);
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
   const {
@@ -95,28 +93,28 @@ function DataExplorerScatterPlot({
   const slice_type1 = plotConfig.dimensions.y?.slice_type;
 
   useEffect(() => {
-    setSelectedLabels(null);
+    setSelectedIds(null);
   }, [slice_type0, slice_type1]);
 
   useEffect(() => {
-    if (!data?.index_labels) {
+    if (!data?.index_ids) {
       return;
     }
 
-    const validSelections = new Set(data.index_labels || []);
+    const validSelections = new Set(data.index_ids || []);
 
-    setSelectedLabels((xs) => {
+    setSelectedIds((xs) => {
       if (!xs) {
         return null;
       }
 
       const ys = new Set<string>();
-      const labels = [...xs];
+      const ids = [...xs];
 
-      for (let i = 0; i < labels.length; i += 1) {
-        const label = labels[i];
-        if (validSelections.has(label)) {
-          ys.add(label);
+      for (let i = 0; i < ids.length; i += 1) {
+        const id = ids[i];
+        if (validSelections.has(id)) {
+          ys.add(id);
         }
       }
 
@@ -127,27 +125,27 @@ function DataExplorerScatterPlot({
   const selectedPoints = useMemo(() => {
     const out: Set<number> = new Set();
 
-    if (!data?.index_labels) {
+    if (!data?.index_ids) {
       return out;
     }
 
-    for (let i = 0; i < data.index_labels.length; i += 1) {
-      if (selectedLabels?.has(data.index_labels[i])) {
+    for (let i = 0; i < data.index_ids.length; i += 1) {
+      if (selectedIds?.has(data.index_ids[i])) {
         out.add(i);
       }
     }
 
     return out;
-  }, [data, selectedLabels]);
+  }, [data, selectedIds]);
 
   const handleMultiselect = useCallback(
     (pointIndices: number[]) => {
       if (data && pointIndices.length > 0) {
         const s = new Set<string>();
         pointIndices.forEach((i: number) => {
-          s.add(data.index_labels[i]);
+          s.add(data.index_ids[i]);
         });
-        setSelectedLabels(s);
+        setSelectedIds(s);
       }
     },
     [data]
@@ -159,26 +157,48 @@ function DataExplorerScatterPlot({
         return;
       }
 
-      const label = data.index_labels[pointIndex];
+      const id = data.index_ids[pointIndex];
 
       if (ctrlKey) {
-        setSelectedLabels((xs) => {
+        setSelectedIds((xs) => {
           const ys = new Set(xs);
 
-          if (xs?.has(label)) {
-            ys.delete(label);
+          if (xs?.has(id)) {
+            ys.delete(id);
           } else {
-            ys.add(label);
+            ys.add(id);
           }
 
           return ys;
         });
       } else {
-        setSelectedLabels(new Set([label]));
+        setSelectedIds(new Set([id]));
       }
     },
-    [data, setSelectedLabels]
+    [data, setSelectedIds]
   );
+
+  // GeneTea consumes display labels (gene symbols), not IDs. Convert at
+  // the boundary by indexing the data's parallel id/label arrays.
+  const selectedLabels = useMemo(() => {
+    if (!data?.index_ids || !selectedIds) {
+      return selectedIds;
+    }
+
+    const idToLabel: Record<string, string> = {};
+    for (let i = 0; i < data.index_ids.length; i += 1) {
+      idToLabel[data.index_ids[i]] = data.index_labels[i];
+    }
+
+    const out = new Set<string>();
+    selectedIds.forEach((id) => {
+      const label = idToLabel[id];
+      if (label !== undefined) {
+        out.add(label);
+      }
+    });
+    return out;
+  }, [data, selectedIds]);
 
   return (
     <div className={styles.DataExplorerScatterPlot}>
@@ -190,7 +210,7 @@ function DataExplorerScatterPlot({
             isLoading={showSpinner}
             plotElement={plotElement}
             handleClickPoint={handleClickPoint}
-            onClickUnselectAll={() => setSelectedLabels(null)}
+            onClickUnselectAll={() => setSelectedIds(null)}
           />
         </div>
         <div className={styles.plot}>
@@ -218,7 +238,7 @@ function DataExplorerScatterPlot({
               selectedPoints={selectedPoints}
               showIdentityLine={showIdentityLine}
               regressionLines={regressionLines}
-              onClickResetSelection={() => setSelectedLabels(null)}
+              onClickResetSelection={() => setSelectedIds(null)}
               legendForDownload={legendForDownload}
               pointSize={pointSize}
               pointOpacity={pointOpacity}
@@ -248,27 +268,29 @@ function DataExplorerScatterPlot({
             <PlotSelections
               data={data}
               plot_type={plotConfig?.plot_type || null}
-              selectedLabels={selectedLabels}
+              selectedIds={selectedIds}
               onClickVisualizeSelected={(e) =>
-                onClickVisualizeSelected(e, selectedLabels as Set<string>)
+                onClickVisualizeSelected(e, selectedIds as Set<string>)
               }
               onClickSaveSelectionAsContext={() => {
                 onClickSaveSelectionAsContext(
                   plotConfig.index_type,
-                  selectedLabels as Set<string>
+                  selectedIds as Set<string>
                 );
               }}
               onClickClearSelection={() => {
-                setSelectedLabels(null);
+                setSelectedIds(null);
               }}
               onClickSetSelectionFromContext={async () => {
-                const labels = await promptForSelectionFromContext(data!);
+                const newSelectedIds = await promptForSelectionFromContext(
+                  data!
+                );
 
-                if (labels === null) {
+                if (newSelectedIds === null) {
                   return;
                 }
 
-                setSelectedLabels(labels);
+                setSelectedIds(newSelectedIds);
                 plotElement?.annotateSelected();
               }}
             />

@@ -1,4 +1,3 @@
-/* eslint-disable no-continue */
 import type {
   ColumnEntry,
   ColumnGroup,

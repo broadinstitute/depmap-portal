@@ -3,21 +3,10 @@ import VirtualList from "react-tiny-virtual-list";
 import styles from "../../../styles/DataExplorer2.scss";
 
 const toHyperlink = (dimensionType: string, id: string, label: string) => {
-  if (dimensionType === "compound_experiment") {
-    const compound = label.replace(/\s*\(BRD:.*\)/, "");
-
-    return (
-      <span>
-        <a href={`../compound/${compound}`} target="_blank" rel="noreferrer">
-          {compound}
-        </a>
-      </span>
-    );
-  }
-
   const urlFor: Record<string, string | undefined> = {
     gene: `../gene/${label}`,
     depmap_model: `../cell_line/${id}`,
+    compound_v2: `../compound/${label}`,
   };
 
   if (!urlFor[dimensionType]) {

@@ -1,4 +1,3 @@
-/* eslint-disable no-continue */
 import type { Dataset, TabularDataset } from "@depmap/types";
 import type { DimensionTypeDescriptor, TableDescriptor } from "./types";
 

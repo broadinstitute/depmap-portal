@@ -21,11 +21,11 @@ interface Props {
   isLoading: boolean;
   onClickVisualizeSelected: (
     e: React.MouseEvent,
-    selectedLabels: Set<string>
+    selectedIds: Set<string>
   ) => void;
   onClickSaveSelectionAsContext: (
     dimension_type: string,
-    selectedLabels: Set<string>
+    selectedIds: Set<string>
   ) => void;
   onClickShowDensityFallback: () => void;
 }
@@ -79,9 +79,7 @@ function DataExplorerCorrelationHeatmap({
   onClickShowDensityFallback,
 }: Props) {
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-  const [selectedLabels, setSelectedLabels] = useState<Set<string> | null>(
-    null
-  );
+  const [selectedIds, setSelectedIds] = useState<Set<string> | null>(null);
   const { plotStyles } = useDataExplorerSettings();
   const { palette, xAxisFontSize } = plotStyles;
 
@@ -93,7 +91,7 @@ function DataExplorerCorrelationHeatmap({
   } = useCorrelationHeatmapData(data, isLoading);
 
   const handleSelectLabels = (labels: string[]) => {
-    setSelectedLabels(new Set(labels));
+    setSelectedIds(new Set(labels));
   };
 
   return (
@@ -105,7 +103,7 @@ function DataExplorerCorrelationHeatmap({
             isLoading={isLoading}
             plotConfig={plotConfig}
             plotElement={plotElement}
-            onClickUnselectAll={() => setSelectedLabels(null)}
+            onClickUnselectAll={() => setSelectedIds(null)}
             hideSelectionTools
           />
         </div>
@@ -131,7 +129,7 @@ function DataExplorerCorrelationHeatmap({
               height="auto"
               onLoad={setPlotElement}
               onSelectLabels={handleSelectLabels}
-              selectedLabels={selectedLabels || undefined}
+              selectedLabels={selectedIds || undefined}
               palette={palette}
               xAxisFontSize={xAxisFontSize}
               distinguish1Label={plotConfig.filters?.distinguish1?.name}
@@ -145,16 +143,16 @@ function DataExplorerCorrelationHeatmap({
           <PlotSelections
             data={data}
             plot_type={plotConfig?.plot_type || null}
-            selectedLabels={selectedLabels}
+            selectedIds={selectedIds}
             onClickVisualizeSelected={(e) => {
-              if (selectedLabels) {
-                onClickVisualizeSelected(e, selectedLabels);
+              if (selectedIds) {
+                onClickVisualizeSelected(e, selectedIds);
               }
             }}
             onClickSaveSelectionAsContext={() => {
               onClickSaveSelectionAsContext(
                 plotConfig.dimensions.x!.slice_type,
-                selectedLabels as Set<string>
+                selectedIds as Set<string>
               );
             }}
           />

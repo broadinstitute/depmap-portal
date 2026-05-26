@@ -145,7 +145,6 @@ async function extractColumnRenames(
       // eslint-disable-next-line no-cond-assign
       while ((entryMatch = entryRegex.exec(outerMatch[1])) !== null) {
         if (entryMatch[2] === "label" && hasLabelTransform) {
-          // eslint-disable-next-line no-continue
           continue;
         }
 
@@ -366,7 +365,6 @@ export function transformToTableData(
 
     for (let i = 0; i < response.ids.length; i++) {
       if (index > 0 && !labelIds.has(response.ids[i])) {
-        // eslint-disable-next-line no-continue
         continue;
       }
       keyed[response.ids[i]] = response.values[i];
@@ -768,7 +766,6 @@ export default function useAlignedData({
           );
 
           if (!dataset) {
-            // eslint-disable-next-line no-continue
             continue;
           }
 
