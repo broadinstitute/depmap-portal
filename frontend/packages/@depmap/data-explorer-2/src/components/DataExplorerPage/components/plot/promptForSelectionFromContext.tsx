@@ -9,10 +9,9 @@ import ContextSelectorV2 from "../../../ContextSelectorV2";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContextV2, DataExplorerPlotResponse } from "@depmap/types";
 
-const resolveToLabels = async (context: DataExplorerContextV2) => {
+const resolveToIds = async (context: DataExplorerContextV2) => {
   const result = await cached(breadboxAPI).evaluateContext(context);
-
-  return context.dimension_type === "depmap_model" ? result.ids : result.labels;
+  return result.ids;
 };
 
 export default async function promptForSelectionFromContext(
@@ -20,8 +19,12 @@ export default async function promptForSelectionFromContext(
 ) {
   const filter = data!.filters?.visible;
 
-  const datasetLabels = new Set(
-    data.index_labels.filter((_, i) => {
+  // Identity comparisons in this function use Breadbox IDs throughout —
+  // resolved from contexts via `resolveToIds`, sourced from plot responses
+  // via `data.index_ids`. The returned `Set<string>` is consumed by plot
+  // components as `selectedIds` state.
+  const datasetIds = new Set(
+    data.index_ids.filter((_, i) => {
       return (
         data!.dimensions.x.values[i] !== null &&
         data!.dimensions.y?.values[i] !== null
@@ -61,32 +64,32 @@ export default async function promptForSelectionFromContext(
           return;
         }
 
-        const labels = await resolveToLabels(nextContext);
-        const contextLabels = new Set(labels);
+        const ids = await resolveToIds(nextContext);
+        const contextIds = new Set(ids);
 
-        const found = [...datasetLabels].filter((label) => {
-          return contextLabels.has(label);
+        const found = [...datasetIds].filter((id) => {
+          return contextIds.has(id);
         }).length;
 
-        const notFound = contextLabels.size - found;
+        const notFound = contextIds.size - found;
 
-        const hiddenByFilters = data.index_labels
-          .map((label, i) => {
+        const hiddenByFilters = data.index_ids
+          .map((id, i) => {
             return [
-              label,
-              datasetLabels.has(label) && filter ? filter.values[i] : true,
+              id,
+              datasetIds.has(id) && filter ? filter.values[i] : true,
             ];
           })
-          .filter(([label]) => contextLabels.has(label as string))
+          .filter(([id]) => contextIds.has(id as string))
           .filter(([, visible]) => !visible).length;
 
         setStats({
-          total: contextLabels.size,
+          total: contextIds.size,
           notFound,
           hiddenByFilters,
         });
 
-        const selectionLength = contextLabels.size - notFound - hiddenByFilters;
+        const selectionLength = contextIds.size - notFound - hiddenByFilters;
 
         if (selectionLength === 0) {
           updateAcceptText("OK");
@@ -146,15 +149,15 @@ export default async function promptForSelectionFromContext(
     return null;
   }
 
-  const labels = await resolveToLabels(context);
-  const contextLabels = new Set(labels);
-  const matchingLabels = data.index_labels.filter((label, i) => {
+  const ids = await resolveToIds(context);
+  const contextIds = new Set(ids);
+  const matchingIds = data.index_ids.filter((id, i) => {
     return (
-      datasetLabels.has(label) &&
-      contextLabels.has(label) &&
+      datasetIds.has(id) &&
+      contextIds.has(id) &&
       (filter ? filter.values[i] : true)
     );
   });
 
-  return matchingLabels.length ? new Set(matchingLabels) : null;
+  return matchingIds.length ? new Set(matchingIds) : null;
 }

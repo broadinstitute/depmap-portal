@@ -27,6 +27,13 @@ function DataExplorerPlotControls({
       return [];
     }
 
+    // Search options show what a user can type to pick a point. The
+    // `value` prefix is unused by `handleSearch` (which parses only the
+    // index after the colon); the labels in the dropdown are what the
+    // user sees and matches against. For `depmap_model` we historically
+    // provide two parallel lists so users can search either by depmap ID
+    // or by cell line name — that dual list is preserved here, now
+    // sourced from `index_ids` and `index_labels` directly.
     let options: {
       value: string;
       label: string;
@@ -36,14 +43,14 @@ function DataExplorerPlotControls({
     }));
 
     if (data.index_type === "depmap_model") {
-      const cellLineNameOptions = data.index_display_labels.map(
-        (label: string, index: number) => ({
-          label,
-          value: `index_display_labels:${index}`,
-        })
-      );
+      const idOptions = data.index_ids.map((id: string, index: number) => ({
+        label: id,
+        value: `index_ids:${index}`,
+      }));
 
-      options = [...cellLineNameOptions, ...options];
+      // Names first (the human-friendly default), then IDs as a secondary
+      // search path — matches the pre-refactor option ordering.
+      options = [...options, ...idOptions];
     }
 
     return options.filter((option) => {

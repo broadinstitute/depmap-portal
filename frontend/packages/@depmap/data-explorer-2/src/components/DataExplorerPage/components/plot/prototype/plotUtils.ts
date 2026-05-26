@@ -303,14 +303,16 @@ export function formatDataForScatterPlot(
     catColorData: catValues || null,
     contColorData: contValues || null,
 
-    hoverText: data.index_labels.map((label: string, i: number) => {
+    hoverText: data.index_ids.map((id: string, i: number) => {
+      const label = data.index_labels[i];
       const aliases: string[] = [];
       const colorInfo = [];
 
-      // FIXME: We shouldn't have a special case for models.
-      // We should just show both id and label.
-      if (data.index_type === "depmap_model") {
-        aliases.push(`<b>${data.index_display_labels[i]}</b>`);
+      // Show the label prominently and the id as a secondary line when
+      // they differ. This is the desired behavior for every type where
+      // ids and labels are distinct (depmap_model, gene, compound_v2, etc).
+      if (id !== label) {
+        aliases.push(`<b>${label}</b>`);
       }
 
       if (c1Values && c1Values[i] && color_by === "aggregated_slice") {
@@ -333,15 +335,18 @@ export function formatDataForScatterPlot(
         );
       }
 
-      const formattedLabel =
-        data.index_type === "compound_experiment"
-          ? label.replace(/\s+\(BRD:.*\)/, "")
-          : label;
+      let primaryLine = label;
+
+      if (id !== label) {
+        primaryLine = data.index_id_column
+          ? `${data.index_id_column}: ${id}`
+          : id;
+      }
 
       const formattedLines =
         aliases.length > 0
-          ? [...aliases, `${formattedLabel}`, ...colorInfo]
-          : [`<b>${formattedLabel}</b>`, ...colorInfo];
+          ? [...aliases, primaryLine, ...colorInfo]
+          : [`<b>${primaryLine}</b>`, ...colorInfo];
 
       Object.keys(data.metadata || {}).forEach((key) => {
         let { label: hoverLabel } = data.metadata[key]!;
@@ -363,23 +368,14 @@ export function formatDataForScatterPlot(
       return formattedLines.join("<br>");
     }),
 
-    annotationText: data.index_labels.map((label: string, i: number) => {
-      const aliases: string[] = [];
+    annotationText: data.index_ids.map((id: string, i: number) => {
+      const label = data.index_labels[i];
 
-      // FIXME: We shouldn't have a special case for models.
-      // We should just show both id and label.
-      if (data.index_type === "depmap_model") {
-        aliases.push(`<b>${data.index_display_labels[i]}</b>`);
+      if (id !== label) {
+        return `<b>${label}</b>`;
       }
 
-      const formattedLabel =
-        data.index_type === "compound_experiment"
-          ? label.replace(/\s+\(BRD:.*\)/, "")
-          : label;
-
-      return aliases.length > 0
-        ? [...aliases].join("<br>")
-        : `<b>${formattedLabel}</b>`;
+      return `<b>${id}</b>`;
     }),
   };
 }
