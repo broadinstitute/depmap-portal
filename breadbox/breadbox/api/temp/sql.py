@@ -21,7 +21,7 @@ class StreamingCSVResponse(StreamingResponse):
 
 
 class SqlQuery(BaseModel):
-    filename: Optional[str]
+    filename: Optional[str] = None
     sql: str
 
 
