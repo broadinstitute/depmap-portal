@@ -1,11 +1,18 @@
+import os
+
 import numpy as np
 import pandas as pd
-from ..utils import assert_status_ok, assert_status_not_ok
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+from itsdangerous.url_safe import URLSafeSerializer
 
+from breadbox.config import Settings, get_settings
 from breadbox.db.session import SessionWithUser
 from breadbox.models.dataset import AnnotationType
-from fastapi.testclient import TestClient
 from tests import factories
+
+from ..utils import assert_status_ok, assert_status_not_ok
 
 
 class TestPost:
@@ -275,3 +282,108 @@ def test_cas_operations(client: TestClient, settings):
     response = client.get(f"/temp/cas/{key2}",)
     assert response.status_code == 200
     assert response.json()["value"] == value2
+
+
+class TestSqlQuery:
+    """Tests for /temp/sql/create-signed-query and /temp/sql/query."""
+
+    # The default continuous_matrix_csv_file uses ACH-1 / ACH-2 as sample IDs.
+    # _sanitize("testdata") == "testdata", so the virtual table is named "testdata".
+    DATASET_NAME = "testdata"
+    SQL = 'SELECT * FROM "testdata_sample"'
+    ADMIN_HEADER = {"X-Forwarded-User": "test-admin-user"}
+
+    @pytest.fixture(autouse=True)
+    def setup_dataset(self, minimal_db: SessionWithUser, settings: Settings):
+        factories.matrix_dataset(minimal_db, settings, dataset_name=self.DATASET_NAME)
+
+    # --- POST /sql/create-signed-query ---
+
+    def test_create_signed_query_blocked_when_disabled(
+        self, client: TestClient, app: FastAPI, settings: Settings, monkeypatch
+    ):
+        restricted = settings.model_copy(
+            update={"sql_endpoints_enabled": False, "privileged_key": "test-secret"}
+        )
+        monkeypatch.setitem(app.dependency_overrides, get_settings, lambda: restricted)
+        response = client.post(
+            "/temp/sql/create-signed-query",
+            json={"sql": self.SQL, "filename": None},
+            headers=self.ADMIN_HEADER,
+        )
+        assert response.status_code == 403
+
+    def test_create_signed_query_allowed_via_privileged_key(
+        self, client: TestClient, app: FastAPI, settings: Settings, monkeypatch
+    ):
+        restricted = settings.model_copy(
+            update={"sql_endpoints_enabled": False, "privileged_key": "test-secret"}
+        )
+        monkeypatch.setitem(app.dependency_overrides, get_settings, lambda: restricted)
+        response = client.post(
+            "/temp/sql/create-signed-query",
+            json={"sql": self.SQL, "filename": None},
+            headers={**self.ADMIN_HEADER, "X-Proof-Of-Privilege": "test-secret"},
+        )
+        assert_status_ok(response)
+
+        signed_url = response.json()["url"]
+        self._validate_signed_url(client, signed_url)
+
+        # now try again, this time with a filename
+        response = client.post(
+            "/temp/sql/create-signed-query",
+            json={"sql": self.SQL, "filename": "results.csv"},
+            headers={**self.ADMIN_HEADER, "X-Proof-Of-Privilege": "test-secret"},
+        )
+        assert_status_ok(response)
+
+        signed_url = response.json()["url"]
+        csv_response = self._validate_signed_url(client, signed_url)
+
+        assert (
+            csv_response.headers["Content-Disposition"]
+            == 'attachment; filename="results.csv"'
+        )
+
+    # --- GET /sql/query ---
+
+    def _validate_signed_url(self, client: TestClient, url: str):
+        response = client.get(url)
+        assert_status_ok(response)
+        assert "text/csv" in response.headers["content-type"]
+        assert "ACH-1" in response.text or "ACH-2" in response.text
+        return response
+
+    def test_get_query_invalid_key_returns_403(self, client: TestClient):
+        response = client.get(
+            "/temp/sql/query",
+            params={"query": "this.is.not.a.valid.signed.key"},
+            headers=self.ADMIN_HEADER,
+        )
+        assert response.status_code == 403
+
+    # --- POST /sql/query ---
+
+    def test_post_query_returns_csv(self, client: TestClient):
+        response = client.post(
+            "/temp/sql/query",
+            json={"sql": self.SQL, "filename": None},
+            headers=self.ADMIN_HEADER,
+        )
+        assert_status_ok(response)
+        assert "text/csv" in response.headers["content-type"]
+
+    def test_post_query_blocked_when_disabled(
+        self, client: TestClient, app: FastAPI, settings: Settings, monkeypatch
+    ):
+        restricted = settings.model_copy(
+            update={"sql_endpoints_enabled": False, "privileged_key": None}
+        )
+        monkeypatch.setitem(app.dependency_overrides, get_settings, lambda: restricted)
+        response = client.post(
+            "/temp/sql/query",
+            json={"sql": self.SQL, "filename": None},
+            headers=self.ADMIN_HEADER,
+        )
+        assert response.status_code == 403

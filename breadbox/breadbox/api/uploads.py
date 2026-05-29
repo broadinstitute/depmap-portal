@@ -1,4 +1,3 @@
-import hashlib
 import shutil
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pydantic import BaseModel
@@ -9,7 +8,6 @@ import uuid
 import os
 from typing import List, Optional
 import hashlib
-from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/uploads")  # , tags=["uploads"])
 

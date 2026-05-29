@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     # the host:port to use for connecting to redis (used by caching)
     redis_host: Optional[str] = os.getenv("REDIS_HOST")
 
+    privileged_key: Optional[str] = None
+
     model_config = SettingsConfigDict(
         env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),
     )
