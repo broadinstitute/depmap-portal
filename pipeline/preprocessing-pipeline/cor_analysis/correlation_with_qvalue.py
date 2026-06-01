@@ -181,6 +181,7 @@ def read_parameters(filename):
         b_mat,
         parameters["b_given_id"],
         parameters["b_taiga_id"],
+        parameters["config"],
     )
 
 
@@ -216,14 +217,19 @@ def compute_cor_table(
     print("Done")
 
 
+threshold_per_config = {
+    "default": Thresholds(
+        batch_size=500, limit=250, minsamples=30, limit_per_sign=25, max_qvalue=0.1
+    ),
+    "codep": Thresholds(
+        batch_size=500, limit=250, minsamples=500, limit_per_sign=0, max_qvalue=0.1
+    ),
+}
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("input_json")
-    parser.add_argument("--minsamples", type=int, default=30)
-    parser.add_argument("--batchsize", type=int, default=500)
-    parser.add_argument("--limit", type=int, default=250)
-    parser.add_argument("--maxqvalue", type=float, default=0.1)
-    parser.add_argument("--limit-per-sign", type=int, default=25, dest="limit_per_sign")
     parser.add_argument("output_file")
 
     args = parser.parse_args()
@@ -235,7 +241,10 @@ def main():
         in_hdf5_1_df,
         label_1,
         taiga_id_1,
+        config_name,
     ) = read_parameters(args.input_json)
+
+    thresholds = threshold_per_config[config_name]
 
     compute_cor_table(
         in_hdf5_0_df,
@@ -245,13 +254,7 @@ def main():
         label_1,
         taiga_id_1,
         args.output_file,
-        Thresholds(
-            args.batchsize,
-            args.limit,
-            args.minsamples,
-            args.limit_per_sign,
-            args.maxqvalue,
-        ),
+        thresholds,
     )
 
 
@@ -352,80 +355,6 @@ def create_correlations_df(m_0, m_1, thresholds: Thresholds):
         cor_df["dim_0"] = m_0_col
         dfs.append(cor_df)
     return pd.concat(dfs)
-
-
-# def create_correlations_df_partial(dep_df, biomarker_df_partial, limit, min_samples, limit_per_sign):
-
-#     (
-#         abs_top_ranked_cols_per_row,
-#         abs_top_ranked_rows_per_col,
-#         abs_row_indexes,
-#         abs_col_indexes,
-#     ) = top_ranked_indexes_per_row_and_col(-np.abs(correlations), limit)
-
-#     (
-#         neg_top_ranked_cols_per_row,
-#         neg_top_ranked_rows_per_col,
-#         neg_row_indexes,
-#         neg_col_indexes,
-#     ) = top_ranked_indexes_per_row_and_col(_new_masked_matrix(correlations, correlations>=0), limit_per_sign)
-
-#     (
-#         pos_top_ranked_cols_per_row,
-#         pos_top_ranked_rows_per_col,
-#         pos_row_indexes,
-#         pos_col_indexes,
-#     ) = top_ranked_indexes_per_row_and_col(_new_masked_matrix(correlations, correlations<=0), limit_per_sign)
-
-#     dfs = []
-
-#     for (top_ranked_cols_per_row,
-#         top_ranked_rows_per_col,
-#         row_indexes,
-#         col_indexes) in [
-#             (
-# abs_top_ranked_cols_per_row,
-#         abs_top_ranked_rows_per_col,
-#         abs_row_indexes,
-#         abs_col_indexes),
-#         (neg_top_ranked_cols_per_row,
-#         neg_top_ranked_rows_per_col,
-#         neg_row_indexes,
-#         neg_col_indexes),
-
-# (
-#         pos_top_ranked_cols_per_row,
-#         pos_top_ranked_rows_per_col,
-#         pos_row_indexes,
-#         pos_col_indexes,
-#     )
-#         ]:
-
-#         df = pd.DataFrame(
-#         {
-#             "cor": np.hstack(
-#                 (
-#                     correlations[row_indexes, top_ranked_cols_per_row],
-#                     correlations[top_ranked_rows_per_col, col_indexes],
-#                 )
-#             ),
-#             "samples": np.hstack(
-#                 (
-#                     sample_counts[row_indexes, top_ranked_cols_per_row],
-#                     sample_counts[top_ranked_rows_per_col, col_indexes],
-#                 ))
-#             ,
-#             "dim_0": list(row_indexes) + list(top_ranked_rows_per_col),
-#             "dim_1": biomarker_df_partial.columns[
-#                 list(top_ranked_cols_per_row) + list(col_indexes)
-#             ],
-#         },
-#         columns=["dim_0", "dim_1", "cor", "samples"],
-#         )
-#         dfs.append(df)
-
-#     merged_df = pd.concat(dfs)
-#     return merged_df.drop_duplicates(["dim_0", "dim_1"])
 
 
 def top_ranked_indexes_per_row_and_col(matrix, limit):

@@ -30,6 +30,11 @@ def main():
         for mat_a in inputs["a_set"]:
             yield mat_a, mat_a
 
+    def make_codep_pairs():
+        for artifact in inputs["a_set"]:
+            if artifact["given_id"] in ["Chronos_Combined", "RNAi_merged"]:
+                yield artifact, artifact
+
     def make_drug_vs_genetic():
         by_given_id = {artifact["given_id"]: artifact for artifact in inputs["a_set"]}
         for drug_given_id in [
@@ -57,8 +62,8 @@ def main():
                         drug_given_id
                     ]
 
-    def make_artifact(a, b):
-        artifact = {"type": "cor_input_pair"}
+    def make_artifact(a, b, config):
+        artifact = {"type": "cor_input_pair", "config": config}
 
         for prefix, src_artifact in [("a", a), ("b", b)]:
             for name in [
@@ -84,7 +89,10 @@ def main():
         + list(make_drug_vs_genetic())
     )
 
-    artifacts = [make_artifact(*pair) for pair in pairs]
+    artifacts = [make_artifact(a, b, "default") for a, b in pairs]
+
+    # compute co-dependencies with different filtering
+    artifacts.extend([make_artifact(a, b, "codep") for a, b in make_codep_pairs()])
 
     with open(args.out_filename, "wt") as fd:
         json.dump({"outputs": artifacts}, fd, indent=2)
