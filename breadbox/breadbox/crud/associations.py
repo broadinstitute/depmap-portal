@@ -46,6 +46,7 @@ def add_association_table(
     axis: str,
     filestore_location: str,
     filename: str,
+    config: str = "default",
 ):
     def get_matrix_dataset(dataset_id):
         dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
@@ -96,6 +97,7 @@ def add_association_table(
         dataset_1_id=dataset_1_id,
         dataset_2_id=dataset_2_id,
         axis=axis,
+        config=config,
         filename=filename,
     )
     db.add(precomputed_assoc)
@@ -107,6 +109,7 @@ def get_association_tables(
     db: SessionWithUser,
     dataset_id: Optional[str],
     association_datasets: Optional[List[str]] = None,
+    config: Optional[str] = None,
 ):
     from sqlalchemy.orm import aliased
 
@@ -119,6 +122,8 @@ def get_association_tables(
         query = query.join(d2, PrecomputedAssociation.dataset_2).filter(
             or_(d2.id.in_(association_datasets), d2.given_id.in_(association_datasets))
         )  # support dataset_ids or given_ids
+    if config is not None:
+        query = query.filter(PrecomputedAssociation.config == config)
     return query.all()
 
 

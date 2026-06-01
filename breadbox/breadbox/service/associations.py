@@ -29,7 +29,10 @@ from breadbox.schemas.custom_http_exception import (
 from breadbox.schemas.dataset import MatrixDimensionsInfo
 from breadbox.service import slice as slice_service
 import logging
-from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id, get_dataset_feature_by_given_id
+from breadbox.crud.dimension_ids import (
+    get_dimension_type_labels_by_id,
+    get_dataset_feature_by_given_id,
+)
 import breadbox.crud.dimension_types as dimension_types_crud
 
 import packed_cor_tables
@@ -45,6 +48,7 @@ def get_associations(
     filestore_location: str,
     slice_query: SliceQuery,
     association_datasets: Optional[List[str]] = None,
+    config: Optional[str] = None,
 ) -> Associations:
     dataset_id = slice_query.dataset_id
 
@@ -55,7 +59,7 @@ def get_associations(
 
     with profiled_region("in get_associations: get_association_tables"):
         precomputed_assoc_tables = associations_crud.get_association_tables(
-            db, dataset.id, association_datasets
+            db, dataset.id, association_datasets, config
         )
     datasets = []
     associated_dimensions = []

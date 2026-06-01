@@ -87,9 +87,13 @@ def query_associations_for_slice(
         SliceQuery, Body(description="A Data Explorer 2 context expression")
     ],
     association_datasets: Optional[List[str]] = None,
+    config: Optional[str] = None,
 ):
+    if config is None:
+        config = "default"
+
     return associations_service.get_associations(
-        db, settings.filestore_location, slice_query, association_datasets
+        db, settings.filestore_location, slice_query, association_datasets, config
     )
 
 
@@ -107,6 +111,7 @@ def get_associations(db: Annotated[SessionWithUser, Depends(get_db_with_user)]):
             dataset_1_name=a.dataset_1.name,
             dataset_2_name=a.dataset_2.name,
             axis=a.axis,
+            config=a.config,
         )
         for a in associations_crud.get_association_tables(db, None)
     ]
@@ -166,6 +171,7 @@ def add_associations(
                 associations_in.axis,
                 settings.filestore_location,
                 dest_filename,
+                associations_in.config,
             )
     except:
         # if add_association_table fails, clean up the sqlite3 file
@@ -180,4 +186,5 @@ def add_associations(
         dataset_1_name=assoc_table.dataset_1.name,
         dataset_2_name=assoc_table.dataset_2.name,
         axis=cast(Literal["sample", "feature"], assoc_table.axis),
+        config=assoc_table.config,
     )
