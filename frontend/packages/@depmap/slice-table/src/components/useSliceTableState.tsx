@@ -19,6 +19,20 @@ import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
 
+export interface CellCtx {
+  row: Record<"id", string> & { original: Record<string, unknown> };
+  table: {
+    getAllColumns: () => {
+      columnDef: {
+        id?: string;
+        meta?: { sliceQuery?: SliceQuery };
+      };
+    }[];
+  };
+  column: unknown;
+  getValue(): unknown;
+}
+
 interface Props {
   index_type_name: string;
   initialSlices: SliceQuery[];
@@ -40,7 +54,10 @@ interface Props {
   }) => boolean;
   customColumns?: {
     header: () => React.ReactNode;
-    cell: ({ row }: { row: Record<"id", string> }) => React.ReactNode;
+    cell: (
+      ctx: CellCtx,
+      getValue: (sliceQuery: SliceQuery) => unknown
+    ) => React.ReactNode;
     width?: number;
   }[];
   getColumnDisplayOptions?: (
@@ -56,7 +73,11 @@ const defaultRowFilters = {
 };
 
 export const filterPredicate = (
-  columns: ReturnType<typeof useSliceTableState>["columns"],
+  // Structural minimum — anything with `id` and `meta.sliceQuery` works.
+  // This accepts both the raw columns from `useData` and `extendedColumns`,
+  // and decouples the helper from `useSliceTableState`'s own return type
+  // (which would otherwise be self-referential).
+  columns: ReadonlyArray<{ id: string; meta: { sliceQuery: SliceQuery } }>,
   implicitFilter: Props["implicitFilter"],
   sliceDataCache?: Map<string, Map<string, unknown>>
 ) => {
@@ -111,6 +132,10 @@ export function useSliceTableState({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>(
     initialRowSelection || {}
   );
+
+  useEffect(() => {
+    setRowSelection(initialRowSelection);
+  }, [initialRowSelection]);
 
   const prevIndexTypeName = useRef(index_type_name);
 
@@ -284,8 +309,30 @@ export function useSliceTableState({
     [columns, data]
   );
 
+  // Build the set of row IDs that pass the implicit filter (i.e. the rows
+  // that would be visible if the user had no filters applied). When there
+  // is no implicit filter, returns undefined — SlicePreview will fall back
+  // to using the full preview dataset as the baseline. This is passed
+  // alongside `visibleRowIds` so the preview can distinguish between
+  // "filtering caused by the (invisible) implicit filter" and "filtering
+  // the user actually applied themselves".
+  const getUnfilteredRowIds = useCallback((): Set<string> | undefined => {
+    if (!implicitFilter) {
+      return undefined;
+    }
+
+    const predicate = filterPredicate(
+      columns,
+      implicitFilter,
+      sliceDataCacheRef.current
+    );
+
+    return new Set(data.filter(predicate).map((row) => row.id as string));
+  }, [columns, data, implicitFilter]);
+
   const handleClickAddColumn = useCallback(async () => {
     const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+    const unfilteredRowIds = getUnfilteredRowIds();
 
     const newSlice = await chooseDataSlice({
       index_type_name,
@@ -295,6 +342,7 @@ export function useSliceTableState({
       hiddenDatasets,
       extraHoverData: buildExtraHoverData(""),
       visibleRowIds,
+      unfilteredRowIds,
     });
 
     if (newSlice) {
@@ -314,6 +362,7 @@ export function useSliceTableState({
     slices,
     buildExtraHoverData,
     tableRef,
+    getUnfilteredRowIds,
   ]);
 
   const handleClickEditColumn = useCallback(
@@ -333,6 +382,7 @@ export function useSliceTableState({
         : "custom";
 
       const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+      const unfilteredRowIds = getUnfilteredRowIds();
 
       const editedSlice = await chooseDataSlice({
         defaultValue,
@@ -344,6 +394,7 @@ export function useSliceTableState({
         hiddenDatasets,
         extraHoverData: buildExtraHoverData(column.id),
         visibleRowIds,
+        unfilteredRowIds,
       });
 
       if (editedSlice) {
@@ -362,12 +413,14 @@ export function useSliceTableState({
       slices,
       buildExtraHoverData,
       tableRef,
+      getUnfilteredRowIds,
     ]
   );
 
   const handleClickViewColumn = useCallback(
     async (column: typeof columns[number]) => {
       const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);
+      const unfilteredRowIds = getUnfilteredRowIds();
 
       showDataSlicePreview({
         index_type_name,
@@ -375,9 +428,16 @@ export function useSliceTableState({
         sliceQuery: column.meta.sliceQuery,
         extraHoverData: buildExtraHoverData(column.id),
         visibleRowIds,
+        unfilteredRowIds,
       });
     },
-    [index_type_name, PlotlyLoader, buildExtraHoverData, tableRef]
+    [
+      index_type_name,
+      PlotlyLoader,
+      buildExtraHoverData,
+      tableRef,
+      getUnfilteredRowIds,
+    ]
   );
 
   const extendedColumns = useMemo(() => {
@@ -476,7 +536,18 @@ export function useSliceTableState({
 
     const nonSliceColumns = (customColumns || []).map((col, i) => ({
       header: col.header,
-      cell: col.cell,
+      cell: (cellCtx: CellCtx) => {
+        const id = cellCtx.row.id;
+
+        return col.cell(cellCtx, (sliceQuery: SliceQuery) => {
+          if (sliceDataCacheRef.current) {
+            const cacheKey = createUniqueColumnKey(sliceQuery);
+            return sliceDataCacheRef.current.get(cacheKey)?.get(id);
+          }
+
+          return undefined;
+        });
+      },
       id: `custom-${i}`,
       accessorFn: () => null,
       enableSorting: false,

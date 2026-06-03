@@ -1,17 +1,10 @@
 import React from "react";
-import { WordBreaker } from "@depmap/common-components";
 import { toPortalLink } from "@depmap/globals";
-import SliceTable from "@depmap/slice-table";
 import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
-import initialSlices from "./initialSlices.json";
-import useMetadata from "./useMetadata";
-import PlotLinksHeader from "./PlotLinksHeader";
-import PlotLinksCell from "./PlotLinksCell";
-import styles from "../styles/ResistanceScreenDashboard.scss";
+import ResistanceScreenTable from "./ResistanceScreenTable";
+import styles from "src/pairedScreens/styles/sharedDashboard.scss";
 
 function ResistanceScreenDashboard() {
-  const metadata = useMetadata();
-
   return (
     <div>
       <div className={styles.header}>
@@ -49,66 +42,7 @@ function ResistanceScreenDashboard() {
         </p>
       </div>
       <div className={styles.tableContainer}>
-        <SliceTable
-          index_type_name="screen_pair"
-          isLoading={!metadata}
-          getInitialState={() => ({ initialSlices })}
-          downloadFilename="resistance_screen_dashboard.csv"
-          hideLabelColumn
-          hiddenDatasets={
-            new Set([
-              "screen_pair_metadata",
-              "PairedAnchorScreenTable",
-              "PairedAnchorGeneEffectDiff",
-              "PairedAnchorGeneEffectFDR",
-            ])
-          }
-          implicitFilter={({ getValue }) => {
-            const comparisonType = getValue({
-              dataset_id: "PairedResScreenTable",
-              identifier_type: "column",
-              identifier: "ComparisonType",
-            }) as string;
-
-            return [
-              "drug adapted",
-              "genetic knock out",
-              "genetic knock-in",
-            ].includes(comparisonType);
-          }}
-          getColumnDisplayOptions={(sliceQuery) => {
-            const header = () => <WordBreaker text={sliceQuery.identifier} />;
-
-            switch (sliceQuery.identifier) {
-              case "PairID":
-                return { width: 100 };
-
-              case "CtrlArmModelID":
-              case "TestArmModelID":
-                return { header, width: 125 };
-
-              case "CtrlArmStrippedCellLineName":
-              case "TestArmStrippedCellLineName":
-              case "OncotreeLineage":
-              case "CulturedDrugResistance":
-              case "EngineeredModelDetails":
-              case "ComparisonType":
-                return { header };
-
-              default:
-                return null;
-            }
-          }}
-          customColumns={[
-            {
-              width: 148,
-              header: PlotLinksHeader,
-              cell: ({ row }) => (
-                <PlotLinksCell pairId={row.id} metadata={metadata} />
-              ),
-            },
-          ]}
-        />
+        <ResistanceScreenTable />
       </div>
     </div>
   );

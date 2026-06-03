@@ -55,6 +55,7 @@ interface SelectedSupplementalTable {
   tableName: string;
   dimType: string;
   dimDisplayName: string;
+  autoPath: ChainHop[];
 }
 
 interface FocusableItem {
@@ -227,6 +228,7 @@ export default function ChainColumnPicker({
 
     return computeLevel(
       currentDimType,
+      index_type,
       tablesByDim,
       dimTypeMap,
       new Set(visited),
@@ -235,6 +237,7 @@ export default function ChainColumnPicker({
   }, [
     selectedSource,
     currentDimType,
+    index_type,
     tablesByDim,
     dimTypeMap,
     visited,
@@ -444,6 +447,7 @@ export default function ChainColumnPicker({
         tableName: st.table.name,
         dimType: st.dimType,
         dimDisplayName: st.dimDisplayName,
+        autoPath: st.autoPath,
       });
       refocusSearch();
     },
@@ -672,9 +676,9 @@ export default function ChainColumnPicker({
   }, []);
 
   const visibleSupplementalTables = useMemo(() => {
-    if (depth === 0 || isInSupplementalTable || !levelResult) return [];
+    if (isInSupplementalTable || !levelResult) return [];
     return levelResult.supplementalTables;
-  }, [depth, isInSupplementalTable, levelResult]);
+  }, [isInSupplementalTable, levelResult]);
 
   // ── Render helpers ──
 

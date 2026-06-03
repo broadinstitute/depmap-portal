@@ -5,6 +5,7 @@ import AsyncTile from "src/common/components/AsyncTile";
 import { CardContainer, CardColumn } from "src/common/components/Card";
 import { DatasetDataTypes, ModelInfo } from "src/cellLine/models/types";
 import styles from "src/common/styles/async_tile.module.scss";
+import { usePairedScreensData } from "src/cellLine/hooks/usePairedScreensData";
 
 const DatasetsTile = React.lazy(
   () => import("src/cellLine/components/DatasetsTile")
@@ -25,6 +26,10 @@ const DescriptionTile = React.lazy(
 
 const CompoundSensitivityTile = React.lazy(
   () => import("src/cellLine/components/CompoundSensitivityTile")
+);
+
+const PairedScreensTile = React.lazy(
+  () => import("src/cellLine/components/PairedScreensTile")
 );
 
 interface Props {
@@ -60,6 +65,8 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
     Array<OncogenicAlteration>
   >([]);
   const [oncokbDatasetVersion, setOncokbDatasetVersion] = useState<string>("");
+
+  const { data: pairedScreens } = usePairedScreensData(modelId);
 
   useEffect(() => {
     legacyPortalAPI.getCellLineDescriptionTileData(modelId).then((data) => {
@@ -153,6 +160,17 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
         )}
       </CardColumn>
       <CardColumn>
+        {pairedScreens && (
+          <React.Suspense
+            fallback={<div className={styles.LoadingTile}>Loading...</div>}
+          >
+            <PairedScreensTile
+              anchorRowIds={pairedScreens.anchorRowIds}
+              resistanceRows={pairedScreens.resistanceRows}
+              resistance={pairedScreens.resistance}
+            />
+          </React.Suspense>
+        )}
         {cellLineDatasets && (
           <React.Suspense
             fallback={<div className={styles.LoadingTile}>Loading...</div>}

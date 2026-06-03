@@ -26,6 +26,11 @@ export interface LevelResult {
  * relationships as "doors" the user clicks through.
  *
  * @param dimType        The dimension type name to start from.
+ * @param index_type     The picker's root dimension type. Used to suppress
+ *                       same-dim supplementals at this exact dim, since
+ *                       those tables are already offered in the source
+ *                       picker (Widget 1) and showing them again under
+ *                       "Continue to table" would be redundant.
  * @param tablesByDim    All tabular datasets grouped by index_type_name.
  * @param dimTypeMap     Dimension type name → descriptor (for display names,
  *                       metadata_dataset_id, etc.).
@@ -36,6 +41,7 @@ export interface LevelResult {
  */
 export default function computeLevel(
   dimType: string,
+  index_type: string,
   tablesByDim: Record<string, TableDescriptor[]>,
   dimTypeMap: Record<string, DimensionTypeDescriptor>,
   visited: Set<string>,
@@ -52,20 +58,27 @@ export default function computeLevel(
   const activeTable =
     startTable ?? tables.find((t) => t.id === metadataDatasetId) ?? null;
 
-  // Supplemental tables at this dim type (everything except the active table).
-  const supplementalTables: SupplementalTable[] = tables
-    .filter((t) => t.id !== (activeTable?.id ?? metadataDatasetId))
-    .map((t) => {
-      const colCount = Object.keys(t.columns).filter((name) => name !== "label")
-        .length;
+  // Supplemental tables at this dim type (everything except the active
+  // table). Skipped entirely when this dim is the picker's index_type,
+  // since those tables are already offered in the source picker.
+  const supplementalTables: SupplementalTable[] =
+    dimType === index_type
+      ? []
+      : tables
+          .filter((t) => t.id !== (activeTable?.id ?? metadataDatasetId))
+          .map((t) => {
+            const colCount = Object.keys(t.columns).filter(
+              (name) => name !== "label"
+            ).length;
 
-      return {
-        dimType,
-        dimDisplayName,
-        table: t,
-        columnCount: colCount,
-      };
-    });
+            return {
+              dimType,
+              dimDisplayName,
+              table: t,
+              columnCount: colCount,
+              autoPath: [],
+            };
+          });
 
   if (!activeTable) {
     return { doors: [], supplementalTables, columns: [] };
@@ -122,7 +135,13 @@ export default function computeLevel(
       // One-to-one: auto-traverse silently. The visited check here guards
       // against a dim type already claimed by an earlier sibling traversal.
       const throughCol = fkCols[0];
-      const deeper = computeLevel(targetDim, tablesByDim, dimTypeMap, visited);
+      const deeper = computeLevel(
+        targetDim,
+        index_type,
+        tablesByDim,
+        dimTypeMap,
+        visited
+      );
 
       // Prepend this hop to each deeper column's autoPath.
       for (const col of deeper.columns) {
@@ -136,8 +155,14 @@ export default function computeLevel(
       // since the user can't interact with auto-traversed hops).
       doors.push(...deeper.doors);
 
-      // Merge deeper supplemental tables.
-      supplementalTables.push(...deeper.supplementalTables);
+      // Merge deeper supplemental tables, prepending this hop to their
+      // autoPath so callers know how they were reached.
+      for (const st of deeper.supplementalTables) {
+        supplementalTables.push({
+          ...st,
+          autoPath: [{ throughCol, toDim: targetDim }, ...st.autoPath],
+        });
+      }
     }
   }
 

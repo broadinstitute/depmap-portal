@@ -142,18 +142,20 @@ function CategoricalDataPreview({
 
   return (
     <div className={styles.CategoricalDataPreview}>
-      <BarChart
-        data={plotData}
-        xAxisTitle={xAxisTitle}
-        hoverLabel={hoverLabel}
-        entityLabel={entityLabel}
-        totalCount={totalCount}
-        useLogScale={useLogScale}
-        disabledIndices={disabledIndices}
-        selectedPoints={withFilter ? selectedPoints : undefined}
-        selectionMode={withFilter ? selectionMode : undefined}
-        onSelect={withFilter ? handleSelect : undefined}
-      />
+      <div className={styles.barChartContainer}>
+        <BarChart
+          data={plotData}
+          xAxisTitle={xAxisTitle}
+          hoverLabel={hoverLabel}
+          entityLabel={entityLabel}
+          totalCount={totalCount}
+          useLogScale={useLogScale}
+          disabledIndices={disabledIndices}
+          selectedPoints={withFilter ? selectedPoints : undefined}
+          selectionMode={withFilter ? selectionMode : undefined}
+          onSelect={withFilter ? handleSelect : undefined}
+        />
+      </div>
       {nullCount > 0 && (
         <Checkbox
           className={styles.showNulls}

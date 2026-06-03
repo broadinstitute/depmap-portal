@@ -9,6 +9,7 @@ interface Props {
   sliceQuery: SliceQuery;
   extraHoverData?: Record<string, string>;
   visibleRowIds?: Set<string>;
+  unfilteredRowIds?: Set<string>;
 }
 
 function showDataSlicePreview({
@@ -17,6 +18,7 @@ function showDataSlicePreview({
   sliceQuery,
   extraHoverData,
   visibleRowIds,
+  unfilteredRowIds,
 }: Props) {
   showInfoModal({
     title: "View column",
@@ -27,6 +29,7 @@ function showDataSlicePreview({
         PlotlyLoader={PlotlyLoader}
         extraHoverData={extraHoverData}
         visibleRowIds={visibleRowIds}
+        unfilteredRowIds={unfilteredRowIds}
       />
     ),
   });

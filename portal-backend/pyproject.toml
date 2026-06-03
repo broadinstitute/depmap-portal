@@ -37,7 +37,7 @@ seaborn="^0.13"
 statsmodels="^0.14"
 scikit-learn="^1.5"
 h5py="^3.12"
-Pillow="^12.1"
+Pillow="^12.2"
 pyarrow="^18.0"
 json-logic="^0.7.0-alpha"
 

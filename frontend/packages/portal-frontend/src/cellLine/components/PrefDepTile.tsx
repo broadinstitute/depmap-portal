@@ -12,7 +12,7 @@ export interface PrefDepProps {
 
 const PrefDepTile = ({ depmapId, crisprData, rnaiData }: PrefDepProps) => {
   const prefDepTooltip = (
-    <Tooltip>
+    <Tooltip id="pref-dep-tooltip">
       The below genes are ranked by z-score. The z-score is computed for each
       gene by taking the gene effect for this model, subtracting the mean across
       all models, and dividing by the standard deviation.

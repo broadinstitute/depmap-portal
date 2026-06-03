@@ -113,13 +113,13 @@ function useHeatmapSelectionHandlers(
 
   const handleSetSelectionFromContext = useCallback(async () => {
     const allModelIds = Array.from(displayNameModelIdMap.keys());
-    const allLabels = new Set(allModelIds);
-    const labels = await compoundPagePromptForSelectionFromContext(allLabels);
-    if (labels === null) {
+    const allIds = new Set(allModelIds);
+    const ids = await compoundPagePromptForSelectionFromContext(allIds);
+    if (ids === null) {
       return;
     }
-    setPlotSelectedModelIds(labels);
-    setSelectedTableRows(labels);
+    setPlotSelectedModelIds(ids);
+    setSelectedTableRows(ids);
   }, [displayNameModelIdMap]);
 
   const handleClearSelection = useCallback(() => {

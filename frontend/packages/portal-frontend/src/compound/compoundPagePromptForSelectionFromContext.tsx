@@ -13,7 +13,7 @@ import { DepMap } from "@depmap/globals";
 import { DataExplorerContextV2 } from "@depmap/types";
 
 export default async function compoundPagePromptForSelectionFromContext(
-  allPossibleLabels: Set<string>
+  allPossibleIds: Set<string>
 ) {
   const indexType = "depmap_model";
   const context = await promptForValue({
@@ -48,24 +48,22 @@ export default async function compoundPagePromptForSelectionFromContext(
           return;
         }
 
-        const { labels } = await cached(breadboxAPI).evaluateContext(
-          nextContext
-        );
-        const contextLabels = new Set(labels);
+        const { ids } = await cached(breadboxAPI).evaluateContext(nextContext);
+        const contextIds = new Set(ids);
 
-        const found = [...allPossibleLabels].filter((label) => {
-          return contextLabels.has(label);
+        const found = [...allPossibleIds].filter((label) => {
+          return contextIds.has(label);
         }).length;
 
-        const notFound = contextLabels.size - found;
+        const notFound = contextIds.size - found;
 
         setStats({
-          total: contextLabels.size,
+          total: contextIds.size,
           notFound,
           hiddenByFilters: 0,
         });
 
-        const selectionLength = contextLabels.size - notFound;
+        const selectionLength = contextIds.size - notFound;
 
         if (selectionLength === 0) {
           updateAcceptText("OK");
@@ -118,11 +116,11 @@ export default async function compoundPagePromptForSelectionFromContext(
     return null;
   }
 
-  const { labels } = await cached(breadboxAPI).evaluateContext(context);
-  const contextLabels = new Set(labels);
-  const matchingLabels = [...allPossibleLabels].filter((label) => {
-    return allPossibleLabels.has(label) && contextLabels.has(label);
+  const { ids } = await cached(breadboxAPI).evaluateContext(context);
+  const contextIds = new Set(ids);
+  const matchingIds = [...allPossibleIds].filter((id) => {
+    return contextIds.has(id);
   });
 
-  return matchingLabels.length ? new Set(matchingLabels) : null;
+  return matchingIds.length ? new Set(matchingIds) : null;
 }
