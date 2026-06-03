@@ -43,7 +43,7 @@ json-logic = "^0.7.0-alpha"
 apsw = "^3.47.2.0"
 sqlglot = "^28.5.0"
 colorama = "^0.4.6"
-
+gunicorn = ">=23.0.0,<24.0.0" # last version working with python 3.9
 
 [tool.poetry.group.dev.dependencies]
 pyright="^1.1.361"
