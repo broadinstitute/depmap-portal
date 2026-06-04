@@ -14,6 +14,7 @@ from fastapi.responses import PlainTextResponse, FileResponse
 from ...celery_task import utils
 import asyncio
 from ...compute.sql import execute_sql_in_virtual_db_task
+from celery.exceptions import TimeLimitExceeded
 
 
 class CSVFileResponse(FileResponse):
@@ -104,7 +105,6 @@ async def _run_time_bounded_celery_task(
     task = task_fn.apply_async(args=args, time_limit=time_limit)
 
     # run the get() in an executor so that this coroutine can yield to any other requests
-    breakpoint()
     result = await anyio.to_thread.run_sync(
         lambda: task.get(timeout=time_limit + time_limit_padding)
     )
@@ -127,13 +127,23 @@ async def query_sql(
         else:
             results_dir = settings.get_todays_result_dir()
 
-            output_file = await _run_time_bounded_celery_task(
-                execute_sql_in_virtual_db_task,
-                [db.user, results_dir, query.sql, settings.filestore_location],
-                time_limit=SQL_QUERY_TIMELIMIT,
-            )
+            output_file = None
+            try:
+                output_file = await _run_time_bounded_celery_task(
+                    execute_sql_in_virtual_db_task,
+                    [db.user, results_dir, query.sql, settings.filestore_location],
+                    time_limit=SQL_QUERY_TIMELIMIT,
+                )
+            except TimeLimitExceeded:
+                response = JSONResponse(
+                    status_code=504,
+                    content={
+                        "detail": "The SQL query took too long to execute and was terminated"
+                    },
+                )
 
-            assert isinstance(output_file, str)
-            response = CSVFileResponse(output_file)
+            if output_file is not None:
+                assert isinstance(output_file, str)
+                response = CSVFileResponse(output_file)
 
     return response
