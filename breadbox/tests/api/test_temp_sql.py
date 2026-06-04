@@ -5,6 +5,7 @@ from breadbox.models.dataset import AnnotationType
 from tests import factories
 import pandas as pd
 from fastapi.testclient import TestClient
+from breadbox.models.dataset import ValueType
 
 
 def _assert_sql_result_eq(client, sql, expected_result, expected_status_code=200):
@@ -66,6 +67,41 @@ def test_overlapping_samples(minimal_db: SessionWithUser, settings, client: Test
         client,
         "select count(1) samples from matrix1_sample m1 join matrix2_sample m2 on m1.sample_id = m2.sample_id join matrix4_sample m4 on m1.sample_id = m4.sample_id",
         "samples\r\n1\r\n",
+    )
+
+
+def test_list_of_strings_matrix_query(
+    minimal_db: SessionWithUser, settings, client: TestClient
+):
+    # list of strings is a little wierd (although rare) so explicitly test this case as well.
+
+    sample_ids = ["s1", "s2"]
+    factories.sample_type(
+        minimal_db, minimal_db.user, "simple_sample_type", given_ids=sample_ids
+    )
+    import json
+
+    def jd(*x):
+        return json.dumps(x)
+
+    factories.matrix_dataset(
+        minimal_db,
+        settings,
+        sample_type="simple_sample_type",
+        feature_type=None,
+        data_file=factories.matrix_csv_data_file_with_values(
+            feature_ids=["A", "B"],
+            sample_ids=sample_ids,
+            values=[[jd("x", "y"), jd("y")], [jd("a"), jd()]],
+        ),
+        dataset_name="simple_matrix",
+        value_type=ValueType.list_strings,
+    )
+
+    _assert_sql_result_eq(
+        client,
+        "select value from simple_matrix where sample_id = 's1' and feature_id = 'A'",
+        'value\r\n"[""x"", ""y""]"\r\n',
     )
 
 
