@@ -4,7 +4,6 @@ from typing import List, Optional, Union
 
 from pydantic import RedisDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-import datetime
 
 
 class Settings(BaseSettings):
@@ -18,7 +17,6 @@ class Settings(BaseSettings):
     host_scheme_override: Optional[str] = None
     sql_endpoints_enabled: bool = False
     breadbox_env: str = "dev"
-    breadbox_root_path: str = os.environ.get("BREADBOX_ROOT_PATH", "")
     # prefix all routes with api_prefix if it's not an empty string
     api_prefix: str = ""
 
@@ -49,16 +47,6 @@ class Settings(BaseSettings):
                 "Must contain colon and take the format of [Internet protocol]:[host name]!"
             )
         return v
-
-    def get_todays_result_dir(self):
-        """
-        Fetch the result directory (used for temp files) to use for any tasks. (Result directory includes the date so
-        that we can easily clean up old results)
-        """
-        resultsDirPrefix = self.compute_results_location
-        return os.path.join(
-            resultsDirPrefix, str(datetime.datetime.now().strftime("%Y%m%d")),
-        )
 
 
 @lru_cache()

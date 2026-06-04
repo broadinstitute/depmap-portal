@@ -28,7 +28,6 @@ def create_app(settings: Settings):
         redoc_url=f"{api_prefix}/redoc",
         swagger_ui_oauth2_redirect_url=f"{api_prefix}/docs/oauth2-redirect",
         version=version("breadbox"),
-        root_path=settings.breadbox_root_path,
     )
 
     app.add_middleware(
