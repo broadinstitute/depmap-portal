@@ -99,7 +99,6 @@ def compute_univariate_associations(
     For two class comparisons, the queryValues are the strings "in" and "out".
     """
 
-    resultsDirPrefix = settings.compute_results_location
     dataset_id = computeParams.datasetId
     vector_variable_type = computeParams.vectorVariableType
     depmap_model_ids = computeParams.queryCellLines
@@ -123,9 +122,7 @@ def compute_univariate_associations(
 
     vector_is_dependent = _get_vector_is_dependent(analysis_type, vector_variable_type)
 
-    results_dir = os.path.join(
-        resultsDirPrefix, str(datetime.datetime.now().strftime("%Y%m%d")),
-    )
+    results_dir = settings.get_todays_result_dir()
 
     result = utils.cast_celery_task(analysis_tasks.run_custom_analysis).delay(
         user=user,
