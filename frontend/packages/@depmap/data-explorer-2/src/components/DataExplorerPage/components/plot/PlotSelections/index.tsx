@@ -11,7 +11,7 @@ import styles from "../../../styles/DataExplorer2.scss";
 interface Props {
   data: DataExplorerPlotResponse | null;
   plot_type: DataExplorerPlotType | null;
-  selectedLabels: Set<string> | null;
+  selectedIds: Set<string> | null;
   onClickVisualizeSelected: (e: React.MouseEvent) => void;
   onClickSaveSelectionAsContext: () => void;
   onClickClearSelection?: () => void;
@@ -23,7 +23,7 @@ const SECTION_HEIGHT_WITHOUT_LIST = 194;
 function PlotSelections({
   data,
   plot_type,
-  selectedLabels,
+  selectedIds,
   onClickVisualizeSelected,
   onClickSaveSelectionAsContext,
   onClickClearSelection = undefined,
@@ -33,8 +33,8 @@ function PlotSelections({
   const { sectionHeights } = useContext(SectionStackContext);
 
   const maxHeightOfList =
-    selectedLabels &&
-    selectedLabels.size > 0 &&
+    selectedIds &&
+    selectedIds.size > 0 &&
     plot_type !== "correlation_heatmap"
       ? sectionHeights[1] - SECTION_HEIGHT_WITHOUT_LIST
       : Infinity;
@@ -43,18 +43,18 @@ function PlotSelections({
     if (!data) {
       return [[], []];
     }
-    const indexLabels: string[] = [];
+    const selectedIndexIds: string[] = [];
     const displayLabels: string[] = [];
 
-    for (let i = 0; i < data.index_labels.length; i += 1) {
-      if (selectedLabels?.has(data.index_labels[i])) {
-        indexLabels.push(data.index_labels[i]);
-        displayLabels.push((data.index_display_labels || data.index_labels)[i]);
+    for (let i = 0; i < data.index_ids.length; i += 1) {
+      if (selectedIds?.has(data.index_ids[i])) {
+        selectedIndexIds.push(data.index_ids[i]);
+        displayLabels.push(data.index_labels[i]);
       }
     }
 
-    return [indexLabels, displayLabels];
-  }, [data, selectedLabels]);
+    return [selectedIndexIds, displayLabels];
+  }, [data, selectedIds]);
 
   const handleCopy = useCallback(() => {
     const w = window.open("");
@@ -71,19 +71,19 @@ function PlotSelections({
           Select points to populate list
           <HelpTip id="select-points-help" />
         </div>
-        {onClickClearSelection && selectedLabels && selectedLabels.size > 0 && (
+        {onClickClearSelection && selectedIds && selectedIds.size > 0 && (
           <div>
             <button
               className={styles.setSelectionButton}
               type="button"
               onClick={onClickClearSelection}
             >
-              clear {selectedLabels.size.toLocaleString()} selected{" "}
-              {selectedLabels.size === 1 ? "point" : "points"}
+              clear {selectedIds.size.toLocaleString()} selected{" "}
+              {selectedIds.size === 1 ? "point" : "points"}
             </button>
           </div>
         )}
-        {onClickSetSelectionFromContext && !selectedLabels && (
+        {onClickSetSelectionFromContext && !selectedIds && (
           <div>
             or{" "}
             <button

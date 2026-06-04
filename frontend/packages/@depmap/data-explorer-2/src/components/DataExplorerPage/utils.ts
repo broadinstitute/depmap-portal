@@ -46,66 +46,44 @@ export const defaultContextName = (numLabels: number) => {
 
 export function toRelatedPlot(
   plot: DataExplorerPlotConfig,
-  selectedLabels: Set<string>,
+  selectedIds: Set<string>,
   identifiers: { id: string; label: string }[]
 ): DataExplorerPlotConfig {
-  const numDimensions = Math.min(selectedLabels.size, 2);
-  const slice_labels = [...selectedLabels];
+  const numDimensions = Math.min(selectedIds.size, 2);
+  const slice_ids = [...selectedIds];
 
   const idToLabelMap = Object.fromEntries(
     identifiers.map(({ id, label }) => [id, label])
   );
 
-  const labelToIdMap = Object.fromEntries(
-    identifiers.map(({ label, id }) => [label, id])
-  );
+  // The input set is real Breadbox IDs, regardless of `index_type` or
+  // `slice_type`. The context expressions emitted below reference those
+  // IDs directly through `given_id` — no per-type translation.
 
-  const toSliceName = (label: string, slice_type: string) => {
-    if (slice_type === "depmap_model") {
-      return idToLabelMap[label];
-    }
+  const toSliceName = (id: string) => idToLabelMap[id];
 
-    return label;
+  const toVarEqualityExpression = (id: string) => {
+    return { "==": [{ var: "given_id" }, id] };
   };
 
-  const toVarEqualityExpression = (label: string, slice_type: string) => {
-    let given_id = labelToIdMap[label];
-
-    if (
-      (plot.plot_type === "correlation_heatmap" &&
-        slice_type === "depmap_model") ||
-      (plot.plot_type !== "correlation_heatmap" &&
-        plot.index_type === "depmap_model")
-    ) {
-      given_id = label;
-    }
-
-    return { "==": [{ var: "given_id" }, given_id] };
-  };
-
-  const toVarInclusionExpression = (labels: string[]) => {
-    const ids =
-      plot.index_type === "depmap_model"
-        ? labels
-        : labels.map((label) => labelToIdMap[label]);
-
+  const toVarInclusionExpression = (ids: string[]) => {
     return { in: [{ var: "given_id" }, ids] };
   };
 
-  const toSingleSliceContext = (slice_type: string, label: string) => {
+  const toSingleSliceContext = (slice_type: string, id: string) => {
     return {
-      name: toSliceName(label, slice_type),
+      name: toSliceName(id),
       dimension_type: slice_type,
-      expr: toVarEqualityExpression(label, slice_type),
+      expr: toVarEqualityExpression(id),
       vars: {},
     };
   };
 
-  const toMultiSliceContext = (slice_type: string, labels: string[]) => {
+  const toMultiSliceContext = (slice_type: string, ids: string[]) => {
     return {
-      name: defaultContextName(selectedLabels.size),
+      name: defaultContextName(selectedIds.size),
       dimension_type: slice_type,
-      expr: toVarInclusionExpression(labels),
+      expr: toVarInclusionExpression(ids),
       vars: {},
     };
   };
@@ -150,7 +128,7 @@ export function toRelatedPlot(
             dataset_id,
             axis_type: "raw_slice",
             aggregation: "first",
-            context: toSingleSliceContext(slice_type, slice_labels[index]),
+            context: toSingleSliceContext(slice_type, slice_ids[index]),
           },
         }),
         {}
@@ -164,8 +142,8 @@ export function toRelatedPlot(
   const slice_type = plot.index_type;
 
   // { density_1d, waterfall, scatter } -> correlation_heatmap
-  if (selectedLabels.size > 2) {
-    const context = toMultiSliceContext(slice_type, slice_labels);
+  if (selectedIds.size > 2) {
+    const context = toMultiSliceContext(slice_type, slice_ids);
 
     const isCompatibleTwoContextComparison =
       plot.dimensions.x!.axis_type === "aggregated_slice" &&
@@ -238,7 +216,7 @@ export function toRelatedPlot(
           aggregation: "first",
           slice_type,
           dataset_id,
-          context: toSingleSliceContext(slice_type, slice_labels[index]),
+          context: toSingleSliceContext(slice_type, slice_ids[index]),
         },
       }),
       {}

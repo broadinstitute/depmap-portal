@@ -71,8 +71,15 @@ function PrecomputedAssociations({ plot, onSelectY, sectionRef }: Props) {
       const valueExpr = (expr["=="]![1] as unknown) as string;
 
       if (varExpr?.var === "entity_label") {
-        // edge case
-        yDimensionId = labelToIdMap[valueExpr];
+        // Legacy V1 contexts use `entity_label`. For depmap_model the
+        // legacy backend stored a depmap id as the "label", so the value
+        // is already an id and needs no resolution. For other types we
+        // resolve label → id via Breadbox.
+        if (plot.dimensions?.y?.slice_type === "depmap_model") {
+          yDimensionId = valueExpr;
+        } else {
+          yDimensionId = labelToIdMap[valueExpr];
+        }
       } else {
         yDimensionId = valueExpr;
       }

@@ -125,7 +125,7 @@ function DummyPlot({
           <PlotSelections
             data={null}
             plot_type={null}
-            selectedLabels={null}
+            selectedIds={null}
             onClickVisualizeSelected={() => {}}
             onClickSaveSelectionAsContext={() => {}}
           />

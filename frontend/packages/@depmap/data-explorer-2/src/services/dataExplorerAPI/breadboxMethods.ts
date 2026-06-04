@@ -161,6 +161,7 @@ const isPrimaryMetatadata = (dataset?: Dataset) => {
  */
 function buildExtendedMetadata(
   index_type: string,
+  index_id_column?: string,
   metadata?: DataExplorerMetadata,
   filters?: DataExplorerFilters
 ): DataExplorerMetadata {
@@ -211,6 +212,13 @@ function buildExtendedMetadata(
     filters || {}
   ) as DataExplorerContextV2[]) {
     for (const variable of Object.values(filter.vars)) {
+      if (
+        variable.identifier === "label" ||
+        variable.identifier === index_id_column
+      ) {
+        continue;
+      }
+
       const asSliceQuery: SliceQuery = {
         dataset_id: variable.dataset_id,
         identifier: variable.identifier,
@@ -238,8 +246,6 @@ export async function fetchPlotDimensions(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
-  const extendedMetadata = buildExtendedMetadata(index_type, metadata, filters);
-
   // Pre-fetch data we know we'll need below. This only works because
   // postJson() caches the Promises. When we later repeat each fetch with an
   // `await`, we're actually awaiting an inflight promise, effectively making
@@ -248,6 +254,17 @@ export async function fetchPlotDimensions(
   fetchDatasetLabel(dimensions.x?.dataset_id);
   fetchDatasetLabel(dimensions.y?.dataset_id);
   fetchDatasetLabel(dimensions.color?.dataset_id);
+
+  const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+  const index_id_column = dimTypes.find((t) => t.name === index_type)
+    ?.id_column;
+
+  const extendedMetadata = buildExtendedMetadata(
+    index_type,
+    index_id_column,
+    metadata,
+    filters
+  );
 
   const dimensionKeys = Object.keys(dimensions).filter((key) => {
     return isCompleteDimension(dimensions[key]);
@@ -259,17 +276,19 @@ export async function fetchPlotDimensions(
   // https://github.com/broadinstitute/depmap-portal/blob/5099618/frontend/packages/portal-frontend/src/data-explorer-2/deprecated-api.ts#L412-L435
   const metadataKeys = Object.keys(extendedMetadata || {});
 
-  // FIXME: We shouldn't be indexing things by label. We should use id instead.
-  // This is just to get things working for now.
+  // Tracks every distinct label seen across the dimension fetches. Drives
+  // `index_labels` (and, via `labelToIdMapping`, `index_ids`) in the
+  // assembled response.
   const uniqueLabels = new Set<string>();
 
-  // HACK: For now we'll reverse the relationship of id and label for models.
-  const cellLineIdMapping = {} as Record<string, string>;
+  // Tracks the label→id correspondence for every (label, id) pair seen
+  // during dimension fetches. Used to populate `index_ids` in the
+  // response by mapping `uniqueLabels` to their corresponding IDs.
+  const labelToIdMapping = {} as Record<string, string>;
 
   async function fetchRawDimension(key: string) {
     const { context, dataset_id, slice_type } = dimensions[key];
 
-    // FIXME: Remove this when we convert everything to use IDs.
     const idToLabelMapping = await (() => {
       return fetchDatasetIdentifiers(
         index_type,
@@ -305,16 +324,11 @@ export async function fetchPlotDimensions(
 
       for (let i = 0; i < ids.length; i++) {
         const id = ids[i];
-        // TODO: Change this to use ids instead of labels.
         const label = idToLabelMapping[id];
         uniqueLabels.add(label);
+        labelToIdMapping[label] = id;
 
-        if (index_type === "depmap_model") {
-          indexed_values[id] = values[i];
-          cellLineIdMapping[label] = id;
-        } else {
-          indexed_values[label] = values[i];
-        }
+        indexed_values[id] = values[i];
       }
 
       return {
@@ -373,13 +387,9 @@ export async function fetchPlotDimensions(
 
     index_indentifiers.forEach(({ id, label }) => {
       uniqueLabels.add(label);
+      labelToIdMapping[label] = id;
 
-      if (index_type === "depmap_model") {
-        indexed_values[id] = response[aggregation][id] ?? null;
-        cellLineIdMapping[label] = id;
-      } else {
-        indexed_values[label] = response[aggregation][id] ?? null;
-      }
+      indexed_values[id] = response[aggregation][id] ?? null;
     });
 
     return {
@@ -404,12 +414,8 @@ export async function fetchPlotDimensions(
         .then((result) => {
           const indexed_values: Record<string, true> = {};
 
-          // TODO: Change this to use ids instead of labels for all types (not
-          // just depmap_model)
-          for (let i = 0; i < result.labels.length; i++) {
-            const label =
-              index_type === "depmap_model" ? result.ids[i] : result.labels[i];
-            indexed_values[label] = true;
+          for (let i = 0; i < result.ids.length; i++) {
+            indexed_values[result.ids[i]] = true;
           }
 
           return {
@@ -433,24 +439,13 @@ export async function fetchPlotDimensions(
       const data = await getDimensionDataWithoutLabels(sliceQuery);
       let value_type = await fetchValueType(sliceQuery);
 
-      // FIXME: Remove this when we convert everything to use IDs.
-      const idToLabelMapping = await (() => {
-        return cached(breadboxAPI)
-          .getDimensionTypeIdentifiers(index_type)
-          .then((identifiers) =>
-            Object.fromEntries(identifiers.map(({ id, label }) => [id, label]))
-          );
-      })();
-
       const distinct = new Set<unknown>();
 
       for (let i = 0; i < data.values.length; i += 1) {
         const id = data.ids[i];
-        const indexKey =
-          index_type === "depmap_model" ? id : idToLabelMapping[id];
         const indexedValue = data.values[i];
 
-        indexed_values[indexKey] = indexedValue;
+        indexed_values[id] = indexedValue;
 
         if (indexedValue) {
           if (Array.isArray(indexedValue)) {
@@ -487,19 +482,19 @@ export async function fetchPlotDimensions(
     }),
   ]);
 
-  const index_labels =
-    index_type === "depmap_model"
-      ? [...uniqueLabels].map((label) => cellLineIdMapping[label])
-      : [...uniqueLabels];
+  // `index_labels` always carries real, human-readable labels — the
+  // post-refactor contract: identity is `index_ids`, display is
+  // `index_labels`.
+  const index_labels = [...uniqueLabels];
 
-  const index_display_labels =
-    index_type === "depmap_model" ? [...uniqueLabels] : index_labels;
+  const index_ids = [...uniqueLabels].map((label) => labelToIdMapping[label]);
 
   return (async () => {
     const out = {
       index_type,
+      index_id_column,
+      index_ids,
       index_labels,
-      index_display_labels,
       linreg_by_group: [],
       dimensions: {} as DataExplorerPlotResponse["dimensions"],
       filters: {} as DataExplorerPlotResponse["filters"],
@@ -507,7 +502,6 @@ export async function fetchPlotDimensions(
     };
 
     const datasets = await cached(breadboxAPI).getDatasets();
-    const dimTypes = await cached(breadboxAPI).getDimensionTypes();
     const dimTypeMap = buildDimTypeMap(dimTypes);
     const tablesByDim = buildTablesByDim(datasets);
 
@@ -594,8 +588,8 @@ export async function fetchPlotDimensions(
 
       if (property === "dimensions") {
         let value_type = valueTypes[key];
-        const values = out.index_labels.map((label) => {
-          return indexed_values[label] ?? null;
+        const values = out.index_ids.map((id) => {
+          return indexed_values[id] ?? null;
         }) as number[];
 
         if (key === "color") {
@@ -628,8 +622,8 @@ export async function fetchPlotDimensions(
 
         out.filters[key as FilterKey] = {
           name: filters![key as FilterKey]!.name,
-          values: out.index_labels.map((label) => {
-            return boolValues[label] ?? false;
+          values: out.index_ids.map((id) => {
+            return boolValues[id] ?? false;
           }),
         };
       }
@@ -651,8 +645,8 @@ export async function fetchPlotDimensions(
           dataset && !isPrimaryMetatadata(dataset) ? dataset.name : undefined;
 
         const value_type = (response as any).value_type;
-        const values = out.index_labels.map((label) => {
-          return indexed_values[label] ?? null;
+        const values = out.index_ids.map((id) => {
+          return indexed_values[id] ?? null;
         });
 
         // HACK! I never imagined there would be continuous metadata. We'll
@@ -968,19 +962,43 @@ const correlateDimension = memoize(
       );
     }
 
-    const representedIds: string[] = [];
+    // Build label↔id lookups from the parallel arrays returned by
+    // `evaluateContext`. Used to rekey `data` from labels to IDs before
+    // the correlation computation, so the entire downstream path is
+    // ID-keyed (matching the rest of Data Explorer's post-refactor
+    // contract). Labels are only needed at the very end for the display
+    // side of the response.
+    const labelToId: Record<string, string> = {};
+    const idToLabel: Record<string, string> = {};
+    for (let i = 0; i < labels.length; i += 1) {
+      labelToId[labels[i]] = ids[i];
+      idToLabel[ids[i]] = labels[i];
+    }
 
-    Object.keys(data).forEach((key, i) => {
+    // Rekey `data` from label-keyed to ID-keyed. `correlationMatrix` is
+    // agnostic about what its keys mean — it just preserves them through
+    // any internal reordering — so handing it IDs makes the returned
+    // `columns` already be IDs in cluster order, no post-hoc alignment
+    // needed.
+    data = Object.fromEntries(
+      Object.entries(data).map(([label, values]) => [labelToId[label], values])
+    );
+
+    Object.keys(data).forEach((key) => {
       const values = data[key];
       const distinct = new Set(values);
       if (distinct.size === 1 && [...distinct][0] == null) {
         delete data[key];
-      } else {
-        representedIds.push(ids[i]);
       }
     });
 
     const { columns, matrix } = correlationMatrix(data, use_clustering);
+
+    // `columns` is now the post-clustering ID order, aligned with the
+    // rows and columns of `matrix`. Derive the parallel label array for
+    // the display side of the response.
+    const representedIds = columns;
+    const representedLabels = columns.map((id) => idToLabel[id]);
 
     const isAutoNamedContext = context.name.match(/^\(\d+ selected\)/) !== null;
     const entities = await fetchEntitiesLabel(slice_type);
@@ -1017,7 +1035,7 @@ const correlateDimension = memoize(
       values: (matrix as unknown) as number[],
     };
 
-    return [outputDimension, columns, representedIds];
+    return [outputDimension, representedIds, representedLabels];
   }
 );
 
@@ -1029,7 +1047,7 @@ export async function fetchCorrelation(
   // eslint-disable-next-line
   use_clustering?: boolean
 ): Promise<DataExplorerPlotResponse> {
-  const [x, xColumns, ids] = await correlateDimension(
+  const [x, ids, labels] = await correlateDimension(
     dimensions.x,
     index_type,
     filters?.distinguish1 as DataExplorerContextV2,
@@ -1045,12 +1063,15 @@ export async function fetchCorrelation(
       )
     : [null];
 
-  const isModelCorrelation = dimensions.x.slice_type === "depmap_model";
+  const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+  const index_id_column = dimTypes.find((t) => t.name === index_type)
+    ?.id_column;
 
   return {
     index_type,
-    index_labels: isModelCorrelation ? ids : xColumns,
-    index_display_labels: xColumns,
+    index_id_column,
+    index_ids: ids,
+    index_labels: labels,
     dimensions: x2 ? { x, x2 } : { x },
     filters: {},
     metadata: {},
@@ -1173,14 +1194,13 @@ export async function fetchWaterfall(
     };
   });
 
-  const sortedIndexDisplayLabels = sortByReindexedLabels(
-    unsortedData.index_display_labels
-  );
+  const sortedIndexIds = sortByReindexedLabels(unsortedData.index_ids);
 
   return {
     index_type,
+    index_id_column: unsortedData.index_id_column,
+    index_ids: sortedIndexIds,
     index_labels: sortedLabels,
-    index_display_labels: sortedIndexDisplayLabels,
     dimensions: sortedDimensions,
     filters: sortedFilters,
     metadata: sortedMetadata,
