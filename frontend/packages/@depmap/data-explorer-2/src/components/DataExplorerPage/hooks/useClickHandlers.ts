@@ -27,33 +27,12 @@ export default function useClickHandlers(
 ) {
   const handleClickSaveSelectionAsContext = async (
     dimension_type: string,
-    selectedLabels: Set<string>
+    selectedIds: Set<string>
   ) => {
-    const labels = [...selectedLabels];
-
-    const identifiers = await dataExplorerAPI.fetchDimensionIdentifiers(
-      dimension_type
-    );
-    const labelToIdMap = Object.fromEntries(
-      identifiers.map(({ label, id }) => [label, id])
-    );
-
-    // "depmap_model" is a confusing type because its IDs were considered
-    // labels by the legacy portal.
-    let labelsAreDemapIds = plot.index_type === "depmap_model";
-
-    // To add an extra layer of confusion, this plot type's index isn't
-    // really a proper index.
-    if (plot.plot_type === "correlation_heatmap") {
-      labelsAreDemapIds = !labelsAreDemapIds;
-    }
-
-    const ids = labelsAreDemapIds
-      ? labels
-      : labels.map((label) => labelToIdMap[label]);
+    const ids = [...selectedIds];
 
     const context = {
-      name: defaultContextName(selectedLabels.size),
+      name: defaultContextName(selectedIds.size),
       dimension_type,
       expr: { in: [{ var: "given_id" }, ids] },
       vars: {},
@@ -63,7 +42,7 @@ export default function useClickHandlers(
   };
 
   const handleClickVisualizeSelected = useCallback(
-    async (e: React.MouseEvent, selectedLabels: Set<string>) => {
+    async (e: React.MouseEvent, selectedIds: Set<string>) => {
       if (!isCompletePlot(plot)) {
         throw new Error("Cannot visualize an incomplete plot!");
       }
@@ -79,7 +58,7 @@ export default function useClickHandlers(
         dimensionType
       );
 
-      const nextPlot = toRelatedPlot(plot, selectedLabels, identifiers);
+      const nextPlot = toRelatedPlot(plot, selectedIds, identifiers);
       const queryString = await plotToQueryString(nextPlot, ["task"]);
 
       if (isModifierPressed) {

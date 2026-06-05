@@ -1,4 +1,3 @@
-/* eslint-disable no-continue */
 import { useEffect, useMemo, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import type { Dataset, TabularDataset, MatrixDataset } from "@depmap/types";

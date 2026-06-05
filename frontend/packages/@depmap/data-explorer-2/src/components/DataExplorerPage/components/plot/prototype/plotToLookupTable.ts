@@ -23,10 +23,19 @@ const applyFilter = (
 export default function plotToLookupTable(data: DataExplorerPlotResponse) {
   const indexColumn = getDimensionTypeLabel(data.index_type);
 
-  let formattedData: FormattedData = { [indexColumn]: data.index_labels };
+  // For depmap_model, the legacy CSV layout has two columns: depmap IDs
+  // in "Cell Line" and cell line names in "Cell Line Name". Preserve
+  // that exact shape, now reading IDs from `index_ids` and names from
+  // `index_labels` (which post-refactor carries real labels for all
+  // types, including depmap_model). For other dimension types, the
+  // single primary column continues to carry labels.
+  const primaryColumnValues =
+    data.index_type === "depmap_model" ? data.index_ids : data.index_labels;
+
+  let formattedData: FormattedData = { [indexColumn]: primaryColumnValues };
 
   if (data.index_type === "depmap_model") {
-    formattedData["Cell Line Name"] = data.index_display_labels as string[];
+    formattedData["Cell Line Name"] = data.index_labels;
   }
 
   Object.values(data.dimensions).forEach((dimension) => {

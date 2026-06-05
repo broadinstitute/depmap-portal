@@ -235,6 +235,7 @@ def make_virtual_module(
 
 def add_matrix_dataset(connection, dataset: MatrixDataset, schema: SchemaNames):
     table_name = schema.get_dataset_table_name(dataset.id)
+    print("Creating ", table_name)
     connection.execute(
         f"CREATE VIRTUAL TABLE \"{table_name}\" using query_matrix_dataset('{dataset.id}')"
     )

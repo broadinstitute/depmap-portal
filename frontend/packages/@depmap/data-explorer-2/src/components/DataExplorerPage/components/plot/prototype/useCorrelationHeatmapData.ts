@@ -57,8 +57,8 @@ export default function useCorrelationHeatmapData(
     () =>
       data && !isLoading
         ? {
-            x: data.index_labels.slice().reverse(),
-            y: data.index_labels,
+            x: data.index_ids.slice().reverse(),
+            y: data.index_ids,
             z: assert2d(data.dimensions.x.values).map(formatDimension),
             z2: data.dimensions.x2
               ? assert2d(data.dimensions.x2.values).map(formatDimension)
@@ -72,21 +72,17 @@ export default function useCorrelationHeatmapData(
     [data, isLoading]
   );
 
-  // If there are index_display_labels, use these for graphing
-  // so that we can prioritize cell line name over model id.
+  // Heatmap axis ticks show real labels (cell line names for depmap_model,
+  // gene symbols for genes, etc). Identity is carried separately by
+  // `heatmapData.x`/`.y` above. No legacy fallback needed — post-patch-1,
+  // `index_labels` is always real display labels.
   const xLabels = useMemo(
-    () =>
-      data && !isLoading
-        ? (data.index_display_labels || data.index_labels).slice().reverse()
-        : null,
+    () => (data && !isLoading ? data.index_labels.slice().reverse() : null),
     [data, isLoading]
   );
 
   const yLabels = useMemo(
-    () =>
-      data && !isLoading
-        ? data.index_display_labels || data.index_labels
-        : null,
+    () => (data && !isLoading ? data.index_labels : null),
     [data, isLoading]
   );
 

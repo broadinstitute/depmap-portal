@@ -237,6 +237,7 @@ function PrototypeCorrelationHeatmap({
     }
 
     const yaxis = axes.current.yaxis || {
+      type: "category" as const,
       automargin: true,
       autorange: true,
       tickvals: y,
@@ -251,6 +252,7 @@ function PrototypeCorrelationHeatmap({
       hoverlabel: { namelength: -1 },
 
       xaxis: {
+        type: "category",
         tickvals: x,
         ticktext: xLabels ? xLabels.map(truncate) : x.map(truncate),
         domain: [0, z2Key ? doubleHeatMapRatio : 1],
@@ -261,6 +263,7 @@ function PrototypeCorrelationHeatmap({
 
       ...(z2Key && {
         xaxis2: {
+          type: "category",
           tickvals: x,
           ticktext: xLabels ? xLabels.map(truncate) : x.map(truncate),
           domain: [1 - doubleHeatMapRatio, 1],

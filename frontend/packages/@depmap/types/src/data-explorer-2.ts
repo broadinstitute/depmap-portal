@@ -130,15 +130,21 @@ export type PartialDataExplorerPlotConfig = PartialDeep<DataExplorerPlotConfig>;
 export interface DataExplorerPlotResponse {
   index_type: string;
 
-  // Human-readable labels. Legacy code also uses these as makeshift IDs but
-  // that practice is discouraged going forward.
-  index_labels: string[];
+  // The id column name for `index_type` as reported by Breadbox
+  // (e.g. "depmap_id", "entrez_id"). Used to give the bare id values in
+  // `index_ids` a human-readable label in display contexts like hover
+  // text. Optional because some legacy code paths construct responses
+  // without consulting Breadbox.
+  index_id_column?: string;
 
-  // Temporary! Eventually we want to be in a situation where index_ids and
-  // index_labels are well defined for all dimension types. We're/ not there
-  // yet. Lots of legacy code wants to use index_labels as makeshift IDs.
-  // These labels are explicitly for display purposes only.
-  index_display_labels: string[];
+  // Real, stable identifiers from Breadbox. Use this for identity:
+  // joins, lookups, selection state, filters, URL state, anything
+  // persistent.
+  index_ids: string[];
+
+  // Human-readable display labels, parallel to `index_ids`. Use this
+  // for any user-facing text — hover, axis ticks, list rendering.
+  index_labels: string[];
 
   dimensions: {
     x: DataExplorerPlotResponseDimension;

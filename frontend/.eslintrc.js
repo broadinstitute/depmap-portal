@@ -50,6 +50,7 @@ module.exports = {
     "jsx-a11y/label-has-associated-control": ["warn", { assert: "either" }],
     "max-len": "off",
     "no-confusing-arrow": "off",
+    "no-continue": "off",
     "no-plusplus": "off",
     "no-restricted-syntax": "off",
     "no-tabs": "off",
