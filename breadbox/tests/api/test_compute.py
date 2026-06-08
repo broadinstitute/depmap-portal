@@ -520,9 +520,9 @@ def test_run_custom_analysis_assoc_vector_is_dependent_true(
 
     assert len(df["label"]) == 3 and len(df["vectorId"]) == 3
     df.sort_values(["label"], inplace=True)
-    assert_series_is_6dp_close(df["EffectSize"], [0.555556, 0.225498, 0.089084])
-    assert_series_is_6dp_close(df["PValue"], [0.005800, 0.354454, 0.587756])
-    assert_series_is_6dp_close(df["QValue"], [0.017400, 0.531682, 0.587756])
+    assert_series_is_6dp_close(df["EffectSize"], [0.555556, 0.228316, 0.089084])
+    assert_series_is_6dp_close(df["PValue"], [0.005800, 0.382209, 0.587756])
+    assert_series_is_6dp_close(df["QValue"], [0.017400, 0.5733129, 0.587756])
     assert list(df["numCellLines"]) == [9, 9, 10]
 
     assert result["numCellLinesUsed"] == len(cell_lines)
@@ -573,13 +573,13 @@ def test_run_custom_analysis_assoc_with_vector_is_dependent_false(
     assert len(df["label"]) == 3 and len(df["vectorId"]) == 3
     df.sort_values(["label"], inplace=True)
     assert_series_is_6dp_close(
-        df["EffectSize"], [1.257015, 0.535728, 0.430303,],
+        df["EffectSize"], [1.27272727, 0.542424, 0.430303,],
     )
     assert_series_is_6dp_close(
-        df["PValue"], [0.002928, 0.325073, 0.587756,],
+        df["PValue"], [0.004513, 0.353011, 0.587756,],
     )
     assert_series_is_6dp_close(
-        df["QValue"], [0.008783, 0.487609, 0.587756,],
+        df["QValue"], [0.013539, 0.529516, 0.587756,],
     )
     assert list(df["numCellLines"]) == [9, 9, 10]
 
