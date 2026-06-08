@@ -20,6 +20,66 @@ Enzyme.configure({
   adapter: new Adapter(),
 });
 
+const portalApiProxyTarget: Record<string | symbol, unknown> = {};
+const breadboxApiProxyTarget: Record<string | symbol, unknown> = {};
+
+const createApiMock = (
+  label: string,
+  importName: string,
+  target: Record<string | symbol, unknown>
+) => {
+  return new Proxy(target, {
+    get(t, prop) {
+      if (prop in t) {
+        return t[prop];
+      }
+
+      const message = [
+        "-".repeat(80),
+        `Some application code is trying to access the ${label} from this test.`,
+        "You'll need to provide a mock response. Please add this to your test:\n",
+        `  ${importName}.${String(prop)} = jest`,
+        `    .fn<ReturnType<typeof ${importName}.${String(prop)}>, []>()`,
+        "    .mockResolvedValue(/* some value */);",
+        "",
+        "(You don't need to reset the mock after the test runs. All mocks are",
+        "automatically reset after each test.)",
+        "-".repeat(80),
+      ].join("\n");
+
+      throw new Error(message);
+    },
+    set(t, prop, value) {
+      t[prop] = value;
+      return true;
+    },
+  });
+};
+
+jest.mock("@depmap/api", () => ({
+  cached: (api: unknown) => api,
+
+  legacyPortalAPI: createApiMock(
+    "Portal API",
+    "legacyPortalAPI",
+    portalApiProxyTarget
+  ),
+
+  breadboxAPI: createApiMock(
+    "Breadbox API",
+    "breadboxAPI",
+    breadboxApiProxyTarget
+  ),
+}));
+
 afterEach(() => {
+  for (const key of Object.keys(portalApiProxyTarget)) {
+    delete portalApiProxyTarget[key];
+  }
+
+  for (const key of Object.keys(breadboxApiProxyTarget)) {
+    delete breadboxApiProxyTarget[key];
+  }
+
   jest.resetAllMocks();
 });

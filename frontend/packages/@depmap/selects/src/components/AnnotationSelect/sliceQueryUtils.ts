@@ -1,4 +1,3 @@
-/* eslint-disable no-continue */
 import { SliceQuery } from "@depmap/types";
 import type {
   ChainHop,

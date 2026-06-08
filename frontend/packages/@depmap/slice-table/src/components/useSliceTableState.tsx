@@ -197,7 +197,6 @@ export function useSliceTableState({
 
     for (const col of columns) {
       if (!isValidSliceQuery(col.meta.sliceQuery)) {
-        // eslint-disable-next-line no-continue
         continue;
       }
 

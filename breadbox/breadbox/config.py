@@ -4,6 +4,7 @@ from typing import List, Optional, Union
 
 from pydantic import RedisDsn, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+import datetime
 
 
 class Settings(BaseSettings):
@@ -38,6 +39,17 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),
     )
+
+    def get_todays_result_dir(self):
+        """
+        Fetch the result directory (used for temp files) to use for any tasks. (Result directory includes the date so
+        that we can easily clean up old results)
+        """
+
+        return os.path.join(
+            self.compute_results_location,
+            str(datetime.datetime.now().strftime("%Y%m%d")),
+        )
 
     @field_validator("host_scheme_override")
     def env_contains_colon(cls, v):

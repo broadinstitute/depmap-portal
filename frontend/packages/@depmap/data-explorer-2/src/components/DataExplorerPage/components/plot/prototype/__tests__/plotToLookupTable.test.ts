@@ -3,8 +3,8 @@ import { DataExplorerPlotResponse } from "@depmap/types";
 
 const data: DataExplorerPlotResponse = {
   index_type: "depmap_model",
-  index_labels: ["ACH-000001", "ACH-000147", "ACH-000535", "ACH-000552"],
-  index_display_labels: ["NIHOVCAR3", "T47D", "BXPC3", "HT29"],
+  index_ids: ["ACH-000001", "ACH-000147", "ACH-000535", "ACH-000552"],
+  index_labels: ["NIHOVCAR3", "T47D", "BXPC3", "HT29"],
   dimensions: {
     x: {
       axis_label: "SOX10 Gene Effect (Chronos)",
