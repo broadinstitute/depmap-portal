@@ -13,3 +13,160 @@
 {{ include_theme_snippet("nav.html") }}
 {% include "nav_footer/alert_banner.html" %}
 
+{% if config.get("FEEDBACK_FORM_URL") %}
+    <style>
+        #help-tab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #4a4f57;
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 1055;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+            user-select: none;
+            transition: background .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+        #help-tab:hover {
+            background: #5a606a;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.30);
+        }
+        #help-tab:active {
+            transform: translateY(1px);
+        }
+        #help-dismiss {
+            margin-left: 2px;
+            padding: 0 2px;
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.65);
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+        }
+        #help-dismiss:hover {
+            color: #fff;
+        }
+        #help-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1060;
+            align-items: center;
+            justify-content: center;
+        }
+        #help-overlay.open {
+            display: flex;
+        }
+        #help-modal {
+            position: relative;
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            background: #fff;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+        }
+        #help-close {
+            position: absolute;
+            top: 8px;
+            right: 12px;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            color: #555;
+            background: none;
+            border: none;
+            z-index: 1;
+        }
+        #help-close:hover {
+            color: #000;
+        }
+        #help-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #help-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            color: #888;
+            background: #fff;
+            pointer-events: none;
+        }
+        #help-loading.hidden {
+            display: none;
+        }
+    </style>
+
+    <div id="help-tab">
+        <span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> Help
+        <button id="help-dismiss" type="button" aria-label="Hide for now" title="Hide for now">&times;</button>
+    </div>
+
+    <div id="help-overlay" role="dialog" aria-modal="true" aria-label="Help">
+        <div id="help-modal">
+            <button id="help-close" aria-label="Close help">&times;</button>
+            <div id="help-loading">Loading&hellip;</div>
+            <iframe id="help-iframe" src="" title="Help / Feedback"></iframe>
+        </div>
+    </div>
+
+    <script>
+        (function () {
+            var tab = document.getElementById('help-tab');
+            var dismiss = document.getElementById('help-dismiss');
+            var overlay = document.getElementById('help-overlay');
+            var closeBtn = document.getElementById('help-close');
+            var iframe = document.getElementById('help-iframe');
+            var loading = document.getElementById('help-loading');
+            var baseUrl = {{ config['FEEDBACK_FORM_URL'] | tojson }};
+            var userEmail = {{ current_user_id | tojson }};
+
+            iframe.addEventListener('load', function () {
+                if (iframe.src) loading.classList.add('hidden');
+            });
+
+            function openHelp() {
+                loading.classList.remove('hidden');
+                var params = new URLSearchParams({
+                    email: userEmail || '',
+                    title: 'Need help or have a suggestion?',
+                    url: window.location.href,
+                });
+                iframe.src = baseUrl + '?' + params.toString();
+                overlay.classList.add('open');
+            }
+            function closeHelp() {
+                overlay.classList.remove('open');
+                iframe.src = '';
+            }
+
+            tab.addEventListener('click', openHelp);
+            dismiss.addEventListener('click', function (e) {
+                e.stopPropagation();
+                tab.style.display = 'none';
+            });
+            closeBtn.addEventListener('click', closeHelp);
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) closeHelp();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeHelp();
+            });
+        })();
+    </script>
+{% endif %}
