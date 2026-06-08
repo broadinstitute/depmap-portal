@@ -1,0 +1,15 @@
+.tableContainer {
+  width: 100vw;
+  height: 100vh;
+}
+
+.error {
+  padding: 15px;
+  color: red;
+}
+
+:global .modal-dialog {
+  max-height: 100vh;
+  // border: 1px solid red !important;
+  transform: scale(0.85) !important;
+}

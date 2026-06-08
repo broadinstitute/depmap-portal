@@ -8,7 +8,7 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
-import ScatterLoader from "./loaders/ScatterLoader";
+import ScatterLoader from "../../loaders/ScatterLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;

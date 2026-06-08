@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ReactElement } from "react";
-import LoadingSpinner from "../../../components/LoadingSpinner";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export type PlotlyType = typeof import("plotly.js");
 
@@ -7,15 +7,15 @@ interface Props {
   children?: (Plotly: PlotlyType) => ReactElement;
 }
 
-function ScatterLoader({ children = undefined }: Props) {
+function DensityLoader({ children = undefined }: Props) {
   const [Plotly, setPlotly] = useState<PlotlyType | null>(null);
 
   useEffect(() => {
     (async () => {
       const lib = (
         await import(
-          // webpackChunkName: "plotly-bundles__scatter"
-          "../../../plotly-bundles/scatter"
+          // webpackChunkName: "plotly-bundles__density-and-barchart"
+          "../plotly-bundles/density-and-barchart"
         )
       ).default;
 
@@ -26,4 +26,4 @@ function ScatterLoader({ children = undefined }: Props) {
   return Plotly && children ? children(Plotly) : <LoadingSpinner />;
 }
 
-export default ScatterLoader;
+export default DensityLoader;

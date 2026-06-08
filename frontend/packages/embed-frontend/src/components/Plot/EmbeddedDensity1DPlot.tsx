@@ -7,7 +7,7 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import DensityLoader from "./loaders/DensityLoader";
+import DensityLoader from "../../loaders/DensityLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;

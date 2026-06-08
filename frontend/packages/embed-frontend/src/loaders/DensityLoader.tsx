@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ReactElement } from "react";
-import LoadingSpinner from "../../../components/LoadingSpinner";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export type PlotlyType = typeof import("plotly.js");
 
@@ -15,7 +15,7 @@ function DensityLoader({ children = undefined }: Props) {
       const lib = (
         await import(
           // webpackChunkName: "plotly-bundles__density"
-          "../../../plotly-bundles/density"
+          "../plotly-bundles/density"
         )
       ).default;
 
