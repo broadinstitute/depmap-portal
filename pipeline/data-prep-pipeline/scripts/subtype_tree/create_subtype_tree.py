@@ -516,7 +516,7 @@ if __name__ == "__main__":
     parser.add_argument("model", help="Taiga ID of model table")
     parser.add_argument("oncotree", help="Taiga ID of oncotree")
     parser.add_argument(
-        "molecular_subtype_tree", help="Taiga ID of Molecular Subtype Hierarchy"
+        "molecular_subtypes_hierarchy", help="Taiga ID of Molecular Subtype Hierarchy"
     )
     parser.add_argument(
         "genetic_subtypes_whitelist",
@@ -528,7 +528,7 @@ if __name__ == "__main__":
     subtype_tree = create_subtype_tree(
         args.model,
         args.oncotree,
-        args.molecular_subtype_tree,
+        args.molecular_subtypes_hierarchy,
         args.genetic_subtypes_whitelist,
     )
 
