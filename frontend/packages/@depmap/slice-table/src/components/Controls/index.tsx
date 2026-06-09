@@ -1,4 +1,5 @@
 import React from "react";
+import cx from "classnames";
 import { Button } from "react-bootstrap";
 import SearchBar from "./SearchBar";
 import styles from "../../styles/SliceTable.scss";
@@ -17,8 +18,16 @@ interface Props {
   hadError: boolean;
   onClickFilterButton: () => void;
   onClickDownload: () => void;
-  renderCustomControls: () => React.ReactNode;
+  renderCustomControls: (info: {
+    isLoading: boolean;
+    hadError: boolean;
+    onClickAddColumn: () => void;
+  }) => React.ReactNode;
   numFiltersApplied: number;
+  // This is threaded through just in case a consumer
+  // wants to be able to call it from a custom action.
+  onClickAddColumn: () => void;
+  controlsClassName?: string;
 }
 
 function Controls({
@@ -29,10 +38,18 @@ function Controls({
   onClickDownload,
   renderCustomControls,
   numFiltersApplied,
+  onClickAddColumn,
+  controlsClassName = undefined,
 }: Props) {
   return (
-    <div className={styles.Controls}>
-      <div className={styles.customControls}>{renderCustomControls()}</div>
+    <div className={cx(styles.Controls, controlsClassName)}>
+      <div className={styles.customControls}>
+        {renderCustomControls({
+          onClickAddColumn,
+          isLoading,
+          hadError,
+        })}
+      </div>
       <div className={styles.search}>
         <SearchBar tableRef={tableRef} />
       </div>

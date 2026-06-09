@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import cx from "classnames";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
 import type { RowSelectionState } from "@depmap/react-table";
@@ -46,10 +47,21 @@ interface Props {
   ) => import("./useData").ColumnDisplayOptions | null;
   // Custom controls will appear at the top of the table (to left of the search
   // bar).
-  renderCustomControls?: () => React.ReactNode;
+  renderCustomControls: (info: {
+    isLoading: boolean;
+    hadError: boolean;
+    onClickAddColumn: () => void;
+  }) => React.ReactNode;
   // Custom actions will appear at the botom of the table (to the right of "Add
   // column").
   renderCustomActions?: () => React.ReactNode;
+  // Use this if you want to complete hide the actions bar. Does nothing if
+  // `renderCustomControls` is defined.
+  hideActions?: boolean;
+  // Use this to apply custom CSS to the container div.
+  containerClassName?: string;
+  // Use this to apply custom CSS to the controls.
+  controlsClassName?: string;
   downloadFilename?: string;
   // An implicit filter that is always applied and invisible to the end user.
   // Rows for which this returns false are excluded from the dataset entirely —
@@ -92,6 +104,9 @@ function SliceTable({
   getColumnDisplayOptions = undefined,
   renderCustomControls = () => null,
   renderCustomActions = () => null,
+  hideActions = false,
+  containerClassName = undefined,
+  controlsClassName = undefined,
   downloadFilename = "",
   implicitFilter = undefined,
   isLoading: externalLoading = false,
@@ -194,8 +209,9 @@ function SliceTable({
   }, [data, columns, implicitFilter, sliceDataCacheRef]);
 
   return (
-    <div className={styles.SliceTable}>
+    <div className={cx(styles.SliceTable, containerClassName)}>
       <Controls
+        controlsClassName={controlsClassName}
         tableRef={tableRef}
         isLoading={combinedLoading}
         hadError={Boolean(error)}
@@ -203,6 +219,7 @@ function SliceTable({
         onClickDownload={handleClickDownload}
         renderCustomControls={renderCustomControls}
         numFiltersApplied={numFiltersApplied}
+        onClickAddColumn={handleClickAddColumn}
       />
       {combinedLoading && (
         <div className={styles.loadingContainer}>
@@ -253,12 +270,14 @@ function SliceTable({
           return 0;
         }}
       />
-      <Actions
-        isLoading={combinedLoading}
-        hadError={Boolean(error)}
-        onClickAddColumn={handleClickAddColumn}
-        renderCustomActions={renderCustomActions}
-      />
+      {!hideActions && !renderCustomActions && (
+        <Actions
+          isLoading={combinedLoading}
+          hadError={Boolean(error)}
+          onClickAddColumn={handleClickAddColumn}
+          renderCustomActions={renderCustomActions}
+        />
+      )}
     </div>
   );
 }

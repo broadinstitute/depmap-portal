@@ -8,8 +8,27 @@
   color: red;
 }
 
+.controls {
+  grid-template-columns: 1fr auto auto;
+  border-left: 2px solid transparent;
+
+  & > :nth-child(1) { order: 1; }
+  & > :nth-child(2) { order: 0; }
+  & > :nth-child(3) { order: 2; }
+}
+
 :global .modal-dialog {
-  max-height: 100vh;
-  // border: 1px solid red !important;
-  transform: scale(0.85) !important;
+  width: calc(100vw - 10px);
+  margin: auto auto;
+  transform: scale(0.9) !important;
+
+  section {
+    & > :first-child {
+      min-height: 0px;
+    }
+
+    div[data-preview-placeholder] {
+      height: calc(100vh - 150px);
+    }
+  }
 }

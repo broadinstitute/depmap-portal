@@ -1,4 +1,5 @@
 import React from "react";
+import { Button } from "react-bootstrap";
 import SliceTable from "@depmap/slice-table";
 import { PlotlyLoaderProvider } from "@depmap/data-explorer-2/src/contexts/PlotlyLoaderContext";
 import DensityAndBarchartLoader from "../loaders/DensityAndBarchartLoader";
@@ -40,6 +41,21 @@ function EmbeddedTable() {
           index_type_name={config.dimension_type}
           downloadFilename={filenameWithTimestamp()}
           getInitialState={() => ({ initialSlices: config.slices })}
+          controlsClassName={styles.controls}
+          hideActions
+          renderCustomControls={({ isLoading, hadError, onClickAddColumn }) => (
+            <div>
+              <Button
+                bsSize="small"
+                bsStyle="default"
+                onClick={onClickAddColumn}
+                disabled={isLoading || hadError}
+              >
+                <i className="glyphicon glyphicon-plus" />
+                <span> Add column</span>
+              </Button>
+            </div>
+          )}
         />
       </div>
     </PlotlyLoaderProvider>
