@@ -7,7 +7,7 @@ import {
 } from "@depmap/types";
 import PrototypeScatterPlot from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeScatterPlot";
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
-import ScatterLoader from "./loaders/ScatterLoader";
+import ScatterLoader from "../../loaders/ScatterLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
