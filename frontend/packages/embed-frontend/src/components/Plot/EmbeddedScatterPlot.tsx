@@ -40,6 +40,13 @@ function EmbeddedScatterPlot({
     return null;
   }
 
+  const showBuiltinLegend = Boolean(
+    data?.metadata.color_property ||
+      data?.dimensions.color ||
+      data?.filters.color1 ||
+      data?.filters.color2
+  );
+
   return (
     <PlotlyLoaderProvider PlotlyLoader={ScatterLoader}>
       <PrototypeScatterPlot
@@ -68,6 +75,7 @@ function EmbeddedScatterPlot({
         palette={palette}
         xAxisFontSize={12}
         yAxisFontSize={12}
+        showBuiltinLegend={showBuiltinLegend}
       />
     </PlotlyLoaderProvider>
   );

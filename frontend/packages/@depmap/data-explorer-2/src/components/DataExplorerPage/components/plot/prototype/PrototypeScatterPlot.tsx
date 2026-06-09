@@ -79,6 +79,7 @@ interface Props {
   customHoverinfo?: PlotData["hoverinfo"];
   hideXAxis?: boolean;
   hideXAxisGrid?: boolean;
+  showBuiltinLegend?: boolean;
   // optional styling
   pointSize?: number;
   pointOpacity?: number;
@@ -137,6 +138,32 @@ const moveSelectedPointsOnTopOfLines = (plot: HTMLDivElement) => {
   hoverlayer.style.transform = "translateX(8px)";
 };
 
+// These dummy traces exist only to force Plotly to add a legend with the
+// correct colors (there is no good way of rendering our custom legend as
+// part of the exported image).
+const getLegendTraces = (
+  legendForDownload: LegendInfo,
+  templateTrace: object & { marker: object }
+) =>
+  legendForDownload.items.map(({ name, hexColor }) => {
+    return {
+      ...templateTrace,
+      showlegend: true,
+      // HACK: Use a plot type of "indicator" rather than "scatter". This
+      // prevents a rare bug where these dummy traces interfere with the
+      // real ones and some points don't get rendered.
+      type: "indicator",
+      name: truncate(name),
+      x: [null], // Data doesn't matter but can't be completely empty
+      y: [null],
+      marker: {
+        ...templateTrace.marker,
+        color: hexColor,
+        line: { color: hexColor, width: 2 },
+      },
+    };
+  });
+
 function PrototypeScatterPlot({
   data,
   xKey,
@@ -165,6 +192,7 @@ function PrototypeScatterPlot({
   customHoverinfo = undefined,
   hideXAxis = false,
   hideXAxisGrid = false,
+  showBuiltinLegend = false,
   pointSize = 7,
   pointOpacity = 1.0,
   outlineWidth = 0.5,
@@ -545,6 +573,12 @@ function PrototypeScatterPlot({
       .filter(Boolean)
       .reverse() as Partial<PlotData>[];
 
+    if (showBuiltinLegend) {
+      getLegendTraces(legendForDownload!, templateTrace).forEach((t) =>
+        plotlyData.push(t as typeof plotlyData[number])
+      );
+    }
+
     const isContinuousCurve = (curveNumber: number) => {
       return plotlyData[curveNumber] === continuousColorTrace;
     };
@@ -597,7 +631,7 @@ function PrototypeScatterPlot({
       // We hide the legend because the traces don't have names and some of
       // them are merely decorative (e.g. selectionOutlineTrace). DE2 has its
       // own custom-build legend so this isn't a problem.
-      showlegend: false,
+      showlegend: true,
 
       xaxis,
       yaxis,
@@ -844,28 +878,7 @@ function PrototypeScatterPlot({
         return;
       }
 
-      // These dummy traces exist only to force Plotly to add a legend with the
-      // correct colors (there is no good way of rendering our custom legend as
-      // part of the exported image).
-      const legendTraces = legendForDownload.items.map(({ name, hexColor }) => {
-        return {
-          ...templateTrace,
-          showlegend: true,
-          // HACK: Use a plot type of "indicator" rather than "scatter". This
-          // prevents a rare bug where these dummy traces interfere with the
-          // real ones and some points don't get rendered.
-          type: "indicator",
-          name: truncate(name),
-          x: [null], // Data doesn't matter but can't be completely empty
-          y: [null],
-          marker: {
-            ...templateTrace.marker,
-            color: hexColor,
-            line: { color: hexColor, width: 2 },
-          },
-        };
-      });
-
+      const legendTraces = getLegendTraces(legendForDownload, templateTrace);
       const imagePlot = {
         ...plot,
         data: [...plot.data, ...legendTraces],
@@ -941,6 +954,7 @@ function PrototypeScatterPlot({
     customHoverinfo,
     hideXAxis,
     hideXAxisGrid,
+    showBuiltinLegend,
     pointSize,
     pointOpacity,
     outlineWidth,
