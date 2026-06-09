@@ -47,7 +47,7 @@ interface Props {
   ) => import("./useData").ColumnDisplayOptions | null;
   // Custom controls will appear at the top of the table (to left of the search
   // bar).
-  renderCustomControls: (info: {
+  renderCustomControls?: (info: {
     isLoading: boolean;
     hadError: boolean;
     onClickAddColumn: () => void;
