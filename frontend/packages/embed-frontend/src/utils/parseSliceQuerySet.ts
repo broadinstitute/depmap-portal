@@ -30,8 +30,14 @@ type SliceQuerySet = {
 
 class SliceQueryParseError extends Error {
   constructor(message: string, options?: { cause?: unknown }) {
-    super(message, options);
+    super(message);
     this.name = "SliceQueryParseError";
+    // `cause` is standard at runtime, but the constructor option is only typed
+    // when the ES2022 Error lib is present. Assign it directly so this compiles
+    // regardless of the workspace's `lib` target.
+    if (options?.cause !== undefined) {
+      (this as { cause?: unknown }).cause = options.cause;
+    }
   }
 }
 
