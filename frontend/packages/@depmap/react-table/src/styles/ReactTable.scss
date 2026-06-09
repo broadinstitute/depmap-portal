@@ -327,10 +327,12 @@
 }
 
 .columnMenu {
-  display: block;
-  position: absolute;
-  transform: translateX(-100%);
-  z-index: 2000;
+  &:global(.dropdown-menu) {
+    display: block;
+    position: absolute;
+    transform: translateX(-100%);
+    z-index: 2000;
+  }
 
   a {
     cursor: pointer;

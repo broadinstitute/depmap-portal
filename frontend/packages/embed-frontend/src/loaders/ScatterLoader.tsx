@@ -1,5 +1,5 @@
 import React, { useEffect, useState, ReactElement } from "react";
-import LoadingSpinner from "../../../components/LoadingSpinner";
+import LoadingSpinner from "../components/LoadingSpinner";
 
 export type PlotlyType = typeof import("plotly.js");
 
@@ -7,15 +7,15 @@ interface Props {
   children?: (Plotly: PlotlyType) => ReactElement;
 }
 
-function HeatmapLoader({ children = undefined }: Props) {
+function ScatterLoader({ children = undefined }: Props) {
   const [Plotly, setPlotly] = useState<PlotlyType | null>(null);
 
   useEffect(() => {
     (async () => {
       const lib = (
         await import(
-          // webpackChunkName: "plotly-bundles__heatmap"
-          "../../../plotly-bundles/heatmap"
+          // webpackChunkName: "plotly-bundles__scatter"
+          "../plotly-bundles/scatter"
         )
       ).default;
 
@@ -26,4 +26,4 @@ function HeatmapLoader({ children = undefined }: Props) {
   return Plotly && children ? children(Plotly) : <LoadingSpinner />;
 }
 
-export default HeatmapLoader;
+export default ScatterLoader;

@@ -18,13 +18,16 @@
     "@depmap/types": "1.0.0",
     "@modelcontextprotocol/ext-apps": "^1.1.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "bootstrap": "^3.3.7",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
+    "react-bootstrap": "^0.32.3",
     "plotly.js": "^2.8.0"
   },
   "devDependencies": {
     "@types/plotly.js": "^1.54.17",
     "@types/react": "16.14.2",
+    "@types/react-bootstrap": "^0.32.24",
     "@types/react-dom": "16.9.8"
   }
 }
