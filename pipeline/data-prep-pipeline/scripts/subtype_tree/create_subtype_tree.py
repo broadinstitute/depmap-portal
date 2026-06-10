@@ -1,6 +1,4 @@
 import argparse
-import re
-import itertools
 import pandas as pd
 from taigapy import create_taiga_client_v3
 
@@ -8,7 +6,7 @@ from taigapy import create_taiga_client_v3
 def load_data(
     model_taiga_id,
     oncotree_taiga_id,
-    molecular_subtypes_taiga_id,
+    molecular_subtype_tree_taiga_id,
     genetic_subtypes_whitelist,
 ):
     """
@@ -24,7 +22,7 @@ def load_data(
 
         - oncotree (pandas df): Oncotree as a result of calling its API and storing on taiga
 
-        - genetic_subtypes (pandas df): The OmicsInferredMolecularSubtype table from release
+        - molecular_subtype_tree_taiga_id (pandas df): The hierarchy of molecular subtypes
 
         - gs_whitelist (pandas df): The whitelist of custom nodes that are defined by
             a genetic subtype and will be added as a node in the lineage-based tree
@@ -74,74 +72,77 @@ def load_data(
     )
 
     ## Load genetic subtypes
-    genetic_subtypes = tc.get(molecular_subtypes_taiga_id).set_index("ModelID")
+    mol_subtype_hierarchy = tc.get(molecular_subtype_tree_taiga_id)
 
     gs_whitelist = tc.get(genetic_subtypes_whitelist)
 
-    return models, oncotree, genetic_subtypes, gs_whitelist
+    return models, oncotree, mol_subtype_hierarchy, gs_whitelist
 
 
-def create_oncotable(oncotree):
-    """
-    Takes the table returned by the oncotree API, which for each node only has
-    its direct parent annotated, and turns into a table format, with a column
-    for each level of the tree. 
-
-    Inputs:
-        - oncotree (pandas df): A dataframe where each row has the code, name, level, and parent
-
-    Outputs:
-        - oncotable (pandas df): A dataframe where each row has all parents
-            annotated, along with the code and name of that node
-    """
+def create_table_from_hierarchy(
+    hierarchy_df,
+    code_col='code',
+    name_col='name',
+    parent_col='parent',
+    level_col='level',
+    root_node='TISSUE'
+    ):
 
     # define function to create table-format node
-    def find_all_parents(node, oncotree):
-        """
-        A function to identify the complete path (all parents) to any node.
-
-        Inputs:
-            - node (pd.Series): one row of the oncotree
-
-            - oncotree (pandas df)
-
-        Outputs:
-            - table node (pd.Series): one row of the new oncotable, which includes 
-                each parent of said node
-        """
-
-        # Oncotree indexes starting at 1, we want to index starting at 0
-        cur_level = node.NodeLevel
+    def find_all_parents(
+        node,
+        hierarchy_df,
+        code_col='code',
+        name_col='name',
+        parent_col='parent',
+        root_node='TISSUE'
+        ):
+        # Hierarchy dataframes are indexed starting at 1, we want to index starting at 0
+        cur_level = node[level_col]
         levels = dict(
             {
-                "OncotreeCode": node.OncotreeCode,
-                "NodeName": node.NodeName,
-                "NodeLevel": node.NodeLevel - 1,  # index at 0
-                f"Level{cur_level-1}": node.OncotreeCode,  # index at 0
+                "Code": node[code_col],
+                "NodeName": node[name_col],
+                "NodeLevel": node[level_col] - 1,  # index at 0
+                f"Level{cur_level-1}": node[code_col],  # index at 0
             }
         )
 
-        while node.parent != "TISSUE":
-            node = oncotree.query("OncotreeCode == @node.parent").iloc[0]
-            cur_level = node.NodeLevel
-            levels[f"Level{cur_level-1}"] = node["OncotreeCode"]
+        while node[parent_col] != root_node:
+            # print("Current:", node[code_col])
+            # print("Parent:", node[parent_col], '\n')
+            node = hierarchy_df[
+                hierarchy_df[code_col] == node[parent_col]
+            ].iloc[0]
+            cur_level = node[level_col]
+            levels[f"Level{cur_level-1}"] = node[code_col]
 
         return pd.Series(levels)
 
-    oncotable = (
-        oncotree[oncotree.OncotreeCode != "TISSUE"]
-        .apply(find_all_parents, **{"oncotree": oncotree}, axis=1)
-        .assign(DepmapModelType=lambda x: x.OncotreeCode, NodeSource="Oncotree")
+    hierarchy_table = (
+        hierarchy_df.loc[
+            hierarchy_df[code_col] != root_node
+        ].apply(
+            find_all_parents,
+            **{
+                "hierarchy_df": hierarchy_df,
+                "code_col":code_col,
+                "name_col":name_col,
+                "parent_col":parent_col,
+                "root_node":root_node
+            },
+            axis=1
+        )
     )
 
     # relabel duplicated node names
-    dup_idx = oncotable.loc[oncotable.NodeName.duplicated(keep=False)].index
+    dup_idx = hierarchy_table.loc[hierarchy_table.NodeName.duplicated(keep=False)].index
 
-    oncotable.loc[dup_idx, "NodeName"] = oncotable.loc[dup_idx].apply(
+    hierarchy_table.loc[dup_idx, "NodeName"] = hierarchy_table.loc[dup_idx].apply(
         lambda x: f"{x.NodeName} ({x.Level0})", axis=1
     )
 
-    return oncotable
+    return hierarchy_table
 
 
 def construct_new_table_node(
@@ -364,137 +365,6 @@ def add_disease_restricted_genetic_subtypes(gs_whitelist, subtype_tree):
 
     return pd.concat([subtype_tree, gs_tree])
 
-
-def add_molecular_subtype_subtree(df, mst_tree):
-    """
-    A function to determine the hierarchy of a gene-specfic subset of the
-    OmicsInferredMolecularSubtype columns. Once the hierarchy is determined,
-    a tree structure is created.
-
-    Inputs:
-        - df (pandas df): a dataframe of the subtypes to add. The function assumes
-            that all subtypes in the df are associated with one gene, and that
-            gene comes at the beginning of each subtype name. Columns in this df
-            are [gene, subtype, full_st], where full_st is the full subtype name
-
-        - mst_tree (pandas df): The molecular subtype tree, which mimics the format 
-            of the subtype tree. In this case, it assumes that all Level0 nodes have
-            been properly added
-
-    Outputs:
-        - mst_tree (pandas df): An extended molecular subtype tree with this gene's
-            sub-tree added in 
-    """
-
-    # sorting by full subtype name
-    # this is important because we are using regex to determine parent-child relationships
-    # for the molecular subtypes. If we do not check these regex relationships in
-    # the right order, then the parent-child relationships will not be correct.
-    df = df.sort_values("full_st").assign(level=1, parent=df.gene.values[0])
-
-    # find all nodes that are children of another
-    pairwise_st = itertools.combinations(df.full_st, 2)
-    for pair in pairwise_st:
-        # if the first one is a parent of the second (its subtype name appears completely within the other)
-        # e.g. KRASp.G12 is the parent of KRASp.G12D because "KRASp.G12" is in "KRASp.G12D"
-        if re.search(pair[0], pair[1]):
-            # set level of the second of the pair to be one below the parent
-            df.loc[df.full_st == pair[1], "level"] = (
-                df.loc[df.full_st == pair[0], "level"].values[0] + 1
-            )
-
-            # set the parent value
-            df.loc[df.full_st == pair[1], "parent"] = pair[0]
-
-        # if the second is a parent of the first
-        elif re.search(pair[1], pair[0]):
-            # set level to be one below the parent
-            df.loc[df.full_st == pair[0], "level"] = (
-                df.loc[df.full_st == pair[1], "level"].values[0] + 1
-            )
-
-            # set the parent value
-            df.loc[df.full_st == pair[0], "parent"] = pair[1]
-
-    # then construct new nodes of the table
-    for idx, row in df.sort_values("level").iterrows():
-        mst_tree.loc[mst_tree.shape[0]] = construct_new_table_node(
-            new_code=row.full_st.replace(" ", ""),
-            new_name=row.full_st,
-            new_source="Omics Inferred Molecular Subtype",
-            parent_code=row.parent.replace(" ", ""),
-            oncotable=mst_tree,
-            code_col="MolecularSubtypeCode",
-        )
-
-    return mst_tree
-
-
-def create_molecular_subtype_tree(genetic_subtypes):
-    """
-    A function that takes the OmicsInferredMolecularSubtype matrix and determines
-    its tree structure
-
-    Inputs:
-        - genetic_subtypes (pandas df): The OmicsInferredMolecularSubtype table
-
-    Outputs:
-        - mst_tree (pandas df): A table that mimics the structure of the subtype tree,
-            but is comprised entirely of molecular subtypes
-    """
-
-    # determine how many subtypes are associated with each gene
-    gene_st = pd.DataFrame(
-        [re.split(" |-|_", i, maxsplit=1) for i in genetic_subtypes.columns],
-        columns=["gene", "subtype"],
-    ).assign(full_st=genetic_subtypes.columns)
-    gene_st["n_gene"] = gene_st.groupby("gene").transform("size")
-
-    # create the level 0 nodes
-    single_genes = gene_st[gene_st.n_gene == 1]
-    mult_genes = gene_st[gene_st.n_gene > 1]
-
-    top_nodes = []
-    for full_st in single_genes.full_st:
-        # for genes with only one subtype, add the full subtype to level 0
-        new_node = pd.Series(
-            {
-                "MolecularSubtypeCode": full_st.replace(" ", ""),
-                "NodeName": full_st,
-                "NodeLevel": 0,
-                "NodeSource": "Omics Inferred Molecular Subtype",
-                "Level0": full_st.replace(" ", ""),
-            }
-        )
-        top_nodes.append(new_node)
-
-    for gene in mult_genes.gene.unique():
-        # for genes with multiple subtypes, add just the gene name to level0
-        new_node = pd.Series(
-            {
-                "MolecularSubtypeCode": gene,
-                "NodeName": gene,
-                "NodeLevel": 0,
-                "NodeSource": "Omics Inferred Molecular Subtype",
-                "Level0": gene,
-            }
-        )
-        top_nodes.append(new_node)
-
-    # turn top level nodes into a dataframe
-    mst_tree = pd.DataFrame(top_nodes).assign(
-        Level1=pd.NA, Level2=pd.NA, Level3=pd.NA, Level4=pd.NA, Level5=pd.NA
-    )
-
-    # now for each gene with multiple subtypes, construct and add the subtree
-    for gene in mult_genes.gene.unique():
-        mst_tree = add_molecular_subtype_subtree(
-            gene_st[gene_st.gene == gene], mst_tree
-        )
-
-    return mst_tree
-
-
 def create_subtype_tree_with_names(subtype_tree):
     """
     A function to convert the subtype tree which uses all codes to the subtype
@@ -587,17 +457,27 @@ def sanity_check_results(subtype_tree):
 def create_subtype_tree(
     model_taiga_id,
     oncotree_taiga_id,
-    molecular_subtypes_taiga_id,
+    molecular_subtype_tree_taiga_id,
     genetic_subtypes_whitelist,
 ):
-    models, oncotree, genetic_subtypes, gs_whitelist = load_data(
+    models, oncotree, mol_subtype_hierarchy, gs_whitelist = load_data(
         model_taiga_id,
         oncotree_taiga_id,
-        molecular_subtypes_taiga_id,
+        molecular_subtype_tree_taiga_id,
         genetic_subtypes_whitelist,
     )
 
-    oncotable = create_oncotable(oncotree)
+    oncotable = create_table_from_hierarchy(
+        oncotree,
+        code_col='OncotreeCode',
+        name_col='NodeName',
+        level_col='NodeLevel'
+    ).rename(columns={
+        'Code':'OncotreeCode'
+    }).assign(
+        DepmapModelType=lambda x: x.OncotreeCode,
+        NodeSource="Oncotree"
+    )
 
     oncotable_plus = add_depmap_nodes(models, oncotable)
 
@@ -605,7 +485,16 @@ def create_subtype_tree(
         gs_whitelist, oncotable_plus
     )
 
-    molecular_subtype_tree = create_molecular_subtype_tree(genetic_subtypes)
+    molecular_subtype_tree = create_table_from_hierarchy(
+        mol_subtype_hierarchy,
+        code_col='MolecularSubtypeCode',
+        name_col='NodeName',
+        root_node='MOLSUBTYPES_ROOT'
+    ).rename(columns={
+        'Code':'MolecularSubtypeCode'
+    }).assign(
+        NodeSource="Omics Inferred Molecular Subtype"
+    )
 
     all_subtypes = pd.concat(
         [
@@ -627,7 +516,7 @@ if __name__ == "__main__":
     parser.add_argument("model", help="Taiga ID of model table")
     parser.add_argument("oncotree", help="Taiga ID of oncotree")
     parser.add_argument(
-        "molecular_subtypes", help="Taiga ID of Omics Inferred Molecular Subtypes"
+        "molecular_subtypes_hierarchy", help="Taiga ID of Molecular Subtype Hierarchy"
     )
     parser.add_argument(
         "genetic_subtypes_whitelist",
@@ -639,7 +528,7 @@ if __name__ == "__main__":
     subtype_tree = create_subtype_tree(
         args.model,
         args.oncotree,
-        args.molecular_subtypes,
+        args.molecular_subtypes_hierarchy,
         args.genetic_subtypes_whitelist,
     )
 
