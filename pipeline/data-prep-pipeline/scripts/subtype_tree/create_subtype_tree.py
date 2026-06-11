@@ -457,7 +457,6 @@ def sanity_check_results(subtype_tree, molecular_subtypes):
 
     # assert that all columns in the OmicsInferredMolecularSubtype Matrix have
     # a node in the tree
-    print('new assert')
     assert (
         set(
             molecular_subtypes.columns
@@ -465,7 +464,6 @@ def sanity_check_results(subtype_tree, molecular_subtypes):
             subtype_tree.NodeName.values
         ))
     )
-    print('passed assert')
 
 
 ### MAIN FUNCTION ###
