@@ -530,3 +530,9 @@ class TestConfig(Config):
     CLOUD_TRACE_ENABLED = False
     DOWNLOADS_PATHS = []
     THEME_PATH = os.path.join(Config.PROJECT_ROOT, f"../config/{ENV_TYPE}/theme")
+
+    # make sure REST endpoints are not allowed to emit Infinity or other NaN
+    # values that cause the front end to fail to parse. It turns into an exception
+    # but a server side exception is easier to identify where the
+    # problem is coming from.
+    RESTX_JSON = {"allow_nan": False}
