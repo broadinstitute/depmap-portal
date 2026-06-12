@@ -3,6 +3,7 @@ from depmap.compound.models import Compound, CompoundDoseReplicate, CompoundExpe
 from depmap.dataset.models import Dataset, DependencyDataset
 from depmap.partials.matrix.models import Matrix
 import pandas as pd
+import math
 
 
 def get_dose_replicate_points(
@@ -66,6 +67,17 @@ def _get_model_map(valid_depmap_ids: set) -> dict:
     return model_map
 
 
+def _float_or_none(x):
+    if x is None or math.isnan(x) or math.isinf(x):
+        return None
+    else:
+        # adding an assert because I'm replacing a call
+        # to `float(x)` but as far as I can tell, it
+        # should have been a float in the first place.
+        assert isinstance(x, float)
+    return x
+
+
 def get_curve_params_for_model_ids(
     compound_id: str,
     drc_dataset_label: str,
@@ -125,10 +137,10 @@ def get_curve_params_for_model_ids(
             curve_param = {
                 "id": curve.depmap_id,
                 "displayName": model.stripped_cell_line_name,
-                "ec50": float(curve.ec50),
-                "slope": float(curve.slope),
-                "lowerAsymptote": float(curve.lower_asymptote),
-                "upperAsymptote": float(curve.upper_asymptote),
+                "ec50": _float_or_none(curve.ec50),
+                "slope": _float_or_none(curve.slope),
+                "lowerAsymptote": _float_or_none(curve.lower_asymptote),
+                "upperAsymptote": _float_or_none(curve.upper_asymptote),
             }
             curve_params.append(curve_param)
 
