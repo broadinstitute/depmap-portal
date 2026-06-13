@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { enablePersistentApiCache } from "@depmap/api";
 import { PartialDataExplorerPlotConfig } from "@depmap/types";
 import {
   DEFAULT_EMPTY_PLOT,
@@ -8,6 +9,11 @@ import SpinnerOverlay from "@depmap/data-explorer-2/src/components/DataExplorerP
 import { EMPTY_TRANSCRIPT_PLOT, focusWhenElementReady } from "./utils";
 import MainContent from "./MainContent";
 import styles from "../styles/TranscriptPlotConfig.scss";
+
+// *** This is an experimental feature that causes `cached()` to persist data
+// to the browser's cache. Transcript data is quite heavy so this makes it a little
+// easier to work with. ***
+enablePersistentApiCache();
 
 interface Props {
   feedbackUrl: string | null;
