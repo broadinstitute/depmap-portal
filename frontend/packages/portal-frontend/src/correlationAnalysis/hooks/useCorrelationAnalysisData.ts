@@ -77,8 +77,10 @@ export function useGeneCorrelationData(
 
         const filtered = rawCorrelates.filter(
           (cor: SortedCorrelations) =>
-            cor.feature !== featureName &&
-            cor.featureDatasetGivenId !== selectedDataset.datasetId
+            !(
+              cor.feature === featureName &&
+              cor.featureDatasetGivenId === selectedDataset.datasetId
+            )
         );
 
         setState({
