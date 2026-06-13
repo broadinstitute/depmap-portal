@@ -56,8 +56,12 @@ export default function useWaterfallPlotData(
   plotConfig: DataExplorerPlotConfig,
   palette: Palette
 ): WaterfallPlotData {
+  // Color-side sorted keys: drive legend order and (via getColorMap) the
+  // colorMap iteration order, which the renderer uses for color trace
+  // construction. Mode-aware via color_by so "color by expansion" picks
+  // up expansion labels.
   const sortedLegendKeys = useMemo(() => {
-    const catData = findCategoricalSlice(data);
+    const catData = findCategoricalSlice(data, plotConfig.color_by);
 
     if (!catData || !data?.dimensions?.y) {
       return undefined;
@@ -66,11 +70,41 @@ export default function useWaterfallPlotData(
     return sortLegendKeysWaterfall(data, catData, plotConfig.sort_by) as
       | LegendKey[]
       | undefined;
-  }, [data, plotConfig.sort_by]);
+  }, [data, plotConfig.color_by, plotConfig.sort_by]);
+
+  // Group-side: drives x-position clustering in formatDataForWaterfall.
+  // When group_by is unset or matches color_by, fall back to the
+  // color-side outputs (no extra computation, no behavior change). When
+  // they diverge, compute a separate per-point series and sorted-key
+  // order from the group-side categorical slice.
+  const groupMode = plotConfig.group_by ?? plotConfig.color_by;
+  const groupSide = useMemo(() => {
+    if (groupMode === plotConfig.color_by) {
+      return { groupData: null, sortedGroupKeys: sortedLegendKeys };
+    }
+    const catData = findCategoricalSlice(data, groupMode);
+    if (!catData || !data?.dimensions?.y) {
+      return { groupData: null, sortedGroupKeys: undefined };
+    }
+    return {
+      groupData: catData.values,
+      sortedGroupKeys: sortLegendKeysWaterfall(
+        data,
+        catData,
+        plotConfig.sort_by
+      ) as LegendKey[] | undefined,
+    };
+  }, [data, groupMode, plotConfig.color_by, plotConfig.sort_by, sortedLegendKeys]);
 
   const formattedData = useMemo(
-    () => formatDataForWaterfall(data, plotConfig.color_by, sortedLegendKeys),
-    [data, plotConfig, sortedLegendKeys]
+    () =>
+      formatDataForWaterfall(
+        data,
+        plotConfig.color_by,
+        groupSide.sortedGroupKeys,
+        groupSide.groupData
+      ),
+    [data, plotConfig, groupSide]
   );
 
   const continuousBins: ContinuousBins = useMemo(
@@ -93,8 +127,8 @@ export default function useWaterfallPlotData(
   );
 
   const legendKeysWithNoData = useMemo(
-    () => getLegendKeysWithNoData(data, continuousBins),
-    [data, continuousBins]
+    () => getLegendKeysWithNoData(data, continuousBins, plotConfig.color_by),
+    [data, continuousBins, plotConfig.color_by]
   );
 
   const legendState = useLegendState(plotConfig, legendKeysWithNoData);
@@ -146,8 +180,15 @@ export default function useWaterfallPlotData(
   }, [colorMap, data, continuousBins, hiddenLegendValues]);
 
   const pointVisibility = useMemo(
-    () => calcVisibility(data, hiddenLegendValues, continuousBins),
-    [data, hiddenLegendValues, continuousBins]
+    () =>
+      calcVisibility(
+        data,
+        hiddenLegendValues,
+        continuousBins,
+        undefined,
+        plotConfig.color_by
+      ),
+    [data, hiddenLegendValues, continuousBins, plotConfig.color_by]
   );
 
   return {

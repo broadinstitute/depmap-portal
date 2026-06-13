@@ -1,13 +1,17 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import { isPortal } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import {
   DataExplorerContextV2,
+  DataExplorerExpansion,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
+  EntityRefSet,
+  entityRefKey,
+  singleRef,
 } from "@depmap/types";
 import useDensity1DPlotData from "./prototype/useDensity1DPlotData";
 import PrototypeDensity1D from "./prototype/PrototypeDensity1D";
@@ -15,8 +19,10 @@ import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import SectionStack, { StackableSection } from "../SectionStack";
 import PlotLegend from "./PlotLegend";
 import PlotSelections from "./PlotSelections";
+import ExpandedPlotSelections from "./ExpandedPlotSelections";
 import GeneTea from "./integrations/GeneTea";
 import promptForSelectionFromContext from "./promptForSelectionFromContext";
+import useSelection from "../../hooks/useSelection";
 import styles from "../../styles/DataExplorer2.scss";
 
 interface Props {
@@ -43,9 +49,22 @@ function DataExplorerDensity1DPlot({
   onClickColorByContext,
 }: Props) {
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
-  const [selectedIds, setSelectedIds] = useState<Set<string> | null>(
-    null
-  );
+  const {
+    selection,
+    selectedPoints,
+    handleClickPoint,
+    handleMultiselect,
+    setSelection,
+    clearSelection,
+  } = useSelection(data);
+
+  // Expanded plots (the response carries an expansion) get a different
+  // selection panel: ExpandedPlotSelections lists (index, expansion)
+  // pairs instead of collapsing them to index entities. Structural read
+  // on the expansion shape, matching the idiom in plotUtils / useSelection.
+  const isExpanded =
+    ((data as { expansions?: DataExplorerExpansion[] } | null)?.expansions
+      ?.length ?? 0) > 0;
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
   const {
@@ -61,7 +80,9 @@ function DataExplorerDensity1DPlot({
     formattedData,
     continuousBins,
     colorData,
+    groupData,
     legendKeysWithNoData,
+    sortedGroupKeys,
     legendState,
     colorMap,
     legendDisplayNames,
@@ -92,92 +113,60 @@ function DataExplorerDensity1DPlot({
     .x as DataExplorerPlotConfigDimension;
 
   useEffect(() => {
-    setSelectedIds(null);
-  }, [slice_type]);
+    clearSelection();
+  }, [slice_type, clearSelection]);
 
+  // When the data changes (filter change, dataset switch, etc.), drop any
+  // selected refs that no longer correspond to a point in the new response.
+  // Done in terms of the derived ref key so both "single" and "pair"
+  // selections work uniformly.
   useEffect(() => {
     if (!data?.index_ids) {
       return;
     }
 
-    const validSelections = new Set(data.index_ids || []);
+    const validKeys = new Set<string>();
+    const expansions = (data as { expansions?: { ids: string[] }[] }).expansions;
+    const expansionIds = expansions?.[0]?.ids;
+    for (let i = 0; i < data.index_ids.length; i += 1) {
+      if (expansionIds) {
+        validKeys.add(`p\x1f${data.index_ids[i]}\x1f${expansionIds[i]}`);
+      } else {
+        validKeys.add(`s\x1f${data.index_ids[i]}`);
+      }
+    }
 
-    setSelectedIds((xs) => {
-      if (!xs) {
+    setSelection((current) => {
+      if (!current) {
         return null;
       }
-
-      const ys = new Set<string>();
-      const ids = [...xs];
-
-      for (let i = 0; i < ids.length; i += 1) {
-        const id = ids[i];
-        if (validSelections.has(id)) {
-          ys.add(id);
+      let next = current;
+      current.forEach((ref) => {
+        if (!validKeys.has(entityRefKey(ref))) {
+          next = next.delete(ref);
         }
-      }
-
-      return ys;
+      });
+      return next;
     });
-  }, [data]);
+  }, [data, setSelection]);
 
-  const selectedPoints = useMemo(() => {
-    const out: Set<number> = new Set();
-
-    if (!data?.index_ids) {
-      return out;
+  // Legacy panel compat: derive a Set<string> of index ids from the
+  // structured selection. See DataExplorerScatterPlot for full rationale.
+  // Replaced by ExpandedPlotSelections (patch 5) for expanded plots.
+  const selectedIdsLegacy = useMemo<Set<string> | null>(() => {
+    if (!selection) {
+      return null;
     }
-
-    for (let i = 0; i < data.index_ids.length; i += 1) {
-      if (selectedIds?.has(data.index_ids[i])) {
-        out.add(i);
-      }
-    }
-
+    const out = new Set<string>();
+    selection.forEach((ref) => out.add(ref.indexId));
     return out;
-  }, [data, selectedIds]);
+  }, [selection]);
 
-  const handleMultiselect = useCallback(
-    (pointIndices: number[]) => {
-      if (pointIndices.length > 0) {
-        const s = new Set<string>();
-        pointIndices.forEach((i: number) => {
-          s.add(data!.index_ids[i]);
-        });
-        setSelectedIds(s);
-      }
-    },
-    [data]
-  );
-
-  const handleClickPoint = useCallback(
-    (pointIndex: number, ctrlKey: boolean) => {
-      const id = data!.index_ids[pointIndex];
-
-      if (ctrlKey) {
-        setSelectedIds((xs) => {
-          const ys = new Set(xs);
-
-          if (xs?.has(id)) {
-            ys.delete(id);
-          } else {
-            ys.add(id);
-          }
-
-          return ys;
-        });
-      } else {
-        setSelectedIds(new Set([id]));
-      }
-    },
-    [data, setSelectedIds]
-  );
-
-  // GeneTea consumes display labels (gene symbols), not IDs. Convert at
-  // the boundary by indexing the data's parallel id/label arrays.
+  // GeneTea consumes display labels (gene symbols), not IDs. Derive from
+  // selection's index ids. Existing semantics preserved (index labels).
   const selectedLabels = useMemo(() => {
-    if (!data?.index_ids || !selectedIds) {
-      return selectedIds;
+    if (!data?.index_ids || !selection) {
+      return null;
     }
 
     const idToLabel: Record<string, string> = {};
@@ -186,14 +175,14 @@ function DataExplorerDensity1DPlot({
     }
 
     const out = new Set<string>();
-    selectedIds.forEach((id) => {
-      const label = idToLabel[id];
+    selection.forEach((ref) => {
+      const label = idToLabel[ref.indexId];
       if (label !== undefined) {
         out.add(label);
       }
     });
     return out;
-  }, [data, selectedIds]);
+  }, [data, selection]);
 
   return (
     <div className={styles.DataExplorerDensity1DPlot}>
@@ -205,9 +194,7 @@ function DataExplorerDensity1DPlot({
             plotConfig={plotConfig}
             plotElement={plotElement}
             handleClickPoint={handleClickPoint}
-            onClickUnselectAll={() => {
-              setSelectedIds(null);
-            }}
+            onClickUnselectAll={clearSelection}
           />
         </div>
         <div className={styles.plot}>
@@ -218,11 +205,14 @@ function DataExplorerDensity1DPlot({
               xKey="x"
               colorMap={colorMap}
               colorData={colorData}
+              groupData={groupData}
+              groupKeys={sortedGroupKeys}
               continuousColorKey="contColorData"
               legendDisplayNames={legendDisplayNames}
               legendTitle={legendTitle}
               pointVisibility={pointVisibility || undefined}
               useSemiOpaqueViolins={!plotConfig.hide_points}
+              placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
               hoverTextKey="hoverText"
               annotationTextKey="annotationText"
               height="auto"
@@ -230,9 +220,7 @@ function DataExplorerDensity1DPlot({
               onClickPoint={handleClickPoint}
               onMultiselect={handleMultiselect}
               selectedPoints={selectedPoints}
-              onClickResetSelection={() => {
-                setSelectedIds(null);
-              }}
+              onClickResetSelection={clearSelection}
               hiddenLegendValues={hiddenLegendValues}
               pointSize={pointSize}
               pointOpacity={pointOpacity}
@@ -259,33 +247,45 @@ function DataExplorerDensity1DPlot({
             />
           </StackableSection>
           <StackableSection title="Plot Selections" minHeight={256}>
-            <PlotSelections
-              data={data}
-              plot_type={plotConfig?.plot_type || null}
-              selectedIds={selectedIds}
-              onClickVisualizeSelected={(e) =>
-                onClickVisualizeSelected(e, selectedIds as Set<string>)
-              }
-              onClickSaveSelectionAsContext={() => {
-                onClickSaveSelectionAsContext(
-                  plotConfig.index_type,
-                  selectedIds as Set<string>
-                );
-              }}
-              onClickClearSelection={() => {
-                setSelectedIds(null);
-              }}
-              onClickSetSelectionFromContext={async () => {
-                const newSelectedIds = await promptForSelectionFromContext(data!);
-
-                if (newSelectedIds === null) {
-                  return;
+            {isExpanded ? (
+              <ExpandedPlotSelections
+                data={data}
+                selection={selection}
+                onClickClearSelection={clearSelection}
+              />
+            ) : (
+              <PlotSelections
+                data={data}
+                plot_type={plotConfig?.plot_type || null}
+                selectedIds={selectedIdsLegacy}
+                onClickVisualizeSelected={(e) =>
+                  onClickVisualizeSelected(e, selectedIdsLegacy as Set<string>)
                 }
+                onClickSaveSelectionAsContext={() => {
+                  onClickSaveSelectionAsContext(
+                    plotConfig.index_type,
+                    selectedIdsLegacy as Set<string>
+                  );
+                }}
+                onClickClearSelection={clearSelection}
+                onClickSetSelectionFromContext={async () => {
+                  const newSelectedIds = await promptForSelectionFromContext(data!);
 
-                setSelectedIds(newSelectedIds);
-                plotElement?.annotateSelected();
-              }}
-            />
+                  if (newSelectedIds === null) {
+                    return;
+                  }
+
+                  // Context resolution names entities of one type, never
+                  // pairs — wrap as single refs. If/when contexts can
+                  // describe (index, expansion) pairs, this is the place
+                  // to grow.
+                  setSelection(
+                    new EntityRefSet([...newSelectedIds].map(singleRef))
+                  );
+                  plotElement?.annotateSelected();
+                }}
+              />
+            )}
           </StackableSection>
           {isPortal && plotConfig.index_type === "gene" ? (
             <StackableSection

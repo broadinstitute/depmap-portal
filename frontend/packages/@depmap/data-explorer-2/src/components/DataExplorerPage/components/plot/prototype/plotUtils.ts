@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Layout } from "plotly.js";
+import type { Layout, XAxisName, YAxisName } from "plotly.js";
 import {
+  ColorByValue,
+  DataExplorerExpansion,
   DataExplorerMetadata,
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
+  LinRegInfo,
   SliceQuery,
 } from "@depmap/types";
+import { linregress, pearsonr, spearmanr } from "@depmap/statistics";
 import wellKnownDatasets from "../../../../../constants/wellKnownDatasets";
 
 // HACK: Copied from the "depmap-shared" directory.
@@ -182,9 +186,162 @@ function nullifyUnplottableValues(
   return out;
 }
 
-export function findCategoricalSlice(data: DataExplorerPlotResponse | null) {
+// Returns the per-point categorical series that drives coloring (or, when
+// the caller is using it for the grouping seam, track assignment). When
+// `mode === "expansion"`, the source is `data.expansions[0]` — the per-cell
+// expansion label, e.g. one transcript label per (model, transcript) point.
+// When `mode` is anything else (or unset), the source is the same as before:
+// the categorical color dimension, falling back to color_property metadata.
+//
+// Throws when `mode === "expansion"` but the response has no expansions —
+// that's the runtime error that surfaces a config saying "use the expansion"
+// against data that doesn't have one.
+// The per-point facet-membership predicate shared by the faceted renderer
+// (which dots land in panel `facet`) and the per-facet regression fit (which
+// points the line is fit over), so the two can't drift — a line must be fit
+// over exactly the points its panel draws. Membership only: callers add their
+// own concerns (the renderer composes a color-group selector on top; the fit
+// adds finite-input hygiene).
+export function facetMaskFor(
+  facetKeys: (string | null)[],
+  facet: string,
+  x: (number | null)[],
+  y: (number | null)[],
+  visible: boolean[]
+) {
+  return (i: number) =>
+    visible[i] && facetKeys[i] === facet && x[i] !== null && y[i] !== null;
+}
+
+// Per-facet linear-regression stats (the LinRegInfo[] shape the regression
+// table consumes), grouped by group_by, computed from a materialized response.
+// The table's faceted counterpart to fetchLinearRegression's color-grouped fit
+// — same row shape, so reformatLinRegTable handles either. It lives here (not
+// in the services layer) because grouping needs findCategoricalSlice, which is
+// a component-layer concern; the table fetches `data` and calls this.
+//
+// It shares the facet-membership predicate (facetMaskFor) and the fit
+// (linregress) with the drawn per-facet lines, so the two agree on
+// slope/intercept given the same inputs. The lines fit over the hook's
+// nulled/legend-visible arrays while this fits over the raw response with
+// filter-visibility — the same lines-vs-table divergence the single-panel path
+// already has via fetchLinearRegression; grouping (the J2 requirement) matches.
+export function computeFacetedLinReg(
+  data: DataExplorerPlotResponse,
+  group_by: ColorByValue,
+  visible?: boolean[]
+): LinRegInfo[] {
+  const facetSlice = findCategoricalSlice(data, group_by);
+  const xs = data.dimensions?.x?.values;
+  const ys = data.dimensions?.y?.values;
+
+  if (!facetSlice || !xs || !ys) {
+    return [];
+  }
+
+  const facetKeys = facetSlice.values;
+  const vis = visible || xs.map(() => true);
+  const facets = [
+    ...new Set(facetKeys.filter((k): k is string => k !== null)),
+  ].sort();
+
+  return facets.map((facet) => {
+    const inFacet = facetMaskFor(facetKeys, facet, xs, ys, vis);
+    const x: number[] = [];
+    const y: number[] = [];
+
+    for (let i = 0; i < xs.length; i += 1) {
+      if (inFacet(i) && Number.isFinite(xs[i]) && Number.isFinite(ys[i])) {
+        x.push(xs[i] as number);
+        y.push(ys[i] as number);
+      }
+    }
+
+    const pearson = pearsonr(x, y);
+    const spearman = spearmanr(x, y);
+    const regression = linregress(x, y);
+
+    return {
+      group_label: facet,
+      number_of_points: x.length,
+      pearson: pearson.statistic,
+      spearman: spearman.statistic,
+      slope: regression.slope,
+      intercept: regression.intercept,
+      p_value: regression.pvalue,
+    };
+  });
+}
+
+// Single pooled fit over every visible point — the ungrouped analog of
+// computeFacetedLinReg, used by the regression table when an expanded plot
+// has no group_by. It mirrors the single pooled line the plot draws and,
+// like the faceted path, never calls fetchLinearRegression (which rejects
+// the "expansion" sentinel). group_label is null, which the table renders
+// the same way it renders the legacy ungrouped fit.
+export function computePooledLinReg(
+  data: DataExplorerPlotResponse,
+  visible?: boolean[]
+): LinRegInfo[] {
+  const xs = data.dimensions?.x?.values;
+  const ys = data.dimensions?.y?.values;
+
+  if (!xs || !ys) {
+    return [];
+  }
+
+  const vis = visible || xs.map(() => true);
+  const x: number[] = [];
+  const y: number[] = [];
+
+  for (let i = 0; i < xs.length; i += 1) {
+    if (vis[i] && Number.isFinite(xs[i]) && Number.isFinite(ys[i])) {
+      x.push(xs[i] as number);
+      y.push(ys[i] as number);
+    }
+  }
+
+  const pearson = pearsonr(x, y);
+  const spearman = spearmanr(x, y);
+  const regression = linregress(x, y);
+
+  return [
+    {
+      group_label: null,
+      number_of_points: x.length,
+      pearson: pearson.statistic,
+      spearman: spearman.statistic,
+      slope: regression.slope,
+      intercept: regression.intercept,
+      p_value: regression.pvalue,
+    },
+  ];
+}
+
+export function findCategoricalSlice(
+  data: DataExplorerPlotResponse | null,
+  mode?: ColorByValue
+) {
   if (!data) {
     return null;
+  }
+
+  if (mode === "expansion") {
+    const expansions = (data as { expansions?: DataExplorerExpansion[] })
+      .expansions;
+    if (!expansions || expansions.length === 0) {
+      throw new Error(
+        `mode "expansion" requires the response to have at least one ` +
+          `expansion, but data.expansions is empty or missing.`
+      );
+    }
+    const exp = expansions[0];
+    return {
+      label: exp.display_name || exp.slice_type,
+      dataset_id: undefined,
+      values: exp.labels.map((v) => v?.toString() || null),
+      value_type: "categorical" as const,
+    };
   }
 
   const colorDim = data.dimensions?.color;
@@ -256,7 +413,7 @@ export function formatDataForScatterPlot(
 
   const c1Values = data.filters?.color1?.values;
   const c2Values = data.filters?.color2?.values;
-  const catValues = findCategoricalSlice(data)?.values;
+  const catValues = findCategoricalSlice(data, color_by)?.values;
   const contSlice = findContinuousColorSlice(data);
   const contValues = nullifyUnplottableValues(
     contSlice?.values,
@@ -305,15 +462,7 @@ export function formatDataForScatterPlot(
 
     hoverText: data.index_ids.map((id: string, i: number) => {
       const label = data.index_labels[i];
-      const aliases: string[] = [];
       const colorInfo = [];
-
-      // Show the label prominently and the id as a secondary line when
-      // they differ. This is the desired behavior for every type where
-      // ids and labels are distinct (depmap_model, gene, compound_v2, etc).
-      if (id !== label) {
-        aliases.push(`<b>${label}</b>`);
-      }
 
       if (c1Values && c1Values[i] && color_by === "aggregated_slice") {
         colorInfo.push(data.filters.color1!.name);
@@ -335,19 +484,35 @@ export function formatDataForScatterPlot(
         );
       }
 
-      let primaryLine = label;
+      const hasExpansion =
+        typeof data === "object" &&
+        data !== null &&
+        "expansions" in data &&
+        (data as { expansions: ArrayLike<unknown> }).expansions.length > 0;
 
+      // Build the index section as: bold header (entity type) + bold
+      // label + plain id. The header anchors the section's identity;
+      // the label is the primary thing the user scans for; the id is
+      // identity for copy/lookup. When `display_name` is missing the
+      // header is skipped — falling back to `index_id_column` would
+      // print "depmap id" as a header, which reads as a column name
+      // rather than an entity type. The degraded form (bold label +
+      // plain id, no header) is honest about what we don't know.
+      const indexLines: string[] = [];
+      if (hasExpansion && data.index_display_name) {
+        indexLines.push(`<b>${data.index_display_name}</b>`);
+      }
+      indexLines.push(`<b>${label}</b>`);
       if (id !== label) {
-        primaryLine = data.index_id_column
-          ? `${data.index_id_column}: ${id}`
-          : id;
+        indexLines.push(id);
       }
 
-      const formattedLines =
-        aliases.length > 0
-          ? [...aliases, primaryLine, ...colorInfo]
-          : [`<b>${primaryLine}</b>`, ...colorInfo];
-
+      // Metadata is index-keyed (model-level for the gene/transcript
+      // case), so it belongs in the index section rather than floating
+      // at the bottom. In an expanded plot this puts it before the
+      // section break; in a non-expanded plot it lifts metadata above
+      // colorInfo, which reads more naturally — colorInfo describes the
+      // point's value and belongs last.
       Object.keys(data.metadata || {}).forEach((key) => {
         let { label: hoverLabel } = data.metadata[key]!;
         const { values, dataset_label } = data.metadata[key]!;
@@ -362,10 +527,34 @@ export function formatDataForScatterPlot(
         let val = values[i] != null ? values[i]!.toString() : "<b>N/A</b>";
         val = val.length > 40 ? `${val.substr(0, 40)}…` : val;
 
-        formattedLines.push(`${hoverLabel}: ${val}`);
+        indexLines.push(`${hoverLabel}: ${val}`);
       });
 
-      return formattedLines.join("<br>");
+      // Build expansion sections, one per expansion. Each mirrors the
+      // index pattern (bold header + bold label + plain id) and is
+      // preceded by a blank line so the section break is obvious. The
+      // header is skipped when `display_name` is missing for the same
+      // reason as in the index section: "transcript" (lowercase
+      // slice_type) reads as a machine name, not an entity label.
+      const expansionSections: string[] = [];
+      const expansions = (data as { expansions?: DataExplorerExpansion[] })
+        .expansions;
+      if (expansions) {
+        expansions.forEach((exp) => {
+          const expLabel = exp.labels[i];
+          const expId = exp.ids[i];
+          expansionSections.push(""); // blank line between sections
+          if (exp.display_name) {
+            expansionSections.push(`<b>${exp.display_name}</b>`);
+          }
+          expansionSections.push(`<b>${expLabel}</b>`);
+          if (expId !== expLabel) {
+            expansionSections.push(expId);
+          }
+        });
+      }
+
+      return [...indexLines, ...expansionSections, ...colorInfo].join("<br>");
     }),
 
     annotationText: data.index_ids.map((id: string, i: number) => {
@@ -380,10 +569,18 @@ export function formatDataForScatterPlot(
   };
 }
 
+// Waterfall's x-positions are reassigned to cluster bars by group. Today
+// that clustering uses `formatted.catColorData` (the color-side categorical),
+// because color and group were conflated. With the split, the clustering
+// uses `groupData` when supplied, falling back to `catColorData` for the
+// converged case. Similarly `sortedGroupKeys` replaces the historical
+// `sortedLegendKeys` parameter — its meaning was always "the order of
+// clusters along x" rather than "the legend display order."
 export function formatDataForWaterfall(
   data: DataExplorerPlotResponse | null,
   color_by: DataExplorerPlotConfig["color_by"],
-  sortedLegendKeys?: (string | symbol)[]
+  sortedGroupKeys?: (string | symbol)[],
+  groupData?: (string | null)[] | null
 ) {
   if (!data) {
     return null;
@@ -391,34 +588,94 @@ export function formatDataForWaterfall(
 
   const formatted = formatDataForScatterPlot(data, color_by);
 
-  if (!formatted || !sortedLegendKeys) {
+  if (!formatted || !sortedGroupKeys) {
     return formatted;
   }
 
-  // If the legend keys have been sorted, then we have to move around the x
-  // values to match.
-  let j = 0;
-  const x: number[] = [];
-  const catData = formatted.catColorData as string[];
-  const visible = data.filters?.visible?.values;
-  const domain = visible ? visible.filter(Boolean).length : catData.length;
-  const minLength = domain / sortedLegendKeys.length;
-  const groups: Record<string | symbol, { start: number; length: number }> = {};
+  // Clustering source: prefer the explicit groupData (group-side categorical)
+  // when supplied; otherwise reuse the color-side catColorData, matching
+  // pre-split behavior.
+  const clusterBy = (groupData ?? formatted.catColorData) as
+    | (string | null)[]
+    | null;
 
-  for (let i = 0; i < catData.length; i += 1) {
-    const category = catData[i] || LEGEND_OTHER;
-    groups[category] ||= { start: i, length: 0 };
-    groups[category].length++;
+  if (!clusterBy) {
+    return formatted;
   }
 
-  sortedLegendKeys.forEach((key) => {
-    const { start, length } = groups[key];
+  // Bucket each point's original index by its category. The previous
+  // implementation built `groups[category] = { start, length }` and
+  // assumed every category's points occupied a contiguous block in the
+  // input. That held for plain waterfall (rank-sorted upstream by
+  // fetchWaterfall, where same-color points end up adjacent) but
+  // breaks for the expanded path, where materialization is row-major
+  // over (logical_i, j) and category labels (e.g. transcript) cycle
+  // every M positions. The bucket structure makes the loop work
+  // regardless of input ordering.
+  //
+  // Note: `length` continues to include invisible points, matching
+  // the previous code's behavior of using `clusterBy.length` (not
+  // visible-count) for the per-category sum. The "leave a gap" logic
+  // below compares `length` to `minLength`, where `minLength` is
+  // computed against the visible domain — so small categories
+  // (visible or not) get extra padding around them. Preserving that
+  // as-is rather than reinterpreting.
+  const buckets: Record<string | symbol, number[]> = {};
+  for (let i = 0; i < clusterBy.length; i += 1) {
+    const category = clusterBy[i] || LEGEND_OTHER;
+    (buckets[category] ||= []).push(i);
+  }
+
+  // Within-cluster rank: sort each bucket's indices by their y value
+  // ascending so that the x positions assigned by the loop below
+  // produce the "snake going up" shape characteristic of a waterfall.
+  // Without this, indices are walked in materialization order, which
+  // for the expanded path is row-major over (logical_i, j) and has no
+  // relationship to the y value — producing a "flame" of intermixed
+  // values within each cluster.
+  //
+  // Nulls sort first (smallest x within their cluster), matching
+  // fetchWaterfall's global sort behavior. The comparator pulls them
+  // out before the numeric comparison so they end up at the low-x end
+  // regardless of where they'd otherwise land. Sort is stable, so ties
+  // (including the common "lots of points with value 0" case) preserve
+  // materialization order — keeps selection / hover behavior deterministic.
+  const yValues = data?.dimensions?.y?.values as (number | null)[] | undefined;
+  if (yValues) {
+    Object.values(buckets).forEach((indices) => {
+      indices.sort((a, b) => {
+        const va = yValues[a];
+        const vb = yValues[b];
+        if (va === vb) return 0;
+        if (va === null || va === undefined) return -1;
+        if (vb === null || vb === undefined) return 1;
+        return va < vb ? -1 : 1;
+      });
+    });
+  }
+
+  let j = 0;
+  const x: number[] = [];
+  const visible = data.filters?.visible?.values;
+  const domain = visible ? visible.filter(Boolean).length : clusterBy.length;
+  const minLength = domain / sortedGroupKeys.length;
+
+  sortedGroupKeys.forEach((key) => {
+    const indices = buckets[key];
+
+    // A category in sortedGroupKeys with no points in `clusterBy` is
+    // unusual but possible (legend key with no data). Skip cleanly.
+    if (!indices || indices.length === 0) {
+      return;
+    }
+
+    const length = indices.length;
 
     if (length < minLength && j > 0) {
       j += Math.floor(minLength - length / 2);
     }
 
-    for (let i = start; i < start + length; i += 1) {
+    for (const i of indices) {
       if (!visible || visible[i]) {
         x[i] = j;
         j++;
@@ -639,7 +896,8 @@ export function calcVisibility(
   data: DataExplorerPlotResponse | null,
   hiddenLegendValues: any,
   continuousBins: any,
-  hide_points?: boolean
+  hide_points?: boolean,
+  color_by?: ColorByValue
 ) {
   if (!data) {
     return null;
@@ -678,7 +936,7 @@ export function calcVisibility(
     });
   }
 
-  const catValues = findCategoricalSlice(data)?.values;
+  const catValues = findCategoricalSlice(data, color_by)?.values;
 
   if (catValues) {
     const hideOthers = hiddenLegendValues.has(LEGEND_OTHER);
@@ -738,8 +996,12 @@ export function calcVisibility(
   return visiblePoints;
 }
 
-export function getLegendKeysWithNoData(data: any, continuousBins: any) {
-  const catData = findCategoricalSlice(data);
+export function getLegendKeysWithNoData(
+  data: any,
+  continuousBins: any,
+  color_by?: ColorByValue
+) {
+  const catData = findCategoricalSlice(data, color_by);
   const visible = data?.filters?.visible;
 
   if (catData && visible) {
@@ -1035,7 +1297,7 @@ export function getColorMap(
 
   let colorMap: Map<LegendKey, string> = new Map();
 
-  const catSlice = findCategoricalSlice(data);
+  const catSlice = findCategoricalSlice(data, plotConfig.color_by);
   const contSlice = findContinuousColorSlice(data);
 
   if (catSlice) {
@@ -1392,11 +1654,50 @@ const sortLegendKeys = (
 const sortLegendKeys1D = (
   data: any,
   catData: any,
-  sort_by: string | undefined
+  sort_by: string | undefined,
+  includeEmpty = false
 ) => {
   const visibleValues = data.filters?.visible
     ? data.filters.visible.values
     : null;
+
+  if (includeEmpty) {
+    // Expanded plots keep a track for every windowed transcript, including
+    // ones the dataset doesn't measure (all-null), which sortLegendKeys would
+    // otherwise drop. Sort the *measured* transcripts normally — respecting
+    // sort_by — then fold the empty ones in: merged alphabetically for an
+    // alphabetical sort, or appended at the end for value-based sorts (an
+    // all-null group has no value to sort by). This preserves sort_by for the
+    // groups that have data while still surfacing the "(no data)" placeholders.
+    const sorted = sortLegendKeys(
+      data.dimensions.x.values,
+      visibleValues,
+      catData,
+      sort_by
+    );
+
+    const seen = new Set(sorted);
+    const empties: (string | symbol)[] = [];
+
+    for (let i = 0; i < catData.values.length; i += 1) {
+      const key = catData.values[i];
+
+      if (key !== null && !seen.has(key)) {
+        seen.add(key);
+        empties.push(key);
+      }
+    }
+
+    if (empties.length === 0) {
+      return sorted;
+    }
+
+    if (!sort_by || sort_by === "alphabetical") {
+      return [...sorted, ...empties].sort(compareLegendKeys);
+    }
+
+    return [...sorted, ...empties.sort(compareLegendKeys)];
+  }
 
   return sortLegendKeys(
     data.dimensions.x.values,
@@ -1465,19 +1766,52 @@ export function continuousValuesToLegendKeySeries(
   return [series, unusedKeys];
 }
 
-export function calcDensityStats(
+// Computes the per-point legend-key series for a single mode (color_by or
+// group_by). The same logic that calcDensityStats used to do inline; pulled
+// out so we can call it once for the coloring concern and (when modes
+// differ) again for the grouping concern.
+//
+// Each branch corresponds to a category of color/group source:
+//   - "custom"               → color1/color2 filter values
+//   - categorical fall-through → catData (mode-aware: expansion when applicable,
+//                                otherwise existing color-dim / color_property)
+//   - continuous fall-through  → contData (binned)
+//
+// The "custom" branch only fires when color1/color2 are actually present;
+// otherwise we fall through. That matches the existing auto-dispatch and
+// keeps callers that don't set mode explicitly behaving the same as today.
+function computeDensitySeriesForMode(
   data: any,
   continuousBins: any,
-  sort_by: string | undefined
-) {
+  sort_by: string | undefined,
+  mode: ColorByValue | undefined,
+  includeEmpty = false
+): {
+  series: any[] | null;
+  unusedKeys: Set<unknown>;
+  sortedKeys?: any[];
+} {
   const color1 = data?.filters?.color1;
   const color2 = data?.filters?.color2;
-  const catData = findCategoricalSlice(data);
-  const contData = findContinuousColorSlice(data);
   const visible = data?.filters?.visible;
 
-  if (color1 || color2) {
-    const out = [];
+  const catData = findCategoricalSlice(data, mode);
+
+  // Custom (color1/color2 filter) branch. It owns coloring when the mode is
+  // "custom"/unset, and also when an explicit non-"expansion" mode has no
+  // categorical source of its own — e.g. aggregated_slice/raw_slice with a
+  // color1/color2 filter but no color dimension. Without that fallback the
+  // color side returns no series at all, and the renderer then builds zero
+  // point traces (every point vanishes). We still never let filters override
+  // the "expansion" group side or a real categorical color dimension.
+  const useCustomColoring =
+    Boolean(color1 || color2) &&
+    (mode === "custom" ||
+      mode === undefined ||
+      (mode !== "expansion" && !catData));
+
+  if (useCustomColoring) {
+    const out: any[] = [];
     const len = (color1 || color2).values.length;
     const unusedKeys = new Set(
       color1 && color2 ? [LEGEND_BOTH, LEGEND_OTHER] : [LEGEND_OTHER]
@@ -1503,12 +1837,12 @@ export function calcDensityStats(
       }
     }
 
-    return [out, unusedKeys];
+    return { series: out, unusedKeys };
   }
 
   if (catData) {
     const counts: Record<string, number> = {};
-    const unusedKeys = new Set();
+    const unusedKeys = new Set<unknown>();
 
     if (visible) {
       for (let i = 0; i < catData.values.length; i += 1) {
@@ -1528,24 +1862,106 @@ export function calcDensityStats(
       });
     }
 
-    return [
-      catData.values.map((x: unknown) => (x === null ? LEGEND_OTHER : x)),
+    return {
+      series: catData.values.map((x: unknown) =>
+        x === null ? LEGEND_OTHER : x
+      ),
       unusedKeys,
-      sortLegendKeys1D(data, catData, sort_by),
-    ];
+      sortedKeys: sortLegendKeys1D(data, catData, sort_by, includeEmpty),
+    };
   }
 
-  if (contData) {
-    const [series, unusedKeys] = continuousValuesToLegendKeySeries(
-      contData.values,
-      continuousBins,
-      data.filters?.visible?.values
-    );
+  // Expansion is always categorical; if mode === "expansion" we never reach
+  // contData. Other modes can fall through to a continuous color source.
+  if (mode !== "expansion") {
+    const contData = findContinuousColorSlice(data);
+    if (contData) {
+      const [series, unusedKeys] = continuousValuesToLegendKeySeries(
+        contData.values,
+        continuousBins,
+        data.filters?.visible?.values
+      );
 
-    return [series, unusedKeys];
+      return { series, unusedKeys };
+    }
   }
 
-  return [null];
+  return { series: null, unusedKeys: new Set() };
+}
+
+// Returns the per-point series for both coloring and grouping, plus the
+// associated legend metadata. When `group_by` is unset (or equal to
+// `color_by`), the grouping arrays are the same references as the coloring
+// arrays — no extra work, no behavior change. When they differ, both arrays
+// are computed independently from the same response and the renderer is
+// expected to consume each for its respective role: colorData drives
+// bgcolor, groupData drives violin-track assignment.
+export function calcDensityStats(
+  data: any,
+  continuousBins: any,
+  sort_by: string | undefined,
+  color_by?: ColorByValue,
+  group_by?: ColorByValue,
+  isExpanded = false
+) {
+  const colorMode = color_by;
+
+  const colorSide = computeDensitySeriesForMode(
+    data,
+    continuousBins,
+    sort_by,
+    colorMode
+  );
+
+  // Expand-by world: group_by is fully decoupled from color_by. An unset
+  // group_by means "no grouping" — a single "all" track — NOT the legacy
+  // `group_by ?? color_by` inheritance. The fallback below survives only when
+  // there's no expansion (the ConfigurationPanel/legacy world), preserving
+  // existing behavior there. (Color still drives point color via colorSide.)
+  if (isExpanded && !group_by) {
+    return {
+      colorData: colorSide.series,
+      groupData: colorSide.series
+        ? colorSide.series.map(() => LEGEND_ALL)
+        : null,
+      unusedKeys: colorSide.unusedKeys as Set<LegendKey>,
+      sortedColorKeys: colorSide.sortedKeys,
+      sortedGroupKeys: [LEGEND_ALL],
+    };
+  }
+
+  const groupMode = group_by ?? color_by;
+
+  // Reuse colorSide when grouping mode matches the coloring mode. This is
+  // the common case (group_by unset, falling back to color_by), and
+  // skipping the second pass keeps the no-op fast.
+  //
+  // When expanded we must NOT reuse it even if the modes match: the group side
+  // needs every windowed transcript (incl. all-null ones the dataset doesn't
+  // measure) so each gets a track — a "(no data)" placeholder for the empties,
+  // keeping the page at its full window size. The color side stays as-is so
+  // the legend reflects only transcripts that actually have points.
+  const groupSide =
+    groupMode === colorMode && !isExpanded
+      ? colorSide
+      : computeDensitySeriesForMode(
+          data,
+          continuousBins,
+          sort_by,
+          groupMode,
+          isExpanded
+        );
+
+  return {
+    colorData: colorSide.series,
+    groupData: groupSide.series,
+    // computeDensitySeriesForMode types unusedKeys as Set<unknown>; narrow at
+    // this boundary, matching the `as Set<LegendKey>` casts used on the other
+    // unused-key paths in this file. Consumers expect Set<LegendKey>.
+    unusedKeys: colorSide.unusedKeys as Set<LegendKey>,
+    sortedColorKeys: colorSide.sortedKeys,
+    sortedGroupKeys: groupSide.sortedKeys,
+  };
 }
 
 export function isEveryValueNull(values: any[]) {
@@ -1787,9 +2203,17 @@ export function calcPlotIndicatorLineShapes(
     rangeX: number;
     rangeY: number;
   },
-  simulateInfiteLength?: boolean
+  simulateInfiteLength?: boolean,
+  // Subplot axis refs the shapes are drawn against. Defaults to the master
+  // "x"/"y" pair, so single-panel callers get byte-for-byte identical output.
+  // The faceted renderer passes one panel's pair (e.g. "x2"/"y2") to draw the
+  // same shapes inside that subplot; endpoints still span the matches-shared
+  // extents, so only the refs (and the per-facet slope/intercept) differ.
+  axisRefs: { xref: string; yref: string } = { xref: "x", yref: "y" }
 ) {
   const shapes: Layout["shapes"] = [];
+  const xref = axisRefs.xref as XAxisName;
+  const yref = axisRefs.yref as YAxisName;
   const extraLength = simulateInfiteLength
     ? Math.max(extents.rangeX, extents.rangeY) * 10
     : 0;
@@ -1807,8 +2231,8 @@ export function calcPlotIndicatorLineShapes(
   if (showIdentityLine) {
     const shape: Layout["shapes"][0] = {
       type: "line",
-      xref: "x",
-      yref: "y",
+      xref,
+      yref,
       x0: p0,
       x1: p1,
       y0: p0,
@@ -1830,8 +2254,8 @@ export function calcPlotIndicatorLineShapes(
       const shape: Layout["shapes"][0] = {
         layer: "above",
         type: "line",
-        xref: "x",
-        yref: "y",
+        xref,
+        yref,
         xanchor: 2,
         yanchor: 2,
         x0: p0,
@@ -1848,4 +2272,149 @@ export function calcPlotIndicatorLineShapes(
   }
 
   return shapes;
+}
+
+export interface SolidColorGroup {
+  color: string;
+  // Membership in this color group, by point index. Deliberately ignores point
+  // visibility, facet membership, and opposite-axis nulls — those masks belong
+  // to the renderer, not to the color semantics.
+  includes: (i: number) => boolean;
+}
+
+// Pure color-grouping seam shared by the scatter renderers (single-panel and
+// small multiples). Given the formatted color inputs, returns the solid-color
+// traces to draw, in paint order: index 0 is drawn first (on the bottom), so
+// the "other"/largest groups come first and the smallest categories end up on
+// top — preserving PrototypeScatterPlot's stacking.
+//
+// It does NOT handle continuous color: that's a single colorscale trace rather
+// than a set of solid groups, so the caller builds it directly. It also
+// deliberately omits the legacy ">75 categories -> one trace per color"
+// workaround; with faceting that would multiply trace count badly, and high
+// color cardinality is already past the readability cliff.
+// Orders point indices for a continuous color trace so that bins with the
+// fewest *visible* points draw last (on top) and null / "Other" points draw
+// first (on the bottom). This is the continuous analogue of the categorical
+// "fewest on top" stacking, shared by every renderer that paints continuous
+// color so they all stack identically. The returned array is the draw order
+// expressed as original point indices (i.e. contTraceIndex): build the trace by
+// mapping each per-point array through it, and map a click on the trace's Nth
+// point back to result[N]. Counts are visible-only, so hidden points never
+// affect the order.
+export function orderContinuousPointsByBin(
+  contColorData: (number | null)[],
+  contLegendKeys: LegendKey[],
+  colorMap: Map<LegendKey, string>,
+  visible: boolean[]
+): number[] {
+  const counts = categoricalDataToValueCounts(contLegendKeys, visible);
+
+  // Largest bins first → smaller bins land later in the trace (drawn on top).
+  // Keys absent from colorMap (e.g. LEGEND_OTHER for nulls) get index -1 and
+  // therefore sort to the very bottom, alongside the separate "other" trace.
+  const sortedBins = [...colorMap.keys()]
+    .sort((a, b) => {
+      const countA = counts.get(a) || 0;
+      const countB = counts.get(b) || 0;
+      if (countA === countB) {
+        return 0;
+      }
+      return countA < countB ? -1 : 1;
+    })
+    .reverse();
+
+  return contColorData
+    .map((value, origIndex) => ({ value, origIndex }))
+    .sort((a, b) => {
+      const binIndexA = sortedBins.indexOf(contLegendKeys[a.origIndex]);
+      const binIndexB = sortedBins.indexOf(contLegendKeys[b.origIndex]);
+
+      if (binIndexA !== binIndexB) {
+        return binIndexA - binIndexB;
+      }
+
+      if (a.value === b.value || a.value == null || b.value == null) {
+        return 0;
+      }
+
+      return a.value < b.value ? -1 : 1;
+    })
+    .map(({ origIndex }) => origIndex);
+}
+
+export function getSolidColorGroups(args: {
+  color1: (boolean | null)[] | null;
+  color2: (boolean | null)[] | null;
+  catColorData: (string | number | null)[] | null;
+  colorMap: Map<LegendKey, string>;
+  palette: DataExplorerColorPalette;
+  visible: boolean[];
+}): SolidColorGroup[] {
+  const { color1, color2, catColorData, colorMap, palette, visible } = args;
+
+  // Comparison mode: two boolean masks plus their overlap, with an "other"
+  // catch-all for points in neither.
+  if (color1 || color2) {
+    const groups: (SolidColorGroup & { count: number })[] = [];
+
+    if (color1) {
+      groups.push({
+        color: palette.compare1,
+        includes: (i) => Boolean(color1?.[i]) && !color2?.[i],
+        count: countExclusivelyTrueValues(color1, color2, visible),
+      });
+    }
+    if (color2) {
+      groups.push({
+        color: palette.compare2,
+        includes: (i) => Boolean(color2?.[i]) && !color1?.[i],
+        count: countExclusivelyTrueValues(color2, color1, visible),
+      });
+    }
+    if (color1 && color2) {
+      groups.push({
+        color: palette.compareBoth,
+        includes: (i) => Boolean(color1?.[i]) && Boolean(color2?.[i]),
+        count: countInclusivelyTrueValues(color1, color2, visible),
+      });
+    }
+
+    // Larger groups on the bottom (drawn first), smaller on top.
+    groups.sort((a, b) => (a.count < b.count ? 1 : -1));
+
+    return [
+      { color: palette.other, includes: (i) => !color1?.[i] && !color2?.[i] },
+      ...groups.map(({ color, includes }) => ({ color, includes })),
+    ];
+  }
+
+  // Categorical mode: one group per category value that has visible points,
+  // plus "other" for nulls.
+  if (catColorData) {
+    const counts = categoricalDataToValueCounts(
+      catColorData.map((v) => (v == null ? null : String(v))),
+      visible
+    );
+
+    const groups: SolidColorGroup[] = [...colorMap.keys()]
+      .filter((key): key is string => typeof key === "string")
+      .map((key) => ({ key, count: counts.get(key) || 0 }))
+      // Drop categories with no visible points; otherwise faceting multiplies
+      // empty traces by the facet count.
+      .filter(({ count }) => count > 0)
+      .sort((a, b) => (a.count < b.count ? 1 : -1))
+      .map(({ key }) => ({
+        color: colorMap.get(key)!,
+        includes: (i: number) => String(catColorData[i]) === key,
+      }));
+
+    return [
+      { color: palette.other, includes: (i) => catColorData[i] == null },
+      ...groups,
+    ];
+  }
+
+  // No color enabled: one group covering every point.
+  return [{ color: palette.all, includes: () => true }];
 }

@@ -17,6 +17,30 @@ interface Props {
   errorMessage?: string;
 }
 
+function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+  } catch {
+    // invalid URL
+  }
+
+  return "#";
+}
+
+function safeMailto(email: string): string {
+  const trimmed = email.trim();
+
+  if (!/^[^\s@]+@[^\s@.]+\.[^\s@]+$/.test(trimmed)) {
+    return "#";
+  }
+
+  return `mailto:${encodeURIComponent(trimmed)}`;
+}
+
 function ErrorState({
   feedbackUrl,
   contactEmail,
@@ -32,7 +56,11 @@ function ErrorState({
       {feedbackUrl ? (
         <p>
           If this problem persists, please submit a report with{" "}
-          <a href={feedbackUrl} target="_blank" rel="noopener noreferrer">
+          <a
+            href={safeUrl(feedbackUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             this form
           </a>
           .
@@ -40,7 +68,7 @@ function ErrorState({
       ) : (
         <p>
           If this problem persists, please contact us at{" "}
-          <a href={`mailto:${contactEmail}`}>{contactEmail}</a>.
+          <a href={safeMailto(`mailto:${contactEmail}`)}>{contactEmail}</a>.
         </p>
       )}
       {errorMessage && <details>{errorMessage}</details>}

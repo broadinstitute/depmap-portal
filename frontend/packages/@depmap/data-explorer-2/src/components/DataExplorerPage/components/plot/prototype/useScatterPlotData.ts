@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
+  DataExplorerPlotResponseDimension,
   LinRegInfo,
 } from "@depmap/types";
 import {
@@ -10,6 +11,8 @@ import {
   categoryToDisplayName,
   continuousValuesToLegendKeySeries,
   ContinuousBins,
+  facetMaskFor,
+  findCategoricalSlice,
   formatDataForScatterPlot,
   getColorMap,
   getLegendKeysWithNoData,
@@ -20,6 +23,7 @@ import {
   RegressionLine,
   useLegendState,
 } from "./plotUtils";
+import { linregress } from "@depmap/statistics";
 
 type Palette = Parameters<typeof getColorMap>[2];
 
@@ -47,8 +51,25 @@ export interface ScatterPlotData {
   };
   pointVisibility: boolean[] | null;
   regressionLines: RegressionLine[] | null;
+  // Per-facet fits for the faceted renderer, keyed by facet label. null when
+  // not faceted (group_by unset); the single-panel path uses regressionLines.
+  regressionLinesByFacet: Map<string, RegressionLine> | null;
   showIdentityLine: boolean;
 }
+
+// Decides whether the x = y identity line is eligible to be drawn, given the
+// x and y dimensions of the response. The default rule is "same dataset on both
+// axes" (i.e. the axes are directly comparable). Injectable so a host can
+// override the eligibility rule — e.g. for expanded plots, where x and y are
+// intentionally different datasets but still comparable. See VisualizationPanel,
+// which supplies this and is the place to swap in a custom implementation.
+export type CanShowIdentityLine = (
+  xDim: DataExplorerPlotResponseDimension,
+  yDim: DataExplorerPlotResponseDimension
+) => boolean;
+
+export const defaultCanShowIdentityLine: CanShowIdentityLine = (xDim, yDim) =>
+  xDim.dataset_id === yDim.dataset_id;
 
 // Encapsulates the data-prep pipeline shared by DataExplorerScatterPlot and
 // any embedded/standalone scatter plot consumer. Returns everything needed to
@@ -58,7 +79,8 @@ export default function useScatterPlotData(
   data: DataExplorerPlotResponse | null,
   plotConfig: DataExplorerPlotConfig,
   linreg_by_group: LinRegInfo[] | null,
-  palette: Palette
+  palette: Palette,
+  canShowIdentityLine: CanShowIdentityLine = defaultCanShowIdentityLine
 ): ScatterPlotData {
   const formattedData = useMemo(
     () => formatDataForScatterPlot(data, plotConfig.color_by),
@@ -85,8 +107,8 @@ export default function useScatterPlotData(
   );
 
   const legendKeysWithNoData = useMemo(
-    () => getLegendKeysWithNoData(data, continuousBins),
-    [data, continuousBins]
+    () => getLegendKeysWithNoData(data, continuousBins, plotConfig.color_by),
+    [data, continuousBins, plotConfig.color_by]
   );
 
   const legendState = useLegendState(plotConfig, legendKeysWithNoData);
@@ -140,13 +162,61 @@ export default function useScatterPlotData(
   }, [colorMap, data, continuousBins, hiddenLegendValues]);
 
   const pointVisibility = useMemo(
-    () => calcVisibility(data, hiddenLegendValues, continuousBins),
-    [data, hiddenLegendValues, continuousBins]
+    () =>
+      calcVisibility(
+        data,
+        hiddenLegendValues,
+        continuousBins,
+        undefined,
+        plotConfig.color_by
+      ),
+    [data, hiddenLegendValues, continuousBins, plotConfig.color_by]
   );
 
   const regressionLines = useMemo(() => {
-    if (!linreg_by_group || !hiddenLegendValues) {
+    if (!hiddenLegendValues) {
       return null;
+    }
+
+    // Expanded single-panel: fetchLinearRegression is skipped when an axis
+    // carries the "expansion" sentinel, so there's no linreg_by_group. When
+    // ungrouped (group_by unset), fit one pooled line over all visible points
+    // from the response so the overall trend still shows instead of nothing.
+    if (!linreg_by_group) {
+      if (
+        !plotConfig.show_regression_line ||
+        plotConfig.group_by ||
+        !formattedData ||
+        !plotConfig.expand_by?.length
+      ) {
+        return null;
+      }
+
+      const x = formattedData.x;
+      const y = formattedData.y;
+      if (!x || !y) {
+        return null;
+      }
+
+      const visible = pointVisibility ?? x.map(() => true);
+      const fx: number[] = [];
+      const fy: number[] = [];
+      for (let i = 0; i < x.length; i += 1) {
+        if (visible[i] && Number.isFinite(x[i]) && Number.isFinite(y[i])) {
+          fx.push(x[i] as number);
+          fy.push(y[i] as number);
+        }
+      }
+
+      const { slope, intercept } = linregress(fx, fy);
+      return [
+        {
+          hidden: fx.length < 3 || !Number.isFinite(slope),
+          color: palette.other,
+          m: slope,
+          b: intercept,
+        },
+      ];
     }
 
     return linreg_by_group.map((linreg) => {
@@ -196,18 +266,96 @@ export default function useScatterPlotData(
   }, [
     colorMap,
     data?.dimensions?.color,
+    formattedData,
     hiddenLegendValues,
     linreg_by_group,
     palette,
+    plotConfig.expand_by,
+    plotConfig.group_by,
     plotConfig.show_regression_line,
+    pointVisibility,
   ]);
 
   const showIdentityLine = Boolean(
     data?.dimensions?.x &&
       data?.dimensions?.y &&
-      data.dimensions.x.dataset_id === data.dimensions.y.dataset_id &&
+      canShowIdentityLine(data.dimensions.x, data.dimensions.y) &&
       !plotConfig.hide_identity_line
   );
+
+  // Faceted regression: one fit per group_by group, computed here from the
+  // main response — which carries group_by's per-point values via
+  // findCategoricalSlice (including the expansion case fetchLinearRegression's
+  // side-fetch can't see). Single-panel keeps using linreg_by_group above.
+  // This is the group_by ?? color_by realization; since scatter only facets on
+  // a categorical group_by, the continuous-color carve-out never applies here.
+  // Fit over formattedData.x/y with the same facet mask the renderer draws, so
+  // each line is fit over exactly its panel's points.
+  const regressionLinesByFacet = useMemo(() => {
+    if (!plotConfig.group_by || !data || !formattedData) {
+      return null;
+    }
+
+    const facetSlice = findCategoricalSlice(data, plotConfig.group_by);
+    const x = formattedData.x;
+    const y = formattedData.y;
+    if (!facetSlice || !x || !y) {
+      return null;
+    }
+
+    const facetKeys = facetSlice.values;
+    const visible = pointVisibility ?? x.map(() => true);
+
+    // J4: a facet's line takes that facet's color only when group_by IS
+    // color_by (the panel is then monochromatic); otherwise neutral, since a
+    // facet spanning several colors has no single color to borrow.
+    const colorSlice = findCategoricalSlice(data, plotConfig.color_by);
+    const groupIsColor =
+      !!colorSlice &&
+      facetSlice.label === colorSlice.label &&
+      facetSlice.dataset_id === colorSlice.dataset_id;
+
+    const facets = Array.from(
+      new Set(facetKeys.filter((k): k is string => k !== null))
+    );
+    const lines = new Map<string, RegressionLine>();
+
+    facets.forEach((facet) => {
+      const inFacet = facetMaskFor(facetKeys, facet, x, y, visible);
+      const fx: number[] = [];
+      const fy: number[] = [];
+      for (let i = 0; i < x.length; i += 1) {
+        if (inFacet(i) && Number.isFinite(x[i]) && Number.isFinite(y[i])) {
+          fx.push(x[i] as number);
+          fy.push(y[i] as number);
+        }
+      }
+
+      const { slope, intercept } = linregress(fx, fy);
+      lines.set(facet, {
+        m: slope,
+        b: intercept,
+        hidden:
+          fx.length < 3 ||
+          !Number.isFinite(slope) ||
+          !plotConfig.show_regression_line,
+        color: groupIsColor
+          ? colorMap.get(facet as LegendKey) || palette.other
+          : "#333",
+      });
+    });
+
+    return lines;
+  }, [
+    data,
+    formattedData,
+    plotConfig.group_by,
+    plotConfig.color_by,
+    plotConfig.show_regression_line,
+    pointVisibility,
+    colorMap,
+    palette,
+  ]);
 
   return {
     formattedData,
@@ -219,6 +367,7 @@ export default function useScatterPlotData(
     legendForDownload,
     pointVisibility,
     regressionLines,
+    regressionLinesByFacet,
     showIdentityLine,
   };
 }

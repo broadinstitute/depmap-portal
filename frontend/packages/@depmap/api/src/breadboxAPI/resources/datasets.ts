@@ -68,6 +68,33 @@ export function getMatrixDatasetData(
     );
   }
 
+  // Defensive trap: reject any aggregation Breadbox can't perform before it
+  // reaches the server, where it would otherwise fail opaquely. The param type
+  // already restricts `aggregation` to Breadbox's set, so this only fires when
+  // a caller has cast around the types. In particular it catches the Data
+  // Explorer "expansion" sentinel (and "first"/"correlation") — app-layer
+  // concepts that must be resolved upstream, never forwarded here.
+  if (args.aggregate) {
+    const validAggregations = [
+      "mean",
+      "median",
+      "25%tile",
+      "75%tile",
+      "stddev",
+    ];
+    const requested = args.aggregate.aggregation as string;
+    if (!validAggregations.includes(requested)) {
+      throw new Error(
+        `getMatrixDatasetData received aggregation "${requested}", which ` +
+          `Breadbox does not support (valid: ${validAggregations.join(
+            ", "
+          )}). ` +
+          `Values like "first", "correlation", or the Data Explorer "expansion" ` +
+          `sentinel must be resolved before reaching this call.`
+      );
+    }
+  }
+
   const finalArgs: typeof args = { ...args };
 
   // WORKAROUND: `aggregate` is silently ignored if you don't
