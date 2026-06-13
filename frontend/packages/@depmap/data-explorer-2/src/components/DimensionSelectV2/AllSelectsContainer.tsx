@@ -56,7 +56,11 @@ function AllSelectsContainer({
   }
 
   return (
-    <div ref={div} className={cx(styles.DimensionSelect, className)}>
+    <div
+      ref={div}
+      data-dimension-select
+      className={cx(styles.DimensionSelect, className)}
+    >
       {children}
     </div>
   );

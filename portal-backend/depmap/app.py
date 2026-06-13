@@ -33,6 +33,7 @@ from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.cli_commands.copy_breadbox_names import copy_breadbox_names_cmd
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
+from depmap.transcript_explorer.views import blueprint as transcript_explorer_blueprint
 from depmap.anchor_screen_dashboard.views import (
     blueprint as anchor_screen_dashboard_blueprint,
 )
@@ -347,6 +348,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(resistance_screen_dashboard_blueprint)
     app.register_blueprint(gene_tea_blueprint)
     app.register_blueprint(custom_analyses_blueprint)
+    app.register_blueprint(transcript_explorer_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)

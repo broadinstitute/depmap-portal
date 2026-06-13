@@ -6,6 +6,7 @@ import {
   ErrorTypeError,
   LinRegInfo,
 } from "@depmap/types";
+import { isExpansionDimension } from "../../../utils/misc";
 
 export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
   const [data, setData] = useState<DataExplorerPlotResponse | null>(null);
@@ -51,7 +52,12 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         setHadError(false);
         let fetchedData: DataExplorerPlotResponse;
 
-        if (plotConfig.plot_type === "correlation_heatmap") {
+        if ("expand_by" in plotConfig) {
+          fetchedData =
+            plotConfig.plot_type === "waterfall"
+              ? await dataExplorerAPI.fetchExpandedWaterfall(plotConfig as any)
+              : await dataExplorerAPI.fetchExpandedPlot(plotConfig as any);
+        } else if (plotConfig.plot_type === "correlation_heatmap") {
           fetchedData = await dataExplorerAPI.fetchCorrelation(
             plotConfig.index_type,
             plotConfig.dimensions,
@@ -105,19 +111,28 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
         plotConfig &&
         plotConfig.show_regression_line &&
         plotConfig.dimensions.x &&
-        plotConfig.dimensions.y
+        plotConfig.dimensions.y &&
+        // Expanded plots get their fit from the faceted regression path;
+        // fetchLinearRegression assumes one value per index entity, so skip it
+        // when any axis carries the "expansion" sentinel (it would otherwise
+        // throw at the aggregate materializer).
+        !Object.values(plotConfig.dimensions).some(isExpansionDimension)
       ) {
-        const fetchedData = await dataExplorerAPI.fetchLinearRegression(
-          plotConfig.index_type,
-          plotConfig.dimensions,
-          plotConfig.filters,
-          plotConfig.metadata
-        );
+        try {
+          const fetchedData = await dataExplorerAPI.fetchLinearRegression(
+            plotConfig.index_type,
+            plotConfig.dimensions,
+            plotConfig.filters,
+            plotConfig.metadata
+          );
 
-        // Double check that these match (the user could've tweaked the config
-        // while this request was still in flight).
-        if (plotConfig === fetchedPlotConfig) {
-          setLinRegInfoByGroup(fetchedData);
+          // Double check that these match (the user could've tweaked the config
+          // while this request was still in flight).
+          if (plotConfig === fetchedPlotConfig) {
+            setLinRegInfoByGroup(fetchedData);
+          }
+        } catch (e) {
+          window.console.error(e);
         }
       }
     })();

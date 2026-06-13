@@ -204,6 +204,20 @@
   white-space: nowrap;
 }
 
+.pairsVirtualListItem {
+  overflow: hidden;
+
+  &[data-kind="header"] > div::before {
+    content: "•";
+    margin-right: 5px;
+  }
+
+  &[data-kind="member"] > div::before {
+    content: "◦";
+    margin-right: 5px;
+  }
+}
+
 .plotSelectionsButtons {
   display: flex;
   flex-direction: column;
@@ -219,6 +233,10 @@
     margin-top: 5px;
     margin-left: 2px;
   }
+}
+
+.seeTableButton {
+  margin-top: 10px;
 }
 
 .plotSelectionsContent {

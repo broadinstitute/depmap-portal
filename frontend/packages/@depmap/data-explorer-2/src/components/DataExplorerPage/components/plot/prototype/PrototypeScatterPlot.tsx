@@ -25,6 +25,7 @@ import {
   getRange,
   hexToRgba,
   LegendKey,
+  orderContinuousPointsByBin,
   RegressionLine,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
@@ -310,10 +311,6 @@ function PrototypeScatterPlot({
     const contColorData: (number | null)[] = continuousColorKey
       ? data[continuousColorKey]
       : null;
-    const contColorValueCounts = categoricalDataToValueCounts(
-      contLegendKeys,
-      x.map(() => true)
-    );
     const hasColorOptionsEnabled = Boolean(
       color1 || color2 || catColorData || contColorData
     );
@@ -461,45 +458,25 @@ function PrototypeScatterPlot({
       const sortedAnnotationText: string[] = [];
       const remappedSelectedPoints: number[] = [];
 
-      const sortedBins = [...colorMap.keys()]
-        .sort(byValueCountOf(contColorValueCounts))
-        .reverse();
+      const order = orderContinuousPointsByBin(
+        contColorData,
+        contLegendKeys,
+        colorMap,
+        visible
+      );
 
-      contColorData
-        .map((value, origIndex) => ({
-          value,
-          origIndex,
-        }))
-        .sort((a, b) => {
-          const binIndexA = sortedBins.indexOf(contLegendKeys[a.origIndex]);
-          const binIndexB = sortedBins.indexOf(contLegendKeys[b.origIndex]);
-
-          if (binIndexA < binIndexB) {
-            return -1;
-          }
-
-          if (binIndexA > binIndexB) {
-            return 1;
-          }
-
-          if (a.value === b.value || a.value == null || b.value == null) {
-            return 0;
-          }
-
-          return a.value < b.value ? -1 : 1;
-        })
-        .forEach(({ origIndex }, i: number) => {
-          contTraceIndex.push(origIndex);
-          sortedX.push(templateTrace.x[origIndex]);
-          sortedY.push(templateTrace.y[origIndex]);
-          sortedColor.push(contColorData[origIndex]);
-          hoverColor.push(colorMap.get(contLegendKeys[origIndex])!);
-          sortedText.push(text[origIndex]);
-          sortedAnnotationText.push(annotationText[origIndex]);
-          if (selectedPoints?.has(origIndex)) {
-            remappedSelectedPoints.push(i);
-          }
-        });
+      order.forEach((origIndex, i) => {
+        contTraceIndex.push(origIndex);
+        sortedX.push(templateTrace.x[origIndex]);
+        sortedY.push(templateTrace.y[origIndex]);
+        sortedColor.push(contColorData[origIndex]);
+        hoverColor.push(colorMap.get(contLegendKeys[origIndex])!);
+        sortedText.push(text[origIndex]);
+        sortedAnnotationText.push(annotationText[origIndex]);
+        if (selectedPoints?.has(origIndex)) {
+          remappedSelectedPoints.push(i);
+        }
+      });
 
       continuousColorTrace = {
         ...templateTrace,

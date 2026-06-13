@@ -58,7 +58,7 @@ function ColorByViewOptions({
         enable={Boolean(index_type)}
         value={color_by || null}
         plot_type={plot_type}
-        slice_type={index_type as string}
+        index_type={index_type as string}
         onChange={(nextColorBy) =>
           dispatch({
             type: "select_color_by",
