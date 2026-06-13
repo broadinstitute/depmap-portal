@@ -29,6 +29,7 @@ module.exports = {
     doseViabilityPrototype: "./src/apps/doseViabilityPrototype.tsx",
     geneTea: "./src/apps/geneTea.tsx",
     custom_analyses: "./src/apps/custom_analyses.tsx",
+    transcriptExplorer: "./src/apps/transcriptExplorer.tsx",
   },
 
   plugins: [

@@ -1,0 +1,166 @@
+.initialLoadingSpinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: calc(100vh - 52px);
+}
+
+.initialLoadError {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  margin-top: 4px;
+}
+
+.hr {
+  margin: 16px 0 12px 0;
+  border-color: #ccc;
+}
+
+.dimensions {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 4px;
+}
+
+.makeScatterButton {
+  margin-left: 41px;
+  height: 20px;
+  padding: 0 4px !important;
+  color: #666;
+  position: relative;
+  top: -2px;
+
+  span {
+    position: relative;
+    top: -2px;
+  }
+
+  i {
+    position: relative;
+    top: -1px;
+    margin-left: 5px;
+    font-size: 11px;
+  }
+}
+
+.swapAxesButton {
+  margin-left: 31px;
+  width: 65px;
+  height: 20px;
+  padding: 0 !important;
+  color: #666;
+  position: relative;
+  top: -2px;
+
+  span {
+    position: relative;
+    top: -2px;
+  }
+
+  i {
+    position: relative;
+    top: 2px;
+    margin-left: 5px;
+  }
+}
+
+.TranscriptExpansionSelect {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+// Don't remove this class! It's used by some JavaScript to focus the element.
+.geneSelect {
+  border: inherit;
+}
+
+.filterAndMax {
+  display: flex;
+  gap: 14px;
+}
+
+.colorAndGroupBy {
+  display: flex;
+  gap: 14px;
+}
+
+.TranscriptColorByViewOptions {
+  margin-bottom: 4px;
+  scroll-margin-bottom: 24px;
+
+  div[data-dimension-select] {
+    margin: 10px 0;
+  }
+}
+
+.TranscriptGroupByViewOptions {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+  scroll-margin-bottom: 24px;
+  gap: 10px;
+
+  div[data-dimension-select] {
+    margin: 10px 0;
+  }
+}
+
+.colorByContext {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  &:not(:empty) {
+    margin-top: 10px;
+  }
+}
+
+.TableViewsContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  button {
+    min-width: 300px;
+  }
+
+  :global .glyphicon {
+    float: right;
+  }
+}
+
+.modal {
+  :global .modal-lg.modal-dialog {
+    width: calc(100% - 150px);
+  }
+
+  :global .modal-body {
+    padding: 20px 20px;
+  }
+}
+
+.tableContainer {
+  height: calc(100vh - 218px);
+}
+
+.geneAnnotationNote {
+  display: flex;
+  flex-wrap: wrap;
+
+  div:nth-child(1) {
+    display: flex;
+    width: 58px;
+
+    b {
+      margin-left: 4px;
+    }
+  }
+
+  div:nth-child(2) {
+    width: 300px;
+  }
+}

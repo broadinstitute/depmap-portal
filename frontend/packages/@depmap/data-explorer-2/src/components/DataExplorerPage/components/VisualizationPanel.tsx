@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { DataExplorerContextV2, DataExplorerPlotConfig } from "@depmap/types";
 import { usePlotData } from "../hooks";
 import DataExplorerScatterPlot from "./plot/DataExplorerScatterPlot";
+import {
+  CanShowIdentityLine,
+  defaultCanShowIdentityLine,
+} from "./plot/prototype/useScatterPlotData";
 import DataExplorerDensity1DPlot from "./plot/DataExplorerDensity1DPlot";
 import DataExplorerWaterfallPlot from "./plot/DataExplorerWaterfallPlot";
 import DataExplorerCorrelationHeatmap from "./plot/DataExplorerCorrelationHeatmap";
@@ -24,6 +28,7 @@ interface Props {
   feedbackUrl: string | null;
   contactEmail: string;
   tutorialLink: string;
+  canShowIdentityLine?: CanShowIdentityLine;
 }
 
 function VisualizationPanel({
@@ -36,6 +41,7 @@ function VisualizationPanel({
   feedbackUrl,
   contactEmail,
   tutorialLink,
+  canShowIdentityLine = defaultCanShowIdentityLine,
 }: Props) {
   const {
     data,
@@ -109,6 +115,7 @@ function VisualizationPanel({
           onClickVisualizeSelected={onClickVisualizeSelected}
           onClickSaveSelectionAsContext={onClickSaveSelectionAsContext}
           onClickColorByContext={onClickColorByContext}
+          canShowIdentityLine={canShowIdentityLine}
         />
       )}
       {plotConfig?.plot_type === "correlation_heatmap" && (

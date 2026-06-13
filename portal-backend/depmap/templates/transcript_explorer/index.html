@@ -1,0 +1,27 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    Transcript Explorer | DepMap Portal
+{% endblock %}
+
+{% block meta_description %}
+  Easily plot all transcripts for a given gene.
+{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="react-root"></div>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script id="transcript-explorer-data" type="application/json">
+      {
+        "feedbackUrl": "{{ config.FEEDBACK_FORM_URL | safe }}",
+        "contactEmail": "{{ config.CONTACT_EMAIL | safe }}",
+        "tutorialLink": "{{ tutorial_link | safe }}"
+      }
+    </script>
+    <script src="{{ webpack_url('transcriptExplorer.js') }}"></script>
+{% endblock %}
