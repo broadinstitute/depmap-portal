@@ -17,6 +17,27 @@ interface Props {
   plotConfig: DataExplorerPlotConfig;
 }
 
+function canShowIdentityLine(data: DataExplorerPlotResponse | null) {
+  const xUnits = data?.dimensions?.x?.units;
+  const yUnits = data?.dimensions?.y?.units;
+  const xDatasetId = data?.dimensions?.x?.dataset_id;
+  const yDatasetId = data?.dimensions?.y?.dataset_id;
+
+  if (!xDatasetId || !yDatasetId || !xUnits || !yUnits) {
+    return false;
+  }
+
+  if (xDatasetId === yDatasetId) {
+    return true;
+  }
+
+  if (xUnits === "unitless" || yUnits === "unitless") {
+    return false;
+  }
+
+  return xUnits === yUnits;
+}
+
 function EmbeddedScatterPlot({
   data,
   height,
@@ -34,7 +55,13 @@ function EmbeddedScatterPlot({
     pointVisibility,
     regressionLines,
     showIdentityLine,
-  } = useScatterPlotData(data, plotConfig, linreg_by_group, palette);
+  } = useScatterPlotData(
+    data,
+    plotConfig,
+    linreg_by_group,
+    palette,
+    canShowIdentityLine(data)
+  );
 
   if (!formattedData) {
     return null;
