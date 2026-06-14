@@ -107,6 +107,12 @@ export interface DataExplorerPlotResponseDimension {
   slice_type: string;
   values: number[];
   value_type: "continuous" | "text" | "categorical" | "list_strings";
+  // The dimension's units as reported by Breadbox (e.g. "log2(TPM+1)"). The
+  // sentinel "unitless" is a real Breadbox value and is also used here for any
+  // dimension with no meaningful units (rank axes, correlation coefficients,
+  // categorical/color dimensions, error placeholders). `string` already covers
+  // "unitless"; it is named in the type so the UI can switch on it explicitly.
+  units: "unitless" | string;
 }
 
 // A single expansion: fans each index entity out into one point per member of

@@ -13,9 +13,7 @@ import {
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import SpinnerOverlay from "./SpinnerOverlay";
-import useScatterPlotData, {
-  CanShowIdentityLine,
-} from "./prototype/useScatterPlotData";
+import useScatterPlotData from "./prototype/useScatterPlotData";
 import PrototypeScatterPlot from "./prototype/PrototypeScatterPlot";
 import SmallMultiplesScatter from "./prototype/SmallMultiplesScatter";
 import { findCategoricalSlice } from "./prototype/plotUtils";
@@ -43,9 +41,7 @@ interface Props {
     selectedIds: Set<string>
   ) => void;
   plotConfig: DataExplorerPlotConfig;
-  // Overrides the rule for when the x = y identity line is eligible. Omit to use
-  // the default (same dataset on both axes). Threaded down from VisualizationPanel.
-  canShowIdentityLine?: CanShowIdentityLine;
+  canShowIdentityLine: boolean;
 }
 
 function DataExplorerScatterPlot({
@@ -56,7 +52,7 @@ function DataExplorerScatterPlot({
   onClickSaveSelectionAsContext,
   onClickVisualizeSelected,
   plotConfig,
-  canShowIdentityLine = undefined,
+  canShowIdentityLine,
 }: Props) {
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const {

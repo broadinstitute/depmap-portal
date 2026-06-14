@@ -664,6 +664,7 @@ export async function fetchExpandedPlot(
         // metadata branch below already does.
         value_type: value_type as DataExplorerPlotResponseDimension["value_type"],
         values: values as number[],
+        units: ds && "units" in ds ? ds.units : "unitless",
       };
     })
   );
@@ -672,6 +673,9 @@ export async function fetchExpandedPlot(
   await Promise.all(
     broadcastResults.map(async (r) => {
       const dim = dimensions[r.key];
+      const bds = datasets.find(
+        (d) => d.id === dim.dataset_id || d.given_id === dim.dataset_id
+      );
       const [axis_label, value_type, dataset_label] = await Promise.all([
         fetchAxisLabel(dim),
         fetchValueType(dim),
@@ -717,6 +721,7 @@ export async function fetchExpandedPlot(
         // number[]; widening that union is a separate, larger change
         // that would touch every downstream consumer.
         values: values as number[],
+        units: bds && "units" in bds ? bds.units : "unitless",
       };
     })
   );
@@ -780,6 +785,7 @@ export async function fetchExpandedPlot(
         slice_type: null,
         values,
         value_type: r.value_type,
+        units: "unitless",
       } as unknown) as DataExplorerPlotResponseDimension;
       continue;
     }
@@ -860,6 +866,8 @@ export async function fetchExpandedWaterfall(
         dataset_label: "",
         value_type: "continuous",
         values: Array.from({ length: NM }, (_, i) => i),
+        // A rank axis has no units (override valueDim's).
+        units: "unitless",
       },
       // The value-bearing dimension, lifted from x.
       y: valueDim,

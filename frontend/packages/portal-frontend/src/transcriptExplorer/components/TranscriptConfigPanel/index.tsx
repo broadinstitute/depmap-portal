@@ -16,6 +16,7 @@ import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styl
 interface Props {
   plot: PartialDataExplorerPlotConfig;
   dispatch: (action: PlotConfigReducerAction) => void;
+  canShowIdentityLine: boolean;
   onClickCreateContext: (path: ContextPath) => void;
   onClickSaveAsContext: (
     contextToEdit: DataExplorerContextV2,
@@ -26,6 +27,7 @@ interface Props {
 function TranscriptConfigPanel({
   plot,
   dispatch,
+  canShowIdentityLine,
   onClickCreateContext,
   onClickSaveAsContext,
 }: Props) {
@@ -111,6 +113,7 @@ function TranscriptConfigPanel({
       <TranscriptViewOptions
         plot={plot}
         dispatch={dispatch}
+        canShowIdentityLine={canShowIdentityLine}
         onClickCreateContext={onClickCreateContext}
         onClickSaveAsContext={onClickSaveAsContext}
       />
