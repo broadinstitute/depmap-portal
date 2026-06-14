@@ -16,6 +16,7 @@ import styles from "../../styles/ConfigurationPanel.scss";
 interface Props {
   plot: PartialDataExplorerPlotConfig;
   dispatch: (action: PlotConfigReducerAction) => void;
+  canShowIdentityLine: boolean;
   onClickCreateContext: (path: ContextPath) => void;
   onClickSaveAsContext: (
     contextToEdit: DataExplorerContextV2,
@@ -28,6 +29,7 @@ interface Props {
 function ConfigurationPanel({
   plot,
   dispatch,
+  canShowIdentityLine,
   onClickCreateContext,
   onClickSaveAsContext,
   onClickCopyAxisConfig,
@@ -55,6 +57,7 @@ function ConfigurationPanel({
       <ViewOptions
         plot={plot}
         dispatch={dispatch}
+        canShowIdentityLine={canShowIdentityLine}
         onClickCreateContext={onClickCreateContext}
         onClickSaveAsContext={onClickSaveAsContext}
       />

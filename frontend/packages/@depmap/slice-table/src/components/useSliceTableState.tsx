@@ -284,7 +284,7 @@ export function useSliceTableState({
       if (otherCols.length > 0) {
         for (const row of data) {
           const id = row.id as string;
-          const lines: string[] = [];
+          let lines: string[] = [];
 
           for (const c of otherCols) {
             const val = row[c.id];
@@ -296,6 +296,9 @@ export function useSliceTableState({
               lines.push(`${label}: ${val}`);
             }
           }
+
+          const MAX_EXTRA_HOVER_DATA_LINES = 26;
+          lines = lines.slice(0, MAX_EXTRA_HOVER_DATA_LINES);
 
           if (lines.length > 0) {
             result[id] = lines.join("<br>");

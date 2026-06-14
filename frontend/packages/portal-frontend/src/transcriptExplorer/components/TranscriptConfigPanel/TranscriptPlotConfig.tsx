@@ -10,6 +10,7 @@ import {
   DimensionKey,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
+import { isCompletePlot } from "@depmap/data-explorer-2/src/components/DataExplorerPage/validation";
 import { PlotConfigReducerAction } from "@depmap/data-explorer-2/src/components/DataExplorerPage/reducers/plotConfigReducer";
 import PlotTypeSelect from "./PlotTypeSelect";
 import TranscriptExpansionSelect from "./TranscriptExpansionSelect";
@@ -150,8 +151,7 @@ function TranscriptPlotConfig({
             .map((key) => {
               const showMakeScatterButton =
                 key === "x" &&
-                plot.dimensions?.x?.dataset_id &&
-                plot.dimensions?.x?.context &&
+                isCompletePlot(plot) &&
                 plot.plot_type !== "scatter" &&
                 plot.plot_type !== "correlation_heatmap";
 

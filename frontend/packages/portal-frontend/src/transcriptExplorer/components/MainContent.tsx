@@ -12,7 +12,10 @@ import {
   readPlotFromQueryString,
 } from "@depmap/data-explorer-2/src/components/DataExplorerPage/utils";
 import { isCompletePlot } from "@depmap/data-explorer-2/src/components/DataExplorerPage/validation";
-import useContextBuilder from "@depmap/data-explorer-2/src/components/DataExplorerPage/hooks/useContextBuilder";
+import {
+  useCanShowIdentityLine,
+  useContextBuilder,
+} from "@depmap/data-explorer-2/src/components/DataExplorerPage/hooks";
 import VisualizationPanel from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/VisualizationPanel";
 import {
   logDirectPlotChange,
@@ -20,7 +23,7 @@ import {
 } from "@depmap/data-explorer-2/src/components/DataExplorerPage/debug";
 import TranscriptConfigPanel from "./TranscriptConfigPanel";
 import styles from "@depmap/data-explorer-2/src/components/DataExplorerPage/styles/DataExplorer2.scss";
-import { canShowIdentityLine, EMPTY_TRANSCRIPT_PLOT } from "./utils";
+import { EMPTY_TRANSCRIPT_PLOT } from "./utils";
 
 interface Props {
   initialPlot: PartialDataExplorerPlotConfig;
@@ -83,12 +86,18 @@ function MainContent({
     onClickCreateContext,
   } = useContextBuilder(plot as DataExplorerPlotConfig, setPlot);
 
+  const canShowIdentityLine = useCanShowIdentityLine(
+    plot?.dimensions?.x?.dataset_id,
+    plot?.dimensions?.y?.dataset_id
+  );
+
   return (
     <>
       <main className={styles.DataExplorer2}>
         <TranscriptConfigPanel
           plot={plot}
           dispatch={dispatchPlotActionAndUpdateHistory}
+          canShowIdentityLine={canShowIdentityLine}
           onClickCreateContext={onClickCreateContext}
           onClickSaveAsContext={onClickSaveAsContext}
         />

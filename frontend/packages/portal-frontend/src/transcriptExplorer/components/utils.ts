@@ -30,22 +30,6 @@ export function makeSetExpansionAction(
   limit: number = DEFAULT_MAX_TRANSCRIPTS,
   offset: number = 0
 ) {
-  if (!geneSymbol || !dataset_id) {
-    return {
-      type: "batch",
-      payload: [
-        {
-          type: "select_expansion",
-          payload: { key: expansionAxis, expand_by: null },
-        },
-        {
-          type: "select_dimension",
-          payload: { key: expansionAxis, dimension: {} },
-        },
-      ],
-    } as PlotConfigReducerAction;
-  }
-
   return {
     type: "select_expansion",
     payload: {
@@ -71,26 +55,6 @@ export function makeSetExpansionAction(
       },
     },
   } as PlotConfigReducerAction;
-}
-
-export function canShowIdentityLine(
-  xDim?: { dataset_id?: string | undefined },
-  yDim?: { dataset_id?: string | undefined }
-) {
-  if (!xDim || !yDim) {
-    return false;
-  }
-
-  const equivalentDatasets: (string | undefined)[] = [
-    "expression",
-    SHORT_READ_DATASET,
-    LONG_READ_DATASET,
-  ];
-
-  return (
-    equivalentDatasets.includes(xDim.dataset_id) &&
-    equivalentDatasets.includes(yDim.dataset_id)
-  );
 }
 
 export function focusWhenElementReady(selector: string): void {
