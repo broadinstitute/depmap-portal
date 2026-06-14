@@ -12,7 +12,7 @@ import {
   ShowPointsCheckbox,
 } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/ConfigurationPanel/selectors";
 import FilterViewOptions from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/ConfigurationPanel/FilterViewOptions";
-import { canShowIdentityLine, DEFAULT_MAX_TRANSCRIPTS } from "../../utils";
+import { DEFAULT_MAX_TRANSCRIPTS } from "../../utils";
 import TranscriptMaxToShowSelect from "../TranscriptExpansionSelect/TranscriptMaxToShowSelect";
 import { makeMaxToShowOnChangeHandler } from "../TranscriptExpansionSelect/actionCreators";
 import TranscriptColorByViewOptions from "./TranscriptColorByViewOptions";
@@ -22,6 +22,7 @@ import styles from "../../../styles/TranscriptPlotConfig.scss";
 interface Props {
   plot: PartialDataExplorerPlotConfig;
   dispatch: (action: PlotConfigReducerAction) => void;
+  canShowIdentityLine: boolean;
   onClickCreateContext: (pathToCreate: ContextPath) => void;
   onClickSaveAsContext: (
     contextToEdit: DataExplorerContextV2,
@@ -32,6 +33,7 @@ interface Props {
 function TranscriptViewOptions({
   plot,
   dispatch,
+  canShowIdentityLine,
   onClickCreateContext,
   onClickSaveAsContext,
 }: Props) {
@@ -69,10 +71,7 @@ function TranscriptViewOptions({
         }}
       />
       <ShowIdentityLineCheckbox
-        show={
-          plot.plot_type === "scatter" &&
-          canShowIdentityLine(plot.dimensions?.x, plot.dimensions?.y)
-        }
+        show={canShowIdentityLine}
         value={!plot.hide_identity_line}
         onChange={(showIdentityLine: boolean) => {
           dispatch({

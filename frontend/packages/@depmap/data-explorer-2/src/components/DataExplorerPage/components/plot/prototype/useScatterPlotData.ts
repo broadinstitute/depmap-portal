@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
-  DataExplorerPlotResponseDimension,
   LinRegInfo,
 } from "@depmap/types";
 import {
@@ -57,20 +56,6 @@ export interface ScatterPlotData {
   showIdentityLine: boolean;
 }
 
-// Decides whether the x = y identity line is eligible to be drawn, given the
-// x and y dimensions of the response. The default rule is "same dataset on both
-// axes" (i.e. the axes are directly comparable). Injectable so a host can
-// override the eligibility rule — e.g. for expanded plots, where x and y are
-// intentionally different datasets but still comparable. See VisualizationPanel,
-// which supplies this and is the place to swap in a custom implementation.
-export type CanShowIdentityLine = (
-  xDim: DataExplorerPlotResponseDimension,
-  yDim: DataExplorerPlotResponseDimension
-) => boolean;
-
-export const defaultCanShowIdentityLine: CanShowIdentityLine = (xDim, yDim) =>
-  xDim.dataset_id === yDim.dataset_id;
-
 // Encapsulates the data-prep pipeline shared by DataExplorerScatterPlot and
 // any embedded/standalone scatter plot consumer. Returns everything needed to
 // drive PrototypeScatterPlot plus the legend state (so callers that render a
@@ -80,7 +65,7 @@ export default function useScatterPlotData(
   plotConfig: DataExplorerPlotConfig,
   linreg_by_group: LinRegInfo[] | null,
   palette: Palette,
-  canShowIdentityLine: CanShowIdentityLine = defaultCanShowIdentityLine
+  canShowIdentityLine: boolean
 ): ScatterPlotData {
   const formattedData = useMemo(
     () => formatDataForScatterPlot(data, plotConfig.color_by),
@@ -277,10 +262,7 @@ export default function useScatterPlotData(
   ]);
 
   const showIdentityLine = Boolean(
-    data?.dimensions?.x &&
-      data?.dimensions?.y &&
-      canShowIdentityLine(data.dimensions.x, data.dimensions.y) &&
-      !plotConfig.hide_identity_line
+    canShowIdentityLine && !plotConfig.hide_identity_line
   );
 
   // Faceted regression: one fit per group_by group, computed here from the

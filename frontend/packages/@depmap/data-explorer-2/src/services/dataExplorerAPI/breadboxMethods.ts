@@ -623,6 +623,12 @@ export async function fetchPlotDimensions(
           }
         }
 
+        const dimDataset = datasets.find(
+          (d) =>
+            d.id === dimensions[key].dataset_id ||
+            d.given_id === dimensions[key].dataset_id
+        );
+
         out.dimensions[key as keyof DataExplorerPlotResponse["dimensions"]] = {
           slice_type: dimensions[key].slice_type,
           dataset_id: dimensions[key].dataset_id,
@@ -630,6 +636,8 @@ export async function fetchPlotDimensions(
           dataset_label: datasetLabels[key] as string,
           value_type,
           values,
+          units:
+            dimDataset && "units" in dimDataset ? dimDataset.units : "unitless",
         };
       }
 
@@ -684,6 +692,7 @@ export async function fetchPlotDimensions(
             slice_type: null,
             values,
             value_type,
+            units: units ?? "unitless",
           } as unknown) as DataExplorerPlotResponseDimension;
 
           return;
@@ -983,6 +992,7 @@ const correlateDimension = memoize(
           value_type: "continuous",
           dataset_label,
           context_size: labels.length,
+          units: "unitless",
           axis_label:
             labels.length === 0 ? "context produced no matches" : "cannot plot",
         } as unknown) as DataExplorerPlotResponse["dimensions"]["x"],
@@ -1093,6 +1103,8 @@ const correlateDimension = memoize(
       // to compute a correlation otherwise.
       // TODO: Add validation for this.
       value_type: "continuous" as const,
+      // Correlation coefficients are dimensionless.
+      units: "unitless",
       // HACK: The correlation heatmap is a special case and breaks the
       // standard dimension type. `matrix` is of type number[][] but we'll
       // cast it to number[] just to keep the types simple. Caution must be
@@ -1227,6 +1239,8 @@ export async function fetchWaterfall(
       slice_type: dimensions.x.slice_type,
       value_type: "continuous",
       values: Array.from({ length: sortedLabels.length }, (_, i) => i),
+      // A rank axis has no units.
+      units: "unitless",
     },
 
     // HACK: We remap the "x" dimension from the plot config onto the y axis.

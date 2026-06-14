@@ -12,7 +12,11 @@ import {
   readPlotFromQueryString,
 } from "../utils";
 import { isCompletePlot } from "../validation";
-import { useClickHandlers, useContextBuilder } from "../hooks";
+import {
+  useClickHandlers,
+  useContextBuilder,
+  useCanShowIdentityLine,
+} from "../hooks";
 import {
   DataExplorerPlotConfig,
   PartialDataExplorerPlotConfig,
@@ -138,6 +142,11 @@ function DataExplorer2MainContent({
     onClickSaveAsContext
   );
 
+  const canShowIdentityLine = useCanShowIdentityLine(
+    plot?.dimensions?.x?.dataset_id,
+    plot?.dimensions?.y?.dataset_id
+  );
+
   return (
     <>
       <main className={styles.DataExplorer2}>
@@ -145,6 +154,7 @@ function DataExplorer2MainContent({
           key={reactKey.current}
           plot={plot}
           dispatch={dispatchPlotActionAndUpdateHistory}
+          canShowIdentityLine={canShowIdentityLine}
           onClickSaveAsContext={onClickSaveAsContext}
           onClickCreateContext={onClickCreateContext}
           onClickCopyAxisConfig={handleClickCopyAxisConfig}
@@ -152,6 +162,7 @@ function DataExplorer2MainContent({
         />
         <VisualizationPanel
           plotConfig={isCompletePlot(plot) ? plot : null}
+          canShowIdentityLine={canShowIdentityLine}
           isInitialPageLoad={isInitialPageLoad}
           onClickVisualizeSelected={handleClickVisualizeSelected}
           onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
