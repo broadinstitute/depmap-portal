@@ -103,7 +103,7 @@ function SliceTable({
   customColumns = undefined,
   getColumnDisplayOptions = undefined,
   renderCustomControls = () => null,
-  renderCustomActions = () => null,
+  renderCustomActions = undefined,
   hideActions = false,
   containerClassName = undefined,
   controlsClassName = undefined,
@@ -270,7 +270,7 @@ function SliceTable({
           return 0;
         }}
       />
-      {!hideActions && !renderCustomActions && (
+      {(!hideActions || renderCustomActions) && (
         <Actions
           isLoading={combinedLoading}
           hadError={Boolean(error)}

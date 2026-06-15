@@ -20,6 +20,7 @@ import ColorByViewOptions from "./ColorByViewOptions";
 interface Props {
   plot: PartialDataExplorerPlotConfig;
   dispatch: (action: PlotConfigReducerAction) => void;
+  canShowIdentityLine: boolean;
   onClickCreateContext: (pathToCreate: ContextPath) => void;
   onClickSaveAsContext: (
     contextToEdit: DataExplorerContextV2,
@@ -27,17 +28,10 @@ interface Props {
   ) => void;
 }
 
-const xDatasetEqualsYDataset = (plot: PartialDataExplorerPlotConfig) => {
-  if (!plot.dimensions?.x?.dataset_id || !plot.dimensions?.y?.dataset_id) {
-    return false;
-  }
-
-  return plot.dimensions.x.dataset_id === plot.dimensions.y.dataset_id;
-};
-
 function ViewOptions({
   plot,
   dispatch,
+  canShowIdentityLine,
   onClickCreateContext,
   onClickSaveAsContext,
 }: Props) {
@@ -77,7 +71,7 @@ function ViewOptions({
         }}
       />
       <ShowIdentityLineCheckbox
-        show={plot.plot_type === "scatter" && xDatasetEqualsYDataset(plot)}
+        show={canShowIdentityLine}
         value={!plot.hide_identity_line}
         onChange={(showIdentityLine: boolean) => {
           dispatch({

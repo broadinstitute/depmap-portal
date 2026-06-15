@@ -24,6 +24,7 @@ interface Props {
   feedbackUrl: string | null;
   contactEmail: string;
   tutorialLink: string;
+  canShowIdentityLine: boolean;
 }
 
 function VisualizationPanel({
@@ -36,6 +37,7 @@ function VisualizationPanel({
   feedbackUrl,
   contactEmail,
   tutorialLink,
+  canShowIdentityLine,
 }: Props) {
   const {
     data,
@@ -109,6 +111,7 @@ function VisualizationPanel({
           onClickVisualizeSelected={onClickVisualizeSelected}
           onClickSaveSelectionAsContext={onClickSaveSelectionAsContext}
           onClickColorByContext={onClickColorByContext}
+          canShowIdentityLine={canShowIdentityLine}
         />
       )}
       {plotConfig?.plot_type === "correlation_heatmap" && (

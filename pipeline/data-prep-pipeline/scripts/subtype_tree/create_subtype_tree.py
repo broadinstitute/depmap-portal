@@ -23,7 +23,9 @@ def load_data(
 
         - oncotree (pandas df): Oncotree as a result of calling its API and storing on taiga
 
-        - molecular_subtype_tree_taiga_id (pandas df): The hierarchy of molecular subtypes
+        - molecular_subtype_hierarchy (pandas df): The hierarchy of molecular subtypes
+
+        - molecular_subtypes (pandas df): Omics Inferred Molecular Subtype matrix
 
         - gs_whitelist (pandas df): The whitelist of custom nodes that are defined by
             a genetic subtype and will be added as a node in the lineage-based tree

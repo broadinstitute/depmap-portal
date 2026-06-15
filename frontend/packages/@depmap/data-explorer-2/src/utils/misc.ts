@@ -134,6 +134,24 @@ export const isPartialSliceId = (value: string | null) => {
   return Boolean(value?.startsWith("slice/") && value?.endsWith("/"));
 };
 
+// Identity predicate for the expansion sentinel. `aggregation === "expansion"`
+// is not a real aggregation — its per-pair values come from fetchExpandedPlot,
+// not from aggregating a slice. The sentinel rides on `aggregation` to keep
+// that field's always-present invariant without a structural redesign. This is
+// the one canonical place that knows the sentinel's name; prefer it over
+// re-deriving `aggregation === "expansion"` inline. (The two materializer
+// guards must stay inline so the compiler narrows `aggregation`; everything
+// else asking "is this the expansion axis?" should call this.)
+export function isExpansionDimension(
+  dimension:
+    | PartialDataExplorerPlotConfigDimension
+    | PartialDataExplorerPlotConfigDimensionV2
+    | null
+    | undefined
+): boolean {
+  return dimension?.aggregation === "expansion";
+}
+
 // A more aggressive version of encodeURIComponent() to match this:
 // https://github.com/broadinstitute/depmap-portal/blob/a2e2cc9/portal-backend/depmap/vector_catalog/models.py#L358
 export const urlLibEncode = (s: string) => {

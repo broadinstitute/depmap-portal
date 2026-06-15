@@ -19,7 +19,10 @@ from werkzeug.routing import RequestRedirect
 
 from depmap.access_control import initialize_request_user, load_auth_config_for_app
 from depmap.access_control.views import blueprint as access_control_blueprint
-from depmap.access_control.utils.get_authorizations import is_current_user_an_admin
+from depmap.access_control.utils.get_authorizations import (
+    get_current_user_for_access_control,
+    is_current_user_an_admin,
+)
 from depmap.api.views import blueprint as api_blueprint
 from depmap.assets import assets, css_cdns, js_cdns, pre_js_cdns
 from depmap.authentication.utils import verify_oauth_request_signature
@@ -30,6 +33,7 @@ from depmap.celligner.views import blueprint as celligner_blueprint
 from depmap.cli_commands.copy_breadbox_names import copy_breadbox_names_cmd
 from depmap.compound.views.index import blueprint as compound_blueprint
 from depmap.compute.views import blueprint as compute_blueprint
+from depmap.transcript_explorer.views import blueprint as transcript_explorer_blueprint
 from depmap.anchor_screen_dashboard.views import (
     blueprint as anchor_screen_dashboard_blueprint,
 )
@@ -201,6 +205,7 @@ def create_app(config_object):
             "color_palette": process_color_palette(),
             "is_mobile": is_mobile(request),
             "is_admin_user": is_current_user_an_admin(),
+            "current_user_id": get_current_user_for_access_control(),
             "include_theme_snippet": include_theme_snippet,
         }
 
@@ -343,6 +348,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(resistance_screen_dashboard_blueprint)
     app.register_blueprint(gene_tea_blueprint)
     app.register_blueprint(custom_analyses_blueprint)
+    app.register_blueprint(transcript_explorer_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)

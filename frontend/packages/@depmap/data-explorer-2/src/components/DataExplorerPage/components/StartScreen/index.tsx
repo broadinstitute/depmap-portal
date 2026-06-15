@@ -9,6 +9,20 @@ interface Props {
   tutorialLink: string;
 }
 
+function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.toString();
+    }
+  } catch {
+    // invalid URL
+  }
+
+  return "#";
+}
+
 function StartScreen({ tutorialLink }: Props) {
   const [showCsvUploadModal, setShowCsvUploadModal] = useState(false);
 
@@ -19,7 +33,7 @@ function StartScreen({ tutorialLink }: Props) {
         Data Explorer 2.0 is a new app that expands on the capabilities of the
         original Data Explorer. It’s focused on providing greater power in terms
         of what you can plot and how you can visualize relationships.{" "}
-        <a href={tutorialLink} rel="noreferrer" target="_blank">
+        <a href={safeUrl(tutorialLink)} rel="noreferrer" target="_blank">
           View the tutorial
         </a>
       </p>

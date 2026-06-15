@@ -31,9 +31,18 @@ export interface Density1DPlotData {
     yLabel: string | null;
   } | null;
   continuousBins: ContinuousBins;
+  // colorData: drives point colors (bgcolor). Sourced from color_by.
   colorData: unknown;
+  // groupData: drives violin-track assignment. Sourced from group_by, or
+  // color_by when group_by is unset. Equal-by-reference to colorData when
+  // the modes match — the common case.
+  groupData: unknown;
   legendKeysWithNoData: Set<LegendKey> | null;
+  // sortedLegendKeys: order of legend entries (color side).
   sortedLegendKeys: LegendKey[] | undefined;
+  // sortedGroupKeys: order of violin tracks (group side). Same array as
+  // sortedLegendKeys when modes match.
+  sortedGroupKeys: LegendKey[] | undefined;
   legendState: ReturnType<typeof useLegendState>;
   colorMap: Map<LegendKey, string>;
   legendDisplayNames: Partial<Record<LegendKey, string>>;
@@ -66,11 +75,25 @@ export default function useDensity1DPlotData(
     [formattedData]
   );
 
-  const { sort_by } = plotConfig;
+  const { sort_by, color_by, group_by, expand_by } = plotConfig;
 
-  const [colorData, legendKeysWithNoData, sortedLegendKeys] = useMemo(
-    () => calcDensityStats(data, continuousBins, sort_by),
-    [data, continuousBins, sort_by]
+  const {
+    colorData,
+    groupData,
+    unusedKeys: legendKeysWithNoData,
+    sortedColorKeys: sortedLegendKeys,
+    sortedGroupKeys,
+  } = useMemo(
+    () =>
+      calcDensityStats(
+        data,
+        continuousBins,
+        sort_by,
+        color_by,
+        group_by,
+        Boolean(expand_by?.length)
+      ),
+    [data, continuousBins, sort_by, color_by, group_by, expand_by]
   );
 
   const legendState = useLegendState(plotConfig, legendKeysWithNoData);
@@ -116,17 +139,20 @@ export default function useDensity1DPlotData(
         data,
         hiddenLegendValues,
         continuousBins,
-        plotConfig.hide_points
+        plotConfig.hide_points,
+        plotConfig.color_by
       ),
-    [data, hiddenLegendValues, continuousBins, plotConfig.hide_points]
+    [data, hiddenLegendValues, continuousBins, plotConfig.hide_points, plotConfig.color_by]
   );
 
   return {
     formattedData,
     continuousBins,
     colorData,
+    groupData,
     legendKeysWithNoData,
     sortedLegendKeys,
+    sortedGroupKeys,
     legendState,
     colorMap,
     legendDisplayNames,

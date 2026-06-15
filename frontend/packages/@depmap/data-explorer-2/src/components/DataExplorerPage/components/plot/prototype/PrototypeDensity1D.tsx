@@ -19,7 +19,9 @@ import {
   hexToRgba,
   isEveryValueNull,
   LEGEND_ALL,
+  LEGEND_OTHER,
   LegendKey,
+  orderContinuousPointsByBin,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
@@ -33,7 +35,17 @@ interface Props {
   annotationTextKey?: string;
   height: number | "auto";
   colorMap: Map<LegendKey, string>;
+  // colorData: per-point color key. Drives bgcolor on scatter traces and
+  // (in the converged case where modes match) violin fillcolor.
   colorData?: any;
+  // groupData: per-point group key. Drives violin-track assignment. When
+  // not supplied, falls back to colorData for backward compatibility with
+  // existing callers and the converged case.
+  groupData?: any;
+  // groupKeys: track display order. When not supplied, derived from
+  // [...colorMap.keys()] (which is the legend order under the old
+  // single-array convention).
+  groupKeys?: LegendKey[];
   continuousColorKey?: string;
   legendDisplayNames: Partial<Record<LegendKey, string>>;
   legendTitle?: string | null;
@@ -52,6 +64,11 @@ interface Props {
   palette?: DataExplorerColorPalette;
   xAxisFontSize?: number;
   yAxisFontSize?: number;
+  // When true, group tracks whose points are entirely null are kept as
+  // labeled "(no data)" placeholders instead of being dropped. Used by
+  // expanded plots so a paginated transcript window renders at full size even
+  // when the dataset doesn't measure every transcript in the window.
+  placeholderEmptyTracks?: boolean;
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -143,6 +160,8 @@ function PrototypeDensity1D({
   xKey,
   colorMap,
   colorData,
+  groupData,
+  groupKeys: groupKeysProp,
   continuousColorKey,
   legendDisplayNames,
   legendTitle,
@@ -163,6 +182,7 @@ function PrototypeDensity1D({
   palette = DEFAULT_PALETTE,
   xAxisFontSize = 14,
   yAxisFontSize = 14,
+  placeholderEmptyTracks = false,
   Plotly,
 }: any) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -226,13 +246,43 @@ function PrototypeDensity1D({
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
     const colorKeys = [...colorMap.keys()];
+    // Group side (drives track assignment). Falls back to color side when
+    // not supplied, preserving existing behavior for callers that don't
+    // distinguish group from color.
+    const effectiveGroupData = groupData ?? colorData;
+    // Annotate explicitly: the component params are typed `any` (see the
+    // `}: any)` signature), so groupKeysProp/colorKeys arrive as `any` and the
+    // downstream .map/.filter callbacks would otherwise be implicitly-any.
+    // Pinning the element type here types the whole violin-trace chain.
+    const effectiveGroupKeys: LegendKey[] = groupKeysProp ?? colorKeys;
     const x = data[xKey] as number[];
-    const y = calcY(x, colorKeys, colorData, hiddenLegendValues);
+    const y = calcY(
+      x,
+      effectiveGroupKeys,
+      effectiveGroupData,
+      hiddenLegendValues
+    );
     const text = hoverTextKey ? data[hoverTextKey] : null;
     const annotationText = annotationTextKey ? data[annotationTextKey] : null;
     const visible = pointVisibility ?? x.map(() => true);
 
     const contColorData = data[continuousColorKey];
+
+    // Continuous color: order points so the smallest-population bins draw last
+    // (on top) and null points on the bottom, matching PrototypeScatterPlot.
+    // The reorder lives inside the single continuous trace, so contTraceIndex
+    // maps a clicked/selected position back to the original point index. For
+    // continuous color, colorData is already the per-point bin-key series.
+    const contTraceIndex =
+      contColorData && colorData
+        ? orderContinuousPointsByBin(
+            contColorData,
+            colorData,
+            colorMap,
+            visible
+          )
+        : [];
+
     const hasColorOptionsEnabled = colorKeys[0] !== LEGEND_ALL;
 
     const isSelectionMode =
@@ -292,9 +342,36 @@ function PrototypeDensity1D({
 
     const defaultTrace = hasColorOptionsEnabled ? null : templateTrace;
 
+    // Paint order for categorical color groups. We stack so the smallest
+    // groups end up on top and the catch-all "Other" group on the bottom,
+    // matching the scatter path (getSolidColorGroups). plotlyData is reversed
+    // below, so the first key here is drawn last (on top): we sort ascending
+    // by visible-point count and pin LEGEND_OTHER to the end. Membership and
+    // color assignment are unchanged — this only reorders the traces, which
+    // matters once color groups span multiple stacks (group_by !== color_by).
+    const orderedColorKeys = (() => {
+      if (!colorMap || !colorData) {
+        return [] as LegendKey[];
+      }
+      const counts = new Map<LegendKey, number>();
+      for (let i = 0; i < colorData.length; i += 1) {
+        if (visible[i] === false) {
+          continue;
+        }
+        const k = colorData[i] as LegendKey;
+        counts.set(k, (counts.get(k) ?? 0) + 1);
+      }
+      const keys = [...colorMap.keys()];
+      const others = keys.filter((key) => key === LEGEND_OTHER);
+      const rest = keys
+        .filter((key) => key !== LEGEND_OTHER)
+        .sort((a, b) => (counts.get(a) ?? 0) - (counts.get(b) ?? 0));
+      return [...rest, ...others];
+    })();
+
     const colorTraces =
       colorMap && colorData && !contColorData
-        ? [...colorMap.keys()].map((key) =>
+        ? orderedColorKeys.map((key) =>
             makeColorTrace(
               colorMap.get(key)!,
               (i) => colorMap.get(key) === colorMap.get(colorData[i])
@@ -306,13 +383,27 @@ function PrototypeDensity1D({
     const continuousColorTrace = contColorData
       ? {
           ...templateTrace,
+          x: contTraceIndex.map((i) => (visible[i] ? x[i] : null)),
+          y: contTraceIndex.map((i) => y[i]),
+          text: text ? contTraceIndex.map((i) => text[i]) : text,
+          // selectedpoints are indices into the (reordered) trace, so map each
+          // selected original index to its position in contTraceIndex.
+          selectedpoints: contTraceIndex.reduce(
+            (acc: number[], origIndex, i) => {
+              if (selectedPoints?.has(origIndex)) {
+                acc.push(i);
+              }
+              return acc;
+            },
+            []
+          ),
           hoverlabel: {
-            bgcolor: colorData.map((key: LegendKey) => colorMap.get(key)),
+            bgcolor: contTraceIndex.map((i) => colorMap.get(colorData[i])),
           },
           marker: {
             size: pointSize,
-            color: contColorData.map(
-              (c: number | null) => c ?? hexToRgba(palette.other, pointOpacity)
+            color: contTraceIndex.map(
+              (i) => contColorData[i] ?? hexToRgba(palette.other, pointOpacity)
             ),
             colorscale: palette.sequentialScale.map(
               ([value, color]: [string, string]) => [
@@ -322,8 +413,8 @@ function PrototypeDensity1D({
             ),
             line: {
               width: outlineWidth,
-              color: contColorData.map(
-                (c: number | null) => c ?? palette.other
+              color: contTraceIndex.map(
+                (i) => contColorData[i] ?? palette.other
               ),
               colorscale: palette.sequentialScale,
             },
@@ -361,10 +452,15 @@ function PrototypeDensity1D({
       showlegend: false,
     } as Partial<ViolinData>;
 
-    const violinTraces = colorKeys
+    const violinTraces = effectiveGroupKeys
       .filter((key) => !hiddenLegendValues.has(key))
       .map((legendKey, index) => {
-        let fillcolor = colorMap.get(legendKey);
+        // In the converged case (group_by === color_by, default) the
+        // group key IS a color key and lives in colorMap. In the divergent
+        // case (group_by ≠ color_by) the group key may not be in colorMap;
+        // fall back to a neutral fill so the violin is still drawn but
+        // doesn't fight with the per-point colors that carry the legend.
+        let fillcolor = colorMap.get(legendKey) ?? palette.other;
 
         if (useSemiOpaqueViolins) {
           fillcolor += "88";
@@ -372,19 +468,45 @@ function PrototypeDensity1D({
 
         return {
           ...templateViolin,
-          name: legendDisplayNames[legendKey],
-          x: colorData
-            ? x.filter((_: any, i: number) => colorData[i] === legendKey)
+          // The "all" bucket is the ungrouped sentinel (a single track holding
+          // every point); it carries no meaningful group label, so render it
+          // blank rather than leaking the raw Symbol(All) into the y-axis tick.
+          name:
+            legendKey === LEGEND_ALL
+              ? ""
+              : legendDisplayNames[legendKey] ?? String(legendKey),
+          x: effectiveGroupData
+            ? x.filter(
+                (_: any, i: number) => effectiveGroupData[i] === legendKey
+              )
             : x,
-          y0: colorKeys.length - hiddenLegendValues.size - index,
+          y0: effectiveGroupKeys.length - hiddenLegendValues.size - index,
           fillcolor,
         };
       })
-      .filter((trace) => !isEveryValueNull(trace.x));
+      // A track whose points are entirely null normally gets dropped (an empty
+      // violin is noise). But for expanded plots that drop is what makes a
+      // paginated window look short: a transcript the dataset doesn't measure
+      // is all-null. When `placeholderEmptyTracks` is set we instead keep it as
+      // a labeled "(no data)" slot — its y0 position is already reserved, so it
+      // just fills the gap the drop would have left. BANDAID tied to the
+      // interim pagination stopgap.
+      .map((trace) =>
+        placeholderEmptyTracks && isEveryValueNull(trace.x)
+          ? {
+              ...trace,
+              // Prepend, not append: the y-axis ticktext truncates each name to
+              // ~25 chars and a transcript label alone already exceeds that, so
+              // an appended marker gets cut off. Leading "(no data)" survives.
+              name: trace.name ? `(no data) ${trace.name}` : "(no data)",
+            }
+          : trace
+      )
+      .filter((trace) => placeholderEmptyTracks || !isEveryValueNull(trace.x));
 
     // Add an extra violin with a light outline to make
     // it stand out on top many dark-colored points.
-    const violinOutlineTraces = colorKeys
+    const violinOutlineTraces = effectiveGroupKeys
       .filter((key) => !hiddenLegendValues.has(key))
       .map((legendKey, index) => {
         return {
@@ -392,10 +514,12 @@ function PrototypeDensity1D({
           line: { color: hexToRgba("#fff", 0.5), width: 4 },
           meanline: { visible: false },
           fillcolor: "transparent",
-          x: colorData
-            ? x.filter((_: any, i: number) => colorData[i] === legendKey)
+          x: effectiveGroupData
+            ? x.filter(
+                (_: any, i: number) => effectiveGroupData[i] === legendKey
+              )
             : x,
-          y0: colorKeys.length - hiddenLegendValues.size - index,
+          y0: effectiveGroupKeys.length - hiddenLegendValues.size - index,
         } as any;
       });
 
@@ -418,6 +542,12 @@ function PrototypeDensity1D({
         ...colorTraces,
       ] as Partial<PlotData>[]).includes(plotlyData[n]);
     };
+
+    // The continuous trace is the only one whose points are reordered, so its
+    // plotly pointIndex must be mapped back through contTraceIndex.
+    const isContinuousCurve = (n: number) =>
+      continuousColorTrace !== null &&
+      (plotlyData[n] as any) === continuousColorTrace;
 
     const collapseLeftMargin = violinTraces.length === 1;
 
@@ -455,8 +585,8 @@ function PrototypeDensity1D({
         ...(axes.current.yaxis || { autorange: true }),
 
         visible:
-          Boolean(colorData) &&
-          colorData.length > 0 &&
+          Boolean(effectiveGroupData) &&
+          effectiveGroupData.length > 0 &&
           violinTraces.length < 40,
         automargin: true,
         tickvals: violinTraces.map((vt) => vt.y0),
@@ -611,7 +741,12 @@ function PrototypeDensity1D({
         e.event.ctrlKey || e.event.metaKey || e.event.shiftKey;
 
       if (isClickableTrace(curveNumber) && onClickPoint) {
-        onClickPoint(pointIndex, anyModifier);
+        onClickPoint(
+          isContinuousCurve(curveNumber)
+            ? contTraceIndex[pointIndex]
+            : pointIndex,
+          anyModifier
+        );
       }
 
       // WORKAROUND: If you mean to double-click to zoom out and
@@ -638,7 +773,11 @@ function PrototypeDensity1D({
           .filter(
             (p) => p.data.hoverinfo !== "skip" && p.data.hoverinfo !== "none"
           )
-          .map((p) => p.pointIndex) || [];
+          .map((p) =>
+            isContinuousCurve(p.curveNumber)
+              ? contTraceIndex[p.pointIndex]
+              : p.pointIndex
+          ) || [];
 
       assignAnnotationPositions(points);
       onMultiselect(points);
@@ -751,6 +890,8 @@ function PrototypeDensity1D({
     xKey,
     colorMap,
     colorData,
+    groupData,
+    groupKeysProp,
     continuousColorKey,
     legendDisplayNames,
     legendTitle,
@@ -771,6 +912,7 @@ function PrototypeDensity1D({
     palette,
     xAxisFontSize,
     yAxisFontSize,
+    placeholderEmptyTracks,
     Plotly,
   ]);
 

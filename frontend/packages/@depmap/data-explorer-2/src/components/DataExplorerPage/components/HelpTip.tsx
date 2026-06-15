@@ -148,6 +148,38 @@ const tips = {
       </div>
     ),
   },
+
+  "temp-pagination-help": {
+    placement: "right",
+    title: "Temporary pagination",
+    content: (
+      <div>
+        <p>
+          This is a stopgap solution for viewing long lists of transcripts. Use
+          this dropdown to move through them one “page” at a time. The page size
+          is controlled by “Max transcripts to show” below.
+        </p>
+        <p>
+          This is obviously not ideal but it gets the job done for now. I plan
+          to replace this with a table view where you can hand pick the
+          transcripts you’re interested in based on computed statistics.
+        </p>
+      </div>
+    ),
+  },
+
+  "temp-transcripts-by-gene": {
+    placement: "right",
+    title: "Start here",
+    content: (
+      <div>
+        <p>
+          Select a gene and all of its transcripts will automatically be
+          fetched.
+        </p>
+      </div>
+    ),
+  },
 };
 
 type HelpTipId = keyof typeof tips;
