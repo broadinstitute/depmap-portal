@@ -36,7 +36,7 @@ def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
     # Mapping legacy names back to breadbox IDs
     legacy_to_breadbox = {
         "Prism_oncology_AUC": "PRISMOncologyReferenceLog2AUCMatrix",
-        "Prism_oncology_AUC_seq": "PRISMOncologyReferenceSeqLog2AUCMatrix",
+        "Prism_oncology_seq_AUC": "PRISMOncologyReferenceSeqLog2AUCMatrix",
         "Rep_all_single_pt": "Rep_all_single_pt_per_compound",
         "CTRP_AUC": "CTRP_AUC_collapsed",
         "GDSC1_AUC": "GDSC1_AUC_collapsed",
