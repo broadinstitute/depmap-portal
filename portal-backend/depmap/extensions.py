@@ -16,6 +16,7 @@ from .methylation.extension import MethylationDbExtension
 from depmap.cansar.extension import CansarExtension
 from depmap.breadbox_shim.extension import BreadboxClientExtension
 from functools import wraps
+from depmap.flask_turnstile import Turnstile
 
 bcrypt = Bcrypt()
 csrf_protect = CSRFProtect()
@@ -26,6 +27,7 @@ in_memory_cache = Cache()
 debug_toolbar = DebugToolbarExtension()
 exception_reporter = ExceptionReporter()
 markdown = Markdown
+turnstile = Turnstile()
 humanize = Humanize
 methylation_db = MethylationDbExtension()
 cansar = CansarExtension()

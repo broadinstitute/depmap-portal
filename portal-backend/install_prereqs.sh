@@ -25,13 +25,13 @@ done
 source setup_env.sh
 
 # install python requirements
-pyenv install "$(cat .python-version)"
+pyenv install -s "$(cat .python-version)"
 poetry env use "$(pyenv which python)"
 poetry install
 
 # generate python version of shared constants between frontend and backend
-python ../depmap-shared/generate-py ../depmap-shared/color_palette.json depmap/utilities/_color_palette.py
-python ../depmap-shared/generate-ts-from-schema.py ../pipeline/scripts/format_models.py schema ModelAnnotation ../frontend/packages/portal-frontend/src/cellLine/models/ModelAnnotation.ts
+poetry run python ../depmap-shared/generate-py ../depmap-shared/color_palette.json depmap/utilities/_color_palette.py
+poetry run python ../depmap-shared/generate-ts-from-schema.py ../pipeline/preprocessing-pipeline/scripts/format_models.py schema ModelAnnotation ../frontend/packages/portal-frontend/src/cellLine/models/ModelAnnotation.ts
 
 # install static assets used by depmap
 yarn --cwd depmap install --modules-folder static/libs
@@ -40,7 +40,7 @@ yarn --cwd depmap install --modules-folder static/libs
 yarn --cwd ../frontend install
 
 # Bundle and minify static css assets (like global.css)
-./flask assets build
+poetry run ./flask assets build
 
 # delete any old hooks because we want all hooks managed by pre-commit
 rm -rf .git/hooks
