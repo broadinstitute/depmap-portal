@@ -4,6 +4,7 @@ import urllib.parse
 import requests
 from flask import Blueprint, redirect, render_template, request
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
+from typing import cast, Optional
 
 
 class Turnstile:
@@ -21,12 +22,19 @@ class Turnstile:
         )
 
         def verify():
-            token = request.form.get("cf-turnstile-response", "")
-            next_url = request.form.get("next_url", "/")
+            parameters: dict[str, Optional[str]] = cast(
+                dict[str, Optional[str]], request.form
+            )
+            token = parameters.get("cf-turnstile-response", "")
+            next_url = parameters.get("next_url", "/")
+            assert isinstance(next_url, str)
+
+            request_url: str = cast(str, request.url)
+            assert isinstance(request_url, str)
 
             parsed = urllib.parse.urlparse(next_url)
             if parsed.scheme or parsed.netloc:
-                req_parsed = urllib.parse.urlparse(request.url)
+                req_parsed = urllib.parse.urlparse(request_url)
                 if (
                     parsed.scheme != req_parsed.scheme
                     or parsed.netloc != req_parsed.netloc
@@ -74,14 +82,15 @@ class Turnstile:
             if request.endpoint == "verify_turnstile.verify":
                 return None
 
-            bypass_patterns = app.config.get("TURNSTILE_BYPASS", [])
-            print("request.path", request.path)
+            bypass_patterns: list[str] = app.config.get("TURNSTILE_BYPASS", [])
+            request_path: str = cast(str, request.path)
+            assert isinstance(request_path, str)
             for pattern in bypass_patterns:
-                if re.match(pattern, request.path):
+                if re.match(pattern, request_path):
                     print("Bypassing due to", pattern)
                     return None
 
-            cookie_value = request.cookies.get("PROBABLY_HUMAN")
+            cookie_value = request.cookies.get("PROBABLY_HUMAN")  # pyright: ignore
             if cookie_value:
                 signer = TimestampSigner(app.config["SECRET_KEY"])
                 max_age = app.config.get("TURNSTILE_COOKIE_EXPIRY", 604800)
