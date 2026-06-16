@@ -362,7 +362,7 @@ class Config(object):
     # just uncomment the below
     # TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
     # TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA"
-    TURNSTILE_BYPASS = [".*/static/.*", "^/$", "^/terms_text$"]
+    TURNSTILE_BYPASS = [".*/static/.*", "^/$", "^/terms_text$", "^/search/.*"]
 
 
 class RemoteConfig(Config):

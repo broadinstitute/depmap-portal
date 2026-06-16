@@ -6,6 +6,10 @@ from flask import Blueprint, redirect, render_template, request
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
 from typing import cast, Optional
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 class Turnstile:
     def __init__(self, app=None):
@@ -16,6 +20,8 @@ class Turnstile:
         for key in ("TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY", "SECRET_KEY"):
             if not app.config.get(key):
                 raise RuntimeError(f"Flask-Turnstile requires {key} in app.config")
+
+        #        app_prefix = app.config.get("APPLICATION_ROOT", "")
 
         blueprint = Blueprint(
             "verify_turnstile", __name__, template_folder="templates",
@@ -87,8 +93,11 @@ class Turnstile:
             assert isinstance(request_path, str)
             for pattern in bypass_patterns:
                 if re.match(pattern, request_path):
-                    print("Bypassing due to", pattern)
+                    log.warning(
+                        f"Bypassing {request_path} because it matches {pattern}"
+                    )
                     return None
+            log.warning(f"Does not match any bypass pattern {request_path}")
 
             cookie_value = request.cookies.get("PROBABLY_HUMAN")  # pyright: ignore
             if cookie_value:
