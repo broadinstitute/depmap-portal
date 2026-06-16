@@ -93,11 +93,11 @@ class Turnstile:
             assert isinstance(request_path, str)
             for pattern in bypass_patterns:
                 if re.match(pattern, request_path):
-                    log.warning(
-                        f"Bypassing {request_path} because it matches {pattern}"
-                    )
+                    # log.warning(
+                    #     f"Bypassing {request_path} because it matches {pattern}"
+                    # )
                     return None
-            log.warning(f"Does not match any bypass pattern {request_path}")
+            # log.warning(f"Does not match any bypass pattern {request_path}")
 
             cookie_value = request.cookies.get("PROBABLY_HUMAN")  # pyright: ignore
             if cookie_value:
