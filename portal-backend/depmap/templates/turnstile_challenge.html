@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>DepMap — Verification</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #f4f5f7;
+      font-family: "Inter", system-ui, sans-serif;
+      color: #0f172a;
+    }
+
+    .page {
+      width: 100%;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: #ffffff;
+      border-radius: 14px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 12px 32px -16px rgba(15, 23, 42, .18);
+      padding: 40px 44px 32px;
+    }
+
+    .eyebrow {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: #475569;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #1f8a5b;
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-size: 30px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin: 0 0 12px;
+      line-height: 1.15;
+    }
+
+    .body-text {
+      font-size: 15px;
+      color: #475569;
+      line-height: 1.55;
+      margin: 0 0 12px;
+    }
+
+    .body-text:last-of-type {
+      margin-bottom: 24px;
+    }
+
+    .body-text a {
+      color: #0f172a;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .widget-row {
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 14px 16px;
+      background: #fafbfc;
+      display: flex;
+      align-items: center;
+      min-height: 65px;
+    }
+
+    .error-banner {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 13.5px;
+      color: #b91c1c;
+      margin-bottom: 16px;
+    }
+
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 24px;
+    }
+
+    .btn-enter {
+      background: #0f172a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 28px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: .01em;
+      font-family: inherit;
+    }
+
+    .btn-enter:hover {
+      background: #1e293b;
+    }
+
+    .footer {
+      margin-top: 22px;
+      padding-top: 18px;
+      border-top: 1px solid #f1f5f9;
+    }
+
+    .cookie-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    .cookie-note svg {
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="card">
+      <div class="eyebrow">
+        <span class="eyebrow-dot"></span>
+        <span>Cancer Dependency Map Portal</span>
+      </div>
+
+      <h1>Quick check before you enter</h1>
+
+      <p class="body-text">
+        We&rsquo;re verifying you&rsquo;re a person, not a bot. This helps
+        keep the portal responsive for researchers.
+      </p>
+      <p class="body-text">
+        Need DepMap data in bulk? You&rsquo;re always welcome to grab
+        everything from the <a href="/data_page">downloads section</a> &mdash;
+        please don&rsquo;t scrape the portal.
+      </p>
+
+      {% if error %}
+      <div class="error-banner">
+        Verification failed. Please try again.
+      </div>
+      {% endif %}
+
+      <form method="POST" action="{{ url_for('verify_turnstile.verify') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        <input type="hidden" name="next_url" value="{{ next_url }}" />
+        <div class="widget-row">
+          <div class="cf-turnstile" data-sitekey="{{ site_key }}"></div>
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="btn-enter">Enter DepMap &rarr;</button>
+        </div>
+      </form>
+
+      <div class="footer">
+        <div class="cookie-note">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+            <rect x="4" y="11" width="16" height="10" rx="2"/>
+            <path d="M8 11V7a4 4 0 1 1 8 0v4"/>
+          </svg>
+          <span>Cookies must be enabled to access this site.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
