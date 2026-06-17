@@ -7,6 +7,7 @@ def load_data(
     model_taiga_id,
     oncotree_taiga_id,
     molecular_subtype_tree_taiga_id,
+    molecular_subtypes_taiga_id,
     genetic_subtypes_whitelist,
 ):
     """
@@ -22,7 +23,9 @@ def load_data(
 
         - oncotree (pandas df): Oncotree as a result of calling its API and storing on taiga
 
-        - molecular_subtype_tree_taiga_id (pandas df): The hierarchy of molecular subtypes
+        - molecular_subtype_hierarchy (pandas df): The hierarchy of molecular subtypes
+
+        - molecular_subtypes (pandas df): Omics Inferred Molecular Subtype matrix
 
         - gs_whitelist (pandas df): The whitelist of custom nodes that are defined by
             a genetic subtype and will be added as a node in the lineage-based tree
@@ -74,9 +77,11 @@ def load_data(
     ## Load genetic subtypes
     mol_subtype_hierarchy = tc.get(molecular_subtype_tree_taiga_id)
 
+    molecular_subtypes = tc.get(molecular_subtypes_taiga_id).set_index("ModelID")
+
     gs_whitelist = tc.get(genetic_subtypes_whitelist)
 
-    return models, oncotree, mol_subtype_hierarchy, gs_whitelist
+    return models, oncotree, mol_subtype_hierarchy, molecular_subtypes, gs_whitelist
 
 
 def create_table_from_hierarchy(
@@ -421,7 +426,7 @@ def create_subtype_tree_with_names(subtype_tree):
     return subtype_formatted
 
 
-def sanity_check_results(subtype_tree):
+def sanity_check_results(subtype_tree, molecular_subtypes):
     """
     A function to make sure that the final result of the subtype tree does not
     break any assumptions/rules that are used by the portal
@@ -452,18 +457,30 @@ def sanity_check_results(subtype_tree):
     # assert that node names are unique
     assert all(subtype_tree.groupby("NodeName").size() == 1)
 
+    # assert that all columns in the OmicsInferredMolecularSubtype Matrix have
+    # a node in the tree
+    assert (
+        set(
+            molecular_subtypes.columns
+        ).issubset(set(
+            subtype_tree.NodeName.values
+        ))
+    )
+
 
 ### MAIN FUNCTION ###
 def create_subtype_tree(
     model_taiga_id,
     oncotree_taiga_id,
     molecular_subtype_tree_taiga_id,
+    molecular_subtypes_taiga_id,
     genetic_subtypes_whitelist,
 ):
-    models, oncotree, mol_subtype_hierarchy, gs_whitelist = load_data(
+    models, oncotree, mol_subtype_hierarchy, molecular_subtypes, gs_whitelist = load_data(
         model_taiga_id,
         oncotree_taiga_id,
         molecular_subtype_tree_taiga_id,
+        molecular_subtypes_taiga_id,
         genetic_subtypes_whitelist,
     )
 
@@ -506,7 +523,7 @@ def create_subtype_tree(
     subtype_tree = create_subtype_tree_with_names(all_subtypes)
 
     # Verify results
-    sanity_check_results(subtype_tree)
+    sanity_check_results(subtype_tree, molecular_subtypes)
 
     return subtype_tree
 
@@ -519,6 +536,9 @@ if __name__ == "__main__":
         "molecular_subtypes_hierarchy", help="Taiga ID of Molecular Subtype Hierarchy"
     )
     parser.add_argument(
+        "molecular_subtypes", help="Taiga ID of OmicsInferredMolecularSubtype Matrix"
+    )
+    parser.add_argument(
         "genetic_subtypes_whitelist",
         help="Taiga ID of lineage-based genetic subtype whitelist",
     )
@@ -529,6 +549,7 @@ if __name__ == "__main__":
         args.model,
         args.oncotree,
         args.molecular_subtypes_hierarchy,
+        args.molecular_subtypes,
         args.genetic_subtypes_whitelist,
     )
 
