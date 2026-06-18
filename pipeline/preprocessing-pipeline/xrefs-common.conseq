@@ -138,12 +138,6 @@ add-if-missing {
   "dataset_id": "total-proteome--5c50.1/protein_quant_current_normalized"
 }
 
-# Temp 
-add-if-missing {
-  "type": "hgnc-snapshot",
-  "dataset_id": "hgnc-gene-table-e250.3/hgnc_complete_set"
-}
-
 # To generate a new version please run scripts/oncokb_maf_annotator.py
 # Oncokb annotated mutations maf
 add-if-missing {
