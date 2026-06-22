@@ -20,6 +20,9 @@ import anyio.to_thread
 from typing import Any, Callable, Awaitable
 
 from fastapi.responses import JSONResponse
+import logging
+
+log = logging.getLogger(__name__)
 
 MAX_PENDING_SQL_QUERIES = 5
 SQL_QUERY_TIMELIMIT = 30
@@ -145,12 +148,17 @@ async def query_sql(
                 time_limit=SQL_QUERY_TIMELIMIT,
             )
         except TimeLimitExceeded:
+            log.warning(
+                f"This query took too long to executed and was aborted: {query.sql}"
+            )
             return JSONResponse(
                 status_code=504,
                 content={
                     "detail": "The SQL query took too long to execute and was terminated"
                 },
             )
+        except Exception as e:
+            raise Exception(f"Exception executing sql query {query.sql}") from e
 
         assert isinstance(output_file, str)
         return CSVFileResponse(output_file)
