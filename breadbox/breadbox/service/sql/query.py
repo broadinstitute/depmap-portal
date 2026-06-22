@@ -12,6 +12,8 @@ from typing import (
     Sequence,
     Dict,
 )
+from breadbox.models.dataset import ValueType
+import json
 
 from breadbox.db.session import SessionWithUser
 from ...schemas.custom_http_exception import UserError
@@ -285,6 +287,10 @@ def query_matrix_dataset(db, filestore_location, dataset_id, **constraints):
     df = dataset_service.get_subsetted_matrix_dataset_df(
         db, matrix_dataset, matrix_dimensions_info, filestore_location,
     )
+
+    # cannot retrun list of strings back to sqlite so convert them
+    if matrix_dataset.value_type == ValueType.list_strings:
+        df = df.map(json.dumps)
 
     for sample_id in df.index:
         for feature_id in df.columns:
