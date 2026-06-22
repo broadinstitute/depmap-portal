@@ -6,7 +6,7 @@ from .router import router
 from fastapi import APIRouter, Body, Depends, HTTPException
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.crud import dataset as dataset_crud
-from breadbox.schemas.custom_http_exception import ResourceNotFoundError
+from breadbox.schemas.custom_http_exception import ResourceNotFoundError, UserError
 from ...config import get_settings, Settings
 from ...db.session import SessionWithUser
 from ...service.sql import generate_simulated_schema, execute_sql_in_virtual_db
@@ -157,7 +157,10 @@ async def query_sql(
                     "detail": "The SQL query took too long to execute and was terminated"
                 },
             )
+        except UserError as e:
+            raise
         except Exception as e:
+            breakpoint()
             raise Exception(f"Exception executing sql query {query.sql}") from e
 
         assert isinstance(output_file, str)

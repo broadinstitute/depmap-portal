@@ -142,7 +142,10 @@ def test_overlapping_samples(
 
 
 def test_list_of_strings_matrix_query(
-    minimal_db: SessionWithUser, settings, client: TestClient
+    minimal_db: SessionWithUser,
+    settings,
+    client: TestClient,
+    mock_run_time_bounded_celery_task,
 ):
     # list of strings is a little wierd (although rare) so explicitly test this case as well.
 
