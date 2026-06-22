@@ -113,7 +113,7 @@ function SlicePreview({
 
   if (!column) {
     return (
-      <div className={styles.previewPlaceholder}>
+      <div className={styles.previewPlaceholder} data-preview-placeholder>
         <i>a data preview will appear here</i>
       </div>
     );

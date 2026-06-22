@@ -18,7 +18,8 @@ export type ColorByValue =
   | "raw_slice"
   | "aggregated_slice"
   | "property"
-  | "custom";
+  | "custom"
+  | "expansion";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DataExplorerContextExpression = Record<string, any> | boolean;
@@ -39,6 +40,14 @@ export type DataExplorerContextV2 = {
 
 export type DataExplorerAnonymousContext = Omit<DataExplorerContext, "name">;
 
+// Despite its name, `aggregation` is really a resolution-mode discriminator:
+// how an axis turns a slice_type into per-index values. Most members are true
+// statistical aggregations, but "first" (take-first selection) and
+// "correlation" (a correlation_heatmap mode) are not, and "expansion" (below)
+// is the third non-aggregation. The Breadbox boundary rejects all three
+// non-aggregations explicitly. A future rename to something more general
+// (e.g. `processor`/`mapping`), with translation for old saved plots, is
+// possible; until then this is the deliberate, documented home for all of them.
 export type DataExplorerAggregation =
   | "first"
   | "correlation"
@@ -46,7 +55,15 @@ export type DataExplorerAggregation =
   | "median"
   | "25%tile"
   | "75%tile"
-  | "stddev";
+  | "stddev"
+  // Sentinel — NOT a real aggregation; if anything, the opposite. It marks an
+  // axis whose per-pair values come from an expansion (fetchExpandedPlot), not
+  // from aggregating a slice. It rides on the required `aggregation` field to
+  // preserve that field's always-present invariant without restructuring the
+  // dimension type. Identity check: `dim.aggregation === "expansion"` (see
+  // isExpansionDimension). It must NEVER reach Breadbox: the materializer
+  // guards and the getMatrixDatasetData trap enforce that.
+  | "expansion";
 
 export type DimensionKey = "x" | "y" | "color";
 export type FilterKey =
@@ -90,6 +107,86 @@ export interface DataExplorerPlotResponseDimension {
   slice_type: string;
   values: number[];
   value_type: "continuous" | "text" | "categorical" | "list_strings";
+  // The dimension's units as reported by Breadbox (e.g. "log2(TPM+1)"). The
+  // sentinel "unitless" is a real Breadbox value and is also used here for any
+  // dimension with no meaningful units (rank axes, correlation coefficients,
+  // categorical/color dimensions, error placeholders). `string` already covers
+  // "unitless"; it is named in the type so the UI can switch on it explicitly.
+  units: "unitless" | string;
+}
+
+// A single expansion: fans each index entity out into one point per member of
+// `context` (e.g. depmap_model × transcript). `expand_by` is a plot-level
+// concept (not a per-axis flag) by design. The count is currently capped at
+// one by the materializer; the type is an array to leave room for
+// multi-expansion, which is deferred (see fetchExpandedPlot's header). `limit`
+// bounds the fan-out for browser safety and keeps the plot self-describing;
+// the UI seeds a default and a separate hard ceiling is enforced at the
+// materializer. The axis that *reads* each per-pair value is the one carrying
+// the "expansion" sentinel on `aggregation`.
+export interface DataExplorerExpandBy {
+  slice_type: string;
+  context: DataExplorerContextV2;
+  limit: number;
+  // Pagination window start, in context order (0-based; defaults to 0). With
+  // `limit` as the page size, the fetcher materializes members
+  // [offset, offset + min(limit, MAX_EXPANSION_MEMBERS)). Interim: this is a
+  // contiguous-range stopgap that will be retired once the user can select an
+  // explicit member subset (at which point `context` becomes that subset and
+  // `offset` goes away).
+  offset?: number;
+}
+
+export interface DataExplorerExpandedPlotConfig {
+  index_type: string;
+  dimensions: Record<string, DataExplorerPlotConfigDimension>;
+  expand_by: DataExplorerExpandBy[]; // length 0 or 1 today (one expansion)
+  filters?: DataExplorerFilters;
+  metadata?: DataExplorerMetadata;
+}
+
+export interface DataExplorerExpansion {
+  // Identity. The "points-index" — i.e. the per-cell entity id for this
+  // expansion axis. Parallel to the response's index_ids.
+  ids: string[];
+
+  // Human-readable display labels, parallel to `ids`.
+  labels: string[];
+
+  // The dimension type's id column name from Breadbox
+  // (e.g. "ensembl_transcript_id"). Mirrors `index_id_column` at the
+  // expansion level. Used to make bare ids legible in hover text.
+  id_column?: string;
+
+  // The dimension type's human-readable display name from Breadbox
+  // (e.g. "Transcript", "Gene"). Mirrors `index_display_name` at the
+  // expansion level. Preferred over `slice_type` as a prefix in
+  // display contexts because slice_type is a machine-readable name
+  // ("transcript") while display_name is the curated label
+  // ("Transcript").
+  display_name?: string;
+
+  // The slice_type this expansion is over (e.g. "transcript").
+  slice_type: string;
+
+  // Number of distinct expansion members the context yielded *before* the
+  // limit/ceiling was applied. `ids`/`labels` reflect the (possibly truncated)
+  // shown set, so the UI can surface "showing K of total_available".
+  total_available?: number;
+
+  // True when members were dropped to satisfy the cap (i.e. total_available
+  // exceeded min(expand_by.limit, MAX_EXPANSION_MEMBERS)). Truncation is
+  // currently arbitrary (first-N in context order); a "most interesting
+  // members" selection is a planned follow-up.
+  truncated?: boolean;
+}
+
+export interface DataExplorerExpandedPlotResponse
+  extends DataExplorerPlotResponse {
+  // Parallel to index_ids/index_labels. Length 0 or 1 today (one expansion).
+  // Each entry's `ids`/`labels` arrays have the same N×M length as
+  // index_ids/index_labels.
+  expansions: DataExplorerExpansion[];
 }
 
 // A DataExplorerPlotConfig is an object with all the configurable parameters
@@ -100,7 +197,23 @@ export interface DataExplorerPlotConfig {
   plot_type: DataExplorerPlotType;
   index_type: string;
   dimensions: Partial<Record<DimensionKey, DataExplorerPlotConfigDimension>>;
+
+  // At most one expansion (see DataExplorerExpandBy). When present, the plot's
+  // point set fans from N index entities to N×M (entity, expansion-member)
+  // pairs. Absent or empty means an ordinary single-axis plot.
+  expand_by?: DataExplorerExpandBy[];
   color_by?: ColorByValue;
+
+  // `group_by` controls which per-point categorical drives spatial
+  // grouping (violin tracks in density_1d, x-position clustering in
+  // waterfall) — separately from `color_by`, which drives point colors.
+  // When unset, falls back to `color_by`, so existing configs preserve
+  // the historical conflation. Set explicitly when you want grouping
+  // and coloring to use different sources (e.g. group by lineage,
+  // color by transcript). Renderers that don't yet honor `group_by`
+  // simply ignore it.
+  group_by?: ColorByValue;
+
   filters?: DataExplorerFilters;
   metadata?: DataExplorerMetadata;
 
@@ -136,6 +249,12 @@ export interface DataExplorerPlotResponse {
   // text. Optional because some legacy code paths construct responses
   // without consulting Breadbox.
   index_id_column?: string;
+
+  // The dimension type's human-readable display name from Breadbox
+  // (e.g. "Cell Line", "Gene"). Preferred over `index_id_column` as a
+  // prefix in display contexts because it's uniformly legible across
+  // types. Optional for the same reason as `index_id_column`.
+  index_display_name?: string;
 
   // Real, stable identifiers from Breadbox. Use this for identity:
   // joins, lookups, selection state, filters, URL state, anything

@@ -142,19 +142,19 @@ export function ColorByTypeSelector({
   enable,
   value,
   plot_type,
-  slice_type,
+  index_type,
   onChange,
 }: {
   show: boolean;
   enable: boolean;
   value: string | null;
   plot_type: DataExplorerPlotType;
-  slice_type: string;
+  index_type: string;
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [sliceTypeLabel, setSliceTypeLabel] = useState(
-    getDimensionTypeLabel(slice_type)
+  const [indexTypeLabel, setIndexTypeLabel] = useState(
+    getDimensionTypeLabel(index_type)
   );
   useEffect(() => {
     (async () => {
@@ -165,37 +165,37 @@ export function ColorByTypeSelector({
         // instead of `display_name` until `getDimensionTypes()` has been cached.
         .then(() => {
           setTimeout(() => {
-            setSliceTypeLabel(getDimensionTypeLabel(slice_type));
+            setIndexTypeLabel(getDimensionTypeLabel(index_type));
           });
         });
     })();
-  }, [slice_type]);
+  }, [index_type]);
 
   const options: Partial<Record<ColorByValue, string>> = {
-    raw_slice: sliceTypeLabel,
+    raw_slice: indexTypeLabel,
   };
 
   const helpContent: React.ReactNode[] = [
     <p key={0}>
-      Choose <b>{sliceTypeLabel}</b> to color a single point.
+      Choose <b>{indexTypeLabel}</b> to color a single point.
     </p>,
   ];
 
-  if (slice_type !== "other") {
-    options.aggregated_slice = `${sliceTypeLabel} Context`;
+  if (index_type !== null) {
+    options.aggregated_slice = `${indexTypeLabel} Context`;
     helpContent.push(
       <p key={1}>
-        Choose <b>{sliceTypeLabel} Context</b> to color by membership in a
+        Choose <b>{indexTypeLabel} Context</b> to color by membership in a
         user-defined context.
       </p>
     );
   }
 
-  options.property = `${sliceTypeLabel} Annotation`;
+  options.property = `${indexTypeLabel} Annotation`;
   helpContent.push(
     <p key={2}>
-      Choose <b>{sliceTypeLabel} Annotation</b> to color by major properties of
-      the {sliceTypeLabel}, such as selectivity for genes or lineage for models.
+      Choose <b>{indexTypeLabel} Annotation</b> to color by major properties of
+      the {indexTypeLabel}, such as selectivity for genes or lineage for models.
     </p>
   );
 
@@ -215,7 +215,7 @@ export function ColorByTypeSelector({
             {["density_1d", "waterfall"].includes(plot_type)
               ? "Color & group by"
               : "Color by"}
-            {slice_type && (
+            {index_type && (
               <HelpTip id="color-by-help" customContent={helpContent} />
             )}
           </span>

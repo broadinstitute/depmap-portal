@@ -134,6 +134,18 @@ function showCodeSnippet(indexTypeName: string) {
   });
 }
 
+function openInBreadboxTable(indexTypeName: string) {
+  const json = JSON.stringify({
+    dimension_type: indexTypeName,
+    slices: initialSlices,
+  });
+
+  const encodedJson = btoa(json);
+  const url = `../breadbox/embed/table?q=${encodeURIComponent(encodedJson)}`;
+
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
 const App = () => {
   const [key, setKey] = useState(0);
   const [indexTypeName, setIndexTypeName] = useState(getIndexTypeNameFromUrl());
@@ -181,14 +193,20 @@ const App = () => {
             onChangeSlices={handleChangeSlices}
             renderCustomActions={() => {
               return (
-                <Button onClick={() => showCodeSnippet(indexTypeName)}>
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg"
-                    height="20"
-                    alt="convert to react component"
-                  />{" "}
-                  Export as React component
-                </Button>
+                <>
+                  <Button onClick={() => showCodeSnippet(indexTypeName)}>
+                    <img
+                      src="https://upload.wikimedia.org/wikipedia/commons/a/a7/React-icon.svg"
+                      height="20"
+                      alt="convert to react component"
+                    />{" "}
+                    Export as React component
+                  </Button>
+                  <Button onClick={() => openInBreadboxTable(indexTypeName)}>
+                    <span className="glyphicon glyphicon-new-window"/>{" "}
+                    Open as embedded table
+                  </Button>
+                </>
               );
             }}
           />

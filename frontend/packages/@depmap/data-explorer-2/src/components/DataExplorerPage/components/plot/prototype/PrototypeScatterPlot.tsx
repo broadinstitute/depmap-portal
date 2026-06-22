@@ -25,6 +25,7 @@ import {
   getRange,
   hexToRgba,
   LegendKey,
+  orderContinuousPointsByBin,
   RegressionLine,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
@@ -79,6 +80,7 @@ interface Props {
   customHoverinfo?: PlotData["hoverinfo"];
   hideXAxis?: boolean;
   hideXAxisGrid?: boolean;
+  showBuiltinLegend?: boolean;
   // optional styling
   pointSize?: number;
   pointOpacity?: number;
@@ -137,6 +139,32 @@ const moveSelectedPointsOnTopOfLines = (plot: HTMLDivElement) => {
   hoverlayer.style.transform = "translateX(8px)";
 };
 
+// These dummy traces exist only to force Plotly to add a legend with the
+// correct colors (there is no good way of rendering our custom legend as
+// part of the exported image).
+const getLegendTraces = (
+  legendForDownload: LegendInfo,
+  templateTrace: object & { marker: object }
+) =>
+  legendForDownload.items.map(({ name, hexColor }) => {
+    return {
+      ...templateTrace,
+      showlegend: true,
+      // HACK: Use a plot type of "indicator" rather than "scatter". This
+      // prevents a rare bug where these dummy traces interfere with the
+      // real ones and some points don't get rendered.
+      type: "indicator",
+      name: truncate(name),
+      x: [null], // Data doesn't matter but can't be completely empty
+      y: [null],
+      marker: {
+        ...templateTrace.marker,
+        color: hexColor,
+        line: { color: hexColor, width: 2 },
+      },
+    };
+  });
+
 function PrototypeScatterPlot({
   data,
   xKey,
@@ -165,6 +193,7 @@ function PrototypeScatterPlot({
   customHoverinfo = undefined,
   hideXAxis = false,
   hideXAxisGrid = false,
+  showBuiltinLegend = false,
   pointSize = 7,
   pointOpacity = 1.0,
   outlineWidth = 0.5,
@@ -282,10 +311,6 @@ function PrototypeScatterPlot({
     const contColorData: (number | null)[] = continuousColorKey
       ? data[continuousColorKey]
       : null;
-    const contColorValueCounts = categoricalDataToValueCounts(
-      contLegendKeys,
-      x.map(() => true)
-    );
     const hasColorOptionsEnabled = Boolean(
       color1 || color2 || catColorData || contColorData
     );
@@ -433,45 +458,25 @@ function PrototypeScatterPlot({
       const sortedAnnotationText: string[] = [];
       const remappedSelectedPoints: number[] = [];
 
-      const sortedBins = [...colorMap.keys()]
-        .sort(byValueCountOf(contColorValueCounts))
-        .reverse();
+      const order = orderContinuousPointsByBin(
+        contColorData,
+        contLegendKeys,
+        colorMap,
+        visible
+      );
 
-      contColorData
-        .map((value, origIndex) => ({
-          value,
-          origIndex,
-        }))
-        .sort((a, b) => {
-          const binIndexA = sortedBins.indexOf(contLegendKeys[a.origIndex]);
-          const binIndexB = sortedBins.indexOf(contLegendKeys[b.origIndex]);
-
-          if (binIndexA < binIndexB) {
-            return -1;
-          }
-
-          if (binIndexA > binIndexB) {
-            return 1;
-          }
-
-          if (a.value === b.value || a.value == null || b.value == null) {
-            return 0;
-          }
-
-          return a.value < b.value ? -1 : 1;
-        })
-        .forEach(({ origIndex }, i: number) => {
-          contTraceIndex.push(origIndex);
-          sortedX.push(templateTrace.x[origIndex]);
-          sortedY.push(templateTrace.y[origIndex]);
-          sortedColor.push(contColorData[origIndex]);
-          hoverColor.push(colorMap.get(contLegendKeys[origIndex])!);
-          sortedText.push(text[origIndex]);
-          sortedAnnotationText.push(annotationText[origIndex]);
-          if (selectedPoints?.has(origIndex)) {
-            remappedSelectedPoints.push(i);
-          }
-        });
+      order.forEach((origIndex, i) => {
+        contTraceIndex.push(origIndex);
+        sortedX.push(templateTrace.x[origIndex]);
+        sortedY.push(templateTrace.y[origIndex]);
+        sortedColor.push(contColorData[origIndex]);
+        hoverColor.push(colorMap.get(contLegendKeys[origIndex])!);
+        sortedText.push(text[origIndex]);
+        sortedAnnotationText.push(annotationText[origIndex]);
+        if (selectedPoints?.has(origIndex)) {
+          remappedSelectedPoints.push(i);
+        }
+      });
 
       continuousColorTrace = {
         ...templateTrace,
@@ -545,6 +550,12 @@ function PrototypeScatterPlot({
       .filter(Boolean)
       .reverse() as Partial<PlotData>[];
 
+    if (showBuiltinLegend) {
+      getLegendTraces(legendForDownload!, templateTrace).forEach((t) =>
+        plotlyData.push(t as typeof plotlyData[number])
+      );
+    }
+
     const isContinuousCurve = (curveNumber: number) => {
       return plotlyData[curveNumber] === continuousColorTrace;
     };
@@ -597,7 +608,7 @@ function PrototypeScatterPlot({
       // We hide the legend because the traces don't have names and some of
       // them are merely decorative (e.g. selectionOutlineTrace). DE2 has its
       // own custom-build legend so this isn't a problem.
-      showlegend: false,
+      showlegend: true,
 
       xaxis,
       yaxis,
@@ -844,28 +855,7 @@ function PrototypeScatterPlot({
         return;
       }
 
-      // These dummy traces exist only to force Plotly to add a legend with the
-      // correct colors (there is no good way of rendering our custom legend as
-      // part of the exported image).
-      const legendTraces = legendForDownload.items.map(({ name, hexColor }) => {
-        return {
-          ...templateTrace,
-          showlegend: true,
-          // HACK: Use a plot type of "indicator" rather than "scatter". This
-          // prevents a rare bug where these dummy traces interfere with the
-          // real ones and some points don't get rendered.
-          type: "indicator",
-          name: truncate(name),
-          x: [null], // Data doesn't matter but can't be completely empty
-          y: [null],
-          marker: {
-            ...templateTrace.marker,
-            color: hexColor,
-            line: { color: hexColor, width: 2 },
-          },
-        };
-      });
-
+      const legendTraces = getLegendTraces(legendForDownload, templateTrace);
       const imagePlot = {
         ...plot,
         data: [...plot.data, ...legendTraces],
@@ -941,6 +931,7 @@ function PrototypeScatterPlot({
     customHoverinfo,
     hideXAxis,
     hideXAxisGrid,
+    showBuiltinLegend,
     pointSize,
     pointOpacity,
     outlineWidth,

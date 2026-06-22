@@ -6,6 +6,7 @@ from tests import factories
 import pandas as pd
 from fastapi.testclient import TestClient
 from breadbox.models.dataset import ValueType
+import pytest
 
 
 def _assert_sql_result_eq(client, sql, expected_result, expected_status_code=200):
@@ -21,7 +22,77 @@ def _assert_sql_result_eq(client, sql, expected_result, expected_status_code=200
         assert response.text == expected_result
 
 
-def test_overlapping_samples(minimal_db: SessionWithUser, settings, client: TestClient):
+# @pytest.mark.celery
+# def test_compute_univariate_associations_intersection_with_minimum_points(
+#     tmpdir,
+#     minimal_db: SessionWithUser,
+#     client: TestClient,
+#     settings,
+#     celery_app,
+#     celery_worker,
+#     monkeypatch,
+# ):
+#     # celery_app is a test celery fixture that comes from celery, see https://docs.celeryproject.org/en/stable/userguide/testing.html#celery-app-celery-app-used-for-testing)
+#     # replace the task function with one bound to the celery_app, bypassing redis
+#     @contextmanager
+#     def mock_db_context(user, commit=True):
+#         yield minimal_db
+
+#     def get_test_settings():
+#         return settings
+
+#     def mock_check_celery():
+#         return True
+
+#     # Monkeypatch check_celery and pretend celery is running for test
+#     monkeypatch.setattr(utils, "check_celery", mock_check_celery)
+
+#     monkeypatch.setattr(
+#         analysis_tasks, "get_settings", get_test_settings,
+#     )
+
+#     monkeypatch.setattr(
+#         analysis_tasks, "db_context", mock_db_context,
+#     )
+
+#     monkeypatch.setattr(
+#         analysis_tasks,
+#         "run_custom_analysis",
+#         celery_app.task(bind=True)(run_custom_analysis),
+#     )
+
+from breadbox.compute import sql as sql_tasks
+from breadbox.api.temp import sql as sql_api
+
+
+@pytest.fixture
+def mock_run_time_bounded_celery_task(minimal_db: SessionWithUser, monkeypatch):
+    # instead of running via celery, just execute it directly
+    async def _mock(task_fn, args: list, time_limit: int, time_limit_padding=5):
+        return task_fn(*args)
+
+    monkeypatch.setattr(
+        sql_api, "_run_time_bounded_celery_task", _mock,
+    )
+
+    # now, this task is going to want to create its own connection to the db because
+    # ordinarily it'd be running in a seperate process. However, in this test, we're not
+    # so also override db_context to return the already open connection
+    from contextlib import contextmanager
+
+    @contextmanager
+    def _mock_db_context(user: str):
+        yield minimal_db
+
+    monkeypatch.setattr(sql_tasks, "db_context", _mock_db_context)
+
+
+def test_overlapping_samples(
+    minimal_db: SessionWithUser,
+    settings,
+    client: TestClient,
+    mock_run_time_bounded_celery_task,
+):
     sample_ids = ["s1", "s2", "s3", "s4"]
     factories.sample_type(
         minimal_db, minimal_db.user, "simple_sample_type", given_ids=sample_ids
@@ -105,7 +176,12 @@ def test_list_of_strings_matrix_query(
     )
 
 
-def test_matrix_query(minimal_db: SessionWithUser, settings, client: TestClient):
+def test_matrix_query(
+    minimal_db: SessionWithUser,
+    settings,
+    client: TestClient,
+    mock_run_time_bounded_celery_task,
+):
     sample_ids = ["s1", "s2", "s3"]
     factories.sample_type(
         minimal_db, minimal_db.user, "simple_sample_type", given_ids=sample_ids
@@ -182,10 +258,14 @@ def assert_schema_is_valid(client):
         # make sure we can parse the resulting SQL that describes the schema
         parsed = sqlglot.parse(schema, dialect="sqlite")
         assert len(parsed) > 0
-        print(f"Schema:\n{schema}")
 
 
-def test_bad_queries(minimal_db: SessionWithUser, settings, client: TestClient):
+def test_bad_queries(
+    minimal_db: SessionWithUser,
+    settings,
+    client: TestClient,
+    mock_run_time_bounded_celery_task,
+):
     # malformed query
     _assert_sql_result_eq(
         client,
@@ -203,7 +283,12 @@ def test_bad_queries(minimal_db: SessionWithUser, settings, client: TestClient):
     )
 
 
-def test_tabular_query(minimal_db: SessionWithUser, settings, client: TestClient):
+def test_tabular_query(
+    minimal_db: SessionWithUser,
+    settings,
+    client: TestClient,
+    mock_run_time_bounded_celery_task,
+):
     # Define metadata
     factories.add_dimension_type(
         minimal_db,

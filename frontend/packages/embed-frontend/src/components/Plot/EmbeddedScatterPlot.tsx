@@ -8,13 +8,34 @@ import {
   DataExplorerPlotResponse,
   LinRegInfo,
 } from "@depmap/types";
-import ScatterLoader from "./loaders/ScatterLoader";
+import ScatterLoader from "../../loaders/ScatterLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
   height: number;
   linreg_by_group: LinRegInfo[] | null;
   plotConfig: DataExplorerPlotConfig;
+}
+
+function canShowIdentityLine(data: DataExplorerPlotResponse | null) {
+  const xUnits = data?.dimensions?.x?.units;
+  const yUnits = data?.dimensions?.y?.units;
+  const xDatasetId = data?.dimensions?.x?.dataset_id;
+  const yDatasetId = data?.dimensions?.y?.dataset_id;
+
+  if (!xDatasetId || !yDatasetId || !xUnits || !yUnits) {
+    return false;
+  }
+
+  if (xDatasetId === yDatasetId) {
+    return true;
+  }
+
+  if (xUnits === "unitless" || yUnits === "unitless") {
+    return false;
+  }
+
+  return xUnits === yUnits;
 }
 
 function EmbeddedScatterPlot({
@@ -34,11 +55,24 @@ function EmbeddedScatterPlot({
     pointVisibility,
     regressionLines,
     showIdentityLine,
-  } = useScatterPlotData(data, plotConfig, linreg_by_group, palette);
+  } = useScatterPlotData(
+    data,
+    plotConfig,
+    linreg_by_group,
+    palette,
+    canShowIdentityLine(data)
+  );
 
   if (!formattedData) {
     return null;
   }
+
+  const showBuiltinLegend = Boolean(
+    data?.metadata.color_property ||
+      data?.dimensions.color ||
+      data?.filters.color1 ||
+      data?.filters.color2
+  );
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={ScatterLoader}>
@@ -68,6 +102,7 @@ function EmbeddedScatterPlot({
         palette={palette}
         xAxisFontSize={12}
         yAxisFontSize={12}
+        showBuiltinLegend={showBuiltinLegend}
       />
     </PlotlyLoaderProvider>
   );

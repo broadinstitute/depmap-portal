@@ -6,7 +6,7 @@ interface Props {
   isLoading: boolean;
   hadError: boolean;
   onClickAddColumn: () => void;
-  renderCustomActions: (state?: {
+  renderCustomActions?: (state?: {
     isLoading: boolean;
     hadError: boolean;
   }) => React.ReactNode;
@@ -16,7 +16,7 @@ function Actions({
   isLoading,
   hadError,
   onClickAddColumn,
-  renderCustomActions,
+  renderCustomActions = () => null,
 }: Props) {
   return (
     <div className={styles.Actions}>

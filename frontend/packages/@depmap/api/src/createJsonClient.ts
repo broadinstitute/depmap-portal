@@ -1,5 +1,10 @@
 import qs from "qs";
 import { ErrorDetail, ErrorTypeError } from "@depmap/types";
+import {
+  isPersistentApiCacheEnabled,
+  persistentCacheGet,
+  persistentCacheSet,
+} from "./persistentApiCache";
 
 const cache: Record<string, Promise<unknown> | null> = {};
 let useCache = false;
@@ -97,6 +102,29 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
   return json as T;
 }
 
+// Reached only when `useCache` is on — i.e. inside a `cached(...)` call. If
+// persistent caching has been enabled, this layers a cross-reload IndexedDB
+// store underneath the in-memory promise cache: check the store first, and on
+// a miss run the request and write the result back. Otherwise it's a
+// passthrough and `cached(...)` behaves exactly as before (in-memory only).
+async function resolveWithPersistence<T>(
+  cacheKey: string,
+  producer: () => Promise<T>
+): Promise<T> {
+  if (!isPersistentApiCacheEnabled()) {
+    return producer();
+  }
+
+  const { hit, value } = await persistentCacheGet(cacheKey);
+  if (hit) {
+    return value as T;
+  }
+
+  const fresh = await producer();
+  await persistentCacheSet(cacheKey, fresh);
+  return fresh;
+}
+
 const makeGetJson = (urlPrefix: string) => <T>(
   url: string,
   queryParameters?: Record<string, unknown>,
@@ -120,10 +148,12 @@ const makeGetJson = (urlPrefix: string) => <T>(
   }
 
   const json = JSON.stringify(queryParameters || {});
-  const cacheKey = `${url}-${json}`;
+  // Include the urlPrefix so the persistent store can't collide entries
+  // between the breadbox and legacy-portal backends (they can share a path).
+  const cacheKey = `${urlPrefix}${url}-${json}`;
 
   if (!cache[cacheKey]) {
-    cache[cacheKey] = getJson().catch((e) => {
+    cache[cacheKey] = resolveWithPersistence(cacheKey, getJson).catch((e) => {
       delete cache[cacheKey];
       throw e;
     });
@@ -149,10 +179,10 @@ const makePostJson = (urlPrefix: string) => async <T>(
   }
 
   const json = JSON.stringify(payload || {});
-  const cacheKey = `${url}-${json}`;
+  const cacheKey = `${urlPrefix}${url}-${json}`;
 
   if (!cache[cacheKey]) {
-    cache[cacheKey] = postJson().catch((e) => {
+    cache[cacheKey] = resolveWithPersistence(cacheKey, postJson).catch((e) => {
       delete cache[cacheKey];
       throw e;
     });

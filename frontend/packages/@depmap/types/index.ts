@@ -87,6 +87,13 @@ export type {
 } from "./src/predictability";
 
 export type * from "./src/data-explorer-2";
+export {
+  EntityRefSet,
+  entityRefKey,
+  singleRef,
+  pairRef,
+} from "./src/EntityRef";
+export type { EntityRef } from "./src/EntityRef";
 export type * from "./src/interactive";
 export type * from "./src/cell-line";
 export type * from "./src/compounds";

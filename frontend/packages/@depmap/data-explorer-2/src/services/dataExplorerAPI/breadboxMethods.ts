@@ -27,14 +27,19 @@ import {
   serializeSliceQuery,
 } from "@depmap/selects";
 import { isContextAll } from "../../utils/context";
-import { isCompleteDimension, isSampleType, pluralize } from "../../utils/misc";
+import {
+  isCompleteDimension,
+  isExpansionDimension,
+  isSampleType,
+  pluralize,
+} from "../../utils/misc";
 import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
 import { fetchDatasetIdentifiers } from "./identifiers";
 import { getDimensionDataWithoutLabels } from "./helpers";
 
 type VarEqualityExpression = { "==": [{ var: string }, string] };
 
-async function fetchEntitiesLabel(dimensionType: string) {
+export async function fetchEntitiesLabel(dimensionType: string) {
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimensionType);
 
@@ -43,7 +48,9 @@ async function fetchEntitiesLabel(dimensionType: string) {
     : "unknown entities";
 }
 
-async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
+export async function fetchAxisLabel(
+  dimension?: DataExplorerPlotConfigDimension
+) {
   if (!dimension || !isCompleteDimension(dimension)) {
     return "";
   }
@@ -93,7 +100,7 @@ async function fetchAxisLabel(dimension?: DataExplorerPlotConfigDimension) {
   return `${aggregation} ${units} of ${contextCount} ${context.name} ${entities}`;
 }
 
-async function fetchValueType(
+export async function fetchValueType(
   dimensionOrSliceQuery?: DataExplorerPlotConfigDimension | SliceQuery
 ) {
   if (
@@ -128,7 +135,7 @@ async function fetchValueType(
   return dataset.value_type;
 }
 
-async function fetchDatasetLabel(dataset_id?: string) {
+export async function fetchDatasetLabel(dataset_id?: string) {
   if (!dataset_id) {
     return "";
   }
@@ -159,7 +166,7 @@ const isPrimaryMetatadata = (dataset?: Dataset) => {
  * are added in priority order (user selections > extra metadata > context
  * vars) and later entries that match an already-tracked query are skipped.
  */
-function buildExtendedMetadata(
+export function buildExtendedMetadata(
   index_type: string,
   index_id_column?: string,
   metadata?: DataExplorerMetadata,
@@ -194,13 +201,13 @@ function buildExtendedMetadata(
     addIfNew("extra1", {
       dataset_id: "depmap_model_metadata",
       identifier_type: "column",
-      identifier: "OncotreePrimaryDisease",
+      identifier: "OncotreeLineage",
     });
 
     addIfNew("extra2", {
       dataset_id: "depmap_model_metadata",
       identifier_type: "column",
-      identifier: "OncotreeLineage",
+      identifier: "OncotreePrimaryDisease",
     });
   }
 
@@ -256,8 +263,9 @@ export async function fetchPlotDimensions(
   fetchDatasetLabel(dimensions.color?.dataset_id);
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
-  const index_id_column = dimTypes.find((t) => t.name === index_type)
-    ?.id_column;
+  const indexDimType = dimTypes.find((t) => t.name === index_type);
+  const index_id_column = indexDimType?.id_column;
+  const index_display_name = indexDimType?.display_name;
 
   const extendedMetadata = buildExtendedMetadata(
     index_type,
@@ -341,6 +349,16 @@ export async function fetchPlotDimensions(
 
   async function fetchAggregatedDimension(key: string) {
     const { aggregation, context, dataset_id, slice_type } = dimensions[key];
+
+    if (aggregation === "expansion") {
+      throw new Error(
+        `Dimension "${key}" carries the "expansion" sentinel on \`aggregation\`, ` +
+          `which is not a real aggregation — its per-pair values come from ` +
+          `fetchExpandedPlot, not from aggregating a slice. Expansion axes must ` +
+          `not be routed through the Breadbox aggregate path; this dimension was ` +
+          `mis-routed.`
+      );
+    }
 
     if (aggregation === "first" || aggregation === "correlation") {
       throw new Error(
@@ -493,6 +511,7 @@ export async function fetchPlotDimensions(
     const out = {
       index_type,
       index_id_column,
+      index_display_name,
       index_ids,
       index_labels,
       linreg_by_group: [],
@@ -604,6 +623,12 @@ export async function fetchPlotDimensions(
           }
         }
 
+        const dimDataset = datasets.find(
+          (d) =>
+            d.id === dimensions[key].dataset_id ||
+            d.given_id === dimensions[key].dataset_id
+        );
+
         out.dimensions[key as keyof DataExplorerPlotResponse["dimensions"]] = {
           slice_type: dimensions[key].slice_type,
           dataset_id: dimensions[key].dataset_id,
@@ -611,6 +636,8 @@ export async function fetchPlotDimensions(
           dataset_label: datasetLabels[key] as string,
           value_type,
           values,
+          units:
+            dimDataset && "units" in dimDataset ? dimDataset.units : "unitless",
         };
       }
 
@@ -665,6 +692,7 @@ export async function fetchPlotDimensions(
             slice_type: null,
             values,
             value_type,
+            units: units ?? "unitless",
           } as unknown) as DataExplorerPlotResponseDimension;
 
           return;
@@ -784,6 +812,28 @@ export const fetchDatasetsByIndexType = memoize(async () => {
   return datasetsByIndexType;
 });
 
+// HACK (LEGACY-COMPUTATION): linear regression is a fetcher-resident
+// derivation, not a data fetch. It computes per-group least-squares fits
+// (plus Pearson/Spearman) over the materialized points. It lives here
+// because it once backed a dedicated Data Explorer endpoint; that backend
+// is gone but the computation stayed put wearing the endpoint's shape. It
+// is a function of DISPLAY state — it already groups by a categorical
+// source (color_property / categorical color dim / color1+color2 filters)
+// and already respects `visible[i]` — so it belongs in the
+// render/derivation layer, not the data layer.
+//
+// PLANNED EVOLUTION (small multiples): when scatter gains per-group small
+// multiples, this moves into the render layer as a fit recomputed per
+// panel from that panel's visible points. The only substantive change to
+// the grouping logic is swapping the category source from the
+// color-derived value seen below to `group_by ?? color_by` (categorical
+// only — a continuous color gradient is a within-panel attribute and must
+// continue to yield a single ungrouped line, never one line per bin). The
+// current single-line-per-color-group behavior is a reasonable interim:
+// in a single-panel scatter it reads as the overall trend. The legacy
+// single-line computation should also be retained as the basis for an
+// opt-in global reference line (one ungrouped fit, neutral color, drawn
+// over every panel) once small multiples exist.
 export const fetchLinearRegression = memoize(
   async (
     index_type: string,
@@ -791,6 +841,16 @@ export const fetchLinearRegression = memoize(
     filters?: DataExplorerFilters,
     metadata?: DataExplorerMetadata
   ) => {
+    if (Object.values(dimensions).some(isExpansionDimension)) {
+      throw new Error(
+        `fetchLinearRegression received a dimension carrying the "expansion" ` +
+          `sentinel. Its color-grouped fit assumes one value per index entity, ` +
+          `but an expansion axis is N×M (entity, member) pairs and is handled by ` +
+          `the faceted regression path. Expanded plots must not reach this ` +
+          `function — gate the caller on isExpansionDimension / expand_by.`
+      );
+    }
+
     const data = await fetchPlotDimensions(
       index_type,
       dimensions,
@@ -886,6 +946,20 @@ export const fetchLinearRegression = memoize(
   }
 );
 
+// HACK (LEGACY-COMPUTATION): the correlation matrix computed here (via
+// correlationMatrix, plus the optional clustering reordering) is a
+// fetcher-resident derivation, not a data fetch. Like the waterfall rank
+// and linear regression, it lives here because it once backed a dedicated
+// Data Explorer endpoint; that backend is gone but the computation stayed
+// put wearing the endpoint's shape. It belongs in the render/derivation
+// layer.
+//
+// Unlike the other two, this one is entangled with the broader
+// correlation_heatmap design, which is itself regretted (it abused shared
+// response fields by reinterpreting their semantics rather than
+// introducing named structural concepts — see the correlation_heatmap
+// plot_type). Don't extract this in isolation; it should move as part of
+// reworking correlation_heatmap, not before.
 const correlateDimension = memoize(
   async (
     dimension: DataExplorerPlotConfigDimension,
@@ -918,6 +992,7 @@ const correlateDimension = memoize(
           value_type: "continuous",
           dataset_label,
           context_size: labels.length,
+          units: "unitless",
           axis_label:
             labels.length === 0 ? "context produced no matches" : "cannot plot",
         } as unknown) as DataExplorerPlotResponse["dimensions"]["x"],
@@ -1028,6 +1103,8 @@ const correlateDimension = memoize(
       // to compute a correlation otherwise.
       // TODO: Add validation for this.
       value_type: "continuous" as const,
+      // Correlation coefficients are dimensionless.
+      units: "unitless",
       // HACK: The correlation heatmap is a special case and breaks the
       // standard dimension type. `matrix` is of type number[][] but we'll
       // cast it to number[] just to keep the types simple. Caution must be
@@ -1064,12 +1141,14 @@ export async function fetchCorrelation(
     : [null];
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
-  const index_id_column = dimTypes.find((t) => t.name === index_type)
-    ?.id_column;
+  const indexDimType = dimTypes.find((t) => t.name === index_type);
+  const index_id_column = indexDimType?.id_column;
+  const index_display_name = indexDimType?.display_name;
 
   return {
     index_type,
     index_id_column,
+    index_display_name,
     index_ids: ids,
     index_labels: labels,
     dimensions: x2 ? { x, x2 } : { x },
@@ -1084,6 +1163,16 @@ export async function fetchWaterfall(
   filters?: DataExplorerFilters,
   metadata?: DataExplorerMetadata
 ): Promise<DataExplorerPlotResponse> {
+  // HACK (LEGACY-COMPUTATION): this entire function is a fetcher-resident
+  // derivation, not a data fetch. It sorts the index by (category, value),
+  // reprojects positions into a synthetic "rank" x dimension, and remaps
+  // the config's x onto y. None of that is identity or values — it's
+  // plottable geometry, and it depends on display concerns (sort order,
+  // grouping). It lives here because it once backed a dedicated Data
+  // Explorer endpoint; that backend is gone but the computation stayed put
+  // wearing the endpoint's shape. It belongs in the render/derivation
+  // layer. Fine to leave until something forces a change here; when that
+  // happens, prefer moving it out over extending it in place.
   const unsortedData = await fetchPlotDimensions(
     index_type,
     dimensions,
@@ -1150,6 +1239,8 @@ export async function fetchWaterfall(
       slice_type: dimensions.x.slice_type,
       value_type: "continuous",
       values: Array.from({ length: sortedLabels.length }, (_, i) => i),
+      // A rank axis has no units.
+      units: "unitless",
     },
 
     // HACK: We remap the "x" dimension from the plot config onto the y axis.
@@ -1199,6 +1290,7 @@ export async function fetchWaterfall(
   return {
     index_type,
     index_id_column: unsortedData.index_id_column,
+    index_display_name: unsortedData.index_display_name,
     index_ids: sortedIndexIds,
     index_labels: sortedLabels,
     dimensions: sortedDimensions,

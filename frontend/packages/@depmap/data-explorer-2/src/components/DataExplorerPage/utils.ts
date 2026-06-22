@@ -322,6 +322,16 @@ function normalizePlot(plot: DataExplorerPlotConfig) {
       normalized.use_clustering = true;
     }
   } else {
+    // `color_by: "expansion"` colors points by their expansion member and is
+    // backed by `expand_by` (which rides through untouched in `rest`), not by a
+    // color dimension/filter/metadata. The branches below only re-add `color_by`
+    // when one of those backings is complete, so without this an expanded plot
+    // would silently lose its coloring on normalize. Preserve it whenever the
+    // plot is actually expanded.
+    if (color_by === "expansion" && Boolean(rest.expand_by?.length)) {
+      normalized.color_by = color_by;
+    }
+
     if ((color_by && filters?.color1) || filters?.color2) {
       normalized.color_by = color_by;
       normalized.filters = filters;

@@ -10,6 +10,14 @@ import {
   PartialDataExplorerPlotConfig,
   SliceQuery,
 } from "@depmap/types";
+import { isExpansionDimension } from "../../../utils/misc";
+
+// Default fan-out bound seeded onto a new expansion when the caller doesn't
+// supply one. Kept here as the single source of that default. Set
+// conservatively: transcript-level data is heavy, and 9 renders as a tidy 3×3
+// small-multiples grid. A separate hard ceiling (MAX_EXPANSION_MEMBERS) is
+// enforced independently at the materializer.
+export const DEFAULT_EXPANSION_LIMIT = 9;
 
 export type PlotConfigReducerAction =
   | { type: "set_plot"; payload: PartialDataExplorerPlotConfig }
@@ -30,6 +38,10 @@ export type PlotConfigReducerAction =
       };
     }
   | { type: "select_color_by"; payload: DataExplorerPlotConfig["color_by"] }
+  | {
+      type: "select_group_by";
+      payload: DataExplorerPlotConfig["group_by"] | null;
+    }
   | { type: "select_sort_by"; payload: DataExplorerPlotConfig["sort_by"] }
   | {
       type: "select_color_property";
@@ -50,6 +62,29 @@ export type PlotConfigReducerAction =
         slice_label: string;
         slice_type: string;
         given_id: string;
+      };
+    }
+  | {
+      type: "select_expansion";
+      payload: {
+        // Which dimension reads the per-pair value (the expanding axis).
+        key: DimensionKey;
+        // The expansion to apply, or null to clear it. `limit` is optional in
+        // the payload; the reducer seeds DEFAULT_EXPANSION_LIMIT when absent.
+        expand_by: {
+          slice_type: string;
+          context: DataExplorerContextV2;
+          limit?: number;
+          // Pagination window start (0-based). Optional; the reducer defaults
+          // it to 0 when absent.
+          offset?: number;
+          // Dataset the reading axis reads its per-pair values from. Required:
+          // enabling repoints the axis at this expansion's slice_type, so the
+          // dataset must be named explicitly. Inheriting a dataset_id from a
+          // differently-shaped axis (e.g. a gene-level dataset under a
+          // transcript expansion) would silently read the wrong matrix.
+          dataset_id: string;
+        } | null;
       };
     }
   // Use this to dispatch multiple actions as if
@@ -101,6 +136,18 @@ const normalize = (plot: PartialDataExplorerPlotConfig) => {
 
   if (plot.plot_type !== "density_1d" && plot.plot_type !== "waterfall") {
     nextPlot = omit(nextPlot, "sort_by");
+  }
+
+  // Keep `expand_by` only while it's non-empty AND some dimension still carries
+  // the expansion sentinel. Overwriting the expanding axis with a plain
+  // dimension orphans the sentinel, so this drops `expand_by` on its own — no
+  // caller-side bookkeeping or action ordering required.
+  const hasExpansionAxis = Object.values(plot.dimensions ?? {}).some((dim) =>
+    isExpansionDimension(dim)
+  );
+
+  if (!plot.expand_by || plot.expand_by.length === 0 || !hasExpansionAxis) {
+    nextPlot = omit(nextPlot, "expand_by");
   }
 
   return nextPlot;
@@ -264,13 +311,13 @@ function plotConfigReducer(
     case "select_dimension": {
       const { key, dimension } = action.payload;
 
-      return {
+      return normalize({
         ...plot,
         dimensions: {
           ...plot.dimensions,
           [key]: dimension,
         },
-      };
+      });
     }
 
     case "select_filter": {
@@ -308,6 +355,22 @@ function plotConfigReducer(
         dimensions,
         filters: visibleFilter ? { visible: visibleFilter } : {},
         metadata: {},
+      });
+    }
+
+    case "select_group_by": {
+      // Unlike select_color_by, this does NOT reset filters/metadata/sort —
+      // group_by is an axis independent of color, so changing it must not
+      // clobber color's state. Clearing (null/undefined payload) omits the
+      // field entirely; the renderers' `group_by ?? color_by` coupling then
+      // takes over (group by color in the 1D plots, ungroup in scatter).
+      if (!action.payload) {
+        return normalize(omit(plot, "group_by"));
+      }
+
+      return normalize({
+        ...plot,
+        group_by: action.payload,
       });
     }
 
@@ -435,6 +498,58 @@ function plotConfigReducer(
           },
         },
       };
+    }
+
+    case "select_expansion": {
+      const { key, expand_by } = action.payload;
+
+      // Clear: drop the expansion and revert the reading axis off the sentinel.
+      // We don't stash the pre-expansion dimension, so this resets `aggregation`
+      // to a plain default rather than restoring prior state; `slice_type` and
+      // `context` are left as-is. normalize() strips the now-empty `expand_by`.
+      if (expand_by === null) {
+        const dimension = plot.dimensions?.[key];
+        const dimensions = { ...plot.dimensions };
+
+        if (dimension) {
+          dimensions[key] = { ...dimension, aggregation: "mean" };
+        }
+
+        return normalize({ ...plot, expand_by: [], dimensions });
+      }
+
+      // Enable: record the expansion (seeding a default limit) and reshape the
+      // reading axis so (a) fetchExpandedPlot routes it as the expanding axis —
+      // it matches on `axis_type: "aggregated_slice"` and `slice_type` equal to
+      // the expansion's — and (b) it carries the "expansion" sentinel on
+      // `aggregation`. plot_type is intentionally left untouched: expansion is
+      // about the point set, not how it's rendered (an expanded density_1d or
+      // waterfall is valid and already fetchable).
+      const { slice_type, context, limit, dataset_id, offset } = expand_by;
+      const existing = plot.dimensions?.[key];
+
+      return normalize({
+        ...plot,
+        expand_by: [
+          {
+            slice_type,
+            context,
+            limit: limit ?? DEFAULT_EXPANSION_LIMIT,
+            offset: offset ?? 0,
+          },
+        ],
+        dimensions: {
+          ...plot.dimensions,
+          [key]: {
+            ...existing,
+            axis_type: "aggregated_slice",
+            slice_type,
+            context,
+            dataset_id,
+            aggregation: "expansion",
+          },
+        },
+      });
     }
 
     case "batch": {

@@ -11,7 +11,7 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import HeatmapLoader from "./loaders/HeatmapLoader";
+import HeatmapLoader from "../../loaders/HeatmapLoader";
 
 interface Props {
   data: DataExplorerPlotResponse | null;
