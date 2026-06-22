@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+from typing import Optional
 
 from loader.dataset_loader.biomarker_loader import _read_fusion
 
@@ -11,7 +12,7 @@ class _FakePbar:
         self.updates += n
 
 
-def _fusion_row(model_id="ACH-1", is_default="Yes"):
+def _fusion_row(model_id: str = "ACH-1", is_default: Optional[str] = "Yes"):
     row = {
         "ModelID": model_id,
         "Gene1": "GENE1",
