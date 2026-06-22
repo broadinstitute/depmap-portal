@@ -573,8 +573,12 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
     skipped = 0
     missing_cell_line = 0
     missing_gene = 0
+    non_default = 0
     for r in dr:
-        # lookups go here
+        if r.get("IsDefaultEntryForModel", "Yes") != "Yes":
+            non_default += 1
+            pbar.update(1)
+            continue
 
         cell_line_id = r["ModelID"]
         cell_line = cell_line_cache.get(cell_line_id)
@@ -621,8 +625,8 @@ def _read_fusion(dr, pbar, gene_cache, cell_line_cache):
             inserted += 1
         pbar.update(1)
     print(
-        "Loaded {} Fusion (Skipped {}, {} had missing gene, {} had missing line)".format(
-            inserted, skipped, missing_gene, missing_cell_line
+        "Loaded {} Fusion (Skipped {}, {} not default entry for model, {} had missing gene, {} had missing line)".format(
+            inserted, skipped, non_default, missing_gene, missing_cell_line
         )
     )
 
