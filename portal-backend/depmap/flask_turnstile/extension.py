@@ -109,6 +109,10 @@ class Turnstile:
                 except (SignatureExpired, BadSignature):
                     pass
 
+            log.warning(
+                f"Showing turnstile challenge because {repr(request_path)} did not match any of {bypass_patterns}"
+            )
+
             return render_template(
                 "turnstile_challenge.html",
                 site_key=app.config["TURNSTILE_SITE_KEY"],
