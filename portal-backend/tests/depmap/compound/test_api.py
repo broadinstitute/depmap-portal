@@ -67,7 +67,7 @@ def test_dose_curve_data_normal(empty_db_mock_downloads):
         assert data["curve_params"][0]["ec50"] == 0.5
 
 
-def test_dose_curve_data_infinity_ec50_serialized_as_null(empty_db_mock_downloads):
+def test_dose_curve_data_infinity_ec50_excluded(empty_db_mock_downloads):
     compound = _setup_dose_curve_data(
         empty_db_mock_downloads,
         compound_id="DPC-00002",
@@ -88,5 +88,4 @@ def test_dose_curve_data_infinity_ec50_serialized_as_null(empty_db_mock_download
         data = r.get_json()
         assert data is not None
         assert "curve_params" in data
-        assert len(data["curve_params"]) == 1
-        assert data["curve_params"][0]["ec50"] is None
+        assert len(data["curve_params"]) == 0

@@ -122,6 +122,15 @@ def get_curve_params_for_model_ids(
             if curve is None or curve.depmap_id not in valid_depmap_ids:
                 continue
 
+            if not (
+                math.isfinite(curve.ec50)
+                and math.isfinite(curve.lower_asymptote)
+                and math.isfinite(curve.upper_asymptote)
+                and math.isfinite(curve.slope)
+            ):
+                # if any curve parameter is invalid, don't include this curve to be shown on the UI
+                continue
+
             reps = get_dose_replicate_points(
                 viabilities=viabilities_by_model_id[curve.depmap_id],
                 compound_dose_replicates=compound_dose_replicates,
