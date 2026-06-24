@@ -16,6 +16,7 @@ from .methylation.extension import MethylationDbExtension
 from depmap.cansar.extension import CansarExtension
 from depmap.breadbox_shim.extension import BreadboxClientExtension
 from functools import wraps
+from depmap.flask_turnstile import Turnstile
 
 bcrypt = Bcrypt()
 csrf_protect = CSRFProtect()
@@ -34,6 +35,7 @@ def markdown(app):
         return Markup(md.convert(text))
 
 
+turnstile = Turnstile()
 humanize = Humanize
 
 methylation_db = MethylationDbExtension()

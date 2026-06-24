@@ -63,6 +63,7 @@ from depmap.extensions import (
     markdown,
     methylation_db,
     breadbox,
+    turnstile,
 )
 from depmap.gene.views.index import blueprint as gene_blueprint
 from depmap.global_search.views import blueprint as global_search_blueprint
@@ -243,9 +244,12 @@ def register_extensions(app: Flask):
     cansar.init_app(app)
     breadbox.init_app(app)
 
-    exception_reporter.init_app(
-        app, service_name="depmap-" + app.config.get("ENV", "unknown")
-    )
+    # if we don't have a site key, don't add turnstile
+    if app.config.get("TURNSTILE_SITE_KEY") is not None:
+        turnstile.init_app(app)
+
+    exception_reporter.init_app(app, service_name="depmap-" + app.config["ENV"])
+
     markdown(app)
     humanize(app)
 

@@ -350,6 +350,16 @@ class Config(object):
     # How long to wait for breadbox before reporting a timeout (in proxy)
     BREADBOX_PROXY_TIMEOUT = 60
 
+    # setting site key to None disables Turnstile check
+    TURNSTILE_SITE_KEY = None
+    TURNSTILE_SECRET_KEY = None
+    # alternatively, if you want to test turnstile, you can use Cloudflare's always-pass test keys:
+    # https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+    # just uncomment the below
+    # TURNSTILE_SITE_KEY = "1x00000000000000000000AA"
+    # TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA"
+    TURNSTILE_BYPASS = [".*/static/.*", "^/$", "^/terms_text$", "^/search/.*"]
+
 
 class RemoteConfig(Config):
     CACHE_TYPE = "redis"
