@@ -129,7 +129,6 @@ def robust_linear_model(X, y):
         # Get valid p-values (where mask is True)
         valid_p = p_val[outmask]
         valid_p_homo = p_val_homoskedastic[outmask]
-        
         # Only run FDR if there are finite p-values
         if np.any(np.isfinite(valid_p)):
             q_val[outmask] = stats.false_discovery_control(valid_p)
