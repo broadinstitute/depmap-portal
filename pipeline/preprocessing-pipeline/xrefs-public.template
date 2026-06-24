@@ -6,6 +6,13 @@ add-if-missing {
     "release_label": "{{config.RELEASE_LABEL}}"
 }
 
+# The gene table
+add-if-missing {
+  "type": "hgnc-snapshot",
+  "dataset_id":  PREPROCESS_TAIGA_ID(virtual_permaname, "Gene")
+}
+
+
 # The following 3 artifacts are necessary for the Context Explorer preprocessing
 # scripts to run successfully
 add-if-missing {
