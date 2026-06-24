@@ -486,7 +486,6 @@ spawn_commands.py: error: "run_with_reloader" is unknown import symbol (reportAt
 spawn_commands.py: error: Argument of type "Literal['auto']" cannot be assigned to parameter "interval" of type "int | float" in function "run_with_reloader"
 spawn_commands.py: error: Argument of type "Literal[1]" cannot be assigned to parameter "exclude_patterns" of type "Iterable[str] | None" in function "run_with_reloader"
 spawn_commands.py: error: Cannot access attribute "_get_current_object" for class "Flask"
-spawn_commands.py: error: Expected 0 positional arguments (reportCallIssue)
 standard_utils.py: error: "get_cell_line_values_and_depmap_ids" is not a known attribute of "None" (reportOptionalMemberAccess)
 standard_utils.py: error: "get_subsetted_df" is not a known attribute of "None" (reportOptionalMemberAccess)
 str_profile_loader.py: error: No parameter named "amel" (reportCallIssue)
