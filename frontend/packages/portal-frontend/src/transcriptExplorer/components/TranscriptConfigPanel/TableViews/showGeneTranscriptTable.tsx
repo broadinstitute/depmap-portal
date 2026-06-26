@@ -17,33 +17,32 @@ function showGeneTranscriptTable(geneSymbol: string) {
           <SliceTable
             index_type_name="transcript"
             downloadFilename={title}
-            renderCustomActions={() => {
-              return (
-                <div className={styles.geneAnnotationNote}>
-                  <div>
-                    ⬅ <b>Note</b>:
-                  </div>
-                  <div>
-                    <span>
-                      Adding gene-level annotations is currently broken 😢
-                    </span>
-                    <span> </span>
-                    <span>But you can still add data columns.</span>
-                  </div>
-                </div>
-              );
-            }}
             getInitialState={() => ({
               initialSlices: [
                 {
                   dataset_id: "transcript_metadata",
-                  identifier: "Gene",
+                  identifier: "Transcript",
                   identifier_type: "column",
                 },
                 {
-                  dataset_id: "transcript_metadata",
-                  identifier: "Transcript",
+                  dataset_id: "gene_metadata",
+                  identifier: "essentiality",
                   identifier_type: "column",
+                  reindex_through: {
+                    dataset_id: "transcript_metadata",
+                    identifier: "entrez_id",
+                    identifier_type: "column",
+                  },
+                },
+                {
+                  dataset_id: "gene_metadata",
+                  identifier: "selectivity",
+                  identifier_type: "column",
+                  reindex_through: {
+                    dataset_id: "transcript_metadata",
+                    identifier: "entrez_id",
+                    identifier_type: "column",
+                  },
                 },
               ],
             })}

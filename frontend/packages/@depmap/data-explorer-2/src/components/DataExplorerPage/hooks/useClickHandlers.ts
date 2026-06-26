@@ -1,4 +1,5 @@
 import React, { useCallback } from "react";
+import { isPortal, toPortalLink } from "@depmap/globals";
 import omit from "lodash.omit";
 import {
   ContextPath,
@@ -66,7 +67,10 @@ export default function useClickHandlers(
         setPlot(nextPlot);
         logDirectPlotChange("handleClickVisualizeSelected", plot, nextPlot);
       } else {
-        const url = `${window.location.href.split("?")[0]}${queryString}`;
+        const url = isPortal
+          ? toPortalLink(`/data_explorer_2${queryString}`)
+          : `${window.location.href.split("?")[0]}${queryString}`;
+
         window.open(url, "_blank", "noreferrer");
       }
     },

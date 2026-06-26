@@ -5,10 +5,8 @@ import {
   DataExplorerExpansion,
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
-  EntityRefSet,
   LinRegInfo,
   entityRefKey,
-  singleRef,
 } from "@depmap/types";
 import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../ExtendedPlotType";
@@ -58,11 +56,14 @@ function DataExplorerScatterPlot({
   const {
     selection,
     selectedPoints,
+    pointsToAnnotate,
     handleClickPoint,
     handleMultiselect,
     setSelection,
+    setSelectionFromContext,
     clearSelection,
-  } = useSelection(data);
+    selectionKeyForPoint,
+  } = useSelection(data, plotConfig.group_by);
 
   // Expanded plots (the response carries an expansion) get a different
   // selection panel: ExpandedPlotSelections lists (index, expansion)
@@ -71,6 +72,14 @@ function DataExplorerScatterPlot({
   const isExpanded =
     ((data as { expansions?: DataExplorerExpansion[] } | null)?.expansions
       ?.length ?? 0) > 0;
+
+  // Panel-follows-grain: the pair panel (ExpandedPlotSelections) only makes
+  // sense when selection is pair-grained. Under group_by === "expansion"
+  // selection collapses to models, so the pair panel would match nothing —
+  // show the model PlotSelections instead (its Visualize / Save-as-context
+  // operations are meaningful for models). Mirrors `pairGrained` in
+  // useSelection.
+  const isPairGrained = isExpanded && plotConfig.group_by !== "expansion";
 
   // Small multiples = the 2D realization of group_by. Unlike the 1D plots,
   // scatter does NOT fall back to color_by when group_by is unset: auto-
@@ -153,16 +162,13 @@ function DataExplorerScatterPlot({
       return;
     }
 
+    // Valid keys must be built in the SAME grain as the selection refs (via
+    // useSelection's selectionKeyForPoint) — otherwise a model-grained
+    // selection (group_by === "expansion") would be measured against pair keys
+    // and wiped on every data change.
     const validKeys = new Set<string>();
-    const expansions = (data as { expansions?: { ids: string[] }[] })
-      .expansions;
-    const expansionIds = expansions?.[0]?.ids;
     for (let i = 0; i < data.index_ids.length; i += 1) {
-      if (expansionIds) {
-        validKeys.add(`p\x1f${data.index_ids[i]}\x1f${expansionIds[i]}`);
-      } else {
-        validKeys.add(`s\x1f${data.index_ids[i]}`);
-      }
+      validKeys.add(selectionKeyForPoint(i));
     }
 
     setSelection((current) => {
@@ -177,7 +183,7 @@ function DataExplorerScatterPlot({
       });
       return next;
     });
-  }, [data, setSelection]);
+  }, [data, setSelection, selectionKeyForPoint]);
 
   // Legacy panel compat: derive a Set<string> of index ids from the
   // structured selection. PlotSelections still keys on `data.index_ids`,
@@ -266,6 +272,8 @@ function DataExplorerScatterPlot({
                 onClickPoint={handleClickPoint}
                 onMultiselect={handleMultiselect}
                 selectedPoints={selectedPoints}
+                pointsToAnnotate={pointsToAnnotate}
+                selectionCount={selection?.size ?? 0}
                 onClickResetSelection={clearSelection}
                 pointSize={pointSize}
                 pointOpacity={pointOpacity}
@@ -295,6 +303,8 @@ function DataExplorerScatterPlot({
                 onClickPoint={handleClickPoint}
                 onMultiselect={handleMultiselect}
                 selectedPoints={selectedPoints}
+                pointsToAnnotate={pointsToAnnotate}
+                selectionCount={selection?.size ?? 0}
                 showIdentityLine={showIdentityLine}
                 regressionLines={regressionLines}
                 onClickResetSelection={clearSelection}
@@ -324,7 +334,7 @@ function DataExplorerScatterPlot({
             />
           </StackableSection>
           <StackableSection title="Plot Selections" minHeight={256}>
-            {isExpanded ? (
+            {isPairGrained ? (
               <ExpandedPlotSelections
                 data={data}
                 selection={selection}
@@ -355,13 +365,14 @@ function DataExplorerScatterPlot({
                   }
 
                   // Context resolution names entities of one type, never
-                  // pairs — wrap as single refs. If/when contexts can
-                  // describe (index, expansion) pairs, this is the place
-                  // to grow.
-                  setSelection(
-                    new EntityRefSet([...newSelectedIds].map(singleRef))
-                  );
-                  plotElement?.annotateSelected();
+                  // pairs. setSelectionFromContext sets the selection to those
+                  // ids (models) and the annotation set to one representative
+                  // point per id; it returns the representative points so we
+                  // can position their labels before the next render.
+                  const repPoints = setSelectionFromContext([
+                    ...newSelectedIds,
+                  ]);
+                  plotElement?.annotateSelected(repPoints);
                 }}
               />
             )}

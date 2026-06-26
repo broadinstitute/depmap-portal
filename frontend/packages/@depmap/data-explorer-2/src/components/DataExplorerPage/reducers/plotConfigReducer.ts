@@ -515,7 +515,20 @@ function plotConfigReducer(
           dimensions[key] = { ...dimension, aggregation: "mean" };
         }
 
-        return normalize({ ...plot, expand_by: [], dimensions });
+        // Teardown coupling (expansion-selection design, decision 2):
+        // `group_by: "expansion"` is meaningless without an expansion axis, so
+        // clearing the expansion must rewrite it. Reset to null (omit it)
+        // rather than restoring the pre-expansion grouping — sticky-restore was
+        // considered and rejected as not worth the shadow state. ONLY the
+        // "expansion" sentinel is reset here; a real grouping (e.g. an
+        // annotation) survives, since it's still valid on the now-unexpanded
+        // plot. Do NOT generalize this to clear any group_by.
+        const cleared =
+          plot.group_by === "expansion"
+            ? omit({ ...plot, expand_by: [], dimensions }, "group_by")
+            : { ...plot, expand_by: [], dimensions };
+
+        return normalize(cleared);
       }
 
       // Enable: record the expansion (seeding a default limit) and reshape the
@@ -528,8 +541,22 @@ function plotConfigReducer(
       const { slice_type, context, limit, dataset_id, offset } = expand_by;
       const existing = plot.dimensions?.[key];
 
+      // Coupling (expansion-selection design, decision 1): enabling an
+      // expansion pre-installs `group_by: "expansion"` as a ONE-TIME default —
+      // the model-clean configuration the UI guides users toward. This fires
+      // ONLY on the enable transition (no expansion → expansion); it is never
+      // re-enforced on a later select_expansion (e.g. a limit/offset/context
+      // edit), so a subsequent user switch to null or an annotation grouping is
+      // preserved. It deliberately OVERWRITES any prior group_by: entering
+      // expansion mode lands you in its default regardless of how the plot was
+      // grouped before. Do NOT "tidy" this into an always-enforce — that would
+      // clobber a deliberate departure from the default and silently break the
+      // null/annotation pair configurations.
+      const wasExpanded = (plot.expand_by?.length ?? 0) > 0;
+
       return normalize({
         ...plot,
+        ...(wasExpanded ? {} : { group_by: "expansion" as const }),
         expand_by: [
           {
             slice_type,

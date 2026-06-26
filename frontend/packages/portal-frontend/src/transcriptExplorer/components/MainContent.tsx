@@ -15,6 +15,7 @@ import { isCompletePlot } from "@depmap/data-explorer-2/src/components/DataExplo
 import {
   useCanShowIdentityLine,
   useContextBuilder,
+  useClickHandlers,
 } from "@depmap/data-explorer-2/src/components/DataExplorerPage/hooks";
 import VisualizationPanel from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/VisualizationPanel";
 import {
@@ -31,8 +32,6 @@ interface Props {
   contactEmail: string;
   tutorialLink: string;
 }
-
-const NOOP = () => {};
 
 function MainContent({
   initialPlot,
@@ -86,6 +85,17 @@ function MainContent({
     onClickCreateContext,
   } = useContextBuilder(plot as DataExplorerPlotConfig, setPlot);
 
+  const {
+    handleClickSaveSelectionAsContext,
+    handleClickVisualizeSelected,
+    handleClickColorByContext,
+    handleClickShowDensityFallback,
+  } = useClickHandlers(
+    plot as DataExplorerPlotConfig,
+    setPlot,
+    onClickSaveAsContext
+  );
+
   const canShowIdentityLine = useCanShowIdentityLine(
     plot?.dimensions?.x?.dataset_id,
     plot?.dimensions?.y?.dataset_id
@@ -104,10 +114,10 @@ function MainContent({
         <VisualizationPanel
           plotConfig={isCompletePlot(plot) ? plot : null}
           isInitialPageLoad={false}
-          onClickVisualizeSelected={NOOP}
-          onClickSaveSelectionAsContext={NOOP}
-          onClickColorByContext={NOOP}
-          onClickShowDensityFallback={NOOP}
+          onClickVisualizeSelected={handleClickVisualizeSelected}
+          onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
+          onClickColorByContext={handleClickColorByContext}
+          onClickShowDensityFallback={handleClickShowDensityFallback}
           feedbackUrl={feedbackUrl}
           contactEmail={contactEmail}
           tutorialLink={tutorialLink}

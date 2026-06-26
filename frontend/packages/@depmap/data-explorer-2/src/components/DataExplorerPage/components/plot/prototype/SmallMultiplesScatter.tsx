@@ -40,6 +40,7 @@ import type {
   PlotSelectionEvent,
 } from "plotly.js";
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
+import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
   calcAutoscaleShapes,
   calcPlotIndicatorLineShapes,
@@ -94,10 +95,17 @@ interface Props {
   palette?: DataExplorerColorPalette;
   xAxisFontSize?: number;
   yAxisFontSize?: number;
-  // Per-point selection annotations are off by default for faceted plots:
-  // tiled across small panels they clutter fast, and the panel title plus
-  // the selection panel already carry identity. Set > 0 to re-enable a cap.
-  maxAnnotations?: number;
+  // The points to put text labels on. Same annotation channel as the
+  // single-panel plots: under group_by === "expansion" this is the handful of
+  // contacted points (one representative per selected model), NOT the
+  // re-expanded `selectedPoints`, so labels stay sparse even tiled across
+  // panels. Each lands on its own facet's axes. Falls back to `selectedPoints`
+  // when omitted. The annotated-subset-of-selected invariant is enforced
+  // upstream in useSelection's derivation, not here.
+  pointsToAnnotate?: Set<number>;
+  // The count shown in the over-cap fallback (selection.size under collapse,
+  // threaded from the wrapper); defaults to the selected-point count.
+  selectionCount?: number;
   // Draw the x = y identity line in every panel. Off by default (current
   // faceted behavior). When on, a master-only autoscale hack equalizes the x/y
   // scale and propagates to all panels via `matches`, so the line reads ~45°
@@ -148,7 +156,8 @@ function SmallMultiplesScatter({
   palette = DEFAULT_PALETTE,
   xAxisFontSize = 12,
   yAxisFontSize = 12,
-  maxAnnotations = 0,
+  pointsToAnnotate,
+  selectionCount,
   showIdentityLine = false,
   regressionLinesByFacet,
   placeholderEmptyFacets = false,
@@ -176,6 +185,14 @@ function SmallMultiplesScatter({
   // Identity of the data currently on the axes. When it changes (a new x/y
   // dataset), the preserved zoom is dropped so the plot re-autoranges.
   const lastDataset = useRef<string | null>(null);
+  // User-dragged annotation tail offsets (ax/ay pixel offsets), keyed by point.
+  // Mirrors the single-panel plots: restored onto the annotation objects each
+  // render and re-captured from plotly_relayout, so a label the user repositions
+  // stays put across selection/zoom/data changes. Pixel offsets are relative to
+  // the anchor point, so they remain meaningful across zoom and facet layout.
+  const annotationTails = useRef<Record<string, { ax: number; ay: number }>>(
+    {}
+  );
 
   useEffect(() => {
     // Capture the node now; ref.current may have changed by the time this
@@ -224,6 +241,16 @@ function SmallMultiplesScatter({
 
     const selected = selectedPoints ?? new Set<number>();
     const selectedpoints = [...selected];
+
+    // Annotation channel (expansion-selection): label the contacted points, not
+    // the re-expanded selection. They coincide off the group_by === "expansion"
+    // collapse; the wrapper passes `pointsToAnnotate` only on the faceted
+    // (collapse) path, so the fallback keeps any other caller unchanged.
+    const pointsForAnnotation = pointsToAnnotate ?? selected;
+    // Count for the over-cap fallback. selectionCount is the model count under
+    // collapse (selection.size). TODO: the noun "points" should become the index
+    // type's display name once that is threaded through; literal for now.
+    const annotationCount = selectionCount ?? selected.size;
 
     // Candidate facets, then drop any with no plottable point at all (every
     // point null on an axis). This is the legend's non-plottable-entity rule
@@ -572,11 +599,10 @@ function SmallMultiplesScatter({
 
     const facetIndex = new Map(facets.map((f, i) => [f, i]));
     if (
-      maxAnnotations > 0 &&
-      selected.size > 0 &&
-      selected.size <= maxAnnotations
+      pointsForAnnotation.size > 0 &&
+      pointsForAnnotation.size <= MAX_POINTS_TO_ANNOTATE
     ) {
-      [...selected].forEach((pointIndex) => {
+      [...pointsForAnnotation].forEach((pointIndex) => {
         if (
           typeof x[pointIndex] !== "number" ||
           typeof y[pointIndex] !== "number"
@@ -587,6 +613,8 @@ function SmallMultiplesScatter({
         if (k === undefined) {
           return;
         }
+        // Place the label on its own facet's axes (each subplot has its own
+        // x{suffix}/y{suffix}); suffix "" is the first panel's x/y.
         const suffix = k === 0 ? "" : String(k + 1);
         (layout.annotations as any[]).push({
           x: x[pointIndex],
@@ -600,11 +628,17 @@ function SmallMultiplesScatter({
           arrowcolor: "#888",
           bordercolor: "#c7c7c7",
           bgcolor: "#fff",
+          // Identifies this label for the relayout capture below; also the key
+          // for restoring a tail the user dragged. The facet titles and axis
+          // labels in this same array carry no pointIndex (and no tail).
+          pointIndex,
+          ax: annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ax,
+          ay: annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ay,
         });
       });
-    } else if (maxAnnotations > 0 && selected.size > maxAnnotations) {
+    } else if (pointsForAnnotation.size > MAX_POINTS_TO_ANNOTATE) {
       (layout.annotations as any[]).push({
-        text: `(${selected.size} selected points)`,
+        text: `(${annotationCount} selected points)`,
         xref: "paper",
         yref: "paper",
         x: 1,
@@ -619,6 +653,9 @@ function SmallMultiplesScatter({
       responsive: true,
       displaylogo: false,
       modeBarButtonsToRemove: ["lasso2d"],
+      // Let the user drag a label's tail (but not the label body), same as the
+      // single-panel plots.
+      edits: { annotationTail: true },
     };
 
     Plotly.react(plot, plotlyData, layout as Partial<Layout>, config);
@@ -660,8 +697,14 @@ function SmallMultiplesScatter({
       // single-panel plot's dummy-trace hack) is deferred.
       Plotly.downloadImage(plot, options as any);
     };
-    // Faceted: navigating-to-a-point and per-point annotations are off for
-    // now, so these are safe stubs that keep the controls from throwing.
+    // Faceted: navigating-to-a-point is still off (a safe stub). Per-point
+    // annotations are on and their tails ARE draggable (see config.edits and the
+    // plotly_relayout capture). `annotateSelected` still does nothing, though:
+    // its single-panel job is to pre-seed non-overlapping tail offsets via
+    // calcAnnotationPositions, which is single-axis (master xaxis/yaxis) and
+    // doesn't translate to per-subplot facets. So labels start at Plotly's
+    // default offset and the user drags from there; the context path's call is a
+    // harmless no-op (the labels appear via the pointsToAnnotate re-render).
     plot.isPointInView = () => true;
     plot.xValueMissing = (pointIndex: number) => x[pointIndex] === null;
     plot.yValueMissing = (pointIndex: number) => y[pointIndex] === null;
@@ -773,6 +816,18 @@ function SmallMultiplesScatter({
         xaxis: { range: (plot.layout as any).xaxis?.range, autorange: false },
         yaxis: { range: (plot.layout as any).yaxis?.range, autorange: false },
       };
+
+      // Persist any annotation tail the user just dragged. The annotations array
+      // also holds non-draggable titles/axis labels (showarrow:false, no tail,
+      // no pointIndex); the guard skips them and captures only the per-point
+      // labels. Keyed by pointIndex because the per-point labels are interspersed
+      // with titles, so array position isn't a stable identifier.
+      plot.layout.annotations?.forEach((annotation) => {
+        const { ax, ay, pointIndex } = annotation as any;
+        if (ax != null && ay != null && pointIndex != null) {
+          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = { ax, ay };
+        }
+      });
     });
 
     return () => {
@@ -817,7 +872,8 @@ function SmallMultiplesScatter({
     palette,
     xAxisFontSize,
     yAxisFontSize,
-    maxAnnotations,
+    pointsToAnnotate,
+    selectionCount,
     showIdentityLine,
     regressionLinesByFacet,
     onLoad,

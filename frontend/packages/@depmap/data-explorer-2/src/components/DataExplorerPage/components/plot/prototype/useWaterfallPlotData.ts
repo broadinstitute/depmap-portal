@@ -13,6 +13,7 @@ import {
   formatDataForWaterfall,
   getColorMap,
   getLegendKeysWithNoData,
+  LEGEND_OTHER,
   LegendKey,
   sortLegendKeysWaterfall,
   useLegendState,
@@ -44,6 +45,12 @@ export interface WaterfallPlotData {
     items: { name: string; hexColor: string }[];
   };
   pointVisibility: boolean[] | null;
+  // Contiguous x-rank regions, one per group, with gap-midpoint boundaries
+  // (±Infinity at the ends). Drives enforceSingleGroupSelection in the
+  // waterfall's scatter renderer. Null when there's nothing to constrain.
+  selectionRegions:
+    | { key: string | symbol; lo: number; hi: number }[]
+    | null;
 }
 
 // Encapsulates the data-prep pipeline shared by DataExplorerWaterfallPlot and
@@ -191,6 +198,49 @@ export default function useWaterfallPlotData(
     [data, hiddenLegendValues, continuousBins, plotConfig.color_by]
   );
 
+  // Build the per-group x-rank regions that enforceSingleGroupSelection clamps
+  // to. Each group's region spans from its leftmost to its rightmost assigned
+  // rank; boundaries between adjacent groups are the gap midpoints, with
+  // ±Infinity at the two ends. Mirrors how formatDataForWaterfall buckets
+  // points (group-side series, falling back to the color-side categorical), and
+  // only counts points that received an x (i.e. visible points). Null when
+  // there are fewer than two groups to constrain across.
+  const selectionRegions = useMemo(() => {
+    const x = formattedData?.x;
+    const groupSeries = (groupSide.groupData ??
+      formattedData?.catColorData) as (string | number | symbol | null)[] | null;
+    if (!x || !groupSeries) {
+      return null;
+    }
+
+    const extents = new Map<string | symbol, { min: number; max: number }>();
+    for (let i = 0; i < x.length; i += 1) {
+      const xv = x[i];
+      if (typeof xv !== "number" || !Number.isFinite(xv)) {
+        continue;
+      }
+      const key = (groupSeries[i] || LEGEND_OTHER) as string | symbol;
+      const e = extents.get(key) ?? { min: Infinity, max: -Infinity };
+      if (xv < e.min) e.min = xv;
+      if (xv > e.max) e.max = xv;
+      extents.set(key, e);
+    }
+
+    if (extents.size < 2) {
+      return null;
+    }
+
+    const ordered = [...extents.entries()].sort(
+      (a, b) => a[1].min - b[1].min
+    );
+    return ordered.map(([key, e], i) => ({
+      key,
+      lo: i === 0 ? -Infinity : (ordered[i - 1][1].max + e.min) / 2,
+      hi:
+        i === ordered.length - 1 ? Infinity : (e.max + ordered[i + 1][1].min) / 2,
+    }));
+  }, [formattedData, groupSide]);
+
   return {
     sortedLegendKeys,
     formattedData,
@@ -201,5 +251,6 @@ export default function useWaterfallPlotData(
     colorMap,
     legendForDownload,
     pointVisibility,
+    selectionRegions,
   };
 }
