@@ -168,7 +168,9 @@ async def query_sql(
                 },
             )
         except UserError as e:
-            return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
+            raise
+        except Exception as e:
+            raise Exception(f"Exception executing sql query {query.sql}") from e
 
         assert isinstance(output_file, str)
         return CSVFileResponse(output_file)
