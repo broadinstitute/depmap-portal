@@ -101,12 +101,22 @@ async def _run_time_bounded_celery_task(
     """
     task = task_fn.apply_async(args=args, time_limit=time_limit)
 
-    # run the get() in an executor so that this coroutine can yield to any other requests
-    result = await anyio.to_thread.run_sync(
-        lambda: task.get(timeout=time_limit + time_limit_padding)
+    # Use propagate=False so task.get() returns normally instead of raising the task's
+    # exception. When propagate=True (the default), a task failure causes the exception
+    # to propagate through Celery's generator-based drain_events_until/_wait_for_pending
+    # chain. Python doesn't close generators when an exception escapes a for-loop, so
+    # their finally blocks (including the Redis pub/sub unsubscribe) never run. The shared
+    # _pubsub connection (a @cached_property on the backend) is then left subscribed to
+    # the stale channel, and subsequent calls read leftover bytes (b'1') as a Redis
+    # protocol response, causing InvalidResponse errors for all queries until restart.
+    await anyio.to_thread.run_sync(
+        lambda: task.get(timeout=time_limit + time_limit_padding, propagate=False)
     )
 
-    return result
+    if task.state == "FAILURE":
+        raise task.result
+
+    return task.result
 
 
 @router.post("/sql/query", operation_id="query_sql", response_class=CSVFileResponse)
@@ -158,10 +168,7 @@ async def query_sql(
                 },
             )
         except UserError as e:
-            raise
-        except Exception as e:
-            breakpoint()
-            raise Exception(f"Exception executing sql query {query.sql}") from e
+            return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
 
         assert isinstance(output_file, str)
         return CSVFileResponse(output_file)
