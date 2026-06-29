@@ -83,3 +83,13 @@
   color: #777;
   font-size: 0.9em;
 }
+
+.acquiredAlterationCheckmark {
+  font-size: 18px;
+  text-align: center;
+
+  :global .glyphicon {
+    margin-left: -10px;
+    margin-top: 8px;
+  }
+}

@@ -18,10 +18,27 @@ export interface ParentalLine {
   name?: string;
 }
 
-export interface ResistanceInfo {
-  origin?: ResistanceOrigin;
-  parentalLine?: ParentalLine;
+export interface DerivativeLine {
+  id: string;
+  name?: string;
 }
+
+// A model can be on one side of a paired-screen relationship or the other,
+// but not both. `role` discriminates the two cases:
+//   - "derivative": this model is a resistant derivative; carries its origin
+//     and a link to the parental line it was derived from.
+//   - "parental":   this model is itself a parental line; carries links to
+//     the derivatives that were created from it.
+export type ResistanceInfo =
+  | {
+      role: "derivative";
+      origin?: ResistanceOrigin;
+      parentalLine: ParentalLine;
+    }
+  | {
+      role: "parental";
+      derivatives: DerivativeLine[];
+    };
 
 export interface ResistanceScreenRows {
   // A single model can appear as a Test row, a Ctrl row, or both.
@@ -110,6 +127,30 @@ function ResistanceScreenLink({ rows }: { rows: ResistanceScreenRows }) {
 }
 
 function ResistanceMetadataSection({ data }: { data: ResistanceInfo }) {
+  if (data.role === "parental") {
+    return (
+      <>
+        <h4 className={styles.propertyGroupHeader} style={{ marginTop: 20 }}>
+          Derived Resistance Models
+        </h4>
+        {data.derivatives.map((d) => (
+          <div key={d.id}>
+            <a
+              className={styles.descriptionLinks}
+              href={toPortalLink(`/cell_line/${d.id}`)}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              {d.name ?? d.id}
+            </a>
+          </div>
+        ))}
+      </>
+    );
+  }
+
+  // role === "derivative"
+
   // Mirrors the property-group / property-header pattern used in the
   // Description tile so the visual rhythm matches what's already on the page.
   return (
@@ -128,20 +169,15 @@ function ResistanceMetadataSection({ data }: { data: ResistanceInfo }) {
           <p>{data.origin.description}</p>
         </>
       )}
-
-      {data.parentalLine && (
-        <>
-          <h6 className={styles.propertyHeader}>Parental Line</h6>
-          <a
-            href={toPortalLink(`/cell_line/${data.parentalLine.id}`)}
-            className={styles.descriptionLinks}
-            rel="noopener noreferrer"
-            target="_blank"
-          >
-            {data.parentalLine.name ?? data.parentalLine.id}
-          </a>
-        </>
-      )}
+      <h6 className={styles.propertyHeader}>Parental Model</h6>
+      <a
+        className={styles.descriptionLinks}
+        href={toPortalLink(`/cell_line/${data.parentalLine.id}`)}
+        target="_blank"
+        rel="noreferrer noopener"
+      >
+        {data.parentalLine.name ?? data.parentalLine.id}
+      </a>
     </>
   );
 }
