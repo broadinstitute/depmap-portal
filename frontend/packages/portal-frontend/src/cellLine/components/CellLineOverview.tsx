@@ -6,6 +6,7 @@ import { CardContainer, CardColumn } from "src/common/components/Card";
 import { DatasetDataTypes, ModelInfo } from "src/cellLine/models/types";
 import styles from "src/common/styles/async_tile.module.scss";
 import { usePairedScreensData } from "src/cellLine/hooks/usePairedScreensData";
+import { useAcquiredAlterations } from "src/cellLine/hooks/useAcquiredAlterations";
 
 const DatasetsTile = React.lazy(
   () => import("src/cellLine/components/DatasetsTile")
@@ -67,6 +68,7 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
   const [oncokbDatasetVersion, setOncokbDatasetVersion] = useState<string>("");
 
   const { data: pairedScreens } = usePairedScreensData(modelId);
+  const { acquiredAlterations } = useAcquiredAlterations(modelId);
 
   useEffect(() => {
     legacyPortalAPI.getCellLineDescriptionTileData(modelId).then((data) => {
@@ -131,6 +133,7 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
           >
             <OncogenicAlterationsTile
               oncogenicAlterations={oncoAlterations}
+              acquiredAlterations={acquiredAlterations ?? undefined}
               oncokbDatasetVersion={oncokbDatasetVersion}
             />
           </React.Suspense>

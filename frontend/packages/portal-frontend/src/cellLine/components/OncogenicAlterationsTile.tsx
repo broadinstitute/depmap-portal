@@ -1,34 +1,60 @@
 import React from "react";
+import { InfoTip } from "@depmap/common-components";
 import { toStaticUrl } from "@depmap/globals";
 import { OncogenicAlteration } from "@depmap/types";
+import { altKey } from "../hooks/useAcquiredAlterations";
+import styles from "../styles/CellLinePage.scss";
 
 interface OncogenicAlterationsTileProps {
   oncogenicAlterations: Array<OncogenicAlteration>;
+  // Keys (gene name + alteration) of alterations acquired during derivation
+  // of the current model. Empty or omitted for non-derivative models.
+  acquiredAlterations?: Set<string>;
   oncokbDatasetVersion: string;
 }
 
 const OncogenicAlterationsTile = ({
   oncogenicAlterations,
+  acquiredAlterations = undefined,
   oncokbDatasetVersion,
 }: OncogenicAlterationsTileProps) => {
-  const tableRows = oncogenicAlterations.map((alteration, i) => (
-    <tr key={i}>
-      <td>
-        <a href={`https://www.oncokb.org/gene/${alteration.gene.name}`}>
-          {alteration.gene.name}
-        </a>
-      </td>
-      <td>
-        <a
-          href={`https://www.oncokb.org/gene/${alteration.gene.name}/${alteration.alteration}`}
-        >
-          {alteration.alteration}
-        </a>
-      </td>
-      <td className="center">{alteration.oncogenic}</td>
-      <td className="center">{alteration.function_change}</td>
-    </tr>
-  ));
+  const hasSomeAcquiredAlterations =
+    acquiredAlterations && acquiredAlterations.size > 0;
+
+  const tableRows = oncogenicAlterations.map((alteration) => {
+    const key = altKey(alteration);
+    const isAcquired = acquiredAlterations?.has(key) ?? false;
+
+    return (
+      <tr key={key}>
+        <td>
+          <a
+            href={`https://www.oncokb.org/gene/${alteration.gene.name}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {alteration.gene.name}
+          </a>
+        </td>
+        <td>
+          <a
+            href={`https://www.oncokb.org/gene/${alteration.gene.name}/${alteration.alteration}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {alteration.alteration}
+          </a>
+        </td>
+        <td className="center">{alteration.oncogenic}</td>
+        <td className="center">{alteration.function_change}</td>
+        {isAcquired && (
+          <td className={styles.acquiredAlterationCheckmark}>
+            <span className="glyphicon glyphicon-ok" />
+          </td>
+        )}
+      </tr>
+    );
+  });
 
   return (
     <article className="card_wrapper oncogenic_alterations_tile">
@@ -42,6 +68,24 @@ const OncogenicAlterationsTile = ({
                 <th>Alteration</th>
                 <th className="center">Oncogenic</th>
                 <th className="center">Function</th>
+                {hasSomeAcquiredAlterations && (
+                  <th className="center">
+                    <div style={{ display: "flex" }}>
+                      Acquired?
+                      <InfoTip
+                        placement="top"
+                        id="acquired-alterations"
+                        title="Acquired alterations"
+                        content={
+                          <div>
+                            Alterations present in this resistant derivative but
+                            not in its parental model.
+                          </div>
+                        }
+                      />
+                    </div>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>{tableRows}</tbody>

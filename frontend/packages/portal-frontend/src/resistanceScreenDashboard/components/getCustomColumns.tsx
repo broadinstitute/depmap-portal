@@ -51,9 +51,20 @@ function getCustomColumns(
     {
       width: 115,
       header: () => (
-        <span style={{ fontWeight: "normal" }}>
-          <b>Expression</b> in parental vs. resistant
-        </span>
+        <DependencyLinksHeader
+          heading={
+            <>
+              <b>Expression</b> in parental vs. resistant
+            </>
+          }
+          tooltipTitle="Comparing parental to resistant model"
+          tooltipContent={
+            <ul>
+              The “scatter” links will show a scatter plot of the parental vs
+              the resistance model gene expression.
+            </ul>
+          }
+        />
       ),
       cell: (_, getValue) => {
         return <ModelScatterLink dataset_id="expression" getValue={getValue} />;
@@ -64,9 +75,20 @@ function getCustomColumns(
     {
       width: 115,
       header: () => (
-        <span style={{ fontWeight: "normal" }}>
-          <b>Copy Number</b> in parental vs. resistant
-        </span>
+        <DependencyLinksHeader
+          heading={
+            <>
+              <b>Copy Number</b> in parental vs. resistant
+            </>
+          }
+          tooltipTitle="Comparing parental to resistant model"
+          tooltipContent={
+            <ul>
+              The “scatter” links will show a scatter plot of the parental vs
+              the resistance model copy number.
+            </ul>
+          }
+        />
       ),
       cell: (_, getValue) => {
         return (
