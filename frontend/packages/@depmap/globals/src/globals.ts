@@ -42,6 +42,27 @@ export const isPortal: boolean = Boolean(
   document.getElementById("webpack-config")
 );
 
+function extractUrlPrefixFromWebpackConfig() {
+  const element = document.getElementById("webpack-config");
+  let urlPrefix = "";
+
+  try {
+    const config = JSON.parse(element?.textContent || "{}");
+
+    if (config && typeof config.rootUrl === "string") {
+      urlPrefix = config.rootUrl.trim();
+    } else {
+      window.console.error(
+        "Invalid webpack-config: Missing or malformed rootUrl."
+      );
+    }
+  } catch (e) {
+    window.console.error("Failed to parse webpack-config:", e);
+  }
+
+  return urlPrefix;
+}
+
 export const getUrlPrefix = () => {
   if (process.env.JEST_WORKER_ID) {
     return "";
@@ -65,24 +86,7 @@ export const getUrlPrefix = () => {
     return "";
   }
 
-  const element = document.getElementById("webpack-config");
-  let urlPrefix = "";
-
-  try {
-    const config = JSON.parse(element?.textContent || "{}");
-
-    if (config && typeof config.rootUrl === "string") {
-      urlPrefix = config.rootUrl.trim();
-    } else {
-      window.console.error(
-        "Invalid webpack-config: Missing or malformed rootUrl."
-      );
-    }
-  } catch (e) {
-    window.console.error("Failed to parse webpack-config:", e);
-  }
-
-  return urlPrefix;
+  return extractUrlPrefixFromWebpackConfig();
 };
 
 export function toPortalLink(relativeUrl: string) {
@@ -94,7 +98,8 @@ export function toPortalLink(relativeUrl: string) {
   const [path, queryAndFragment] = trimmed.split(/(?=[?#])/); // Split at first ? or #
 
   const encodedPath = path.split("/").map(encodeURIComponent).join("/");
-  let fullUrl = `${encodeURI(getUrlPrefix())}/${encodedPath}`;
+  const prefix = extractUrlPrefixFromWebpackConfig();
+  let fullUrl = `${encodeURI(prefix)}/${encodedPath}`;
 
   if (queryAndFragment) {
     fullUrl += queryAndFragment; // preserve ?query=... and/or #fragment

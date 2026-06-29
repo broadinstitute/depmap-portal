@@ -45,10 +45,22 @@ function PlotSelections({
     }
     const selectedIndexIds: string[] = [];
     const displayLabels: string[] = [];
+    // De-dupe by index id. Under group_by === "expansion" the selection is
+    // collapsed to models, but `data.index_ids` still carries one row per
+    // (model, transcript) point, so a single selected model matches many rows
+    // here. Resolve each selected model to one entry — the first row wins, and
+    // since every row of a model shares its index id and index label that pick
+    // is well-defined. Without this the list, the count, and the Visualize /
+    // Save-as-context affordances all over-count an expanded selection. For the
+    // unexpanded and pair-grained paths the ids are already unique, so the guard
+    // never fires and behavior (including row order) is unchanged.
+    const seen = new Set<string>();
 
     for (let i = 0; i < data.index_ids.length; i += 1) {
-      if (selectedIds?.has(data.index_ids[i])) {
-        selectedIndexIds.push(data.index_ids[i]);
+      const id = data.index_ids[i];
+      if (selectedIds?.has(id) && !seen.has(id)) {
+        seen.add(id);
+        selectedIndexIds.push(id);
         displayLabels.push(data.index_labels[i]);
       }
     }

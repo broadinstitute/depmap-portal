@@ -24,6 +24,9 @@ import {
   orderContinuousPointsByBin,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
+import installGroupSelectionDragLayer, {
+  GroupSelectionConfig,
+} from "./groupSelectionDragLayer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
 
 type Data = Record<string, any>;
@@ -69,6 +72,21 @@ interface Props {
   // expanded plots so a paginated transcript window renders at full size even
   // when the dataset doesn't measure every transcript in the window.
   placeholderEmptyTracks?: boolean;
+  // When true, box/lasso selection is replaced with a custom drag whose
+  // marquee is confined to the violin track (group) it starts in, and cannot
+  // escape into a neighbouring track. Shift adds to the selection within that
+  // same locked track. See groupSelectionDragLayer.
+  enforceSingleGroupSelection?: boolean;
+  // The points to put text labels on. Diverges from `selectedPoints` only under
+  // group_by === "expansion": there, `selectedPoints` re-expands a model to
+  // every region it appears in, while this stays the handful of contacted
+  // points (see useSelection's annotation channel). Falls back to
+  // `selectedPoints` when omitted, so the labeled set is unchanged elsewhere.
+  pointsToAnnotate?: Set<number>;
+  // The count shown in the "N points selected" fallback when there are too many
+  // to label. The wrapper threads selection.size (model count under collapse);
+  // defaults to the selected-point count when omitted.
+  selectionCount?: number;
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -183,6 +201,9 @@ function PrototypeDensity1D({
   xAxisFontSize = 14,
   yAxisFontSize = 14,
   placeholderEmptyTracks = false,
+  enforceSingleGroupSelection = false,
+  pointsToAnnotate,
+  selectionCount,
   Plotly,
 }: any) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -207,7 +228,10 @@ function PrototypeDensity1D({
 
   useEffect(() => {
     const plot = ref.current;
-    return () => Plotly.purge(plot as HTMLElement);
+    return () => {
+      (plot as any)?.__groupSelCleanup?.();
+      Plotly.purge(plot as HTMLElement);
+    };
   }, [Plotly]);
 
   const [minX, maxX] = useMemo(() => getRange(data[xKey]), [data, xKey]);
@@ -289,6 +313,16 @@ function PrototypeDensity1D({
       dragmode === "select" ||
       dragmode === "lasso" ||
       (selectedPoints && selectedPoints.size > 0);
+
+    // When enforceSingleGroupSelection is on and a select/lasso tool is active,
+    // we keep Plotly's real selection running (it does the hit testing and the
+    // selected-point rendering) but hide its marquee in favor of our custom,
+    // band-clamped one, and constrain the committed result to the anchor group
+    // (see the plotly_selected handler). So the real `dragmode` passes through.
+    const useGroupSelection =
+      enforceSingleGroupSelection &&
+      (dragmode === "select" || dragmode === "lasso");
+    const groupSelectionTool = dragmode === "lasso" ? "lasso" : "box";
 
     const templateTrace = {
       type: "scattergl" as const,
@@ -551,6 +585,17 @@ function PrototypeDensity1D({
 
     const collapseLeftMargin = violinTraces.length === 1;
 
+    // Annotation channel (expansion-selection): label precisely the contacted
+    // points, not the re-expanded `selectedPoints`. They coincide off the
+    // group_by === "expansion" collapse, so this is a no-op there; the fallback
+    // keeps callers that don't pass the set (e.g. the scatter path) unchanged.
+    const pointsForAnnotation = pointsToAnnotate ?? selectedPoints;
+    // Count for the "too many to label" fallback. selectionCount is the model
+    // count under collapse (selection.size, threaded from the wrapper). TODO:
+    // the noun "point(s)" should become the index type's display name (e.g.
+    // "model(s)") once that is threaded through; literal for now.
+    const annotationCount = selectionCount ?? selectedPoints?.size ?? 0;
+
     const layout: Partial<Layout> = {
       height: height === "auto" ? calcPlotHeight(plot) : height,
       margin: {
@@ -596,9 +641,19 @@ function PrototypeDensity1D({
 
       dragmode,
 
+      // enforceSingleGroupSelection: a thin band sweep is mostly-horizontal,
+      // which Plotly's default selectdirection "any" auto-reads as an "h"
+      // (full-y-axis) selection — spanning every band and bypassing the pointer
+      // clamp, since Plotly sets that span programmatically. Force diagonal-only
+      // ("d") so every box stays an ordinary drag-cornered rectangle; the
+      // interceptor then clamps its height to the anchor band.
+      selectdirection: useGroupSelection ? "d" : "any",
+
       annotations:
-        annotationText && selectedPoints?.size <= MAX_POINTS_TO_ANNOTATE
-          ? [...selectedPoints]
+        annotationText &&
+        pointsForAnnotation &&
+        pointsForAnnotation.size <= MAX_POINTS_TO_ANNOTATE
+          ? [...pointsForAnnotation]
               .filter(
                 // Filter out any annotations associated with missing data. This can
                 // happen if the x or y column has changed since the annotations were
@@ -633,8 +688,8 @@ function PrototypeDensity1D({
                       xref: "paper",
                       yref: "paper",
                       text: [
-                        selectedPoints.size,
-                        selectedPoints.size === 1 ? "point" : "points",
+                        annotationCount,
+                        annotationCount === 1 ? "point" : "points",
                         "selected",
                       ].join(" "),
                       arrowcolor: "transparent",
@@ -654,6 +709,43 @@ function PrototypeDensity1D({
     };
 
     Plotly.react(plot, plotlyData, layout, config);
+
+    // enforceSingleGroupSelection: hand the live config to the custom drag
+    // layer and (re)install it. The config is read on each mousedown, so it
+    // stays current across effect re-runs. Switching tool or toggling the mode
+    // off resets the additive (shift-select) state; benign re-renders keep it.
+    {
+      const prev = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      const resetAdditive =
+        !prev ||
+        prev.tool !== groupSelectionTool ||
+        prev.enabled !== useGroupSelection;
+
+      if (prev && resetAdditive) {
+        prev.committedShapes = [];
+        prev.selectionRegionKey = null;
+      }
+
+      (plot as any).__groupSel = {
+        enabled: useGroupSelection,
+        tool: groupSelectionTool,
+        axis: "y",
+        // Groups here are violin tracks at integer y0s. The waterfall uses the
+        // same drag layer with a "ranges" model on the x-axis; both rely on
+        // groupSelectionDragLayer's shared l2p + axis._offset conversion to map
+        // region bounds to exact on-screen pixels (see axisOffset there).
+        regionModel: {
+          kind: "violinTracks",
+          validKeys: new Set<number>(
+            violinTraces.map((vt) => vt.y0 as number)
+          ),
+        },
+        committedShapes: resetAdditive ? [] : prev!.committedShapes,
+        selectionRegionKey: resetAdditive ? null : prev!.selectionRegionKey,
+      } as GroupSelectionConfig;
+
+      installGroupSelectionDragLayer(plot as any);
+    }
 
     // Keep track of added listeners so we can easily remove them.
     const listeners: [string, (e: any) => void][] = [];
@@ -698,12 +790,14 @@ function PrototypeDensity1D({
       );
     };
 
-    plot.annotateSelected = () => {
-      if (selectedPoints) {
-        const points = [...selectedPoints];
-        assignAnnotationPositions(points);
-        onMultiselect(points);
-      }
+    plot.annotateSelected = (points?: number[]) => {
+      // Position annotation tails for the given points (the context path passes
+      // its representative points; selection + annotation state is already set
+      // by setSelectionFromContext). Falls back to the current selection when
+      // called with no argument. No longer commits a selection of its own —
+      // that "annotate == select" coupling is now split into the two channels.
+      const pts = points ?? (selectedPoints ? [...selectedPoints] : []);
+      assignAnnotationPositions(pts);
     };
 
     // After initializing the plot with `autorange` set to true, store what
@@ -720,6 +814,14 @@ function PrototypeDensity1D({
     });
 
     on("plotly_relayout", () => {
+      // A zoom/resize invalidates the pixel-space committed marquees, so drop
+      // the additive (shift-select) state along with the stored axes.
+      const cfg = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      if (cfg) {
+        cfg.committedShapes = [];
+        cfg.selectionRegionKey = null;
+      }
+
       axes.current = {
         xaxis: { ...plot.layout.xaxis, autorange: false },
         yaxis: { ...plot.layout.yaxis, autorange: false },
@@ -761,14 +863,62 @@ function PrototypeDensity1D({
       }, 100);
     });
 
-    on("plotly_selecting", () => {
+    on("plotly_selecting", (e: PlotSelectionEvent) => {
       if (selectedPoints?.size > 0) {
         onClickResetSelection();
+      }
+
+      // enforceSingleGroupSelection (density): the band anchor is deferred until
+      // the drag box first touches a point (groupSelectionDragLayer leaves
+      // selectionRegionKey null on a fresh violin drag). Lock it here to the
+      // band of the first contacted point nearest the drag start; from then on
+      // the interceptor confines the box to that band.
+      //
+      // Known limitation (deliberate trade-off): the interceptor clamps the live
+      // pointer to the band but does not re-pin Plotly's anchor corner (the
+      // mousedown position). So a drag going UPWARD from a start below the
+      // resolved violin can momentarily render a box that spans into the
+      // neighbour above. Re-pinning the anchor would mean rewriting Plotly's
+      // in-progress drag start — invasive, and not worth losing the simple
+      // "clamp the pointer" model we settled on, especially for a gesture this
+      // uncommon. It is purely a visual artifact: plotly_selected filters the
+      // committed points to the anchor band on mouse up, so the selection itself
+      // is always unambiguous and its integrity is unaffected.
+      if (!useGroupSelection) {
+        return;
+      }
+      const cfg = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      if (
+        !cfg ||
+        cfg.regionModel.kind !== "violinTracks" ||
+        cfg.selectionRegionKey != null || // already resolved (or shift-locked)
+        !e?.points?.length // no contact yet — still traversing a gap
+      ) {
+        return;
+      }
+      const startY = (plot as any).__groupSelStartCoord as number | undefined;
+      let bestBand: number | null = null;
+      let bestDist = Infinity;
+      e.points.forEach((p) => {
+        if (p.data.hoverinfo === "skip" || p.data.hoverinfo === "none") {
+          return;
+        }
+        const origIndex = isContinuousCurve(p.curveNumber)
+          ? contTraceIndex[p.pointIndex]
+          : p.pointIndex;
+        const dist = startY == null ? 0 : Math.abs(y[origIndex] - startY);
+        if (dist < bestDist) {
+          bestDist = dist;
+          bestBand = Math.round(y[origIndex]);
+        }
+      });
+      if (bestBand != null) {
+        cfg.selectionRegionKey = bestBand;
       }
     });
 
     on("plotly_selected", (e: PlotSelectionEvent) => {
-      const points =
+      let points =
         e?.points
           .filter(
             (p) => p.data.hoverinfo !== "skip" && p.data.hoverinfo !== "none"
@@ -778,6 +928,18 @@ function PrototypeDensity1D({
               ? contTraceIndex[p.pointIndex]
               : p.pointIndex
           ) || [];
+
+      // enforceSingleGroupSelection: Plotly hit-tests across the whole plot, so
+      // drop any selected points that aren't in the track the drag was anchored
+      // to. A point's track is round(y) (points jitter < 0.5 from their center).
+      if (useGroupSelection) {
+        const anchorY0 = (plot as any).__groupSel?.selectionRegionKey as
+          | number
+          | null;
+        if (anchorY0 != null) {
+          points = points.filter((i) => Math.round(y[i]) === anchorY0);
+        }
+      }
 
       assignAnnotationPositions(points);
       onMultiselect(points);
@@ -899,6 +1061,8 @@ function PrototypeDensity1D({
     annotationTextKey,
     height,
     selectedPoints,
+    pointsToAnnotate,
+    selectionCount,
     onClickPoint,
     onMultiselect,
     onClickResetSelection,
@@ -913,6 +1077,7 @@ function PrototypeDensity1D({
     xAxisFontSize,
     yAxisFontSize,
     placeholderEmptyTracks,
+    enforceSingleGroupSelection,
     Plotly,
   ]);
 

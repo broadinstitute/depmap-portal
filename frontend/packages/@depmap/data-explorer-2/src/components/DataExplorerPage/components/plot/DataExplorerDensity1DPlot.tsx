@@ -9,9 +9,7 @@ import {
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
-  EntityRefSet,
   entityRefKey,
-  singleRef,
 } from "@depmap/types";
 import useDensity1DPlotData from "./prototype/useDensity1DPlotData";
 import PrototypeDensity1D from "./prototype/PrototypeDensity1D";
@@ -48,15 +46,21 @@ function DataExplorerDensity1DPlot({
   onClickSaveSelectionAsContext,
   onClickColorByContext,
 }: Props) {
+  // Expanded plots (group_by "expansion") are the one and only trigger for
+  // confining selection to a single group.
+  const enforceSingleGroupSelection = plotConfig.group_by === "expansion";
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const {
     selection,
     selectedPoints,
+    pointsToAnnotate,
     handleClickPoint,
     handleMultiselect,
     setSelection,
+    setSelectionFromContext,
     clearSelection,
-  } = useSelection(data);
+    selectionKeyForPoint,
+  } = useSelection(data, plotConfig.group_by);
 
   // Expanded plots (the response carries an expansion) get a different
   // selection panel: ExpandedPlotSelections lists (index, expansion)
@@ -65,6 +69,14 @@ function DataExplorerDensity1DPlot({
   const isExpanded =
     ((data as { expansions?: DataExplorerExpansion[] } | null)?.expansions
       ?.length ?? 0) > 0;
+
+  // Panel-follows-grain: the pair panel (ExpandedPlotSelections) only makes
+  // sense when selection is pair-grained. Under group_by === "expansion"
+  // selection collapses to models, so the pair panel would match nothing —
+  // show the model PlotSelections instead (its Visualize / Save-as-context
+  // operations are meaningful for models). Mirrors `pairGrained` in
+  // useSelection.
+  const isPairGrained = isExpanded && plotConfig.group_by !== "expansion";
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
   const {
@@ -125,15 +137,13 @@ function DataExplorerDensity1DPlot({
       return;
     }
 
+    // Valid keys must be built in the SAME grain as the selection refs (via
+    // useSelection's selectionKeyForPoint) — otherwise a model-grained
+    // selection (group_by === "expansion") would be measured against pair keys
+    // and wiped on every data change.
     const validKeys = new Set<string>();
-    const expansions = (data as { expansions?: { ids: string[] }[] }).expansions;
-    const expansionIds = expansions?.[0]?.ids;
     for (let i = 0; i < data.index_ids.length; i += 1) {
-      if (expansionIds) {
-        validKeys.add(`p\x1f${data.index_ids[i]}\x1f${expansionIds[i]}`);
-      } else {
-        validKeys.add(`s\x1f${data.index_ids[i]}`);
-      }
+      validKeys.add(selectionKeyForPoint(i));
     }
 
     setSelection((current) => {
@@ -148,7 +158,7 @@ function DataExplorerDensity1DPlot({
       });
       return next;
     });
-  }, [data, setSelection]);
+  }, [data, setSelection, selectionKeyForPoint]);
 
   // Legacy panel compat: derive a Set<string> of index ids from the
   // structured selection. See DataExplorerScatterPlot for full rationale.
@@ -213,6 +223,9 @@ function DataExplorerDensity1DPlot({
               pointVisibility={pointVisibility || undefined}
               useSemiOpaqueViolins={!plotConfig.hide_points}
               placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
+              enforceSingleGroupSelection={enforceSingleGroupSelection}
+              pointsToAnnotate={pointsToAnnotate}
+              selectionCount={selection?.size ?? 0}
               hoverTextKey="hoverText"
               annotationTextKey="annotationText"
               height="auto"
@@ -247,7 +260,7 @@ function DataExplorerDensity1DPlot({
             />
           </StackableSection>
           <StackableSection title="Plot Selections" minHeight={256}>
-            {isExpanded ? (
+            {isPairGrained ? (
               <ExpandedPlotSelections
                 data={data}
                 selection={selection}
@@ -269,20 +282,23 @@ function DataExplorerDensity1DPlot({
                 }}
                 onClickClearSelection={clearSelection}
                 onClickSetSelectionFromContext={async () => {
-                  const newSelectedIds = await promptForSelectionFromContext(data!);
+                  const newSelectedIds = await promptForSelectionFromContext(
+                    data!
+                  );
 
                   if (newSelectedIds === null) {
                     return;
                   }
 
                   // Context resolution names entities of one type, never
-                  // pairs — wrap as single refs. If/when contexts can
-                  // describe (index, expansion) pairs, this is the place
-                  // to grow.
-                  setSelection(
-                    new EntityRefSet([...newSelectedIds].map(singleRef))
-                  );
-                  plotElement?.annotateSelected();
+                  // pairs. setSelectionFromContext sets the selection to those
+                  // ids (models) and the annotation set to one representative
+                  // point per id; it returns the representative points so we
+                  // can position their labels before the next render.
+                  const repPoints = setSelectionFromContext([
+                    ...newSelectedIds,
+                  ]);
+                  plotElement?.annotateSelected(repPoints);
                 }}
               />
             )}

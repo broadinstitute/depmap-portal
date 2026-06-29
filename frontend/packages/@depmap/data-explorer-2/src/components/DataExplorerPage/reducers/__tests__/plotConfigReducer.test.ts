@@ -136,4 +136,141 @@ describe("plotConfigReducer", () => {
     });
     expect(nextPlot.dimensions?.x?.aggregation).not.toBe("correlation");
   });
+
+  it("installs group_by 'expansion' as a one-time default on the expand_by enable transition, overwriting any prior group_by", () => {
+    const plot = {
+      plot_type: "scatter" as const,
+      index_type: "depmap_model",
+      // A prior grouping that entering expansion mode should overwrite.
+      group_by: "property" as const,
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice" as const,
+          aggregation: "mean" as const,
+          dataset_id: "gene_expr",
+          slice_type: "gene",
+          context: { name: "x", dimension_type: "gene", expr: true, vars: {} },
+        },
+        y: {},
+      },
+    };
+
+    const nextPlot = plotConfigReducer(plot, {
+      type: "select_expansion",
+      payload: {
+        key: "x",
+        expand_by: {
+          slice_type: "transcript",
+          context: {
+            name: "T",
+            dimension_type: "transcript",
+            expr: true,
+            vars: {},
+          } as any,
+          dataset_id: "transcript_expr",
+        },
+      },
+    });
+
+    expect(nextPlot.group_by).toBe("expansion");
+    expect(nextPlot.expand_by?.length).toBe(1);
+    expect(nextPlot.dimensions?.x?.aggregation).toBe("expansion");
+  });
+
+  it("does not re-install group_by 'expansion' on a subsequent select_expansion while already expanded", () => {
+    // Already expanded; the user has since moved group_by off the default
+    // (here stood in for by "property"). A paging dispatch must not clobber it.
+    const plot = {
+      plot_type: "scatter" as const,
+      index_type: "depmap_model",
+      group_by: "property" as const,
+      expand_by: [
+        { slice_type: "transcript", context: {} as any, limit: 9, offset: 0 },
+      ],
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice" as const,
+          aggregation: "expansion" as const,
+          dataset_id: "transcript_expr",
+          slice_type: "transcript",
+          context: {} as any,
+        },
+        y: {},
+      },
+    };
+
+    const nextPlot = plotConfigReducer(plot, {
+      type: "select_expansion",
+      payload: {
+        key: "x",
+        expand_by: {
+          slice_type: "transcript",
+          context: {} as any,
+          dataset_id: "transcript_expr",
+          offset: 9,
+        },
+      },
+    });
+
+    expect(nextPlot.group_by).toBe("property");
+  });
+
+  it("resets group_by to undefined when clearing an expansion grouped by 'expansion'", () => {
+    const plot = {
+      plot_type: "scatter" as const,
+      index_type: "depmap_model",
+      group_by: "expansion" as const,
+      expand_by: [
+        { slice_type: "transcript", context: {} as any, limit: 9, offset: 0 },
+      ],
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice" as const,
+          aggregation: "expansion" as const,
+          dataset_id: "transcript_expr",
+          slice_type: "transcript",
+          context: {} as any,
+        },
+        y: {},
+      },
+    };
+
+    const nextPlot = plotConfigReducer(plot, {
+      type: "select_expansion",
+      payload: { key: "x", expand_by: null },
+    });
+
+    expect(nextPlot.group_by).toBeUndefined();
+    // normalize() strips the now-empty expand_by once the sentinel is gone.
+    expect(nextPlot.expand_by).toBeUndefined();
+    expect(nextPlot.dimensions?.x?.aggregation).toBe("mean");
+  });
+
+  it("preserves a non-'expansion' group_by when clearing an expansion", () => {
+    const plot = {
+      plot_type: "scatter" as const,
+      index_type: "depmap_model",
+      group_by: "property" as const,
+      expand_by: [
+        { slice_type: "transcript", context: {} as any, limit: 9, offset: 0 },
+      ],
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice" as const,
+          aggregation: "expansion" as const,
+          dataset_id: "transcript_expr",
+          slice_type: "transcript",
+          context: {} as any,
+        },
+        y: {},
+      },
+    };
+
+    const nextPlot = plotConfigReducer(plot, {
+      type: "select_expansion",
+      payload: { key: "x", expand_by: null },
+    });
+
+    expect(nextPlot.group_by).toBe("property");
+  });
 });
