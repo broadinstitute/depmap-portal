@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import { enabledFeatures } from "@depmap/globals";
+import getResistanceScreenTable, {
+  ResistanceRow,
+} from "../utilities/getResistanceScreenTable";
 
 import {
   ResistanceInfo,
@@ -20,17 +23,6 @@ import {
 interface AnchorRow {
   PairID: string;
   ModelID: string;
-}
-
-interface ResistanceRow {
-  PairID: string;
-  CtrlArmModelID: string;
-  CtrlArmStrippedCellLineName: string;
-  TestArmModelID: string;
-  TestArmStrippedCellLineName: string;
-  CulturedDrugResistance: string | null;
-  EngineeredModelDetails: string | null;
-  ComparisonType: "drug adapted" | "genetic knock-in" | string;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,31 +55,6 @@ const getAnchorScreenTable = async () => {
     PairID,
     ModelID,
   })) as AnchorRow[];
-};
-
-const getResistanceScreenTable = async () => {
-  const data = await bb.getTabularDatasetData("PairedResScreenTable", {
-    columns: [
-      "CtrlArmModelID",
-      "CtrlArmStrippedCellLineName",
-      "TestArmModelID",
-      "TestArmStrippedCellLineName",
-      "CulturedDrugResistance",
-      "EngineeredModelDetails",
-      "ComparisonType",
-    ],
-  });
-
-  return Object.keys(data.ComparisonType).map((PairID) => ({
-    PairID,
-    CtrlArmModelID: data.CtrlArmModelID[PairID],
-    CtrlArmStrippedCellLineName: data.CtrlArmStrippedCellLineName[PairID],
-    TestArmModelID: data.TestArmModelID[PairID],
-    TestArmStrippedCellLineName: data.TestArmStrippedCellLineName[PairID],
-    CulturedDrugResistance: data.CulturedDrugResistance[PairID],
-    EngineeredModelDetails: data.EngineeredModelDetails[PairID],
-    ComparisonType: data.ComparisonType[PairID],
-  })) as ResistanceRow[];
 };
 
 export function usePairedScreensData(modelId: string): PairedScreensState {
@@ -174,11 +141,24 @@ export function derivePairedScreensData(
     // wants it presented.
     const row = testRows[0];
     resistance = {
+      role: "derivative",
       origin: deriveOrigin(row),
       parentalLine: {
         id: row.CtrlArmModelID,
         name: row.CtrlArmStrippedCellLineName,
       },
+    };
+  } else if (ctrlRows.length > 0) {
+    // The model is itself a parental line; surface its derivatives so users
+    // can navigate to each. A derivative may appear once per resistance
+    // experiment, so de-duplication isn't done here — the dashboard rows
+    // themselves are the source of truth.
+    resistance = {
+      role: "parental",
+      derivatives: ctrlRows.map((r) => ({
+        id: r.TestArmModelID,
+        name: r.TestArmStrippedCellLineName,
+      })),
     };
   }
 

@@ -521,7 +521,7 @@ def get_cell_line_oncogenic_alterations(model_id: str):
                     "alteration": alteration,
                     "oncogenic": oncogenic_label,
                     "function_change": mutation.get("Mutation Effect"),
-                    "dataste": None,
+                    "dataset": None,
                 }
             )
 
