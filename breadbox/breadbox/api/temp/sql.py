@@ -101,22 +101,23 @@ async def _run_time_bounded_celery_task(
     """
     task = task_fn.apply_async(args=args, time_limit=time_limit)
 
-    # Use propagate=False so task.get() returns normally instead of raising the task's
-    # exception. When propagate=True (the default), a task failure causes the exception
-    # to propagate through Celery's generator-based drain_events_until/_wait_for_pending
-    # chain. Python doesn't close generators when an exception escapes a for-loop, so
-    # their finally blocks (including the Redis pub/sub unsubscribe) never run. The shared
-    # _pubsub connection (a @cached_property on the backend) is then left subscribed to
-    # the stale channel, and subsequent calls read leftover bytes (b'1') as a Redis
-    # protocol response, causing InvalidResponse errors for all queries until restart.
-    await anyio.to_thread.run_sync(
-        lambda: task.get(timeout=time_limit + time_limit_padding, propagate=False)
-    )
+    # we previously had the following here to do a blocking wait for the task
+    #
+    # await anyio.to_thread.run_sync(
+    #   lambda: task.get(timeout=time_limit + time_limit_padding, propagate=False)
+    # )
+    #
+    # However, it appears this results in some non-threadsafe use of a redis connection
+    # which can result in all future queries failing with an InvalidResponse exception,
+    #
+    # To avoid that, we're going to use a dumb polling strategy instead
 
-    if task.state == "FAILURE":
-        raise task.result
-
-    return task.result
+    deadline = asyncio.get_event_loop().time() + time_limit + time_limit_padding
+    while asyncio.get_event_loop().time() < deadline:
+        if task.ready():
+            return task.result
+        await asyncio.sleep(0.5)
+    raise TimeoutError(f"Task {task.id} did not complete in time")
 
 
 @router.post("/sql/query", operation_id="query_sql", response_class=CSVFileResponse)
