@@ -162,7 +162,6 @@ class Cursor:
         self.iterating: Union[Iterator[SQLiteValue], None] = None
         self.current_row: Any = None
         self.callable = callable
-        print(f"Cursor.__init__: {(self.param_values)}")
 
     def Filter(self, idx_num: int, idx_str: str, args: tuple[SQLiteValue]) -> None:
         params: dict[str, SQLiteValue] = self.param_values.copy()
@@ -237,7 +236,6 @@ def make_virtual_module(
 
 def add_matrix_dataset(connection, dataset: MatrixDataset, schema: SchemaNames):
     table_name = schema.get_dataset_table_name(dataset.id)
-    print("Creating ", table_name)
     connection.execute(
         f"CREATE VIRTUAL TABLE \"{table_name}\" using query_matrix_dataset('{dataset.id}')"
     )
@@ -353,7 +351,7 @@ def sorted_list_contains(haystack, needle):
 def _query_matrix_dataset_samples(
     db, index_cache, dataset_id, dim_id_type, **constraints
 ):
-    print(f"Querying {dim_id_type} dimensions with constraints ({constraints})")
+    log.info(f"Querying {dim_id_type} dimensions with constraints ({constraints})")
     dataset_key = f"dataset:{dataset_id}"
     if dataset_key not in index_cache:
         matrix_dataset = crud_dataset.get_dataset(db, db.user, dataset_id)
@@ -377,7 +375,7 @@ def _query_matrix_dataset_samples(
     if len(constraints) > 0:
         # if there's any constraint, we can assume it's on dim_id_type
         dim_id = constraints[dim_id_type]
-        print(f"Searching for {dim_id} among {dim_ids}")
+        log.info(f"Searching for {dim_id} among {dim_ids}")
         if sorted_list_contains(dim_ids, dim_id):
             yield (dim_id,)
         else:
