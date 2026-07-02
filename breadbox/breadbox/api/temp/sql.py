@@ -99,7 +99,10 @@ async def _run_time_bounded_celery_task(
     not actually get any chance to run before the time limit expires. Regardless, this is a way to at
     least enforce some bound on the execution time of a function.
     """
-    task = task_fn.apply_async(args=args, time_limit=time_limit)
+    # give the task extra time in celery so that our while loop below is generally the one
+    # to figure out that we've run out of time and raises the exception before the task comes back
+    # as a failure
+    task = task_fn.apply_async(args=args, time_limit=time_limit + time_limit_padding)
 
     # we previously had the following here to do a blocking wait for the task
     #
@@ -112,10 +115,15 @@ async def _run_time_bounded_celery_task(
     #
     # To avoid that, we're going to use a dumb polling strategy instead
 
-    deadline = asyncio.get_event_loop().time() + time_limit + time_limit_padding
+    deadline = asyncio.get_event_loop().time() + time_limit
     while asyncio.get_event_loop().time() < deadline:
         if task.ready():
-            return task.result
+            if task.state == "SUCCESS":
+                return task.result
+            else:
+                raise Exception(
+                    f"Task {task.id} task.status was not SUCCESS (was: {task.state}) "
+                )
         await asyncio.sleep(0.5)
     raise TimeoutError(f"Task {task.id} did not complete in time")
 
