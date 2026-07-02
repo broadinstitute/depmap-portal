@@ -90,6 +90,10 @@ def get_sql_schema(
     return statements_by_given_id
 
 
+class CeleryTaskTimeout(Exception):
+    pass
+
+
 async def _run_time_bounded_celery_task(
     task_fn: Any, args: list, time_limit: int, time_limit_padding=5
 ):
@@ -116,16 +120,20 @@ async def _run_time_bounded_celery_task(
     # To avoid that, we're going to use a dumb polling strategy instead
 
     deadline = asyncio.get_event_loop().time() + time_limit
-    while asyncio.get_event_loop().time() < deadline:
-        if task.ready():
-            if task.state == "SUCCESS":
-                return task.result
-            else:
-                raise Exception(
-                    f"Task {task.id} task.status was not SUCCESS (was: {task.state}) "
-                )
-        await asyncio.sleep(0.5)
-    raise TimeoutError(f"Task {task.id} did not complete in time")
+    try:
+        while asyncio.get_event_loop().time() < deadline:
+            if task.ready():
+                if task.state == "SUCCESS":
+                    return task.result
+                else:
+                    raise Exception(
+                        f"Task {task.id} task.status was not SUCCESS (was: {task.state}) "
+                    )
+            await asyncio.sleep(0.5)
+    except TimeLimitExceeded:
+        pass  # fall through and let our custom timeout error be thrown
+
+    raise CeleryTaskTimeout(f"Task {task.id} did not complete in time")
 
 
 @router.post("/sql/query", operation_id="query_sql", response_class=CSVFileResponse)
@@ -166,7 +174,7 @@ async def query_sql(
                 [db.user, results_dir, query.sql, settings.filestore_location],
                 time_limit=SQL_QUERY_TIMELIMIT,
             )
-        except TimeLimitExceeded:
+        except CeleryTaskTimeout:
             log.warning(
                 f"This query took too long to executed and was aborted: {query.sql}"
             )
