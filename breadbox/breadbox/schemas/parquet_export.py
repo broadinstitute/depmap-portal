@@ -12,3 +12,7 @@ class MatrixSubsetOperation(BaseModel):
 class TabularSubsetOperation(BaseModel):
     dataset_id: str
     destination: str
+
+
+class ExportResult(BaseModel):
+    url: str

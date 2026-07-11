@@ -1,5 +1,5 @@
 from fastapi import Depends, HTTPException, Request
-
+from typing import Annotated
 from ..crud import dataset as dataset_crud
 from breadbox.db.session import SessionLocalWithUser, SessionWithUser
 from breadbox.config import Settings, get_settings
@@ -20,6 +20,10 @@ def get_db_with_user(request: Request):
 def get_legacy_cas_bucket():
     settings = get_settings()
     return settings.LEGACY_CAS_BUCKET
+
+
+def get_filestore_location(settings: Annotated[Settings, get_settings]):
+    return settings.filestore_location
 
 
 def get_cas_db_path():

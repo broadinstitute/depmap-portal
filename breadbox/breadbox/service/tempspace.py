@@ -56,6 +56,10 @@ class ObjStore:
     def delete(self, paths: list[TempspacePath]):
         ...
 
+    def abspath(self, path: TempspacePath) -> str:
+        """resolve a TempspacePath to a fully resolved absolute path"""
+        ...
+
 
 class FileObjStore(ObjStore):
     """
@@ -67,29 +71,29 @@ class FileObjStore(ObjStore):
     def __init__(self, root_dir: str):
         self.root_dir = root_dir
 
-    def _full_path(self, path: str) -> str:
+    def abspath(self, path: TempspacePath) -> str:
         # path is always a "/"-separated relative key, regardless of host OS
         return os.path.join(self.root_dir, *path.split("/"))
 
     def exists(self, path: TempspacePath) -> bool:
-        return os.path.isfile(self._full_path(path))
+        return os.path.isfile(self.abspath(path))
 
     def copy(self, src_path: TempspacePath, dst_path: TempspacePath):
-        full_src = self._full_path(src_path)
+        full_src = self.abspath(src_path)
         if not os.path.isfile(full_src):
             raise DoesNotExist(src_path)
-        full_dst = self._full_path(dst_path)
+        full_dst = self.abspath(dst_path)
         os.makedirs(os.path.dirname(full_dst), exist_ok=True)
         shutil.copyfile(full_src, full_dst)
 
     def get(self, src_path: TempspacePath, dst_local_path: str):
-        full_src = self._full_path(src_path)
+        full_src = self.abspath(src_path)
         if not os.path.isfile(full_src):
             raise DoesNotExist(src_path)
         shutil.copyfile(full_src, dst_local_path)
 
     def put(self, src_local_path: str, dst_path: TempspacePath):
-        full_dst = self._full_path(dst_path)
+        full_dst = self.abspath(dst_path)
         os.makedirs(os.path.dirname(full_dst), exist_ok=True)
         shutil.copyfile(src_local_path, full_dst)
 
@@ -112,7 +116,7 @@ class FileObjStore(ObjStore):
 
     def delete(self, paths: list[TempspacePath]):
         for path in paths:
-            full_path = self._full_path(path)
+            full_path = self.abspath(path)
             if os.path.isfile(full_path):
                 os.remove(full_path)
 
@@ -124,13 +128,17 @@ class GCSObjStore(ObjStore):
     `Tempspace._make_path`) which are resolved to blob names under `prefix`.
     """
 
-    def __init__(self, bucket_name: str, prefix: str = ""):
-        self.client = storage.Client()
+    def __init__(self, client: storage.Client, bucket_name: str, prefix: str = ""):
+        self.client = client
+        self.bucket_name = bucket_name
         self.bucket = self.client.bucket(bucket_name)
         self.prefix = prefix
 
     def _full_path(self, path: str) -> str:
         return f"{self.prefix}{path}"
+
+    def abspath(self, path: TempspacePath) -> str:
+        return f"gs://{self.bucket_name}/{self._full_path(path)}"
 
     def exists(self, path: TempspacePath) -> bool:
         return self.bucket.blob(self._full_path(path)).exists()
@@ -292,3 +300,6 @@ class Tempspace:
 
         # and delete them all
         self.storage.delete(paths_to_delete)
+
+    def abspath(self, path: TempspacePath) -> str:
+        return self.storage.abspath(path)
