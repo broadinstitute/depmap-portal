@@ -22,7 +22,7 @@ def get_legacy_cas_bucket():
     return settings.LEGACY_CAS_BUCKET
 
 
-def get_filestore_location(settings: Annotated[Settings, get_settings]):
+def get_filestore_location(settings: Annotated[Settings, Depends(get_settings)]):
     return settings.filestore_location
 
 

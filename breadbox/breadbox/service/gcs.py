@@ -6,7 +6,7 @@ from typing import Annotated, Callable
 from breadbox.config import Settings
 from breadbox.api.dependencies import get_settings
 from fastapi import Depends
-from tempspace import Tempspace, GCSObjStore
+from breadbox.service.tempspace import Tempspace, GCSObjStore
 
 # set up our caching for temp space to retain files for at least 15 days
 default_interval = 60 * 60 * 24 * 15
