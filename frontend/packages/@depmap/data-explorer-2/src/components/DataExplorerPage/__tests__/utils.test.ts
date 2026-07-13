@@ -1,5 +1,5 @@
 import { DataExplorerPlotConfig } from "@depmap/types";
-import { toRelatedPlot } from "../utils";
+import { CURRENT_PLOT_VERSION, normalizePlot, toRelatedPlot } from "../utils";
 
 // `toRelatedPlot` pins the selection-to-context translation: given a plot
 // the user is looking at and a set of selected IDs, return the plot that
@@ -180,6 +180,67 @@ describe("toRelatedPlot", () => {
       expect(next.dimensions.x?.slice_type).toBe("gene");
       // Pre-refactor: labelToIdMap["ENSG00000181449"] === undefined.
       expect(givenIdOf(next.dimensions.x?.context)).toBe("ENSG00000181449");
+    });
+  });
+});
+
+describe("normalizePlot", () => {
+  // Minimal valid plot used as the base fixture.
+  const basePlot: DataExplorerPlotConfig = ({
+    plot_type: "scatter",
+    index_type: "depmap_model",
+    dimensions: {
+      x: {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "FABP5",
+          dimension_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "FABP5"] },
+          vars: {},
+        },
+      },
+    },
+  } as unknown) as DataExplorerPlotConfig;
+
+  test("version survives normalizePlot — stamped payloads must round-trip the field", () => {
+    // If version were pulled into the destructure, this would return undefined
+    // and the writer would serialize a version-less blob, defeating the versioning
+    // scheme. Fail loudly here rather than silently at the reader's gate.
+    const result = normalizePlot({ ...basePlot, version: CURRENT_PLOT_VERSION });
+    expect(result.version).toBe(CURRENT_PLOT_VERSION);
+  });
+
+  // `sort_by` used to be re-added only inside the `color_by` arms, so it survived
+  // normalization only when some color backing happened to be complete. These pin
+  // the fix: sort order is a property of the plot, not of its coloring.
+  describe("sort_by preservation", () => {
+    test("survives with no color_by and no group_by", () => {
+      // The Transcript Explorer regression: a plot with `sort_by: "alphabetical"`
+      // matched no color arm, so `plotToQueryString` serialized it without a
+      // `sort_by` and the setting vanished on refresh.
+      const result = normalizePlot(({
+        ...basePlot,
+        sort_by: "alphabetical",
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.sort_by).toBe("alphabetical");
+    });
+
+    test("survives when grouped but uncolored", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        group_by: "expansion",
+        sort_by: "alphabetical",
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.sort_by).toBe("alphabetical");
+    });
+
+    test("is absent when the plot never had one", () => {
+      expect(normalizePlot(basePlot).sort_by).toBeUndefined();
     });
   });
 });

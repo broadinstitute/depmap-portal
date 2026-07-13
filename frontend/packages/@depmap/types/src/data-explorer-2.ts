@@ -194,6 +194,7 @@ export interface DataExplorerExpandedPlotResponse
 // certain plot types (but encoding that in type system would be much more
 // trouble than it's worth).
 export interface DataExplorerPlotConfig {
+  version?: number;
   plot_type: DataExplorerPlotType;
   index_type: string;
   dimensions: Partial<Record<DimensionKey, DataExplorerPlotConfigDimension>>;

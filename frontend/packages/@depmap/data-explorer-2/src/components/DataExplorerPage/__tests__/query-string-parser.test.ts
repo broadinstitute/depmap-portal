@@ -1,6 +1,7 @@
 import qs from "qs";
 import { DataExplorerDatasetDescriptor } from "@depmap/types";
 import { parseShorthandParams } from "../query-string-parser";
+import { CURRENT_PLOT_VERSION } from "../plot-version";
 
 const MOCK_DATASETS_BY_INDEX_TYPE: Record<
   string,
@@ -131,6 +132,21 @@ describe("Data Explorer 2.0 query string parser", () => {
 
     expect(result2).toBeDefined();
     expect(result2?.plot_type).toEqual("scatter");
+  });
+
+  it("should stamp the current schema version", () => {
+    // Shorthand params are a mint point. An unstamped plot would coerce to
+    // version 0 at the reader and get migrated as though it were pre-versioning
+    // legacy, even though it was minted this second.
+    const result = parseShorthandParams(
+      {
+        xDataset: "Chronos_Combined",
+        xFeature: "SOX10",
+      },
+      MOCK_DATASETS_BY_INDEX_TYPE
+    );
+
+    expect(result?.version).toEqual(CURRENT_PLOT_VERSION);
   });
 
   it("should infer `index_type` from `dataset_id` and `slice_type`", () => {
