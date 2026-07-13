@@ -39,6 +39,12 @@ import {
   omitShorthandParams,
   parseShorthandParams,
 } from "./query-string-parser";
+import { CURRENT_PLOT_VERSION } from "./plot-version";
+
+// Re-exported so existing callers (and tests) can keep importing this from
+// `./utils`. The definition lives in its own module to keep the import graph
+// acyclic — see the comment there.
+export { CURRENT_PLOT_VERSION };
 
 export const defaultContextName = (numLabels: number) => {
   return ["(", numLabels, " selected", ")"].join("");
@@ -291,7 +297,7 @@ function decompress(str: string): object {
   return JSON.parse(json);
 }
 
-function normalizePlot(plot: DataExplorerPlotConfig) {
+export function normalizePlot(plot: DataExplorerPlotConfig) {
   // Remove any incomplete options first.
   const {
     color_by,
@@ -301,6 +307,11 @@ function normalizePlot(plot: DataExplorerPlotConfig) {
     show_regression_line,
     filters,
     metadata,
+    // `version` is deliberately NOT listed here — it must survive into `rest`
+    // so the serialization in plotToQueryString round-trips it correctly. If you
+    // add it to this destructure for any reason, you must re-add it
+    // unconditionally in every branch below, or stamped payloads lose their
+    // version and the reader treats them as pre-versioning legacy.
     ...rest
   } = plot;
   const normalized: DataExplorerPlotConfig = rest;
@@ -322,6 +333,28 @@ function normalizePlot(plot: DataExplorerPlotConfig) {
       normalized.use_clustering = true;
     }
   } else {
+    // `sort_by` controls the ordering of groups. Every one of its values is a
+    // function of the data alone; none is semantically dependent on the color
+    // dimension. Its entanglement with `color_by` was historical: preservation
+    // used to happen only inside the color arms below, so `sort_by` survived
+    // normalization only when some color backing happened to be complete, and
+    // was silently dropped otherwise. That is why `sort_by: "alphabetical"` set
+    // by Transcript Explorer vanished on refresh — the plot round-tripped
+    // through `plotToQueryString` and matched no color arm.
+    //
+    // Preserve it unconditionally here and let the color arms below concern
+    // themselves only with color. This is the same allowlist hazard that bit
+    // `color_by: "expansion"`: anything destructured out at the top of this
+    // function must be deliberately shepherded back in, and a field re-added
+    // only inside conditional branches is a field that is conditionally lost.
+    //
+    // (Deliberately inside the non-heatmap arm: `correlation_heatmap` has no
+    // groups to order — it is ordered by `use_clustering` — so it has never
+    // carried a meaningful `sort_by`.)
+    if (sort_by) {
+      normalized.sort_by = sort_by;
+    }
+
     // `color_by: "expansion"` colors points by their expansion member and is
     // backed by `expand_by` (which rides through untouched in `rest`), not by a
     // color dimension/filter/metadata. The branches below only re-add `color_by`
@@ -355,19 +388,11 @@ function normalizePlot(plot: DataExplorerPlotConfig) {
     ) {
       normalized.color_by = color_by;
       normalized.metadata = metadata;
-
-      if (sort_by) {
-        normalized.sort_by = sort_by;
-      }
     }
 
     if (color_by && rest.dimensions?.color) {
       if (isCompleteDimension(rest.dimensions.color)) {
         normalized.color_by = color_by;
-
-        if (sort_by) {
-          normalized.sort_by = sort_by;
-        }
       } else {
         normalized.dimensions = omit(rest.dimensions, "color");
       }
@@ -537,7 +562,9 @@ export async function plotToQueryString(
     nextParams = omit(nextParams, paramsToDrop);
   }
 
-  const encodedPlot = await replaceContextsWithHashes(normalizePlot(plot));
+  const encodedPlot = await replaceContextsWithHashes(
+    normalizePlot({ ...plot, version: CURRENT_PLOT_VERSION })
+  );
   const serialized = compress(encodedPlot);
 
   return `?${qs.stringify({ ...nextParams, p: serialized })}`;
@@ -591,6 +618,11 @@ const replaceLegacyPropertyNames = (plot: DataExplorerPlotConfig | null) => {
   return plot;
 };
 
+// Called only from makePlotConfigBreadboxModeCompatible, which itself has a
+// second caller (StartScreenExample) besides readPlotFromQueryString. Do not
+// gate this on payload version: the side effect
+// (replaceLegacyContextIfExistsInLocalStorage) must fire for every caller, and
+// version describes only the `p`-param payload, not the StartScreen path.
 async function convertAllLegacyContexts(plot: DataExplorerPlotConfig | null) {
   if (!plot) {
     return null;
@@ -667,91 +699,101 @@ export async function makePlotConfigBreadboxModeCompatible(
   }
 
   // Convert any `metadata` values from slice IDs to SliceQuery objects.
+  // The two dataset fetches are gated on whether any value actually needs
+  // conversion — native (already-SliceQuery) payloads skip the round-trips.
   if (plot?.metadata) {
-    const datasets = await cached(breadboxAPI).getDatasets();
-    const dimTypes = await cached(breadboxAPI).getDimensionTypes();
+    const hasSliceIds = Object.keys(plot.metadata).some(
+      (key) => "slice_id" in plot.metadata[key]
+    );
 
-    // eslint-disable-next-line no-inner-declarations
-    function maybeFallbackToMetadataDatasetNonGivenId(dataset_id: string) {
-      const dimTypeName = dataset_id.replace(/_metadata$/, "");
-      const dimType = dimTypes.find((dt) => dt.name === dimTypeName);
+    if (hasSliceIds) {
+      const datasets = await cached(breadboxAPI).getDatasets();
+      const dimTypes = await cached(breadboxAPI).getDimensionTypes();
 
-      if (dimType?.metadata_dataset_id) {
-        const regularId = dimType.metadata_dataset_id;
-        const dataset = datasets.find((d) => d.id === regularId);
+      // eslint-disable-next-line no-inner-declarations
+      function maybeFallbackToMetadataDatasetNonGivenId(dataset_id: string) {
+        const dimTypeName = dataset_id.replace(/_metadata$/, "");
+        const dimType = dimTypes.find((dt) => dt.name === dimTypeName);
 
-        if (dataset && dataset.given_id !== dataset_id) {
-          return regularId;
+        if (dimType?.metadata_dataset_id) {
+          const regularId = dimType.metadata_dataset_id;
+          const dataset = datasets.find((d) => d.id === regularId);
+
+          if (dataset && dataset.given_id !== dataset_id) {
+            return regularId;
+          }
         }
+
+        return dataset_id;
       }
 
-      return dataset_id;
-    }
+      for (const key of Object.keys(plot.metadata)) {
+        const value = plot.metadata[key];
 
-    for (const key of Object.keys(plot.metadata)) {
-      const value = plot.metadata[key];
-
-      if ("slice_id" in value) {
-        const nextValue = sliceIdToSliceQuery(
-          value.slice_id,
-          "categorical",
-          plot.index_type
-        );
-
-        if (nextValue.dataset_id.endsWith("_metadata")) {
-          // This shouldn't bee necessary because we now auto-generate a
-          // given_id for every metadata dataset. However, at least at one
-          // point, there were some crufty dimension types that slipped through
-          // the cracks. This accounts for that.
-          nextValue.dataset_id = maybeFallbackToMetadataDatasetNonGivenId(
-            nextValue.dataset_id
+        if ("slice_id" in value) {
+          const nextValue = sliceIdToSliceQuery(
+            value.slice_id,
+            "categorical",
+            plot.index_type
           );
-        }
 
-        plot.metadata[key] = nextValue;
+          if (nextValue.dataset_id.endsWith("_metadata")) {
+            // This shouldn't bee necessary because we now auto-generate a
+            // given_id for every metadata dataset. However, at least at one
+            // point, there were some crufty dimension types that slipped through
+            // the cracks. This accounts for that.
+            nextValue.dataset_id = maybeFallbackToMetadataDatasetNonGivenId(
+              nextValue.dataset_id
+            );
+          }
 
-        if (key === "color_property" && nextValue) {
-          if (nextValue.identifier_type === "column") {
-            plot.color_by = nextValue.dataset_id.endsWith("_metadata")
-              ? "property"
-              : "custom";
-          } else if (
-            nextValue.dataset_id === wellKnownDatasets.subtype_matrix
-          ) {
-            plot.color_by = "property";
-          } else {
-            // In some rare cases, what used to be considered a color "property"
-            // (was keyed as model metadata) is now now stored in a matrix.
-            // Known cases:
-            // mutations_prioritized
-            // mutation_protein_change
-            const slice_type =
-              nextValue.dataset_id === wellKnownDatasets.mutations_prioritized
-                ? "gene"
-                : null;
+          plot.metadata[key] = nextValue;
 
-            plot.color_by = "custom";
-            plot.dimensions.color = ({
-              axis_type: "raw_slice",
-              slice_type,
-              aggregation: "first",
-              dataset_id: nextValue.dataset_id,
-              context: {
-                name: nextValue.identifier,
-                dimension_type: slice_type,
-                expr: { "==": [{ var: "entity_label" }, nextValue.identifier] },
-                vars: {
-                  entity_label: {
-                    dataset_id: maybeFallbackToMetadataDatasetNonGivenId(
-                      `${slice_type}_metadata`
-                    ),
-                    identifier_type: "column" as const,
-                    identifier: "label",
+          if (key === "color_property" && nextValue) {
+            if (nextValue.identifier_type === "column") {
+              plot.color_by = nextValue.dataset_id.endsWith("_metadata")
+                ? "property"
+                : "custom";
+            } else if (
+              nextValue.dataset_id === wellKnownDatasets.subtype_matrix
+            ) {
+              plot.color_by = "property";
+            } else {
+              // In some rare cases, what used to be considered a color "property"
+              // (was keyed as model metadata) is now now stored in a matrix.
+              // Known cases:
+              // mutations_prioritized
+              // mutation_protein_change
+              const slice_type =
+                nextValue.dataset_id === wellKnownDatasets.mutations_prioritized
+                  ? "gene"
+                  : null;
+
+              plot.color_by = "custom";
+              plot.dimensions.color = ({
+                axis_type: "raw_slice",
+                slice_type,
+                aggregation: "first",
+                dataset_id: nextValue.dataset_id,
+                context: {
+                  name: nextValue.identifier,
+                  dimension_type: slice_type,
+                  expr: {
+                    "==": [{ var: "entity_label" }, nextValue.identifier],
+                  },
+                  vars: {
+                    entity_label: {
+                      dataset_id: maybeFallbackToMetadataDatasetNonGivenId(
+                        `${slice_type}_metadata`
+                      ),
+                      identifier_type: "column" as const,
+                      identifier: "label",
+                    },
                   },
                 },
-              },
-            } as unknown) as DataExplorerPlotConfigDimension;
-            delete plot.metadata[key];
+              } as unknown) as DataExplorerPlotConfigDimension;
+              delete plot.metadata[key];
+            }
           }
         }
       }
@@ -786,20 +828,82 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
     plot = decompress(params.p as string) as DataExplorerPlotConfig;
   }
 
-  // `plot.dimensions` used to be an array but now it's an object.
-  // Just in case there are any old bookmarks hanging around,
-  // we'll parse the array and transform it into an object.
-  if (plot && Array.isArray(plot.dimensions)) {
-    const [x, y] = plot.dimensions;
+  // Both live mint points stamp `version`: `plotToQueryString` (the `p` param)
+  // and `parseShorthandParams` (the shorthand params). The only producers left
+  // unstamped are genuinely old — the base64 `plot` param, a format we no longer
+  // write, and `p` payloads minted before versioning shipped. So absent version
+  // ⟹ pre-versioning legacy, and coercing it to 0 is sound rather than a guess.
+  //
+  // Keeping that implication TRUE is the whole job of stamping at the mint point,
+  // and it is load-bearing for every future migration. A Phase B step gated on
+  // `payloadVersion < N` necessarily assumes an unstamped payload was minted
+  // under the old regime. Were shorthand links left unstamped, a link generated
+  // one second from now would coerce to 0 and be migrated as though it were years
+  // old — silently reinterpreted under semantics it was never minted under. Stamp
+  // at the mint point; never sniff payload shape at the reader.
+  const payloadVersion = plot?.version ?? 0;
 
-    plot.dimensions = {
-      ...(x && { x }),
-      ...(y && { y }),
-      // no `color` dimension because this format predates that
-    };
+  // Phase A: structural repairs — skipped for version >= 1, which certifies that
+  // `dimensions` is already an object and all property names are canonical (no
+  // legacy `entity`/`context` values for color_by/axis_type, no entity_type).
+  //
+  // Shorthand plots are certified by construction, not by assumption: the parser
+  // only ever writes `color_by` of "aggregated_slice" | "property", `axis_type` of
+  // "raw_slice" | "aggregated_slice", always `slice_type` (never `entity_type`),
+  // and always an object `dimensions`. Phase A was already a no-op on them before
+  // they carried a version; stamping simply lets us skip the no-op honestly.
+  if (payloadVersion < 1) {
+    // `plot.dimensions` used to be an array but now it's an object.
+    // Just in case there are any old bookmarks hanging around,
+    // we'll parse the array and transform it into an object.
+    if (plot && Array.isArray(plot.dimensions)) {
+      const [x, y] = plot.dimensions;
+
+      plot.dimensions = {
+        ...(x && { x }),
+        ...(y && { y }),
+        // no `color` dimension because this format predates that
+      };
+    }
+
+    plot = replaceLegacyPropertyNames(plot);
   }
 
-  plot = replaceLegacyPropertyNames(plot);
+  // Strip version before the plot enters memory. It's a wire-only field;
+  // leaving it in would cause plotsAreEquivalentWhenSerialized to see spurious
+  // diffs between a loaded plot and an otherwise-identical in-memory one.
+  if (plot) {
+    delete plot.version;
+  }
+
+  // Phase B migrations go here, gated on `payloadVersion` — the coerced local
+  // captured above, NOT `plot.version`. The reason isn't only that `plot.version`
+  // has been deleted; it's that `plot.version` is undefined for the ENTIRE
+  // pre-versioning cohort regardless of where the strip sits, and
+  // `undefined < 2` evaluates to false, which would silently skip the legacy
+  // payloads a migration exists to upgrade while appearing to work on v1+.
+  // The `?? 0` coercion is the only thing that makes `0 < 2 === true` for that
+  // cohort. Do not "fix" this by moving the strip — the silent-skip failure mode
+  // is independent of strip placement. Each migration should be its own named
+  // step, not folded into Phase A's block.
+  // Example slot: if (payloadVersion < 2) { /* color_by flip migration */ }
+  //
+  // replaceHashesWithContexts and makePlotConfigBreadboxModeCompatible are
+  // unconditional regardless of version, for two independent reasons:
+  //   1. `version` certifies SCHEMA vintage, never backend-nativity. A payload can
+  //      be honestly v1 and still carry backend-legacy forms. Shorthand is the
+  //      proof: parseShorthandParams matches legacy dataset IDs via
+  //      legacyPortalIdToBreadboxGivenId but writes the RAW id, deliberately
+  //      deferring the rewrite to here; it likewise emits context_type contexts,
+  //      the "custom" slice_type sentinel, and slice_id metadata. A hand-written
+  //      or LLM-generated v1 URL can do the same. For those inputs these passes
+  //      are LOAD-BEARING, not idempotent no-ops. Never gate them on version.
+  //   2. Context hashes resolve to contexts persisted by any client vintage, so
+  //      V1→V2 conversion happens at point-of-dereference inside
+  //      replaceHashesWithContexts, keyed on the context's shape, not the plot's
+  //      version.
+  // The function is additionally idempotent on already-native input, so running
+  // it unconditionally is cheap.
   plot = await replaceHashesWithContexts(plot);
 
   if (plot) {

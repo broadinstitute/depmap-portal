@@ -8,6 +8,7 @@ import {
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
 import { isCompletePlot } from "./validation";
+import { CURRENT_PLOT_VERSION } from "./plot-version";
 
 type Datasets = Record<string, DataExplorerDatasetDescriptor[]>;
 
@@ -444,5 +445,24 @@ export function parseShorthandParams(params: qs.ParsedQs, datasets: Datasets) {
     throw new Error(message);
   }
 
-  return plot;
+  // Shorthand params are a MINT POINT, so stamp the schema version here.
+  //
+  // The plot built above is current-schema by construction: object `dimensions`,
+  // canonical property names, and only canonical `color_by` / `axis_type` values
+  // (never the legacy "entity" / "context" spellings, never `entity_type`). It is
+  // therefore honestly v1, not merely untagged.
+  //
+  // Stamping matters because the reader coerces an absent `version` to 0 and runs
+  // pre-versioning migrations against it. Leave shorthand unstamped and a link
+  // generated one second from now becomes indistinguishable from a years-old
+  // bookmark — the moment a Phase B migration exists, it would be applied to a
+  // payload that was never minted under the old regime.
+  //
+  // This says nothing about backend-nativity, and must not be read as such: the
+  // dimensions above still carry raw legacy dataset IDs (the rewrite is
+  // deliberately deferred), context_type contexts, the "custom" slice_type
+  // sentinel, and slice_id metadata. Those are repaired unconditionally
+  // downstream by makePlotConfigBreadboxModeCompatible, which does not — and must
+  // not — gate on version.
+  return { ...plot, version: CURRENT_PLOT_VERSION };
 }
