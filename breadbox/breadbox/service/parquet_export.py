@@ -3,25 +3,28 @@ from typing import Annotated, Optional
 
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.crud import dataset as dataset_crud
-from breadbox.schemas.custom_http_exception import ResourceNotFoundError, UserError
+from breadbox.schemas.custom_http_exception import (
+    DatasetNotFoundError,
+    ResourceNotFoundError,
+    UserError,
+)
 from breadbox.config import get_settings, Settings
 from breadbox.db.session import SessionWithUser
 import pandas as pd
 import json
 import hashlib
-from breadbox.crud.dimension_ids import get_dataset_feature_by_given_id
 from breadbox.models.dataset import (
     Dataset as DatasetModel,
     ValueType,
     MatrixDataset,
     TabularDataset,
 )
-from breadbox.io.filestore_crud import get_feature_slice
 from breadbox.service import dataset as dataset_service
 from breadbox.schemas.parquet_export import (
     MatrixSubsetOperation,
     TabularSubsetOperation,
 )
+from breadbox.schemas.dataset import MatrixDimensionsInfo, FeatureSampleIdentifier
 
 from typing import Any, Callable, Awaitable
 from .tempspace import Tempspace
@@ -31,7 +34,6 @@ import logging
 import os
 import tempfile
 from breadbox.api.datasets import _get_required_tabular_dataset, TabularDimensionsInfo
-from breadbox.schemas.custom_http_exception import UserError
 
 
 def get_tabular_df(db: SessionWithUser, dataset_id: str) -> pd.DataFrame:
@@ -49,6 +51,15 @@ def canonical_sha(model: BaseModel) -> str:
     ).hexdigest()
 
 
+def _get_required_matrix_dataset(db: SessionWithUser, dataset_id: str) -> MatrixDataset:
+    dataset = dataset_crud.get_dataset(db, db.user, dataset_id)
+    if dataset is None:
+        raise DatasetNotFoundError(f"Could not find dataset with id {dataset_id}")
+    if not isinstance(dataset, MatrixDataset):
+        raise UserError(f"This endpoint only works with MatrixDatasets")
+    return dataset
+
+
 def get_matrix_df(
     db: SessionWithUser,
     filestore_location: str,
@@ -60,35 +71,29 @@ def get_matrix_df(
     if sample_ids is None and feature_ids is None:
         raise UserError("Must specify either features_ids or sample_ids to export")
 
-    if sample_ids is not None:
-        if feature_ids is not None:
-            # The rational is that this will yield tiny exports and not worth implementing support for. The later sql query can always do the necessary
-            # filtering.
-            raise UserError(
-                "Must specify either features_ids or sample_ids to export. Specifying both is not supported"
-            )
+    if sample_ids is not None and feature_ids is not None:
+        # The rational is that this will yield tiny exports and not worth implementing support for. The later sql query can always do the necessary
+        # filtering.
+        raise UserError(
+            "Must specify either features_ids or sample_ids to export. Specifying both is not supported"
+        )
 
-        # TODO: Implement
-        raise NotImplementedError()
-    else:
-        feature_indices = []
-        assert feature_ids is not None
-        dataset = None
-        for i in range(len(feature_ids)):
-            feature = get_dataset_feature_by_given_id(
-                db=db, dataset_id=dataset_id, feature_given_id=feature_ids[i]
-            )
-            dataset = feature.dataset
-            if not isinstance(dataset, MatrixDataset):
-                raise UserError(
-                    f"Expected a matrix dataset. Unable to load feature data for tabular dataset: '{feature.dataset_id}' "
-                )
-            assert feature.index is not None
-            feature_indices.append(feature.index)
+    dataset = _get_required_matrix_dataset(db, dataset_id)
 
-        # Read data from the HDF5 file
-        assert dataset is not None
-        df = get_feature_slice(dataset, feature_indices, filestore_location)
+    matrix_dimensions_info = MatrixDimensionsInfo(
+        features=feature_ids,
+        feature_identifier=FeatureSampleIdentifier.id
+        if feature_ids is not None
+        else None,
+        samples=sample_ids,
+        sample_identifier=FeatureSampleIdentifier.id
+        if sample_ids is not None
+        else None,
+    )
+
+    df = dataset_service.get_subsetted_matrix_dataset_df(
+        db, dataset, matrix_dimensions_info, filestore_location, strict=False,
+    )
 
     return df
 
