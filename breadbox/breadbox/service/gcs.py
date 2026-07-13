@@ -40,13 +40,6 @@ def generate_signed_url(
     the signed URL request and GCS will honor it (returning a 206 Partial
     Content response) without needing anything special done at signing time.
 
-    Args:
-        gs_path: Path to the object in the form `gs://bucket/key`.
-        credentials: Note ADC via metadata server (e.g. Compute Engine default SA)
-            cannot sign URLs directly; you need a service account key or
-            impersonation credentials for that case
-        expiration_minutes: How long the URL should remain valid.
-
     Returns:
         A signed URL string.
     """
