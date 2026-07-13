@@ -40,6 +40,10 @@ class Settings(BaseSettings):
         env_file=os.environ.get("BREADBOX_SETTINGS_PATH", ".env"),
     )
 
+    # used for writing temp files as part of exports
+    gcs_credentials_path: Optional[str] = os.environ.get("GCS_CREDENTIALS_PATH")
+    gcs_temp_path: Optional[str] = os.environ.get("GCS_TEMP_PATH")
+
     def get_todays_result_dir(self):
         """
         Fetch the result directory (used for temp files) to use for any tasks. (Result directory includes the date so
