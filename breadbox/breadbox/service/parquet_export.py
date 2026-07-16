@@ -36,8 +36,9 @@ import tempfile
 from breadbox.api.datasets import _get_required_tabular_dataset, TabularDimensionsInfo
 
 
-def get_tabular_df(db: SessionWithUser, dataset_id: str) -> pd.DataFrame:
-    tabular_dataset = _get_required_tabular_dataset(db, dataset_id)
+def get_tabular_df(
+    db: SessionWithUser, tabular_dataset: TabularDataset
+) -> pd.DataFrame:
     tabular_dimensions_info = TabularDimensionsInfo()
     df = dataset_service.get_subsetted_tabular_dataset_df(
         db, db.user, tabular_dataset, tabular_dimensions_info, False
@@ -45,9 +46,9 @@ def get_tabular_df(db: SessionWithUser, dataset_id: str) -> pd.DataFrame:
     return df
 
 
-def canonical_sha(model: BaseModel) -> str:
+def canonical_sha(key_dict: dict) -> str:
     return hashlib.sha256(
-        json.dumps(model.model_dump(), sort_keys=True).encode("utf8")
+        json.dumps(key_dict, sort_keys=True).encode("utf8")
     ).hexdigest()
 
 
@@ -63,7 +64,7 @@ def _get_required_matrix_dataset(db: SessionWithUser, dataset_id: str) -> Matrix
 def get_matrix_df(
     db: SessionWithUser,
     filestore_location: str,
-    dataset_id: str,
+    dataset: MatrixDataset,
     feature_ids: Optional[list[str]],
     sample_ids: Optional[list[str]],
 ) -> pd.DataFrame:
@@ -77,8 +78,6 @@ def get_matrix_df(
         raise UserError(
             "Must specify either features_ids or sample_ids to export. Specifying both is not supported"
         )
-
-    dataset = _get_required_matrix_dataset(db, dataset_id)
 
     matrix_dimensions_info = MatrixDimensionsInfo(
         features=feature_ids,
@@ -101,11 +100,13 @@ def get_matrix_df(
 def materialize_tabular(
     db: SessionWithUser, op: TabularSubsetOperation, tempspace: Tempspace
 ):
-    key = canonical_sha(op)
+    dataset = _get_required_tabular_dataset(db, op.dataset_id)
+
+    key = canonical_sha({"type": "materialize_matrix", "dataset_id": dataset.id})
     dest_path, exists = tempspace.get_path_if_exists(key)
 
     if not exists:
-        df = get_tabular_df(db, op.dataset_id)
+        df = get_tabular_df(db, dataset)
 
         with tempfile.NamedTemporaryFile() as tmp:
             df.to_parquet(tmp.name)
@@ -120,12 +121,21 @@ def materialize_matrix(
     op: MatrixSubsetOperation,
     tempspace: Tempspace,
 ):
-    key = canonical_sha(op)
+    dataset = _get_required_matrix_dataset(db, op.dataset_id)
+
+    key = canonical_sha(
+        {
+            "type": "materialize_matrix",
+            "dataset_id": dataset.id,
+            "feature_ids": op.feature_ids,
+            "sample_ids": op.sample_ids,
+        }
+    )
     dest_path, exists = tempspace.get_path_if_exists(key)
 
     if not exists:
         df = get_matrix_df(
-            db, filestore_location, op.dataset_id, op.feature_ids, op.sample_ids
+            db, filestore_location, dataset, op.feature_ids, op.sample_ids
         )
         df = (
             df.rename_axis("sample_id")
