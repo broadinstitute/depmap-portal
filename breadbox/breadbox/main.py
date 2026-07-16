@@ -5,11 +5,14 @@ from breadbox.api.dependencies import get_user
 from fastapi import Request, status
 from fastapi.exception_handlers import http_exception_handler
 from .logging import configure_logging, GCPExceptionReporter
+from .telemetry import configure_tracing
 
 configure_logging()
 
 # Create all the singleton instances
 settings = get_settings()
+
+configure_tracing(settings)
 
 ensure_directories_exist(settings)
 app = create_app(settings)

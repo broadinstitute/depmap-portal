@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     host_scheme_override: Optional[str] = None
     sql_endpoints_enabled: bool = False
     breadbox_env: str = "dev"
+
+    # controls whether OpenTelemetry tracing is set up. Effectively disabled in "dev" regardless
+    # of this setting, since local dev doesn't have GCP credentials to export spans with.
+    otel_enabled: bool = True
+    otel_service_name: str = "breadbox"
     # prefix all routes with api_prefix if it's not an empty string
     api_prefix: str = ""
 

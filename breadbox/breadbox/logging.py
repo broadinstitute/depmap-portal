@@ -9,7 +9,9 @@ from pydantic import BaseModel
 # based on https://stackoverflow.com/questions/63510041/adding-python-logging-to-fastapi-endpoints-hosted-on-docker-doesnt-display-api
 class LogConfig(BaseModel):
     LOGGER_NAME: str = "breadbox"
-    LOG_FORMAT: str = "%(levelprefix)s | %(asctime)s | %(message)s"
+    LOG_FORMAT: str = (
+        "%(levelprefix)s | %(asctime)s | %(otelTraceID)s | %(otelSpanID)s | %(message)s"
+    )
     LOG_LEVEL: str = "INFO"
 
     # Logging config

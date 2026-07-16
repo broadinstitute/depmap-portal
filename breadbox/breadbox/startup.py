@@ -10,6 +10,7 @@ from .utils.debug_event_log import log_event, _get_log_filename
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from starlette.datastructures import MutableHeaders
 
 from .api import api_router
@@ -29,6 +30,9 @@ def create_app(settings: Settings):
         swagger_ui_oauth2_redirect_url=f"{api_prefix}/docs/oauth2-redirect",
         version=version("breadbox"),
     )
+
+    if settings.otel_enabled and settings.breadbox_env != "dev":
+        FastAPIInstrumentor.instrument_app(app)
 
     app.add_middleware(
         CORSMiddleware,

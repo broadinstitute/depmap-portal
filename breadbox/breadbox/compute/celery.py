@@ -8,6 +8,7 @@ from fastapi import HTTPException
 from breadbox.logging import GCPExceptionReporter
 from breadbox.celery_task.utils import check_celery
 from breadbox.utils.debug_event_log import log_event, _get_log_filename
+from breadbox.telemetry import configure_tracing
 
 from ..config import Settings, get_settings
 from pydantic import ValidationError
@@ -68,6 +69,8 @@ except ValidationError:
     settings = None
 
 if settings is not None:
+    configure_tracing(settings)
+
     if settings.brokerless_celery_for_testing:
         storage_configuration = dict(
             broker_url="memory://",
