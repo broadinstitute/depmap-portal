@@ -5,6 +5,7 @@ import uuid
 from logging import getLogger
 from fastapi import HTTPException
 from opentelemetry import trace
+from opentelemetry.sdk.trace import TracerProvider
 
 from breadbox.logging import GCPExceptionReporter
 from breadbox.celery_task.utils import check_celery
@@ -51,7 +52,9 @@ def shutdown_celery_tracing(*args, **kwargs):
     """Flush any OpenTelemetry spans still buffered in the BatchSpanProcessor before the worker process
     exits. Without this, spans from short-lived workers (e.g. --max-tasks-per-child 1) can be
     dropped before the batch processor's periodic export timer ever fires."""
-    trace.get_tracer_provider().shutdown()
+    provider = trace.get_tracer_provider()
+    if isinstance(provider, TracerProvider):
+        provider.shutdown()
 
 app = Celery(
     "breadbox-celery",
