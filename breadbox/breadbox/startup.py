@@ -31,7 +31,7 @@ def create_app(settings: Settings):
         version=version("breadbox"),
     )
 
-    if settings.otel_enabled and settings.breadbox_env != "dev":
+    if settings.breadbox_env != "dev":
         FastAPIInstrumentor.instrument_app(app)
 
     app.add_middleware(

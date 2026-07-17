@@ -5,16 +5,17 @@ from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+from opentelemetry.instrumentation.celery import CeleryInstrumentor
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.instrumentation.logging import LoggingInstrumentor
 
 from .config import Settings
 
 
-def configure_tracing(settings: Settings):
+def configure_tracing(service: str, env_name: str):
     """Sets up a global OpenTelemetry TracerProvider exporting to Google Cloud Trace, and
-    instruments httpx and stdlib logging. Call this once, before any instrumented code runs
-    (e.g. before create_app()).
+    instruments Celery, httpx, and stdlib logging. Call this once, before any instrumented code
+    runs (e.g. before create_app()).
 
     No-ops (aside from log record enrichment) when tracing is disabled, so this is safe to call
     in local dev without GCP credentials.
@@ -24,12 +25,12 @@ def configure_tracing(settings: Settings):
     # span, e.g. because tracing is disabled below).
     LoggingInstrumentor().instrument(set_logging_format=False)
 
-    if not settings.otel_enabled or settings.breadbox_env == "dev":
+    if env_name == "dev":
         return
 
     resource = Resource.create(
         {
-            "service.name": settings.otel_service_name,
+            "service.name": f"{service}-{env_name}",
             "service.version": version("breadbox"),
         }
     )
@@ -37,4 +38,5 @@ def configure_tracing(settings: Settings):
     provider.add_span_processor(BatchSpanProcessor(CloudTraceSpanExporter()))
     trace.set_tracer_provider(provider)
 
+    CeleryInstrumentor().instrument()
     HTTPXClientInstrumentor().instrument()

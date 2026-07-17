@@ -69,7 +69,7 @@ except ValidationError:
     settings = None
 
 if settings is not None:
-    configure_tracing(settings)
+    configure_tracing(service="breadbox-celery", env_name=settings.breadbox_env)
 
     if settings.brokerless_celery_for_testing:
         storage_configuration = dict(

@@ -48,6 +48,7 @@ opentelemetry-sdk = "^1.27.0"
 opentelemetry-exporter-gcp-trace = "^1.9.0"
 opentelemetry-instrumentation-fastapi = "^0.48b0"
 opentelemetry-instrumentation-httpx = "^0.48b0"
+opentelemetry-instrumentation-celery = "^0.48b0"
 opentelemetry-instrumentation-logging = "^0.48b0"
 # opentelemetry-instrumentation still imports pkg_resources, which setuptools>=81 no longer bundles
 setuptools = "<81"
