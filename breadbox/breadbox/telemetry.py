@@ -28,6 +28,8 @@ def configure_tracing(service: str, env_name: str):
     if env_name == "dev":
         return
 
+    # Configure Google Cloud as our provider for OpenTelemetry
+    # Set the service name and version which should be logged with our spans
     resource = Resource.create(
         {
             "service.name": f"{service}-{env_name}",
@@ -35,7 +37,13 @@ def configure_tracing(service: str, env_name: str):
         }
     )
     provider = TracerProvider(resource=resource)
-    provider.add_span_processor(BatchSpanProcessor(CloudTraceSpanExporter()))
+    provider.add_span_processor(
+        BatchSpanProcessor(CloudTraceSpanExporter(
+            # Attributes with keys matching this regex will be added to exported spans as labels
+            # This is necessary to populate the service name field in GCP
+            resource_regex=r"service\..*"
+        ))
+    )
     trace.set_tracer_provider(provider)
 
     CeleryInstrumentor().instrument()
