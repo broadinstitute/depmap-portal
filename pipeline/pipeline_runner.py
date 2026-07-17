@@ -157,7 +157,7 @@ class PipelineRunner:
             "peddep": "dmc",
             "xqa": "external",
             "xstaging": "external",
-            "test-prefix": "iqa",  # Any env starting with "test-" maps to this
+            "test-prefix": "internal",  # Any env starting with "test-" maps to this
         }
 
         if env_name.startswith("test-"):
