@@ -4,6 +4,7 @@ import os
 import uuid
 from logging import getLogger
 from fastapi import HTTPException
+from opentelemetry import trace
 
 from breadbox.logging import GCPExceptionReporter
 from breadbox.celery_task.utils import check_celery
@@ -43,6 +44,14 @@ class LogErrorsTask(Task):
 @signals.worker_process_init.connect(weak=False)
 def init_celery_tracing(*args, **kwargs):
     configure_tracing(service="breadbox-celery", env_name=breadbox_env)
+
+
+@signals.worker_process_shutdown.connect(weak=False)
+def shutdown_celery_tracing(*args, **kwargs):
+    """Flush any OpenTelemetry spans still buffered in the BatchSpanProcessor before the worker process
+    exits. Without this, spans from short-lived workers (e.g. --max-tasks-per-child 1) can be
+    dropped before the batch processor's periodic export timer ever fires."""
+    trace.get_tracer_provider().shutdown()
 
 app = Celery(
     "breadbox-celery",
