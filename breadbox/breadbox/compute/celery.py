@@ -40,6 +40,10 @@ class LogErrorsTask(Task):
             super().on_failure(exc, task_id, args, kwargs, einfo)
 
 
+@signals.worker_process_init.connect(weak=False)
+def init_celery_tracing(*args, **kwargs):
+    configure_tracing(service="breadbox-celery", env_name=breadbox_env)
+
 app = Celery(
     "breadbox-celery",
     include=[
@@ -69,15 +73,6 @@ except ValidationError:
     settings = None
 
 if settings is not None:
-    # Tracing must be initialized after the worker process is forked (not here, at module
-    # import time in the pre-fork parent), otherwise the BatchSpanProcessor's export thread
-    # doesn't survive into the forked child and task spans are silently never exported. See
-    # https://github.com/open-telemetry/opentelemetry-python-contrib/blob/main/instrumentation/opentelemetry-instrumentation-celery/src/opentelemetry/instrumentation/celery/__init__.py
-    env_name = settings.breadbox_env
-    @signals.worker_process_init.connect(weak=False)
-    def _init_worker_tracing(**kwargs):
-        configure_tracing(service="breadbox-celery", env_name=env_name)
-
     if settings.brokerless_celery_for_testing:
         storage_configuration = dict(
             broker_url="memory://",
