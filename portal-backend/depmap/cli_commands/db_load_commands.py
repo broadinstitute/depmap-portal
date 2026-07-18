@@ -201,6 +201,7 @@ def recreate_full_db(
     db_create_all()
     _setup_logging()
 
+    log.warning(f"S3_DIR is {current_app.config['S3_DIR']}")
     if srcdata is not None:
         m = re.match("gs://([^/]+)/(.*)", srcdata)
         assert m is not None, f"Could not parse {srcdata} as a gcs path"
@@ -352,7 +353,6 @@ def _load_real_data(
     checkpoint: Callable,
     process_downloads: bool,
 ):
-
     taiga_client = get_taiga_client()
 
     if process_downloads:
