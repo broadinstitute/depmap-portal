@@ -279,8 +279,11 @@ class PipelineRunner:
             # because we've had problems where changes result an artifact being dropped
             # and we don't realize it because the old file is still hanging out in GCS,
             # every run, force the destination to be cleaned out and force the publish
-            # rules to re-run
-            raise Exception(f"gcloud storage rm -r '{config.publish_dest}'")
+            # rules to re-run. That way the dest will only contain the artifacts
+            # that were published from this specific run.
+            self.subprocess_run(
+                f"gcloud storage rm -r '{config.publish_dest}'", check=True
+            )
             self.subprocess_run(
                 "conseq forget --regex 'publish.*'",
                 check=True,
