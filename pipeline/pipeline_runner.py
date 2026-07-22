@@ -214,7 +214,7 @@ class PipelineRunner:
         return os.path.abspath(conseq_file)
 
     def handle_special_features(self, config: CommonConfig) -> None:
-        """Handle pre-run features. Subclasses should call super() after their own logic."""
+        """Handle pre-run features."""
 
         assert self.script_path is not None
         if config.start_with:
@@ -325,7 +325,7 @@ class PipelineRunner:
         return " ".join(cmd_parts)
 
     def handle_post_run_tasks(self, config: CommonConfig) -> None:
-        """Handle post-run tasks. Subclasses should call super() after their own logic."""
+        """Handle post-run tasks."""
         self.subprocess_run(
             "conseq report html", check=True, cwd=str(config.working_dir)
         )
