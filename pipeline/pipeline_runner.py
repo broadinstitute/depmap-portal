@@ -256,7 +256,7 @@ class PipelineRunner:
                 cwd=str(config.working_dir),
             )
             self.subprocess_run(
-                "conseq forget --regex 'publish.*'",
+                "conseq forget --regex publish.*",
                 check=True,
                 cwd=str(config.working_dir),
             )
