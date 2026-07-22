@@ -25,7 +25,7 @@ def gcs_rm_prefixed_by(path: str) -> None:
     bucket = client.bucket(bucket_name)
     for blob in bucket.list_blobs(prefix=prefix):
         blob_path = f"gs://{bucket_name}/{blob.name}"
-        print(f"Deleting {blob_path} ...")
+        print(f"Deleting {blob_path} (skipping until code verified) ...")
         # for test
         # blob.delete()
 
