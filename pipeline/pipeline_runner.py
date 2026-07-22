@@ -276,6 +276,17 @@ class PipelineRunner:
             result = self.subprocess_run("conseq gc", cwd=str(config.working_dir))
             assert result.returncode == 0, "Conseq gc failed"
 
+            # because we've had problems where changes result an artifact being dropped
+            # and we don't realize it because the old file is still hanging out in GCS,
+            # every run, force the destination to be cleaned out and force the publish
+            # rules to re-run
+            raise Exception(f"gcloud storage rm -r '{config.publish_dest}'")
+            self.subprocess_run(
+                "conseq forget --regex 'publish.*'",
+                check=True,
+                cwd=str(config.working_dir),
+            )
+
             # Build and run main conseq command
             conseq_run_cmd = self.build_conseq_run_command(config)
             result = self.subprocess_run(conseq_run_cmd, cwd=str(config.working_dir))
