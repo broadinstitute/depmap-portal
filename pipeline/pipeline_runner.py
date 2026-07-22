@@ -287,9 +287,7 @@ class PipelineRunner:
         else:
             gcs_rm_prefixed_by(config.publish_dest)
         self.subprocess_run(
-            "conseq forget --regex 'publish.*'",
-            check=True,
-            cwd=str(config.working_dir),
+            "conseq forget --regex publish.*", check=True, cwd=str(config.working_dir),
         )
 
         # Build and run main conseq command
