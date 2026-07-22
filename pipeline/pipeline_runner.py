@@ -10,10 +10,24 @@ from typing import Union
 from pathlib import Path
 from datetime import datetime
 import re
+from google.cloud import storage
 from pipeline_config import CommonConfig
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger(__name__)
+
+
+def gcs_rm_prefixed_by(path: str) -> None:
+    """Delete all GCS objects under a gs:// path prefix, printing each path before deleting it."""
+    assert path.startswith("gs://"), f"Expected a gs:// path, got: {path}"
+    bucket_name, _, prefix = path[len("gs://") :].partition("/")
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    for blob in bucket.list_blobs(prefix=prefix):
+        blob_path = f"gs://{bucket_name}/{blob.name}"
+        print(f"Deleting {blob_path} ...")
+        # for test
+        # blob.delete()
 
 
 def create_argument_parser() -> argparse.ArgumentParser:
@@ -267,7 +281,11 @@ class PipelineRunner:
         # every run, force the destination to be cleaned out and force the publish
         # rules to re-run. That way the dest will only contain the artifacts
         # that were published from this specific run.
-        self.subprocess_run(f"gcloud storage rm -r {config.publish_dest}", check=True)
+        assert config.publish_dest, "publish_dest must be set"
+        if self.dryrun:
+            log.info(f"[dryrun] would delete all objects under {config.publish_dest}")
+        else:
+            gcs_rm_prefixed_by(config.publish_dest)
         self.subprocess_run(
             "conseq forget --regex 'publish.*'",
             check=True,
