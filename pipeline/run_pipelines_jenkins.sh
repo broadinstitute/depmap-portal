@@ -15,7 +15,6 @@ set -ex
 #   DEPMAP_DEPLOY_BRANCH - branch to checkout for depmap-deploy repo (default: master)
 #   CLEAN_START - if "true", delete state directories before running
 #   START_WITH - if set, copy artifacts from specified export path
-#   MANUALLY_RUN_CONSEQ - if "true", pass CONSEQ_ARGS directly to conseq
 #   CONSEQ_ARGS - additional args to pass to conseq
 #   PUBLISH_DATA_PREP_FILES - if "true", publish data-prep files to Taiga
 
@@ -88,10 +87,6 @@ fi
 
 if [ "$EXPORT_PATH" != "" ]; then
     RUN_PIPELINE_ARGS="$RUN_PIPELINE_ARGS --export-path ${EXPORT_PATH}"
-fi
-
-if [ "$MANUALLY_RUN_CONSEQ" = "true" ]; then
-    RUN_PIPELINE_ARGS="$RUN_PIPELINE_ARGS --manually-run-conseq ${CONSEQ_ARGS}"
 fi
 
 if [ "$START_WITH" != "" ]; then

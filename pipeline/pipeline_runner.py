@@ -24,11 +24,6 @@ def create_argument_parser() -> argparse.ArgumentParser:
         "--destination", help="GCS path for publishing; presence enables publishing"
     )
     parser.add_argument("--start-with", help="Start with existing export from GCS path")
-    parser.add_argument(
-        "--manually-run-conseq",
-        action="store_true",
-        help="If set, conseq_args are passed directly to conseq",
-    )
     parser.add_argument("conseq_args", nargs="*", help="Parameters to pass to conseq")
     parser.add_argument("--export-path", help="Export path for conseq export")
     parser.add_argument(
@@ -136,7 +131,6 @@ class PipelineRunner:
             publish_dest=args.destination,
             s3_staging_url=args.staging_url,
             start_with=args.start_with,
-            manually_run_conseq=args.manually_run_conseq,
             conseq_args=args.conseq_args,
             export_path=args.export_path,
         )
@@ -264,39 +258,29 @@ class PipelineRunner:
 
         config.conseq_file = self.get_conseq_file(config)
 
-        if config.manually_run_conseq:
-            log.info("executing: conseq %s", " ".join(config.conseq_args))
-            result = self.subprocess_run(
-                f"conseq -D is_dev=False {' '.join(config.conseq_args)}",
-                cwd=str(config.working_dir),
-            )
-            run_exit_status = result.returncode
-        else:
-            # Clean up unused directories from past runs
-            result = self.subprocess_run("conseq gc", cwd=str(config.working_dir))
-            assert result.returncode == 0, "Conseq gc failed"
+        # Clean up unused directories from past runs
+        result = self.subprocess_run("conseq gc", cwd=str(config.working_dir))
+        assert result.returncode == 0, "Conseq gc failed"
 
-            # because we've had problems where changes result an artifact being dropped
-            # and we don't realize it because the old file is still hanging out in GCS,
-            # every run, force the destination to be cleaned out and force the publish
-            # rules to re-run. That way the dest will only contain the artifacts
-            # that were published from this specific run.
-            self.subprocess_run(
-                f"gcloud storage rm -r '{config.publish_dest}'", check=True
-            )
-            self.subprocess_run(
-                "conseq forget --regex 'publish.*'",
-                check=True,
-                cwd=str(config.working_dir),
-            )
+        # because we've had problems where changes result an artifact being dropped
+        # and we don't realize it because the old file is still hanging out in GCS,
+        # every run, force the destination to be cleaned out and force the publish
+        # rules to re-run. That way the dest will only contain the artifacts
+        # that were published from this specific run.
+        self.subprocess_run(f"gsutil rm -r '{config.publish_dest}'", check=True)
+        self.subprocess_run(
+            "conseq forget --regex 'publish.*'",
+            check=True,
+            cwd=str(config.working_dir),
+        )
 
-            # Build and run main conseq command
-            conseq_run_cmd = self.build_conseq_run_command(config)
-            result = self.subprocess_run(conseq_run_cmd, cwd=str(config.working_dir))
-            run_exit_status = result.returncode
+        # Build and run main conseq command
+        conseq_run_cmd = self.build_conseq_run_command(config)
+        result = self.subprocess_run(conseq_run_cmd, cwd=str(config.working_dir))
+        run_exit_status = result.returncode
 
-            # Handle post-run tasks (export, reports, etc.)
-            self.handle_post_run_tasks(config)
+        # Handle post-run tasks (export, reports, etc.)
+        self.handle_post_run_tasks(config)
 
         log.info("Pipeline run complete")
         sys.exit(run_exit_status)

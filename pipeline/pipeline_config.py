@@ -13,7 +13,6 @@ class CommonConfig(BaseModel):
     working_dir: str
     publish_dest: Optional[str] = None
     start_with: Optional[str] = None
-    manually_run_conseq: bool = False
     conseq_args: List[str] = Field(default_factory=list)
     conseq_file: Optional[str] = None
     export_path: Optional[str] = None
