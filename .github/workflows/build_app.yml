@@ -15,6 +15,11 @@ on:
       - "backend-package-upgrade-26q1"
       - "backend-package-upgrade-26q1-phase1"
       - "backend-package-upgrade-26q1-phase2"
+    paths:
+      - "portal-backend/**"
+      - "frontend/**"
+      - "depmap-shared/**"
+      - ".github/workflows/build_app.yml"
 
 env:
   ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap
