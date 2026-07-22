@@ -267,7 +267,7 @@ class PipelineRunner:
         # every run, force the destination to be cleaned out and force the publish
         # rules to re-run. That way the dest will only contain the artifacts
         # that were published from this specific run.
-        self.subprocess_run(f"gsutil rm -r '{config.publish_dest}'", check=True)
+        self.subprocess_run(f"gcloud storage rm -r {config.publish_dest}", check=True)
         self.subprocess_run(
             "conseq forget --regex 'publish.*'",
             check=True,
