@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     host_scheme_override: Optional[str] = None
     sql_endpoints_enabled: bool = False
     breadbox_env: str = "dev"
+
     # prefix all routes with api_prefix if it's not an empty string
     api_prefix: str = ""
 

@@ -1,0 +1,50 @@
+from importlib.metadata import version
+
+from opentelemetry import trace
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import BatchSpanProcessor
+from opentelemetry.exporter.cloud_trace import CloudTraceSpanExporter
+from opentelemetry.instrumentation.celery import CeleryInstrumentor
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+from opentelemetry.instrumentation.logging import LoggingInstrumentor
+
+from .config import Settings
+
+
+def configure_tracing(service: str, env_name: str):
+    """Sets up a global OpenTelemetry TracerProvider exporting to Google Cloud Trace, and
+    instruments Celery, httpx, and stdlib logging. Call this once, before any instrumented code
+    runs (e.g. before create_app()).
+
+    No-ops (aside from log record enrichment) when tracing is disabled, so this is safe to call
+    in local dev without GCP credentials.
+    """
+    # Always instrument logging so every LogRecord has otelTraceID/otelSpanID attributes, since
+    # breadbox's LOG_FORMAT references them unconditionally (they're "0" when there's no active
+    # span, e.g. because tracing is disabled below).
+    LoggingInstrumentor().instrument(set_logging_format=False)
+
+    if env_name == "dev":
+        return
+
+    # Configure Google Cloud as our provider for OpenTelemetry
+    # Set the service name and version which should be logged with our spans
+    resource = Resource.create(
+        {
+            "service.name": f"{service}-{env_name}",
+            "service.version": version("breadbox"),
+        }
+    )
+    provider = TracerProvider(resource=resource)
+    provider.add_span_processor(
+        BatchSpanProcessor(CloudTraceSpanExporter(
+            # Attributes with keys matching this regex will be added to exported spans as labels
+            # This is necessary to populate the service name field in GCP
+            resource_regex=r"service\..*"
+        ))
+    )
+    trace.set_tracer_provider(provider)
+
+    CeleryInstrumentor().instrument()
+    HTTPXClientInstrumentor().instrument()

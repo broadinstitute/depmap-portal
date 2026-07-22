@@ -5,11 +5,15 @@ from breadbox.api.dependencies import get_user
 from fastapi import Request, status
 from fastapi.exception_handlers import http_exception_handler
 from .logging import configure_logging, GCPExceptionReporter
+from .telemetry import configure_tracing
 
 configure_logging()
 
 # Create all the singleton instances
 settings = get_settings()
+service_name = "breadbox"
+
+configure_tracing(service=service_name, env_name=settings.breadbox_env)
 
 ensure_directories_exist(settings)
 app = create_app(settings)
@@ -23,7 +27,7 @@ celery = celery_app
 
 # create the Google Cloud exception reporter class
 exception_reporter = GCPExceptionReporter(
-    service="breadbox", env_name=settings.breadbox_env
+    service=service_name, env_name=settings.breadbox_env
 )
 
 from starlette.exceptions import HTTPException as StarletteHTTPException

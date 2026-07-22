@@ -43,6 +43,15 @@ json-logic = "^0.7.0-alpha"
 apsw = "^3.47.2.0"
 sqlglot = "^28.5.0"
 colorama = "^0.4.6"
+opentelemetry-api = "^1.27.0"
+opentelemetry-sdk = "^1.27.0"
+opentelemetry-exporter-gcp-trace = "^1.9.0"
+opentelemetry-instrumentation-fastapi = "^0.48b0"
+opentelemetry-instrumentation-httpx = "^0.48b0"
+opentelemetry-instrumentation-celery = "^0.48b0"
+opentelemetry-instrumentation-logging = "^0.48b0"
+# opentelemetry-instrumentation still imports pkg_resources, which setuptools>=81 no longer bundles
+setuptools = "<81"
 
 
 [tool.poetry.group.dev.dependencies]
