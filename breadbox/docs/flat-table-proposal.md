@@ -48,11 +48,11 @@ The endpoint itself returns `202` with a task-status body immediately (matching 
 The ColumnMetadata type is described below
 
 | Property   | Type           | Description                                                                                                                                                     |
-| :--------- | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------------ |
+| :--------- | :------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | 
 | given_id   | str            | how the column is named in the uploaded file                                                                                                                    |
 | name       | str            | Name of the column for display purposes                                                                                                                         |
 | references | Str (optional) | if set, indicates this column's values are IDs in the named Dimension type. See [subset response](#fetch-data-from-a-flat-table) for how this affects querying. |
-| type       | “string” or ”int”  or   ”float” | What type to expect the values to be |
+| type       | “string” or ”int” or ”float” | What type to expect the values to be |
 
 ### Response {#create-a-flattable-response}
 
