@@ -33,6 +33,8 @@ from breadbox.compute import dataset_uploads_tasks
 from fastapi import FastAPI, Request
 
 from breadbox.compute import dataset_uploads_tasks
+from breadbox.compute import flat_table_tasks
+from breadbox.schemas.flat_table import FlatTableCreateParams
 from breadbox.celery_task import utils
 from . import factories
 
@@ -316,6 +318,53 @@ def mock_celery(minimal_db, settings, monkeypatch, celery_app):
         dataset_uploads_tasks.run_dataset_upload, "delay", mock_run_dataset_upload_task,
     )
     # monkeypatch.setattr(utils, "format_task_status", mock_return_task)
+
+    yield
+
+
+@pytest.fixture
+def mock_celery_flat_table(db, settings, monkeypatch, celery_app):
+    """
+    Same technique `mock_celery` above uses (see that fixture), applied to
+    `run_flat_table_upload`: monkeypatch `.delay` to call the plain, undecorated
+    `create_flat_table_upload` function directly and synchronously, in-process, wrapping the
+    result in an `EagerResult`.
+
+    This means these tests do NOT exercise: real celery task dispatch, (de)serialization of
+    task arguments/results through an actual broker/backend, celery's own `db_context`
+    entry/exit (the task body never runs -- we call `create_flat_table_upload` directly, which
+    doesn't open its own db session), or the real `GET /api/task/{id}` polling path against a
+    live task store. Only the request-handling and DB-transaction logic inside the task body is
+    exercised. `get_settings()` inside `create_flat_table_upload` still resolves correctly
+    without any extra patching here, because it's the same function object patched globally by
+    the `settings` fixture (`breadbox.config._get_settings`).
+
+    Prefers `db` (not `minimal_db`) since flat tables have no dependency on groups or
+    dimension types.
+    """
+
+    def mock_check_celery():
+        return True
+
+    monkeypatch.setattr(utils, "check_celery", mock_check_celery)
+
+    def mock_run_flat_table_upload_task(flat_table_params, user):
+        params = FlatTableCreateParams(**flat_table_params)
+        db.reset_user(user)
+        task_state = TaskState.PENDING.value
+        try:
+            result = flat_table_tasks.create_flat_table_upload(db, params)
+            task_state = TaskState.SUCCESS.value
+        except Exception as e:
+            result = e
+
+        return EagerResult(str(uuid.uuid4()), result, state=task_state)
+
+    monkeypatch.setattr(
+        flat_table_tasks.run_flat_table_upload,
+        "delay",
+        mock_run_flat_table_upload_task,
+    )
 
     yield
 
