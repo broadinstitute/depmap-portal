@@ -76,7 +76,7 @@ Same format as the response for [Create a flattable](#create-a-flattable)
 ## List all flat tables
 
 GET /flattables  
-Retrieve a list of all _current_ flat tables (superseded versions, reachable only by their UUID, are not included).
+Retrieve a list of all flat tables, including superseded versions. A superseded version is distinguishable by having a null `given_id` (see [given_id semantics](#given_id-semantics)) -- it's still reachable individually via its own UUID.
 
 ### Response
 
@@ -91,6 +91,8 @@ Admin-only. Only allows for updating a few fields that are independent of the ac
 Unlike [create](#create-a-flattable), this is a simple metadata update with no file I/O, so it's handled synchronously in the request (no Celery task, no task-status polling) and returns the updated record directly.
 
 `<ID>` resolves the same way as in [GET /flattable/\<ID\>](#fetch-flat-table-metadata).
+
+Only fields actually present in the request body are updated -- a field that's omitted entirely is left untouched, while a field explicitly set to `null` is cleared. This matters for `given_id`: `PATCH` with `given_id` omitted leaves it alone, but `PATCH` with `"given_id": null` explicitly clears it (unpublishing this table -- it becomes reachable only by its UUID, with no other table superseding it).
 
 ### Request
 
@@ -157,7 +159,7 @@ Unlike dataset `given_id` (which is DB-unique and permanently claimed by one dat
 - At the DB level, `given_id` remains a UNIQUE column (so given_id lookups are still a simple unique-key fetch, not an "ORDER BY created_at LIMIT 1").
 - When [POST /flattable](#create-a-flattable) (or a [PATCH](#update-flat-table-metadata) reassignment) supplies a `given_id` that's already held by another FlatTable row, that existing row's `given_id` column is cleared/renamed aside as part of the same transaction, freeing it up for the new row to claim. The old row keeps its own UUID, its data, and its SQLite file untouched — it's simply no longer resolvable by given_id, only by its `flat_table_id` UUID.
 - Old/superseded versions are kept indefinitely (not auto-deleted) until explicitly removed via [DELETE](#delete-a-flat-table).
-- [GET /flattables](#list-all-flat-tables) only lists current versions (i.e. rows that still have a non-null given_id).
+- [GET /flattables](#list-all-flat-tables) lists every row, current and superseded alike; a superseded row is identifiable by its null given_id.
 
 # Implementation notes
 

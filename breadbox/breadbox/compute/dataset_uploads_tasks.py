@@ -27,7 +27,7 @@ from ..crud import group as group_crud
 from ..crud import data_type as data_type_crud
 from ..crud import dataset as dataset_crud
 from .dataset_tasks import db_context
-from ..api.uploads import construct_file_from_ids
+from ..service.upload import construct_file_from_ids
 from ..io.data_validation import (
     read_and_validate_matrix_df,
     _get_dimension_labels_and_warnings,
