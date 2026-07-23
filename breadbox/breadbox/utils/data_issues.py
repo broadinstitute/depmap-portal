@@ -8,6 +8,14 @@ from breadbox.models.dataset import MatrixDataset
 
 ISSUES_FILE_NAME = "known-data-issues.json"
 
+# Known deprecated IDs may be referenced in older matrix datasets despite being missing from metadata - this is expected. 
+known_deprecated_ids = {
+    # Model IDs
+    "ACH-001173", "ACH-001741", "ACH-001790", "ACH-001078", "ACH-000010", "ACH-003008", "ACH-003055", "ACH-003004", "ACH-003010", "ACH-002176", "ACH-002194"
+    # Compound IDs
+    "DPC-004766", 
+}
+
 
 @dataclass
 class DataIssue:
@@ -33,7 +41,7 @@ def check_for_dataset_ids_without_metadata(dataset: MatrixDataset, dimension_typ
     """
     Return a warning string if there are a substantial number of features in dataset_given_ids that are not in metadata_given_ids.
     """
-    dataset_ids_not_in_metadata = set(dataset_given_ids).difference(set(metadata_given_ids))
+    dataset_ids_not_in_metadata = set(dataset_given_ids).difference(set(metadata_given_ids), known_deprecated_ids)
     percent_ids_not_in_metadata = len(dataset_ids_not_in_metadata) / len(dataset_given_ids)
 
     # Append a warning when a given matrix dataset has a large number of features or samples with no metadata.
