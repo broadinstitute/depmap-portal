@@ -1,6 +1,11 @@
 import type { LegacyPortalApiResponse } from "@depmap/api";
 
-export type DatasetId = "Rep_all_single_pt" | "Prism_oncology_AUC" | "unknown";
+export type DatasetId =
+  | "Rep_all_single_pt"
+  | "Prism_oncology_AUC"
+  | "Prism_oncology_seq_AUC"
+  | "Prism_oncology_harmonized_AUC"
+  | "unknown";
 
 // raw data as returned by the server
 export type CompoundSummaryTableRaw = LegacyPortalApiResponse["getCompoundDashboardSummaryTable"];

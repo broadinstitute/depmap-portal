@@ -49,6 +49,11 @@ class DependencyEnum(DatasetEnum):
     Prism_oncology_seq_AUC = "Prism_oncology_seq_AUC"
     Prism_oncology_seq_dose_replicate = "Prism_oncology_seq_dose_replicate"
 
+    Prism_oncology_harmonized_AUC = "Prism_oncology_harmonized_AUC"
+    Prism_oncology_harmonized_dose_replicate = (
+        "Prism_oncology_harmonized_dose_replicate"
+    )
+
     @staticmethod
     def values():
         return {x.value for x in DependencyEnum}
@@ -68,6 +73,7 @@ class DependencyEnum(DatasetEnum):
             DependencyEnum.Rep_all_single_pt,
             DependencyEnum.Prism_oncology_AUC,
             DependencyEnum.Prism_oncology_seq_AUC,
+            DependencyEnum.Prism_oncology_harmonized_AUC,
         }
 
 
@@ -90,6 +96,7 @@ class BiomarkerEnum(DatasetEnum):
     rnai_confounders = "rnai_confounders"
     oncref_confounders = "oncref_confounders"
     oncref_seq_confounders = "oncref_seq_confounders"
+    oncref_harmonized_confounders = "oncref_harmonized_confounders"
     rep_all_single_pt_confounders = "rep_all_single_pt_confounders"
     CRISPRGeneDependency = "CRISPRGeneDependency"
     OmicsAbsoluteCNGene = "OmicsAbsoluteCNGene"

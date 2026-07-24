@@ -18,6 +18,9 @@ export function legacyPortalIdToBreadboxGivenId(legacyId: string) {
     case "Prism_oncology_AUC":
       return "PRISMOncologyReferenceLog2AUCMatrix";
 
+    case "Prism_oncology_harmonized_AUC":
+      return "PRISMOncologyReferenceHarmonizedLog2AUCMatrix";
+
     case "Repurposing_secondary_AUC":
       return "REPURPOSING_AUC_collapsed";
 

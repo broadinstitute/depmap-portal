@@ -169,7 +169,7 @@ def test_get_corr_analysis_options(app, monkeypatch):
         compound = CompoundFactory()
 
         result = get_corr_analysis_options(compound_label=compound.label)
-        assert len(result) == 6
+        assert len(result) == 7
         matches = [x for x in result if x == expected_oncref_dataset_w_priority]
         assert len(matches) == 1
 

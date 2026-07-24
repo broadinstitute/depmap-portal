@@ -14,6 +14,7 @@ DATASET_LABEL_TO_ENUM = {
     "crispr-confounders": BiomarkerEnum.crispr_confounders,
     "oncref-confounders": BiomarkerEnum.oncref_confounders,
     "oncref_seq-confounders": BiomarkerEnum.oncref_seq_confounders,
+    "oncref_harmonized-confounders": BiomarkerEnum.oncref_harmonized_confounders,
     "repallsinglept-confounders": BiomarkerEnum.rep_all_single_pt_confounders,
     "Fusion": BiomarkerEnum.fusions,
     "ssGSEA": BiomarkerEnum.ssgsea,

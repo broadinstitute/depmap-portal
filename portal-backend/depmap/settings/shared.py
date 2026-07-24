@@ -172,6 +172,13 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.confounders,
         priority=103,
     ),
+    BiomarkerEnum.oncref_harmonized_confounders: DatasetLabel(
+        display_name="PRISM OncRef Harmonized confounders",
+        units="",
+        s3_json_name="oncref_harmonized-confounders",
+        data_type=DataTypeEnum.confounders,
+        priority=104,
+    ),
     BiomarkerEnum.rep_all_single_pt_confounders: DatasetLabel(
         display_name="Repurposing Primary Extended confounders",
         units="",
@@ -344,6 +351,18 @@ DATASET_METADATA: Dict[
     ),
     DependencyEnum.Prism_oncology_seq_dose_replicate: DepDatasetMeta(
         display_name="PRISM OncRef Seq Dose Replicate",
+        units="Viability",
+        data_type=DataTypeEnum.drug_screen,
+    ),
+    DependencyEnum.Prism_oncology_harmonized_AUC: DepDatasetMeta(
+        display_name="PRISM OncRef log2(AUC) Harmonized",
+        units="log2(AUC)",
+        data_type=DataTypeEnum.drug_screen,
+        nominal_range=(0, 1.1),
+        priority=3,
+    ),
+    DependencyEnum.Prism_oncology_harmonized_dose_replicate: DepDatasetMeta(
+        display_name="PRISM OncRef Harmonized Dose Replicate",
         units="Viability",
         data_type=DataTypeEnum.drug_screen,
     ),

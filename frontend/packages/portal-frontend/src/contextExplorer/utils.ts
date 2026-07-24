@@ -49,6 +49,10 @@ export const DATATYPE_TOOLTIP_TEXT = new Map<string, string>([
     "Models that have been included in at least one PRISM OncRef Seq screen.",
   ],
   [
+    DataTypeStrings.PRISMOncRefHarmonized.toString(),
+    "Models that have been included in at least one PRISM OncRef Harmonized screen.",
+  ],
+  [
     DataTypeStrings.PRISMRepurposing.toString(),
     "Models that have been included in at least one PRISM Repurposing screen.",
   ],
@@ -767,6 +771,9 @@ export const ONCREF_LUM_SIDEBAR_TEXT =
 export const ONCREF_SEQ_SIDEBAR_TEXT =
   "Compound sensitivities enriched within models of the selected lineage/tumor subtype vs. a chosen out-group (all other PRISM OncRef Seq screened models by default) are calculated using a two-sided T-test on the log AUC of the dose response curves from the NGS dataset. P-values are corrected for multiple hypothesis testing using the Benjamini-Hochberg procedure. ";
 
+export const ONCREF_HARMONIZED_SIDEBAR_TEXT =
+  "Compound sensitivities enriched within models of the selected lineage/tumor subtype vs. a chosen out-group (all other PRISM OncRef Harmonized screened models by default) are calculated using a two-sided T-test on the log AUC of the dose response curves from the harmonized dataset. P-values are corrected for multiple hypothesis testing using the Benjamini-Hochberg procedure. ";
+
 export const OVERVIEW_SIDEBAR_TEXT =
   "Context Explorer helps researchers see how many datasets are available for their chosen tissue context type and subtype, as well as showing the overlap in data.";
 
@@ -799,7 +806,10 @@ export const REP_DETAIL_TOOLTIP =
 export function getDetailPanelTooltip(datasetId: ContextExplorerDatasets) {
   if (
     datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
-    datasetId === ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
+    datasetId ===
+      ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix ||
+    datasetId ===
+      ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix
   ) {
     return ONC_DETAIL_TOOLTIP;
   }

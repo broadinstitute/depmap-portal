@@ -262,7 +262,9 @@ function ContextAnalysis({
   const isOncRefDataset =
     datasetId === ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
     datasetId ===
-      ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix;
+      ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix ||
+    datasetId ===
+      ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix;
 
   const getFilterDefinitions = useCallback(() => {
     if (isOncRefDataset) {
@@ -794,6 +796,20 @@ function ContextAnalysis({
                 <>
                   <h2>
                     OncRef Seq sensitivies enriched in{" "}
+                    {selectedContextNameInfo.name}
+                  </h2>
+                  <h4>
+                    The plots below display compound sensitivities that are
+                    enriched in {selectedContextNameInfo.name} models compared
+                    to {outgroup.label.toLowerCase()} models.
+                  </h4>
+                </>
+              )}
+              {datasetId ===
+                ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix && (
+                <>
+                  <h2>
+                    OncRef Harmonized sensitivies enriched in{" "}
                     {selectedContextNameInfo.name}
                   </h2>
                   <h4>
