@@ -513,6 +513,7 @@ def _setup_entities_and_dataset_id(
         "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
         "PRISMOncologyReferenceSeqLog2AUCMatrix",
+        "PRISMOncologyReferenceHarmonizedLog2AUCMatrix",
     ],
 )
 def test_get_analysis_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):
@@ -1070,6 +1071,7 @@ def test_get_dose_curves(empty_db_mock_downloads, monkeypatch):
         "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
         "PRISMOncologyReferenceSeqLog2AUCMatrix",
+        "PRISMOncologyReferenceHarmonizedLog2AUCMatrix",
     ],
 )
 def test_get_drug_dotted_line(empty_db_mock_downloads, dataset_given_id, monkeypatch):
@@ -1145,6 +1147,7 @@ def _get_box_plot_data(
         "Rep_all_single_pt_per_compound",
         "PRISMOncologyReferenceLog2AUCMatrix",
         "PRISMOncologyReferenceSeqLog2AUCMatrix",
+        "PRISMOncologyReferenceHarmonizedLog2AUCMatrix",
     ],
 )
 def test_get_box_plot_data(empty_db_mock_downloads, dataset_given_id, monkeypatch):

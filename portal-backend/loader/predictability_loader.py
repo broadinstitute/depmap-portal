@@ -37,6 +37,7 @@ def lookup_breadbox_dataset_given_id(legacy_dataset_id: str) -> str:
     legacy_to_breadbox = {
         "Prism_oncology_AUC": "PRISMOncologyReferenceLog2AUCMatrix",
         "Prism_oncology_seq_AUC": "PRISMOncologyReferenceSeqLog2AUCMatrix",
+        "Prism_oncology_harmonized_AUC": "PRISMOncologyReferenceHarmonizedLog2AUCMatrix",
         "Rep_all_single_pt": "Rep_all_single_pt_per_compound",
         "CTRP_AUC": "CTRP_AUC_collapsed",
         "GDSC1_AUC": "GDSC1_AUC_collapsed",
@@ -276,6 +277,7 @@ def _load_predictive_features(
             BiomarkerDataset.BiomarkerEnum.rnai_confounders,
             BiomarkerDataset.BiomarkerEnum.oncref_confounders,
             BiomarkerDataset.BiomarkerEnum.oncref_seq_confounders,
+            BiomarkerDataset.BiomarkerEnum.oncref_harmonized_confounders,
             BiomarkerDataset.BiomarkerEnum.rep_all_single_pt_confounders,
         ]:
             if GenericEntity.get_by_label(feature_name, must=False) is not None:
