@@ -292,7 +292,7 @@ def update_client():
     # use the breadbox-client-generator directory which has a different virtual env with incompatible
     # libraries, but we need it in order to run the openapi-python-client generator
     subprocess.run(
-        ["poetry", "run", "./generate.sh",],
+        ["bash", "./generate.sh",],
         check=True,
         cwd="../breadbox-client-generator",
     )
