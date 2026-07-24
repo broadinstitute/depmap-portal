@@ -29,6 +29,12 @@ from breadbox_client.api.datasets import get_datasets as get_datasets_client
 from breadbox_client.api.datasets import get_feature_data as get_feature_data_client
 from breadbox_client.api.datasets import remove_dataset as remove_dataset_client
 from breadbox_client.api.datasets import update_dataset as update_dataset_client
+from breadbox_client.api.flat_tables import add_flat_table as add_flat_table_client
+from breadbox_client.api.flat_tables import get_flat_table as get_flat_table_client
+from breadbox_client.api.flat_tables import list_flat_tables as list_flat_tables_client
+from breadbox_client.api.flat_tables import update_flat_table as update_flat_table_client
+from breadbox_client.api.flat_tables import delete_flat_table as delete_flat_table_client
+from breadbox_client.api.flat_tables import get_flat_table_subset as get_flat_table_subset_client
 from breadbox_client.api.default import upload_file
 from breadbox_client.api.groups import add_group as add_group_client
 from breadbox_client.api.groups import add_group_entry as add_group_entry_client
@@ -80,11 +86,20 @@ from breadbox_client.models import (
     Context,
     ContextMatchResponse,
     DataType,
-    DimensionIdentifiers, 
+    DimensionIdentifiers,
     DimensionType,
     FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
+    FlatTableColumnMetadata,
+    FlatTableCreateParams,
+    FlatTableCreateParamsMetadataType0,
+    FlatTableFilter,
+    FlatTableResponse,
+    FlatTableSubsetRequest,
+    FlatTableSubsetResponse,
+    FlatTableSummaryResponse,
+    FlatTableUpdateParams,
     GroupIn,
     GroupEntry,
     GroupEntryIn,
@@ -496,6 +511,100 @@ class BBClient:
             body=params,
         )
         return self._parse_client_response(breadbox_response)
+
+    # FLAT TABLES
+
+    def add_flat_table(
+        self,
+        name: str,
+        given_id: str,
+        data_df: pd.DataFrame,
+        columns_metadata: List[FlatTableColumnMetadata],
+        indices: Optional[List[List[str]]] = None,
+        table_metadata: Optional[dict] = None,
+        taiga_id: Optional[str] = None,
+        timeout=None,
+    ):
+        """Upload a new flat table (parquet-backed) and await the ingestion task."""
+        buffer = io.BytesIO()
+        data_df.to_parquet(buffer, index=False)
+        buffer.seek(0)
+        uploaded_file = self.upload_file(file_handle=buffer)
+
+        metadata = FlatTableCreateParamsMetadataType0.from_dict(table_metadata) if table_metadata else None
+
+        params = FlatTableCreateParams(
+            columns=columns_metadata,
+            file_ids=uploaded_file.file_ids,
+            file_md5=uploaded_file.md5,
+            given_id=given_id,
+            name=name,
+            indices=indices if indices else UNSET,
+            metadata=metadata if metadata else UNSET,
+            taiga_id=taiga_id if taiga_id else UNSET,
+        )
+        breadbox_response = add_flat_table_client.sync_detailed(
+            client=self.client,
+            body=params,
+        )
+        breadbox_response_ = typing.cast(AddDatasetResponse, self._parse_client_response(breadbox_response))
+        result = self.await_task_result(breadbox_response_.id, timeout=timeout)
+        return result
+
+    def get_flat_table(self, id: str) -> FlatTableResponse:
+        """Get metadata (including columns) for a flat table by flat_table_id or given_id."""
+        breadbox_response = get_flat_table_client.sync_detailed(id=id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def list_flat_tables(self) -> List[FlatTableSummaryResponse]:
+        """List metadata for all flat tables available to current user."""
+        breadbox_response = list_flat_tables_client.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def update_flat_table(
+        self,
+        id: str,
+        name: Union[str, Unset, None] = UNSET,
+        given_id: Union[str, Unset, None] = UNSET,
+    ) -> FlatTableResponse:
+        """Rename a flat table and/or reassign its given_id (admin only)."""
+        params = FlatTableUpdateParams(
+            name=name,
+            given_id=given_id,
+        )
+        breadbox_response = update_flat_table_client.sync_detailed(
+            id=id,
+            client=self.client,
+            body=params,
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def remove_flat_table(self, id: str):
+        """Delete a flat table by flat_table_id or given_id (admin only)."""
+        breadbox_response = delete_flat_table_client.sync_detailed(id=id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def get_flat_table_subset(
+        self,
+        flat_table_id: str,
+        columns: Optional[List[str]] = None,
+        filters: Optional[Dict[str, List[str]]] = None,
+    ) -> pd.DataFrame:
+        """Get a subset of a flat table's rows/columns as a DataFrame."""
+        params = FlatTableSubsetRequest(
+            flat_table_id=flat_table_id,
+            columns=columns if columns else UNSET,
+            filters=[FlatTableFilter(column=k, values=v) for k, v in filters.items()] if filters else UNSET,
+        )
+        breadbox_response = get_flat_table_subset_client.sync_detailed(
+            client=self.client,
+            body=params,
+        )
+        response = typing.cast(FlatTableSubsetResponse, self._parse_client_response(breadbox_response))
+        try:
+            return pd.DataFrame({col.metadata.given_id: col.values for col in response.columns})
+        except Exception as e:
+            raise Exception(e, "Unable to parse breadbox response into dataframe.")
 
     # TYPES
 
