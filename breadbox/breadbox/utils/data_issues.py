@@ -9,7 +9,7 @@ from breadbox.models.dataset import MatrixDataset
 
 ISSUES_FILE_NAME = "known-data-issues.json"
 
-# HEURISTICS CONFIGS
+# CONFIGS FOR HEURISTICS
 # There are a small number of special cases in which issues can be safely ignored (configured below).
 
 # Known deprecated IDs may be referenced in older matrix datasets despite being missing from metadata. 
