@@ -174,6 +174,7 @@ def create_flat_table_from_upload(
         sqlite_db_path=relative_sqlite_path,
         row_count=row_count,
         columns=params.columns,
+        indices=params.indices,
         taiga_id=params.taiga_id,
         metadata=params.metadata,
     )
@@ -197,10 +198,13 @@ def to_flat_table_response(flat_table: FlatTable) -> FlatTableResponse:
         taiga_id=flat_table.taiga_id,
         metadata=flat_table.flat_table_metadata,
         columns=[_to_column_metadata(c) for c in flat_table.columns],
+        indices=flat_table.indices,
     )
 
 
-def to_flat_table_summary(flat_table: FlatTable) -> FlatTableSummaryResponse:
+def to_flat_table_summary(
+    flat_table: FlatTable, include_columns: bool = False
+) -> FlatTableSummaryResponse:
     return FlatTableSummaryResponse(
         flat_table_id=flat_table.id,
         given_id=flat_table.given_id,
@@ -208,6 +212,10 @@ def to_flat_table_summary(flat_table: FlatTable) -> FlatTableSummaryResponse:
         row_count=flat_table.row_count,
         taiga_id=flat_table.taiga_id,
         metadata=flat_table.flat_table_metadata,
+        indices=flat_table.indices,
+        columns=[_to_column_metadata(c) for c in flat_table.columns]
+        if include_columns
+        else None,
     )
 
 

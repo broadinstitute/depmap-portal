@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.encoders import jsonable_encoder
 
 from breadbox.celery_task import utils as celery_utils
@@ -90,10 +90,22 @@ def get_flat_table(id: str, db: SessionWithUser = Depends(get_db_with_user)):
     response_model_by_alias=False,
     response_model_exclude_none=False,
 )
-def list_flat_tables(db: SessionWithUser = Depends(get_db_with_user)):
+def list_flat_tables(
+    include: Optional[Literal["all"]] = Query(
+        None,
+        description="If set to 'all', also include each table's `columns` in the response.",
+    ),
+    db: SessionWithUser = Depends(get_db_with_user),
+):
     "List all flat tables"
     flat_tables = flat_table_crud.get_flat_tables(db)
-    return [flat_table_service.to_flat_table_summary(ft) for ft in flat_tables]
+    include_columns = include == "all"
+    return [
+        flat_table_service.to_flat_table_summary(
+            ft, include_columns=include_columns
+        )
+        for ft in flat_tables
+    ]
 
 
 @router.patch(

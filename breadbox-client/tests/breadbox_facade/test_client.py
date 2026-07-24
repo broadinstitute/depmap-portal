@@ -235,12 +235,19 @@ def test_flat_table_lifecycle(breadbox_client: BBClient):
             FlatTableColumnMetadata(given_id="id", name="ID", type=ColumnType.STRING),
             FlatTableColumnMetadata(given_id="value", name="Value", type=ColumnType.FLOAT),
         ],
+        indices=[["id"]],
         timeout=15,
     )
     flat_table_id = result["flat_table_id"]
 
     tables = breadbox_client.list_flat_tables()
-    assert given_id in [t.given_id for t in tables]
+    listed_table = next(t for t in tables if t.given_id == given_id)
+    assert listed_table.columns is None
+    assert listed_table.indices == [["id"]]
+
+    tables_with_columns = breadbox_client.list_flat_tables(include_columns=True)
+    listed_table_with_columns = next(t for t in tables_with_columns if t.given_id == given_id)
+    assert {c.given_id for c in listed_table_with_columns.columns} == {"id", "value"}
 
     new_name = unique_name("renamed-flat-table")
     updated = breadbox_client.update_flat_table(flat_table_id, name=new_name)

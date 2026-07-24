@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from sqlalchemy import (
     JSON,
@@ -36,6 +36,13 @@ class FlatTable(Base, UUIDMixin):
     sqlite_db_path: Mapped[str] = mapped_column(String, nullable=False)
 
     row_count: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # sets of columns (by given_id) which have a SQLite index built on them, as set at
+    # creation time via FlatTableCreateParams.indices. Stored purely so it can be read back
+    # (e.g. by callers doing declarative management); not consulted by any query logic.
+    indices: Mapped[List[List[str]]] = mapped_column(
+        JSON, nullable=False, default=list
+    )
 
     taiga_id: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 

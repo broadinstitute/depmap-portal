@@ -556,9 +556,16 @@ class BBClient:
         breadbox_response = get_flat_table_client.sync_detailed(id=id, client=self.client)
         return self._parse_client_response(breadbox_response)
 
-    def list_flat_tables(self) -> List[FlatTableSummaryResponse]:
-        """List metadata for all flat tables available to current user."""
-        breadbox_response = list_flat_tables_client.sync_detailed(client=self.client)
+    def list_flat_tables(self, include_columns: bool = False) -> List[FlatTableSummaryResponse]:
+        """List metadata for all flat tables available to current user.
+
+        If include_columns is True, each summary's `columns` field is also populated
+        (at the cost of a larger response).
+        """
+        breadbox_response = list_flat_tables_client.sync_detailed(
+            client=self.client,
+            include="all" if include_columns else UNSET,
+        )
         return self._parse_client_response(breadbox_response)
 
     def update_flat_table(

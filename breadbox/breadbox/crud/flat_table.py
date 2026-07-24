@@ -52,6 +52,7 @@ def create_flat_table(
     sqlite_db_path: str,
     row_count: int,
     columns: List[FlatTableColumnMetadata],
+    indices: List[List[str]],
     taiga_id: Optional[str],
     metadata: Optional[dict],
 ) -> FlatTable:
@@ -63,6 +64,7 @@ def create_flat_table(
         name=name,
         sqlite_db_path=sqlite_db_path,
         row_count=row_count,
+        indices=indices,
         taiga_id=taiga_id,
         flat_table_metadata=metadata,
         columns=[
