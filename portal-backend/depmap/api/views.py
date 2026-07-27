@@ -4,6 +4,7 @@ from flask_restplus import Resource
 from depmap.api.models import ApiWithUrlScheme
 from depmap.celery_task.api import namespace as celery_namespace
 from depmap.download.api import namespace as download_namespace
+from depmap.download.api import no_captcha_namespace as no_captcha_download_namespace
 from depmap.extensions import csrf_protect, restplus_handle_exception
 from depmap.health_check.api import namespace as health_check_namespace
 from depmap.context_explorer.api import namespace as context_explorer_namespace
@@ -33,6 +34,7 @@ api.add_namespace(health_check_namespace)
 api.add_namespace(celery_namespace)
 api.add_namespace(download_namespace)
 api.add_namespace(compound_namespace)
+api.add_namespace(no_captcha_download_namespace)
 
 
 @api.route("/error")

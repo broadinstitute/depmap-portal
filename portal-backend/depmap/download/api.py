@@ -25,6 +25,84 @@ from depmap.utilities.data_access_log import log_dataset_access, log_feature_acc
 from depmap.utilities.data_access_log import log_bulk_download_csv
 
 namespace = Namespace("download", description="Download data in the portal")
+no_captcha_namespace = Namespace(
+    "no-captcha", description="Operations which bypass captcha check"
+)
+
+
+def generate_download_files_table(include_dl_links: bool):
+    # Generate csv table which contains signed urls for fetching all the data files
+    # This was written primarily in response to DMC requests for a way to bulk access all downloads.
+    log_bulk_download_csv()
+    show_taiga = current_app.config["SHOW_TAIGA_IN_BULK_DOWNLOADS"]
+    credentials = ServiceAccountCredentials.from_json_keyfile_name(
+        current_app.config["DOWNLOADS_KEY"]
+    )
+    downloads: List[DownloadRelease] = get_download_list()
+    records = []
+    expiry_seconds = 60 * 60 * 24 * 14  # links expire after two weeks
+
+    for download in downloads:
+        for file in download.all_files:
+            if isinstance(file._url, BucketUrl):
+                if include_dl_links:
+                    url = sign_url(
+                        credentials,
+                        file._url.bucket,
+                        file._url.file_name,
+                        # extension_headers=extension_headers,
+                        expiry_seconds=expiry_seconds,
+                        dl_name=file._url.dl_name,
+                    )
+                else:
+                    url = None
+            elif isinstance(file._url, str):
+                url = file._url
+            elif not show_taiga:
+                continue
+            else:
+                url = None
+
+            if show_taiga:
+                taiga_id = file.original_taiga_id
+                records.append(
+                    [
+                        download.name,
+                        download.get_release_date(file),
+                        file.name,
+                        url,
+                        taiga_id,
+                        file.md5_hash,
+                    ]
+                )
+            else:
+                assert url is not None
+                records.append(
+                    [
+                        download.name,
+                        download.get_release_date(file),
+                        file.name,
+                        url,
+                        file.md5_hash,
+                    ]
+                )
+
+    sout = StringIO()
+    w = csv.writer(sout)
+    if show_taiga:
+        w.writerow(
+            ["release", "release_date", "filename", "url", "taiga_id", "md5_hash"]
+        )
+    else:
+        w.writerow(["release", "release_date", "filename", "url", "md5_hash"])
+    for rec in records:
+        w.writerow(rec)
+    headers = {
+        "Content-Disposition": "attachment; filename=downloads.csv",
+        "Content-type": "text/csv",
+    }
+
+    return make_response((sout.getvalue(), headers))
 
 
 @namespace.route("/files")
@@ -37,75 +115,20 @@ class BulkFilesCsv(
         """
         Download a csv table listing all files available for download and links to download them
         """
-        # Generate csv table which contains signed urls for fetching all the data files
-        # This was written primarily in response to DMC requests for a way to bulk access all downloads.
-        log_bulk_download_csv()
-        show_taiga = current_app.config["SHOW_TAIGA_IN_BULK_DOWNLOADS"]
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(
-            current_app.config["DOWNLOADS_KEY"]
-        )
-        downloads: List[DownloadRelease] = get_download_list()
+        return generate_download_files_table(True)
 
-        records = []
-        expiry_seconds = 60 * 60 * 24 * 14  # links expire after two weeks
 
-        for download in downloads:
-            for file in download.all_files:
-                if isinstance(file._url, BucketUrl):
-                    url = sign_url(
-                        credentials,
-                        file._url.bucket,
-                        file._url.file_name,
-                        # extension_headers=extension_headers,
-                        expiry_seconds=expiry_seconds,
-                        dl_name=file._url.dl_name,
-                    )
-                elif isinstance(file._url, str):
-                    url = file._url
-                elif not show_taiga:
-                    continue
-                else:
-                    url = None
-
-                if show_taiga:
-                    taiga_id = file.original_taiga_id
-                    records.append(
-                        [
-                            download.name,
-                            download.get_release_date(file),
-                            file.name,
-                            url,
-                            taiga_id,
-                            file.md5_hash,
-                        ]
-                    )
-                else:
-                    assert url is not None
-                    records.append(
-                        [
-                            download.name,
-                            download.get_release_date(file),
-                            file.name,
-                            url,
-                            file.md5_hash,
-                        ]
-                    )
-
-        sout = StringIO()
-        w = csv.writer(sout)
-        if show_taiga:
-            w.writerow(
-                ["release", "release_date", "filename", "url", "taiga_id", "md5_hash"]
-            )
-        else:
-            w.writerow(["release", "release_date", "filename", "url", "md5_hash"])
-        for rec in records:
-            w.writerow(rec)
-        headers = {
-            "Content-Disposition": "attachment; filename=downloads.csv",
-            "Content-type": "text/csv",
-        }
-        return make_response((sout.getvalue(), headers))
+@no_captcha_namespace.route("/download/files")
+class NoCaptchaBulkFilesCsv(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # Note: docstrings to restplus methods end up in the swagger documentation.
+        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        """
+        Download a csv table listing all files available for download, without download links (but without requiring captcha check)
+        """
+        return generate_download_files_table(False)
 
 
 @namespace.route("/mutation_table_citation")
