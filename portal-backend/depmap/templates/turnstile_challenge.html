@@ -173,16 +173,24 @@
       </div>
       {% endif %}
 
-      <form method="POST" action="{{ url_for('verify_turnstile.verify') }}">
+      <form id="turnstile-form" method="POST" action="{{ url_for('verify_turnstile.verify') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
         <input type="hidden" name="next_url" value="{{ next_url }}" />
         <div class="widget-row">
-          <div class="cf-turnstile" data-sitekey="{{ site_key }}"></div>
+          <div class="cf-turnstile" data-sitekey="{{ site_key }}" data-callback="onTurnstileSuccess"></div>
         </div>
         <div class="btn-row">
           <button type="submit" class="btn-enter">Enter DepMap &rarr;</button>
         </div>
       </form>
+
+      <script>
+        // Turnstile calls this with the token once the challenge passes, so most
+        // visitors never have to click the button.
+        function onTurnstileSuccess() {
+          document.getElementById("turnstile-form").submit();
+        }
+      </script>
 
       <div class="footer">
         <div class="cookie-note">
