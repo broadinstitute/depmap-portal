@@ -63,6 +63,9 @@ def generate_download_files_table(include_dl_links: bool):
             else:
                 url = None
 
+            if url is None:
+                url = ""
+
             if show_taiga:
                 taiga_id = file.original_taiga_id
                 records.append(
