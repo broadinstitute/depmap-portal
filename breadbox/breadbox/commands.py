@@ -472,6 +472,13 @@ def log_data_issues(issues_dir: str, accept_worsened_issues: bool):
 
 
 def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
+    """
+    Flag instances where either:
+    1. A matrix dataset has features or samples with no metadata.
+    2. A matrix dataset has a large number of metadata records not referenced by any features in the dataset (not applicable to samples).
+    3. Metadata records are not referenced by any features in any dataset.
+    """
+
     db = _get_db_connection()
 
     all_dimension_types = types_crud.get_dimension_types(db=db)
@@ -501,10 +508,12 @@ def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
             dataset_given_ids = get_matrix_dataset_given_ids(db=db, dataset=dataset, axis=dimension_type.axis)
             used_given_ids_across_datasets.update(set(dataset_given_ids))
 
+            # Feature/sample missing metadata
             missing_metadata_issue = data_issues.check_for_dataset_ids_without_metadata(dataset, dimension_type.name, dataset_given_ids, metadata_given_ids)
             if missing_metadata_issue:
                 all_issues[missing_metadata_issue.get_key()] = missing_metadata_issue
-            
+
+            # Metadata not referenced in dataset
             unused_metadata_issue = data_issues.check_for_metadata_not_in_dataset(dataset, dimension_type.name, dimension_type.axis, dataset_given_ids, metadata_given_ids)
             if unused_metadata_issue:
                 all_issues[unused_metadata_issue.get_key()] = unused_metadata_issue
