@@ -23,6 +23,7 @@ CRISPR_DATASET_NAME = "Chronos_Combined"
 REPURPOSING_DATASET_NAME = "Rep_all_single_pt_per_compound"
 ONCREF_DATASET_NAME = "PRISMOncologyReferenceLog2AUCMatrix"
 ONCREF_SEQ_DATASET_NAME = "PRISMOncologyReferenceSeqLog2AUCMatrix"
+ONCREF_HARMONIZED_DATASET_NAME = "PRISMOncologyReferenceHarmonizedLog2AUCMatrix"
 
 
 def format_selectivity_vals(drug_data_dict):
@@ -418,6 +419,19 @@ def oncref_seq_context_analysis(
     )
 
 
+def oncref_harmonized_context_analysis(
+    tc, subtype_tree, context_matrix, oncref_auc_taiga_id, portal_compounds_taiga_id
+):
+    return oncref_context_analysis(
+        tc,
+        subtype_tree,
+        context_matrix,
+        oncref_auc_taiga_id,
+        portal_compounds_taiga_id,
+        ONCREF_HARMONIZED_DATASET_NAME,
+    )
+
+
 def oncref_context_analysis(
     tc,
     subtype_tree,
@@ -583,6 +597,7 @@ if __name__ == "__main__":
         [
             oncref_lum_context_analysis,
             oncref_seq_context_analysis,
+            oncref_harmonized_context_analysis,
             repurposing_context_analysis,
             crispr_context_analysis,
         ],

@@ -9,6 +9,8 @@ skip_if_missing = [
     "Prism_oncology_viability",
     "PRISMOncologyReferenceSeqLog2AUCMatrix",
     "Prism_oncology_seq_viability",
+    "PRISMOncologyReferenceHarmonizedLog2AUCMatrix",
+    "Prism_oncology_harmonized_viability",
 ]
 
 
@@ -37,6 +39,8 @@ def main():
             "Prism_oncology_viability",
             "PRISMOncologyReferenceSeqLog2AUCMatrix",
             "Prism_oncology_seq_viability",
+            "PRISMOncologyReferenceHarmonizedLog2AUCMatrix",
+            "Prism_oncology_harmonized_viability",
             "REPURPOSING_log2AUC_collapsed",
             "CTRP_log2AUC_collapsed",
             "GDSC1_log2AUC_collapsed",

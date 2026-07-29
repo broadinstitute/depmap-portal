@@ -91,6 +91,7 @@ def _get_context_summary(tree_type: str):
             "RNASeq",
             "PRISMOncRefSeq",
             "PRISMOncRefLum",
+            "PRISMOncRefHarmonized",
             "PRISMRepurposing",
         ]
         sorted_summary_df = subsetted_summary_df.sort_values(
@@ -298,6 +299,7 @@ def _get_overview_table(overview_page_table, summary_df_by_model_id):
             "WES": "wes",
             "PRISMOncRefLum": "oncrefLum",
             "PRISMOncRefSeq": "oncrefSeq",
+            "PRISMOncRefHarmonized": "oncrefHarmonized",
             "PRISMRepurposing": "repurposing",
             "RNASeq": "rna_seq",
         }
@@ -690,7 +692,7 @@ def _get_enriched_lineages_tile_with_caching(tree_type, feature_id, feature_type
         selected_context_name_info=top_context_name_info,
         # top_context_name_info is repeated here on purpose. As described above, "selected context" is inherited from the Context Explorer page version of the box plots
         dataset_name=dataset_given_id,
-        # for the frontend to determine the tab of context_explorer to link to: "oncrefLum", "oncrefSeq", "repurposing", or "geneDependency"
+        # for the frontend to determine the tab of context_explorer to link to: "oncrefLum", "oncrefSeq", "oncrefHarmonized", "repurposing", or "geneDependency"
         dataset_display_name=dataset_display_name,
         context_explorer_url=url_for(
             "context_explorer.view_context_explorer"

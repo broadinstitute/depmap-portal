@@ -26,6 +26,9 @@ def main(
     prism_oncology_reference_seq_log2_auc_matrix = get_id(
         taiga_ids["prism_oncology_reference_seq_log2_auc_matrix"]
     )
+    prism_oncology_reference_harmonized_log2_auc_matrix = get_id(
+        taiga_ids["prism_oncology_reference_harmonized_log2_auc_matrix"]
+    )
 
     tc = create_taiga_client_v3()
 
@@ -92,6 +95,22 @@ def main(
         ] = True
         resulting_cols.insert(
             -1, "PRISMOncRefLum"
+        )  # put the oncref column before the repurposing column
+
+    # PRISM OncRef Harmonized
+    if prism_oncology_reference_harmonized_log2_auc_matrix is not None:
+        OncRef_Harmonized_Matrix = tc.get(
+            prism_oncology_reference_harmonized_log2_auc_matrix
+        )
+        assert OncRef_Harmonized_Matrix is not None
+
+        overall_summary["PRISMOncRefHarmonized"] = False
+        overall_summary.loc[
+            overall_summary.index.isin(OncRef_Harmonized_Matrix.index),
+            "PRISMOncRefHarmonized",
+        ] = True
+        resulting_cols.insert(
+            -1, "PRISMOncRefHarmonized"
         )  # put the oncref column before the repurposing column
 
     # OMICS
