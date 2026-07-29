@@ -653,7 +653,7 @@ rule convert_predictability_feature_metadata:
 rule compound_matrix_to_ftr:
     inputs:
         data={
-            "type": "dep-matrix",
+            "type": "dep-matrix-temp-disabled",
             "label" ~ "Rep_all_single_pt|(?:Prism_oncology.*_AUC)"
         },
         hdf5_utils=fileref("../scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
