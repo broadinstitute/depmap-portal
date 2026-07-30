@@ -36,6 +36,14 @@ _SQLITE_TYPE_BY_COLUMN_TYPE = {
     ColumnType.float: "REAL",
 }
 
+# Used to coerce values read back from pyarrow/pandas (e.g. numpy.int64, numpy.float64)
+# into the native Python types sqlite3 knows how to bind (None/int/float/str/bytes).
+_PY_CAST_BY_COLUMN_TYPE = {
+    ColumnType.string: str,
+    ColumnType.int: int,
+    ColumnType.float: float,
+}
+
 # Row batch size used when streaming the uploaded parquet file into SQLite, so that ingesting
 # a ~100M row table doesn't require holding the whole dataframe in memory at once.
 _INGEST_BATCH_SIZE = 100_000
@@ -107,6 +115,7 @@ def _ingest_parquet_to_sqlite(
         os.remove(dest_path)
 
     column_names = [c.given_id for c in columns]
+    column_casts = [_PY_CAST_BY_COLUMN_TYPE[c.type] for c in columns]
 
     conn = sqlite3.connect(dest_path)
     try:
@@ -129,7 +138,19 @@ def _ingest_parquet_to_sqlite(
             batch_size=_INGEST_BATCH_SIZE, columns=column_names
         ):
             batch_df = batch.to_pandas()
-            rows = list(batch_df[column_names].itertuples(index=False, name=None))
+            raw_rows = batch_df[column_names].itertuples(index=False, name=None)
+            # `_validate_schema_against_parquet` above already confirmed each column's
+            # declared type is compatible with the uploaded file's arrow type, but
+            # to_pandas() hands back numpy scalar types (e.g. numpy.int64) that sqlite3
+            # doesn't know how to bind -- coerce each value to the native Python type its
+            # column declares, preserving nulls.
+            rows = [
+                tuple(
+                    None if pd.isna(value) else cast(value)
+                    for value, cast in zip(row, column_casts)
+                )
+                for row in raw_rows
+            ]
             if rows:
                 cursor.executemany(insert_sql, rows)
                 row_count += len(rows)
