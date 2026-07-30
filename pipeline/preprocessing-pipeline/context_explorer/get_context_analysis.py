@@ -151,6 +151,16 @@ def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taig
     assert set(repurposing_matrix.columns).issubset(
         sample_id_to_compound_id_map.values()
     )
+
+    # if there are two samples which are the same compound, drop all but the first
+    dupped_cols = repurposing_matrix.columns.duplicated(keep="first")
+    print(f"Dropping {sum(dupped_cols)} duplicate columns")
+    repurposing_matrix = repurposing_matrix.loc[:, ~dupped_cols]
+
+    # sanity check that we didn't drop everything by mistake
+    assert repurposing_matrix.shape[0] > 100
+    assert repurposing_matrix.shape[1] > 100
+
     # verify that there are no duplicates per compound ID
     assert repurposing_matrix.columns.nunique() == repurposing_matrix.shape[1]
 
