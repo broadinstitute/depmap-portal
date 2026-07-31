@@ -81,6 +81,12 @@ interface Props {
   // warns and exports a plain figure with no legend, same as
   // PrototypeScatterPlot's own fallback.
   legendForDownload?: LegendInfo;
+  // Renders a Plotly-native legend (dummy traces built from legendForDownload,
+  // same mechanism as downloadImage below) instead of DE2's own custom legend.
+  // Off by default; used by embedded plots rendered outside Data Explorer,
+  // which have no surrounding UI to host the custom legend. Mirrors
+  // PrototypeScatterPlot's identical prop.
+  showBuiltinLegend?: boolean;
   hoverTextKey?: string;
   annotationTextKey?: string;
   colorKey1?: string;
@@ -152,6 +158,7 @@ function SmallMultiplesScatter({
   facetOrder,
   height,
   legendForDownload,
+  showBuiltinLegend = false,
   hoverTextKey,
   annotationTextKey,
   colorKey1,
@@ -277,9 +284,9 @@ function SmallMultiplesScatter({
     // empty). A facet hidden via the "Facets" panel (hiddenFacets, below) is
     // different: that's a deliberate, causal user action, so it's dropped
     // outright rather than rendered as an empty placeholder.
-    const candidateFacets = (facetOrder ?? Array.from(new Set(facetKeys))).filter(
-      (f) => !hiddenFacets?.has(f)
-    );
+    const candidateFacets = (
+      facetOrder ?? Array.from(new Set(facetKeys))
+    ).filter((f) => !hiddenFacets?.has(f));
     const plottableFacets = new Set<string>();
     const visibleFacets = new Set<string>();
     for (let i = 0; i < x.length; i += 1) {
@@ -315,7 +322,10 @@ function SmallMultiplesScatter({
     const layout: Record<string, any> = {
       height: resolvedHeight,
       margin: { t: 28, r: 16, b: 60, l: 68 },
-      showlegend: false,
+      // Every real trace below sets `showlegend: false` explicitly, so this
+      // has no effect unless showBuiltinLegend adds its dummy, named traces
+      // (which force `showlegend: true`). Mirrors PrototypeScatterPlot.
+      showlegend: true,
       hovermode: "closest",
       dragmode,
       annotations: [] as any[],
@@ -584,6 +594,15 @@ function SmallMultiplesScatter({
       }
     });
 
+    if (showBuiltinLegend) {
+      const legendTemplateTrace = {
+        marker: { size: pointSize, line: { width: outlineWidth } },
+      };
+      getLegendTraces(legendForDownload!, legendTemplateTrace).forEach((t) =>
+        plotlyData.push(t as typeof plotlyData[number])
+      );
+    }
+
     // Selected-point annotations, placed on their own facet's axes. Above the
     // per-facet cap we fall back to a single count, mirroring the single-panel
     // plot.
@@ -706,14 +725,12 @@ function SmallMultiplesScatter({
           y as number[],
           indices,
           facetLayout
-        ).forEach(
-          ({ pointIndex, ax, ay }) => {
-            annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = {
-              ax,
-              ay,
-            };
-          }
-        );
+        ).forEach(({ pointIndex, ax, ay }) => {
+          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = {
+            ax,
+            ay,
+          };
+        });
       });
     };
 
@@ -769,7 +786,10 @@ function SmallMultiplesScatter({
       const legendTemplateTrace = {
         marker: { size: pointSize, line: { width: outlineWidth } },
       };
-      const legendTraces = getLegendTraces(legendForDownload, legendTemplateTrace);
+      const legendTraces = getLegendTraces(
+        legendForDownload,
+        legendTemplateTrace
+      );
 
       // Recompute per-facet shapes with simulateInfiteLength=false (bounded
       // endpoints for a static image) — mirrors the indicatorShapes loop
@@ -969,6 +989,7 @@ function SmallMultiplesScatter({
     facetOrder,
     height,
     legendForDownload,
+    showBuiltinLegend,
     hoverTextKey,
     annotationTextKey,
     colorKey1,
