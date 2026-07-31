@@ -8,10 +8,12 @@ import {
   calcBins,
   calcVisibility,
   categoryToDisplayName,
+  computeFacets,
   continuousValuesToLegendKeySeries,
   ContinuousBins,
   facetMaskFor,
   findCategoricalSlice,
+  findContinuousColorSlice,
   formatDataForScatterPlot,
   getColorMap,
   getLegendKeysWithNoData,
@@ -19,7 +21,9 @@ import {
   LEGEND_BOTH,
   LEGEND_OTHER,
   LegendKey,
+  nullifyUnplottableValues,
   RegressionLine,
+  resolveColorMode,
   useLegendState,
 } from "./plotUtils";
 import { linregress } from "@depmap/statistics";
@@ -43,6 +47,12 @@ export interface ScatterPlotData {
   contLegendKeys: LegendKey[] | null;
   legendKeysWithNoData: Set<LegendKey> | null;
   legendState: ReturnType<typeof useLegendState>;
+  // Drives the "Facets" panel (shown only when color_by/facet_by diverge —
+  // see resolveColorMode) — a second, independent useLegendState instance
+  // pinned to target "facet". The display list itself (facetOrder) is
+  // computed in DataExplorerScatterPlot.tsx, where computeFacets already
+  // runs for the small-multiples grid.
+  facetLegendState: ReturnType<typeof useLegendState>;
   colorMap: Map<LegendKey, string>;
   legendForDownload: {
     title: string;
@@ -51,9 +61,19 @@ export interface ScatterPlotData {
   pointVisibility: boolean[] | null;
   regressionLines: RegressionLine[] | null;
   // Per-facet fits for the faceted renderer, keyed by facet label. null when
-  // not faceted (group_by unset); the single-panel path uses regressionLines.
+  // not faceted (facet_by unset); the single-panel path uses regressionLines.
   regressionLinesByFacet: Map<string, RegressionLine> | null;
   showIdentityLine: boolean;
+  // Which triad (color's own, or facet's own via the version-2 default
+  // defer) actually backs the legend — PlotLegend/LegendLabel need this to
+  // read the right filters.color1/2 vs facet1/2 pair for a LEGEND_BOTH
+  // label. See resolveColorMode.
+  colorTarget: "color" | "facet";
+  // Whether facet_by and color_by resolve to the SAME underlying source —
+  // see colorMatchesFacet's own comment for the full rationale. Used to
+  // gate the "Facets" panel: when true, Legend already IS the facet
+  // partition, so a second panel would be redundant.
+  colorMatchesFacet: boolean;
 }
 
 // Encapsulates the data-prep pipeline shared by DataExplorerScatterPlot and
@@ -67,9 +87,21 @@ export default function useScatterPlotData(
   palette: Palette,
   canShowIdentityLine: boolean
 ): ScatterPlotData {
+  // Resolves color_by's version-2 default flip / "uniform" opt-out (ADR
+  // 0001, ADR 0004) into the effective (mode, target) pair every helper
+  // below actually needs. See resolveColorMode's own comment for why this
+  // must be the one place color_by is read raw. Deliberately depends only on
+  // the two fields resolveColorMode actually reads, not the whole
+  // `plotConfig` object, so unrelated plotConfig changes don't invalidate it.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const colorMode = useMemo(() => resolveColorMode(plotConfig), [
+    plotConfig.color_by,
+    plotConfig.facet_by,
+  ]);
+
   const formattedData = useMemo(
-    () => formatDataForScatterPlot(data, plotConfig.color_by),
-    [data, plotConfig]
+    () => formatDataForScatterPlot(data, colorMode.mode, colorMode.target),
+    [data, colorMode]
   );
 
   const continuousBins: ContinuousBins = useMemo(
@@ -92,12 +124,32 @@ export default function useScatterPlotData(
   );
 
   const legendKeysWithNoData = useMemo(
-    () => getLegendKeysWithNoData(data, continuousBins, plotConfig.color_by),
-    [data, continuousBins, plotConfig.color_by]
+    () => getLegendKeysWithNoData(data, continuousBins, colorMode.mode, colorMode.target),
+    [data, continuousBins, colorMode]
   );
 
   const legendState = useLegendState(plotConfig, legendKeysWithNoData);
   const { hiddenLegendValues } = legendState;
+
+  // Independent of the color legend's own hidden set — drives the "Facets"
+  // panel. See useDensity1DPlotData's identically-purposed facetLegendState.
+  const facetLegendState = useLegendState(plotConfig, undefined, "facet");
+  const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
+
+  // Facet's OWN continuous bins, computed independently of color's — mirrors
+  // useDensity1DPlotData/useWaterfallPlotData's identically-named field.
+  // Nullified the same way formatDataForScatterPlot nullifies color's own
+  // contValues so facet's bin edges match color's when both resolve to the
+  // same underlying property (otherwise the two would compute min/max over
+  // different-sized value sets and produce slightly different buckets).
+  const facetContinuousBins: ContinuousBins = useMemo(() => {
+    const values = nullifyUnplottableValues(
+      findContinuousColorSlice(data, "facet")?.values,
+      data?.filters?.visible?.values,
+      data ? [data.dimensions.x, data.dimensions.y!] : undefined
+    );
+    return values ? calcBins(values) : null;
+  }, [data]);
 
   const colorMap = useMemo(() => getColorMap(data, plotConfig, palette), [
     data,
@@ -109,15 +161,24 @@ export default function useScatterPlotData(
   const legendForDownload = useMemo(() => {
     let title = "";
 
-    if (data?.dimensions?.color) {
-      title = `${data.dimensions.color.axis_label}<br>${data.dimensions.color.dataset_label}`;
+    // dataset_label is legitimately absent for "primary" metadata datasets
+    // (see isPrimaryMetatadata in breadboxMethods.ts) — must be appended
+    // conditionally, not interpolated unconditionally, or a real `undefined`
+    // bakes into the string as the literal text "undefined". Mirrors
+    // PlotLegend.tsx's SliceDescription, which already gets this right.
+    const legendDim = data?.dimensions?.[colorMode.target];
+    if (legendDim) {
+      title = legendDim.dataset_label
+        ? `${legendDim.axis_label}<br>${legendDim.dataset_label}`
+        : legendDim.axis_label;
     }
 
-    if (data?.metadata?.color_property) {
-      title = data.metadata.color_property.label;
+    const legendProperty = data?.metadata?.[`${colorMode.target}_property`];
+    if (legendProperty) {
+      title = legendProperty.label;
 
-      if (data.metadata.dataset_label) {
-        title += `<br>${data.metadata.dataset_label}`;
+      if (legendProperty.dataset_label) {
+        title += `<br>${legendProperty.dataset_label}`;
       }
     }
 
@@ -128,7 +189,8 @@ export default function useScatterPlotData(
         const name = categoryToDisplayName(
           key as LegendKey,
           data as DataExplorerPlotResponse,
-          continuousBins
+          continuousBins,
+          colorMode.target
         );
         const formattedName =
           typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
@@ -144,19 +206,47 @@ export default function useScatterPlotData(
       title,
       items,
     };
-  }, [colorMap, data, continuousBins, hiddenLegendValues]);
+  }, [colorMap, data, continuousBins, hiddenLegendValues, colorMode]);
 
-  const pointVisibility = useMemo(
-    () =>
-      calcVisibility(
-        data,
-        hiddenLegendValues,
-        continuousBins,
-        undefined,
-        plotConfig.color_by
-      ),
-    [data, hiddenLegendValues, continuousBins, plotConfig.color_by]
-  );
+  // A point hidden by EITHER axis (color-legend toggle or facet toggle) is
+  // hidden — see useDensity1DPlotData's identical combination for rationale.
+  // For scatter, a hidden facet also removes its whole panel (see
+  // DataExplorerScatterPlot.tsx's hiddenFacets wiring into
+  // SmallMultiplesScatter) — this pointVisibility combination keeps
+  // regression fits/counts consistent with that removal.
+  const pointVisibility = useMemo(() => {
+    const colorVisibility = calcVisibility(
+      data,
+      hiddenLegendValues,
+      continuousBins,
+      undefined,
+      colorMode.mode,
+      colorMode.target
+    );
+
+    const facetVisibility = calcVisibility(
+      data,
+      hiddenFacetValues,
+      facetContinuousBins,
+      undefined,
+      plotConfig.facet_by,
+      "facet"
+    );
+
+    if (!colorVisibility || !facetVisibility) {
+      return colorVisibility;
+    }
+
+    return colorVisibility.map((v: boolean, i: number) => v && facetVisibility[i]);
+  }, [
+    data,
+    hiddenLegendValues,
+    continuousBins,
+    colorMode,
+    hiddenFacetValues,
+    facetContinuousBins,
+    plotConfig.facet_by,
+  ]);
 
   const regressionLines = useMemo(() => {
     if (!hiddenLegendValues) {
@@ -165,14 +255,23 @@ export default function useScatterPlotData(
 
     // Expanded single-panel: fetchLinearRegression is skipped when an axis
     // carries the "expansion" sentinel, so there's no linreg_by_group. When
-    // ungrouped (group_by unset), fit one pooled line over all visible points
-    // from the response so the overall trend still shows instead of nothing.
+    // ungrouped (facet_by unset), fall back to color_by's own facets — the
+    // same categorical/custom-filter partition fetchLinearRegression itself
+    // would use had it been reachable here — fitting one regression line
+    // per category, each colored to match (reusing computeFacets'
+    // facetColorKeys the same way regressionLinesByFacet does, so a "Both"/
+    // "Other" fallback line gets palette.compareBoth/palette.other rather
+    // than a coincidental colorMap miss). Continuous color (or color_by
+    // having nothing real to facet by either) still pools into one line,
+    // matching fetchLinearRegression's own behavior — it never splits by a
+    // continuous color either.
     if (!linreg_by_group) {
       if (
         !plotConfig.show_regression_line ||
-        plotConfig.group_by ||
+        plotConfig.facet_by ||
         !formattedData ||
-        !plotConfig.expand_by?.length
+        !plotConfig.expand_by?.length ||
+        !data
       ) {
         return null;
       }
@@ -184,6 +283,44 @@ export default function useScatterPlotData(
       }
 
       const visible = pointVisibility ?? x.map(() => true);
+
+      const colorFacetInfo = colorMode.mode
+        ? computeFacets(data, colorMode.mode, "color")
+        : null;
+
+      if (colorFacetInfo) {
+        const { facetKeys, facetColorKeys } = colorFacetInfo;
+        // The "N/A" bucket gets a fit too, same as any other facet —
+        // see computeFacetedLinReg's comment for the reasoning.
+        const facets = [...new Set(facetKeys)];
+
+        return facets.map((facet) => {
+          const inFacet = facetMaskFor(facetKeys, facet, x, y, visible);
+          const fx: number[] = [];
+          const fy: number[] = [];
+          for (let i = 0; i < x.length; i += 1) {
+            if (inFacet(i) && Number.isFinite(x[i]) && Number.isFinite(y[i])) {
+              fx.push(x[i] as number);
+              fy.push(y[i] as number);
+            }
+          }
+
+          const { slope, intercept } = linregress(fx, fy);
+          const colorKey = facetColorKeys?.[facet] ?? facet;
+
+          return {
+            hidden:
+              fx.length < 3 ||
+              !Number.isFinite(slope) ||
+              !plotConfig.show_regression_line ||
+              hiddenLegendValues.has(colorKey),
+            color: colorMap.get(colorKey) || palette.other,
+            m: slope,
+            b: intercept,
+          };
+        });
+      }
+
       const fx: number[] = [];
       const fy: number[] = [];
       for (let i = 0; i < x.length; i += 1) {
@@ -250,56 +387,80 @@ export default function useScatterPlotData(
     });
   }, [
     colorMap,
-    data?.dimensions?.color,
+    data,
     formattedData,
     hiddenLegendValues,
     linreg_by_group,
     palette,
     plotConfig.expand_by,
-    plotConfig.group_by,
+    plotConfig.facet_by,
     plotConfig.show_regression_line,
     pointVisibility,
+    colorMode,
   ]);
 
   const showIdentityLine = Boolean(
     canShowIdentityLine && !plotConfig.hide_identity_line
   );
 
-  // Faceted regression: one fit per group_by group, computed here from the
-  // main response — which carries group_by's per-point values via
-  // findCategoricalSlice (including the expansion case fetchLinearRegression's
-  // side-fetch can't see). Single-panel keeps using linreg_by_group above.
-  // This is the group_by ?? color_by realization; since scatter only facets on
-  // a categorical group_by, the continuous-color carve-out never applies here.
-  // Fit over formattedData.x/y with the same facet mask the renderer draws, so
-  // each line is fit over exactly its panel's points.
+  // "J4"-style comparison (mirrors useDensity1DPlotData's identically-named
+  // field): facet_by and color_by can independently resolve to the SAME
+  // underlying source even when color_by doesn't literally defer to
+  // facet_by via the "facet" sentinel (e.g. both explicitly name the
+  // identical property). Used both by regressionLinesByFacet below (a
+  // facet's line may only borrow its color from colorMap when this is true)
+  // and by the caller to gate the "Facets" panel (redundant with Legend
+  // when true).
+  const colorMatchesFacet = useMemo(() => {
+    if (colorMode.target === "facet") {
+      return true;
+    }
+
+    const facetSource =
+      findCategoricalSlice(data, plotConfig.facet_by, "facet") ??
+      findContinuousColorSlice(data, "facet");
+    const colorSource =
+      findCategoricalSlice(data, colorMode.mode, "color") ??
+      findContinuousColorSlice(data, "color");
+
+    return (
+      !!facetSource &&
+      !!colorSource &&
+      facetSource.label === colorSource.label &&
+      facetSource.dataset_id === colorSource.dataset_id
+    );
+  }, [data, plotConfig.facet_by, colorMode]);
+
+  // Faceted regression: one fit per facet_by facet, computed here from the
+  // main response — which carries facet_by's per-point values via
+  // computeFacets (including the expansion case fetchLinearRegression's
+  // side-fetch can't see, and now the continuous-bin case too). Single-panel
+  // keeps using linreg_by_group above. Fit over formattedData.x/y with the
+  // same facet mask the renderer draws, so each line is fit over exactly its
+  // panel's points.
   const regressionLinesByFacet = useMemo(() => {
-    if (!plotConfig.group_by || !data || !formattedData) {
+    if (!plotConfig.facet_by || !data || !formattedData) {
       return null;
     }
 
-    const facetSlice = findCategoricalSlice(data, plotConfig.group_by);
+    const facetInfo = computeFacets(data, plotConfig.facet_by);
     const x = formattedData.x;
     const y = formattedData.y;
-    if (!facetSlice || !x || !y) {
+    if (!facetInfo || !x || !y) {
       return null;
     }
 
-    const facetKeys = facetSlice.values;
+    const { facetKeys, facetColorKeys } = facetInfo;
     const visible = pointVisibility ?? x.map(() => true);
 
-    // J4: a facet's line takes that facet's color only when group_by IS
-    // color_by (the panel is then monochromatic); otherwise neutral, since a
-    // facet spanning several colors has no single color to borrow.
-    const colorSlice = findCategoricalSlice(data, plotConfig.color_by);
-    const groupIsColor =
-      !!colorSlice &&
-      facetSlice.label === colorSlice.label &&
-      facetSlice.dataset_id === colorSlice.dataset_id;
+    // A facet's line takes that facet's color only when facet_by resolves
+    // to the SAME source as color_by (the panel is then monochromatic);
+    // otherwise neutral, since a facet spanning several colors has no
+    // single color to borrow. See colorMatchesFacet's own comment.
 
-    const facets = Array.from(
-      new Set(facetKeys.filter((k): k is string => k !== null))
-    );
+    // The "N/A" bucket gets a fit too, same as any other facet —
+    // see computeFacetedLinReg's comment for the reasoning.
+    const facets = [...new Set(facetKeys)];
     const lines = new Map<string, RegressionLine>();
 
     facets.forEach((facet) => {
@@ -314,6 +475,12 @@ export default function useScatterPlotData(
       }
 
       const { slope, intercept } = linregress(fx, fy);
+      // facet is always the formatted display string; colorMap is keyed by
+      // the original LegendKey (a shared Symbol for LEGEND_BOTH/OTHER/
+      // RANGE_N facets), so a stringified facet must be translated back via
+      // facetColorKeys before the lookup — looking it up directly always
+      // misses and silently falls through to palette.other.
+      const colorKey = facetColorKeys?.[facet] ?? facet;
       lines.set(facet, {
         m: slope,
         b: intercept,
@@ -321,8 +488,8 @@ export default function useScatterPlotData(
           fx.length < 3 ||
           !Number.isFinite(slope) ||
           !plotConfig.show_regression_line,
-        color: groupIsColor
-          ? colorMap.get(facet as LegendKey) || palette.other
+        color: colorMatchesFacet
+          ? colorMap.get(colorKey) || palette.other
           : "#333",
       });
     });
@@ -331,12 +498,12 @@ export default function useScatterPlotData(
   }, [
     data,
     formattedData,
-    plotConfig.group_by,
-    plotConfig.color_by,
+    plotConfig.facet_by,
     plotConfig.show_regression_line,
     pointVisibility,
     colorMap,
     palette,
+    colorMatchesFacet,
   ]);
 
   return {
@@ -345,11 +512,14 @@ export default function useScatterPlotData(
     contLegendKeys,
     legendKeysWithNoData,
     legendState,
+    facetLegendState,
     colorMap,
     legendForDownload,
     pointVisibility,
     regressionLines,
     regressionLinesByFacet,
     showIdentityLine,
+    colorTarget: colorMode.target,
+    colorMatchesFacet,
   };
 }

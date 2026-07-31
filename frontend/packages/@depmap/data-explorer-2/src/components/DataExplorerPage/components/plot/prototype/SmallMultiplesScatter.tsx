@@ -2,7 +2,7 @@
 // SmallMultiplesScatter
 //
 // The faceted ("small multiples") rendering of the scatter plot — the 2D
-// realization of group_by, sibling to PrototypeScatterPlot. Built as a single
+// realization of facet_by, sibling to PrototypeScatterPlot. Built as a single
 // plotly figure with a grid of subplots: one panel per facet, ranges shared
 // across panels via axis `matches`.
 //
@@ -16,7 +16,7 @@
 // full-length arrays with non-member points nulled, and `selectedpoints` uses
 // global indices. That keeps selection faceting-agnostic and makes
 // plotly_click / plotly_selected report global indices with no remap. Color
-// grouping comes from the shared getSolidColorGroups() seam.
+// faceting comes from the shared getSolidColorGroups() seam.
 //
 // Deliberately deferred for this first cut (each a focused follow-up, flagged
 // rather than half-built):
@@ -42,14 +42,17 @@ import type {
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
+  calcAnnotationPositions,
   calcAutoscaleShapes,
   calcPlotIndicatorLineShapes,
   DataExplorerColorPalette,
   DEFAULT_PALETTE,
   facetMaskFor,
+  getLegendTraces,
   getRange,
   getSolidColorGroups,
   hexToRgba,
+  LegendInfo,
   LegendKey,
   orderContinuousPointsByBin,
   RegressionLine,
@@ -72,6 +75,12 @@ interface Props {
   // Explicit facet identity/order; defaults to first-seen order of facetKeys.
   facetOrder?: string[];
   height: number | "auto";
+  // Drives the dummy legend traces + `layout.legend` baked into a downloaded
+  // image — see `downloadImage` below and PrototypeScatterPlot's identical
+  // prop/mechanism. Omitted (or missing at download time): downloadImage
+  // warns and exports a plain figure with no legend, same as
+  // PrototypeScatterPlot's own fallback.
+  legendForDownload?: LegendInfo;
   hoverTextKey?: string;
   annotationTextKey?: string;
   colorKey1?: string;
@@ -96,7 +105,7 @@ interface Props {
   xAxisFontSize?: number;
   yAxisFontSize?: number;
   // The points to put text labels on. Same annotation channel as the
-  // single-panel plots: under group_by === "expansion" this is the handful of
+  // single-panel plots: under facet_by === "expansion" this is the handful of
   // contacted points (one representative per selected model), NOT the
   // re-expanded `selectedPoints`, so labels stay sparse even tiled across
   // panels. Each lands on its own facet's axes. Falls back to `selectedPoints`
@@ -119,6 +128,12 @@ interface Props {
   // paginated transcript window keeps its full set of panels even when the
   // dataset doesn't measure every transcript.
   placeholderEmptyFacets?: boolean;
+  // Facets toggled off via the "Facets" panel (shown when color_by/facet_by
+  // diverge). Unlike a facet hidden only by the color legend (which keeps its
+  // panel, rendered empty — see the placeholderEmptyFacets comment above),
+  // this is a deliberate, causal user action: the facet's panel is fully
+  // removed from the grid, not grayed out.
+  hiddenFacets?: Set<string>;
 }
 
 type PlotlyType = typeof Plotly;
@@ -136,6 +151,7 @@ function SmallMultiplesScatter({
   facetKeys,
   facetOrder,
   height,
+  legendForDownload,
   hoverTextKey,
   annotationTextKey,
   colorKey1,
@@ -161,6 +177,7 @@ function SmallMultiplesScatter({
   showIdentityLine = false,
   regressionLinesByFacet,
   placeholderEmptyFacets = false,
+  hiddenFacets,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<(HTMLDivElement & ExtendedPlotType) | null>(null);
@@ -212,7 +229,7 @@ function SmallMultiplesScatter({
     }
 
     // Reset the preserved zoom when an axis's dataset changes. The axis label
-    // is the signal: coloring, grouping, selection, and dragmode don't change
+    // is the signal: coloring, faceting, selection, and dragmode don't change
     // it (so those keep the current zoom), but swapping the x/y dataset does.
     const datasetKey = `${xLabel}\u0000${yLabel}`;
     if (lastDataset.current !== datasetKey) {
@@ -243,7 +260,7 @@ function SmallMultiplesScatter({
     const selectedpoints = [...selected];
 
     // Annotation channel (expansion-selection): label the contacted points, not
-    // the re-expanded selection. They coincide off the group_by === "expansion"
+    // the re-expanded selection. They coincide off the facet_by === "expansion"
     // collapse; the wrapper passes `pointsToAnnotate` only on the faceted
     // (collapse) path, so the fallback keeps any other caller unchanged.
     const pointsForAnnotation = pointsToAnnotate ?? selected;
@@ -256,9 +273,13 @@ function SmallMultiplesScatter({
     // point null on an axis). This is the legend's non-plottable-entity rule
     // applied to facet selection: a facet that can never render shouldn't
     // hold a slot. Deliberately ignores visibility — a facet hidden only by a
-    // legend toggle still has plottable data, so it's kept (and renders empty
-    // for now; the toggled-off placeholder is handled separately).
-    const candidateFacets = facetOrder ?? Array.from(new Set(facetKeys));
+    // color-legend toggle still has plottable data, so it's kept (and renders
+    // empty). A facet hidden via the "Facets" panel (hiddenFacets, below) is
+    // different: that's a deliberate, causal user action, so it's dropped
+    // outright rather than rendered as an empty placeholder.
+    const candidateFacets = (facetOrder ?? Array.from(new Set(facetKeys))).filter(
+      (f) => !hiddenFacets?.has(f)
+    );
     const plottableFacets = new Set<string>();
     const visibleFacets = new Set<string>();
     for (let i = 0; i < x.length; i += 1) {
@@ -307,7 +328,7 @@ function SmallMultiplesScatter({
 
     const plotlyData: Partial<PlotData>[] = [];
 
-    // Color grouping is facet-independent, so resolve it once. Continuous color
+    // Color faceting is facet-independent, so resolve it once. Continuous color
     // is handled separately (see below), so skip the seam in that case.
     const solidGroups = contColorData
       ? null
@@ -357,7 +378,7 @@ function SmallMultiplesScatter({
 
       // A facet kept by the plottable check above but with no currently
       // visible point is hidden by a legend toggle (e.g. coloring AND
-      // grouping by expansion, then toggling a transcript off). Keep its
+      // faceting by expansion, then toggling a transcript off). Keep its
       // slot so the grid stays stable, but mark it so the empty frame reads
       // as intentional rather than a rendering bug. (A facet with no
       // plottable data at all was already dropped, so this is toggle-only.)
@@ -649,6 +670,53 @@ function SmallMultiplesScatter({
       });
     }
 
+    // Pre-seeds non-overlapping tail offsets, mirroring PrototypeScatterPlot's
+    // identically-named helper. calcAnnotationPositions itself is single-axis
+    // (it just calls whatever axis object's l2p it's handed) — grouping points
+    // by facet and calling it once per facet with that facet's own
+    // xaxis{suffix}/yaxis{suffix} object is a direct reuse, not a hack.
+    const assignAnnotationPositions = (pointIndices: number[]) => {
+      if (new Set(pointIndices).size > MAX_POINTS_TO_ANNOTATE) {
+        return;
+      }
+
+      const fullLayout = (plot as any)._fullLayout;
+
+      const byFacet = new Map<number, number[]>();
+      pointIndices.forEach((pointIndex) => {
+        const k = facetIndex.get(facetKeys[pointIndex]);
+        if (k === undefined) {
+          return;
+        }
+        if (!byFacet.has(k)) {
+          byFacet.set(k, []);
+        }
+        byFacet.get(k)!.push(pointIndex);
+      });
+
+      byFacet.forEach((indices, k) => {
+        const suffix = k === 0 ? "" : String(k + 1);
+        const facetLayout = {
+          xaxis: fullLayout[`xaxis${suffix}`],
+          yaxis: fullLayout[`yaxis${suffix}`],
+        };
+
+        calcAnnotationPositions(
+          x as number[],
+          y as number[],
+          indices,
+          facetLayout
+        ).forEach(
+          ({ pointIndex, ax, ay }) => {
+            annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = {
+              ax,
+              ay,
+            };
+          }
+        );
+      });
+    };
+
     const config: Partial<Config> = {
       responsive: true,
       displaylogo: false,
@@ -693,22 +761,68 @@ function SmallMultiplesScatter({
     plot.zoomIn = () => zoom("in");
     plot.zoomOut = () => zoom("out");
     plot.downloadImage = (options) => {
-      // First cut: plain figure export. Embedding the external legend (the
-      // single-panel plot's dummy-trace hack) is deferred.
-      Plotly.downloadImage(plot, options as any);
+      if (!legendForDownload) {
+        window.console.warn("`legendForDownload` is undefined");
+        return;
+      }
+
+      const legendTemplateTrace = {
+        marker: { size: pointSize, line: { width: outlineWidth } },
+      };
+      const legendTraces = getLegendTraces(legendForDownload, legendTemplateTrace);
+
+      // Recompute per-facet shapes with simulateInfiteLength=false (bounded
+      // endpoints for a static image) — mirrors the indicatorShapes loop
+      // above exactly, but plot.layout.shapes holds the invisible autoscale
+      // decoy by this point (see the plotly_afterplot handler below), not
+      // the real lines, so a fresh computation is required. Same rationale
+      // as PrototypeScatterPlot's own downloadImage.
+      const downloadShapes: NonNullable<Layout["shapes"]> = [];
+      if (showIdentityLine || regressionLinesByFacet) {
+        for (let k = 0; k < facets.length; k += 1) {
+          const suffix = k === 0 ? "" : String(k + 1);
+          const facetLine = regressionLinesByFacet?.get(facets[k]) ?? null;
+          downloadShapes.push(
+            ...(calcPlotIndicatorLineShapes(
+              showIdentityLine,
+              facetLine ? [facetLine] : null,
+              extents,
+              false,
+              { xref: `x${suffix}`, yref: `y${suffix}` }
+            ) ?? [])
+          );
+        }
+      }
+
+      const imagePlot = {
+        ...plot,
+        data: [...plot.data, ...legendTraces],
+        layout: {
+          ...plot.layout,
+          shapes: downloadShapes,
+          showlegend: true,
+          legend: {
+            title: { text: legendForDownload.title },
+            font: { size: 14 },
+          },
+        },
+      };
+
+      Plotly.downloadImage(imagePlot, options as any);
     };
     // Faceted: navigating-to-a-point is still off (a safe stub). Per-point
     // annotations are on and their tails ARE draggable (see config.edits and the
-    // plotly_relayout capture). `annotateSelected` still does nothing, though:
-    // its single-panel job is to pre-seed non-overlapping tail offsets via
-    // calcAnnotationPositions, which is single-axis (master xaxis/yaxis) and
-    // doesn't translate to per-subplot facets. So labels start at Plotly's
-    // default offset and the user drags from there; the context path's call is a
-    // harmless no-op (the labels appear via the pointsToAnnotate re-render).
+    // plotly_relayout capture). `annotateSelected` pre-seeds non-overlapping
+    // tail offsets via assignAnnotationPositions (see above), same as
+    // PrototypeScatterPlot's identical handle — the context path's call now
+    // does real work here too, not just a no-op.
     plot.isPointInView = () => true;
     plot.xValueMissing = (pointIndex: number) => x[pointIndex] === null;
     plot.yValueMissing = (pointIndex: number) => y[pointIndex] === null;
-    plot.annotateSelected = () => {};
+    plot.annotateSelected = (points?: number[]) => {
+      const pts = points ?? (selectedPoints ? [...selectedPoints] : []);
+      assignAnnotationPositions(pts);
+    };
     plot.removeAnnotations = () => {};
 
     if (onLoad) {
@@ -803,6 +917,7 @@ function SmallMultiplesScatter({
             : (p.pointIndex as number);
         });
       if (points.length > 0) {
+        assignAnnotationPositions(points);
         onMultiselect(points);
       }
     });
@@ -853,6 +968,7 @@ function SmallMultiplesScatter({
     facetKeys,
     facetOrder,
     height,
+    legendForDownload,
     hoverTextKey,
     annotationTextKey,
     colorKey1,
@@ -879,6 +995,7 @@ function SmallMultiplesScatter({
     onLoad,
     dragmode,
     placeholderEmptyFacets,
+    hiddenFacets,
     Plotly,
   ]);
 

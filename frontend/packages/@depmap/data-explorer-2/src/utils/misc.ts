@@ -4,6 +4,7 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotConfigDimensionV2,
   DimensionType,
+  PartialDataExplorerPlotConfig,
   PartialDataExplorerPlotConfigDimension,
   PartialDataExplorerPlotConfigDimensionV2,
   SliceQuery,
@@ -150,6 +151,15 @@ export function isExpansionDimension(
     | undefined
 ): boolean {
   return dimension?.aggregation === "expansion";
+}
+
+// Which axis ("x" or "y") is the expanding one for a plot that has an active
+// expansion. Defers to isExpansionDimension rather than re-deriving the
+// sentinel check inline.
+export function getExpansionAxis(
+  plot: Pick<PartialDataExplorerPlotConfig, "dimensions">
+): "x" | "y" {
+  return isExpansionDimension(plot.dimensions?.y) ? "y" : "x";
 }
 
 // A more aggressive version of encodeURIComponent() to match this:

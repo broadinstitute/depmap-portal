@@ -405,7 +405,8 @@
   "compare-expression-distributions": {
     "plot_type": "density_1d",
     "index_type": "depmap_model",
-    "color_by": "aggregated_slice",
+    "facet_by": "aggregated_slice",
+    "color_by": "facet",
     "dimensions": {
       "x": {
         "axis_type": "raw_slice",
@@ -448,7 +449,7 @@
           }
         }
       },
-      "color1": {
+      "facet1": {
         "dimension_type": "depmap_model",
         "expr": {
           ">": [
@@ -470,16 +471,18 @@
           }
         }
       },
-      "color2": {
-        "name": "not HER2Amp",
+      "facet2": {
+        "name": "Not HER2Amp",
         "dimension_type": "depmap_model",
         "expr": {
-          "<=": [
-            {
-              "var": "0"
-            },
-            1.5
-          ]
+          "complement": {
+            ">": [
+              {
+                "var": "0"
+              },
+              1.5
+            ]
+          }
         },
         "vars": {
           "0": {

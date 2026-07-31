@@ -3,8 +3,15 @@
 // Version history:
 //   1 — Property names are canonical and `dimensions` is an object. This is the
 //       post-mechanism, PRE-`color_by`-flip schema: an absent `color_by` still
-//       means "uniform", not "group". The flip ships as version 2. Do not attach
-//       new default semantics to version 1 after the fact.
+//       means "uniform", not "facet".
+//   2 — The `color_by` default flip (ADR 0001, ADR 0004). Absent `color_by` now
+//       means `"facet"` (defer entirely to `facet_by`'s own resolution) instead
+//       of "uniform". A new explicit `"uniform"` value carries the old meaning
+//       forward for anyone who wants it regardless of `facet_by`. A version-1
+//       payload's absent `color_by` is migrated to explicit `"uniform"` on read
+//       (see readPlotFromQueryString's Phase B), so it keeps rendering exactly
+//       as it did. Do not attach new default semantics to version 1 after the
+//       fact, or to version 2 once a version 3 ships.
 //
 // When a schema change ships, bump this constant AND add the corresponding
 // Phase B step in `readPlotFromQueryString` in the SAME commit. The number and
@@ -24,4 +31,4 @@
 // `query-string-parser.ts`. Defining it here keeps the import graph acyclic.
 // `utils.ts` re-exports it, so `import { CURRENT_PLOT_VERSION } from "../utils"`
 // keeps working for existing callers.
-export const CURRENT_PLOT_VERSION = 1;
+export const CURRENT_PLOT_VERSION = 2;

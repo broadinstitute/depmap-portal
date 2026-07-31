@@ -20,11 +20,11 @@ old defaults make sense in an extended world. That strategy works — but **only
 absence is stable**. A missing field has always meant one time-invariant thing, so a
 missing field could always be reconciled after the fact.
 
-The `color_by` default flip breaks that precondition. It gives `color_by` a `"group"`
-value that becomes the new default, meaning "color follows `group_by`", and removes the
-old "if no `group_by`, fall back to grouping by color" fallback. This is the **first
+The `color_by` default flip breaks that precondition. It gives `color_by` a `"facet"`
+value that becomes the new default, meaning "color follows `facet_by`", and removes the
+old "if no `facet_by`, fall back to faceting by color" fallback. This is the **first
 change that makes absence ambiguous**: after the flip, an absent `color_by` must resolve
-to `"group"`, but every payload minted before it meant *uniform*. The two cannot be
+to `"facet"`, but every payload minted before it meant *uniform*. The two cannot be
 reconciled retroactively, because the change **inverts** the default rather than
 extending it.
 
@@ -167,7 +167,7 @@ const inferColorBy = (partialPlot) => {
 ```
 
 Under v1 that absence means **uniform**. The moment `CURRENT_PLOT_VERSION` becomes `2`,
-that same untouched line is *declared* to mean **group** — a semantic change to a live
+that same untouched line is *declared* to mean **facet** — a semantic change to a live
 producer, caused by editing a constant in a different file. Nothing breaks loudly. The
 audit is the only thing standing between a version bump and a mint point quietly emitting
 payloads whose meaning it never intended.
@@ -195,10 +195,10 @@ upgrades an old plot into the new default silently changes what an existing link
 
 - Commit introducing this: "Add schema versioning to DataExplorerPlotConfig (version 1)".
 - **ADR 0002 — `normalizePlot` is an allowlist normalizer.** The `sort_by` fix in this
-  commit is an instance of that hazard class, and the incoming `color_by: "group"` is a
+  commit is an instance of that hazard class, and the incoming `color_by: "facet"` is a
   latent one. Read 0002 before adding any field to `DataExplorerPlotConfig`.
-- The `color_by` default flip (version 2) is not yet decided and has no ADR. Its open
-  design inputs — the `ColorByValue` type split, the `group: null` degenerate, the
-  `findCategoricalSlice("expansion")` throw, the categorical 1D-fidelity branch, and the
-  `group_by: "expansion"` lifecycle — are tracked in the v2 gotchas handoff, not here. An
-  ADR records a decision that was *made*; those are inputs to one that has not been.
+- **ADR 0004 — `color_by` default flip: `"facet"` and the `"uniform"` sentinel.** The
+  version 2 flip named above has since been decided; ADR 0004 records it and resolves
+  each of the open design inputs this ADR left open (the `ColorByValue` type split, the
+  `facet: null` degenerate, the `findCategoricalSlice("expansion")` throw, the
+  categorical 1D-fidelity branch, and the `facet_by: "expansion"` lifecycle).

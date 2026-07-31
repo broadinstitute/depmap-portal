@@ -18,6 +18,7 @@ function LegendLabels({
   onClickLegendItem,
   handleClickShowAll,
   handleClickHideAll,
+  target,
 }: {
   data: any;
   colorMap: Map<LegendKey, string>;
@@ -28,12 +29,13 @@ function LegendLabels({
   onClickLegendItem: any;
   handleClickShowAll: any;
   handleClickHideAll: any;
+  target: "color" | "facet";
 }) {
   const { sectionHeights } = useContext(SectionStackContext);
 
   const categories = (sortedLegendKeys || [...colorMap.keys()]).filter(
     (category) =>
-      data?.dimensions?.color ||
+      data?.dimensions?.[target] ||
       !legendKeysWithNoData ||
       !legendKeysWithNoData.has(category)
   );
@@ -41,9 +43,10 @@ function LegendLabels({
   // TODO: Update callbacks to use `colorMap` directly.
   const colorMapAsObject = Object.fromEntries(colorMap);
 
-  const hasColorDimensionLabels = Boolean(data?.dimensions?.color);
+  const hasColorDimensionLabels = Boolean(data?.dimensions?.[target]);
   const extraTextHeight = hasColorDimensionLabels ? 40 : 0;
-  const maxHeight = sectionHeights[0] - HEIGHT_WITHOUT_LIST - extraTextHeight;
+  const maxHeight =
+    sectionHeights.Legend - HEIGHT_WITHOUT_LIST - extraTextHeight;
 
   return (
     <div className={styles.LegendLabels} style={{ maxHeight }} data-overflow>
@@ -78,6 +81,7 @@ function LegendLabels({
               data={data}
               continuousBins={continuousBins}
               category={category}
+              target={target}
             />
           </button>
         </div>
@@ -86,18 +90,26 @@ function LegendLabels({
   );
 }
 
-function SliceDescription({ data }: { data: DataExplorerPlotResponse | null }) {
-  if (data?.dimensions?.color) {
+function SliceDescription({
+  data,
+  target,
+}: {
+  data: DataExplorerPlotResponse | null;
+  target: "color" | "facet";
+}) {
+  const dimension = data?.dimensions?.[target];
+  if (dimension) {
     return (
       <div className={styles.colorDimensionLabels}>
-        <div>{data.dimensions.color.axis_label}</div>
-        <div>{data.dimensions.color.dataset_label}</div>
+        <div>{dimension.axis_label}</div>
+        <div>{dimension.dataset_label}</div>
       </div>
     );
   }
 
-  if (data?.metadata?.color_property) {
-    const { label, units, dataset_label } = data.metadata.color_property;
+  const property = data?.metadata?.[`${target}_property`];
+  if (property) {
+    const { label, units, dataset_label } = property;
 
     return (
       <div className={styles.colorDimensionLabels}>
@@ -124,6 +136,11 @@ interface Props {
   ) => void;
   handleClickShowAll: () => void;
   handleClickHideAll: (catColorMap: Record<string, string>) => void;
+  // Which triad (color's own, or facet's own via the version-2 default
+  // defer) backs this legend — see resolveColorMode. No default: an absent
+  // color_by defers to facet_by, so "color" is not a safe universal
+  // fallback here.
+  target: "color" | "facet";
 }
 
 function PlotLegend({
@@ -136,6 +153,7 @@ function PlotLegend({
   onClickLegendItem,
   handleClickShowAll,
   handleClickHideAll,
+  target,
 }: Props) {
   return (
     <div>
@@ -143,7 +161,7 @@ function PlotLegend({
         Click to toggle on/off
         <HelpTip id="legend-doubleclick-help" />
       </div>
-      <SliceDescription data={data} />
+      <SliceDescription data={data} target={target} />
       <LegendLabels
         data={data}
         colorMap={colorMap}
@@ -154,6 +172,7 @@ function PlotLegend({
         onClickLegendItem={onClickLegendItem}
         handleClickShowAll={handleClickShowAll}
         handleClickHideAll={handleClickHideAll}
+        target={target}
       />
     </div>
   );
