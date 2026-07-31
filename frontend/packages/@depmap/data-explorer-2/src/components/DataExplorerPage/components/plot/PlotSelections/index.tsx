@@ -36,7 +36,7 @@ function PlotSelections({
     selectedIds &&
     selectedIds.size > 0 &&
     plot_type !== "correlation_heatmap"
-      ? sectionHeights[1] - SECTION_HEIGHT_WITHOUT_LIST
+      ? sectionHeights["Plot Selections"] - SECTION_HEIGHT_WITHOUT_LIST
       : Infinity;
 
   const [ids, labels] = useMemo(() => {
@@ -45,7 +45,7 @@ function PlotSelections({
     }
     const selectedIndexIds: string[] = [];
     const displayLabels: string[] = [];
-    // De-dupe by index id. Under group_by === "expansion" the selection is
+    // De-dupe by index id. Under facet_by === "expansion" the selection is
     // collapsed to models, but `data.index_ids` still carries one row per
     // (model, transcript) point, so a single selected model matches many rows
     // here. Resolve each selected model to one entry — the first row wins, and

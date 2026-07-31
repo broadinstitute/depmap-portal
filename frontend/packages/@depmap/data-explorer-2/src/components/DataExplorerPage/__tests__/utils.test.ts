@@ -1,5 +1,27 @@
+import pako from "pako";
+import { Base64 } from "js-base64";
 import { DataExplorerPlotConfig } from "@depmap/types";
-import { CURRENT_PLOT_VERSION, normalizePlot, toRelatedPlot } from "../utils";
+import {
+  CURRENT_PLOT_VERSION,
+  normalizePlot,
+  plotToQueryString,
+  readPlotFromQueryString,
+  toRelatedPlot,
+} from "../utils";
+
+// Mirrors the private `compress()` in utils.ts (pako deflate + url-safe
+// base64), so tests can mint a raw `p` param payload without normalizePlot
+// or plotToQueryString rewriting it first — needed to simulate a pre-v2
+// wire payload exactly as an old bookmarked link would have stored it.
+const compress = (obj: object): string => {
+  const json = JSON.stringify(obj);
+  const bytes = pako.deflate(json);
+  return Base64.fromUint8Array(bytes, true);
+};
+
+const setQueryString = (search: string) => {
+  window.history.pushState(null, "", search);
+};
 
 // `toRelatedPlot` pins the selection-to-context translation: given a plot
 // the user is looking at and a set of selected IDs, return the plot that
@@ -209,7 +231,10 @@ describe("normalizePlot", () => {
     // If version were pulled into the destructure, this would return undefined
     // and the writer would serialize a version-less blob, defeating the versioning
     // scheme. Fail loudly here rather than silently at the reader's gate.
-    const result = normalizePlot({ ...basePlot, version: CURRENT_PLOT_VERSION });
+    const result = normalizePlot({
+      ...basePlot,
+      version: CURRENT_PLOT_VERSION,
+    });
     expect(result.version).toBe(CURRENT_PLOT_VERSION);
   });
 
@@ -217,7 +242,7 @@ describe("normalizePlot", () => {
   // normalization only when some color backing happened to be complete. These pin
   // the fix: sort order is a property of the plot, not of its coloring.
   describe("sort_by preservation", () => {
-    test("survives with no color_by and no group_by", () => {
+    test("survives with no color_by and no facet_by", () => {
       // The Transcript Explorer regression: a plot with `sort_by: "alphabetical"`
       // matched no color arm, so `plotToQueryString` serialized it without a
       // `sort_by` and the setting vanished on refresh.
@@ -229,10 +254,10 @@ describe("normalizePlot", () => {
       expect(result.sort_by).toBe("alphabetical");
     });
 
-    test("survives when grouped but uncolored", () => {
+    test("survives when faceted but uncolored", () => {
       const result = normalizePlot(({
         ...basePlot,
-        group_by: "expansion",
+        facet_by: "expansion",
         sort_by: "alphabetical",
       } as unknown) as DataExplorerPlotConfig);
 
@@ -241,6 +266,590 @@ describe("normalizePlot", () => {
 
     test("is absent when the plot never had one", () => {
       expect(normalizePlot(basePlot).sort_by).toBeUndefined();
+    });
+  });
+
+  // `facet_by` used to be destructured off the top and never re-added in any
+  // branch, so it was silently dropped from every serialized plot — set it
+  // through the UI and it vanished on the next `plotToQueryString` round trip
+  // (e.g. on reload, or on any Transcript Explorer history push). These pin
+  // the fix for the two facet_by modes actually wired today.
+  describe("facet_by preservation", () => {
+    test("'expansion' survives when expand_by is present", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        facet_by: "expansion",
+        expand_by: [
+          {
+            slice_type: "transcript",
+            context: {
+              name: "All",
+              dimension_type: "transcript",
+              expr: true,
+              vars: {},
+            },
+            limit: 50,
+          },
+        ],
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.facet_by).toBe("expansion");
+    });
+
+    test("'expansion' is dropped when expand_by is absent", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        facet_by: "expansion",
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.facet_by).toBeUndefined();
+    });
+
+    test("'property' survives with a valid metadata.facet_property", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        facet_by: "property",
+        metadata: {
+          facet_property: {
+            dataset_id: "lineage-dataset",
+            identifier: "lineage",
+            identifier_type: "column",
+          },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.facet_by).toBe("property");
+      expect(result.metadata?.facet_property).toEqual({
+        dataset_id: "lineage-dataset",
+        identifier: "lineage",
+        identifier_type: "column",
+      });
+    });
+
+    test("'property' is dropped when metadata.facet_property is missing", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        facet_by: "property",
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.facet_by).toBeUndefined();
+    });
+
+    test("survival is independent of color_by's own state", () => {
+      // color_by is "property" but its metadata backing (color_property) is
+      // incomplete, so color_by must be dropped. facet_by is a separate
+      // "property" mode backed by its own, valid facet_property — it must
+      // survive regardless, and the incomplete color_property must not ride
+      // along with it (ADR 0002 §3: survival must not couple to an
+      // unrelated field's state).
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "property",
+        facet_by: "property",
+        metadata: {
+          color_property: { dataset_id: "incomplete-dataset" },
+          facet_property: {
+            dataset_id: "lineage-dataset",
+            identifier: "lineage",
+            identifier_type: "column",
+          },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+      expect(result.facet_by).toBe("property");
+      expect(result.metadata?.facet_property).toEqual({
+        dataset_id: "lineage-dataset",
+        identifier: "lineage",
+        identifier_type: "column",
+      });
+      expect(result.metadata?.color_property).toBeUndefined();
+    });
+
+    test("'raw_slice'/'aggregated_slice' survive with a facet1/facet2 filter", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        facet_by: "raw_slice",
+        filters: {
+          facet1: { name: "Facet A", context_type: "depmap_model", expr: true },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.facet_by).toBe("raw_slice");
+      expect(result.filters?.facet1).toEqual({
+        name: "Facet A",
+        context_type: "depmap_model",
+        expr: true,
+      });
+    });
+
+    test("facet1/facet2 survive independently of color1/color2", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "raw_slice",
+        facet_by: "raw_slice",
+        filters: {
+          color1: { name: "Color A", context_type: "depmap_model", expr: true },
+          facet1: { name: "Facet A", context_type: "depmap_model", expr: true },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.filters?.color1).toEqual({
+        name: "Color A",
+        context_type: "depmap_model",
+        expr: true,
+      });
+      expect(result.filters?.facet1).toEqual({
+        name: "Facet A",
+        context_type: "depmap_model",
+        expr: true,
+      });
+    });
+
+    test("'custom' survives with a complete dimensions.facet, without reintroducing an incomplete dimensions.color", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "custom",
+        facet_by: "custom",
+        dimensions: {
+          ...basePlot.dimensions,
+          // Incomplete: no dataset_id/context, so color_by must be dropped
+          // and dimensions.color stripped.
+          color: { axis_type: "raw_slice", slice_type: "gene" },
+          facet: {
+            axis_type: "raw_slice",
+            aggregation: "first",
+            slice_type: "gene",
+            dataset_id: "Chronos_Combined",
+            context: {
+              name: "SOX2",
+              dimension_type: "gene",
+              expr: { "==": [{ var: "entity_label" }, "SOX2"] },
+              vars: {},
+            },
+          },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+      expect(result.dimensions?.color).toBeUndefined();
+      expect(result.facet_by).toBe("custom");
+      expect(result.dimensions?.facet).toEqual({
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "SOX2",
+          dimension_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "SOX2"] },
+          vars: {},
+        },
+      });
+    });
+  });
+
+  // A `color_by`/`facet_by` set without its own complete backing (metadata/
+  // filters/dimension) must be normalized away entirely — treated as if it
+  // were never set — rather than surviving because some *unrelated* field
+  // happens to be present/valid. This is what keeps an in-progress selection
+  // (e.g. picking "Annotation" from the type dropdown before choosing which
+  // annotation) from ever reaching plotToQueryString/history: normalizePlot
+  // strips it, so plotsAreEquivalentWhenSerialized sees no change and no
+  // history entry is pushed until the user completes the selection.
+  describe("color_by/facet_by completeness", () => {
+    test("color_by 'property' with empty metadata is dropped, not vacuously complete", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "property",
+        metadata: {},
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+    });
+
+    test("color_by 'property' is dropped when metadata holds only the unrelated facet_property", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "property",
+        facet_by: "property",
+        metadata: {
+          facet_property: {
+            dataset_id: "lineage-dataset",
+            identifier: "lineage",
+            identifier_type: "column",
+          },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+      // facet_property itself is unaffected — facet_by has its own valid backing.
+      expect(result.metadata?.facet_property).toBeDefined();
+    });
+
+    test("facet_by 'property' with empty metadata is dropped, not vacuously complete", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        facet_by: "property",
+        metadata: {},
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.facet_by).toBeUndefined();
+    });
+
+    test("an unrelated filters.facet1 does not leak through via color_by's own (complete) filters.color1", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "raw_slice",
+        // facet_by is unset, so facet1 has no owner and must not survive.
+        filters: {
+          color1: { name: "Color A", context_type: "depmap_model", expr: true },
+          facet1: {
+            name: "Stale Facet A",
+            context_type: "depmap_model",
+            expr: true,
+          },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBe("raw_slice");
+      expect(result.filters?.color1).toBeDefined();
+      expect(result.filters?.facet1).toBeUndefined();
+    });
+
+    test("filters.color2 alone does not survive when color_by itself is unset", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: undefined,
+        filters: {
+          color2: { name: "Color B", context_type: "depmap_model", expr: true },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+      expect(result.filters?.color2).toBeUndefined();
+    });
+  });
+
+  // `color_by: "facet"` (v2, ADR 0001/0004) defers entirely to facet_by's own
+  // resolution and has no backing of its own. `color_by: "uniform"` is the
+  // opposite: an explicit "no color regardless of facet_by" sentinel that is
+  // NOT equivalent to absence post-v2 (absence now means "facet").
+  describe("color_by 'facet'/'uniform' handling (v2)", () => {
+    test("'facet' with no backing is stripped (survives as absent, not as 'facet')", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "facet",
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+    });
+
+    test("'uniform' survives unconditionally, even with stale color backing present", () => {
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "uniform",
+        dimensions: {
+          ...basePlot.dimensions,
+          color: {
+            axis_type: "raw_slice",
+            aggregation: "first",
+            slice_type: "gene",
+            dataset_id: "Chronos_Combined",
+            context: {
+              name: "SOX2",
+              dimension_type: "gene",
+              expr: { "==": [{ var: "entity_label" }, "SOX2"] },
+              vars: {},
+            },
+          },
+        },
+        filters: {
+          color1: { name: "Color A", context_type: "depmap_model", expr: true },
+        },
+        metadata: {
+          color_property: {
+            dataset_id: "lineage-dataset",
+            identifier: "lineage",
+            identifier_type: "column",
+          },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBe("uniform");
+    });
+
+    test("'facet' is still stripped even with a complete filters.color1 present", () => {
+      // Regression test for the tightened `color_by_has_own_backing` guard:
+      // "facet" has no backing of ITS OWN, so a leftover (stale) color1
+      // filter must not resurrect it.
+      const result = normalizePlot(({
+        ...basePlot,
+        color_by: "facet",
+        filters: {
+          color1: { name: "Color A", context_type: "depmap_model", expr: true },
+        },
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+    });
+  });
+});
+
+describe("readPlotFromQueryString / plotToQueryString — v1->v2 color_by migration", () => {
+  afterEach(() => {
+    setQueryString("/");
+  });
+
+  // Minimal valid v2-context scatter plot fixture, used both for hand-built
+  // "legacy payload" simulations and for round-trip tests through
+  // plotToQueryString. Avoids anything that would trigger a network call on
+  // read (slice_id metadata, hashed contexts, shorthand params).
+  const v2Plot: DataExplorerPlotConfig = ({
+    plot_type: "scatter",
+    index_type: "depmap_model",
+    dimensions: {
+      x: {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "FABP5",
+          dimension_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "FABP5"] },
+          vars: {},
+        },
+      },
+      y: {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "SOX2",
+          dimension_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "SOX2"] },
+          vars: {},
+        },
+      },
+    },
+  } as unknown) as DataExplorerPlotConfig;
+
+  test("a pre-v2 payload with absent color_by migrates to 'uniform'", async () => {
+    const legacyPayload = { ...v2Plot, version: 1 };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("uniform");
+  });
+
+  test("a pre-v2 payload with absent color_by but a POPULATED facet_by still migrates to 'uniform'", async () => {
+    // The case called out in ADR 0004: under v1, color_by never deferred to
+    // facet_by, so a v1 payload with a set facet_by and no color_by must
+    // still become "uniform" — not silently start matching that facet_by
+    // under v2 read-back semantics.
+    const legacyPayload = {
+      ...v2Plot,
+      version: 1,
+      facet_by: "expansion",
+      expand_by: [
+        {
+          slice_type: "transcript",
+          context: {
+            name: "All",
+            dimension_type: "transcript",
+            expr: true,
+            vars: {},
+          },
+          limit: 50,
+        },
+      ],
+    };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("uniform");
+    expect(result.facet_by).toBe("expansion");
+  });
+
+  test("a payload with no version at all (coerced to 0) also migrates to 'uniform'", async () => {
+    const legacyPayload = { ...v2Plot };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("uniform");
+  });
+
+  test("a v2 payload with color_by already set is left untouched by the migration", async () => {
+    const legacyPayload = {
+      ...v2Plot,
+      version: 2,
+      color_by: "uniform" as const,
+    };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("uniform");
+  });
+
+  test("round-trip: color_by 'uniform' survives plotToQueryString -> readPlotFromQueryString", async () => {
+    setQueryString("/");
+    const search = await plotToQueryString(({
+      ...v2Plot,
+      color_by: "uniform",
+    } as unknown) as DataExplorerPlotConfig);
+
+    setQueryString(search);
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("uniform");
+  });
+
+  test("round-trip: color_by 'facet' has no backing so it normalizes to absent, which then reads back as the v2 default (defer to facet_by)", async () => {
+    // normalizePlot deliberately strips "facet" (item 4 of the plan) since
+    // post-v2 absence already means "facet" — so plotToQueryString never
+    // serializes the literal string. Confirms that omission round-trips to
+    // the same effective meaning rather than asserting the literal string
+    // survives (it should not).
+    setQueryString("/");
+    const search = await plotToQueryString(({
+      ...v2Plot,
+      color_by: "facet",
+    } as unknown) as DataExplorerPlotConfig);
+
+    setQueryString(search);
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBeUndefined();
+  });
+
+  test("a pre-v2 payload with only color_by ('property') moves its value and backing to facet_by", async () => {
+    // Under v1, color_by was the only axis — its value drove color AND
+    // faceting simultaneously. Migrating a v1 payload's real color_by (and
+    // its backing) over to facet_by, with color_by rewritten to "facet",
+    // keeps it rendering identically under v2's independent axes.
+    const legacyPayload = {
+      ...v2Plot,
+      version: 1,
+      color_by: "property" as const,
+      metadata: {
+        color_property: {
+          dataset_id: "lineage-dataset",
+          identifier: "lineage",
+          identifier_type: "column",
+        },
+      },
+    };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("facet");
+    expect(result.facet_by).toBe("property");
+    expect(result.metadata?.facet_property).toEqual({
+      dataset_id: "lineage-dataset",
+      identifier: "lineage",
+      identifier_type: "column",
+    });
+    expect(result.metadata?.color_property).toBeUndefined();
+  });
+
+  test("a pre-v2 payload with color_by 'aggregated_slice' moves filters.color1/color2 to facet1/facet2", async () => {
+    const legacyPayload = {
+      ...v2Plot,
+      version: 1,
+      color_by: "aggregated_slice" as const,
+      filters: {
+        color1: {
+          name: "Facet A",
+          dimension_type: "depmap_model",
+          expr: true,
+          vars: {},
+        },
+        color2: {
+          name: "Facet B",
+          dimension_type: "depmap_model",
+          expr: true,
+          vars: {},
+        },
+      },
+    };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("facet");
+    expect(result.facet_by).toBe("aggregated_slice");
+    expect(result.filters?.facet1).toEqual(legacyPayload.filters.color1);
+    expect(result.filters?.facet2).toEqual(legacyPayload.filters.color2);
+    expect(result.filters?.color1).toBeUndefined();
+    expect(result.filters?.color2).toBeUndefined();
+  });
+
+  test("a pre-v2 payload with color_by 'custom' moves dimensions.color to dimensions.facet", async () => {
+    const legacyPayload = {
+      ...v2Plot,
+      version: 1,
+      color_by: "custom" as const,
+      dimensions: {
+        ...v2Plot.dimensions,
+        color: {
+          axis_type: "raw_slice",
+          aggregation: "first",
+          slice_type: "gene",
+          dataset_id: "Chronos_Combined",
+          context: {
+            name: "KRAS",
+            dimension_type: "gene",
+            expr: { "==": [{ var: "entity_label" }, "KRAS"] },
+            vars: {},
+          },
+        },
+      },
+    };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("facet");
+    expect(result.facet_by).toBe("custom");
+    expect(result.dimensions?.facet).toEqual(legacyPayload.dimensions.color);
+    expect((result.dimensions as { color?: unknown })?.color).toBeUndefined();
+  });
+
+  test("a pre-v2 payload with color_by and an already-populated facet_by is left untouched by this migration", async () => {
+    // Defensive gate: a genuine v1 payload can never already have a
+    // facet_by (it didn't exist yet), so this is an impossible-in-practice
+    // case — but the migration must skip rather than clobber if it's ever
+    // seen (e.g. a hand-authored payload).
+    const legacyPayload = {
+      ...v2Plot,
+      version: 1,
+      color_by: "property" as const,
+      facet_by: "expansion" as const,
+      metadata: {
+        color_property: {
+          dataset_id: "lineage-dataset",
+          identifier: "lineage",
+          identifier_type: "column",
+        },
+      },
+    };
+    setQueryString(`?p=${compress(legacyPayload)}`);
+
+    const result = await readPlotFromQueryString();
+
+    expect(result.color_by).toBe("property");
+    expect(result.facet_by).toBe("expansion");
+    expect(result.metadata?.color_property).toEqual({
+      dataset_id: "lineage-dataset",
+      identifier: "lineage",
+      identifier_type: "column",
     });
   });
 });

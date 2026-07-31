@@ -18,6 +18,7 @@ interface Props {
   // FIXME
   // eslint-disable-next-line
   units: string | null;
+  label?: React.ReactNode,
   isUnknownDataset?: boolean;
   isLoading?: boolean;
   swatchColor?: string;
@@ -31,6 +32,7 @@ function DimensionSliceSelect({
   dataset_id,
   value,
   onChange,
+  label = null,
   isLoading = false,
   isUnknownDataset = false,
   swatchColor = undefined,
@@ -52,7 +54,7 @@ function DimensionSliceSelect({
       onChange={(selection) => {
         onChange(sliceSelectionToContext(selection, slice_type));
       }}
-      label={sliceLabel}
+      label={(label as string) || sliceLabel}
       placeholder={slicePlaceholder}
       isLoading={isLoading}
       swatchColor={swatchColor}

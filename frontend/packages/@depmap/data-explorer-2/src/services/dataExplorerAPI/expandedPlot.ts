@@ -101,6 +101,7 @@ export async function fetchExpandedPlot(
   fetchDatasetLabel(dimensions.x?.dataset_id);
   fetchDatasetLabel(dimensions.y?.dataset_id);
   fetchDatasetLabel(dimensions.color?.dataset_id);
+  fetchDatasetLabel(dimensions.facet?.dataset_id);
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const indexDimType = dimTypes.find((t) => t.name === index_type);
@@ -480,7 +481,7 @@ export async function fetchExpandedPlot(
 
     if (
       value_type !== "continuous" &&
-      metadataKey === "color_property" &&
+      (metadataKey === "color_property" || metadataKey === "facet_property") &&
       distinct.size > MAX_PLOTTABLE_CATEGORIES
     ) {
       window.console.error(extendedMetadata[metadataKey]);
@@ -701,9 +702,9 @@ export async function fetchExpandedPlot(
         }
       }
 
-      // color dim isBinaryish coercion (matches fetchPlotDimensions).
+      // color/facet dim isBinaryish coercion (matches fetchPlotDimensions).
       let vt = value_type;
-      if (r.key === "color") {
+      if (r.key === "color" || r.key === "facet") {
         const distinct = new Set(values.filter((v) => v != null));
         const isBinaryish =
           distinct.size <= 3 &&
@@ -775,10 +776,15 @@ export async function fetchExpandedPlot(
 
     // "I never imagined there would be continuous metadata" promotion,
     // mirrored from fetchPlotDimensions. In an expanded plot this means
-    // color is model-keyed (broadcasts across all M transcripts per
+    // color/facet is model-keyed (broadcasts across all M transcripts per
     // model), which is the right behavior.
-    if (r.key === "color_property" && r.value_type === "continuous") {
-      out.dimensions.color = ({
+    if (
+      (r.key === "color_property" || r.key === "facet_property") &&
+      r.value_type === "continuous"
+    ) {
+      const dimKey = r.key === "color_property" ? "color" : "facet";
+
+      out.dimensions[dimKey] = ({
         axis_label: label,
         dataset_id: r.sliceQuery.dataset_id,
         dataset_label,

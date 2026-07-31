@@ -20,6 +20,7 @@ import {
 import VisualizationPanel from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/VisualizationPanel";
 import {
   logDirectPlotChange,
+  logInitialPlot,
   logReducerTransform,
 } from "@depmap/data-explorer-2/src/components/DataExplorerPage/debug";
 import TranscriptConfigPanel from "./TranscriptConfigPanel";
@@ -39,6 +40,10 @@ function MainContent({
   contactEmail,
   tutorialLink,
 }: Props) {
+  useEffect(() => {
+    logInitialPlot(initialPlot);
+  }, [initialPlot]);
+
   const reactKey = useRef(0);
   const [plot, dispatchPlotAction] = useReducer(plotConfigReducer, initialPlot);
 

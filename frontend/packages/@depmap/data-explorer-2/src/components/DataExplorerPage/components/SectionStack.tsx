@@ -8,8 +8,15 @@ import React, {
 import Section from "./Section";
 import styles from "../styles/DataExplorer2.scss";
 
+// Keyed by each StackableSection's own `title` (a required, already-unique
+// string per stack — "Legend", "Plot Selections", "Facets", etc.) rather than
+// its position among SectionStack's children. A positional array meant a
+// section's identity in the layout algorithm was implicit in child order —
+// inserting/reordering/conditionally-omitting a section would silently shift
+// every later section's height to the wrong slot, with no error, just a
+// visibly wrong size. Keying by title removes that footgun entirely.
 export const SectionStackContext = React.createContext({
-  sectionHeights: [0, 0, 0] as number[],
+  sectionHeights: {} as Record<string, number>,
 });
 
 interface StackableSectionProps extends React.ComponentProps<typeof Section> {
@@ -89,12 +96,15 @@ function SectionStack({
   children: (React.ReactElement<StackableSectionProps> | null)[];
 }) {
   const _children = children.filter(Boolean);
+  const titles = _children.map((child) =>
+    React.isValidElement(child) ? (child.props as { title: string }).title : ""
+  );
 
   const [needsLayout, setNeedsLayout] = useState(false);
-  const [sectionHeights, setSectionHeights] = useState(_children.map(() => 0));
-  const sections = useRef<SectionInfo[]>(
-    _children.map(() => ({} as SectionInfo))
+  const [sectionHeights, setSectionHeights] = useState<Record<string, number>>(
+    {}
   );
+  const sections = useRef<Record<string, SectionInfo>>({});
 
   useEffect(() => {
     const onResize = () => setNeedsLayout(true);
@@ -103,8 +113,8 @@ function SectionStack({
   }, []);
 
   const handleRender = useCallback(
-    (index: number, nextSection: SectionInfo) => {
-      const section = sections.current[index];
+    (title: string, nextSection: SectionInfo) => {
+      const section = sections.current[title];
       const almostEqual = (a: number, b: number) => Math.abs(a - b) < 2;
 
       if (
@@ -113,7 +123,7 @@ function SectionStack({
         section.minHeight !== nextSection.minHeight ||
         !almostEqual(section.contentHeight, nextSection.contentHeight)
       ) {
-        sections.current[index] = nextSection;
+        sections.current[title] = nextSection;
         setNeedsLayout(true);
       }
     },
@@ -127,49 +137,65 @@ function SectionStack({
 
     setNeedsLayout(false);
 
-    setSectionHeights((prevHeights) => {
-      const n = prevHeights.length;
-      const heights: number[] = [];
+    setSectionHeights(() => {
+      const n = titles.length;
+      const heights: Record<string, number> = {};
       let budget = window.innerHeight - 94 - SECTION_TITLE_HEIGHT * n;
 
-      for (let i = 0; i < n; i += 1) {
-        const section = sections.current[i];
+      titles.forEach((title) => {
+        const section = sections.current[title];
         const { open, minHeight, contentHeight } = section;
 
         if (open) {
           const height = Math.min(minHeight, contentHeight);
-          heights[i] = height;
+          heights[title] = height;
           budget -= height;
         } else {
-          heights[i] = 0;
+          heights[title] = 0;
         }
-      }
+      });
 
-      for (let i = 0; i < n; i += 1) {
-        const section = sections.current[i];
+      titles.forEach((title) => {
+        const section = sections.current[title];
         const { open, minHeight, contentHeight } = section;
 
         if (budget > 0 && open && contentHeight > minHeight) {
           const delta = Math.min(budget, contentHeight - minHeight);
-          heights[i] += delta;
+          heights[title] += delta;
           budget -= delta;
         }
-      }
+      });
 
       return heights;
     });
-  }, [needsLayout]);
+  }, [needsLayout, titles]);
+
+  // Guarantee every currently-rendered title has a numeric entry, even
+  // before its first layout measurement completes (or if it just mounted —
+  // e.g. the conditional "Facets" section appearing/disappearing). Without
+  // this, a title missing from `sectionHeights` reads as `undefined` in a
+  // consumer's `sectionHeights[title] - X` arithmetic, producing NaN (an
+  // invalid CSS value) for one render until the next layout pass fills it
+  // in. 0 mirrors the old positional array's initial all-zero state.
+  const safeSectionHeights = titles.reduce((acc, title) => {
+    acc[title] = sectionHeights[title] ?? 0;
+    return acc;
+  }, {} as Record<string, number>);
 
   return (
-    <SectionStackContext.Provider value={{ sectionHeights }}>
+    <SectionStackContext.Provider
+      value={{ sectionHeights: safeSectionHeights }}
+    >
       <div id="section-stack" className={styles.SectionStack}>
         {React.Children.map(_children, (child, index) => {
           if (!React.isValidElement(child)) {
             return child;
           }
 
+          const title = titles[index];
+
           return React.cloneElement(child, {
-            onRender: (section) => handleRender(index, section),
+            onRender: (section) => handleRender(title, section),
           } as Partial<InternalProps>);
         })}
       </div>

@@ -147,6 +147,10 @@ function DummyPlot({
             legendKeysWithNoData={null}
             handleClickShowAll={() => {}}
             handleClickHideAll={() => {}}
+            // No real plot config exists in this placeholder state, so
+            // there's nothing to resolve — "color" is an arbitrary but
+            // harmless choice given `data` is null.
+            target="color"
           />
         </Section>
         <Section title="Plot Selections">

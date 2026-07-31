@@ -76,7 +76,7 @@ function SearchIndexAwareSliceSelect({
 
   return (
     <AsyncSelect
-      label={!swatchColor ? label : null}
+      label={label}
       className={selectClassName}
       value={displayValue}
       hasError={invalidValue}
