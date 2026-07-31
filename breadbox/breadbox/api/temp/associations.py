@@ -8,7 +8,7 @@ from itsdangerous import URLSafeSerializer
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.config import Settings, get_settings
 from breadbox.db.session import SessionWithUser
-from breadbox.api.uploads import construct_file_from_ids
+from breadbox.service.upload import construct_file_from_ids
 from breadbox.depmap_compute_embed.slice import SliceQuery
 from breadbox.schemas.associations import (
     Associations,
