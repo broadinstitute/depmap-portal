@@ -30,6 +30,11 @@
   margin-bottom: 4px;
 }
 
+.filterAndMax {
+  display: flex;
+  gap: 14px;
+}
+
 .dimensionWithGap {
   & > div:last-child {
     margin-top: 58px;
@@ -94,14 +99,11 @@
 
 .colorByContext {
   display: flex;
+  flex-direction: column;
   gap: 10px;
 
-  & > div:nth-child(2) {
-    margin-left: 8px;
-
-    .Select {
-      width: 154px;
-    }
+  &:not(:empty) {
+    margin-top: 10px;
   }
 }
 
@@ -137,9 +139,45 @@
 }
 
 .ColorByViewOptions {
-  margin-top: 14px;
   margin-bottom: 4px;
   scroll-margin-bottom: 24px;
+
+  div[data-dimension-select] {
+    margin: 10px 0;
+  }
+}
+
+.FacetByViewOptions {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 4px;
+  scroll-margin-bottom: 24px;
+
+  div[data-dimension-select] {
+    margin: 10px 0;
+  }
+}
+
+.facetAndColor {
+  display: flex;
+  gap: 14px;
+}
+
+.facetAndColorTypeSelect {
+  label {
+    font-size: 14px;
+  }
+}
+
+.swapColorFacetButtonContainer {
+  position: relative;
+  margin-left: -12px;
+}
+
+.swapColorFacetButton {
+  @extend .swapAxesButton;
+  position: absolute;
+  margin-left: -67px;
 }
 
 .ColorByAnnotationSelect {
@@ -275,4 +313,8 @@
     top: 29px;
     left: 360px;
   }
+}
+
+.sortBySelector {
+  margin-top: 10px;
 }

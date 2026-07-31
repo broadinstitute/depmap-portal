@@ -47,11 +47,11 @@ point the symptom (a setting that "doesn't stick") is several steps removed from
    This is why `sort_by: "alphabetical"` set via Transcript Explorer disappeared on refresh.
    Fixed by hoisting the preserve out of the color arms entirely (ADR 0001's commit).
 
-3. **`color_by: "group"`** *(latent, arrives with the version-2 flip)* — `"group"` has **no
+3. **`color_by: "facet"`** *(latent, arrives with the version-2 flip)* — `"facet"` has **no
    backing at all**, exactly like `"expansion"`. It will be stripped unless the flip either
    adds an explicit arm or strips it *deliberately* for URL brevity. Note the trap: stripping
    is actually **sound** post-v2, because absent `color_by` in a v2 payload reads back as
-   `"group"`. So the correct behavior and the bug look **identical in the diff**. It must be
+   `"facet"`. So the correct behavior and the bug look **identical in the diff**. It must be
    a decision with a comment, not a coincidence.
 
 Instances 1 and 2 also show the failure is not merely "forgot an arm" — `sort_by` was

@@ -3,7 +3,11 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import { fetchCorrelation, fetchPlotDimensions } from "../breadboxMethods";
+import {
+  buildExtendedMetadata,
+  fetchCorrelation,
+  fetchPlotDimensions,
+} from "../breadboxMethods";
 
 // Fixtures shared across cases.
 
@@ -180,6 +184,71 @@ function expectIdsAndLabelsAligned(
   });
 }
 
+describe("buildExtendedMetadata", () => {
+  // Regression: color_property and facet_property are two independently
+  // required, differently-named metadata keys. If a user happens to pick
+  // the *same* underlying annotation for both color_by and facet_by, both
+  // keys must still survive in the extended metadata — each is read by
+  // exact name downstream (findCategoricalSlice reads metadata.color_property
+  // vs metadata.facet_property specifically). The dedup-by-value `addIfNew`
+  // helper is correct for section 2/3 (hardcoded extras, anonymous context
+  // vars) but must never apply across section 1's user-selected keys, or
+  // whichever key is processed second gets silently dropped — breaking
+  // that axis while leaving the other looking fine. This is also why the
+  // symptom was flaky: JS object key order differs between a live-built
+  // metadata object and a freshly-parsed URL, so which axis "won" flipped
+  // between editing live and reloading the page.
+  test("color_property and facet_property both survive when they reference the identical slice", () => {
+    const identicalSlice = {
+      dataset_id: "lineage-dataset",
+      identifier: "lineage",
+      identifier_type: "column" as const,
+    };
+
+    const result = buildExtendedMetadata("depmap_model", "depmap_id", {
+      facet_property: identicalSlice,
+      color_property: identicalSlice,
+    });
+
+    expect(result.facet_property).toEqual(identicalSlice);
+    expect(result.color_property).toEqual(identicalSlice);
+  });
+
+  test("order of the input metadata object doesn't change which keys survive", () => {
+    const identicalSlice = {
+      dataset_id: "lineage-dataset",
+      identifier: "lineage",
+      identifier_type: "column" as const,
+    };
+
+    // Same as above but with keys inserted in the opposite order — pins
+    // that survival isn't accidentally order-dependent in either direction.
+    const result = buildExtendedMetadata("depmap_model", "depmap_id", {
+      color_property: identicalSlice,
+      facet_property: identicalSlice,
+    });
+
+    expect(result.facet_property).toEqual(identicalSlice);
+    expect(result.color_property).toEqual(identicalSlice);
+  });
+
+  test("still dedupes hardcoded extras against a user-selected key with the same value", () => {
+    const result = buildExtendedMetadata("depmap_model", "depmap_id", {
+      color_property: {
+        dataset_id: "depmap_model_metadata",
+        identifier: "OncotreeLineage",
+        identifier_type: "column" as const,
+      },
+    });
+
+    // color_property survives under its own name...
+    expect(result.color_property).toBeDefined();
+    // ...and the hardcoded extra1 (same slice) is skipped as redundant,
+    // rather than duplicating the fetch under a second key.
+    expect(result.extra1).toBeUndefined();
+  });
+});
+
 describe("fetchPlotDimensions", () => {
   describe("with depmap_model index_type", () => {
     test("raw_slice dimension produces aligned index_ids and index_labels", async () => {
@@ -219,6 +288,53 @@ describe("fetchPlotDimensions", () => {
       response.index_ids.forEach((id) => {
         expect(id).toMatch(/^ACH-/);
       });
+    });
+
+    test("a 'facet' custom dimension is populated in the response, mirroring 'color'", async () => {
+      mockDimensionTypes();
+      mockDatasets();
+      mockDatasetIdentifiers();
+      mockDimensionTypeIdentifiers();
+      mockMatrixDataFor("gene");
+      mockDepmapModelHardcodedExtras();
+
+      const xDimension: DataExplorerPlotConfigDimension = {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "FABP5",
+          context_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "FABP5"] },
+        },
+      };
+
+      const groupDimension: DataExplorerPlotConfigDimension = {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "FABP5",
+          context_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "FABP5"] },
+        },
+      };
+
+      const response = await fetchPlotDimensions("depmap_model", {
+        x: xDimension,
+        facet: groupDimension,
+      });
+
+      expect(response.dimensions.facet).toBeDefined();
+      expect(response.dimensions.facet?.slice_type).toBe("gene");
+      expect(response.dimensions.facet?.dataset_id).toBe("Chronos_Combined");
+      expect(response.dimensions.facet?.values.length).toBe(
+        response.index_ids.length
+      );
+      // facet is independent of color: no color dimension was supplied.
+      expect(response.dimensions.color).toBeUndefined();
     });
   });
 

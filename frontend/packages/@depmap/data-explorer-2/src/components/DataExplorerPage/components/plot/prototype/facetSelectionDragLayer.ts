@@ -1,12 +1,12 @@
 /* eslint-disable no-nested-ternary, no-param-reassign */
-// groupSelectionDragLayer.ts
+// facetSelectionDragLayer.ts
 //
-// Custom box/lasso drag for the `enforceSingleGroupSelection` mode, shared by
-// PrototypeDensity1D (groups are violin tracks on the y-axis) and
-// PrototypeScatterPlot/waterfall (groups are rank regions on the x-axis). When
+// Custom box/lasso drag for the `enforceSingleFacetSelection` mode, shared by
+// PrototypeDensity1D (facets are violin tracks on the y-axis) and
+// PrototypeScatterPlot/waterfall (facets are rank regions on the x-axis). When
 // the mode is on, Plotly's own select/lasso is turned off (dragmode:false) and
 // this module owns the drag, drawing a marquee that is *clamped to the region
-// the drag started in* and cannot escape into a neighbouring group.
+// the drag started in* and cannot escape into a neighbouring facet.
 //
 // FIRST PASS — VISUAL FEEDBACK ONLY. This module draws the (clamped) marquee
 // and nothing else. It does not compute or emit a selection; resolving the
@@ -14,7 +14,7 @@
 // and never touches Plotly's selection machinery.
 //
 // The constrained axis and the region layout differ per plot, expressed by the
-// live config on `plot.__groupSel` (rewritten by the renderer on every effect
+// live config on `plot.__facetSel` (rewritten by the renderer on every effect
 // run). Two region models are supported:
 //
 //   * violinTracks (density, axis "y"): tracks live at integer y0s. The anchor
@@ -31,38 +31,38 @@
 // ALTERNATIVE WORTH CONSIDERING (faceting). Everything below — the interceptor,
 // the pixel clamp, the l2p/box-select basis skew, the renderer's resolveRange
 // commit fence, and the waterfall's rank-skip gap hack that fakes spacing
-// between groups — exists to carve one shared coordinate space into per-group
+// between facets — exists to carve one shared coordinate space into per-facet
 // regions at runtime. Plotly already confines a box/lasso drag to a single
-// subplot, so faceting by group (one panel per group, only while
-// enforceSingleGroupSelection is on) would make the single-group constraint
+// subplot, so faceting by facet (one panel per facet, only while
+// enforceSingleFacetSelection is on) would make the single-facet constraint
 // STRUCTURAL instead of enforced, deleting all of that machinery and the whole
 // class of pixel-degeneracy bugs with it (no shared axis left to partition).
-// Use `matches: 'y'` so cross-group value comparison survives the split.
+// Use `matches: 'y'` so cross-facet value comparison survives the split.
 //
 // It is not a clear win, which is why it is a note and not the implementation:
-//   - It changes what the plot *is* on a toggle. Fine if single-group select is
+//   - It changes what the plot *is* on a toggle. Fine if single-facet select is
 //     a deliberate "focus" view; jarring if it's a quick mode flipped over the
 //     same overlaid view (and it discards the shared-axis comparison that makes
 //     the combined waterfall worth having).
-//   - It does not scale past a handful of groups — nine panels are fine, but the
+//   - It does not scale past a handful of facets — nine panels are fine, but the
 //     expansion north star (doses, replicates, ...) could blow that up, whereas
 //     the shared axis degrades gracefully (selection gets fiddlier, plot stays
 //     readable).
 //   - It forks the waterfall from the density/violin path, which today share
 //     this regionModel + interceptor machinery; faceting violins would be more
 //     disruptive still, costing the unified abstraction.
-// Net: keep the shared plot as default; reach for facets only if single-group
-// select becomes a dedicated view AND group counts stay small. Revisit when the
-// "best members" ranking work forces the group-count question anyway.
+// Net: keep the shared plot as default; reach for facets only if single-facet
+// select becomes a dedicated view AND facet counts stay small. Revisit when the
+// "best members" ranking work forces the facet-count question anyway.
 
 const BAND_HALF = 0.5; // a violin track at y0 owns the band [y0 - 0.5, y0 + 0.5]
 const DRAG_THRESHOLD_PX = 3; // movement below this is treated as a click
 // The waterfall clamp window is built from `ax.l2p(v) + ax._offset`, which lands
 // ~1px left of the pixel basis Plotly's box-select uses. That single-pixel skew
-// simultaneously holds the live box short of a group's rightmost points and lets
+// simultaneously holds the live box short of a facet's rightmost points and lets
 // it graze the left neighbour by a pixel. Translate the whole x clamp window
 // right by this amount to realign the two bases. resolveRange still fences the
-// committed set, so this only affects live reach, never group attribution. Bump
+// committed set, so this only affects live reach, never facet attribution. Bump
 // to 2 if a given zoom's rounding leaves it a hair short. (Waterfall x only;
 // density y bands aren't pixel-degenerate and don't need it.)
 const WATERFALL_CLAMP_SHIFT_PX = 1;
@@ -90,8 +90,8 @@ interface LassoShape {
 }
 type Shape = BoxShape | LassoShape;
 
-export interface GroupSelectionConfig {
-  // whether enforceSingleGroupSelection is active AND a select/lasso tool is on
+export interface FacetSelectionConfig {
+  // whether enforceSingleFacetSelection is active AND a select/lasso tool is on
   enabled: boolean;
   tool: "box" | "lasso";
   axis: "x" | "y"; // the constrained axis
@@ -102,16 +102,16 @@ export interface GroupSelectionConfig {
   selectionRegionKey: RegionKey | null;
 }
 
-type GroupSelectionPlot = HTMLElement & {
+type FacetSelectionPlot = HTMLElement & {
   _fullLayout?: any;
-  __groupSel?: GroupSelectionConfig;
-  __groupSelInstalled?: boolean;
-  __groupSelCleanup?: () => void;
+  __facetSel?: FacetSelectionConfig;
+  __facetSelInstalled?: boolean;
+  __facetSelCleanup?: () => void;
   // data-space coordinate (on the constrained axis) of the current drag's start,
   // recorded while the anchor is deferred (kept on the element so it survives
   // the reset re-render). The renderer reads it to resolve the region on the
   // first point contact (density -> violin band y, waterfall -> x-rank).
-  __groupSelStartCoord?: number;
+  __facetSelStartCoord?: number;
 };
 
 // --- region resolution (pure) ----------------------------------------------
@@ -145,13 +145,13 @@ export function resolveRange(
   return best;
 }
 
-export default function installGroupSelectionDragLayer(
-  plot: GroupSelectionPlot
+export default function installFacetSelectionDragLayer(
+  plot: FacetSelectionPlot
 ) {
-  if (plot.__groupSelInstalled) {
+  if (plot.__facetSelInstalled) {
     return;
   }
-  plot.__groupSelInstalled = true;
+  plot.__facetSelInstalled = true;
 
   // ---- geometry helpers ---------------------------------------------------
   const axisObj = (axis: "x" | "y") =>
@@ -177,7 +177,7 @@ export default function installGroupSelectionDragLayer(
 
   // a region's [lo, hi] bounds in data coordinates on the constrained axis
   const regionBoundsData = (
-    cfg: GroupSelectionConfig,
+    cfg: FacetSelectionConfig,
     key: RegionKey
   ): [number, number] | null => {
     const m = cfg.regionModel;
@@ -191,7 +191,7 @@ export default function installGroupSelectionDragLayer(
 
   // a region's [min, max] pixel bounds on the constrained axis (plot-div px)
   const regionBoundsPx = (
-    cfg: GroupSelectionConfig,
+    cfg: FacetSelectionConfig,
     key: RegionKey
   ): [number, number] | null => {
     const bounds = regionBoundsData(cfg, key);
@@ -233,7 +233,7 @@ export default function installGroupSelectionDragLayer(
   // point (resolved in the renderer's plotly_selecting). The waterfall still
   // resolves immediately by containment. Shift-additive keeps the locked region.
   const beginDrag = (): boolean => {
-    const cfg = plot.__groupSel!;
+    const cfg = plot.__facetSel!;
     const ax = axisObj(cfg.axis);
     const off = axisOffset(cfg.axis);
     const startConstrainedPx = coordOf(
@@ -254,13 +254,13 @@ export default function installGroupSelectionDragLayer(
     // (density -> violin band, waterfall -> x-rank range). Recorded on the
     // element so it survives the reset re-render at the start of a drag.
     cfg.selectionRegionKey = null;
-    plot.__groupSelStartCoord = startData;
+    plot.__facetSelStartCoord = startData;
     return true;
   };
 
   // ---- DOM listeners ------------------------------------------------------
   const onMouseDown = (e: MouseEvent) => {
-    const cfg = plot.__groupSel;
+    const cfg = plot.__facetSel;
     pending = null;
     dragging = false;
     if (!cfg || !cfg.enabled || e.button !== 0) {
@@ -312,7 +312,7 @@ export default function installGroupSelectionDragLayer(
   let interceptDragTarget: EventTarget | null = null;
 
   const regionClientBounds = (
-    cfg: GroupSelectionConfig,
+    cfg: FacetSelectionConfig,
     key: RegionKey
   ): [number, number] | null => {
     const px = regionBoundsPx(cfg, key); // plot-div px on the constrained axis
@@ -325,8 +325,8 @@ export default function installGroupSelectionDragLayer(
   };
 
   const onInterceptMove = (e: MouseEvent | PointerEvent) => {
-    const cfg = plot.__groupSel;
-    // Only while a real group-select drag is active on THIS plot.
+    const cfg = plot.__facetSel;
+    // Only while a real facet-select drag is active on THIS plot.
     if (!dragging || !cfg || !cfg.enabled) {
       return;
     }
@@ -393,7 +393,7 @@ export default function installGroupSelectionDragLayer(
   window.addEventListener("mouseup", onInterceptUp, true);
   window.addEventListener("pointerup", onInterceptUp, true);
 
-  plot.__groupSelCleanup = () => {
+  plot.__facetSelCleanup = () => {
     plot.removeEventListener("mousedown", onMouseDown, true);
     document.removeEventListener("mousemove", onMouseMove);
     document.removeEventListener("mouseup", onMouseUp);
@@ -401,6 +401,6 @@ export default function installGroupSelectionDragLayer(
     window.removeEventListener("pointermove", onInterceptMove, true);
     window.removeEventListener("mouseup", onInterceptUp, true);
     window.removeEventListener("pointerup", onInterceptUp, true);
-    plot.__groupSelInstalled = false;
+    plot.__facetSelInstalled = false;
   };
 }

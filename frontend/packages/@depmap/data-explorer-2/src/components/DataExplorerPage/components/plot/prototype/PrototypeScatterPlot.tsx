@@ -22,31 +22,24 @@ import {
   countInclusivelyTrueValues,
   DataExplorerColorPalette,
   DEFAULT_PALETTE,
+  getLegendTraces,
   getRange,
   hexToRgba,
+  LegendInfo,
   LegendKey,
+  NEUTRAL_FACET_FILL,
   orderContinuousPointsByBin,
   RegressionLine,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
-import installGroupSelectionDragLayer, {
-  GroupSelectionConfig,
+import installFacetSelectionDragLayer, {
+  FacetSelectionConfig,
   resolveRange,
-} from "./groupSelectionDragLayer";
+} from "./facetSelectionDragLayer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
 import styles from "../../../styles/ScatterPlot.scss";
 
 type Data = Record<string, any>;
-
-const truncate = (s: string) => {
-  const MAX = 25;
-  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
-};
-
-interface LegendInfo {
-  title: string;
-  items: { name: string; hexColor: string }[];
-}
 
 interface Props {
   data: Data;
@@ -93,21 +86,29 @@ interface Props {
   xAxisFontSize?: number;
   yAxisFontSize?: number;
   // When true, box/lasso selection is replaced with a custom drag whose marquee
-  // is confined to the group region it starts in (and cannot escape into a
-  // neighbouring group). `selectionRegions` describes those regions along
+  // is confined to the facet region it starts in (and cannot escape into a
+  // neighbouring facet). `selectionRegions` describes those regions along
   // `selectionAxis` (waterfall uses the x-axis rank regions). See
-  // groupSelectionDragLayer.
-  enforceSingleGroupSelection?: boolean;
+  // facetSelectionDragLayer.
+  enforceSingleFacetSelection?: boolean;
   selectionRegions?:
     | { key: string | number | symbol; lo: number; hi: number }[]
     | null;
   selectionAxis?: "x" | "y";
   // See PrototypeDensity1D. Label precisely the contacted points; diverges from
-  // `selectedPoints` only under group_by === "expansion" (the waterfall path).
+  // `selectedPoints` only under facet_by === "expansion" (the waterfall path).
   // Falls back to `selectedPoints` when omitted, so the non-faceted scatter
   // path (which passes neither prop) is unchanged.
   pointsToAnnotate?: Set<number>;
   selectionCount?: number;
+  // Whether facet_by has real backing for this plot (e.g. waterfall's
+  // x-clustering). When true and color has nothing of its own to show
+  // (!hasColorOptionsEnabled), the default trace renders neutral instead of
+  // palette.all — see PrototypeDensity1D's analogous hasRealFacetBacking.
+  // Defaults to false: the non-faceted scatter call site never has a real
+  // facet_by to report here (that case already routes to
+  // SmallMultiplesScatter instead of this component).
+  hasFacetOptionsEnabled?: boolean;
 }
 
 type PlotlyType = typeof Plotly;
@@ -159,32 +160,6 @@ const moveSelectedPointsOnTopOfLines = (plot: HTMLDivElement) => {
   hoverlayer.style.transform = "translateX(8px)";
 };
 
-// These dummy traces exist only to force Plotly to add a legend with the
-// correct colors (there is no good way of rendering our custom legend as
-// part of the exported image).
-const getLegendTraces = (
-  legendForDownload: LegendInfo,
-  templateTrace: object & { marker: object }
-) =>
-  legendForDownload.items.map(({ name, hexColor }) => {
-    return {
-      ...templateTrace,
-      showlegend: true,
-      // HACK: Use a plot type of "indicator" rather than "scatter". This
-      // prevents a rare bug where these dummy traces interfere with the
-      // real ones and some points don't get rendered.
-      type: "indicator",
-      name: truncate(name),
-      x: [null], // Data doesn't matter but can't be completely empty
-      y: [null],
-      marker: {
-        ...templateTrace.marker,
-        color: hexColor,
-        line: { color: hexColor, width: 2 },
-      },
-    };
-  });
-
 function PrototypeScatterPlot({
   data,
   xKey,
@@ -220,11 +195,12 @@ function PrototypeScatterPlot({
   palette = DEFAULT_PALETTE,
   xAxisFontSize = 14,
   yAxisFontSize = 14,
-  enforceSingleGroupSelection = false,
+  enforceSingleFacetSelection = false,
   selectionRegions = null,
   selectionAxis = "x",
   pointsToAnnotate,
   selectionCount,
+  hasFacetOptionsEnabled = false,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -277,7 +253,7 @@ function PrototypeScatterPlot({
   useEffect(() => {
     const plot = ref.current;
     return () => {
-      (plot as any)?.__groupSelCleanup?.();
+      (plot as any)?.__facetSelCleanup?.();
       Plotly.purge(plot as HTMLElement);
     };
   }, [Plotly]);
@@ -342,20 +318,27 @@ function PrototypeScatterPlot({
     const hasColorOptionsEnabled = Boolean(
       color1 || color2 || catColorData || contColorData
     );
+    // Only takes effect when templateTrace is actually used as the default
+    // (uncolored) trace below — color having its own real categories always
+    // wins, this never overrides a real color. See PrototypeDensity1D's
+    // analogous hasRealFacetBacking/inertColor.
+    const inertColor = hasFacetOptionsEnabled
+      ? NEUTRAL_FACET_FILL
+      : palette.all;
 
     const isSelectionMode =
       dragmode === "select" ||
       dragmode === "lasso" ||
       (selectedPoints && selectedPoints.size > 0);
 
-    // When enforceSingleGroupSelection is on, there is more than one region to
+    // When enforceSingleFacetSelection is on, there is more than one region to
     // constrain across, and a select/lasso tool is active, we let Plotly run its
-    // real selection but install groupSelectionDragLayer, whose pointer
+    // real selection but install facetSelectionDragLayer, whose pointer
     // interceptor confines the native box/lasso to the region the drag started
     // in. So the real `dragmode` passes through (previously we disabled Plotly's
     // drag and drew a custom marquee). Otherwise behavior is unchanged.
-    const useGroupSelection =
-      enforceSingleGroupSelection &&
+    const useFacetSelection =
+      enforceSingleFacetSelection &&
       Boolean(selectionRegions && selectionRegions.length > 1) &&
       (dragmode === "select" || dragmode === "lasso");
     const groupSelectionTool = dragmode === "lasso" ? "lasso" : "box";
@@ -385,12 +368,12 @@ function PrototypeScatterPlot({
       text,
       hoverinfo: customHoverinfo || ("x+y+text" as const),
       showlegend: false,
-      hoverlabel: { bgcolor: palette.all },
+      hoverlabel: { bgcolor: inertColor },
       selectedpoints: selectedPoints ? [...selectedPoints] : [],
       marker: {
-        color: hexToRgba(palette.all, pointOpacity),
+        color: hexToRgba(inertColor, pointOpacity),
         size: pointSize,
-        line: { color: palette.all, width: outlineWidth },
+        line: { color: inertColor, width: outlineWidth },
       },
       selected: { marker: { opacity: 1 } },
       unselected: {
@@ -461,6 +444,7 @@ function PrototypeScatterPlot({
         catCardinality < 75
           ? [...colorMap.keys()]
               .sort(byValueCountOf(catColorValueCounts))
+              .filter((key) => colorMap.get(key))
               .map((key) =>
                 makeColorTrace(
                   colorMap.get(key)!,
@@ -629,7 +613,7 @@ function PrototypeScatterPlot({
 
     // Annotation channel (expansion-selection): label precisely the contacted
     // points, not the re-expanded `selectedPoints`. They coincide off the
-    // group_by === "expansion" collapse (the only collapse path here is the
+    // facet_by === "expansion" collapse (the only collapse path here is the
     // waterfall), so this is a no-op for the plain scatter, which passes
     // neither prop and falls back to `selectedPoints`.
     const pointsForAnnotation = pointsToAnnotate ?? selectedPoints;
@@ -642,13 +626,13 @@ function PrototypeScatterPlot({
     const layout: Partial<Layout> = {
       dragmode,
 
-      // enforceSingleGroupSelection: a sweep within a narrow x-region is mostly
+      // enforceSingleFacetSelection: a sweep within a narrow x-region is mostly
       // vertical, which Plotly's default selectdirection "any" auto-reads as a
       // "v" (full-x-axis) selection spanning every region — set programmatically,
       // so the pointer clamp can't catch it. Force diagonal-only ("d") so every
       // box stays an ordinary drag-cornered rectangle; the interceptor then
       // clamps its width to the anchor region.
-      selectdirection: useGroupSelection ? "d" : "any",
+      selectdirection: useFacetSelection ? "d" : "any",
       // Actual shapes are drawn in the "plotly_afterplot" event handler.
       // That's to prevent them having any effect on autoscaling. However, we
       // *do* want to force the scales to match when `showIdentityLine` is
@@ -734,24 +718,24 @@ function PrototypeScatterPlot({
 
     Plotly.react(plot, plotlyData, layout, config);
 
-    // enforceSingleGroupSelection: hand the live config to the custom drag
+    // enforceSingleFacetSelection: hand the live config to the custom drag
     // layer and (re)install it. Mirrors PrototypeDensity1D, but the regions are
     // explicit x-rank ranges (waterfall) rather than violin tracks. The config
     // is read on each mousedown so it stays current across effect re-runs.
     {
-      const prev = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      const prev = (plot as any).__facetSel as FacetSelectionConfig | undefined;
       const resetAdditive =
         !prev ||
         prev.tool !== groupSelectionTool ||
-        prev.enabled !== useGroupSelection;
+        prev.enabled !== useFacetSelection;
 
       if (prev && resetAdditive) {
         prev.committedShapes = [];
         prev.selectionRegionKey = null;
       }
 
-      (plot as any).__groupSel = {
-        enabled: useGroupSelection,
+      (plot as any).__facetSel = {
+        enabled: useFacetSelection,
         tool: groupSelectionTool,
         axis: selectionAxis,
         regionModel: {
@@ -760,9 +744,9 @@ function PrototypeScatterPlot({
         },
         committedShapes: resetAdditive ? [] : prev!.committedShapes,
         selectionRegionKey: resetAdditive ? null : prev!.selectionRegionKey,
-      } as GroupSelectionConfig;
+      } as FacetSelectionConfig;
 
-      installGroupSelectionDragLayer(plot as any);
+      installFacetSelectionDragLayer(plot as any);
     }
 
     // Keep track of added listeners so we can easily remove them.
@@ -837,7 +821,7 @@ function PrototypeScatterPlot({
     on("plotly_relayout", () => {
       // A zoom/resize invalidates the pixel-space committed marquees, so drop
       // the additive (shift-select) state along with the stored axes.
-      const cfg = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
       if (cfg) {
         cfg.committedShapes = [];
         cfg.selectionRegionKey = null;
@@ -888,16 +872,16 @@ function PrototypeScatterPlot({
         onClickResetSelection();
       }
 
-      // enforceSingleGroupSelection (waterfall): the region anchor is deferred
-      // until the drag box first touches a point (groupSelectionDragLayer leaves
+      // enforceSingleFacetSelection (waterfall): the region anchor is deferred
+      // until the drag box first touches a point (facetSelectionDragLayer leaves
       // selectionRegionKey null on a fresh drag), so the initial box isn't pinned
       // to whatever region the click happened to land in. Lock it here to the
       // x-rank region of the first contacted point nearest the drag start; from
       // then on the interceptor confines the box to that region.
-      if (!useGroupSelection) {
+      if (!useFacetSelection) {
         return;
       }
-      const cfg = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
       if (
         !cfg ||
         cfg.regionModel.kind !== "ranges" ||
@@ -906,10 +890,10 @@ function PrototypeScatterPlot({
       ) {
         return;
       }
-      const startCoord = (plot as any).__groupSelStartCoord as
+      const startCoord = (plot as any).__facetSelStartCoord as
         | number
         | undefined;
-      let bestKey: GroupSelectionConfig["selectionRegionKey"] = null;
+      let bestKey: FacetSelectionConfig["selectionRegionKey"] = null;
       let bestDist = Infinity;
       e.points.forEach((p) => {
         if (p.data.hoverinfo === "skip" || p.data.hoverinfo === "none") {
@@ -944,15 +928,15 @@ function PrototypeScatterPlot({
               : p.pointIndex;
           }) || [];
 
-      // enforceSingleGroupSelection invariant: an out-of-region point must never
+      // enforceSingleFacetSelection invariant: an out-of-region point must never
       // enter the selection set. The interceptor confines the live box, but a
       // fast drag from outside the resolved region (e.g. dragging back across the
       // anchor corner) can momentarily span a neighbour before clamping. Mirror
       // the density plot and drop any committed point that doesn't fall in the
       // anchor region, so the committed set is always exactly that region's.
-      if (useGroupSelection) {
-        const cfg = (plot as any).__groupSel as
-          | GroupSelectionConfig
+      if (useFacetSelection) {
+        const cfg = (plot as any).__facetSel as
+          | FacetSelectionConfig
           | undefined;
         if (
           cfg?.selectionRegionKey != null &&
@@ -1002,7 +986,7 @@ function PrototypeScatterPlot({
     // Add a few non-standard methods to the plot for convenience.
     plot.setDragmode = (nextDragmode) => {
       const shouldResetSelection =
-        plot.layout.dragmode !== nextDragmode &&
+        plot?.layout?.dragmode !== nextDragmode &&
         (nextDragmode === "select" || nextDragmode === "lasso");
 
       if (shouldResetSelection && onClickResetSelection) {
@@ -1088,6 +1072,7 @@ function PrototypeScatterPlot({
     selectedPoints,
     pointsToAnnotate,
     selectionCount,
+    hasFacetOptionsEnabled,
     onClickPoint,
     onMultiselect,
     onClickResetSelection,
@@ -1107,7 +1092,7 @@ function PrototypeScatterPlot({
     palette,
     xAxisFontSize,
     yAxisFontSize,
-    enforceSingleGroupSelection,
+    enforceSingleFacetSelection,
     selectionRegions,
     selectionAxis,
     shapes,

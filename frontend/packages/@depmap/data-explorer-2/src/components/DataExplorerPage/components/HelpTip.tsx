@@ -117,6 +117,13 @@ const tips = {
     content: null,
   },
 
+  "facet-by-help": {
+    placement: "right",
+    title: "Facet points",
+    // Content is created dynamically and passed in as `customContent`
+    content: null,
+  },
+
   "legend-doubleclick-help": {
     placement: "left",
     title: "Double-click works too",

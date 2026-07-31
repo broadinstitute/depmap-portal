@@ -14,9 +14,10 @@ import SpinnerOverlay from "./SpinnerOverlay";
 import useScatterPlotData from "./prototype/useScatterPlotData";
 import PrototypeScatterPlot from "./prototype/PrototypeScatterPlot";
 import SmallMultiplesScatter from "./prototype/SmallMultiplesScatter";
-import { findCategoricalSlice } from "./prototype/plotUtils";
+import { computeFacets } from "./prototype/plotUtils";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotLegend from "./PlotLegend";
+import PlotFacets from "./PlotFacets";
 import PlotSelections from "./PlotSelections";
 import ExpandedPlotSelections from "./ExpandedPlotSelections";
 import GeneTea from "./integrations/GeneTea";
@@ -63,7 +64,7 @@ function DataExplorerScatterPlot({
     setSelectionFromContext,
     clearSelection,
     selectionKeyForPoint,
-  } = useSelection(data, plotConfig.group_by);
+  } = useSelection(data, plotConfig.facet_by);
 
   // Expanded plots (the response carries an expansion) get a different
   // selection panel: ExpandedPlotSelections lists (index, expansion)
@@ -74,27 +75,28 @@ function DataExplorerScatterPlot({
       ?.length ?? 0) > 0;
 
   // Panel-follows-grain: the pair panel (ExpandedPlotSelections) only makes
-  // sense when selection is pair-grained. Under group_by === "expansion"
+  // sense when selection is pair-grained. Under facet_by === "expansion"
   // selection collapses to models, so the pair panel would match nothing —
   // show the model PlotSelections instead (its Visualize / Save-as-context
   // operations are meaningful for models). Mirrors `pairGrained` in
   // useSelection.
-  const isPairGrained = isExpanded && plotConfig.group_by !== "expansion";
+  const isPairGrained = isExpanded && plotConfig.facet_by !== "expansion";
 
-  // Small multiples = the 2D realization of group_by. Unlike the 1D plots,
-  // scatter does NOT fall back to color_by when group_by is unset: auto-
-  // faceting a colored scatter by its own color dimension would explode into
-  // per-category panels. So facet only on an *explicit* group_by. The facet
-  // key per point comes from the same reader color_by uses.
-  const facetKeys = useMemo(() => {
-    if (!plotConfig.group_by) {
-      return null;
-    }
-    const slice = findCategoricalSlice(data, plotConfig.group_by);
-    return (
-      slice?.values.map((v) => (v == null ? "(no value)" : String(v))) ?? null
-    );
-  }, [data, plotConfig.group_by]);
+  // Small multiples = the 2D realization of facet_by. facet_by is a fully
+  // independent axis from color_by and never falls back to it: auto-faceting
+  // a colored scatter by its own color dimension would explode into
+  // per-category panels. So facet only on an *explicit* facet_by, read from
+  // the facet triad (dimensions.facet / metadata.facet_property /
+  // filters.facet1+facet2), never the color one. computeFacets is
+  // shared with the per-facet regression fit (useScatterPlotData) and the
+  // regression table (computeFacetedLinReg), so all three agree on facet
+  // identity/labels.
+  const facetInfo = useMemo(() => computeFacets(data, plotConfig.facet_by), [
+    data,
+    plotConfig.facet_by,
+  ]);
+  const facetKeys = facetInfo?.facetKeys ?? null;
+  const facetOrder = facetInfo?.facetOrder;
   const isFaceted = Boolean(facetKeys);
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
@@ -113,12 +115,15 @@ function DataExplorerScatterPlot({
     contLegendKeys,
     legendKeysWithNoData,
     legendState,
+    facetLegendState,
     colorMap,
     legendForDownload,
     pointVisibility,
     regressionLines,
     regressionLinesByFacet,
     showIdentityLine,
+    colorTarget,
+    colorMatchesFacet,
   } = useScatterPlotData(
     data,
     plotConfig,
@@ -128,11 +133,49 @@ function DataExplorerScatterPlot({
   );
 
   const {
+    hiddenLegendValues: hiddenFacetValues,
+    onClickLegendItem: onClickFacetItem,
+    handleClickShowAll: handleClickShowAllFacets,
+    handleClickHideAll: handleClickHideAllFacets,
+  } = facetLegendState;
+
+  // Shown only when color_by/facet_by have actually diverged (the Legend no
+  // longer doubles as the facet key) and facet_by has real backing to show.
+  // !colorMatchesFacet, not resolveColorMode(...).target === "color" alone —
+  // see useDensity1DPlotData's colorMatchesFacet comment for why.
+  const showFacetsPanel = !colorMatchesFacet && isFaceted;
+
+  const {
     hiddenLegendValues,
     onClickLegendItem,
     handleClickShowAll,
     handleClickHideAll,
   } = legendState;
+
+  // When facets follow color (colorMatchesFacet), the Legend doubles as the
+  // facet key and toggling a legend entry IS toggling that facet — so it
+  // should fully remove the panel from the grid, exactly like the separate
+  // Facets panel already does when facet_by is independent (hiddenFacetValues,
+  // used below in the !colorMatchesFacet case). hiddenLegendValues lives in
+  // colorMap's raw LegendKey space (a real category string, or a shared
+  // Symbol like LEGEND_OTHER/LEGEND_BOTH/LEGEND_RANGE_N for the "Other"/
+  // "Both"/continuous-bin cases), while SmallMultiplesScatter's hiddenFacets
+  // works in facetKeys' plain-string space — facetColorKeys (computeFacets's
+  // own reverse-lookup table, also used by regressionLinesByFacet's color
+  // lookup) bridges the two.
+  const hiddenFacetsFromLegend = useMemo(() => {
+    if (!colorMatchesFacet || !facetKeys) {
+      return null;
+    }
+    const out = new Set<string>();
+    facetKeys.forEach((f) => {
+      const legendKey = facetInfo?.facetColorKeys?.[f] ?? f;
+      if (hiddenLegendValues.has(legendKey)) {
+        out.add(f);
+      }
+    });
+    return out;
+  }, [colorMatchesFacet, facetKeys, facetInfo, hiddenLegendValues]);
 
   useEffect(() => {
     let timeout: number | undefined;
@@ -164,7 +207,7 @@ function DataExplorerScatterPlot({
 
     // Valid keys must be built in the SAME grain as the selection refs (via
     // useSelection's selectionKeyForPoint) — otherwise a model-grained
-    // selection (group_by === "expansion") would be measured against pair keys
+    // selection (facet_by === "expansion") would be measured against pair keys
     // and wiped on every data change.
     const validKeys = new Set<string>();
     for (let i = 0; i < data.index_ids.length; i += 1) {
@@ -264,7 +307,20 @@ function DataExplorerScatterPlot({
                 height="auto"
                 xLabel={formattedData?.xLabel || ""}
                 yLabel={formattedData?.yLabel || ""}
+                legendForDownload={legendForDownload}
                 facetKeys={facetKeys ?? []}
+                facetOrder={facetOrder}
+                // When color_by/facet_by have converged, hide via the
+                // Legend's own toggles (translated to facet-key-string
+                // space, see hiddenFacetsFromLegend above); otherwise via
+                // the independent Facets panel's own state
+                // (hiddenFacetValues, already in that string space —
+                // computeFacets always returns plain strings for scatter's
+                // facetKeys/facetOrder, see its own comment on why — so
+                // that's a direct pass-through, not a real conversion).
+                hiddenFacets={
+                  (hiddenFacetsFromLegend ?? hiddenFacetValues) as Set<string>
+                }
                 placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
                 showIdentityLine={showIdentityLine}
                 regressionLinesByFacet={regressionLinesByFacet}
@@ -283,6 +339,11 @@ function DataExplorerScatterPlot({
                 yAxisFontSize={yAxisFontSize}
               />
             ) : (
+              // hasFacetOptionsEnabled intentionally left unset here: this
+              // branch only renders when !isFaceted, i.e. facet_by has no
+              // real backing (a real facet_by always routes to
+              // SmallMultiplesScatter above instead) — so there's nothing
+              // real for this prop to report at this call site.
               <PrototypeScatterPlot
                 data={formattedData}
                 xKey="x"
@@ -331,8 +392,22 @@ function DataExplorerScatterPlot({
               onClickLegendItem={onClickLegendItem}
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
+              target={colorTarget}
             />
           </StackableSection>
+          {showFacetsPanel ? (
+            <StackableSection title="Facets" minHeight={160}>
+              <PlotFacets
+                data={data}
+                facetKeys={facetOrder ?? []}
+                continuousBins={null}
+                hiddenFacetValues={hiddenFacetValues}
+                onClickFacetItem={onClickFacetItem}
+                handleClickShowAllFacets={handleClickShowAllFacets}
+                handleClickHideAllFacets={handleClickHideAllFacets}
+              />
+            </StackableSection>
+          ) : null}
           <StackableSection title="Plot Selections" minHeight={256}>
             {isPairGrained ? (
               <ExpandedPlotSelections

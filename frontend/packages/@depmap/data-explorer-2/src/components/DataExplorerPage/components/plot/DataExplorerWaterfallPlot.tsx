@@ -14,6 +14,7 @@ import useWaterfallPlotData from "./prototype/useWaterfallPlotData";
 import PrototypeScatterPlot from "./prototype/PrototypeScatterPlot";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotLegend from "./PlotLegend";
+import PlotFacets from "./PlotFacets";
 import PlotSelections from "./PlotSelections";
 import ExpandedPlotSelections from "./ExpandedPlotSelections";
 import GeneTea from "./integrations/GeneTea";
@@ -45,9 +46,9 @@ function DataExplorerWaterfallPlot({
   onClickSaveSelectionAsContext,
   onClickVisualizeSelected,
 }: Props) {
-  // Expanded plots (group_by "expansion") are the one and only trigger for
-  // confining selection to a single group.
-  const enforceSingleGroupSelection = plotConfig.group_by === "expansion";
+  // Expanded plots (facet_by "expansion") are the one and only trigger for
+  // confining selection to a single facet.
+  const enforceSingleFacetSelection = plotConfig.facet_by === "expansion";
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const {
     selection,
@@ -59,7 +60,7 @@ function DataExplorerWaterfallPlot({
     setSelectionFromContext,
     clearSelection,
     selectionKeyForPoint,
-  } = useSelection(data, plotConfig.group_by);
+  } = useSelection(data, plotConfig.facet_by);
 
   // Expanded plots (the response carries an expansion) get a different
   // selection panel: ExpandedPlotSelections lists (index, expansion)
@@ -70,12 +71,12 @@ function DataExplorerWaterfallPlot({
       ?.length ?? 0) > 0;
 
   // Panel-follows-grain: the pair panel (ExpandedPlotSelections) only makes
-  // sense when selection is pair-grained. Under group_by === "expansion"
+  // sense when selection is pair-grained. Under facet_by === "expansion"
   // selection collapses to models, so the pair panel would match nothing —
   // show the model PlotSelections instead (its Visualize / Save-as-context
   // operations are meaningful for models). Mirrors `pairGrained` in
   // useSelection.
-  const isPairGrained = isExpanded && plotConfig.group_by !== "expansion";
+  const isPairGrained = isExpanded && plotConfig.facet_by !== "expansion";
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
   const {
@@ -94,10 +95,16 @@ function DataExplorerWaterfallPlot({
     contLegendKeys,
     legendKeysWithNoData,
     legendState,
+    facetLegendState,
+    sortedFacetKeys,
+    facetContinuousBins,
     colorMap,
     legendForDownload,
     pointVisibility,
     selectionRegions,
+    colorTarget,
+    hasFacetOptionsEnabled,
+    colorMatchesFacet,
   } = useWaterfallPlotData(data, plotConfig, palette);
 
   const {
@@ -106,6 +113,19 @@ function DataExplorerWaterfallPlot({
     handleClickShowAll,
     handleClickHideAll,
   } = legendState;
+
+  const {
+    hiddenLegendValues: hiddenFacetValues,
+    onClickLegendItem: onClickFacetItem,
+    handleClickShowAll: handleClickShowAllFacets,
+    handleClickHideAll: handleClickHideAllFacets,
+  } = facetLegendState;
+
+  // Shown only when color_by/facet_by have actually diverged (the Legend no
+  // longer doubles as the facet key) and facet_by has real backing to show.
+  // !colorMatchesFacet, not resolveColorMode(...).target === "color" alone —
+  // see useDensity1DPlotData's colorMatchesFacet comment for why.
+  const showFacetsPanel = !colorMatchesFacet && hasFacetOptionsEnabled;
 
   useEffect(() => {
     let timeout: number | undefined;
@@ -137,7 +157,7 @@ function DataExplorerWaterfallPlot({
 
     // Valid keys must be built in the SAME grain as the selection refs (via
     // useSelection's selectionKeyForPoint) — otherwise a model-grained
-    // selection (group_by === "expansion") would be measured against pair keys
+    // selection (facet_by === "expansion") would be measured against pair keys
     // and wiped on every data change.
     const validKeys = new Set<string>();
     for (let i = 0; i < data.index_ids.length; i += 1) {
@@ -231,17 +251,20 @@ function DataExplorerWaterfallPlot({
               showIdentityLine={false}
               onClickResetSelection={clearSelection}
               legendForDownload={legendForDownload}
-              enforceSingleGroupSelection={enforceSingleGroupSelection}
+              enforceSingleFacetSelection={enforceSingleFacetSelection}
               selectionRegions={selectionRegions}
               selectionAxis="x"
               pointsToAnnotate={pointsToAnnotate}
               selectionCount={selection?.size ?? 0}
+              hasFacetOptionsEnabled={hasFacetOptionsEnabled}
               pointSize={pointSize}
               pointOpacity={pointOpacity}
               outlineWidth={outlineWidth}
               customHoverinfo="y+text"
               hideXAxisGrid
-              hideXAxis={Boolean(data?.metadata?.color_property)}
+              hideXAxis={Boolean(
+                data?.metadata?.color_property || data?.metadata?.facet_property
+              )}
               palette={palette}
               xAxisFontSize={xAxisFontSize}
               yAxisFontSize={yAxisFontSize}
@@ -262,8 +285,22 @@ function DataExplorerWaterfallPlot({
               onClickLegendItem={onClickLegendItem}
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
+              target={colorTarget}
             />
           </StackableSection>
+          {showFacetsPanel ? (
+            <StackableSection title="Facets" minHeight={120}>
+              <PlotFacets
+                data={data}
+                facetKeys={sortedFacetKeys ?? []}
+                continuousBins={facetContinuousBins}
+                hiddenFacetValues={hiddenFacetValues}
+                onClickFacetItem={onClickFacetItem}
+                handleClickShowAllFacets={handleClickShowAllFacets}
+                handleClickHideAllFacets={handleClickHideAllFacets}
+              />
+            </StackableSection>
+          ) : null}
           <StackableSection title="Plot Selections" minHeight={256}>
             {isPairGrained ? (
               <ExpandedPlotSelections

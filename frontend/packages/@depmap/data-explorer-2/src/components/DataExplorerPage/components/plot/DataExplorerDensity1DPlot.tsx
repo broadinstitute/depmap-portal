@@ -16,6 +16,7 @@ import PrototypeDensity1D from "./prototype/PrototypeDensity1D";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import SectionStack, { StackableSection } from "../SectionStack";
 import PlotLegend from "./PlotLegend";
+import PlotFacets from "./PlotFacets";
 import PlotSelections from "./PlotSelections";
 import ExpandedPlotSelections from "./ExpandedPlotSelections";
 import GeneTea from "./integrations/GeneTea";
@@ -46,9 +47,9 @@ function DataExplorerDensity1DPlot({
   onClickSaveSelectionAsContext,
   onClickColorByContext,
 }: Props) {
-  // Expanded plots (group_by "expansion") are the one and only trigger for
-  // confining selection to a single group.
-  const enforceSingleGroupSelection = plotConfig.group_by === "expansion";
+  // Expanded plots (facet_by "expansion") are the one and only trigger for
+  // confining selection to a single facet.
+  const enforceSingleFacetSelection = plotConfig.facet_by === "expansion";
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const {
     selection,
@@ -60,7 +61,7 @@ function DataExplorerDensity1DPlot({
     setSelectionFromContext,
     clearSelection,
     selectionKeyForPoint,
-  } = useSelection(data, plotConfig.group_by);
+  } = useSelection(data, plotConfig.facet_by);
 
   // Expanded plots (the response carries an expansion) get a different
   // selection panel: ExpandedPlotSelections lists (index, expansion)
@@ -71,12 +72,12 @@ function DataExplorerDensity1DPlot({
       ?.length ?? 0) > 0;
 
   // Panel-follows-grain: the pair panel (ExpandedPlotSelections) only makes
-  // sense when selection is pair-grained. Under group_by === "expansion"
+  // sense when selection is pair-grained. Under facet_by === "expansion"
   // selection collapses to models, so the pair panel would match nothing —
   // show the model PlotSelections instead (its Visualize / Save-as-context
   // operations are meaningful for models). Mirrors `pairGrained` in
   // useSelection.
-  const isPairGrained = isExpanded && plotConfig.group_by !== "expansion";
+  const isPairGrained = isExpanded && plotConfig.facet_by !== "expansion";
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
   const {
@@ -92,14 +93,19 @@ function DataExplorerDensity1DPlot({
     formattedData,
     continuousBins,
     colorData,
-    groupData,
+    facetData,
     legendKeysWithNoData,
-    sortedGroupKeys,
+    sortedFacetKeys,
+    facetContinuousBins,
     legendState,
+    facetLegendState,
     colorMap,
     legendDisplayNames,
+    facetDisplayNames,
     legendTitle,
     pointVisibility,
+    colorTarget,
+    colorMatchesFacet,
   } = useDensity1DPlotData(data, plotConfig, palette);
 
   const {
@@ -108,6 +114,22 @@ function DataExplorerDensity1DPlot({
     handleClickShowAll,
     handleClickHideAll,
   } = legendState;
+
+  const {
+    hiddenLegendValues: hiddenFacetValues,
+    onClickLegendItem: onClickFacetItem,
+    handleClickShowAll: handleClickShowAllFacets,
+    handleClickHideAll: handleClickHideAllFacets,
+  } = facetLegendState;
+
+  // Shown only when color_by/facet_by have actually diverged (the Legend no
+  // longer doubles as the facet key) and facet_by has real backing to show.
+  // !colorMatchesFacet, not resolveColorMode(...).target === "color" alone —
+  // an explicit color_by that happens to name the identical source as
+  // facet_by (without using the "facet" sentinel) still makes Legend the
+  // facet partition, so the panel would be redundant. See colorMatchesFacet's
+  // own comment for why this is broader than a target check.
+  const showFacetsPanel = !colorMatchesFacet && Boolean(sortedFacetKeys);
 
   useEffect(() => {
     let timeout: number | undefined;
@@ -139,7 +161,7 @@ function DataExplorerDensity1DPlot({
 
     // Valid keys must be built in the SAME grain as the selection refs (via
     // useSelection's selectionKeyForPoint) — otherwise a model-grained
-    // selection (group_by === "expansion") would be measured against pair keys
+    // selection (facet_by === "expansion") would be measured against pair keys
     // and wiped on every data change.
     const validKeys = new Set<string>();
     for (let i = 0; i < data.index_ids.length; i += 1) {
@@ -215,15 +237,17 @@ function DataExplorerDensity1DPlot({
               xKey="x"
               colorMap={colorMap}
               colorData={colorData}
-              groupData={groupData}
-              groupKeys={sortedGroupKeys}
+              facetData={facetData}
+              groupKeys={sortedFacetKeys}
+              colorMatchesFacet={colorMatchesFacet}
               continuousColorKey="contColorData"
               legendDisplayNames={legendDisplayNames}
+              facetDisplayNames={facetDisplayNames}
               legendTitle={legendTitle}
               pointVisibility={pointVisibility || undefined}
               useSemiOpaqueViolins={!plotConfig.hide_points}
               placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
-              enforceSingleGroupSelection={enforceSingleGroupSelection}
+              enforceSingleFacetSelection={enforceSingleFacetSelection}
               pointsToAnnotate={pointsToAnnotate}
               selectionCount={selection?.size ?? 0}
               hoverTextKey="hoverText"
@@ -235,6 +259,7 @@ function DataExplorerDensity1DPlot({
               selectedPoints={selectedPoints}
               onClickResetSelection={clearSelection}
               hiddenLegendValues={hiddenLegendValues}
+              hiddenFacetValues={hiddenFacetValues}
               pointSize={pointSize}
               pointOpacity={pointOpacity}
               outlineWidth={outlineWidth}
@@ -257,8 +282,22 @@ function DataExplorerDensity1DPlot({
               onClickLegendItem={onClickLegendItem}
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
+              target={colorTarget}
             />
           </StackableSection>
+          {showFacetsPanel ? (
+            <StackableSection title="Facets" minHeight={120}>
+              <PlotFacets
+                data={data}
+                facetKeys={sortedFacetKeys ?? []}
+                continuousBins={facetContinuousBins}
+                hiddenFacetValues={hiddenFacetValues}
+                onClickFacetItem={onClickFacetItem}
+                handleClickShowAllFacets={handleClickShowAllFacets}
+                handleClickHideAllFacets={handleClickHideAllFacets}
+              />
+            </StackableSection>
+          ) : null}
           <StackableSection title="Plot Selections" minHeight={256}>
             {isPairGrained ? (
               <ExpandedPlotSelections

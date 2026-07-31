@@ -127,6 +127,17 @@ export const DEFAULT_PALETTE = {
   ],
 };
 
+// Deliberately NOT palette.other (or palette.all): this fills/colors a
+// track/point when facet_by has real backing but color_by has nothing of
+// its own to represent it (e.g. color_by absent/"uniform", or diverged from
+// facet_by — see PrototypeDensity1D's colorMatchesFacet). That's a "this
+// axis isn't part of the color scheme" treatment, not a color_by category —
+// palette.all/palette.other are user-editable, and letting a user's palette
+// customization tint this would incorrectly read as if it were still
+// semantically part of color_by. A fixed neutral gray keeps it inert
+// regardless of palette customization.
+export const NEUTRAL_FACET_FILL = "#bdbdbd";
+
 const collator = new Intl.Collator(undefined, {
   numeric: true,
   sensitivity: "base",
@@ -145,6 +156,10 @@ const compareLegendKeys = (keyA: symbol | string, keyB: symbol | string) => {
 };
 
 export const hexToRgba = (hex: string, alpha: number) => {
+  if (!hex) {
+    throw new Error(`hexToRgba(): a hex string like "#00AAFF" must be passed.`);
+  }
+
   const [r, g, b] = hex
     .replace(/^#/, "")
     .replace(/(.)/g, hex.length < 6 ? "$1$1" : "$1")
@@ -154,7 +169,7 @@ export const hexToRgba = (hex: string, alpha: number) => {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 };
 
-function nullifyUnplottableValues(
+export function nullifyUnplottableValues(
   values?: number[],
   visibleFilter?: boolean[],
   dependentDimensions?: { values: unknown[] }[]
@@ -187,7 +202,7 @@ function nullifyUnplottableValues(
 }
 
 // Returns the per-point categorical series that drives coloring (or, when
-// the caller is using it for the grouping seam, track assignment). When
+// the caller is using it for the faceting seam, track assignment). When
 // `mode === "expansion"`, the source is `data.expansions[0]` — the per-cell
 // expansion label, e.g. one transcript label per (model, transcript) point.
 // When `mode` is anything else (or unset), the source is the same as before:
@@ -200,7 +215,7 @@ function nullifyUnplottableValues(
 // (which dots land in panel `facet`) and the per-facet regression fit (which
 // points the line is fit over), so the two can't drift — a line must be fit
 // over exactly the points its panel draws. Membership only: callers add their
-// own concerns (the renderer composes a color-group selector on top; the fit
+// own concerns (the renderer composes a color-facet selector on top; the fit
 // adds finite-input hygiene).
 export function facetMaskFor(
   facetKeys: (string | null)[],
@@ -213,11 +228,173 @@ export function facetMaskFor(
     visible[i] && facetKeys[i] === facet && x[i] !== null && y[i] !== null;
 }
 
+// Derives facet_by's per-point facet identity, for any renderer that needs
+// to split a plot into one panel/fit per facet — small multiples
+// (DataExplorerScatterPlot) and the per-facet regression fit/table below
+// both need the SAME facet labels, since the table/lines are looked up by
+// label string against the panels the renderer already drew.
+//
+// Categorical: facetKeys from the facet triad's categorical/text source,
+// null values mapped to the literal "N/A" string (a real, visible
+// facet — facet_by has no data for those points, but they still get a
+// panel). facetOrder IS explicit here too: alphabetical (natural,
+// case-insensitive, via compareLegendKeys), with "N/A" moved last —
+// giving every caller (scatter's small-multiples panel grid, the regression
+// table) the same sensible default order instead of each falling back to
+// its own convention.
+//
+// Continuous: facet's own property may not be categorical at all (e.g. a
+// numeric annotation) — bin it independently of any continuous color
+// binning (a facet key is just display text here, so the bin's formatted
+// range string doubles as both the key and the panel title). facetOrder IS
+// explicit here (natural ascending bin order) since there's no sensible
+// generic sort for formatted range strings otherwise.
+export function computeFacets(
+  data: DataExplorerPlotResponse | null,
+  mode: DataExplorerPlotConfig["facet_by"],
+  // Which triad `mode` resolves against. Defaults to "facet" (this
+  // function's original, and still primary, purpose); the regression
+  // fallback (see Addendum 5 / regressionLines) also calls this with
+  // target "color" to facet by color_by's own triad when facet_by is
+  // unset — the internals below don't care which triad they're reading,
+  // they just read whichever `target` names.
+  target: "color" | "facet" = "facet"
+): {
+  facetKeys: string[];
+  facetOrder?: string[];
+  // Maps a formatted facet string back to the original LegendKey it came
+  // from, for facets whose real colorMap identity is a shared Symbol
+  // (LEGEND_RANGE_N / LEGEND_BOTH / LEGEND_OTHER) that got stringified above
+  // for facetMaskFor's string-keyed matching and panel titles. A caller that
+  // needs to look a facet's color up in colorMap (keyed by those Symbols,
+  // never by the formatted text) must go through this map first — looking
+  // up the formatted string directly always misses. The categorical branch's
+  // real category-value facetKeys are already valid colorMap keys as-is and
+  // need no entry; its one exception is "N/A" (LEGEND_OTHER),
+  // included below for the same reason the other branches are.
+  facetColorKeys?: Record<string, LegendKey>;
+} | null {
+  if (!data || !mode) {
+    return null;
+  }
+
+  const catSlice = findCategoricalSlice(data, mode, target);
+  if (catSlice) {
+    const facetKeys: string[] = catSlice.values.map((v) =>
+      v == null ? "N/A" : String(v)
+    );
+
+    // facetOrder: alphabetical (natural, case-insensitive — same collator
+    // sortLegendKeys/sortLegendKeysWaterfall use for density/waterfall's own
+    // "alphabetical" sort_by), with "N/A" moved last when present.
+    // Without this, callers with no other convention of their own (the
+    // scatter small-multiples panel grid) fell back to first-seen order over
+    // the response's per-point array — whatever order the backend happened
+    // to return points in, which reads as arbitrary/strange to users.
+    // compareLegendKeys' symbol-last rule doesn't help here on its own:
+    // "N/A" is a plain string at this point, not the LEGEND_OTHER
+    // symbol itself, so it needs the same explicit append-last handling the
+    // continuous branch below already uses for its own null facet.
+    const hasNullFacet = facetKeys.includes("N/A");
+    const realNames = [...new Set(facetKeys)].filter((k) => k !== "N/A");
+
+    return {
+      facetKeys,
+      facetOrder: [
+        ...realNames.sort(compareLegendKeys),
+        ...(hasNullFacet ? ["N/A"] : []),
+      ],
+      // "N/A" stringifies the same LEGEND_OTHER identity the color
+      // side uses for a null categorical value (see e.g.
+      // computeDensitySeriesForMode's `x === null ? LEGEND_OTHER : x`) — a
+      // caller doing a colorMap/hiddenLegendValues lookup by the formatted
+      // string must translate back through here first, same as the
+      // continuous/custom-filter branches below.
+      facetColorKeys: { "N/A": LEGEND_OTHER },
+    };
+  }
+
+  const contSlice = findContinuousColorSlice(data, target);
+  if (contSlice) {
+    const bins = calcBins(contSlice.values);
+    const binned = computeContinuousLegendKeySeries(contSlice.values, bins);
+
+    if (binned) {
+      const labelFor = (key: LegendKey) =>
+        key === LEGEND_OTHER
+          ? "N/A"
+          : formatCategoryLabel(key, data, bins, target);
+
+      // binned.sortedKeys never includes LEGEND_OTHER — it's built from
+      // calcBins' own keys (calcBins only ever produces the 10 real range
+      // bins), not from what individual points actually resolved to. A
+      // null value still gets its own "N/A" facet per point (via
+      // labelFor below), so — when at least one point actually has one —
+      // it needs its own ordered slot and colorMap-key translation too,
+      // added explicitly here rather than via calcBins. Appended last: it
+      // isn't part of the ascending numeric order, so it doesn't belong
+      // anywhere within it.
+      const hasNullFacet = binned.series.includes(LEGEND_OTHER);
+      const orderedKeys: LegendKey[] = hasNullFacet
+        ? [...binned.sortedKeys, LEGEND_OTHER]
+        : binned.sortedKeys;
+
+      const facetOrder = orderedKeys.map(labelFor);
+      const facetColorKeys: Record<string, LegendKey> = {};
+      orderedKeys.forEach((key, i) => {
+        facetColorKeys[facetOrder[i]] = key;
+      });
+
+      return {
+        facetKeys: binned.series.map(labelFor),
+        facetOrder,
+        facetColorKeys,
+      };
+    }
+  }
+
+  // Custom-filter fallback: "raw_slice"/"aggregated_slice" backed by
+  // filters.[target]1/[target]2, mirroring the other axis's own
+  // custom-filter partition (see computeCustomFilterSeries) — a real facet
+  // per selected context, an automatic "Other" facet for points in neither,
+  // and a "Both" facet for the overlap. Like the categorical/continuous
+  // "N/A" sentinel, none of these are excluded from
+  // computeFacetedLinReg's fitted rows — every facet gets a fit.
+  const filter1 = data.filters?.[`${target}1`];
+  const filter2 = data.filters?.[`${target}2`];
+  if (filter1 || filter2) {
+    const custom = computeCustomFilterSeries(filter1, filter2, data.filters?.visible);
+    const labelFor = (key: string | symbol) =>
+      typeof key === "string"
+        ? key
+        : formatCategoryLabel(key as LegendKey, data, null, target);
+
+    const facetOrder = custom.sortedKeys.map(labelFor);
+    const facetColorKeys: Record<string, LegendKey> = {};
+    custom.sortedKeys.forEach((key, i) => {
+      // Only the LEGEND_BOTH/LEGEND_OTHER symbols need translating back —
+      // filter1.name/filter2.name are already plain strings and valid
+      // colorMap keys as-is, so mapping them here would be redundant.
+      if (typeof key !== "string") {
+        facetColorKeys[facetOrder[i]] = key as LegendKey;
+      }
+    });
+
+    return {
+      facetKeys: custom.series.map(labelFor),
+      facetOrder,
+      facetColorKeys,
+    };
+  }
+
+  return null;
+}
+
 // Per-facet linear-regression stats (the LinRegInfo[] shape the regression
-// table consumes), grouped by group_by, computed from a materialized response.
-// The table's faceted counterpart to fetchLinearRegression's color-grouped fit
+// table consumes), faceted by facet_by, computed from a materialized response.
+// The table's faceted counterpart to fetchLinearRegression's color-faceted fit
 // — same row shape, so reformatLinRegTable handles either. It lives here (not
-// in the services layer) because grouping needs findCategoricalSlice, which is
+// in the services layer) because faceting needs computeFacets, which is
 // a component-layer concern; the table fetches `data` and calls this.
 //
 // It shares the facet-membership predicate (facetMaskFor) and the fit
@@ -225,25 +402,37 @@ export function facetMaskFor(
 // slope/intercept given the same inputs. The lines fit over the hook's
 // nulled/legend-visible arrays while this fits over the raw response with
 // filter-visibility — the same lines-vs-table divergence the single-panel path
-// already has via fetchLinearRegression; grouping (the J2 requirement) matches.
+// already has via fetchLinearRegression; faceting (the J2 requirement) matches.
 export function computeFacetedLinReg(
   data: DataExplorerPlotResponse,
-  group_by: ColorByValue,
-  visible?: boolean[]
+  mode: ColorByValue,
+  visible?: boolean[],
+  // Appended last (not inserted before `visible`) so no existing positional
+  // call site shifts meaning. Defaults to "facet" — this function's
+  // original purpose; the regression fallback (Addendum 5) also calls this
+  // with target "color" to fit color_by's own facets when facet_by is unset.
+  target: "color" | "facet" = "facet"
 ): LinRegInfo[] {
-  const facetSlice = findCategoricalSlice(data, group_by);
+  const facetInfo = computeFacets(data, mode, target);
   const xs = data.dimensions?.x?.values;
   const ys = data.dimensions?.y?.values;
 
-  if (!facetSlice || !xs || !ys) {
+  if (!facetInfo || !xs || !ys) {
     return [];
   }
 
-  const facetKeys = facetSlice.values;
+  const { facetKeys, facetOrder } = facetInfo;
   const vis = visible || xs.map(() => true);
-  const facets = [
-    ...new Set(facetKeys.filter((k): k is string => k !== null)),
-  ].sort();
+
+  // The "N/A" bucket gets a fit too, same as any other facet — its
+  // points are genuinely plottable (only the faceting annotation is
+  // missing), and users found its absence more confusing than a technically
+  // arguable line. facetOrder is always set by every current
+  // computeFacets branch, so this `??` fallback is defensive dead code
+  // today — kept (using the same natural/case-insensitive comparator as
+  // every other alphabetical sort in this file, not a bare `.sort()`) in
+  // case a future branch forgets to set facetOrder.
+  const facets = facetOrder ?? [...new Set(facetKeys)].sort(compareLegendKeys);
 
   return facets.map((facet) => {
     const inFacet = facetMaskFor(facetKeys, facet, xs, ys, vis);
@@ -275,7 +464,7 @@ export function computeFacetedLinReg(
 
 // Single pooled fit over every visible point — the ungrouped analog of
 // computeFacetedLinReg, used by the regression table when an expanded plot
-// has no group_by. It mirrors the single pooled line the plot draws and,
+// has no facet_by. It mirrors the single pooled line the plot draws and,
 // like the faceted path, never calls fetchLinearRegression (which rejects
 // the "expansion" sentinel). group_label is null, which the table renders
 // the same way it renders the legacy ungrouped fit.
@@ -318,9 +507,16 @@ export function computePooledLinReg(
   ];
 }
 
+// `target` picks which triad this call reads: "color" is dimensions.color +
+// metadata.color_property (backed by filters.color1/color2 upstream), "facet"
+// is the parallel dimensions.facet + metadata.facet_property (backed by
+// filters.facet1/facet2). "expansion" is target-agnostic — it never reads
+// either triad, since it's backed by `expand_by`/`data.expansions`, not by a
+// dimension/filter/metadata selection.
 export function findCategoricalSlice(
   data: DataExplorerPlotResponse | null,
-  mode?: ColorByValue
+  mode?: ColorByValue,
+  target: "color" | "facet" = "color"
 ) {
   if (!data) {
     return null;
@@ -344,28 +540,28 @@ export function findCategoricalSlice(
     };
   }
 
-  const colorDim = data.dimensions?.color;
+  const dim = target === "facet" ? data.dimensions?.facet : data.dimensions?.color;
 
-  if (colorDim && ["text", "categorical"].includes(colorDim.value_type)) {
+  if (dim && ["text", "categorical"].includes(dim.value_type)) {
     return {
-      label: colorDim.axis_label,
-      dataset_id: colorDim.dataset_id,
-      values: colorDim.values.map((v) => v?.toString() || null),
-      value_type: colorDim.value_type,
+      label: dim.axis_label,
+      dataset_id: dim.dataset_id,
+      values: dim.values.map((v) => v?.toString() || null),
+      value_type: dim.value_type,
     };
   }
 
-  const color_property = data?.metadata?.color_property;
+  const property =
+    target === "facet"
+      ? data?.metadata?.facet_property
+      : data?.metadata?.color_property;
 
-  if (
-    color_property &&
-    ["text", "categorical"].includes(color_property.value_type)
-  ) {
+  if (property && ["text", "categorical"].includes(property.value_type)) {
     return {
-      label: color_property.label,
-      dataset_id: color_property.sliceQuery?.dataset_id,
-      values: color_property.values.map((v) => v?.toString() || null),
-      value_type: color_property.value_type,
+      label: property.label,
+      dataset_id: property.sliceQuery?.dataset_id,
+      values: property.values.map((v) => v?.toString() || null),
+      value_type: property.value_type,
     };
   }
 
@@ -373,36 +569,92 @@ export function findCategoricalSlice(
 }
 
 export function findContinuousColorSlice(
-  data: DataExplorerPlotResponse | null
+  data: DataExplorerPlotResponse | null,
+  target: "color" | "facet" = "color"
 ) {
-  const colorDim = data?.dimensions?.color;
+  const dim = target === "facet" ? data?.dimensions?.facet : data?.dimensions?.color;
 
-  if (colorDim?.value_type === "continuous") {
+  if (dim?.value_type === "continuous") {
     return {
-      label: colorDim.axis_label,
-      dataset_id: colorDim.dataset_id,
-      values: colorDim.values,
-      value_type: colorDim.value_type,
+      label: dim.axis_label,
+      dataset_id: dim.dataset_id,
+      values: dim.values,
+      value_type: dim.value_type,
     };
   }
 
-  const color_property = data?.metadata?.color_property;
+  const property =
+    target === "facet"
+      ? data?.metadata?.facet_property
+      : data?.metadata?.color_property;
 
-  if (color_property?.value_type === "continuous") {
+  if (property?.value_type === "continuous") {
     return {
-      label: color_property.label,
-      dataset_id: color_property.sliceQuery?.dataset_id,
-      values: color_property.values as number[],
-      value_type: color_property.value_type,
+      label: property.label,
+      dataset_id: property.sliceQuery?.dataset_id,
+      values: property.values as number[],
+      value_type: property.value_type,
     };
   }
 
   return null;
 }
 
+// Resolves what `color_by` actually means at render time, folding in the
+// version-2 default flip (ADR 0001, ADR 0004) and the "uniform" opt-out
+// sentinel. Every call site that reads `plotConfig.color_by` directly (as
+// either a `mode` for findCategoricalSlice-shaped helpers, or to pick
+// `target: "color"`) must instead call this once and use its `{mode,
+// target}` pair.
+//
+// Centralizing this is what makes the "facet: null degenerate" (ADR 0001's
+// phrase for "what if color_by resolves to facet but facet_by itself has
+// no backing?") resolve for free: when `effective === "facet"`, `mode`
+// becomes `plotConfig.facet_by` itself — which may be undefined or an
+// incomplete-but-present value — and every target-aware helper's existing
+// "no categorical/continuous/custom match" fallthrough already treats that
+// as uniform, the exact same path that already runs today whenever
+// `facet_by` is literally unset for the facet-SIDE computations. No new
+// degenerate-case branch is needed anywhere, as long as every call site
+// uses this resolver's output instead of re-deriving its own.
+//
+// Must only ever be called against an already-migrated (in-memory) plot
+// config, never a raw wire payload — readPlotFromQueryString's Phase B
+// migration is what makes a version-1 payload's absent color_by arrive
+// here as explicit "uniform" rather than falling through to "facet".
+export function resolveColorMode(
+  plotConfig: Pick<DataExplorerPlotConfig, "color_by" | "facet_by">
+): { mode: ColorByValue | undefined; target: "color" | "facet" } {
+  const effective = plotConfig.color_by ?? "facet";
+
+  if (effective === "uniform") {
+    // Explicit opt-out. mode: undefined (not "uniform") + target: "color"
+    // makes every helper's "no color source found" fallback fire, which is
+    // exactly uniform — and is robust to stale dimensions.color/
+    // metadata.color_property data surviving on the plot independent of
+    // normalizePlot's own guards against that (defense in depth for a
+    // sentinel that must never silently reappear as colored).
+    return { mode: undefined, target: "color" };
+  }
+
+  if (effective === "facet") {
+    return { mode: plotConfig.facet_by, target: "facet" };
+  }
+
+  return { mode: effective, target: "color" };
+}
+
 export function formatDataForScatterPlot(
   data: DataExplorerPlotResponse | null,
-  color_by: DataExplorerPlotConfig["color_by"]
+  color_by: DataExplorerPlotConfig["color_by"],
+  target: "color" | "facet" = "color",
+  // Which axis's label should carry the "filtered by"/"faceted by" suffix.
+  // Defaults to "x" — true for scatter/density, where x is always the real
+  // measured dimension. Waterfall calls this with "y": its response remaps
+  // the real measured dimension onto y and gives x a synthetic "rank" label
+  // (see fetchWaterfall's HACK comment in breadboxMethods.ts), so the
+  // suffix belongs on y there, not on whatever "Rank"/"" happens to be on x.
+  extrasAxis: "x" | "y" = "x"
 ) {
   if (!data) {
     return null;
@@ -411,10 +663,10 @@ export function formatDataForScatterPlot(
   const round = (num: number) =>
     Math.round((num + Number.EPSILON) * 1.0e7) / 1.0e7;
 
-  const c1Values = data.filters?.color1?.values;
-  const c2Values = data.filters?.color2?.values;
-  const catValues = findCategoricalSlice(data, color_by)?.values;
-  const contSlice = findContinuousColorSlice(data);
+  const c1Values = data.filters?.[`${target}1`]?.values;
+  const c2Values = data.filters?.[`${target}2`]?.values;
+  const catValues = findCategoricalSlice(data, color_by, target)?.values;
+  const contSlice = findContinuousColorSlice(data, target);
   const contValues = nullifyUnplottableValues(
     contSlice?.values,
     data.filters?.visible?.values,
@@ -433,11 +685,32 @@ export function formatDataForScatterPlot(
       .join("<br>");
   }
 
+  // facet_by's own display name (custom dimension or property) — only ever
+  // populated here when facet_by actually has that kind of backing, which
+  // (per computeFacets/isFaceted in DataExplorerScatterPlot.tsx) is exactly
+  // when this plot is rendered as small multiples. Mirrors PlotFacets.tsx's
+  // FacetSliceDescription; raw_slice/aggregated_slice (filters.facet1/2) has
+  // no single name to show here, same as "filtered by" never covering
+  // filters.color1/2 either.
+  const facetName =
+    data.dimensions?.facet?.axis_label ?? data.metadata?.facet_property?.label;
+
+  const extras: string[] = [];
   if (data.filters.visible) {
-    if (xLabel) {
-      xLabel += `<br>filtered by ${data.filters.visible.name}`;
+    extras.push(`filtered by ${data.filters.visible.name}`);
+  }
+  if (facetName) {
+    extras.push(`faceted by ${facetName}`);
+  }
+
+  if (extras.length > 0) {
+    const suffix = `<br>${extras.join(", ")}`;
+    if (extrasAxis === "y" && yLabel) {
+      yLabel += suffix;
+    } else if (xLabel) {
+      xLabel += suffix;
     } else {
-      yLabel += `<br>filtered by ${data.filters.visible.name}`;
+      yLabel += suffix;
     }
   }
 
@@ -465,11 +738,11 @@ export function formatDataForScatterPlot(
       const colorInfo = [];
 
       if (c1Values && c1Values[i] && color_by === "aggregated_slice") {
-        colorInfo.push(data.filters.color1!.name);
+        colorInfo.push(data.filters[`${target}1`]!.name);
       }
 
       if (c2Values && c2Values[i] && color_by === "aggregated_slice") {
-        colorInfo.push(data.filters.color2!.name);
+        colorInfo.push(data.filters[`${target}2`]!.name);
       }
 
       if (contValues && contValues[i] !== null) {
@@ -569,33 +842,38 @@ export function formatDataForScatterPlot(
   };
 }
 
-// Waterfall's x-positions are reassigned to cluster bars by group. Today
+// Waterfall's x-positions are reassigned to cluster bars by facet. Today
 // that clustering uses `formatted.catColorData` (the color-side categorical),
-// because color and group were conflated. With the split, the clustering
-// uses `groupData` when supplied, falling back to `catColorData` for the
-// converged case. Similarly `sortedGroupKeys` replaces the historical
+// because color and facet were conflated. With the split, the clustering
+// uses `facetData` when supplied, falling back to `catColorData` for the
+// converged case. Similarly `sortedFacetKeys` replaces the historical
 // `sortedLegendKeys` parameter — its meaning was always "the order of
 // clusters along x" rather than "the legend display order."
 export function formatDataForWaterfall(
   data: DataExplorerPlotResponse | null,
   color_by: DataExplorerPlotConfig["color_by"],
-  sortedGroupKeys?: (string | symbol)[],
-  groupData?: (string | null)[] | null
+  sortedFacetKeys?: (string | symbol)[],
+  facetData?: (string | null)[] | null,
+  target: "color" | "facet" = "color"
 ) {
   if (!data) {
     return null;
   }
 
-  const formatted = formatDataForScatterPlot(data, color_by);
+  // "y" — waterfall's response remaps the real measured dimension onto y and
+  // gives x a synthetic "rank" label (see the HACK comment on this response
+  // shape in breadboxMethods.ts's fetchWaterfall), so the "filtered by"/
+  // "faceted by" suffix belongs on y here, not on whatever happens to be on x.
+  const formatted = formatDataForScatterPlot(data, color_by, target, "y");
 
-  if (!formatted || !sortedGroupKeys) {
+  if (!formatted || !sortedFacetKeys) {
     return formatted;
   }
 
-  // Clustering source: prefer the explicit groupData (group-side categorical)
+  // Clustering source: prefer the explicit facetData (facet-side categorical)
   // when supplied; otherwise reuse the color-side catColorData, matching
   // pre-split behavior.
-  const clusterBy = (groupData ?? formatted.catColorData) as
+  const clusterBy = (facetData ?? formatted.catColorData) as
     | (string | null)[]
     | null;
 
@@ -642,8 +920,16 @@ export function formatDataForWaterfall(
   // materialization order — keeps selection / hover behavior deterministic.
   const yValues = data?.dimensions?.y?.values as (number | null)[] | undefined;
   if (yValues) {
-    Object.values(buckets).forEach((indices) => {
-      indices.sort((a, b) => {
+    // `Object.values`/`Object.keys` never see Symbol-keyed properties — and
+    // a continuous facet_by (or the LEGEND_OTHER null bucket) keys `buckets`
+    // with LEGEND_RANGE_* symbols, not strings. `Object.values(buckets)`
+    // would silently iterate zero buckets in that case, leaving every
+    // symbol-keyed cluster's indices in raw materialization order — no
+    // ascending "snake" within the cluster, just whatever order the points
+    // happened to arrive in (a scattered, Manhattan-plot-like look, not a
+    // smooth ramp). `Reflect.ownKeys` sees both string and symbol keys.
+    Reflect.ownKeys(buckets).forEach((key) => {
+      buckets[key].sort((a, b) => {
         const va = yValues[a];
         const vb = yValues[b];
         if (va === vb) return 0;
@@ -658,12 +944,12 @@ export function formatDataForWaterfall(
   const x: number[] = [];
   const visible = data.filters?.visible?.values;
   const domain = visible ? visible.filter(Boolean).length : clusterBy.length;
-  const minLength = domain / sortedGroupKeys.length;
+  const minLength = domain / sortedFacetKeys.length;
 
-  sortedGroupKeys.forEach((key) => {
+  sortedFacetKeys.forEach((key) => {
     const indices = buckets[key];
 
-    // A category in sortedGroupKeys with no points in `clusterBy` is
+    // A category in sortedFacetKeys with no points in `clusterBy` is
     // unusual but possible (legend key with no data). Skip cleanly.
     if (!indices || indices.length === 0) {
       return;
@@ -692,10 +978,11 @@ export function formatDataForWaterfall(
 
 function colorMetadataChanged(
   ma?: DataExplorerMetadata,
-  mb?: DataExplorerMetadata
+  mb?: DataExplorerMetadata,
+  target: "color" | "facet" = "color"
 ) {
-  const a = ma?.color_property;
-  const b = mb?.color_property;
+  const a = ma?.[`${target}_property`];
+  const b = mb?.[`${target}_property`];
 
   if (!a && !b) {
     return false;
@@ -725,7 +1012,13 @@ function colorMetadataChanged(
 
 export function useLegendState(
   plotConfig: DataExplorerPlotConfig,
-  legendKeysWithNoData?: any
+  legendKeysWithNoData?: any,
+  // When provided, pins this hook instance to one specific triad instead of
+  // deferring to resolveColorMode — needed for a second, independent
+  // instance driving the Facets panel (always "facet", regardless of what
+  // color_by resolves to). Omitted (the default), this preserves today's
+  // exact behavior for the color legend's own instance.
+  targetOverride?: "color" | "facet"
 ) {
   const prevPlotConfig = useRef(plotConfig);
   const recentClickKey = useRef<string | symbol | null>(null);
@@ -735,29 +1028,42 @@ export function useLegendState(
   useEffect(() => {
     let hasChanges = false;
 
+    // Resolved once per render and used for BOTH the previous and current
+    // plotConfig — color_by/facet_by could themselves have changed between
+    // renders (changing what target resolves to), so this must compare
+    // apples to apples: "did whatever backs the CURRENTLY-effective axis
+    // change," not two different axes for old vs. new. A caller pinning this
+    // instance to "facet" (see targetOverride above) always compares against
+    // facet_by's own triad instead, independent of color_by.
+    const target = targetOverride ?? resolveColorMode(plotConfig).target;
+
     if (
-      colorMetadataChanged(prevPlotConfig.current.metadata, plotConfig.metadata)
+      colorMetadataChanged(
+        prevPlotConfig.current.metadata,
+        plotConfig.metadata,
+        target
+      )
     ) {
       hasChanges = true;
     }
 
     if (
-      prevPlotConfig.current.filters?.color1?.name !==
-      plotConfig.filters?.color1?.name
+      prevPlotConfig.current.filters?.[`${target}1`]?.name !==
+      plotConfig.filters?.[`${target}1`]?.name
     ) {
       hasChanges = true;
     }
 
     if (
-      prevPlotConfig.current.filters?.color2?.name !==
-      plotConfig.filters?.color2?.name
+      prevPlotConfig.current.filters?.[`${target}2`]?.name !==
+      plotConfig.filters?.[`${target}2`]?.name
     ) {
       hasChanges = true;
     }
 
     if (
-      Boolean(prevPlotConfig.current.dimensions.color?.context) !==
-      Boolean(plotConfig.dimensions.color?.context)
+      Boolean(prevPlotConfig.current.dimensions[target]?.context) !==
+      Boolean(plotConfig.dimensions[target]?.context)
     ) {
       hasChanges = true;
     }
@@ -767,7 +1073,7 @@ export function useLegendState(
     }
 
     prevPlotConfig.current = plotConfig;
-  }, [plotConfig]);
+  }, [plotConfig, targetOverride]);
 
   useEffect(() => {
     if (legendKeysWithNoData) {
@@ -897,7 +1203,8 @@ export function calcVisibility(
   hiddenLegendValues: any,
   continuousBins: any,
   hide_points?: boolean,
-  color_by?: ColorByValue
+  color_by?: ColorByValue,
+  target: "color" | "facet" = "color"
 ) {
   if (!data) {
     return null;
@@ -908,7 +1215,7 @@ export function calcVisibility(
   }
 
   const contKeys = Reflect.ownKeys(continuousBins || {});
-  const contValues = findContinuousColorSlice(data)?.values;
+  const contValues = findContinuousColorSlice(data, target)?.values;
 
   if (contValues) {
     return contValues.map((value: number) => {
@@ -936,7 +1243,7 @@ export function calcVisibility(
     });
   }
 
-  const catValues = findCategoricalSlice(data, color_by)?.values;
+  const catValues = findCategoricalSlice(data, color_by, target)?.values;
 
   if (catValues) {
     const hideOthers = hiddenLegendValues.has(LEGEND_OTHER);
@@ -954,11 +1261,11 @@ export function calcVisibility(
     });
   }
 
-  const c1Values = data.filters?.color1?.values;
-  const c2Values = data.filters?.color2?.values;
+  const c1Values = data.filters?.[`${target}1`]?.values;
+  const c2Values = data.filters?.[`${target}2`]?.values;
   const visiblePoints = data.dimensions.x.values.map(() => true);
 
-  if (c1Values && hiddenLegendValues.has(data.filters.color1!.name)) {
+  if (c1Values && hiddenLegendValues.has(data.filters[`${target}1`]!.name)) {
     c1Values.forEach((value: boolean, i: number) => {
       if (value && !(c2Values || [])[i]) {
         visiblePoints[i] = false;
@@ -966,7 +1273,7 @@ export function calcVisibility(
     });
   }
 
-  if (c2Values && hiddenLegendValues.has(data.filters.color2!.name)) {
+  if (c2Values && hiddenLegendValues.has(data.filters[`${target}2`]!.name)) {
     c2Values.forEach((value: boolean, i: number) => {
       if (value && !(c1Values || [])[i]) {
         visiblePoints[i] = false;
@@ -999,9 +1306,10 @@ export function calcVisibility(
 export function getLegendKeysWithNoData(
   data: any,
   continuousBins: any,
-  color_by?: ColorByValue
+  color_by?: ColorByValue,
+  target: "color" | "facet" = "color"
 ) {
-  const catData = findCategoricalSlice(data, color_by);
+  const catData = findCategoricalSlice(data, color_by, target);
   const visible = data?.filters?.visible;
 
   if (catData && visible) {
@@ -1026,7 +1334,7 @@ export function getLegendKeysWithNoData(
     return unusedKeys as Set<LegendKey>;
   }
 
-  const contData = findContinuousColorSlice(data);
+  const contData = findContinuousColorSlice(data, target);
 
   if (!contData || !continuousBins) {
     return null;
@@ -1195,7 +1503,8 @@ const findPlottableCategories = (
 const hasPlottableNulls = (
   values: string[] | null,
   dimensions: Record<string, { values: unknown[] }> | null,
-  visible: boolean[]
+  visible: boolean[],
+  target: "color" | "facet" = "color"
 ) => {
   if (!values) {
     return false;
@@ -1206,7 +1515,7 @@ const hasPlottableNulls = (
 
     if (value === null) {
       const dimensionsAreNotNull = Object.keys(dimensions || {})
-        .filter((key) => key !== "color")
+        .filter((key) => key !== target)
         .every((key) => dimensions![key].values[i] !== null);
 
       if (dimensionsAreNotNull && visible[i]) {
@@ -1223,7 +1532,8 @@ function makeCategoricalColorMap(
   dimensions: Record<string, { dataset_id: string; values: unknown[] }> | null,
   filters: Record<string, { values: boolean[] }> | null,
   metadata: DataExplorerMetadata | null,
-  palette: DataExplorerColorPalette
+  palette: DataExplorerColorPalette,
+  target: "color" | "facet" = "color"
 ) {
   const out: Map<LegendKey, string> = new Map();
 
@@ -1244,12 +1554,13 @@ function makeCategoricalColorMap(
     .filter((key) => counts.get(key)! > 0 && plottableCategories.has(key))
     .sort(collator.compare);
 
-  const legacySliceId = (metadata?.color_property as { slice_id?: string })
-    ?.slice_id;
+  const legacySliceId = (metadata?.[`${target}_property`] as {
+    slice_id?: string;
+  })?.slice_id;
 
   if (
     legacySliceId?.startsWith("slice/mutations_prioritized/") ||
-    dimensions?.color?.dataset_id === wellKnownDatasets.mutations_prioritized
+    dimensions?.[target]?.dataset_id === wellKnownDatasets.mutations_prioritized
   ) {
     const fixedColors = {
       "Other conserving": colorPalette.other_conserving_color,
@@ -1278,7 +1589,7 @@ function makeCategoricalColorMap(
     });
   }
 
-  if (hasPlottableNulls(values, dimensions, visible)) {
+  if (hasPlottableNulls(values, dimensions, visible, target)) {
     out.set(LEGEND_OTHER, palette.other);
   }
 
@@ -1291,14 +1602,27 @@ export function getColorMap(
   palette: DataExplorerColorPalette,
   sortedLegendKeys?: any
 ): Map<LegendKey, string> {
-  if (!data || data.dimensions?.color?.values?.length === 0) {
-    return new Map([[LEGEND_ALL, palette.all]]);
+  const { mode, target } = resolveColorMode(plotConfig);
+
+  // Whether facet_by has real backing, independent of what color resolved
+  // to — mirrors PrototypeDensity1D's hasRealFacetBacking and
+  // PrototypeScatterPlot's hasFacetOptionsEnabled. The LEGEND_ALL swatch
+  // must match whatever color the points/violins actually render: neutral
+  // when facet_by is doing something on its own even though color isn't,
+  // palette.all only when nothing is set at all.
+  const hasRealFacetBacking = Boolean(
+    data && computeFacets(data, plotConfig.facet_by)
+  );
+  const allColor = hasRealFacetBacking ? NEUTRAL_FACET_FILL : palette.all;
+
+  if (!data || data.dimensions?.[target]?.values?.length === 0) {
+    return new Map([[LEGEND_ALL, allColor]]);
   }
 
   let colorMap: Map<LegendKey, string> = new Map();
 
-  const catSlice = findCategoricalSlice(data, plotConfig.color_by);
-  const contSlice = findContinuousColorSlice(data);
+  const catSlice = findCategoricalSlice(data, mode, target);
+  const contSlice = findContinuousColorSlice(data, target);
 
   if (catSlice) {
     colorMap = makeCategoricalColorMap(
@@ -1306,7 +1630,8 @@ export function getColorMap(
       data.dimensions,
       data.filters,
       data.metadata,
-      palette
+      palette,
+      target
     );
   }
 
@@ -1326,62 +1651,46 @@ export function getColorMap(
     colorMap = new Map(entries);
   }
 
-  if (data.filters?.color1) {
-    if (
-      hasSomeUniqueValues(
-        data.filters.color1.values,
-        data.filters.color2?.values
-      )
-    ) {
-      const { name } = data.filters.color1;
+  const filter1 = data.filters?.[`${target}1`];
+  const filter2 = data.filters?.[`${target}2`];
+
+  if (filter1) {
+    if (hasSomeUniqueValues(filter1.values, filter2?.values)) {
+      const { name } = filter1;
       colorMap.set(name, palette.compare1);
     }
   }
 
-  if (data.filters?.color2) {
-    if (
-      hasSomeUniqueValues(
-        data.filters.color2.values,
-        data.filters.color1?.values
-      )
-    ) {
-      const { name } = data.filters.color2;
+  if (filter2) {
+    if (hasSomeUniqueValues(filter2.values, filter1?.values)) {
+      const { name } = filter2;
       colorMap.set(name, palette.compare2);
     }
   }
 
   if (
-    data.filters?.color1 &&
-    data.filters?.color2 &&
-    hasSomeMatchingTrueValue(
-      data.filters.color1.values,
-      data.filters.color2.values
-    )
+    filter1 &&
+    filter2 &&
+    hasSomeMatchingTrueValue(filter1.values, filter2.values)
   ) {
     colorMap.set(LEGEND_BOTH, palette.compareBoth);
   }
 
-  if (data.filters?.color1 || data.filters?.color2) {
-    if (
-      hasSomeUncoloredPoints(
-        data.filters?.color1?.values,
-        data.filters?.color2?.values,
-        data.dimensions
-      )
-    ) {
+  if (filter1 || filter2) {
+    if (hasSomeUncoloredPoints(filter1?.values, filter2?.values, data.dimensions)) {
       colorMap.set(LEGEND_OTHER, palette.other);
     }
   }
 
   if (
-    data.dimensions.color &&
-    hasSomeNullValuesUniqueToDimension(data.dimensions, "color")
+    data.dimensions[target] &&
+    hasSomeNullValuesUniqueToDimension(data.dimensions, target)
   ) {
     colorMap.set(LEGEND_OTHER, palette.other);
   }
 
   if (colorMap.size === 0) {
-    colorMap.set(LEGEND_ALL, palette.all);
+    colorMap.set(LEGEND_ALL, allColor);
   }
 
   if (sortedLegendKeys) {
@@ -1467,14 +1776,24 @@ export function categoryToDisplayName(
     filters: {
       color1?: { name: string };
       color2?: { name: string };
+      facet1?: { name: string };
+      facet2?: { name: string };
     };
   },
-  continuousBins: ContinuousBins
+  continuousBins: ContinuousBins,
+  // Which triad's filters (color1/color2 vs facet1/facet2) back a LEGEND_BOTH
+  // label, and which triad's own categorical source (color_by's vs
+  // facet_by's) backs the LEGEND_OTHER "hasOther" check. Deliberately no
+  // default: under the version-2 default flip, an absent color_by defers to
+  // facet_by, so "color" is no longer a safe universal fallback — the
+  // correct target depends on resolveColorMode, not on this parameter being
+  // omitted. Every caller must resolve and pass it explicitly.
+  target: "color" | "facet"
 ) {
   if (category === LEGEND_BOTH) {
-    return `Both (${[data.filters.color1!.name, data.filters.color2!.name].join(
-      " & "
-    )})`;
+    const filter1 = target === "facet" ? data.filters.facet1 : data.filters.color1;
+    const filter2 = target === "facet" ? data.filters.facet2 : data.filters.color2;
+    return `Both (${[filter1!.name, filter2!.name].join(" & ")})`;
   }
 
   if (category === LEGEND_ALL) {
@@ -1482,7 +1801,11 @@ export function categoryToDisplayName(
   }
 
   if (category === LEGEND_OTHER) {
-    const catSlice = findCategoricalSlice(data as DataExplorerPlotResponse);
+    const catSlice = findCategoricalSlice(
+      data as DataExplorerPlotResponse,
+      undefined,
+      target
+    );
     const hasOther = catSlice?.values.some(
       (val) => val === "other" || val === "Other"
     );
@@ -1506,6 +1829,20 @@ export function categoryToDisplayName(
   }
 
   return category;
+}
+
+// Flattens categoryToDisplayName's result (a plain string, or a [min, max]
+// tuple for a continuous bin) into a single display string. Every caller
+// that builds a legend/label list from category keys was hand-rolling this
+// same `typeof name === "string" ? name : \`${name[0]} – ${name[1]}\`` check.
+export function formatCategoryLabel(
+  category: LegendKey,
+  data: Parameters<typeof categoryToDisplayName>[1],
+  continuousBins: ContinuousBins,
+  target: "color" | "facet"
+): string {
+  const name = categoryToDisplayName(category, data, continuousBins, target);
+  return typeof name === "string" ? name : `${name[0]} – ${name[1]}`;
 }
 
 const sortLegendKeys = (
@@ -1667,7 +2004,7 @@ const sortLegendKeys1D = (
     // otherwise drop. Sort the *measured* transcripts normally — respecting
     // sort_by — then fold the empty ones in: merged alphabetically for an
     // alphabetical sort, or appended at the end for value-based sorts (an
-    // all-null group has no value to sort by). This preserves sort_by for the
+    // all-null facet has no value to sort by). This preserves sort_by for the
     // groups that have data while still surfacing the "(no data)" placeholders.
     const sorted = sortLegendKeys(
       data.dimensions.x.values,
@@ -1766,78 +2103,157 @@ export function continuousValuesToLegendKeySeries(
   return [series, unusedKeys];
 }
 
-// Computes the per-point legend-key series for a single mode (color_by or
-// group_by). The same logic that calcDensityStats used to do inline; pulled
-// out so we can call it once for the coloring concern and (when modes
-// differ) again for the grouping concern.
+// Bins a continuous slice's raw values into a per-point LEGEND_RANGE_*
+// series, plus the represented bins in natural (ascending-value) order —
+// natural order already IS "sorted by value ascending" since calcBins
+// builds bins low-to-high by construction, so callers never need to
+// consult sort_by here (unlike the categorical case). Filtered to bins
+// with at least one currently-visible point, unless `includeEmpty` (the
+// expanded world), which keeps every bin as a placeholder.
 //
-// Each branch corresponds to a category of color/group source:
-//   - "custom"               → color1/color2 filter values
+// Shared by every renderer path that needs continuous-bin faceting
+// independent of computeDensitySeriesForMode's fuller color/facet dispatch
+// — waterfall's x-clustering and scatter's faceting, both of which have no
+// categorical/continuous dispatch of their own the way density's does.
+export function computeContinuousLegendKeySeries(
+  values: (number | null)[],
+  continuousBins: ContinuousBins,
+  visible?: boolean[],
+  includeEmpty = false
+): {
+  series: LegendKey[];
+  unusedKeys: Set<LegendKey>;
+  sortedKeys: LegendKey[];
+} | null {
+  if (!continuousBins) {
+    return null;
+  }
+
+  const [series, unusedKeys] = continuousValuesToLegendKeySeries(
+    values,
+    continuousBins,
+    visible
+  );
+
+  const sortedKeys = (Reflect.ownKeys(continuousBins) as LegendKey[]).filter(
+    (key) => includeEmpty || !unusedKeys.has(key)
+  );
+
+  return { series, unusedKeys, sortedKeys };
+}
+
+// Partitions points by up to two boolean membership filters (color1/color2
+// or facet1/facet2) into up to 4 buckets: in filter1 only (named after it),
+// in filter2 only, in BOTH (LEGEND_BOTH, "Both (X & Y)"), or in NEITHER
+// (LEGEND_OTHER, "Other" — a real, fittable classification, not missing
+// data). Shared by computeDensitySeriesForMode (density's color/facet axes)
+// and computeFacets (waterfall's clustering / scatter's faceting,
+// regression lines/table) — the same primitive color_by's custom-filter
+// mode already used, extended so facet_by gets identical behavior.
+//
+// `sortedKeys` is the canonical order [filter1.name, filter2.name,
+// LEGEND_BOTH, LEGEND_OTHER], filtered to entries actually represented
+// (filter1/filter2's own names are always "represented" by definition —
+// they're real user selections; LEGEND_BOTH/LEGEND_OTHER only when at least
+// one currently-visible point landed there). This is the same order
+// getColorMap independently builds for color_by, so a caller reordering by
+// these sortedKeys is a no-op for color and, for the first time, gives
+// facet_by a real key/order set instead of `undefined`.
+export function computeCustomFilterSeries(
+  filter1: { name: string; values: (boolean | null)[] } | undefined,
+  filter2: { name: string; values: (boolean | null)[] } | undefined,
+  visible?: { values: boolean[] }
+): { series: any[]; unusedKeys: Set<unknown>; sortedKeys: (string | symbol)[] } {
+  const out: any[] = [];
+  const len = (filter1 || filter2)!.values.length;
+  const unusedKeys = new Set(
+    filter1 && filter2 ? [LEGEND_BOTH, LEGEND_OTHER] : [LEGEND_OTHER]
+  );
+
+  for (let i = 0; i < len; i += 1) {
+    if (filter1?.values[i] && filter2?.values[i]) {
+      out[i] = LEGEND_BOTH;
+
+      if (!visible || visible.values[i]) {
+        unusedKeys.delete(LEGEND_BOTH);
+      }
+    } else if (filter1?.values[i]) {
+      out[i] = filter1.name;
+    } else if (filter2?.values[i]) {
+      out[i] = filter2.name;
+    } else {
+      out[i] = LEGEND_OTHER;
+
+      if (!visible || visible.values[i]) {
+        unusedKeys.delete(LEGEND_OTHER);
+      }
+    }
+  }
+
+  const sortedKeys = (
+    [
+      filter1 ? filter1.name : null,
+      filter2 ? filter2.name : null,
+      filter1 && filter2 && !unusedKeys.has(LEGEND_BOTH) ? LEGEND_BOTH : null,
+      !unusedKeys.has(LEGEND_OTHER) ? LEGEND_OTHER : null,
+    ].filter((key) => key !== null) as (string | symbol)[]
+  );
+
+  return { series: out, unusedKeys, sortedKeys };
+}
+
+// Computes the per-point legend-key series for a single axis (color_by or
+// facet_by). The same logic that calcDensityStats used to do inline; pulled
+// out so we can call it once for the coloring concern and once for the
+// (fully independent) faceting concern.
+//
+// `target` picks which triad backs this axis: "color" reads
+// filters.color1/color2 + dimensions.color + metadata.color_property;
+// "facet" reads the parallel filters.facet1/facet2 + dimensions.facet +
+// metadata.facet_property. The two are never mixed.
+//
+// Each branch corresponds to a category of source:
+//   - "custom"                 → <target>1/<target>2 filter values
 //   - categorical fall-through → catData (mode-aware: expansion when applicable,
-//                                otherwise existing color-dim / color_property)
+//                                otherwise the target's own dimension / property)
 //   - continuous fall-through  → contData (binned)
 //
-// The "custom" branch only fires when color1/color2 are actually present;
-// otherwise we fall through. That matches the existing auto-dispatch and
-// keeps callers that don't set mode explicitly behaving the same as today.
+// The "custom" branch only fires when <target>1/<target>2 are actually
+// present; otherwise we fall through. That matches the existing auto-dispatch
+// and keeps callers that don't set mode explicitly behaving the same as today.
 function computeDensitySeriesForMode(
   data: any,
   continuousBins: any,
   sort_by: string | undefined,
   mode: ColorByValue | undefined,
+  target: "color" | "facet" = "color",
   includeEmpty = false
 ): {
   series: any[] | null;
   unusedKeys: Set<unknown>;
   sortedKeys?: any[];
 } {
-  const color1 = data?.filters?.color1;
-  const color2 = data?.filters?.color2;
+  const filter1 = target === "facet" ? data?.filters?.facet1 : data?.filters?.color1;
+  const filter2 = target === "facet" ? data?.filters?.facet2 : data?.filters?.color2;
   const visible = data?.filters?.visible;
 
-  const catData = findCategoricalSlice(data, mode);
+  const catData = findCategoricalSlice(data, mode, target);
 
-  // Custom (color1/color2 filter) branch. It owns coloring when the mode is
-  // "custom"/unset, and also when an explicit non-"expansion" mode has no
-  // categorical source of its own — e.g. aggregated_slice/raw_slice with a
-  // color1/color2 filter but no color dimension. Without that fallback the
-  // color side returns no series at all, and the renderer then builds zero
-  // point traces (every point vanishes). We still never let filters override
-  // the "expansion" group side or a real categorical color dimension.
-  const useCustomColoring =
-    Boolean(color1 || color2) &&
+  // Custom (facet1/facet2 or color1/color2 filter) branch. It owns this axis
+  // when the mode is "custom"/unset, and also when an explicit non-"expansion"
+  // mode has no categorical source of its own — e.g. aggregated_slice/raw_slice
+  // with a color1/color2 filter but no color dimension. Without that fallback
+  // this axis's series would be empty and the renderer then builds zero point
+  // traces (every point vanishes). We still never let filters override the
+  // "expansion" side or a real categorical dimension.
+  const useCustomFilter =
+    Boolean(filter1 || filter2) &&
     (mode === "custom" ||
       mode === undefined ||
       (mode !== "expansion" && !catData));
 
-  if (useCustomColoring) {
-    const out: any[] = [];
-    const len = (color1 || color2).values.length;
-    const unusedKeys = new Set(
-      color1 && color2 ? [LEGEND_BOTH, LEGEND_OTHER] : [LEGEND_OTHER]
-    );
-
-    for (let i = 0; i < len; i += 1) {
-      if (color1?.values[i] && color2?.values[i]) {
-        out[i] = LEGEND_BOTH;
-
-        if (!visible || visible.values[i]) {
-          unusedKeys.delete(LEGEND_BOTH);
-        }
-      } else if (color1?.values[i]) {
-        out[i] = color1.name;
-      } else if (color2?.values[i]) {
-        out[i] = color2.name;
-      } else {
-        out[i] = LEGEND_OTHER;
-
-        if (!visible || visible.values[i]) {
-          unusedKeys.delete(LEGEND_OTHER);
-        }
-      }
-    }
-
-    return { series: out, unusedKeys };
+  if (useCustomFilter) {
+    return computeCustomFilterSeries(filter1, filter2, visible);
   }
 
   if (catData) {
@@ -1872,95 +2288,122 @@ function computeDensitySeriesForMode(
   }
 
   // Expansion is always categorical; if mode === "expansion" we never reach
-  // contData. Other modes can fall through to a continuous color source.
+  // contData. Other modes can fall through to a continuous source.
   if (mode !== "expansion") {
-    const contData = findContinuousColorSlice(data);
+    const contData = findContinuousColorSlice(data, target);
     if (contData) {
-      const [series, unusedKeys] = continuousValuesToLegendKeySeries(
+      // `sortedKeys` matters here just as much as for the categorical
+      // branch above: when target === "facet" and this is left undefined,
+      // the density renderer's `effectiveFacetKeys = facetKeysProp ??
+      // colorKeys` silently falls back to COLOR's legend keys for track
+      // identity/order — which happens to look right only when color is
+      // ALSO continuous (and shares the same bins), and produces zero/wrong
+      // violin tracks the moment color_by changes to anything else.
+      const binned = computeContinuousLegendKeySeries(
         contData.values,
         continuousBins,
-        data.filters?.visible?.values
+        data.filters?.visible?.values,
+        includeEmpty
       );
 
-      return { series, unusedKeys };
+      if (binned) {
+        return binned;
+      }
     }
   }
 
   return { series: null, unusedKeys: new Set() };
 }
 
-// Returns the per-point series for both coloring and grouping, plus the
-// associated legend metadata. When `group_by` is unset (or equal to
-// `color_by`), the grouping arrays are the same references as the coloring
-// arrays — no extra work, no behavior change. When they differ, both arrays
-// are computed independently from the same response and the renderer is
-// expected to consume each for its respective role: colorData drives
-// bgcolor, groupData drives violin-track assignment.
+// Returns the per-point series for both coloring and faceting, plus the
+// associated legend metadata. `facet_by` is a fully independent axis from
+// `color_by` — it does NOT fall back to color_by when unset. Both an unset
+// `facet_by` AND a set-but-not-yet-backed `facet_by` (a mode picked with no
+// real data behind it yet) mean "no faceting": every point lands in a
+// single LEGEND_ALL track, in both the expanded and non-expanded world.
+// colorData drives bgcolor; facetData drives violin-track assignment.
 export function calcDensityStats(
   data: any,
   continuousBins: any,
   sort_by: string | undefined,
-  color_by?: ColorByValue,
-  group_by?: ColorByValue,
+  // The RESOLVED color mode (see resolveColorMode) — never a raw color_by.
+  // color_by can itself be "facet"/"uniform" (version 2), so the caller
+  // must resolve it first; this function only ever deals in the effective
+  // (mode, target) pair, exactly like facet_by's own side below (which
+  // never needs resolution, since facet_by is never itself "facet"/
+  // "uniform").
+  colorMode: { mode: ColorByValue | undefined; target: "color" | "facet" },
+  facet_by?: ColorByValue,
+  // Facet's OWN continuous bins — never color's. A continuous
+  // color_property/facet_property each get their own independent 10-bin
+  // scale from their own values; sharing `continuousBins` here (color's)
+  // would either silently be null (when color isn't continuous, dropping
+  // facet's binning entirely) or apply the wrong boundaries (when color IS
+  // continuous but a different slice than facet). The caller computes this
+  // from facet's own continuous values, mirroring how `continuousBins` is
+  // computed from color's.
+  facetContinuousBins: any = null,
   isExpanded = false
 ) {
-  const colorMode = color_by;
-
   const colorSide = computeDensitySeriesForMode(
     data,
     continuousBins,
     sort_by,
-    colorMode
+    colorMode.mode,
+    colorMode.target
   );
 
-  // Expand-by world: group_by is fully decoupled from color_by. An unset
-  // group_by means "no grouping" — a single "all" track — NOT the legacy
-  // `group_by ?? color_by` inheritance. The fallback below survives only when
-  // there's no expansion (the ConfigurationPanel/legacy world), preserving
-  // existing behavior there. (Color still drives point color via colorSide.)
-  if (isExpanded && !group_by) {
+  // isExpanded is threaded through as `includeEmpty`: the facet side needs
+  // every windowed transcript (incl. all-null ones the dataset doesn't
+  // measure) so each gets a track — a "(no data)" placeholder for the
+  // empties, keeping the page at its full window size.
+  const facetSide = facet_by
+    ? computeDensitySeriesForMode(
+        data,
+        facetContinuousBins,
+        sort_by,
+        facet_by,
+        "facet",
+        isExpanded
+      )
+    : null;
+
+  // Unset facet_by, and a SET-BUT-UNBACKED facet_by (a mode picked in the
+  // dropdown with no real data yet — e.g. facet_by: "property" before an
+  // annotation is chosen), must render identically: a single LEGEND_ALL
+  // track. Without this, the live render would visibly split into one
+  // track per color category the instant an incomplete mode is picked,
+  // even though a page reload (which strips an incomplete facet_by
+  // entirely — see normalizePlot's completeness checks) would show the
+  // single-track appearance. Both "no mode selected" and "mode selected,
+  // nothing found" collapse to the exact same rendering here so there's no
+  // in-between state for the renderer to visibly diverge on.
+  if (!facetSide || !facetSide.series) {
     return {
       colorData: colorSide.series,
-      groupData: colorSide.series
+      facetData: colorSide.series
         ? colorSide.series.map(() => LEGEND_ALL)
         : null,
       unusedKeys: colorSide.unusedKeys as Set<LegendKey>,
       sortedColorKeys: colorSide.sortedKeys,
-      sortedGroupKeys: [LEGEND_ALL],
+      // Cast needed because this return site is no longer the function's
+      // only early return (see the `facetSide` guard above): without an
+      // explicit type here, TS widens `LEGEND_ALL`'s unique symbol literal
+      // down to plain `symbol` when merging this return's type with the
+      // one below, which no longer satisfies `LegendKey[]` for callers.
+      sortedFacetKeys: [LEGEND_ALL] as LegendKey[],
     };
   }
 
-  const groupMode = group_by ?? color_by;
-
-  // Reuse colorSide when grouping mode matches the coloring mode. This is
-  // the common case (group_by unset, falling back to color_by), and
-  // skipping the second pass keeps the no-op fast.
-  //
-  // When expanded we must NOT reuse it even if the modes match: the group side
-  // needs every windowed transcript (incl. all-null ones the dataset doesn't
-  // measure) so each gets a track — a "(no data)" placeholder for the empties,
-  // keeping the page at its full window size. The color side stays as-is so
-  // the legend reflects only transcripts that actually have points.
-  const groupSide =
-    groupMode === colorMode && !isExpanded
-      ? colorSide
-      : computeDensitySeriesForMode(
-          data,
-          continuousBins,
-          sort_by,
-          groupMode,
-          isExpanded
-        );
-
   return {
     colorData: colorSide.series,
-    groupData: groupSide.series,
+    facetData: facetSide.series,
     // computeDensitySeriesForMode types unusedKeys as Set<unknown>; narrow at
     // this boundary, matching the `as Set<LegendKey>` casts used on the other
     // unused-key paths in this file. Consumers expect Set<LegendKey>.
     unusedKeys: colorSide.unusedKeys as Set<LegendKey>,
     sortedColorKeys: colorSide.sortedKeys,
-    sortedGroupKeys: groupSide.sortedKeys,
+    sortedFacetKeys: facetSide.sortedKeys,
   };
 }
 
@@ -2274,15 +2717,53 @@ export function calcPlotIndicatorLineShapes(
   return shapes;
 }
 
+export interface LegendInfo {
+  title: string;
+  items: { name: string; hexColor: string }[];
+}
+
+const truncateLegendName = (s: string) => {
+  const MAX = 25;
+  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
+};
+
+// These dummy traces exist only to force Plotly to add a legend with the
+// correct colors to a downloaded image (there is no good way of rendering our
+// custom legend as part of the exported image). Shared by both scatter
+// renderers (single-panel PrototypeScatterPlot and the faceted
+// SmallMultiplesScatter) — see either's `downloadImage` implementation.
+export const getLegendTraces = (
+  legendForDownload: LegendInfo,
+  templateTrace: object & { marker: object }
+) =>
+  legendForDownload.items.map(({ name, hexColor }) => {
+    return {
+      ...templateTrace,
+      showlegend: true,
+      // HACK: Use a plot type of "indicator" rather than "scatter". This
+      // prevents a rare bug where these dummy traces interfere with the
+      // real ones and some points don't get rendered.
+      type: "indicator",
+      name: truncateLegendName(name),
+      x: [null], // Data doesn't matter but can't be completely empty
+      y: [null],
+      marker: {
+        ...templateTrace.marker,
+        color: hexColor,
+        line: { color: hexColor, width: 2 },
+      },
+    };
+  });
+
 export interface SolidColorGroup {
   color: string;
-  // Membership in this color group, by point index. Deliberately ignores point
+  // Membership in this color facet, by point index. Deliberately ignores point
   // visibility, facet membership, and opposite-axis nulls — those masks belong
   // to the renderer, not to the color semantics.
   includes: (i: number) => boolean;
 }
 
-// Pure color-grouping seam shared by the scatter renderers (single-panel and
+// Pure color-faceting seam shared by the scatter renderers (single-panel and
 // small multiples). Given the formatted color inputs, returns the solid-color
 // traces to draw, in paint order: index 0 is drawn first (on the bottom), so
 // the "other"/largest groups come first and the smallest categories end up on
@@ -2389,7 +2870,7 @@ export function getSolidColorGroups(args: {
     ];
   }
 
-  // Categorical mode: one group per category value that has visible points,
+  // Categorical mode: one facet per category value that has visible points,
   // plus "other" for nulls.
   if (catColorData) {
     const counts = categoricalDataToValueCounts(
@@ -2415,6 +2896,10 @@ export function getSolidColorGroups(args: {
     ];
   }
 
-  // No color enabled: one group covering every point.
-  return [{ color: palette.all, includes: () => true }];
+  // No color enabled: one facet covering every point. This function is only
+  // ever called from within SmallMultiplesScatter, which itself only renders
+  // when facet_by is already faceted/real — so this is unconditionally the
+  // "facet_by set, color_by has nothing of its own" case, never the vanilla
+  // no-facet-at-all case (that one never reaches small multiples).
+  return [{ color: NEUTRAL_FACET_FILL, includes: () => true }];
 }

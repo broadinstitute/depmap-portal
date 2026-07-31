@@ -135,7 +135,9 @@ function ExpandedPlotSelections({
   const count = rows.length;
 
   const maxHeightOfList =
-    count > 0 ? sectionHeights[1] - SECTION_HEIGHT_WITHOUT_LIST : Infinity;
+    count > 0
+      ? sectionHeights["Plot Selections"] - SECTION_HEIGHT_WITHOUT_LIST
+      : Infinity;
 
   // "Show Table" opens a (model, transcript) table of the selected pairs,
   // with a CSV download. Pair selections don't support the usual
