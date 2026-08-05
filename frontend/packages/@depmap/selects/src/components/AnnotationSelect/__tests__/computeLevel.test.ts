@@ -262,4 +262,41 @@ describe("computeLevel", () => {
 
     expect(result.supplementalTables).toEqual([]);
   });
+
+  it("surfaces a distinct 'label' column at every level of an auto-traversed chain", () => {
+    // "label" is a reserved column present on every dim type's own metadata
+    // table (not a single global column), so peptide → protein → gene should
+    // each contribute their own "label" entry, distinguishable by tableId
+    // and autoPath (not just column name).
+    const result = computeLevel(
+      "peptide",
+      "peptide",
+      TABLES_BY_DIM,
+      DIM_TYPES,
+      new Set()
+    );
+
+    const labelEntries = result.columns.filter((c) => c.columnName === "label");
+    expect(labelEntries).toHaveLength(3);
+
+    const peptideLabel = labelEntries.find(
+      (c) => c.tableId === "peptide_metadata_id"
+    );
+    expect(peptideLabel?.autoPath).toEqual([]);
+
+    const proteinLabel = labelEntries.find(
+      (c) => c.tableId === "protein_metadata_id"
+    );
+    expect(proteinLabel?.autoPath).toEqual([
+      { throughCol: "protein_fk", toDim: "protein" },
+    ]);
+
+    const geneLabel = labelEntries.find(
+      (c) => c.tableId === "gene_metadata_id"
+    );
+    expect(geneLabel?.autoPath).toEqual([
+      { throughCol: "protein_fk", toDim: "protein" },
+      { throughCol: "gene_fk", toDim: "gene" },
+    ]);
+  });
 });

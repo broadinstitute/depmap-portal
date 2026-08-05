@@ -172,6 +172,7 @@ export default function useDensity1DPlotData(
     colorData,
     facetData,
     unusedKeys: legendKeysWithNoData,
+    unusedFacetKeys: facetKeysWithNoData,
     sortedColorKeys: sortedLegendKeys,
     sortedFacetKeys,
   } = useMemo(
@@ -203,7 +204,13 @@ export default function useDensity1DPlotData(
   // panel, shown only when color_by/facet_by diverge (colorMode.target ===
   // "color"). Pinned to target "facet" regardless of what color_by resolves
   // to, so toggling a facet never touches color-legend state or vice versa.
-  const facetLegendState = useLegendState(plotConfig, undefined, "facet");
+  // Seeded with facet's own no-data keys so facets with nothing to plot
+  // start toggled off, mirroring the color legend's own seeding above.
+  const facetLegendState = useLegendState(
+    plotConfig,
+    facetKeysWithNoData,
+    "facet"
+  );
   const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
 
   const colorMap = useMemo(
@@ -219,7 +226,12 @@ export default function useDensity1DPlotData(
     }
 
     [...colorMap.keys()].forEach((key) => {
-      out[key] = formatCategoryLabel(key, data, continuousBins, colorMode.target);
+      out[key] = formatCategoryLabel(
+        key,
+        data,
+        continuousBins,
+        colorMode.target
+      );
     });
 
     return out;
@@ -294,7 +306,9 @@ export default function useDensity1DPlotData(
       return colorVisibility;
     }
 
-    return colorVisibility.map((v: boolean, i: number) => v && facetVisibility[i]);
+    return colorVisibility.map(
+      (v: boolean, i: number) => v && facetVisibility[i]
+    );
   }, [
     data,
     hiddenLegendValues,

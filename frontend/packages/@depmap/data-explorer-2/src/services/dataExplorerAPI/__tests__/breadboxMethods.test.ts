@@ -247,6 +247,64 @@ describe("buildExtendedMetadata", () => {
     // rather than duplicating the fetch under a second key.
     expect(result.extra1).toBeUndefined();
   });
+
+  test("skips a filter var that is the flat root 'label' (redundant with the always-fetched root label)", () => {
+    const result = buildExtendedMetadata("screen_pair", "pair_id", undefined, {
+      visible: {
+        name: "visible",
+        dimension_type: "screen_pair",
+        expr: { "==": [{ var: "x" }, "foo"] },
+        vars: {
+          x: {
+            dataset_id: "screen_pair_metadata",
+            identifier: "label",
+            identifier_type: "column",
+          },
+        },
+      },
+    });
+
+    expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  test("keeps a chained 'label' var reached via reindex_through — it's a distinct column, not the root's", () => {
+    // "label" is reserved and present on every dimension type's own
+    // metadata table, not a single global column. A filter on screen_pair
+    // referencing screen's label (via CtrlArmScreenID) is genuinely
+    // different data from screen_pair's own root label, and must not be
+    // dropped just because its terminal identifier happens to be "label".
+    const result = buildExtendedMetadata("screen_pair", "pair_id", undefined, {
+      visible: {
+        name: "visible",
+        dimension_type: "screen_pair",
+        expr: { "==": [{ var: "x" }, "foo"] },
+        vars: {
+          x: {
+            dataset_id: "screen_metadata",
+            identifier: "label",
+            identifier_type: "column",
+            reindex_through: {
+              dataset_id: "screen_pair_metadata",
+              identifier: "CtrlArmScreenID",
+              identifier_type: "column",
+            },
+          },
+        },
+      },
+    });
+
+    expect(Object.keys(result)).toHaveLength(1);
+    expect(result.context_var_0).toEqual({
+      dataset_id: "screen_metadata",
+      identifier: "label",
+      identifier_type: "column",
+      reindex_through: {
+        dataset_id: "screen_pair_metadata",
+        identifier: "CtrlArmScreenID",
+        identifier_type: "column",
+      },
+    });
+  });
 });
 
 describe("fetchPlotDimensions", () => {
@@ -392,9 +450,24 @@ const correlationGeneIdentifiers = [
 // GENE_A and GENE_B have identical value rows (ρ = 1).
 // GENE_C has reversed values (ρ = −1 vs A and B).
 const correlationMatrixResponse = {
-  GENE_A: { "ACH-000001": 1.0, "ACH-000002": 2.0, "ACH-000003": 3.0, "ACH-000004": 4.0 },
-  GENE_B: { "ACH-000001": 1.0, "ACH-000002": 2.0, "ACH-000003": 3.0, "ACH-000004": 4.0 },
-  GENE_C: { "ACH-000001": 4.0, "ACH-000002": 3.0, "ACH-000003": 2.0, "ACH-000004": 1.0 },
+  GENE_A: {
+    "ACH-000001": 1.0,
+    "ACH-000002": 2.0,
+    "ACH-000003": 3.0,
+    "ACH-000004": 4.0,
+  },
+  GENE_B: {
+    "ACH-000001": 1.0,
+    "ACH-000002": 2.0,
+    "ACH-000003": 3.0,
+    "ACH-000004": 4.0,
+  },
+  GENE_C: {
+    "ACH-000001": 4.0,
+    "ACH-000002": 3.0,
+    "ACH-000003": 2.0,
+    "ACH-000004": 1.0,
+  },
 };
 
 function mockCorrelationContext() {
@@ -476,8 +549,13 @@ describe("fetchCorrelation", () => {
   test("matrix rows/columns are aligned with index_ids regardless of clustering order", async () => {
     setupMocks();
 
-    const response = await fetchCorrelation("gene", { x: xDimension }, undefined, true);
-    const matrix = response.dimensions.x.values as unknown as number[][];
+    const response = await fetchCorrelation(
+      "gene",
+      { x: xDimension },
+      undefined,
+      true
+    );
+    const matrix = (response.dimensions.x.values as unknown) as number[][];
 
     expect(matrix.length).toBe(3);
     matrix.forEach((row) => expect(row.length).toBe(3));

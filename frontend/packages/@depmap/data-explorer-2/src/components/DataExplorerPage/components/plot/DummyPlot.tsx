@@ -144,7 +144,6 @@ function DummyPlot({
             hiddenLegendValues={hiddenLegendValues}
             onClickLegendItem={onClickLegendItem}
             colorMap={new Map()}
-            legendKeysWithNoData={null}
             handleClickShowAll={() => {}}
             handleClickHideAll={() => {}}
             // No real plot config exists in this placeholder state, so

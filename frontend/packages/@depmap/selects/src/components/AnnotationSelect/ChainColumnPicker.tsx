@@ -62,6 +62,7 @@ interface FocusableItem {
   columnName: string;
   columnEntry: ColumnEntry | null;
   disabled: boolean;
+  selected: boolean;
 }
 
 export default function ChainColumnPicker({
@@ -104,6 +105,15 @@ export default function ChainColumnPicker({
   const hiddenSet = useMemo(() => {
     return new SliceQuerySet(hiddenSlices ?? []);
   }, [hiddenSlices]);
+
+  // The current value, as a one-element set for structural (not name-only)
+  // equality checks — the same column name (e.g. "label") can legitimately
+  // appear on multiple rows at once (different tables reached via different
+  // FK chains), so matching the selected row requires comparing the full
+  // SliceQuery, not just columnName.
+  const selectedSet = useMemo(() => {
+    return new SliceQuerySet(value ? [value] : []);
+  }, [value]);
 
   /**
    * Builds the hypothetical SliceQuery for a column entry (used to check
@@ -155,6 +165,16 @@ export default function ChainColumnPicker({
       return query !== null && hiddenSet.has(query);
     },
     [hiddenSet, buildQueryForColumn]
+  );
+
+  const isColumnSelected = useCallback(
+    (columnName: string, columnEntry: ColumnEntry | null): boolean => {
+      if (selectedSet.size === 0) return false;
+
+      const query = buildQueryForColumn(columnName, columnEntry);
+      return query !== null && selectedSet.has(query);
+    },
+    [selectedSet, buildQueryForColumn]
   );
 
   // ── Dropdown lifecycle ──
@@ -271,7 +291,7 @@ export default function ChainColumnPicker({
     const table = tables.find((t) => t.id === supplementalTable.tableId);
     if (!table) return [];
 
-    let cols = Object.keys(table.columns).filter((name) => name !== "label");
+    let cols = Object.keys(table.columns);
 
     if (hiddenSet.size > 0) {
       cols = cols.filter((name) => !isColumnHidden(name, null));
@@ -341,6 +361,7 @@ export default function ChainColumnPicker({
           columnName: col,
           columnEntry: null,
           disabled: isColumnDisabled(col, null),
+          selected: isColumnSelected(col, null),
         });
       }
     } else {
@@ -350,6 +371,7 @@ export default function ChainColumnPicker({
             columnName: col.columnName,
             columnEntry: col,
             disabled: isColumnDisabled(col.columnName, col),
+            selected: isColumnSelected(col.columnName, col),
           });
         }
       }
@@ -361,23 +383,16 @@ export default function ChainColumnPicker({
     filteredSupplementalColumns,
     sortedColumnGroups,
     isColumnDisabled,
+    isColumnSelected,
   ]);
 
-  const selectedColumnName = value?.identifier ?? null;
-
-  // Reset focused index when the list changes.
-  // If there's a selected value, focus it instead of defaulting to 0.
+  // Reset focused index when the list changes. If there's a selected value,
+  // focus the specific row that matches it (by full SliceQuery, not just
+  // column name — the same name can appear on multiple rows at once).
   useEffect(() => {
-    if (selectedColumnName) {
-      const idx = focusableItems.findIndex(
-        (item) => item.columnName === selectedColumnName
-      );
-
-      setFocusedIndex(idx >= 0 ? idx : 0);
-    } else {
-      setFocusedIndex(0);
-    }
-  }, [focusableItems, selectedColumnName]);
+    const idx = focusableItems.findIndex((item) => item.selected);
+    setFocusedIndex(idx >= 0 ? idx : 0);
+  }, [focusableItems]);
 
   // Scroll the focused item into view within the dropdown body.
   useEffect(() => {
@@ -454,28 +469,9 @@ export default function ChainColumnPicker({
     [refocusSearch]
   );
 
-  const findColumnEntry = useCallback(
-    (columnName: string): ColumnEntry | null => {
-      if (!levelResult) return null;
-
-      for (const col of levelResult.columns) {
-        if (col.columnName === columnName) {
-          return col;
-        }
-      }
-
-      return null;
-    },
-    [levelResult]
-  );
-
   const handleColumnSelect = useCallback(
-    (columnName: string) => {
+    (columnName: string, columnEntry: ColumnEntry | null) => {
       if (!selectedSource) return;
-
-      const columnEntry = supplementalTable
-        ? null
-        : findColumnEntry(columnName);
 
       const query = buildSliceQuery(
         columnName,
@@ -493,9 +489,8 @@ export default function ChainColumnPicker({
       resetNavigation();
     },
     [
-      supplementalTable,
-      findColumnEntry,
       hops,
+      supplementalTable,
       selectedSource,
       index_type,
       tablesByDim,
@@ -542,7 +537,7 @@ export default function ChainColumnPicker({
           e.preventDefault();
           const item = focusableItems[focusedIndex];
           if (item && !item.disabled) {
-            handleColumnSelect(item.columnName);
+            handleColumnSelect(item.columnName, item.columnEntry);
           }
           break;
         }
@@ -693,7 +688,7 @@ export default function ChainColumnPicker({
     const disabled = isColumnDisabled(columnName, columnEntry);
     const currentIndex = rowIndex++;
     const isFocused = currentIndex === focusedIndex;
-    const isSelected = columnName === selectedColumnName;
+    const isSelected = isColumnSelected(columnName, columnEntry);
 
     return (
       <div
@@ -703,7 +698,11 @@ export default function ChainColumnPicker({
         data-selected={isSelected ? "true" : undefined}
         data-focused={isFocused ? "true" : undefined}
         data-disabled={disabled ? "true" : undefined}
-        onClick={disabled ? undefined : () => handleColumnSelect(columnName)}
+        onClick={
+          disabled
+            ? undefined
+            : () => handleColumnSelect(columnName, columnEntry)
+        }
         onMouseEnter={() => setFocusedIndex(currentIndex)}
       >
         <span className={styles.columnName}>{columnName}</span>

@@ -68,8 +68,13 @@ export const StackableSection = (props: StackableSectionProps) => {
     onRender({ contentHeight, minHeight, open: isOpen });
   }, [onRender, isOpen, minHeight]);
 
+  // `{...props}` is spread FIRST so the onOpen/onClose wrappers below can't
+  // be clobbered by caller-supplied handlers — the wrappers must always run
+  // (they keep `isOpen` in sync with Section's own collapse state) and they
+  // already delegate to the caller's handlers themselves.
   return (
     <Section
+      {...props}
       innerRef={ref}
       onOpen={() => {
         setIsOpen(true);
@@ -83,7 +88,6 @@ export const StackableSection = (props: StackableSectionProps) => {
           onClose();
         }
       }}
-      {...props}
     />
   );
 };
@@ -187,14 +191,24 @@ function SectionStack({
       value={{ sectionHeights: safeSectionHeights }}
     >
       <div id="section-stack" className={styles.SectionStack}>
-        {React.Children.map(_children, (child, index) => {
+        {_children.map((child, index) => {
           if (!React.isValidElement(child)) {
             return child;
           }
 
           const title = titles[index];
 
+          // `key: title` pins each section's React identity to its title.
+          // Without it, sections were keyed by position in the null-FILTERED
+          // array, so a conditional section appearing or disappearing
+          // (Facets, GeneTEA) shifted every later sibling onto a different
+          // component instance — sections inherited each other's open/closed
+          // state (useState initializers like defaultOpen only run at mount,
+          // not on a reused instance). A plain array .map is required here:
+          // React.Children.map would re-prefix each key with the child's
+          // positional index, making it position-dependent all over again.
           return React.cloneElement(child, {
+            key: title,
             onRender: (section) => handleRender(title, section),
           } as Partial<InternalProps>);
         })}

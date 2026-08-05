@@ -95,9 +95,7 @@ export default function useChainSelectorData(index_type: string) {
 
       const isPrimary = d.id === metadataDatasetId;
       const cols = d.columns_metadata;
-      const colEntries = Object.entries(cols).filter(
-        ([name]) => name !== "label"
-      );
+      const colEntries = Object.entries(cols);
       const fkCount = colEntries.filter(([, meta]) => meta.references != null)
         .length;
 

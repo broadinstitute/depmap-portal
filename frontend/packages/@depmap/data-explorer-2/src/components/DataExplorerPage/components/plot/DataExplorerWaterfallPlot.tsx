@@ -93,7 +93,6 @@ function DataExplorerWaterfallPlot({
     formattedData,
     continuousBins,
     contLegendKeys,
-    legendKeysWithNoData,
     legendState,
     facetLegendState,
     sortedFacetKeys,
@@ -281,7 +280,6 @@ function DataExplorerWaterfallPlot({
               sortedLegendKeys={sortedLegendKeys}
               continuousBins={continuousBins}
               hiddenLegendValues={hiddenLegendValues}
-              legendKeysWithNoData={legendKeysWithNoData}
               onClickLegendItem={onClickLegendItem}
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
@@ -301,7 +299,11 @@ function DataExplorerWaterfallPlot({
               />
             </StackableSection>
           ) : null}
-          <StackableSection title="Plot Selections" minHeight={256}>
+          <StackableSection
+            title="Plot Selections"
+            minHeight={256}
+            defaultOpen={!plotConfig.expand_by}
+          >
             {isPairGrained ? (
               <ExpandedPlotSelections
                 data={data}
