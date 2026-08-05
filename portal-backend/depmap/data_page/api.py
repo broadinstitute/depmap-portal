@@ -2,11 +2,13 @@ import os
 from typing import List, Union
 
 from depmap import data_access
+from depmap.data_access import breadbox_dao
 from depmap.data_page import temp_update_paralogs_avail
 from depmap.dataset.models import BiomarkerDataset, DependencyDataset
 from depmap.download.utils import get_download_url
 from depmap.enums import BiomarkerEnum, DependencyEnum
 from depmap.cell_line.models_new import DepmapModel
+from depmap.interactive import interactive_utils
 from flask_restx import Namespace, Resource
 from flask import current_app, request
 import pandas as pd
@@ -233,3 +235,50 @@ class LineageAvailability(
         )
 
         return lineage_dict
+
+
+def _get_legacy_db_mirrors_breadbox_issues() -> List[str]:
+    """
+    Check that datasets in the legacy database use the same taiga IDs as their corresponding breadbox datasets.
+    Any datasets where the legacy dataset ID matches the breadbox given ID should also have matching taiga IDs.
+    This ensures that the data versions are used in both places - even though they're configured separately.
+    At this point, we also expect that all legacy dataset IDs exist in the breadbox database.
+    """
+    legacy_dataset_ids = interactive_utils.get_all_dataset_ids()
+    all_breadbox_given_ids = breadbox_dao.get_breadbox_given_ids()
+
+    issues = []
+    for legacy_dataset_id in legacy_dataset_ids:
+        # if the legacy dataset ID is also a breadbox given ID, check that the taiga IDs match
+        if legacy_dataset_id in all_breadbox_given_ids:
+            legacy_taiga_id = interactive_utils.get_taiga_id(legacy_dataset_id)
+            breadbox_taiga_id = breadbox_dao.get_dataset_taiga_id(legacy_dataset_id)
+
+            if legacy_taiga_id != breadbox_taiga_id and "placeholder" not in legacy_taiga_id:
+                issues.append(
+                    "Mismatch in taiga IDs for dataset '{}': legacy db taiga ID is '{}', breadbox taiga ID is '{}'".format(
+                        legacy_dataset_id, legacy_taiga_id, breadbox_taiga_id
+                    )
+                )
+        elif interactive_utils.is_continuous(legacy_dataset_id):
+            issues.append(
+                "Continuous legacy dataset '{}' not found in breadbox given IDs".format(
+                    legacy_dataset_id
+                )
+            )
+    return issues
+
+
+@namespace.route("/check_legacy_db_mirrors_breadbox")
+class CheckLegacyDbMirrorsBreadbox(
+    Resource
+):  # the flask url_for endpoint is automagically the snake case of the namespace prefix plus class name
+    def get(self):
+        # Note: docstrings to restplus methods end up in the swagger documentation.
+        # DO NOT put a docstring here that you would not want exposed to users of the API. Use # for comments instead
+        """
+        Check that the legacy db and breadbox agree on taiga IDs for shared datasets
+        """
+        issues = _get_legacy_db_mirrors_breadbox_issues()
+
+        return {"issues": issues}
