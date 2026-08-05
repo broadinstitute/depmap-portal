@@ -234,7 +234,7 @@ export function buildExtendedMetadata(
   ) as DataExplorerContextV2[]) {
     for (const variable of Object.values(filter.vars)) {
       if (
-        variable.identifier === "label" ||
+        (variable.identifier === "label" && !variable.reindex_through) ||
         variable.identifier === index_id_column
       ) {
         continue;

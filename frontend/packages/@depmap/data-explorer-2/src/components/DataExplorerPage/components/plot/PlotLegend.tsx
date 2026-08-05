@@ -14,7 +14,6 @@ function LegendLabels({
   sortedLegendKeys = undefined,
   continuousBins,
   hiddenLegendValues,
-  legendKeysWithNoData,
   onClickLegendItem,
   handleClickShowAll,
   handleClickHideAll,
@@ -25,7 +24,6 @@ function LegendLabels({
   sortedLegendKeys?: LegendKey[];
   continuousBins: any;
   hiddenLegendValues: any;
-  legendKeysWithNoData: Set<LegendKey> | null;
   onClickLegendItem: any;
   handleClickShowAll: any;
   handleClickHideAll: any;
@@ -33,12 +31,14 @@ function LegendLabels({
 }) {
   const { sectionHeights } = useContext(SectionStackContext);
 
-  const categories = (sortedLegendKeys || [...colorMap.keys()]).filter(
-    (category) =>
-      data?.dimensions?.[target] ||
-      !legendKeysWithNoData ||
-      !legendKeysWithNoData.has(category)
-  );
+  // No-data keys are deliberately NOT filtered out of this list: they seed
+  // hiddenLegendValues (see useLegendState's legendKeysWithNoData param), so
+  // they render toggled off (dimmed) — the same treatment every no-data item
+  // gets regardless of which triad backs the legend. (They used to be
+  // display-filtered here unless the target was backed by a real response
+  // dimension, which made no-data items vanish entirely for
+  // property/expansion-backed legends.)
+  const categories = sortedLegendKeys || [...colorMap.keys()];
 
   // TODO: Update callbacks to use `colorMap` directly.
   const colorMapAsObject = Object.fromEntries(colorMap);
@@ -129,7 +129,6 @@ interface Props {
   sortedLegendKeys?: LegendKey[];
   continuousBins: ContinuousBins;
   hiddenLegendValues: Set<LegendKey>;
-  legendKeysWithNoData: Set<LegendKey> | null;
   onClickLegendItem: (
     item: string | symbol,
     catColorMap: Record<string, string>
@@ -149,7 +148,6 @@ function PlotLegend({
   sortedLegendKeys = undefined,
   continuousBins,
   hiddenLegendValues,
-  legendKeysWithNoData,
   onClickLegendItem,
   handleClickShowAll,
   handleClickHideAll,
@@ -168,7 +166,6 @@ function PlotLegend({
         sortedLegendKeys={sortedLegendKeys}
         continuousBins={continuousBins}
         hiddenLegendValues={hiddenLegendValues}
-        legendKeysWithNoData={legendKeysWithNoData}
         onClickLegendItem={onClickLegendItem}
         handleClickShowAll={handleClickShowAll}
         handleClickHideAll={handleClickHideAll}

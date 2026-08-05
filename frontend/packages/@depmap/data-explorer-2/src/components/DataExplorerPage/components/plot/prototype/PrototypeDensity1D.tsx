@@ -19,6 +19,7 @@ import {
   hexToRgba,
   isEveryValueNull,
   LEGEND_ALL,
+  LEGEND_NEITHER,
   LEGEND_OTHER,
   LegendKey,
   NEUTRAL_FACET_FILL,
@@ -443,12 +444,14 @@ function PrototypeDensity1D({
     const defaultTrace = hasColorOptionsEnabled ? null : templateTrace;
 
     // Paint order for categorical color groups. We stack so the smallest
-    // groups end up on top and the catch-all "Other" facet on the bottom,
-    // matching the scatter path (getSolidColorGroups). plotlyData is reversed
-    // below, so the first key here is drawn last (on top): we sort ascending
-    // by visible-point count and pin LEGEND_OTHER to the end. Membership and
-    // color assignment are unchanged — this only reorders the traces, which
-    // matters once color groups span multiple stacks (facet_by !== color_by).
+    // groups end up on top and the catch-all "N/A"/"Other" facet on the
+    // bottom, matching the scatter path (getSolidColorGroups). plotlyData is
+    // reversed below, so the first key here is drawn last (on top): we sort
+    // ascending by visible-point count and pin LEGEND_OTHER/LEGEND_NEITHER
+    // (the two catch-all identities — see their shared comment in
+    // plotUtils.ts) to the end. Membership and color assignment are
+    // unchanged — this only reorders the traces, which matters once color
+    // groups span multiple stacks (facet_by !== color_by).
     const orderedColorKeys = (() => {
       if (!colorMap || !colorData) {
         return [] as LegendKey[];
@@ -461,10 +464,12 @@ function PrototypeDensity1D({
         const k = colorData[i] as LegendKey;
         counts.set(k, (counts.get(k) ?? 0) + 1);
       }
+      const isCatchAll = (key: LegendKey) =>
+        key === LEGEND_OTHER || key === LEGEND_NEITHER;
       const keys = [...colorMap.keys()];
-      const others = keys.filter((key) => key === LEGEND_OTHER);
+      const others = keys.filter(isCatchAll);
       const rest = keys
-        .filter((key) => key !== LEGEND_OTHER)
+        .filter((key) => !isCatchAll(key))
         .sort((a, b) => (counts.get(a) ?? 0) - (counts.get(b) ?? 0));
       return [...rest, ...others];
     })();
@@ -610,7 +615,7 @@ function PrototypeDensity1D({
               // Prepend, not append: the y-axis ticktext truncates each name to
               // ~25 chars and a transcript label alone already exceeds that, so
               // an appended marker gets cut off. Leading "(no data)" survives.
-              name: trace.name ? `(no data) ${trace.name}` : "(no data)",
+              name: trace.name ? `❌ (no data) ${trace.name}` : "❌ (no data)",
             }
           : trace
       )

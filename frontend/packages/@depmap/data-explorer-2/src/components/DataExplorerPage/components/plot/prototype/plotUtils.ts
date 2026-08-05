@@ -41,7 +41,17 @@ export type RegressionLine = {
 
 export const LEGEND_ALL = Symbol("All");
 export const LEGEND_BOTH = Symbol("Both");
+// LEGEND_OTHER means "missing data" — a null categorical/continuous value —
+// and always displays as "N/A" (see categoryToDisplayName). LEGEND_NEITHER
+// is the distinct "real, explicit classification" case: a point in neither
+// of two selected raw_slice/aggregated_slice contexts, which always
+// displays as "Other". The two used to share one symbol, which forced
+// categoryToDisplayName to guess which display text applied via a fragile
+// heuristic (checking whether continuousBins happened to be set, or
+// scanning the categorical data for a literal "Other" string) — separate
+// identities make the correct text a certainty, not a guess, everywhere.
 export const LEGEND_OTHER = Symbol("Other");
+export const LEGEND_NEITHER = Symbol("Neither");
 export const LEGEND_RANGE_1 = Symbol("Range 1");
 export const LEGEND_RANGE_2 = Symbol("Range 2");
 export const LEGEND_RANGE_3 = Symbol("Range 3");
@@ -57,6 +67,7 @@ export type LegendKey =
   | typeof LEGEND_ALL
   | typeof LEGEND_BOTH
   | typeof LEGEND_OTHER
+  | typeof LEGEND_NEITHER
   | typeof LEGEND_RANGE_1
   | typeof LEGEND_RANGE_2
   | typeof LEGEND_RANGE_3
@@ -325,19 +336,10 @@ export function computeFacets(
           ? "N/A"
           : formatCategoryLabel(key, data, bins, target);
 
-      // binned.sortedKeys never includes LEGEND_OTHER — it's built from
-      // calcBins' own keys (calcBins only ever produces the 10 real range
-      // bins), not from what individual points actually resolved to. A
-      // null value still gets its own "N/A" facet per point (via
-      // labelFor below), so — when at least one point actually has one —
-      // it needs its own ordered slot and colorMap-key translation too,
-      // added explicitly here rather than via calcBins. Appended last: it
-      // isn't part of the ascending numeric order, so it doesn't belong
-      // anywhere within it.
-      const hasNullFacet = binned.series.includes(LEGEND_OTHER);
-      const orderedKeys: LegendKey[] = hasNullFacet
-        ? [...binned.sortedKeys, LEGEND_OTHER]
-        : binned.sortedKeys;
+      // binned.sortedKeys already appends LEGEND_OTHER itself (see
+      // computeContinuousLegendKeySeries) whenever at least one point
+      // actually resolved to it — no need to re-derive that here.
+      const orderedKeys: LegendKey[] = binned.sortedKeys;
 
       const facetOrder = orderedKeys.map(labelFor);
       const facetColorKeys: Record<string, LegendKey> = {};
@@ -363,7 +365,11 @@ export function computeFacets(
   const filter1 = data.filters?.[`${target}1`];
   const filter2 = data.filters?.[`${target}2`];
   if (filter1 || filter2) {
-    const custom = computeCustomFilterSeries(filter1, filter2, data.filters?.visible);
+    const custom = computeCustomFilterSeries(
+      filter1,
+      filter2,
+      data.filters?.visible
+    );
     const labelFor = (key: string | symbol) =>
       typeof key === "string"
         ? key
@@ -372,7 +378,7 @@ export function computeFacets(
     const facetOrder = custom.sortedKeys.map(labelFor);
     const facetColorKeys: Record<string, LegendKey> = {};
     custom.sortedKeys.forEach((key, i) => {
-      // Only the LEGEND_BOTH/LEGEND_OTHER symbols need translating back —
+      // Only the LEGEND_BOTH/LEGEND_NEITHER symbols need translating back —
       // filter1.name/filter2.name are already plain strings and valid
       // colorMap keys as-is, so mapping them here would be redundant.
       if (typeof key !== "string") {
@@ -540,7 +546,8 @@ export function findCategoricalSlice(
     };
   }
 
-  const dim = target === "facet" ? data.dimensions?.facet : data.dimensions?.color;
+  const dim =
+    target === "facet" ? data.dimensions?.facet : data.dimensions?.color;
 
   if (dim && ["text", "categorical"].includes(dim.value_type)) {
     return {
@@ -572,7 +579,8 @@ export function findContinuousColorSlice(
   data: DataExplorerPlotResponse | null,
   target: "color" | "facet" = "color"
 ) {
-  const dim = target === "facet" ? data?.dimensions?.facet : data?.dimensions?.color;
+  const dim =
+    target === "facet" ? data?.dimensions?.facet : data?.dimensions?.color;
 
   if (dim?.value_type === "continuous") {
     return {
@@ -1289,7 +1297,7 @@ export function calcVisibility(
     });
   }
 
-  if (hiddenLegendValues.has(LEGEND_OTHER)) {
+  if (hiddenLegendValues.has(LEGEND_NEITHER)) {
     const primary = c1Values || c2Values;
     const other = c2Values || [];
 
@@ -1312,7 +1320,15 @@ export function getLegendKeysWithNoData(
   const catData = findCategoricalSlice(data, color_by, target);
   const visible = data?.filters?.visible;
 
-  if (catData && visible) {
+  if (catData) {
+    // "No data" means no point that is both visible AND plottable — a point
+    // null on x (or on y, when a y dimension exists) plots nowhere, so a
+    // category made up entirely of such points has nothing to show (e.g. an
+    // expansion member the dataset doesn't measure). A missing `visible`
+    // filter means every point is visible; it must not disable this
+    // bookkeeping (it used to gate the whole computation).
+    const xValues = data?.dimensions?.x?.values;
+    const yValues = data?.dimensions?.y?.values;
     const counts: Record<string, number> = {};
     const unusedKeys = new Set();
 
@@ -1321,7 +1337,12 @@ export function getLegendKeysWithNoData(
 
       if (category) {
         counts[category] = counts[category] || 0;
-        counts[category] += visible.values[i] ? 1 : 0;
+        counts[category] +=
+          (!visible || visible.values[i]) &&
+          (!xValues || xValues[i] !== null) &&
+          (!yValues || yValues[i] !== null)
+            ? 1
+            : 0;
       }
     }
 
@@ -1677,8 +1698,10 @@ export function getColorMap(
   }
 
   if (filter1 || filter2) {
-    if (hasSomeUncoloredPoints(filter1?.values, filter2?.values, data.dimensions)) {
-      colorMap.set(LEGEND_OTHER, palette.other);
+    if (
+      hasSomeUncoloredPoints(filter1?.values, filter2?.values, data.dimensions)
+    ) {
+      colorMap.set(LEGEND_NEITHER, palette.other);
     }
   }
 
@@ -1782,17 +1805,18 @@ export function categoryToDisplayName(
   },
   continuousBins: ContinuousBins,
   // Which triad's filters (color1/color2 vs facet1/facet2) back a LEGEND_BOTH
-  // label, and which triad's own categorical source (color_by's vs
-  // facet_by's) backs the LEGEND_OTHER "hasOther" check. Deliberately no
-  // default: under the version-2 default flip, an absent color_by defers to
-  // facet_by, so "color" is no longer a safe universal fallback — the
-  // correct target depends on resolveColorMode, not on this parameter being
-  // omitted. Every caller must resolve and pass it explicitly.
+  // label. Deliberately no default: under the version-2 default flip, an
+  // absent color_by defers to facet_by, so "color" is no longer a safe
+  // universal fallback — the correct target depends on resolveColorMode, not
+  // on this parameter being omitted. Every caller must resolve and pass it
+  // explicitly.
   target: "color" | "facet"
 ) {
   if (category === LEGEND_BOTH) {
-    const filter1 = target === "facet" ? data.filters.facet1 : data.filters.color1;
-    const filter2 = target === "facet" ? data.filters.facet2 : data.filters.color2;
+    const filter1 =
+      target === "facet" ? data.filters.facet1 : data.filters.color1;
+    const filter2 =
+      target === "facet" ? data.filters.facet2 : data.filters.color2;
     return `Both (${[filter1!.name, filter2!.name].join(" & ")})`;
   }
 
@@ -1800,17 +1824,16 @@ export function categoryToDisplayName(
     return "All";
   }
 
-  if (category === LEGEND_OTHER) {
-    const catSlice = findCategoricalSlice(
-      data as DataExplorerPlotResponse,
-      undefined,
-      target
-    );
-    const hasOther = catSlice?.values.some(
-      (val) => val === "other" || val === "Other"
-    );
+  // LEGEND_NEITHER (a real, explicit "in neither selected context" bucket)
+  // and LEGEND_OTHER (missing/null data) are distinct identities precisely
+  // so this never has to guess which display text applies — see their
+  // shared comment at the top of the file.
+  if (category === LEGEND_NEITHER) {
+    return "Other";
+  }
 
-    return continuousBins || hasOther ? "N/A" : "Other";
+  if (category === LEGEND_OTHER) {
+    return "N/A";
   }
 
   if (typeof category === "symbol") {
@@ -2139,23 +2162,40 @@ export function computeContinuousLegendKeySeries(
     (key) => includeEmpty || !unusedKeys.has(key)
   );
 
+  // A null value gets its own LEGEND_OTHER ("N/A") entry per point (via
+  // `series` above), but LEGEND_OTHER is never one of continuousBins' own
+  // keys (calcBins only ever produces the 10 real range bins) — so it's
+  // never picked up by the filter above and must be appended explicitly.
+  // Appended last since it isn't part of the ascending numeric order.
+  // `unusedKeys` can't tell us whether it's actually represented either
+  // (it's seeded from continuousBins' own keys, so LEGEND_OTHER is never a
+  // member of it either way) — checking `series` directly, mirroring
+  // computeFacets' own `binned.series.includes(LEGEND_OTHER)` check, is
+  // what makes this and computeFacets agree on when a null-value entry is
+  // warranted.
+  if (includeEmpty || series.includes(LEGEND_OTHER)) {
+    sortedKeys.push(LEGEND_OTHER);
+  }
+
   return { series, unusedKeys, sortedKeys };
 }
 
 // Partitions points by up to two boolean membership filters (color1/color2
 // or facet1/facet2) into up to 4 buckets: in filter1 only (named after it),
 // in filter2 only, in BOTH (LEGEND_BOTH, "Both (X & Y)"), or in NEITHER
-// (LEGEND_OTHER, "Other" — a real, fittable classification, not missing
-// data). Shared by computeDensitySeriesForMode (density's color/facet axes)
-// and computeFacets (waterfall's clustering / scatter's faceting,
-// regression lines/table) — the same primitive color_by's custom-filter
-// mode already used, extended so facet_by gets identical behavior.
+// (LEGEND_NEITHER, "Other" — a real, fittable classification, not missing
+// data — see LEGEND_NEITHER's own comment for why this is a distinct
+// identity from LEGEND_OTHER). Shared by computeDensitySeriesForMode
+// (density's color/facet axes) and computeFacets (waterfall's clustering /
+// scatter's faceting, regression lines/table) — the same primitive
+// color_by's custom-filter mode already used, extended so facet_by gets
+// identical behavior.
 //
 // `sortedKeys` is the canonical order [filter1.name, filter2.name,
-// LEGEND_BOTH, LEGEND_OTHER], filtered to entries actually represented
+// LEGEND_BOTH, LEGEND_NEITHER], filtered to entries actually represented
 // (filter1/filter2's own names are always "represented" by definition —
-// they're real user selections; LEGEND_BOTH/LEGEND_OTHER only when at least
-// one currently-visible point landed there). This is the same order
+// they're real user selections; LEGEND_BOTH/LEGEND_NEITHER only when at
+// least one currently-visible point landed there). This is the same order
 // getColorMap independently builds for color_by, so a caller reordering by
 // these sortedKeys is a no-op for color and, for the first time, gives
 // facet_by a real key/order set instead of `undefined`.
@@ -2163,11 +2203,15 @@ export function computeCustomFilterSeries(
   filter1: { name: string; values: (boolean | null)[] } | undefined,
   filter2: { name: string; values: (boolean | null)[] } | undefined,
   visible?: { values: boolean[] }
-): { series: any[]; unusedKeys: Set<unknown>; sortedKeys: (string | symbol)[] } {
+): {
+  series: any[];
+  unusedKeys: Set<unknown>;
+  sortedKeys: (string | symbol)[];
+} {
   const out: any[] = [];
   const len = (filter1 || filter2)!.values.length;
   const unusedKeys = new Set(
-    filter1 && filter2 ? [LEGEND_BOTH, LEGEND_OTHER] : [LEGEND_OTHER]
+    filter1 && filter2 ? [LEGEND_BOTH, LEGEND_NEITHER] : [LEGEND_NEITHER]
   );
 
   for (let i = 0; i < len; i += 1) {
@@ -2182,22 +2226,20 @@ export function computeCustomFilterSeries(
     } else if (filter2?.values[i]) {
       out[i] = filter2.name;
     } else {
-      out[i] = LEGEND_OTHER;
+      out[i] = LEGEND_NEITHER;
 
       if (!visible || visible.values[i]) {
-        unusedKeys.delete(LEGEND_OTHER);
+        unusedKeys.delete(LEGEND_NEITHER);
       }
     }
   }
 
-  const sortedKeys = (
-    [
-      filter1 ? filter1.name : null,
-      filter2 ? filter2.name : null,
-      filter1 && filter2 && !unusedKeys.has(LEGEND_BOTH) ? LEGEND_BOTH : null,
-      !unusedKeys.has(LEGEND_OTHER) ? LEGEND_OTHER : null,
-    ].filter((key) => key !== null) as (string | symbol)[]
-  );
+  const sortedKeys = [
+    filter1 ? filter1.name : null,
+    filter2 ? filter2.name : null,
+    filter1 && filter2 && !unusedKeys.has(LEGEND_BOTH) ? LEGEND_BOTH : null,
+    !unusedKeys.has(LEGEND_NEITHER) ? LEGEND_NEITHER : null,
+  ].filter((key) => key !== null) as (string | symbol)[];
 
   return { series: out, unusedKeys, sortedKeys };
 }
@@ -2233,8 +2275,10 @@ function computeDensitySeriesForMode(
   unusedKeys: Set<unknown>;
   sortedKeys?: any[];
 } {
-  const filter1 = target === "facet" ? data?.filters?.facet1 : data?.filters?.color1;
-  const filter2 = target === "facet" ? data?.filters?.facet2 : data?.filters?.color2;
+  const filter1 =
+    target === "facet" ? data?.filters?.facet1 : data?.filters?.color1;
+  const filter2 =
+    target === "facet" ? data?.filters?.facet2 : data?.filters?.color2;
   const visible = data?.filters?.visible;
 
   const catData = findCategoricalSlice(data, mode, target);
@@ -2260,23 +2304,30 @@ function computeDensitySeriesForMode(
     const counts: Record<string, number> = {};
     const unusedKeys = new Set<unknown>();
 
-    if (visible) {
-      for (let i = 0; i < catData.values.length; i += 1) {
-        const category = catData.values[i];
+    // A missing `visible` filter means every point is visible — it must NOT
+    // disable the no-data bookkeeping. (It used to: unusedKeys were only
+    // computed when a visible filter happened to exist, so a category whose
+    // points are all null on x — e.g. an expansion member the dataset
+    // doesn't measure — was never flagged unless something was also
+    // filtered.)
+    for (let i = 0; i < catData.values.length; i += 1) {
+      const category = catData.values[i];
 
-        if (category) {
-          counts[category] = counts[category] || 0;
-          counts[category] +=
-            visible.values[i] && data.dimensions.x.values[i] !== null ? 1 : 0;
-        }
+      if (category) {
+        counts[category] = counts[category] || 0;
+        counts[category] +=
+          (!visible || visible.values[i]) &&
+          data.dimensions.x.values[i] !== null
+            ? 1
+            : 0;
       }
-
-      Object.keys(counts).forEach((category) => {
-        if (counts[category] === 0) {
-          unusedKeys.add(category);
-        }
-      });
     }
+
+    Object.keys(counts).forEach((category) => {
+      if (counts[category] === 0) {
+        unusedKeys.add(category);
+      }
+    });
 
     return {
       series: catData.values.map((x: unknown) =>
@@ -2345,12 +2396,20 @@ export function calcDensityStats(
   facetContinuousBins: any = null,
   isExpanded = false
 ) {
+  // When the color legend IS the expansion (mode "expansion" — the
+  // color_by/facet_by-equivalent configuration where the Legend panel
+  // doubles as the facet key), it must list every windowed member the same
+  // way the facet side below does: no-data members appear toggled off by
+  // default (they're in unusedKeys) rather than vanishing from the list
+  // entirely. Scoped to the expansion mode — other color modes keep their
+  // existing only-represented-keys legends.
   const colorSide = computeDensitySeriesForMode(
     data,
     continuousBins,
     sort_by,
     colorMode.mode,
-    colorMode.target
+    colorMode.target,
+    isExpanded && colorMode.mode === "expansion"
   );
 
   // isExpanded is threaded through as `includeEmpty`: the facet side needs
@@ -2385,6 +2444,7 @@ export function calcDensityStats(
         ? colorSide.series.map(() => LEGEND_ALL)
         : null,
       unusedKeys: colorSide.unusedKeys as Set<LegendKey>,
+      unusedFacetKeys: new Set<LegendKey>(),
       sortedColorKeys: colorSide.sortedKeys,
       // Cast needed because this return site is no longer the function's
       // only early return (see the `facetSide` guard above): without an
@@ -2402,6 +2462,9 @@ export function calcDensityStats(
     // this boundary, matching the `as Set<LegendKey>` casts used on the other
     // unused-key paths in this file. Consumers expect Set<LegendKey>.
     unusedKeys: colorSide.unusedKeys as Set<LegendKey>,
+    // Facet's own no-data keys — the Facets panel seeds its default-hidden
+    // set from these, mirroring how the Legend panel seeds from unusedKeys.
+    unusedFacetKeys: facetSide.unusedKeys as Set<LegendKey>,
     sortedColorKeys: colorSide.sortedKeys,
     sortedFacetKeys: facetSide.sortedKeys,
   };

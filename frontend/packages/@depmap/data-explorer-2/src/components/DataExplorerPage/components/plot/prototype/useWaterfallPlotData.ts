@@ -69,9 +69,7 @@ export interface WaterfallPlotData {
   // Contiguous x-rank regions, one per facet, with gap-midpoint boundaries
   // (±Infinity at the ends). Drives enforceSingleFacetSelection in the
   // waterfall's scatter renderer. Null when there's nothing to constrain.
-  selectionRegions:
-    | { key: string | symbol; lo: number; hi: number }[]
-    | null;
+  selectionRegions: { key: string | symbol; lo: number; hi: number }[] | null;
   // Which triad (color's own, or facet's own via the version-2 default
   // defer) actually backs the legend — PlotLegend/LegendLabel need this to
   // read the right filters.color1/2 vs facet1/2 pair for a LEGEND_BOTH
@@ -121,7 +119,11 @@ export default function useWaterfallPlotData(
   // expansion" (or "color by facet, itself expansion") picks up expansion
   // labels.
   const sortedLegendKeys = useMemo(() => {
-    const catData = findCategoricalSlice(data, colorMode.mode, colorMode.target);
+    const catData = findCategoricalSlice(
+      data,
+      colorMode.mode,
+      colorMode.target
+    );
 
     if (!catData || !data?.dimensions?.y) {
       return undefined;
@@ -267,16 +269,41 @@ export default function useWaterfallPlotData(
   );
 
   const legendKeysWithNoData = useMemo(
-    () => getLegendKeysWithNoData(data, continuousBins, colorMode.mode, colorMode.target),
+    () =>
+      getLegendKeysWithNoData(
+        data,
+        continuousBins,
+        colorMode.mode,
+        colorMode.target
+      ),
     [data, continuousBins, colorMode]
   );
 
   const legendState = useLegendState(plotConfig, legendKeysWithNoData);
   const { hiddenLegendValues } = legendState;
 
+  // Facet's own no-data keys, computed against facet's own triad and bins —
+  // the exact facet-side analog of legendKeysWithNoData above.
+  const facetKeysWithNoData = useMemo(
+    () =>
+      getLegendKeysWithNoData(
+        data,
+        facetContinuousBins,
+        plotConfig.facet_by,
+        "facet"
+      ),
+    [data, facetContinuousBins, plotConfig.facet_by]
+  );
+
   // Independent of the color legend's own hidden set — drives the "Facets"
   // panel. See useDensity1DPlotData's identically-purposed facetLegendState.
-  const facetLegendState = useLegendState(plotConfig, undefined, "facet");
+  // Seeded with facet's own no-data keys so facets with nothing to plot
+  // start toggled off, mirroring the color legend's own seeding above.
+  const facetLegendState = useLegendState(
+    plotConfig,
+    facetKeysWithNoData,
+    "facet"
+  );
   const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
 
   // Mirrors useDensity1DPlotData's facetDisplayNames.
@@ -378,7 +405,9 @@ export default function useWaterfallPlotData(
       return colorVisibility;
     }
 
-    return colorVisibility.map((v: boolean, i: number) => v && facetVisibility[i]);
+    return colorVisibility.map(
+      (v: boolean, i: number) => v && facetVisibility[i]
+    );
   }, [
     data,
     hiddenLegendValues,
@@ -398,8 +427,9 @@ export default function useWaterfallPlotData(
   // there are fewer than two facets to constrain across.
   const selectionRegions = useMemo(() => {
     const x = formattedData?.x;
-    const groupSeries = (facetSide.facetData ??
-      formattedData?.catColorData) as (string | number | symbol | null)[] | null;
+    const groupSeries = (facetSide.facetData ?? formattedData?.catColorData) as
+      | (string | number | symbol | null)[]
+      | null;
     if (!x || !groupSeries) {
       return null;
     }
@@ -421,14 +451,14 @@ export default function useWaterfallPlotData(
       return null;
     }
 
-    const ordered = [...extents.entries()].sort(
-      (a, b) => a[1].min - b[1].min
-    );
+    const ordered = [...extents.entries()].sort((a, b) => a[1].min - b[1].min);
     return ordered.map(([key, e], i) => ({
       key,
       lo: i === 0 ? -Infinity : (ordered[i - 1][1].max + e.min) / 2,
       hi:
-        i === ordered.length - 1 ? Infinity : (e.max + ordered[i + 1][1].min) / 2,
+        i === ordered.length - 1
+          ? Infinity
+          : (e.max + ordered[i + 1][1].min) / 2,
     }));
   }, [formattedData, facetSide]);
 

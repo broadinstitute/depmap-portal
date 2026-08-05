@@ -94,7 +94,6 @@ function DataExplorerDensity1DPlot({
     continuousBins,
     colorData,
     facetData,
-    legendKeysWithNoData,
     sortedFacetKeys,
     facetContinuousBins,
     legendState,
@@ -278,7 +277,6 @@ function DataExplorerDensity1DPlot({
               colorMap={colorMap}
               continuousBins={continuousBins}
               hiddenLegendValues={hiddenLegendValues}
-              legendKeysWithNoData={legendKeysWithNoData}
               onClickLegendItem={onClickLegendItem}
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
@@ -298,7 +296,11 @@ function DataExplorerDensity1DPlot({
               />
             </StackableSection>
           ) : null}
-          <StackableSection title="Plot Selections" minHeight={256}>
+          <StackableSection
+            title="Plot Selections"
+            minHeight={256}
+            defaultOpen={!plotConfig.expand_by}
+          >
             {isPairGrained ? (
               <ExpandedPlotSelections
                 data={data}
