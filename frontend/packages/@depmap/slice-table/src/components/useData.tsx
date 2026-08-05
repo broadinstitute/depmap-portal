@@ -237,34 +237,41 @@ function createDataFetchPromise(slice: SliceQuery): Promise<SliceResponse> {
 /**
  * Resolves a human-readable display label for a slice.
  *
- * For reindex_through chains, composes the outermost link's column name
- * with the fully-resolved leaf label (e.g. "TestArmScreenID › KRAS").
- * Intermediate "door" links are collapsed — they don't represent user
- * decision points, so including them only adds noise.
+ * For reindex_through chains, shows every hop in the chain (root to leaf)
+ * joined by " › ", e.g. "TestArmScreenID › ArmScreenID › KRAS" — no hop is
+ * collapsed. Column headers are where a long, fully-spelled-out chain is
+ * most useful: unlike the compact chain picker trigger, a header has the
+ * room to show it, and collapsing hops can make two structurally different
+ * columns (e.g. "label", which is present on every dimension type's own
+ * metadata table, reached via different chains) show up with the exact
+ * same header text.
  *
  * For tabular columns, the identifier is already the column name.
  *
  * For matrix features/samples, fetches metadata to find the label
  * corresponding to the identifier.
  */
-async function resolveDisplayLabel(
+export async function resolveDisplayLabel(
   slice: SliceQuery,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   indexType: DimensionType
 ): Promise<string> {
-  if (slice.reindex_through) {
-    const rootLabel = await resolveLeafLabel(slice);
-    // Walk to the deepest reindex_through — that's the hop adjacent to
-    // the query dimension, which is the meaningful "door" the user chose.
-    // Shallower hops are intermediate plumbing and get collapsed.
-    let deepest = slice.reindex_through;
-    while (deepest.reindex_through) {
-      deepest = deepest.reindex_through;
-    }
-    return `${deepest.identifier} › ${rootLabel}`;
+  const leafLabel = await resolveLeafLabel(slice);
+
+  if (!slice.reindex_through) {
+    return leafLabel;
   }
 
-  return resolveLeafLabel(slice);
+  // Collect hops leaf-to-root, then reverse for root-to-leaf display order.
+  const hops: string[] = [];
+  let current: SliceQuery | undefined = slice.reindex_through;
+
+  while (current) {
+    hops.push(current.identifier);
+    current = current.reindex_through;
+  }
+
+  return [...hops.reverse(), leafLabel].join(" › ");
 }
 
 /**

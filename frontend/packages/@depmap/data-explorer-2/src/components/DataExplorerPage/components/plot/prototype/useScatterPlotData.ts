@@ -19,6 +19,7 @@ import {
   getLegendKeysWithNoData,
   LEGEND_ALL,
   LEGEND_BOTH,
+  LEGEND_NEITHER,
   LEGEND_OTHER,
   LegendKey,
   nullifyUnplottableValues,
@@ -124,17 +125,18 @@ export default function useScatterPlotData(
   );
 
   const legendKeysWithNoData = useMemo(
-    () => getLegendKeysWithNoData(data, continuousBins, colorMode.mode, colorMode.target),
+    () =>
+      getLegendKeysWithNoData(
+        data,
+        continuousBins,
+        colorMode.mode,
+        colorMode.target
+      ),
     [data, continuousBins, colorMode]
   );
 
   const legendState = useLegendState(plotConfig, legendKeysWithNoData);
   const { hiddenLegendValues } = legendState;
-
-  // Independent of the color legend's own hidden set — drives the "Facets"
-  // panel. See useDensity1DPlotData's identically-purposed facetLegendState.
-  const facetLegendState = useLegendState(plotConfig, undefined, "facet");
-  const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
 
   // Facet's OWN continuous bins, computed independently of color's — mirrors
   // useDensity1DPlotData/useWaterfallPlotData's identically-named field.
@@ -150,6 +152,30 @@ export default function useScatterPlotData(
     );
     return values ? calcBins(values) : null;
   }, [data]);
+
+  // Facet's own no-data keys, computed against facet's own triad and bins —
+  // the exact facet-side analog of legendKeysWithNoData above.
+  const facetKeysWithNoData = useMemo(
+    () =>
+      getLegendKeysWithNoData(
+        data,
+        facetContinuousBins,
+        plotConfig.facet_by,
+        "facet"
+      ),
+    [data, facetContinuousBins, plotConfig.facet_by]
+  );
+
+  // Independent of the color legend's own hidden set — drives the "Facets"
+  // panel. See useDensity1DPlotData's identically-purposed facetLegendState.
+  // Seeded with facet's own no-data keys so facets with nothing to plot
+  // start toggled off, mirroring the color legend's own seeding above.
+  const facetLegendState = useLegendState(
+    plotConfig,
+    facetKeysWithNoData,
+    "facet"
+  );
+  const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
 
   const colorMap = useMemo(() => getColorMap(data, plotConfig, palette), [
     data,
@@ -237,7 +263,9 @@ export default function useScatterPlotData(
       return colorVisibility;
     }
 
-    return colorVisibility.map((v: boolean, i: number) => v && facetVisibility[i]);
+    return colorVisibility.map(
+      (v: boolean, i: number) => v && facetVisibility[i]
+    );
   }, [
     data,
     hiddenLegendValues,
@@ -354,7 +382,23 @@ export default function useScatterPlotData(
       }
 
       if (label === null) {
-        label = linreg_by_group.length === 1 ? LEGEND_ALL : LEGEND_OTHER;
+        // A null group_label from the backend's classic (non-expansion)
+        // fetchLinearRegression is ambiguous on its own — it means either
+        // "in neither selected context" (raw_slice/aggregated_slice, a real
+        // classification) or "missing data" (property/custom, a null
+        // value), depending on which color_by mode was active when that
+        // fetch ran. colorMode.mode (already a dependency of this useMemo)
+        // resolves it, rather than guessing.
+        const isCustomFilterMode =
+          colorMode.mode === "raw_slice" ||
+          colorMode.mode === "aggregated_slice";
+        label =
+          /* eslint-disable no-nested-ternary */
+          linreg_by_group.length === 1
+            ? LEGEND_ALL
+            : isCustomFilterMode
+            ? LEGEND_NEITHER
+            : LEGEND_OTHER;
       }
 
       let hidden =
@@ -363,8 +407,11 @@ export default function useScatterPlotData(
         hiddenLegendValues.has(label);
 
       if (
-        (label === LEGEND_ALL || label === LEGEND_OTHER) &&
+        (label === LEGEND_ALL ||
+          label === LEGEND_OTHER ||
+          label === LEGEND_NEITHER) &&
         (hiddenLegendValues.has(LEGEND_OTHER) ||
+          hiddenLegendValues.has(LEGEND_NEITHER) ||
           hiddenLegendValues.has(LEGEND_ALL))
       ) {
         hidden = true;

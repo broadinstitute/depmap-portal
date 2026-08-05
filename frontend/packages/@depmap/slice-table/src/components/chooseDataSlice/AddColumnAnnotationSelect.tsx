@@ -24,10 +24,20 @@ function AddColumnAnnotationSelect({
   const disabledSlices = useMemo(() => {
     const slicesToKeepEnabled = [value, initialValue.current].filter(Boolean);
 
-    return (existingSlices || []).filter((s1) =>
+    // The primary "label" column is always shown as a fixed, read-only
+    // column in SliceTable, so it can't be re-added here. This only
+    // matches the root label (not one reached through a foreign key
+    // chain), since a chained "label" is distinct, addable data.
+    const rootLabelSlice: SliceQuery = {
+      dataset_id: `${index_type_name}_metadata`,
+      identifier_type: "column",
+      identifier: "label",
+    };
+
+    return [rootLabelSlice, ...(existingSlices || [])].filter((s1) =>
       slicesToKeepEnabled.every((s2) => !areSliceQueriesEqual(s1, s2!))
     );
-  }, [existingSlices, value]);
+  }, [existingSlices, value, index_type_name]);
 
   const hiddenSlices = useMemo(() => {
     return [
