@@ -1,5 +1,7 @@
 from types import SimpleNamespace
+from typing import cast
 
+from breadbox.models.dataset import MatrixDataset
 from breadbox.utils.data_issues import (
     check_for_dataset_ids_without_metadata,
     check_for_metadata_not_in_dataset,
@@ -7,9 +9,14 @@ from breadbox.utils.data_issues import (
 )
 
 
-def make_dataset(given_id="dataset-1", id="dataset-id-1", name="My Dataset", dataset_metadata=None):
-    return SimpleNamespace(
-        given_id=given_id, id=id, name=name, dataset_metadata=dataset_metadata
+def make_dataset(given_id="dataset-1", id="dataset-id-1", name="My Dataset", dataset_metadata=None) -> MatrixDataset:
+    # A SimpleNamespace stands in for a real MatrixDataset since these functions only read
+    # given_id/id/name/dataset_metadata and don't need a DB-backed model.
+    return cast(
+        MatrixDataset,
+        SimpleNamespace(
+            given_id=given_id, id=id, name=name, dataset_metadata=dataset_metadata
+        ),
     )
 
 
