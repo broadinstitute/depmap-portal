@@ -5,7 +5,7 @@ from fastapi import Body, Depends
 from itsdangerous import URLSafeSerializer
 
 from breadbox.api.dependencies import get_db_with_user
-from breadbox.api.uploads import construct_file_from_ids
+from breadbox.service.upload import construct_file_from_ids
 from breadbox.config import Settings, get_settings
 from breadbox.crud import predictive_models as predictive_models_crud
 from breadbox.db.session import SessionWithUser

@@ -1153,14 +1153,33 @@ export async function fetchCorrelation(
     use_clustering
   );
 
-  const [x2] = filters?.distinguish2
+  const [x2Raw, x2Ids] = filters?.distinguish2
     ? await correlateDimension(
         dimensions.x,
         index_type,
         filters?.distinguish2 as DataExplorerContextV2,
         use_clustering
       )
-    : [null];
+    : [null, null];
+
+  // When clustering is enabled, correlateDimension runs a separate clustering
+  // pass for x2 that may produce a different column order than x. Without
+  // realignment, x2.values[i][j] describes a different gene pair than
+  // x.values[i][j] (and index_ids[i/j]), so a selected cell shows the wrong
+  // value from one of the two heatmaps. Reorder x2's matrix to follow x's
+  // clustering order.
+  let x2 = x2Raw;
+  if (x2Raw && x2Ids && use_clustering) {
+    const x2Matrix = x2Raw.values as unknown as number[][];
+    const x2IdToIndex: Record<string, number> = {};
+    x2Ids.forEach((id: string, i: number) => {
+      x2IdToIndex[id] = i;
+    });
+    const reorderedMatrix = ids.map((rowId: string) =>
+      ids.map((colId: string) => x2Matrix[x2IdToIndex[rowId]][x2IdToIndex[colId]])
+    );
+    x2 = { ...x2Raw, values: reorderedMatrix as unknown as number[] };
+  }
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const indexDimType = dimTypes.find((t) => t.name === index_type);
