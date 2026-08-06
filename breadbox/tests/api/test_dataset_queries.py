@@ -433,6 +433,20 @@ def test_get_aggregated_matrix_dataset_data(
 
     response = client.post(
         f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+        json={"aggregate": {"aggregate_by": "samples", "aggregation": "sum"}},
+    )
+    """
+    Expected:
+        sum
+    -------------------
+    A     6
+    B     7
+    C     9
+    """
+    assert response.json() == {"sum": {"A": 6, "B": 7, "C": 9}}
+
+    response = client.post(
+        f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
         json={
             "feature_identifier": "id",
             "features": ["A", "B"],

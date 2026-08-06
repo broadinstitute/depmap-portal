@@ -278,6 +278,7 @@ def _aggregate_matrix_df(
         AggregationMethod.per25: lambda x: np.nanpercentile(x, q=25),
         AggregationMethod.per75: lambda x: np.nanpercentile(x, q=75),
         AggregationMethod.stddev: lambda x: np.nanstd(x, ddof=1),
+        AggregationMethod.sum: "sum",
     }
 
     axis = 0 if aggregate_by == "samples" else 1

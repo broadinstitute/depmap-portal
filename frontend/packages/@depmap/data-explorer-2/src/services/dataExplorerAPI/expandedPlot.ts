@@ -16,7 +16,11 @@ import {
   buildTablesByDim,
   resolveDisplayLabel,
 } from "@depmap/selects";
-import { isCompleteDimension, isSampleType } from "../../utils/misc";
+import {
+  isCompleteDimension,
+  isExpansionDimension,
+  isSampleType,
+} from "../../utils/misc";
 import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
 import { fetchDatasetIdentifiers } from "./identifiers";
 import { getDimensionDataWithoutLabels } from "./helpers";
@@ -168,16 +172,41 @@ export async function fetchExpandedPlot(
   const filterKeys = Object.keys(filters || {}) as FilterKey[];
   const metadataKeys = Object.keys(extendedMetadata);
 
-  // A dimension expands when its slice_type matches the expansion's, AND
-  // it's an aggregated_slice (i.e. its context resolves to many ids that
-  // we'd normally aggregate). A raw_slice transcript dimension picks one
-  // specific transcript and is broadcast like any other singleton value.
-  const isExpanding = (k: string) =>
-    dimensions[k].axis_type === "aggregated_slice" &&
-    dimensions[k].slice_type === exp.slice_type;
+  // A dimension expands when it carries the "expansion" sentinel on
+  // `aggregation` — the single documented identity for an expansion axis (see
+  // isExpansionDimension, and the DataExplorerAggregation comments in
+  // @depmap/types). `select_expansion` stamps it on exactly the axis being
+  // expanded, and it survives URL round-tripping, so it is authoritative no
+  // matter where a config came from.
+  //
+  // This deliberately does NOT match on `(axis_type, slice_type)` shape.
+  // Doing so also captured any OTHER aggregated dimension that happened to
+  // share the expansion's slice_type — in Transcript Explorer, an aggregated
+  // transcript slice on the opposite axis, which is an entirely ordinary
+  // thing to configure. Such a dimension was routed here, materialized
+  // per-pair, and its `aggregation` silently discarded, so that axis's
+  // aggregation dropdown had no effect on the plot. The shape check also
+  // disagreed with normalize() in plotConfigReducer, which has always used
+  // the sentinel to decide whether `expand_by` is still live.
+  const isExpanding = (k: string) => isExpansionDimension(dimensions[k]);
 
   const expandedKeys = dimensionKeys.filter(isExpanding);
   const broadcastKeys = dimensionKeys.filter((k) => !isExpanding(k));
+
+  // An `expand_by` with no sentinel-bearing axis has nothing to read the
+  // expansion from: every dimension would be broadcast and each index
+  // entity's single value replicated M times, producing an N×M plot of
+  // duplicated points that looks plausible and is wrong. normalize() strips
+  // `expand_by` in exactly this case, so reaching here means the config
+  // bypassed the reducer (a hand-authored link, or a caller assembling a
+  // config directly). Fail loudly instead.
+  if (expandedKeys.length === 0) {
+    throw new Error(
+      `fetchExpandedPlot got an \`expand_by\` for "${exp.slice_type}" but no ` +
+        `dimension carries the "expansion" sentinel on \`aggregation\`, so ` +
+        `there is no axis to materialize the expansion from.`
+    );
+  }
 
   // Shared state. Same pattern as fetchPlotDimensions: every fetcher
   // populates these; the canonical index is derived from them at the end.

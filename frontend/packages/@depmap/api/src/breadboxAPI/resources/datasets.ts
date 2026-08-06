@@ -56,7 +56,7 @@ export function getMatrixDatasetData(
     features?: string[] | null;
     aggregate?: {
       aggregate_by: "features" | "samples";
-      aggregation: "mean" | "median" | "25%tile" | "75%tile" | "stddev";
+      aggregation: "mean" | "median" | "25%tile" | "75%tile" | "stddev" | "sum";
     };
   }
 ) {
@@ -81,6 +81,7 @@ export function getMatrixDatasetData(
       "25%tile",
       "75%tile",
       "stddev",
+      "sum",
     ];
     const requested = args.aggregate.aggregation as string;
     if (!validAggregations.includes(requested)) {

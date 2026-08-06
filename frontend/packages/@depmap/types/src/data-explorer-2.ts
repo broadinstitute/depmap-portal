@@ -81,6 +81,7 @@ export type DataExplorerAggregation =
   | "25%tile"
   | "75%tile"
   | "stddev"
+  | "sum"
   // Sentinel — NOT a real aggregation; if anything, the opposite. It marks an
   // axis whose per-pair values come from an expansion (fetchExpandedPlot), not
   // from aggregating a slice. It rides on the required `aggregation` field to
