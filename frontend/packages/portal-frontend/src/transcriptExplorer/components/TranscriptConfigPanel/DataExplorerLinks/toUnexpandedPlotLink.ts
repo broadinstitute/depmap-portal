@@ -14,6 +14,10 @@ function toUnexpandedPlotLink(
     nextPlot = omit(nextPlot, "color_by");
   }
 
+  if (nextPlot.facet_by === "expansion") {
+    nextPlot = omit(nextPlot, "facet_by");
+  }
+
   nextPlot.dimensions = (() => {
     const out: DataExplorerPlotConfig["dimensions"] = {};
 
