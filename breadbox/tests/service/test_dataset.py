@@ -46,6 +46,10 @@ def test_aggregate_stddev():
             AggregationMethod.median,
             pd.DataFrame({"median": [2, 6.50]}, index=["A", "B"]),  # pyright: ignore
         ),
+        (
+            AggregationMethod.sum,
+            pd.DataFrame({"sum": [32.0, 39.0]}, index=["A", "B"]),  # pyright: ignore
+        ),
     ],
 )
 def test_aggregate_matrix_methods(method, expected_df):
