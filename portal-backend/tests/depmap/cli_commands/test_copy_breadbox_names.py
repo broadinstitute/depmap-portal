@@ -20,7 +20,7 @@ def test_copy_breadbox_names(monkeypatch, empty_db_mock_downloads):
         return dataset
 
     DependencyDatasetFactory(name=DependencyEnum.Avana, display_name="d1")
-    DependencyDatasetFactory(name=DependencyEnum.Chronos_Achilles, display_name="d2")
+    DependencyDatasetFactory(name=DependencyEnum.Chronos_Combined, display_name="d2")
     empty_db_mock_downloads.session.flush()
 
     mock_bb_client.get_datasets.return_value = [mk_dataset("d1_new_name", "Avana")]
@@ -41,4 +41,4 @@ def test_copy_breadbox_names(monkeypatch, empty_db_mock_downloads):
         assert dataset.display_name == expected
 
     check_name(DependencyEnum.Avana.value, "d1_new_name")
-    check_name(DependencyEnum.Chronos_Achilles.value, "d2")
+    check_name(DependencyEnum.Chronos_Combined.value, "d2")

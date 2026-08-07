@@ -18,8 +18,6 @@ class DependencyEnum(DatasetEnum):
 
     # Chronos_Achilles and Chronos_Score combined
     Chronos_Combined = "Chronos_Combined"
-    # analogous to Avana, but run with Chronos instead of CERES
-    Chronos_Achilles = "Chronos_Achilles"
 
     CERES_Combined = "CERES_Combined"  # Avana and Sanger_CRISPR combined
     Avana = "Avana"

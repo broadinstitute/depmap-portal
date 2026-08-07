@@ -254,7 +254,7 @@ def test_validate_features(app, empty_db_mock_downloads):
         matrix=MatrixFactory(entities=genes, cell_lines=cell_lines),
     )
     dataset_2 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
+        name=DependencyDataset.DependencyEnum.Chronos_Combined,
         matrix=MatrixFactory(
             entities=[genes[i] for i in [0, 2]], cell_lines=cell_lines
         ),

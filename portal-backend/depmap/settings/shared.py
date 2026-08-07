@@ -233,13 +233,6 @@ DATASET_METADATA: Dict[
         priority=1,  # Determined from labeling as default_crispr_enum
         global_priority=1,
     ),
-    DependencyEnum.Chronos_Achilles: DepDatasetMeta(
-        display_name="CRISPR (DepMap, Chronos)",
-        units="Gene Effect (Chronos)",
-        nominal_range=NORMALIZED_RANGE,
-        data_type=DataTypeEnum.crispr,
-        priority=2,
-    ),
     DependencyEnum.CERES_Combined: DepDatasetMeta(
         display_name="CRISPR (DepMap+Score, CERES)",
         units="Gene Effect (CERES)",
