@@ -1083,7 +1083,6 @@ def load_sample_data(
             BiomarkerEnum.context,
             BiomarkerEnum.rppa,
             BiomarkerEnum.rrbs,
-            BiomarkerEnum.proteomics,
             BiomarkerEnum.sanger_proteomics,
             BiomarkerEnum.ssgsea,
             BiomarkerEnum.fusions,

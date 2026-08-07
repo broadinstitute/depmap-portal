@@ -97,7 +97,6 @@ additional_dev_metadata = {
     BiomarkerEnum.context: {"taiga_id": "placeholder-taiga-id.1", "transpose": True},
     BiomarkerEnum.rppa: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.rrbs: {"taiga_id": "placeholder-taiga-id.1"},
-    BiomarkerEnum.proteomics: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.sanger_proteomics: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.mutations_hotspot: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.mutations_damaging: {"taiga_id": "placeholder-taiga-id.1"},

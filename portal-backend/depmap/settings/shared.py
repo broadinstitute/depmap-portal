@@ -82,14 +82,6 @@ DATASET_METADATA: Dict[
         s3_json_name="rrbs",
         data_type=DataTypeEnum.methylation,
     ),
-    BiomarkerEnum.proteomics: DatasetLabel(
-        display_name="Proteomics",
-        units="Relative Protein Expression",
-        s3_json_name="proteomics",
-        data_type=DataTypeEnum.protein_expression,
-        priority=1,
-        global_priority=10,
-    ),
     BiomarkerEnum.sanger_proteomics: DatasetLabel(
         display_name="Sanger Proteomics",
         units="Relative Protein Expression",

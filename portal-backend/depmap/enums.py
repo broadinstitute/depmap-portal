@@ -81,7 +81,6 @@ class BiomarkerEnum(DatasetEnum):
     context = "context"
     rppa = "rppa"
     rrbs = "rrbs"
-    proteomics = "proteomics"
     sanger_proteomics = "sanger_proteomics"
     fusions = "fusions"
     ssgsea = "ssgsea"

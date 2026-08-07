@@ -25,7 +25,6 @@ def format_characterizations(gene_id, gene_symbol, biomarker_datasets):
     multiple_entities_per_gene = {
         BiomarkerEnum.rrbs.name: TranscriptionStartSite,
         BiomarkerEnum.rppa.name: Antibody,
-        BiomarkerEnum.proteomics.name: Protein,
         BiomarkerEnum.sanger_proteomics.name: Protein,
     }
     tabular_enum_to_format_function = {
@@ -45,7 +44,6 @@ def format_characterizations(gene_id, gene_symbol, biomarker_datasets):
         BiomarkerEnum.rrbs,
         "cpg_methylation",
         BiomarkerEnum.rppa,
-        BiomarkerEnum.proteomics,
         BiomarkerEnum.sanger_proteomics,
     ]
 
