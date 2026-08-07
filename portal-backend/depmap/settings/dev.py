@@ -6,10 +6,6 @@ additional_dev_metadata = {
         "matrix_file_name_root": "dataset/chronos_combined",
         "taiga_id": "small-chronos-combined-e82b.2/chronos_combined_score",
     },
-    DependencyEnum.Chronos_Achilles: {
-        "matrix_file_name_root": "dataset/chronos_achilles",
-        "taiga_id": "placeholder-taiga-id.1",
-    },
     DependencyEnum.CERES_Combined: {
         "matrix_file_name_root": "dataset/ceres_combined",
         "taiga_id": "small-ceres-combined-3dc6.1/ceres_combined_score",
@@ -97,7 +93,6 @@ additional_dev_metadata = {
     BiomarkerEnum.context: {"taiga_id": "placeholder-taiga-id.1", "transpose": True},
     BiomarkerEnum.rppa: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.rrbs: {"taiga_id": "placeholder-taiga-id.1"},
-    BiomarkerEnum.proteomics: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.sanger_proteomics: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.mutations_hotspot: {"taiga_id": "placeholder-taiga-id.1"},
     BiomarkerEnum.mutations_damaging: {"taiga_id": "placeholder-taiga-id.1"},

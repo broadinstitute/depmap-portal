@@ -158,7 +158,7 @@ def _get_expected_merged_process_df_variables(empty_db_mock_downloads):
     )
 
     dataset_achilles = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
+        name=DependencyDataset.DependencyEnum.Chronos_Combined,
         matrix=MatrixFactory(
             entities=genes, cell_lines=cell_lines, data=df_single.values
         ),
@@ -328,7 +328,7 @@ def test_get_merged_processed_df_datasets_without_entities(empty_db_mock_downloa
     )
 
     dataset_achilles = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
+        name=DependencyDataset.DependencyEnum.Chronos_Combined,
         matrix=MatrixFactory(
             entities=genes, cell_lines=cell_lines, data=df_single.values
         ),
@@ -386,7 +386,7 @@ def test_get_merged_processed_df_no_info(empty_db_mock_downloads):
     cell_lines = []
     dataset_ids = [
         DependencyDataset.DependencyEnum.Avana.name,
-        DependencyDataset.DependencyEnum.Chronos_Achilles.name,
+        DependencyDataset.DependencyEnum.Chronos_Combined.name,
     ]
 
     empty_db_mock_downloads.session.flush()

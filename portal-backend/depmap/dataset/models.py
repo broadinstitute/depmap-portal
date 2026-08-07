@@ -59,7 +59,6 @@ DATASET_NAME_TO_FEATURE_TYPE = {
     BiomarkerEnum.copy_number_relative.name: "Copy num.",
     BiomarkerEnum.crispr_confounders.name: "Confounders",
     BiomarkerEnum.rnai_confounders.name: "Confounders",
-    BiomarkerEnum.proteomics.name: "Proteomics",
     BiomarkerEnum.sanger_proteomics.name: "Sanger Proteomics",
 }
 
@@ -439,7 +438,6 @@ class BiomarkerDataset(Dataset):
         gene_related_with_multiple_entities = {
             BiomarkerDataset.BiomarkerEnum.rrbs: TranscriptionStartSite,
             BiomarkerDataset.BiomarkerEnum.rppa: Antibody,
-            BiomarkerDataset.BiomarkerEnum.proteomics: Protein,
             BiomarkerDataset.BiomarkerEnum.sanger_proteomics: Protein,
         }
 

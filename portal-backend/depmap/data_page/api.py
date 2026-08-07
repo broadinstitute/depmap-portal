@@ -117,9 +117,6 @@ def _get_data_type_url_mapping(data_types: List[str]):
         "Proteomics_RPPA_CCLE": _get_dataset_url(
             BiomarkerEnum.rppa.name, isDependencyDataset=False
         ),
-        "Proteomics_MS_CCLE": _get_dataset_url(
-            BiomarkerEnum.proteomics.name, isDependencyDataset=False
-        ),
         "Proteomics_MS_Sanger": _get_dataset_url(
             BiomarkerEnum.sanger_proteomics.name, isDependencyDataset=False
         ),

@@ -443,7 +443,6 @@ def get_cell_line_datasets(model_id: str):
         TabularDataset.TabularEnum.translocation,
         BiomarkerDataset.BiomarkerEnum.rppa,
         BiomarkerDataset.BiomarkerEnum.rrbs,
-        BiomarkerDataset.BiomarkerEnum.proteomics,
         BiomarkerDataset.BiomarkerEnum.sanger_proteomics,
         BiomarkerDataset.BiomarkerEnum.CRISPRGeneDependency,
         BiomarkerDataset.BiomarkerEnum.OmicsAbsoluteCNGene,
