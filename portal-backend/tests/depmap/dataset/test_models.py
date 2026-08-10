@@ -710,7 +710,7 @@ def test_get_dataset_by_data_type_priority(empty_db_mock_downloads):
     )
     dataset_2 = DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Rep1M)
     dataset_3 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Combined, priority=2
+        name=DependencyDataset.DependencyEnum.CERES_Combined, priority=2
     )
 
     assert (
