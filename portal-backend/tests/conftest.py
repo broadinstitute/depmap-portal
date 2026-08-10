@@ -554,9 +554,6 @@ def load_populated_db_data():
             BiomarkerDataset.BiomarkerEnum.rrbs: {
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            BiomarkerDataset.BiomarkerEnum.proteomics: {
-                "taiga_id": "placeholder-taiga-id.1",
-            },
             BiomarkerDataset.BiomarkerEnum.sanger_proteomics: {
                 "taiga_id": "placeholder-taiga-id.1",
             },
