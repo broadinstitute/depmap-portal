@@ -18,5 +18,10 @@ class TabularSubsetOperation(BaseModel):
     destination: Optional[str] = None
 
 
+class FlatTableSubsetOperation(BaseModel):
+    flat_table_id: str
+    columns: list[str]
+
+
 class ExportResult(BaseModel):
     url: str

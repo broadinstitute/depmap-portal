@@ -6,6 +6,8 @@ from breadbox.service.gcs import get_signed_key_generator, get_tempspace
 from breadbox.service.tempspace import FileObjStore, Tempspace
 
 from .. import factories
+from ..utils import assert_task_success
+from .test_flat_tables import _upload_flat_table
 
 
 def _fake_export_dependencies(client, tmpdir):
@@ -108,5 +110,39 @@ def test_export_matrix(client, minimal_db, settings, tmpdir):
     assert_frame_equal(
         exported_df.sort_values(sort_cols).reset_index(drop=True),
         expected_df.sort_values(sort_cols).reset_index(drop=True),
+        check_dtype=False,
+    )
+
+
+def test_export_flattable(client, db, settings, tmpdir, mock_celery_flat_table):
+    admin_headers = {"X-Forwarded-Email": settings.admin_users[0]}
+
+    upload_response = _upload_flat_table(
+        client, tmpdir, given_id="export_table", headers=admin_headers,
+    )
+    assert_task_success(upload_response)
+    flat_table_id = upload_response.json()["result"]["flat_table_id"]
+
+    generated_urls = _fake_export_dependencies(client, tmpdir)
+
+    response = client.post(
+        "/temp/parquet-export/flattable",
+        json={"flat_table_id": flat_table_id, "columns": ["id", "amount"]},
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200, response.content
+    url = response.json()["url"]
+
+    assert url in generated_urls
+    gcs_path = generated_urls[url]
+
+    exported_df = pd.read_parquet(gcs_path)
+    expected_df = pd.DataFrame(
+        {"id": ["r1", "r2", "r3", "r4"], "amount": [10, 20, 30, 40]}
+    )
+    assert_frame_equal(
+        exported_df.reset_index(drop=True),
+        expected_df.reset_index(drop=True),
         check_dtype=False,
     )

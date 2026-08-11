@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 
 from breadbox.api.dependencies import get_db_with_user
 from breadbox.crud import dataset as dataset_crud
+from breadbox.crud import flat_table as flat_table_crud
 from breadbox.schemas.custom_http_exception import (
     DatasetNotFoundError,
     ResourceNotFoundError,
@@ -19,10 +20,13 @@ from breadbox.models.dataset import (
     MatrixDataset,
     TabularDataset,
 )
+from breadbox.models.flat_table import FlatTable
 from breadbox.service import dataset as dataset_service
+from breadbox.service import flat_table as flat_table_service
 from breadbox.schemas.parquet_export import (
     MatrixSubsetOperation,
     TabularSubsetOperation,
+    FlatTableSubsetOperation,
 )
 from breadbox.schemas.dataset import MatrixDimensionsInfo, FeatureSampleIdentifier
 
@@ -59,6 +63,15 @@ def _get_required_matrix_dataset(db: SessionWithUser, dataset_id: str) -> Matrix
     if not isinstance(dataset, MatrixDataset):
         raise UserError(f"This endpoint only works with MatrixDatasets")
     return dataset
+
+
+def _get_required_flat_table(db: SessionWithUser, flat_table_id: str) -> FlatTable:
+    flat_table = flat_table_crud.get_flat_table(db, flat_table_id)
+    if flat_table is None:
+        raise ResourceNotFoundError(
+            f"Could not find flat table with id {flat_table_id}"
+        )
+    return flat_table
 
 
 def get_matrix_df(
@@ -107,6 +120,35 @@ def materialize_tabular(
 
     if not exists:
         df = get_tabular_df(db, dataset)
+
+        with tempfile.NamedTemporaryFile() as tmp:
+            df.to_parquet(tmp.name)
+            tempspace.put(tmp.name, dest_path)
+
+    return tempspace.abspath(dest_path)
+
+
+def materialize_flattable(
+    db: SessionWithUser,
+    settings: Settings,
+    op: FlatTableSubsetOperation,
+    tempspace: Tempspace,
+):
+    flat_table = _get_required_flat_table(db, op.flat_table_id)
+
+    key = canonical_sha(
+        {
+            "type": "materialize_flattable",
+            "flat_table_id": flat_table.id,
+            "columns": op.columns,
+        }
+    )
+    dest_path, exists = tempspace.get_path_if_exists(key)
+
+    if not exists:
+        df = flat_table_service.get_flat_table_dataframe(
+            settings, flat_table, op.columns
+        )
 
         with tempfile.NamedTemporaryFile() as tmp:
             df.to_parquet(tmp.name)
