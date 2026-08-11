@@ -8,7 +8,11 @@ export interface ResistanceRow {
   TestArmStrippedCellLineName: string;
   CulturedDrugResistance: string | null;
   EngineeredModelDetails: string | null;
-  ComparisonType: "drug adapted" | "genetic knock-in" | string;
+  ComparisonType:
+    | "drug adapted"
+    | "genetic knock-in"
+    | "genetic knock out"
+    | string;
 }
 
 const getResistanceScreenTable = async () => {

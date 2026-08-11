@@ -1,12 +1,17 @@
 import React from "react";
 import { ModelInfo, SubtypeTreeInfo } from "../models/types";
+import type { ResistanceOrigin } from "./PairedScreensTile";
 import styles from "../styles/CellLinePage.scss";
 
 export interface ModelTabProps {
   modelInfo: ModelInfo;
+  resistanceOrigin?: ResistanceOrigin;
 }
 
-const ModelTab = ({ modelInfo }: ModelTabProps) => {
+const ModelTab = ({
+  modelInfo,
+  resistanceOrigin = undefined,
+}: ModelTabProps) => {
   const showAnnotations =
     modelInfo.oncotree_lineage ||
     modelInfo.oncotree_primary_disease ||
@@ -71,6 +76,17 @@ const ModelTab = ({ modelInfo }: ModelTabProps) => {
                     </a>
                   </React.Fragment>
                 ))}
+            </>
+          )}
+          {resistanceOrigin && (
+            <>
+              <h4 className={styles.propertyGroupHeader}>Resistance</h4>
+              <h6 className={styles.propertyHeader}>
+                {resistanceOrigin.type === "cultured"
+                  ? "Cultured Resistance"
+                  : "Engineered Resistance"}
+              </h6>
+              <p>{resistanceOrigin.description}</p>
             </>
           )}
         </div>
