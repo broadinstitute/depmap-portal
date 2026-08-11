@@ -3,7 +3,7 @@ import uuid
 
 import pandas as pd
 
-from breadbox_client.models import ModelConfigIn, ColumnType, FlatTableColumnMetadata
+from breadbox_client.models import ModelConfigIn, ColumnType, FlatTableColumnMetadata, MenuIn
 from breadbox_facade import AXIS_SAMPLE, AXIS_FEATURE, COL_TYPE_CONTINUOUS, COL_TYPE_TEXT, BBClient, ColumnMetadata
 
 def unique_name(prefix):
@@ -222,6 +222,52 @@ def test_predictive_models(breadbox_client: BBClient):
 
     # delete_predictive_model_configs
     breadbox_client.delete_predictive_model_configs(dim_type_name)
+
+
+def test_cms(breadbox_client: BBClient):
+    slug1 = unique_name("post-1")
+    slug2 = unique_name("post-2")
+
+    post1 = breadbox_client.add_post(
+        slug=slug1,
+        title="Post One",
+        content="Content one",
+        content_hash="hash1",
+    )
+    post2 = breadbox_client.add_post(
+        slug=slug2,
+        title="Post Two",
+        content="Content two",
+        content_hash="hash2",
+    )
+
+    # querying posts should include both newly added posts
+    posts = breadbox_client.get_posts()
+    slugs = {p.slug for p in posts}
+    assert slug1 in slugs
+    assert slug2 in slugs
+
+    # delete one of the posts
+    breadbox_client.delete_post(post1.id)
+
+    posts_after_delete = breadbox_client.get_posts()
+    slugs_after_delete = {p.slug for p in posts_after_delete}
+    assert slug1 not in slugs_after_delete
+    assert slug2 in slugs_after_delete
+
+    # set the menu, referencing the remaining post by slug
+    menu_slug = unique_name("menu")
+    menu = [MenuIn(slug=menu_slug, title="Docs", child_menus=[], posts=[slug2])]
+    set_result = breadbox_client.set_menu(menu)
+    assert len(set_result) == 1
+    assert set_result[0].slug == menu_slug
+    assert set_result[0].posts == [slug2]
+
+    # getting the menu should reflect what was just set
+    fetched_menu = breadbox_client.get_menu()
+    assert len(fetched_menu) == 1
+    assert fetched_menu[0].slug == menu_slug
+    assert fetched_menu[0].posts == [slug2]
 
 
 def test_flat_table_lifecycle(breadbox_client: BBClient):
