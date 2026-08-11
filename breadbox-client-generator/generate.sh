@@ -2,7 +2,7 @@
 
 set -ex
 
-uvx openapi-python-client==0.21.1 \
+uvx --from openapi-python-client==0.21.1 --with "click<8.2.0" openapi-python-client==0.21.1 \
   generate \
   --meta=none \
   --output-path ../breadbox-client/breadbox_client \
