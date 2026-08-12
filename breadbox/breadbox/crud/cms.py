@@ -1,19 +1,22 @@
+import uuid
 from typing import List, Optional, Union
 
 from sqlalchemy.orm import Session
 
 from breadbox.models.cms import CmsMenu, CmsMenuPost, CmsPost
-from breadbox.schemas.cms import Menu, PostIn, PostOut, PostSummaryOut
+from breadbox.schemas.cms import MenuIn, MenuOut, PostIn, PostOut, PostSummaryOut
 from breadbox.schemas.custom_http_exception import ResourceNotFoundError
 
 
-def _build_menu_out(menu: CmsMenu) -> Menu:
+def _build_menu_out(menu: CmsMenu) -> MenuOut:
     posts = [link.post.slug for link in menu.post_links]
     child_menus = [_build_menu_out(child) for child in menu.children]
-    return Menu(slug=menu.slug, title=menu.title, child_menus=child_menus, posts=posts)
+    return MenuOut(
+        slug=menu.slug, title=menu.title, child_menus=child_menus, posts=posts
+    )
 
 
-def get_menu(db: Session) -> List[Menu]:
+def get_menu(db: Session) -> List[MenuOut]:
     roots = (
         db.query(CmsMenu)
         .filter(CmsMenu.parent_id == None)
@@ -24,7 +27,7 @@ def get_menu(db: Session) -> List[Menu]:
 
 
 def _insert_menu_nodes(
-    db: Session, items: List[Menu], parent_id: Optional[str], post_slug_to_id: dict,
+    db: Session, items: List[MenuIn], parent_id: Optional[str], post_slug_to_id: dict,
 ) -> None:
     for order_index, item in enumerate(items):
         node = CmsMenu(
@@ -47,7 +50,7 @@ def _insert_menu_nodes(
         _insert_menu_nodes(db, item.child_menus, node.id, post_slug_to_id)
 
 
-def set_menu(db: Session, menu_data: List[Menu]) -> List[Menu]:
+def set_menu(db: Session, menu_data: List[MenuIn]) -> List[MenuOut]:
     # Delete all existing menu rows (cascade handles children and post_links)
     db.query(CmsMenu).filter(CmsMenu.parent_id == None).delete(
         synchronize_session=False
@@ -80,23 +83,27 @@ def get_post(db: Session, post_id: str) -> PostOut:
     return PostOut.model_validate(post)
 
 
-def upsert_post(db: Session, post_id: str, data: PostIn) -> PostOut:
-    post = db.query(CmsPost).filter(CmsPost.id == post_id).first()
-    if post is None:
-        post = CmsPost(
-            id=post_id,
-            slug=data.slug,
-            title=data.title,
-            content=data.content,
-            content_hash=data.content_hash,
-        )
-        db.add(post)
-    else:
-        post.slug = data.slug
-        post.title = data.title
-        post.content = data.content
-        post.content_hash = data.content_hash
+def add_post(db: Session, data: PostIn) -> PostOut:
+    # Posts are immutable: if a post with the same slug already exists,
+    # delete it before inserting the new one rather than mutating it in place.
+    existing = db.query(CmsPost).filter(CmsPost.slug == data.slug).first()
+    if existing is not None:
+        db.delete(existing)
+        db.flush()
 
+    post = CmsPost(
+        id=str(uuid.uuid4()),
+        slug=data.slug,
+        title=data.title,
+        content=data.content,
+        content_hash=data.content_hash,
+    )
+    if data.created_at is not None:
+        post.created_at = data.created_at
+    if data.updated_at is not None:
+        post.updated_at = data.updated_at
+
+    db.add(post)
     db.flush()
     db.refresh(post)
     return PostOut.model_validate(post)

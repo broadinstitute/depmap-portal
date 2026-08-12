@@ -79,11 +79,10 @@ class TestPosts:
         assert_status_ok(response)
         assert response.json() == []
 
-    def test_upsert_and_get_post(
+    def test_add_and_get_post(
         self, client: TestClient, minimal_db, settings: Settings
     ):
         admin_headers = make_admin_headers(settings)
-        post_id = str(uuid.uuid4())
         post = {
             "slug": "getting-started",
             "title": "Getting Started",
@@ -91,12 +90,11 @@ class TestPosts:
             "content_hash": "abc123",
         }
 
-        response = client.post(
-            f"/cms/posts/{post_id}", json=post, headers=admin_headers
-        )
+        response = client.post("/cms/posts", json=post, headers=admin_headers)
         assert_status_ok(response)
         result = response.json()
-        assert result["id"] == post_id
+        post_id = result["id"]
+        assert post_id
         assert result["slug"] == "getting-started"
         assert result["content"] == "# Hello\nWelcome!"
 
@@ -109,14 +107,13 @@ class TestPosts:
         self, client: TestClient, minimal_db, settings: Settings
     ):
         admin_headers = make_admin_headers(settings)
-        post_id = str(uuid.uuid4())
         post = {
             "slug": "my-post",
             "title": "My Post",
             "content": "Long content here",
             "content_hash": "hash1",
         }
-        client.post(f"/cms/posts/{post_id}", json=post, headers=admin_headers)
+        client.post("/cms/posts", json=post, headers=admin_headers)
 
         response = client.get("/cms/posts", headers=USER_HEADERS)
         assert_status_ok(response)
@@ -128,50 +125,60 @@ class TestPosts:
         self, client: TestClient, minimal_db, settings: Settings
     ):
         admin_headers = make_admin_headers(settings)
-        post_id = str(uuid.uuid4())
         post = {
             "slug": "my-post",
             "title": "My Post",
             "content": "Long content here",
             "content_hash": "hash1",
         }
-        client.post(f"/cms/posts/{post_id}", json=post, headers=admin_headers)
+        client.post("/cms/posts", json=post, headers=admin_headers)
 
         response = client.get("/cms/posts?include_content=true", headers=USER_HEADERS)
         assert_status_ok(response)
         posts = response.json()
         assert posts[0]["content"] == "Long content here"
 
-    def test_upsert_updates_existing(
+    def test_adding_post_with_same_slug_replaces_existing(
         self, client: TestClient, minimal_db, settings: Settings
     ):
         admin_headers = make_admin_headers(settings)
-        post_id = str(uuid.uuid4())
         post = {
             "slug": "my-post",
             "title": "Original",
             "content": "v1",
             "content_hash": "h1",
         }
-        client.post(f"/cms/posts/{post_id}", json=post, headers=admin_headers)
+        original_response = client.post("/cms/posts", json=post, headers=admin_headers)
+        original_id = original_response.json()["id"]
 
         updated = {**post, "title": "Updated", "content": "v2", "content_hash": "h2"}
-        client.post(f"/cms/posts/{post_id}", json=updated, headers=admin_headers)
+        updated_response = client.post("/cms/posts", json=updated, headers=admin_headers)
+        assert_status_ok(updated_response)
+        new_id = updated_response.json()["id"]
 
-        response = client.get(f"/cms/posts/{post_id}", headers=USER_HEADERS)
+        # A new post row (new id) was inserted; the old one is gone.
+        assert new_id != original_id
+        response = client.get(f"/cms/posts/{original_id}", headers=USER_HEADERS)
+        assert response.status_code == 404
+
+        response = client.get(f"/cms/posts/{new_id}", headers=USER_HEADERS)
         assert response.json()["title"] == "Updated"
         assert response.json()["content"] == "v2"
 
+        # Only one post with this slug exists.
+        response = client.get("/cms/posts", headers=USER_HEADERS)
+        assert len(response.json()) == 1
+
     def test_delete_post(self, client: TestClient, minimal_db, settings: Settings):
         admin_headers = make_admin_headers(settings)
-        post_id = str(uuid.uuid4())
         post = {
             "slug": "to-delete",
             "title": "To Delete",
             "content": "bye",
             "content_hash": "x",
         }
-        client.post(f"/cms/posts/{post_id}", json=post, headers=admin_headers)
+        add_response = client.post("/cms/posts", json=post, headers=admin_headers)
+        post_id = add_response.json()["id"]
 
         response = client.delete(f"/cms/posts/{post_id}", headers=admin_headers)
         assert response.status_code == 204
@@ -184,14 +191,13 @@ class TestPosts:
         assert response.status_code == 404
 
     def test_write_requires_admin(self, client: TestClient, minimal_db):
-        post_id = str(uuid.uuid4())
         post = {
             "slug": "s",
             "title": "t",
             "content": "c",
             "content_hash": "h",
         }
-        response = client.post(f"/cms/posts/{post_id}", json=post, headers=USER_HEADERS)
+        response = client.post("/cms/posts", json=post, headers=USER_HEADERS)
         assert response.status_code == 403
 
     def test_delete_requires_admin(self, client: TestClient, minimal_db):
@@ -204,14 +210,13 @@ class TestMenuWithPosts:
         self, client: TestClient, minimal_db, settings: Settings
     ):
         admin_headers = make_admin_headers(settings)
-        post_id = str(uuid.uuid4())
         post = {
             "slug": "intro",
             "title": "Intro",
             "content": "...",
             "content_hash": "h",
         }
-        client.post(f"/cms/posts/{post_id}", json=post, headers=admin_headers)
+        client.post("/cms/posts", json=post, headers=admin_headers)
 
         menu = [
             {"slug": "docs", "title": "Docs", "child_menus": [], "posts": ["intro"],}

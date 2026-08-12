@@ -67,6 +67,12 @@ from breadbox_client.api.release_versions import get_release_versions as get_rel
 from breadbox_client.api.release_versions import get_release_version as get_release_version_client
 from breadbox_client.api.release_versions import create_release_version as create_release_version_client
 from breadbox_client.api.release_versions import delete_release_version as delete_release_version_client
+from breadbox_client.api.cms import get_cms_posts as get_cms_posts_client
+from breadbox_client.api.cms import get_cms_post as get_cms_post_client
+from breadbox_client.api.cms import add_cms_post as add_cms_post_client
+from breadbox_client.api.cms import delete_cms_post as delete_cms_post_client
+from breadbox_client.api.cms import get_cms_menu as get_cms_menu_client
+from breadbox_client.api.cms import set_cms_menu as set_cms_menu_client
 
 from breadbox_client.models import (
     AccessType,
@@ -131,8 +137,13 @@ from breadbox_client.models import (
     PredictiveModelResultOut,
     PredictiveModelsResponse,
     ReleaseVersionResponse,
-    CreateReleaseVersionParams, 
-    ReleaseVersionResponse
+    CreateReleaseVersionParams,
+    ReleaseVersionResponse,
+    PostOut,
+    PostSummaryOut,
+    PostIn,
+    MenuIn,
+    MenuOut,
 )
 
 from breadbox_client.types import UNSET, Unset, File, Response
@@ -787,6 +798,58 @@ class BBClient:
         deleted automatically via cascade.
         """
         breadbox_response = delete_release_version_client.sync_detailed(client=self.client, release_version_id=release_version_id)
+        return self._parse_client_response(breadbox_response)
+
+    # CMS
+
+    def get_posts(self, include_content: bool = False) -> List[Union[PostOut, PostSummaryOut]]:
+        """Get all CMS posts, with the option to include_content."""
+        breadbox_response = get_cms_posts_client.sync_detailed(client=self.client, include_content=include_content)
+        return self._parse_client_response(breadbox_response)
+
+    def get_post(self, post_id: str) -> PostOut:
+        """Get a single CMS post by id."""
+        breadbox_response = get_cms_post_client.sync_detailed(post_id=post_id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def add_post(
+        self,
+        slug: str,
+        title: str,
+        content: str,
+        content_hash: str,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
+    ) -> PostOut:
+        """
+        Add a new CMS post. Posts are immutable, so this always inserts a new
+        row — the server generates its own id; if a post with the same slug
+        already exists, the server deletes it first.
+        """
+        body = PostIn(
+            slug=slug,
+            title=title,
+            content=content,
+            content_hash=content_hash,
+            created_at=created_at if created_at else UNSET,
+            updated_at=updated_at if updated_at else UNSET,
+        )
+        breadbox_response = add_cms_post_client.sync_detailed(client=self.client, body=body)
+        return self._parse_client_response(breadbox_response)
+
+    def delete_post(self, post_id: str) -> None:
+        """Delete a CMS post by id."""
+        breadbox_response = delete_cms_post_client.sync_detailed(post_id=post_id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def get_menu(self) -> List[MenuOut]:
+        """Get the CMS menu tree."""
+        breadbox_response = get_cms_menu_client.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def set_menu(self, menus: List[MenuIn]) -> List[MenuOut]:
+        """Replace the entire CMS menu tree."""
+        breadbox_response = set_cms_menu_client.sync_detailed(client=self.client, body=menus)
         return self._parse_client_response(breadbox_response)
 
     # PREDICTIVE MODELS
