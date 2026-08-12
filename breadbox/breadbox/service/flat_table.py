@@ -305,7 +305,7 @@ def _query_flat_table_as_dataframe(
     if not columns:
         return pd.DataFrame(index=range(len(rows)))
 
-    return pd.DataFrame(rows, columns=columns, dtype=object)
+    return pd.DataFrame(rows, columns=pd.Index(columns), dtype=object)
 
 
 def get_flat_table_dataframe(
