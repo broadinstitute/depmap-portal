@@ -2,8 +2,9 @@ import os
 import re
 import sqlite3
 import uuid
-from typing import List
+from typing import List, Optional
 
+import pandas as pd
 import pyarrow.parquet as pq
 import pyarrow.types as pa_types
 
@@ -16,6 +17,7 @@ from breadbox.schemas.flat_table import (
     ColumnType,
     FlatTableColumnMetadata,
     FlatTableCreateParams,
+    FlatTableFilter,
     FlatTableSubsetColumn,
     FlatTableSubsetRequest,
     FlatTableSubsetResponse,
@@ -32,6 +34,14 @@ _SQLITE_TYPE_BY_COLUMN_TYPE = {
     ColumnType.string: "TEXT",
     ColumnType.int: "INTEGER",
     ColumnType.float: "REAL",
+}
+
+# Used to coerce values read back from pyarrow/pandas (e.g. numpy.int64, numpy.float64)
+# into the native Python types sqlite3 knows how to bind (None/int/float/str/bytes).
+_PY_CAST_BY_COLUMN_TYPE = {
+    ColumnType.string: str,
+    ColumnType.int: int,
+    ColumnType.float: float,
 }
 
 # Row batch size used when streaming the uploaded parquet file into SQLite, so that ingesting
@@ -105,6 +115,7 @@ def _ingest_parquet_to_sqlite(
         os.remove(dest_path)
 
     column_names = [c.given_id for c in columns]
+    column_casts = [_PY_CAST_BY_COLUMN_TYPE[c.type] for c in columns]
 
     conn = sqlite3.connect(dest_path)
     try:
@@ -127,7 +138,19 @@ def _ingest_parquet_to_sqlite(
             batch_size=_INGEST_BATCH_SIZE, columns=column_names
         ):
             batch_df = batch.to_pandas()
-            rows = list(batch_df[column_names].itertuples(index=False, name=None))
+            raw_rows = batch_df[column_names].itertuples(index=False, name=None)
+            # `_validate_schema_against_parquet` above already confirmed each column's
+            # declared type is compatible with the uploaded file's arrow type, but
+            # to_pandas() hands back numpy scalar types (e.g. numpy.int64) that sqlite3
+            # doesn't know how to bind -- coerce each value to the native Python type its
+            # column declares, preserving nulls.
+            rows = [
+                tuple(
+                    None if pd.isna(value) else cast(value)
+                    for value, cast in zip(row, column_casts)
+                )
+                for row in raw_rows
+            ]
             if rows:
                 cursor.executemany(insert_sql, rows)
                 row_count += len(rows)
@@ -174,6 +197,7 @@ def create_flat_table_from_upload(
         sqlite_db_path=relative_sqlite_path,
         row_count=row_count,
         columns=params.columns,
+        indices=params.indices,
         taiga_id=params.taiga_id,
         metadata=params.metadata,
     )
@@ -197,10 +221,13 @@ def to_flat_table_response(flat_table: FlatTable) -> FlatTableResponse:
         taiga_id=flat_table.taiga_id,
         metadata=flat_table.flat_table_metadata,
         columns=[_to_column_metadata(c) for c in flat_table.columns],
+        indices=flat_table.indices,
     )
 
 
-def to_flat_table_summary(flat_table: FlatTable) -> FlatTableSummaryResponse:
+def to_flat_table_summary(
+    flat_table: FlatTable, include_columns: bool = False
+) -> FlatTableSummaryResponse:
     return FlatTableSummaryResponse(
         flat_table_id=flat_table.id,
         given_id=flat_table.given_id,
@@ -208,6 +235,10 @@ def to_flat_table_summary(flat_table: FlatTable) -> FlatTableSummaryResponse:
         row_count=flat_table.row_count,
         taiga_id=flat_table.taiga_id,
         metadata=flat_table.flat_table_metadata,
+        indices=flat_table.indices,
+        columns=[_to_column_metadata(c) for c in flat_table.columns]
+        if include_columns
+        else None,
     )
 
 
@@ -219,21 +250,26 @@ def _cast_filter_value(value: str, column_type: str):
     return value
 
 
-def get_flat_table_subset(
-    settings: Settings, flat_table: FlatTable, request: FlatTableSubsetRequest,
-) -> FlatTableSubsetResponse:
+def _query_flat_table_as_dataframe(
+    settings: Settings,
+    flat_table: FlatTable,
+    columns: List[str],
+    filters: Optional[List[FlatTableFilter]] = None,
+) -> pd.DataFrame:
+    """
+    Run a SELECT for the given columns against a flat table's underlying SQLite file,
+    with optional filter clauses (AND'd together, each an IN-list against a single
+    column). Returns one row per matching row and one column per entry in `columns`, in
+    that order, with values exactly as stored (no numeric/null coercion). If `columns` is
+    empty, returns a DataFrame with the correct row count and no columns.
+    """
     columns_by_given_id = {c.given_id: c for c in flat_table.columns}
 
-    requested_columns = (
-        request.columns
-        if request.columns is not None
-        else list(columns_by_given_id.keys())
-    )
-    for column in requested_columns:
+    for column in columns:
         if column not in columns_by_given_id:
             raise UserError(f"Unknown column {column!r} for this flat table")
 
-    for filter in request.filters:
+    for filter in filters or []:
         if filter.column not in columns_by_given_id:
             raise UserError(
                 f"Unknown filter column {filter.column!r} for this flat table"
@@ -241,19 +277,17 @@ def get_flat_table_subset(
 
     where_clauses = []
     query_params: list = []
-    for filter in request.filters:
+    for filter in filters or []:
         column_type = columns_by_given_id[filter.column].type
         cast_values = [_cast_filter_value(v, column_type) for v in filter.values]
         placeholders = ", ".join("?" for _ in cast_values)
         where_clauses.append(f"{_quote_identifier(filter.column)} IN ({placeholders})")
         query_params.extend(cast_values)
 
-    quoted_requested_columns = (
-        ", ".join(_quote_identifier(c) for c in requested_columns)
-        if requested_columns
-        else "NULL"
+    quoted_columns = (
+        ", ".join(_quote_identifier(c) for c in columns) if columns else "NULL"
     )
-    select_sql = f"SELECT {quoted_requested_columns} FROM {_DATA_TABLE_NAME}"
+    select_sql = f"SELECT {quoted_columns} FROM {_DATA_TABLE_NAME}"
     if where_clauses:
         select_sql += " WHERE " + " AND ".join(where_clauses)
 
@@ -268,14 +302,43 @@ def get_flat_table_subset(
     finally:
         conn.close()
 
-    columns_values = list(zip(*rows)) if rows else [[] for _ in requested_columns]
+    if not columns:
+        return pd.DataFrame(index=range(len(rows)))
+
+    return pd.DataFrame(rows, columns=pd.Index(columns), dtype=object)
+
+
+def get_flat_table_dataframe(
+    settings: Settings, flat_table: FlatTable, columns: List[str],
+) -> pd.DataFrame:
+    "Read the given columns of a flat table into a DataFrame, in row order."
+    if not columns:
+        raise UserError("Must specify at least one column to export")
+
+    return _query_flat_table_as_dataframe(settings, flat_table, columns)
+
+
+def get_flat_table_subset(
+    settings: Settings, flat_table: FlatTable, request: FlatTableSubsetRequest,
+) -> FlatTableSubsetResponse:
+    columns_by_given_id = {c.given_id: c for c in flat_table.columns}
+
+    requested_columns = (
+        request.columns
+        if request.columns is not None
+        else list(columns_by_given_id.keys())
+    )
+
+    df = _query_flat_table_as_dataframe(
+        settings, flat_table, requested_columns, request.filters
+    )
 
     result_columns = [
         FlatTableSubsetColumn(
             metadata=_to_column_metadata(columns_by_given_id[column]),
-            values=list(columns_values[i]),
+            values=df[column].tolist(),
         )
-        for i, column in enumerate(requested_columns)
+        for column in requested_columns
     ]
 
-    return FlatTableSubsetResponse(columns=result_columns, row_count=len(rows))
+    return FlatTableSubsetResponse(columns=result_columns, row_count=len(df))

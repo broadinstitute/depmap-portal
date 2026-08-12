@@ -126,6 +126,12 @@ class FlatTableResponse(BaseModel):
     taiga_id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
     columns: List[FlatTableColumnMetadata]
+    indices: Annotated[
+        List[List[str]],
+        Field(
+            description="Sets of columns (by given_id) which have a SQLite index built on them."
+        ),
+    ] = Field(default_factory=list)
 
 
 class FlatTableSummaryResponse(BaseModel):
@@ -135,6 +141,18 @@ class FlatTableSummaryResponse(BaseModel):
     row_count: int
     taiga_id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+    indices: Annotated[
+        List[List[str]],
+        Field(
+            description="Sets of columns (by given_id) which have a SQLite index built on them."
+        ),
+    ] = Field(default_factory=list)
+    columns: Annotated[
+        Optional[List[FlatTableColumnMetadata]],
+        Field(
+            description="The table's columns. Only populated when `include=all` is passed to the list endpoint."
+        ),
+    ] = None
 
 
 class FlatTableFilter(BaseModel):

@@ -124,12 +124,26 @@ class TestScenarios:
         assert by_uuid.json() == by_given_id.json()
         assert by_uuid.json()["columns"] == DEFAULT_COLUMNS
 
-        # list omits "columns" to keep the payload small
+        # list omits "columns" (null) by default to keep the payload small
         listing = client.get("/flattables", headers=ADMIN_HEADERS)
         assert_status_ok(listing)
         summaries = {t["flat_table_id"]: t for t in listing.json()}
         assert flat_table_id in summaries
-        assert "columns" not in summaries[flat_table_id]
+        assert summaries[flat_table_id]["columns"] is None
+        assert summaries[flat_table_id]["indices"] == [["category"]]
+
+        # include=all adds "columns" to each summary
+        listing_with_columns = client.get(
+            "/flattables", params={"include": "all"}, headers=ADMIN_HEADERS
+        )
+        assert_status_ok(listing_with_columns)
+        summaries_with_columns = {
+            t["flat_table_id"]: t for t in listing_with_columns.json()
+        }
+        assert summaries_with_columns[flat_table_id]["columns"] == DEFAULT_COLUMNS
+
+        # indices round-trip on the single-table response too
+        assert by_uuid.json()["indices"] == [["category"]]
 
         # subset: multiple filters (AND), explicit column subset
         subset = client.post(
