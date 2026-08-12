@@ -114,6 +114,7 @@ depmap-base/requirements
 yarn-error.log
 storybook-static
 node_modules
+*.tsbuildinfo
 documentation/cell_lines.png
 documentation/*.png
 *.orig

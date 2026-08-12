@@ -79,5 +79,6 @@ all. A binary blob in Google Drive is checkable by nobody.
 
 - **0001** — schema versioning; establishes the invariant this doc protects, and the reason
   `version` cannot certify provenance.
-- The `color_by` default flip (schema version 2) is the first change that will exercise the
-  lockstep rule. It has not been decided and has no ADR yet.
+- **ADR 0004** — the `color_by` default flip (schema version 2), the first change to
+  exercise the lockstep rule this ADR establishes. `generating-de2-links.md` was bumped
+  to version 2 in the same commit.

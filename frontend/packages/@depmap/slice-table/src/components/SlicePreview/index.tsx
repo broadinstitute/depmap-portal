@@ -5,7 +5,7 @@ import {
   PlotlyLoaderProvider,
   usePlotlyLoader,
 } from "@depmap/data-explorer-2";
-import { SliceQuery } from "@depmap/types";
+import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
 import useData from "../useData";
 import ContinuousDataPreview from "./ContinuousDataPreview";
 import CategoricalDataPreview from "./CategoricalDataPreview";
@@ -67,12 +67,16 @@ function SlicePreview({
     entityLabel,
   } = useData({ index_type_name, slices });
 
+  // Match by full SliceQuery equality, not just `identifier` — a chained
+  // slice (e.g. "label" reached via reindex_through to a different table)
+  // shares its bare identifier with the always-fetched root "label" column,
+  // so comparing identifiers alone would resolve to the wrong column.
   const column = useMemo(
     () =>
       previewColumns.find(({ meta }) => {
-        return meta.sliceQuery.identifier === value?.identifier;
+        return value !== null && areSliceQueriesEqual(meta.sliceQuery, value);
       }),
-    [previewColumns, value?.identifier]
+    [previewColumns, value]
   );
 
   const isBinary = useMemo(() => {

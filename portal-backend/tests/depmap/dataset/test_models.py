@@ -115,7 +115,7 @@ def test_dataset_find_datasets_with_entity_ids(empty_db_mock_downloads):
     )
     dataset_2 = DependencyDatasetFactory(
         matrix=MatrixFactory(entities=[genes[1]]),
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles,
+        name=DependencyDataset.DependencyEnum.Chronos_Combined,
     )
     dataset_3 = BiomarkerDatasetFactory(
         matrix=MatrixFactory(entities=[genes[1]]),
@@ -243,7 +243,7 @@ def test_biomarker_dataset_has_entity_by_label(empty_db_mock_downloads):
     "enum, expected",
     [
         (DependencyDataset.DependencyEnum.Avana, True),
-        (DependencyDataset.DependencyEnum.Chronos_Achilles, True),
+        (DependencyDataset.DependencyEnum.Chronos_Combined, True),
         (DependencyDataset.DependencyEnum.RNAi_Ach, False),
         (DependencyDataset.DependencyEnum.GDSC1_AUC, False),
     ],
@@ -284,7 +284,7 @@ def test_dataset_is_auc(empty_db_mock_downloads, enum, expected):
 
 def test_get_all(empty_db_mock_downloads):
     DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Avana)
-    DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Chronos_Achilles)
+    DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Chronos_Combined)
     BiomarkerDatasetFactory(name=BiomarkerDataset.BiomarkerEnum.expression)
     empty_db_mock_downloads.session.flush()
 
@@ -329,8 +329,8 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
                 "global_priority": None,
                 "taiga_id": "placeholder-taiga-id.1",
             },
-            DependencyDataset.DependencyEnum.Chronos_Achilles: {
-                "matrix_file_name_root": "dataset/chronos_achilles",
+            DependencyDataset.DependencyEnum.Chronos_Combined: {
+                "matrix_file_name_root": "dataset/chronos_combined",
                 "display_name": "CRISPR (DepMap, Chronos)",
                 "units": "Gene Effect (Chronos)",
                 "data_type": "CRISPR",
@@ -373,12 +373,12 @@ def test_dependency_dataset_has_entity(empty_db_mock_downloads):
         (DependencyDataset.DependencyEnum.Avana, symbol_to_id["AMY1A"], True),
         (DependencyDataset.DependencyEnum.Avana, symbol_to_id["dummy"], False),
         (
-            DependencyDataset.DependencyEnum.Chronos_Achilles,
+            DependencyDataset.DependencyEnum.Chronos_Combined,
             symbol_to_id["ANOS1"],
             True,
         ),
         (
-            DependencyDataset.DependencyEnum.Chronos_Achilles,
+            DependencyDataset.DependencyEnum.Chronos_Combined,
             symbol_to_id["dummy"],
             False,
         ),
@@ -680,7 +680,7 @@ def test_get_datasets_in_order(empty_db_mock_downloads):
         name=DependencyDataset.DependencyEnum.Chronos_Combined, priority=1
     )
     dataset_5 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles, priority=2
+        name=DependencyDataset.DependencyEnum.CERES_Combined, priority=2
     )
     dataset_6 = DependencyDatasetFactory(
         name=DependencyDataset.DependencyEnum.RNAi_merged, priority=1
@@ -710,7 +710,7 @@ def test_get_dataset_by_data_type_priority(empty_db_mock_downloads):
     )
     dataset_2 = DependencyDatasetFactory(name=DependencyDataset.DependencyEnum.Rep1M)
     dataset_3 = DependencyDatasetFactory(
-        name=DependencyDataset.DependencyEnum.Chronos_Achilles, priority=2
+        name=DependencyDataset.DependencyEnum.CERES_Combined, priority=2
     )
 
     assert (

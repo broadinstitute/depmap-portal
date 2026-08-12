@@ -6,7 +6,6 @@ import {
   DataExplorerDatasetDescriptor,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimensionV2,
-  DataExplorerPlotType,
 } from "@depmap/types";
 import { dataExplorerAPI } from "../../../../services/dataExplorerAPI";
 import {
@@ -141,20 +140,29 @@ export function ColorByTypeSelector({
   show,
   enable,
   value,
-  plot_type,
   index_type,
+  expansionSliceType = null,
   onChange,
 }: {
   show: boolean;
   enable: boolean;
   value: string | null;
-  plot_type: DataExplorerPlotType;
   index_type: string;
+  // The slice_type of the current expansion (plot.expand_by?.[0]?.slice_type)
+  // — labels the "expansion" option with its real dimension type instead of
+  // a hardcoded "Transcript". Falls back to "Transcript" when the label
+  // hasn't resolved yet, or when this is unset but `value` is already
+  // "expansion" (a plot can be seeded with color_by: "expansion" before its
+  // expand_by is ever populated).
+  expansionSliceType?: string | null;
   onChange: (nextValue: DataExplorerPlotConfig["color_by"]) => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [indexTypeLabel, setIndexTypeLabel] = useState(
     getDimensionTypeLabel(index_type)
+  );
+  const [expansionTypeLabel, setExpansionTypeLabel] = useState(
+    getDimensionTypeLabel(expansionSliceType ?? undefined)
   );
   useEffect(() => {
     (async () => {
@@ -166,10 +174,13 @@ export function ColorByTypeSelector({
         .then(() => {
           setTimeout(() => {
             setIndexTypeLabel(getDimensionTypeLabel(index_type));
+            setExpansionTypeLabel(
+              getDimensionTypeLabel(expansionSliceType ?? undefined)
+            );
           });
         });
     })();
-  }, [index_type]);
+  }, [index_type, expansionSliceType]);
 
   const options: Partial<Record<ColorByValue, string>> = {
     raw_slice: indexTypeLabel,
@@ -207,14 +218,38 @@ export function ColorByTypeSelector({
     </p>
   );
 
+  // Always a real, selectable, always-available option (ADR 0004/Addendum 2):
+  // defers coloring entirely to facet_by's own resolution. It's also the
+  // implicit default whenever color_by is absent, so this is never a special
+  // case to build UI around — just another value in the list.
+  options.facet = "Match Facet By";
+  helpContent.push(
+    <p key={4}>
+      Choose <b>Match Facet By</b> to color points the same way they&apos;re
+      faceted (the default whenever a facet is chosen).
+    </p>
+  );
+
+  // Only a real, meaningful choice once an expansion actually exists — or
+  // when `value` is already "expansion" (a plot can be seeded that way
+  // before its expand_by is populated). Never shown otherwise (no DE2-main
+  // UI sets expand_by today).
+  if (expansionSliceType || value === "expansion") {
+    options.expansion = expansionTypeLabel || "Transcript";
+    helpContent.push(
+      <p key={5}>
+        Choose <b>{expansionTypeLabel || "Transcript"}</b> to color by the
+        expanded per-{(expansionTypeLabel || "Transcript").toLowerCase()} rows.
+      </p>
+    );
+  }
+
   return (
-    <div ref={ref} className={styles.colorBySelector}>
+    <div ref={ref} className={styles.facetAndColorTypeSelect}>
       <PlotConfigSelect
         label={
           <span>
-            {["density_1d", "waterfall"].includes(plot_type)
-              ? "Color & group by"
-              : "Color by"}
+            Color by
             {index_type && (
               <HelpTip id="color-by-help" customContent={helpContent} />
             )}
@@ -240,6 +275,129 @@ export function ColorByTypeSelector({
   );
 }
 
+// facet_by reuses ColorByValue's value set, minus the color-only sentinels
+// ("facet"/"uniform" only make sense for deferring/opting-out of color).
+type FacetByValue = ColorByValue;
+
+export function FacetByTypeSelector({
+  show,
+  enable,
+  value,
+  index_type,
+  expansionSliceType = null,
+  onChange,
+}: {
+  show: boolean;
+  enable: boolean;
+  value: string | null;
+  index_type: string;
+  // See ColorByTypeSelector's identical prop for the full rationale.
+  expansionSliceType?: string | null;
+  onChange: (nextValue: DataExplorerPlotConfig["facet_by"] | null) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [indexTypeLabel, setIndexTypeLabel] = useState(
+    getDimensionTypeLabel(index_type)
+  );
+  const [expansionTypeLabel, setExpansionTypeLabel] = useState(
+    getDimensionTypeLabel(expansionSliceType ?? undefined)
+  );
+
+  useEffect(() => {
+    (async () => {
+      cached(breadboxAPI)
+        .getDimensionTypes()
+        .then(() => {
+          setTimeout(() => {
+            setIndexTypeLabel(getDimensionTypeLabel(index_type));
+            setExpansionTypeLabel(
+              getDimensionTypeLabel(expansionSliceType ?? undefined)
+            );
+          });
+        });
+    })();
+  }, [index_type, expansionSliceType]);
+
+  const options: Partial<Record<FacetByValue, string>> = {
+    raw_slice: indexTypeLabel,
+  };
+
+  const helpContent: React.ReactNode[] = [
+    <p key={0}>
+      Choose <b>{indexTypeLabel}</b> to facet by a single point.
+    </p>,
+  ];
+
+  options.aggregated_slice = `${indexTypeLabel} Context`;
+  helpContent.push(
+    <p key={1}>
+      Choose <b>{indexTypeLabel} Context</b> to facet by membership in a
+      user-defined context.
+    </p>
+  );
+
+  options.property = `${indexTypeLabel} Annotation`;
+  helpContent.push(
+    <p key={2}>
+      Choose <b>{indexTypeLabel} Annotation</b> to facet by major properties of
+      the {indexTypeLabel}, such as selectivity for genes or lineage for models.
+    </p>
+  );
+
+  options.custom = "Dataset";
+  helpContent.push(
+    <p key={3}>
+      Choose <b>Dataset</b> to treat facet as a third axis, letting you choose
+      any data type that could have been an axis.
+    </p>
+  );
+
+  // Only a real, meaningful choice once an expansion actually exists — or
+  // when `value` is already "expansion" (a plot can be seeded that way
+  // before its expand_by is populated). Never shown otherwise (no DE2-main
+  // UI sets expand_by today).
+  if (expansionSliceType || value === "expansion") {
+    options.expansion = expansionTypeLabel || "Transcript";
+    helpContent.push(
+      <p key={4}>
+        Choose <b>{expansionTypeLabel || "Transcript"}</b> to facet by the
+        expanded per-{(expansionTypeLabel || "Transcript").toLowerCase()} rows.
+      </p>
+    );
+  }
+
+  return (
+    <div ref={ref} className={styles.facetAndColorTypeSelect}>
+      <PlotConfigSelect
+        isClearable
+        label={
+          <span>
+            Facet by
+            {index_type && (
+              <HelpTip id="facet-by-help" customContent={helpContent} />
+            )}
+          </span>
+        }
+        placeholder="Choose type…"
+        options={options}
+        show={show}
+        enable={enable}
+        value={value}
+        onChange={(nextValue) => {
+          onChange(nextValue as DataExplorerPlotConfig["facet_by"] | null);
+
+          setTimeout(() => {
+            ref.current?.parentElement?.scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }, 0);
+        }}
+      />
+    </div>
+  );
+}
+
 export function SortBySelector({
   show,
   enable,
@@ -252,24 +410,26 @@ export function SortBySelector({
   onChange: (nextValue: DataExplorerPlotConfig["sort_by"]) => void;
 }) {
   return (
-    <PlotConfigSelect
-      label="Sort groups by"
-      placeholder="Select sort…"
-      options={{
-        alphabetical: "Alphabetical",
-        mean_values_asc: "Mean values (ascending)",
-        mean_values_desc: "Mean values (descending)",
-        max_values: "Max values",
-        min_values: "Min values",
-        num_points: "Number of points",
-      }}
-      show={show}
-      enable={enable}
-      value={value}
-      onChange={(nextValue) =>
-        onChange(nextValue as DataExplorerPlotConfig["sort_by"])
-      }
-    />
+    <div className={styles.sortBySelector}>
+      <PlotConfigSelect
+        label="Sort facets by"
+        placeholder="Select sort…"
+        options={{
+          alphabetical: "Alphabetical",
+          mean_values_asc: "Mean values (ascending)",
+          mean_values_desc: "Mean values (descending)",
+          max_values: "Max values",
+          min_values: "Min values",
+          num_points: "Number of points",
+        }}
+        show={show}
+        enable={enable}
+        value={value}
+        onChange={(nextValue) =>
+          onChange(nextValue as DataExplorerPlotConfig["sort_by"])
+        }
+      />
+    </div>
   );
 }
 
@@ -280,8 +440,8 @@ export function ColorByDimensionSelect({
   onChange,
   onClickCreateContext,
   onClickSaveAsContext,
-  sortByValue,
-  onChangeSortBy,
+  sortByValue = undefined,
+  onChangeSortBy = undefined,
 }: {
   plot_type: string;
   index_type: string | null;
@@ -289,13 +449,22 @@ export function ColorByDimensionSelect({
   onChange: (nextValue: Partial<DataExplorerPlotConfigDimensionV2>) => void;
   onClickCreateContext: () => void;
   onClickSaveAsContext: () => void;
-  sortByValue: string;
-  onChangeSortBy: (nextValue: DataExplorerPlotConfig["sort_by"]) => void;
+  // Optional: omitting these (both, together) opts a caller out of the
+  // embedded secondary sort-by selector entirely — no render, no
+  // getDataset fetch. Callers that have their own, single primary sort
+  // selector elsewhere (e.g. Transcript Explorer) should omit them rather
+  // than passing a stub.
+  sortByValue?: string;
+  onChangeSortBy?: (nextValue: DataExplorerPlotConfig["sort_by"]) => void;
 }) {
   const [showSortBy, setShowSortBy] = useState(false);
 
   useEffect(() => {
-    if (["density_1d", "waterfall"].includes(plot_type) && value?.dataset_id) {
+    if (
+      onChangeSortBy &&
+      ["density_1d", "waterfall"].includes(plot_type) &&
+      value?.dataset_id
+    ) {
       cached(breadboxAPI)
         .getDataset(value.dataset_id)
         .then((d) => {
@@ -306,7 +475,7 @@ export function ColorByDimensionSelect({
     } else {
       setShowSortBy(false);
     }
-  }, [plot_type, value]);
+  }, [plot_type, value, onChangeSortBy]);
 
   return (
     <>
@@ -328,12 +497,12 @@ export function ColorByDimensionSelect({
           });
         }}
       />
-      {showSortBy && (
+      {showSortBy && onChangeSortBy && (
         <div className={styles.customColorSortBy}>
           <SortBySelector
             show
             enable
-            value={sortByValue}
+            value={sortByValue ?? ""}
             onChange={onChangeSortBy}
           />
         </div>

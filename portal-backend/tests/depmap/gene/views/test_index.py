@@ -127,7 +127,6 @@ def test_gene_dependency_datasets_where_present(
                 "mutations_damaging",
                 "mutations_driver",
                 "rrbs",
-                "proteomics",
                 "sanger_proteomics",
             ],
         ),

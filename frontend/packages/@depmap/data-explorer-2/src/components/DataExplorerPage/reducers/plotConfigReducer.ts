@@ -11,6 +11,7 @@ import {
   SliceQuery,
 } from "@depmap/types";
 import { isExpansionDimension } from "../../../utils/misc";
+import { canSwapColorAndFacet, isAxisComplete, SwappablePlot } from "../utils";
 
 // Default fan-out bound seeded onto a new expansion when the caller doesn't
 // supply one. Kept here as the single source of that default. Set
@@ -39,12 +40,16 @@ export type PlotConfigReducerAction =
     }
   | { type: "select_color_by"; payload: DataExplorerPlotConfig["color_by"] }
   | {
-      type: "select_group_by";
-      payload: DataExplorerPlotConfig["group_by"] | null;
+      type: "select_facet_by";
+      payload: DataExplorerPlotConfig["facet_by"] | null;
     }
   | { type: "select_sort_by"; payload: DataExplorerPlotConfig["sort_by"] }
   | {
       type: "select_color_property";
+      payload: SliceQuery | null;
+    }
+  | {
+      type: "select_facet_property";
       payload: SliceQuery | null;
     }
   | {
@@ -87,6 +92,13 @@ export type PlotConfigReducerAction =
         } | null;
       };
     }
+  // Swaps color_by/facet_by and their backing filters/metadata/dimensions.
+  // No payload — see canSwapColorAndFacet for when this is a no-op. The
+  // `payload?: undefined` is otherwise-unused; it exists only so generic
+  // code that accesses `action.payload` across the whole action union
+  // (e.g. debug.ts's logger) keeps type-checking without a special case
+  // for this one payload-less variant.
+  | { type: "swap_color_and_facet"; payload?: undefined }
   // Use this to dispatch multiple actions as if
   // they were a single logical action. Example:
   //   dispatch({
@@ -99,6 +111,35 @@ export type PlotConfigReducerAction =
   | { type: "batch"; payload: PlotConfigReducerAction[] };
 
 const DEFAULT_SORT = "alphabetical";
+
+// Whenever a facet selection is FINALIZED — i.e. the facet axis transitions
+// from having no real backing to having some (a mode was picked, and now
+// the property/filter/dataset/expansion behind it actually exists) — seed
+// sort_by with the same default new plots get, if the user hasn't already
+// set one. Sorting is meaningless against an incomplete facet_by (there's
+// nothing to sort yet, per calcDensityStats' own completeness handling), so
+// it should only default in at the exact moment there's finally something
+// to sort. Compares `prevPlot`'s completeness against `nextPlot`'s so this
+// only fires on the true false->true transition, not on every subsequent
+// edit made while the facet is already complete (which must never clobber
+// a sort_by the user changed away from the default).
+function maybeDefaultFacetSortBy(
+  prevPlot: SwappablePlot,
+  nextPlot: PartialDataExplorerPlotConfig
+): PartialDataExplorerPlotConfig {
+  if (nextPlot.sort_by) {
+    return nextPlot;
+  }
+
+  const wasComplete = isAxisComplete(prevPlot.facet_by, "facet", prevPlot);
+  const isComplete = isAxisComplete(nextPlot.facet_by, "facet", nextPlot);
+
+  if (!wasComplete && isComplete) {
+    return { ...nextPlot, sort_by: DEFAULT_SORT };
+  }
+
+  return nextPlot;
+}
 
 const isEmptyObject = (obj?: object) =>
   obj !== null && typeof obj === "object" && Object.keys(obj).length === 0;
@@ -238,8 +279,14 @@ function plotConfigReducer(
       }
 
       if (nextPlotType === "correlation_heatmap") {
+        // facet_by has no meaning on a heatmap (no violin tracks/snakes/
+        // facets to drive), same as color_by — dropped alongside it so we
+        // don't leave a dangling facet_by field whose backing (filters/
+        // metadata) was just wiped. dimensions.facet is already absent
+        // since `dimensions` above was rebuilt from just `x` (and `y`).
         nextPlot = omit(nextPlot, [
           "color_by",
+          "facet_by",
           "sort_by",
           "filters",
           "metadata",
@@ -254,8 +301,21 @@ function plotConfigReducer(
             "dataset_id",
           ]);
         }
-      } else if (plot.dimensions?.color) {
-        nextPlot.dimensions!.color = plot.dimensions.color;
+      } else {
+        // The `dimensions` object above was rebuilt from scratch (just `x`
+        // and, for scatter, `y`), so any other dimension present on the
+        // previous plot must be explicitly restored or it's silently
+        // dropped — color_by: "custom" and facet_by: "custom" both live
+        // here. Restoring only color and not facet was the bug: facet_by
+        // would survive as a field but its backing would vanish, breaking
+        // faceting immediately (not just on reload).
+        if (plot.dimensions?.color) {
+          nextPlot.dimensions!.color = plot.dimensions.color;
+        }
+
+        if (plot.dimensions?.facet) {
+          nextPlot.dimensions!.facet = plot.dimensions.facet;
+        }
       }
 
       if (nextPlotType === "scatter" && plot.index_type !== "depmap_model") {
@@ -286,6 +346,14 @@ function plotConfigReducer(
         return plot;
       }
 
+      // A new index_type invalidates every dimension/filter/metadata
+      // selection (they all targeted the old index type), so `dimensions`
+      // is rebuilt from scratch below with no restoration — unlike
+      // select_plot_type, there's no "same index_type, different shape"
+      // case to preserve across. facet_by must be dropped here for the
+      // same reason color_by already is: left in, it would survive as a
+      // dangling field whose backing (dimensions.facet / filters.facet1+2 /
+      // metadata.facet_property) was just wiped.
       const nextPlot = omit(
         {
           ...plot,
@@ -293,7 +361,7 @@ function plotConfigReducer(
           dimensions:
             plot.plot_type === "scatter" ? { x: {}, y: {} } : { x: {} },
         },
-        ["color_by", "filters", "metadata"]
+        ["color_by", "facet_by", "filters", "metadata"]
       );
 
       Object.keys(nextPlot.dimensions).forEach((key) => {
@@ -311,13 +379,15 @@ function plotConfigReducer(
     case "select_dimension": {
       const { key, dimension } = action.payload;
 
-      return normalize({
-        ...plot,
-        dimensions: {
-          ...plot.dimensions,
-          [key]: dimension,
-        },
-      });
+      return normalize(
+        maybeDefaultFacetSortBy(plot, {
+          ...plot,
+          dimensions: {
+            ...plot.dimensions,
+            [key]: dimension,
+          },
+        })
+      );
     }
 
     case "select_filter": {
@@ -331,7 +401,7 @@ function plotConfigReducer(
         filters[key] = filter;
       }
 
-      return normalize({ ...plot, filters });
+      return normalize(maybeDefaultFacetSortBy(plot, { ...plot, filters }));
     }
 
     case "select_color_by": {
@@ -346,31 +416,167 @@ function plotConfigReducer(
         dimensions = omit(plot.dimensions, "color");
       }
 
-      const visibleFilter = plot.filters?.visible;
+      // This aggressively resets color's own filters/metadata on every mode
+      // change, but must preserve facet_by's independent state — facet1/
+      // facet2/dimensions.facet and metadata.facet_property survive a
+      // color_by change untouched, exactly as select_facet_by preserves
+      // color's state in the other direction.
+      const { visible, facet1, facet2 } = plot.filters || {};
+      const filters = {
+        ...(visible && { visible }),
+        ...(facet1 && { facet1 }),
+        ...(facet2 && { facet2 }),
+      };
+
+      const { facet_property } = plot.metadata || {};
+      const metadata = facet_property ? { facet_property } : {};
 
       return normalize({
         ...plot,
         color_by: action.payload,
         sort_by: DEFAULT_SORT,
         dimensions,
-        filters: visibleFilter ? { visible: visibleFilter } : {},
-        metadata: {},
+        filters,
+        metadata,
       });
     }
 
-    case "select_group_by": {
-      // Unlike select_color_by, this does NOT reset filters/metadata/sort —
-      // group_by is an axis independent of color, so changing it must not
-      // clobber color's state. Clearing (null/undefined payload) omits the
-      // field entirely; the renderers' `group_by ?? color_by` coupling then
-      // takes over (group by color in the 1D plots, ungroup in scatter).
+    case "select_facet_by": {
+      // Mirrors select_color_by exactly, but for facet's own backing:
+      // changing facet_by clears dimensions.facet / filters.facet1+facet2 /
+      // metadata.facet_property — never color's, which is preserved
+      // untouched, symmetric with select_color_by preserving facet's state.
+      const dimensions =
+        action.payload === "custom"
+          ? { ...plot.dimensions, facet: {} }
+          : omit(plot.dimensions, "facet");
+
+      const filters = omit(plot.filters, "facet1", "facet2");
+      const metadata = omit(plot.metadata, "facet_property");
+
+      // Clearing (null/undefined payload) omits the field entirely, which
+      // means "no faceting" — facet_by no longer falls back to color_by in
+      // any renderer.
       if (!action.payload) {
-        return normalize(omit(plot, "group_by"));
+        return normalize({
+          ...omit(plot, "facet_by"),
+          dimensions,
+          filters,
+          metadata,
+        });
       }
 
+      return normalize(
+        maybeDefaultFacetSortBy(plot, {
+          ...plot,
+          facet_by: action.payload,
+          dimensions,
+          filters,
+          metadata,
+        })
+      );
+    }
+
+    case "swap_color_and_facet": {
+      // canSwapColorAndFacet covers three mutually-exclusive cases — see its
+      // own comment. This guard is independent of the button's own
+      // visibility check (also driven by canSwapColorAndFacet), so
+      // dispatching this action is safe from anywhere, not just from behind
+      // that check.
+      if (!canSwapColorAndFacet(plot)) {
+        return plot;
+      }
+
+      const { color_by, facet_by } = plot;
+
+      const { color1, color2, facet1, facet2, ...restFilters } =
+        plot.filters || {};
+      const { color_property, facet_property, ...restMetadata } =
+        plot.metadata || {};
+      const { color, facet, ...restDimensions } = plot.dimensions || {};
+
+      // filters.visible and sort_by are deliberately left untouched in every
+      // branch below — they aren't axis-specific.
+
+      // Promote: facet_by is unset — move color's mode and backing over to
+      // become facet_by; color_by becomes "facet" (defers back to it).
+      if (!facet_by) {
+        return normalize({
+          ...plot,
+          color_by: "facet",
+          facet_by: color_by,
+          filters: {
+            ...restFilters,
+            ...(color1 && { facet1: color1 }),
+            ...(color2 && { facet2: color2 }),
+          },
+          metadata: {
+            ...restMetadata,
+            ...(color_property && { facet_property: color_property }),
+          },
+          dimensions: {
+            ...restDimensions,
+            ...(color && { facet: color }),
+          },
+        });
+      }
+
+      // Demote: color_by defers to facet_by (explicitly via "facet", or
+      // implicitly by being absent — resolveColorMode treats the two
+      // identically) or holds a real mode that's still mid-selection — move
+      // facet's mode and backing over to become color_by; facet_by becomes
+      // unset entirely (omitted, matching select_facet_by's own clearing
+      // idiom). See canSwapColorAndFacet's matching comment for why
+      // "uniform" is deliberately excluded (and thus never reaches this
+      // branch, since the guard above already returned for that no-op case).
+      if (color_by === "facet" || !isAxisComplete(color_by, "color", plot)) {
+        return normalize(
+          omit(
+            {
+              ...plot,
+              color_by: facet_by,
+              filters: {
+                ...restFilters,
+                ...(facet1 && { color1: facet1 }),
+                ...(facet2 && { color2: facet2 }),
+              },
+              metadata: {
+                ...restMetadata,
+                ...(facet_property && { color_property: facet_property }),
+              },
+              dimensions: {
+                ...restDimensions,
+                ...(facet && { color: facet }),
+              },
+            },
+            "facet_by"
+          )
+        );
+      }
+
+      // Standard: both axes already hold one of the five real, shared
+      // values — full two-way exchange.
       return normalize({
         ...plot,
-        group_by: action.payload,
+        color_by: facet_by,
+        facet_by: color_by,
+        filters: {
+          ...restFilters,
+          ...(facet1 && { color1: facet1 }),
+          ...(facet2 && { color2: facet2 }),
+          ...(color1 && { facet1: color1 }),
+          ...(color2 && { facet2: color2 }),
+        },
+        metadata: {
+          ...restMetadata,
+          ...(facet_property && { color_property: facet_property }),
+          ...(color_property && { facet_property: color_property }),
+        },
+        dimensions: {
+          ...restDimensions,
+          ...(facet && { color: facet }),
+          ...(color && { facet: color }),
+        },
       });
     }
 
@@ -398,6 +604,25 @@ function plotConfigReducer(
           color_property: sliceQuery,
         },
       };
+    }
+
+    case "select_facet_property": {
+      const sliceQuery = action.payload;
+
+      if (sliceQuery === null) {
+        return normalize({
+          ...plot,
+          metadata: omit(plot.metadata, "facet_property"),
+        });
+      }
+
+      return maybeDefaultFacetSortBy(plot, {
+        ...plot,
+        metadata: {
+          ...plot.metadata,
+          facet_property: sliceQuery,
+        },
+      });
     }
 
     // legacy version used a slice ID instead of SliceQuery
@@ -516,16 +741,16 @@ function plotConfigReducer(
         }
 
         // Teardown coupling (expansion-selection design, decision 2):
-        // `group_by: "expansion"` is meaningless without an expansion axis, so
+        // `facet_by: "expansion"` is meaningless without an expansion axis, so
         // clearing the expansion must rewrite it. Reset to null (omit it)
-        // rather than restoring the pre-expansion grouping — sticky-restore was
+        // rather than restoring the pre-expansion faceting — sticky-restore was
         // considered and rejected as not worth the shadow state. ONLY the
-        // "expansion" sentinel is reset here; a real grouping (e.g. an
+        // "expansion" sentinel is reset here; a real faceting (e.g. an
         // annotation) survives, since it's still valid on the now-unexpanded
-        // plot. Do NOT generalize this to clear any group_by.
+        // plot. Do NOT generalize this to clear any facet_by.
         const cleared =
-          plot.group_by === "expansion"
-            ? omit({ ...plot, expand_by: [], dimensions }, "group_by")
+          plot.facet_by === "expansion"
+            ? omit({ ...plot, expand_by: [], dimensions }, "facet_by")
             : { ...plot, expand_by: [], dimensions };
 
         return normalize(cleared);
@@ -542,41 +767,43 @@ function plotConfigReducer(
       const existing = plot.dimensions?.[key];
 
       // Coupling (expansion-selection design, decision 1): enabling an
-      // expansion pre-installs `group_by: "expansion"` as a ONE-TIME default —
+      // expansion pre-installs `facet_by: "expansion"` as a ONE-TIME default —
       // the model-clean configuration the UI guides users toward. This fires
       // ONLY on the enable transition (no expansion → expansion); it is never
       // re-enforced on a later select_expansion (e.g. a limit/offset/context
-      // edit), so a subsequent user switch to null or an annotation grouping is
-      // preserved. It deliberately OVERWRITES any prior group_by: entering
+      // edit), so a subsequent user switch to null or an annotation faceting is
+      // preserved. It deliberately OVERWRITES any prior facet_by: entering
       // expansion mode lands you in its default regardless of how the plot was
-      // grouped before. Do NOT "tidy" this into an always-enforce — that would
+      // faceted before. Do NOT "tidy" this into an always-enforce — that would
       // clobber a deliberate departure from the default and silently break the
       // null/annotation pair configurations.
       const wasExpanded = (plot.expand_by?.length ?? 0) > 0;
 
-      return normalize({
-        ...plot,
-        ...(wasExpanded ? {} : { group_by: "expansion" as const }),
-        expand_by: [
-          {
-            slice_type,
-            context,
-            limit: limit ?? DEFAULT_EXPANSION_LIMIT,
-            offset: offset ?? 0,
+      return normalize(
+        maybeDefaultFacetSortBy(plot, {
+          ...plot,
+          ...(wasExpanded ? {} : { facet_by: "expansion" as const }),
+          expand_by: [
+            {
+              slice_type,
+              context,
+              limit: limit ?? DEFAULT_EXPANSION_LIMIT,
+              offset: offset ?? 0,
+            },
+          ],
+          dimensions: {
+            ...plot.dimensions,
+            [key]: {
+              ...existing,
+              axis_type: "aggregated_slice",
+              slice_type,
+              context,
+              dataset_id,
+              aggregation: "expansion",
+            },
           },
-        ],
-        dimensions: {
-          ...plot.dimensions,
-          [key]: {
-            ...existing,
-            axis_type: "aggregated_slice",
-            slice_type,
-            context,
-            dataset_id,
-            aggregation: "expansion",
-          },
-        },
-      });
+        })
+      );
     }
 
     case "batch": {

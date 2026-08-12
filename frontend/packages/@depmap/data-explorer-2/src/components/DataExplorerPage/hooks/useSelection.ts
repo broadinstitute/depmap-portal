@@ -20,13 +20,13 @@ import {
 // Grain switch (expansion-selection design). The pair-vs-single decision is
 // NOT simply "is the response expanded." It is conditional on `groupBy`:
 //
-//   - group_by === "expansion" (the pre-installed default for expansion mode):
+//   - facet_by === "expansion" (the pre-installed default for expansion mode):
 //     selection collapses to the MODEL id (single ref). Regions are expansion
 //     members (transcripts); a model appears exactly once per region, so a
 //     within-region gesture resolves unambiguously to a model. (Confining the
 //     gesture to one region is enforced structurally by the renderers — see
-//     `enforceSingleGroupSelection` — not here.)
-//   - expanded, but group_by is anything else (null = regionless interspersed,
+//     `enforceSingleFacetSelection` — not here.)
+//   - expanded, but facet_by is anything else (null = regionless interspersed,
 //     or a real annotation): a model recurs many times per region, so identity
 //     needs the full (index, expansion) PAIR.
 //   - not expanded: single ref, as before.
@@ -34,13 +34,13 @@ import {
 // The EntityRef `pair` variant is therefore CONDITIONALLY LIVE by design —
 // reachable whenever `pairGrained` is true — not dead code. A future cleanup
 // pass must not remove it. (An earlier facet-axis design would have let the
-// pair be deleted; that design was reversed in favor of keeping group_by
+// pair be deleted; that design was reversed in favor of keeping facet_by
 // flexibility, and the pair is the accepted cost.)
 //
 // Two channels: selection vs. annotation. There is a SECOND set alongside
 // `selection`: `annotationRefs`, the points to put text labels on. They
 // coincide for every non-collapse config, but diverge under
-// group_by === "expansion":
+// facet_by === "expansion":
 //   - `selection` (grain-switched) is what's selected — drives the panel,
 //     point highlighting, and the selection count. Under collapse it holds
 //     MODELS, so `selectedPoints` re-expands to every (model, region) point a
@@ -52,9 +52,9 @@ import {
 // Invariant: annotated ⊆ selected. Every annotation ref's selection-grain
 // projection (singleRef(indexId) under collapse, identity otherwise) is a
 // member of `selection`; the ctrl-toggle and context paths below preserve this.
-// Because fine grain == selection grain whenever group_by !== "expansion", the
+// Because fine grain == selection grain whenever facet_by !== "expansion", the
 // two sets are identical there and `pointsToAnnotate === selectedPoints` —
-// i.e. plain plots and null/annotation-grouped expanded plots are unchanged.
+// i.e. plain plots and null/annotation-faceted expanded plots are unchanged.
 //
 // Selection state is `EntityRefSet | null`, where the `null` state is
 // meaningfully distinct from an empty set:
@@ -77,9 +77,9 @@ import {
 //     points. No-op when indices is empty (matches existing behavior).
 //
 // What this hook deliberately doesn't do:
-//   - The within-group selection restriction. Under group_by === "expansion"
+//   - The within-facet selection restriction. Under facet_by === "expansion"
 //     a gesture must stay within one region; that is enforced at the renderer
-//     (physically impossible to draw across groups) rather than by filtering
+//     (physically impossible to draw across facets) rather than by filtering
 //     indices here, so this hook only collapses to models and trusts the
 //     indices it is handed.
 //   - Label conversion. GeneTea and other consumers that want display
@@ -114,7 +114,7 @@ export default function useSelection(
       ?.length ?? 0) > 0;
 
   // The one boolean the grain hinges on (see header). Pair only when expanded
-  // AND not in the model-clean "expansion" grouping.
+  // AND not in the model-clean "expansion" faceting.
   const pairGrained = isExpanded && groupBy !== "expansion";
 
   // Build the EntityRef for the point at `pointIndex`. Pair ref when
@@ -137,7 +137,7 @@ export default function useSelection(
   );
 
   // The point's FINE-grain ref: pair whenever the plot is expanded (regardless
-  // of group_by), single otherwise. This is the annotation grain — it never
+  // of facet_by), single otherwise. This is the annotation grain — it never
   // collapses, so it identifies the exact contacted point even when `selection`
   // is collapsed to the model. Equals `refForPoint` whenever not collapsing.
   const fineRefForPoint = useCallback(
@@ -183,7 +183,7 @@ export default function useSelection(
   // what enforces annotated ⊆ selected STRUCTURALLY, at render time, rather than
   // only through the handlers: annotations can't outlive the selection no matter
   // how it was cleared. The motivating case is an implicit clear that bypasses
-  // every handler — e.g. switching group_by to "expansion" flips the selection
+  // every handler — e.g. switching facet_by to "expansion" flips the selection
   // grain, so the wrappers' cleanup effect prunes the now-mismatched refs out of
   // `selection`, while the still-pair-grained annotation refs keep resolving
   // against the same expansion. Without the `selection.has` clause those labels
@@ -267,8 +267,8 @@ export default function useSelection(
       if (!data || pointIndices.length === 0) {
         return;
       }
-      // The renderers have already confined `pointIndices` to a single group
-      // when enforceSingleGroupSelection is on, so these are exactly the points
+      // The renderers have already confined `pointIndices` to a single facet
+      // when enforceSingleFacetSelection is on, so these are exactly the points
       // the box touched. selection collapses by grain; annotation keeps them at
       // fine grain.
       setSelection(new EntityRefSet(pointIndices.map(refForPoint)));
@@ -290,7 +290,7 @@ export default function useSelection(
   // matching point, captured at fine grain. annotated ⊆ selected holds (reps
   // are a visible subset). Returns the representative point indices so the
   // caller can position their annotations before the next render. Under
-  // group_by === "expansion" that's one point per model; on a plain plot it is
+  // facet_by === "expansion" that's one point per model; on a plain plot it is
   // every selected point (one per id), i.e. the prior behavior.
   const setSelectionFromContext = useCallback(
     (indexIds: string[]): number[] => {
@@ -320,7 +320,7 @@ export default function useSelection(
   // Stable selection key for the point at `pointIndex`, in the CURRENT grain.
   // Exposed so the wrappers' stale-ref cleanup effect builds valid keys the
   // same way selection refs are built. Without this, a model-grained selection
-  // (group_by === "expansion") would be measured against pair keys the wrapper
+  // (facet_by === "expansion") would be measured against pair keys the wrapper
   // computed from `data.expansions` and get wiped on every data change.
   const selectionKeyForPoint = useCallback(
     (pointIndex: number) => entityRefKey(refForPoint(pointIndex)),

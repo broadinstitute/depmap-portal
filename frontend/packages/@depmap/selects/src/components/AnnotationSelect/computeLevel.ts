@@ -66,9 +66,7 @@ export default function computeLevel(
       : tables
           .filter((t) => t.id !== (activeTable?.id ?? metadataDatasetId))
           .map((t) => {
-            const colCount = Object.keys(t.columns).filter(
-              (name) => name !== "label"
-            ).length;
+            const colCount = Object.keys(t.columns).length;
 
             return {
               dimType,
@@ -91,8 +89,6 @@ export default function computeLevel(
   const fksByTarget: Record<string, string[]> = {};
 
   for (const [colName, meta] of Object.entries(activeTable.columns)) {
-    if (colName === "label") continue;
-
     if (meta.references && !visited.has(meta.references)) {
       if (!fksByTarget[meta.references]) {
         fksByTarget[meta.references] = [];
@@ -103,8 +99,6 @@ export default function computeLevel(
 
   // Emit leaf columns from the active table.
   for (const colName of Object.keys(activeTable.columns)) {
-    if (colName === "label") continue;
-
     columns.push({
       columnName: colName,
       dimType,

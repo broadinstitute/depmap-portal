@@ -14,12 +14,37 @@ export type DataExplorerContextVariable = SliceQuery & {
   label?: string;
 };
 
+// `facet_by` also types itself as `ColorByValue` (see its own field comment
+// below) rather than a dedicated `FacetByValue`. That already over-permits
+// nonsensical combinations by convention rather than by the type system
+// (e.g. nothing stops `facet_by: "expansion"` misuse beyond the reducer/UI
+// never offering it) — "facet" and "uniform" below are two more members
+// that are meaningless for `facet_by` (circular / redundant with omitting
+// facet_by, respectively) in exactly that same already-accepted way. A real
+// `ColorByValue`/`FacetByValue` split (excluding these two from facet_by's
+// type) is additive and low-risk and can happen at any later time as a
+// pure type-level change with no wire-format impact — deliberately
+// deferred rather than bundled into the version-2 flip that introduced
+// these two values. See ADR 0004 in @depmap/data-explorer-2/docs/adr/.
 export type ColorByValue =
   | "raw_slice"
   | "aggregated_slice"
   | "property"
   | "custom"
-  | "expansion";
+  | "expansion"
+  // Version 2 (see ADR 0001, ADR 0004): defers color entirely to
+  // facet_by's own resolution — same categorical/continuous/custom-filter/
+  // expansion source, same partition, same colors facet_by is already
+  // computing. This is the version-2 DEFAULT (absent color_by means this),
+  // not merely an available value — see CURRENT_PLOT_VERSION / the v1->v2
+  // migration in DataExplorerPage/utils.ts.
+  | "facet"
+  // Version 2 (see ADR 0001, ADR 0004): explicit "no color, regardless of
+  // facet_by" sentinel. NOT equivalent to omitting color_by (which means
+  // "facet" as of version 2) — this is what a version-1 payload's absent
+  // color_by (which meant "uniform") gets migrated to on read, and is also
+  // available as an explicit opt-out for new plots.
+  | "uniform";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type DataExplorerContextExpression = Record<string, any> | boolean;
@@ -56,6 +81,7 @@ export type DataExplorerAggregation =
   | "25%tile"
   | "75%tile"
   | "stddev"
+  | "sum"
   // Sentinel — NOT a real aggregation; if anything, the opposite. It marks an
   // axis whose per-pair values come from an expansion (fetchExpandedPlot), not
   // from aggregating a slice. It rides on the required `aggregation` field to
@@ -65,10 +91,12 @@ export type DataExplorerAggregation =
   // guards and the getMatrixDatasetData trap enforce that.
   | "expansion";
 
-export type DimensionKey = "x" | "y" | "color";
+export type DimensionKey = "x" | "y" | "color" | "facet";
 export type FilterKey =
   | "color1"
   | "color2"
+  | "facet1"
+  | "facet2"
   | "visible"
   | "distinguish1"
   | "distinguish2";
@@ -205,15 +233,15 @@ export interface DataExplorerPlotConfig {
   expand_by?: DataExplorerExpandBy[];
   color_by?: ColorByValue;
 
-  // `group_by` controls which per-point categorical drives spatial
-  // grouping (violin tracks in density_1d, x-position clustering in
-  // waterfall) — separately from `color_by`, which drives point colors.
-  // When unset, falls back to `color_by`, so existing configs preserve
-  // the historical conflation. Set explicitly when you want grouping
-  // and coloring to use different sources (e.g. group by lineage,
-  // color by transcript). Renderers that don't yet honor `group_by`
-  // simply ignore it.
-  group_by?: ColorByValue;
+  // `facet_by` controls which per-point categorical/continuous/custom-
+  // filter source drives spatial faceting (violin tracks in density_1d,
+  // x-position clustering in waterfall, small-multiples faceting in
+  // scatter) — an axis fully independent from `color_by`. Unset means "no
+  // faceting" in every renderer; it does NOT fall back to `color_by` (that
+  // historical conflation was removed). The relationship runs the other
+  // direction as of version 2: `color_by` can defer TO `facet_by` (see
+  // `ColorByValue`'s `"facet"` member above), never the reverse.
+  facet_by?: ColorByValue;
 
   filters?: DataExplorerFilters;
   metadata?: DataExplorerMetadata;
@@ -270,15 +298,16 @@ export interface DataExplorerPlotResponse {
     x: DataExplorerPlotResponseDimension;
     y?: DataExplorerPlotResponseDimension;
     color?: DataExplorerPlotResponseDimension;
+    facet?: DataExplorerPlotResponseDimension;
     // "x2" is a pseudo-dimension returned by the /get_correlation endpoint
     x2?: DataExplorerPlotResponseDimension;
   };
   filters: Partial<Record<FilterKey, { name: string; values: boolean[] }>>;
   metadata: Partial<
     Record<
-      // Officially used to color by annotations, but other properties may
-      // exist in the future.
-      "color_property" | string,
+      // Officially used to color by and facet by annotations but any other
+      // strings will be treated as data to add as hover text.
+      "color_property" | "facet_property" | string,
       {
         label: string;
         sliceQuery?: SliceQuery;
@@ -306,8 +335,11 @@ export type ContextPath =
   | ["dimensions", "x", "context"]
   | ["dimensions", "y", "context"]
   | ["dimensions", "color", "context"]
+  | ["dimensions", "facet", "context"]
   | ["filters", "color1"]
   | ["filters", "color2"]
+  | ["filters", "facet1"]
+  | ["filters", "facet2"]
   | ["filters", "visible"]
   | ["filters", "distinguish1"]
   | ["filters", "distinguish2"];

@@ -177,7 +177,13 @@ function deriveOrigin(row: ResistanceRow): ResistanceOrigin | undefined {
     return { type: "cultured", description: row.CulturedDrugResistance };
   }
 
-  if (row.ComparisonType === "genetic knock-in" && row.EngineeredModelDetails) {
+  // Note: the source data really does mix hyphenation ("knock-in" vs
+  // "knock out"). Both are genetically engineered models.
+  if (
+    (row.ComparisonType === "genetic knock-in" ||
+      row.ComparisonType === "genetic knock out") &&
+    row.EngineeredModelDetails
+  ) {
     return { type: "engineered", description: row.EngineeredModelDetails };
   }
 

@@ -8,10 +8,14 @@ function toUnexpandedPlotLink(
   transcriptId: string,
   transcriptLabel: string
 ) {
-  let nextPlot = omit(plot, "expand_by", "group_by");
+  let nextPlot = omit(plot, "expand_by");
 
   if (nextPlot.color_by === "expansion") {
     nextPlot = omit(nextPlot, "color_by");
+  }
+
+  if (nextPlot.facet_by === "expansion") {
+    nextPlot = omit(nextPlot, "facet_by");
   }
 
   nextPlot.dimensions = (() => {

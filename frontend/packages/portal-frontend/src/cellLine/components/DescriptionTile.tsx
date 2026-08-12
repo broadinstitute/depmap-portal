@@ -4,13 +4,18 @@ import { ModelInfo } from "../models/types";
 import IdTab from "./IdTab";
 import ModelTab from "./ModelTab";
 import PatientTab from "./PatientTab";
+import type { ResistanceOrigin } from "./PairedScreensTile";
 import styles from "../styles/CellLinePage.scss";
 
 export interface DescriptionTileProps {
   data: ModelInfo;
+  resistanceOrigin?: ResistanceOrigin;
 }
 
-const DescriptionTile = ({ data }: DescriptionTileProps) => {
+const DescriptionTile = ({
+  data,
+  resistanceOrigin = undefined,
+}: DescriptionTileProps) => {
   if (data) {
     return (
       <article className="card_wrapper">
@@ -22,7 +27,7 @@ const DescriptionTile = ({ data }: DescriptionTileProps) => {
             id="cell_line_description_tile_tabs"
           >
             <Tab eventKey={1} title="Model">
-              <ModelTab modelInfo={data} />
+              <ModelTab modelInfo={data} resistanceOrigin={resistanceOrigin} />
             </Tab>
             <Tab eventKey={2} title="Patient">
               <PatientTab

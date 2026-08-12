@@ -78,8 +78,8 @@ const OncogenicAlterationsTile = ({
                         title="Acquired alterations"
                         content={
                           <div>
-                            Alterations present in this resistant derivative but
-                            not in its parental model.
+                            Alterations observed in this resistant derivative
+                            but not in its parental model.
                           </div>
                         }
                       />

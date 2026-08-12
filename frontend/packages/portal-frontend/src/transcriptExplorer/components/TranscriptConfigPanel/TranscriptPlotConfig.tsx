@@ -11,10 +11,12 @@ import {
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
 import { isCompletePlot } from "@depmap/data-explorer-2/src/components/DataExplorerPage/validation";
-import { PlotConfigReducerAction } from "@depmap/data-explorer-2/src/components/DataExplorerPage/reducers/plotConfigReducer";
+import {
+  DEFAULT_EXPANSION_LIMIT,
+  PlotConfigReducerAction,
+} from "@depmap/data-explorer-2/src/components/DataExplorerPage/reducers/plotConfigReducer";
 import PlotTypeSelect from "./PlotTypeSelect";
 import TranscriptExpansionSelect from "./TranscriptExpansionSelect";
-import { DEFAULT_MAX_TRANSCRIPTS } from "../utils";
 import styles from "../../styles/TranscriptPlotConfig.scss";
 
 interface Props {
@@ -183,7 +185,7 @@ function TranscriptPlotConfig({
                       geneSymbol={getGeneSymbol(plot, key)}
                       expansionAxis={expansionAxis}
                       dimension={dimension}
-                      limit={expansion?.limit ?? DEFAULT_MAX_TRANSCRIPTS}
+                      limit={expansion?.limit ?? DEFAULT_EXPANSION_LIMIT}
                       offset={expansion?.offset ?? 0}
                       dispatch={dispatch}
                     />

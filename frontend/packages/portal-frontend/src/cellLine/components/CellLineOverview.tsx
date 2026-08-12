@@ -123,7 +123,14 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
           <React.Suspense
             fallback={<div className={styles.LoadingTile}>Loading...</div>}
           >
-            <DescriptionTile data={descriptionTileData} />
+            <DescriptionTile
+              data={descriptionTileData}
+              resistanceOrigin={
+                pairedScreens?.resistance?.role === "derivative"
+                  ? pairedScreens.resistance.origin
+                  : undefined
+              }
+            />
           </React.Suspense>
         )}
 

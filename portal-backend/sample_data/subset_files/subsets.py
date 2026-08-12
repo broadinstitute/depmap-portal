@@ -270,19 +270,6 @@ chronos_combined = [
     "SOX10",
     "SWI5",
 ]
-chronos_achilles = [
-    "ANOS1",
-    "C1orf74",
-    "F8A1",
-    "HNF1B",
-    "KDM7A",
-    "MAP4K4",
-    "MED1",
-    "NRAS",
-    "PSG7",
-    "SOX10",
-    "SWI5",
-]
 avana_score = [
     "AMY1A",
     "ANOS1",

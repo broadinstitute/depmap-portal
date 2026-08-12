@@ -48,6 +48,7 @@ class AggregationMethod(enum.Enum):
     per25 = "25%tile"
     per75 = "75%tile"
     stddev = "stddev"
+    sum = "sum"
 
 
 # NOTE: `param: Annotated[Optional[str], Field(None)]` gives pydantic error 'ValueError: `Field` default cannot be set in `Annotated` for 'param''.
@@ -485,7 +486,7 @@ class MatrixAggregation(BaseModel):
             AggregationMethod(v)
         except ValueError as err:
             raise UserError(
-                "Aggregations method must be one of ['mean', 'median', '25%tile', '75%tile']"
+                f"Aggregations method must be one of {[m.value for m in AggregationMethod]}"
             ) from err
 
         return v

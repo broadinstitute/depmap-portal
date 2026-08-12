@@ -1,5 +1,9 @@
 import { Dataset, DimensionType, SliceQuery } from "@depmap/types";
-import { SliceResponse, transformToTableData } from "../components/useData";
+import {
+  resolveDisplayLabel,
+  SliceResponse,
+  transformToTableData,
+} from "../components/useData";
 
 // Minimal valid dataset for the function's lookups (id/given_id matching,
 // `format`, `columns_metadata` field reads). Cast to `any` because the
@@ -159,5 +163,45 @@ describe("transformToTableData", () => {
     expect(data[2][scoreKey]).toBeUndefined();
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("resolveDisplayLabel", () => {
+  it("returns just the column name for a flat (unchained) slice", async () => {
+    const slice: SliceQuery = {
+      dataset_id: "screen_pair_metadata",
+      identifier_type: "column",
+      identifier: "label",
+    };
+
+    expect(await resolveDisplayLabel(slice, indexType)).toBe("label");
+  });
+
+  it("shows every hop in a multi-level chain, not just the deepest one", async () => {
+    // screen_pair --anchor_screen_id--> screen --gene_fk--> gene, ending
+    // at gene's own "label" column. Column headers are where a long,
+    // fully-spelled-out chain is most useful, so every hop should be
+    // shown — collapsing down to just "gene_fk › label" (or worse, just
+    // "label") would make this indistinguishable from a shorter chain, or
+    // from a different dimension type's own "label" column.
+    const slice: SliceQuery = {
+      dataset_id: "gene_metadata",
+      identifier_type: "column",
+      identifier: "label",
+      reindex_through: {
+        dataset_id: "screen_metadata",
+        identifier: "gene_fk",
+        identifier_type: "column",
+        reindex_through: {
+          dataset_id: "screen_pair_metadata",
+          identifier: "anchor_screen_id",
+          identifier_type: "column",
+        },
+      },
+    };
+
+    expect(await resolveDisplayLabel(slice, indexType)).toBe(
+      "anchor_screen_id › gene_fk › label"
+    );
   });
 });
