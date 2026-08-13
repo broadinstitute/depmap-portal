@@ -248,8 +248,35 @@ def _chunked_aggregate_matrix_df(
     df: pd.DataFrame, axis: int, agg_method, chunk_size_in_mb=10
 ):
     aggregated = []
-    chunk_size = chunk_size_in_mb * 1024 ** 2 // (df.shape[axis] * 8)
+    aggregated_axis_length = df.shape[axis]
     chunked_axis_length = df.shape[axis ^ 1]
+
+    # Chunking only exists to bound peak memory, so anything it cannot express
+    # falls back to aggregating in one go -- which pandas handles correctly in
+    # every one of these cases, and which costs nothing when there is no memory
+    # to save. Three ways to get here:
+    #
+    #   - An empty aggregated axis: the requested ids matched nothing in this
+    #     dataset. Divides by zero below. Routinely reachable, not exotic --
+    #     datasets are often sparse and a context is typically chosen before the
+    #     dataset it will be applied to, with nothing forcing the two to
+    #     intersect. The right answer is NaN per surviving label (and a count of
+    #     0), which .agg already returns, and which is consistent with how
+    #     non-strict requests already treat partially missing ids: warn and
+    #     carry on. Callers wanting this to be an error pass strict=True.
+    #   - An empty chunked axis. The loop wouldn't run at all and pd.concat
+    #     would then raise on an empty list.
+    #   - A single row/column larger than the chunk budget, which floors
+    #     chunk_size to 0 and makes range() raise. Chunking cannot help here:
+    #     one slice is already over budget.
+    if aggregated_axis_length == 0 or chunked_axis_length == 0:
+        return df.replace({pd.NA: np.nan}).agg(agg_method, axis=axis)
+
+    chunk_size = chunk_size_in_mb * 1024 ** 2 // (aggregated_axis_length * 8)
+
+    if chunk_size == 0:
+        return df.replace({pd.NA: np.nan}).agg(agg_method, axis=axis)
+
     for chunk_start in range(0, chunked_axis_length, chunk_size):
         chunk_end = min(chunk_start + chunk_size, chunked_axis_length)
         if axis == 0:
@@ -267,6 +294,30 @@ def _chunked_aggregate_matrix_df(
 def _aggregate_matrix_df(
     df_: pd.DataFrame,
     aggregate_by: Literal["features", "samples"],
+    aggregation: Union[AggregationMethod, List[AggregationMethod]],
+    use_chunking=True,
+):
+    # Each method is computed independently and the one-column results are
+    # stitched together, rather than handing pandas a list of methods. `.agg`
+    # with a list names its output columns after the callables it was given
+    # (so every lambda here would come back as "<lambda>"), and it transposes
+    # its result for axis=0 but not axis=1. Doing them one at a time keeps the
+    # column names authoritative and means a single method produces exactly the
+    # frame it always did.
+    aggregations = aggregation if isinstance(aggregation, list) else [aggregation]
+
+    return pd.concat(
+        [
+            _aggregate_matrix_df_once(df_, aggregate_by, method, use_chunking)
+            for method in aggregations
+        ],
+        axis=1,
+    )
+
+
+def _aggregate_matrix_df_once(
+    df_: pd.DataFrame,
+    aggregate_by: Literal["features", "samples"],
     aggregation: AggregationMethod,
     use_chunking=True,
 ):
@@ -278,6 +329,11 @@ def _aggregate_matrix_df(
         AggregationMethod.per25: lambda x: np.nanpercentile(x, q=25),
         AggregationMethod.per75: lambda x: np.nanpercentile(x, q=75),
         AggregationMethod.stddev: lambda x: np.nanstd(x, ddof=1),
+        AggregationMethod.variance: lambda x: np.nanvar(x, ddof=1),
+        # Non-null count. Unlike the others this is a property of coverage
+        # rather than of the values, so it is the one aggregation that stays
+        # meaningful when everything else comes back NaN.
+        AggregationMethod.count: "count",
         AggregationMethod.sum: "sum",
     }
 
