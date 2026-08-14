@@ -255,11 +255,12 @@ class PipelineRunner:
                 check=True,
                 cwd=str(config.working_dir),
             )
-            self.subprocess_run(
-                "conseq forget --regex publish.*",
-                check=True,
-                cwd=str(config.working_dir),
-            )
+            if (config.working_dir / "state").exists():
+                self.subprocess_run(
+                    "conseq forget --regex publish.*",
+                    check=True,
+                    cwd=str(config.working_dir),
+                )
 
     def run(self, args: argparse.Namespace) -> None:
         """Main entry point for running the pipeline."""
