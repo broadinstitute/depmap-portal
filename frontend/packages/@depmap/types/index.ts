@@ -100,6 +100,7 @@ export type * from "./src/compounds";
 export type * from "./src/celery";
 export type * from "./src/compute";
 
+export type { CmsPost, CmsPostSummary, CmsMenu } from "./src/cms";
 export type { UploadFileResponse } from "./src/UploadFileResponse";
 export type { SliceQuery } from "./src/SliceQuery";
 export type { ErrorDetail } from "./src/BreadboxErrorType";

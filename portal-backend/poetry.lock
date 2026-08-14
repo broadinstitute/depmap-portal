@@ -289,21 +289,21 @@ crt = ["awscrt (==0.16.26)"]
 
 [[package]]
 name = "breadbox-client"
-version = "4.6.0"
+version = "4.20.0"
 description = "A client library for accessing Breadbox"
 optional = false
 python-versions = ">=3.9,<4.0"
 groups = ["main"]
 files = [
-    {file = "breadbox_client-4.6.0-py3-none-any.whl", hash = "sha256:ee01b1ec179df9f772cea83dfbee882ec180bf693a06d4a22c31d93f6260fdf5"},
-    {file = "breadbox_client-4.6.0.tar.gz", hash = "sha256:66e955b09f0f8718e12c72367061aa2173936e32e89db0573e79ad787a70a9da"},
+    {file = "breadbox_client-4.20.0-py3-none-any.whl", hash = "sha256:cf48cc0140b6cf11575ba10c7a0c7a542979a5938c2a4666e225595ad645a9a7"},
+    {file = "breadbox_client-4.20.0.tar.gz", hash = "sha256:809a03d6322101d52bff77a81d74046de736d9df4c17b3109028e5900d3a557f"},
 ]
 
 [package.dependencies]
 attrs = ">=21.3.0"
 httpx = ">=0.28.1,<0.29.0"
 pandas = ">=1.5.1"
-pytest = ">=7.2.0,<8.0.0"
+pyarrow = ">3.0.0"
 python-dateutil = ">=2.8.0,<3.0.0"
 
 [package.source]
@@ -5693,4 +5693,4 @@ test = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more-it
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.13"
-content-hash = "afadabc392205ddc8b97cba7bf2513b833dffeb21c7be0130b26ee45b2b722bc"
+content-hash = "09b5c142ee24165503459d99ad1d8172c8ee1bc615c10f4252d8a95b4b80033e"
