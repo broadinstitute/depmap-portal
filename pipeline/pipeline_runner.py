@@ -287,7 +287,8 @@ class PipelineRunner:
             log.info(f"[dryrun] would delete all objects under {config.publish_dest}")
         else:
             gcs_rm_prefixed_by(config.publish_dest)
-        if (config.working_dir / "state").exists():
+
+        if os.path.exists(f"{config.working_dir}/state"):
             self.subprocess_run(
                 "conseq forget --regex publish.*",
                 check=True,
