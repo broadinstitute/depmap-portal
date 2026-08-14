@@ -454,8 +454,8 @@ def sanity_check_results(subtype_tree, molecular_subtypes):
 
     # assert that all columns in the OmicsInferredMolecularSubtype Matrix have
     # a node in the tree
-    missing_subtypes = set(subtype_tree.NodeName.values).difference(
-        set(molecular_subtypes.columns)
+    missing_subtypes = set(molecular_subtypes.columns).difference(
+        subtype_tree.NodeName.values
     )
 
     assert (
