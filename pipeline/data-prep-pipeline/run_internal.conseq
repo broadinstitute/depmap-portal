@@ -4,7 +4,7 @@ import subprocess
 import sys
 
 template=f"depmap-deploy/non-public-pipeline-files/data-prep-pipeline/release_inputs_internal.template"
-cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "release_inputs_internal-DO-NOT-EDIT-ME", "--search-ancestors"]
+cmd=["python", f"{rules.vars['SCRIPT_DIR']}/../preprocess_taiga_ids.py", template, "release_inputs_internal-DO-NOT-EDIT-ME", "--search", "data-prep-pipeline"]
 
 print(f"Preprocessing templates by running {' '.join(cmd)}...")
 try:
