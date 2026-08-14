@@ -460,7 +460,7 @@ def sanity_check_results(subtype_tree, molecular_subtypes):
 
     assert (
         len(missing_subtypes) == 0
-    ), f"Found subtypes in OmicsInferredMolecularSubtype which are not present in subtype_tree.NodeName"
+    ), f"Found subtypes in OmicsInferredMolecularSubtype which are not present in subtype_tree.NodeName: {missing_subtypes}"
 
 
 ### MAIN FUNCTION ###
