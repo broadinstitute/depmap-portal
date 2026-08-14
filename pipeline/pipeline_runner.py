@@ -334,10 +334,10 @@ class PipelineRunner:
         self.subprocess_run(
             "conseq report html", check=True, cwd=str(config.working_dir)
         )
-        if self.dryrun:
-            log.info("[dryrun] skipping track_dataset_usage")
-        else:
-            self.track_dataset_usage_from_conseq(config.working_dir)
+        #        if self.dryrun:
+        #            log.info("[dryrun] skipping track_dataset_usage")
+        #        else:
+        #            self.track_dataset_usage_from_conseq(config.working_dir)
 
         if config.export_path:
             assert config.conseq_file is not None
