@@ -1,3 +1,0 @@
-include "xrefs-common.conseq"
-# TAIGA_PREPROCESSOR_INCLUDE "../external.template"
-# TAIGA_PREPROCESSOR_INCLUDE "xrefs-public.template"
