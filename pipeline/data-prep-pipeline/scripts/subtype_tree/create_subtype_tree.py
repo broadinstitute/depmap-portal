@@ -86,22 +86,22 @@ def load_data(
 
 def create_table_from_hierarchy(
     hierarchy_df,
-    code_col='code',
-    name_col='name',
-    parent_col='parent',
-    level_col='level',
-    root_node='TISSUE'
-    ):
+    code_col="code",
+    name_col="name",
+    parent_col="parent",
+    level_col="level",
+    root_node="TISSUE",
+):
 
     # define function to create table-format node
     def find_all_parents(
         node,
         hierarchy_df,
-        code_col='code',
-        name_col='name',
-        parent_col='parent',
-        root_node='TISSUE'
-        ):
+        code_col="code",
+        name_col="name",
+        parent_col="parent",
+        root_node="TISSUE",
+    ):
         # Hierarchy dataframes are indexed starting at 1, we want to index starting at 0
         cur_level = node[level_col]
         levels = dict(
@@ -116,28 +116,22 @@ def create_table_from_hierarchy(
         while node[parent_col] != root_node:
             # print("Current:", node[code_col])
             # print("Parent:", node[parent_col], '\n')
-            node = hierarchy_df[
-                hierarchy_df[code_col] == node[parent_col]
-            ].iloc[0]
+            node = hierarchy_df[hierarchy_df[code_col] == node[parent_col]].iloc[0]
             cur_level = node[level_col]
             levels[f"Level{cur_level-1}"] = node[code_col]
 
         return pd.Series(levels)
 
-    hierarchy_table = (
-        hierarchy_df.loc[
-            hierarchy_df[code_col] != root_node
-        ].apply(
-            find_all_parents,
-            **{
-                "hierarchy_df": hierarchy_df,
-                "code_col":code_col,
-                "name_col":name_col,
-                "parent_col":parent_col,
-                "root_node":root_node
-            },
-            axis=1
-        )
+    hierarchy_table = hierarchy_df.loc[hierarchy_df[code_col] != root_node].apply(
+        find_all_parents,
+        **{
+            "hierarchy_df": hierarchy_df,
+            "code_col": code_col,
+            "name_col": name_col,
+            "parent_col": parent_col,
+            "root_node": root_node,
+        },
+        axis=1,
     )
 
     # relabel duplicated node names
@@ -370,6 +364,7 @@ def add_disease_restricted_genetic_subtypes(gs_whitelist, subtype_tree):
 
     return pd.concat([subtype_tree, gs_tree])
 
+
 def create_subtype_tree_with_names(subtype_tree):
     """
     A function to convert the subtype tree which uses all codes to the subtype
@@ -459,13 +454,13 @@ def sanity_check_results(subtype_tree, molecular_subtypes):
 
     # assert that all columns in the OmicsInferredMolecularSubtype Matrix have
     # a node in the tree
-    assert (
-        set(
-            molecular_subtypes.columns
-        ).issubset(set(
-            subtype_tree.NodeName.values
-        ))
+    missing_subtypes = set(subtype_tree.NodeName.values).difference(
+        set(molecular_subtypes.columns)
     )
+
+    assert (
+        len(missing_subtypes) == 0
+    ), f"Found subtypes in OmicsInferredMolecularSubtype which are not present in subtype_tree.NodeName"
 
 
 ### MAIN FUNCTION ###
@@ -476,7 +471,13 @@ def create_subtype_tree(
     molecular_subtypes_taiga_id,
     genetic_subtypes_whitelist,
 ):
-    models, oncotree, mol_subtype_hierarchy, molecular_subtypes, gs_whitelist = load_data(
+    (
+        models,
+        oncotree,
+        mol_subtype_hierarchy,
+        molecular_subtypes,
+        gs_whitelist,
+    ) = load_data(
         model_taiga_id,
         oncotree_taiga_id,
         molecular_subtype_tree_taiga_id,
@@ -484,16 +485,15 @@ def create_subtype_tree(
         genetic_subtypes_whitelist,
     )
 
-    oncotable = create_table_from_hierarchy(
-        oncotree,
-        code_col='OncotreeCode',
-        name_col='NodeName',
-        level_col='NodeLevel'
-    ).rename(columns={
-        'Code':'OncotreeCode'
-    }).assign(
-        DepmapModelType=lambda x: x.OncotreeCode,
-        NodeSource="Oncotree"
+    oncotable = (
+        create_table_from_hierarchy(
+            oncotree,
+            code_col="OncotreeCode",
+            name_col="NodeName",
+            level_col="NodeLevel",
+        )
+        .rename(columns={"Code": "OncotreeCode"})
+        .assign(DepmapModelType=lambda x: x.OncotreeCode, NodeSource="Oncotree")
     )
 
     oncotable_plus = add_depmap_nodes(models, oncotable)
@@ -502,15 +502,15 @@ def create_subtype_tree(
         gs_whitelist, oncotable_plus
     )
 
-    molecular_subtype_tree = create_table_from_hierarchy(
-        mol_subtype_hierarchy,
-        code_col='MolecularSubtypeCode',
-        name_col='NodeName',
-        root_node='MOLSUBTYPES_ROOT'
-    ).rename(columns={
-        'Code':'MolecularSubtypeCode'
-    }).assign(
-        NodeSource="Omics Inferred Molecular Subtype"
+    molecular_subtype_tree = (
+        create_table_from_hierarchy(
+            mol_subtype_hierarchy,
+            code_col="MolecularSubtypeCode",
+            name_col="NodeName",
+            root_node="MOLSUBTYPES_ROOT",
+        )
+        .rename(columns={"Code": "MolecularSubtypeCode"})
+        .assign(NodeSource="Omics Inferred Molecular Subtype")
     )
 
     all_subtypes = pd.concat(
