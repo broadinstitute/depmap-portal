@@ -436,7 +436,12 @@ def sanity_check_results(subtype_tree, molecular_subtypes):
     assert all(subtype_tree.groupby("DepmapModelType").size() == 1)
 
     # assert that molecular codes are unique
-    assert all(subtype_tree.groupby("MolecularSubtypeCode").size() == 1)
+    duplicate_subtypes = set(
+        subtype_tree["MolecularSubtypeCode"][
+            subtype_tree["MolecularSubtypeCode"].duplicated()
+        ]
+    )
+    assert len(duplicate_subtypes) == 0, f"Duplicated subtypes: {duplicate_subtypes}"
 
     # assert there's no overlap between depmap and molecular codes
     assert (
