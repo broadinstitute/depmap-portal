@@ -50,7 +50,6 @@ schema = pa.DataFrameSchema(
         "PatientTumorGrade": pa.Column(str),
         "PatientTreatmentType": pa.Column(str),
         "EngineeredModelDetails": pa.Column(str),
-        "ModelAvailableInDbgap": pa.Column(str),
         "PatientTreatmentDetails": pa.Column(str),
         "ModelType": pa.Column(str),
         "ModelSubtypeFeatures": pa.Column(str),
