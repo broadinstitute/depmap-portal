@@ -80,6 +80,8 @@ def load_data(
     molecular_subtypes = tc.get(molecular_subtypes_taiga_id).set_index("ModelID")
 
     gs_whitelist = tc.get(genetic_subtypes_whitelist)
+    # hackery to work around Breast:PAM50Unclear being listed twice
+    gs_whitelist = gs_whitelist.drop(columns=["Unnamed: 0"]).drop_duplicates()
 
     return models, oncotree, mol_subtype_hierarchy, molecular_subtypes, gs_whitelist
 
@@ -439,6 +441,7 @@ def sanity_check_results(subtype_tree, molecular_subtypes):
     duplicate_subtypes = set(
         subtype_tree["MolecularSubtypeCode"][
             subtype_tree["MolecularSubtypeCode"].duplicated()
+            & (~pd.isna(subtype_tree["MolecularSubtypeCode"]))
         ]
     )
     assert len(duplicate_subtypes) == 0, f"Duplicated subtypes: {duplicate_subtypes}"
