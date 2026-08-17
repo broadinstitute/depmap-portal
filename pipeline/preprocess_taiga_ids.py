@@ -63,7 +63,7 @@ def _rewrite_stream(vars, in_name, in_lines, out_fd, dirs_to_check):
         # drop any comments so we can comment out the other statements
         m = re.match("(.*)#.*", line, re.DOTALL)
         if m is not None:
-            line = m.group(1)
+            line = m.group(1) + "\n"
 
         m = re.match("(.*)PREPROCESS_VAR\\(([^)]+)\\)(.*)", line, re.DOTALL)
         if m is not None:
