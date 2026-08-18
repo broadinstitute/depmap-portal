@@ -37,16 +37,3 @@ rule transform_fusion:
         }
     run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv --rows-per-model"
 
-
-rule transform_crispr_confounders:
-    inputs:
-        model={"type": "model"},
-        achilles_screen_qc_report={"type": "achilles_screen_qc_report"},
-        crispr_screen_map={"type": "crispr_screen_map"},
-        script=fileref('scripts/predictability/transform_crispr_confounders.py'),
-    outputs:
-        {
-            "type": "predictability_crispr_confounders",
-            "filename": {"$filename": "crispr_confounders.csv"},
-        }
-    run "python3 {{inputs.script.filename}} {{inputs.model.dataset_id}} {{inputs.achilles_screen_qc_report.dataset_id}} {{inputs.crispr_screen_map.dataset_id}} crispr_confounders.csv"
