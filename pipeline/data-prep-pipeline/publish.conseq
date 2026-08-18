@@ -82,4 +82,4 @@ rule publish_crispr_confounders:
         update_taiga_script=fileref('scripts/upload_to_taiga.py')
     outputs:{"type": "predictability_crispr_confounders_published"}
 
-    run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityCRISPRConfoundersTransformed data for predictability'  'PredictabilityCRISPRConfoundersTransformed' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated CRISPRConfounders data for predictability'  'CRISPRConfounders' {{inputs.crispr_confounders_data.filename}} 'csv_matrix'"
