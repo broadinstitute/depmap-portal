@@ -64,7 +64,7 @@ rule publish_fusion:
         fusion_data={"type": "predictability_fusion"},
         update_taiga_script=fileref('scripts/upload_to_taiga.py')
     outputs:{"type": "predictability_fusion_published"}
-    run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PredictabilityFusionTransformed for predictability'  'PredictabilityFusionTransformed' {{inputs.fusion_data.filename}} 'csv_matrix'"
+    run "python3 {{inputs.update_taiga_script.filename}} {{config.RELEASE_PERMANAME}} 'Generated PortalFusionsMatrix'  'PortalFusionsMatrix' {{inputs.fusion_data.filename}} 'csv_matrix'"
 
 
 rule publish_lineage:

@@ -25,15 +25,3 @@ rule transform_driver_events:
     run "python3 {{inputs.script.filename}} {{inputs.mutations.dataset_id}} {{inputs.oncokb_annotated.dataset_id}} driver_events.csv"
 
 
-rule transform_fusion:
-    inputs:
-        fusion={"type": "fusion"},
-        gene={"type": "gene"},
-        script=fileref('../preprocessing-pipeline/scripts/make_fusions_matrix.py'),
-    outputs:
-        {
-            "type": "predictability_fusion",
-            "filename": {"$filename": "fusion.csv"},
-        }
-    run "python3 {{inputs.script.filename}} {{inputs.fusion.dataset_id}} {{inputs.gene.filename}} fusion.csv --rows-per-model"
-
