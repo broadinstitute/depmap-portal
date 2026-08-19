@@ -42,7 +42,7 @@ export interface CellLineOverview {
   wes: string;
   prismOncRefLum: string;
   prismOncRefSeq: string;
-  prismOncRefHarmonized: string;
+  prismOncRefUnified: string;
   prismRepurposing: string;
 }
 
@@ -56,14 +56,14 @@ export enum DataType {
   RNAi,
   CRISPR,
   default,
-  PRISMOncRefHarmonized,
+  PRISMOncRefUnified,
 }
 
 export enum DataTypeStrings {
   PRISMRepurposing = "PRISMRepurposing",
   PRISMOncRefLum = "PRISMOncRefLum",
   PRISMOncRefSeq = "PRISMOncRefSeq",
-  PRISMOncRefHarmonized = "PRISMOncRefHarmonized",
+  PRISMOncRefUnified = "PRISMOncRefUnified",
   RNASeq = "RNASeq",
   WGS = "WGS",
   WES = "WES",
@@ -96,7 +96,7 @@ export function getDataTypeColorCategoryFromDataTypeValue(
       return DataTypeCategory.OMICS;
     case DataType.PRISMOncRefLum:
     case DataType.PRISMOncRefSeq:
-    case DataType.PRISMOncRefHarmonized:
+    case DataType.PRISMOncRefUnified:
     case DataType.PRISMRepurposing:
       return DataTypeCategory.CompoundViability;
     default:
@@ -169,7 +169,7 @@ export enum TabTypes {
   GeneDependency = "GeneDependency",
   DrugSensitivityOncRefSeq = "DrugSensitivityOncRefSeq",
   DrugSensitivityOncRefLum = "DrugSensitivityOncRefLum",
-  DrugSensitivityOncRefHarmonized = "DrugSensitivityOncRefHarmonized",
+  DrugSensitivityOncRefUnified = "DrugSensitivityOncRefUnified",
   DrugSensitivityRepurposing = "DrugSensitivityRepurposing",
 }
 

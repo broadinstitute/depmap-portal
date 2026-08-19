@@ -80,9 +80,9 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
 
     if (
       datasetName ===
-      ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix.toString()
+      ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix.toString()
     ) {
-      return "oncrefHarmonized";
+      return "oncrefUnified";
     }
 
     return "oncrefSeq";
@@ -121,7 +121,7 @@ export const EnrichmentTile: React.FC<EnrichmentTileProps> = ({
       tileData?.dataset_name ===
         ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix ||
       tileData?.dataset_name ===
-        ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix
+        ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix
     ) {
       return `Lineages and/or subtypes that have, on average, a stronger sensitivity to this compound compared to all other models. Enriched lineages/subtypes are calculated as in Context Explorer and selected based on default Context Explorer filters (T-test FDR<0.1, avg. AUC difference < -0.1).`;
     }

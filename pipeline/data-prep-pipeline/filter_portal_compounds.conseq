@@ -26,7 +26,7 @@ rule filter-portal-compounds:
         {% if inputs.prism_oncology_reference_compound_list|length > 1 %} \
         --sample-id-of-table {{(inputs.prism_oncology_reference_compound_list|selectattr('dataset_id', 'defined')|first).dataset_id}} \
         {% endif %} \
-        {% if inputs.prism_oncology_reference_harmonized_log2_auc_matrix|length > 1 %} \
-        --sample-id-of-table {{(inputs.prism_oncology_reference_harmonized_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
+        {% if inputs.prism_oncology_reference_unified_log2_auc_matrix|length > 1 %} \
+        --sample-id-of-table {{(inputs.prism_oncology_reference_unified_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
         {% endif %} \
         filtered_portal_compounds.csv"

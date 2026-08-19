@@ -177,7 +177,7 @@ function CollapsibleBoxPlots({
       datasetId ===
         ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix ||
       datasetId ===
-        ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix
+        ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix
     ) {
       return boxPlotData?.dataset_units || "";
     }

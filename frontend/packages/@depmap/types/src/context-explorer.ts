@@ -18,7 +18,7 @@ export enum ContextExplorerDatasets {
   Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound",
   PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix",
   PRISMOncologyReferenceSeqLog2AUCMatrix = "PRISMOncologyReferenceSeqLog2AUCMatrix",
-  PRISMOncologyReferenceHarmonizedLog2AUCMatrix = "PRISMOncologyReferenceHarmonizedLog2AUCMatrix",
+  PRISMOncologyReferenceUnifiedLog2AUCMatrix = "PRISMOncologyReferenceUnifiedLog2AUCMatrix",
 }
 
 export interface ContextPathInfo {

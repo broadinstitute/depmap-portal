@@ -191,14 +191,14 @@ function OverviewTable(props: OverviewTableProps) {
       disableFilters: true,
     });
     columns.push({
-      accessor: "prismOncRefHarmonized",
-      Header: "OncRef Harmonized",
+      accessor: "prismOncRefUnified",
+      Header: "OncRef Unified",
       maxWidth: 90,
       disableFilters: true,
     });
     defaultColumns.push("prismOncRefSeq");
     defaultColumns.push("prismOncRefLum");
-    defaultColumns.push("prismOncRefHarmonized");
+    defaultColumns.push("prismOncRefUnified");
   }
 
   return (

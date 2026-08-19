@@ -97,10 +97,10 @@ def view_compound(name):
             compound.label,
         )
         or data_access.dataset_exists(
-            ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix.name
+            ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix.name
         )
         and data_access.valid_row(
-            ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix.name,
+            ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix.name,
             compound.label,
         )
         or data_access.dataset_exists(

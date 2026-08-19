@@ -21,7 +21,7 @@ enum DataType {
   RNAi,
   CRISPR,
   default,
-  PRISMOncRefHarmonized,
+  PRISMOncRefUnified,
 }
 
 interface Summary {
@@ -53,7 +53,7 @@ function getDataTypeColorCategoryFromDataTypeValue(
       return DataTypeCategory.OMICS;
     case DataType.PRISMOncRefSeq:
     case DataType.PRISMOncRefLum:
-    case DataType.PRISMOncRefHarmonized:
+    case DataType.PRISMOncRefUnified:
     case DataType.PRISMRepurposing:
       return DataTypeCategory.CompoundViability;
     default:

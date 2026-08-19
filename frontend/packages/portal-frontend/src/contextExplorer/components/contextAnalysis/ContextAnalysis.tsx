@@ -264,7 +264,7 @@ function ContextAnalysis({
     datasetId ===
       ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix ||
     datasetId ===
-      ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix;
+      ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix;
 
   const getFilterDefinitions = useCallback(() => {
     if (isOncRefDataset) {
@@ -806,10 +806,10 @@ function ContextAnalysis({
                 </>
               )}
               {datasetId ===
-                ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix && (
+                ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix && (
                 <>
                   <h2>
-                    OncRef Harmonized sensitivies enriched in{" "}
+                    OncRef Unified sensitivies enriched in{" "}
                     {selectedContextNameInfo.name}
                   </h2>
                   <h4>

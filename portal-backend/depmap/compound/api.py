@@ -176,8 +176,8 @@ class PredictabilityTileData(Resource):
                 "prism_onc_seq_ref",
                 color_palette.prism_oncology_color,
             ),
-            "PRISMOncologyReferenceHarmonizedLog2AUCMatrix": (
-                "prism_onc_harmonized_ref",
+            "PRISMOncologyReferenceUnifiedLog2AUCMatrix": (
+                "prism_onc_unified_ref",
                 color_palette.prism_oncology_color,
             ),
         }

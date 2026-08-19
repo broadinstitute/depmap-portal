@@ -89,9 +89,7 @@ const ContextExplorerTabs = ({
       rna_seq: capitalizeFirstLetter(String(row.rna_seq)),
       prismOncRefSeq: capitalizeFirstLetter(String(row.oncrefSeq)),
       prismOncRefLum: capitalizeFirstLetter(String(row.oncrefLum)),
-      prismOncRefHarmonized: capitalizeFirstLetter(
-        String(row.oncrefHarmonized)
-      ),
+      prismOncRefUnified: capitalizeFirstLetter(String(row.oncrefUnified)),
       prismRepurposing: capitalizeFirstLetter(String(row.repurposing)),
     };
   });
@@ -103,7 +101,7 @@ const ContextExplorerTabs = ({
       (tabTypeStr) =>
         (tabTypeStr !== String(TabTypes.DrugSensitivityOncRefLum) &&
           tabTypeStr !== String(TabTypes.DrugSensitivityOncRefSeq) &&
-          tabTypeStr !== String(TabTypes.DrugSensitivityOncRefHarmonized)) ||
+          tabTypeStr !== String(TabTypes.DrugSensitivityOncRefUnified)) ||
         enabledFeatures.context_explorer_prerelease_datasets
     );
 
@@ -157,11 +155,11 @@ const ContextExplorerTabs = ({
           </Tab>
         )}
         {enabledFeatures.context_explorer_prerelease_datasets && (
-          <Tab id="oncrefHarmonized" className={styles.Tab}>
-            OncRef Harmonized Sensitivity{" "}
+          <Tab id="oncrefUnified" className={styles.Tab}>
+            OncRef Unified Sensitivity{" "}
             <PurpleHelpIcon
-              tooltipText="Selective compound sensitivities calculated from the OncRef Harmonized Dataset."
-              popoverId="oncref-harmonized-tab-help"
+              tooltipText="Selective compound sensitivities calculated from the OncRef Unified Dataset."
+              popoverId="oncref-unified-tab-help"
               placement="top"
             />
           </Tab>
@@ -272,7 +270,7 @@ const ContextExplorerTabs = ({
                 treeType={treeType}
                 featureType={"compound"}
                 datasetId={
-                  ContextExplorerDatasets.PRISMOncologyReferenceHarmonizedLog2AUCMatrix
+                  ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix
                 }
                 customInfoImg={customInfoImg}
               />

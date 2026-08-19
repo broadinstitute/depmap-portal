@@ -26,7 +26,7 @@ tc = taigapy.create_taiga_client_v3()
 assert label in [
     "Prism_oncology_AUC",
     "Prism_oncology_seq_AUC",
-    "Prism_oncology_harmonized_AUC",
+    "Prism_oncology_unified_AUC",
     "Prism_oncology_IC50",
     "GDSC1_AUC",
     "GDSC2_AUC",
@@ -54,7 +54,7 @@ def add_prefix_if_needed(sample_id):
 if label not in [
     "Prism_oncology_AUC",
     "Prism_oncology_seq_AUC",
-    "Prism_oncology_harmonized_AUC",
+    "Prism_oncology_unified_AUC",
 ]:
     sample_compound_ids = metadata_df[["SampleID", "CompoundID"]].drop_duplicates()
     assert (sum(sample_compound_ids["SampleID"].value_counts() > 1) == 0) and (
