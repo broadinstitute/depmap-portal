@@ -124,7 +124,30 @@ def test_read_and_validate_matrix_df_helper(tmpdir):
     assert df.columns.to_list() == ["10", "11"]
 
 
+def test_read_and_validate_matrix_df_helper_incorrect_typing(tmpdir):
+    """Checks that read_and_validate_matrix_df_helper raises a FileValidationError when called
+    with ValueType.continuous but the matrix contains values that can't be coerced to numeric.
+    """
+
+    def to_csv(*args, **kwargs):
+        return _to_csv(tmpdir, *args, **kwargs)
+
+    with pytest.raises(FileValidationError):
+        read_and_validate_matrix_df_helper(
+            to_csv(pd.DataFrame("not_a_number", columns=["C1", "C2"], index=["A", "B"])),  # type: ignore
+            ValueType.continuous,
+            None,
+            "csv",
+        )
+
+
 def test_validate_tabular_df_schema(tmpdir):
+    """Checks that _validate_tabular_df_schema coerces column values to the dtype implied
+    by each column's declared AnnotationType (text, continuous, categorical, list_strings)
+    for otherwise well-formed data, including numeric-looking column names/values and
+    parsing of stringified list columns.
+    """
+
     def to_csv(*args, **kwargs):
         return _to_csv(tmpdir, *args, **kwargs)
 
@@ -222,6 +245,11 @@ def test_validate_tabular_df_schema(tmpdir):
 
 
 def test_incorrect_typing_tabular_df_schema(tmpdir):
+    """Checks that _validate_tabular_df_schema raises a FileValidationError when a column's
+    values can't be coerced to match its declared AnnotationType -- here, a column declared
+    as `continuous` contains non-numeric strings.
+    """
+
     def to_csv(*args, **kwargs):
         return _to_csv(tmpdir, *args, **kwargs)
 

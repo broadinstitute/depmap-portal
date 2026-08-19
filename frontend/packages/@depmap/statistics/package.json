@@ -5,7 +5,23 @@
   "types": "index.d.ts",
   "license": "MIT",
   "scripts": {
-    "test": "echo 'no tests to run'"
+    "test": "jest"
+  },
+  "jest": {
+    "moduleFileExtensions": ["js", "ts"],
+    "transform": {
+      "^.+\\.tsx?$": [
+        "ts-jest",
+        {
+          "diagnostics": false,
+          "tsconfig": {
+            "module": "commonjs"
+          }
+        }
+      ]
+    },
+    "testRegex": ".*/__tests__/.*\\.test\\.(ts|js)$",
+    "testEnvironment": "node"
   },
   "dependencies": {
     "jstat": "^1.9.6",

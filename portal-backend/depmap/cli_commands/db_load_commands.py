@@ -923,7 +923,6 @@ def load_sample_data(
         dep_datasets_config = [
             # when adding a dataset, check if it should be added to association_deps and additional_dev_metadata as well
             DependencyEnum.Chronos_Combined,
-            DependencyEnum.Chronos_Achilles,
             DependencyEnum.RNAi_Ach,
             DependencyEnum.RNAi_Nov_DEM,
             DependencyEnum.RNAi_merged,
@@ -1083,7 +1082,6 @@ def load_sample_data(
             BiomarkerEnum.context,
             BiomarkerEnum.rppa,
             BiomarkerEnum.rrbs,
-            BiomarkerEnum.proteomics,
             BiomarkerEnum.sanger_proteomics,
             BiomarkerEnum.ssgsea,
             BiomarkerEnum.fusions,

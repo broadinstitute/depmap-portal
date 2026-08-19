@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { PlotlyLoaderProvider } from "@depmap/data-explorer-2/src/contexts/PlotlyLoaderContext";
 import useScatterPlotData from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/useScatterPlotData";
 import PrototypeScatterPlot from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeScatterPlot";
+import SmallMultiplesScatter from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/SmallMultiplesScatter";
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
+import { computeFacets } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
@@ -55,6 +57,7 @@ function EmbeddedScatterPlot({
     pointVisibility,
     regressionLines,
     showIdentityLine,
+    regressionLinesByFacet,
   } = useScatterPlotData(
     data,
     plotConfig,
@@ -62,6 +65,11 @@ function EmbeddedScatterPlot({
     palette,
     canShowIdentityLine(data)
   );
+
+  const facetInfo = useMemo(() => computeFacets(data, plotConfig.facet_by), [
+    data,
+    plotConfig.facet_by,
+  ]);
 
   if (!formattedData) {
     return null;
@@ -74,36 +82,80 @@ function EmbeddedScatterPlot({
       data?.filters.color2
   );
 
+  const facetKeys = facetInfo?.facetKeys ?? null;
+  const facetOrder = facetInfo?.facetOrder;
+  const isFaceted = Boolean(facetKeys);
+
   return (
     <PlotlyLoaderProvider PlotlyLoader={ScatterLoader}>
-      <PrototypeScatterPlot
-        data={formattedData}
-        xKey="x"
-        yKey="y"
-        pointVisibility={pointVisibility || undefined}
-        colorKey1="color1"
-        colorKey2="color2"
-        categoricalColorKey="catColorData"
-        continuousColorKey="contColorData"
-        contLegendKeys={contLegendKeys}
-        colorMap={colorMap}
-        hoverTextKey="hoverText"
-        annotationTextKey="annotationText"
-        height={height}
-        xLabel={formattedData.xLabel || ""}
-        yLabel={formattedData.yLabel || ""}
-        showIdentityLine={showIdentityLine}
-        regressionLines={regressionLines}
-        onClickResetSelection={() => {}}
-        legendForDownload={legendForDownload}
-        pointSize={pointSize}
-        pointOpacity={pointOpacity}
-        outlineWidth={outlineWidth}
-        palette={palette}
-        xAxisFontSize={12}
-        yAxisFontSize={12}
-        showBuiltinLegend={showBuiltinLegend}
-      />
+      {formattedData &&
+        (isFaceted ? (
+          <SmallMultiplesScatter
+            data={formattedData}
+            xKey="x"
+            yKey="y"
+            pointVisibility={pointVisibility || undefined}
+            colorKey1="color1"
+            colorKey2="color2"
+            categoricalColorKey="catColorData"
+            continuousColorKey="contColorData"
+            contLegendKeys={contLegendKeys}
+            colorMap={colorMap}
+            hoverTextKey="hoverText"
+            annotationTextKey="annotationText"
+            height="auto"
+            xLabel={formattedData?.xLabel || ""}
+            yLabel={formattedData?.yLabel || ""}
+            legendForDownload={legendForDownload}
+            facetKeys={facetKeys || []}
+            facetOrder={facetOrder}
+            // hiddenFacets={}
+            regressionLinesByFacet={regressionLinesByFacet}
+            placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
+            showIdentityLine={showIdentityLine}
+            pointSize={pointSize}
+            pointOpacity={pointOpacity}
+            outlineWidth={outlineWidth}
+            palette={palette}
+            xAxisFontSize={12}
+            yAxisFontSize={12}
+            showBuiltinLegend={showBuiltinLegend}
+          />
+        ) : (
+          // hasFacetOptionsEnabled intentionally left unset here: this
+          // branch only renders when !isFaceted, i.e. facet_by has no
+          // real backing (a real facet_by always routes to
+          // SmallMultiplesScatter above instead) — so there's nothing
+          // real for this prop to report at this call site.
+          <PrototypeScatterPlot
+            data={formattedData}
+            xKey="x"
+            yKey="y"
+            pointVisibility={pointVisibility || undefined}
+            colorKey1="color1"
+            colorKey2="color2"
+            categoricalColorKey="catColorData"
+            continuousColorKey="contColorData"
+            contLegendKeys={contLegendKeys}
+            colorMap={colorMap}
+            hoverTextKey="hoverText"
+            annotationTextKey="annotationText"
+            height={height}
+            xLabel={formattedData?.xLabel || ""}
+            yLabel={formattedData?.yLabel || ""}
+            showIdentityLine={showIdentityLine}
+            regressionLines={regressionLines}
+            onClickResetSelection={() => {}}
+            legendForDownload={legendForDownload}
+            pointSize={pointSize}
+            pointOpacity={pointOpacity}
+            outlineWidth={outlineWidth}
+            palette={palette}
+            xAxisFontSize={12}
+            yAxisFontSize={12}
+            showBuiltinLegend={showBuiltinLegend}
+          />
+        ))}
     </PlotlyLoaderProvider>
   );
 }

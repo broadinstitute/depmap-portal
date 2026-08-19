@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
@@ -18,10 +19,10 @@ class CmsPost(Base):
     title: Mapped[str] = mapped_column(String, nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     content_hash: Mapped[str] = mapped_column(String, nullable=False)
-    created_at: Mapped[Optional[DateTime]] = mapped_column(
+    created_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, server_default=func.now()
     )
-    updated_at: Mapped[Optional[DateTime]] = mapped_column(
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now()
     )
 

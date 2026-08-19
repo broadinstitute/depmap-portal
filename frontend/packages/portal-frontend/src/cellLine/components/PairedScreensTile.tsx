@@ -159,16 +159,6 @@ function ResistanceMetadataSection({ data }: { data: ResistanceInfo }) {
         Resistance
       </h4>
 
-      {data.origin && (
-        <>
-          <h6 className={styles.propertyHeader}>
-            {data.origin.type === "cultured"
-              ? "Cultured Resistance"
-              : "Engineered Resistance"}
-          </h6>
-          <p>{data.origin.description}</p>
-        </>
-      )}
       <h6 className={styles.propertyHeader}>Parental Model</h6>
       <a
         className={styles.descriptionLinks}

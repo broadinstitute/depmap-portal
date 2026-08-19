@@ -29,6 +29,12 @@ from breadbox_client.api.datasets import get_datasets as get_datasets_client
 from breadbox_client.api.datasets import get_feature_data as get_feature_data_client
 from breadbox_client.api.datasets import remove_dataset as remove_dataset_client
 from breadbox_client.api.datasets import update_dataset as update_dataset_client
+from breadbox_client.api.flat_tables import add_flat_table as add_flat_table_client
+from breadbox_client.api.flat_tables import get_flat_table as get_flat_table_client
+from breadbox_client.api.flat_tables import list_flat_tables as list_flat_tables_client
+from breadbox_client.api.flat_tables import update_flat_table as update_flat_table_client
+from breadbox_client.api.flat_tables import delete_flat_table as delete_flat_table_client
+from breadbox_client.api.flat_tables import get_flat_table_subset as get_flat_table_subset_client
 from breadbox_client.api.default import upload_file
 from breadbox_client.api.groups import add_group as add_group_client
 from breadbox_client.api.groups import add_group_entry as add_group_entry_client
@@ -61,6 +67,12 @@ from breadbox_client.api.release_versions import get_release_versions as get_rel
 from breadbox_client.api.release_versions import get_release_version as get_release_version_client
 from breadbox_client.api.release_versions import create_release_version as create_release_version_client
 from breadbox_client.api.release_versions import delete_release_version as delete_release_version_client
+from breadbox_client.api.cms import get_cms_posts as get_cms_posts_client
+from breadbox_client.api.cms import get_cms_post as get_cms_post_client
+from breadbox_client.api.cms import add_cms_post as add_cms_post_client
+from breadbox_client.api.cms import delete_cms_post as delete_cms_post_client
+from breadbox_client.api.cms import get_cms_menu as get_cms_menu_client
+from breadbox_client.api.cms import set_cms_menu as set_cms_menu_client
 
 from breadbox_client.models import (
     AccessType,
@@ -80,11 +92,20 @@ from breadbox_client.models import (
     Context,
     ContextMatchResponse,
     DataType,
-    DimensionIdentifiers, 
+    DimensionIdentifiers,
     DimensionType,
     FeatureSampleIdentifier,
     FeatureResponse,
     FeatureTypeOut,
+    FlatTableColumnMetadata,
+    FlatTableCreateParams,
+    FlatTableCreateParamsMetadataType0,
+    FlatTableFilter,
+    FlatTableResponse,
+    FlatTableSubsetRequest,
+    FlatTableSubsetResponse,
+    FlatTableSummaryResponse,
+    FlatTableUpdateParams,
     GroupIn,
     GroupEntry,
     GroupEntryIn,
@@ -116,8 +137,13 @@ from breadbox_client.models import (
     PredictiveModelResultOut,
     PredictiveModelsResponse,
     ReleaseVersionResponse,
-    CreateReleaseVersionParams, 
-    ReleaseVersionResponse
+    CreateReleaseVersionParams,
+    ReleaseVersionResponse,
+    PostOut,
+    PostSummaryOut,
+    PostIn,
+    MenuIn,
+    MenuOut,
 )
 
 from breadbox_client.types import UNSET, Unset, File, Response
@@ -497,6 +523,107 @@ class BBClient:
         )
         return self._parse_client_response(breadbox_response)
 
+    # FLAT TABLES
+
+    def add_flat_table(
+        self,
+        name: str,
+        given_id: str,
+        data_df: pd.DataFrame,
+        columns_metadata: List[FlatTableColumnMetadata],
+        indices: Optional[List[List[str]]] = None,
+        table_metadata: Optional[dict] = None,
+        taiga_id: Optional[str] = None,
+        timeout=None,
+    ):
+        """Upload a new flat table (parquet-backed) and await the ingestion task."""
+        buffer = io.BytesIO()
+        data_df.to_parquet(buffer, index=False)
+        buffer.seek(0)
+        uploaded_file = self.upload_file(file_handle=buffer)
+
+        metadata = FlatTableCreateParamsMetadataType0.from_dict(table_metadata) if table_metadata else None
+
+        params = FlatTableCreateParams(
+            columns=columns_metadata,
+            file_ids=uploaded_file.file_ids,
+            file_md5=uploaded_file.md5,
+            given_id=given_id,
+            name=name,
+            indices=indices if indices else UNSET,
+            metadata=metadata if metadata else UNSET,
+            taiga_id=taiga_id if taiga_id else UNSET,
+        )
+        breadbox_response = add_flat_table_client.sync_detailed(
+            client=self.client,
+            body=params,
+        )
+        breadbox_response_ = typing.cast(AddDatasetResponse, self._parse_client_response(breadbox_response))
+        result = self.await_task_result(breadbox_response_.id, timeout=timeout)
+        return result
+
+    def get_flat_table(self, id: str) -> FlatTableResponse:
+        """Get metadata (including columns) for a flat table by flat_table_id or given_id."""
+        breadbox_response = get_flat_table_client.sync_detailed(id=id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def list_flat_tables(self, include_columns: bool = False) -> List[FlatTableSummaryResponse]:
+        """List metadata for all flat tables available to current user.
+
+        If include_columns is True, each summary's `columns` field is also populated
+        (at the cost of a larger response).
+        """
+        breadbox_response = list_flat_tables_client.sync_detailed(
+            client=self.client,
+            include="all" if include_columns else UNSET,
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def update_flat_table(
+        self,
+        id: str,
+        name: Union[str, Unset, None] = UNSET,
+        given_id: Union[str, Unset, None] = UNSET,
+    ) -> FlatTableResponse:
+        """Rename a flat table and/or reassign its given_id (admin only)."""
+        params = FlatTableUpdateParams(
+            name=name,
+            given_id=given_id,
+        )
+        breadbox_response = update_flat_table_client.sync_detailed(
+            id=id,
+            client=self.client,
+            body=params,
+        )
+        return self._parse_client_response(breadbox_response)
+
+    def remove_flat_table(self, id: str):
+        """Delete a flat table by flat_table_id or given_id (admin only)."""
+        breadbox_response = delete_flat_table_client.sync_detailed(id=id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def get_flat_table_subset(
+        self,
+        flat_table_id: str,
+        columns: Optional[List[str]] = None,
+        filters: Optional[Dict[str, List[str]]] = None,
+    ) -> pd.DataFrame:
+        """Get a subset of a flat table's rows/columns as a DataFrame."""
+        params = FlatTableSubsetRequest(
+            flat_table_id=flat_table_id,
+            columns=columns if columns else UNSET,
+            filters=[FlatTableFilter(column=k, values=v) for k, v in filters.items()] if filters else UNSET,
+        )
+        breadbox_response = get_flat_table_subset_client.sync_detailed(
+            client=self.client,
+            body=params,
+        )
+        response = typing.cast(FlatTableSubsetResponse, self._parse_client_response(breadbox_response))
+        try:
+            return pd.DataFrame({col.metadata.given_id: col.values for col in response.columns})
+        except Exception as e:
+            raise Exception(e, "Unable to parse breadbox response into dataframe.")
+
     # TYPES
 
     def get_feature_types(self) -> list[FeatureTypeOut]:
@@ -671,6 +798,58 @@ class BBClient:
         deleted automatically via cascade.
         """
         breadbox_response = delete_release_version_client.sync_detailed(client=self.client, release_version_id=release_version_id)
+        return self._parse_client_response(breadbox_response)
+
+    # CMS
+
+    def get_posts(self, include_content: bool = False) -> List[Union[PostOut, PostSummaryOut]]:
+        """Get all CMS posts, with the option to include_content."""
+        breadbox_response = get_cms_posts_client.sync_detailed(client=self.client, include_content=include_content)
+        return self._parse_client_response(breadbox_response)
+
+    def get_post(self, post_id: str) -> PostOut:
+        """Get a single CMS post by id."""
+        breadbox_response = get_cms_post_client.sync_detailed(post_id=post_id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def add_post(
+        self,
+        slug: str,
+        title: str,
+        content: str,
+        content_hash: str,
+        created_at: Optional[datetime] = None,
+        updated_at: Optional[datetime] = None,
+    ) -> PostOut:
+        """
+        Add a new CMS post. Posts are immutable, so this always inserts a new
+        row — the server generates its own id; if a post with the same slug
+        already exists, the server deletes it first.
+        """
+        body = PostIn(
+            slug=slug,
+            title=title,
+            content=content,
+            content_hash=content_hash,
+            created_at=created_at if created_at else UNSET,
+            updated_at=updated_at if updated_at else UNSET,
+        )
+        breadbox_response = add_cms_post_client.sync_detailed(client=self.client, body=body)
+        return self._parse_client_response(breadbox_response)
+
+    def delete_post(self, post_id: str) -> None:
+        """Delete a CMS post by id."""
+        breadbox_response = delete_cms_post_client.sync_detailed(post_id=post_id, client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def get_menu(self) -> List[MenuOut]:
+        """Get the CMS menu tree."""
+        breadbox_response = get_cms_menu_client.sync_detailed(client=self.client)
+        return self._parse_client_response(breadbox_response)
+
+    def set_menu(self, menus: List[MenuIn]) -> List[MenuOut]:
+        """Replace the entire CMS menu tree."""
+        breadbox_response = set_cms_menu_client.sync_detailed(client=self.client, body=menus)
         return self._parse_client_response(breadbox_response)
 
     # PREDICTIVE MODELS

@@ -16,3 +16,4 @@ from breadbox.models.predictive_models import (
 )
 from breadbox.models.release_version import ReleaseVersion, ReleaseFile, ReleasePipeline
 from breadbox.models.cms import CmsPost, CmsMenu, CmsMenuPost
+from breadbox.models.flat_table import FlatTable, FlatTableColumn

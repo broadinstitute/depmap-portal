@@ -36,6 +36,7 @@ function AggregationSelect({
           "25%tile": "25%tile",
           "75%tile": "75%tile",
           stddev: "Standard deviation",
+          sum: "Sum",
         }}
         value={value}
         onChange={(nextValue) => onChange(nextValue as DataExplorerAggregation)}

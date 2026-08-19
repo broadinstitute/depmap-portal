@@ -10,15 +10,22 @@ import styles from "../../styles/DataExplorer2.scss";
 interface Props {
   data: {
     filters: {
-      color1: { name: string };
-      color2: { name: string };
+      color1?: { name: string };
+      color2?: { name: string };
+      facet1?: { name: string };
+      facet2?: { name: string };
     };
   };
   continuousBins: ReturnType<typeof calcBins>;
   category: LegendKey;
+  // Which triad (color's own, or facet's own via the version-2 default
+  // defer) backs this legend — see resolveColorMode. No default: an absent
+  // color_by defers to facet_by, so "color" is not a safe universal
+  // fallback here.
+  target: "color" | "facet";
 }
 
-function LegendLabel({ data, continuousBins, category }: Props) {
+function LegendLabel({ data, continuousBins, category, target }: Props) {
   const ref = useRef<HTMLElement | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
 
@@ -29,7 +36,7 @@ function LegendLabel({ data, continuousBins, category }: Props) {
     }
   }, []);
 
-  const name = categoryToDisplayName(category, data, continuousBins);
+  const name = categoryToDisplayName(category, data, continuousBins, target);
   const nameElement =
     typeof name === "string" ? (
       <span>{name}</span>

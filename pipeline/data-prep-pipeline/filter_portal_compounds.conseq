@@ -1,7 +1,7 @@
 # In this paritcular rule, a stub-artifact input is being used which doesn't have a dataset_id.
-# This is because the prism_oncology_reference_lum_log2_auc_matrix is optional meaning it is available for internal
+# This is because the prism_oncology_reference_compound_list is optional meaning it is available for internal
 # but not for public releases. Conseq doesn't support optional inputs as of 25q3. However, we can circumvent that
-# by using an all{stub-artifact|[onref_auc_matrix]} input. This way prism_oncology_reference_lum_log2_auc_matrix is not
+# by using an all{stub-artifact|[onref_auc_matrix]} input. This way prism_oncology_reference_compound_list is not
 # an empty list. So in case of public releases, the rule will run without error even without the onref_auc_matrix input due
 # to the length > 1 check. In case of internal releases, the rule will run with the onref_auc_matrix input.
 
@@ -10,9 +10,7 @@ rule filter-portal-compounds:
         repsdrug_matrix={"type": "repsdrug_matrix"},
         repsdrug_log2_viability_collapsed_conditions={"type": "repsdrug_log2_viability_collapsed_conditions"},
         portal_compounds={"type": "portal_compounds"},
-        prism_oncology_reference_lum_log2_auc_matrix=all{"type"~ "prism_oncology_reference_lum_log2_auc_matrix|stub-artifact"},
-        prism_oncology_reference_seq_log2_auc_matrix=all{"type"~ "prism_oncology_reference_seq_log2_auc_matrix|stub-artifact"},
-        prism_oncology_reference_harmonized_log2_auc_matrix=all{"type"~ "prism_oncology_reference_harmonized_log2_auc_matrix|stub-artifact"},
+        prism_oncology_reference_compound_list=all{"type"~ "prism_oncology_reference_compound_list|stub-artifact"},
         script=fileref('scripts/portal_compounds/filter_portal_compounds.py'),
     outputs:
         {
@@ -25,11 +23,8 @@ rule filter-portal-compounds:
         {{inputs.portal_compounds.dataset_id}} \
         --index-of-matrix {{inputs.repsdrug_matrix.dataset_id}} \
         --sample-id-of-table {{inputs.repsdrug_log2_viability_collapsed_conditions.dataset_id}} \
-        {% if inputs.prism_oncology_reference_lum_log2_auc_matrix|length > 1 %} \
-        --sample-id-of-table {{(inputs.prism_oncology_reference_lum_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
-        {% endif %} \
-        {% if inputs.prism_oncology_reference_seq_log2_auc_matrix|length > 1 %} \
-        --sample-id-of-table {{(inputs.prism_oncology_reference_seq_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
+        {% if inputs.prism_oncology_reference_compound_list|length > 1 %} \
+        --sample-id-of-table {{(inputs.prism_oncology_reference_compound_list|selectattr('dataset_id', 'defined')|first).dataset_id}} \
         {% endif %} \
         {% if inputs.prism_oncology_reference_harmonized_log2_auc_matrix|length > 1 %} \
         --sample-id-of-table {{(inputs.prism_oncology_reference_harmonized_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \

@@ -184,11 +184,25 @@ export function buildExtendedMetadata(
     }
   };
 
-  // 1. User-selected metadata has highest priority.
+  // 1. User-selected metadata has highest priority. Each key here (e.g.
+  // `color_property`, `facet_property`) is read by exact name downstream —
+  // never dedupe one against another via `addIfNew`, even if two of them
+  // happen to reference the identical slice (e.g. color_by and facet_by
+  // both backed by the same annotation). `addIfNew` would silently skip
+  // whichever key is processed second, dropping it from the response and
+  // breaking whichever axis reads it by name — while still leaving the
+  // *other* axis working, since its key won the dedup. Object key order
+  // (and therefore which axis "wins") differs between a live edit and a
+  // freshly-parsed URL, which is why this bug looked flaky. Every
+  // user-selected key is written unconditionally; we still record its
+  // serialized value in `seen` so sections 2/3 below (which are genuinely
+  // supplementary/anonymous) don't redundantly re-fetch the same slice
+  // under a new key.
   if (metadata) {
     for (const [key, entry] of Object.entries(metadata)) {
       if ("dataset_id" in entry) {
-        addIfNew(key, entry as SliceQuery);
+        seen.add(serializeSliceQuery(entry as SliceQuery));
+        result[key] = entry as SliceQuery;
       } else {
         // Legacy entries (e.g. { slice_id }) — pass through as-is.
         result[key] = entry;
@@ -220,7 +234,7 @@ export function buildExtendedMetadata(
   ) as DataExplorerContextV2[]) {
     for (const variable of Object.values(filter.vars)) {
       if (
-        variable.identifier === "label" ||
+        (variable.identifier === "label" && !variable.reindex_through) ||
         variable.identifier === index_id_column
       ) {
         continue;
@@ -261,6 +275,7 @@ export async function fetchPlotDimensions(
   fetchDatasetLabel(dimensions.x?.dataset_id);
   fetchDatasetLabel(dimensions.y?.dataset_id);
   fetchDatasetLabel(dimensions.color?.dataset_id);
+  fetchDatasetLabel(dimensions.facet?.dataset_id);
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const indexDimType = dimTypes.find((t) => t.name === index_type);
@@ -476,7 +491,7 @@ export async function fetchPlotDimensions(
 
       if (
         value_type !== "continuous" &&
-        key === "color_property" &&
+        (key === "color_property" || key === "facet_property") &&
         distinct.size > MAX_PLOTTABLE_CATEGORIES
       ) {
         window.console.error(extendedMetadata![key]);
@@ -580,12 +595,14 @@ export async function fetchPlotDimensions(
       x: await fetchAxisLabel(dimensions?.x),
       y: await fetchAxisLabel(dimensions?.y),
       color: await fetchAxisLabel(dimensions?.color),
+      facet: await fetchAxisLabel(dimensions?.facet),
     } as Record<string, string>;
 
     const valueTypes = {
       x: await fetchValueType(dimensions?.x),
       y: await fetchValueType(dimensions?.y),
       color: await fetchValueType(dimensions?.color),
+      facet: await fetchValueType(dimensions?.facet),
     } as Record<string, DataExplorerPlotResponseDimension["value_type"]>;
 
     const datasetLabels = {
@@ -595,6 +612,10 @@ export async function fetchPlotDimensions(
 
       color: dimensions.color
         ? await fetchDatasetLabel(dimensions.color.dataset_id)
+        : null,
+
+      facet: dimensions.facet
+        ? await fetchDatasetLabel(dimensions.facet.dataset_id)
         : null,
     } as Record<string, string | null>;
 
@@ -611,7 +632,7 @@ export async function fetchPlotDimensions(
           return indexed_values[id] ?? null;
         }) as number[];
 
-        if (key === "color") {
+        if (key === "color" || key === "facet") {
           const distinct = new Set(values.filter((v) => v != null));
 
           const isBinaryish =
@@ -677,9 +698,14 @@ export async function fetchPlotDimensions(
         });
 
         // HACK! I never imagined there would be continuous metadata. We'll
-        // fake it too like a color dimension instead.
-        if (key === "color_property" && value_type === "continuous") {
-          out.dimensions.color = ({
+        // fake it too like a color/facet dimension instead.
+        if (
+          (key === "color_property" || key === "facet_property") &&
+          value_type === "continuous"
+        ) {
+          const dimKey = key === "color_property" ? "color" : "facet";
+
+          out.dimensions[dimKey] = ({
             axis_label: resolveDisplayLabel(
               sliceQuery,
               index_type,
@@ -822,18 +848,14 @@ export const fetchDatasetsByIndexType = memoize(async () => {
 // and already respects `visible[i]` — so it belongs in the
 // render/derivation layer, not the data layer.
 //
-// PLANNED EVOLUTION (small multiples): when scatter gains per-group small
-// multiples, this moves into the render layer as a fit recomputed per
-// panel from that panel's visible points. The only substantive change to
-// the grouping logic is swapping the category source from the
-// color-derived value seen below to `group_by ?? color_by` (categorical
-// only — a continuous color gradient is a within-panel attribute and must
-// continue to yield a single ungrouped line, never one line per bin). The
-// current single-line-per-color-group behavior is a reasonable interim:
-// in a single-panel scatter it reads as the overall trend. The legacy
-// single-line computation should also be retained as the basis for an
-// opt-in global reference line (one ungrouped fit, neutral color, drawn
-// over every panel) once small multiples exist.
+// Small multiples already exist (DataExplorerScatterPlot's facetKeys /
+// computeFacetedLinReg) and facet on `facet_by` directly — facet_by is an
+// independent axis with no color_by fallback, so that path never touches
+// this function's color-derived categories. This function remains the
+// single-panel, color-only computation: a reasonable interim, since in a
+// single-panel scatter it reads as the overall trend. It's also retained
+// as the basis for an opt-in global reference line (one ungrouped fit,
+// neutral color, drawn over every panel) alongside the faceted lines.
 export const fetchLinearRegression = memoize(
   async (
     index_type: string,
@@ -844,7 +866,7 @@ export const fetchLinearRegression = memoize(
     if (Object.values(dimensions).some(isExpansionDimension)) {
       throw new Error(
         `fetchLinearRegression received a dimension carrying the "expansion" ` +
-          `sentinel. Its color-grouped fit assumes one value per index entity, ` +
+          `sentinel. Its color-faceted fit assumes one value per index entity, ` +
           `but an expansion axis is N×M (entity, member) pairs and is handled by ` +
           `the faceted regression path. Expanded plots must not reach this ` +
           `function — gate the caller on isExpansionDimension / expand_by.`
@@ -1131,14 +1153,33 @@ export async function fetchCorrelation(
     use_clustering
   );
 
-  const [x2] = filters?.distinguish2
+  const [x2Raw, x2Ids] = filters?.distinguish2
     ? await correlateDimension(
         dimensions.x,
         index_type,
         filters?.distinguish2 as DataExplorerContextV2,
         use_clustering
       )
-    : [null];
+    : [null, null];
+
+  // When clustering is enabled, correlateDimension runs a separate clustering
+  // pass for x2 that may produce a different column order than x. Without
+  // realignment, x2.values[i][j] describes a different gene pair than
+  // x.values[i][j] (and index_ids[i/j]), so a selected cell shows the wrong
+  // value from one of the two heatmaps. Reorder x2's matrix to follow x's
+  // clustering order.
+  let x2 = x2Raw;
+  if (x2Raw && x2Ids && use_clustering) {
+    const x2Matrix = x2Raw.values as unknown as number[][];
+    const x2IdToIndex: Record<string, number> = {};
+    x2Ids.forEach((id: string, i: number) => {
+      x2IdToIndex[id] = i;
+    });
+    const reorderedMatrix = ids.map((rowId: string) =>
+      ids.map((colId: string) => x2Matrix[x2IdToIndex[rowId]][x2IdToIndex[colId]])
+    );
+    x2 = { ...x2Raw, values: reorderedMatrix as unknown as number[] };
+  }
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
   const indexDimType = dimTypes.find((t) => t.name === index_type);
@@ -1168,7 +1209,7 @@ export async function fetchWaterfall(
   // reprojects positions into a synthetic "rank" x dimension, and remaps
   // the config's x onto y. None of that is identity or values — it's
   // plottable geometry, and it depends on display concerns (sort order,
-  // grouping). It lives here because it once backed a dedicated Data
+  // faceting). It lives here because it once backed a dedicated Data
   // Explorer endpoint; that backend is gone but the computation stayed put
   // wearing the endpoint's shape. It belongs in the render/derivation
   // layer. Fine to leave until something forces a change here; when that
@@ -1261,6 +1302,19 @@ export async function fetchWaterfall(
     sortedDimensions.color = {
       ...unsortedData.dimensions.color,
       values: sortByReindexedLabels(unsortedData.dimensions.color.values),
+    };
+  }
+
+  // Mirrors the color branch above — a continuous facet_property gets
+  // redirected into dimensions.facet (see the "HACK! I never imagined
+  // there would be continuous metadata" comment above), so it needs the
+  // same re-sort/carry-through color gets, or it's silently dropped here
+  // and the Facets panel (and any faceting at all) never sees it for a
+  // continuous facet_by on a waterfall plot.
+  if (unsortedData.dimensions.facet) {
+    sortedDimensions.facet = {
+      ...unsortedData.dimensions.facet,
+      values: sortByReindexedLabels(unsortedData.dimensions.facet.values),
     };
   }
 

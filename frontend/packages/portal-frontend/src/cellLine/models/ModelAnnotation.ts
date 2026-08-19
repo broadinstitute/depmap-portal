@@ -1,8 +1,8 @@
 /*
-  This script was generated from ../pipeline/scripts/format_models.py via running:
-    ../depmap-shared/generate-ts-from-schema.py ../pipeline/scripts/format_models.py schema ModelAnnotation ../frontend/packages/portal-frontend/src/cellLine/models/ModelAnnotation.ts
+  This script was generated from ../pipeline/preprocessing-pipeline/scripts/format_models.py via running:
+    ../depmap-shared/generate-ts-from-schema.py ../pipeline/preprocessing-pipeline/scripts/format_models.py schema ModelAnnotation ../frontend/packages/portal-frontend/src/cellLine/models/ModelAnnotation.ts
   
-  Do not manually edit this file, but instead edit ../pipeline/scripts/format_models.py and
+  Do not manually edit this file, but instead edit ../pipeline/preprocessing-pipeline/scripts/format_models.py and
   regenerate by running "./install_prereqs.sh"
   
   The purpose of this file is to define a type which enumerates which columns are available from
@@ -54,7 +54,6 @@ export interface ModelAnnotation {
   PatientTumorGrade: string;
   PatientTreatmentType: string;
   EngineeredModelDetails: string;
-  ModelAvailableInDbgap: string;
   PatientTreatmentDetails: string;
   ModelType: string;
   ModelSubtypeFeatures: string;

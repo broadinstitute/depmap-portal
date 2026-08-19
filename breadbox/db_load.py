@@ -156,14 +156,6 @@ def upload_example_datasets(db, settings):
             ValueType.continuous,
             "tests/sample_data/rbbs.csv",
         ),
-        DatasetUpload(
-            "Proteomics",
-            "protein",
-            "depmap_model",
-            "Relative Protein Expression",
-            ValueType.continuous,
-            "tests/sample_data/proteomics.csv",
-        ),
     ]
 
     example_metadata_datasets = [

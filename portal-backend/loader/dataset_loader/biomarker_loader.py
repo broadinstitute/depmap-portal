@@ -100,9 +100,7 @@ def load_biomarker_dataset(
             non_gene_lookup=entity_lookup,
         )
         entity_type = "protein"
-    elif (biomarker_enum == BiomarkerDataset.BiomarkerEnum.proteomics) or (
-        biomarker_enum == BiomarkerDataset.BiomarkerEnum.sanger_proteomics
-    ):
+    elif biomarker_enum == BiomarkerDataset.BiomarkerEnum.sanger_proteomics:
         load_proteins(file_path, allow_missing_entities=allow_missing_entities)
         entity_lookup = lambda x: Protein.get_by_label(x, must=False)
         matrix = create_matrix_object(
@@ -268,11 +266,6 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                 civic_description=r["CivicDescription"],
                 civic_score=_to_none(r["CivicScore"]),
                 likely_lof=r["LikelyLoF"],
-                hess_driver=r["HessDriver"],
-                hess_signature=r["HessSignature"],
-                revel_score=_to_none(r["RevelScore"]),
-                gwas_disease=r["GwasDisease"],
-                gwas_pmid=_to_none(r["GwasPmID"]),
                 oncogenic=r["Oncogenic"],
                 mutation_effect=r["MutationEffect"],
                 ## New columns 2023 Q4
@@ -291,19 +284,12 @@ def _read_mutations(dr, pbar, gene_cache, cell_line_cache):
                 vep_clin_sig=r["VepClinSig"],
                 dp=_to_none(r["DP"]),
                 ensembl_feature_id=r["EnsemblFeatureID"],
-                transcript_likely_lof=r["TranscriptLikelyLof"],
-                gtex_gene=r["GtexGene"],
-                brca1_func_score=_to_none(r["Brca1FuncScore"]),
-                pharmgkb_id=r["PharmgkbId"],
-                molecular_consequence=r["MolecularConsequence"],
                 vep_hgnc_id=r["VepHgncID"],
                 vep_existing_variation=r["VepExistingVariation"],
                 vep_mane_select=r["VepManeSelect"],
                 sift=r["Sift"],
                 vep_ensp=r["VepENSP"],
                 ensembl_gene_id=r["EnsemblGeneID"],
-                provean_prediction=r["ProveanPrediction"],
-                nmd=r["NMD"],
                 vep_somatic=r["VepSomatic"],
                 vep_impact=r["VepImpact"],
                 oncogene_high_impact=_to_sql_bool(r["OncogeneHighImpact"]),

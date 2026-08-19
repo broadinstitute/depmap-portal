@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
-from breadbox.api.uploads import construct_file_from_ids, get_itsdangerous_serializer
+from breadbox.api.uploads import get_itsdangerous_serializer
+from breadbox.service.upload import construct_file_from_ids
 from ..factories import continuous_matrix_csv_file
 
 

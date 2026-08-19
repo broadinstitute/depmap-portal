@@ -77,47 +77,6 @@
   border: inherit;
 }
 
-.filterAndMax {
-  display: flex;
-  gap: 14px;
-}
-
-.colorAndGroupBy {
-  display: flex;
-  gap: 14px;
-}
-
-.TranscriptColorByViewOptions {
-  margin-bottom: 4px;
-  scroll-margin-bottom: 24px;
-
-  div[data-dimension-select] {
-    margin: 10px 0;
-  }
-}
-
-.TranscriptGroupByViewOptions {
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 4px;
-  scroll-margin-bottom: 24px;
-  gap: 10px;
-
-  div[data-dimension-select] {
-    margin: 10px 0;
-  }
-}
-
-.colorByContext {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-
-  &:not(:empty) {
-    margin-top: 10px;
-  }
-}
-
 .TableViewsContent {
   display: flex;
   flex-direction: column;

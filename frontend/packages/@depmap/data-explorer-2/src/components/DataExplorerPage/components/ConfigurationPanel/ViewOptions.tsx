@@ -1,4 +1,5 @@
 import React, { useRef } from "react";
+import { Button } from "react-bootstrap";
 import qs from "qs";
 import {
   ContextPath,
@@ -6,7 +7,12 @@ import {
   DataExplorerContextV2,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
+import {
+  DEFAULT_EXPANSION_LIMIT,
+  PlotConfigReducerAction,
+} from "../../reducers/plotConfigReducer";
+import { canSwapColorAndFacet } from "../../utils";
+import { getExpansionAxis } from "../../../../utils/misc";
 import HelpTip from "../HelpTip";
 import Section from "../Section";
 import {
@@ -16,6 +22,9 @@ import {
 } from "./selectors";
 import FilterViewOptions from "./FilterViewOptions";
 import ColorByViewOptions from "./ColorByViewOptions";
+import FacetByViewOptions from "./FacetByViewOptions";
+import MaxToShowSelect from "./MaxToShowSelect";
+import styles from "../../styles/ConfigurationPanel.scss";
 
 interface Props {
   plot: PartialDataExplorerPlotConfig;
@@ -45,6 +54,9 @@ function ViewOptions({
 
   const params = qs.parse(window.location.search.substr(1));
   const defaultOpen = !params.task;
+
+  const expansionAxis = getExpansionAxis(plot);
+  const currentExpandBy = plot.expand_by?.[0];
 
   return (
     <Section
@@ -90,26 +102,79 @@ function ViewOptions({
           });
         }}
       />
-      <FilterViewOptions
-        plot={plot}
-        dispatch={dispatch}
-        filterKeys={filterKeys}
-        labels={[
-          <span key={0}>
-            Filter
-            <HelpTip id="filter-help" />
-          </span>,
-        ]}
-        onClickCreateContext={onClickCreateContext}
-        onClickSaveAsContext={onClickSaveAsContext}
-      />
-      <ColorByViewOptions
-        show={plot.plot_type !== "correlation_heatmap"}
-        plot={plot}
-        dispatch={dispatch}
-        onClickCreateContext={onClickCreateContext}
-        onClickSaveAsContext={onClickSaveAsContext}
-      />
+      <div className={styles.filterAndMax}>
+        <FilterViewOptions
+          plot={plot}
+          dispatch={dispatch}
+          filterKeys={filterKeys}
+          labels={[
+            <span key={0}>
+              Filter
+              <HelpTip id="filter-help" />
+            </span>,
+          ]}
+          onClickCreateContext={onClickCreateContext}
+          onClickSaveAsContext={onClickSaveAsContext}
+        />
+        <MaxToShowSelect
+          show={Boolean(currentExpandBy)}
+          value={currentExpandBy?.limit ?? DEFAULT_EXPANSION_LIMIT}
+          slice_type={currentExpandBy?.slice_type}
+          onChange={(nextLimit) => {
+            if (!currentExpandBy?.slice_type || !currentExpandBy?.context) {
+              return;
+            }
+
+            dispatch({
+              type: "select_expansion",
+              payload: {
+                key: expansionAxis,
+                expand_by: {
+                  slice_type: currentExpandBy.slice_type as string,
+                  context: currentExpandBy.context as DataExplorerContextV2,
+                  dataset_id: plot.dimensions?.[expansionAxis]
+                    ?.dataset_id as string,
+                  limit: nextLimit,
+                  offset: 0,
+                },
+              },
+            });
+          }}
+        />
+      </div>
+      {plot.plot_type !== "correlation_heatmap" && (
+        <>
+          <hr className={styles.hr} />
+          <div className={styles.facetAndColor}>
+            <FacetByViewOptions
+              show
+              plot={plot}
+              dispatch={dispatch}
+              onClickCreateContext={onClickCreateContext}
+              onClickSaveAsContext={onClickSaveAsContext}
+            />
+            <div className={styles.swapColorFacetButtonContainer}>
+              {canSwapColorAndFacet(plot) && (
+                <Button
+                  id="swap-color-and-facet"
+                  className={styles.swapColorFacetButton}
+                  onClick={() => dispatch({ type: "swap_color_and_facet" })}
+                >
+                  <span>swap</span>
+                  <i className="glyphicon glyphicon-transfer" />
+                </Button>
+              )}
+            </div>
+            <ColorByViewOptions
+              show
+              plot={plot}
+              dispatch={dispatch}
+              onClickCreateContext={onClickCreateContext}
+              onClickSaveAsContext={onClickSaveAsContext}
+            />
+          </div>
+        </>
+      )}
     </Section>
   );
 }

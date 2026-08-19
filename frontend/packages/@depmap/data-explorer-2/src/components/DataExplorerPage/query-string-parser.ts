@@ -335,7 +335,14 @@ const inferColorBy = (partialPlot: PartialDataExplorerPlotConfig) => {
     return "property";
   }
 
-  return null;
+  // This mint point stamps CURRENT_PLOT_VERSION (now 2), so an absent
+  // color_by it emits is read back as "facet" (defer to facet_by) — but
+  // shorthand params have no way to set facet_by, so "nothing to color by"
+  // here always means genuinely uniform, never "match a facet_by that
+  // can't exist." Returning "uniform" explicitly (not null/absent) keeps
+  // shorthand-generated plots rendering exactly as they did pre-flip. See
+  // ADR 0001 §7's "worked example" — this is that exact hazard.
+  return "uniform";
 };
 
 const inferSortBy = (partialPlot: PartialDataExplorerPlotConfig) => {

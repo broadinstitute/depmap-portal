@@ -19,14 +19,16 @@ import {
   hexToRgba,
   isEveryValueNull,
   LEGEND_ALL,
+  LEGEND_NEITHER,
   LEGEND_OTHER,
   LegendKey,
+  NEUTRAL_FACET_FILL,
   orderContinuousPointsByBin,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
-import installGroupSelectionDragLayer, {
-  GroupSelectionConfig,
-} from "./groupSelectionDragLayer";
+import installFacetSelectionDragLayer, {
+  FacetSelectionConfig,
+} from "./facetSelectionDragLayer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
 
 type Data = Record<string, any>;
@@ -41,17 +43,48 @@ interface Props {
   // colorData: per-point color key. Drives bgcolor on scatter traces and
   // (in the converged case where modes match) violin fillcolor.
   colorData?: any;
-  // groupData: per-point group key. Drives violin-track assignment. When
+  // facetData: per-point facet key. Drives violin-track assignment. When
   // not supplied, falls back to colorData for backward compatibility with
   // existing callers and the converged case.
-  groupData?: any;
+  facetData?: any;
   // groupKeys: track display order. When not supplied, derived from
   // [...colorMap.keys()] (which is the legend order under the old
   // single-array convention).
   groupKeys?: LegendKey[];
   continuousColorKey?: string;
   legendDisplayNames: Partial<Record<LegendKey, string>>;
+  // facetDisplayNames: labels for violin-track names, keyed by the SAME
+  // LEGEND_RANGE_* symbols legendDisplayNames uses — but facet_by and
+  // color_by can each independently bin a continuous property, and when
+  // they do, the shared Range symbols mean different bin boundaries on
+  // each axis. legendDisplayNames must never be reused for track names in
+  // that case (it would show color's bin ranges on facet's tracks). Falls
+  // back to legendDisplayNames when not supplied, for callers whose facet
+  // keys are non-continuous (or absent) and can't collide this way.
+  facetDisplayNames?: Partial<Record<LegendKey, string>>;
   legendTitle?: string | null;
+  // Whether facet_by and color_by resolve to the SAME underlying source
+  // (see resolveColorMode / useDensity1DPlotData's own colorMatchesFacet
+  // comment for the full rationale, including why this is NOT simply
+  // "colorMode.target === 'facet'" — facet_by: "expansion" and
+  // color_by: "expansion", explicit on both sides with neither deferring,
+  // still read the identical source). `hiddenLegendValues` is populated
+  // purely from clicks on the COLOR legend. When this is true, the legend
+  // IS facet's own partition (or reads the identical data), so hiding a
+  // legend entry legitimately hides that same violin track, and a track
+  // may borrow its real color from colorMap. When false, facet's tracks
+  // are a completely separate partition that merely happens to share
+  // LEGEND_BOTH/LEGEND_OTHER's Symbol identity with color's —
+  // hiddenLegendValues/colorMap must NOT be applied to them, or hiding
+  // "Other" in the color legend would incorrectly also remove facet's
+  // unrelated "Other" track. Defaults to `false` (the safe, facet_by-
+  // agnostic behavior) for callers that don't pass it.
+  colorMatchesFacet?: boolean;
+  // Facets toggled off via the "Facets" panel (shown when color_by/facet_by
+  // diverge — colorMatchesFacet false). Independent of hiddenLegendValues;
+  // see this prop's own docs on the `facetHiddenValues` local below for how
+  // the two combine.
+  hiddenFacetValues?: Set<LegendKey>;
   selectedPoints?: Set<number>;
   onClickPoint?: (pointIndex: number, ctrlKey: boolean) => void;
   onMultiselect?: (pointIndices: number[]) => void;
@@ -67,18 +100,18 @@ interface Props {
   palette?: DataExplorerColorPalette;
   xAxisFontSize?: number;
   yAxisFontSize?: number;
-  // When true, group tracks whose points are entirely null are kept as
+  // When true, facet tracks whose points are entirely null are kept as
   // labeled "(no data)" placeholders instead of being dropped. Used by
   // expanded plots so a paginated transcript window renders at full size even
   // when the dataset doesn't measure every transcript in the window.
   placeholderEmptyTracks?: boolean;
   // When true, box/lasso selection is replaced with a custom drag whose
-  // marquee is confined to the violin track (group) it starts in, and cannot
+  // marquee is confined to the violin track (facet) it starts in, and cannot
   // escape into a neighbouring track. Shift adds to the selection within that
-  // same locked track. See groupSelectionDragLayer.
-  enforceSingleGroupSelection?: boolean;
+  // same locked track. See facetSelectionDragLayer.
+  enforceSingleFacetSelection?: boolean;
   // The points to put text labels on. Diverges from `selectedPoints` only under
-  // group_by === "expansion": there, `selectedPoints` re-expands a model to
+  // facet_by === "expansion": there, `selectedPoints` re-expands a model to
   // every region it appears in, while this stays the handful of contacted
   // points (see useSelection's annotation channel). Falls back to
   // `selectedPoints` when omitted, so the labeled set is unchanged elsewhere.
@@ -178,11 +211,13 @@ function PrototypeDensity1D({
   xKey,
   colorMap,
   colorData,
-  groupData,
-  groupKeys: groupKeysProp,
+  facetData,
+  groupKeys: facetKeysProp,
   continuousColorKey,
   legendDisplayNames,
+  facetDisplayNames,
   legendTitle,
+  colorMatchesFacet = false,
   height,
   hoverTextKey,
   annotationTextKey,
@@ -194,6 +229,7 @@ function PrototypeDensity1D({
   onClickResetSelection = () => {},
   onLoad = () => {},
   hiddenLegendValues = new Set(),
+  hiddenFacetValues = new Set(),
   pointSize = 7,
   pointOpacity = 1.0,
   outlineWidth = 0.5,
@@ -201,7 +237,7 @@ function PrototypeDensity1D({
   xAxisFontSize = 14,
   yAxisFontSize = 14,
   placeholderEmptyTracks = false,
-  enforceSingleGroupSelection = false,
+  enforceSingleFacetSelection = false,
   pointsToAnnotate,
   selectionCount,
   Plotly,
@@ -229,7 +265,7 @@ function PrototypeDensity1D({
   useEffect(() => {
     const plot = ref.current;
     return () => {
-      (plot as any)?.__groupSelCleanup?.();
+      (plot as any)?.__facetSelCleanup?.();
       Plotly.purge(plot as HTMLElement);
     };
   }, [Plotly]);
@@ -247,7 +283,14 @@ function PrototypeDensity1D({
 
   useEffect(() => {
     axes.current.yaxis = undefined;
-  }, [colorMap, colorData, hiddenLegendValues.size]);
+    // hiddenFacetValues.size covers the diverged case (color_by/facet_by
+    // independent — toggling a facet in the "Facets" panel doesn't touch
+    // hiddenLegendValues at all, so without this the axis never re-autoranges
+    // and a hidden track leaves a visible gap; worse, re-showing a track can
+    // land outside a since-adjusted manual zoom with nothing to indicate it's
+    // there). hiddenLegendValues.size still covers the converged case (color
+    // legend toggles a facet directly).
+  }, [colorMap, colorData, hiddenLegendValues.size, hiddenFacetValues.size]);
 
   // Update axes when font size changes.
   useEffect(() => {
@@ -270,21 +313,41 @@ function PrototypeDensity1D({
   useEffect(() => {
     const plot = ref.current as ExtendedPlotType;
     const colorKeys = [...colorMap.keys()];
-    // Group side (drives track assignment). Falls back to color side when
+    // Facet side (drives track assignment). Falls back to color side when
     // not supplied, preserving existing behavior for callers that don't
-    // distinguish group from color.
-    const effectiveGroupData = groupData ?? colorData;
+    // distinguish facet from color.
+    const effectiveFacetData = facetData ?? colorData;
     // Annotate explicitly: the component params are typed `any` (see the
-    // `}: any)` signature), so groupKeysProp/colorKeys arrive as `any` and the
+    // `}: any)` signature), so facetKeysProp/colorKeys arrive as `any` and the
     // downstream .map/.filter callbacks would otherwise be implicitly-any.
     // Pinning the element type here types the whole violin-trace chain.
-    const effectiveGroupKeys: LegendKey[] = groupKeysProp ?? colorKeys;
+    const effectiveFacetKeys: LegendKey[] = facetKeysProp ?? colorKeys;
+    // Whether facet_by has real backing (more than just the single
+    // LEGEND_ALL "no faceting" bucket) — used below to keep the overlaid
+    // scatter points neutral rather than palette.all's own color when
+    // facet_by is set but color_by has nothing of its own to show.
+    const hasRealFacetBacking = !(
+      effectiveFacetKeys.length === 1 && effectiveFacetKeys[0] === LEGEND_ALL
+    );
+    // hiddenLegendValues is populated purely from clicks on the COLOR
+    // legend. It only legitimately describes facet's own tracks when
+    // colorMatchesFacet — the two partitions are then either literally the
+    // same one (color defers to facet_by) or explicitly read the same
+    // source (e.g. facet_by/color_by both "expansion"). Otherwise facet's
+    // tracks are a wholly independent partition that merely happens to
+    // share LEGEND_BOTH/LEGEND_OTHER's Symbol identity with color's, so
+    // hiddenLegendValues must not apply to them — hiddenFacetValues (from
+    // the independent "Facets" panel's own click state) drives visibility
+    // instead in that case.
+    const facetHiddenValues: Set<LegendKey> = colorMatchesFacet
+      ? hiddenLegendValues
+      : hiddenFacetValues;
     const x = data[xKey] as number[];
     const y = calcY(
       x,
-      effectiveGroupKeys,
-      effectiveGroupData,
-      hiddenLegendValues
+      effectiveFacetKeys,
+      effectiveFacetData,
+      facetHiddenValues
     );
     const text = hoverTextKey ? data[hoverTextKey] : null;
     const annotationText = annotationTextKey ? data[annotationTextKey] : null;
@@ -308,21 +371,25 @@ function PrototypeDensity1D({
         : [];
 
     const hasColorOptionsEnabled = colorKeys[0] !== LEGEND_ALL;
+    // Only takes effect when templateTrace is actually used as the default
+    // (uncolored) trace below — facet_by having its own real categories to
+    // color by always wins, this never overrides a real color.
+    const inertColor = hasRealFacetBacking ? NEUTRAL_FACET_FILL : palette.all;
 
     const isSelectionMode =
       dragmode === "select" ||
       dragmode === "lasso" ||
       (selectedPoints && selectedPoints.size > 0);
 
-    // When enforceSingleGroupSelection is on and a select/lasso tool is active,
+    // When enforceSingleFacetSelection is on and a select/lasso tool is active,
     // we keep Plotly's real selection running (it does the hit testing and the
     // selected-point rendering) but hide its marquee in favor of our custom,
-    // band-clamped one, and constrain the committed result to the anchor group
+    // band-clamped one, and constrain the committed result to the anchor facet
     // (see the plotly_selected handler). So the real `dragmode` passes through.
-    const useGroupSelection =
-      enforceSingleGroupSelection &&
+    const useFacetSelection =
+      enforceSingleFacetSelection &&
       (dragmode === "select" || dragmode === "lasso");
-    const groupSelectionTool = dragmode === "lasso" ? "lasso" : "box";
+    const facetSelectionTool = dragmode === "lasso" ? "lasso" : "box";
 
     const templateTrace = {
       type: "scattergl" as const,
@@ -333,13 +400,13 @@ function PrototypeDensity1D({
       text,
       showlegend: false,
       hoverinfo: "x+text",
-      hoverlabel: { bgcolor: palette.all },
+      hoverlabel: { bgcolor: inertColor },
       selectedpoints: selectedPoints ? [...selectedPoints] : [],
       marker: {
-        color: hexToRgba(palette.all, pointOpacity),
+        color: hexToRgba(inertColor, pointOpacity),
         size: pointSize,
         line: {
-          color: palette.all,
+          color: inertColor,
           width: outlineWidth,
         },
       },
@@ -377,12 +444,14 @@ function PrototypeDensity1D({
     const defaultTrace = hasColorOptionsEnabled ? null : templateTrace;
 
     // Paint order for categorical color groups. We stack so the smallest
-    // groups end up on top and the catch-all "Other" group on the bottom,
-    // matching the scatter path (getSolidColorGroups). plotlyData is reversed
-    // below, so the first key here is drawn last (on top): we sort ascending
-    // by visible-point count and pin LEGEND_OTHER to the end. Membership and
-    // color assignment are unchanged — this only reorders the traces, which
-    // matters once color groups span multiple stacks (group_by !== color_by).
+    // groups end up on top and the catch-all "N/A"/"Other" facet on the
+    // bottom, matching the scatter path (getSolidColorGroups). plotlyData is
+    // reversed below, so the first key here is drawn last (on top): we sort
+    // ascending by visible-point count and pin LEGEND_OTHER/LEGEND_NEITHER
+    // (the two catch-all identities — see their shared comment in
+    // plotUtils.ts) to the end. Membership and color assignment are
+    // unchanged — this only reorders the traces, which matters once color
+    // groups span multiple stacks (facet_by !== color_by).
     const orderedColorKeys = (() => {
       if (!colorMap || !colorData) {
         return [] as LegendKey[];
@@ -395,22 +464,26 @@ function PrototypeDensity1D({
         const k = colorData[i] as LegendKey;
         counts.set(k, (counts.get(k) ?? 0) + 1);
       }
+      const isCatchAll = (key: LegendKey) =>
+        key === LEGEND_OTHER || key === LEGEND_NEITHER;
       const keys = [...colorMap.keys()];
-      const others = keys.filter((key) => key === LEGEND_OTHER);
+      const others = keys.filter(isCatchAll);
       const rest = keys
-        .filter((key) => key !== LEGEND_OTHER)
+        .filter((key) => !isCatchAll(key))
         .sort((a, b) => (counts.get(a) ?? 0) - (counts.get(b) ?? 0));
       return [...rest, ...others];
     })();
 
     const colorTraces =
       colorMap && colorData && !contColorData
-        ? orderedColorKeys.map((key) =>
-            makeColorTrace(
-              colorMap.get(key)!,
-              (i) => colorMap.get(key) === colorMap.get(colorData[i])
+        ? orderedColorKeys
+            .filter((key) => colorMap.get(key))
+            .map((key) =>
+              makeColorTrace(
+                colorMap.get(key),
+                (i) => colorMap.get(key) === colorMap.get(colorData[i])
+              )
             )
-          )
         : [];
 
     // TODO: Add support for palette.divergingScale
@@ -486,15 +559,23 @@ function PrototypeDensity1D({
       showlegend: false,
     } as Partial<ViolinData>;
 
-    const violinTraces = effectiveGroupKeys
-      .filter((key) => !hiddenLegendValues.has(key))
+    const violinTraces = effectiveFacetKeys
+      .filter((key) => !facetHiddenValues.has(key))
       .map((legendKey, index) => {
-        // In the converged case (group_by === color_by, default) the
-        // group key IS a color key and lives in colorMap. In the divergent
-        // case (group_by ≠ color_by) the group key may not be in colorMap;
-        // fall back to a neutral fill so the violin is still drawn but
-        // doesn't fight with the per-point colors that carry the legend.
-        let fillcolor = colorMap.get(legendKey) ?? palette.other;
+        // facet_by is an independent axis from color_by (no fallback). When
+        // colorMatchesFacet, colorMap's keys ARE (or coincide with) facet's
+        // own keys, so consulting it (with a palette.other fallback for a
+        // genuine miss) is correct. When color_by has genuinely diverged,
+        // colorMap belongs to a completely different partition —
+        // LEGEND_BOTH/LEGEND_OTHER/LEGEND_ALL are shared Symbol identities,
+        // so colorMap.get(legendKey) can spuriously SUCCEED with color's
+        // own (unrelated) entry for that same shared symbol, not just
+        // fail. So the lookup must be skipped entirely when diverged, not
+        // merely null-coalesced — every diverged track gets the fixed
+        // neutral gray, immune to palette customization.
+        let fillcolor = colorMatchesFacet
+          ? colorMap.get(legendKey) ?? palette.other
+          : NEUTRAL_FACET_FILL;
 
         if (useSemiOpaqueViolins) {
           fillcolor += "88";
@@ -503,18 +584,20 @@ function PrototypeDensity1D({
         return {
           ...templateViolin,
           // The "all" bucket is the ungrouped sentinel (a single track holding
-          // every point); it carries no meaningful group label, so render it
+          // every point); it carries no meaningful facet label, so render it
           // blank rather than leaking the raw Symbol(All) into the y-axis tick.
           name:
             legendKey === LEGEND_ALL
               ? ""
-              : legendDisplayNames[legendKey] ?? String(legendKey),
-          x: effectiveGroupData
+              : facetDisplayNames?.[legendKey] ??
+                legendDisplayNames[legendKey] ??
+                String(legendKey),
+          x: effectiveFacetData
             ? x.filter(
-                (_: any, i: number) => effectiveGroupData[i] === legendKey
+                (_: any, i: number) => effectiveFacetData[i] === legendKey
               )
             : x,
-          y0: effectiveGroupKeys.length - hiddenLegendValues.size - index,
+          y0: effectiveFacetKeys.length - facetHiddenValues.size - index,
           fillcolor,
         };
       })
@@ -532,7 +615,7 @@ function PrototypeDensity1D({
               // Prepend, not append: the y-axis ticktext truncates each name to
               // ~25 chars and a transcript label alone already exceeds that, so
               // an appended marker gets cut off. Leading "(no data)" survives.
-              name: trace.name ? `(no data) ${trace.name}` : "(no data)",
+              name: trace.name ? `❌ (no data) ${trace.name}` : "❌ (no data)",
             }
           : trace
       )
@@ -540,20 +623,20 @@ function PrototypeDensity1D({
 
     // Add an extra violin with a light outline to make
     // it stand out on top many dark-colored points.
-    const violinOutlineTraces = effectiveGroupKeys
-      .filter((key) => !hiddenLegendValues.has(key))
+    const violinOutlineTraces = effectiveFacetKeys
+      .filter((key) => !facetHiddenValues.has(key))
       .map((legendKey, index) => {
         return {
           ...templateViolin,
           line: { color: hexToRgba("#fff", 0.5), width: 4 },
           meanline: { visible: false },
           fillcolor: "transparent",
-          x: effectiveGroupData
+          x: effectiveFacetData
             ? x.filter(
-                (_: any, i: number) => effectiveGroupData[i] === legendKey
+                (_: any, i: number) => effectiveFacetData[i] === legendKey
               )
             : x,
-          y0: effectiveGroupKeys.length - hiddenLegendValues.size - index,
+          y0: effectiveFacetKeys.length - facetHiddenValues.size - index,
         } as any;
       });
 
@@ -587,7 +670,7 @@ function PrototypeDensity1D({
 
     // Annotation channel (expansion-selection): label precisely the contacted
     // points, not the re-expanded `selectedPoints`. They coincide off the
-    // group_by === "expansion" collapse, so this is a no-op there; the fallback
+    // facet_by === "expansion" collapse, so this is a no-op there; the fallback
     // keeps callers that don't pass the set (e.g. the scatter path) unchanged.
     const pointsForAnnotation = pointsToAnnotate ?? selectedPoints;
     // Count for the "too many to label" fallback. selectionCount is the model
@@ -630,8 +713,8 @@ function PrototypeDensity1D({
         ...(axes.current.yaxis || { autorange: true }),
 
         visible:
-          Boolean(effectiveGroupData) &&
-          effectiveGroupData.length > 0 &&
+          Boolean(effectiveFacetData) &&
+          effectiveFacetData.length > 0 &&
           violinTraces.length < 40,
         automargin: true,
         tickvals: violinTraces.map((vt) => vt.y0),
@@ -641,13 +724,13 @@ function PrototypeDensity1D({
 
       dragmode,
 
-      // enforceSingleGroupSelection: a thin band sweep is mostly-horizontal,
+      // enforceSingleFacetSelection: a thin band sweep is mostly-horizontal,
       // which Plotly's default selectdirection "any" auto-reads as an "h"
       // (full-y-axis) selection — spanning every band and bypassing the pointer
       // clamp, since Plotly sets that span programmatically. Force diagonal-only
       // ("d") so every box stays an ordinary drag-cornered rectangle; the
       // interceptor then clamps its height to the anchor band.
-      selectdirection: useGroupSelection ? "d" : "any",
+      selectdirection: useFacetSelection ? "d" : "any",
 
       annotations:
         annotationText &&
@@ -710,41 +793,39 @@ function PrototypeDensity1D({
 
     Plotly.react(plot, plotlyData, layout, config);
 
-    // enforceSingleGroupSelection: hand the live config to the custom drag
+    // enforceSingleFacetSelection: hand the live config to the custom drag
     // layer and (re)install it. The config is read on each mousedown, so it
     // stays current across effect re-runs. Switching tool or toggling the mode
     // off resets the additive (shift-select) state; benign re-renders keep it.
     {
-      const prev = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      const prev = (plot as any).__facetSel as FacetSelectionConfig | undefined;
       const resetAdditive =
         !prev ||
-        prev.tool !== groupSelectionTool ||
-        prev.enabled !== useGroupSelection;
+        prev.tool !== facetSelectionTool ||
+        prev.enabled !== useFacetSelection;
 
       if (prev && resetAdditive) {
         prev.committedShapes = [];
         prev.selectionRegionKey = null;
       }
 
-      (plot as any).__groupSel = {
-        enabled: useGroupSelection,
-        tool: groupSelectionTool,
+      (plot as any).__facetSel = {
+        enabled: useFacetSelection,
+        tool: facetSelectionTool,
         axis: "y",
-        // Groups here are violin tracks at integer y0s. The waterfall uses the
+        // Facets here are violin tracks at integer y0s. The waterfall uses the
         // same drag layer with a "ranges" model on the x-axis; both rely on
-        // groupSelectionDragLayer's shared l2p + axis._offset conversion to map
+        // facetSelectionDragLayer's shared l2p + axis._offset conversion to map
         // region bounds to exact on-screen pixels (see axisOffset there).
         regionModel: {
           kind: "violinTracks",
-          validKeys: new Set<number>(
-            violinTraces.map((vt) => vt.y0 as number)
-          ),
+          validKeys: new Set<number>(violinTraces.map((vt) => vt.y0 as number)),
         },
         committedShapes: resetAdditive ? [] : prev!.committedShapes,
         selectionRegionKey: resetAdditive ? null : prev!.selectionRegionKey,
-      } as GroupSelectionConfig;
+      } as FacetSelectionConfig;
 
-      installGroupSelectionDragLayer(plot as any);
+      installFacetSelectionDragLayer(plot as any);
     }
 
     // Keep track of added listeners so we can easily remove them.
@@ -816,7 +897,7 @@ function PrototypeDensity1D({
     on("plotly_relayout", () => {
       // A zoom/resize invalidates the pixel-space committed marquees, so drop
       // the additive (shift-select) state along with the stored axes.
-      const cfg = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
       if (cfg) {
         cfg.committedShapes = [];
         cfg.selectionRegionKey = null;
@@ -868,8 +949,8 @@ function PrototypeDensity1D({
         onClickResetSelection();
       }
 
-      // enforceSingleGroupSelection (density): the band anchor is deferred until
-      // the drag box first touches a point (groupSelectionDragLayer leaves
+      // enforceSingleFacetSelection (density): the band anchor is deferred until
+      // the drag box first touches a point (facetSelectionDragLayer leaves
       // selectionRegionKey null on a fresh violin drag). Lock it here to the
       // band of the first contacted point nearest the drag start; from then on
       // the interceptor confines the box to that band.
@@ -884,10 +965,10 @@ function PrototypeDensity1D({
       // uncommon. It is purely a visual artifact: plotly_selected filters the
       // committed points to the anchor band on mouse up, so the selection itself
       // is always unambiguous and its integrity is unaffected.
-      if (!useGroupSelection) {
+      if (!useFacetSelection) {
         return;
       }
-      const cfg = (plot as any).__groupSel as GroupSelectionConfig | undefined;
+      const cfg = (plot as any).__facetSel as FacetSelectionConfig | undefined;
       if (
         !cfg ||
         cfg.regionModel.kind !== "violinTracks" ||
@@ -896,7 +977,7 @@ function PrototypeDensity1D({
       ) {
         return;
       }
-      const startY = (plot as any).__groupSelStartCoord as number | undefined;
+      const startY = (plot as any).__facetSelStartCoord as number | undefined;
       let bestBand: number | null = null;
       let bestDist = Infinity;
       e.points.forEach((p) => {
@@ -929,11 +1010,11 @@ function PrototypeDensity1D({
               : p.pointIndex
           ) || [];
 
-      // enforceSingleGroupSelection: Plotly hit-tests across the whole plot, so
+      // enforceSingleFacetSelection: Plotly hit-tests across the whole plot, so
       // drop any selected points that aren't in the track the drag was anchored
       // to. A point's track is round(y) (points jitter < 0.5 from their center).
-      if (useGroupSelection) {
-        const anchorY0 = (plot as any).__groupSel?.selectionRegionKey as
+      if (useFacetSelection) {
+        const anchorY0 = (plot as any).__facetSel?.selectionRegionKey as
           | number
           | null;
         if (anchorY0 != null) {
@@ -976,7 +1057,7 @@ function PrototypeDensity1D({
     // Add a few non-standard methods to the plot for convenience.
     plot.setDragmode = (nextDragmode) => {
       const shouldResetSelection =
-        plot.layout.dragmode !== nextDragmode &&
+        plot?.layout?.dragmode !== nextDragmode &&
         (nextDragmode === "select" || nextDragmode === "lasso");
 
       if (shouldResetSelection && onClickResetSelection) {
@@ -1052,11 +1133,13 @@ function PrototypeDensity1D({
     xKey,
     colorMap,
     colorData,
-    groupData,
-    groupKeysProp,
+    facetData,
+    facetKeysProp,
     continuousColorKey,
     legendDisplayNames,
+    facetDisplayNames,
     legendTitle,
+    colorMatchesFacet,
     hoverTextKey,
     annotationTextKey,
     height,
@@ -1070,6 +1153,7 @@ function PrototypeDensity1D({
     useSemiOpaqueViolins,
     dragmode,
     hiddenLegendValues,
+    hiddenFacetValues,
     pointSize,
     pointOpacity,
     outlineWidth,
@@ -1077,7 +1161,7 @@ function PrototypeDensity1D({
     xAxisFontSize,
     yAxisFontSize,
     placeholderEmptyTracks,
-    enforceSingleGroupSelection,
+    enforceSingleFacetSelection,
     Plotly,
   ]);
 

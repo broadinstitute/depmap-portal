@@ -59,7 +59,6 @@ DATASET_NAME_TO_FEATURE_TYPE = {
     BiomarkerEnum.copy_number_relative.name: "Copy num.",
     BiomarkerEnum.crispr_confounders.name: "Confounders",
     BiomarkerEnum.rnai_confounders.name: "Confounders",
-    BiomarkerEnum.proteomics.name: "Proteomics",
     BiomarkerEnum.sanger_proteomics.name: "Sanger Proteomics",
 }
 
@@ -439,7 +438,6 @@ class BiomarkerDataset(Dataset):
         gene_related_with_multiple_entities = {
             BiomarkerDataset.BiomarkerEnum.rrbs: TranscriptionStartSite,
             BiomarkerDataset.BiomarkerEnum.rppa: Antibody,
-            BiomarkerDataset.BiomarkerEnum.proteomics: Protein,
             BiomarkerDataset.BiomarkerEnum.sanger_proteomics: Protein,
         }
 
@@ -556,13 +554,10 @@ class Mutation(Model):
     civic_id = Column(Float)
     civic_description = Column(String)
     civic_score = Column(Float)
-    hess_signature = Column(String)
     likely_lof = Column(String)
-    hess_driver = Column(String)
-    revel_score = Column(Float)
-    gwas_disease = Column(String)
-    gwas_pmid = Column(Float)
     entrez_gene_id = Column(Float)
+    # Not present in the mutation file itself; joined on by the OncoKB annotation
+    # step (pipeline/preprocessing-pipeline/oncokb_import.conseq)
     oncogenic = Column(String)
     mutation_effect = Column(String)
 
@@ -580,19 +575,12 @@ class Mutation(Model):
     vep_clin_sig = Column(String)
     dp = Column(Integer)
     ensembl_feature_id = Column(String)
-    transcript_likely_lof = Column(String)
-    gtex_gene = Column(String)
-    brca1_func_score = Column(Float)
-    pharmgkb_id = Column(String)
-    molecular_consequence = Column(String)
     vep_hgnc_id = Column(String)
     vep_existing_variation = Column(String)
     vep_mane_select = Column(String)
     sift = Column(String)
     vep_ensp = Column(String)
     ensembl_gene_id = Column(String)
-    provean_prediction = Column(String)
-    nmd = Column(String)
     vep_somatic = Column(String)
     vep_impact = Column(String)
     oncogene_high_impact = Column(Boolean)

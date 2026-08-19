@@ -64,17 +64,3 @@ export const makePaginationOnChangeHandler = (
   };
 };
 
-// "Max transcripts to show": set the page size and reset pagination to the
-// first window (a stale offset under a new page size would be confusing).
-export const makeMaxToShowOnChangeHandler = (
-  expansionAxis: "x" | "y",
-  geneSymbol: string | null,
-  datasetId: string | null,
-  dispatch: (action: PlotConfigReducerAction) => void
-) => {
-  return (nextLimit: number) => {
-    dispatch(
-      makeSetExpansionAction(expansionAxis, geneSymbol, datasetId, nextLimit, 0)
-    );
-  };
-};

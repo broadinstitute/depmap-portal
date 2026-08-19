@@ -2,17 +2,23 @@ from .router import router
 from breadbox.schemas.parquet_export import (
     TabularSubsetOperation,
     MatrixSubsetOperation,
+    FlatTableSubsetOperation,
     ExportResult,
 )
 from typing import Annotated, Optional, Callable
 from fastapi import APIRouter, Body, Depends, HTTPException
+from breadbox.config import Settings, get_settings
 from breadbox.db.session import SessionLocalWithUser, SessionWithUser
 from breadbox.api.dependencies import (
     get_db_with_user,
     get_filestore_location,
 )
 from breadbox.service.gcs import get_signed_key_generator, get_tempspace
-from breadbox.service.parquet_export import materialize_matrix, materialize_tabular
+from breadbox.service.parquet_export import (
+    materialize_flattable,
+    materialize_matrix,
+    materialize_tabular,
+)
 from breadbox.service.tempspace import Tempspace
 
 # how long urls returned by parquet-export are valid
@@ -33,6 +39,24 @@ def export_tabular(
     ],
 ):
     gcs_path = materialize_tabular(db, op, tempspace)
+    return ExportResult(url=signed_url_generator(gcs_path, default_expiration_minutes))
+
+
+@router.post(
+    "/parquet-export/flattable",
+    operation_id="export_flattable",
+    response_model=ExportResult,
+)
+def export_flattable(
+    op: FlatTableSubsetOperation,
+    db: Annotated[SessionWithUser, Depends(get_db_with_user)],
+    settings: Annotated[Settings, Depends(get_settings)],
+    tempspace: Annotated[Tempspace, Depends(get_tempspace)],
+    signed_url_generator: Annotated[
+        Callable[[str, int], str], Depends(get_signed_key_generator)
+    ],
+):
+    gcs_path = materialize_flattable(db, settings, op, tempspace)
     return ExportResult(url=signed_url_generator(gcs_path, default_expiration_minutes))
 
 

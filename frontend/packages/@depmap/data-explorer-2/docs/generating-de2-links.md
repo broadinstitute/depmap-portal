@@ -62,20 +62,31 @@ DE2 payloads carry an optional top-level `version` field that declares which rev
 
 ### version [number] (recommended)
 
-`version` is a sibling of `plot_type`, `index_type`, and `dimensions`. It lives in the JSON itself, so it applies to both the `?plot=` and `?p=` formats. **This document describes version 1.** Links you generate today should include:
+`version` is a sibling of `plot_type`, `index_type`, and `dimensions`. It lives in the JSON itself, so it applies to both the `?plot=` and `?p=` formats. **This document describes version 2.** Links you generate today should include:
 
 ```json
-"version": 1
+"version": 2
 ```
 
-It is technically optional — a payload with no `version` is interpreted as the oldest, pre-versioning schema — but **including it is recommended.** DE2 uses `version` to interpret your payload against the correct schema. Today the practical effect is small, but the schema will evolve, and some future changes will alter what an *omitted* field means. Stamping the version you generated against guarantees your link keeps rendering as intended instead of silently adopting a new default.
+It is technically optional — a payload with no `version` is interpreted as the oldest, pre-versioning schema — but **including it is recommended.** DE2 uses `version` to interpret your payload against the correct schema. The schema will evolve, and some changes (like the one that produced version 2) alter what an *omitted* field means. Stamping the version you generated against guarantees your link keeps rendering as intended instead of silently adopting a new default.
 
 Two things to keep in mind:
 
 - **Keep the number in sync with this document.** Whenever the version described here changes, emit the new number. A payload's `version` should match the version of the document it was built from.
-- **Declaring `version: 1` is a promise that the payload uses the current canonical schema** — Breadbox `given_id`s for `dataset_id` (not legacy Portal IDs), canonical field names, and V2-format contexts (as described throughout this document). Following this document satisfies that promise automatically.
+- **Declaring `version: 2` is a promise that the payload uses the current canonical schema** — Breadbox `given_id`s for `dataset_id` (not legacy Portal IDs), canonical field names, and V2-format contexts (as described throughout this document). Following this document satisfies that promise automatically.
 
-The examples below omit `version` for brevity and because absent-version payloads still resolve; when generating links, add `"version": 1` as a top-level field.
+The examples below omit `version` for brevity and because absent-version payloads still resolve; when generating links, add `"version": 2` as a top-level field.
+
+#### The version 2 default flip: `color_by` and `facet_by`
+
+Version 2 changed what an **omitted `color_by`** means. Under version 1, no `color_by` meant "no coloring." Under version 2, no `color_by` means **"color by whatever `facet_by` is doing"** — pick a `facet_by` and you get matching colors for free, with no `color_by` field required. See [color_by](#color_by-string) below for the full value set, including the new `"facet"` and `"uniform"` values this flip introduces.
+
+If you are generating a link and want colors that are independent of (or in the absence of) any `facet_by`, either:
+
+- Explicitly set `color_by` to whatever value you want (`"raw_slice"`, `"aggregated_slice"`, `"property"`, or `"custom"`), or
+- Set `"color_by": "uniform"` to explicitly request no coloring at all, regardless of `facet_by`.
+
+A version-1 payload (`"version": 1`, or no `version` field at all) with no `color_by` is unaffected by this flip — DE2 migrates it on read so it keeps rendering exactly as it always did (uncolored), rather than silently picking up the new "match facet_by" default.
 
 ## Basic examples
 
@@ -399,15 +410,78 @@ The "distinguish" feature pre-filters the entities of type `index_type` before c
 
 This produces two heatmaps on the same page: the first is the correlation of the 11 genes distinguished by "Lung" models, the second the correlation distinguished by "Not Lung" models (note the null-safe [complement](#complement) operator). Hovering over a cell shows both that cell's value and the value from the parallel heatmap, so you can see how each context affects the result.
 
+### Faceted scatterplot (small multiples)
+
+Setting `facet_by` on a `scatter` plot is the most visually distinctive case: instead of one panel, DE2 renders one small-multiples panel per facet, each with its own regression line (if `show_regression_line` is set) and identity line. This example facets the same TP53-CRISPR-vs-TP53-expression scatterplot from the [basic scatterplot example](#scatterplot) above by `OncotreeLineage`, producing one panel per lineage. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJ5Ijp7ImF4aXNfdHlwZSI6InJhd19zbGljZSIsImFnZ3JlZ2F0aW9uIjoiZmlyc3QiLCJkYXRhc2V0X2lkIjoiZXhwcmVzc2lvbiIsInNsaWNlX3R5cGUiOiJnZW5lIiwiY29udGV4dCI6eyJkaW1lbnNpb25fdHlwZSI6ImdlbmUiLCJuYW1lIjoiVFA1MyIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIjcxNTciXX0sInZhcnMiOnt9fX19LCJmYWNldF9ieSI6InByb3BlcnR5IiwibWV0YWRhdGEiOnsiZmFjZXRfcHJvcGVydHkiOnsiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIiwiZGF0YXNldF9pZCI6ImRlcG1hcF9tb2RlbF9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJPbmNvdHJlZUxpbmVhZ2UifX19))
+
+```json
+{
+  "plot_type": "scatter",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    },
+    "y": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "expression",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    }
+  },
+  "facet_by": "property",
+  "metadata": {
+    "facet_property": {
+      "identifier_type": "column",
+      "dataset_id": "depmap_model_metadata",
+      "identifier": "OncotreeLineage"
+    }
+  }
+}
+```
+
+`color_by` is omitted, so each panel's points are also colored to match its facet, per the version 2 default — no separate `color_by` needed. If you instead want the panels to keep this faceted layout but color points by something unrelated (say, a different property), just add an explicit `color_by`/`metadata.color_property` (or any other `color_by` mode) alongside `facet_by`; the two are fully independent (see [facet_by](#facet_by-string) above).
+
 ## Optional fields
 
-The following fields color, filter, or annotate a plot.
+The following fields color, facet, filter, or annotate a plot.
 
 ### color_by [string]
 
-Specifies how the plot should be colored. There are several strategies: some map directly to values (continuous or categorical), while others map to membership of an arbitrary group. The supported values are `"raw_slice"`, `"aggregated_slice"`, `"property"`, and `"custom"`.
+Specifies how the plot should be colored. There are several strategies: some map directly to values (continuous or categorical), while others map to membership of an arbitrary facet. The supported values are `"raw_slice"`, `"aggregated_slice"`, `"property"`, `"custom"`, `"facet"`, and `"uniform"`.
 
 Note that `color_by` cannot be used with the `correlation_heatmap` plot type.
+
+**If `color_by` is omitted entirely** (version 2 default — see [above](#the-version-2-default-flip-color_by-and-facet_by)), the plot colors by whatever `facet_by` resolves to, exactly as if you had set `"color_by": "facet"`. If `facet_by` is also unset, the plot is uncolored.
 
 #### raw_slice
 
@@ -635,6 +709,224 @@ Set `color_by` to `"custom"` to use a continuous color scheme keyed on numeric v
 }
 ```
 
+#### facet
+
+Set `color_by` to `"facet"` to explicitly defer coloring to `facet_by`'s own resolution (see [facet_by](#facet_by-string) below) — the plot is colored using whatever categorical/continuous/custom-filter/expansion source `facet_by` is already reading, with no separate color backing of its own. This is the same behavior you get by omitting `color_by` entirely (the version 2 default); writing it out explicitly is only useful if you want to be unambiguous in a hand-authored payload, or to override a previously-set `color_by` back to matching `facet_by`.
+
+`color_by: "facet"` has no backing fields of its own — no `filters.color1`/`color2`, `metadata.color_property`, or `dimensions.color` — since it borrows `facet_by`'s. If `facet_by` is itself unset, the plot is uncolored (equivalent to `"uniform"`).
+
+#### uniform
+
+Set `color_by` to `"uniform"` to explicitly request no coloring, regardless of whether `facet_by` is set. This is the one value with no analog in `filters`/`metadata`/`dimensions` — it has nothing to configure. Use it when you want a plain, single-color plot but also want to set a `facet_by` (which would otherwise supply matching colors by default).
+
+```json
+{
+  "plot_type": "density_1d",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    }
+  },
+  "facet_by": "property",
+  "metadata": {
+    "facet_property": {
+      "identifier_type": "column",
+      "dataset_id": "depmap_model_metadata",
+      "identifier": "OncotreeLineage"
+    }
+  },
+  "color_by": "uniform"
+}
+```
+
+### facet_by [string]
+
+Specifies how points should be clustered/faceted — driving the violin tracks in a `density_1d` plot, the x-axis clustering in a `waterfall` plot, and the per-facet layout/regression fits in a `scatter` plot. `facet_by` is a fully independent axis from `color_by`: setting one does not implicitly set the other, and clearing one leaves the other untouched. (The one link between them is the version 2 default described [above](#the-version-2-default-flip-color_by-and-facet_by): an omitted `color_by` colors by whatever `facet_by` resolves to.)
+
+The supported values mirror `color_by`'s (minus `"facet"`/`"uniform"`, which are meaningless for `facet_by` itself): `"raw_slice"`, `"aggregated_slice"`, `"property"`, `"custom"`, and `"expansion"`.
+
+Note that `facet_by` cannot be used with the `correlation_heatmap` plot type.
+
+#### raw_slice / aggregated_slice
+
+Backed by `filters.facet1` (and optionally `filters.facet2`), exactly like `color_by`'s `filters.color1`/`color2` — a context per facet, an automatic "Other" cluster for points in neither, and a "Both" cluster for the overlap when two groups are given. On a `density_1d` plot this draws one violin track per facet; on `waterfall`, one x-axis cluster per facet; on `scatter`, one small-multiples panel per facet. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmFjZXRfYnkiOiJyYXdfc2xpY2UiLCJmaWx0ZXJzIjp7ImZhY2V0MSI6eyJuYW1lIjoiVUFDQy02MiIsImRpbWVuc2lvbl90eXBlIjoiZGVwbWFwX21vZGVsIiwiZXhwciI6eyI9PSI6W3sidmFyIjoiZ2l2ZW5faWQifSwiQUNILTAwMDQyNSJdfSwidmFycyI6e319LCJmYWNldDIiOnsibmFtZSI6IlVBQ0MtMjU3IiwiZGltZW5zaW9uX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCJBQ0gtMDAwNTc5Il19LCJ2YXJzIjp7fX19fQ==))
+
+```json
+{
+  "plot_type": "density_1d",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    }
+  },
+  "facet_by": "raw_slice",
+  "filters": {
+    "facet1": {
+      "name": "UACC-62",
+      "dimension_type": "depmap_model",
+      "expr": {
+        "==": [
+          {
+            "var": "given_id"
+          },
+          "ACH-000425"
+        ]
+      },
+      "vars": {}
+    },
+    "facet2": {
+      "name": "UACC-257",
+      "dimension_type": "depmap_model",
+      "expr": {
+        "==": [
+          {
+            "var": "given_id"
+          },
+          "ACH-000579"
+        ]
+      },
+      "vars": {}
+    }
+  }
+}
+```
+
+Since `color_by` is omitted here, this also colors the plot to match — one color per facet, per the version 2 default. `aggregated_slice` works identically, just with contexts that resolve to multiple features/samples, exactly like `color_by`'s `aggregated_slice`.
+
+#### property
+
+Backed by `metadata.facet_property`, a SliceQuery referring to a categorical/text column — exactly like `color_by`'s `metadata.color_property`. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmFjZXRfYnkiOiJwcm9wZXJ0eSIsIm1ldGFkYXRhIjp7ImZhY2V0X3Byb3BlcnR5Ijp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiT25jb3RyZWVMaW5lYWdlIn19fQ==))
+
+```json
+{
+  "plot_type": "density_1d",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    }
+  },
+  "facet_by": "property",
+  "metadata": {
+    "facet_property": {
+      "identifier_type": "column",
+      "dataset_id": "depmap_model_metadata",
+      "identifier": "OncotreeLineage"
+    }
+  }
+}
+```
+
+A `facet_property` (or `dimensions.facet`, below) that resolves to a **continuous** value is also supported: points are automatically binned, the same way `color_by: "custom"` bins continuous color values.
+
+#### custom
+
+Backed by `dimensions.facet`, mirroring `dimensions.color` — a raw or aggregated slice, continuous or categorical. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJmYWNldCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6ImV4cHJlc3Npb24iLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmFjZXRfYnkiOiJjdXN0b20ifQ==))
+
+```json
+{
+  "plot_type": "density_1d",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    },
+    "facet": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "expression",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    }
+  },
+  "facet_by": "custom"
+}
+```
+
+This example facets the TP53 CRISPR-effect density plot by TP53's own (continuous) expression, so it's automatically binned into ranges rather than split into discrete groups.
+
+#### expansion
+
+Groups points by their expansion member. Requires `expand_by` to be set (see the Transcript Explorer, the primary consumer of this mode) — without it, `facet_by: "expansion"` has nothing to facet by and is dropped.
+
 ### filters
 
 Apply a filter with `filters.visible`, using a context to restrict which points are shown. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJkZW5zaXR5XzFkIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19fSwiZmlsdGVycyI6eyJ2aXNpYmxlIjp7Im5hbWUiOiJTa2luIiwiZGltZW5zaW9uX3R5cGUiOiJkZXBtYXBfbW9kZWwiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiIwIn0sIlNraW4iXX0sInZhcnMiOnsiMCI6eyJkYXRhc2V0X2lkIjoiZGVwbWFwX21vZGVsX21ldGFkYXRhIiwiaWRlbnRpZmllciI6Ik9uY290cmVlTGluZWFnZSIsImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiJ9fX19fQ==))
@@ -796,8 +1088,11 @@ The notion of a "context" is reused many times:
 - `dimensions.x.context`
 - `dimensions.y.context`
 - `dimensions.color.context`
+- `dimensions.facet.context`
 - `filters.color1`
 - `filters.color2`
+- `filters.facet1`
+- `filters.facet2`
 - `filters.visible`
 - `filters.distinguish1` (heatmap only)
 - `filters.distinguish2` (heatmap only)

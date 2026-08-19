@@ -199,7 +199,7 @@ export async function inferDatasetId(
 
   datasets.forEach((dataset) => {
     if (dataset.slice_type === slice_type && dataset.data_type === dataType) {
-      ids.add(dataset.id);
+      ids.add(dataset.given_id || dataset.id);
     }
   });
 

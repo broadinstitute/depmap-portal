@@ -82,14 +82,6 @@ DATASET_METADATA: Dict[
         s3_json_name="rrbs",
         data_type=DataTypeEnum.methylation,
     ),
-    BiomarkerEnum.proteomics: DatasetLabel(
-        display_name="Proteomics",
-        units="Relative Protein Expression",
-        s3_json_name="proteomics",
-        data_type=DataTypeEnum.protein_expression,
-        priority=1,
-        global_priority=10,
-    ),
     BiomarkerEnum.sanger_proteomics: DatasetLabel(
         display_name="Sanger Proteomics",
         units="Relative Protein Expression",
@@ -247,13 +239,6 @@ DATASET_METADATA: Dict[
         data_type=DataTypeEnum.crispr,
         priority=1,  # Determined from labeling as default_crispr_enum
         global_priority=1,
-    ),
-    DependencyEnum.Chronos_Achilles: DepDatasetMeta(
-        display_name="CRISPR (DepMap, Chronos)",
-        units="Gene Effect (Chronos)",
-        nominal_range=NORMALIZED_RANGE,
-        data_type=DataTypeEnum.crispr,
-        priority=2,
     ),
     DependencyEnum.CERES_Combined: DepDatasetMeta(
         display_name="CRISPR (DepMap+Score, CERES)",

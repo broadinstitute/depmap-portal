@@ -3,7 +3,11 @@ import {
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
 } from "@depmap/types";
-import { fetchCorrelation, fetchPlotDimensions } from "../breadboxMethods";
+import {
+  buildExtendedMetadata,
+  fetchCorrelation,
+  fetchPlotDimensions,
+} from "../breadboxMethods";
 
 // Fixtures shared across cases.
 
@@ -180,6 +184,129 @@ function expectIdsAndLabelsAligned(
   });
 }
 
+describe("buildExtendedMetadata", () => {
+  // Regression: color_property and facet_property are two independently
+  // required, differently-named metadata keys. If a user happens to pick
+  // the *same* underlying annotation for both color_by and facet_by, both
+  // keys must still survive in the extended metadata — each is read by
+  // exact name downstream (findCategoricalSlice reads metadata.color_property
+  // vs metadata.facet_property specifically). The dedup-by-value `addIfNew`
+  // helper is correct for section 2/3 (hardcoded extras, anonymous context
+  // vars) but must never apply across section 1's user-selected keys, or
+  // whichever key is processed second gets silently dropped — breaking
+  // that axis while leaving the other looking fine. This is also why the
+  // symptom was flaky: JS object key order differs between a live-built
+  // metadata object and a freshly-parsed URL, so which axis "won" flipped
+  // between editing live and reloading the page.
+  test("color_property and facet_property both survive when they reference the identical slice", () => {
+    const identicalSlice = {
+      dataset_id: "lineage-dataset",
+      identifier: "lineage",
+      identifier_type: "column" as const,
+    };
+
+    const result = buildExtendedMetadata("depmap_model", "depmap_id", {
+      facet_property: identicalSlice,
+      color_property: identicalSlice,
+    });
+
+    expect(result.facet_property).toEqual(identicalSlice);
+    expect(result.color_property).toEqual(identicalSlice);
+  });
+
+  test("order of the input metadata object doesn't change which keys survive", () => {
+    const identicalSlice = {
+      dataset_id: "lineage-dataset",
+      identifier: "lineage",
+      identifier_type: "column" as const,
+    };
+
+    // Same as above but with keys inserted in the opposite order — pins
+    // that survival isn't accidentally order-dependent in either direction.
+    const result = buildExtendedMetadata("depmap_model", "depmap_id", {
+      color_property: identicalSlice,
+      facet_property: identicalSlice,
+    });
+
+    expect(result.facet_property).toEqual(identicalSlice);
+    expect(result.color_property).toEqual(identicalSlice);
+  });
+
+  test("still dedupes hardcoded extras against a user-selected key with the same value", () => {
+    const result = buildExtendedMetadata("depmap_model", "depmap_id", {
+      color_property: {
+        dataset_id: "depmap_model_metadata",
+        identifier: "OncotreeLineage",
+        identifier_type: "column" as const,
+      },
+    });
+
+    // color_property survives under its own name...
+    expect(result.color_property).toBeDefined();
+    // ...and the hardcoded extra1 (same slice) is skipped as redundant,
+    // rather than duplicating the fetch under a second key.
+    expect(result.extra1).toBeUndefined();
+  });
+
+  test("skips a filter var that is the flat root 'label' (redundant with the always-fetched root label)", () => {
+    const result = buildExtendedMetadata("screen_pair", "pair_id", undefined, {
+      visible: {
+        name: "visible",
+        dimension_type: "screen_pair",
+        expr: { "==": [{ var: "x" }, "foo"] },
+        vars: {
+          x: {
+            dataset_id: "screen_pair_metadata",
+            identifier: "label",
+            identifier_type: "column",
+          },
+        },
+      },
+    });
+
+    expect(Object.keys(result)).toHaveLength(0);
+  });
+
+  test("keeps a chained 'label' var reached via reindex_through — it's a distinct column, not the root's", () => {
+    // "label" is reserved and present on every dimension type's own
+    // metadata table, not a single global column. A filter on screen_pair
+    // referencing screen's label (via CtrlArmScreenID) is genuinely
+    // different data from screen_pair's own root label, and must not be
+    // dropped just because its terminal identifier happens to be "label".
+    const result = buildExtendedMetadata("screen_pair", "pair_id", undefined, {
+      visible: {
+        name: "visible",
+        dimension_type: "screen_pair",
+        expr: { "==": [{ var: "x" }, "foo"] },
+        vars: {
+          x: {
+            dataset_id: "screen_metadata",
+            identifier: "label",
+            identifier_type: "column",
+            reindex_through: {
+              dataset_id: "screen_pair_metadata",
+              identifier: "CtrlArmScreenID",
+              identifier_type: "column",
+            },
+          },
+        },
+      },
+    });
+
+    expect(Object.keys(result)).toHaveLength(1);
+    expect(result.context_var_0).toEqual({
+      dataset_id: "screen_metadata",
+      identifier: "label",
+      identifier_type: "column",
+      reindex_through: {
+        dataset_id: "screen_pair_metadata",
+        identifier: "CtrlArmScreenID",
+        identifier_type: "column",
+      },
+    });
+  });
+});
+
 describe("fetchPlotDimensions", () => {
   describe("with depmap_model index_type", () => {
     test("raw_slice dimension produces aligned index_ids and index_labels", async () => {
@@ -219,6 +346,53 @@ describe("fetchPlotDimensions", () => {
       response.index_ids.forEach((id) => {
         expect(id).toMatch(/^ACH-/);
       });
+    });
+
+    test("a 'facet' custom dimension is populated in the response, mirroring 'color'", async () => {
+      mockDimensionTypes();
+      mockDatasets();
+      mockDatasetIdentifiers();
+      mockDimensionTypeIdentifiers();
+      mockMatrixDataFor("gene");
+      mockDepmapModelHardcodedExtras();
+
+      const xDimension: DataExplorerPlotConfigDimension = {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "FABP5",
+          context_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "FABP5"] },
+        },
+      };
+
+      const groupDimension: DataExplorerPlotConfigDimension = {
+        axis_type: "raw_slice",
+        aggregation: "first",
+        slice_type: "gene",
+        dataset_id: "Chronos_Combined",
+        context: {
+          name: "FABP5",
+          context_type: "gene",
+          expr: { "==": [{ var: "entity_label" }, "FABP5"] },
+        },
+      };
+
+      const response = await fetchPlotDimensions("depmap_model", {
+        x: xDimension,
+        facet: groupDimension,
+      });
+
+      expect(response.dimensions.facet).toBeDefined();
+      expect(response.dimensions.facet?.slice_type).toBe("gene");
+      expect(response.dimensions.facet?.dataset_id).toBe("Chronos_Combined");
+      expect(response.dimensions.facet?.values.length).toBe(
+        response.index_ids.length
+      );
+      // facet is independent of color: no color dimension was supplied.
+      expect(response.dimensions.color).toBeUndefined();
     });
   });
 
@@ -276,9 +450,24 @@ const correlationGeneIdentifiers = [
 // GENE_A and GENE_B have identical value rows (ρ = 1).
 // GENE_C has reversed values (ρ = −1 vs A and B).
 const correlationMatrixResponse = {
-  GENE_A: { "ACH-000001": 1.0, "ACH-000002": 2.0, "ACH-000003": 3.0, "ACH-000004": 4.0 },
-  GENE_B: { "ACH-000001": 1.0, "ACH-000002": 2.0, "ACH-000003": 3.0, "ACH-000004": 4.0 },
-  GENE_C: { "ACH-000001": 4.0, "ACH-000002": 3.0, "ACH-000003": 2.0, "ACH-000004": 1.0 },
+  GENE_A: {
+    "ACH-000001": 1.0,
+    "ACH-000002": 2.0,
+    "ACH-000003": 3.0,
+    "ACH-000004": 4.0,
+  },
+  GENE_B: {
+    "ACH-000001": 1.0,
+    "ACH-000002": 2.0,
+    "ACH-000003": 3.0,
+    "ACH-000004": 4.0,
+  },
+  GENE_C: {
+    "ACH-000001": 4.0,
+    "ACH-000002": 3.0,
+    "ACH-000003": 2.0,
+    "ACH-000004": 1.0,
+  },
 };
 
 function mockCorrelationContext() {
@@ -360,8 +549,13 @@ describe("fetchCorrelation", () => {
   test("matrix rows/columns are aligned with index_ids regardless of clustering order", async () => {
     setupMocks();
 
-    const response = await fetchCorrelation("gene", { x: xDimension }, undefined, true);
-    const matrix = response.dimensions.x.values as unknown as number[][];
+    const response = await fetchCorrelation(
+      "gene",
+      { x: xDimension },
+      undefined,
+      true
+    );
+    const matrix = (response.dimensions.x.values as unknown) as number[][];
 
     expect(matrix.length).toBe(3);
     matrix.forEach((row) => expect(row.length).toBe(3));
@@ -397,5 +591,111 @@ describe("fetchCorrelation", () => {
     const response = await fetchCorrelation("gene", { x: xDimension });
 
     expect(response.index_id_column).toBe("entrez_id");
+  });
+
+  // Regression: with both distinguish1 and distinguish2, each correlateDimension
+  // call runs an independent clustering pass. The two passes can produce different
+  // column orders. Without realignment, x2.values[i][j] describes a different gene
+  // pair than x.values[i][j] (and index_ids[i/j]), so a selected heatmap cell shows
+  // the wrong correlation value from the second heatmap.
+  test("x2 matrix is aligned with index_ids when clustering and distinguish2 are both active", async () => {
+    mockDimensionTypes();
+    mockDatasets();
+    mockDatasetIdentifiers();
+    mockDimensionTypeIdentifiers();
+
+    // distinguish1 data: GENE_A and GENE_B perfectly correlated, GENE_C anti-correlated.
+    // Clustering will place A and B adjacent.
+    const distinguish1MatrixResponse = {
+      GENE_A: { S1: 1.0, S2: 2.0, S3: 3.0, S4: 4.0 },
+      GENE_B: { S1: 1.0, S2: 2.0, S3: 3.0, S4: 4.0 },
+      GENE_C: { S1: 4.0, S2: 3.0, S3: 2.0, S4: 1.0 },
+    };
+
+    // distinguish2 data: GENE_A and GENE_C perfectly correlated, GENE_B anti-correlated.
+    // Independent clustering would place A and C adjacent — a different order than x.
+    const distinguish2MatrixResponse = {
+      GENE_A: { T1: 1.0, T2: 2.0, T3: 3.0, T4: 4.0 },
+      GENE_B: { T1: 4.0, T2: 3.0, T3: 2.0, T4: 1.0 },
+      GENE_C: { T1: 1.0, T2: 2.0, T3: 3.0, T4: 4.0 },
+    };
+
+    const distinguish1Context = {
+      name: "filter1",
+      context_type: "depmap_model",
+      expr: { in: [{ var: "given_id" }, ["S1", "S2", "S3", "S4"]] },
+    };
+    const distinguish2Context = {
+      name: "filter2",
+      context_type: "depmap_model",
+      expr: { in: [{ var: "given_id" }, ["T1", "T2", "T3", "T4"]] },
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    breadboxAPI.evaluateContext = jest.fn<any, [any]>().mockImplementation(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (ctx: any) => {
+        if (ctx === distinguish1Context) {
+          return Promise.resolve({ ids: ["S1", "S2", "S3", "S4"], labels: ["S1", "S2", "S3", "S4"] });
+        }
+        if (ctx === distinguish2Context) {
+          return Promise.resolve({ ids: ["T1", "T2", "T3", "T4"], labels: ["T1", "T2", "T3", "T4"] });
+        }
+        // Gene context
+        return Promise.resolve({
+          ids: correlationGeneIdentifiers.map((g) => g.id),
+          labels: correlationGeneIdentifiers.map((g) => g.label),
+        });
+      }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ) as any;
+
+    breadboxAPI.getMatrixDatasetData = jest
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .fn<ReturnType<typeof breadboxAPI.getMatrixDatasetData>, [string, any]>()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .mockImplementation((_datasetId: string, params: any) => {
+        const samples: string[] = params.samples || [];
+        if (samples.includes("S1")) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          return Promise.resolve(distinguish1MatrixResponse as any);
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return Promise.resolve(distinguish2MatrixResponse as any);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      }) as any;
+
+    const response = await fetchCorrelation(
+      "gene",
+      { x: xDimension },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { distinguish1: distinguish1Context as any, distinguish2: distinguish2Context as any },
+      true
+    );
+
+    const x1Matrix = response.dimensions.x.values as unknown as number[][];
+    const x2Matrix = (response.dimensions as any).x2?.values as unknown as number[][];
+
+    expect(x2Matrix).toBeDefined();
+
+    // Build a lookup by id so assertions are independent of clustering order.
+    const idToPos: Record<string, number> = {};
+    response.index_ids.forEach((id, i) => { idToPos[id] = i; });
+
+    const a = idToPos["11111"]; // GENE_A
+    const b = idToPos["22222"]; // GENE_B
+    const c = idToPos["33333"]; // GENE_C
+
+    // x (distinguish1): A↔B = 1, A↔C = B↔C = -1
+    expect(x1Matrix[a][b]).toBeCloseTo(1, 5);
+    expect(x1Matrix[a][c]).toBeCloseTo(-1, 5);
+    expect(x1Matrix[b][c]).toBeCloseTo(-1, 5);
+
+    // x2 (distinguish2): A↔C = 1, A↔B = B↔C = -1.
+    // Before the fix, x2's matrix was in a different clustering order than index_ids,
+    // so these look-ups by index_ids position would return wrong values.
+    expect(x2Matrix[a][c]).toBeCloseTo(1, 5);
+    expect(x2Matrix[a][b]).toBeCloseTo(-1, 5);
+    expect(x2Matrix[b][c]).toBeCloseTo(-1, 5);
   });
 });
