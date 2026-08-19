@@ -45,6 +45,7 @@ GENERIC_ENTITY_BIOMARKER_ENUMS = [
     BiomarkerDataset.BiomarkerEnum.rnai_confounders,
     BiomarkerDataset.BiomarkerEnum.oncref_confounders,
     BiomarkerDataset.BiomarkerEnum.oncref_seq_confounders,
+    BiomarkerDataset.BiomarkerEnum.oncref_unified_confounders,
     BiomarkerDataset.BiomarkerEnum.rep_all_single_pt_confounders,
     BiomarkerDataset.BiomarkerEnum.OmicsSignatures,
 ]
@@ -99,7 +100,7 @@ def load_biomarker_dataset(
             non_gene_lookup=entity_lookup,
         )
         entity_type = "protein"
-    elif (biomarker_enum == BiomarkerDataset.BiomarkerEnum.sanger_proteomics):
+    elif biomarker_enum == BiomarkerDataset.BiomarkerEnum.sanger_proteomics:
         load_proteins(file_path, allow_missing_entities=allow_missing_entities)
         entity_lookup = lambda x: Protein.get_by_label(x, must=False)
         matrix = create_matrix_object(

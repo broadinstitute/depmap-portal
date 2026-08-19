@@ -76,6 +76,16 @@ drc_compound_datasets = [
         log_auc_dataset_given_id="PRISMOncologyReferenceSeqLog2AUCMatrix",
     ),
     DRCCompoundDataset(
+        drc_dataset_label="Prism_oncology_unified_per_curve",
+        viability_dataset_given_id="Prism_oncology_unified_viability",
+        replicate_dataset="Prism_oncology_unified_dose_replicate",
+        auc_dataset_given_id="Prism_oncology_unified_AUC_collapsed",
+        auc_dataset=DependencyEnum.Prism_oncology_unified_AUC,
+        display_name="PRISM OncRef Unified",
+        assay="PRISM",
+        log_auc_dataset_given_id="PRISMOncologyReferenceUnifiedLog2AUCMatrix",
+    ),
+    DRCCompoundDataset(
         drc_dataset_label="GDSC2",
         viability_dataset_given_id="GDSC2_Viability",
         replicate_dataset="GDSC2_dose_replicate",
