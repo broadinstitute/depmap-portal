@@ -464,6 +464,42 @@ def test_get_aggregated_matrix_dataset_data(
     """
     assert response.json() == {"mean": {"Id1": 2, "Id3": 3}}
 
+    # Several methods in one request. The response keys off the method name
+    # exactly as it does for one, so asking for two costs a caller nothing
+    # beyond a second key -- notably it reads the block out of HDF5 once.
+    response = client.post(
+        f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+        json={
+            "aggregate": {
+                "aggregate_by": "samples",
+                "aggregation": ["variance", "count"],
+            }
+        },
+    )
+    """
+    Expected:
+        variance  count
+    -------------------
+    A     1.0       3
+    B     0.5       2
+    C     1.0       3
+    """
+    assert response.json() == {
+        "variance": {"A": 1.0, "B": 0.5, "C": 1.0},
+        # B's NA does not count.
+        "count": {"A": 3, "B": 2, "C": 3},
+    }
+
+    # A repeated method collapses instead of asking for a duplicate column,
+    # which would not be serializable.
+    response = client.post(
+        f"/datasets/matrix/{matrix_dataset.json()['result']['datasetId']}",
+        json={
+            "aggregate": {"aggregate_by": "samples", "aggregation": ["mean", "mean"]}
+        },
+    )
+    assert response.json() == {"mean": {"A": 2, "B": 3.5, "C": 3}}
+
 
 def test_bad_matrix_dataset_categorical_aggregation(
     client: TestClient,

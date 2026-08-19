@@ -48,6 +48,11 @@ class AggregationMethod(enum.Enum):
     per25 = "25%tile"
     per75 = "75%tile"
     stddev = "stddev"
+    variance = "variance"
+    # Number of non-null values that went into the other aggregations. Lets a
+    # caller tell a spread computed over three observations from one computed
+    # over three hundred.
+    count = "count"
     sum = "sum"
 
 
@@ -470,7 +475,12 @@ class MatrixAggregation(BaseModel):
     aggregate_by: Literal[
         "features", "samples"
     ]  # collapse features or samples into a single series
-    aggregation: AggregationMethod
+    # Either one method or several. Several are worth asking for together when
+    # they describe the same collapse -- e.g. a spread alongside the `count` it
+    # was computed over -- since the expensive part is reading the block out of
+    # HDF5, not the arithmetic. The response is keyed by method name either way,
+    # so a single method reads back exactly as it always has.
+    aggregation: Union[AggregationMethod, List[AggregationMethod]]
 
     @model_validator(mode="before")
     def check_valid_fields(self):
@@ -482,14 +492,27 @@ class MatrixAggregation(BaseModel):
 
     @field_validator("aggregation", mode="before")
     def valid_aggregation_methods(cls, v):
-        try:
-            AggregationMethod(v)
-        except ValueError as err:
-            raise UserError(
-                f"Aggregations method must be one of {[m.value for m in AggregationMethod]}"
-            ) from err
+        values = v if isinstance(v, list) else [v]
 
-        return v
+        if len(values) == 0:
+            raise UserError("'aggregation' must name at least one method!")
+
+        for value in values:
+            try:
+                AggregationMethod(value)
+            except ValueError as err:
+                raise UserError(
+                    f"Aggregations method must be one of {[m.value for m in AggregationMethod]}"
+                ) from err
+
+        if not isinstance(v, list):
+            return v
+
+        # The response is one column per method, named for the method, so a
+        # repeated method would ask for a duplicate column -- which is not
+        # serializable. Asking for the same thing twice has one obvious answer,
+        # so collapse it rather than complain.
+        return list(dict.fromkeys(AggregationMethod(value) for value in values))
 
 
 class FeatureResponse(BaseModel):
