@@ -107,6 +107,19 @@ def load_SampleID_to_CompoundID_mapping(tc, portal_compounds_taiga_id):
     return sample_id_to_compound_id
 
 
+def _drop_dup_columns(df: pd.DataFrame, expected_drops: int):
+    orig_cols = df.columns
+    df_without_dups = df.loc[:, ~df.columns.duplicated(keep=False)].copy()
+    final_cols = df_without_dups.columns
+
+    dropped_count = len(orig_cols) - len(final_cols)
+    assert (
+        dropped_count <= expected_drops
+    ), f"Expected {expected_drops} dropped columns, but got {dropped_count}"
+    print(f"Warnning: Dropped {dropped_count} duplicate columns")
+    return df_without_dups
+
+
 def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taiga_id):
     # construct the mapping of stripped compound sample IDs to compound IDs
     sample_id_to_compound_id_map = load_SampleID_to_CompoundID_mapping(
@@ -150,6 +163,11 @@ def load_repurposing_data(tc, repurposing_matrix_taiga_id, portal_compounds_taig
     assert set(repurposing_matrix.columns).issubset(
         sample_id_to_compound_id_map.values()
     )
+
+    # there are two samples that got merged into one compound ID, so need to massage the
+    # data before we continue
+    repurposing_matrix = _drop_dup_columns(repurposing_matrix, 2)
+
     # verify that there are no duplicates per compound ID
     assert repurposing_matrix.columns.nunique() == repurposing_matrix.shape[1]
 

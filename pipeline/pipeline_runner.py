@@ -255,11 +255,12 @@ class PipelineRunner:
                 check=True,
                 cwd=str(config.working_dir),
             )
-            self.subprocess_run(
-                "conseq forget --regex publish.*",
-                check=True,
-                cwd=str(config.working_dir),
-            )
+            if (config.working_dir / "state").exists():
+                self.subprocess_run(
+                    "conseq forget --regex publish.*",
+                    check=True,
+                    cwd=str(config.working_dir),
+                )
 
     def run(self, args: argparse.Namespace) -> None:
         """Main entry point for running the pipeline."""
@@ -286,9 +287,13 @@ class PipelineRunner:
             log.info(f"[dryrun] would delete all objects under {config.publish_dest}")
         else:
             gcs_rm_prefixed_by(config.publish_dest)
-        self.subprocess_run(
-            "conseq forget --regex publish.*", check=True, cwd=str(config.working_dir),
-        )
+
+        if os.path.exists(f"{config.working_dir}/state"):
+            self.subprocess_run(
+                "conseq forget --regex publish.*",
+                check=True,
+                cwd=str(config.working_dir),
+            )
 
         # Build and run main conseq command
         conseq_run_cmd = self.build_conseq_run_command(config)
@@ -329,10 +334,10 @@ class PipelineRunner:
         self.subprocess_run(
             "conseq report html", check=True, cwd=str(config.working_dir)
         )
-        if self.dryrun:
-            log.info("[dryrun] skipping track_dataset_usage")
-        else:
-            self.track_dataset_usage_from_conseq(config.working_dir)
+        #        if self.dryrun:
+        #            log.info("[dryrun] skipping track_dataset_usage")
+        #        else:
+        #            self.track_dataset_usage_from_conseq(config.working_dir)
 
         if config.export_path:
             assert config.conseq_file is not None
