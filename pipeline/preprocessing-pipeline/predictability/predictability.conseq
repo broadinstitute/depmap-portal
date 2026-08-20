@@ -199,26 +199,30 @@ rule create_biomarker_matrix_csv:
     """
     run "python3 {{ inputs.cleanup_script.filename }} {{ inputs.biomarker_matrix.category }}.csv --index_col 0"
 
-# the gene effect datasets are only used to test cell line membership
-rule compute_crispr_confounders:
+# The CRISPR confounder matrix is computed by the data-prep-pipeline (see
+# data-prep-pipeline/scripts/predictability/transform_crispr_confounders.py) and published back into
+# the release as "CRISPRConfounders", so here we only need to download it.
+# The plan as of 26Q3 is that Achilles team will generate and upload the Crispr Confoudners file 
+# since they already have all the data necessary to generate it from future releases. 
+rule download_crispr_confounders:
     inputs:
-        sample_info={"type": "sample_info_dataset_id"},
-        params={"type": "crispr-confounder-parameters"},
-        confounders_script=fileref("scripts/confounders.py"),
+        data={'type': 'confounders-matrix-raw', 'label': 'crispr'},
         cleanup_script=fileref("../scripts/cleanup_dataframe.py"),
     outputs:
         {
             "type": "confounders-matrix-csv",
-            "label": "crispr",
+            "label": "{{ inputs.data.label }}",
             "filename": {"$filename": "confounders.csv"},
-            "dataset_id": "{{ inputs.sample_info.dataset_id }}",
-            "other_dataset_ids": "sample_info: {{ inputs.sample_info.dataset_id }}, achilles_qc_report_taiga_id: {{ inputs.params.achilles_qc_report_taiga_id }}, crispr_screen_map_taiga_id: {{ inputs.params.crispr_screen_map_taiga_id }}"
+            "dataset_id": "{{ inputs.data.dataset_id }}"
         }
-    run "bash" with """
-        python {{ inputs.confounders_script.filename }} \
-        {{ inputs.sample_info.dataset_id }} \
-        {{ inputs.params.achilles_qc_report_taiga_id }} \
-        {{ inputs.params.crispr_screen_map_taiga_id }}
+    run "python3" with """
+        from taigapy import create_taiga_client_v3
+
+        tc = create_taiga_client_v3()
+        df = tc.get("{{inputs.data.dataset_id}}")
+        # Taiga drops the index name on a csv_matrix round trip, so restore it
+        df.index.name = "ModelID"
+        df.to_csv("confounders.csv")
     """
     run "python3 {{ inputs.cleanup_script.filename }} confounders.csv --index_col 0"
 

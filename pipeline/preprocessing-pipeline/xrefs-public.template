@@ -37,10 +37,13 @@ add-if-missing {
   "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "Model"),
 }
 
+# The CRISPR confounder matrix is read straight out of the release rather than recomputed here.
+# It is currently written into the release by the data-prep-pipeline's publish_crispr_confounders
+# rule; once the Achilles team uploads it directly this xref keeps working unchanged.
 add-if-missing {
-    "type": "crispr-confounder-parameters",
-    "achilles_qc_report_taiga_id":  PREPROCESS_TAIGA_ID(virtual_permaname, "AchillesScreenQCReport"),
-    "crispr_screen_map_taiga_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRScreenMap")
+  "type": "confounders-matrix-raw",
+  "label": 'crispr',
+  "dataset_id": PREPROCESS_TAIGA_ID(virtual_permaname, "CRISPRConfounders")
 }
 
 # Chronos Combined
