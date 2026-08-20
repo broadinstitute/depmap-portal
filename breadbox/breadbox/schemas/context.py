@@ -3,6 +3,16 @@ from typing import Annotated, Any, Optional, Union
 from breadbox.schemas.dataset import SliceQueryIdentifierType
 
 
+class ContextDatasetCoverageResponse(BaseModel):
+    # Per-dataset count of how many of the context's entities that dataset
+    # contains, keyed by dataset id. Datasets matching nothing are absent
+    # rather than present with a zero.
+    counts: dict[str, int]
+    # How many entities the context resolved to, so a count reads as a share
+    # without the caller evaluating the context a second time to find out.
+    total: int
+
+
 class ContextMatchResponse(BaseModel):
     ids: list[str]
     labels: list[str]
