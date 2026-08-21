@@ -1,4 +1,9 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  evaluateContextPersisted,
+  getDimensionTypeIdentifiersPersisted,
+} from "@depmap/api";
 import {
   DataExplorerContextV2,
   DataExplorerContextVariable,
@@ -148,9 +153,10 @@ export async function fetchExpandedPlot(
 
   // Resolve the expansion list once. For gene/transcript this is e.g.
   // "transcripts of CD44" → ids + labels of length M.
-  const { ids: allExpIds, labels: allExpLabels } = await cached(
-    breadboxAPI
-  ).evaluateContext(expansionContext);
+  const {
+    ids: allExpIds,
+    labels: allExpLabels,
+  } = await evaluateContextPersisted(expansionContext);
 
   if (allExpIds.length === 0) {
     throw new Error(
@@ -379,15 +385,14 @@ export async function fetchExpandedPlot(
       dataset_id
     );
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      {
-        sample_identifier: "id",
-        feature_identifier: "id",
-        samples: sliceIsSampleType ? expIds : null,
-        features: sliceIsSampleType ? null : expIds,
-      }
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, {
+      sample_identifier: "id",
+      feature_identifier: "id",
+      samples: sliceIsSampleType ? expIds : null,
+      features: sliceIsSampleType ? null : expIds,
+    });
 
     // Matrix responses are always Record<feature_id, Record<sample_id, value>>:
     //   - expansion-on-feature-axis: response[expId][indexId]
@@ -565,7 +570,7 @@ export async function fetchExpandedPlot(
 
     let ctxIds: string[] = [];
     try {
-      const result = await cached(breadboxAPI).evaluateContext(
+      const result = await evaluateContextPersisted(
         (context as unknown) as DataExplorerContextV2
       );
       ctxIds = result.ids;
@@ -581,16 +586,15 @@ export async function fetchExpandedPlot(
       dataset_id
     );
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      {
-        sample_identifier: "id",
-        feature_identifier: "id",
-        samples: aggregate_by === "samples" ? ctxIds : null,
-        features: aggregate_by === "features" ? ctxIds : null,
-        aggregate: { aggregate_by, aggregation },
-      }
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, {
+      sample_identifier: "id",
+      feature_identifier: "id",
+      samples: aggregate_by === "samples" ? ctxIds : null,
+      features: aggregate_by === "features" ? ctxIds : null,
+      aggregate: { aggregate_by, aggregation },
+    });
 
     const indexed_values: Record<string, number | null> = {};
     indexIdentifiers.forEach(({ id }) => {
@@ -607,7 +611,7 @@ export async function fetchExpandedPlot(
     const filter = (filters![filterKey] as unknown) as DataExplorerContextV2;
 
     try {
-      const result = await cached(breadboxAPI).evaluateContext(filter);
+      const result = await evaluateContextPersisted(filter);
 
       const indexed_values: Record<string, true> = {};
       for (let i = 0; i < result.ids.length; i += 1) {
@@ -822,7 +826,7 @@ export async function fetchExpandedPlot(
           ? dataset.feature_type_name
           : dataset.sample_type_name;
       if (!dimTypeName) return;
-      const identifiers = await cached(breadboxAPI).getDimensionTypeIdentifiers(
+      const identifiers = await getDimensionTypeIdentifiersPersisted(
         dimTypeName
       );
       metadataIdToLabel[key] = Object.fromEntries(

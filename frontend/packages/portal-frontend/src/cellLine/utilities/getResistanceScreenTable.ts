@@ -16,20 +16,19 @@ export interface ResistanceRow {
 }
 
 const getResistanceScreenTable = async () => {
-  const data = await cached(breadboxAPI).getTabularDatasetData(
-    "PairedResScreenTable",
-    {
-      columns: [
-        "CtrlArmModelID",
-        "CtrlArmStrippedCellLineName",
-        "TestArmModelID",
-        "TestArmStrippedCellLineName",
-        "CulturedDrugResistance",
-        "EngineeredModelDetails",
-        "ComparisonType",
-      ],
-    }
-  );
+  const data = await cached(breadboxAPI, {
+    persist: true,
+  }).getTabularDatasetData("PairedResScreenTable", {
+    columns: [
+      "CtrlArmModelID",
+      "CtrlArmStrippedCellLineName",
+      "TestArmModelID",
+      "TestArmStrippedCellLineName",
+      "CulturedDrugResistance",
+      "EngineeredModelDetails",
+      "ComparisonType",
+    ],
+  });
 
   return Object.keys(data.ComparisonType).map((PairID) => ({
     PairID,

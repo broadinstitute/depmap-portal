@@ -1,4 +1,8 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  getDimensionTypeIdentifiersPersisted,
+} from "@depmap/api";
 import {
   isValidSliceQuery,
   SliceQuery,
@@ -37,9 +41,9 @@ async function convertSliceQueryToDimension(
     identifier_type !== "sample_label" &&
     identifier_type !== "feature_label"
   ) {
-    const allIdentifiers = await cached(
-      breadboxAPI
-    ).getDimensionTypeIdentifiers(slice_type);
+    const allIdentifiers = await getDimensionTypeIdentifiersPersisted(
+      slice_type
+    );
 
     const match = allIdentifiers.find(({ id }) => id === identifier);
     identifierLabel = match ? match.label : identifier;

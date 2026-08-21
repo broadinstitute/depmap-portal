@@ -4,10 +4,9 @@ export async function fetchMetadata<T>(
   typeName: string,
   indices: string[] | null,
   columns: string[] | null,
-  bbapi: typeof breadboxAPI,
   identifier: "label" | "id" = "id"
 ) {
-  const dimType = await cached(bbapi).getDimensionType(typeName);
+  const dimType = await cached(breadboxAPI).getDimensionType(typeName);
   if (!dimType?.metadata_dataset_id) {
     throw new Error(`No metadata for ${typeName}`);
   }
@@ -18,7 +17,7 @@ export async function fetchMetadata<T>(
   } else {
     args = { indices: null, identifier: null, columns };
   }
-  return cached(bbapi).getTabularDatasetData(
+  return cached(breadboxAPI, { persist: true }).getTabularDatasetData(
     dimType.metadata_dataset_id,
     args
   ) as Promise<T>;

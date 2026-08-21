@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { breadboxAPI, cached, BreadboxApiResponse } from "@depmap/api";
+import { BreadboxApiResponse, evaluateContextPersisted } from "@depmap/api";
 import { DataExplorerContextV2 } from "@depmap/types";
 
 function useContextResult(context?: DataExplorerContextV2 | null) {
@@ -13,12 +13,10 @@ function useContextResult(context?: DataExplorerContextV2 | null) {
     if (context) {
       setIsLoading(true);
 
-      cached(breadboxAPI)
-        .evaluateContext(context)
-        .then((nextResult) => {
-          setResult(nextResult);
-          setIsLoading(false);
-        });
+      evaluateContextPersisted(context).then((nextResult) => {
+        setResult(nextResult);
+        setIsLoading(false);
+      });
     } else {
       setResult(null);
       setIsLoading(false);

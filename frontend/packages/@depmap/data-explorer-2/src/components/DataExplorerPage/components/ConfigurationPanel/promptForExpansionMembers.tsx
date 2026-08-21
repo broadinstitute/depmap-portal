@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import {
   promptForValue,
   PromptComponentProps,
@@ -409,7 +409,7 @@ export default async function promptForExpansionMembers({
   PlotlyLoader: ReturnType<typeof usePlotlyLoader>;
 }): Promise<ExpansionMembersChoice | undefined> {
   const [{ ids }, cap] = await Promise.all([
-    cached(breadboxAPI).evaluateContext(context),
+    evaluateContextPersisted(context),
     maxExpansionMembersFor(index_type, dataset_id),
   ]);
 

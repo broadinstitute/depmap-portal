@@ -1,5 +1,5 @@
 import qs from "qs";
-import { breadboxAPI, cached } from "@depmap/api";
+import { breadboxAPI, cached, evaluateContextPersisted } from "@depmap/api";
 import { persistContext } from "@depmap/data-explorer-2";
 import { isPortal } from "@depmap/globals";
 import { ComputeResponseResult, DataExplorerContextV2 } from "@depmap/types";
@@ -29,9 +29,9 @@ async function getDataExplorerLink(
       ? await persistContext(filterByContext)
       : undefined;
 
-    const features = await cached(breadboxAPI).getDatasetFeatures(
-      sliceQuery.dataset_id
-    );
+    const features = await cached(breadboxAPI, {
+      persist: true,
+    }).getDatasetFeatures(sliceQuery.dataset_id);
 
     let identifierLabel = "";
 
@@ -68,10 +68,8 @@ async function getDataExplorerLink(
     if (outGroupContext) {
       color2 = await persistContext(outGroupContext);
 
-      const inGroup = await cached(breadboxAPI).evaluateContext(inGroupContext);
-      const outGroup = await cached(breadboxAPI).evaluateContext(
-        outGroupContext
-      );
+      const inGroup = await evaluateContextPersisted(inGroupContext);
+      const outGroup = await evaluateContextPersisted(outGroupContext);
 
       if (inGroup.ids.length + outGroup.ids.length < inGroup.num_candidates) {
         const combinedIds = [...new Set([...inGroup.ids, ...outGroup.ids])];

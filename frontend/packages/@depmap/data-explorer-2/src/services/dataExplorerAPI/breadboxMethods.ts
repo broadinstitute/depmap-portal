@@ -1,4 +1,9 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  evaluateContextPersisted,
+  getDimensionTypeIdentifiersPersisted,
+} from "@depmap/api";
 import {
   correlationMatrix,
   linregress,
@@ -77,7 +82,7 @@ export async function fetchAxisLabel(
 
   const { aggregation } = dimension;
 
-  const { ids } = await cached(breadboxAPI).evaluateContext(
+  const { ids } = await evaluateContextPersisted(
     (context as unknown) as DataExplorerContextV2
   );
 
@@ -387,7 +392,7 @@ export async function fetchPlotDimensions(
     let ids: string[] = [];
 
     try {
-      const result = await cached(breadboxAPI).evaluateContext(
+      const result = await evaluateContextPersisted(
         (context as unknown) as DataExplorerContextV2
       );
 
@@ -404,16 +409,15 @@ export async function fetchPlotDimensions(
       dataset_id
     );
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      {
-        sample_identifier: "id",
-        feature_identifier: "id",
-        samples: aggregate_by === "samples" ? ids : null,
-        features: aggregate_by === "features" ? ids : null,
-        aggregate: { aggregate_by, aggregation },
-      }
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, {
+      sample_identifier: "id",
+      feature_identifier: "id",
+      samples: aggregate_by === "samples" ? ids : null,
+      features: aggregate_by === "features" ? ids : null,
+      aggregate: { aggregate_by, aggregation },
+    });
 
     const indexed_values = {} as Record<string, number | null>;
 
@@ -441,8 +445,7 @@ export async function fetchPlotDimensions(
     ...filterKeys.map((key) => {
       const filter = (filters![key] as unknown) as DataExplorerContextV2;
 
-      return cached(breadboxAPI)
-        .evaluateContext(filter)
+      return evaluateContextPersisted(filter)
         .then((result) => {
           const indexed_values: Record<string, true> = {};
 
@@ -578,9 +581,9 @@ export async function fetchPlotDimensions(
           return;
         }
 
-        const identifiers = await cached(
-          breadboxAPI
-        ).getDimensionTypeIdentifiers(dimTypeName);
+        const identifiers = await getDimensionTypeIdentifiersPersisted(
+          dimTypeName
+        );
 
         metadataIdToLabel[key] = Object.fromEntries(
           identifiers.map(({ id, label }) => [id, label])
@@ -996,10 +999,8 @@ const correlateDimension = memoize(
       filterIdentifiers,
       dataset_label,
     ] = await Promise.all([
-      cached(breadboxAPI).evaluateContext(
-        (context as unknown) as DataExplorerContextV2
-      ),
-      filter ? cached(breadboxAPI).evaluateContext(filter) : null,
+      evaluateContextPersisted((context as unknown) as DataExplorerContextV2),
+      filter ? evaluateContextPersisted(filter) : null,
       fetchDatasetLabel(dataset_id),
     ]);
 
@@ -1035,10 +1036,9 @@ const correlateDimension = memoize(
           : filterIdentifiers?.labels || null,
     };
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      requestParams
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, requestParams);
     let data = {} as Record<string, number[]>;
 
     // The /datasets/matrix/<id> endpoint always returns an object where features

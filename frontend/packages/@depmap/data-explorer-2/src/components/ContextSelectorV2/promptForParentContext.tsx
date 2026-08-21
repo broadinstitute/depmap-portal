@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { breadboxAPI, cached, evaluateContextPersisted } from "@depmap/api";
 import {
   promptForValue,
   PromptComponentProps,
@@ -179,7 +179,7 @@ export default async function promptForParentContext(
         let ids: string[];
 
         try {
-          ({ ids } = await cached(breadboxAPI).evaluateContext(nextContext));
+          ({ ids } = await evaluateContextPersisted(nextContext));
         } catch (e) {
           window.console.error(e);
 

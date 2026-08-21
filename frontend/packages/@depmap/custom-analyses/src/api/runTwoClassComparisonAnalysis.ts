@@ -1,4 +1,4 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import { breadboxAPI, cached, evaluateContextPersisted } from "@depmap/api";
 import { DataExplorerContextV2 } from "@depmap/types";
 
 interface Parameters {
@@ -12,21 +12,19 @@ async function runTwoClassComparisonAnalysis({
   inGroupContext,
   outGroupContext,
 }: Parameters) {
-  const inGroupIdentifiers = await cached(breadboxAPI).evaluateContext(
-    inGroupContext
-  );
+  const inGroupIdentifiers = await evaluateContextPersisted(inGroupContext);
 
   const queryIds = await (async () => {
     if (!outGroupContext) {
-      const allIdentifiers = await cached(breadboxAPI).getDatasetSamples(
-        datasetId
-      );
+      const allIdentifiers = await cached(breadboxAPI, {
+        persist: true,
+      }).getDatasetSamples(datasetId);
 
       return allIdentifiers.map(({ id }) => id);
     }
 
     const outGroupIdentifiers = outGroupContext
-      ? await cached(breadboxAPI).evaluateContext(outGroupContext)
+      ? await evaluateContextPersisted(outGroupContext)
       : { ids: [] };
 
     return new Set([...inGroupIdentifiers.ids, ...outGroupIdentifiers.ids]);
