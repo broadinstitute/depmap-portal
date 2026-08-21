@@ -56,21 +56,33 @@ const createApiMock = (
   });
 };
 
-jest.mock("@depmap/api", () => ({
-  cached: (api: unknown) => api,
-
-  legacyPortalAPI: createApiMock(
-    "Portal API",
-    "legacyPortalAPI",
-    portalApiProxyTarget
-  ),
-
-  breadboxAPI: createApiMock(
+jest.mock("@depmap/api", () => {
+  const breadboxAPI = createApiMock(
     "Breadbox API",
     "breadboxAPI",
     breadboxApiProxyTarget
-  ),
-}));
+  ) as Record<string, (...args: unknown[]) => unknown>;
+
+  return {
+    cached: (api: unknown) => api,
+
+    legacyPortalAPI: createApiMock(
+      "Portal API",
+      "legacyPortalAPI",
+      portalApiProxyTarget
+    ),
+
+    breadboxAPI,
+
+    // The persisted wrappers delegate to the mocked breadboxAPI so tests mock
+    // the underlying method exactly as they would for a direct call.
+    evaluateContextPersisted: (context: unknown) =>
+      breadboxAPI.evaluateContext(context),
+
+    getDimensionTypeIdentifiersPersisted: (dimTypeName: string) =>
+      breadboxAPI.getDimensionTypeIdentifiers(dimTypeName),
+  };
+});
 
 afterEach(() => {
   for (const key of Object.keys(portalApiProxyTarget)) {

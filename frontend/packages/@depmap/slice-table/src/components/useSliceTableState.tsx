@@ -531,21 +531,57 @@ export function useSliceTableState({
     ]
   );
 
+  const removeColumn = useCallback(
+    (column: { meta: { sliceQuery: SliceQuery } }) => {
+      setSlices((prev) =>
+        prev.filter(
+          (slice) => !areSliceQueriesEqual(slice, column.meta.sliceQuery)
+        )
+      );
+    },
+    []
+  );
+
   const extendedColumns = useMemo(() => {
     const OFFSET = columns.length - slices.length;
 
     const sliceColumns = columns.map((column, colIndex) => ({
       ...column,
+      // A column whose dataset was removed can never load again, so the fix
+      // goes right where the failure is shown, not only in the header menu.
+      // A transient failure deliberately does NOT get this: its column would
+      // come back on reload, and an inline remove would train users to
+      // delete it.
+      ...(column.meta.loadFailure === "dataset_removed" &&
+        column.meta.isEditable && {
+          header: () => (
+            <div>
+              {column.header()}
+              <button
+                type="button"
+                className="btn btn-default btn-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeColumn(column);
+                }}
+              >
+                Remove column
+              </button>
+            </div>
+          ),
+        }),
       meta: {
         ...column.meta,
         headerMenuItems: [
-          column.meta.isEditable && {
-            label: "View distribution",
-            icon: "glyphicon-eye-open",
-            onClick: () => handleClickEditColumn(column),
-          },
+          !column.meta.loadFailure &&
+            column.meta.isEditable && {
+              label: "View distribution",
+              icon: "glyphicon-eye-open",
+              onClick: () => handleClickEditColumn(column),
+            },
 
-          !column.meta.isEditable &&
+          !column.meta.loadFailure &&
+            !column.meta.isEditable &&
             column.meta.isViewable && {
               label: "View distribution",
               icon: "glyphicon-eye-open",
@@ -598,6 +634,14 @@ export function useSliceTableState({
             label: "Remove column",
             icon: "glyphicon-remove-sign",
             onClick: async () => {
+              // The confirmation exists to protect a working column. A
+              // column whose dataset no longer exists has nothing to lose,
+              // and its header already explains why it's being removed.
+              if (column.meta.loadFailure === "dataset_removed") {
+                removeColumn(column);
+                return;
+              }
+
               const confirmed = await getConfirmation({
                 message: (
                   <div>
@@ -610,14 +654,7 @@ export function useSliceTableState({
               });
 
               if (confirmed) {
-                setTimeout(() => {
-                  setSlices((prev) => {
-                    return prev.filter(
-                      (slice) =>
-                        !areSliceQueriesEqual(slice, column.meta.sliceQuery)
-                    );
-                  });
-                });
+                setTimeout(() => removeColumn(column));
               }
             },
           },
@@ -671,6 +708,7 @@ export function useSliceTableState({
     customColumnPlacement,
     handleClickEditColumn,
     handleClickViewColumn,
+    removeColumn,
     slices.length,
   ]);
 

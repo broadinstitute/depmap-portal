@@ -1,4 +1,4 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import { breadboxAPI, cached, evaluateContextPersisted } from "@depmap/api";
 import { DataExplorerContextV2 } from "@depmap/types";
 import { isSampleType } from "../../utils/misc";
 import { fetchDatasetIdentifiers } from "./identifiers";
@@ -253,7 +253,7 @@ async function resolveRankingIndex(
     return indexIds;
   }
 
-  const { ids } = await cached(breadboxAPI).evaluateContext(visibleFilter);
+  const { ids } = await evaluateContextPersisted(visibleFilter);
   const visible = new Set(ids);
   const narrowed = indexIds.filter((id) => visible.has(id));
 
@@ -308,7 +308,9 @@ export async function fetchExpansionMemberStats({
     visibleFilter
   );
 
-  const response = await cached(breadboxAPI).getMatrixDatasetData(dataset_id, {
+  const response = await cached(breadboxAPI, {
+    persist: true,
+  }).getMatrixDatasetData(dataset_id, {
     sample_identifier: "id",
     feature_identifier: "id",
     // Members sit on the slice axis, the cohort on the other one.

@@ -1,4 +1,8 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  getDimensionTypeIdentifiersPersisted,
+} from "@depmap/api";
 import { DataExplorerContextV2 } from "@depmap/types";
 import { capitalize, getDimensionTypeLabel, pluralize } from "./misc";
 
@@ -365,7 +369,7 @@ export async function resolveParentLabel(
     return selection;
   }
 
-  const identifiers = await cached(breadboxAPI).getDimensionTypeIdentifiers(
+  const identifiers = await getDimensionTypeIdentifiersPersisted(
     route.parentType
   );
 

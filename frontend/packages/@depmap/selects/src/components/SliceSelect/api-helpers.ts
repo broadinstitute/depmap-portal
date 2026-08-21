@@ -30,8 +30,12 @@ export async function fetchDatasetIdentifiers(
   const isFeature = dimType.axis === "feature";
 
   const result = isFeature
-    ? await cached(breadboxAPI).getDatasetFeatures(dataset_id)
-    : await cached(breadboxAPI).getDatasetSamples(dataset_id);
+    ? await cached(breadboxAPI, { persist: true }).getDatasetFeatures(
+        dataset_id
+      )
+    : await cached(breadboxAPI, { persist: true }).getDatasetSamples(
+        dataset_id
+      );
 
   if ("detail" in result) {
     throw new Error(JSON.stringify(result.detail));
@@ -45,7 +49,9 @@ export async function fetchDatasetIdentifiers(
  * Used by DatasetSpecificSliceSelect where the dataset's features are generic.
  */
 export async function fetchDatasetFeatures(dataset_id: string) {
-  const result = await cached(breadboxAPI).getDatasetFeatures(dataset_id);
+  const result = await cached(breadboxAPI, {
+    persist: true,
+  }).getDatasetFeatures(dataset_id);
 
   if ("detail" in result) {
     throw new Error(JSON.stringify(result.detail));

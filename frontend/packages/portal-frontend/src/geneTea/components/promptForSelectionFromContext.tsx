@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import {
   promptForValue,
   PromptComponentProps,
@@ -48,9 +48,7 @@ export default async function promptForSelectionFromContext(
           return;
         }
 
-        const { labels } = await cached(breadboxAPI).evaluateContext(
-          nextContext
-        );
+        const { labels } = await evaluateContextPersisted(nextContext);
         const contextLabels = new Set(labels);
 
         const found = [...allPossibleLabels].filter((label) => {
@@ -118,7 +116,7 @@ export default async function promptForSelectionFromContext(
     return null;
   }
 
-  const { labels } = await cached(breadboxAPI).evaluateContext(context);
+  const { labels } = await evaluateContextPersisted(context);
   const contextLabels = new Set(labels);
   const matchingLabels = [...allPossibleLabels].filter((label) => {
     return allPossibleLabels.has(label) && contextLabels.has(label);

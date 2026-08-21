@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import { getConfirmation, showInfoModal } from "@depmap/common-components";
 import { DepMap } from "@depmap/globals";
 import { DataExplorerContext, DataExplorerContextV2 } from "@depmap/types";
@@ -84,9 +84,7 @@ const handleDefaultCase = async (
     let success = false;
 
     try {
-      const result = await cached(breadboxAPI).evaluateContext(
-        convertedContext
-      );
+      const result = await evaluateContextPersisted(convertedContext);
       success = result.ids.length > 0;
     } catch (e) {
       success = false;

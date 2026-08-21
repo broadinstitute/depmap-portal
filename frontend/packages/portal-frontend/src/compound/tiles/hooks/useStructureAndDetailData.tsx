@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { breadboxAPI } from "@depmap/api";
 import { fetchMetadata } from "src/compound/fetchDataHelpers";
 import { compoundImageBaseURL, pythonQuote } from "src/compound/utils";
 
@@ -87,8 +86,6 @@ export default function useStructureAndDetailData(compoundId: string) {
       setIsLoading(true);
       setError(false);
       try {
-        const bbapi = breadboxAPI;
-
         const columnsOfInterest = [
           "EntrezIDsOfTargets",
           "TargetOrMechanism",
@@ -102,7 +99,6 @@ export default function useStructureAndDetailData(compoundId: string) {
           "gene",
           null,
           ["label"],
-          breadboxAPI,
           "id"
         );
 
@@ -111,7 +107,6 @@ export default function useStructureAndDetailData(compoundId: string) {
           "compound_v2",
           [compoundId],
           columnsOfInterest,
-          bbapi,
           "id"
         );
 

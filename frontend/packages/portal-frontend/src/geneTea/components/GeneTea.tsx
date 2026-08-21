@@ -7,7 +7,6 @@ import "src/common/styles/typeahead_fix.scss";
 import styles from "../styles/GeneTea.scss";
 import SearchOptionsContainer from "./SearchOptionsContainer";
 import { useGeneTeaFiltersContext } from "../context/GeneTeaFiltersContext";
-import { breadboxAPI } from "@depmap/api";
 import { fetchMetadata } from "../utils";
 import glossary from "src/geneTea/json/glossary.json";
 import Glossary from "src/common/components/Glossary";
@@ -30,7 +29,6 @@ function GeneTea() {
         "gene",
         null,
         ["label"],
-        breadboxAPI,
         "id"
       );
 

@@ -22,7 +22,6 @@ export function useGeneCorrelationData(
   featureId: string,
   featureName: string
 ) {
-  const bapi = cached(breadboxAPI);
   const [state, setState] = useState<CorrelationResult>({
     correlationAnalysisData: [],
     correlatedDatasets: [],
@@ -38,7 +37,7 @@ export function useGeneCorrelationData(
       try {
         setState((s) => ({ ...s, isLoading: true, hasError: false }));
 
-        const res = await bapi.fetchAssociations({
+        const res = await cached(breadboxAPI).fetchAssociations({
           dataset_id: selectedDataset.datasetId,
           identifier: String(featureId),
           identifier_type: "feature_id",
@@ -105,7 +104,7 @@ export function useGeneCorrelationData(
     return () => {
       isCurrent = false;
     };
-  }, [selectedDataset, featureId, featureName, bapi]);
+  }, [selectedDataset, featureId, featureName]);
 
   return { ...state };
 }
@@ -115,7 +114,6 @@ export function useCompoundCorrelationData(
   featureId: string,
   featureName: string
 ): CorrelationResult {
-  const bapi = cached(breadboxAPI);
   const [state, setState] = useState<CorrelationResult>({
     correlationAnalysisData: [],
     correlatedDatasets: [],
@@ -137,7 +135,9 @@ export function useCompoundCorrelationData(
         const compoundDoseToDose = new Map<string, string>();
         const fetchTasks: [string, string][] = [[featureId, aucId]];
 
-        const features = await bapi.getDatasetFeatures(doseId);
+        const features = await cached(breadboxAPI, {
+          persist: true,
+        }).getDatasetFeatures(doseId);
         features
           .filter((f: any) => f.id.includes(featureId))
           .forEach((f: any) => {
@@ -156,7 +156,7 @@ export function useCompoundCorrelationData(
 
         const allRes = await Promise.all(
           fetchTasks.map(([feature_id, dataset_id]) =>
-            bapi.fetchAssociations({
+            cached(breadboxAPI).fetchAssociations({
               dataset_id,
               identifier: feature_id,
               identifier_type: "feature_id",
@@ -233,7 +233,7 @@ export function useCompoundCorrelationData(
     return () => {
       isCurrent = false;
     };
-  }, [selectedDataset, featureId, featureName, bapi]);
+  }, [selectedDataset, featureId, featureName]);
 
   return state;
 }

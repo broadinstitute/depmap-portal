@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import {
   ContextSelectorV2,
   getDimensionTypeLabel,
@@ -49,7 +49,7 @@ const LoadFromGeneContextSection: React.FC = () => {
       return;
     }
 
-    const { labels } = await cached(breadboxAPI).evaluateContext(nextContext);
+    const { labels } = await evaluateContextPersisted(nextContext);
     const contextLabels = new Set(labels);
 
     handleSetGeneSymbolSelections(contextLabels);

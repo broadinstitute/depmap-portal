@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import { showInfoModal } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
 import { isV2Context } from "../../utils/context";
@@ -35,9 +35,7 @@ function DownloadTable({
         context = await convertContextV1toV2(context);
       }
 
-      const { ids, num_candidates } = await cached(breadboxAPI).evaluateContext(
-        context
-      );
+      const { ids, num_candidates } = await evaluateContextPersisted(context);
       setContextIds(new Set(ids));
       setTotal(num_candidates);
     })();

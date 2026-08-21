@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import {
   promptForValue,
   PromptComponentProps,
@@ -10,7 +10,7 @@ import { DepMap } from "@depmap/globals";
 import { DataExplorerContextV2, DataExplorerPlotResponse } from "@depmap/types";
 
 const resolveToIds = async (context: DataExplorerContextV2) => {
-  const result = await cached(breadboxAPI).evaluateContext(context);
+  const result = await evaluateContextPersisted(context);
   return result.ids;
 };
 
@@ -75,10 +75,7 @@ export default async function promptForSelectionFromContext(
 
         const hiddenByFilters = data.index_ids
           .map((id, i) => {
-            return [
-              id,
-              datasetIds.has(id) && filter ? filter.values[i] : true,
-            ];
+            return [id, datasetIds.has(id) && filter ? filter.values[i] : true];
           })
           .filter(([id]) => contextIds.has(id as string))
           .filter(([, visible]) => !visible).length;
