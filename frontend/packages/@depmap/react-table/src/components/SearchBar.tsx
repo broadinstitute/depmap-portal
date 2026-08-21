@@ -1,8 +1,20 @@
 import React, { useEffect, useState } from "react";
+import cx from "classnames";
 import ButtonWithTooltip from "./ButtonWithTooltip";
-import styles from "../../styles/SliceTable.scss";
+import styles from "../styles/SearchBar.scss";
 
-interface Props {
+// The input for a ReactTable rendered with `enableSearch`. It is deliberately
+// not part of ReactTable itself — the table has no control bar of its own, and
+// where the search input belongs is a layout question only the consumer can
+// answer. What it is NOT is a piece of any one consumer: the matching, the
+// match index and the next/previous navigation all live behind the table's
+// `tableRef` handle, so anything else rendering an input over that handle would
+// be reimplementing this component rather than writing its own.
+//
+// The `tableRef` type is the subset of ReactTable's handle this reads, rather
+// than the whole thing, so a caller can pass a ref typed for whichever methods
+// it needs.
+export interface SearchBarProps {
   tableRef: React.RefObject<{
     goToNextMatch: () => void;
     goToPreviousMatch: () => void;
@@ -12,9 +24,20 @@ interface Props {
     setSearchQuery: (query: string) => void;
     subscribeToSearch: (listener: () => void) => () => void;
   }>;
+  // Worth setting when the table searches one column rather than everything:
+  // "Find in table" then overstates what typing here will do.
+  placeholder?: string;
+  // Applied alongside the bar's own class. The empty-state input width is a
+  // custom property (--search-bar-input-width), so a consumer can size the bar
+  // to its container from here without restyling the input itself.
+  className?: string;
 }
 
-function SearchBar({ tableRef }: Props) {
+function SearchBar({
+  tableRef,
+  placeholder = "Find in table",
+  className = undefined,
+}: SearchBarProps) {
   // Local state for the input value
   const [searchQuery, setSearchQuery] = useState("");
   // Local state that syncs with tableRef (for match navigation display)
@@ -68,14 +91,14 @@ function SearchBar({ tableRef }: Props) {
   const showControls = searchQuery.length > 0;
 
   return (
-    <div className={styles.searchBar}>
+    <div className={cx(styles.searchBar, className)}>
       <i className="glyphicon glyphicon-search" />
       <input
         type="text"
         value={searchQuery}
         onChange={handleSearchChange}
         onKeyDown={handleKeyDown}
-        placeholder="Find in table"
+        placeholder={placeholder}
       />
       {showControls && (
         <>

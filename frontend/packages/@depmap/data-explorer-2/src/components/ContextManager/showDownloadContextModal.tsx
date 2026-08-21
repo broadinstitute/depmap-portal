@@ -10,10 +10,7 @@ import {
   uncapitalize,
 } from "../../utils/misc";
 import { convertContextV1toV2 } from "../../utils/context-converter";
-import {
-  PlotlyLoaderProvider,
-  usePlotlyLoader,
-} from "../../contexts/PlotlyLoaderContext";
+import { usePlotlyLoader } from "../../contexts/PlotlyLoaderContext";
 import styles from "../../styles/ContextManager.scss";
 
 function DownloadTable({
@@ -50,26 +47,25 @@ function DownloadTable({
   const entities = uncapitalize(pluralize(entity));
 
   return (
-    <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
-      <SliceTable
-        index_type_name={dimension_type}
-        downloadFilename={contextName}
-        implicitFilter={({ id }) => Boolean(contextIds?.has(id))}
-        isLoading={!contextIds}
-        renderCustomControls={() => {
-          if (!contextIds) {
-            return null;
-          }
+    <SliceTable
+      PlotlyLoader={PlotlyLoader}
+      index_type_name={dimension_type}
+      downloadFilename={contextName}
+      implicitFilter={({ id }) => Boolean(contextIds?.has(id))}
+      isLoading={!contextIds}
+      renderCustomControls={() => {
+        if (!contextIds) {
+          return null;
+        }
 
-          return (
-            <div>
-              Showing <b>{contextIds.size.toLocaleString()}</b> matches of{" "}
-              {total.toLocaleString()} {entities}
-            </div>
-          );
-        }}
-      />
-    </PlotlyLoaderProvider>
+        return (
+          <div>
+            Showing <b>{contextIds.size.toLocaleString()}</b> matches of{" "}
+            {total.toLocaleString()} {entities}
+          </div>
+        );
+      }}
+    />
   );
 }
 

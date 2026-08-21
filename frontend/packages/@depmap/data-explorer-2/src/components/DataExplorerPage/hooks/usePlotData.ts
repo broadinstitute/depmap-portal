@@ -138,5 +138,24 @@ export default function usePlotData(plotConfig: DataExplorerPlotConfig | null) {
     })();
   }, [plotConfig, fetchedPlotConfig]);
 
-  return { data, linreg_by_group, fetchedPlotConfig, hadError, errorMessage };
+  // The stale-content-while-fetching behavior above only works when the old
+  // response is shape-compatible with the incoming config. Toggling an
+  // expansion on or off breaks that: a config with facet_by/color_by
+  // "expansion" rendered against a stale non-expanded response throws in
+  // findCategoricalSlice (mode "expansion" requires data.expansions). That
+  // throw happens during the very render triggered by the dispatch — before
+  // any effect could clear the data — so the mask must be computed here at
+  // render time, not via setData(null) in the fetch effect.
+  const isStaleDataCompatible =
+    !fetchedPlotConfig ||
+    !plotConfig ||
+    "expand_by" in fetchedPlotConfig === "expand_by" in plotConfig;
+
+  return {
+    data: isStaleDataCompatible ? data : null,
+    linreg_by_group,
+    fetchedPlotConfig,
+    hadError,
+    errorMessage,
+  };
 }

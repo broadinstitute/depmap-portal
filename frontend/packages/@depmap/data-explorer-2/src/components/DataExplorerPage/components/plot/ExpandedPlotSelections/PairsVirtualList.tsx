@@ -7,9 +7,10 @@ import styles from "../../../styles/DataExplorer2.scss";
 // Presentational sibling of PlotSelections/LabelsVirtualList for expanded
 // plots. The list stays flat and fixed-item-size (so virtualization stays
 // trivial), but rows come in two kinds: a `header` row per selected index
-// entity (model) and a `member` row per selected expansion (transcript)
-// beneath it. Members are indented with a margin so the flat list reads as a
-// grouped one. ExpandedPlotSelections builds the rows; this just renders them.
+// entity and a `member` row per selected expansion member beneath it. Members
+// are indented with a margin so the flat list reads as a grouped one.
+// ExpandedPlotSelections builds the rows; this just renders them, so nothing
+// here needs to know which dimension types the pair is made of.
 //
 // `key` carries a stable id per row (entityRefKey for members, a header-
 // prefixed index id for headers) so React keys survive reordering and never

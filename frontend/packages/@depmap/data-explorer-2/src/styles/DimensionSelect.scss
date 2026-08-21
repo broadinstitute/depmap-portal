@@ -23,8 +23,47 @@
   }
 }
 
+// Grid mode (opt-in via `asGridRows`). The cells below become rows of a grid
+// an ANCESTOR owns, so a second DimensionSelect beside this one shares those
+// rows and the two line up control for control.
+//
+// `display: contents` because this element must not be a box: the cells have
+// to be children of the per-axis subgrid (`.axisColumn`), not of a box nested
+// inside it, or each axis would size its own rows independently and the whole
+// point would be lost. Selectors still match through it, so the spacing rules
+// below apply as normal.
+.gridRows {
+  display: contents;
+
+  // Deliberately NOT `row-gap` on the ancestor. A gap applies at every row
+  // boundary, including the boundaries of rows that collapsed to zero height
+  // because neither axis shows that control — which would put back exactly the
+  // dead space this is meant to remove. Spacing stays on the cells, where an
+  // empty one can opt out.
+  & > div:not(:first-child) {
+    margin-top: 10px;
+
+    // A cell whose control is hidden renders nothing. It still occupies its
+    // row — that is the entire point, since the opposite axis may be showing
+    // something there — but it must not contribute spacing of its own.
+    &:empty {
+      margin-top: 0;
+    }
+
+    &:not(:has(label)) {
+      margin-top: 0;
+    }
+  }
+}
+
+// One row of the shared grid. Nothing to style; it exists so that a hidden
+// control still holds its place.
+.gridRow {
+  min-width: 0;
+}
+
 .AxisTypeToggle {
-  margin: 10px;
+  margin: 0 10px;
 
   label {
     margin-top: 0;
@@ -34,6 +73,12 @@
   button {
     border-color: #999;
   }
+}
+
+.AggregateOrExpandToggle {
+  @extend .AxisTypeToggle;
+  margin-left: 0;
+  margin-right: -5px;
 }
 
 .unblockable {
@@ -150,5 +195,18 @@
       top: -0.5px;
       left: -5px;
     }
+  }
+}
+
+// The share of a context a data version actually contains, shown beside its
+// name in the menu. Muted and lighter than the label: it explains the ordering
+// without competing with the thing being named.
+.coverageNote {
+  color: #777;
+  font-size: 0.85em;
+  white-space: nowrap;
+
+  :global(.data-version-select__option--is-selected) & {
+    color: rgba(255, 255, 255, 0.8);
   }
 }

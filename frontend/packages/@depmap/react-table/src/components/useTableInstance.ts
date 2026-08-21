@@ -6,7 +6,6 @@ import React, {
   useEffect,
 } from "react";
 import {
-  ColumnDef,
   RowData,
   SortingState,
   RowSelectionState,
@@ -14,11 +13,22 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import type { ColumnDef } from "../types";
 import { useVirtualizer } from "@tanstack/react-virtual";
+import styles from "../styles/ReactTable.scss";
 
 type SelectionOptions<TData> = {
-  enableRowSelection?: boolean;
+  // A predicate makes selection per-row: TanStack drives row.getCanSelect()
+  // from it, which the checkbox cell already honors via `disabled`. Use it for
+  // rows that exist to be read but not chosen.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  enableRowSelection?: boolean | ((row: any) => boolean);
   enableMultiRowSelection?: boolean;
+  // Ceiling on what "select all" will take. Enforced here because only the
+  // table knows the order rows are currently displayed in — a caller trimming
+  // afterwards can only guess, and guessing produces a scattered selection
+  // nobody can account for.
+  maxRowSelection?: number;
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: (
     updater: RowSelectionState | ((old: RowSelectionState) => RowSelectionState)
@@ -33,7 +43,16 @@ type SelectionOptions<TData> = {
       | ((old: Record<string, boolean>) => Record<string, boolean>)
   ) => void;
   enableSearch?: boolean;
+  // Restricts search to these columns. Omitted, every visible column is
+  // searched — see the `visibleColumns` comment in searchMatches for when
+  // narrowing is worth it.
+  searchableColumnIds?: string[];
   rowFilter?: (row: TData) => boolean;
+  // Which column the table opens sorted by. Seeds the sorting state rather
+  // than replacing `defaultSort`: the two answer different questions, and
+  // supplying this deliberately suppresses `defaultSort`, since a real column
+  // sort is what the header indicator claims is in effect.
+  initialSorting?: SortingState;
 };
 
 type SearchMatchInfo = {
@@ -56,6 +75,7 @@ export function useTableInstance<TData extends RowData>(
   const {
     enableRowSelection = false,
     enableMultiRowSelection = true,
+    maxRowSelection = undefined,
     rowSelection: controlledRowSelection,
     onRowSelectionChange,
     getRowId,
@@ -64,10 +84,12 @@ export function useTableInstance<TData extends RowData>(
     columnVisibility: controlledColumnVisibility,
     onColumnVisibilityChange,
     enableSearch = false,
+    searchableColumnIds = undefined,
     rowFilter = undefined,
+    initialSorting = undefined,
   } = selectionOptions;
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(initialSorting ?? []);
   const [
     internalRowSelection,
     setInternalRowSelection,
@@ -206,51 +228,111 @@ export function useTableInstance<TData extends RowData>(
               const visibleRows = displayRowsRef.current;
               const selectionState = table.getState().rowSelection;
 
+              // Rows that can't be selected are excluded from every part of
+              // this: they must not be selected by "select all", and they must
+              // not hold the checkbox in an indeterminate state forever by
+              // being permanently unselected.
+              const selectableRows = visibleRows.filter((row: any) =>
+                row.getCanSelect()
+              );
+
               const allVisibleSelected =
-                visibleRows.length > 0 &&
-                visibleRows.every((row: any) => selectionState[row.id]);
-              const someVisibleSelected =
-                !allVisibleSelected &&
-                visibleRows.some((row: any) => selectionState[row.id]);
+                selectableRows.length > 0 &&
+                selectableRows.every((row: any) => selectionState[row.id]);
+              const someVisibleSelected = selectableRows.some(
+                (row: any) => selectionState[row.id]
+              );
 
-              return React.createElement("input", {
-                type: "checkbox",
-                checked: allVisibleSelected,
-                ref: (input: HTMLInputElement | null) => {
-                  if (input) {
-                    // eslint-disable-next-line no-param-reassign
-                    input.indeterminate = someVisibleSelected;
-                  }
+              // Clears whenever anything is selected, rather than only when
+              // everything is. Keyed on "all selected" it was possible to get
+              // stuck: with a ceiling in play, or any partial selection, the
+              // click kept trying to select more and there was no way back to
+              // an empty table.
+              //
+              // Rows that aren't currently visible keep their state either way,
+              // so a search or filter scopes the action to what the user can
+              // see.
+              const toggleAllVisible = () => {
+                const nextSelection = { ...selectionState };
+
+                if (someVisibleSelected) {
+                  selectableRows.forEach((row: any) => {
+                    delete nextSelection[row.id];
+                  });
+                } else {
+                  // Taken from the top of the display order, so the result is
+                  // whatever the table is showing first — sort the column you
+                  // care about and select-all follows it.
+                  const takeable =
+                    maxRowSelection == null
+                      ? selectableRows
+                      : selectableRows.slice(0, maxRowSelection);
+
+                  takeable.forEach((row: any) => {
+                    nextSelection[row.id] = true;
+                  });
+                }
+
+                handleRowSelectionChange(nextSelection);
+              };
+
+              return React.createElement(
+                "span",
+                {
+                  className: styles.selectCell,
+                  role: "presentation",
+                  onClick: () => toggleAllVisible(),
                 },
-                onChange: () => {
-                  // Toggle: if all visible are selected, deselect them;
-                  // otherwise select all visible. Preserve selection state
-                  // of non-visible rows.
-                  const nextSelection = { ...selectionState };
-
-                  if (allVisibleSelected) {
-                    visibleRows.forEach((row: any) => {
-                      delete nextSelection[row.id];
-                    });
-                  } else {
-                    visibleRows.forEach((row: any) => {
-                      nextSelection[row.id] = true;
-                    });
-                  }
-
-                  handleRowSelectionChange(nextSelection);
-                },
-              });
+                React.createElement("input", {
+                  type: "checkbox",
+                  checked: allVisibleSelected,
+                  ref: (input: HTMLInputElement | null) => {
+                    if (input) {
+                      // eslint-disable-next-line no-param-reassign
+                      input.indeterminate =
+                        someVisibleSelected && !allVisibleSelected;
+                    }
+                  },
+                  onChange: () => toggleAllVisible(),
+                  onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                })
+              );
             },
             cell: ({ row }: { row: any }) => {
-              return React.createElement("input", {
-                type: enableMultiRowSelection ? "checkbox" : "radio",
-                name: enableMultiRowSelection ? undefined : "row-selection",
-                checked: row.getIsSelected(),
-                disabled: !row.getCanSelect(),
-                onChange: row.getToggleSelectedHandler(),
-                onClick: (e: React.MouseEvent) => e.stopPropagation(),
-              });
+              // A span, deliberately not a label. A label wrapping its input
+              // looks like the obvious way to make the whole cell a target,
+              // and it double-toggles: clicking the input fires its own
+              // change, then the browser's label activation forwards a second
+              // click to it. stopPropagation on the input can't prevent that —
+              // label forwarding is not propagation. Two toggles cancel out, so
+              // the selection never changes, and because React then re-renders
+              // with unchanged state it never corrects the DOM node the browser
+              // already flipped: the box sits visibly wrong and every further
+              // click cancels out too. Clicking the label's padding worked
+              // fine, which is what made it look intermittent.
+              //
+              // A span has no activation behavior, so stopPropagation on the
+              // input really does stop the wrapper from firing as well.
+              return React.createElement(
+                "span",
+                {
+                  className: styles.selectCell,
+                  role: "presentation",
+                  onClick: () => {
+                    if (row.getCanSelect()) {
+                      row.toggleSelected();
+                    }
+                  },
+                },
+                React.createElement("input", {
+                  type: enableMultiRowSelection ? "checkbox" : "radio",
+                  name: enableMultiRowSelection ? undefined : "row-selection",
+                  checked: row.getIsSelected(),
+                  disabled: !row.getCanSelect(),
+                  onChange: row.getToggleSelectedHandler(),
+                  onClick: (e: React.MouseEvent) => e.stopPropagation(),
+                })
+              );
             },
             size: 38,
             minSize: 38,
@@ -262,14 +344,18 @@ export function useTableInstance<TData extends RowData>(
         ]
       : columns;
 
-    // Ensure all columns have a default size if not specified
+    // A column with no stated size is auto-sized. Recorded here, where the
+    // answer is still known — filling in the default first and then reading
+    // that value back as "unset" is what made 150 a trap.
     const withDefaults = baseColumns.map((col) => {
       if (col.size !== undefined) {
         return col;
       }
+
       return {
         ...col,
-        size: 150, // default size
+        size: 150, // starting width, shared out from here
+        autoSize: true,
       };
     });
 
@@ -278,6 +364,7 @@ export function useTableInstance<TData extends RowData>(
     columns,
     enableRowSelection,
     enableMultiRowSelection,
+    maxRowSelection,
     handleRowSelectionChange,
   ]);
 
@@ -458,10 +545,22 @@ export function useTableInstance<TData extends RowData>(
     const matches: SearchMatchInfo[] = [];
 
     // Get visible column IDs and their accessors for direct data access
-    // This avoids the expensive row.getVisibleCells() call
+    // This avoids the expensive row.getVisibleCells() call.
+    //
+    // `searchableColumnIds` narrows it further. Searching everything is the
+    // right default for a table of mostly text, but a table whose other columns
+    // are computed statistics matches on them in ways nobody typed for — "2" in
+    // a score column, a stray digit inside a p-value — and each of those is a
+    // match the user has to step past. Naming the columns worth searching costs
+    // one prop and removes the whole class of them.
+    const searchable = searchableColumnIds
+      ? new Set(searchableColumnIds)
+      : null;
+
     const visibleColumns = table
       .getVisibleLeafColumns()
       .filter((col) => col.id !== "select")
+      .filter((col) => !searchable || searchable.has(col.id))
       .map((col) => ({
         id: col.id,
         accessorFn: col.accessorFn,
@@ -495,7 +594,14 @@ export function useTableInstance<TData extends RowData>(
     });
 
     return matches;
-  }, [enableSearch, searchQuery, getSearchableText, filteredRows, table]);
+  }, [
+    enableSearch,
+    searchableColumnIds,
+    searchQuery,
+    getSearchableText,
+    filteredRows,
+    table,
+  ]);
 
   // Get the set of row IDs that have matches (for filtering)
   const matchingRowIds = useMemo(() => {
@@ -547,7 +653,7 @@ export function useTableInstance<TData extends RowData>(
 
   // Calculate sticky columns information
   const stickyColumnsInfo = useMemo(() => {
-    const hasSelectColumn = enableRowSelection;
+    const hasSelectColumn = Boolean(enableRowSelection);
     const selectColumn = hasSelectColumn ? table.getColumn("select") : null;
     const selectColumnWidth = selectColumn ? selectColumn.getSize() : 0;
 
@@ -573,7 +679,7 @@ export function useTableInstance<TData extends RowData>(
 
       // Determine which column index is the sticky first data column
       // so we can exclude it from auto-sizing when sticky is enabled.
-      const hasSelectColumn = enableRowSelection;
+      const hasSelectColumn = Boolean(enableRowSelection);
       let stickyFirstDataColIndex = -1;
 
       if (enableStickyFirstColumn) {
@@ -596,7 +702,7 @@ export function useTableInstance<TData extends RowData>(
         const isVisible = table.getColumn(colId)?.getIsVisible() ?? true;
         if (!isVisible) return;
 
-        const hasExplicitSize = col.size !== undefined && col.size !== 150; // 150 is our default
+        const hasExplicitSize = !col.autoSize;
         const wasManuallyResized = manuallyResizedColumns.has(colId);
 
         // The select column always has an explicit size (38px)
@@ -659,7 +765,7 @@ export function useTableInstance<TData extends RowData>(
         const isVisible = table.getColumn(colId)?.getIsVisible() ?? true;
         if (!isVisible) return;
 
-        const hasExplicitSize = col.size !== undefined && col.size !== 150;
+        const hasExplicitSize = !col.autoSize;
         const wasManuallyResized = manuallyResizedColumns.has(colId);
 
         // Sticky first data column is excluded from auto-sizing
@@ -671,9 +777,18 @@ export function useTableInstance<TData extends RowData>(
         }
       });
 
-      // Apply the new sizing if we have changes
+      // "We have changes" has to mean the values differ, not merely that some
+      // column is auto-sizeable. Writing an identical sizing object still
+      // re-renders, which is enough to keep a loop alive once anything starts
+      // one.
       if (Object.keys(newSizing).length > 0) {
-        setColumnSizing((prev) => ({ ...prev, ...newSizing }));
+        setColumnSizing((prev) => {
+          const changed = Object.keys(newSizing).some(
+            (colId) => prev[colId] !== newSizing[colId]
+          );
+
+          return changed ? { ...prev, ...newSizing } : prev;
+        });
       }
     },
     [
@@ -686,102 +801,83 @@ export function useTableInstance<TData extends RowData>(
     ]
   );
 
-  // Set up ResizeObserver to watch container width changes
+  // Set up ResizeObserver to watch container width changes.
+  //
+  // Runs once. It used to depend on `containerWidth` — the value it sets —
+  // while claiming in a comment to run only on mount, and that was an infinite
+  // loop waiting for a trigger. Re-running tears the observer down and rebuilds
+  // it, `observe()` fires its callback synchronously, and the width it reports
+  // came from a *different element* than the one the initial measurement used:
+  // the two searches below had diverged, one accepting any element whose
+  // `gridColumn` isn't "auto" (which is nearly all of them, since non-grid
+  // children compute to "auto / auto"), the other only elements with a
+  // non-auto width. Two answers, each re-triggering the other.
+  //
+  // So the element is chosen once and both readings come from it.
   useEffect(() => {
     if (!containerRef.current) {
       return () => {};
     }
 
-    // Initial width calculation
-    const calculateInitialWidth = () => {
-      if (!containerRef.current) return;
+    // The nearest ancestor whose width is imposed rather than derived from its
+    // contents. Measuring anything content-sized would feed column widths back
+    // into the container width they are computed from.
+    const findWidthReference = () => {
+      let element = containerRef.current?.parentElement;
 
-      // Walk up the DOM to find a stable width reference
-      let element = containerRef.current.parentElement;
-      let width = 0;
-
-      // Try to find a parent with explicit width or use viewport as fallback
-      while (element && !width) {
+      while (element) {
         const computedStyle = getComputedStyle(element);
-        const elementWidth = element.clientWidth;
 
-        // If this element has explicit width or is the body, use it
         if (
           computedStyle.width !== "auto" ||
           element.tagName === "BODY" ||
           !element.parentElement
         ) {
-          width = elementWidth;
-          break;
+          return element;
         }
+
         element = element.parentElement;
       }
 
-      // Fallback to viewport width if we can't find anything
-      if (!width) {
-        width = window.innerWidth - 32; // Account for some padding
-      }
-
-      setContainerWidth(width);
+      return null;
     };
 
-    // Set up ResizeObserver to watch for container size changes
-    const setupResizeObserver = () => {
-      if (typeof ResizeObserver === "undefined") {
-        // Fallback for browsers without ResizeObserver support
-        calculateInitialWidth();
-        return;
+    const reference = findWidthReference();
+
+    // Idempotent by construction: an unchanged width must not produce a state
+    // write, or every measurement becomes a re-render.
+    const applyWidth = (width: number) => {
+      if (width > 0) {
+        setContainerWidth((prev) => (prev === width ? prev : width));
       }
-
-      resizeObserverRef.current = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const newWidth = entry.contentRect.width;
-          if (newWidth > 0 && newWidth !== containerWidth) {
-            setContainerWidth(newWidth);
-          }
-        }
-      });
-
-      // Find the parent element to observe
-      let elementToObserve = containerRef.current?.parentElement;
-
-      // Walk up to find a suitable parent container to observe
-      while (elementToObserve) {
-        const computedStyle = getComputedStyle(elementToObserve);
-
-        // Observe this element if it has explicit dimensions or is a flex/grid child
-        if (
-          computedStyle.width !== "auto" ||
-          computedStyle.flexGrow !== "0" ||
-          computedStyle.gridColumn !== "auto" ||
-          elementToObserve.tagName === "BODY"
-        ) {
-          resizeObserverRef.current.observe(elementToObserve);
-          break;
-        }
-
-        elementToObserve = elementToObserve.parentElement;
-      }
-
-      // If we couldn't find a suitable parent, observe the container itself
-      if (!elementToObserve && containerRef.current) {
-        resizeObserverRef.current.observe(containerRef.current);
-      }
-
-      // Set initial width
-      calculateInitialWidth();
     };
 
-    setupResizeObserver();
+    if (typeof ResizeObserver === "undefined") {
+      // No observer available; take a single reading and leave it.
+      applyWidth(reference?.clientWidth || window.innerWidth - 32);
+      return () => {};
+    }
 
-    // Cleanup function
+    resizeObserverRef.current = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        applyWidth(entry.contentRect.width);
+      }
+    });
+
+    // Falling back to the container itself is a last resort: it is the one
+    // element whose width the column sizing can influence.
+    resizeObserverRef.current.observe(reference ?? containerRef.current);
+
+    applyWidth(reference?.clientWidth || window.innerWidth - 32);
+
     return () => {
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
         resizeObserverRef.current = null;
       }
     };
-  }, [containerWidth]); // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-sizing effect - runs when columns are added OR when container width changes
   useEffect(() => {
@@ -797,9 +893,8 @@ export function useTableInstance<TData extends RowData>(
       (containerWidth > 0 &&
         enhancedColumns.some((col) => {
           const colId = getColumnId(col);
-          const hasExplicitSize = col.size !== undefined && col.size !== 150;
           const wasManuallyResized = manuallyResizedColumns.has(colId);
-          return !hasExplicitSize && !wasManuallyResized;
+          return Boolean(col.autoSize) && !wasManuallyResized;
         }));
 
     if (shouldRedistribute) {
@@ -828,9 +923,9 @@ export function useTableInstance<TData extends RowData>(
     setSorting([]);
   }, []);
 
-  // Track the hover-to-scroll debounce timer so it can be cancelled.
+  // Track the hover-to-scroll debounce timer so it can be canceled.
   const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track an in-progress scroll animation so it can be cancelled.
+  // Track an in-progress scroll animation so it can be canceled.
   const scrollAnimationRef = useRef<number | null>(null);
 
   /**

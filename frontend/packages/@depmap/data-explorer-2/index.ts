@@ -18,6 +18,15 @@ export {
   usePlotlyLoader,
 } from "./src/contexts/PlotlyLoaderContext";
 
+// Shared by every slice table that lets someone curate its metadata columns, so
+// that reopening one doesn't mean re-picking them. See the module for why the
+// scope is part of the key.
+export {
+  loadRememberedColumns,
+  rememberColumns,
+} from "./src/utils/rememberedTableColumns";
+export type { RememberedColumnsScope } from "./src/utils/rememberedTableColumns";
+
 export {
   contextsMatch,
   initializeDevContexts,

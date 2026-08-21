@@ -8,12 +8,14 @@ import {
   entityRefKey,
   pairRef,
 } from "@depmap/types";
+import { pluralize } from "../../../../../utils/misc";
 import { SectionStackContext } from "../../SectionStack";
 import HelpTip from "../../HelpTip";
 import PairsVirtualList, { SelectionRow } from "./PairsVirtualList";
 import ExpandedSelectionsTable, {
   SelectionPair,
 } from "./ExpandedSelectionsTable";
+import { resolvePairLabels } from "./pairLabels";
 import styles from "../../../styles/DataExplorer2.scss";
 
 // ExpandedPlotSelections
@@ -21,9 +23,15 @@ import styles from "../../../styles/DataExplorer2.scss";
 // The selection panel for expanded plots — the sibling of PlotSelections
 // that the plot wrappers dispatch to when the response carries an
 // expansion. Where PlotSelections lists one row per selected *index*
-// entity (a model), this groups the selected *points* under their index
-// entity: a header row per model, with its selected expansions
-// (transcripts) listed and indented beneath it.
+// entity, this groups the selected *points* under theirs: a header row per
+// index entity, with its selected expansion members listed and indented
+// beneath it.
+//
+// Neither half is a fixed dimension type. Both are named from the response
+// (index_display_name, and the expansion's own display_name), so the panel
+// reads "Cell Line"/"Transcript" for one plot and "Compound"/"Dose" for
+// another. It used to say Model and Transcript outright, in its field names,
+// its column headers, its modal title and its CSV filename.
 //
 // Why a separate component rather than a flag on PlotSelections:
 //   - It consumes the selection as an EntityRefSet directly (pairs), not
@@ -66,19 +74,21 @@ function ExpandedPlotSelections({
 }: Props) {
   const { sectionHeights } = useContext(SectionStackContext);
 
-  const pairs = useMemo<SelectionPair[]>(() => {
-    const expansions = (data as { expansions?: DataExplorerExpansion[] } | null)
-      ?.expansions;
+  // MVP "at most one expansion": the points index is expansions[0], parallel
+  // to index_ids / index_labels. Cast because `expansions` belongs to
+  // DataExplorerExpandedPlotResponse and the prop is typed as the base
+  // response; hoisted out of the pairs memo below so the labels can name it
+  // too, rather than casting twice.
+  const expansion = (data as { expansions?: DataExplorerExpansion[] } | null)
+    ?.expansions?.[0];
 
-    if (!data || !selection || !expansions || expansions.length === 0) {
+  const pairs = useMemo<SelectionPair[]>(() => {
+    if (!data || !selection || !expansion) {
       return [];
     }
 
-    // MVP "at most one expansion": the points index is expansions[0],
-    // parallel to index_ids / index_labels. Walk points (not the selection
-    // set) so rows come out in the plot's own point order, matching how
-    // PlotSelections derives its list.
-    const expansion = expansions[0];
+    // Walk points (not the selection set) so rows come out in the plot's own
+    // point order, matching how PlotSelections derives its list.
     const out: SelectionPair[] = [];
 
     for (let i = 0; i < data.index_ids.length; i += 1) {
@@ -86,38 +96,38 @@ function ExpandedPlotSelections({
 
       if (selection.has(ref)) {
         out.push({
-          modelId: data.index_ids[i],
-          modelLabel: data.index_labels[i],
-          transcriptId: expansion.ids[i],
-          transcriptLabel: expansion.labels[i],
+          indexId: data.index_ids[i],
+          indexLabel: data.index_labels[i],
+          memberId: expansion.ids[i],
+          memberLabel: expansion.labels[i],
           key: entityRefKey(ref),
         });
       }
     }
 
     return out;
-  }, [data, selection]);
+  }, [data, selection, expansion]);
 
   const rows = useMemo<SelectionRow[]>(() => {
-    // Group the flat pairs by index id (unique — two models can share a
-    // label) and display the label; the list carries a header row per model
-    // followed by its selected expansions as indented members.
+    // Group the flat pairs by index id (unique — two entities can share a
+    // label) and display the label; the list carries a header row per index
+    // entity followed by its selected expansion members, indented.
     const groups = new Map<
       string,
       { label: string; members: SelectionRow[] }
     >();
 
     pairs.forEach((pair) => {
-      let group = groups.get(pair.modelId);
+      let group = groups.get(pair.indexId);
 
       if (!group) {
-        group = { label: pair.modelLabel, members: [] };
-        groups.set(pair.modelId, group);
+        group = { label: pair.indexLabel, members: [] };
+        groups.set(pair.indexId, group);
       }
 
       group.members.push({
         kind: "member",
-        label: pair.transcriptLabel,
+        label: pair.memberLabel,
         key: pair.key,
       });
     });
@@ -139,13 +149,19 @@ function ExpandedPlotSelections({
       ? sectionHeights["Plot Selections"] - SECTION_HEIGHT_WITHOUT_LIST
       : Infinity;
 
-  // "Show Table" opens a (model, transcript) table of the selected pairs,
-  // with a CSV download. Pair selections don't support the usual
-  // PlotSelections operations, so this is a read-only view for now.
+  // What this plot calls the two halves of a pair — see resolvePairLabels.
+  const labels = useMemo(() => resolvePairLabels(data, expansion), [
+    data,
+    expansion,
+  ]);
+
+  // "Show Table" opens a two-column table of the selected pairs, with a CSV
+  // download. Pair selections don't support the usual PlotSelections
+  // operations, so this is a read-only view for now.
   const onClickShowTable = () => {
     showInfoModal({
-      title: "Selected transcripts",
-      content: <ExpandedSelectionsTable pairs={pairs} />,
+      title: `Selected ${pluralize(labels.member).toLowerCase()}`,
+      content: <ExpandedSelectionsTable pairs={pairs} labels={labels} />,
     });
   };
 

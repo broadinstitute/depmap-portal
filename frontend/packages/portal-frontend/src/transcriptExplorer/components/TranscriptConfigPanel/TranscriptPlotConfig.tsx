@@ -11,10 +11,7 @@ import {
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
 import { isCompletePlot } from "@depmap/data-explorer-2/src/components/DataExplorerPage/validation";
-import {
-  DEFAULT_EXPANSION_LIMIT,
-  PlotConfigReducerAction,
-} from "@depmap/data-explorer-2/src/components/DataExplorerPage/reducers/plotConfigReducer";
+import { PlotConfigReducerAction } from "@depmap/data-explorer-2/src/components/DataExplorerPage/reducers/plotConfigReducer";
 import PlotTypeSelect from "./PlotTypeSelect";
 import TranscriptExpansionSelect from "./TranscriptExpansionSelect";
 import styles from "../../styles/TranscriptPlotConfig.scss";
@@ -90,8 +87,6 @@ function TranscriptPlotConfig({
 }: Props) {
   const expansionAxis =
     plot.dimensions?.y?.aggregation === "expansion" ? "y" : "x";
-
-  const expansion = plot.expand_by?.[0];
 
   return (
     <div className={styles.TranscriptPlotConfig}>
@@ -185,8 +180,6 @@ function TranscriptPlotConfig({
                       geneSymbol={getGeneSymbol(plot, key)}
                       expansionAxis={expansionAxis}
                       dimension={dimension}
-                      limit={expansion?.limit ?? DEFAULT_EXPANSION_LIMIT}
-                      offset={expansion?.offset ?? 0}
                       dispatch={dispatch}
                     />
                   ) : (
