@@ -109,16 +109,6 @@ async function resolveNextState(
     !contextsMatch(context || null, changes.context || null)
   ) {
     context = changes.context || undefined;
-
-    // See if we can infer a Data Type from a feature/sample id alone.
-    if (!dataType && axis_type === "raw_slice") {
-      // FIXME: Figure out how to calcuate this from the selected `context`.
-      const enabledDataTypes = new Set<string>();
-
-      if (enabledDataTypes.size === 1) {
-        dataType = [...enabledDataTypes][0];
-      }
-    }
   }
 
   if ("dataset_id" in changes && dataset_id !== changes.dataset_id) {
@@ -174,7 +164,17 @@ async function resolveNextState(
     slice_type !== pd.slice_type ||
     context !== pd.context;
 
-  if (!dataset_id && hasAllRequiredProps && requiredPropChanged) {
+  // `"context" in changes` also qualifies (not only requiredPropChanged): a
+  // context created in the Context Builder is written into the plot config
+  // directly and synced into this state verbatim, so by the time it is
+  // re-asserted through update() it is no longer a *change* — but it still
+  // deserves the same default data version a context picked in the
+  // ContextSelect gets.
+  if (
+    !dataset_id &&
+    hasAllRequiredProps &&
+    (requiredPropChanged || "context" in changes)
+  ) {
     const defaultDatasetOption = options.dataVersionOptions.find(
       (d) => d.isDefault
     );

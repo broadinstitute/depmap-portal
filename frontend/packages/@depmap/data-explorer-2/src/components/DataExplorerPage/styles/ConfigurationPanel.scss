@@ -24,21 +24,51 @@
   border-color: #ccc;
 }
 
+// The two axes are columns, but their CONTROLS are rows shared across both, so
+// that a control only one axis shows (the aggregation method, the expand
+// toggle, the "Save as Context" button) makes its row taller on both sides and
+// everything below it stays level. Each axis opts into those rows with
+// `grid-template-rows: subgrid` — see `.gridRows` in DimensionSelect.scss.
+//
+// This replaces a hand-computed 58px gap that only ever accounted for the
+// aggregation select. The button in particular can't be compensated for that
+// way: whether it shows depends on whether the context happens to be saved.
+//
+// Row count is deliberately generous. Rows nothing occupies collapse to zero
+// height and cost nothing (there is no row-gap), so overshooting is free while
+// undershooting silently drops controls into an implicit final row.
+// `grid-template-columns` is set inline from the number of axes actually
+// rendered — a 1D plot has only an x, and a hardcoded two-column template
+// would reserve half the width for a column that never gets filled.
 .dimensions {
-  display: flex;
-  gap: 16px;
+  display: grid;
+  grid-template-rows: repeat(12, auto);
+  column-gap: 16px;
   margin-bottom: 4px;
+  align-items: start;
 }
 
-.filterAndMax {
-  display: flex;
-  gap: 14px;
+// One grid item per axis, and the ONLY item each axis contributes — its
+// contents reach the shared rows through subgrid rather than by being
+// grid items themselves.
+//
+// That distinction is load-bearing. An earlier version made the header and the
+// selects separate items of `.dimensions`; because the selects span
+// `1 / -1` they claimed row 1 too, collided with the header, and
+// auto-placement pushed each axis into the next column — x overlapping y, and
+// y into an implicit third column. With one item per axis there is nothing to
+// place ambiguously.
+.axisColumn {
+  display: grid;
+  grid-row: 1 / -1;
+  grid-template-rows: subgrid;
+  min-width: 0;
 }
 
-.dimensionWithGap {
-  & > div:last-child {
-    margin-top: 58px;
-  }
+// The axis label and its copy/swap buttons — the first row, so the selects
+// below start level on both axes even when only one has a button.
+.axisHeader {
+  min-height: 24px;
 }
 
 .copyAxisButton {
@@ -150,11 +180,10 @@
 .FacetByViewOptions {
   display: flex;
   flex-direction: column;
-  margin-bottom: 4px;
   scroll-margin-bottom: 24px;
 
   div[data-dimension-select] {
-    margin: 10px 0;
+    margin: 10px 0 4px 0;
   }
 }
 
@@ -178,6 +207,26 @@
   @extend .swapAxesButton;
   position: absolute;
   margin-left: -67px;
+}
+
+// The one-way exchanges name their result rather than the action ("color &
+// facet", "color only"), and neither fits the 65px the word "swap" was sized
+// for. Sized to its own text instead, and re-anchored so the button stays
+// centered on the point the fixed-width version occupies (margin-left -67px
+// plus half of 65px) rather than growing off to one side as the label changes.
+.swapColorFacetButtonOneWay {
+  width: auto;
+  margin-left: 0;
+  left: -34px;
+  transform: translateX(-50%);
+  padding: 0 6px !important;
+  font-size: 11px;
+  white-space: nowrap;
+
+  span {
+    display: inline-block;
+    margin-top: 3px;
+  }
 }
 
 .ColorByAnnotationSelect {
@@ -316,5 +365,59 @@
 }
 
 .sortBySelector {
-  margin-top: 10px;
+  &:not(:empty) {
+    margin-top: 10px;
+  }
+}
+
+.expansionMembers {
+  margin-top: 8px;
+}
+
+.expansionMembersSummary {
+  font-size: 12px;
+  font-style: italic;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+// Modal contents.
+.expansionMembersModal {
+  :global .modal-lg {
+    width: calc(100vw - 60px);
+    max-width: 1200px;
+  }
+}
+
+.expansionMembersIntro {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.expansionMembersTable {
+  height: calc(100vh - 263px);
+}
+
+.expansionMembersError {
+  min-height: 120px;
+  color: #a94442;
+}
+
+.expansionMembersFooter {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.expansionMembersCapHint {
+  color: #a94442;
+}
+
+.expansionMembersFloorHint {
+  margin-left: auto;
+  font-style: italic;
 }

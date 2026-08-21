@@ -11,6 +11,9 @@ import {
   saveContextToLocalStorageAndPersist,
 } from "../../utils/context";
 import { convertContextV1toV2 } from "../../utils/context-converter";
+import { getExpansionRoutes } from "../../utils/expansionRoutes";
+import promptForParentContext from "./promptForParentContext";
+import { PARENT_PICK_PREFIX } from "./useOptions";
 
 type OnChange = (
   context: DataExplorerContextV2 | null,
@@ -150,6 +153,34 @@ export default function useChangeHandler(
     () => async (wrapper: { value: string | null; isLegacyList: boolean }) => {
       const contextHash = wrapper?.value || null;
       const isLegacyList = !!wrapper?.isLegacyList;
+
+      // "Transcripts of a gene…" needs a second answer before there's a
+      // context to hand back, so it opens a one-question modal — the same
+      // shape "new" and "manage" already use. A null hash is handed along with
+      // the result, exactly as the "all" sentinel does: the context was
+      // manufactured rather than loaded, so there's nothing to look it up by,
+      // and the "Save as Context +" button appears for it like any other
+      // unsaved context.
+      if (contextHash?.startsWith(PARENT_PICK_PREFIX)) {
+        const parentType = contextHash.slice(PARENT_PICK_PREFIX.length);
+        const route = getExpansionRoutes(dimension_type).find(
+          (r) => r.parentType === parentType
+        );
+
+        if (!route) {
+          return undefined;
+        }
+
+        const picked = await promptForParentContext(
+          dimension_type,
+          route,
+          value
+        );
+
+        // Cancelling leaves the previous selection alone rather than clearing
+        // it — backing out of the modal shouldn't destroy what was there.
+        return picked ? onChange(picked, null) : undefined;
+      }
 
       switch (contextHash) {
         case "all":

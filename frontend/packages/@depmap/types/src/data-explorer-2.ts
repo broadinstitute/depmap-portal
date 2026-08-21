@@ -147,22 +147,40 @@ export interface DataExplorerPlotResponseDimension {
 // `context` (e.g. depmap_model × transcript). `expand_by` is a plot-level
 // concept (not a per-axis flag) by design. The count is currently capped at
 // one by the materializer; the type is an array to leave room for
-// multi-expansion, which is deferred (see fetchExpandedPlot's header). `limit`
-// bounds the fan-out for browser safety and keeps the plot self-describing;
-// the UI seeds a default and a separate hard ceiling is enforced at the
-// materializer. The axis that *reads* each per-pair value is the one carrying
-// the "expansion" sentinel on `aggregation`.
+// multi-expansion, which is deferred (see fetchExpandedPlot's header). The axis
+// that *reads* each per-pair value is the one carrying the "expansion" sentinel
+// on `aggregation`.
+//
+// How many members get shown is not recorded here. It used to be (`limit`,
+// alongside an `offset` to page through the rest), but both existed only
+// because the members shown were an arbitrary prefix of the context: if the
+// interesting ones might be anywhere, you need to be able to reach anywhere.
+// The materializer now picks the members worth showing, and how many fit is
+// derived from the size of the index being expanded (see
+// maxExpansionMembersFor) rather than chosen — so there is nothing left for the
+// config to say about count. Deriving it is what makes that true: a number the
+// config carried would go stale the moment the plot pointed at a differently
+// sized dataset. Links written before that change may still carry the old
+// fields; they are inert, and nothing reads them.
 export interface DataExplorerExpandBy {
   slice_type: string;
   context: DataExplorerContextV2;
-  limit: number;
-  // Pagination window start, in context order (0-based; defaults to 0). With
-  // `limit` as the page size, the fetcher materializes members
-  // [offset, offset + min(limit, MAX_EXPANSION_MEMBERS)). Interim: this is a
-  // contiguous-range stopgap that will be retired once the user can select an
-  // explicit member subset (at which point `context` becomes that subset and
-  // `offset` goes away).
-  offset?: number;
+
+  // The members the user picked by hand, in the member table. Absent means
+  // "restore default", which is the default and by far the common case.
+  //
+  // Present, it wins outright — the ranking is a suggestion and this is a
+  // decision. Recording it here rather than recomputing is what makes a shared
+  // link show the reader the same members the author was looking at, even as
+  // the underlying data changes underneath both of them.
+  //
+  // Still bounded by the same cap the ranking is: it is about small multiples
+  // staying legible and about not fetching N×M values, neither of which
+  // deliberateness changes. Since the cap depends on the dataset, a selection
+  // made against one dataset may be trimmed when read against a larger one.
+  // Ids naming members outside `context` are ignored rather than honored, so
+  // this can't smuggle in entities the expansion doesn't contain.
+  members?: string[];
 }
 
 export interface DataExplorerExpandedPlotConfig {
@@ -197,15 +215,46 @@ export interface DataExplorerExpansion {
   // The slice_type this expansion is over (e.g. "transcript").
   slice_type: string;
 
-  // Number of distinct expansion members the context yielded *before* the
-  // limit/ceiling was applied. `ids`/`labels` reflect the (possibly truncated)
-  // shown set, so the UI can surface "showing K of total_available".
-  total_available?: number;
+  // Three different counts, because a sparse dataset makes them genuinely
+  // differ and the UI was previously conflating them into a claim it couldn't
+  // keep ("Showing 14 of 29" when six were drawn and the cap of 14 was never
+  // reachable).
+  //
+  // What the context resolved to, before the cap or the data had any say. The
+  // widest of the three, and the least useful on its own.
+  total_in_context?: number;
 
-  // True when members were dropped to satisfy the cap (i.e. total_available
-  // exceeded min(expand_by.limit, MAX_EXPANSION_MEMBERS)). Truncation is
-  // currently arbitrary (first-N in context order); a "most interesting
-  // members" selection is a planned follow-up.
+  // How many of those could be drawn at all — members with at least one
+  // observation in EVERY expanding axis's dataset. A context names entities; a
+  // dataset measures some of them, and often not most of them; two axes on
+  // different datasets narrow it again to what they share. This is the number
+  // that answers "could I show more than I'm seeing?", so it is the denominator
+  // the member control uses, and taking it from one dataset let the control
+  // offer members no selection could reach.
+  //
+  // An upper bound rather than an exact count when the axes differ: "has data
+  // in each" is weaker than "has data in each for the same entity", which is
+  // what actually puts a point on the plot. Deliberate — the exact answer means
+  // fetching values for every candidate, which is the work ranking exists to
+  // avoid. shown_count, computed after the values arrive, is exact.
+  //
+  // Undefined when it can't be known without a request nobody needs: a
+  // hand-picked selection tells us nothing about the members it didn't pick,
+  // and a categorical dataset can't be aggregated to find out.
+  available_count?: number;
+
+  // How many members actually contributed a drawn point. Bounded above by the
+  // cap and by available_count, and the only one of the three the user can
+  // literally count on screen. A member the dataset doesn't track still gets an
+  // entry in `ids` — it just renders an empty panel or a legend row that
+  // toggles nothing — so this is deliberately not `ids.length`.
+  shown_count?: number;
+
+  // True when members were dropped to satisfy the cap. The ones
+  // kept are those that vary most across the entities being plotted, so this
+  // says "there are more of these" rather than "you are missing the good ones"
+  // — but the user should still be told, since nothing else on the plot
+  // indicates that the member set is partial.
   truncated?: boolean;
 }
 
@@ -242,6 +291,26 @@ export interface DataExplorerPlotConfig {
   // direction as of version 2: `color_by` can defer TO `facet_by` (see
   // `ColorByValue`'s `"facet"` member above), never the reverse.
   facet_by?: ColorByValue;
+
+  // The categories the user picked by hand to get their own color or facet
+  // panel. Absent means "restore default", which is the default and the common
+  // case: a plot shows the categories whose points sit somewhere distinctive on
+  // the axes being drawn, and collapses the rest into one bucket.
+  //
+  // Present, the list wins outright — the ranking is a suggestion and this is a
+  // decision, so a shared link shows a reader the categories its author was
+  // looking at rather than whatever the data says on the day they open it.
+  //
+  // Which of the two applies follows the resolved color target, not the field
+  // name: when `color_by` defers to `facet_by` there is one partition, resolved
+  // as target "facet", and `facet_categories` is what governs it. So the two
+  // can never disagree about a partition they share.
+  //
+  // Still bounded by HARD_MAX_CATEGORIES. Names that aren't in the data are
+  // ignored rather than honored, and if none of them survive the plot falls
+  // back to choosing, rather than rendering nothing.
+  color_categories?: string[];
+  facet_categories?: string[];
 
   filters?: DataExplorerFilters;
   metadata?: DataExplorerMetadata;

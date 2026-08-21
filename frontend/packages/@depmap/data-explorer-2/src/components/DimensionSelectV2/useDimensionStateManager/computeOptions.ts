@@ -49,7 +49,9 @@ async function fetchIndexCompatibleDatasets(
   });
 }
 
-async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
+// Every matrix dataset of this slice_type, before anything is asked about what
+// the context contains. The candidate list.
+async function fetchSliceTypeDatasets(dimension: State["dimension"]) {
   if (dimension.slice_type === undefined) {
     return cached(breadboxAPI).getDatasets();
   }
@@ -58,87 +60,58 @@ async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
   const axis = dimensionTypes.find((dt) => dt.name === dimension.slice_type)
     ?.axis;
 
-  if (!dimension.context || dimension.axis_type === "aggregated_slice") {
-    const prop = axis === "sample" ? "sample_type_name" : "feature_type_name";
+  const prop = axis === "sample" ? "sample_type_name" : "feature_type_name";
 
-    return cached(breadboxAPI)
-      .getDatasets()
-      .then((datasets) =>
-        datasets.filter(
-          (d) =>
-            d.format === "matrix_dataset" && d[prop] === dimension.slice_type
-        )
-      );
-  }
+  return cached(breadboxAPI)
+    .getDatasets()
+    .then((datasets) =>
+      datasets.filter(
+        (d) => d.format === "matrix_dataset" && d[prop] === dimension.slice_type
+      )
+    );
+}
 
-  const expr = dimension.context.expr;
-
-  if (!(typeof expr === "object") || !("==" in expr)) {
-    throw new Error("Malformed context expression");
-  }
-
-  const [variable, idOrLabel] = expr["=="];
-  const varName = variable.var;
-
-  const property = (() => {
-    if (varName === "given_id") {
-      return axis + "_id";
-    }
-
-    if (varName === "entity_label") {
-      return axis + "_label";
-    }
-
-    if (varName in (dimension.context.vars || {})) {
-      const { identifier } = dimension.context.vars[varName];
-
-      if (["id", "label"].includes(identifier)) {
-        return identifier;
-      }
-    }
-
-    throw new Error("Unsupported format");
-  })();
-
-  if (axis === "sample") {
-    try {
-      return await cached(breadboxAPI).getDatasets({
-        [property]: idOrLabel,
-        sample_type: dimension.slice_type as string,
-      });
-    } catch (e) {
-      return [];
-    }
+// How many of the context's entities each dataset actually contains, or null
+// when there is no context to ask about.
+//
+// This replaced a block that read the context's expression directly — looking
+// for `"=="`, then guessing a query param from the variable name — which only
+// ever worked for one shape. A multi-feature context (`aggregated_slice`)
+// skipped the check entirely, so the Data Version select ranked purely by
+// priority and routinely resolved to a dataset containing none of the
+// entities. Less visibly, the label-based branches built query params Breadbox
+// does not accept, and FastAPI ignores unknown params silently, so those
+// degraded to unfiltered too. One endpoint answers the question for every
+// context shape, so none of that parsing is needed.
+//
+// Failure returns null rather than an empty result: no opinion leaves the
+// options exactly as they were before this existed, where an empty one would
+// disable every dataset and strand the user.
+async function fetchContextCoverage(dimension: State["dimension"]) {
+  if (!dimension.context || !dimension.slice_type) {
+    return null;
   }
 
   try {
-    if (dimension.slice_type !== null) {
-      return await cached(breadboxAPI).getDatasets({
-        [property]: idOrLabel,
-        feature_type: dimension.slice_type,
-      });
-    }
-
-    return await cached(breadboxAPI)
-      .getDatasets()
-      .then((datasets) => {
-        return datasets.filter(
-          (d) => d.format === "matrix_dataset" && d.feature_type_name === null
-        );
-      });
+    return await cached(breadboxAPI).getContextDatasetCoverage(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      dimension.context as any
+    );
   } catch (e) {
-    return [];
+    window.console.warn("Could not determine dataset coverage", e);
+    return null;
   }
 }
 
-async function fetchContextCompatibleDatasetIds(dimension: State["dimension"]) {
-  const datasets = await fetchContextCompatibleDatasets(dimension);
+async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
+  const datasets = await fetchSliceTypeDatasets(dimension);
+  const coverage = await fetchContextCoverage(dimension);
 
-  if (!datasets) {
-    return new Set<string>();
+  if (!coverage) {
+    return datasets;
   }
 
-  return new Set(datasets.map(({ id }) => id));
+  return datasets.filter((d) => (coverage.counts[d.id] ?? 0) > 0);
 }
 
 async function fetchContextCompatibleDataTypes(dimension: State["dimension"]) {
@@ -363,6 +336,32 @@ async function computeSliceTypeOptions(
   });
 }
 
+// Which data version gets offered first: the one with the most of the selected
+// context in it, and only then the one `priority` prefers.
+//
+// `priority` orders datasets that can all answer the question. It was never
+// meant to choose between one that holds the data and one that holds none of
+// it, and on sparse data it constantly did — which is how "leave this on
+// default and we'll find a match" came to resolve to datasets containing not a
+// single one of the entities. A low-priority dataset that has the entities now
+// wins over the canonical one that doesn't.
+//
+// With no coverage to go on every dataset scores zero, so this collapses to the
+// priority ordering it replaced.
+export function compareByCoverageThenPriority<
+  T extends { priority?: number | null }
+>(coverageOf: (dataset: T) => number) {
+  return (a: T, b: T) => {
+    const byCoverage = coverageOf(b) - coverageOf(a);
+
+    if (byCoverage !== 0) {
+      return byCoverage;
+    }
+
+    return (a.priority ?? -Infinity) - (b.priority ?? -Infinity);
+  };
+}
+
 async function computeDataVersionOptions(
   index_type: string | null,
   selectedDataType: string | null,
@@ -373,9 +372,7 @@ async function computeDataVersionOptions(
   dimensionTypes: DimensionType[],
   hiddenDatasets: Set<string>
 ) {
-  const contextCompatibleDatasetIds = await fetchContextCompatibleDatasetIds(
-    dimension
-  );
+  const coverage = await fetchContextCoverage(dimension);
 
   const sliceAxis =
     dimensionTypes.find((dt) => dt.name === dimension.slice_type)?.axis ||
@@ -383,11 +380,13 @@ async function computeDataVersionOptions(
 
   let foundDefault = false;
 
-  const priorities: Record<string, number> = {};
+  const coverageOf = (d: DataExplorerDatasetDescriptor) =>
+    coverage ? coverage.counts[d.id] ?? 0 : 0;
 
-  for (const d of datasets) {
-    priorities[d.id] = d.priority as number;
-  }
+  // Keyed by the same thing the option's `value` is, so the re-sort after
+  // mapping can find it. Keying by `id` alone silently produced NaN for every
+  // dataset with a given_id, which made that sort a no-op.
+  const rank: Record<string, number> = {};
 
   return datasets
     .filter((d) => !selectedDataType || d.data_type === selectedDataType)
@@ -401,8 +400,10 @@ async function computeDataVersionOptions(
         d.value_type as typeof valueTypes extends Set<infer U> ? U : never
       )
     )
-    .sort((a, b) => (a.priority ?? -Infinity) - (b.priority ?? -Infinity))
-    .map((dataset) => {
+    .sort(compareByCoverageThenPriority(coverageOf))
+    .map((dataset, index) => {
+      rank[dataset.given_id || dataset.id] = index;
+
       let isDisabled = false;
       let disabledReason = "";
 
@@ -469,10 +470,7 @@ async function computeDataVersionOptions(
               "Clear the Feature Type in order to use this version",
               "(it uses generic features that don’t have a type).",
             ].join(" ");
-      } else if (
-        contextCompatibleDatasetIds &&
-        !contextCompatibleDatasetIds.has(dataset.id)
-      ) {
+      } else if (coverage && coverageOf(dataset) === 0) {
         isDisabled = true;
         const name = dimension.context?.name || "unknonwn";
 
@@ -503,9 +501,14 @@ async function computeDataVersionOptions(
         isDisabled,
         disabledReason,
         isDefault,
+        // How much of the context this version actually has, for the select to
+        // show. Undefined when there is no context to measure against, which
+        // is different from covering none of it.
+        matched: coverage ? coverageOf(dataset) : undefined,
+        total: coverage ? coverage.total : undefined,
       };
     })
-    .sort((a, b) => priorities[a.value] - priorities[b.value])
+    .sort((a, b) => rank[a.value] - rank[b.value])
     .sort(compareDisabledLast);
 }
 

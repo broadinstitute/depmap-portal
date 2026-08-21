@@ -82,6 +82,15 @@ interface AlignedData {
     // When provided, only these columns are included in the export.
     visibleColumnIds?: string[];
     selectedRowIds?: Set<string>;
+    // The columns to export, in export order. Defaults to the slice columns
+    // this hook built. Callers that add columns of their own pass the merged
+    // list, so the download matches what is on screen; a column opts out by
+    // having an empty `meta.csvHeader`.
+    columns?: {
+      id: string;
+      meta: { csvHeader: string };
+      accessorFn: (row: Record<string, string | number | undefined>) => unknown;
+    }[];
   }) => string;
 }
 
@@ -624,6 +633,13 @@ export default function useAlignedData({
         sortedRowIds?: string[];
         visibleColumnIds?: string[];
         selectedRowIds?: Set<string>;
+        columns?: {
+          id: string;
+          meta: { csvHeader: string };
+          accessorFn: (
+            row: Record<string, string | number | undefined>
+          ) => unknown;
+        }[];
       } = {}
     ) => {
       const {
@@ -631,19 +647,23 @@ export default function useAlignedData({
         sortedRowIds,
         visibleColumnIds,
         selectedRowIds,
+        columns: overrideColumns,
       } = options;
 
       if (!state.columns.length || !state.data.length) {
         return "";
       }
 
+      const sourceColumns = overrideColumns ?? state.columns;
+
       // Filter columns to only visible ones if specified
       const visibleColumnIdSet = visibleColumnIds
         ? new Set(visibleColumnIds)
         : null;
-      const columnsToExport = visibleColumnIdSet
-        ? state.columns.filter((col) => visibleColumnIdSet.has(col.id))
-        : state.columns;
+      const columnsToExport = (visibleColumnIdSet
+        ? sourceColumns.filter((col) => visibleColumnIdSet.has(col.id))
+        : sourceColumns
+      ).filter((col) => col.meta.csvHeader);
 
       // Apply the row filter if provided
       const filteredData = rowFilter

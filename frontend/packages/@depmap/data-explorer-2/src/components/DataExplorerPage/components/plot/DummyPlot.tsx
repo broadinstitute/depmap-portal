@@ -15,6 +15,10 @@ interface Props {
   tutorialLink: string;
   hadError?: boolean;
   errorMessage?: string;
+  // The plot fetched successfully and has no point to draw. Distinct from
+  // `hadError` (something broke) and from the initial-load state (nothing has
+  // been asked for yet).
+  hasNoData?: boolean;
 }
 
 function safeUrl(url: string): string {
@@ -76,6 +80,28 @@ function ErrorState({
   );
 }
 
+// The plot came back fine and drew nothing, which is not an error and is not a
+// blank slate — both of which this component already had a state for, and
+// neither of which explains itself.
+//
+// Deliberately says nothing about *why* beyond the dataset, because the cause
+// is the same whatever the plot is doing: a dataset measures some entities and
+// not others, and neither aggregating nor expanding can invent the ones it
+// doesn't measure. Naming the mechanism ("your context resolved to 29
+// transcripts, of which this dataset tracks none") would explain it precisely
+// to the handful of people who already know what a context is.
+function NoDataState() {
+  return (
+    <div className={styles.plotEmptyState}>
+      <h2>Nothing to plot</h2>
+      <p>
+        This dataset has no values for the things you selected. Try a different
+        dataset, or widen the selection.
+      </p>
+    </div>
+  );
+}
+
 function EmptyScatter() {
   const data = {
     x: [],
@@ -111,6 +137,7 @@ function DummyPlot({
   tutorialLink,
   hadError = false,
   errorMessage = "",
+  hasNoData = false,
 }: Props) {
   const { hiddenLegendValues, onClickLegendItem } = useLegendState({
     plot_type: "scatter",
@@ -126,7 +153,8 @@ function DummyPlot({
         </div>
         <div className={styles.plot}>
           {isInitialPageLoad && <StartScreen tutorialLink={tutorialLink} />}
-          {!isInitialPageLoad && !hadError && <EmptyScatter />}
+          {!isInitialPageLoad && !hadError && !hasNoData && <EmptyScatter />}
+          {!isInitialPageLoad && !hadError && hasNoData && <NoDataState />}
           {!isInitialPageLoad && hadError && (
             <ErrorState
               feedbackUrl={feedbackUrl}

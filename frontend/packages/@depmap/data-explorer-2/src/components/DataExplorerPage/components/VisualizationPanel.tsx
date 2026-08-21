@@ -6,6 +6,7 @@ import DataExplorerDensity1DPlot from "./plot/DataExplorerDensity1DPlot";
 import DataExplorerWaterfallPlot from "./plot/DataExplorerWaterfallPlot";
 import DataExplorerCorrelationHeatmap from "./plot/DataExplorerCorrelationHeatmap";
 import DummyPlot from "./plot/DummyPlot";
+import { countPlottablePoints } from "./plot/prototype/plotUtils";
 import styles from "../styles/DataExplorer2.scss";
 
 interface Props {
@@ -20,6 +21,16 @@ interface Props {
     selectedLabels: Set<string>
   ) => void;
   onClickColorByContext: (context: DataExplorerContextV2) => void;
+  // The plot side's one route back into the config: the category picker lives
+  // beside the legend, where the categories are listed and the response that
+  // describes them is in hand.
+  onChangeCategories: (
+    target: "color" | "facet",
+    categories: string[] | null
+  ) => void;
+  // Expansion members are edited from whichever panel is listing them, which is
+  // the same reasoning as onChangeCategories above.
+  onChangeExpansionMembers: (members: string[] | null) => void;
   onClickShowDensityFallback: () => void;
   feedbackUrl: string | null;
   contactEmail: string;
@@ -33,6 +44,8 @@ function VisualizationPanel({
   onClickVisualizeSelected,
   onClickSaveSelectionAsContext,
   onClickColorByContext,
+  onChangeCategories,
+  onChangeExpansionMembers,
   onClickShowDensityFallback,
   feedbackUrl,
   contactEmail,
@@ -80,6 +93,29 @@ function VisualizationPanel({
     );
   }
 
+  // A successful fetch that produced no drawable point. Handled here rather
+  // than in any one plot type, and rather than in the expansion's own controls,
+  // because the cause has nothing to do with either: a dataset covers some
+  // entities and not others, which an aggregated plot runs into exactly as
+  // readily as an expanded one. Checked only once loading has settled, so a
+  // half-arrived response doesn't flash this.
+  //
+  // `null` from countPlottablePoints means "no basis to judge" (a correlation
+  // heatmap, or a config with no x yet) and deliberately does not qualify.
+  if (!isLoading && countPlottablePoints(data) === 0) {
+    return (
+      <div className={styles.VisualizationPanel}>
+        <DummyPlot
+          hasNoData
+          isInitialPageLoad={isInitialPageLoad}
+          feedbackUrl={feedbackUrl}
+          contactEmail={contactEmail}
+          tutorialLink={tutorialLink}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className={styles.VisualizationPanel}>
       {plotConfig?.plot_type === "density_1d" && (
@@ -90,6 +126,8 @@ function VisualizationPanel({
           onClickVisualizeSelected={onClickVisualizeSelected}
           onClickSaveSelectionAsContext={onClickSaveSelectionAsContext}
           onClickColorByContext={onClickColorByContext}
+          onChangeCategories={onChangeCategories}
+          onChangeExpansionMembers={onChangeExpansionMembers}
         />
       )}
       {plotConfig?.plot_type === "waterfall" && (
@@ -100,6 +138,8 @@ function VisualizationPanel({
           onClickVisualizeSelected={onClickVisualizeSelected}
           onClickSaveSelectionAsContext={onClickSaveSelectionAsContext}
           onClickColorByContext={onClickColorByContext}
+          onChangeCategories={onChangeCategories}
+          onChangeExpansionMembers={onChangeExpansionMembers}
         />
       )}
       {plotConfig?.plot_type === "scatter" && (
@@ -111,6 +151,8 @@ function VisualizationPanel({
           onClickVisualizeSelected={onClickVisualizeSelected}
           onClickSaveSelectionAsContext={onClickSaveSelectionAsContext}
           onClickColorByContext={onClickColorByContext}
+          onChangeCategories={onChangeCategories}
+          onChangeExpansionMembers={onChangeExpansionMembers}
           canShowIdentityLine={canShowIdentityLine}
         />
       )}

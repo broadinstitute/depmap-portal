@@ -4,19 +4,14 @@ import { PlotConfigReducerAction } from "@depmap/data-explorer-2/src/components/
 export const makeGeneOnChangeHandler = (
   expansionAxis: "x" | "y",
   currentDatasetId: string | null,
-  limit: number,
   dispatch: (action: PlotConfigReducerAction) => void
 ) => {
   return (nextGene: string | null) => {
-    // Changing the gene changes the transcript set, so preserve the page
-    // size but reset pagination to the first window.
     dispatch(
       makeSetExpansionAction(
         expansionAxis,
         nextGene,
-        currentDatasetId || SHORT_READ_DATASET,
-        limit,
-        0
+        currentDatasetId || SHORT_READ_DATASET
       )
     );
   };
@@ -25,42 +20,9 @@ export const makeGeneOnChangeHandler = (
 export const makeDatasetOnChangeHandler = (
   expansionAxis: "x" | "y",
   currentGene: string | null,
-  limit: number,
   dispatch: (action: PlotConfigReducerAction) => void
 ) => {
   return (nextDatasetId: string | null) => {
-    // Changing the dataset changes the transcript set, so preserve the page
-    // size but reset pagination to the first window.
-    dispatch(
-      makeSetExpansionAction(
-        expansionAxis,
-        currentGene,
-        nextDatasetId,
-        limit,
-        0
-      )
-    );
+    dispatch(makeSetExpansionAction(expansionAxis, currentGene, nextDatasetId));
   };
 };
-
-// Pagination: preserve the gene/dataset/page-size and move the window start.
-export const makePaginationOnChangeHandler = (
-  expansionAxis: "x" | "y",
-  geneSymbol: string | null,
-  datasetId: string | null,
-  limit: number,
-  dispatch: (action: PlotConfigReducerAction) => void
-) => {
-  return (nextOffset: number) => {
-    dispatch(
-      makeSetExpansionAction(
-        expansionAxis,
-        geneSymbol,
-        datasetId,
-        limit,
-        nextOffset
-      )
-    );
-  };
-};
-

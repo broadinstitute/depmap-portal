@@ -55,6 +55,8 @@ import {
   LegendInfo,
   LegendKey,
   orderContinuousPointsByBin,
+  facetLabelBudget,
+  truncateFacetLabel,
   RegressionLine,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
@@ -147,6 +149,12 @@ type PropsWithPlotly = Props & { Plotly: PlotlyType };
 
 const GAP_X = 0.06;
 const GAP_Y = 0.1;
+
+// Hoisted out of the layout literal because facetLabelBudget needs the
+// horizontal pair: paper-referenced annotations span the figure minus these,
+// not the figure.
+const MARGIN = { t: 28, r: 16, b: 60, l: 78 };
+const FACET_TITLE_FONT_SIZE = 11;
 
 function SmallMultiplesScatter({
   data,
@@ -319,9 +327,24 @@ function SmallMultiplesScatter({
         ? height
         : plot.clientHeight || plot.parentElement?.clientHeight || 600;
 
+    // No `width` prop to consult — plotly autosizes to the container — so this
+    // is measured, with 0 standing for "not measured yet" (facetLabelBudget
+    // treats that as "don't tighten").
+    const resolvedWidth =
+      plot.clientWidth || plot.parentElement?.clientWidth || 0;
+
+    // The widest a facet title may run before it starts colliding with the one
+    // over the next panel. Falls with `cols`, which is how it falls with the
+    // facet count.
+    const labelBudget = facetLabelBudget({
+      gridWidth: resolvedWidth ? resolvedWidth - MARGIN.l - MARGIN.r : 0,
+      cols,
+      fontSize: FACET_TITLE_FONT_SIZE,
+    });
+
     const layout: Record<string, any> = {
       height: resolvedHeight,
-      margin: { t: 28, r: 16, b: 60, l: 68 },
+      margin: MARGIN,
       // Every real trace below sets `showlegend: false` explicitly, so this
       // has no effect unless showBuiltinLegend adds its dummy, named traces
       // (which force `showlegend: true`). Mirrors PrototypeScatterPlot.
@@ -338,18 +361,40 @@ function SmallMultiplesScatter({
 
     const plotlyData: Partial<PlotData>[] = [];
 
-    // Color faceting is facet-independent, so resolve it once. Continuous color
-    // is handled separately (see below), so skip the seam in that case.
-    const solidGroups = contColorData
-      ? null
-      : getSolidColorGroups({
-          color1,
-          color2,
-          catColorData,
-          colorMap,
-          palette,
-          visible,
-        });
+    // Color group membership is facet-independent, but the order they are
+    // painted in is not, and that order is what decides which points get
+    // buried. The rule is "smallest group on top", and the size that matters is
+    // the size *in this panel* — a color that is rare overall can dominate one
+    // facet, and a color that is common overall can be the handful of points
+    // someone is looking for in another. Facets partition the points, so the
+    // per-facet count is exactly well defined.
+    //
+    // Restricting `visible` to the facet is what does it: the seam already
+    // derives its counts, its ordering, and its "drop groups with no visible
+    // points" rule from that mask. That last one now drops colors absent from
+    // this panel rather than only colors absent everywhere, so the trace count
+    // falls out of F×G to the sum of what each panel actually contains —
+    // which more than pays for resolving the seam per facet instead of once.
+    const solidGroupsFor = (facet: string) => {
+      if (contColorData) {
+        return null;
+      }
+
+      const inFacet = facetMaskFor(facetKeys, facet, x, y, visible);
+
+      return getSolidColorGroups({
+        color1,
+        color2,
+        catColorData,
+        colorMap,
+        palette,
+        visible: visible.map((_, i) => inFacet(i)),
+        // Counts tie whenever color is an expansion member — every member has
+        // one point per index entity — so the order needs something else to go
+        // on. See orderColorKeysByCount.
+        axes: [x, y],
+      });
+    };
 
     // The mask shared by every trace: a point is plottable in facet `facet`
     // only if it's visible, in that facet, and has values on both axes.
@@ -539,15 +584,20 @@ function SmallMultiplesScatter({
           unselected: { marker: { opacity: facetHasSelection ? 0.5 : 1 } },
         } as Partial<PlotData>);
       } else {
-        // Solid color groups (none / categorical / comparison), in paint order.
-        (solidGroups ?? []).forEach((group) =>
+        // Solid color groups (none / categorical / comparison), in this
+        // panel's paint order.
+        (solidGroupsFor(facet) ?? []).forEach((group) =>
           pushSolid(group.color, group.includes)
         );
       }
 
-      // Facet title (paper-positioned, centered above the panel).
+      // Facet title (paper-positioned, centered above the panel). Trimmed the
+      // same way the density plot trims its track labels — a name wider than
+      // its panel overlaps the neighboring title rather than being clipped,
+      // since these are paper-positioned annotations with nothing to clip them.
+      // Unlike the density plot, the budget is the grid's, not a constant.
       (layout.annotations as any[]).push({
-        text: facet,
+        text: truncateFacetLabel(facet, labelBudget),
         x: (xDomain[0] + xDomain[1]) / 2,
         y: yTop - GAP_Y / 2 + 0.012,
         xref: "paper",
@@ -556,7 +606,7 @@ function SmallMultiplesScatter({
         yanchor: "bottom",
         showarrow: false,
         font: {
-          size: 11,
+          size: FACET_TITLE_FONT_SIZE,
           color: facetHidden || facetNoData ? "#999" : undefined,
         },
       });

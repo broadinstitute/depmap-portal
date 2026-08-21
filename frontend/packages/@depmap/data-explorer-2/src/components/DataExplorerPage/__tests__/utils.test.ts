@@ -2,7 +2,9 @@ import pako from "pako";
 import { Base64 } from "js-base64";
 import { DataExplorerPlotConfig } from "@depmap/types";
 import {
+  canSwapColorAndFacet,
   CURRENT_PLOT_VERSION,
+  getColorFacetSwapMode,
   normalizePlot,
   plotToQueryString,
   readPlotFromQueryString,
@@ -288,7 +290,6 @@ describe("normalizePlot", () => {
               expr: true,
               vars: {},
             },
-            limit: 50,
           },
         ],
       } as unknown) as DataExplorerPlotConfig);
@@ -663,7 +664,6 @@ describe("readPlotFromQueryString / plotToQueryString — v1->v2 color_by migrat
             expr: true,
             vars: {},
           },
-          limit: 50,
         },
       ],
     };
@@ -850,6 +850,101 @@ describe("readPlotFromQueryString / plotToQueryString — v1->v2 color_by migrat
       dataset_id: "lineage-dataset",
       identifier: "lineage",
       identifier_type: "column",
+    });
+  });
+});
+
+// The button in ViewOptions both shows itself and names itself from this, so a
+// mode that comes back wrong is a mislabeled action rather than a missing one.
+describe("getColorFacetSwapMode", () => {
+  const completeProperty = {
+    dataset_id: "d",
+    identifier: "lineage",
+    identifier_type: "column",
+  };
+
+  // raw_slice on color (backed by filters.color1), property on facet (backed by
+  // metadata.facet_property) — two different real modes, both complete.
+  const bothAxes = {
+    color_by: "raw_slice",
+    facet_by: "property",
+    filters: { color1: { name: "Color 1" } },
+    metadata: { facet_property: completeProperty },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+
+  it("calls a two-way exchange a swap", () => {
+    expect(getColorFacetSwapMode(bothAxes)).toBe("swap");
+  });
+
+  it("calls an unset facet_by a promote", () => {
+    // Color's selection moves to facet and color_by becomes "facet", so both
+    // axes end up showing the one partition — which is what the button says.
+    expect(getColorFacetSwapMode({ ...bothAxes, facet_by: undefined })).toBe(
+      "promote"
+    );
+  });
+
+  it("calls a color_by that defers to facet_by a demote", () => {
+    // Facet's selection moves to color and facet_by is unset, leaving color
+    // alone — again what the button says.
+    const deferring = {
+      color_by: "facet",
+      facet_by: "property",
+      metadata: { facet_property: completeProperty },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    expect(getColorFacetSwapMode(deferring)).toBe("demote");
+    // An absent color_by means the same thing in version 2, so it must not
+    // report a different action.
+    expect(getColorFacetSwapMode({ ...deferring, color_by: undefined })).toBe(
+      "demote"
+    );
+  });
+
+  it("reports no mode when there is nothing well-defined to do", () => {
+    // Both axes resolving to the same thing: a swap would be a visible no-op.
+    expect(
+      getColorFacetSwapMode({
+        color_by: "property",
+        facet_by: "property",
+        metadata: {
+          color_property: completeProperty,
+          facet_property: completeProperty,
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
+    ).toBeNull();
+
+    // "uniform" is a deliberate, complete choice rather than a deferred one,
+    // so it is not demoted out from under the user.
+    expect(
+      getColorFacetSwapMode({
+        color_by: "uniform",
+        facet_by: "property",
+        metadata: { facet_property: completeProperty },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any)
+    ).toBeNull();
+
+    // Nothing on either axis.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect(getColorFacetSwapMode({} as any)).toBeNull();
+  });
+
+  it("agrees with canSwapColorAndFacet, which is derived from it", () => {
+    const cases = [
+      bothAxes,
+      { ...bothAxes, facet_by: undefined },
+      { color_by: "uniform", facet_by: "property" },
+      {},
+    ];
+
+    cases.forEach((plot) => {
+      expect(canSwapColorAndFacet(plot as never)).toBe(
+        getColorFacetSwapMode(plot as never) !== null
+      );
     });
   });
 });
