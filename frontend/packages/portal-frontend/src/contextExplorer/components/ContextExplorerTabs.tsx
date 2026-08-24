@@ -89,6 +89,7 @@ const ContextExplorerTabs = ({
       rna_seq: capitalizeFirstLetter(String(row.rna_seq)),
       prismOncRefSeq: capitalizeFirstLetter(String(row.oncrefSeq)),
       prismOncRefLum: capitalizeFirstLetter(String(row.oncrefLum)),
+      prismOncRefUnified: capitalizeFirstLetter(String(row.oncrefUnified)),
       prismRepurposing: capitalizeFirstLetter(String(row.repurposing)),
     };
   });
@@ -98,8 +99,9 @@ const ContextExplorerTabs = ({
     const map = new Map<number, TabTypes>();
     const allowedTabTypes = Object.values(TabTypes).filter(
       (tabTypeStr) =>
-        tabTypeStr !== String(TabTypes.DrugSensitivityOncRefLum) ||
-        tabTypeStr !== String(TabTypes.DrugSensitivityOncRefSeq) ||
+        (tabTypeStr !== String(TabTypes.DrugSensitivityOncRefLum) &&
+          tabTypeStr !== String(TabTypes.DrugSensitivityOncRefSeq) &&
+          tabTypeStr !== String(TabTypes.DrugSensitivityOncRefUnified)) ||
         enabledFeatures.context_explorer_prerelease_datasets
     );
 
@@ -148,6 +150,16 @@ const ContextExplorerTabs = ({
             <PurpleHelpIcon
               tooltipText="Selective compound sensitivities calculated from the OncRef Luminex Dataset (viability readout captured via Luminex)."
               popoverId="oncref-lum-tab-help"
+              placement="top"
+            />
+          </Tab>
+        )}
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <Tab id="oncrefUnified" className={styles.Tab}>
+            OncRef Unified Sensitivity{" "}
+            <PurpleHelpIcon
+              tooltipText="Selective compound sensitivities calculated from the OncRef Unified Dataset."
+              popoverId="oncref-unified-tab-help"
               placement="top"
             />
           </Tab>
@@ -241,6 +253,24 @@ const ContextExplorerTabs = ({
                 featureType={"compound"}
                 datasetId={
                   ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
+                }
+                customInfoImg={customInfoImg}
+              />
+            )}
+          </TabPanel>
+        )}
+        {enabledFeatures.context_explorer_prerelease_datasets && (
+          <TabPanel className={styles.TabPanel}>
+            {" "}
+            {!isLoadingInitialData && (
+              <ContextAnalysis
+                selectedContextNode={selectedContextNode}
+                selectedContextNameInfo={selectedContextNameInfo}
+                topContextNameInfo={topContextNameInfo}
+                treeType={treeType}
+                featureType={"compound"}
+                datasetId={
+                  ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix
                 }
                 customInfoImg={customInfoImg}
               />
