@@ -25,7 +25,7 @@ known_deprecated_ids = {
 }
 
 # Dimension types in which our matrix datasets are expected to use only a subset of the metadata's IDs
-dim_types_with_expansive_metadata = ["gene", "compound_v2", "compound_dose", "protein_v5"]
+dim_types_with_expansive_metadata = ["gene", "compound_v2", "compound_dose", "compound_sample", "protein_v5"]
 
 # Within certain dimension types, it's okay to ignore certain ID formats. 
 # For example, for gene-indexed datasets, it's okay if some small percentage of of the features do not have metadata.
