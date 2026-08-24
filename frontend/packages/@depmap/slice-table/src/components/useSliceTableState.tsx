@@ -7,7 +7,6 @@ import React, {
 } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
 import { getConfirmation } from "@depmap/common-components";
-import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import { RowSelectionState } from "@depmap/react-table";
 import {
   areSliceQueriesEqual,
@@ -35,9 +34,20 @@ export interface CellCtx {
 
 interface Props {
   index_type_name: string;
+  // Taken from SliceTable rather than read from context, for the same reason
+  // SliceTable takes it as a prop: this hook runs in SliceTable itself, which
+  // renders PlotlyLoaderProvider *below* itself, so a context read here
+  // resolves against whatever ancestor happens to exist. In the app that is the
+  // root provider and it works by luck; in a promptForValue modal, whose tree is
+  // detached, there is no ancestor and it throws. The modals this hook opens
+  // (chooseDataSlice, showDataSlicePreview) are detached too and need the value
+  // passed down explicitly regardless.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  PlotlyLoader: any;
   initialSlices: SliceQuery[];
   viewOnlySlices: Set<SliceQuery>;
-  enableRowSelection: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  enableRowSelection: boolean | ((row: any) => boolean);
   initialRowSelection: RowSelectionState;
   onChangeSlices: (nextSlices: SliceQuery[]) => void;
   downloadFilename: string;
@@ -52,18 +62,73 @@ interface Props {
     label: string;
     getValue: (sliceQuery: SliceQuery) => unknown;
   }) => boolean;
-  customColumns?: {
-    header: () => React.ReactNode;
-    cell: (
-      ctx: CellCtx,
-      getValue: (sliceQuery: SliceQuery) => unknown
-    ) => React.ReactNode;
-    width?: number;
-  }[];
+  customColumns?: CustomColumn[];
+  customColumnPlacement?: CustomColumnPlacement;
   getColumnDisplayOptions?: (
     sliceQuery: SliceQuery
   ) => import("./useData").ColumnDisplayOptions | null;
   hiddenDatasets?: Set<string>;
+}
+
+// A column the caller supplies itself, for values that aren't Breadbox slices —
+// links, buttons, or statistics computed by the caller.
+//
+// `cell` renders it. `accessorFn` is what makes it a first-class column rather
+// than decoration: sorting, search and CSV export in @depmap/react-table are all
+// driven by the accessor, not by the rendered node. Supply it whenever the
+// column represents a *value* someone might want to sort or search by; leave it
+// off for a column that only renders controls.
+export interface CustomColumn {
+  // Stable identifier, so a caller can refer to this column later — to open
+  // the table sorted by it, for instance. Without one the id is positional
+  // (`custom-0`, `custom-1`), which nobody outside this file should have to
+  // know or depend on.
+  id?: string;
+  header: () => React.ReactNode;
+  cell: (
+    ctx: CellCtx,
+    getValue: (sliceQuery: SliceQuery) => unknown
+  ) => React.ReactNode;
+  // Raw value behind the rendered cell. Its absence is what disables sorting,
+  // so a column with no meaningful ordering simply omits it.
+  accessorFn?: (row: Record<string, unknown>) => unknown;
+  // Column heading used in the CSV download. Defaults to nothing, which keeps
+  // the column out of the export entirely.
+  csvHeader?: string;
+  width?: number;
+}
+
+// Where the caller's own columns sit relative to the slice columns. "end" is
+// the default because it is what every consumer got before the option existed.
+export type CustomColumnPlacement = "end" | "beforeSliceColumns";
+
+// Interleaves the caller's columns with the slice columns.
+//
+// `leadingCount` is the number of fixed columns at the front (id and label).
+// "beforeSliceColumns" goes after those, never at the very front: react-table
+// treats the first data column as sticky and excludes it from width
+// redistribution, so a custom column landing there would be frozen in place and
+// mis-sized. Keeping id/label leading means every positional assumption
+// downstream still points at the column it did before.
+// Two type parameters, not one: slice columns and custom columns genuinely have
+// different shapes (only slice columns carry a header menu), and react-table is
+// happy with the union. Sharing one parameter would silently infer it from
+// whichever array came first.
+export function mergeCustomColumns<S, C>(
+  sliceColumns: S[],
+  customColumns: C[],
+  leadingCount: number,
+  placement: CustomColumnPlacement
+): (S | C)[] {
+  if (placement === "beforeSliceColumns") {
+    return [
+      ...sliceColumns.slice(0, leadingCount),
+      ...customColumns,
+      ...sliceColumns.slice(leadingCount),
+    ];
+  }
+
+  return [...sliceColumns, ...customColumns];
 }
 
 const defaultRowFilters = {
@@ -92,6 +157,12 @@ export const filterPredicate = (
     return implicitFilter({
       id,
       label,
+      // Resolves against loaded columns and nothing else. There is deliberately
+      // no fetch here — the predicate is synchronous and runs per row — so a
+      // slice the table was never asked to display has no value to return. See
+      // `implicitFilter`'s own comment in SliceTable.tsx for what to do instead;
+      // buildSlicesToFetch in useData.tsx is where the fetched set is decided,
+      // and it reads `slices`, never this.
       getValue: (sq: SliceQuery) => {
         const column = columns.find((c) => {
           const colSq = c.meta.sliceQuery;
@@ -116,6 +187,7 @@ export const filterPredicate = (
 
 export function useSliceTableState({
   index_type_name,
+  PlotlyLoader,
   initialSlices,
   viewOnlySlices,
   enableRowSelection,
@@ -125,6 +197,7 @@ export function useSliceTableState({
   tableRef,
   implicitFilter = undefined,
   customColumns = undefined,
+  customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
   hiddenDatasets = undefined,
 }: Props) {
@@ -133,9 +206,27 @@ export function useSliceTableState({
     initialRowSelection || {}
   );
 
-  useEffect(() => {
+  // Adjusted during render rather than in an effect, deliberately. As an
+  // effect, there was one committed render where `initialRowSelection` already
+  // held the new seed and `rowSelection` was still the old (usually empty) one
+  // — and SliceTable's "did the selection change?" effect ran on exactly that
+  // pair, saw a difference, and reported the *stale* selection to the consumer.
+  // The correct value arrived a render later but the callback had already
+  // fired, so a table seeded asynchronously (stats arrive, then
+  // forceInitialize) showed its rows checked while telling its owner nothing
+  // was selected.
+  //
+  // React re-renders immediately on a set-during-render, before committing, so
+  // no effect ever observes the mismatched pair. This is the documented pattern
+  // for adjusting state when a prop changes.
+  const [syncedInitialSelection, setSyncedInitialSelection] = useState(
+    initialRowSelection
+  );
+
+  if (syncedInitialSelection !== initialRowSelection) {
+    setSyncedInitialSelection(initialRowSelection);
     setRowSelection(initialRowSelection);
-  }, [initialRowSelection]);
+  }
 
   const prevIndexTypeName = useRef(index_type_name);
 
@@ -270,8 +361,6 @@ export function useSliceTableState({
   ) {
     shouldShowLabelColumn = false;
   }
-
-  const PlotlyLoader = usePlotlyLoader();
 
   const buildExtraHoverData = useCallback(
     (excludeColumnId: string): Record<string, string> => {
@@ -442,21 +531,57 @@ export function useSliceTableState({
     ]
   );
 
+  const removeColumn = useCallback(
+    (column: { meta: { sliceQuery: SliceQuery } }) => {
+      setSlices((prev) =>
+        prev.filter(
+          (slice) => !areSliceQueriesEqual(slice, column.meta.sliceQuery)
+        )
+      );
+    },
+    []
+  );
+
   const extendedColumns = useMemo(() => {
     const OFFSET = columns.length - slices.length;
 
     const sliceColumns = columns.map((column, colIndex) => ({
       ...column,
+      // A column whose dataset was removed can never load again, so the fix
+      // goes right where the failure is shown, not only in the header menu.
+      // A transient failure deliberately does NOT get this: its column would
+      // come back on reload, and an inline remove would train users to
+      // delete it.
+      ...(column.meta.loadFailure === "dataset_removed" &&
+        column.meta.isEditable && {
+          header: () => (
+            <div>
+              {column.header()}
+              <button
+                type="button"
+                className="btn btn-default btn-xs"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeColumn(column);
+                }}
+              >
+                Remove column
+              </button>
+            </div>
+          ),
+        }),
       meta: {
         ...column.meta,
         headerMenuItems: [
-          column.meta.isEditable && {
-            label: "View distribution",
-            icon: "glyphicon-eye-open",
-            onClick: () => handleClickEditColumn(column),
-          },
+          !column.meta.loadFailure &&
+            column.meta.isEditable && {
+              label: "View distribution",
+              icon: "glyphicon-eye-open",
+              onClick: () => handleClickEditColumn(column),
+            },
 
-          !column.meta.isEditable &&
+          !column.meta.loadFailure &&
+            !column.meta.isEditable &&
             column.meta.isViewable && {
               label: "View distribution",
               icon: "glyphicon-eye-open",
@@ -509,6 +634,14 @@ export function useSliceTableState({
             label: "Remove column",
             icon: "glyphicon-remove-sign",
             onClick: async () => {
+              // The confirmation exists to protect a working column. A
+              // column whose dataset no longer exists has nothing to lose,
+              // and its header already explains why it's being removed.
+              if (column.meta.loadFailure === "dataset_removed") {
+                removeColumn(column);
+                return;
+              }
+
               const confirmed = await getConfirmation({
                 message: (
                   <div>
@@ -521,14 +654,7 @@ export function useSliceTableState({
               });
 
               if (confirmed) {
-                setTimeout(() => {
-                  setSlices((prev) => {
-                    return prev.filter(
-                      (slice) =>
-                        !areSliceQueriesEqual(slice, column.meta.sliceQuery)
-                    );
-                  });
-                });
+                setTimeout(() => removeColumn(column));
               }
             },
           },
@@ -550,33 +676,49 @@ export function useSliceTableState({
           return undefined;
         });
       },
-      id: `custom-${i}`,
-      accessorFn: () => null,
-      enableSorting: false,
+      id: col.id ?? `custom-${i}`,
+      // Falls back to the old behavior when the caller supplies no accessor:
+      // a null value, which react-table's search skips and which sorts nothing.
+      // `enableSorting` is derived rather than configurable because sorting by
+      // a column whose every value is null is never what anyone wants.
+      accessorFn: col.accessorFn ?? (() => null),
+      enableSorting: col.accessorFn != null,
       ...(col.width != null && { size: col.width }),
       meta: {
         idLabel: "",
         units: "",
         value_type: null,
         datasetName: "",
-        csvHeader: "",
+        csvHeader: col.csvHeader ?? "",
         sliceQuery: {} as SliceQuery,
         isEditable: false,
         isViewable: false,
       },
     }));
 
-    return [...sliceColumns, ...nonSliceColumns];
+    return mergeCustomColumns(
+      sliceColumns,
+      nonSliceColumns,
+      OFFSET,
+      customColumnPlacement
+    );
   }, [
     columns,
     customColumns,
+    customColumnPlacement,
     handleClickEditColumn,
     handleClickViewColumn,
+    removeColumn,
     slices.length,
   ]);
 
   const handleClickFilterButton = useCallback(async () => {
-    const result = await chooseFilters({ enableRowSelection, rowFilters });
+    // The filter dialog only asks whether selection exists at all, not which
+    // rows can use it.
+    const result = await chooseFilters({
+      enableRowSelection: Boolean(enableRowSelection),
+      rowFilters,
+    });
 
     if (result) {
       setRowFilters(result);
@@ -623,6 +765,10 @@ export function useSliceTableState({
       sortedRowIds: displayRowIds ?? undefined,
       visibleColumnIds: visibleColumnIds ?? undefined,
       selectedRowIds,
+      // The merged, correctly-ordered list, so the download matches what is on
+      // screen. Custom columns without a `csvHeader` drop out on the far side,
+      // which is what keeps existing consumers' exports unchanged.
+      columns: extendedColumns,
     });
 
     // Download as file

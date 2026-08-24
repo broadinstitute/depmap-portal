@@ -80,11 +80,11 @@ function TableViewsContent({ plot, expansionAxis }: Props) {
           showModelTranscriptTable(geneSymbol, datasetName, slices)
         }
       >
-        <span>Model/Transcript table</span>{" "}
+        <span>Data Table</span>{" "}
         <span className="glyphicon glyphicon-new-window" />
       </Button>
       <Button onClick={() => showGeneTranscriptTable(geneSymbol)}>
-        <span>Gene/Transcript table</span>{" "}
+        <span>Annotations Table</span>{" "}
         <span className="glyphicon glyphicon-new-window" />
       </Button>
     </div>

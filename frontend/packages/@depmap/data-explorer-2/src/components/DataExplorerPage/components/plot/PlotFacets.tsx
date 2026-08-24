@@ -1,8 +1,14 @@
 import React, { useContext } from "react";
-import { DataExplorerPlotResponse } from "@depmap/types";
+import {
+  DataExplorerPlotConfig,
+  DataExplorerExpandedPlotResponse,
+  DataExplorerPlotResponse,
+} from "@depmap/types";
 import { SectionStackContext } from "../SectionStack";
 import HelpTip from "../HelpTip";
 import LegendLabel from "./LegendLabel";
+import ChooseCategoriesButton from "./ChooseCategoriesButton";
+import ExpansionMembersControl from "../ConfigurationPanel/ExpansionMembersControl";
 import { NEUTRAL_FACET_FILL } from "./prototype/plotUtils";
 import type { ContinuousBins, LegendKey } from "./prototype/plotUtils";
 import styles from "../../styles/DataExplorer2.scss";
@@ -38,7 +44,8 @@ function FacetLabels({
 
   const hasFacetDimensionLabels = Boolean(data?.dimensions?.facet);
   const extraTextHeight = hasFacetDimensionLabels ? 40 : 0;
-  const maxHeight = sectionHeights.Facets - HEIGHT_WITHOUT_LIST - extraTextHeight;
+  const maxHeight =
+    sectionHeights.Facets - HEIGHT_WITHOUT_LIST - extraTextHeight;
 
   return (
     <div className={styles.LegendLabels} style={{ maxHeight }} data-overflow>
@@ -117,7 +124,10 @@ function FacetSliceDescription({
 }
 
 interface Props {
-  data: DataExplorerPlotResponse | null;
+  // Widened to the expanded response so the member counts below are reachable.
+  // The expanded shape extends the plain one, so every other reader is
+  // unaffected; `"expansions" in data` is what distinguishes them.
+  data: DataExplorerPlotResponse | DataExplorerExpandedPlotResponse | null;
   // Display-order list of facets — sortedFacetKeys for density/waterfall,
   // facetOrder for scatter (already computed by each caller for its own
   // rendering purposes; this panel doesn't recompute facet identity).
@@ -130,6 +140,12 @@ interface Props {
   ) => void;
   handleClickShowAllFacets: () => void;
   handleClickHideAllFacets: (facetKeysAsObject: Record<string, string>) => void;
+  plotConfig?: DataExplorerPlotConfig | null;
+  onChangeCategories?: (
+    target: "color" | "facet",
+    categories: string[] | null
+  ) => void;
+  onChangeExpansionMembers?: (members: string[] | null) => void;
 }
 
 // Shown only when color_by/facet_by diverge (resolveColorMode's target is
@@ -148,7 +164,14 @@ function PlotFacets({
   onClickFacetItem,
   handleClickShowAllFacets,
   handleClickHideAllFacets,
+  plotConfig = null,
+  onChangeCategories = undefined,
+  onChangeExpansionMembers = undefined,
 }: Props) {
+  // Only an expanded response carries these; a plain one leaves them undefined,
+  // which the control reads as "no counts to report".
+  const expansion = data && "expansions" in data ? data.expansions[0] : null;
+
   return (
     <div>
       <div className={styles.plotInstructions}>
@@ -165,6 +188,24 @@ function PlotFacets({
         handleClickShowAllFacets={handleClickShowAllFacets}
         handleClickHideAllFacets={handleClickHideAllFacets}
       />
+      {onChangeExpansionMembers && plotConfig?.facet_by === "expansion" ? (
+        // This panel only renders when color and facet have diverged, so when
+        // facet_by is the expansion these rows are its members.
+        <ExpansionMembersControl
+          plot={plotConfig}
+          onChangeMembers={onChangeExpansionMembers}
+          shownCount={expansion?.shown_count}
+          availableCount={expansion?.available_count}
+        />
+      ) : null}
+      {onChangeCategories && (
+        <ChooseCategoriesButton
+          data={data}
+          plotConfig={plotConfig}
+          target="facet"
+          onChangeCategories={onChangeCategories}
+        />
+      )}
     </div>
   );
 }

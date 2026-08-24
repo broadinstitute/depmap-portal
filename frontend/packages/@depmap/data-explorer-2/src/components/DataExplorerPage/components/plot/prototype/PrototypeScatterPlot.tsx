@@ -25,6 +25,7 @@ import {
   getLegendTraces,
   getRange,
   hexToRgba,
+  LEGEND_REMAINDER,
   LegendInfo,
   LegendKey,
   NEUTRAL_FACET_FILL,
@@ -440,17 +441,44 @@ function PrototypeScatterPlot({
     if (colorMap && catColorData) {
       const catCardinality = Object.keys(colorMap || {}).length;
 
+      // Categories that didn't earn their own color are drawn as one bucket,
+      // and it must never occlude a category that did. `plotlyData` is reversed
+      // below, so the LAST entry here is drawn first — at the bottom. That is
+      // also why the count sort is ascending: smallest last, on top.
+      //
+      // The bucket cannot be placed by that sort, being a symbol with no count
+      // of its own, so it is appended explicitly. It sits directly above the
+      // null/N-A trace, which the outer array already keeps below everything.
+      const shownCategories = new Set(
+        [...colorMap.keys()].filter((key) => typeof key === "string")
+      );
+
+      const remainderTrace = colorMap.has(LEGEND_REMAINDER)
+        ? [
+            makeColorTrace(
+              colorMap.get(LEGEND_REMAINDER)!,
+              (i) =>
+                catColorData[i] !== null &&
+                !shownCategories.has(catColorData[i] as string)
+            ),
+          ]
+        : [];
+
       categoricalColorTraces =
         catCardinality < 75
-          ? [...colorMap.keys()]
-              .sort(byValueCountOf(catColorValueCounts))
-              .filter((key) => colorMap.get(key))
-              .map((key) =>
-                makeColorTrace(
-                  colorMap.get(key)!,
-                  (i) => key === catColorData[i]
-                )
-              )
+          ? [
+              ...[...colorMap.keys()]
+                .filter((key) => key !== LEGEND_REMAINDER)
+                .sort(byValueCountOf(catColorValueCounts))
+                .filter((key) => colorMap.get(key))
+                .map((key) =>
+                  makeColorTrace(
+                    colorMap.get(key)!,
+                    (i) => key === catColorData[i]
+                  )
+                ),
+              ...remainderTrace,
+            ]
           : // WORKAROUND: If there's a large number of categories,
             // make a trace for each color instead. This is worse
             // for the stacking order but better for performance.

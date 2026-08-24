@@ -143,8 +143,22 @@ export default function useDimensionStateManager({
       update({ context: undefined });
     }
 
+    // The reverse case: a context that arrived from OUTSIDE the state manager.
+    // A context created in the Context Builder is written straight into the
+    // plot config, and useSync copies it in verbatim — skipping everything
+    // update() does for a context picked in the ContextSelect. Re-assert it so
+    // it gets the same treatment, notably auto-selecting a default data
+    // version when none is set yet.
+    if (
+      !prevContext.current &&
+      state.dimension.context &&
+      !state.dimension.dataset_id
+    ) {
+      update({ context: state.dimension.context });
+    }
+
     prevContext.current = state.dimension.context;
-  }, [state.dimension.context, update]);
+  }, [state.dimension.context, state.dimension.dataset_id, update]);
 
   const noMatchingContexts = useMemo(() => {
     return (

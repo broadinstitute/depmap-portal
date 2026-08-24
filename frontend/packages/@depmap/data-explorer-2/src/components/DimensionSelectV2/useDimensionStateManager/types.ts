@@ -7,6 +7,13 @@ import type {
 export type Mode = "entity-only" | "context-only" | "entity-or-context";
 export type PartialDimension = Partial<DataExplorerPlotConfigDimensionV2>;
 
+// The expansion some OTHER axis of the same plot has already defined. Only the
+// type it expands is needed here: whether this axis may join that expansion
+// turns entirely on being over the same type, and the members themselves get
+// mirrored onto a joining axis's own `context` by the reducer, so the selects
+// already have them.
+export type OtherAxisExpansion = { slice_type: string } | null;
+
 export interface SliceTypeNull {
   valueOf(): null;
   toJSON(): null;
@@ -40,6 +47,12 @@ type SliceTypeOption = BaseOption & { value: string | SliceTypeNull };
 type DataVersionOption = BaseOption & {
   value: string;
   isDefault: boolean;
+  // How many of the selected context's entities this version contains, and how
+  // many the context named. Both undefined when there is no context to measure
+  // against — which is not the same as covering none of it, and the select
+  // distinguishes the two.
+  matched?: number;
+  total?: number;
 };
 
 export interface State {

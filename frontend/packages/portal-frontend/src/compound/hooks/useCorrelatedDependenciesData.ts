@@ -8,8 +8,6 @@ function useCorrelatedDependenciesData(
   datasetId: string,
   compoundLabel: string
 ) {
-  const bapi = cached(breadboxAPI);
-
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [datasetName, setDatasetName] = useState<string>("");
@@ -30,26 +28,26 @@ function useCorrelatedDependenciesData(
         setIsLoading(true);
 
         // get compound dataset name
-        const compoundDataset = await bapi.getDataset(datasetId);
+        const compoundDataset = await cached(breadboxAPI).getDataset(datasetId);
         setDatasetName(compoundDataset.name);
 
         // get compound id by label
-        const compoundDimType = await bapi.getDimensionType("compound_v2");
+        const compoundDimType = await cached(breadboxAPI).getDimensionType(
+          "compound_v2"
+        );
         if (compoundDimType.metadata_dataset_id) {
-          const allCompoundMetadata = await bapi.getTabularDatasetData(
-            compoundDimType.metadata_dataset_id,
-            {
-              identifier: "label",
-              columns: ["CompoundID", "EntrezIDsOfTargets"],
-            }
-          );
+          const allCompoundMetadata = await cached(breadboxAPI, {
+            persist: true,
+          }).getTabularDatasetData(compoundDimType.metadata_dataset_id, {
+            identifier: "label",
+            columns: ["CompoundID", "EntrezIDsOfTargets"],
+          });
           const compoundID = allCompoundMetadata.CompoundID[compoundLabel];
 
           const geneMetadata = await fetchMetadata<any>(
             "gene",
             null,
             ["label"],
-            breadboxAPI,
             "id"
           );
 
@@ -60,7 +58,9 @@ function useCorrelatedDependenciesData(
           setGeneTargets(genes);
 
           // Fetching the correlation data for the given dataset and compound and filtering by associated dataset IDs
-          const datasetAssociations = await bapi.fetchAssociations(
+          const datasetAssociations = await cached(
+            breadboxAPI
+          ).fetchAssociations(
             {
               dataset_id: datasetId,
               identifier: compoundID,

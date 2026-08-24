@@ -11,6 +11,15 @@ import {
 } from "@depmap/types";
 import { linregress, pearsonr, spearmanr } from "@depmap/statistics";
 import wellKnownDatasets from "../../../../../constants/wellKnownDatasets";
+import {
+  HARD_MAX_CATEGORIES,
+  SOFT_MAX_CATEGORIES,
+} from "../../../../../constants/plotConstants";
+import {
+  scoreCategories,
+  selectBestCategories,
+} from "../../../../../utils/bestCategories";
+import { compareNaturally } from "@depmap/utils";
 
 // HACK: Copied from the "depmap-shared" directory.
 const colorPalette = {
@@ -52,6 +61,13 @@ export const LEGEND_BOTH = Symbol("Both");
 // identities make the correct text a certainty, not a guess, everywhere.
 export const LEGEND_OTHER = Symbol("Other");
 export const LEGEND_NEITHER = Symbol("Neither");
+// A third, distinct meaning: real categories with real data that didn't earn
+// their own color, collapsed together. Not LEGEND_OTHER (which means "no
+// value") and not LEGEND_NEITHER (which means "in neither selected context").
+// Kept separate for the same reason those two are — so display text is a
+// certainty rather than a guess — and because a grey point must not be
+// ambiguous between "missing" and "not highlighted".
+export const LEGEND_REMAINDER = Symbol("Remainder");
 export const LEGEND_RANGE_1 = Symbol("Range 1");
 export const LEGEND_RANGE_2 = Symbol("Range 2");
 export const LEGEND_RANGE_3 = Symbol("Range 3");
@@ -68,6 +84,7 @@ export type LegendKey =
   | typeof LEGEND_BOTH
   | typeof LEGEND_OTHER
   | typeof LEGEND_NEITHER
+  | typeof LEGEND_REMAINDER
   | typeof LEGEND_RANGE_1
   | typeof LEGEND_RANGE_2
   | typeof LEGEND_RANGE_3
@@ -149,10 +166,16 @@ export const DEFAULT_PALETTE = {
 // regardless of palette customization.
 export const NEUTRAL_FACET_FILL = "#bdbdbd";
 
-const collator = new Intl.Collator(undefined, {
-  numeric: true,
-  sensitivity: "base",
-});
+// Deliberately darker than palette.other, which paints missing data. The two
+// buckets can appear in one legend, and a reader has to be able to tell "this
+// point has no value" from "this point's category wasn't one of the ones shown".
+export const REMAINDER_FILL = "#8a8a8a";
+
+// The facet panel that collapsed categories share. A plain string, because
+// facetKeys are strings throughout (the null facet is likewise the literal
+// "N/A"); facetColorKeys translates it back to LEGEND_REMAINDER for anything
+// doing a color or visibility lookup.
+export const REMAINDER_FACET = "Other categories";
 
 const compareLegendKeys = (keyA: symbol | string, keyB: symbol | string) => {
   if (typeof keyA === "symbol") {
@@ -163,7 +186,7 @@ const compareLegendKeys = (keyA: symbol | string, keyB: symbol | string) => {
     return -1;
   }
 
-  return collator.compare(keyA, keyB);
+  return compareNaturally(keyA, keyB);
 };
 
 export const hexToRgba = (hex: string, alpha: number) => {
@@ -269,7 +292,8 @@ export function computeFacets(
   // target "color" to facet by color_by's own triad when facet_by is
   // unset — the internals below don't care which triad they're reading,
   // they just read whichever `target` names.
-  target: "color" | "facet" = "facet"
+  target: "color" | "facet" = "facet",
+  chosen?: string[] | null
 ): {
   facetKeys: string[];
   facetOrder?: string[];
@@ -291,9 +315,32 @@ export function computeFacets(
 
   const catSlice = findCategoricalSlice(data, mode, target);
   if (catSlice) {
-    const facetKeys: string[] = catSlice.values.map((v) =>
-      v == null ? "N/A" : String(v)
+    // Facets are capped for the same reason colors are, and by the same
+    // ranking — a panel per category stops being readable well before the
+    // categories run out, and `ceil(sqrt(F))` will happily lay out a hundred of
+    // them. The collapsed ones share one panel rather than disappearing.
+    //
+    // This has to agree with computeDensitySeriesForMode, which resolves the
+    // same points through the same function. When it didn't, the series put a
+    // point in the remainder while the order still listed its category, and the
+    // panel rendered as empty space.
+    const { shown, hasRemainder } = getShownCategories(
+      catSlice.values as string[],
+      data.dimensions,
+      data.filters,
+      SOFT_MAX_CATEGORIES,
+      chosen
     );
+
+    const facetKeys: string[] = catSlice.values.map((v) => {
+      if (v == null) {
+        return "N/A";
+      }
+
+      const category = String(v);
+
+      return hasRemainder && !shown.has(category) ? REMAINDER_FACET : category;
+    });
 
     // facetOrder: alphabetical (natural, case-insensitive — same collator
     // sortLegendKeys/sortLegendKeysWaterfall use for density/waterfall's own
@@ -307,12 +354,19 @@ export function computeFacets(
     // symbol itself, so it needs the same explicit append-last handling the
     // continuous branch below already uses for its own null facet.
     const hasNullFacet = facetKeys.includes("N/A");
-    const realNames = [...new Set(facetKeys)].filter((k) => k !== "N/A");
+    const hasRemainderFacet = facetKeys.includes(REMAINDER_FACET);
+
+    const realNames = [...new Set(facetKeys)].filter(
+      (k) => k !== "N/A" && k !== REMAINDER_FACET
+    );
 
     return {
       facetKeys,
+      // The two catch-alls go last, in the same order the legend puts them:
+      // the collapsed categories, then the ones with no value at all.
       facetOrder: [
         ...realNames.sort(compareLegendKeys),
+        ...(hasRemainderFacet ? [REMAINDER_FACET] : []),
         ...(hasNullFacet ? ["N/A"] : []),
       ],
       // "N/A" stringifies the same LEGEND_OTHER identity the color
@@ -321,7 +375,13 @@ export function computeFacets(
       // caller doing a colorMap/hiddenLegendValues lookup by the formatted
       // string must translate back through here first, same as the
       // continuous/custom-filter branches below.
-      facetColorKeys: { "N/A": LEGEND_OTHER },
+      facetColorKeys: {
+        "N/A": LEGEND_OTHER,
+        // Only when there is one. This table describes the facets actually
+        // present, and a caller translating a name it never saw would be
+        // looking up something that isn't on the plot.
+        ...(hasRemainderFacet ? { [REMAINDER_FACET]: LEGEND_REMAINDER } : {}),
+      },
     };
   }
 
@@ -417,9 +477,12 @@ export function computeFacetedLinReg(
   // call site shifts meaning. Defaults to "facet" — this function's
   // original purpose; the regression fallback (Addendum 5) also calls this
   // with target "color" to fit color_by's own facets when facet_by is unset.
-  target: "color" | "facet" = "facet"
+  target: "color" | "facet" = "facet",
+  // Must match how the renderer facets, or the per-facet fits are keyed to
+  // panels that don't exist.
+  chosen?: string[] | null
 ): LinRegInfo[] {
-  const facetInfo = computeFacets(data, mode, target);
+  const facetInfo = computeFacets(data, mode, target, chosen);
   const xs = data.dimensions?.x?.values;
   const ys = data.dimensions?.y?.values;
 
@@ -861,7 +924,12 @@ export function formatDataForWaterfall(
   data: DataExplorerPlotResponse | null,
   color_by: DataExplorerPlotConfig["color_by"],
   sortedFacetKeys?: (string | symbol)[],
-  facetData?: (string | null)[] | null,
+  // Symbols allowed, matching sortedFacetKeys above and what the bucketing
+  // below already does (`Record<string | symbol, …>` keyed via Reflect.ownKeys).
+  // The color side spells its remainder as a symbol, so clustering by the
+  // collapsed color partition needs this to be as wide as the implementation
+  // always was.
+  facetData?: (string | symbol | null)[] | null,
   target: "color" | "facet" = "color"
 ) {
   if (!data) {
@@ -882,7 +950,7 @@ export function formatDataForWaterfall(
   // when supplied; otherwise reuse the color-side catColorData, matching
   // pre-split behavior.
   const clusterBy = (facetData ?? formatted.catColorData) as
-    | (string | null)[]
+    | (string | symbol | null)[]
     | null;
 
   if (!clusterBy) {
@@ -1212,7 +1280,8 @@ export function calcVisibility(
   continuousBins: any,
   hide_points?: boolean,
   color_by?: ColorByValue,
-  target: "color" | "facet" = "color"
+  target: "color" | "facet" = "color",
+  chosen?: string[] | null
 ) {
   if (!data) {
     return null;
@@ -1254,19 +1323,23 @@ export function calcVisibility(
   const catValues = findCategoricalSlice(data, color_by, target)?.values;
 
   if (catValues) {
-    const hideOthers = hiddenLegendValues.has(LEGEND_OTHER);
+    // Through the resolver rather than against the raw value: a collapsed
+    // category is no longer a legend row of its own, so `hiddenLegendValues`
+    // will never contain it and testing it directly leaves those points
+    // permanently visible while the bucket's own toggle moves nothing.
+    const toLegendKey = makeLegendKeyResolver(
+      getShownCategories(
+        catValues as string[],
+        (data.dimensions as unknown) as Record<string, { values: unknown[] }>,
+        (data.filters as unknown) as Record<string, { values: boolean[] }>,
+        SOFT_MAX_CATEGORIES,
+        chosen
+      )
+    );
 
-    return catValues.map((value) => {
-      if (hiddenLegendValues.has(value)) {
-        return false;
-      }
-
-      if (hideOthers && !value) {
-        return false;
-      }
-
-      return true;
-    });
+    return catValues.map(
+      (value) => !hiddenLegendValues.has(toLegendKey(value))
+    );
   }
 
   const c1Values = data.filters?.[`${target}1`]?.values;
@@ -1309,6 +1382,42 @@ export function calcVisibility(
   }
 
   return visiblePoints;
+}
+
+// How many points the plot would actually draw. "Would draw" is the same rule
+// the legend uses to gray out a category with nothing behind it: visible, and
+// non-null on every axis in play. Factored out so the two can't drift — a plot
+// reporting itself empty while the legend still lists live categories, or the
+// reverse, would be worse than either answer alone.
+//
+// Returns null when there is nothing to judge by, which is not the same as
+// zero. A correlation heatmap has no per-point x/y arrays at all, and a plot
+// mid-configuration may have no x dimension yet; neither is an empty result.
+export function countPlottablePoints(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any
+): number | null {
+  const xValues = data?.dimensions?.x?.values;
+
+  if (!xValues) {
+    return null;
+  }
+
+  const yValues = data?.dimensions?.y?.values;
+  const visible = data?.filters?.visible;
+  let count = 0;
+
+  for (let i = 0; i < xValues.length; i += 1) {
+    if (
+      (!visible || visible.values[i]) &&
+      xValues[i] !== null &&
+      (!yValues || yValues[i] !== null)
+    ) {
+      count += 1;
+    }
+  }
+
+  return count;
 }
 
 export function getLegendKeysWithNoData(
@@ -1548,18 +1657,48 @@ const hasPlottableNulls = (
   return false;
 };
 
-function makeCategoricalColorMap(
-  values: string[] | null,
-  dimensions: Record<string, { dataset_id: string; values: unknown[] }> | null,
-  filters: Record<string, { values: boolean[] }> | null,
-  metadata: DataExplorerMetadata | null,
-  palette: DataExplorerColorPalette,
-  target: "color" | "facet" = "color"
-) {
-  const out: Map<LegendKey, string> = new Map();
+// Which categories get to be themselves, and whether anything was collapsed.
+//
+// This is the single answer to that question. It used to be computed inside the
+// color map and nowhere else, which was wrong: the color map is one of four
+// places that turn a point's category into a legend key — visibility toggling,
+// the density/waterfall series, and the no-data bookkeeping are the others —
+// and each of them independently assumed every category *is* a key. That held
+// until categories started being collapsed, and then each one broke in its own
+// way: blank legend rows, a toggle that moved nothing, phantom density curves.
+//
+// Derived from the data rather than from the color map on purpose. The density
+// path builds its series first and hands the resulting order to the color map,
+// so a consumer that asked the color map would be asking something that does
+// not exist yet.
+// Which of the two override lists governs a partition. Keyed off the RESOLVED
+// target, never the raw config field: when `color_by` defers to `facet_by`
+// there is one partition, resolved as target "facet", and `facet_categories` is
+// what governs it. Going through here is what stops the two lists disagreeing
+// about a partition they share.
+export function chosenCategoriesFor(
+  plotConfig:
+    | Pick<DataExplorerPlotConfig, "color_categories" | "facet_categories">
+    | null
+    | undefined,
+  target: "color" | "facet"
+): string[] | undefined {
+  return target === "facet"
+    ? plotConfig?.facet_categories
+    : plotConfig?.color_categories;
+}
 
+export function getShownCategories(
+  values: string[] | null,
+  dimensions: Record<string, { values: unknown[] }> | null,
+  filters: Record<string, { values: boolean[] }> | null,
+  cap: number = SOFT_MAX_CATEGORIES,
+  // The user's own choice, from the category picker. Overrides the ranking
+  // entirely — that is what makes it a choice rather than a suggestion.
+  chosen?: string[] | null
+): { shown: Set<string>; hasRemainder: boolean } {
   if (!values) {
-    return out;
+    return { shown: new Set(), hasRemainder: false };
   }
 
   const visible = filters?.visible?.values || Array(values.length).fill(true);
@@ -1571,9 +1710,286 @@ function makeCategoricalColorMap(
     visible
   );
 
+  const allKeys = ([...counts.keys()].filter(Boolean) as string[]).filter(
+    (key) => counts.get(key)! > 0 && plottableCategories.has(key)
+  );
+
+  if (chosen && chosen.length > 0) {
+    // Intersected with what the data actually has rather than trusted outright,
+    // so a config naming categories this annotation no longer contains can't
+    // ask for something that isn't there. Capped for the same reason a ranked
+    // set is: deliberateness doesn't make a hundred swatches legible.
+    const wanted = new Set(chosen);
+    const kept = allKeys
+      .filter((key) => wanted.has(key))
+      .slice(0, HARD_MAX_CATEGORIES);
+
+    // Nothing survived — the choice is entirely stale, so choosing is better
+    // than showing an empty plot.
+    if (kept.length > 0) {
+      return {
+        shown: new Set(kept),
+        hasRemainder: kept.length < allKeys.length,
+      };
+    }
+  }
+
+  if (allKeys.length <= cap) {
+    return { shown: new Set(allKeys), hasRemainder: false };
+  }
+
+  const axes = [dimensions?.x, dimensions?.y]
+    .filter(Boolean)
+    .map((dim) => dim!.values)
+    // A categorical or otherwise non-numeric axis has no position to be
+    // separated along, so it contributes nothing to the score.
+    .filter((vals) => vals.some((v) => typeof v === "number")) as (
+    | number
+    | null
+  )[][];
+
+  const kept = selectBestCategories(
+    scoreCategories(values, axes, visible),
+    cap,
+    compareNaturally
+  );
+
+  return { shown: new Set(kept), hasRemainder: kept.length < allKeys.length };
+}
+
+// Maps one point's raw category value to the legend key that represents it.
+// Null becomes N/A; a collapsed category becomes the remainder bucket.
+export function makeLegendKeyResolver(shownCategories: {
+  shown: Set<string>;
+  hasRemainder: boolean;
+}) {
+  const { shown, hasRemainder } = shownCategories;
+
+  return (value: unknown): LegendKey => {
+    if (value === null || value === undefined || value === "") {
+      return LEGEND_OTHER;
+    }
+
+    const category = String(value);
+
+    if (shown.has(category) || !hasRemainder) {
+      return category;
+    }
+
+    return LEGEND_REMAINDER;
+  };
+}
+
+// Collapses a categorical series and its key order together, so the points and
+// the list of things that represent them can never disagree.
+//
+// Both halves matter and they are easy to fix one at a time: collapsing only
+// the series leaves the Facets panel offering rows the plot has merged away;
+// collapsing only the order leaves points stranded in a panel with nothing in
+// it. Every categorical color/facet path should go through here.
+export function collapseCategoricalSeries<K extends LegendKey = LegendKey>(
+  values: (string | null)[],
+  dimensions: Record<string, { values: unknown[] }> | null,
+  filters: Record<string, { values: boolean[] }> | null,
+  rawSortedKeys: LegendKey[] | undefined,
+  chosen?: string[] | null,
+  // How the bucket is spelled. The color side keys legends by symbol; the
+  // facet side keys panels by string, exactly as it does for null ("N/A" rather
+  // than LEGEND_OTHER). Callers pass whichever their pipeline is built from.
+  remainderKey: LegendKey = LEGEND_REMAINDER
+): { series: K[]; sortedKeys: K[] | undefined } {
+  const resolve = makeLegendKeyResolver(
+    getShownCategories(
+      values as string[],
+      dimensions,
+      filters,
+      SOFT_MAX_CATEGORIES,
+      chosen
+    )
+  );
+
+  const toLegendKey = (value: unknown) => {
+    const key = resolve(value);
+    return key === LEGEND_REMAINDER ? remainderKey : key;
+  };
+
+  const series = values.map(toLegendKey) as K[];
+
+  if (!rawSortedKeys) {
+    return { series, sortedKeys: rawSortedKeys };
+  }
+
+  const seen = new Set<LegendKey>();
+  const sortedKeys: LegendKey[] = [];
+  let sawRemainder = false;
+
+  rawSortedKeys.forEach((key) => {
+    const resolved = typeof key === "string" ? toLegendKey(key) : key;
+
+    if (resolved === remainderKey) {
+      sawRemainder = true;
+      return;
+    }
+
+    if (!seen.has(resolved)) {
+      seen.add(resolved);
+      sortedKeys.push(resolved);
+    }
+  });
+
+  if (sawRemainder) {
+    // Just before N/A, matching computeFacets' order and the legend's.
+    const naIndex = sortedKeys.indexOf(LEGEND_OTHER);
+
+    if (naIndex === -1) {
+      sortedKeys.push(remainderKey);
+    } else {
+      sortedKeys.splice(naIndex, 0, remainderKey);
+    }
+  }
+
+  return { series: series as K[], sortedKeys: sortedKeys as K[] };
+}
+
+// Paint order for categorical color groups within one facet (or across the
+// whole plot when `facet` is null).
+//
+// Smallest last in the returned array is NOT the convention: callers reverse
+// their trace list, so this returns ascending by count and the smallest ends up
+// drawn last, on top. The size that decides burial is the size *within the
+// facet* — facets partition the points, so a color that is rare overall can
+// dominate one panel and be a handful of points in another.
+export function orderColorKeysByCount(
+  colorMap: Map<LegendKey, string>,
+  colorData: LegendKey[],
+  facetData: LegendKey[] | null,
+  facet: LegendKey | null,
+  visible: boolean[],
+  // The plotted positions, for the tiebreak. Optional, but worth supplying:
+  // counts tie constantly. Coloring by an expansion member gives every color
+  // exactly one point per index entity, so every group is the same size and
+  // count alone can say nothing about which should sit on top.
+  //
+  // Spread can. A tightly clustered group covers few pixels and disappears
+  // under anything drawn over it; a diffuse one loses almost nothing by sitting
+  // underneath. So the tighter group goes on top. This is variance, not
+  // clustering — one more accumulator in the pass that already counts.
+  axes?: (number | null)[][]
+): LegendKey[] {
+  const counts = new Map<LegendKey, number>();
+  const sums = new Map<LegendKey, number[]>();
+  const sumSquares = new Map<LegendKey, number[]>();
+
+  for (let i = 0; i < colorData.length; i += 1) {
+    if (visible[i] === false) {
+      continue;
+    }
+
+    if (facet !== null && facetData && facetData[i] !== facet) {
+      continue;
+    }
+
+    const key = colorData[i];
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+
+    if (axes) {
+      if (!sums.has(key)) {
+        sums.set(
+          key,
+          axes.map(() => 0)
+        );
+        sumSquares.set(
+          key,
+          axes.map(() => 0)
+        );
+      }
+
+      for (let a = 0; a < axes.length; a += 1) {
+        const value = axes[a][i];
+
+        if (typeof value === "number") {
+          sums.get(key)![a] += value;
+          sumSquares.get(key)![a] += value * value;
+        }
+      }
+    }
+  }
+
+  // Summed across axes, so a group tight on both counts as tighter than one
+  // tight on only one. Unitless comparison isn't a concern: every group is
+  // being measured on the same axes.
+  const spreadOf = (key: LegendKey) => {
+    const n = counts.get(key) ?? 0;
+    const sum = sums.get(key);
+    const sumSq = sumSquares.get(key);
+
+    if (!sum || !sumSq || n < 2) {
+      return 0;
+    }
+
+    return sum.reduce((running, s, a) => {
+      const mean = s / n;
+      return running + Math.max(0, sumSq[a] / n - mean * mean);
+    }, 0);
+  };
+
+  // The three catch-all identities go to the bottom together. The remainder
+  // bucket belongs with them: it is the collapsed categories, and burying the
+  // individually-named ones under it would undo the point of naming them.
+  const isCatchAll = (key: LegendKey) =>
+    key === LEGEND_OTHER || key === LEGEND_NEITHER || key === LEGEND_REMAINDER;
+
+  // Per facet, drop colors with nothing in this panel rather than emitting an
+  // empty trace for each.
+  const keys = [...colorMap.keys()].filter(
+    (key) => facet === null || (counts.get(key) ?? 0) > 0
+  );
+
+  return [
+    ...keys
+      .filter((key) => !isCatchAll(key))
+      .sort((a, b) => {
+        const byCount = (counts.get(a) ?? 0) - (counts.get(b) ?? 0);
+
+        return byCount === 0 ? spreadOf(a) - spreadOf(b) : byCount;
+      }),
+    ...keys.filter(isCatchAll),
+  ];
+}
+
+function makeCategoricalColorMap(
+  values: string[] | null,
+  dimensions: Record<string, { dataset_id: string; values: unknown[] }> | null,
+  filters: Record<string, { values: boolean[] }> | null,
+  metadata: DataExplorerMetadata | null,
+  palette: DataExplorerColorPalette,
+  target: "color" | "facet" = "color",
+  cap: number = SOFT_MAX_CATEGORIES,
+  chosen?: string[] | null
+) {
+  const out: Map<LegendKey, string> = new Map();
+
+  if (!values) {
+    return out;
+  }
+
+  const visible = filters?.visible?.values || Array(values.length).fill(true);
+  const counts = categoricalDataToValueCounts(values, visible);
+
+  // Which categories survive is getShownCategories' answer, not this
+  // function's. It used to be decided here, which is how the other consumers
+  // came to disagree with it.
+  const { shown, hasRemainder } = getShownCategories(
+    values,
+    dimensions,
+    filters,
+    cap,
+    chosen
+  );
+
   const keys = ([...counts.keys()].filter(Boolean) as string[])
-    .filter((key) => counts.get(key)! > 0 && plottableCategories.has(key))
-    .sort(collator.compare);
+    .filter((key) => shown.has(key))
+    .sort(compareNaturally);
 
   const legacySliceId = (metadata?.[`${target}_property`] as {
     slice_id?: string;
@@ -1610,11 +2026,35 @@ function makeCategoricalColorMap(
     });
   }
 
+  if (hasRemainder) {
+    out.set(LEGEND_REMAINDER, REMAINDER_FILL);
+  }
+
   if (hasPlottableNulls(values, dimensions, visible, target)) {
     out.set(LEGEND_OTHER, palette.other);
   }
 
   return out;
+}
+
+// Whether a facet key list partitions anything, or is just the placeholder
+// track calcDensityStats hands back when facet_by is unset.
+//
+// The list is never absent and never empty, so `Boolean(keys)` answers "did the
+// stats run" rather than "is facet_by doing something" — a distinction that is
+// invisible until something branches on it, at which point an unfaceted plot
+// grows a Facets panel whose only row is "All".
+//
+// The config-side counterpart is getColorMap's hasRealFacetBacking below, which
+// asks computeFacets instead. The two agree: LEGEND_ALL alone is exactly what an
+// unset facet_by produces.
+export function hasRealFacetPartition(
+  sortedFacetKeys: LegendKey[] | undefined
+): boolean {
+  return Boolean(
+    sortedFacetKeys &&
+      !(sortedFacetKeys.length === 1 && sortedFacetKeys[0] === LEGEND_ALL)
+  );
 }
 
 export function getColorMap(
@@ -1632,7 +2072,13 @@ export function getColorMap(
   // when facet_by is doing something on its own even though color isn't,
   // palette.all only when nothing is set at all.
   const hasRealFacetBacking = Boolean(
-    data && computeFacets(data, plotConfig.facet_by)
+    data &&
+      computeFacets(
+        data,
+        plotConfig.facet_by,
+        "facet",
+        chosenCategoriesFor(plotConfig, "facet")
+      )
   );
   const allColor = hasRealFacetBacking ? NEUTRAL_FACET_FILL : palette.all;
 
@@ -1652,7 +2098,9 @@ export function getColorMap(
       data.filters,
       data.metadata,
       palette,
-      target
+      target,
+      SOFT_MAX_CATEGORIES,
+      chosenCategoriesFor(plotConfig, target)
     );
   }
 
@@ -1717,16 +2165,61 @@ export function getColorMap(
   }
 
   if (sortedLegendKeys) {
-    const sortedColorMap: typeof colorMap = new Map();
-
-    sortedLegendKeys.forEach((key: LegendKey) => {
-      sortedColorMap.set(key, colorMap.get(key)!);
-    });
-
-    colorMap = sortedColorMap;
+    colorMap = reorderColorMap(colorMap, sortedLegendKeys);
   }
 
   return colorMap;
+}
+
+// Applies density_1d/waterfall's legend ordering to a color map.
+//
+// `sortedLegendKeys` is an ORDER and nothing more. It is derived from the data,
+// so it names categories the color map may have deliberately left out, and it
+// knows nothing about buckets that aren't categories.
+export function reorderColorMap(
+  colorMap: Map<LegendKey, string>,
+  sortedLegendKeys: LegendKey[]
+): Map<LegendKey, string> {
+  const sortedColorMap: Map<LegendKey, string> = new Map();
+
+  sortedLegendKeys.forEach((key: LegendKey) => {
+    // `sortedLegendKeys` is an ORDER, derived from the data, so it still
+    // names every category — including the ones the ranking collapsed into
+    // the remainder bucket. Re-adding those here would give them an undefined
+    // color and put them back in the legend as blank rows backing no points,
+    // where toggling them does nothing.
+    //
+    // Only string keys, because only categories can be collapsed. The symbol
+    // keys pass through exactly as before, undefined color included — the
+    // continuous-N/A path currently depends on this branch creating its entry
+    // (see the LEGEND_OTHER reorder test), and that is a separate thread to
+    // pull.
+    if (typeof key === "string" && !colorMap.has(key)) {
+      return;
+    }
+
+    sortedColorMap.set(key, colorMap.get(key)!);
+  });
+
+  // Anything the ordering doesn't know about — the remainder bucket, which is
+  // not a category and so was never in the data the order was derived from.
+  // Dropping it would take the bucket out of the legend and out of the paint
+  // path with it, since both read the color map.
+  colorMap.forEach((color, key) => {
+    if (!sortedColorMap.has(key)) {
+      sortedColorMap.set(key, color);
+    }
+  });
+
+  // Keep N/A last, as every branch of sortLegendKeys already arranges. A Map
+  // won't move an existing key on re-set, hence the delete.
+  if (sortedColorMap.has(LEGEND_OTHER)) {
+    const naColor = sortedColorMap.get(LEGEND_OTHER)!;
+    sortedColorMap.delete(LEGEND_OTHER);
+    sortedColorMap.set(LEGEND_OTHER, naColor);
+  }
+
+  return sortedColorMap;
 }
 
 export function countExclusivelyTrueValues(
@@ -1824,6 +2317,10 @@ export function categoryToDisplayName(
     return "All";
   }
 
+  if (category === LEGEND_REMAINDER) {
+    return "Other categories";
+  }
+
   // LEGEND_NEITHER (a real, explicit "in neither selected context" bucket)
   // and LEGEND_OTHER (missing/null data) are distinct identities precisely
   // so this never has to guess which display text applies — see their
@@ -1852,6 +2349,79 @@ export function categoryToDisplayName(
   }
 
   return category;
+}
+
+// Trims a facet's name to what its label can hold.
+//
+// Both faceted renderers need this and neither has room to negotiate: the
+// density plot writes these as y-axis tick text, where a long name pushes the
+// left margin until the panels themselves are squeezed, and the small-multiples
+// scatter writes them as titles centered over panels only a fraction of the
+// figure wide. An untrimmed name silently overlaps its neighbors in the second
+// case rather than being clipped.
+//
+// 25 is what the density plot has always used, and stays its budget: its tracks
+// are stacked vertically, so a name has the full figure width whatever the facet
+// count. The scatter passes a smaller number as its grid tightens — see
+// facetLabelBudget. The full names remain in the Facets panel either way.
+const DEFAULT_MAX_FACET_LABEL = 25;
+
+export function truncateFacetLabel(
+  s: string,
+  maxChars: number = DEFAULT_MAX_FACET_LABEL
+) {
+  return s && s.length > maxChars ? `${s.substr(0, maxChars)}…` : s;
+}
+
+// How many characters a facet title can hold above one panel of a `cols`-wide
+// grid, given the grid's total width in pixels (the figure minus its left and
+// right margins, which is what a paper-referenced annotation spans).
+//
+// Plotly isn't deciding the layout — SmallMultiplesScatter is, at a fixed
+// `cols = ceil(sqrt(F))` — so this is arithmetic rather than a guess about what
+// the library will do.
+//
+// What a title must not outgrow is the column *pitch*, not the panel's own
+// domain. Adjacent titles are centered over adjacent panels, so a long one may
+// spill into the gutter on both sides and still clear its neighbors; the two
+// collide only once their average width passes the distance between panel
+// centers. GUTTER keeps them from touching when both run long.
+//
+// The character count comes from an assumed average glyph advance rather than a
+// measurement, since there is nothing rendered to measure at layout time.
+// Plotly's default stack is Verdana-like, whose lowercase runs near 0.6em;
+// overestimating is the safe direction, as it only trims harder. Clamped at both
+// ends: a dense grid still shows enough of each name to tell them apart, and a
+// roomy one doesn't start showing more than the density plot would.
+//
+// Measured at build time, so it doesn't follow a window resize — Plotly's
+// resize path repaints the existing annotations rather than rebuilding them.
+// Widening is harmless and narrowing lands back on the fixed-25 behavior this
+// replaced, until the next config change rebuilds the figure.
+export function facetLabelBudget({
+  gridWidth,
+  cols,
+  fontSize,
+}: {
+  gridWidth: number;
+  cols: number;
+  fontSize: number;
+}): number {
+  const MIN_CHARS = 8;
+  const GUTTER = 8;
+  const EM_PER_CHAR = 0.6;
+
+  // Nothing measured yet (first pass, or a detached node). Anything derived
+  // from a zero width would trim to the floor, which is far worse than the
+  // untightened default.
+  if (!Number.isFinite(gridWidth) || gridWidth <= 0) {
+    return DEFAULT_MAX_FACET_LABEL;
+  }
+
+  const pitch = gridWidth / Math.max(1, cols);
+  const chars = Math.floor((pitch - GUTTER) / (fontSize * EM_PER_CHAR));
+
+  return Math.min(DEFAULT_MAX_FACET_LABEL, Math.max(MIN_CHARS, chars));
 }
 
 // Flattens categoryToDisplayName's result (a plain string, or a [min, max]
@@ -2269,7 +2839,8 @@ function computeDensitySeriesForMode(
   sort_by: string | undefined,
   mode: ColorByValue | undefined,
   target: "color" | "facet" = "color",
-  includeEmpty = false
+  includeEmpty = false,
+  chosen?: string[] | null
 ): {
   series: any[] | null;
   unusedKeys: Set<unknown>;
@@ -2329,12 +2900,22 @@ function computeDensitySeriesForMode(
       }
     });
 
+    // Collapsed categories share the remainder's series and its key, or
+    // density_1d and waterfall would draw a separate curve for each of them —
+    // uncolored, with no legend row to explain or toggle it, and a Facets
+    // panel still offering them as though they were there.
+    const collapsed = collapseCategoricalSeries(
+      catData.values as (string | null)[],
+      data.dimensions,
+      data.filters,
+      sortLegendKeys1D(data, catData, sort_by, includeEmpty) as LegendKey[],
+      chosen
+    );
+
     return {
-      series: catData.values.map((x: unknown) =>
-        x === null ? LEGEND_OTHER : x
-      ),
+      series: collapsed.series,
       unusedKeys,
-      sortedKeys: sortLegendKeys1D(data, catData, sort_by, includeEmpty),
+      sortedKeys: collapsed.sortedKeys,
     };
   }
 
@@ -2394,7 +2975,20 @@ export function calcDensityStats(
   // from facet's own continuous values, mirroring how `continuousBins` is
   // computed from color's.
   facetContinuousBins: any = null,
-  isExpanded = false
+  isExpanded = false,
+  // The categories the user picked by hand, per side, or absent to let the
+  // automatic ranking choose. Grouped into one trailing object rather than two
+  // more positional parameters: this signature is already seven long, and the
+  // color half would otherwise sit four arguments away from the `colorMode` it
+  // belongs to.
+  //
+  // Threading these was the whole bug. Every other renderer reaches
+  // getShownCategories with the chosen list in hand — the waterfall through
+  // collapseCategoricalSeries, the scatter through computeFacets, the legend
+  // through getColorMap — but density's series come from here, and here had no
+  // parameter to carry them. Both sides were affected; only the facet half got
+  // noticed, because that is the one with a panel next to it to disagree with.
+  chosen: { color?: string[] | null; facet?: string[] | null } = {}
 ) {
   // When the color legend IS the expansion (mode "expansion" — the
   // color_by/facet_by-equivalent configuration where the Legend panel
@@ -2409,7 +3003,8 @@ export function calcDensityStats(
     sort_by,
     colorMode.mode,
     colorMode.target,
-    isExpanded && colorMode.mode === "expansion"
+    isExpanded && colorMode.mode === "expansion",
+    chosen.color
   );
 
   // isExpanded is threaded through as `includeEmpty`: the facet side needs
@@ -2423,7 +3018,8 @@ export function calcDensityStats(
         sort_by,
         facet_by,
         "facet",
-        isExpanded
+        isExpanded,
+        chosen.facet
       )
     : null;
 
@@ -2887,6 +3483,72 @@ export function orderContinuousPointsByBin(
     .map(({ origIndex }) => origIndex);
 }
 
+// Per-group positional variance, summed across axes. Shared by the two paint
+// orderings so they break ties the same way.
+function spreadByKey(
+  catColorData: (string | number | null)[] | null,
+  visible: boolean[],
+  axes?: (number | null)[][]
+): Map<string, number> {
+  const out = new Map<string, number>();
+
+  if (!catColorData || !axes || axes.length === 0) {
+    return out;
+  }
+
+  const counts = new Map<string, number>();
+  const sums = new Map<string, number[]>();
+  const sumSquares = new Map<string, number[]>();
+
+  for (let i = 0; i < catColorData.length; i += 1) {
+    if (!visible[i] || catColorData[i] == null) {
+      continue;
+    }
+
+    const key = String(catColorData[i]);
+
+    if (!sums.has(key)) {
+      counts.set(key, 0);
+      sums.set(
+        key,
+        axes.map(() => 0)
+      );
+      sumSquares.set(
+        key,
+        axes.map(() => 0)
+      );
+    }
+
+    counts.set(key, counts.get(key)! + 1);
+
+    for (let a = 0; a < axes.length; a += 1) {
+      const value = axes[a][i];
+
+      if (typeof value === "number") {
+        sums.get(key)![a] += value;
+        sumSquares.get(key)![a] += value * value;
+      }
+    }
+  }
+
+  counts.forEach((n, key) => {
+    if (n < 2) {
+      out.set(key, 0);
+      return;
+    }
+
+    out.set(
+      key,
+      sums.get(key)!.reduce((running, s, a) => {
+        const mean = s / n;
+        return running + Math.max(0, sumSquares.get(key)![a] / n - mean * mean);
+      }, 0)
+    );
+  });
+
+  return out;
+}
+
 export function getSolidColorGroups(args: {
   color1: (boolean | null)[] | null;
   color2: (boolean | null)[] | null;
@@ -2894,8 +3556,20 @@ export function getSolidColorGroups(args: {
   colorMap: Map<LegendKey, string>;
   palette: DataExplorerColorPalette;
   visible: boolean[];
+  // Positions, for the same tiebreak orderColorKeysByCount uses — see its
+  // comment. Counts tie whenever color is an expansion member, and then only
+  // spread can say which group is at risk of being buried.
+  axes?: (number | null)[][];
 }): SolidColorGroup[] {
-  const { color1, color2, catColorData, colorMap, palette, visible } = args;
+  const {
+    color1,
+    color2,
+    catColorData,
+    colorMap,
+    palette,
+    visible,
+    axes,
+  } = args;
 
   // Comparison mode: two boolean masks plus their overlap, with an "other"
   // catch-all for points in neither.
@@ -2941,21 +3615,50 @@ export function getSolidColorGroups(args: {
       visible
     );
 
-    const groups: SolidColorGroup[] = [...colorMap.keys()]
+    // Larger first, i.e. at the bottom. Note this is the opposite array
+    // convention from orderColorKeysByCount, whose caller reverses.
+    const spread = spreadByKey(catColorData, visible, axes);
+
+    const groups: (SolidColorGroup & { key: string })[] = [...colorMap.keys()]
       .filter((key): key is string => typeof key === "string")
       .map((key) => ({ key, count: counts.get(key) || 0 }))
       // Drop categories with no visible points; otherwise faceting multiplies
       // empty traces by the facet count.
       .filter(({ count }) => count > 0)
-      .sort((a, b) => (a.count < b.count ? 1 : -1))
+      .sort((a, b) => {
+        if (a.count !== b.count) {
+          return a.count < b.count ? 1 : -1;
+        }
+
+        // Tied: the more diffuse group goes underneath.
+        return (spread.get(b.key) ?? 0) - (spread.get(a.key) ?? 0);
+      })
       .map(({ key }) => ({
+        key,
         color: colorMap.get(key)!,
         includes: (i: number) => String(catColorData[i]) === key,
       }));
 
+    // Categories that didn't earn their own color still have to be drawn, or
+    // they would vanish from the plot rather than being de-emphasised in it.
+    // Derived from the color map rather than passed in separately, so there is
+    // one answer to "which categories are shown" and not two that can disagree.
+    const shown = new Set(groups.map((g) => g.key));
+
+    const remainder: SolidColorGroup[] = colorMap.has(LEGEND_REMAINDER)
+      ? [
+          {
+            color: REMAINDER_FILL,
+            includes: (i: number) =>
+              catColorData[i] != null && !shown.has(String(catColorData[i])),
+          },
+        ]
+      : [];
+
     return [
       { color: palette.other, includes: (i) => catColorData[i] == null },
-      ...groups,
+      ...remainder,
+      ...groups.map(({ color, includes }) => ({ color, includes })),
     ];
   }
 

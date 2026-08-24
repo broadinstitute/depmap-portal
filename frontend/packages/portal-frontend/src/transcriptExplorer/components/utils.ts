@@ -2,10 +2,7 @@ import {
   DataExplorerPlotConfig,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import {
-  DEFAULT_EXPANSION_LIMIT,
-  PlotConfigReducerAction,
-} from "@depmap/data-explorer-2/src/components/DataExplorerPage/reducers/plotConfigReducer";
+import { PlotConfigReducerAction } from "@depmap/data-explorer-2/src/components/DataExplorerPage/reducers/plotConfigReducer";
 
 export const SHORT_READ_DATASET =
   "OmicsExpressionTranscriptTPMLogp1_MC_HumanAllGenes";
@@ -17,7 +14,7 @@ export const EMPTY_TRANSCRIPT_PLOT: DataExplorerPlotConfig = {
   plot_type: "density_1d",
   index_type: "depmap_model",
   dimensions: {
-    x: { dataset_id: SHORT_READ_DATASET },
+    x: { dataset_id: LONG_READ_DATASET },
   } as DataExplorerPlotConfig["dimensions"],
   color_by: "expansion",
   facet_by: "expansion",
@@ -28,9 +25,7 @@ export const EMPTY_TRANSCRIPT_PLOT: DataExplorerPlotConfig = {
 export function makeSetExpansionAction(
   expansionAxis: "x" | "y",
   geneSymbol: string | null,
-  dataset_id: string | null,
-  limit: number = DEFAULT_EXPANSION_LIMIT,
-  offset: number = 0
+  dataset_id: string | null
 ) {
   return {
     type: "select_expansion",
@@ -39,8 +34,6 @@ export function makeSetExpansionAction(
       expand_by: {
         slice_type: "transcript",
         dataset_id,
-        limit,
-        offset,
         context: {
           name: geneSymbol,
           dimension_type: "transcript",
@@ -150,16 +143,10 @@ export function makeHandlerForSwapAxisConfigs(
 
     const nextExpansionAxis = expansionAxis === "x" ? "y" : "x";
 
-    // Same gene and dataset — only the axis changes — so the transcript
-    // set is identical; preserve both the page size and the window.
-    const expansion = plot.expand_by?.[0];
-
     const setExpansion = makeSetExpansionAction(
       nextExpansionAxis,
       geneSymbol,
-      dataset_id,
-      expansion?.limit ?? DEFAULT_EXPANSION_LIMIT,
-      expansion?.offset ?? 0
+      dataset_id
     ) as any;
 
     const setOtherAxis = {

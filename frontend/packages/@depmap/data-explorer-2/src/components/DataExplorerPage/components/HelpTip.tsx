@@ -156,20 +156,60 @@ const tips = {
     ),
   },
 
-  "temp-pagination-help": {
-    placement: "right",
-    title: "Temporary pagination",
+  "expansion-member-score-help": {
+    placement: "bottom",
+    title: "Score",
     content: (
       <div>
         <p>
-          This is a stopgap solution for viewing long lists of transcripts. Use
-          this dropdown to move through them one “page” at a time. The page size
-          is controlled by “Max transcripts to show” below.
+          A rule of thumb for choosing which members to show, rather than a
+          measurement of the data itself.
         </p>
         <p>
-          This is obviously not ideal but it gets the job done for now. I plan
-          to replace this with a table view where you can hand pick the
-          transcripts you’re interested in based on computed statistics.
+          It favors members whose values vary most across what&rsquo;s plotted,
+          discounted by how few entities they were measured in — a 95% lower
+          bound on the variance. A wide spread seen in a handful of entities
+          ranks below a narrower one seen in hundreds.
+        </p>
+        <p>
+          The plot shows the highest scoring, so sorting by this column is the
+          order it picked from.
+        </p>
+      </div>
+    ),
+  },
+
+  "expansion-member-count-help": {
+    placement: "bottom",
+    title: "N",
+    // Filled in by the caller, which knows how many entities the plot covers.
+    content: null,
+  },
+
+  "category-score-help": {
+    placement: "bottom",
+    title: "Score",
+    content: (
+      <div>
+        <p>
+          A rule of thumb for choosing which categories to show, rather than a
+          measurement of the annotation itself.
+        </p>
+        <p>
+          It favors categories whose points sit somewhere the others don&rsquo;t
+          — a two-sample <em>t</em> statistic comparing each category against
+          every point outside it, on the axes currently plotted. A tight cluster
+          off on its own therefore scores higher than a scattered group the same
+          distance away.
+        </p>
+        <p>
+          Because it reads the axes, the same annotation scores differently on a
+          different plot. A category with fewer than 3 points scores 0; one that
+          doesn&rsquo;t overlap the rest at all shows &infin;.
+        </p>
+        <p>
+          The plot shows the highest scoring, so sorting by this column is the
+          order it picked from.
         </p>
       </div>
     ),

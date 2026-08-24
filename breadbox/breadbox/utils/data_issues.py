@@ -15,13 +15,17 @@ ISSUES_FILE_NAME = "known-data-issues.json"
 # Known deprecated IDs may be referenced in older matrix datasets despite being missing from metadata. 
 known_deprecated_ids = {
     # Model IDs
-    "ACH-001173", "ACH-001741", "ACH-001790", "ACH-001078", "ACH-000010", "ACH-003008", "ACH-003055", "ACH-003004", "ACH-003010", "ACH-002176", "ACH-002194"
+    "ACH-001173", "ACH-001741", "ACH-001790", "ACH-001078", "ACH-000010", "ACH-003008", 
+    "ACH-003055", "ACH-003004", "ACH-003010", "ACH-002176", "ACH-002194", "ACH-001620",
+    "ACH-001120", "ACH-002319", "ACH-001827", "ACH-002325", "ACH-001108",
     # Compound IDs
-    "DPC-004766", 
+    "DPC-004766", "DPC-004782"
+    # Surfaceome (IDs known to be missing from the HGNC mapping table)
+    "G9CGD6",
 }
 
 # Dimension types in which our matrix datasets are expected to use only a subset of the metadata's IDs
-dim_types_with_expansive_metadata = ["gene", "compound", "protein_v5"]
+dim_types_with_expansive_metadata = ["gene", "compound_v2", "compound_dose", "compound_sample", "protein_v5"]
 
 # Within certain dimension types, it's okay to ignore certain ID formats. 
 # For example, for gene-indexed datasets, it's okay if some small percentage of of the features do not have metadata.

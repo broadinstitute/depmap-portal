@@ -33,8 +33,6 @@ const getPrioritizedData = async (
   datasets: MatrixDataset[],
   metadataMap: DataAvailByAUCDatasetMetadataMap
 ): Promise<DatasetAvailability[]> => {
-  const bbapi = breadboxAPI;
-
   // 1. Map Breadbox datasets by ID
   const breadboxDatasetLookup = Object.fromEntries(
     datasets.map((ds) => [ds.given_id || ds.id, ds])
@@ -47,7 +45,7 @@ const getPrioritizedData = async (
   // 2. Fetch ALL dose metadata for this compound once.
   const doseCompoundMetadata = await fetchMetadata<{
     CompoundID: Record<string, string>;
-  }>("compound_dose", null, ["CompoundID"], bbapi);
+  }>("compound_dose", null, ["CompoundID"]);
 
   const allViabilityFeatureIds = getKeysByValue(
     doseCompoundMetadata.CompoundID,
@@ -62,7 +60,7 @@ const getPrioritizedData = async (
   const globalDoseMetadata = await fetchMetadata<{
     Dose: Record<string, number>;
     DoseUnit: Record<string, string>;
-  }>("compound_dose", allViabilityFeatureIds, ["Dose", "DoseUnit"], bbapi);
+  }>("compound_dose", allViabilityFeatureIds, ["Dose", "DoseUnit"]);
 
   // 3. Process each dataset record
   return Promise.all(
@@ -73,7 +71,9 @@ const getPrioritizedData = async (
 
       try {
         // Filter the global metadata to only include features found in this specific viability dataset
-        const features = await cached(bbapi).getDatasetFeatures(viabilityId);
+        const features = await cached(breadboxAPI, {
+          persist: true,
+        }).getDatasetFeatures(viabilityId);
         const localFeatureIds = features
           .filter((f: any) => f.id.includes(compoundId))
           .map((f: any) => f.id);
@@ -88,7 +88,9 @@ const getPrioritizedData = async (
         };
 
         const doseRange = getDoseRangeLabel(localDoseMeta);
-        const sliceData = await cached(bbapi).getMatrixDatasetData(aucId, {
+        const sliceData = await cached(breadboxAPI, {
+          persist: true,
+        }).getMatrixDatasetData(aucId, {
           features: [compoundId],
           feature_identifier: "id",
         });

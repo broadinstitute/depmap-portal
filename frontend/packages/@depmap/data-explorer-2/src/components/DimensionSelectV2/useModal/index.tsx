@@ -1,7 +1,11 @@
 import React, { useCallback } from "react";
 import ReactDOM from "react-dom";
 import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
-import { Mode, State } from "../useDimensionStateManager/types";
+import {
+  Mode,
+  OtherAxisExpansion,
+  State,
+} from "../useDimensionStateManager/types";
 import DimensionDetailsModal from "./DimensionDetailsModal";
 
 interface Props {
@@ -13,6 +17,8 @@ interface Props {
   allowNullFeatureType: boolean;
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
   hiddenDatasets: Set<string>;
+  allowExpansion: boolean;
+  otherAxisExpansion: OtherAxisExpansion;
 }
 
 export default function useModal({
@@ -24,6 +30,8 @@ export default function useModal({
   allowNullFeatureType,
   valueTypes,
   hiddenDatasets,
+  allowExpansion,
+  otherAxisExpansion,
 }: Props) {
   const onClickShowModal = useCallback(() => {
     const container = document.createElement("div");
@@ -49,6 +57,8 @@ export default function useModal({
         allowNullFeatureType={allowNullFeatureType}
         valueTypes={valueTypes}
         hiddenDatasets={hiddenDatasets}
+        allowExpansion={allowExpansion}
+        otherAxisExpansion={otherAxisExpansion}
       />,
       container
     );
@@ -57,6 +67,8 @@ export default function useModal({
     allowNullFeatureType,
     valueTypes,
     hiddenDatasets,
+    allowExpansion,
+    otherAxisExpansion,
     index_type,
     mode,
     onChange,

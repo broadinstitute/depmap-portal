@@ -36,6 +36,11 @@ interface Props {
     e: React.MouseEvent,
     selectedIds: Set<string>
   ) => void;
+  onChangeCategories?: (
+    target: "color" | "facet",
+    categories: string[] | null
+  ) => void;
+  onChangeExpansionMembers?: (members: string[] | null) => void;
 }
 
 function DataExplorerWaterfallPlot({
@@ -45,6 +50,8 @@ function DataExplorerWaterfallPlot({
   onClickColorByContext,
   onClickSaveSelectionAsContext,
   onClickVisualizeSelected,
+  onChangeCategories = undefined,
+  onChangeExpansionMembers = undefined,
 }: Props) {
   // Expanded plots (facet_by "expansion") are the one and only trigger for
   // confining selection to a single facet.
@@ -284,6 +291,9 @@ function DataExplorerWaterfallPlot({
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
               target={colorTarget}
+              plotConfig={plotConfig}
+              onChangeCategories={onChangeCategories}
+              onChangeExpansionMembers={onChangeExpansionMembers}
             />
           </StackableSection>
           {showFacetsPanel ? (
@@ -296,6 +306,9 @@ function DataExplorerWaterfallPlot({
                 onClickFacetItem={onClickFacetItem}
                 handleClickShowAllFacets={handleClickShowAllFacets}
                 handleClickHideAllFacets={handleClickHideAllFacets}
+                plotConfig={plotConfig}
+                onChangeCategories={onChangeCategories}
+                onChangeExpansionMembers={onChangeExpansionMembers}
               />
             </StackableSection>
           ) : null}

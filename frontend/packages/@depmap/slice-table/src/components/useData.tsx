@@ -1,5 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  getDimensionTypeIdentifiersPersisted,
+} from "@depmap/api";
 import { ExternalLink, WordBreaker } from "@depmap/common-components";
 import { isPortal, toPortalLink } from "@depmap/globals";
 import { serializeSliceQuery } from "@depmap/selects";
@@ -36,6 +40,15 @@ export type SliceResponse = {
 };
 type ColumnRenames = Record<string, string>;
 
+// Why a slice column has no data. "dataset_removed" means the dataset no
+// longer appears in the listing (a remembered column outliving a Breadbox
+// release that retired its dataset, most commonly) and the column can never
+// load again. "fetch_failed" means the dataset exists but its request failed,
+// which may well be transient. The distinction drives the UI: a removed
+// dataset's column offers removal inline; a transient failure does not, so
+// users aren't trained to delete columns that would come back on reload.
+export type SliceLoadFailure = "dataset_removed" | "fetch_failed";
+
 export interface RowFilters {
   hideUnselectedRows: boolean;
   hideIncompleteRows: boolean;
@@ -56,6 +69,7 @@ interface AlignedData {
       sliceQuery: SliceQuery;
       isEditable: boolean;
       isViewable: boolean;
+      loadFailure?: SliceLoadFailure;
       numericPrecision?: number;
       headerMenuItems?: (
         | {
@@ -82,6 +96,15 @@ interface AlignedData {
     // When provided, only these columns are included in the export.
     visibleColumnIds?: string[];
     selectedRowIds?: Set<string>;
+    // The columns to export, in export order. Defaults to the slice columns
+    // this hook built. Callers that add columns of their own pass the merged
+    // list, so the download matches what is on screen; a column opts out by
+    // having an empty `meta.csvHeader`.
+    columns?: {
+      id: string;
+      meta: { csvHeader: string };
+      accessorFn: (row: Record<string, string | number | undefined>) => unknown;
+    }[];
   }) => string;
 }
 
@@ -231,7 +254,7 @@ function buildSlicesToFetch(
  * the backend's dimension data endpoint.
  */
 function createDataFetchPromise(slice: SliceQuery): Promise<SliceResponse> {
-  return cached(breadboxAPI).getDimensionData(slice);
+  return cached(breadboxAPI, { persist: true }).getDimensionData(slice);
 }
 
 /**
@@ -290,12 +313,31 @@ async function resolveLeafLabel(slice: SliceQuery): Promise<string> {
 
   const isFeatureAxis = slice.identifier_type.startsWith("feature");
   const metadata = isFeatureAxis
-    ? await cached(breadboxAPI).getDatasetFeatures(slice.dataset_id)
-    : await cached(breadboxAPI).getDatasetSamples(slice.dataset_id);
+    ? await cached(breadboxAPI, { persist: true }).getDatasetFeatures(
+        slice.dataset_id
+      )
+    : await cached(breadboxAPI, { persist: true }).getDatasetSamples(
+        slice.dataset_id
+      );
 
   const idOrLabel = slice.identifier_type.endsWith("_id") ? "id" : "label";
   const match = metadata.find((item) => item[idOrLabel] === slice.identifier);
   return match?.label || slice.identifier;
+}
+
+// What resolveDisplayLabel would show, minus any lookups: raw identifiers
+// only. Used for slices that failed to load, where a metadata fetch would
+// just be another doomed request.
+function fallbackDisplayLabel(slice: SliceQuery): string {
+  const hops: string[] = [];
+  let current = slice.reindex_through;
+
+  while (current) {
+    hops.push(current.identifier);
+    current = current.reindex_through;
+  }
+
+  return [...hops.reverse(), slice.identifier].join(" › ");
 }
 
 const truncateMiddle = (str: string, maxLength = 45): string => {
@@ -332,7 +374,10 @@ export function transformToTableData(
   idColumnDisplayName: string,
   labelColumnDisplayName: string,
   idToLabelMappings: Record<string, Record<string, string>>,
-  getColumnDisplayOptions?: Parameters["getColumnDisplayOptions"]
+  getColumnDisplayOptions?: Parameters["getColumnDisplayOptions"],
+  // Aligned with `slices`. A failed slice gets a stub column (header names
+  // the problem, cells stay empty) rather than failing the whole table.
+  failures?: (SliceLoadFailure | null)[]
 ) {
   // Step 1: Create unique column keys, validate IDs, and key data by ID.
   //
@@ -457,7 +502,51 @@ export function transformToTableData(
       (d) => d.given_id === slice.dataset_id || d.id === slice.dataset_id
     );
 
+    // A slice can outlive its dataset (a remembered column pointing at a
+    // dataset retired by a newer Breadbox release). Render a stub column
+    // instead of failing the whole table: the header names the problem, and
+    // the removal affordances still work because the stub keeps its
+    // sliceQuery.
+    const loadFailure =
+      failures?.[index] ?? (dataset ? null : ("dataset_removed" as const));
+
+    if (loadFailure) {
+      const failureLabel = displayLabel || slice.identifier;
+
+      return {
+        size: undefined as number | undefined,
+        id: columnKey,
+        meta: {
+          isEditable: columnKey !== "label" && !viewOnlySlices?.has(slice),
+          isViewable: false,
+          idLabel: failureLabel,
+          units: "",
+          value_type: null,
+          datasetName: dataset?.name || "",
+          // An empty csvHeader opts the column out of CSV export.
+          csvHeader: "",
+          sliceQuery: slice,
+          loadFailure,
+        },
+        accessorFn: (row: Record<string, unknown>) => row[columnKey],
+        header: () => (
+          <div>
+            <WordBreaker text={truncateMiddle(failureLabel)} />
+            <br />
+            <i>
+              {loadFailure === "dataset_removed"
+                ? "dataset no longer available"
+                : "failed to load"}
+            </i>
+          </div>
+        ),
+        cell: () => <></>,
+      };
+    }
+
     if (!dataset) {
+      // Unreachable (a missing dataset is classified as a failure above);
+      // this exists so TypeScript can narrow `dataset` below.
       throw new Error(`Unknown dataset "${slice.dataset_id}"`);
     }
 
@@ -602,7 +691,12 @@ export default function useAlignedData({
   const [state, setState] = useState<AlignedData>({
     columns: [],
     data: [],
-    loading: false,
+    // True from the start: the mount effect always begins a load, but effects
+    // run after the first paint, so initializing to false painted one frame
+    // of "There are no rows to display" before the spinner. That frame was
+    // invisible when every load took a network round trip; with persistent-
+    // cache hits it can be most of what the user sees.
+    loading: true,
     error: null,
     entityLabel: "",
     exportToCsv: () => "",
@@ -624,6 +718,13 @@ export default function useAlignedData({
         sortedRowIds?: string[];
         visibleColumnIds?: string[];
         selectedRowIds?: Set<string>;
+        columns?: {
+          id: string;
+          meta: { csvHeader: string };
+          accessorFn: (
+            row: Record<string, string | number | undefined>
+          ) => unknown;
+        }[];
       } = {}
     ) => {
       const {
@@ -631,19 +732,23 @@ export default function useAlignedData({
         sortedRowIds,
         visibleColumnIds,
         selectedRowIds,
+        columns: overrideColumns,
       } = options;
 
       if (!state.columns.length || !state.data.length) {
         return "";
       }
 
+      const sourceColumns = overrideColumns ?? state.columns;
+
       // Filter columns to only visible ones if specified
       const visibleColumnIdSet = visibleColumnIds
         ? new Set(visibleColumnIds)
         : null;
-      const columnsToExport = visibleColumnIdSet
-        ? state.columns.filter((col) => visibleColumnIdSet.has(col.id))
-        : state.columns;
+      const columnsToExport = (visibleColumnIdSet
+        ? sourceColumns.filter((col) => visibleColumnIdSet.has(col.id))
+        : sourceColumns
+      ).filter((col) => col.meta.csvHeader);
 
       // Apply the row filter if provided
       const filteredData = rowFilter
@@ -739,27 +844,71 @@ export default function useAlignedData({
         indexTypeRef.current = indexType;
         idColumnDisplayNameRef.current = idColumnDisplayName;
 
-        // Step 2: Load data if we have slices to fetch
-        const slicesToFetch = buildSlicesToFetch(indexType, slices);
-
-        // Create all the fetch promises
-        const dataPromises = slicesToFetch.map((slice) =>
-          createDataFetchPromise(slice)
-        );
-
-        const datasetsPromise = cached(breadboxAPI).getDatasets();
-
-        // Execute all fetches in parallel
-        const [dataResponses, datasets] = await Promise.all([
-          Promise.all(dataPromises),
-          datasetsPromise,
-        ]);
+        // Step 2: Figure out which slices still point at a dataset that
+        // exists. A slice can outlive its dataset (a remembered column
+        // pointing at a dataset retired by a newer Breadbox release); those
+        // become stub columns instead of doomed fetches.
+        const datasets = await cached(breadboxAPI).getDatasets();
 
         if (isCancelled) return;
 
-        // Resolve display labels for each slice
+        const slicesToFetch = buildSlicesToFetch(indexType, slices);
+
+        const datasetExists = (dataset_id: string) =>
+          datasets.some(
+            (d) => d.id === dataset_id || d.given_id === dataset_id
+          );
+
+        // Index 0 is the label slice from the index type's own metadata;
+        // without it there are no rows at all, so it keeps the hard-failure
+        // behavior below.
+        const failures: (SliceLoadFailure | null)[] = slicesToFetch.map(
+          (slice, i) =>
+            i > 0 && !datasetExists(slice.dataset_id) ? "dataset_removed" : null
+        );
+
+        const EMPTY_RESPONSE: SliceResponse = {
+          ids: [],
+          labels: [],
+          values: [],
+        };
+
+        // Step 3: Load data. A single slice's failure degrades to a stub
+        // column rather than rejecting the whole table.
+        const dataResponses = await Promise.all(
+          slicesToFetch.map((slice, i) => {
+            if (failures[i]) {
+              return Promise.resolve(EMPTY_RESPONSE);
+            }
+
+            if (i === 0) {
+              return createDataFetchPromise(slice);
+            }
+
+            return createDataFetchPromise(slice).catch((e) => {
+              window.console.warn(
+                "[SliceTable] failed to load slice",
+                slice,
+                e
+              );
+              failures[i] = "fetch_failed";
+              return EMPTY_RESPONSE;
+            });
+          })
+        );
+
+        if (isCancelled) return;
+
+        // Resolve display labels for each slice. Failed slices fall back to
+        // their raw identifiers rather than issuing more doomed requests.
         const displayLabels = await Promise.all(
-          slicesToFetch.map((slice) => resolveDisplayLabel(slice, indexType))
+          slicesToFetch.map((slice, i) =>
+            failures[i]
+              ? Promise.resolve(fallbackDisplayLabel(slice))
+              : resolveDisplayLabel(slice, indexType).catch(() =>
+                  fallbackDisplayLabel(slice)
+                )
+          )
         );
 
         if (isCancelled) return;
@@ -783,9 +932,9 @@ export default function useAlignedData({
 
           if (references && !(references in idToLabelMappings)) {
             // eslint-disable-next-line no-await-in-loop
-            const identifiers = await cached(
-              breadboxAPI
-            ).getDimensionTypeIdentifiers(references);
+            const identifiers = await getDimensionTypeIdentifiersPersisted(
+              references
+            );
 
             idToLabelMappings[references] = {};
 
@@ -806,7 +955,8 @@ export default function useAlignedData({
           idColumnDisplayName,
           labelColumnDisplayName,
           idToLabelMappings,
-          getColumnDisplayOptions
+          getColumnDisplayOptions,
+          failures
         );
 
         setState((prev) => ({

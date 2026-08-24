@@ -21,15 +21,12 @@ export default function useSensitivityTileData(
       setIsLoading(true);
       setError(false);
       try {
-        const bbapi = breadboxAPI;
-
-        const sliceData = await cached(bbapi).getMatrixDatasetData(
-          datasetGivenId,
-          {
-            features: [compoundId],
-            feature_identifier: "id",
-          }
-        );
+        const sliceData = await cached(breadboxAPI, {
+          persist: true,
+        }).getMatrixDatasetData(datasetGivenId, {
+          features: [compoundId],
+          feature_identifier: "id",
+        });
 
         const record: Record<string, any> = sliceData[compoundId] || {};
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import {
   promptForValue,
   PromptComponentProps,
@@ -48,7 +48,7 @@ export default async function compoundPagePromptForSelectionFromContext(
           return;
         }
 
-        const { ids } = await cached(breadboxAPI).evaluateContext(nextContext);
+        const { ids } = await evaluateContextPersisted(nextContext);
         const contextIds = new Set(ids);
 
         const found = [...allPossibleIds].filter((label) => {
@@ -116,7 +116,7 @@ export default async function compoundPagePromptForSelectionFromContext(
     return null;
   }
 
-  const { ids } = await cached(breadboxAPI).evaluateContext(context);
+  const { ids } = await evaluateContextPersisted(context);
   const contextIds = new Set(ids);
   const matchingIds = [...allPossibleIds].filter((id) => {
     return contextIds.has(id);

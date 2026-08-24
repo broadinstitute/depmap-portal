@@ -172,28 +172,41 @@ export const makeCompatibleExpression = (
 
   const isUnaryOp = isUnaryOperator(op);
   const isReference = domain.references !== null;
-  const isContextValue =
-    value && typeof value === "object" && "dimension_type" in value;
-  const badContext = isContextValue && (!isReference || !isListOperator(op));
+  const isContextValue = isEmbeddedContextExpression(value);
+
+  // A `{ context }` right-hand side pairs with exactly one operator, and that
+  // operator only means anything on a column whose values are ids of another
+  // type. Either half being wrong means the pair has to be rebuilt.
+  const badContext =
+    (isContextValue && (!isReference || op !== "in_context")) ||
+    (op === "in_context" && !isReference);
+
+  // `in_context` is deliberately absent from operatorsByValueType, because
+  // whether it applies is not a question about what the column holds.
+  const isOperatorAllowed =
+    op === "in_context"
+      ? isReference
+      : operatorsByValueType[value_type].has(op);
 
   let nextOp = op;
   let nextValue = value;
 
-  if (
-    (!isUnaryOp && value == null) ||
-    !operatorsByValueType[value_type].has(op) ||
-    badContext
-  ) {
+  if ((!isUnaryOp && value == null) || !isOperatorAllowed || badContext) {
     nextValue = null;
     nextOp = defaultOperatorByValueType[value_type];
   }
 
-  if (isReference) {
-    nextOp = "in_context";
+  // A reference column is NOT forced to `in_context`. It used to be, which
+  // made that the only reachable operator and rewrote any other choice on the
+  // next domain change — so "CompoundID is DPC-000001", the shape generated
+  // contexts use, could not survive being opened in the builder. `in_context`
+  // is now one option among the ordinary ones, and only its own value shape is
+  // maintained here.
+  if (nextOp === "in_context") {
     nextValue = isContextValue ? value : { context: null };
   }
 
-  if (!isUnaryOp && value_type === "continuous") {
+  if (!isUnaryOp && nextOp !== "in_context" && value_type === "continuous") {
     const { min, max, isBinary, isBinaryish, isAllIntegers } = domain;
 
     if (isBinary && !["==", "!="].includes(nextOp)) {

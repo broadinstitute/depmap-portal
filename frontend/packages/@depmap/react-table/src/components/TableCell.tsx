@@ -286,10 +286,22 @@ export function TableCell<T>({
         colStats.max
       );
 
-      const displayValue = formatNumber(rawValue);
+      // A column that supplies its own cell renderer owns how its value reads;
+      // the bar is decoration around that, not a replacement for it. The plain
+      // -number branch below already defers this way — this one did not, so a
+      // column pairing a numeric `accessorFn` (to sort by) with a `cell` (to
+      // format with) silently rendered the raw accessor value instead, and only
+      // when the column happened to have variance.
+      const customCell = columnDef.cell
+        ? flexRender(columnDef.cell, cellContext)
+        : null;
 
-      // If we should highlight, we need to highlight the number inside MagnitudeBar
-      if (shouldHighlight) {
+      const displayValue = customCell ?? formatNumber(rawValue);
+
+      // If we should highlight, we need to highlight the number inside
+      // MagnitudeBar. Skipped when the column renders itself: the rendered
+      // output is a node, and there is no text to run the matcher over.
+      if (shouldHighlight && !customCell) {
         return (
           <div className={styles.magnitudeBarCell}>
             {(isNegative || rawValue > 0) && (
@@ -297,7 +309,7 @@ export function TableCell<T>({
             )}
             <span className={styles.magnitudeBarValue}>
               <HighlightedText
-                text={displayValue}
+                text={displayValue as string}
                 searchQuery={searchQuery}
                 isCurrentMatch={highlightStatus.isCurrentMatch}
               />

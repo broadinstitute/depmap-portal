@@ -138,3 +138,30 @@ export async function evaluateContext(context: NamelessContext) {
 
   return response;
 }
+
+// How many of a context's entities each dataset actually contains.
+//
+// Exists so the Data Version select can offer a dataset that has the data
+// rather than the highest-priority one for the slice type, which with sparse
+// data is often a dataset containing none of it. The context is evaluated
+// server-side, so this is one round trip regardless of how many entities the
+// context names — asking `getDatasets({ feature_id })` per entity is a round
+// trip each, and a context routinely names thousands.
+//
+// Datasets matching nothing are absent from `counts` rather than present with
+// a zero, so a caller wanting the zeroes fills them in from its own dataset
+// list.
+export async function getContextDatasetCoverage(context: NamelessContext) {
+  const response = await postJson<
+    | { counts: Record<string, number>; total: number }
+    // Same workaround as evaluateContext above: errors come back with a 200.
+    | { detail: { message: string; error_type: string } }
+  >("/temp/context/dataset-coverage", context);
+
+  if ("detail" in response) {
+    window.console.warn("Could not compute dataset coverage", context);
+    return { counts: {}, total: 0 };
+  }
+
+  return response;
+}

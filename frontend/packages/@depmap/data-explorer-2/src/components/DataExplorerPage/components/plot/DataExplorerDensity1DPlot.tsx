@@ -37,6 +37,11 @@ interface Props {
     selectedIds: Set<string>
   ) => void;
   onClickColorByContext: (context: DataExplorerContextV2) => void;
+  onChangeCategories?: (
+    target: "color" | "facet",
+    categories: string[] | null
+  ) => void;
+  onChangeExpansionMembers?: (members: string[] | null) => void;
 }
 
 function DataExplorerDensity1DPlot({
@@ -46,6 +51,8 @@ function DataExplorerDensity1DPlot({
   onClickVisualizeSelected,
   onClickSaveSelectionAsContext,
   onClickColorByContext,
+  onChangeCategories = undefined,
+  onChangeExpansionMembers = undefined,
 }: Props) {
   // Expanded plots (facet_by "expansion") are the one and only trigger for
   // confining selection to a single facet.
@@ -105,6 +112,7 @@ function DataExplorerDensity1DPlot({
     pointVisibility,
     colorTarget,
     colorMatchesFacet,
+    hasFacetOptionsEnabled,
   } = useDensity1DPlotData(data, plotConfig, palette);
 
   const {
@@ -128,7 +136,7 @@ function DataExplorerDensity1DPlot({
   // facet_by (without using the "facet" sentinel) still makes Legend the
   // facet partition, so the panel would be redundant. See colorMatchesFacet's
   // own comment for why this is broader than a target check.
-  const showFacetsPanel = !colorMatchesFacet && Boolean(sortedFacetKeys);
+  const showFacetsPanel = !colorMatchesFacet && hasFacetOptionsEnabled;
 
   useEffect(() => {
     let timeout: number | undefined;
@@ -281,6 +289,9 @@ function DataExplorerDensity1DPlot({
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
               target={colorTarget}
+              plotConfig={plotConfig}
+              onChangeCategories={onChangeCategories}
+              onChangeExpansionMembers={onChangeExpansionMembers}
             />
           </StackableSection>
           {showFacetsPanel ? (
@@ -293,6 +304,9 @@ function DataExplorerDensity1DPlot({
                 onClickFacetItem={onClickFacetItem}
                 handleClickShowAllFacets={handleClickShowAllFacets}
                 handleClickHideAllFacets={handleClickHideAllFacets}
+                plotConfig={plotConfig}
+                onChangeCategories={onChangeCategories}
+                onChangeExpansionMembers={onChangeExpansionMembers}
               />
             </StackableSection>
           ) : null}

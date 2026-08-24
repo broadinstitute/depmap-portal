@@ -54,7 +54,7 @@ rule process_model_config:
         
         if "{{ inputs.data.label }}" == "Achilles_for_gene_confidence":
             models_to_use = ["Core_omics", "Related"]
-        elif "{{ inputs.data.label }}" in ["Rep1M", "Rep_all_single_pt", "Prism_oncology_AUC", "Prism_oncology_seq_AUC"]:
+        elif "{{ inputs.data.label }}" in ["Rep1M", "Rep_all_single_pt", "Prism_oncology_AUC", "Prism_oncology_seq_AUC", "Prism_oncology_unified_AUC"]:
             models_to_use = ["Core_omics", "Extended_omics", "DNA_based"]
         else:
             assert "{{ inputs.data.label }}" in ['Chronos_Combined', 'Chronos_Achilles', 'Avana', 'RNAi_merged', 'CERES_Combined']
@@ -657,7 +657,7 @@ rule convert_predictability_feature_metadata:
 rule compound_matrix_to_ftr:
     inputs:
         data={
-            "type": "dep-matrix",
+            "type": "dep-matrix-temp-disabled",
             "label" ~ "Rep_all_single_pt|(?:Prism_oncology.*_AUC)"
         },
         hdf5_utils=fileref("../scripts/hdf5_utils.py", copy_to="hdf5_utils.py")
