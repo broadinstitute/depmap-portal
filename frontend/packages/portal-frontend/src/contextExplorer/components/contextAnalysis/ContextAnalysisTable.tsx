@@ -96,9 +96,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         datasetId ===
           ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
         datasetId ===
-          ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix ||
-        datasetId ===
-          ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix
+          ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
       ) {
         // Keep this as AUC regardless of what the units of OncRef are because
         // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
@@ -113,9 +111,7 @@ function ContextAnalysisTable(props: ContextAnalysisTableProps) {
         datasetId ===
           ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix ||
         datasetId ===
-          ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix ||
-        datasetId ===
-          ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix
+          ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
       ) {
         // Keep this as AUC regardless of what the units of Prism_oncology_AUC are because
         // get_context_analysis outputs these results and should always use AUC (rather than log2(AUC))
