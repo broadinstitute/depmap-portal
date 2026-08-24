@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional, List, Type, Union, Tuple, Set
 from uuid import UUID, uuid4
 
 import pandas as pd
-from sqlalchemy import and_, func, or_, select, true
+from sqlalchemy import and_, func, insert, or_, select, true
 from sqlalchemy.sql import distinct
 from sqlalchemy.sql.elements import ColumnElement
 from sqlalchemy.orm import aliased, with_polymorphic
@@ -235,7 +235,6 @@ def add_tabular_dimensions(
     Adds tabular dataset dimensions to database.
     """
     dimensions = []
-    values = []
 
     for col in data_df.columns:
         annotation_id = str(uuid4())
@@ -251,23 +250,27 @@ def add_tabular_dimensions(
                 references_dimension_type_name=columns_metadata[col].references,
             )
         )
-        values.extend(
-            [
-                TabularCell(
-                    tabular_column_id=annotation_id,
-                    dimension_given_id=index,
-                    value=None
-                    if pd.isnull(val)
-                    else str(val),  # Val could be pd.NA. Store null as None
-                    group_id=group_id,
-                )
-                for index, val in zip(data_df[dimension_type.id_column], data_df[col],)
-            ]
-        )
 
     db.bulk_save_objects(dimensions)
     db.flush()
-    db.bulk_save_objects(values)
+
+    # Build and insert one column's worth of cells at a time so we never hold more
+    # than a single column's cells in memory (a long table can have millions of cells
+    # across all columns combined). Insert as plain dicts via Core rather than
+    # TabularCell(...) ORM instances, which carry far more per-row overhead.
+    for col, column in zip(data_df.columns, dimensions):
+        values = [
+            {
+                "tabular_column_id": column.id,
+                "dimension_given_id": index,
+                "value": None
+                if pd.isnull(val)
+                else str(val),  # Val could be pd.NA. Store null as None
+                "group_id": group_id,
+            }
+            for index, val in zip(data_df[dimension_type.id_column], data_df[col],)
+        ]
+        db.execute(insert(TabularCell), values)
     db.flush()
 
 
