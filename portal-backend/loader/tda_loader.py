@@ -20,7 +20,6 @@ from depmap.utilities.bulk_load import bulk_load
 
 log = logging.getLogger(__name__)
 
-GENE_CARD_URL_TEMPLATE = "https://www.genecards.org/cgi-bin/carddisp.pl?gene={}"
 color_scale_min = -1.5
 color_scale_max = 1
 
