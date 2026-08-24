@@ -33,7 +33,6 @@ permissions:
 env:
   ARTIFACT_REGISTRY_REPO: us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap-breadbox
   DOCKER_TAG: ga2-build-${{ github.run_number }}
-  DUMMY_VALUE_TO_FORCE_BUILD: v1
 
 jobs:
   build-docker:

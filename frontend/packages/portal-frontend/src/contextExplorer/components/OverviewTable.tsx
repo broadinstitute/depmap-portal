@@ -190,15 +190,8 @@ function OverviewTable(props: OverviewTableProps) {
       maxWidth: 90,
       disableFilters: true,
     });
-    columns.push({
-      accessor: "prismOncRefUnified",
-      Header: "OncRef Unified",
-      maxWidth: 90,
-      disableFilters: true,
-    });
     defaultColumns.push("prismOncRefSeq");
     defaultColumns.push("prismOncRefLum");
-    defaultColumns.push("prismOncRefUnified");
   }
 
   return (
