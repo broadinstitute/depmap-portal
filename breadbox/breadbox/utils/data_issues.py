@@ -19,7 +19,7 @@ known_deprecated_ids = {
     "ACH-003055", "ACH-003004", "ACH-003010", "ACH-002176", "ACH-002194", "ACH-001620",
     "ACH-001120", "ACH-002319", "ACH-001827", "ACH-002325", "ACH-001108",
     # Compound IDs
-    "DPC-004766", "DPC-004782"
+    "DPC-004766", "DPC-004782",
     # Surfaceome (IDs known to be missing from the HGNC mapping table)
     "G9CGD6",
 }
