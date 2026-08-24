@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
 import { areSliceQueriesEqual, SliceQuery } from "@depmap/types";
+import { usePlotlyLoader } from "../../../../contexts/PlotlyLoaderContext";
 import { isCompleteExpression } from "../../../../utils/misc";
 import {
   DEFAULT_EMPTY_EXPR,
@@ -28,6 +29,7 @@ function ContextBuilderTableView() {
     uniqueVariableSlices,
   } = useContextBuilderState();
 
+  const PlotlyLoader = usePlotlyLoader();
   const [isViewInitialized, setIsViewInitialized] = useState(false);
   const { isLoading, matchingIds } = useMatches(mainExpr);
   const wasLoading = useRef(false);
@@ -132,6 +134,7 @@ function ContextBuilderTableView() {
   return (
     <div className={styles.ContextBuilderTableView}>
       <SliceTable
+        PlotlyLoader={PlotlyLoader}
         sliceTableRef={sliceTableRef}
         getInitialState={() => {
           return {

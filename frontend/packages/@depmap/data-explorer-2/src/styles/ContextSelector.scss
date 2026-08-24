@@ -24,3 +24,36 @@
   border-radius: 3px;
   margin-right: 3px;
 }
+
+.parentContextModal {
+  :global .modal-sm {
+    width: 400px;
+  }
+
+  :global .modal-body {
+    min-height: 165px;
+  }
+}
+
+.loadingContainer {
+  display: flex;
+  margin-top: 15px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  margin-left: 10px;
+  margin-top: 2px;
+  flex-shrink: 0;
+  border: 2px solid #ccc;
+  border-top-color: hsl(0, 0%, 70%);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

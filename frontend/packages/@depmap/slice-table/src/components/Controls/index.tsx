@@ -1,7 +1,7 @@
 import React from "react";
 import cx from "classnames";
 import { Button } from "react-bootstrap";
-import SearchBar from "./SearchBar";
+import { SearchBar } from "@depmap/react-table";
 import styles from "../../styles/SliceTable.scss";
 
 interface Props {

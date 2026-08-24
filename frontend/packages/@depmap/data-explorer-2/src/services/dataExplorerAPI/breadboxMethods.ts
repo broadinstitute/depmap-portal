@@ -1,4 +1,9 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  evaluateContextPersisted,
+  getDimensionTypeIdentifiersPersisted,
+} from "@depmap/api";
 import {
   correlationMatrix,
   linregress,
@@ -33,7 +38,6 @@ import {
   isSampleType,
   pluralize,
 } from "../../utils/misc";
-import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
 import { fetchDatasetIdentifiers } from "./identifiers";
 import { getDimensionDataWithoutLabels } from "./helpers";
 
@@ -78,7 +82,7 @@ export async function fetchAxisLabel(
 
   const { aggregation } = dimension;
 
-  const { ids } = await cached(breadboxAPI).evaluateContext(
+  const { ids } = await evaluateContextPersisted(
     (context as unknown) as DataExplorerContextV2
   );
 
@@ -388,7 +392,7 @@ export async function fetchPlotDimensions(
     let ids: string[] = [];
 
     try {
-      const result = await cached(breadboxAPI).evaluateContext(
+      const result = await evaluateContextPersisted(
         (context as unknown) as DataExplorerContextV2
       );
 
@@ -405,16 +409,15 @@ export async function fetchPlotDimensions(
       dataset_id
     );
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      {
-        sample_identifier: "id",
-        feature_identifier: "id",
-        samples: aggregate_by === "samples" ? ids : null,
-        features: aggregate_by === "features" ? ids : null,
-        aggregate: { aggregate_by, aggregation },
-      }
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, {
+      sample_identifier: "id",
+      feature_identifier: "id",
+      samples: aggregate_by === "samples" ? ids : null,
+      features: aggregate_by === "features" ? ids : null,
+      aggregate: { aggregate_by, aggregation },
+    });
 
     const indexed_values = {} as Record<string, number | null>;
 
@@ -442,8 +445,7 @@ export async function fetchPlotDimensions(
     ...filterKeys.map((key) => {
       const filter = (filters![key] as unknown) as DataExplorerContextV2;
 
-      return cached(breadboxAPI)
-        .evaluateContext(filter)
+      return evaluateContextPersisted(filter)
         .then((result) => {
           const indexed_values: Record<string, true> = {};
 
@@ -489,15 +491,13 @@ export async function fetchPlotDimensions(
         }
       }
 
-      if (
-        value_type !== "continuous" &&
-        (key === "color_property" || key === "facet_property") &&
-        distinct.size > MAX_PLOTTABLE_CATEGORIES
-      ) {
-        window.console.error(extendedMetadata![key]);
-        throw new Error("Too many distinct categorical values to plot!");
-      }
-
+      // No cardinality check here. A high-cardinality annotation costs exactly
+      // what a low-cardinality one costs — one value per index entity — so
+      // there was never a fetch-side reason to refuse it. All it affects is
+      // whether the *picture* can be read, which the renderer decides, and can
+      // then say so and offer a way to change it. Refusing here instead threw
+      // away the whole plot (a saved link landed on a crash screen) over
+      // something only the color or facet could not do.
       const isBinaryish =
         distinct.size <= 3 &&
         [...distinct].every((n) => n === 0 || n === 1 || n === 2);
@@ -581,9 +581,9 @@ export async function fetchPlotDimensions(
           return;
         }
 
-        const identifiers = await cached(
-          breadboxAPI
-        ).getDimensionTypeIdentifiers(dimTypeName);
+        const identifiers = await getDimensionTypeIdentifiersPersisted(
+          dimTypeName
+        );
 
         metadataIdToLabel[key] = Object.fromEntries(
           identifiers.map(({ id, label }) => [id, label])
@@ -999,10 +999,8 @@ const correlateDimension = memoize(
       filterIdentifiers,
       dataset_label,
     ] = await Promise.all([
-      cached(breadboxAPI).evaluateContext(
-        (context as unknown) as DataExplorerContextV2
-      ),
-      filter ? cached(breadboxAPI).evaluateContext(filter) : null,
+      evaluateContextPersisted((context as unknown) as DataExplorerContextV2),
+      filter ? evaluateContextPersisted(filter) : null,
       fetchDatasetLabel(dataset_id),
     ]);
 
@@ -1038,10 +1036,9 @@ const correlateDimension = memoize(
           : filterIdentifiers?.labels || null,
     };
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      requestParams
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, requestParams);
     let data = {} as Record<string, number[]>;
 
     // The /datasets/matrix/<id> endpoint always returns an object where features
@@ -1170,15 +1167,17 @@ export async function fetchCorrelation(
   // clustering order.
   let x2 = x2Raw;
   if (x2Raw && x2Ids && use_clustering) {
-    const x2Matrix = x2Raw.values as unknown as number[][];
+    const x2Matrix = (x2Raw.values as unknown) as number[][];
     const x2IdToIndex: Record<string, number> = {};
     x2Ids.forEach((id: string, i: number) => {
       x2IdToIndex[id] = i;
     });
     const reorderedMatrix = ids.map((rowId: string) =>
-      ids.map((colId: string) => x2Matrix[x2IdToIndex[rowId]][x2IdToIndex[colId]])
+      ids.map(
+        (colId: string) => x2Matrix[x2IdToIndex[rowId]][x2IdToIndex[colId]]
+      )
     );
-    x2 = { ...x2Raw, values: reorderedMatrix as unknown as number[] };
+    x2 = { ...x2Raw, values: (reorderedMatrix as unknown) as number[] };
   }
 
   const dimTypes = await cached(breadboxAPI).getDimensionTypes();
@@ -1221,35 +1220,23 @@ export async function fetchWaterfall(
     metadata
   );
 
-  let categoricalValues = unsortedData.metadata?.color_property?.values;
-
-  // FIXME: Should we make this easier to work with?
-  if (unsortedData.dimensions.color?.value_type === "categorical") {
-    categoricalValues = unsortedData.dimensions.color.values;
-  }
-
   const sortedLabels = unsortedData.index_labels
     .map(
       (label, i) =>
-        [
-          label,
-          unsortedData.dimensions.x.values[i],
-          categoricalValues?.[i] || null,
-        ] as [string, number | null, string | null]
+        [label, unsortedData.dimensions.x.values[i]] as [string, number | null]
     )
-    .sort(([, valueA, categoryA], [, valueB, categoryB]) => {
-      if (categoryA !== categoryB) {
-        if (categoryA === null) {
-          return -1;
-        }
-
-        if (categoryB === null) {
-          return 1;
-        }
-
-        return categoryA.localeCompare(categoryB);
-      }
-
+    // Sorted by value alone. This used to sort by (category, value), which
+    // made color_by partition the plot into one "snake" per category — a job
+    // that belongs to facet_by, and that facet_by does for this plot type
+    // already (see FacetByViewOptions). Every other plot type treats color as
+    // purely visual, and the waterfall's own faceted path discards this
+    // ordering anyway: formatDataForWaterfall re-buckets by facet and re-sorts
+    // within each cluster, so the category sort only ever survived when there
+    // was no facet — the one case where the user had asked for no grouping.
+    //
+    // `categoryA`/`categoryB` are left in the tuple: the category is still read
+    // below to decide whether there is a categorical color at all.
+    .sort(([, valueA], [, valueB]) => {
       if (valueA === null) {
         return -1;
       }
@@ -1274,7 +1261,10 @@ export async function fetchWaterfall(
     // HACK: This ouput "x" dimension does not match the input "x" dimension.
     // Rather, it is a special "rank" dimension that's derived from it.
     x: {
-      axis_label: categoricalValues ? "" : "Rank",
+      // Always a rank now. This was blanked whenever a categorical color
+      // existed, because the axis was then a series of per-category ramps
+      // rather than one ranking — which is no longer true.
+      axis_label: "Rank",
       dataset_label: "",
       dataset_id: dimensions.x.dataset_id,
       slice_type: dimensions.x.slice_type,

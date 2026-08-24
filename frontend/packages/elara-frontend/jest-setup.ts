@@ -51,34 +51,46 @@ const createApiMock = (
   });
 };
 
-jest.mock("@depmap/api", () => ({
-  breadboxAPI: createApiMock(
+jest.mock("@depmap/api", () => {
+  const breadboxAPI = createApiMock(
     "Breadbox API",
     "breadboxAPI",
     breadboxApiProxyTarget
-  ),
+  ) as Record<string, (...args: unknown[]) => unknown>;
 
-  legacyPortalAPI: new Proxy(
-    {},
-    {
-      get(target, prop) {
-        const message = [
-          "*".repeat(80),
-          "Some application code is trying to access the legacy Portal API",
-          "from Elara! This should never happen because Elara is intended to",
-          "be deployed in environments where the legacy Portal backend does",
-          "not exist.",
-          "",
-          `Please remove any instances of legacyPortalAPI.${String(prop)}()`,
-          "from the Elara codebase.",
-          "*".repeat(80),
-        ].join("\n");
+  return {
+    breadboxAPI,
 
-        throw new Error(message);
-      },
-    }
-  ),
-}));
+    // The persisted wrappers delegate to the mocked breadboxAPI so tests mock
+    // the underlying method exactly as they would for a direct call.
+    evaluateContextPersisted: (context: unknown) =>
+      breadboxAPI.evaluateContext(context),
+
+    getDimensionTypeIdentifiersPersisted: (dimTypeName: string) =>
+      breadboxAPI.getDimensionTypeIdentifiers(dimTypeName),
+
+    legacyPortalAPI: new Proxy(
+      {},
+      {
+        get(target, prop) {
+          const message = [
+            "*".repeat(80),
+            "Some application code is trying to access the legacy Portal API",
+            "from Elara! This should never happen because Elara is intended to",
+            "be deployed in environments where the legacy Portal backend does",
+            "not exist.",
+            "",
+            `Please remove any instances of legacyPortalAPI.${String(prop)}()`,
+            "from the Elara codebase.",
+            "*".repeat(80),
+          ].join("\n");
+
+          throw new Error(message);
+        },
+      }
+    ),
+  };
+});
 
 afterEach(() => {
   for (const key of Object.keys(breadboxApiProxyTarget)) {

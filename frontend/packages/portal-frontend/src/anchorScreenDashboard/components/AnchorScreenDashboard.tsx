@@ -3,6 +3,7 @@ import { Button } from "react-bootstrap";
 import { WordBreaker } from "@depmap/common-components";
 import { toPortalLink } from "@depmap/globals";
 import SliceTable from "@depmap/slice-table";
+import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import DownloadDataSvg from "src/common/components/svgs/DownloadDataSvg";
 import DependencyLinksHeader from "src/pairedScreens/components/DependencyLinksHeader";
 import DependencyLinksCell from "src/pairedScreens/components/DependencyLinksCell";
@@ -68,6 +69,7 @@ function AnchorScreenDashboard() {
       </div>
       <div className={styles.tableContainer}>
         <SliceTable
+          PlotlyLoader={PlotlyLoader}
           index_type_name="screen_pair"
           sliceTableRef={sliceTableRef}
           isLoading={!metadata}

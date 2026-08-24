@@ -14,7 +14,7 @@ import SpinnerOverlay from "./SpinnerOverlay";
 import useScatterPlotData from "./prototype/useScatterPlotData";
 import PrototypeScatterPlot from "./prototype/PrototypeScatterPlot";
 import SmallMultiplesScatter from "./prototype/SmallMultiplesScatter";
-import { computeFacets } from "./prototype/plotUtils";
+import { chosenCategoriesFor, computeFacets } from "./prototype/plotUtils";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotLegend from "./PlotLegend";
 import PlotFacets from "./PlotFacets";
@@ -41,6 +41,11 @@ interface Props {
   ) => void;
   plotConfig: DataExplorerPlotConfig;
   canShowIdentityLine: boolean;
+  onChangeCategories?: (
+    target: "color" | "facet",
+    categories: string[] | null
+  ) => void;
+  onChangeExpansionMembers?: (members: string[] | null) => void;
 }
 
 function DataExplorerScatterPlot({
@@ -52,6 +57,8 @@ function DataExplorerScatterPlot({
   onClickVisualizeSelected,
   plotConfig,
   canShowIdentityLine,
+  onChangeCategories = undefined,
+  onChangeExpansionMembers = undefined,
 }: Props) {
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const {
@@ -91,10 +98,14 @@ function DataExplorerScatterPlot({
   // shared with the per-facet regression fit (useScatterPlotData) and the
   // regression table (computeFacetedLinReg), so all three agree on facet
   // identity/labels.
-  const facetInfo = useMemo(() => computeFacets(data, plotConfig.facet_by), [
-    data,
-    plotConfig.facet_by,
-  ]);
+  // Hoisted so the memo depends on the value rather than the whole config,
+  // which would re-run it for every unrelated edit.
+  const facetChosen = chosenCategoriesFor(plotConfig, "facet");
+
+  const facetInfo = useMemo(
+    () => computeFacets(data, plotConfig.facet_by, "facet", facetChosen),
+    [data, plotConfig.facet_by, facetChosen]
+  );
   const facetKeys = facetInfo?.facetKeys ?? null;
   const facetOrder = facetInfo?.facetOrder;
   const isFaceted = Boolean(facetKeys);
@@ -391,6 +402,9 @@ function DataExplorerScatterPlot({
               handleClickShowAll={handleClickShowAll}
               handleClickHideAll={handleClickHideAll}
               target={colorTarget}
+              plotConfig={plotConfig}
+              onChangeCategories={onChangeCategories}
+              onChangeExpansionMembers={onChangeExpansionMembers}
             />
           </StackableSection>
           {showFacetsPanel ? (
@@ -403,6 +417,9 @@ function DataExplorerScatterPlot({
                 onClickFacetItem={onClickFacetItem}
                 handleClickShowAllFacets={handleClickShowAllFacets}
                 handleClickHideAllFacets={handleClickHideAllFacets}
+                plotConfig={plotConfig}
+                onChangeCategories={onChangeCategories}
+                onChangeExpansionMembers={onChangeExpansionMembers}
               />
             </StackableSection>
           ) : null}

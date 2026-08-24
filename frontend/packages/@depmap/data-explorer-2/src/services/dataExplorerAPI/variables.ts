@@ -102,6 +102,12 @@ export async function fetchVariableDomain(
 
     return Promise.resolve({
       unique_values: [...new Set(stringValues)].sort(compareCaseInsensitive),
+      // How many entities actually carry a value, which is the denominator for
+      // "is this a category or an identifier?". Entities with no value are
+      // excluded deliberately: a column filled in for 300 of 2,000 models with
+      // 300 distinct values is a primary key for the part of the cohort it
+      // describes, and counting the 1,700 blanks would disguise that.
+      value_count: stringValues.length,
       dimension_type,
       value_type,
       references,
@@ -158,12 +164,17 @@ export async function fetchVariableDomain(
 
   if (value_type === "list_strings") {
     const stringValues = new Set<string>();
+    let value_count = 0;
 
     for (let i = 0; i < data.values.length; i += 1) {
       const value = data.values[i];
 
       if (Array.isArray(value)) {
         value.forEach((s) => stringValues.add(s));
+
+        if (value.length > 0) {
+          value_count += 1;
+        }
       }
     }
 
@@ -191,6 +202,10 @@ export async function fetchVariableDomain(
 
     return Promise.resolve({
       unique_values,
+      // Entities carrying at least one value. Same role as in the
+      // text/categorical branch above, though a list column reaches the
+      // "can't color by this" answer on its own terms first.
+      value_count,
       dimension_type,
       value_type,
       references,

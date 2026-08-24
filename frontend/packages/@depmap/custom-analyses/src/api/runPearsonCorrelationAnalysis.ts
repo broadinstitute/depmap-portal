@@ -1,4 +1,4 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import { breadboxAPI, evaluateContextPersisted } from "@depmap/api";
 import { DataExplorerContextV2, SliceQuery } from "@depmap/types";
 
 interface Parameters {
@@ -15,7 +15,7 @@ async function runPearsonCorrelationAnalysis({
   let queryCellLines: string[] | null = null;
 
   if (filterByContext) {
-    const result = await cached(breadboxAPI).evaluateContext(filterByContext);
+    const result = await evaluateContextPersisted(filterByContext);
     queryCellLines = result.ids;
   }
 

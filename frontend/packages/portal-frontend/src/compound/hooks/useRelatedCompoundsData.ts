@@ -128,8 +128,6 @@ export default function useRelatedCompoundsData(
   compoundId: string,
   datasetToDataTypeMap: Record<string, "CRISPR" | "RNAi">
 ) {
-  const bapi = cached(breadboxAPI);
-
   const [state, setState] = useState({
     isLoading: true,
     hasError: false,
@@ -146,15 +144,14 @@ export default function useRelatedCompoundsData(
 
         // 1: Metadata Fetching
         const [compoundDataset, allMetadata, geneMetadata] = await Promise.all([
-          bapi.getDataset(datasetId),
+          cached(breadboxAPI).getDataset(datasetId),
           fetchMetadata<CompoundMetadata>(
             "compound_v2",
             null,
-            ["label", "EntrezIDsOfTargets"],
-            breadboxAPI, // fetchMetadata uses cache wrapper internally, so pass in uncached breadboxAPI
+            ["label", "EntrezIDsOfTargets"], // fetchMetadata uses cache wrapper internally, so pass in uncached breadboxAPI
             "id"
           ),
-          fetchMetadata<any>("gene", null, ["label"], breadboxAPI, "id"),
+          fetchMetadata<any>("gene", null, ["label"], "id"),
         ]);
 
         // selected -> defined by the compound page the user is currently on.
@@ -171,7 +168,7 @@ export default function useRelatedCompoundsData(
 
         const associations = await Promise.allSettled(
           queryPairs.map((p) =>
-            bapi.fetchAssociations(
+            cached(breadboxAPI).fetchAssociations(
               {
                 dataset_id: p.dataset,
                 identifier: p.gene,
@@ -221,7 +218,7 @@ export default function useRelatedCompoundsData(
         setState((prev) => ({ ...prev, isLoading: false, hasError: true }));
       }
     })();
-  }, [datasetId, compoundId, datasetToDataTypeMap, bapi]);
+  }, [datasetId, compoundId, datasetToDataTypeMap]);
 
   return state;
 }

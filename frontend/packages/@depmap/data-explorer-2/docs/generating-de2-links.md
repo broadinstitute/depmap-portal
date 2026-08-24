@@ -34,7 +34,7 @@ Depending on `plot_type`, this has either just an `"x"` field or both `"x"` and 
 Each dimension is an object with its own set of required fields:
 
 - **axis_type** — either `"raw_slice"` (plots a single feature or sample directly) or `"aggregated_slice"` (computes, for instance, the mean of several features).
-- **aggregation** — set to `"first"` if you're plotting a `"raw_slice"`; set to `"correlation"` if the plot type is `"correlation_heatmap"`; otherwise one of `"mean"`, `"median"`, `"25%tile"`, `"75%tile"`, `"stddev"`.
+- **aggregation** — set to `"first"` if you're plotting a `"raw_slice"`; set to `"correlation"` if the plot type is `"correlation_heatmap"`; otherwise one of `"mean"`, `"median"`, `"25%tile"`, `"75%tile"`, `"stddev"`. There is one further value, `"expansion"`, which means "don't aggregate these members at all — give each one its own point"; see [expand_by](#expand_by-array).
 - **dataset_id** — the dataset you wish to plot. It should be indexable by the `index_type` (i.e. either the sample type or the feature type of the dataset should match the specified `index_type`).
 - **slice_type** — the complement to `index_type`. If `index_type` is a sample type, this should be a feature type, and vice versa.
 - **context** — a Context Definition describing how to derive the slice. More on this in [Context format](#context-format).
@@ -49,7 +49,7 @@ But what if you're just plotting a single `"raw_slice"`? You still have to write
 {
   "dimension_type": "gene",
   "name": "TP53",
-  "expr": { "==": [ { "var": "given_id" }, "7157" ] },
+  "expr": { "==": [{ "var": "given_id" }, "7157"] },
   "vars": {}
 }
 ```
@@ -68,7 +68,7 @@ DE2 payloads carry an optional top-level `version` field that declares which rev
 "version": 2
 ```
 
-It is technically optional — a payload with no `version` is interpreted as the oldest, pre-versioning schema — but **including it is recommended.** DE2 uses `version` to interpret your payload against the correct schema. The schema will evolve, and some changes (like the one that produced version 2) alter what an *omitted* field means. Stamping the version you generated against guarantees your link keeps rendering as intended instead of silently adopting a new default.
+It is technically optional — a payload with no `version` is interpreted as the oldest, pre-versioning schema — but **including it is recommended.** DE2 uses `version` to interpret your payload against the correct schema. The schema will evolve, and some changes (like the one that produced version 2) alter what an _omitted_ field means. Stamping the version you generated against guarantees your link keeps rendering as intended instead of silently adopting a new default.
 
 Two things to keep in mind:
 
@@ -925,7 +925,100 @@ This example facets the TP53 CRISPR-effect density plot by TP53's own (continuou
 
 #### expansion
 
-Groups points by their expansion member. Requires `expand_by` to be set (see the Transcript Explorer, the primary consumer of this mode) — without it, `facet_by: "expansion"` has nothing to facet by and is dropped.
+Groups points by their expansion member. Requires [expand_by](#expand_by-array) to be set — without it, `facet_by: "expansion"` has nothing to facet by and is dropped.
+
+### expand_by [array]
+
+Turns one axis's context from something to _aggregate_ into something to _expand_. Normally an `aggregated_slice` axis over "the transcripts of CD44" collapses those transcripts into a single number per model. Expanding instead gives each transcript its own point, so a plot of N models over M transcripts becomes N×M points, one per (model, transcript).
+
+Two fields together express this, and both are required:
+
+1. The expanding axis sets `"aggregation": "expansion"` in place of `"mean"` and friends.
+2. A plot-level `expand_by` — a sibling of `dimensions` — records the member set, mirroring that axis's own `slice_type` and `context`.
+
+`expand_by` is an array to leave room for future multi-expansion, but **at most one entry is supported today**; two or more is rejected outright. Each entry has:
+
+- **slice_type** and **context** — the same values as the expanding axis's. They're repeated here because this is what the renderer, `color_by: "expansion"` and `facet_by: "expansion"` all read.
+
+- **members** _(optional)_ — the exact members to draw, chosen by hand. Omit it and the plot picks for you, keeping the ones whose values vary most across the entities being plotted (honoring the `visible` filter, if there is one). Set it and your list wins outright, which is what makes a link show your reader what you were looking at rather than what the data says today.
+
+  **How many get drawn is not 16, and is not fixed.** The cap scales down as the plot gets denser, because what stays legible depends on how many points each member is adding:
+
+  ```
+  cap = clamp(round(430 / sqrt(N)), 2, 16)
+  ```
+
+  `N` is the number of entities on the expanding dataset's index axis — its features when `index_type` is a feature type, its samples otherwise. Deliberately the dataset's own size, not the number left after the `visible` filter: hiding cell lines shouldn't silently change how many panels a plot is allowed.
+
+  | `N`        | cap |
+  | ---------- | --- |
+  | up to ~769 | 16  |
+  | 1,000      | 14  |
+  | 1,800      | 10  |
+  | 5,000      | 6   |
+  | 20,000     | 3   |
+  | 46,000     | 2   |
+
+  So 16 is only the ceiling, reached by a small cohort; a genome-wide index gets a handful. **A hand-picked `members` list is subject to the same cap** — deliberateness doesn't buy extra panels — so a list written against one dataset may be trimmed when the same link is pointed at a larger one. Ids that aren't in `context` are ignored rather than honored, so this can't smuggle in entities the expansion doesn't contain; if none of them survive, the plot falls back to picking for you.
+
+  Because the cap is derived, don't record it in a link. There is no field for it, and any number you computed yourself goes stale as soon as the plot points at a differently sized dataset.
+
+Older links may also carry `limit` and `offset` — a page size and a window, from when the members shown were an arbitrary prefix. They are ignored.
+
+```json
+{
+  "plot_type": "density_1d",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "aggregated_slice",
+      "aggregation": "expansion",
+      "dataset_id": "OmicsExpressionTranscriptTPMLogp1_MC_HumanAllGenes",
+      "slice_type": "transcript",
+      "context": {
+        "dimension_type": "transcript",
+        "name": "CD44",
+        "expr": { "==": [{ "var": "gene" }, "CD44"] },
+        "vars": {
+          "gene": {
+            "dataset_id": "transcript_metadata",
+            "identifier": "Gene",
+            "identifier_type": "column"
+          }
+        }
+      }
+    }
+  },
+  "expand_by": [
+    {
+      "slice_type": "transcript",
+      "context": {
+        "dimension_type": "transcript",
+        "name": "CD44",
+        "expr": { "==": [{ "var": "gene" }, "CD44"] },
+        "vars": {
+          "gene": {
+            "dataset_id": "transcript_metadata",
+            "identifier": "Gene",
+            "identifier_type": "column"
+          }
+        }
+      }
+    }
+  ],
+  "facet_by": "expansion"
+}
+```
+
+#### Expanding both axes
+
+A **second** axis may expand the same members, reading them from a different dataset — one point per (model, transcript) with short-read expression on x and long-read on y, say. Give it `"aggregation": "expansion"` too, along with the _same_ `slice_type` and `context` as the first; only its `dataset_id` differs. There is still just one `expand_by`.
+
+Three rules govern this, and all of them hold whether one axis expands or two:
+
+- **Only `x` and `y` may expand.** Putting `"aggregation": "expansion"` on `dimensions.color` or `dimensions.facet` is rejected. An expansion says what a _point_ is, and the point set is defined by the axes — color and facet are readings of it. To partition points by their expansion member, set `color_by` or [`facet_by`](#expansion) to `"expansion"`; those are the supported way to do it and need no dimension of their own.
+- Every expanding axis must be over the **same `slice_type` as `expand_by`**. Its values are looked up by finding the expansion's member ids in its own dataset, so a mismatch silently produces an all-null axis rather than an error.
+- An axis that shares the expansion's `slice_type` but keeps a **real aggregation** is _not_ expanded — it's aggregated and broadcast, one value per model repeated across that model's transcripts. That combination is deliberate and useful: "each transcript's expression (x) against the mean over all of the gene's transcripts (y)".
 
 ### filters
 
@@ -1265,10 +1358,7 @@ If a bridge column is a `list_strings` column — each row holding a list of for
 {
   "dimension_type": "antibody_v2",
   "expr": {
-    "has_any": [
-      { "var": "arms" },
-      [ "14q", "10q" ]
-    ]
+    "has_any": [{ "var": "arms" }, ["14q", "10q"]]
   },
   "vars": {
     "arms": {
@@ -1320,10 +1410,7 @@ For example, a `gene_pair` context can keep only the pairs whose first gene is "
 {
   "dimension_type": "gene_pair",
   "expr": {
-    "in_context": [
-      { "var": "gene_1" },
-      { "context": "selective" }
-    ]
+    "in_context": [{ "var": "gene_1" }, { "context": "selective" }]
   },
   "vars": {
     "gene_1": {

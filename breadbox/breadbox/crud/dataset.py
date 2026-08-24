@@ -170,6 +170,88 @@ def get_datasets(
     return datasets
 
 
+# SQLite caps how many bound parameters one statement may carry, and a context
+# routinely resolves to more ids than that -- every gene, every model. Chunked
+# well under the limit rather than at it, since the query carries a few
+# parameters of its own.
+_ID_CHUNK_SIZE = 900
+
+
+def count_dataset_coverage(
+    db: SessionWithUser, user: str, dimension_type_name: str, given_ids: List[str],
+) -> Dict[str, int]:
+    """How many of `given_ids` each visible matrix dataset actually contains.
+
+    Answers "which of these datasets has the data?" for a set of entities, which
+    is what picking a dataset on the user's behalf requires. Asking per id
+    instead -- the only thing get_datasets can do -- is one round trip per
+    entity, and a context can name thousands.
+
+    Datasets with no matching id are absent from the result rather than present
+    with a zero. Callers who need the zeroes have the dataset list already, and
+    the omission keeps the response proportional to what matched.
+    """
+    assert (
+        db.user == user
+    ), f"User parameter '{user}' must match the user set on the database session '{db.user}'"
+
+    dimension_type = (
+        db.query(DimensionType).filter_by(name=dimension_type_name).one_or_none()
+    )
+
+    if dimension_type is None:
+        raise ResourceNotFoundError(f"Unknown dimension type: '{dimension_type_name}'")
+
+    # Scoped to what this user may see, by asking the access-controlled query
+    # rather than counting over the dimension tables directly. Counting first
+    # and filtering afterwards would report the existence of private datasets
+    # to someone who cannot see them, which is precisely what the group checks
+    # in get_datasets exist to prevent.
+    axis_kwarg = (
+        {"feature_type": dimension_type_name}
+        if dimension_type.axis == "feature"
+        else {"sample_type": dimension_type_name}
+    )
+    visible_dataset_ids = {
+        dataset.id
+        for dataset in get_datasets(db, user, **axis_kwarg)  # pyright: ignore
+        if isinstance(dataset, MatrixDataset)
+    }
+
+    if not visible_dataset_ids or not given_ids:
+        return {}
+
+    dimension_model = (
+        DatasetFeature if dimension_type.axis == "feature" else DatasetSample
+    )
+
+    counts: Dict[str, int] = defaultdict(int)
+
+    for start in range(0, len(given_ids), _ID_CHUNK_SIZE):
+        chunk = given_ids[start : start + _ID_CHUNK_SIZE]
+
+        # `with_entities` rather than passing both columns to `query`:
+        # SessionWithUser.query takes a single entity, because it wraps every
+        # query with the caller's readable-group execution options. Narrowing
+        # afterwards keeps that wrapper rather than going around it.
+        rows = (
+            db.query(dimension_model)
+            .with_entities(
+                dimension_model.dataset_id,
+                func.count(distinct(dimension_model.given_id)),
+            )
+            .filter(dimension_model.given_id.in_(chunk))
+            .filter(dimension_model.dataset_id.in_(visible_dataset_ids))
+            .group_by(dimension_model.dataset_id)
+            .all()
+        )
+
+        for dataset_id, count in rows:
+            counts[dataset_id] += count
+
+    return dict(counts)
+
+
 def get_dataset(
     db: SessionWithUser, user: str, dataset_id: Union[str, UUID]
 ) -> Optional[Dataset]:
@@ -178,9 +260,11 @@ def get_dataset(
         db.user == user
     ), f"User parameter '{user}' must match the user set on the database session '{db.user}'"
 
-    dataset: Optional[Dataset] = db.query(Dataset).filter(
-        or_(Dataset.id == str(dataset_id), Dataset.given_id == str(dataset_id))
-    ).one_or_none()
+    dataset: Optional[Dataset] = (
+        db.query(Dataset)
+        .filter(or_(Dataset.id == str(dataset_id), Dataset.given_id == str(dataset_id)))
+        .one_or_none()
+    )
 
     if dataset is None:
         return None
@@ -553,10 +637,10 @@ def get_current_datetime():
 
 def find_expired_datasets(db: SessionWithUser, max_age: timedelta) -> List[Dataset]:
     """
-    Finds transient datasets which can be deleted (because they've "expired") 
-    Two ways a transient dataset can be expired: 
+    Finds transient datasets which can be deleted (because they've "expired")
+    Two ways a transient dataset can be expired:
     1. the `expiry` field can be explictly set, and that time is in the past
-    2. the upload_date is before now - `max_age`. 
+    2. the upload_date is before now - `max_age`.
     """
 
     now = get_current_datetime()

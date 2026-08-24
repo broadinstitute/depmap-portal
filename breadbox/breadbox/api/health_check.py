@@ -1,3 +1,5 @@
+from importlib.metadata import version
+
 from fastapi import APIRouter, status
 from breadbox.compute import site_check_task
 from breadbox.celery_task.utils import format_task_status
@@ -12,7 +14,11 @@ log = logging.getLogger(__name__)
 
 @router.get("/basic", operation_id="basic_check")
 def basic_check():
-    return {"message": "ok"}
+    # `version` is the app version (from pyproject.toml, auto-bumped by
+    # commitizen). The frontend folds it into its persistent-cache epoch so
+    # that deploying a new Breadbox wipes cached responses produced by the
+    # old code.
+    return {"message": "ok", "version": version("breadbox")}
 
 
 @router.get("/ok", operation_id="ok")

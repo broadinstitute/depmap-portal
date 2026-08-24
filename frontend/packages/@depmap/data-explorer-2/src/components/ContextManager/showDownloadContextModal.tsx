@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import { showInfoModal } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
 import { isV2Context } from "../../utils/context";
@@ -10,10 +10,7 @@ import {
   uncapitalize,
 } from "../../utils/misc";
 import { convertContextV1toV2 } from "../../utils/context-converter";
-import {
-  PlotlyLoaderProvider,
-  usePlotlyLoader,
-} from "../../contexts/PlotlyLoaderContext";
+import { usePlotlyLoader } from "../../contexts/PlotlyLoaderContext";
 import styles from "../../styles/ContextManager.scss";
 
 function DownloadTable({
@@ -38,9 +35,7 @@ function DownloadTable({
         context = await convertContextV1toV2(context);
       }
 
-      const { ids, num_candidates } = await cached(breadboxAPI).evaluateContext(
-        context
-      );
+      const { ids, num_candidates } = await evaluateContextPersisted(context);
       setContextIds(new Set(ids));
       setTotal(num_candidates);
     })();
@@ -50,26 +45,25 @@ function DownloadTable({
   const entities = uncapitalize(pluralize(entity));
 
   return (
-    <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
-      <SliceTable
-        index_type_name={dimension_type}
-        downloadFilename={contextName}
-        implicitFilter={({ id }) => Boolean(contextIds?.has(id))}
-        isLoading={!contextIds}
-        renderCustomControls={() => {
-          if (!contextIds) {
-            return null;
-          }
+    <SliceTable
+      PlotlyLoader={PlotlyLoader}
+      index_type_name={dimension_type}
+      downloadFilename={contextName}
+      implicitFilter={({ id }) => Boolean(contextIds?.has(id))}
+      isLoading={!contextIds}
+      renderCustomControls={() => {
+        if (!contextIds) {
+          return null;
+        }
 
-          return (
-            <div>
-              Showing <b>{contextIds.size.toLocaleString()}</b> matches of{" "}
-              {total.toLocaleString()} {entities}
-            </div>
-          );
-        }}
-      />
-    </PlotlyLoaderProvider>
+        return (
+          <div>
+            Showing <b>{contextIds.size.toLocaleString()}</b> matches of{" "}
+            {total.toLocaleString()} {entities}
+          </div>
+        );
+      }}
+    />
   );
 }
 

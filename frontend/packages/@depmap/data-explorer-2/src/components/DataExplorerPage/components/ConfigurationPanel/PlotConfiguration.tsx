@@ -1,7 +1,5 @@
 import React from "react";
 import qs from "qs";
-import cx from "classnames";
-import { Button } from "react-bootstrap";
 import DimensionSelectV2 from "../../../DimensionSelectV2";
 import {
   ContextPath,
@@ -12,9 +10,16 @@ import {
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
 import { isCompletePlot } from "../../validation";
+import { getExpansionAxes } from "../../../../utils/misc";
 import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
-import { PlotTypeSelector, PointsSelector } from "./selectors";
 import Section from "../Section";
+import { PlotTypeSelector, PointsSelector } from "./selectors";
+import {
+  CopyAxisButton,
+  SwapAxesButton,
+  getAxisLabel,
+  handleExpansionSelection,
+} from "./plotConfigUtils";
 import styles from "../../styles/ConfigurationPanel.scss";
 
 interface Props {
@@ -29,51 +34,6 @@ interface Props {
   onClickSwapAxisConfigs: () => void;
 }
 
-const getAxisLabel = (plot_type: string | undefined, axis: string) => {
-  if (axis === "y" || plot_type === "waterfall") {
-    return "Y Axis";
-  }
-  if (axis === "x" && plot_type === "scatter") {
-    return "X Axis";
-  }
-
-  return "Axis";
-};
-
-const CopyAxisButton = ({
-  onClickCopyAxisConfig,
-}: {
-  onClickCopyAxisConfig: () => void;
-}) => {
-  return (
-    <Button
-      id="copy-axis-config"
-      className={styles.copyAxisButton}
-      onClick={onClickCopyAxisConfig}
-    >
-      <span>copy</span>
-      <i className="glyphicon glyphicon-arrow-right" />
-    </Button>
-  );
-};
-
-const SwapAxesButton = ({
-  onClickSwapAxisConfigs,
-}: {
-  onClickSwapAxisConfigs: () => void;
-}) => {
-  return (
-    <Button
-      id="swap-axis-configs"
-      className={styles.swapAxesButton}
-      onClick={onClickSwapAxisConfigs}
-    >
-      <span>swap</span>
-      <i className="glyphicon glyphicon-transfer" />
-    </Button>
-  );
-};
-
 function PlotConfiguration({
   plot,
   dispatch,
@@ -84,6 +44,12 @@ function PlotConfiguration({
 }: Props) {
   const params = qs.parse(window.location.search.substr(1));
   const defaultOpen = !params.task;
+
+  const expandBy = plot.expand_by?.[0];
+
+  const axisKeys = (["x", "y"] as DimensionKey[]).filter(
+    (key) => plot.dimensions?.[key]
+  );
 
   return (
     <Section title="Plot Configuration" defaultOpen={defaultOpen}>
@@ -109,30 +75,42 @@ function PlotConfiguration({
         }
       />
       <hr className={styles.hr} />
-      <div className={styles.dimensions}>
-        {(["x", "y"] as DimensionKey[])
-          .filter((key) => plot.dimensions?.[key])
-          .map((key) => {
-            const showSwapButton = key === "x" && plot.plot_type === "scatter";
+      <div
+        className={styles.dimensions}
+        style={{
+          gridTemplateColumns: `repeat(${axisKeys.length}, minmax(0, 1fr))`,
+        }}
+      >
+        {axisKeys.map((key) => {
+          const path: ContextPath = ["dimensions", key, "context"];
+          const dimension = plot.dimensions![
+            key
+          ] as Partial<DataExplorerPlotConfigDimensionV2>;
 
-            const showCopyButton =
-              key === "x" &&
-              isCompletePlot(plot) &&
-              ["density_1d", "waterfall"].includes(plot.plot_type) &&
-              plot.index_type !== "other";
+          const showSwapButton = key === "x" && plot.plot_type === "scatter";
 
-            const dimension = plot.dimensions![
-              key
-            ] as Partial<DataExplorerPlotConfigDimensionV2>;
-            const path: ContextPath = ["dimensions", key, "context"];
+          const showCopyButton =
+            key === "x" &&
+            isCompletePlot(plot) &&
+            ["density_1d", "waterfall"].includes(plot.plot_type);
 
-            const onlyParallelAxisHasAggregation =
-              dimension.axis_type === "raw_slice" &&
-              plot.dimensions![key === "x" ? "y" : "x"]?.axis_type ===
-                "aggregated_slice";
+          // The expansion, if any, that some axis OTHER than this one has
+          // defined. `expand_by` is the plot-level record of it, so this is
+          // just "is anyone else expanding?" — this axis may then join that
+          // expansion (same members, its own dataset) but never start a
+          // rival one.
+          const otherAxisExpansion =
+            getExpansionAxes(plot).some((k) => k !== key) && expandBy
+              ? { slice_type: expandBy.slice_type as string }
+              : null;
 
-            return (
-              <div key={key}>
+          return (
+            // Exactly ONE grid item per axis. Its contents reach the shared
+            // rows via subgrid rather than by being grid items of
+            // `.dimensions` themselves — see `.axisColumn` for why that
+            // distinction matters.
+            <div className={styles.axisColumn} key={key}>
+              <div className={styles.axisHeader}>
                 {plot.plot_type !== "correlation_heatmap" && (
                   <label>{getAxisLabel(plot.plot_type, key)}</label>
                 )}
@@ -146,38 +124,44 @@ function PlotConfiguration({
                     onClickSwapAxisConfigs={onClickSwapAxisConfigs}
                   />
                 )}
-                <DimensionSelectV2
-                  className={cx({
-                    [styles.dimensionWithGap]: onlyParallelAxisHasAggregation,
-                  })}
-                  index_type={plot.index_type as string}
-                  allowNullFeatureType
-                  value={
-                    (dimension as DataExplorerPlotConfigDimensionV2) || null
-                  }
-                  onChange={(nextDimension) => {
+              </div>
+              <DimensionSelectV2
+                asGridRows
+                index_type={plot.index_type as string}
+                allowNullFeatureType
+                allowExpansion={plot.plot_type !== "correlation_heatmap"}
+                otherAxisExpansion={otherAxisExpansion}
+                value={(dimension as DataExplorerPlotConfigDimensionV2) || null}
+                onChange={(nextDimension) => {
+                  if (
+                    dimension.aggregation === "expansion" ||
+                    nextDimension?.aggregation === "expansion"
+                  ) {
+                    handleExpansionSelection(key, nextDimension, dispatch);
+                  } else {
                     dispatch({
                       type: "select_dimension",
                       payload: { key, dimension: nextDimension },
                     });
-                  }}
-                  mode={
-                    plot.plot_type === "correlation_heatmap"
-                      ? "context-only"
-                      : "entity-or-context"
                   }
-                  includeAllInContextOptions={
-                    plot.plot_type !== "correlation_heatmap"
-                  }
-                  onClickCreateContext={() => onClickCreateContext(path)}
-                  onClickSaveAsContext={() => {
-                    const context = dimension.context;
-                    onClickSaveAsContext(context!, path);
-                  }}
-                />
-              </div>
-            );
-          })}
+                }}
+                mode={
+                  plot.plot_type === "correlation_heatmap"
+                    ? "context-only"
+                    : "entity-or-context"
+                }
+                includeAllInContextOptions={
+                  plot.plot_type !== "correlation_heatmap"
+                }
+                onClickCreateContext={() => onClickCreateContext(path)}
+                onClickSaveAsContext={() => {
+                  const context = dimension.context;
+                  onClickSaveAsContext(context!, path);
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
     </Section>
   );

@@ -99,6 +99,29 @@ function DataExplorer2MainContent({
     };
   }, [dispatchPlotActionAndUpdateHistory]);
 
+  // The category picker sits beside the legend, in the visualization column,
+  // which has no dispatch of its own — so it gets a callback instead, in the
+  // same style as the other plot-side config edits.
+  const handleChangeExpansionMembers = useCallback(
+    (members: string[] | null) => {
+      dispatchPlotActionAndUpdateHistory({
+        type: "select_expansion_members",
+        payload: members,
+      });
+    },
+    [dispatchPlotActionAndUpdateHistory]
+  );
+
+  const handleChangeCategories = useCallback(
+    (target: "color" | "facet", categories: string[] | null) => {
+      dispatchPlotActionAndUpdateHistory({
+        type: "select_categories",
+        payload: { target, categories },
+      });
+    },
+    [dispatchPlotActionAndUpdateHistory]
+  );
+
   useEffect(() => {
     const onPopState = (e: PopStateEvent) => {
       readPlotFromQueryString().then((nextPlot) => {
@@ -167,6 +190,8 @@ function DataExplorer2MainContent({
           onClickVisualizeSelected={handleClickVisualizeSelected}
           onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
           onClickColorByContext={handleClickColorByContext}
+          onChangeCategories={handleChangeCategories}
+          onChangeExpansionMembers={handleChangeExpansionMembers}
           onClickShowDensityFallback={handleClickShowDensityFallback}
           feedbackUrl={feedbackUrl}
           contactEmail={contactEmail}

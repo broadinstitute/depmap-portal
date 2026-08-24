@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { getDimensionTypeIdentifiersPersisted } from "@depmap/api";
 
 // Builds a label → id map for a given dimension type. Used by
 // `PrecomputedAssociations` to resolve a legacy `entity_label`-style
@@ -17,17 +17,15 @@ function useLabelToIdMap(dimension_type: string | undefined) {
       return;
     }
 
-    cached(breadboxAPI)
-      .getDimensionTypeIdentifiers(dimension_type)
-      .then((identifiers) => {
-        const map: Record<string, string> = {};
+    getDimensionTypeIdentifiersPersisted(dimension_type).then((identifiers) => {
+      const map: Record<string, string> = {};
 
-        identifiers.forEach(({ id, label }) => {
-          map[label] = id;
-        });
-
-        setMapping(map);
+      identifiers.forEach(({ id, label }) => {
+        map[label] = id;
       });
+
+      setMapping(map);
+    });
   }, [dimension_type]);
 
   return mapping;

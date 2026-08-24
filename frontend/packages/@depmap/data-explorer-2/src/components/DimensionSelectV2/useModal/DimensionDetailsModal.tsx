@@ -7,7 +7,11 @@ import {
   DataExplorerContextV2,
   DataExplorerPlotConfigDimensionV2,
 } from "@depmap/types";
-import { Mode, State } from "../useDimensionStateManager/types";
+import {
+  Mode,
+  OtherAxisExpansion,
+  State,
+} from "../useDimensionStateManager/types";
 import ModalDimensionSelect from "./ModalDimensionSelect";
 import DatasetDetails from "./DatasetDetails";
 import styles from "../../../styles/DimensionSelect.scss";
@@ -22,6 +26,8 @@ interface Props {
   allowNullFeatureType: boolean;
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
   hiddenDatasets: Set<string>;
+  allowExpansion: boolean;
+  otherAxisExpansion: OtherAxisExpansion;
 }
 
 function DimensionDetailsModal({
@@ -34,6 +40,8 @@ function DimensionDetailsModal({
   allowNullFeatureType,
   valueTypes,
   hiddenDatasets,
+  allowExpansion,
+  otherAxisExpansion,
 }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [dimension, setDimension] = useState(initialState.dimension);
@@ -80,6 +88,8 @@ function DimensionDetailsModal({
           allowNullFeatureType={allowNullFeatureType}
           valueTypes={valueTypes}
           hiddenDatasets={hiddenDatasets}
+          allowExpansion={allowExpansion}
+          otherAxisExpansion={otherAxisExpansion}
           onClickCreateContext={() => {
             const dimension_type = dimension.slice_type as string;
 

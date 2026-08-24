@@ -7,8 +7,6 @@ function useTopCoDependenciesData(
   geneEntrezId: string,
   associationDatasetIds: string[]
 ) {
-  const bapi = cached(breadboxAPI);
-
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [datasetName, setDatasetName] = useState<string>("");
@@ -22,11 +20,13 @@ function useTopCoDependenciesData(
       try {
         setIsLoading(true);
 
-        const dataset = await bapi.getDataset(datasetId);
+        const dataset = await cached(breadboxAPI).getDataset(datasetId);
         setDatasetName(dataset.name);
 
         if (dataset.given_id) {
-          const datasetAssociations = await bapi.fetchAssociations(
+          const datasetAssociations = await cached(
+            breadboxAPI
+          ).fetchAssociations(
             {
               dataset_id: dataset.given_id,
               identifier: geneEntrezId,
@@ -45,7 +45,7 @@ function useTopCoDependenciesData(
         setIsLoading(false);
       }
     })();
-  }, [correlationData, geneEntrezId, bapi, datasetId, associationDatasetIds]);
+  }, [correlationData, geneEntrezId, datasetId, associationDatasetIds]);
   return {
     datasetName,
     correlationData,

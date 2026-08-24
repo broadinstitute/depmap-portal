@@ -2,19 +2,34 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import cx from "classnames";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
-import type { RowSelectionState } from "@depmap/react-table";
+import type { RowSelectionState, SortingState } from "@depmap/react-table";
 import type { SliceQuery } from "@depmap/types";
+import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
 import Controls from "./Controls";
+import rowSelectionChanged from "./rowSelectionChanged";
 import Actions from "./Actions";
 import {
   useSliceTableState,
   filterPredicate,
-  CellCtx,
+  CustomColumn,
+  CustomColumnPlacement,
 } from "./useSliceTableState";
 import styles from "../styles/SliceTable.scss";
 
 interface Props {
   index_type_name: string;
+  // Required, and not read from context, on purpose. SliceTable draws slice
+  // previews with Plotly, and it is very often rendered into a modal — which
+  // means a detached React tree that no provider above the app reaches. Taking
+  // it as a prop turns "I forgot the provider" from a runtime error someone
+  // hits when they open a preview into a compile error.
+  //
+  // `any` for the same reason PlotlyLoaderProvider uses it: the concrete
+  // loaders each app supplies don't structurally satisfy PlotlyLoaderType, and
+  // reconciling Plotly's versions is more trouble than it is worth. The point
+  // of this prop is that it must be *passed*, not that it is precisely typed.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  PlotlyLoader: any;
   getInitialState?: () => {
     initialSlices?: SliceQuery[];
     // Should be a subset of `initialSlices`
@@ -22,21 +37,32 @@ interface Props {
     initialRowSelection?: RowSelectionState;
   };
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
-  enableRowSelection?: boolean;
+  // Pass a predicate to make only some rows selectable — the checkbox renders
+  // disabled for the rest, and "select all" skips them.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  enableRowSelection?: boolean | ((row: any) => boolean);
   enableMultiRowSelection?: boolean;
+  // Ceiling on what a single "select all" click takes, from the top of the
+  // current display order. Individual checkboxes stay unrestricted — this only
+  // stops the one click that can blow past a limit in one go. Forwarded to
+  // ReactTable, which is the only thing that knows what order the rows are in.
+  maxRowSelection?: number;
   onChangeRowSelection?: (nextRowSelection: Record<string, boolean>) => void;
+  // Which column the table opens sorted by. Supplying it suppresses the
+  // built-in "rows that started selected come first" ordering, which is the
+  // point: a header showing a sort indicator should mean that sort is in
+  // effect, not that something else quietly reordered the rows first.
+  initialSorting?: SortingState;
   hideIdColumn?: boolean;
   hideLabelColumn?: boolean;
   // Dataset IDs that should not appear in the "Add Column" menus.
   hiddenDatasets?: Set<string>;
-  customColumns?: {
-    header: () => React.ReactNode;
-    cell: (
-      cellCtx: CellCtx,
-      getValue: (sliceQuery: SliceQuery) => unknown
-    ) => React.ReactNode;
-    width?: number;
-  }[];
+  // Columns the caller supplies itself, for values that aren't Breadbox slices.
+  // Give an entry an `accessorFn` to make it sortable, searchable and
+  // exportable; omit it for a column that only renders controls.
+  customColumns?: CustomColumn[];
+  // Where those columns sit relative to the slice columns. Defaults to "end".
+  customColumnPlacement?: CustomColumnPlacement;
   // Per-column display customization. Called once per column during column
   // definition building. Return `null` for default behavior, or an object with:
   // - `header`: custom header renderer (receives label and defaultElement)
@@ -67,6 +93,18 @@ interface Props {
   // Rows for which this returns false are excluded from the dataset entirely —
   // they won't appear in the table, search results, magnitude bar stats, or
   // CSV exports. Use this to scope the table to a relevant subset of rows.
+  //
+  // `getValue` resolves against the table's LOADED columns only — a slice in
+  // `initialSlices`, one the user added, or one they since removed (those are
+  // cached). It does NOT fetch. Naming a slice the table was never asked to
+  // display returns `undefined`, and because `undefined` compares unequal to
+  // whatever you meant, the filter quietly excludes every row rather than
+  // failing. Two ways to avoid that:
+  //
+  //   - Put the slice in `initialSlices`, accepting that it shows as a column.
+  //   - Resolve what you need yourself and filter on `id`, holding the table on
+  //     `isLoading` until it arrives. This is what every current caller does;
+  //     showGeneTranscriptTable is the worked example.
   implicitFilter?: (row: {
     id: string;
     label: string;
@@ -92,15 +130,19 @@ const NOOP = () => {};
 
 function SliceTable({
   index_type_name,
+  PlotlyLoader,
   getInitialState = () => ({}),
   onChangeSlices = NOOP,
   enableRowSelection = false,
   enableMultiRowSelection = false,
+  maxRowSelection = undefined,
   onChangeRowSelection = NOOP,
+  initialSorting = undefined,
   hideIdColumn = false,
   hideLabelColumn = false,
   hiddenDatasets = undefined,
   customColumns = undefined,
+  customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
   renderCustomControls = () => null,
   renderCustomActions = undefined,
@@ -166,10 +208,12 @@ function SliceTable({
     sliceDataCacheRef,
   } = useSliceTableState({
     index_type_name,
+    PlotlyLoader,
     initialSlices,
     viewOnlySlices,
     enableRowSelection,
     customColumns,
+    customColumnPlacement,
     getColumnDisplayOptions,
     initialRowSelection,
     onChangeSlices,
@@ -181,17 +225,35 @@ function SliceTable({
 
   const combinedLoading = loading || externalLoading;
 
+  // Compared against what was last *reported*, not against the initial
+  // selection. Comparing against the initial one suppressed every return to it:
+  // adding a row past the seed reported the addition, and then removing that
+  // same row reported nothing, because the result matched the seed again. The
+  // consumer's count stayed stuck one high, and only for rows in the seed —
+  // which is what made it look like particular rows were broken.
+  //
+  // The comparison is over *selected ids* rather than keys. TanStack may
+  // represent a deselected row as an absent key or as an explicit `false`, and
+  // by keys alone those two read as different selections while meaning the same
+  // thing.
+  const lastReportedRef = useRef(initialRowSelection);
+  const prevInitialRef = useRef(initialRowSelection);
+
+  // Adopting a new seed is an initialization, not a user action: re-baseline so
+  // it isn't reported back to the consumer that supplied it. Done during render,
+  // alongside the equivalent adjustment in useSliceTableState, so the effect
+  // below never sees a baseline that lags the selection it is judging.
+  if (prevInitialRef.current !== initialRowSelection) {
+    prevInitialRef.current = initialRowSelection;
+    lastReportedRef.current = initialRowSelection;
+  }
+
   useEffect(() => {
-    const keysA = Object.keys(rowSelection);
-    const keysB = new Set(Object.keys(initialRowSelection));
-
-    const hasSelectionChanges =
-      keysA.length !== keysB.size || keysA.some((k) => !keysB.has(k));
-
-    if (hasSelectionChanges) {
+    if (rowSelectionChanged(lastReportedRef.current, rowSelection)) {
+      lastReportedRef.current = rowSelection;
       onChangeRowSelection(rowSelection);
     }
-  }, [rowSelection, initialRowSelection, onChangeRowSelection]);
+  }, [rowSelection, onChangeRowSelection]);
 
   // Apply implicit filter before ReactTable sees the data. This shapes the
   // dataset itself — magnitude bar stats, search, and everything else will
@@ -209,76 +271,82 @@ function SliceTable({
   }, [data, columns, implicitFilter, sliceDataCacheRef]);
 
   return (
-    <div className={cx(styles.SliceTable, containerClassName)}>
-      <Controls
-        controlsClassName={controlsClassName}
-        tableRef={tableRef}
-        isLoading={combinedLoading}
-        hadError={Boolean(error)}
-        onClickFilterButton={handleClickFilterButton}
-        onClickDownload={handleClickDownload}
-        renderCustomControls={renderCustomControls}
-        numFiltersApplied={numFiltersApplied}
-        onClickAddColumn={handleClickAddColumn}
-      />
-      {combinedLoading && (
-        <div className={styles.loadingContainer}>
-          <Spinner position="static" />
-        </div>
-      )}
-      {error && (
-        <div className={styles.errorContainer}>
-          <p>⚠️ Sorry, there was an error loading the table.</p>
-          <details>{error}</details>
-        </div>
-      )}
-      <ReactTable
-        tableRef={tableRef}
-        className={combinedLoading ? styles.hidden : ""}
-        height="100%"
-        data={filteredData}
-        columns={columns}
-        rowSelection={rowSelection}
-        onRowSelectionChange={setRowSelection}
-        getRowId={getRowId}
-        enableRowSelection={enableRowSelection}
-        enableMultiRowSelection={enableMultiRowSelection}
-        enableStickyFirstColumn
-        columnVisibility={{
-          id: !hideIdColumn,
-          label: shouldShowLabelColumn && !hideLabelColumn,
-        }}
-        enableSearch
-        rowFilter={rowFilter}
-        defaultSort={(a, b) => {
-          const aId = getRowId(a);
-          const bId = getRowId(b);
-
-          const aSelected = initialRowSelection[aId] || false;
-          const bSelected = initialRowSelection[bId] || false;
-
-          if (aSelected && !bSelected) return -1;
-          if (!aSelected && bSelected) return 1;
-
-          const aIdNum = Number(aId);
-          const bIdNum = Number(bId);
-
-          if (!Number.isNaN(aIdNum) && !Number.isNaN(bIdNum)) {
-            return aIdNum < bIdNum ? -1 : 1;
-          }
-
-          return 0;
-        }}
-      />
-      {(!hideActions || renderCustomActions) && (
-        <Actions
+    // Provided here rather than expected from above, so that callers rendering
+    // into a modal don't each have to remember to do it.
+    <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+      <div className={cx(styles.SliceTable, containerClassName)}>
+        <Controls
+          controlsClassName={controlsClassName}
+          tableRef={tableRef}
           isLoading={combinedLoading}
           hadError={Boolean(error)}
+          onClickFilterButton={handleClickFilterButton}
+          onClickDownload={handleClickDownload}
+          renderCustomControls={renderCustomControls}
+          numFiltersApplied={numFiltersApplied}
           onClickAddColumn={handleClickAddColumn}
-          renderCustomActions={renderCustomActions}
         />
-      )}
-    </div>
+        {combinedLoading && (
+          <div className={styles.loadingContainer}>
+            <Spinner position="static" />
+          </div>
+        )}
+        {error && (
+          <div className={styles.errorContainer}>
+            <p>⚠️ Sorry, there was an error loading the table.</p>
+            <details>{error}</details>
+          </div>
+        )}
+        <ReactTable
+          tableRef={tableRef}
+          className={combinedLoading ? styles.hidden : ""}
+          height="100%"
+          data={filteredData}
+          columns={columns}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
+          getRowId={getRowId}
+          initialSorting={initialSorting}
+          enableRowSelection={enableRowSelection}
+          enableMultiRowSelection={enableMultiRowSelection}
+          maxRowSelection={maxRowSelection}
+          enableStickyFirstColumn
+          columnVisibility={{
+            id: !hideIdColumn,
+            label: shouldShowLabelColumn && !hideLabelColumn,
+          }}
+          enableSearch
+          rowFilter={rowFilter}
+          defaultSort={(a, b) => {
+            const aId = getRowId(a);
+            const bId = getRowId(b);
+
+            const aSelected = initialRowSelection[aId] || false;
+            const bSelected = initialRowSelection[bId] || false;
+
+            if (aSelected && !bSelected) return -1;
+            if (!aSelected && bSelected) return 1;
+
+            const aIdNum = Number(aId);
+            const bIdNum = Number(bId);
+
+            if (!Number.isNaN(aIdNum) && !Number.isNaN(bIdNum)) {
+              return aIdNum < bIdNum ? -1 : 1;
+            }
+
+            return 0;
+          }}
+        />
+        {(!hideActions || renderCustomActions) && (
+          <Actions
+            isLoading={combinedLoading}
+            hadError={Boolean(error)}
+            onClickAddColumn={handleClickAddColumn}
+            renderCustomActions={renderCustomActions}
+          />
+        )}
+      </div>
+    </PlotlyLoaderProvider>
   );
 }
 

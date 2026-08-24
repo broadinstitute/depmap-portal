@@ -1,20 +1,35 @@
 import qs from "qs";
 import { ErrorDetail, ErrorTypeError } from "@depmap/types";
 import {
-  isPersistentApiCacheEnabled,
   persistentCacheGet,
   persistentCacheSet,
+  buildPersistentKey,
 } from "./persistentApiCache";
+import type { RequestCacheContext } from "./persistentApiCache";
 
 const cache: Record<string, Promise<unknown> | null> = {};
-let useCache = false;
 
-export const cacheOn = () => {
-  useCache = true;
+// Ambient request context, set by the `cached(...)` decorator immediately before
+// it invokes an API method and cleared immediately after. `null` means "not
+// inside cached(...)"; a non-null value means the in-memory cache is on, and its
+// `persist` field says whether the response may also go to IndexedDB.
+//
+// This is dynamic scoping, and it only works because every layer between
+// cacheOn() and the getJson/postJson call below is synchronous up to the point
+// the request is issued. The API methods are `async`, but an async function body
+// runs synchronously until its first `await`, and none of them awaits anything
+// before delegating here. Read `cacheContext` into a local at the top of each
+// maker function; do not read it after an await.
+let cacheContext: RequestCacheContext = null;
+
+export const cacheOn = (
+  context: RequestCacheContext = { persist: undefined }
+) => {
+  cacheContext = context;
 };
 
 export const cacheOff = () => {
-  useCache = false;
+  cacheContext = null;
 };
 
 interface BreadboxCustomException {
@@ -102,26 +117,40 @@ async function request<T>(url: string, options: RequestInit): Promise<T> {
   return json as T;
 }
 
-// Reached only when `useCache` is on — i.e. inside a `cached(...)` call. If
-// persistent caching has been enabled, this layers a cross-reload IndexedDB
-// store underneath the in-memory promise cache: check the store first, and on
-// a miss run the request and write the result back. Otherwise it's a
-// passthrough and `cached(...)` behaves exactly as before (in-memory only).
+// Reached only from inside a `cached(...)` call. When that call opted into
+// persistence, this layers a cross-reload IndexedDB store underneath the
+// in-memory promise cache: check the store first, and on a miss run the request
+// and write the result back. Otherwise it's a passthrough and `cached(...)`
+// behaves exactly as before (in-memory only).
+//
+// `context` is passed in rather than read from the module global, because by the
+// time this runs the decorator has already called cacheOff().
 async function resolveWithPersistence<T>(
   cacheKey: string,
+  context: RequestCacheContext,
   producer: () => Promise<T>
 ): Promise<T> {
-  if (!isPersistentApiCacheEnabled()) {
+  if (context === null || context.persist === undefined) {
     return producer();
   }
 
-  const { hit, value } = await persistentCacheGet(cacheKey);
+  // The persistent key can differ from the in-memory one: for a given_id-
+  // addressed request it carries the resolved dataset UUID, and for a request
+  // with declared deps it carries those too. Returns null when the request
+  // isn't eligible for disk at all, in which case this degrades to in-memory.
+  const persistentKey = await buildPersistentKey(cacheKey, context.persist);
+
+  if (persistentKey === null) {
+    return producer();
+  }
+
+  const { hit, value } = await persistentCacheGet(persistentKey);
   if (hit) {
     return value as T;
   }
 
   const fresh = await producer();
-  await persistentCacheSet(cacheKey, fresh);
+  await persistentCacheSet(persistentKey, fresh, context.persist);
   return fresh;
 }
 
@@ -143,7 +172,10 @@ const makeGetJson = (urlPrefix: string) => <T>(
     return request<T>(fullUrl, { method: "GET", ...options });
   };
 
-  if (!useCache) {
+  // Captured synchronously: the decorator clears it as soon as this returns.
+  const context = cacheContext;
+
+  if (context === null) {
     return getJson();
   }
 
@@ -153,10 +185,12 @@ const makeGetJson = (urlPrefix: string) => <T>(
   const cacheKey = `${urlPrefix}${url}-${json}`;
 
   if (!cache[cacheKey]) {
-    cache[cacheKey] = resolveWithPersistence(cacheKey, getJson).catch((e) => {
-      delete cache[cacheKey];
-      throw e;
-    });
+    cache[cacheKey] = resolveWithPersistence(cacheKey, context, getJson).catch(
+      (e) => {
+        delete cache[cacheKey];
+        throw e;
+      }
+    );
   }
 
   return cache[cacheKey] as Promise<T>;
@@ -174,7 +208,10 @@ const makePostJson = (urlPrefix: string) => async <T>(
     });
   };
 
-  if (!useCache) {
+  // Captured synchronously: the decorator clears it as soon as this returns.
+  const context = cacheContext;
+
+  if (context === null) {
     return postJson();
   }
 
@@ -182,10 +219,12 @@ const makePostJson = (urlPrefix: string) => async <T>(
   const cacheKey = `${urlPrefix}${url}-${json}`;
 
   if (!cache[cacheKey]) {
-    cache[cacheKey] = resolveWithPersistence(cacheKey, postJson).catch((e) => {
-      delete cache[cacheKey];
-      throw e;
-    });
+    cache[cacheKey] = resolveWithPersistence(cacheKey, context, postJson).catch(
+      (e) => {
+        delete cache[cacheKey];
+        throw e;
+      }
+    );
   }
 
   return cache[cacheKey] as Promise<T>;
@@ -195,7 +234,7 @@ const makePatchJson = (urlPrefix: string) => async <T>(
   url: string,
   payload: unknown
 ): Promise<T> => {
-  if (useCache) {
+  if (cacheContext !== null) {
     window.console.warn("PATCH requests cannot be cached");
   }
 
@@ -210,7 +249,7 @@ const makeDeleteJson = (urlPrefix: string) => async <T>(
   url: string,
   payload?: unknown
 ): Promise<T> => {
-  if (useCache) {
+  if (cacheContext !== null) {
     window.console.warn("DELETE requests cannot be cached");
   }
 
@@ -233,7 +272,7 @@ const makePostMultipart = (urlPrefix: string) => async <T>(
     Blob | string | File | number | boolean | null | undefined
   >
 ): Promise<T> => {
-  if (useCache) {
+  if (cacheContext !== null) {
     window.console.warn("Multipart POST requests cannot be cached");
   }
 
@@ -258,7 +297,7 @@ const makePatchMultipart = (urlPrefix: string) => async <T>(
     Blob | string | File | number | boolean | null | undefined
   >
 ): Promise<T> => {
-  if (useCache) {
+  if (cacheContext !== null) {
     window.console.warn("Multipart PATCH requests cannot be cached");
   }
 
