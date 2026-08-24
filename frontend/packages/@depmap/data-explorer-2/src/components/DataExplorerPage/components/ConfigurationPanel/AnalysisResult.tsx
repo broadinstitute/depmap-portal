@@ -211,9 +211,10 @@ function AnalysisResult({ plot, dispatch }: Props) {
                 const vars: Record<string, object> = {};
 
                 if (sliceType !== null) {
-                  const bb = cached(breadboxAPI);
-                  const datasets = await bb.getDatasets();
-                  const dimTypes = await bb.getDimensionTypes();
+                  const datasets = await cached(breadboxAPI).getDatasets();
+                  const dimTypes = await cached(
+                    breadboxAPI
+                  ).getDimensionTypes();
                   const metadataDataset = resolveMetadataGivenId(
                     sliceType,
                     dimTypes,

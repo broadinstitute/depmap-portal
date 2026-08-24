@@ -42,9 +42,13 @@ const useLabel = (
   let label = dimensionType?.axis === "sample" ? "Feature" : "Sample";
 
   if (axis_type === "aggregated_slice") {
-    label = `${pluralize(label)} to ${
-      aggregation === "correlation" ? "correlate" : "aggregate"
-    }`;
+    let verb = aggregation === "correlation" ? "correlate" : "aggregate";
+
+    if (aggregation === "expansion") {
+      verb = "facet";
+    }
+
+    label = `${pluralize(label)} to ${verb}`;
   } else {
     label += " Type";
   }

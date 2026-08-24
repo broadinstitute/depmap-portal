@@ -95,6 +95,7 @@ function showCodeSnippet(indexTypeName: string) {
     function MyTable() {
       return (
         <SliceTable
+          PlotlyLoader={PlotlyLoader}
           index_type_name="${indexTypeName}"
           getInitialState={() => ({
             initialSlices: ${indentBlock(sliceJson, 12)},
@@ -187,6 +188,7 @@ const App = () => {
           style={{ margin: 20, display: "flex", height: "calc(100vh - 146px)" }}
         >
           <SliceTable
+            PlotlyLoader={PlotlyLoader}
             key={key}
             index_type_name={indexTypeName}
             getInitialState={() => ({ initialSlices })}
@@ -203,8 +205,8 @@ const App = () => {
                     Export as React component
                   </Button>
                   <Button onClick={() => openInBreadboxTable(indexTypeName)}>
-                    <span className="glyphicon glyphicon-new-window"/>{" "}
-                    Open as embedded table
+                    <span className="glyphicon glyphicon-new-window" /> Open as
+                    embedded table
                   </Button>
                 </>
               );

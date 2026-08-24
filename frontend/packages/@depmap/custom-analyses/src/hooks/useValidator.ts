@@ -23,7 +23,9 @@ function useValidator(analysis: Partial<AnalysisConfiguration>) {
       if (analysis.kind === "pearson_correlation") {
         if (analysis.sliceQuery) {
           try {
-            await cached(breadboxAPI).getDimensionData(analysis.sliceQuery);
+            await cached(breadboxAPI, { persist: true }).getDimensionData(
+              analysis.sliceQuery
+            );
             isSliceValid = true;
           } catch (e) {
             isSliceValid = false;

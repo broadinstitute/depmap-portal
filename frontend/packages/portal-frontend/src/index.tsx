@@ -2,7 +2,12 @@ import "src/public-path";
 
 import React from "react";
 import ReactDOM from "react-dom";
-import { LegacyPortalApiResponse } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  initDatasetRegistry,
+  LegacyPortalApiResponse,
+} from "@depmap/api";
 import { CustomList } from "@depmap/cell-line-selector";
 
 import { getQueryParams, sortByNumberOrNull } from "@depmap/utils";
@@ -36,6 +41,21 @@ type EntitySummaryResponse = LegacyPortalApiResponse["getEntitySummary"];
 if (["dev.cds.team", "127.0.0.1:5000"].includes(window.location.host)) {
   initializeDevContexts();
 }
+
+// Seed the persistent-cache dataset registry. Called synchronously (with the
+// pending promises, not the resolved values) so requests issued during these
+// round trips wait for it instead of refusing to persist. Never blocks first
+// paint, and never rejects — the engine degrades to in-memory caching on any
+// failure.
+//
+// getDatasets goes through cached() so the seed SHARES one request (and one
+// listing) with every app caller. That is safe only while getDatasets never
+// gains a persist option: a persisted call awaits the registry this promise
+// seeds, which would deadlock. ADR 0008 forbids persisting it independently.
+initDatasetRegistry({
+  datasets: cached(breadboxAPI).getDatasets(),
+  breadboxVersion: breadboxAPI.getBreadboxVersion(),
+});
 
 const CorrelatedDependenciesTile = React.lazy(
   () =>

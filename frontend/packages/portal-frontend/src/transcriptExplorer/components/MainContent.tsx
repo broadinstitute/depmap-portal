@@ -106,6 +106,28 @@ function MainContent({
     plot?.dimensions?.y?.dataset_id
   );
 
+  // Same route back into the config the Data Explorer's own MainContent uses:
+  // the picker lives beside the legend, which has no dispatch of its own.
+  const handleChangeExpansionMembers = useCallback(
+    (members: string[] | null) => {
+      dispatchPlotActionAndUpdateHistory({
+        type: "select_expansion_members",
+        payload: members,
+      });
+    },
+    [dispatchPlotActionAndUpdateHistory]
+  );
+
+  const handleChangeCategories = useCallback(
+    (target: "color" | "facet", categories: string[] | null) => {
+      dispatchPlotActionAndUpdateHistory({
+        type: "select_categories",
+        payload: { target, categories },
+      });
+    },
+    [dispatchPlotActionAndUpdateHistory]
+  );
+
   return (
     <>
       <main className={styles.DataExplorer2}>
@@ -122,6 +144,8 @@ function MainContent({
           onClickVisualizeSelected={handleClickVisualizeSelected}
           onClickSaveSelectionAsContext={handleClickSaveSelectionAsContext}
           onClickColorByContext={handleClickColorByContext}
+          onChangeCategories={handleChangeCategories}
+          onChangeExpansionMembers={handleChangeExpansionMembers}
           onClickShowDensityFallback={handleClickShowDensityFallback}
           feedbackUrl={feedbackUrl}
           contactEmail={contactEmail}

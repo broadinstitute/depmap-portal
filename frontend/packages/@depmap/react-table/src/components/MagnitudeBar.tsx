@@ -8,7 +8,9 @@ type MagnitudeBarProps = {
   // Optional formatted string for display. When provided, this is shown
   // instead of the raw numeric value. The raw `value` is still used for
   // bar width calculations.
-  displayValue?: string;
+  // A node, not a string: a column may supply its own cell renderer, and that
+  // renderer owns how the value reads. The bar is decoration around it.
+  displayValue?: React.ReactNode;
 };
 
 const NEGATIVE_COLOR = "#E53935"; // Red

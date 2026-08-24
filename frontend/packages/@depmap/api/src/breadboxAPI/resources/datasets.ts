@@ -47,6 +47,29 @@ export function updateDataset(
   return patchJson<Dataset>(uri`/datasets/${datasetId}`, datasetUpdateArgs);
 }
 
+// Breadbox's AggregationMethod enum, mirrored. Kept as a named type because
+// the runtime guard below has to enumerate it too, and the two must not drift.
+export type BreadboxAggregation =
+  | "mean"
+  | "median"
+  | "25%tile"
+  | "75%tile"
+  | "stddev"
+  | "variance"
+  | "count"
+  | "sum";
+
+const VALID_AGGREGATIONS: BreadboxAggregation[] = [
+  "mean",
+  "median",
+  "25%tile",
+  "75%tile",
+  "stddev",
+  "variance",
+  "count",
+  "sum",
+];
+
 export function getMatrixDatasetData(
   datasetId: string,
   args: {
@@ -56,7 +79,11 @@ export function getMatrixDatasetData(
     features?: string[] | null;
     aggregate?: {
       aggregate_by: "features" | "samples";
-      aggregation: "mean" | "median" | "25%tile" | "75%tile" | "stddev" | "sum";
+      // One method, or several. Several are worth asking for together when they
+      // describe the same collapse (a spread alongside the `count` it was
+      // computed over), since the cost is reading the block out of HDF5, not
+      // the arithmetic. The response is keyed by method name either way.
+      aggregation: BreadboxAggregation | BreadboxAggregation[];
     };
   }
 ) {
@@ -75,19 +102,18 @@ export function getMatrixDatasetData(
   // Explorer "expansion" sentinel (and "first"/"correlation") — app-layer
   // concepts that must be resolved upstream, never forwarded here.
   if (args.aggregate) {
-    const validAggregations = [
-      "mean",
-      "median",
-      "25%tile",
-      "75%tile",
-      "stddev",
-      "sum",
-    ];
-    const requested = args.aggregate.aggregation as string;
-    if (!validAggregations.includes(requested)) {
+    const requested = Array.isArray(args.aggregate.aggregation)
+      ? args.aggregate.aggregation
+      : [args.aggregate.aggregation];
+
+    const unsupported = (requested as string[]).find(
+      (agg) => !VALID_AGGREGATIONS.includes(agg as BreadboxAggregation)
+    );
+
+    if (unsupported !== undefined) {
       throw new Error(
-        `getMatrixDatasetData received aggregation "${requested}", which ` +
-          `Breadbox does not support (valid: ${validAggregations.join(
+        `getMatrixDatasetData received aggregation "${unsupported}", which ` +
+          `Breadbox does not support (valid: ${VALID_AGGREGATIONS.join(
             ", "
           )}). ` +
           `Values like "first", "correlation", or the Data Explorer "expansion" ` +

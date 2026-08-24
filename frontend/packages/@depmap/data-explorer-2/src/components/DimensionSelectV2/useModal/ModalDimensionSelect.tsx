@@ -1,6 +1,7 @@
 import React from "react";
 import { DataExplorerPlotConfigDimensionV2 } from "@depmap/types";
 import AllSelects from "../AllSelects";
+import { OtherAxisExpansion } from "../useDimensionStateManager/types";
 import useDimensionStateManager from "../useDimensionStateManager";
 import { wrapWithErrorBoundary } from "../ErrorBoundary";
 
@@ -16,6 +17,8 @@ export interface Props {
   allowNullFeatureType: boolean;
   valueTypes: Set<"continuous" | "text" | "categorical" | "list_strings">;
   hiddenDatasets: Set<string>;
+  allowExpansion: boolean;
+  otherAxisExpansion: OtherAxisExpansion;
 }
 
 function ModalDimensionSelect({
@@ -30,6 +33,8 @@ function ModalDimensionSelect({
   allowNullFeatureType,
   valueTypes,
   hiddenDatasets,
+  allowExpansion,
+  otherAxisExpansion,
 }: Props) {
   const state = useDimensionStateManager({
     index_type,
@@ -47,6 +52,8 @@ function ModalDimensionSelect({
       mode={mode}
       state={state}
       index_type={index_type}
+      allowExpansion={allowExpansion}
+      otherAxisExpansion={otherAxisExpansion}
       includeAllInContextOptions={includeAllInContextOptions}
       onClickCreateContext={onClickCreateContext}
       onClickSaveAsContext={onClickSaveAsContext}

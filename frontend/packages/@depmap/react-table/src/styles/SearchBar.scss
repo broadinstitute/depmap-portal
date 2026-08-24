@@ -1,0 +1,98 @@
+// The UI half of ReactTable's search API (enableSearch + the tableRef handle).
+// It lives here rather than in a consumer because the table owns the matching,
+// the match index and the navigation; a consumer reimplementing the input on
+// top of that handle would be reimplementing this file too.
+.searchBar {
+  // How wide the input sits when empty. A custom property rather than a fixed
+  // number so a consumer can size it to its own container — the slice table has
+  // a full-width control bar to fill, a modal usually doesn't — without having
+  // to reach through this module's hashed class names to restyle the input.
+  --search-bar-input-width: 296px;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border: 1px solid #ccc;
+  border-radius: 22px;
+  background: #fff;
+  font-size: 14px;
+  transition: box-shadow 0.2s;
+  height: 27px;
+
+  &:focus-within {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 2px #4285f4;
+  }
+
+  .glyphicon-search {
+    color: #5f6368;
+    font-size: 14px;
+  }
+
+  i {
+    top: 0;
+  }
+
+  input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: inherit;
+    color: #202124;
+    min-width: 0;
+
+    &::placeholder {
+      color: #80868b;
+    }
+
+    &:placeholder-shown {
+      width: var(--search-bar-input-width);
+    }
+  }
+
+  .matchCount {
+    color: #5f6368;
+    font-size: 12px;
+    white-space: nowrap;
+    padding: 0 4px;
+    min-width: 40px;
+  }
+
+  .divider {
+    width: 1px;
+    height: 20px;
+    background: #dadce0;
+  }
+
+  .navButton,
+  .clearButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: #5f6368;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    transition: background-color 0.15s;
+
+    &:hover:not(:disabled) {
+      background: #f1f3f4;
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: default;
+    }
+  }
+
+  .clearButton {
+    font-size: 12px;
+  }
+}

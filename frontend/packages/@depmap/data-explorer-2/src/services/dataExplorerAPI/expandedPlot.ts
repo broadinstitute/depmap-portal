@@ -1,4 +1,9 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import {
+  breadboxAPI,
+  cached,
+  evaluateContextPersisted,
+  getDimensionTypeIdentifiersPersisted,
+} from "@depmap/api";
 import {
   DataExplorerContextV2,
   DataExplorerContextVariable,
@@ -21,7 +26,12 @@ import {
   isExpansionDimension,
   isSampleType,
 } from "../../utils/misc";
-import { MAX_PLOTTABLE_CATEGORIES } from "../../constants/plotConstants";
+import {
+  assertExpansionAxesDiffer,
+  chooseExpansionMembers,
+  fetchExpansionMemberStats,
+  maxExpansionMembersFor,
+} from "./expansionMembers";
 import { fetchDatasetIdentifiers } from "./identifiers";
 import { getDimensionDataWithoutLabels } from "./helpers";
 import {
@@ -62,11 +72,13 @@ import {
 //     factoring out a shared helper. Extracting one is a tracked cleanup.
 // ---------------------------------------------------------------------------
 
-// Hard ceiling on expansion members, enforced at materialization regardless of
-// the per-plot `expand_by.limit`. A safety backstop so an over-large limit (or
-// a hand-crafted config) can't fan a plot out far enough to wedge the browser.
-// Matches the conservative default; 9 is a tidy 3×3 small-multiples grid.
-export const MAX_EXPANSION_MEMBERS = 16;
+// How many expansion members a plot shows is no longer stated here, or anywhere
+// as a single number: it scales with the index the expansion multiplies (see
+// maxExpansionMembersFor in ./expansionMembers). A plot used to carry its own
+// `limit` too, but once the members shown are the ones worth showing — and once
+// how many fit is a property of the data rather than a preference — asking the
+// user to pick a count stops earning its place in the config. Which members is
+// decided by chooseExpansionMembers.
 
 // ---------------------------------------------------------------------------
 // fetchExpandedPlot
@@ -115,47 +127,42 @@ export async function fetchExpandedPlot(
   const expansion_id_column = expansionDimType?.id_column;
   const expansion_display_name = expansionDimType?.display_name;
 
-  // Resolve the expansion list once. For gene/transcript this is e.g.
-  // "transcripts of CD44" → ids + labels of length M.
-  const { ids: allExpIds, labels: allExpLabels } = await cached(
-    breadboxAPI
-  ).evaluateContext(exp.context);
+  // Checked here, before the context is resolved and before anything is
+  // fetched, because everything downstream assumes it. (Cheap: the dimension
+  // types it reads are the ones already awaited just above.)
+  await assertExpansionAxesDiffer(index_type, exp.slice_type);
 
-  if (allExpIds.length === 0) {
+  // The wire type requires `exp.context`, but toggling Expand before picking a
+  // context is a legitimate flow, and it mints an expansion whose context is
+  // undefined (dropped entirely on serialization). ADR 0007 makes the expanding
+  // axis authoritative — its own slice_type and context ARE the expansion — so
+  // recover from the axis rather than crashing deep inside evaluateContext.
+  const expansionContext = (exp.context ??
+    (["x", "y"] as const)
+      .map((k) => dimensions[k])
+      .find((d) => isExpansionDimension(d) && d?.context)?.context) as
+    | DataExplorerContextV2
+    | undefined;
+
+  if (!expansionContext) {
     throw new Error(
-      `Expansion context "${exp.context.name}" produced no ` +
-        `${exp.slice_type} identifiers.`
+      `fetchExpandedPlot: the expansion over "${exp.slice_type}" has no ` +
+        `context — neither expand_by nor an expanding axis carries one.`
     );
   }
 
-  // Enforce the expansion bound *before* anything downstream, so we only query
-  // Breadbox for the members we keep. `exp.limit` is the per-plot cap (UI-
-  // seeded); MAX_EXPANSION_MEMBERS is the hard ceiling that holds regardless.
-  // Truncation is arbitrary (first-N in context order) for now; selecting the
-  // "most interesting" members is a planned follow-up.
-  const totalExpansionMembers = allExpIds.length;
-  const expansionCap = Math.min(exp.limit, MAX_EXPANSION_MEMBERS);
-  const expansionTruncated = totalExpansionMembers > expansionCap;
-  // Pagination window: members [offset, offset + cap) in context order. The
-  // offset is clamped defensively so a stale/out-of-range config can't slice
-  // past the end; the UI only ever sends page-aligned offsets.
-  const expansionOffset = Math.min(
-    Math.max(0, exp.offset ?? 0),
-    Math.max(0, totalExpansionMembers - 1)
-  );
-  const expIds = allExpIds.slice(
-    expansionOffset,
-    expansionOffset + expansionCap
-  );
-  const expLabels = allExpLabels.slice(
-    expansionOffset,
-    expansionOffset + expansionCap
-  );
+  // Resolve the expansion list once. For gene/transcript this is e.g.
+  // "transcripts of CD44" → ids + labels of length M.
+  const {
+    ids: allExpIds,
+    labels: allExpLabels,
+  } = await evaluateContextPersisted(expansionContext);
 
-  // Map from expansion id to its display label, for use during materialization.
-  const expIdToLabel: Record<string, string> = {};
-  for (let j = 0; j < expIds.length; j += 1) {
-    expIdToLabel[expIds[j]] = expLabels[j];
+  if (allExpIds.length === 0) {
+    throw new Error(
+      `Expansion context "${expansionContext.name}" produced no ` +
+        `${exp.slice_type} identifiers.`
+    );
   }
 
   const extendedMetadata = buildExtendedMetadata(
@@ -175,9 +182,11 @@ export async function fetchExpandedPlot(
   // A dimension expands when it carries the "expansion" sentinel on
   // `aggregation` — the single documented identity for an expansion axis (see
   // isExpansionDimension, and the DataExplorerAggregation comments in
-  // @depmap/types). `select_expansion` stamps it on exactly the axis being
-  // expanded, and it survives URL round-tripping, so it is authoritative no
-  // matter where a config came from.
+  // @depmap/types). It is the user's own choice, made on the Aggregate/Expand
+  // toggle, and it survives URL round-tripping, so it is authoritative no
+  // matter where a config came from. Either AXIS may carry it: a second axis
+  // can join an expansion the first defined, reading the same members from its
+  // own dataset (ADR 0007). `color` and `facet` may not — see the check below.
   //
   // This deliberately does NOT match on `(axis_type, slice_type)` shape.
   // Doing so also captured any OTHER aggregated dimension that happened to
@@ -188,10 +197,36 @@ export async function fetchExpandedPlot(
   // aggregation dropdown had no effect on the plot. The shape check also
   // disagreed with normalize() in plotConfigReducer, which has always used
   // the sentinel to decide whether `expand_by` is still live.
-  const isExpanding = (k: string) => isExpansionDimension(dimensions[k]);
+  const isExpanding = (k: string) =>
+    (k === "x" || k === "y") && isExpansionDimension(dimensions[k]);
 
   const expandedKeys = dimensionKeys.filter(isExpanding);
   const broadcastKeys = dimensionKeys.filter((k) => !isExpanding(k));
+
+  // Only an axis may expand. An expansion says what a POINT is, and the point
+  // set is defined by the axes; `color` and `facet` are readings of it. They
+  // also already have first-class ways to express the common need —
+  // `color_by: "expansion"` and `facet_by: "expansion"` partition by the
+  // member — so the sentinel here would mean something quite different
+  // ("color by this point's member's value in some dataset"), which nothing
+  // in the UI can produce.
+  //
+  // Rejected explicitly rather than left to fall through to the broadcast
+  // path: that throws too, but with a message about mis-routing that sends
+  // the reader looking for a bug that isn't there.
+  const misplacedKeys = dimensionKeys.filter(
+    (k) => !isExpanding(k) && isExpansionDimension(dimensions[k])
+  );
+
+  if (misplacedKeys.length > 0) {
+    throw new Error(
+      `Only the x and y axes can expand, but ${misplacedKeys
+        .map((k) => `"${k}"`)
+        .join(" and ")} carries the "expansion" sentinel on \`aggregation\`. ` +
+        `To partition points by their expansion member, use ` +
+        `\`color_by: "expansion"\` or \`facet_by: "expansion"\` instead.`
+    );
+  }
 
   // An `expand_by` with no sentinel-bearing axis has nothing to read the
   // expansion from: every dimension would be broadcast and each index
@@ -206,6 +241,126 @@ export async function fetchExpandedPlot(
         `dimension carries the "expansion" sentinel on \`aggregation\`, so ` +
         `there is no axis to materialize the expansion from.`
     );
+  }
+
+  // Decide which members to show, before anything downstream, so we only query
+  // Breadbox for the ones we keep. The context routinely resolves to more
+  // members than a plot can render; chooseExpansionMembers picks by how much
+  // each varies across the entities being plotted rather than by its position
+  // in the context, which is what lets the plot drop pagination entirely.
+  //
+  // When both axes expand over the same members (short-read vs long-read), one
+  // dataset has to arbitrate, and x does. That is a simplification — a member
+  // flat in y's dataset can win a panel on x's variance alone. Combining the
+  // two rankings would be fairer; the member table is where that would show up,
+  // as a second set of columns rather than a different default. Until then the
+  // table at least lets someone override the result by hand.
+  const rankingKey = expandedKeys.includes("x") ? "x" : expandedKeys[0];
+  const rankingDim = dimensions[rankingKey];
+
+  const visibleFilter = filters?.visible as DataExplorerContextV2 | undefined;
+  const rankingIsContinuous =
+    (await fetchValueType(rankingDim)) === "continuous";
+
+  const expIds = await chooseExpansionMembers({
+    candidateIds: allExpIds,
+    // The ranking dimension's dataset, so the cap and the ranking are both
+    // reading the same index.
+    cap: await maxExpansionMembersFor(index_type, rankingDim.dataset_id),
+    index_type,
+    dataset_id: rankingDim.dataset_id,
+    slice_type: exp.slice_type,
+    visibleFilter,
+    isContinuous: rankingIsContinuous,
+    pinnedIds: exp.members,
+  });
+
+  const totalExpansionMembers = allExpIds.length;
+  const expansionTruncated = expIds.length < totalExpansionMembers;
+
+  // How many members could be drawn at all, which is usually fewer than the
+  // context named and is the number worth reporting: it says whether there is
+  // anything left to pick. Skipped when it can't be learned cheaply or at all —
+  // see `available_count` in @depmap/types. The all-are-shown case needs no
+  // request, because the drawn members ARE every member and the values fetched
+  // below already answer it.
+  //
+  // Every expanding axis has to measure a member, not just the ranking one.
+  // Two axes on different datasets (short-read vs long-read) draw a point only
+  // where both have a value, so a member absent from either can never appear —
+  // shownMemberCount below already applies that rule, and counting availability
+  // from one dataset left the two disagreeing. The gap showed as a control
+  // offering members that could not be shown however they were picked, since
+  // "shown < available" stayed true no matter what the user chose.
+  const availableMemberCount = await (async () => {
+    if (!expansionTruncated) {
+      return undefined;
+    }
+
+    if (!rankingIsContinuous) {
+      return undefined;
+    }
+
+    try {
+      // Deduped, so the ordinary case — one expanding axis, or two sharing a
+      // dataset — issues a single request. `cached` makes even that free
+      // whenever the ranking already ran; it is a real request only for a
+      // hand-picked selection, which never ranked.
+      const datasetIds = [
+        ...new Set(expandedKeys.map((key) => dimensions[key].dataset_id)),
+      ];
+
+      const perDataset = await Promise.all(
+        datasetIds.map(async (dataset_id) => {
+          const { stats } = await fetchExpansionMemberStats({
+            candidateIds: allExpIds,
+            index_type,
+            dataset_id,
+            slice_type: exp.slice_type,
+            visibleFilter,
+          });
+
+          // No counts at all means the aggregation didn't apply to this dataset
+          // (only the ranking dimension was checked for a continuous value
+          // type). That is not the same as a dataset measuring none of them:
+          // intersecting with its empty set would report nothing available
+          // while points are plainly on screen, and hide the control in the one
+          // case where it is most needed. Unknowable is the honest answer.
+          if (stats.every((s) => s.count === null)) {
+            return null;
+          }
+
+          return new Set(
+            stats.filter((s) => (s.count ?? 0) > 0).map((s) => s.id)
+          );
+        })
+      );
+
+      if (perDataset.some((withData) => withData === null)) {
+        return undefined;
+      }
+
+      return allExpIds.filter((id) =>
+        (perDataset as Set<string>[]).every((withData) => withData.has(id))
+      ).length;
+    } catch (e) {
+      // A count nobody can compute is not worth failing a plot over.
+      window.console.warn("Could not determine available expansion members", e);
+      return undefined;
+    }
+  })();
+
+  const labelByMemberId = new Map<string, string>();
+  for (let j = 0; j < allExpIds.length; j += 1) {
+    labelByMemberId.set(allExpIds[j], allExpLabels[j]);
+  }
+
+  const expLabels = expIds.map((id) => labelByMemberId.get(id) as string);
+
+  // Map from expansion id to its display label, for use during materialization.
+  const expIdToLabel: Record<string, string> = {};
+  for (let j = 0; j < expIds.length; j += 1) {
+    expIdToLabel[expIds[j]] = expLabels[j];
   }
 
   // Shared state. Same pattern as fetchPlotDimensions: every fetcher
@@ -230,15 +385,14 @@ export async function fetchExpandedPlot(
       dataset_id
     );
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      {
-        sample_identifier: "id",
-        feature_identifier: "id",
-        samples: sliceIsSampleType ? expIds : null,
-        features: sliceIsSampleType ? null : expIds,
-      }
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, {
+      sample_identifier: "id",
+      feature_identifier: "id",
+      samples: sliceIsSampleType ? expIds : null,
+      features: sliceIsSampleType ? null : expIds,
+    });
 
     // Matrix responses are always Record<feature_id, Record<sample_id, value>>:
     //   - expansion-on-feature-axis: response[expId][indexId]
@@ -416,7 +570,7 @@ export async function fetchExpandedPlot(
 
     let ctxIds: string[] = [];
     try {
-      const result = await cached(breadboxAPI).evaluateContext(
+      const result = await evaluateContextPersisted(
         (context as unknown) as DataExplorerContextV2
       );
       ctxIds = result.ids;
@@ -432,16 +586,15 @@ export async function fetchExpandedPlot(
       dataset_id
     );
 
-    const response = await cached(breadboxAPI).getMatrixDatasetData(
-      dataset_id,
-      {
-        sample_identifier: "id",
-        feature_identifier: "id",
-        samples: aggregate_by === "samples" ? ctxIds : null,
-        features: aggregate_by === "features" ? ctxIds : null,
-        aggregate: { aggregate_by, aggregation },
-      }
-    );
+    const response = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(dataset_id, {
+      sample_identifier: "id",
+      feature_identifier: "id",
+      samples: aggregate_by === "samples" ? ctxIds : null,
+      features: aggregate_by === "features" ? ctxIds : null,
+      aggregate: { aggregate_by, aggregation },
+    });
 
     const indexed_values: Record<string, number | null> = {};
     indexIdentifiers.forEach(({ id }) => {
@@ -458,7 +611,7 @@ export async function fetchExpandedPlot(
     const filter = (filters![filterKey] as unknown) as DataExplorerContextV2;
 
     try {
-      const result = await cached(breadboxAPI).evaluateContext(filter);
+      const result = await evaluateContextPersisted(filter);
 
       const indexed_values: Record<string, true> = {};
       for (let i = 0; i < result.ids.length; i += 1) {
@@ -508,15 +661,10 @@ export async function fetchExpandedPlot(
       }
     }
 
-    if (
-      value_type !== "continuous" &&
-      (metadataKey === "color_property" || metadataKey === "facet_property") &&
-      distinct.size > MAX_PLOTTABLE_CATEGORIES
-    ) {
-      window.console.error(extendedMetadata[metadataKey]);
-      throw new Error("Too many distinct categorical values to plot!");
-    }
-
+    // No cardinality check here — see the note on the twin of this block in
+    // breadboxMethods. How many distinct values an annotation has is a question
+    // about legibility, which the renderer answers, not about whether the data
+    // can be fetched.
     const isBinaryish =
       distinct.size <= 3 &&
       [...distinct].every((n) => n === 0 || n === 1 || n === 2);
@@ -547,6 +695,45 @@ export async function fetchExpandedPlot(
     Promise.all(filterKeys.map(fetchFilterValues)),
     Promise.all(metadataKeys.map(fetchMetadataValues)),
   ]);
+
+  // Members that actually put a point on the plot. Not `expIds.length`: the
+  // dataset may simply not track a member the context named, and such a member
+  // still gets its slot here — it just draws an empty panel, or a legend row
+  // that toggles nothing.
+  //
+  // A point needs a value on EVERY expanding axis, not just one, so a member
+  // measured in short-read but not long-read contributes nothing to a plot of
+  // the two against each other and is counted accordingly.
+  const shownMemberCount = (() => {
+    const valueMaps = expandedResults.map((r) => r.indexed_values);
+
+    if (valueMaps.length === 0) {
+      return 0;
+    }
+
+    // Scoped to the visible entities, because availableMemberCount above is —
+    // resolveRankingIndex narrows by this same filter — and the two get
+    // compared to decide whether any member is left to add. A member with
+    // values only in entities the user has filtered out draws nothing, so
+    // counting it would overstate what is on screen and, by inflating this past
+    // a correctly-narrowed availability, hide the control in exactly the case
+    // where there IS something to add.
+    const visibleIndexIds = filterResults.find((r) => r.key === "visible")
+      ?.indexed_values;
+
+    const indexIds = Object.keys(valueMaps[0]).filter(
+      (indexId) => !visibleIndexIds || visibleIndexIds[indexId]
+    );
+
+    return expIds.filter((expId) =>
+      indexIds.some((indexId) =>
+        valueMaps.every(
+          (m) =>
+            m[indexId]?.[expId] !== null && m[indexId]?.[expId] !== undefined
+        )
+      )
+    ).length;
+  })();
 
   // ------------------------------------------------------------------
   // Build the canonical index (index-major cross product).
@@ -597,7 +784,13 @@ export async function fetchExpandedPlot(
         display_name: expansion_display_name,
         ids: expansionIdsFlat,
         labels: expansionLabelsFlat,
-        total_available: totalExpansionMembers,
+        total_in_context: totalExpansionMembers,
+        // With nothing truncated, every member the context named is drawn, so
+        // "how many does the dataset track" is answered by what came back.
+        available_count: expansionTruncated
+          ? availableMemberCount
+          : shownMemberCount,
+        shown_count: shownMemberCount,
         truncated: expansionTruncated,
       },
     ],
@@ -633,7 +826,7 @@ export async function fetchExpandedPlot(
           ? dataset.feature_type_name
           : dataset.sample_type_name;
       if (!dimTypeName) return;
-      const identifiers = await cached(breadboxAPI).getDimensionTypeIdentifiers(
+      const identifiers = await getDimensionTypeIdentifiersPersisted(
         dimTypeName
       );
       metadataIdToLabel[key] = Object.fromEntries(

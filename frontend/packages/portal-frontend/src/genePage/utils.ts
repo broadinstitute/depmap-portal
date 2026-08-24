@@ -80,13 +80,7 @@ export async function downloadTopCorrelations(
   datasetDisplayName: string,
   correlationsData: AssociatedFeatures[]
 ) {
-  const geneMetadata = await fetchMetadata<any>(
-    "gene",
-    null,
-    ["label"],
-    breadboxAPI,
-    "id"
-  );
+  const geneMetadata = await fetchMetadata<any>("gene", null, ["label"], "id");
   // 1. Create lookup map for the Join
   const geneMap = new Map(
     Object.entries(geneMetadata.label).map(([entrez_id, label]) => [

@@ -7,6 +7,7 @@ import {
 import {
   calcBins,
   calcVisibility,
+  chosenCategoriesFor,
   categoryToDisplayName,
   computeFacets,
   continuousValuesToLegendKeySeries,
@@ -99,6 +100,11 @@ export default function useScatterPlotData(
     plotConfig.color_by,
     plotConfig.facet_by,
   ]);
+
+  // Hoisted so the memos below depend on these values rather than on the
+  // whole config, which would re-run them for every unrelated edit.
+  const colorChosen = chosenCategoriesFor(plotConfig, colorMode.target);
+  const facetChosen = chosenCategoriesFor(plotConfig, "facet");
 
   const formattedData = useMemo(
     () => formatDataForScatterPlot(data, colorMode.mode, colorMode.target),
@@ -247,7 +253,8 @@ export default function useScatterPlotData(
       continuousBins,
       undefined,
       colorMode.mode,
-      colorMode.target
+      colorMode.target,
+      colorChosen
     );
 
     const facetVisibility = calcVisibility(
@@ -256,7 +263,8 @@ export default function useScatterPlotData(
       facetContinuousBins,
       undefined,
       plotConfig.facet_by,
-      "facet"
+      "facet",
+      facetChosen
     );
 
     if (!colorVisibility || !facetVisibility) {
@@ -274,6 +282,8 @@ export default function useScatterPlotData(
     hiddenFacetValues,
     facetContinuousBins,
     plotConfig.facet_by,
+    colorChosen,
+    facetChosen,
   ]);
 
   const regressionLines = useMemo(() => {
@@ -313,7 +323,7 @@ export default function useScatterPlotData(
       const visible = pointVisibility ?? x.map(() => true);
 
       const colorFacetInfo = colorMode.mode
-        ? computeFacets(data, colorMode.mode, "color")
+        ? computeFacets(data, colorMode.mode, "color", colorChosen)
         : null;
 
       if (colorFacetInfo) {
@@ -444,6 +454,7 @@ export default function useScatterPlotData(
     plotConfig.show_regression_line,
     pointVisibility,
     colorMode,
+    colorChosen,
   ]);
 
   const showIdentityLine = Boolean(
@@ -490,7 +501,12 @@ export default function useScatterPlotData(
       return null;
     }
 
-    const facetInfo = computeFacets(data, plotConfig.facet_by);
+    const facetInfo = computeFacets(
+      data,
+      plotConfig.facet_by,
+      "facet",
+      facetChosen
+    );
     const x = formattedData.x;
     const y = formattedData.y;
     if (!facetInfo || !x || !y) {
@@ -551,6 +567,7 @@ export default function useScatterPlotData(
     colorMap,
     palette,
     colorMatchesFacet,
+    facetChosen,
   ]);
 
   return {

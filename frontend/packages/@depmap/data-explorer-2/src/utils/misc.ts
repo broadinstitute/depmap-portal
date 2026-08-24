@@ -153,13 +153,35 @@ export function isExpansionDimension(
   return dimension?.aggregation === "expansion";
 }
 
-// Which axis ("x" or "y") is the expanding one for a plot that has an active
-// expansion. Defers to isExpansionDimension rather than re-deriving the
-// sentinel check inline.
+// Every axis currently expanding, in x-then-y order.
+//
+// Usually there is exactly one. A second axis can *join* an expansion already
+// defined by the first — that's what makes "short-read transcripts vs
+// long-read transcripts" expressible, one point per (model, transcript) with a
+// different dataset on each axis. Joining axes are indistinguishable from the
+// defining one in the config, and deliberately so: both simply expand over the
+// same members, so a swap needs no bookkeeping. The distinction is only ever
+// presentational — see getExpansionAxis.
+export function getExpansionAxes(
+  plot: Pick<PartialDataExplorerPlotConfig, "dimensions">
+): ("x" | "y")[] {
+  return (["x", "y"] as const).filter((key) =>
+    isExpansionDimension(plot.dimensions?.[key])
+  );
+}
+
+// Which axis "owns" the expansion for display purposes: the first one
+// expanding, x before y. It is the axis whose context picker stays live, and
+// whose selection the plot's `expand_by` mirrors; any other expanding axis
+// follows it. Nothing downstream of the config depends on this choice — it
+// exists so the UI has exactly one place to edit the member set.
+//
+// Returns "x" for a plot with no expansion at all, which is meaningless but
+// harmless: every caller either has an expansion or ignores the result.
 export function getExpansionAxis(
   plot: Pick<PartialDataExplorerPlotConfig, "dimensions">
 ): "x" | "y" {
-  return isExpansionDimension(plot.dimensions?.y) ? "y" : "x";
+  return getExpansionAxes(plot)[0] ?? "x";
 }
 
 // A more aggressive version of encodeURIComponent() to match this:

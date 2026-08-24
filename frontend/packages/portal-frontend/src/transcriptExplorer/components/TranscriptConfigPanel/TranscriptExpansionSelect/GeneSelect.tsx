@@ -13,7 +13,7 @@ function GeneSelect({ value, onChange }: Props) {
   const [options, setOptions] = useState<any[]>([]);
 
   useEffect(() => {
-    cached(breadboxAPI)
+    cached(breadboxAPI, { persist: true })
       .getTabularDatasetData("transcript_metadata", {
         columns: ["Gene"],
       })

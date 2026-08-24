@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef } from "react";
 import { Button } from "react-bootstrap";
 import { WordBreaker } from "@depmap/common-components";
 import SliceTable from "@depmap/slice-table";
+import PlotlyLoader from "src/plot/components/PlotlyLoader";
 import initialSlices from "../json/initialSlices.json";
 import useMetadata from "src/pairedScreens/hooks/useMetadata";
 import useUrlHighlights from "src/pairedScreens/hooks/useUrlHighlights";
@@ -31,6 +32,7 @@ function ResistanceScreenTable() {
 
   return (
     <SliceTable
+      PlotlyLoader={PlotlyLoader}
       index_type_name="screen_pair"
       sliceTableRef={sliceTableRef}
       isLoading={!metadata}

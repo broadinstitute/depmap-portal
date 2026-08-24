@@ -169,6 +169,7 @@ function DataVersionSelect({
   return (
     <PlotConfigSelect
       data-version-select
+      classNamePrefix="data-version-select"
       isClearable
       hasError={isUnknownDataset}
       show={show}
@@ -239,6 +240,8 @@ function DataVersionSelect({
           isDefault: boolean;
           isDisabled: boolean;
           disabledReason: string;
+          matched?: number;
+          total?: number;
         },
         { context }: { context: "menu" | "value" }
       ) => {
@@ -252,6 +255,27 @@ function DataVersionSelect({
             >
               <span style={{ cursor: "not-allowed" }}>{option.label}</span>
             </Tooltip>
+          );
+        }
+
+        // The coverage that decided the ordering, shown on each option so the
+        // automatic pick is inspectable rather than mysterious. Only in the
+        // menu: the closed select should read as the version's name.
+        if (
+          context === "menu" &&
+          option.matched !== undefined &&
+          option.total !== undefined &&
+          option.total > 0 &&
+          option.matched < option.total
+        ) {
+          return (
+            <span>
+              {option.label}{" "}
+              <span className={styles.coverageNote}>
+                {option.matched.toLocaleString()} of{" "}
+                {option.total.toLocaleString()}
+              </span>
+            </span>
           );
         }
 

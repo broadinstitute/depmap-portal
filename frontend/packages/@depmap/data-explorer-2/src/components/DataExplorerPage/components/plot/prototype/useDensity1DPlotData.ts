@@ -7,12 +7,14 @@ import {
   calcBins,
   calcDensityStats,
   calcVisibility,
+  chosenCategoriesFor,
   ContinuousBins,
   findCategoricalSlice,
   findContinuousColorSlice,
   formatCategoryLabel,
   formatDataForScatterPlot,
   getColorMap,
+  hasRealFacetPartition,
   LegendKey,
   nullifyUnplottableValues,
   resolveColorMode,
@@ -44,8 +46,14 @@ export interface Density1DPlotData {
   // sortedLegendKeys: order of legend entries (color side).
   sortedLegendKeys: LegendKey[] | undefined;
   // sortedFacetKeys: order of violin tracks (facet side). Same array as
-  // sortedLegendKeys when modes match.
+  // sortedLegendKeys when modes match. Never empty — an unset facet_by still
+  // yields one LEGEND_ALL track — so use hasFacetOptionsEnabled, not this, to
+  // ask whether facet_by partitions anything.
   sortedFacetKeys: LegendKey[] | undefined;
+  // Whether facet_by has real backing. Drives the "Facets" panel, which has
+  // nothing to offer against the single LEGEND_ALL placeholder. Counterpart of
+  // useWaterfallPlotData's identically named field.
+  hasFacetOptionsEnabled: boolean;
   // facetContinuousBins: facet's own bins, independent of continuousBins
   // (color's own) — needed by the Facets panel to label a continuous
   // facet's LEGEND_RANGE_* keys via categoryToDisplayName.
@@ -104,6 +112,11 @@ export default function useDensity1DPlotData(
     plotConfig.color_by,
     plotConfig.facet_by,
   ]);
+
+  // Hoisted so the memos below depend on these values rather than on the
+  // whole config, which would re-run them for every unrelated edit.
+  const colorChosen = chosenCategoriesFor(plotConfig, colorMode.target);
+  const facetChosen = chosenCategoriesFor(plotConfig, "facet");
 
   const formattedData = useMemo(
     () => formatDataForScatterPlot(data, colorMode.mode, colorMode.target),
@@ -184,7 +197,8 @@ export default function useDensity1DPlotData(
         colorMode,
         facet_by,
         facetContinuousBins,
-        Boolean(expand_by?.length)
+        Boolean(expand_by?.length),
+        { color: colorChosen, facet: facetChosen }
       ),
     [
       data,
@@ -194,8 +208,15 @@ export default function useDensity1DPlotData(
       facet_by,
       facetContinuousBins,
       expand_by,
+      colorChosen,
+      facetChosen,
     ]
   );
+
+  // Drives the "Facets" panel. Previously `Boolean(sortedFacetKeys)`, which is
+  // always true — see hasRealFacetPartition for why that is the wrong question
+  // and what it looked like when asked.
+  const hasFacetOptionsEnabled = hasRealFacetPartition(sortedFacetKeys);
 
   const legendState = useLegendState(plotConfig, legendKeysWithNoData);
   const { hiddenLegendValues } = legendState;
@@ -290,7 +311,8 @@ export default function useDensity1DPlotData(
       continuousBins,
       plotConfig.hide_points,
       colorMode.mode,
-      colorMode.target
+      colorMode.target,
+      colorChosen
     );
 
     const facetVisibility = calcVisibility(
@@ -299,7 +321,8 @@ export default function useDensity1DPlotData(
       facetContinuousBins,
       undefined,
       facet_by,
-      "facet"
+      "facet",
+      facetChosen
     );
 
     if (!colorVisibility || !facetVisibility) {
@@ -318,6 +341,8 @@ export default function useDensity1DPlotData(
     hiddenFacetValues,
     facetContinuousBins,
     facet_by,
+    colorChosen,
+    facetChosen,
   ]);
 
   return {
@@ -338,5 +363,6 @@ export default function useDensity1DPlotData(
     pointVisibility,
     colorTarget: colorMode.target,
     colorMatchesFacet,
+    hasFacetOptionsEnabled,
   };
 }

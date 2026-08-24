@@ -7,12 +7,8 @@ import {
   DataExplorerContextV2,
   PartialDataExplorerPlotConfig,
 } from "@depmap/types";
-import {
-  DEFAULT_EXPANSION_LIMIT,
-  PlotConfigReducerAction,
-} from "../../reducers/plotConfigReducer";
-import { canSwapColorAndFacet } from "../../utils";
-import { getExpansionAxis } from "../../../../utils/misc";
+import { PlotConfigReducerAction } from "../../reducers/plotConfigReducer";
+import { ColorFacetSwapMode, getColorFacetSwapMode } from "../../utils";
 import HelpTip from "../HelpTip";
 import Section from "../Section";
 import {
@@ -23,8 +19,26 @@ import {
 import FilterViewOptions from "./FilterViewOptions";
 import ColorByViewOptions from "./ColorByViewOptions";
 import FacetByViewOptions from "./FacetByViewOptions";
-import MaxToShowSelect from "./MaxToShowSelect";
+import ExpansionMembersControl from "./ExpansionMembersControl";
+import { resolveColorMode } from "../plot/prototype/plotUtils";
 import styles from "../../styles/ConfigurationPanel.scss";
+
+// Only the two-way exchange is a swap, so only it gets the word and the
+// transfer icon — that icon reads as "these two trade places", which is exactly
+// what the other two don't do. The one-way cases name the axes they leave
+// populated instead of the action they perform, because the action ("move this
+// selection to the other axis, then rewrite this one") is harder to state than
+// the outcome:
+//
+//   - promote: color's selection becomes facet's, and color_by is set to
+//     "facet" so it defers back. Both axes then show the same partition.
+//   - demote: facet's selection becomes color's, and facet_by is unset. Color
+//     is all that's left.
+const SWAP_BUTTON_LABELS: Record<ColorFacetSwapMode, string> = {
+  swap: "swap",
+  promote: "color & facet",
+  demote: "color only",
+};
 
 interface Props {
   plot: PartialDataExplorerPlotConfig;
@@ -55,8 +69,8 @@ function ViewOptions({
   const params = qs.parse(window.location.search.substr(1));
   const defaultOpen = !params.task;
 
-  const expansionAxis = getExpansionAxis(plot);
-  const currentExpandBy = plot.expand_by?.[0];
+  // Null when no exchange is well-defined, which is also what hides the button.
+  const swapMode = getColorFacetSwapMode(plot);
 
   return (
     <Section
@@ -102,46 +116,38 @@ function ViewOptions({
           });
         }}
       />
-      <div className={styles.filterAndMax}>
-        <FilterViewOptions
+      <FilterViewOptions
+        plot={plot}
+        dispatch={dispatch}
+        filterKeys={filterKeys}
+        labels={[
+          <span key={0}>
+            Filter
+            <HelpTip id="filter-help" />
+          </span>,
+        ]}
+        onClickCreateContext={onClickCreateContext}
+        onClickSaveAsContext={onClickSaveAsContext}
+      />
+      {/* Only when no panel is showing the members. The control belongs beside
+          the list it edits, and the Legend or the Facets panel is that list
+          whenever the expansion backs either of them. This is the leftover
+          case — expand an axis, color by an annotation, don't facet — where
+          the members appear nowhere and the control would otherwise be
+          unreachable. Decidable from the config alone, which matters because
+          this column has no plot response. What the control does here is closer
+          to a cap on how many points the plot draws than to editing a list the
+          user can see, since nothing on screen names the members. */}
+      {plot.expand_by?.length &&
+      resolveColorMode(plot).mode !== "expansion" &&
+      plot.facet_by !== "expansion" ? (
+        <ExpansionMembersControl
           plot={plot}
-          dispatch={dispatch}
-          filterKeys={filterKeys}
-          labels={[
-            <span key={0}>
-              Filter
-              <HelpTip id="filter-help" />
-            </span>,
-          ]}
-          onClickCreateContext={onClickCreateContext}
-          onClickSaveAsContext={onClickSaveAsContext}
+          onChangeMembers={(members) =>
+            dispatch({ type: "select_expansion_members", payload: members })
+          }
         />
-        <MaxToShowSelect
-          show={Boolean(currentExpandBy)}
-          value={currentExpandBy?.limit ?? DEFAULT_EXPANSION_LIMIT}
-          slice_type={currentExpandBy?.slice_type}
-          onChange={(nextLimit) => {
-            if (!currentExpandBy?.slice_type || !currentExpandBy?.context) {
-              return;
-            }
-
-            dispatch({
-              type: "select_expansion",
-              payload: {
-                key: expansionAxis,
-                expand_by: {
-                  slice_type: currentExpandBy.slice_type as string,
-                  context: currentExpandBy.context as DataExplorerContextV2,
-                  dataset_id: plot.dimensions?.[expansionAxis]
-                    ?.dataset_id as string,
-                  limit: nextLimit,
-                  offset: 0,
-                },
-              },
-            });
-          }}
-        />
-      </div>
+      ) : null}
       {plot.plot_type !== "correlation_heatmap" && (
         <>
           <hr className={styles.hr} />
@@ -154,14 +160,20 @@ function ViewOptions({
               onClickSaveAsContext={onClickSaveAsContext}
             />
             <div className={styles.swapColorFacetButtonContainer}>
-              {canSwapColorAndFacet(plot) && (
+              {swapMode && (
                 <Button
                   id="swap-color-and-facet"
-                  className={styles.swapColorFacetButton}
+                  className={
+                    swapMode === "swap"
+                      ? styles.swapColorFacetButton
+                      : `${styles.swapColorFacetButton} ${styles.swapColorFacetButtonOneWay}`
+                  }
                   onClick={() => dispatch({ type: "swap_color_and_facet" })}
                 >
-                  <span>swap</span>
-                  <i className="glyphicon glyphicon-transfer" />
+                  <span>{SWAP_BUTTON_LABELS[swapMode]}</span>
+                  {swapMode === "swap" && (
+                    <i className="glyphicon glyphicon-transfer" />
+                  )}
                 </Button>
               )}
             </div>

@@ -14,17 +14,18 @@ export async function getDimensionDataWithoutLabels(slice: SliceQuery) {
   // need, but chain queries are metadata/annotation columns in practice — not
   // 100K-element transcript slices — so the overhead is acceptable.
   if (slice.reindex_through) {
-    const { ids, values } = await cached(breadboxAPI).getDimensionData(slice);
+    const { ids, values } = await cached(breadboxAPI, {
+      persist: true,
+    }).getDimensionData(slice);
     return { ids, values };
   }
 
   if (slice.identifier_type === "column") {
-    const wrapper = await cached(breadboxAPI).getTabularDatasetData(
-      slice.dataset_id,
-      {
-        columns: [slice.identifier],
-      }
-    );
+    const wrapper = await cached(breadboxAPI, {
+      persist: true,
+    }).getTabularDatasetData(slice.dataset_id, {
+      columns: [slice.identifier],
+    });
 
     const indexedData = wrapper[slice.identifier];
 
@@ -41,14 +42,13 @@ export async function getDimensionDataWithoutLabels(slice: SliceQuery) {
   }
 
   if (["feature_id", "feature_label"].includes(slice.identifier_type)) {
-    const features = await cached(breadboxAPI).getMatrixDatasetData(
-      slice.dataset_id,
-      {
-        feature_identifier:
-          slice.identifier_type === "feature_id" ? "id" : "label",
-        features: [slice.identifier],
-      }
-    );
+    const features = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(slice.dataset_id, {
+      feature_identifier:
+        slice.identifier_type === "feature_id" ? "id" : "label",
+      features: [slice.identifier],
+    });
 
     if (Object.keys(features).length === 0) {
       return { ids: [] as string[], values: [] as any[] };
@@ -66,14 +66,12 @@ export async function getDimensionDataWithoutLabels(slice: SliceQuery) {
   }
 
   if (["sample_id", "sample_label"].includes(slice.identifier_type)) {
-    const features = await cached(breadboxAPI).getMatrixDatasetData(
-      slice.dataset_id,
-      {
-        sample_identifier:
-          slice.identifier_type === "sample_id" ? "id" : "label",
-        samples: [slice.identifier],
-      }
-    );
+    const features = await cached(breadboxAPI, {
+      persist: true,
+    }).getMatrixDatasetData(slice.dataset_id, {
+      sample_identifier: slice.identifier_type === "sample_id" ? "id" : "label",
+      samples: [slice.identifier],
+    });
 
     if (Object.keys(features).length === 0) {
       return { ids: [] as string[], values: [] as any[] };

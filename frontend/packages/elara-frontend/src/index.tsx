@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
-import { breadboxAPI } from "@depmap/api";
+import { breadboxAPI, cached, initDatasetRegistry } from "@depmap/api";
 import { BrowserRouter, Navigate, Routes, Route } from "react-router-dom";
 import ErrorBoundary from "src/common/components/ErrorBoundary";
 import NotFound from "src/pages/NotFound";
@@ -26,6 +26,21 @@ const CustomDownloads = React.lazy(
 );
 const GroupsPage = React.lazy(() => import("@depmap/groups-manager"));
 const Metadata = React.lazy(() => import("src/pages/Metadata/Metadata"));
+
+// Seed the persistent-cache dataset registry. Called synchronously (with the
+// pending promises, not the resolved values) so requests issued during these
+// round trips wait for it instead of refusing to persist. Never blocks first
+// paint, and never rejects — the engine degrades to in-memory caching on any
+// failure.
+//
+// getDatasets goes through cached() so the seed SHARES one request (and one
+// listing) with every app caller. That is safe only while getDatasets never
+// gains a persist option: a persisted call awaits the registry this promise
+// seeds, which would deadlock. ADR 0008 forbids persisting it independently.
+initDatasetRegistry({
+  datasets: cached(breadboxAPI).getDatasets(),
+  breadboxVersion: breadboxAPI.getBreadboxVersion(),
+});
 
 const container = document.getElementById("root");
 

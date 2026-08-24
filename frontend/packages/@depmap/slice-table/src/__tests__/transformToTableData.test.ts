@@ -164,6 +164,74 @@ describe("transformToTableData", () => {
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
   });
+
+  it("stubs a column whose dataset no longer exists instead of throwing", () => {
+    const labelResponse: SliceResponse = {
+      ids: ["A", "B"],
+      labels: ["A", "B"],
+      values: ["alpha", "beta"],
+    };
+    const emptyResponse: SliceResponse = { ids: [], labels: [], values: [] };
+
+    const deadSlice: SliceQuery = {
+      dataset_id: "retired_ds",
+      identifier_type: "column",
+      identifier: "old_score",
+    };
+
+    const { data, columns } = transformToTableData(
+      [labelResponse, emptyResponse],
+      ["label", "old_score"],
+      [labelSlice, deadSlice],
+      undefined,
+      datasets, // does not contain "retired_ds"
+      indexType,
+      "antibody_id",
+      "label",
+      {}
+    );
+
+    // The table still renders: full row set, stub column present.
+    expect(data).toHaveLength(2);
+
+    const stub = columns.find((c) => c.meta.idLabel === "old_score")!;
+    expect(stub.meta.loadFailure).toBe("dataset_removed");
+    // Editable so the existing "Remove column" affordances work on it.
+    expect(stub.meta.isEditable).toBe(true);
+    expect(stub.meta.isViewable).toBe(false);
+    // Opted out of CSV export.
+    expect(stub.meta.csvHeader).toBe("");
+    // Cells are coverage holes, not values.
+    expect(data[0][stub.id]).toBeUndefined();
+  });
+
+  it("stubs a column marked fetch_failed, keeping its dataset name", () => {
+    const labelResponse: SliceResponse = {
+      ids: ["A", "B"],
+      labels: ["A", "B"],
+      values: ["alpha", "beta"],
+    };
+    const emptyResponse: SliceResponse = { ids: [], labels: [], values: [] };
+
+    const { columns } = transformToTableData(
+      [labelResponse, emptyResponse],
+      ["label", "Score"],
+      [labelSlice, dataSlice],
+      undefined,
+      datasets,
+      indexType,
+      "antibody_id",
+      "label",
+      {},
+      undefined,
+      [null, "fetch_failed"]
+    );
+
+    const stub = columns.find((c) => c.meta.idLabel === "Score")!;
+    expect(stub.meta.loadFailure).toBe("fetch_failed");
+    // The dataset still exists, so its name is still shown.
+    expect(stub.meta.datasetName).toBe("Data");
+  });
 });
 
 describe("resolveDisplayLabel", () => {

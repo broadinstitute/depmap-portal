@@ -623,3 +623,57 @@
     font-size: 15px;
   }
 }
+
+.categoryPickerModal {
+  overflow-y: auto;
+
+  :global .modal-lg {
+    width: calc(100vw - 60px);
+    max-width: 1200px;
+  }
+}
+
+.categoryPickerControl {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #eee;
+  font-size: 12px;
+  color: #666;
+}
+
+.categoryPickerSummary {
+  font-style: italic;
+  margin-bottom: 2px;
+}
+
+.categoryPickerTable {
+  height: calc(100vh - 298px);
+}
+
+// The bar defaults to the width the slice table's control strip has room for,
+// which is most of a modal. Narrowed here through the custom property it
+// exposes, rather than by reaching into its input.
+.categoryPickerSearch {
+  --search-bar-input-width: 180px;
+  margin-bottom: 8px;
+  margin-left: 2px;
+}
+
+.categoryPickerIntro {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.categoryPickerFooter {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.categoryPickerWarning {
+  color: #a94442;
+}

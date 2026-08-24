@@ -97,20 +97,20 @@ function Operator({
       return opLabels;
     }
 
-    // References to other types can use these pseudo context operators.
-    // They are not real operators but merely placeholders that the user
-    // can select, which turns the rhs into a { "context": ... } expression.
-    if (isReference) {
-      return {
-        // TODO: Add more operators like "has property", "does not have
-        // property", etc
-        in_context: "is in context",
-      };
-    }
-
     return Object.fromEntries(
       Object.entries(opLabels)
         .filter(([key]) => {
+          // `in_context` is deliberately absent from operatorsByValueType:
+          // whether it applies isn't a question about what the column HOLDS
+          // but about whether those values are ids of another type. It's
+          // offered ALONGSIDE the ordinary operators, not instead of them —
+          // "CompoundID is DPC-000001" is every bit as valid as "CompoundID
+          // is in <some compound context>", and it's the shape generated
+          // contexts use.
+          if (key === "in_context") {
+            return isReference;
+          }
+
           return operatorsByValueType[value_type].has(key);
         })
         .filter(([key]) => {

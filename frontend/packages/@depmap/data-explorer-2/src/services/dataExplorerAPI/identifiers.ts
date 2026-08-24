@@ -12,8 +12,8 @@ export async function fetchDatasetIdentifiers(
   }
 
   return dimType.axis === "feature"
-    ? cached(breadboxAPI).getDatasetFeatures(dataset_id)
-    : cached(breadboxAPI).getDatasetSamples(dataset_id);
+    ? cached(breadboxAPI, { persist: true }).getDatasetFeatures(dataset_id)
+    : cached(breadboxAPI, { persist: true }).getDatasetSamples(dataset_id);
 }
 
 export async function fetchDimensionIdentifiers(
