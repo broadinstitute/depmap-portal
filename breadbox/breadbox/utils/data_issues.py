@@ -20,6 +20,8 @@ known_deprecated_ids = {
     "ACH-001120", "ACH-002319", "ACH-001827", "ACH-002325", "ACH-001108",
     # Compound IDs
     "DPC-004766", 
+    # Surfaceome (IDs known to be missing from the HGNC mapping table)
+    "G9CGD6",
 }
 
 # Dimension types in which our matrix datasets are expected to use only a subset of the metadata's IDs
