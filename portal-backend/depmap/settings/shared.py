@@ -320,7 +320,7 @@ DATASET_METADATA: Dict[
         units="log2(AUC)",
         data_type=DataTypeEnum.drug_screen,
         nominal_range=(0, 1.1),
-        priority=2,
+        priority=3,
     ),
     DependencyEnum.Prism_oncology_seq_AUC: DepDatasetMeta(
         display_name="PRISM OncRef log2(AUC) Seq",
