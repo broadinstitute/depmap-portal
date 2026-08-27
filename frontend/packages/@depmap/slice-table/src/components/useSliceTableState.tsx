@@ -275,7 +275,7 @@ export function useSliceTableState({
   }, [initialSlices, slices, onChangeSlices]);
 
   // Fetch data without any filtering — useData now returns the full dataset
-  const { columns, data, loading, error, exportToCsv } = useData({
+  const { columns, data, loading, progress, error, exportToCsv } = useData({
     getColumnDisplayOptions,
     index_type_name,
     slices,
@@ -801,6 +801,7 @@ export function useSliceTableState({
     data,
     error,
     loading,
+    progress,
     columns: extendedColumns,
     rowFilter,
     handleClickAddColumn,

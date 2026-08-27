@@ -93,7 +93,13 @@ async function fetchContextCoverage(dimension: State["dimension"]) {
   }
 
   try {
-    return await cached(breadboxAPI).getContextDatasetCoverage(
+    // wholeCatalog, not persist: true — the response spans every dataset the
+    // caller can see, so the engine persists it only for callers whose whole
+    // catalog is public (keyed by a fingerprint of the listing) and keeps it
+    // in-memory-only for anyone who can see a private dataset. See ADR 0008.
+    return await cached(breadboxAPI, {
+      persist: { wholeCatalog: true },
+    }).getContextDatasetCoverage(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dimension.context as any
     );
