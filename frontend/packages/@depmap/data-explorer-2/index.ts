@@ -22,6 +22,7 @@ export {
 // that reopening one doesn't mean re-picking them. See the module for why the
 // scope is part of the key.
 export {
+  forgetRememberedColumns,
   loadRememberedColumns,
   rememberColumns,
 } from "./src/utils/rememberedTableColumns";

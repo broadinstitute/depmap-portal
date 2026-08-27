@@ -8,6 +8,7 @@ import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
 import Controls from "./Controls";
 import rowSelectionChanged from "./rowSelectionChanged";
 import Actions from "./Actions";
+import LoadingProgress from "./LoadingProgress";
 import {
   useSliceTableState,
   filterPredicate,
@@ -37,6 +38,11 @@ interface Props {
     initialRowSelection?: RowSelectionState;
   };
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
+  // Called when the table fails to load, in addition to (not instead of) the
+  // error the table renders itself. For callers that persist their column
+  // choice: a set that fails to load will keep failing to load, so a plain
+  // retry never recovers unless something throws the persisted set away.
+  onLoadError?: (error: string) => void;
   // Pass a predicate to make only some rows selectable — the checkbox renders
   // disabled for the rest, and "select all" skips them.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,6 +139,7 @@ function SliceTable({
   PlotlyLoader,
   getInitialState = () => ({}),
   onChangeSlices = NOOP,
+  onLoadError = NOOP,
   enableRowSelection = false,
   enableMultiRowSelection = false,
   maxRowSelection = undefined,
@@ -196,6 +203,7 @@ function SliceTable({
     data,
     error,
     loading,
+    progress,
     columns,
     rowFilter,
     rowSelection,
@@ -224,6 +232,18 @@ function SliceTable({
   });
 
   const combinedLoading = loading || externalLoading;
+
+  // Held in a ref so the effect below depends on the error alone. Callers pass
+  // this inline, and a new function identity every render would otherwise mean
+  // one notification per render for as long as the error is on screen.
+  const onLoadErrorRef = useRef(onLoadError);
+  onLoadErrorRef.current = onLoadError;
+
+  useEffect(() => {
+    if (error) {
+      onLoadErrorRef.current(error);
+    }
+  }, [error]);
 
   // Compared against what was last *reported*, not against the initial
   // selection. Comparing against the initial one suppressed every return to it:
@@ -289,6 +309,14 @@ function SliceTable({
         {combinedLoading && (
           <div className={styles.loadingContainer}>
             <Spinner position="static" />
+            {/* Gated on `progress` so a caller's own `isLoading` keeps the
+                bare spinner — it has no column count behind it. */}
+            {progress && (
+              <LoadingProgress
+                loaded={progress.loaded}
+                total={progress.total}
+              />
+            )}
           </div>
         )}
         {error && (
