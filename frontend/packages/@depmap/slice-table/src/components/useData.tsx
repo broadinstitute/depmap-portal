@@ -86,6 +86,10 @@ interface AlignedData {
   }>;
   data: Record<string, string | number | undefined>[];
   loading: boolean;
+  // Non-null only while this hook's own fetch is in flight, so a consumer can
+  // tell it apart from loading for some other reason. `total` counts the
+  // slices being fetched, including the label slice at index 0.
+  progress: { loaded: number; total: number } | null;
   error: string | null;
   entityLabel: string;
   exportToCsv: (options?: {
@@ -697,6 +701,7 @@ export default function useAlignedData({
     // invisible when every load took a network round trip; with persistent-
     // cache hits it can be most of what the user sees.
     loading: true,
+    progress: null,
     error: null,
     entityLabel: "",
     exportToCsv: () => "",
@@ -814,7 +819,12 @@ export default function useAlignedData({
     let isCancelled = false;
 
     const loadData = async () => {
-      setState((prev) => ({ ...prev, loading: true, error: null }));
+      setState((prev) => ({
+        ...prev,
+        loading: true,
+        progress: null,
+        error: null,
+      }));
 
       try {
         // Step 1: Load index type metadata
@@ -873,45 +883,80 @@ export default function useAlignedData({
           values: [],
         };
 
-        // Step 3: Load data. A single slice's failure degrades to a stub
-        // column rather than rejecting the whole table.
-        const dataResponses = await Promise.all(
-          slicesToFetch.map((slice, i) => {
-            if (failures[i]) {
-              return Promise.resolve(EMPTY_RESPONSE);
-            }
+        setState((prev) => ({
+          ...prev,
+          progress: { loaded: 0, total: slicesToFetch.length },
+        }));
 
-            if (i === 0) {
-              return createDataFetchPromise(slice);
-            }
+        let loaded = 0;
+        const onSliceSettled = () => {
+          loaded += 1;
 
-            return createDataFetchPromise(slice).catch((e) => {
-              window.console.warn(
-                "[SliceTable] failed to load slice",
+          if (isCancelled) {
+            return;
+          }
+
+          setState((prev) =>
+            prev.progress
+              ? { ...prev, progress: { ...prev.progress, loaded } }
+              : prev
+          );
+        };
+
+        // Step 3: Load each slice's data and its display label together. A
+        // single slice's failure degrades to a stub column rather than
+        // rejecting the whole table.
+        //
+        // The two run concurrently rather than as sequential passes, since
+        // label resolution costs a request for matrix feature/sample slices
+        // and used to start only after every column's data had landed.
+        const settled = await Promise.all(
+          slicesToFetch.map(
+            (slice, i): Promise<[SliceResponse, string]> => {
+              if (failures[i]) {
+                onSliceSettled();
+                return Promise.resolve([
+                  EMPTY_RESPONSE,
+                  fallbackDisplayLabel(slice),
+                ]);
+              }
+
+              // Index 0 is the label slice: without it there are no rows, so it
+              // keeps no `.catch` and fails the whole table via the outer try.
+              const dataPromise =
+                i === 0
+                  ? createDataFetchPromise(slice)
+                  : createDataFetchPromise(slice).catch((e) => {
+                      window.console.warn(
+                        "[SliceTable] failed to load slice",
+                        slice,
+                        e
+                      );
+                      failures[i] = "fetch_failed";
+                      return EMPTY_RESPONSE;
+                    });
+
+              const labelPromise = resolveDisplayLabel(
                 slice,
-                e
+                indexType
+              ).catch(() => fallbackDisplayLabel(slice));
+
+              return Promise.all([dataPromise, labelPromise]).finally(
+                onSliceSettled
               );
-              failures[i] = "fetch_failed";
-              return EMPTY_RESPONSE;
-            });
-          })
-        );
-
-        if (isCancelled) return;
-
-        // Resolve display labels for each slice. Failed slices fall back to
-        // their raw identifiers rather than issuing more doomed requests.
-        const displayLabels = await Promise.all(
-          slicesToFetch.map((slice, i) =>
-            failures[i]
-              ? Promise.resolve(fallbackDisplayLabel(slice))
-              : resolveDisplayLabel(slice, indexType).catch(() =>
-                  fallbackDisplayLabel(slice)
-                )
+            }
           )
         );
 
         if (isCancelled) return;
+
+        const dataResponses = settled.map(([response]) => response);
+
+        // A slice that failed after its label resolution was already under way
+        // still reports raw identifiers, matching the stub column's header.
+        const displayLabels = settled.map(([, label], i) =>
+          failures[i] ? fallbackDisplayLabel(slicesToFetch[i]) : label
+        );
 
         // Grab the sample/feature labels for any referenced types
         const idToLabelMappings = {} as Record<string, Record<string, string>>;
@@ -965,6 +1010,7 @@ export default function useAlignedData({
           columns,
           entityLabel: indexType.display_name || indexType.name,
           loading: false,
+          progress: null,
           error: null,
         }));
       } catch (error) {
@@ -976,6 +1022,7 @@ export default function useAlignedData({
           setState((prev) => ({
             ...prev,
             loading: false,
+            progress: null,
             error: `Failed to load data: ${errorMessage}`,
           }));
         }
@@ -993,6 +1040,7 @@ export default function useAlignedData({
     columns: state.columns,
     data: state.data,
     loading: state.loading,
+    progress: state.progress,
     error: state.error,
     entityLabel: state.entityLabel,
     exportToCsv,

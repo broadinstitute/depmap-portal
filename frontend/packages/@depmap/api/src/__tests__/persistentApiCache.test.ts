@@ -193,6 +193,43 @@ describe("buildPersistentKey", () => {
     expect(key2).toContain(PUBLIC_DEP_UUID_2);
     expect(key1).not.toEqual(key2);
   });
+
+  it("refuses a wholeCatalog response when any visible dataset is private", async () => {
+    // defaultDatasets includes PRIVATE_UUID, so this caller's catalog is not
+    // entirely public — the response would contain private-derived bytes, and
+    // no keying scheme makes those safe in a wholesale-readable store.
+    await init();
+    const key = await buildPersistentKey("POST /temp/context/coverage-{}", {
+      wholeCatalog: true,
+    });
+
+    expect(key).toBeNull();
+    expect(persistentCacheStats.refusedPrivateCatalog).toBe(1);
+  });
+
+  it("keys a wholeCatalog response by the catalog fingerprint", async () => {
+    const allPublic = defaultDatasets.filter(
+      (d) => d.group_id === PUBLIC_GROUP_ID
+    );
+
+    // No dataset address in the request — the catalog itself is the declared
+    // dependency, so the no-address refusal does not apply.
+    const cacheKey = "POST /temp/context/coverage-{}";
+
+    await init({ datasets: allPublic });
+    const key1 = await buildPersistentKey(cacheKey, { wholeCatalog: true });
+
+    __resetForTests();
+    await init({ datasets: allPublic.slice(0, -1) });
+    const key2 = await buildPersistentKey(cacheKey, { wholeCatalog: true });
+
+    expect(key1).not.toBeNull();
+    expect(key2).not.toBeNull();
+    expect(key1).toContain(cacheKey);
+    // A different catalog produces a different key, so entries orphan rather
+    // than serve coverage missing a newly-listed dataset.
+    expect(key1).not.toEqual(key2);
+  });
 });
 
 describe("persistentCacheGet / persistentCacheSet", () => {
