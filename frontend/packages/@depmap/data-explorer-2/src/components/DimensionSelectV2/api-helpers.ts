@@ -4,7 +4,7 @@ import { SliceTypeNull } from "./useDimensionStateManager/types";
 
 export async function fetchDimensionIdentifiers(
   dimensionTypeName: string,
-  dataType?: string
+  dataType?: string | null
 ) {
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
@@ -14,7 +14,7 @@ export async function fetchDimensionIdentifiers(
   }
 
   return cached(breadboxAPI).getDimensionTypeIdentifiers(dimensionTypeName, {
-    data_type: dataType,
+    data_type: dataType || undefined,
   });
 }
 
