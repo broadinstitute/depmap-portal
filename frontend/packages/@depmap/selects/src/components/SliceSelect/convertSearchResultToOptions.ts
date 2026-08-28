@@ -10,10 +10,11 @@ export async function fetchDataTypeCompatibleIds(
   slice_type: string,
   dataType: string | null
 ) {
-  const ids = await fetchDimensionIdentifiers(
-    slice_type,
-    dataType || undefined
-  );
+  let ids = await fetchDimensionIdentifiers(slice_type, dataType);
+
+  if (ids.length === 0) {
+    ids = await fetchDimensionIdentifiers(slice_type);
+  }
 
   return new Set(ids.map(({ id }) => id));
 }
