@@ -96,7 +96,9 @@ const getPrioritizedData = async (
         });
         const record: Record<string, any> = sliceData[compoundId] || {};
 
-        const dataList = Object.values(record).map(Number).filter(Boolean);
+        const dataList = Object.values(record)
+          .map(Number)
+          .filter((value) => !Number.isNaN(value));
 
         return {
           datasetDisplayName: meta.display_name,
