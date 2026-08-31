@@ -104,6 +104,13 @@ multidict = "^6.1.0"
 html-sanitizer = "^2.3.0"
 httpx = "^0.28.1"
 
+# Security floors for transitive dependencies we do not import directly.
+# Declared here only so they can be targeted by `poetry update`; without a
+# direct entry poetry leaves them pinned at stale versions in the lock.
+pyasn1 = ">=0.6.4"          # via google-auth -> pyasn1-modules / rsa
+soupsieve = ">=2.9.2"       # via beautifulsoup4
+lxml-html-clean = ">=0.4.5" # via html-sanitizer
+
 
 [tool.poetry.group.dev.dependencies]
 atomicwrites="^1.4.0"

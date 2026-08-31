@@ -7,9 +7,18 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV PYENV_ROOT="/opt/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
+# Cache-bust for the apt layer below. Without this, --cache-from replays a
+# previously-built apt layer from the registry and neither `update`, `upgrade`
+# nor `install` actually run, so the image ships whatever package versions were
+# current when that layer was first built (observed: 6 days stale).
+# build-docker-image.sh passes today's date, so the layer rebuilds once a day.
+ARG APT_REFRESH=0
+
 # Install base packages and pyenv build dependencies
-RUN apt-get update -y && apt-get install -y --no-install-recommends \
-    vim nano joe \
+# APT_REFRESH must be referenced here - an unused ARG does not affect the cache key.
+RUN echo "apt cache-bust: ${APT_REFRESH}" \
+    && apt-get update -y && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    nano joe \
     libpq-dev graphviz \
     build-essential zlib1g-dev \
     make git \

@@ -54,10 +54,16 @@ git rev-parse HEAD > dist/git-sha
 # save the current sha to help track what we built this docker image from
 git rev-parse HEAD > git-sha
 
+# Changes once a day, so the apt layer in the Dockerfile is rebuilt daily instead
+# of being replayed from the registry cache indefinitely. Use +%Y-%m-%dT%H for
+# hourly (fresher, but nearly every build then pays the ~5min CPython rebuild).
+APT_REFRESH="$(date +%Y-%m-%d)"
+
 # Build Docker image
 DOCKER_BUILDKIT=1 \
   docker build . \
   -t ${IMAGE_TAG} \
   --cache-from us-central1-docker.pkg.dev/depmap-consortium/depmap-docker-images/depmap:latest \
-  --build-arg BUILDKIT_INLINE_CACHE=1
+  --build-arg BUILDKIT_INLINE_CACHE=1 \
+  --build-arg APT_REFRESH="${APT_REFRESH}"
 
