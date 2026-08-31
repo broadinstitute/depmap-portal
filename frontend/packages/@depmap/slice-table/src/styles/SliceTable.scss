@@ -46,11 +46,36 @@
 }
 
 .errorContainer {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
   height: 100%;
+  max-width: 600px;
+  margin: auto;
 
-  p {
-    font-size: 20px;
+  & > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    p {
+      margin-top: 50px;
+      font-size: 20px;
+    }
+
+    button {
+      margin-top: 10px;
+    }
   }
+
+  details {
+    margin-top: 20px;
+    align-self: left;
+  }
+}
+
+.retryButton {
+  margin-top: 16px;
 }
 
 .Controls {
