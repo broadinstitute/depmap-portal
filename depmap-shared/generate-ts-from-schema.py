@@ -2,7 +2,7 @@
 # Used to ensure front end is aware of what the columns exist based on the definition that we have in python-land
 
 import sys
-from pandera import SchemaModel, Column
+from pandera import Column
 import argparse
 
 parser = argparse.ArgumentParser()

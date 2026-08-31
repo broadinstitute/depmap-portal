@@ -297,6 +297,9 @@ def format_predictability_tile(
         elif given_id == "PRISMOncologyReferenceSeqLog2AUCMatrix":
             dataset_type = "prism_onc_seq_ref"
             color = color_palette.prism_oncology_color
+        elif given_id == "PRISMOncologyReferenceUnifiedLog2AUCMatrix":
+            dataset_type = "prism_onc_unified_ref"
+            color = color_palette.prism_oncology_color
         else:
             raise Exception("Type not defined")
 

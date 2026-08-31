@@ -25,6 +25,9 @@ class ContextExplorerDatasets(enum.Enum):
     Rep_all_single_pt_per_compound = "Rep_all_single_pt_per_compound"
     PRISMOncologyReferenceLog2AUCMatrix = "PRISMOncologyReferenceLog2AUCMatrix"
     PRISMOncologyReferenceSeqLog2AUCMatrix = "PRISMOncologyReferenceSeqLog2AUCMatrix"
+    PRISMOncologyReferenceUnifiedLog2AUCMatrix = (
+        "PRISMOncologyReferenceUnifiedLog2AUCMatrix"
+    )
     Chronos_Combined = "Chronos_Combined"
 
     @staticmethod
@@ -37,6 +40,8 @@ def is_oncref_dataset(dataset_id: str):
         dataset_id == ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix.name
         or dataset_id
         == ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix.name
+        or dataset_id
+        == ContextExplorerDatasets.PRISMOncologyReferenceUnifiedLog2AUCMatrix.name
     )
 
 

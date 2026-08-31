@@ -6,11 +6,13 @@ import {
   calcBins,
   calcDensityStats,
   calcVisibility,
+  collapseCategoricalSeries,
   categoryToDisplayName,
   computeContinuousLegendKeySeries,
   computeCustomFilterSeries,
   computeFacetedLinReg,
   computeFacets,
+  countPlottablePoints,
   DEFAULT_PALETTE,
   findCategoricalSlice,
   findContinuousColorSlice,
@@ -21,8 +23,18 @@ import {
   LEGEND_BOTH,
   LEGEND_NEITHER,
   LEGEND_OTHER,
+  LEGEND_REMAINDER,
+  LegendKey,
+  makeLegendKeyResolver,
+  orderColorKeysByCount,
+  REMAINDER_FACET,
   NEUTRAL_FACET_FILL,
+  REMAINDER_FILL,
+  reorderColorMap,
   resolveColorMode,
+  hasRealFacetPartition,
+  truncateFacetLabel,
+  facetLabelBudget,
 } from "../plotUtils";
 
 // Minimal response fixture with independent color and facet backings, used to
@@ -61,6 +73,141 @@ const baseData = ({
     },
   },
 } as unknown) as DataExplorerPlotResponse;
+
+describe("truncateFacetLabel", () => {
+  it("leaves a label that fits alone", () => {
+    expect(truncateFacetLabel("Skin")).toBe("Skin");
+  });
+
+  it("trims a long one and says it did", () => {
+    // A transcript id alone already exceeds the limit, which is why both
+    // faceted renderers need this rather than only the one with an axis
+    // gutter.
+    const long = "ENST00000263100.8 (protein coding, canonical)";
+    const result = truncateFacetLabel(long);
+
+    expect(result).toHaveLength(26); // 25 characters plus the ellipsis
+    expect(result.endsWith("\u2026")).toBe(true);
+    expect(long.startsWith(result.slice(0, -1))).toBe(true);
+  });
+
+  it("does not trim a label exactly at the limit", () => {
+    const exact = "a".repeat(25);
+
+    expect(truncateFacetLabel(exact)).toBe(exact);
+    expect(truncateFacetLabel(`${exact}b`)).toBe(`${exact}\u2026`);
+  });
+
+  it("passes an empty label through", () => {
+    expect(truncateFacetLabel("")).toBe("");
+  });
+
+  it("honors a caller-supplied budget", () => {
+    expect(truncateFacetLabel("Peripheral Nervous System", 10)).toBe(
+      "Peripheral…"
+    );
+  });
+});
+
+describe("facetLabelBudget", () => {
+  // The small-multiples grid, which is what makes this computable at all.
+  const colsFor = (facetCount: number) =>
+    Math.max(1, Math.ceil(Math.sqrt(facetCount)));
+
+  // A typical Data Explorer plot column, minus the figure's l/r margins.
+  const GRID_WIDTH = 816;
+  const FONT_SIZE = 11;
+
+  const budgetFor = (facetCount: number, gridWidth = GRID_WIDTH) =>
+    facetLabelBudget({
+      gridWidth,
+      cols: colsFor(facetCount),
+      fontSize: FONT_SIZE,
+    });
+
+  it("never exceeds the shared default", () => {
+    // One panel spanning the whole figure has room for far more than 25
+    // characters. It still doesn't get them: a facet should read the same
+    // however it is drawn.
+    expect(budgetFor(1)).toBe(25);
+    expect(budgetFor(4)).toBe(25);
+  });
+
+  it("tightens as the grid gains columns", () => {
+    // Successive perfect squares, so each step is a real extra column rather
+    // than a partly-filled row.
+    const budgets = [1, 4, 9, 16, 25, 36, 49].map((f) => budgetFor(f));
+
+    for (let i = 1; i < budgets.length; i += 1) {
+      expect(budgets[i]).toBeLessThanOrEqual(budgets[i - 1]);
+    }
+
+    // And it actually moves — a monotone constant would pass the above.
+    expect(budgets[budgets.length - 1]).toBeLessThan(budgets[0]);
+  });
+
+  it("tightens as the figure narrows at a fixed facet count", () => {
+    expect(budgetFor(16, 500)).toBeLessThan(budgetFor(16, GRID_WIDTH));
+  });
+
+  it("keeps enough characters to tell facets apart", () => {
+    // Well past HARD_MAX_CATEGORIES in a cramped column: still legible.
+    expect(budgetFor(200, 300)).toBeGreaterThanOrEqual(8);
+  });
+
+  it("does not tighten when the figure has not been measured", () => {
+    // Deriving a budget from a zero width would floor every label on the
+    // first pass, before the node has a size.
+    expect(facetLabelBudget({ gridWidth: 0, cols: 6, fontSize: 11 })).toBe(25);
+    expect(facetLabelBudget({ gridWidth: NaN, cols: 6, fontSize: 11 })).toBe(
+      25
+    );
+  });
+});
+
+describe("countPlottablePoints", () => {
+  const dim = (values: (number | null)[]) => ({ values } as any);
+
+  it("counts points that would actually be drawn", () => {
+    expect(countPlottablePoints({ dimensions: { x: dim([1, null, 3]) } })).toBe(
+      2
+    );
+  });
+
+  it("requires every axis in play, not just one", () => {
+    // The sparse case this exists for: measured on x, absent on y, so the
+    // scatter has nothing to place. Counting it would report a plot as
+    // non-empty while it drew nothing.
+    expect(
+      countPlottablePoints({
+        dimensions: { x: dim([1, 2, 3]), y: dim([1, null, null]) },
+      })
+    ).toBe(1);
+  });
+
+  it("ignores points the user has filtered out", () => {
+    expect(
+      countPlottablePoints({
+        dimensions: { x: dim([1, 2, 3]) },
+        filters: { visible: { values: [true, false, false] } },
+      })
+    ).toBe(1);
+  });
+
+  it("reports zero when a dataset covers none of the selection", () => {
+    expect(countPlottablePoints({ dimensions: { x: dim([null, null]) } })).toBe(
+      0
+    );
+  });
+
+  it("distinguishes 'nothing to judge by' from 'nothing to draw'", () => {
+    // null, not 0 — a correlation heatmap has no per-point axes at all, and a
+    // half-configured plot has no x yet. Treating either as empty would put an
+    // apology on a plot that is working fine.
+    expect(countPlottablePoints({ dimensions: {} })).toBeNull();
+    expect(countPlottablePoints(null)).toBeNull();
+  });
+});
 
 describe("findCategoricalSlice", () => {
   test("target 'color' reads metadata.color_property", () => {
@@ -744,6 +891,61 @@ describe("formatDataForWaterfall", () => {
       }
     });
   });
+
+  // The remainder is one cluster, not one per category merged into it. Worth
+  // pinning because the collapse and the clustering are computed separately —
+  // collapseCategoricalSeries produces the series and keys, formatDataForWaterfall
+  // buckets by them — and a mismatch between the two spellings of the remainder
+  // key would silently leave those points with no x position at all.
+  test("gathers the collapsed remainder into one contiguous run", () => {
+    const cats = Array.from({ length: 20 }, (_, i) => `cat${i}`);
+    const yValues = cats.map((_, i) => (i * 7) % 20);
+
+    const data = ({
+      index_ids: cats,
+      index_labels: cats,
+      dimensions: {
+        x: { values: cats.map((_, i) => i), value_type: "continuous" },
+        y: { values: yValues, value_type: "continuous" },
+        facet: {
+          values: cats,
+          value_type: "categorical",
+          label: "F",
+          dataset_id: "d",
+        },
+      },
+      filters: {},
+      metadata: {},
+    } as unknown) as DataExplorerPlotResponse;
+
+    // Three categories kept; the other seventeen collapse.
+    const collapsed = collapseCategoricalSeries<string>(
+      cats,
+      data.dimensions as any,
+      data.filters as any,
+      (cats as unknown) as LegendKey[],
+      ["cat0", "cat1", "cat2"],
+      REMAINDER_FACET
+    );
+
+    const formatted = formatDataForWaterfall(
+      data,
+      "property" as any,
+      collapsed.sortedKeys as (string | symbol)[],
+      collapsed.series,
+      "facet"
+    )!;
+
+    const x = formatted.x as number[];
+    const remainderX = collapsed.series
+      .map((key, i) => (key === REMAINDER_FACET ? x[i] : null))
+      .filter((v): v is number => v !== null)
+      .sort((a, b) => a - b);
+
+    expect(remainderX).toHaveLength(17);
+    // Contiguous: no other category's point sits between the first and last.
+    expect(remainderX[remainderX.length - 1] - remainderX[0]).toBe(16);
+  });
 });
 
 describe("calcDensityStats", () => {
@@ -771,6 +973,33 @@ describe("calcDensityStats", () => {
     expect(result.colorData).toEqual(["lung", "breast", "lung"]);
   });
 
+  // Regression: DataExplorerDensity1DPlot gated its "Facets" panel on
+  // `Boolean(sortedFacetKeys)`, which the test above shows is true even with no
+  // faceting at all — so an unfaceted density plot grew a panel whose only row
+  // was "All". The scatter and the waterfall ask predicates that mean what they
+  // say, which is why neither showed it. Fed from calcDensityStats rather than
+  // a hand-built array, since the placeholder track is its output.
+  test("a lone LEGEND_ALL track is not a facet partition", () => {
+    const unfaceted = calcDensityStats(
+      baseData,
+      null,
+      undefined,
+      colorModeProperty,
+      undefined
+    );
+
+    const faceted = calcDensityStats(
+      baseData,
+      null,
+      undefined,
+      colorModeProperty,
+      "property"
+    );
+
+    expect(hasRealFacetPartition(unfaceted.sortedFacetKeys)).toBe(false);
+    expect(hasRealFacetPartition(faceted.sortedFacetKeys)).toBe(true);
+  });
+
   test("explicit facet_by reads its own independent triad, even when color_by is also 'property'", () => {
     const result = calcDensityStats(
       baseData,
@@ -778,6 +1007,64 @@ describe("calcDensityStats", () => {
       undefined,
       colorModeProperty,
       "property"
+    );
+
+    expect(result.colorData).toEqual(["lung", "breast", "lung"]);
+    expect(result.facetData).toEqual(["male", "female", "female"]);
+  });
+
+  // Regression: the density plot drew the automatic selection no matter what
+  // the user picked, because calcDensityStats had no parameter to receive the
+  // chosen categories and so never passed one down to
+  // computeDensitySeriesForMode. The legend, the waterfall and the scatter all
+  // read the chosen list by their own routes, so density was the only renderer
+  // out of sync with the panel sitting next to it.
+  test("honors hand-picked color categories", () => {
+    const result = calcDensityStats(
+      baseData,
+      null,
+      undefined,
+      colorModeProperty,
+      undefined,
+      null,
+      false,
+      { color: ["lung"] }
+    );
+
+    // "breast" wasn't picked, so it shares the remainder rather than keeping a
+    // curve of its own.
+    expect(result.colorData).toEqual(["lung", LEGEND_REMAINDER, "lung"]);
+  });
+
+  test("honors hand-picked facet categories", () => {
+    const result = calcDensityStats(
+      baseData,
+      null,
+      undefined,
+      colorModeProperty,
+      "property",
+      null,
+      false,
+      { facet: ["female"] }
+    );
+
+    expect(result.facetData).toEqual([LEGEND_REMAINDER, "female", "female"]);
+    // The other side is untouched by a facet-only selection.
+    expect(result.colorData).toEqual(["lung", "breast", "lung"]);
+  });
+
+  test("falls back to the automatic selection when nothing is picked", () => {
+    // The reason the bug hid: with few enough categories the automatic ranking
+    // keeps them all, so an absent selection and a complete one look alike.
+    const result = calcDensityStats(
+      baseData,
+      null,
+      undefined,
+      colorModeProperty,
+      "property",
+      null,
+      false,
+      {}
     );
 
     expect(result.colorData).toEqual(["lung", "breast", "lung"]);
@@ -1274,6 +1561,259 @@ describe("getColorMap — continuous property with null values", () => {
     );
 
     expect(colorMap.has(LEGEND_OTHER)).toBe(true);
+  });
+
+  // Regression: density_1d and waterfall pass a sortedLegendKeys array built
+  // from the *data*, so it names every category — including the ones the
+  // ranking collapsed. Reordering by it used to re-add those with an undefined
+  // color, putting them back in the legend as blank rows that backed no points
+  // and did nothing when toggled, and dropping the remainder bucket (which is
+  // not a category, so never appears in that order) from the map entirely —
+  // taking it out of the paint path too.
+  test("drops collapsed categories on reorder, and keeps the remainder", () => {
+    const colorMap = new Map<LegendKey, string>([
+      ["kept", "#111111"],
+      [LEGEND_REMAINDER, REMAINDER_FILL],
+      [LEGEND_OTHER, "#bdbdbd"],
+    ]);
+
+    const reordered = reorderColorMap(colorMap, [
+      "kept",
+      "collapsed",
+      "alsoCollapsed",
+      LEGEND_OTHER,
+    ]);
+
+    expect([...reordered.keys()]).toEqual([
+      "kept",
+      LEGEND_REMAINDER,
+      LEGEND_OTHER,
+    ]);
+    expect(reordered.get(LEGEND_REMAINDER)).toBe(REMAINDER_FILL);
+  });
+});
+
+describe("orderColorKeysByCount", () => {
+  // The reported scenario: colored by transcript, faceted by lineage. Inside
+  // the collapsed-lineage panel one transcript has far more points than the
+  // other, and was burying it.
+  const colorMap = new Map<LegendKey, string>([
+    ["ENST-big", "#111111"],
+    ["ENST-small", "#222222"],
+    [LEGEND_REMAINDER, REMAINDER_FILL],
+  ]);
+
+  // 40 points in the bucket panel: 38 of the big transcript, 2 of the small.
+  // Elsewhere the proportions are reversed, which is the whole point — a global
+  // count would order both panels the same way and get one of them wrong.
+  const colorData: LegendKey[] = [
+    ...new Array(38).fill("ENST-big"),
+    ...new Array(2).fill("ENST-small"),
+    ...new Array(2).fill("ENST-big"),
+    ...new Array(38).fill("ENST-small"),
+  ];
+
+  const facetData: LegendKey[] = [
+    ...new Array(40).fill(LEGEND_REMAINDER),
+    ...new Array(40).fill("Lung"),
+  ];
+
+  const visible = new Array(80).fill(true);
+
+  test("orders by the count within the facet, smallest first", () => {
+    // Callers reverse their trace list, so first here is drawn last — on top.
+    // No remainder-*colored* points in this panel, so that key drops out —
+    // the bucket here is a collapsed lineage, not a collapsed transcript.
+    expect(
+      orderColorKeysByCount(
+        colorMap,
+        colorData,
+        facetData,
+        LEGEND_REMAINDER,
+        visible
+      )
+    ).toEqual(["ENST-small", "ENST-big"]);
+
+    // Same colors, opposite order, because the panel differs. This is what a
+    // global count cannot express.
+    expect(
+      orderColorKeysByCount(colorMap, colorData, facetData, "Lung", visible)
+    ).toEqual(["ENST-big", "ENST-small"]);
+  });
+
+  test("breaks a tie on spread, putting the tight cluster on top", () => {
+    // The case that matters, and the one count cannot touch: coloring by an
+    // expansion member gives every color exactly one point per index entity,
+    // so every group is the same size. Here both transcripts have 20 points in
+    // the panel; one is a tight clump, the other is spread across the axis.
+    const tied = new Map<LegendKey, string>([
+      ["ENST-tight", "#111111"],
+      ["ENST-diffuse", "#222222"],
+    ]);
+
+    const cData: LegendKey[] = [
+      ...new Array(20).fill("ENST-tight"),
+      ...new Array(20).fill("ENST-diffuse"),
+    ];
+
+    const fData: LegendKey[] = new Array(40).fill(LEGEND_REMAINDER);
+    const vis = new Array(40).fill(true);
+
+    const xs = [
+      ...new Array(20).fill(0).map((_, i) => 5 + i * 0.01),
+      ...new Array(20).fill(0).map((_, i) => i * 2),
+    ];
+
+    // First is drawn last, on top — so the clump, which would otherwise vanish
+    // under the spread-out one.
+    expect(
+      orderColorKeysByCount(tied, cData, fData, LEGEND_REMAINDER, vis, [xs])
+    ).toEqual(["ENST-tight", "ENST-diffuse"]);
+
+    // Without positions there is nothing to break the tie with, and the order
+    // is left alone rather than invented.
+    expect(
+      orderColorKeysByCount(tied, cData, fData, LEGEND_REMAINDER, vis)
+    ).toEqual(["ENST-tight", "ENST-diffuse"]);
+  });
+
+  test("count still wins when it differs", () => {
+    const tied = new Map<LegendKey, string>([
+      ["few-but-spread", "#111111"],
+      ["many-but-tight", "#222222"],
+    ]);
+
+    const cData: LegendKey[] = [
+      ...new Array(3).fill("few-but-spread"),
+      ...new Array(40).fill("many-but-tight"),
+    ];
+
+    const fData: LegendKey[] = new Array(43).fill(LEGEND_REMAINDER);
+    const vis = new Array(43).fill(true);
+
+    const xs = [
+      0,
+      50,
+      100,
+      ...new Array(40).fill(0).map((_, i) => 5 + i * 0.01),
+    ];
+
+    // Spread is only a tiebreak. Three points still need protecting from forty
+    // more than a tight clump needs protecting from a scattering.
+    expect(
+      orderColorKeysByCount(tied, cData, fData, LEGEND_REMAINDER, vis, [xs])
+    ).toEqual(["few-but-spread", "many-but-tight"]);
+  });
+
+  test("drops colors with no points in the facet", () => {
+    const absent: LegendKey[] = new Array(80).fill("ENST-big");
+
+    expect(
+      orderColorKeysByCount(
+        colorMap,
+        absent,
+        facetData,
+        LEGEND_REMAINDER,
+        visible
+      )
+    ).toEqual(["ENST-big"]);
+  });
+
+  test("keeps the remainder color at the bottom", () => {
+    const withBucket: LegendKey[] = [
+      ...new Array(39).fill(LEGEND_REMAINDER),
+      "ENST-small",
+      ...new Array(40).fill("ENST-big"),
+    ];
+
+    // Last in the array is drawn first, at the bottom — even though the bucket
+    // is by far the largest group here.
+    const order = orderColorKeysByCount(
+      colorMap,
+      withBucket,
+      facetData,
+      LEGEND_REMAINDER,
+      visible
+    );
+
+    expect(order[order.length - 1]).toBe(LEGEND_REMAINDER);
+  });
+});
+
+describe("collapsed categories resolve to the remainder bucket", () => {
+  // Every consumer that turns a point's category into a legend key has to agree
+  // on which categories still have one. They each used to decide separately,
+  // and each broke differently once categories started being collapsed: blank
+  // legend rows, a bucket toggle that moved nothing, phantom density curves.
+  const shownCategories = {
+    shown: new Set(["kept"]),
+    hasRemainder: true,
+  };
+
+  test("a collapsed category maps to the bucket, a kept one to itself", () => {
+    const toLegendKey = makeLegendKeyResolver(shownCategories);
+
+    expect(toLegendKey("kept")).toBe("kept");
+    expect(toLegendKey("collapsed")).toBe(LEGEND_REMAINDER);
+  });
+
+  test("a null maps to N/A, not to the bucket", () => {
+    // The two grey buckets mean different things — "no value" versus "has a
+    // value, just not one of the ones shown" — and a point must land in the
+    // right one.
+    const toLegendKey = makeLegendKeyResolver(shownCategories);
+
+    expect(toLegendKey(null)).toBe(LEGEND_OTHER);
+  });
+
+  test("computeFacets collapses to a shared panel, ordered before N/A", () => {
+    // The facet identity and the density series resolve the same points, so
+    // they have to agree on which categories survive. When they didn't, the
+    // series put a point in the remainder while the order still listed its
+    // category, and the panel rendered as empty vertical space.
+    const values = [
+      ...new Array(30).fill(0).map((_, i) => `cat${i}`),
+      ...new Array(30).fill("big"),
+      null,
+    ];
+
+    const data = ({
+      dimensions: {
+        x: { values: values.map((_, i) => i % 7) },
+      },
+      filters: {},
+      metadata: {
+        facet_property: {
+          label: "Thing",
+          values,
+          value_type: "categorical",
+        },
+      },
+    } as unknown) as DataExplorerPlotResponse;
+
+    const result = computeFacets(data, "property", "facet");
+
+    expect(result?.facetOrder).toContain(REMAINDER_FACET);
+    expect(result?.facetKeys).toContain(REMAINDER_FACET);
+
+    // Both catch-alls last, collapsed before missing.
+    const order = result!.facetOrder!;
+    expect(order.indexOf(REMAINDER_FACET)).toBe(order.length - 2);
+    expect(order[order.length - 1]).toBe("N/A");
+
+    expect(result?.facetColorKeys?.[REMAINDER_FACET]).toBe(LEGEND_REMAINDER);
+  });
+
+  test("nothing is rerouted when nothing was collapsed", () => {
+    const toLegendKey = makeLegendKeyResolver({
+      shown: new Set(["a"]),
+      hasRemainder: false,
+    });
+
+    // "b" isn't in `shown` here only because the caller's set is partial;
+    // with no remainder there is nowhere to reroute it to, so it stays itself
+    // rather than vanishing into a bucket that isn't on the plot.
+    expect(toLegendKey("b")).toBe("b");
   });
 });
 

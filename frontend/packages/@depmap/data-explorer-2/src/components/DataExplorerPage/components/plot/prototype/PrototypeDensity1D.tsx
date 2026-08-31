@@ -19,11 +19,11 @@ import {
   hexToRgba,
   isEveryValueNull,
   LEGEND_ALL,
-  LEGEND_NEITHER,
-  LEGEND_OTHER,
   LegendKey,
+  orderColorKeysByCount,
   NEUTRAL_FACET_FILL,
   orderContinuousPointsByBin,
+  truncateFacetLabel,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import installFacetSelectionDragLayer, {
@@ -128,11 +128,6 @@ const calcPlotHeight = (plot: HTMLDivElement) => {
   }
 
   return window.innerHeight - plot.offsetTop - 22;
-};
-
-const truncate = (s: string) => {
-  const MAX = 25;
-  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
 };
 
 // HACK: Plotly doesn't allow you to put a violin on top of a scatter plot, so
@@ -452,39 +447,52 @@ function PrototypeDensity1D({
     // plotUtils.ts) to the end. Membership and color assignment are
     // unchanged — this only reorders the traces, which matters once color
     // groups span multiple stacks (facet_by !== color_by).
-    const orderedColorKeys = (() => {
-      if (!colorMap || !colorData) {
-        return [] as LegendKey[];
-      }
-      const counts = new Map<LegendKey, number>();
-      for (let i = 0; i < colorData.length; i += 1) {
-        if (visible[i] === false) {
-          continue;
-        }
-        const k = colorData[i] as LegendKey;
-        counts.set(k, (counts.get(k) ?? 0) + 1);
-      }
-      const isCatchAll = (key: LegendKey) =>
-        key === LEGEND_OTHER || key === LEGEND_NEITHER;
-      const keys = [...colorMap.keys()];
-      const others = keys.filter(isCatchAll);
-      const rest = keys
-        .filter((key) => !isCatchAll(key))
-        .sort((a, b) => (counts.get(a) ?? 0) - (counts.get(b) ?? 0));
-      return [...rest, ...others];
-    })();
+    // When color and facet are the same partition, every track holds exactly
+    // one color and the order within a track is moot. When they diverge, a
+    // track holds several, and the size that decides burial is the size *in
+    // that track* — a color that is rare overall can dominate one track, and a
+    // color that is common overall can be the few points someone is looking
+    // for in another. Facets partition the points, so the per-facet count is
+    // exactly well defined.
+    const orderPerFacet = hasRealFacetBacking && !colorMatchesFacet;
 
-    const colorTraces =
-      colorMap && colorData && !contColorData
-        ? orderedColorKeys
-            .filter((key) => colorMap.get(key))
-            .map((key) =>
-              makeColorTrace(
-                colorMap.get(key),
-                (i) => colorMap.get(key) === colorMap.get(colorData[i])
-              )
-            )
-        : [];
+    const orderedColorKeysFor = (facet: LegendKey | null) =>
+      colorMap && colorData
+        ? orderColorKeysByCount(
+            colorMap,
+            colorData,
+            effectiveFacetData,
+            facet,
+            visible,
+            // Density lays points out along x within a track, so x is where
+            // concentration is visible.
+            [x]
+          )
+        : ([] as LegendKey[]);
+
+    const makeColorTracesFor = (facet: LegendKey | null) =>
+      orderedColorKeysFor(facet)
+        .filter((key) => colorMap.get(key))
+        .map((key) =>
+          makeColorTrace(
+            colorMap.get(key),
+            (i) =>
+              (facet === null || effectiveFacetData[i] === facet) &&
+              colorMap.get(key) === colorMap.get(colorData[i])
+          )
+        );
+
+    const colorTraces = (() => {
+      if (!colorMap || !colorData || contColorData) {
+        return [];
+      }
+
+      // Cross-track order doesn't matter — tracks don't overlap — so the
+      // per-facet runs simply concatenate, each internally ordered.
+      return orderPerFacet
+        ? effectiveFacetKeys.flatMap((facet) => makeColorTracesFor(facet))
+        : makeColorTracesFor(null);
+    })();
 
     // TODO: Add support for palette.divergingScale
     const continuousColorTrace = contColorData
@@ -718,7 +726,7 @@ function PrototypeDensity1D({
           violinTraces.length < 40,
         automargin: true,
         tickvals: violinTraces.map((vt) => vt.y0),
-        ticktext: violinTraces.map((vt) => truncate(vt.name)),
+        ticktext: violinTraces.map((vt) => truncateFacetLabel(vt.name)),
         tickfont: { size: yAxisFontSize },
       },
 

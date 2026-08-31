@@ -1,8 +1,15 @@
 import React, { useContext } from "react";
-import { DataExplorerPlotResponse } from "@depmap/types";
+import {
+  DataExplorerPlotConfig,
+  DataExplorerExpandedPlotResponse,
+  DataExplorerPlotResponse,
+} from "@depmap/types";
 import { SectionStackContext } from "../SectionStack";
 import HelpTip from "../HelpTip";
 import LegendLabel from "./LegendLabel";
+import ChooseCategoriesButton from "./ChooseCategoriesButton";
+import ExpansionMembersControl from "../ConfigurationPanel/ExpansionMembersControl";
+import { resolveColorMode } from "./prototype/plotUtils";
 import type { ContinuousBins, LegendKey } from "./prototype/plotUtils";
 import styles from "../../styles/DataExplorer2.scss";
 
@@ -46,7 +53,7 @@ function LegendLabels({
   const hasColorDimensionLabels = Boolean(data?.dimensions?.[target]);
   const extraTextHeight = hasColorDimensionLabels ? 40 : 0;
   const maxHeight =
-    sectionHeights.Legend - HEIGHT_WITHOUT_LIST - extraTextHeight;
+    (sectionHeights.Legend || 0) - HEIGHT_WITHOUT_LIST - extraTextHeight;
 
   return (
     <div className={styles.LegendLabels} style={{ maxHeight }} data-overflow>
@@ -124,7 +131,10 @@ function SliceDescription({
 }
 
 interface Props {
-  data: DataExplorerPlotResponse | null;
+  // Widened to the expanded response so the member counts below are reachable.
+  // The expanded shape extends the plain one, so every other reader is
+  // unaffected; `"expansions" in data` is what distinguishes them.
+  data: DataExplorerPlotResponse | DataExplorerExpandedPlotResponse | null;
   colorMap: Map<LegendKey, string>;
   sortedLegendKeys?: LegendKey[];
   continuousBins: ContinuousBins;
@@ -140,6 +150,12 @@ interface Props {
   // color_by defers to facet_by, so "color" is not a safe universal
   // fallback here.
   target: "color" | "facet";
+  plotConfig?: DataExplorerPlotConfig | null;
+  onChangeCategories?: (
+    target: "color" | "facet",
+    categories: string[] | null
+  ) => void;
+  onChangeExpansionMembers?: (members: string[] | null) => void;
 }
 
 function PlotLegend({
@@ -152,7 +168,14 @@ function PlotLegend({
   handleClickShowAll,
   handleClickHideAll,
   target,
+  plotConfig = null,
+  onChangeCategories = undefined,
+  onChangeExpansionMembers = undefined,
 }: Props) {
+  // Only an expanded response carries these; a plain one leaves them undefined,
+  // which the control reads as "no counts to report".
+  const expansion = data && "expansions" in data ? data.expansions[0] : null;
+
   return (
     <div>
       <div className={styles.plotInstructions}>
@@ -171,6 +194,27 @@ function PlotLegend({
         handleClickHideAll={handleClickHideAll}
         target={target}
       />
+      {onChangeExpansionMembers &&
+      plotConfig &&
+      resolveColorMode(plotConfig).mode === "expansion" ? (
+        // The legend lists the expansion's members whenever color resolves to it
+        // — including the common case where facet_by is also the expansion and no
+        // Facets panel renders at all.
+        <ExpansionMembersControl
+          plot={plotConfig}
+          onChangeMembers={onChangeExpansionMembers}
+          shownCount={expansion?.shown_count}
+          availableCount={expansion?.available_count}
+        />
+      ) : null}
+      {onChangeCategories && (
+        <ChooseCategoriesButton
+          data={data}
+          plotConfig={plotConfig}
+          target={target}
+          onChangeCategories={onChangeCategories}
+        />
+      )}
     </div>
   );
 }

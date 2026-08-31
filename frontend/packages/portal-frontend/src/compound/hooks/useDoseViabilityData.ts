@@ -129,13 +129,11 @@ export default function useDoseViabilityData(
       setIsLoading(true);
       setError(false);
       try {
-        const bbapi = breadboxAPI;
-
         // Get the compound dose viability features by fetching the compound dose metadata. Will
         // be like {CompoundID: "viability_feature_id": "compound_id"}
         const doseCompoundMetadata = await fetchMetadata<{
           CompoundID: Record<string, string>;
-        }>("compound_dose", null, ["CompoundID"], bbapi);
+        }>("compound_dose", null, ["CompoundID"]);
 
         // All of the viability features relevant to this particular compound will be the list of keys
         // with a value equal to this compoundId.
@@ -156,7 +154,7 @@ export default function useDoseViabilityData(
           doseCurvesResponse,
         ] = await Promise.all([
           // For getting the values for the dose viability table dose columns and the heatmap.
-          cached(bbapi).getMatrixDatasetData(
+          cached(breadboxAPI, { persist: true }).getMatrixDatasetData(
             dataset.viability_dataset_given_id,
             {
               features: viabilityFeatureIds,
@@ -166,19 +164,21 @@ export default function useDoseViabilityData(
           fetchMetadata<{
             Dose: Record<string, number>;
             DoseUnit: Record<string, string>;
-          }>("compound_dose", viabilityFeatureIds, ["Dose", "DoseUnit"], bbapi),
+          }>("compound_dose", viabilityFeatureIds, ["Dose", "DoseUnit"]),
           // For getting model id --> cell line name
           fetchMetadata<{ CellLineName: Record<string, string> }>(
             "depmap_model",
             null,
-            ["CellLineName"],
-            bbapi
+            ["CellLineName"]
           ),
           // For getting the AUC column of the dose viability table.
-          cached(bbapi).getMatrixDatasetData(dataset.auc_dataset_given_id, {
-            features: [compoundId],
-            feature_identifier: "id",
-          }),
+          cached(breadboxAPI, { persist: true }).getMatrixDatasetData(
+            dataset.auc_dataset_given_id,
+            {
+              features: [compoundId],
+              feature_identifier: "id",
+            }
+          ),
           // For getting dose curves plot data, including replicates. Curve_params are also
           // added to the dose viability table below.
           fetchCompoundDoseCurveData(

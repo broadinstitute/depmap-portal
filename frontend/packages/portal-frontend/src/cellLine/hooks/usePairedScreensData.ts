@@ -44,10 +44,10 @@ export interface PairedScreensState {
 // ---------------------------------------------------------------------------
 // Hook
 // ---------------------------------------------------------------------------
-const bb = cached(breadboxAPI);
-
 const getAnchorScreenTable = async () => {
-  const data = await bb.getTabularDatasetData("PairedAnchorScreenTable", {
+  const data = await cached(breadboxAPI, {
+    persist: true,
+  }).getTabularDatasetData("PairedAnchorScreenTable", {
     columns: ["ModelID"],
   });
 

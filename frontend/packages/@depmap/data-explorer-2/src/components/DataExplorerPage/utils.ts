@@ -357,7 +357,9 @@ export function isAxisComplete(
       // stricter than these validators need — they already handle missing
       // fields gracefully at every level.
       return "slice_id" in property
-        ? !isPartialSliceId((property as { slice_id?: string }).slice_id ?? null)
+        ? !isPartialSliceId(
+            (property as { slice_id?: string }).slice_id ?? null
+          )
         : isValidSliceQuery(property as Partial<SliceQuery>);
     }
     case "custom": {
@@ -409,7 +411,20 @@ function axesAlreadyMatch(
   }
 }
 
-export function canSwapColorAndFacet(plot: SwappablePlot): boolean {
+export type ColorFacetSwapMode = "swap" | "promote" | "demote";
+
+// Which of the three exchanges described above the current config supports, or
+// null when it supports none.
+//
+// Split out from canSwapColorAndFacet — now just "is there one" — because the
+// button has to NAME the action, and only the two-way case is a swap in any
+// sense a reader would recognize. Promote leaves color deferring to the facet
+// it just created, so both end up showing the same partition; demote leaves
+// color holding what facet had and facet unset. Deriving the label and the
+// visibility from one function is what keeps the two from drifting apart.
+export function getColorFacetSwapMode(
+  plot: SwappablePlot
+): ColorFacetSwapMode | null {
   const { color_by, facet_by } = plot;
 
   const colorIsReal = SWAPPABLE_AXIS_VALUES.has(color_by as string);
@@ -421,12 +436,12 @@ export function canSwapColorAndFacet(plot: SwappablePlot): boolean {
   // Standard case: both axes already hold one of the five real, shared
   // values, both complete, and not already matching — full two-way swap.
   if (colorComplete && facetComplete) {
-    return !axesAlreadyMatch(color_by, plot);
+    return axesAlreadyMatch(color_by, plot) ? null : "swap";
   }
 
   // Promote: facet_by is unset and color_by holds a real, complete value.
   if (!facet_by && colorComplete) {
-    return true;
+    return "promote";
   }
 
   // Demote: facet_by holds a real, complete value, and color_by is either
@@ -442,10 +457,14 @@ export function canSwapColorAndFacet(plot: SwappablePlot): boolean {
     facetComplete &&
     (color_by === "facet" || !color_by || (colorIsReal && !colorComplete))
   ) {
-    return true;
+    return "demote";
   }
 
-  return false;
+  return null;
+}
+
+export function canSwapColorAndFacet(plot: SwappablePlot): boolean {
+  return getColorFacetSwapMode(plot) !== null;
 }
 
 function compress(obj: object): string {
@@ -633,9 +652,9 @@ export function normalizePlot(plot: DataExplorerPlotConfig) {
     if (
       facet_by &&
       facet_property &&
-      (("slice_id" in facet_property
+      ("slice_id" in facet_property
         ? !isPartialSliceId(facet_property.slice_id)
-        : isValidSliceQuery(facet_property)))
+        : isValidSliceQuery(facet_property))
     ) {
       normalized.facet_by = facet_by;
       normalized.metadata = {

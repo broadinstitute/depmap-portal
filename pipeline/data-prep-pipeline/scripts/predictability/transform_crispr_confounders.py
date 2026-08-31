@@ -49,6 +49,8 @@ def collapse_confounders_to_models(qc: pd.DataFrame) -> pd.DataFrame:
         "LibraryKY",
         "ScreenType2DS",
         "ScreenType3DO",
+        "LibraryTKOv3",
+        "LibraryBrunello",
     ]
 
     # LibraryHumagneCD and ScreenType3D0 are not included in public 22q4

@@ -2,7 +2,7 @@ import { breadboxAPI, cached } from "@depmap/api";
 
 export async function fetchDimensionIdentifiers(
   dimensionTypeName: string,
-  dataType?: string
+  dataType?: string | null
 ) {
   const dimensionTypes = await cached(breadboxAPI).getDimensionTypes();
   const dimType = dimensionTypes.find((t) => t.name === dimensionTypeName);
@@ -12,7 +12,7 @@ export async function fetchDimensionIdentifiers(
   }
 
   return cached(breadboxAPI).getDimensionTypeIdentifiers(dimensionTypeName, {
-    data_type: dataType,
+    data_type: dataType || undefined,
   });
 }
 
@@ -30,8 +30,12 @@ export async function fetchDatasetIdentifiers(
   const isFeature = dimType.axis === "feature";
 
   const result = isFeature
-    ? await cached(breadboxAPI).getDatasetFeatures(dataset_id)
-    : await cached(breadboxAPI).getDatasetSamples(dataset_id);
+    ? await cached(breadboxAPI, { persist: true }).getDatasetFeatures(
+        dataset_id
+      )
+    : await cached(breadboxAPI, { persist: true }).getDatasetSamples(
+        dataset_id
+      );
 
   if ("detail" in result) {
     throw new Error(JSON.stringify(result.detail));
@@ -45,7 +49,9 @@ export async function fetchDatasetIdentifiers(
  * Used by DatasetSpecificSliceSelect where the dataset's features are generic.
  */
 export async function fetchDatasetFeatures(dataset_id: string) {
-  const result = await cached(breadboxAPI).getDatasetFeatures(dataset_id);
+  const result = await cached(breadboxAPI, {
+    persist: true,
+  }).getDatasetFeatures(dataset_id);
 
   if ("detail" in result) {
     throw new Error(JSON.stringify(result.detail));
@@ -76,7 +82,12 @@ export async function fetchDatasetName(dataset_id: string | null) {
   });
 
   if (!dataset) {
-    throw new Error(`Unknown dataset "${dataset_id}".`);
+    const privateDataset = await cached(breadboxAPI).getDataset(dataset_id);
+    if (!privateDataset) {
+      throw new Error(`Unknown dataset "${dataset_id}".`);
+    }
+
+    return privateDataset.name;
   }
 
   return dataset.name;

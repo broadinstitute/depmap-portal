@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Alert } from "react-bootstrap";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import { DataExplorerContextV2 } from "@depmap/types";
 
 interface Props {
@@ -23,10 +23,8 @@ function OverlappingIdentifiersWarning({
     }
 
     (async () => {
-      const inGroupIdentifiers = await cached(breadboxAPI).evaluateContext(
-        inGroupContext
-      );
-      const outGroupIdentifiers = await cached(breadboxAPI).evaluateContext(
+      const inGroupIdentifiers = await evaluateContextPersisted(inGroupContext);
+      const outGroupIdentifiers = await evaluateContextPersisted(
         outGroupContext
       );
 

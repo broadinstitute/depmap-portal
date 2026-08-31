@@ -21,6 +21,9 @@ import {
   LegendKey,
   nullifyUnplottableValues,
   resolveColorMode,
+  chosenCategoriesFor,
+  collapseCategoricalSeries,
+  REMAINDER_FACET,
   sortLegendKeysWaterfall,
   useLegendState,
 } from "./plotUtils";
@@ -113,12 +116,16 @@ export default function useWaterfallPlotData(
     plotConfig.facet_by,
   ]);
 
+  // Hoisted so the memos below depend on these values rather than on the
+  // whole config, which would re-run them for every unrelated edit.
+  const colorChosen = chosenCategoriesFor(plotConfig, colorMode.target);
+
   // Color-side sorted keys: drive legend order and (via getColorMap) the
   // colorMap iteration order, which the renderer uses for color trace
   // construction. Mode-aware via the resolved color mode so "color by
   // expansion" (or "color by facet, itself expansion") picks up expansion
   // labels.
-  const sortedLegendKeys = useMemo(() => {
+  const colorCollapse = useMemo(() => {
     const catData = findCategoricalSlice(
       data,
       colorMode.mode,
@@ -126,13 +133,28 @@ export default function useWaterfallPlotData(
     );
 
     if (!catData || !data?.dimensions?.y) {
-      return undefined;
+      return null;
     }
 
-    return sortLegendKeysWaterfall(data, catData, plotConfig.sort_by) as
-      | LegendKey[]
-      | undefined;
-  }, [data, colorMode, plotConfig.sort_by]);
+    // Through the shared collapse, like every other categorical path. The key
+    // order is what PlotLegend lists directly, so leaving it uncollapsed left
+    // the waterfall legend offering a row per category the plot had already
+    // merged away, and no row for the bucket they were merged into.
+    //
+    // The collapsed *series* is kept too, for the clustering below. The paint
+    // path still matches points on their own raw categories.
+    return collapseCategoricalSeries(
+      catData.values as (string | null)[],
+      data.dimensions,
+      data.filters,
+      sortLegendKeysWaterfall(data, catData, plotConfig.sort_by) as
+        | LegendKey[]
+        | undefined,
+      colorChosen
+    );
+  }, [data, colorMode, plotConfig.sort_by, colorChosen]);
+
+  const sortedLegendKeys = colorCollapse?.sortedKeys;
 
   // Facet's OWN continuous bins, computed independently of color's — facet
   // and color can each independently resolve to a continuous property, and
@@ -181,6 +203,10 @@ export default function useWaterfallPlotData(
   // facet_by is a fully independent axis from color_by — it does NOT fall
   // back to color_by when unset. An unset facet_by means no clustering at
   // all (formatDataForWaterfall's plain rank-sort), not "cluster by color".
+  // Hoisted so the memo can depend on the value rather than on the whole
+  // config, which would re-run it for every unrelated edit.
+  const facetChosen = chosenCategoriesFor(plotConfig, "facet");
+
   const facetSide = useMemo(() => {
     if (!plotConfig.facet_by || !data?.dimensions?.y) {
       return { facetData: null, sortedFacetKeys: undefined };
@@ -188,13 +214,23 @@ export default function useWaterfallPlotData(
 
     const catData = findCategoricalSlice(data, plotConfig.facet_by, "facet");
     if (catData) {
+      // Through the shared collapse, so the x-clusters and the Facets panel
+      // agree with each other and with the color side about which categories
+      // are still their own thing.
+      const collapsed = collapseCategoricalSeries<string>(
+        catData.values as (string | null)[],
+        data.dimensions,
+        data.filters,
+        sortLegendKeysWaterfall(data, catData, plotConfig.sort_by) as
+          | LegendKey[]
+          | undefined,
+        facetChosen,
+        REMAINDER_FACET
+      );
+
       return {
-        facetData: catData.values,
-        sortedFacetKeys: sortLegendKeysWaterfall(
-          data,
-          catData,
-          plotConfig.sort_by
-        ) as LegendKey[] | undefined,
+        facetData: collapsed.series,
+        sortedFacetKeys: collapsed.sortedKeys,
       };
     }
 
@@ -235,8 +271,23 @@ export default function useWaterfallPlotData(
     }
 
     return { facetData: null, sortedFacetKeys: undefined };
-  }, [data, plotConfig.facet_by, plotConfig.sort_by, facetContinuousBins]);
+  }, [
+    data,
+    plotConfig.facet_by,
+    plotConfig.sort_by,
+    facetChosen,
+    facetContinuousBins,
+  ]);
 
+  // Only facet_by clusters. Color is purely visual here, as it is on every
+  // other plot type — an unfaceted waterfall is one ranking of every point,
+  // colored.
+  //
+  // This briefly clustered by the collapsed color partition too, to gather a
+  // scattered remainder back together. That was treating a symptom: the
+  // scattering came from fetchWaterfall sorting by (category, value), which
+  // grouped by color in the first place. With that sort gone there is nothing
+  // to gather.
   const formattedData = useMemo(
     () =>
       formatDataForWaterfall(
@@ -389,7 +440,8 @@ export default function useWaterfallPlotData(
       continuousBins,
       undefined,
       colorMode.mode,
-      colorMode.target
+      colorMode.target,
+      colorChosen
     );
 
     const facetVisibility = calcVisibility(
@@ -398,7 +450,8 @@ export default function useWaterfallPlotData(
       facetContinuousBins,
       undefined,
       plotConfig.facet_by,
-      "facet"
+      "facet",
+      facetChosen
     );
 
     if (!colorVisibility || !facetVisibility) {
@@ -416,6 +469,8 @@ export default function useWaterfallPlotData(
     hiddenFacetValues,
     facetContinuousBins,
     plotConfig.facet_by,
+    colorChosen,
+    facetChosen,
   ]);
 
   // Build the per-facet x-rank regions that enforceSingleFacetSelection clamps

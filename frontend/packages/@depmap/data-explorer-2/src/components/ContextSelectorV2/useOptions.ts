@@ -5,6 +5,10 @@ import {
   isNegatedContext,
   loadContextsFromLocalStorage,
 } from "../../utils/context";
+import {
+  getExpansionRoutes,
+  getRouteHeading,
+} from "../../utils/expansionRoutes";
 import useContextHash from "./useContextHash";
 
 const EMPTY_OBJECT = {};
@@ -13,6 +17,13 @@ const compareContextEntries = (
   a: [string, { name: string }],
   b: [string, { name: string }]
 ) => (a[1].name.toLowerCase() < b[1].name.toLowerCase() ? -1 : 1);
+
+// Sentinel prefix for the "children of a parent entity" quick-picks. Parallel
+// to "all"/"new"/"edit"/"manage": the value is not a context hash, and
+// useChangeHandler switches on it rather than trying to load anything. The
+// suffix names the route's parent type, since a child type may have more than
+// one (see getExpansionRoutes).
+export const PARENT_PICK_PREFIX = "parent_pick_";
 
 export default function useOptions(
   value: DataExplorerContext | DataExplorerContextV2 | null,
@@ -83,9 +94,21 @@ export default function useOptions(
     return null;
   }, [value, hashOfSelectedValue, isKnownContext]);
 
+  // "Transcripts of a gene…" and friends. Offered ahead of "New" because for
+  // the types that have a route it is almost always what the user wants, and
+  // it saves them hand-building a single-equality context in the builder.
+  const parentPickOptions = useMemo(() => {
+    return getExpansionRoutes(dimension_type).map((route) => ({
+      label: `${getRouteHeading(dimension_type, route)}…`,
+      value: `${PARENT_PICK_PREFIX}${route.parentType}`,
+    }));
+  }, [dimension_type]);
+
   return useMemo(() => {
     const specialOptions = [
       includeAllInOptions ? { label: "All", value: "all" } : null,
+
+      ...parentPickOptions,
 
       { label: "New", value: "new" },
 
@@ -114,6 +137,7 @@ export default function useOptions(
     linkToContextManager,
     loadedContexts,
     outGroupOptions,
+    parentPickOptions,
     shouldShowSaveButton,
     unsavedOptions,
     userContextOptions,

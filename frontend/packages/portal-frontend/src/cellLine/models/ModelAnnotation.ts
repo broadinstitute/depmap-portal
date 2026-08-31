@@ -54,7 +54,6 @@ export interface ModelAnnotation {
   PatientTumorGrade: string;
   PatientTreatmentType: string;
   EngineeredModelDetails: string;
-  ModelAvailableInDbgap: string;
   PatientTreatmentDetails: string;
   ModelType: string;
   ModelSubtypeFeatures: string;

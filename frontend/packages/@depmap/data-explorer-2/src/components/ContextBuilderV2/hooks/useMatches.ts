@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { breadboxAPI, cached } from "@depmap/api";
+import { evaluateContextPersisted } from "@depmap/api";
 import {
   DataExplorerContextExpression,
   DataExplorerContextV2,
@@ -64,7 +64,7 @@ function useMatches(expr: Expr) {
 
     (async () => {
       try {
-        const result = await cached(breadboxAPI).evaluateContext(
+        const result = await evaluateContextPersisted(
           simplifyVarNames({
             dimension_type,
             expr: flattenExpr(expr) as DataExplorerContextExpression,
