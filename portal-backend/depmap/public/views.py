@@ -168,7 +168,7 @@ def resources_reloads():
             client, current_app.config.get("FORUM_RESOURCES_CATEGORY")
         )
     except requests.exceptions.HTTPError as err:
-        if err.response.status_code == 429:
+        if err.response is not None and err.response.status_code == 429:
             abort(429)
         else:
             raise err
@@ -199,7 +199,7 @@ def resources():
         )
 
     except requests.exceptions.HTTPError as err:
-        if err.response.status_code == 429:
+        if err.response is not None and err.response.status_code == 429:
             abort(429)
         else:
             raise err
