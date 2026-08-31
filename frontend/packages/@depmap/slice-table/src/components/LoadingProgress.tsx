@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import cx from "classnames";
 import { ProgressBar } from "react-bootstrap";
 import styles from "../styles/SliceTable.scss";
 
@@ -32,7 +33,25 @@ function LoadingProgress({ loaded, total }: Props) {
 
   return (
     <div className={styles.loadingProgress}>
+      {/* `srOnly`, not a visible `label`: ProgressBar renders its label inside
+          `.progress-bar`, whose width tracks the percentage, so the text gets
+          clipped whenever the bar is narrow. The visible copies are below. */}
       <ProgressBar active striped now={percent} label={text} srOnly />
+
+      {/* Two superimposed copies of the label: a dark one for the grey track,
+          and a white one clipped to the filled width for the blue bar. Blend
+          modes can't replace this — the bar's mid-tone blue inverts to a tan
+          at ~1.5:1 contrast. aria-hidden since `srOnly` above already
+          announces the string. */}
+      <div aria-hidden="true">
+        <span className={styles.progressLabel}>{text}</span>
+        <span
+          className={cx(styles.progressLabel, styles.progressLabelOnBar)}
+          style={{ clipPath: `inset(0 ${100 - percent}% 0 0)` }}
+        >
+          {text}
+        </span>
+      </div>
     </div>
   );
 }
