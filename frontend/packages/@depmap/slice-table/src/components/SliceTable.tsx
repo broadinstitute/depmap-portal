@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import cx from "classnames";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
@@ -38,10 +44,16 @@ interface Props {
     initialRowSelection?: RowSelectionState;
   };
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
-  // Called when the table fails to load, in addition to (not instead of) the
-  // error the table renders itself. For callers that persist their column
-  // choice: a set that fails to load will keep failing to load, so a plain
-  // retry never recovers unless something throws the persisted set away.
+  // Called when the table fails to load outright — it couldn't even build its
+  // index — in addition to (not instead of) the error the table renders itself.
+  // A single column failing to load doesn't come through here; that degrades to
+  // a stub column and leaves the rest of the table usable.
+  //
+  // For callers that persist their column choice: a set that fails to load will
+  // keep failing to load, so this is the hook for throwing the persisted set
+  // away. The "Try again" button rendered alongside the error re-reads
+  // `getInitialState` for exactly that reason, so whatever this callback
+  // discards is gone by the time the retry starts.
   onLoadError?: (error: string) => void;
   // Pass a predicate to make only some rows selectable — the checkbox renders
   // disabled for the rest, and "select all" skips them.
@@ -162,6 +174,7 @@ function SliceTable({
   sliceTableRef = undefined,
 }: Props) {
   const [revision, setRevision] = useState(1);
+  const [retryToken, setRetryToken] = useState(0);
 
   const { initialSlices, viewOnlySlices, initialRowSelection } = useMemo(() => {
     return {
@@ -229,7 +242,19 @@ function SliceTable({
     tableRef,
     implicitFilter,
     hiddenDatasets,
+    retryToken,
   });
+
+  // Two counters bumped together, not one. The revision re-reads
+  // `getInitialState`, which is what gives `onLoadError` a chance to have
+  // mattered — a caller that forgot its remembered columns retries with the
+  // smaller set. The token is what guarantees a refetch at all: when the caller
+  // hands back the identical slices (a stable array, or nothing persisted to
+  // forget), the revision alone changes nothing useData can see.
+  const handleClickRetry = useCallback(() => {
+    setRevision((r) => r + 1);
+    setRetryToken((t) => t + 1);
+  }, []);
 
   const combinedLoading = loading || externalLoading;
 
@@ -319,15 +344,29 @@ function SliceTable({
             )}
           </div>
         )}
-        {error && (
+        {error && !combinedLoading && (
           <div className={styles.errorContainer}>
-            <p>⚠️ Sorry, there was an error loading the table.</p>
+            <div>
+              <p>⚠️ Sorry, there was an error loading the table.</p>
+              <button
+                type="button"
+                className={cx("btn", "btn-default", styles.retryButton)}
+                onClick={handleClickRetry}
+              >
+                <span className="glyphicon glyphicon-refresh" /> Try again
+              </button>
+            </div>
             <details>{error}</details>
           </div>
         )}
         <ReactTable
           tableRef={tableRef}
-          className={combinedLoading ? styles.hidden : ""}
+          // Hidden rather than unmounted so `tableRef` stays live. An error here
+          // means the index itself couldn't be built, so the table has no rows
+          // to show and no prospect of any — leaving it visible put "There are
+          // no rows to display" under the error message, which reads as a second
+          // unrelated thing having gone wrong.
+          className={combinedLoading || error ? styles.hidden : ""}
           height="100%"
           data={filteredData}
           columns={columns}

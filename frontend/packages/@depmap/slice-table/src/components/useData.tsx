@@ -30,6 +30,12 @@ interface Parameters {
   getColumnDisplayOptions?: (
     sliceQuery: SliceQuery
   ) => ColumnDisplayOptions | null;
+  // Bumped by SliceTable's "Try again" button. It's a dependency of the fetch
+  // effect and nothing else, which is what makes a retry refetch even when the
+  // request is identical to the one that just failed — the common case, since a
+  // caller whose slices are a stable array (an imported JSON list, say) gives
+  // this hook nothing else that changes.
+  retryToken?: number;
 }
 
 // Types for better code clarity
@@ -691,6 +697,7 @@ export default function useAlignedData({
   slices,
   viewOnlySlices = undefined,
   getColumnDisplayOptions = undefined,
+  retryToken = 0,
 }: Parameters): AlignedData {
   const [state, setState] = useState<AlignedData>({
     columns: [],
@@ -1034,7 +1041,15 @@ export default function useAlignedData({
     return () => {
       isCancelled = true;
     };
-  }, [getColumnDisplayOptions, index_type_name, slices, viewOnlySlices]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    getColumnDisplayOptions,
+    index_type_name,
+    slices,
+    viewOnlySlices,
+    // Not read by `loadData` — see `retryToken`'s comment above.
+    retryToken,
+  ]);
 
   return {
     columns: state.columns,
