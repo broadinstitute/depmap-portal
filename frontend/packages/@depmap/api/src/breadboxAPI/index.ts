@@ -1,3 +1,4 @@
+import * as cms from "./resources/cms";
 import * as compute from "./resources/compute";
 import * as data_types from "./resources/data_types";
 import * as dataset_v2 from "./resources/dataset_v2";
@@ -13,6 +14,7 @@ import * as uploads from "./resources/uploads";
 import * as user from "./resources/user";
 
 export const breadboxAPI = {
+  ...cms,
   ...compute,
   ...data_types,
   ...dataset_v2,
