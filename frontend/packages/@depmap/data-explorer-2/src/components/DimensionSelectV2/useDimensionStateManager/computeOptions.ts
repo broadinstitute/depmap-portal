@@ -97,12 +97,19 @@ async function fetchContextCoverage(dimension: State["dimension"]) {
     // caller can see, so the engine persists it only for callers whose whole
     // catalog is public (keyed by a fingerprint of the listing) and keeps it
     // in-memory-only for anyone who can see a private dataset. See ADR 0008.
-    return await cached(breadboxAPI, {
+    const coverage = await cached(breadboxAPI, {
       persist: { wholeCatalog: true },
     }).getContextDatasetCoverage(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       dimension.context as any
     );
+
+    // A zero total means either the context resolved to nothing or the request
+    // failed — getContextDatasetCoverage answers a failure with an empty result
+    // rather than throwing, so the catch below never sees one. Both cases mean
+    // the same thing here, and it isn't "every dataset covers none of it": that
+    // reading disables every data version and strands the user.
+    return coverage.total > 0 ? coverage : null;
   } catch (e) {
     window.console.warn("Could not determine dataset coverage", e);
     return null;
@@ -342,29 +349,72 @@ async function computeSliceTypeOptions(
   });
 }
 
-// Which data version gets offered first: the one with the most of the selected
-// context in it, and only then the one `priority` prefers.
+// The fewest entities a data version must hold before it counts as able to
+// answer the question at all. Below this, `priority` doesn't get a say.
 //
-// `priority` orders datasets that can all answer the question. It was never
-// meant to choose between one that holds the data and one that holds none of
-// it, and on sparse data it constantly did — which is how "leave this on
-// default and we'll find a match" came to resolve to datasets containing not a
-// single one of the entities. A low-priority dataset that has the entities now
-// wins over the canonical one that doesn't.
-//
-// With no coverage to go on every dataset scores zero, so this collapses to the
-// priority ordering it replaced.
-export function compareByCoverageThenPriority<
-  T extends { priority?: number | null }
->(coverageOf: (dataset: T) => number) {
-  return (a: T, b: T) => {
-    const byCoverage = coverageOf(b) - coverageOf(a);
+// 0 is useless and 1 nearly so — aggregation and faceting both presuppose a
+// collection. 2 is where those operations become defined but degenerate (a
+// correlation over two points is always exactly ±1), so 3 is the first count
+// that yields a non-degenerate answer.
+const MIN_USEFUL_COVERAGE = 3;
 
-    if (byCoverage !== 0) {
-      return byCoverage;
+// Which data version gets offered first. `priority` decides among the versions
+// that can actually answer the question; coverage only decides which of the
+// versions that can't is least bad.
+//
+// This is a deliberate step back from ranking purely by coverage, which let any
+// coverage difference at all — 380 entities vs. 379 — override the curated
+// `priority` order, and drew complaints that priority was being ignored. It is
+// also a step forward from ranking purely by `priority`, which on sparse data
+// resolved the default to versions containing not a single one of the entities.
+//
+// The floor is clamped to the size of the context: a context of two entities
+// can never clear a floor of three, and leaving it permanently below the floor
+// would quietly restore coverage-first ordering for the single-entity and
+// small-context cases that are the most common of all.
+//
+// With no context to measure against, `total` is null, the floor is zero, every
+// version clears it, and this collapses to the priority ordering.
+export function compareByPriorityAboveCoverageFloor<
+  T extends { priority?: number | null }
+>(coverageOf: (dataset: T) => number, total: number | null) {
+  const floor = total === null ? 0 : Math.min(MIN_USEFUL_COVERAGE, total);
+
+  return (a: T, b: T) => {
+    const aCoverage = coverageOf(a);
+    const bCoverage = coverageOf(b);
+    const aClearsFloor = aCoverage >= floor;
+    const bClearsFloor = bCoverage >= floor;
+
+    if (aClearsFloor !== bClearsFloor) {
+      return aClearsFloor ? -1 : 1;
     }
 
-    return (a.priority ?? -Infinity) - (b.priority ?? -Infinity);
+    // Only below the floor does coverage outrank priority: nothing here can
+    // really answer the question, so offer whichever comes closest.
+    if (!aClearsFloor && bCoverage !== aCoverage) {
+      return bCoverage - aCoverage;
+    }
+
+    // Unprioritized last: `1` is the highest priority, so a missing one is an
+    // absence of curation rather than the strongest possible claim. This is
+    // also the convention everywhere else — the compound page, the gene page,
+    // and `sortByNumberOrNull` in @depmap/utils all sink nulls.
+    //
+    // Compared rather than subtracted because subtracting two sentinels is
+    // NaN, which the sort silently reads as "equal".
+    const aPriority = a.priority ?? Infinity;
+    const bPriority = b.priority ?? Infinity;
+
+    if (aPriority !== bPriority) {
+      return aPriority < bPriority ? -1 : 1;
+    }
+
+    // Coverage settles what priority can't. This is what makes a list where
+    // nothing is prioritized rank by coverage alone: every pair ties above, so
+    // this line decides all of them. Without it such a list would keep whatever
+    // order the dataset request happened to return.
+    return bCoverage - aCoverage;
   };
 }
 
@@ -406,7 +456,9 @@ async function computeDataVersionOptions(
         d.value_type as typeof valueTypes extends Set<infer U> ? U : never
       )
     )
-    .sort(compareByCoverageThenPriority(coverageOf))
+    .sort(
+      compareByPriorityAboveCoverageFloor(coverageOf, coverage?.total ?? null)
+    )
     .map((dataset, index) => {
       rank[dataset.given_id || dataset.id] = index;
 
