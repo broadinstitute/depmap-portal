@@ -379,6 +379,12 @@ export default function useScatterPlotData(
       ];
     }
 
+    // Whether these group labels came from the custom-filter modes ("custom",
+    // "raw_slice", "aggregated_slice")
+    const isCustomFilterColor = Boolean(
+      data?.filters?.color1 || data?.filters?.color2
+    );
+
     return linreg_by_group.map((linreg) => {
       // HACK: `linreg.group_label` is always a string or null but, in order to
       // highlight some special cases, we temporarily set `label` a LegendKey
@@ -417,6 +423,7 @@ export default function useScatterPlotData(
         hiddenLegendValues.has(label);
 
       if (
+        isCustomFilterColor &&
         (label === LEGEND_ALL ||
           label === LEGEND_OTHER ||
           label === LEGEND_NEITHER) &&
@@ -425,10 +432,6 @@ export default function useScatterPlotData(
           hiddenLegendValues.has(LEGEND_ALL))
       ) {
         hidden = true;
-      }
-
-      if (data?.dimensions?.color && plotConfig.show_regression_line) {
-        hidden = false;
       }
 
       if (((linreg.slope as unknown) as string) === "") {

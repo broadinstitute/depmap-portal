@@ -157,9 +157,9 @@ async function computeDataTypeOptions(
     compareCaseInsensitive
   );
 
-  const sliceAxis =
-    dimensionTypes.find((dt) => dt.name === dimension.slice_type)?.axis ||
-    "sample";
+  const sliceAxis = dimensionTypes.find(
+    (dt) => dt.name === dimension.slice_type
+  )?.axis;
 
   let sliceDisplayName =
     dimensionTypes.find((dt) => dt.name === dimension.slice_type)
@@ -213,12 +213,14 @@ async function computeDataTypeOptions(
     if (!isCompatibleWithSliceType) {
       isDisabled = true;
 
-      disabledReason = [
-        "The",
-        `${sliceAxis} type`,
-        `“${sliceDisplayName}”`,
-        "is incompatible with this data type",
-      ].join(" ");
+      disabledReason = sliceAxis
+        ? [
+            "The",
+            `${sliceAxis} type`,
+            `“${sliceDisplayName}”`,
+            "is incompatible with this data type",
+          ].join(" ")
+        : "";
     } else if (
       dimension.slice_type !== null &&
       contextCompatibleDataTypes &&

@@ -6,6 +6,7 @@ import {
 import {
   buildExtendedMetadata,
   fetchCorrelation,
+  fetchLinearRegression,
   fetchPlotDimensions,
 } from "../breadboxMethods";
 
@@ -636,10 +637,16 @@ describe("fetchCorrelation", () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (ctx: any) => {
         if (ctx === distinguish1Context) {
-          return Promise.resolve({ ids: ["S1", "S2", "S3", "S4"], labels: ["S1", "S2", "S3", "S4"] });
+          return Promise.resolve({
+            ids: ["S1", "S2", "S3", "S4"],
+            labels: ["S1", "S2", "S3", "S4"],
+          });
         }
         if (ctx === distinguish2Context) {
-          return Promise.resolve({ ids: ["T1", "T2", "T3", "T4"], labels: ["T1", "T2", "T3", "T4"] });
+          return Promise.resolve({
+            ids: ["T1", "T2", "T3", "T4"],
+            labels: ["T1", "T2", "T3", "T4"],
+          });
         }
         // Gene context
         return Promise.resolve({
@@ -647,7 +654,7 @@ describe("fetchCorrelation", () => {
           labels: correlationGeneIdentifiers.map((g) => g.label),
         });
       }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ) as any;
 
     breadboxAPI.getMatrixDatasetData = jest
@@ -662,25 +669,31 @@ describe("fetchCorrelation", () => {
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return Promise.resolve(distinguish2MatrixResponse as any);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
       }) as any;
 
     const response = await fetchCorrelation(
       "gene",
       { x: xDimension },
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { distinguish1: distinguish1Context as any, distinguish2: distinguish2Context as any },
+      {
+        distinguish1: distinguish1Context as any,
+        distinguish2: distinguish2Context as any,
+      },
       true
     );
 
-    const x1Matrix = response.dimensions.x.values as unknown as number[][];
-    const x2Matrix = (response.dimensions as any).x2?.values as unknown as number[][];
+    const x1Matrix = (response.dimensions.x.values as unknown) as number[][];
+    const x2Matrix = ((response.dimensions as any).x2
+      ?.values as unknown) as number[][];
 
     expect(x2Matrix).toBeDefined();
 
     // Build a lookup by id so assertions are independent of clustering order.
     const idToPos: Record<string, number> = {};
-    response.index_ids.forEach((id, i) => { idToPos[id] = i; });
+    response.index_ids.forEach((id, i) => {
+      idToPos[id] = i;
+    });
 
     const a = idToPos["11111"]; // GENE_A
     const b = idToPos["22222"]; // GENE_B
@@ -697,5 +710,90 @@ describe("fetchCorrelation", () => {
     expect(x2Matrix[a][c]).toBeCloseTo(1, 5);
     expect(x2Matrix[a][b]).toBeCloseTo(-1, 5);
     expect(x2Matrix[b][c]).toBeCloseTo(-1, 5);
+  });
+});
+
+describe("fetchLinearRegression", () => {
+  // Regression: the group labels this returns are looked up in the legend's
+  // colorMap / hiddenLegendValues downstream (regressionLines in
+  // useScatterPlotData.ts), and legend keys are always strings — the legend
+  // reads its categories through findCategoricalSlice, which stringifies.
+  //
+  // A categorical color slice can legitimately hold *numbers*: the isBinaryish
+  // coercion in fetchPlotDimensions retypes a continuous 0/1/2 dataset as
+  // "categorical" (so it gets read as pseudo-categories) without rewriting its
+  // values. When the group labels came back as numeric `0`/`1`, every lookup
+  // against a legend keyed by "0"/"1" missed, so each pseudo-category's
+  // regression line took the neutral fallback color instead of its legend
+  // color and could never be toggled off with its legend key.
+  test("group labels are strings for a binaryish (numeric) categorical color", async () => {
+    mockDimensionTypes();
+    mockDatasets();
+    mockDatasetIdentifiers();
+    mockDimensionTypeIdentifiers();
+    mockDepmapModelHardcodedExtras();
+
+    // One row per requested feature; the color feature's values are all in
+    // {0, 1, 2}, which is what trips the isBinaryish coercion.
+    const rowsByFeatureLabel: Record<string, any> = {
+      FABP5: {
+        ENSG00000164687: {
+          "ACH-000425": 0.5,
+          "ACH-000552": -0.3,
+          "ACH-000001": 1.2,
+        },
+      },
+      SOX2: {
+        ENSG00000181449: {
+          "ACH-000425": 1.5,
+          "ACH-000552": -1.3,
+          "ACH-000001": 2.2,
+        },
+      },
+      BDNF: {
+        ENSG00000176697: {
+          "ACH-000425": 0,
+          "ACH-000552": 1,
+          "ACH-000001": 1,
+        },
+      },
+    };
+
+    breadboxAPI.getMatrixDatasetData = jest
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .fn<any, [string, any]>()
+      .mockImplementation(
+        (_datasetId: string, params: any) =>
+          Promise.resolve(rowsByFeatureLabel[params.features?.[0]] ?? {})
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ) as any;
+
+    const dimensionFor = (
+      featureLabel: string
+    ): DataExplorerPlotConfigDimension => ({
+      axis_type: "raw_slice",
+      aggregation: "first",
+      slice_type: "gene",
+      dataset_id: "Chronos_Combined",
+      context: {
+        name: featureLabel,
+        context_type: "gene",
+        expr: { "==": [{ var: "entity_label" }, featureLabel] },
+      },
+    });
+
+    const linreg = await fetchLinearRegression("depmap_model", {
+      x: dimensionFor("FABP5"),
+      y: dimensionFor("SOX2"),
+      color: dimensionFor("BDNF"),
+    });
+
+    // One fit per pseudo-category, each labeled with the same string the
+    // legend keys itself by — never the raw number.
+    expect(linreg.map((group) => group.group_label)).toEqual(["0", "1"]);
+
+    linreg.forEach((group) => {
+      expect(typeof group.group_label).toBe("string");
+    });
   });
 });

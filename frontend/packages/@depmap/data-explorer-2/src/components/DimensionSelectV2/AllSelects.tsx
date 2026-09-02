@@ -32,7 +32,7 @@ interface Props {
 }
 
 const truncate = (s: string) => {
-  const MAX = 15;
+  const MAX = 16;
   return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
 };
 
