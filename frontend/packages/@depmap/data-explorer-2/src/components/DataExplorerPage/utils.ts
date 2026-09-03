@@ -467,6 +467,36 @@ export function canSwapColorAndFacet(plot: SwappablePlot): boolean {
   return getColorFacetSwapMode(plot) !== null;
 }
 
+// Whether `show_regression_line_per_color` has anything to mean: there must be
+// panels to split (a complete facet_by) AND a color partition of its own to
+// split them by (a complete color_by that isn't just facet_by under another
+// name). Everything else already draws exactly one line per panel, so the
+// option would be a checkbox with no effect.
+//
+// Same three conditions as the "swap" arm of getColorFacetSwapMode, and
+// deliberately not written as `getColorFacetSwapMode(plot) === "swap"`: the two
+// answer different questions and only coincide today. Reusing the swap mode
+// here would silently redefine this option the next time swappability changes
+// (e.g. if ADR 0004's "smart translated swap" is ever built).
+//
+// Config-level only. Two axes naming the *same* underlying annotation through
+// different modes still read as different here; that case resolves to one
+// partition in the data (colorMatchesFacet in useScatterPlotData) and is
+// caught there, where the response is available.
+export function canShowRegressionLinePerColor(plot: SwappablePlot): boolean {
+  const { color_by, facet_by } = plot;
+
+  const colorComplete =
+    SWAPPABLE_AXIS_VALUES.has(color_by as string) &&
+    isAxisComplete(color_by, "color", plot);
+
+  const facetComplete =
+    SWAPPABLE_AXIS_VALUES.has(facet_by as string) &&
+    isAxisComplete(facet_by, "facet", plot);
+
+  return colorComplete && facetComplete && !axesAlreadyMatch(color_by, plot);
+}
+
 function compress(obj: object): string {
   // thanks to https://gist.github.com/heinrich-ulbricht/683ea2ac8ac0e7bc607e4f4a57534937
   const json = JSON.stringify(obj);
@@ -489,6 +519,7 @@ export function normalizePlot(plot: DataExplorerPlotConfig) {
     hide_points,
     use_clustering,
     show_regression_line,
+    show_regression_line_per_color,
     filters,
     metadata,
     // `version` is deliberately NOT listed here — it must survive into `rest`
@@ -687,6 +718,22 @@ export function normalizePlot(plot: DataExplorerPlotConfig) {
         normalized.dimensions = omit(normalized.dimensions, "facet");
       }
     }
+  }
+
+  // `show_regression_line_per_color` is a sub-option of the faceted regression:
+  // it only means anything while color_by and facet_by BOTH survive as real,
+  // distinct partitions. Checked against `normalized` rather than `plot`
+  // deliberately — this has to run after the color/facet arms above have
+  // settled, so an axis whose backing was just dropped as incomplete takes the
+  // option down with it instead of leaving it stranded on a plot that now draws
+  // one line per panel. (ADR 0002 §3's "no incidental coupling" is satisfied:
+  // the dependency on color_by/facet_by is the option's whole definition.)
+  if (
+    plot.plot_type === "scatter" &&
+    show_regression_line_per_color &&
+    canShowRegressionLinePerColor(normalized)
+  ) {
+    normalized.show_regression_line_per_color = true;
   }
 
   return normalized;

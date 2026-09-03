@@ -1760,4 +1760,106 @@ describe("plotConfigReducer", () => {
       expect(swapped.facet_categories).toEqual(["Lung"]);
     });
   });
+
+  // The per-color regression split only exists while color_by and facet_by are
+  // two real, distinct partitions — the same condition that shows its checkbox.
+  // Its checkbox disappearing and the option quietly staying set would be the
+  // worse failure of the two, so normalize drops it with the condition.
+  describe("show_regression_line_per_color", () => {
+    const coloredAndFaceted: PartialDataExplorerPlotConfig = {
+      plot_type: "scatter" as const,
+      index_type: "depmap_model",
+      color_by: "property" as const,
+      facet_by: "property" as const,
+      metadata: {
+        color_property: {
+          dataset_id: "m",
+          identifier: "PrimaryOrMetastasis",
+          identifier_type: "column",
+        } as any,
+        facet_property: {
+          dataset_id: "m",
+          identifier: "OncotreeLineage",
+          identifier_type: "column",
+        } as any,
+      },
+      dimensions: { x: {}, y: {} },
+    };
+
+    const turnOn = (plot: PartialDataExplorerPlotConfig) =>
+      plotConfigReducer(plot, {
+        type: "select_show_regression_line_per_color",
+        payload: true,
+      });
+
+    it("sticks when both partitions are real and distinct", () => {
+      expect(turnOn(coloredAndFaceted).show_regression_line_per_color).toBe(
+        true
+      );
+    });
+
+    it("is absent, not false, when switched back off", () => {
+      // Same convention as every other boolean option here: absent is the
+      // default, and `false` is junk we refuse to serialize.
+      const off = plotConfigReducer(turnOn(coloredAndFaceted), {
+        type: "select_show_regression_line_per_color",
+        payload: false,
+      });
+
+      expect(off).not.toHaveProperty("show_regression_line_per_color");
+    });
+
+    it("does not stick on an unfaceted plot", () => {
+      const unfaceted = plotConfigReducer(coloredAndFaceted, {
+        type: "select_facet_by",
+        payload: null,
+      });
+
+      expect(turnOn(unfaceted)).not.toHaveProperty(
+        "show_regression_line_per_color"
+      );
+    });
+
+    it("is dropped when faceting is turned off afterwards", () => {
+      const unfaceted = plotConfigReducer(turnOn(coloredAndFaceted), {
+        type: "select_facet_by",
+        payload: null,
+      });
+
+      expect(unfaceted).not.toHaveProperty("show_regression_line_per_color");
+    });
+
+    it("is dropped when color_by stops being its own partition", () => {
+      // "uniform" (no color at all) and "facet" (color defers to the facet
+      // key, so every panel is monochromatic) both leave one line per panel.
+      ["uniform" as const, "facet" as const].forEach((color_by) => {
+        const recolored = plotConfigReducer(turnOn(coloredAndFaceted), {
+          type: "select_color_by",
+          payload: color_by,
+        });
+
+        expect(recolored).not.toHaveProperty("show_regression_line_per_color");
+      });
+    });
+
+    // Repointing color_by at the annotation facet_by already shows is the one
+    // convergence this reducer does NOT catch: select_color_property returns
+    // without going through `normalize` (it can't — normalize would strip a
+    // scatter's sort_by, which orders the facets). Same weaker arrangement
+    // `normalize`'s own comment describes for the hand-picked categories, and
+    // tolerable for the same reason: the leftover value is inert. It draws
+    // nothing (useScatterPlotData gates on colorMatchesFacet, which sees the
+    // response and so catches convergence the config can't express) and it
+    // can't be serialized (normalizePlot re-checks on the write path — see its
+    // "identical annotation" test). It becomes live again only if color_by is
+    // repointed at something distinct, which is when it was last meaningful.
+    it("is dropped when the plot type changes away from scatter", () => {
+      const density = plotConfigReducer(turnOn(coloredAndFaceted), {
+        type: "select_plot_type",
+        payload: "density_1d",
+      });
+
+      expect(density).not.toHaveProperty("show_regression_line_per_color");
+    });
+  });
 });
