@@ -825,6 +825,16 @@ function PrototypeScatterPlot({
       assignAnnotationPositions(pts);
     };
 
+    // The legend is drawn from dummy traces (getLegendTraces) that hold no
+    // real points, so Plotly's default click behavior toggles the dummy and
+    // nothing else: the entry greys out while the plot stays put. Returning
+    // false suppresses that, leaving the legend a static key rather than a
+    // control that appears to do something. Registered unconditionally — with
+    // no legend shown (Data Explorer's case) these never fire.
+    // TODO: make these actually filter, as Data Explorer's own legend does.
+    on("plotly_legendclick", () => false);
+    on("plotly_legenddoubleclick", () => false);
+
     // After initializing the plot with `autorange` set to true, store what
     // Plotly calculated for the axes zoom level and turn off autorange.
     on("plotly_afterplot", () => {

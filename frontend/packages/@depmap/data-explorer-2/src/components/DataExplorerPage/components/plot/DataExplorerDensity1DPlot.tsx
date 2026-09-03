@@ -89,6 +89,7 @@ function DataExplorerDensity1DPlot({
   const { plotStyles } = useDataExplorerSettings();
   const {
     pointSize,
+    facetedPointSize,
     pointOpacity,
     outlineWidth,
     palette,
@@ -267,7 +268,11 @@ function DataExplorerDensity1DPlot({
               onClickResetSelection={clearSelection}
               hiddenLegendValues={hiddenLegendValues}
               hiddenFacetValues={hiddenFacetValues}
-              pointSize={pointSize}
+              // hasFacetOptionsEnabled, not Boolean(sortedFacetKeys): an
+              // unset facet_by still yields one LEGEND_ALL track, so
+              // sortedFacetKeys is never empty and would report every plot
+              // as faceted. See useDensity1DPlotData's own note on this.
+              pointSize={hasFacetOptionsEnabled ? facetedPointSize : pointSize}
               pointOpacity={pointOpacity}
               outlineWidth={outlineWidth}
               palette={palette}

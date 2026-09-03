@@ -63,6 +63,14 @@ interface Props {
   // keys are non-continuous (or absent) and can't collide this way.
   facetDisplayNames?: Partial<Record<LegendKey, string>>;
   legendTitle?: string | null;
+  // Reveals Plotly's own legend, built from the color keys. Data Explorer
+  // hides it because it renders its own richer legend panel alongside the
+  // plot (that's what the dummy traces below normally exist only to fake, for
+  // downloaded images) — but embedded plots live outside Data Explorer with
+  // no panel to fall back on, so for them Plotly's legend is all there is.
+  // Mirrors PrototypeScatterPlot / SmallMultiplesScatter's identically named
+  // prop.
+  showBuiltinLegend?: boolean;
   // Whether facet_by and color_by resolve to the SAME underlying source
   // (see resolveColorMode / useDensity1DPlotData's own colorMatchesFacet
   // comment for the full rationale, including why this is NOT simply
@@ -212,6 +220,7 @@ function PrototypeDensity1D({
   legendDisplayNames,
   facetDisplayNames,
   legendTitle,
+  showBuiltinLegend = false,
   colorMatchesFacet = false,
   height,
   hoverTextKey,
@@ -648,6 +657,26 @@ function PrototypeDensity1D({
         } as any;
       });
 
+    // Dummy traces that exist only to populate Plotly's legend with the right
+    // names and colors. Used for downloaded images (where our own legend panel
+    // can't be rendered) and, when showBuiltinLegend is set, for the live plot
+    // too — the two must agree, hence one definition.
+    const legendTraces = colorKeys
+      .filter((key) => !hiddenLegendValues.has(key))
+      .map((legendKey) => {
+        const fillcolor = colorMap.get(legendKey);
+
+        return {
+          type: "violin",
+          showlegend: true,
+          x: [null],
+          line: { color: "#666" },
+          hoverinfo: "skip",
+          name: legendDisplayNames[legendKey],
+          fillcolor,
+        };
+      });
+
     const plotlyData = [
       ...violinTraces,
       ...violinOutlineTraces,
@@ -659,6 +688,15 @@ function PrototypeDensity1D({
       .filter(Boolean)
       .filter((trace) => hasSomeNonNullValue(trace.x))
       .reverse() as Partial<PlotData>[];
+
+    // Appended after the all-null filter above (which would drop them, their
+    // x being [null]) and after the reverse, so the indices that
+    // isClickableTrace / isContinuousCurve compare against are untouched.
+    if (showBuiltinLegend) {
+      legendTraces.forEach((t) =>
+        plotlyData.push(t as typeof plotlyData[number])
+      );
+    }
 
     const isClickableTrace = (n: number) => {
       return ([
@@ -700,10 +738,14 @@ function PrototypeDensity1D({
         namelength: -1,
       },
 
-      // We have a custom legend so we hide Plotly's legend. However, this
-      // property is toggled just before capturing a snapshot image. See the
-      // definition of plot.downloadImage() below.
-      showlegend: false,
+      // Data Explorer has a custom legend, so Plotly's is hidden there. It's
+      // toggled on just before capturing a snapshot image (see
+      // plot.downloadImage() below), and stays on throughout for embedded
+      // plots, which have no custom legend to defer to (showBuiltinLegend).
+      showlegend: showBuiltinLegend,
+      ...(showBuiltinLegend
+        ? { legend: { title: { text: legendTitle } } }
+        : {}),
 
       xaxis: axes.current.xaxis || {
         title: {
@@ -891,6 +933,16 @@ function PrototypeDensity1D({
 
     // After initializing the plot with `autorange` set to true, store what
     // Plotly calculated for the axes zoom level and turn off autorange.
+    // The legend is drawn from dummy traces (see legendTraces) that hold no
+    // real points, so Plotly's default click behavior toggles the dummy and
+    // nothing else: the entry greys out while the plot stays put. Returning
+    // false suppresses that, leaving the legend a static key rather than a
+    // control that appears to do something. Registered unconditionally — with
+    // no legend shown (Data Explorer's case) these never fire.
+    // TODO: make these actually filter, as Data Explorer's own legend does.
+    on("plotly_legendclick", () => false);
+    on("plotly_legenddoubleclick", () => false);
+
     on("plotly_afterplot", () => {
       if (!axes.current.xaxis || !axes.current.yaxis) {
         axes.current = {
@@ -1080,26 +1132,11 @@ function PrototypeDensity1D({
     plot.resetZoom = () => setTimeout(zoom, 0, "reset");
 
     plot.downloadImage = (options) => {
-      // Add some extra traces used to populate the legend.
-      const legendTraces = colorKeys
-        .filter((key) => !hiddenLegendValues.has(key))
-        .map((legendKey) => {
-          const fillcolor = colorMap.get(legendKey);
-
-          return {
-            type: "violin",
-            showlegend: true,
-            x: [null],
-            line: { color: "#666" },
-            hoverinfo: "skip",
-            name: legendDisplayNames[legendKey],
-            fillcolor,
-          };
-        });
-
       const imagePlot = {
         ...plot,
-        data: [...plot.data, ...legendTraces],
+        // Under showBuiltinLegend the legend traces are already in plot.data;
+        // appending them again would double every legend entry.
+        data: showBuiltinLegend ? plot.data : [...plot.data, ...legendTraces],
         layout: {
           ...plot.layout,
           showlegend: true,
@@ -1147,6 +1184,7 @@ function PrototypeDensity1D({
     legendDisplayNames,
     facetDisplayNames,
     legendTitle,
+    showBuiltinLegend,
     colorMatchesFacet,
     hoverTextKey,
     annotationTextKey,

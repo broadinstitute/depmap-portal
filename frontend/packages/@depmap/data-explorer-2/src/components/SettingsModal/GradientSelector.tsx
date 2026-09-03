@@ -1,5 +1,6 @@
 /* eslint-disable jsx-a11y/no-static-element-interactions, jsx-a11y/click-events-have-key-events */
-import React, { useEffect, useRef, useState } from "react";
+import React, { useState } from "react";
+import GradientEditorPopover from "./GradientEditorPopover";
 import styles from "../../styles/SettingsModal.scss";
 
 interface Props {
@@ -10,27 +11,13 @@ interface Props {
 }
 
 function GradientSelector({ name, label, value, onChange }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [showEditor, setShowEditor] = useState(false);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (ref.current && !ref.current.contains(event.target as HTMLElement)) {
-        setShowEditor(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [ref]);
 
   return (
     <div className={styles.gradient}>
       <label htmlFor={name}>{label}</label>
-      <span onClick={() => setShowEditor(true)}>
+      <span ref={setAnchor} onClick={() => setShowEditor(true)}>
         {value.slice(0, -1).map((pair, i) => (
           <span
             key={pair[0]}
@@ -42,22 +29,24 @@ function GradientSelector({ name, label, value, onChange }: Props) {
           />
         ))}
       </span>
-      {showEditor && (
-        <div ref={ref} className={styles.gradientEditor}>
-          <div className={styles.gradientEditorItems}>
-            {value.map((pair, index) => (
-              <input
-                key={pair[0]}
-                type="color"
-                value={pair[1]}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  return onChange(e.target.value, index);
-                }}
-              />
-            ))}
-          </div>
+      <GradientEditorPopover
+        show={showEditor}
+        anchor={anchor}
+        onHide={() => setShowEditor(false)}
+      >
+        <div className={styles.gradientEditorItems}>
+          {value.map((pair, index) => (
+            <input
+              key={pair[0]}
+              type="color"
+              value={pair[1]}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                return onChange(e.target.value, index);
+              }}
+            />
+          ))}
         </div>
-      )}
+      </GradientEditorPopover>
     </div>
   );
 }

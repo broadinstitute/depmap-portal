@@ -16,7 +16,12 @@ import {
   isExpansionDimension,
 } from "../../../utils/misc";
 import { contextsMatch } from "../../../utils/context";
-import { canSwapColorAndFacet, isAxisComplete, SwappablePlot } from "../utils";
+import {
+  canShowRegressionLinePerColor,
+  canSwapColorAndFacet,
+  isAxisComplete,
+  SwappablePlot,
+} from "../utils";
 
 export type PlotConfigReducerAction =
   | { type: "set_plot"; payload: PartialDataExplorerPlotConfig }
@@ -58,6 +63,7 @@ export type PlotConfigReducerAction =
   | { type: "select_hide_identity_line"; payload: boolean }
   | { type: "select_use_clustering"; payload: boolean }
   | { type: "select_show_regression_line"; payload: boolean }
+  | { type: "select_show_regression_line_per_color"; payload: boolean }
   | {
       type: "select_scatter_y_slice";
       payload: {
@@ -214,6 +220,28 @@ const normalize = (plot: PartialDataExplorerPlotConfig) => {
 
   if (plot.show_regression_line === false || plot.plot_type !== "scatter") {
     nextPlot = omit(nextPlot, "show_regression_line");
+  }
+
+  // The per-color split only exists while color_by and facet_by are two real,
+  // distinct partitions — the same condition that shows its checkbox. Dropped
+  // the moment that stops holding (color_by switched to "uniform"/"facet",
+  // facet_by cleared, either axis pointed at what the other already shows), so
+  // it can't sit in the config invisibly and reassert itself later, the same
+  // reasoning as the hand-picked categories above. Checked against `nextPlot`,
+  // so an axis this same normalize pass just cleared already counts as gone.
+  //
+  // And, like the categories, this only sees "there is no distinct partition
+  // any more", not a change of *backing* that happens to converge the two axes
+  // (select_color_property returns without normalizing). That leftover is inert
+  // rather than merely unlikely: useScatterPlotData won't draw a per-color
+  // split while colorMatchesFacet, and normalizePlot re-checks before anything
+  // is serialized.
+  if (
+    plot.show_regression_line_per_color === false ||
+    plot.plot_type !== "scatter" ||
+    !canShowRegressionLinePerColor(nextPlot)
+  ) {
+    nextPlot = omit(nextPlot, "show_regression_line_per_color");
   }
 
   if (
@@ -923,6 +951,19 @@ function plotConfigReducer(
       return normalize({
         ...plot,
         show_regression_line: action.payload,
+      });
+    }
+
+    case "select_show_regression_line_per_color": {
+      if (plot.plot_type !== "scatter") {
+        window.console.warn(
+          "`show_regression_line_per_color` is only supported by the 'scatter' plot type."
+        );
+      }
+
+      return normalize({
+        ...plot,
+        show_regression_line_per_color: action.payload,
       });
     }
 
