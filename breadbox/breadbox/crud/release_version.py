@@ -128,8 +128,8 @@ def create_release_version(
         release_file = ReleaseFile(
             **f.model_dump(exclude={"datatypes"}), release_version_id=release_version.id
         )
-        for dt in dict.fromkeys(f.datatypes):  # dedupe; datatypes is conceptually a set
-            release_file.datatypes.append(dt)
+        # datatypes is conceptually a set; dedupe
+        release_file.datatypes = list(set(f.datatypes))
         db.add(release_file)
         created_files.append(release_file)
 

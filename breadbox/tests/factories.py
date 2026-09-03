@@ -546,8 +546,7 @@ def release_file(
         md5_hash=kwargs.get("md5_hash", "0" * 32),
         pipeline_name=kwargs.get("pipeline_name", "Test Pipeline"),
     )
-    for dt in dict.fromkeys(datatypes):
-        file.datatypes.append(dt)
+    file.datatypes = list(set(datatypes))
     db.add(file)
     db.flush()
     return file
