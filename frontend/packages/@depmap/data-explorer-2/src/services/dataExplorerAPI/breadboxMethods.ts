@@ -885,8 +885,20 @@ export const fetchLinearRegression = memoize(
     const visible = data.filters?.visible?.values || xs.map(() => true);
     let categories: (string | number | null)[] = xs.map(() => null);
 
-    if (data.metadata?.color_property) {
-      categories = data.metadata.color_property.values;
+    // These group labels are looked up in the legend's `colorMap` and
+    // `hiddenLegendValues` downstream , and every legend key is a *string* —
+    // the legend reads its categories through findCategoricalSlice, which
+    // stringifies.
+    const toLegendCategory = (v: unknown) =>
+      (v?.toString() || null) as string | null;
+
+    // Categorical only, matching the dimension branch below.
+    if (
+      ["categorical", "text"].includes(
+        data.metadata?.color_property?.value_type as string
+      )
+    ) {
+      categories = data.metadata!.color_property!.values.map(toLegendCategory);
     }
 
     if (
@@ -894,7 +906,7 @@ export const fetchLinearRegression = memoize(
         data.dimensions?.color?.value_type as string
       )
     ) {
-      categories = data.dimensions.color!.values;
+      categories = data.dimensions.color!.values.map(toLegendCategory);
     }
 
     if (data.filters?.color1 || data.filters?.color2) {

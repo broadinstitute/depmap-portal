@@ -417,15 +417,6 @@ function plotConfigReducer(
 
       let dx = plot.dimensions.x;
 
-      // These selections are incompatible. Take the nuclear option and wipe
-      // everything.
-      if (nextPlotType === "scatter" && plot.index_type === "other") {
-        return {
-          plot_type: nextPlotType,
-          dimensions: { x: {}, y: {} },
-        };
-      }
-
       if (
         nextPlotType !== "correlation_heatmap" &&
         dx.aggregation === "correlation"
@@ -459,11 +450,12 @@ function plotConfigReducer(
       let nextPlot: PartialDataExplorerPlotConfig = {
         ...plot,
         plot_type: nextPlotType,
-        dimensions: {
-          x: dx,
-          ...(nextPlotType === "scatter" ? { y: {} } : {}),
-        },
+        dimensions: { x: dx },
       };
+
+      if (nextPlotType === "scatter") {
+        nextPlot.dimensions!.y = {};
+      }
 
       if (
         plot.plot_type === "correlation_heatmap" &&
@@ -488,7 +480,7 @@ function plotConfigReducer(
 
         // No support for custom data (there's no such thing as a "custom
         // context").
-        if (dx.slice_type === "custom" || dx.slice_type === null) {
+        if (dx.slice_type === null) {
           nextPlot.dimensions!.x = omit(dx, [
             "slice_type",
             "context",
@@ -510,13 +502,6 @@ function plotConfigReducer(
         if (plot.dimensions?.facet) {
           nextPlot.dimensions!.facet = plot.dimensions.facet;
         }
-      }
-
-      if (nextPlotType === "scatter" && plot.index_type !== "depmap_model") {
-        nextPlot.dimensions!.y = {
-          slice_type: "depmap_model",
-          axis_type: "raw_slice",
-        };
       }
 
       // Scenario: a scatter with a "color by" property is switched to a 1D
