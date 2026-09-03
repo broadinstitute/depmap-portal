@@ -17,23 +17,50 @@ interface Props {
 
 function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
   const { plotStyles } = useDataExplorerSettings();
-  const { pointSize, pointOpacity, outlineWidth, palette } = plotStyles;
+  const {
+    pointSize,
+    facetedPointSize,
+    pointOpacity,
+    outlineWidth,
+    palette,
+  } = plotStyles;
 
   const {
     formattedData,
     colorData,
+    facetData,
+    sortedFacetKeys,
+    hasFacetOptionsEnabled,
+    colorMatchesFacet,
     legendState,
+    facetLegendState,
     colorMap,
     legendDisplayNames,
+    facetDisplayNames,
     legendTitle,
     pointVisibility,
   } = useDensity1DPlotData(data, plotConfig, palette);
 
   const { hiddenLegendValues } = legendState;
+  // Seeded by useLegendState with facet's own no-data keys, so facets with
+  // nothing to plot start hidden. There's no Facets panel out here to toggle
+  // them back on, but that seeding is the whole reason to pass this: without
+  // it an empty facet renders as a blank track.
+  const { hiddenLegendValues: hiddenFacetValues } = facetLegendState;
 
   if (!formattedData) {
     return null;
   }
+
+  // Only worth revealing when something is actually colored — otherwise the
+  // legend is one entry for the single ungrouped bucket. Same condition
+  // EmbeddedScatterPlot uses.
+  const showBuiltinLegend = Boolean(
+    data?.metadata.color_property ||
+      data?.dimensions.color ||
+      data?.filters.color1 ||
+      data?.filters.color2
+  );
 
   return (
     <PlotlyLoaderProvider PlotlyLoader={DensityLoader}>
@@ -42,16 +69,23 @@ function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
         xKey="x"
         colorMap={colorMap}
         colorData={colorData}
+        facetData={facetData}
+        groupKeys={sortedFacetKeys}
+        colorMatchesFacet={colorMatchesFacet}
         continuousColorKey="contColorData"
         legendDisplayNames={legendDisplayNames}
+        facetDisplayNames={facetDisplayNames}
         legendTitle={legendTitle}
+        showBuiltinLegend={showBuiltinLegend}
         pointVisibility={pointVisibility || undefined}
         useSemiOpaqueViolins={!plotConfig.hide_points}
+        placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
         hoverTextKey="hoverText"
         annotationTextKey="annotationText"
         height={height}
         hiddenLegendValues={hiddenLegendValues}
-        pointSize={pointSize}
+        hiddenFacetValues={hiddenFacetValues}
+        pointSize={hasFacetOptionsEnabled ? facetedPointSize : pointSize}
         pointOpacity={pointOpacity}
         outlineWidth={outlineWidth}
         palette={palette}

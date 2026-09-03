@@ -62,7 +62,12 @@ function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
         outlineWidth={outlineWidth}
         customHoverinfo="y+text"
         hideXAxisGrid
-        hideXAxis={Boolean(data?.metadata?.color_property)}
+        // facet_property too, matching DataExplorerWaterfallPlot: clustering
+        // makes x a per-cluster rank, so the tick numbers are as meaningless
+        // as they are under a color_property.
+        hideXAxis={Boolean(
+          data?.metadata?.color_property || data?.metadata?.facet_property
+        )}
         palette={palette}
         xAxisFontSize={13}
         yAxisFontSize={13}
