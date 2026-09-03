@@ -944,6 +944,16 @@ function SmallMultiplesScatter({
     // would otherwise drop the identity/regression lines. Re-asserting here
     // puts them back; Plotly de-dupes the no-op repeats when nothing changed,
     // so it doesn't loop. Mirrors PrototypeScatterPlot's handling.
+    // The legend is drawn from dummy traces (getLegendTraces) that hold no
+    // real points, so Plotly's default click behavior toggles the dummy and
+    // nothing else: the entry greys out while the plot stays put. Returning
+    // false suppresses that, leaving the legend a static key rather than a
+    // control that appears to do something. Registered unconditionally — with
+    // no legend shown (Data Explorer's case) these never fire.
+    // TODO: make these actually filter, as Data Explorer's own legend does.
+    on("plotly_legendclick", () => false);
+    on("plotly_legenddoubleclick", () => false);
+
     on("plotly_afterplot", () => {
       if (
         indicatorShapes.length === 0 ||
