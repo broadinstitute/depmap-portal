@@ -64,7 +64,12 @@ export interface ScatterPlotData {
   regressionLines: RegressionLine[] | null;
   // Per-facet fits for the faceted renderer, keyed by facet label. null when
   // not faceted (facet_by unset); the single-panel path uses regressionLines.
-  regressionLinesByFacet: Map<string, RegressionLine> | null;
+  //
+  // An array per facet, not a single line: normally it holds exactly one (the
+  // panel's pooled fit), but `show_regression_line_per_color` splits it into
+  // one fit per color legend entry. A one-element array is the uniform shape
+  // for both, so the renderer never has to know which case it's drawing.
+  regressionLinesByFacet: Map<string, RegressionLine[]> | null;
   showIdentityLine: boolean;
   // Which triad (color's own, or facet's own via the version-2 default
   // defer) actually backs the legend — PlotLegend/LegendLabel need this to
@@ -519,45 +524,111 @@ export default function useScatterPlotData(
     const { facetKeys, facetColorKeys } = facetInfo;
     const visible = pointVisibility ?? x.map(() => true);
 
+    // The opt-in per-color split (show_regression_line_per_color): color_by's
+    // OWN partition, the same one the legend shows, used below to subdivide
+    // each panel. Null — and the pooled per-panel fit below is what runs —
+    // whenever the option is off, or when there's no separate color partition
+    // to split by at all: colorMatchesFacet (color IS the facet, so every
+    // panel is already monochromatic and the split would reproduce the same
+    // single line) or an absent colorMode.mode (color_by "uniform", which
+    // resolveColorMode deliberately reports as no mode). Those two cases are
+    // also why the checkbox is hidden, so this is the data-side half of the
+    // same condition — canShowRegressionLinePerColor can only see the config,
+    // and "the two axes name the same annotation through different modes" is
+    // only visible here, in the response.
+    const colorPartition =
+      plotConfig.show_regression_line_per_color &&
+      !colorMatchesFacet &&
+      colorMode.mode
+        ? computeFacets(data, colorMode.mode, colorMode.target, colorChosen)
+        : null;
+
     // A facet's line takes that facet's color only when facet_by resolves
     // to the SAME source as color_by (the panel is then monochromatic);
     // otherwise neutral, since a facet spanning several colors has no
-    // single color to borrow. See colorMatchesFacet's own comment.
+    // single color to borrow. See colorMatchesFacet's own comment. (Under the
+    // per-color split each line covers exactly one color, so each takes that
+    // color instead — see below.)
 
     // The "N/A" bucket gets a fit too, same as any other facet —
     // see computeFacetedLinReg's comment for the reasoning.
     const facets = [...new Set(facetKeys)];
-    const lines = new Map<string, RegressionLine>();
+    const lines = new Map<string, RegressionLine[]>();
 
-    facets.forEach((facet) => {
-      const inFacet = facetMaskFor(facetKeys, facet, x, y, visible);
+    // Fits over the points `keep` selects, sharing the finite-input hygiene
+    // between the pooled and per-color paths so the two can't drift.
+    const fit = (keep: (i: number) => boolean) => {
       const fx: number[] = [];
       const fy: number[] = [];
       for (let i = 0; i < x.length; i += 1) {
-        if (inFacet(i) && Number.isFinite(x[i]) && Number.isFinite(y[i])) {
+        if (keep(i) && Number.isFinite(x[i]) && Number.isFinite(y[i])) {
           fx.push(x[i] as number);
           fy.push(y[i] as number);
         }
       }
 
       const { slope, intercept } = linregress(fx, fy);
-      // facet is always the formatted display string; colorMap is keyed by
-      // the original LegendKey (a shared Symbol for LEGEND_BOTH/OTHER/
-      // RANGE_N facets), so a stringified facet must be translated back via
-      // facetColorKeys before the lookup — looking it up directly always
-      // misses and silently falls through to palette.other.
-      const colorKey = facetColorKeys?.[facet] ?? facet;
-      lines.set(facet, {
+
+      return {
         m: slope,
         b: intercept,
         hidden:
           fx.length < 3 ||
           !Number.isFinite(slope) ||
           !plotConfig.show_regression_line,
-        color: colorMatchesFacet
-          ? colorMap.get(colorKey) || palette.other
-          : "#333",
-      });
+      };
+    };
+
+    facets.forEach((facet) => {
+      const inFacet = facetMaskFor(facetKeys, facet, x, y, visible);
+
+      if (colorPartition) {
+        const colorKeys = colorPartition.facetKeys;
+        // Drawn in the legend's own order rather than first-seen order, so the
+        // stack of lines in a panel reads in the same sequence as the legend
+        // beside it.
+        const groups =
+          colorPartition.facetOrder ?? [...new Set(colorKeys)].sort();
+
+        lines.set(
+          facet,
+          groups
+            // A color absent from this panel gets no line rather than an
+            // empty one — every panel would otherwise carry a full set of
+            // lines, most of them fit over nothing.
+            .filter((group) =>
+              colorKeys.some((k, i) => k === group && inFacet(i))
+            )
+            .map((group) => {
+              // Same translation the pooled path does below, for the same
+              // reason: colorMap is keyed by the original LegendKey, never by
+              // the formatted display string.
+              const colorKey = colorPartition.facetColorKeys?.[group] ?? group;
+
+              return {
+                ...fit((i) => inFacet(i) && colorKeys[i] === group),
+                color: colorMap.get(colorKey) || palette.other,
+              };
+            })
+        );
+
+        return;
+      }
+
+      // facet is always the formatted display string; colorMap is keyed by
+      // the original LegendKey (a shared Symbol for LEGEND_BOTH/OTHER/
+      // RANGE_N facets), so a stringified facet must be translated back via
+      // facetColorKeys before the lookup — looking it up directly always
+      // misses and silently falls through to palette.other.
+      const colorKey = facetColorKeys?.[facet] ?? facet;
+      lines.set(facet, [
+        {
+          ...fit(inFacet),
+          color: colorMatchesFacet
+            ? colorMap.get(colorKey) || palette.other
+            : "#333",
+        },
+      ]);
     });
 
     return lines;
@@ -566,10 +637,13 @@ export default function useScatterPlotData(
     formattedData,
     plotConfig.facet_by,
     plotConfig.show_regression_line,
+    plotConfig.show_regression_line_per_color,
     pointVisibility,
     colorMap,
     palette,
     colorMatchesFacet,
+    colorMode,
+    colorChosen,
     facetChosen,
   ]);
 
