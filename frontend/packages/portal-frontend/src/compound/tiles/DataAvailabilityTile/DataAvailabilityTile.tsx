@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Tooltip } from "@depmap/common-components";
 import styles from "../CompoundTiles.scss";
 import useDataAvailabilityTileData from "../hooks/useDataAvailabilityTileData";
 import { MatrixDataset } from "@depmap/types";
@@ -10,6 +11,32 @@ interface DatasetAvailabilityTileProps {
   compoundId: string;
   datasets: MatrixDataset[];
 }
+
+const DatasetName = ({
+  datasetUrl,
+  datasetDisplayName,
+  tooltip = undefined,
+}: {
+  datasetUrl: string | null;
+  datasetDisplayName: string;
+  tooltip?: string;
+}) => {
+  const link = <a href={datasetUrl || ""}>{datasetDisplayName}</a>;
+
+  if (!tooltip) {
+    return link;
+  }
+
+  return (
+    <Tooltip
+      id={`data-availability-tooltip-${datasetDisplayName}`}
+      content={tooltip}
+      placement="top"
+    >
+      <span>{link}</span>
+    </Tooltip>
+  );
+};
 
 export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = ({
   compoundId,
@@ -69,9 +96,11 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
                 {initialData.map((entry, index: number) => (
                   <tr key={index}>
                     <td className={styles.datasetColContent}>
-                      <a href={entry.datasetUrl || ""}>
-                        {entry.datasetDisplayName}
-                      </a>
+                      <DatasetName
+                        datasetUrl={entry.datasetUrl}
+                        datasetDisplayName={entry.datasetDisplayName}
+                        tooltip={entry.tooltip}
+                      />
                     </td>
                     <td className={styles.cellLineColContent}>
                       {entry.cellLineCount}
@@ -89,9 +118,11 @@ export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = (
                   extraData.map((entry, index) => (
                     <tr key={index + 5}>
                       <td className={styles.extraDataContainer}>
-                        <a href={entry.datasetUrl || ""}>
-                          {entry.datasetDisplayName}
-                        </a>
+                        <DatasetName
+                          datasetUrl={entry.datasetUrl}
+                          datasetDisplayName={entry.datasetDisplayName}
+                          tooltip={entry.tooltip}
+                        />
                       </td>
                       <td>{entry.cellLineCount}</td>
                       <td>{entry.doseRangeLabel}</td>
