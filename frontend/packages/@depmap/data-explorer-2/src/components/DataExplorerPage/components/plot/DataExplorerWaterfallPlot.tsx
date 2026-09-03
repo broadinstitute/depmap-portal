@@ -88,6 +88,7 @@ function DataExplorerWaterfallPlot({
   const { plotStyles } = useDataExplorerSettings();
   const {
     pointSize,
+    facetedPointSize,
     pointOpacity,
     outlineWidth,
     palette,
@@ -263,7 +264,10 @@ function DataExplorerWaterfallPlot({
               pointsToAnnotate={pointsToAnnotate}
               selectionCount={selection?.size ?? 0}
               hasFacetOptionsEnabled={hasFacetOptionsEnabled}
-              pointSize={pointSize}
+              // Same predicate that drives the x-clustering itself (it's
+              // what facetSide feeds formatDataForWaterfall), so the smaller
+              // size applies exactly when the ranking is split into clusters.
+              pointSize={hasFacetOptionsEnabled ? facetedPointSize : pointSize}
               pointOpacity={pointOpacity}
               outlineWidth={outlineWidth}
               customHoverinfo="y+text"

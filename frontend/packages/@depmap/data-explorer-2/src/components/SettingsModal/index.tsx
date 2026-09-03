@@ -28,6 +28,7 @@ function SettingsModal({
 
   const isValid =
     isValidNumber(settings.plotStyles.pointSize, 3, 50) &&
+    isValidNumber(settings.plotStyles.facetedPointSize, 3, 50) &&
     isValidNumber(settings.plotStyles.pointOpacity, 0, 1) &&
     isValidNumber(settings.plotStyles.outlineWidth, 0, 10) &&
     settings.plotStyles.palette.qualitativeFew.length > 0 &&
@@ -54,6 +55,21 @@ function SettingsModal({
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 const pointSize = e.target.valueAsNumber;
                 setSettings(updateStyle("pointSize", pointSize));
+              }}
+            />
+            <span>px</span>
+          </div>
+          <div>
+            <label htmlFor="faceted-point-size">faceted point size</label>
+            <input
+              type="number"
+              name="faceted-point-size"
+              min={3}
+              max={50}
+              value={settings.plotStyles.facetedPointSize ?? ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const facetedPointSize = e.target.valueAsNumber;
+                setSettings(updateStyle("facetedPointSize", facetedPointSize));
               }}
             />
             <span>px</span>
