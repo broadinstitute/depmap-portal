@@ -17,13 +17,20 @@ interface Props {
 
 function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
   const { plotStyles } = useDataExplorerSettings();
-  const { pointSize, pointOpacity, outlineWidth, palette } = plotStyles;
+  const {
+    pointSize,
+    facetedPointSize,
+    pointOpacity,
+    outlineWidth,
+    palette,
+  } = plotStyles;
 
-  const { formattedData, contLegendKeys, colorMap } = useWaterfallPlotData(
-    data,
-    plotConfig,
-    palette
-  );
+  const {
+    formattedData,
+    contLegendKeys,
+    colorMap,
+    hasFacetOptionsEnabled,
+  } = useWaterfallPlotData(data, plotConfig, palette);
 
   if (!formattedData) {
     return null;
@@ -46,7 +53,11 @@ function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
         height={height}
         xLabel={formattedData?.xLabel || ""}
         yLabel={formattedData?.yLabel || ""}
-        pointSize={pointSize}
+        // The hook bakes facet_by's x-clustering into formattedData, so this
+        // plot is genuinely faceted even though hasFacetOptionsEnabled isn't
+        // threaded to PrototypeScatterPlot here (that prop only drives inert
+        // color and drag-selection regions, neither of which embeds use).
+        pointSize={hasFacetOptionsEnabled ? facetedPointSize : pointSize}
         pointOpacity={pointOpacity}
         outlineWidth={outlineWidth}
         customHoverinfo="y+text"

@@ -47,7 +47,13 @@ function EmbeddedScatterPlot({
   plotConfig,
 }: Props) {
   const { plotStyles } = useDataExplorerSettings();
-  const { pointSize, pointOpacity, outlineWidth, palette } = plotStyles;
+  const {
+    pointSize,
+    facetedPointSize,
+    pointOpacity,
+    outlineWidth,
+    palette,
+  } = plotStyles;
 
   const {
     formattedData,
@@ -113,7 +119,7 @@ function EmbeddedScatterPlot({
             regressionLinesByFacet={regressionLinesByFacet}
             placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
             showIdentityLine={showIdentityLine}
-            pointSize={pointSize}
+            pointSize={facetedPointSize}
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}
             palette={palette}
