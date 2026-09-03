@@ -23,6 +23,9 @@ function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
     pointOpacity,
     outlineWidth,
     palette,
+    annotationFontSize,
+    xAxisFontSize,
+    yAxisFontSize,
   } = plotStyles;
 
   const {
@@ -89,8 +92,9 @@ function EmbeddedDensity1DPlot({ data, height, plotConfig }: Props) {
         pointOpacity={pointOpacity}
         outlineWidth={outlineWidth}
         palette={palette}
-        xAxisFontSize={13}
-        yAxisFontSize={13}
+        annotationFontSize={annotationFontSize}
+        xAxisFontSize={xAxisFontSize}
+        yAxisFontSize={yAxisFontSize}
       />
     </PlotlyLoaderProvider>
   );
