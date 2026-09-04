@@ -25,7 +25,7 @@ executor-template dsub {
       --env AWS_SECRET_ACCESS_KEY=invalid \
       --min-ram {{ parameters.min_ram | default("4") }} \
       --boot-disk-size {{ parameters.boot_disk_size | default("10") }} \
-      --service-account depmap-pipeline-runner@broad-achilles.iam.gserviceaccount.com \
+      --service-account depmap-pipeline-runner@depmap-portal-pipeline.iam.gserviceaccount.com \
       --command '{{ COMMAND }}'""",
   "CHECK_COMMAND_TEMPLATE": """python dstat_wrapper.py {{config.DSTAT_EXE_PATH}} \
       --provider google-batch \
