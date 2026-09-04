@@ -66,7 +66,7 @@ RUN mkdir -p /root/.taiga && mkdir -p /root/.local/bin
 
 # install dsub in virtual environment and put symlink into /root/.local/bin
 RUN python3.9 -m venv /install/dsub && \
-    /install/dsub/bin/pip install git+https://github.com/pgm/dsub.git@patched-0.4.13 && \
+    /install/dsub/bin/pip install "dsub>=0.5.5" && \
     ln -s /install/dsub/bin/dsub /root/.local/bin && \
     ln -s /install/dsub/bin/dstat /root/.local/bin 
 
