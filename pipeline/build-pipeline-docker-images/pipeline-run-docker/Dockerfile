@@ -81,7 +81,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
     curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
     gpg --dearmor > /usr/share/keyrings/cloud.google.gpg && \
     apt-get update && \
-    apt-get install -y google-cloud-sdk && \
+    apt-get install -y google-cloud-cli && \
     ln -s $(which gsutil) /root/.local/bin/gsutil
 
 # install conseq in virtual environment
