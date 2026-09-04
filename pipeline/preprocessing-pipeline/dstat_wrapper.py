@@ -32,11 +32,7 @@ try:
     if status_message is None:  # seems to happen right after job submission
         prefix = "IN_PROGRESS"
     else:
-        m = re.match(
-            "Job state is set from [A-Z_]+ to ([A-Z_]+) for job.*", status_message
-        )
-        assert m is not None
-        state = m.group(1)
+        state = status_message
         if state in terminal_states:
             prefix = "COMPLETED"
         else:
