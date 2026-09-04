@@ -96,7 +96,7 @@ def test_delete_release_version_cascade_and_search_sync(minimal_db: SessionWithU
     file_metadata = [
         {
             "file_name": "target_file.csv",
-            "datatype": "crispr",
+            "datatypes": ["crispr"],
             "is_main_file": True,
             "md5_hash": "0" * 32,
         }
@@ -153,7 +153,7 @@ def test_get_release_versions_filtering(minimal_db: SessionWithUser):
         version_name="v1",
         version_date=today - timedelta(days=400),
     )
-    factories.release_file(minimal_db, release_a, datatype="crispr")
+    factories.release_file(minimal_db, release_a, datatypes=["crispr"])
 
     # Release B: RNAseq data from last month
     release_b = factories.release_version(
@@ -162,13 +162,13 @@ def test_get_release_versions_filtering(minimal_db: SessionWithUser):
         version_name="v1",
         version_date=today - timedelta(days=30),
     )
-    factories.release_file(minimal_db, release_b, datatype="rnaseq")
+    factories.release_file(minimal_db, release_b, datatypes=["rnaseq"])
 
     # Release C: CRISPR data from today (Same release name as A)
     release_c = factories.release_version(
         minimal_db, release_name="Project A", version_name="v2", version_date=today
     )
-    factories.release_file(minimal_db, release_c, datatype="crispr")
+    factories.release_file(minimal_db, release_c, datatypes=["crispr"])
 
     # Test 1: Filter by release_name
     # Should find both v1 and v2 of Project A
@@ -183,7 +183,7 @@ def test_get_release_versions_filtering(minimal_db: SessionWithUser):
     assert set(r.id for r in crispr_results) == {release_a.id, release_c.id}
     # Ensure distinctness (no duplicates even if release has multiple crispr files)
     factories.release_file(
-        minimal_db, release_c, datatype="crispr", file_name="another_crispr.csv"
+        minimal_db, release_c, datatypes=["crispr"], file_name="another_crispr.csv"
     )
     crispr_results_deduped = get_release_versions(minimal_db, datatype="crispr")
     assert len(crispr_results_deduped) == 2
@@ -229,7 +229,7 @@ def test_get_release_versions_include_files_toggle(minimal_db: SessionWithUser):
     factories.release_version(
         minimal_db,
         version_name="IncludeTest",
-        files=[{"file_name": file_name, "datatype": "crispr", "is_main_file": True}],
+        files=[{"file_name": file_name, "datatypes": ["crispr"], "is_main_file": True}],
     )
 
     minimal_db.flush()
@@ -265,7 +265,7 @@ def test_get_release_version_include_files_toggle(minimal_db: SessionWithUser):
     file_name = "detail.csv"
     release = factories.release_version(
         minimal_db,
-        files=[{"file_name": file_name, "datatype": "crispr", "is_main_file": True}],
+        files=[{"file_name": file_name, "datatypes": ["crispr"], "is_main_file": True}],
     )
     release_id = release.id
     minimal_db.flush()

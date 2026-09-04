@@ -15,12 +15,14 @@ class TestSearchReleaseFiles:
         factories.release_version(
             minimal_db,
             version_name="Release A",
-            files=[{"file_name": "sequencing_data.csv", "datatype": "genomics"}],
+            files=[{"file_name": "sequencing_data.csv", "datatypes": ["genomics"]}],
         )
         factories.release_version(
             minimal_db,
             version_name="Release B",
-            files=[{"file_name": "proteomics_results.csv", "datatype": "proteomics"}],
+            files=[
+                {"file_name": "proteomics_results.csv", "datatypes": ["proteomics"]}
+            ],
         )
 
         minimal_db.flush()
@@ -41,7 +43,8 @@ class TestSearchReleaseFiles:
         """Verify that limit and offset correctly slice the result set."""
         # Setup: Create 5 files that all match the word "common"
         files = [
-            {"file_name": f"common_file_{i}.csv", "datatype": "test"} for i in range(5)
+            {"file_name": f"common_file_{i}.csv", "datatypes": ["test"]}
+            for i in range(5)
         ]
         factories.release_version(minimal_db, version_name="Paginated", files=files)
         minimal_db.flush()
@@ -86,7 +89,7 @@ class TestSearchReleaseFiles:
             files=[
                 {
                     "file_name": "data.csv",
-                    "datatype": "test",
+                    "datatypes": ["test"],
                     "description": "This contains the secret results",
                 }
             ],
@@ -112,14 +115,14 @@ class TestSearchReleaseFiles:
         factories.release_version(
             minimal_db,
             version_name="Rel_1",
-            files=[{"file_name": "lung_cancer_genomics.csv", "datatype": "misc"}],
+            files=[{"file_name": "lung_cancer_genomics.csv", "datatypes": ["misc"]}],
         )
 
         # 2. Match in Datatype
         factories.release_version(
             minimal_db,
             version_name="Rel_2",
-            files=[{"file_name": "expression.csv", "datatype": "lung_biology"}],
+            files=[{"file_name": "expression.csv", "datatypes": ["lung_biology"]}],
         )
 
         # 3. Match in Description
@@ -129,7 +132,7 @@ class TestSearchReleaseFiles:
             files=[
                 {
                     "file_name": "metadata.json",
-                    "datatype": "clinical",
+                    "datatypes": ["clinical"],
                     "description": "Patient samples collected from lung tissue",
                 }
             ],
@@ -139,7 +142,7 @@ class TestSearchReleaseFiles:
         factories.release_version(
             minimal_db,
             version_name="Lung_Atlas_v2",
-            files=[{"file_name": "atlas.csv", "datatype": "rna"}],
+            files=[{"file_name": "atlas.csv", "datatypes": ["rna"]}],
         )
 
         # Search for the global keyword

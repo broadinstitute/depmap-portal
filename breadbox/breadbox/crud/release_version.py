@@ -10,6 +10,7 @@ from breadbox.db.session import SessionWithUser
 from ..models.release_version import (
     ReleaseVersion,
     ReleaseFile,
+    ReleaseFileDatatype,
     ReleasePipeline,
     ReleaseFileSearchIndex,
 )
@@ -77,7 +78,8 @@ def get_release_versions(
         # matching the requested datatype.
         file_exists = exists().where(
             ReleaseFile.release_version_id == ReleaseVersion.id,
-            ReleaseFile.datatype == datatype,
+            ReleaseFile.id == ReleaseFileDatatype.release_file_id,
+            ReleaseFileDatatype.datatype == datatype,
         )
         query = query.filter(file_exists)
 
@@ -124,8 +126,10 @@ def create_release_version(
     created_files = []
     for f in params.files:
         release_file = ReleaseFile(
-            **f.model_dump(), release_version_id=release_version.id
+            **f.model_dump(exclude={"datatypes"}), release_version_id=release_version.id
         )
+        # datatypes is conceptually a set; dedupe
+        release_file.datatypes = list(set(f.datatypes))
         db.add(release_file)
         created_files.append(release_file)
 
@@ -168,7 +172,7 @@ def _update_search_index(
                 file_id=file.id,
                 file_name=file.file_name,
                 file_description=file.description or "",
-                file_datatype=file.datatype,
+                file_datatypes=" ".join(file.datatypes),
                 release_version_name=release.version_name,
                 release_name=release.release_name,
                 release_version_description=release.description or "",
