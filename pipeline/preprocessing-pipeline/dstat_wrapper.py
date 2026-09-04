@@ -9,6 +9,8 @@ import re
 
 # based on https://cloud.google.com/batch/docs/reference/rest/v1alpha/projects.locations.jobs#State
 terminal_states = [
+    "SUCCESS",
+    "FAILURE",
     "SUCCEEDED",
     "FAILED",
     "CANCELLED",
@@ -36,7 +38,7 @@ try:
         if state in terminal_states:
             prefix = "COMPLETED"
         else:
-            assert state in in_progress_state
+            assert state in in_progress_state, f"Unknown state: {state}"
             prefix = "IN_PROGRESS"
 except Exception as ex:
     sys.stderr.write(f"got exception parsing output from command {command}: {stdout}")
