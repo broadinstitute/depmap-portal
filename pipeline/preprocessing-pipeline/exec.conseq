@@ -32,7 +32,7 @@ executor-template dsub {
       --project {{ config.DEFAULT_GCP_PROJECT }} \
       --location us-central1 \
       --jobs {{ JOB_ID }} \
-      --format json""",
+      --format json --status '*'""",
   "IS_RUNNING_PATTERN": "IN_PROGRESS:", 
   "TERMINATE_CMD_TEMPLATE": "{{ config.DDEL_EXE_PATH }} --provider google-batch --project {{ config.DEFAULT_GCP_PROJECT }} --jobs {{ JOB_ID }}",
   "JOB_ID_PATTERN": """(?:(?:Job: )|(?:Launched job-id: ))(\S+).*""",
