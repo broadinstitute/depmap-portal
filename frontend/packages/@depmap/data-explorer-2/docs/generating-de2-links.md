@@ -412,7 +412,7 @@ This produces two heatmaps on the same page: the first is the correlation of the
 
 ### Faceted scatterplot (small multiples)
 
-Setting `facet_by` on a `scatter` plot is the most visually distinctive case: instead of one panel, DE2 renders one small-multiples panel per facet, each with its own regression line (if `show_regression_line` is set) and identity line. This example facets the same TP53-CRISPR-vs-TP53-expression scatterplot from the [basic scatterplot example](#scatterplot) above by `OncotreeLineage`, producing one panel per lineage. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJ5Ijp7ImF4aXNfdHlwZSI6InJhd19zbGljZSIsImFnZ3JlZ2F0aW9uIjoiZmlyc3QiLCJkYXRhc2V0X2lkIjoiZXhwcmVzc2lvbiIsInNsaWNlX3R5cGUiOiJnZW5lIiwiY29udGV4dCI6eyJkaW1lbnNpb25fdHlwZSI6ImdlbmUiLCJuYW1lIjoiVFA1MyIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIjcxNTciXX0sInZhcnMiOnt9fX19LCJmYWNldF9ieSI6InByb3BlcnR5IiwibWV0YWRhdGEiOnsiZmFjZXRfcHJvcGVydHkiOnsiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIiwiZGF0YXNldF9pZCI6ImRlcG1hcF9tb2RlbF9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJPbmNvdHJlZUxpbmVhZ2UifX19))
+Setting `facet_by` on a `scatter` plot is the most visually distinctive case: instead of one panel, DE2 renders one small-multiples panel per facet, each with its own regression line (if `show_regression_line` is set — or one line per color, with [show_regression_line_per_color](#show_regression_line_per_color-boolean)) and identity line. This example facets the same TP53-CRISPR-vs-TP53-expression scatterplot from the [basic scatterplot example](#scatterplot) above by `OncotreeLineage`, producing one panel per lineage. ([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJ5Ijp7ImF4aXNfdHlwZSI6InJhd19zbGljZSIsImFnZ3JlZ2F0aW9uIjoiZmlyc3QiLCJkYXRhc2V0X2lkIjoiZXhwcmVzc2lvbiIsInNsaWNlX3R5cGUiOiJnZW5lIiwiY29udGV4dCI6eyJkaW1lbnNpb25fdHlwZSI6ImdlbmUiLCJuYW1lIjoiVFA1MyIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIjcxNTciXX0sInZhcnMiOnt9fX19LCJmYWNldF9ieSI6InByb3BlcnR5IiwibWV0YWRhdGEiOnsiZmFjZXRfcHJvcGVydHkiOnsiaWRlbnRpZmllcl90eXBlIjoiY29sdW1uIiwiZGF0YXNldF9pZCI6ImRlcG1hcF9tb2RlbF9tZXRhZGF0YSIsImlkZW50aWZpZXIiOiJPbmNvdHJlZUxpbmVhZ2UifX19))
 
 ```json
 {
@@ -1171,6 +1171,86 @@ Only works with the `scatter` plot type. Toggles the optional linear regression 
     }
   },
   "show_regression_line": true
+}
+```
+
+### show_regression_line_per_color [boolean]
+
+A sub-option of `show_regression_line`, and only meaningful on a **faceted** `scatter` plot whose `color_by` shows a _different_ partition than its `facet_by`.
+
+By default, each small-multiples panel gets **one** regression line, fit over all of that panel's points regardless of color. Setting this to `true` instead fits **one line per color within each panel**, each drawn in its legend color.
+
+This is off by default deliberately: a panel with many colors becomes hard to read. Set it only when the per-color trends are the point of the plot.
+
+It is ignored (and dropped from the plot config) unless all of the following hold, since there is otherwise nothing to split:
+
+- `plot_type` is `scatter`
+- `facet_by` is set and complete
+- `color_by` is set and complete, and is not `"facet"` or `"uniform"`
+- `color_by` and `facet_by` do not resolve to the same annotation
+
+([Open](https://cds.team/depmap/data_explorer_2/?plot=eyJwbG90X3R5cGUiOiJzY2F0dGVyIiwiaW5kZXhfdHlwZSI6ImRlcG1hcF9tb2RlbCIsImRpbWVuc2lvbnMiOnsieCI6eyJheGlzX3R5cGUiOiJyYXdfc2xpY2UiLCJhZ2dyZWdhdGlvbiI6ImZpcnN0IiwiZGF0YXNldF9pZCI6IkNocm9ub3NfQ29tYmluZWQiLCJzbGljZV90eXBlIjoiZ2VuZSIsImNvbnRleHQiOnsiZGltZW5zaW9uX3R5cGUiOiJnZW5lIiwibmFtZSI6IlRQNTMiLCJleHByIjp7Ij09IjpbeyJ2YXIiOiJnaXZlbl9pZCJ9LCI3MTU3Il19LCJ2YXJzIjp7fX19LCJ5Ijp7ImF4aXNfdHlwZSI6InJhd19zbGljZSIsImFnZ3JlZ2F0aW9uIjoiZmlyc3QiLCJkYXRhc2V0X2lkIjoiZXhwcmVzc2lvbiIsInNsaWNlX3R5cGUiOiJnZW5lIiwiY29udGV4dCI6eyJkaW1lbnNpb25fdHlwZSI6ImdlbmUiLCJuYW1lIjoiVFA1MyIsImV4cHIiOnsiPT0iOlt7InZhciI6ImdpdmVuX2lkIn0sIjcxNTciXX0sInZhcnMiOnt9fX19LCJmYWNldF9ieSI6InByb3BlcnR5IiwiY29sb3JfYnkiOiJwcm9wZXJ0eSIsIm1ldGFkYXRhIjp7ImZhY2V0X3Byb3BlcnR5Ijp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiT25jb3RyZWVMaW5lYWdlIn0sImNvbG9yX3Byb3BlcnR5Ijp7ImlkZW50aWZpZXJfdHlwZSI6ImNvbHVtbiIsImRhdGFzZXRfaWQiOiJkZXBtYXBfbW9kZWxfbWV0YWRhdGEiLCJpZGVudGlmaWVyIjoiUHJpbWFyeU9yTWV0YXN0YXNpcyJ9fSwic2hvd19yZWdyZXNzaW9uX2xpbmUiOnRydWUsInNob3dfcmVncmVzc2lvbl9saW5lX3Blcl9jb2xvciI6dHJ1ZX0=))
+
+```json
+{
+  "plot_type": "scatter",
+  "index_type": "depmap_model",
+  "dimensions": {
+    "x": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "Chronos_Combined",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    },
+    "y": {
+      "axis_type": "raw_slice",
+      "aggregation": "first",
+      "dataset_id": "expression",
+      "slice_type": "gene",
+      "context": {
+        "dimension_type": "gene",
+        "name": "TP53",
+        "expr": {
+          "==": [
+            {
+              "var": "given_id"
+            },
+            "7157"
+          ]
+        },
+        "vars": {}
+      }
+    }
+  },
+  "facet_by": "property",
+  "color_by": "property",
+  "metadata": {
+    "facet_property": {
+      "identifier_type": "column",
+      "dataset_id": "depmap_model_metadata",
+      "identifier": "OncotreeLineage"
+    },
+    "color_property": {
+      "identifier_type": "column",
+      "dataset_id": "depmap_model_metadata",
+      "identifier": "PrimaryOrMetastasis"
+    }
+  },
+  "show_regression_line": true,
+  "show_regression_line_per_color": true
 }
 ```
 

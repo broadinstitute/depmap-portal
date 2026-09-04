@@ -332,6 +332,17 @@ export interface DataExplorerPlotConfig {
   hide_identity_line?: boolean;
   show_regression_line?: boolean;
 
+  // A sub-option of `show_regression_line`, meaningful only on a faceted
+  // scatter whose `color_by` resolves to a DIFFERENT partition than its
+  // `facet_by`. Absent/false (the default) keeps the established behavior: one
+  // pooled fit per small-multiples panel, recomputed as legend entries are
+  // toggled off. True splits each panel's fit by color instead, giving one
+  // line per legend entry per panel — deliberately opt-in, since a panel with
+  // many colors becomes unreadable. Normalized away as soon as it can't
+  // apply (see `canShowRegressionLinePerColor`), so it never sits in a config
+  // describing something the plot can't draw.
+  show_regression_line_per_color?: boolean;
+
   // unique to correlation_heatmap
   use_clustering?: boolean;
 }

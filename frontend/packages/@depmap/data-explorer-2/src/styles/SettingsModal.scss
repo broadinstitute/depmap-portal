@@ -83,11 +83,14 @@
   }
 }
 
+// Portaled to document.body (see GradientEditorPopover), so `top`/`left` come
+// from the trigger swatch's bounding rect as inline styles rather than from a
+// margin offset against a positioned ancestor.
 .gradientEditor {
-  z-index: 1;
-  position: absolute;
-  margin-left: 131px;
-  margin-top: 32px;
+  // Above Bootstrap's .modal (1050), which is now an ancestor in paint order
+  // rather than in the DOM.
+  z-index: 1060;
+  position: fixed;
   padding: 5px;
   border: 1px solid #999;
   border-radius: 4px;
@@ -95,6 +98,8 @@
   filter: drop-shadow(5px 5px 10px #aaa);
 
   label {
+    // .SettingsModal used to supply this, overriding Bootstrap's bold label.
+    font-weight: normal;
     margin-top: 20px;
     width: auto;
   }

@@ -13,6 +13,11 @@ const SettingsModal = React.lazy(
 export const DEFAULT_SETTINGS = {
   plotStyles: {
     pointSize: 10,
+    // Faceting subdivides the plot area — into small multiples (scatter),
+    // violin tracks (density 1D), or x-clusters (waterfall) — so every point
+    // has less room. Faceted plots get their own (smaller) point size
+    // instead of reusing `pointSize`.
+    facetedPointSize: 7,
     pointOpacity: 0.5,
     outlineWidth: 2,
     xAxisFontSize: 14,

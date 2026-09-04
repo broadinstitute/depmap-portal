@@ -68,6 +68,10 @@ interface Props {
     sliceQuery: SliceQuery
   ) => import("./useData").ColumnDisplayOptions | null;
   hiddenDatasets?: Set<string>;
+  // Bumped by SliceTable's "Try again" button. See `retryToken` in useData for
+  // why the refetch needs a token of its own, and the adjustment below for what
+  // else a retry re-initializes.
+  retryToken: number;
 }
 
 // A column the caller supplies itself, for values that aren't Breadbox slices —
@@ -200,6 +204,7 @@ export function useSliceTableState({
   customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
   hiddenDatasets = undefined,
+  retryToken,
 }: Props) {
   const [slices, setSlices] = useState<SliceQuery[]>(initialSlices || []);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>(
@@ -226,6 +231,21 @@ export function useSliceTableState({
   if (syncedInitialSelection !== initialRowSelection) {
     setSyncedInitialSelection(initialRowSelection);
     setRowSelection(initialRowSelection);
+  }
+
+  // A retry re-reads `getInitialState` — SliceTable bumps its revision in the
+  // same click — so by the time this runs, `initialSlices` is the freshly-read
+  // set. For a caller that drops what it persisted in `onLoadError` (see
+  // forgetRememberedColumns) that is the smaller set, which is the whole point:
+  // replaying the column set that was just rejected would fail identically
+  // every time, so the retry has to start from whatever the caller now
+  // considers its starting point. Adjusted during render for the same reason
+  // the row selection above is.
+  const [syncedRetryToken, setSyncedRetryToken] = useState(retryToken);
+
+  if (syncedRetryToken !== retryToken) {
+    setSyncedRetryToken(retryToken);
+    setSlices(initialSlices);
   }
 
   const prevIndexTypeName = useRef(index_type_name);
@@ -275,11 +295,12 @@ export function useSliceTableState({
   }, [initialSlices, slices, onChangeSlices]);
 
   // Fetch data without any filtering — useData now returns the full dataset
-  const { columns, data, loading, error, exportToCsv } = useData({
+  const { columns, data, loading, progress, error, exportToCsv } = useData({
     getColumnDisplayOptions,
     index_type_name,
     slices,
     viewOnlySlices,
+    retryToken,
   });
 
   // Populate the slice data cache whenever columns or data change.
@@ -801,6 +822,7 @@ export function useSliceTableState({
     data,
     error,
     loading,
+    progress,
     columns: extendedColumns,
     rowFilter,
     handleClickAddColumn,

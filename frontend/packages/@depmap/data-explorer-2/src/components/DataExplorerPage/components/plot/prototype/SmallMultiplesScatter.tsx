@@ -129,8 +129,10 @@ interface Props {
   // everywhere; the line itself is injected per subplot after autorange.
   showIdentityLine?: boolean;
   // Per-facet regression lines keyed by facet label (from useScatterPlotData).
-  // Each panel draws its own; a facet with no entry draws none.
-  regressionLinesByFacet?: Map<string, RegressionLine> | null;
+  // Each panel draws its own; a facet with no entry (or an empty one) draws
+  // none. Usually one line per panel; several when the plot is configured to
+  // fit one per color (show_regression_line_per_color).
+  regressionLinesByFacet?: Map<string, RegressionLine[]> | null;
   // When true, a facet with no plottable point is kept as an empty panel
   // labeled "(no data)" rather than dropped. Used by expanded plots so a
   // paginated transcript window keeps its full set of panels even when the
@@ -851,11 +853,11 @@ function SmallMultiplesScatter({
       if (showIdentityLine || regressionLinesByFacet) {
         for (let k = 0; k < facets.length; k += 1) {
           const suffix = k === 0 ? "" : String(k + 1);
-          const facetLine = regressionLinesByFacet?.get(facets[k]) ?? null;
+          const facetLines = regressionLinesByFacet?.get(facets[k]) ?? null;
           downloadShapes.push(
             ...(calcPlotIndicatorLineShapes(
               showIdentityLine,
-              facetLine ? [facetLine] : null,
+              facetLines,
               extents,
               false,
               { xref: `x${suffix}`, yref: `y${suffix}` }
@@ -900,7 +902,8 @@ function SmallMultiplesScatter({
     }
 
     // Per-facet indicator shapes: the identity line (same in every panel) plus
-    // this panel's regression line, if one was fit (regressionLinesByFacet).
+    // this panel's regression line(s), if any were fit (regressionLinesByFacet
+    // — one per panel normally, one per color under the per-color option).
     // The shared `extents` is identical across panels (ranges linked by
     // `matches`); only the subplot refs and per-facet slope/intercept differ.
     // Built here, injected after autorange settles (below).
@@ -908,11 +911,11 @@ function SmallMultiplesScatter({
     if (showIdentityLine || regressionLinesByFacet) {
       for (let k = 0; k < facets.length; k += 1) {
         const suffix = k === 0 ? "" : String(k + 1);
-        const facetLine = regressionLinesByFacet?.get(facets[k]) ?? null;
+        const facetLines = regressionLinesByFacet?.get(facets[k]) ?? null;
         indicatorShapes.push(
           ...(calcPlotIndicatorLineShapes(
             showIdentityLine,
-            facetLine ? [facetLine] : null,
+            facetLines,
             extents,
             true,
             { xref: `x${suffix}`, yref: `y${suffix}` }
@@ -941,6 +944,16 @@ function SmallMultiplesScatter({
     // would otherwise drop the identity/regression lines. Re-asserting here
     // puts them back; Plotly de-dupes the no-op repeats when nothing changed,
     // so it doesn't loop. Mirrors PrototypeScatterPlot's handling.
+    // The legend is drawn from dummy traces (getLegendTraces) that hold no
+    // real points, so Plotly's default click behavior toggles the dummy and
+    // nothing else: the entry greys out while the plot stays put. Returning
+    // false suppresses that, leaving the legend a static key rather than a
+    // control that appears to do something. Registered unconditionally — with
+    // no legend shown (Data Explorer's case) these never fire.
+    // TODO: make these actually filter, as Data Explorer's own legend does.
+    on("plotly_legendclick", () => false);
+    on("plotly_legenddoubleclick", () => false);
+
     on("plotly_afterplot", () => {
       if (
         indicatorShapes.length === 0 ||

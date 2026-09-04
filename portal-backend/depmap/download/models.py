@@ -656,6 +656,7 @@ class ReleaseType(Enum):
     rnai = "rnai"
     drug = "drug"
     other_omics = "other_omics"
+    proteomics = "proteomics"
     other_crispr = "other_crispr"
     other = "other"
     metmap = "metmap"
@@ -667,6 +668,7 @@ class ReleaseType(Enum):
             ReleaseType.rnai: "RNAi Screens",
             ReleaseType.drug: "Drug Screens",
             ReleaseType.other_omics: "Other Omics",
+            ReleaseType.proteomics: "Proteomics",
             ReleaseType.other_crispr: "Other CRISPR Screens",
             ReleaseType.other: "Other",
             ReleaseType.metmap: "MetMap",

@@ -348,10 +348,9 @@ export const pluralize = (str: string) => {
     return str;
   }
 
-  // Special case: there are both multiple compounds and
-  // multiple doses per compound, so pluralize both words.
+  // Special case: The "at" isn't doing much work in the plural case.
   if (str === "Compound at dose") {
-    return "Compounds at doses";
+    return "Compound doses";
   }
 
   return `${str.replace(/y$/, "ie")}s`;

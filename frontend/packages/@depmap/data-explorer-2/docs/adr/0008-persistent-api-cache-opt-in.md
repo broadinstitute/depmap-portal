@@ -79,27 +79,41 @@ direction. When you add a Data Explorer call site, decide explicitly.
 - **Filtered `getDimensionTypeIdentifiers`** (`data_type`,
   `show_only_dimensions_in_datasets`): **never persist.** The backend filters through
   the _user's_ accessible datasets, so the response is per-user. Keep plain `cached()`.
-- **Never persist:** `fetchAssociations` (see above), `getContextDatasetCoverage`
-  (next bullet), `getTaskStatus` (mutable by nature), and the bootstrap methods
+- **Never persist:** `fetchAssociations` (see above), `getTaskStatus` (mutable by
+  nature), and the bootstrap methods
   `getDatasets` / `getDimensionTypes` / `getDataset`. The last three are not merely
   "not worth it": the correctness argument
   _requires_ `getDatasets` to be fresh every load (it seeds the registry and populates
   pickers — deletion handling exists only because of this), `getDimensionTypes` is the
   source the persisted helpers resolve deps from, and `getDataset` returns metadata
   that is PATCH-able under a stable UUID.
-- **`getContextDatasetCoverage` is the sharpest counterexample on record.** Its
-  request is the same Context body `evaluateContext` takes and it runs the same
-  evaluator, so the analogy invites "upgrading" it to a persisted helper someday.
-  Don't. The assertion fails on the _response_ side, twice over. First, coverage is
-  computed across the caller's entire accessible catalog — datasets named nowhere in
-  the request — and user identity arrives via proxy headers the cache key can never
-  see; the enumerated dataset ids would disclose private datasets' existence to the
-  next user of a shared store. Second, its answer depends on what exists _right now_:
-  datasets are uploaded at runtime, between deploys, where the epoch offers no
-  protection, so even a public-only variant would serve coverage that silently omits
-  new datasets. Plain in-memory `cached()` is exactly right for it — a page belongs
-  to one user and one moment in catalog time, which are the two dimensions the
-  persistent key cannot express.
+- **`getContextDatasetCoverage` — the whole-catalog case, and what it taught us.**
+  Its request is the same Context body `evaluateContext` takes and it runs the same
+  evaluator, so the analogy invites `persist: true` someday. Don't: the assertion
+  fails on the _response_ side. Coverage is computed across the caller's entire
+  accessible catalog — datasets named nowhere in the request — and user identity
+  arrives via proxy headers the cache key can never see. It persists via
+  `persist: { wholeCatalog: true }` instead, which makes the dependency explicit
+  and lets the engine decide per session:
+
+  - **Only when the caller's entire visible catalog is public.** This is the
+    load-bearing invariant, and it is about BYTES, not keys: IndexedDB is
+    readable wholesale (devtools, shared machines), so no keying scheme can make
+    a private-derived response safe to store. For an all-public caller the full
+    response is derived from public data alone, so storing it discloses nothing.
+    Anyone who can see a private dataset stays in-memory only, permanently.
+  - **Keyed by a fingerprint of the listing.** Coverage depends on what exists
+    _right now_, and datasets are uploaded at runtime where the epoch offers no
+    protection — but the registry is rebuilt from a fresh `getDatasets()` every
+    page load, so folding a hash of the sorted listing UUIDs into the key makes
+    entries self-invalidate on any catalog change, the same way given_id keys
+    do. (Since UUIDs pin contents, the fingerprint pins the entire input.)
+
+  An earlier revision of this bullet presented both objections as absolute. Only
+  the bytes-on-disk one is; the catalog-time one is answerable by the key. If a
+  future endpoint needs full-fidelity persistence for private-visible users too,
+  that requires server-side changes (a public/private scope split) — the client
+  alone cannot express it.
 
 Misclassifying in the safe direction (not persisting something immutable) costs a cache
 hit. Misclassifying in the unsafe direction is the only real hazard, and the engine's

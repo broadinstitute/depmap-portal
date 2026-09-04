@@ -595,6 +595,146 @@ describe("normalizePlot", () => {
       expect(result.color_by).toBeUndefined();
     });
   });
+
+  // `show_regression_line_per_color` splits each small-multiples panel's fit by
+  // color. It only means anything while color_by and facet_by are two real,
+  // DISTINCT partitions, so unlike the other scatter booleans its survival is
+  // (by definition, not by accident — ADR 0002 §3) conditional on those two
+  // axes. ADR 0002 §5: a new field gets a round-trip test.
+  describe("show_regression_line_per_color", () => {
+    // Distinct, complete color and facet annotations — the one configuration
+    // where the option applies.
+    const coloredAndFaceted = ({
+      ...basePlot,
+      color_by: "property",
+      facet_by: "property",
+      metadata: {
+        color_property: {
+          dataset_id: "model-metadata",
+          identifier: "PrimaryOrMetastasis",
+          identifier_type: "column",
+        },
+        facet_property: {
+          dataset_id: "model-metadata",
+          identifier: "OncotreeLineage",
+          identifier_type: "column",
+        },
+      },
+    } as unknown) as DataExplorerPlotConfig;
+
+    test("survives when color_by and facet_by are both complete and distinct", () => {
+      const result = normalizePlot({
+        ...coloredAndFaceted,
+        show_regression_line_per_color: true,
+      });
+
+      expect(result.show_regression_line_per_color).toBe(true);
+    });
+
+    test("survives a full plotToQueryString/readPlotFromQueryString round trip", async () => {
+      setQueryString("/");
+      const search = await plotToQueryString({
+        ...coloredAndFaceted,
+        show_regression_line: true,
+        show_regression_line_per_color: true,
+      });
+
+      setQueryString(search);
+      const result = await readPlotFromQueryString();
+      setQueryString("/");
+
+      expect(result?.show_regression_line_per_color).toBe(true);
+    });
+
+    test("is dropped when facet_by is unset (no panels to split)", () => {
+      const result = normalizePlot(({
+        ...coloredAndFaceted,
+        facet_by: undefined,
+        show_regression_line_per_color: true,
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.show_regression_line_per_color).toBeUndefined();
+    });
+
+    test("is dropped when color_by defers to facet_by ('facet')", () => {
+      // The Legend then IS the facet key, so every panel is monochromatic and
+      // the split would reproduce the same single line.
+      const result = normalizePlot(({
+        ...coloredAndFaceted,
+        color_by: "facet",
+        show_regression_line_per_color: true,
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.show_regression_line_per_color).toBeUndefined();
+    });
+
+    test("is dropped when color_by is 'uniform' (nothing to split by)", () => {
+      const result = normalizePlot(({
+        ...coloredAndFaceted,
+        color_by: "uniform",
+        show_regression_line_per_color: true,
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.show_regression_line_per_color).toBeUndefined();
+    });
+
+    test("is dropped when both axes name the identical annotation", () => {
+      const result = normalizePlot(({
+        ...coloredAndFaceted,
+        metadata: {
+          color_property: {
+            dataset_id: "model-metadata",
+            identifier: "OncotreeLineage",
+            identifier_type: "column",
+          },
+          facet_property: {
+            dataset_id: "model-metadata",
+            identifier: "OncotreeLineage",
+            identifier_type: "column",
+          },
+        },
+        show_regression_line_per_color: true,
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.show_regression_line_per_color).toBeUndefined();
+    });
+
+    test("is dropped when color_by's own backing is incomplete", () => {
+      // Checked against the NORMALIZED plot: color_by is mid-selection here
+      // (mode chosen, annotation not), so it doesn't survive — and the option
+      // must not survive a partition that isn't there.
+      const result = normalizePlot(({
+        ...coloredAndFaceted,
+        metadata: {
+          facet_property: {
+            dataset_id: "model-metadata",
+            identifier: "OncotreeLineage",
+            identifier_type: "column",
+          },
+        },
+        show_regression_line_per_color: true,
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.color_by).toBeUndefined();
+      expect(result.show_regression_line_per_color).toBeUndefined();
+    });
+
+    test("is dropped on a non-scatter plot type", () => {
+      const result = normalizePlot(({
+        ...coloredAndFaceted,
+        plot_type: "density_1d",
+        show_regression_line_per_color: true,
+      } as unknown) as DataExplorerPlotConfig);
+
+      expect(result.show_regression_line_per_color).toBeUndefined();
+    });
+
+    test("is absent when the plot never had one", () => {
+      expect(
+        normalizePlot(coloredAndFaceted).show_regression_line_per_color
+      ).toBeUndefined();
+    });
+  });
 });
 
 describe("readPlotFromQueryString / plotToQueryString — v1->v2 color_by migration", () => {

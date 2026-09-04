@@ -113,6 +113,7 @@ function DataExplorerScatterPlot({
   const { plotStyles } = useDataExplorerSettings();
   const {
     pointSize,
+    facetedPointSize,
     pointOpacity,
     outlineWidth,
     palette,
@@ -341,7 +342,7 @@ function DataExplorerScatterPlot({
                 pointsToAnnotate={pointsToAnnotate}
                 selectionCount={selection?.size ?? 0}
                 onClickResetSelection={clearSelection}
-                pointSize={pointSize}
+                pointSize={facetedPointSize}
                 pointOpacity={pointOpacity}
                 outlineWidth={outlineWidth}
                 palette={palette}

@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import cx from "classnames";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
@@ -8,6 +14,7 @@ import { PlotlyLoaderProvider } from "@depmap/data-explorer-2";
 import Controls from "./Controls";
 import rowSelectionChanged from "./rowSelectionChanged";
 import Actions from "./Actions";
+import LoadingProgress from "./LoadingProgress";
 import {
   useSliceTableState,
   filterPredicate,
@@ -37,6 +44,17 @@ interface Props {
     initialRowSelection?: RowSelectionState;
   };
   onChangeSlices?: (nextSlices: SliceQuery[]) => void;
+  // Called when the table fails to load outright — it couldn't even build its
+  // index — in addition to (not instead of) the error the table renders itself.
+  // A single column failing to load doesn't come through here; that degrades to
+  // a stub column and leaves the rest of the table usable.
+  //
+  // For callers that persist their column choice: a set that fails to load will
+  // keep failing to load, so this is the hook for throwing the persisted set
+  // away. The "Try again" button rendered alongside the error re-reads
+  // `getInitialState` for exactly that reason, so whatever this callback
+  // discards is gone by the time the retry starts.
+  onLoadError?: (error: string) => void;
   // Pass a predicate to make only some rows selectable — the checkbox renders
   // disabled for the rest, and "select all" skips them.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -133,6 +151,7 @@ function SliceTable({
   PlotlyLoader,
   getInitialState = () => ({}),
   onChangeSlices = NOOP,
+  onLoadError = NOOP,
   enableRowSelection = false,
   enableMultiRowSelection = false,
   maxRowSelection = undefined,
@@ -155,6 +174,7 @@ function SliceTable({
   sliceTableRef = undefined,
 }: Props) {
   const [revision, setRevision] = useState(1);
+  const [retryToken, setRetryToken] = useState(0);
 
   const { initialSlices, viewOnlySlices, initialRowSelection } = useMemo(() => {
     return {
@@ -196,6 +216,7 @@ function SliceTable({
     data,
     error,
     loading,
+    progress,
     columns,
     rowFilter,
     rowSelection,
@@ -221,9 +242,33 @@ function SliceTable({
     tableRef,
     implicitFilter,
     hiddenDatasets,
+    retryToken,
   });
 
+  // Two counters bumped together, not one. The revision re-reads
+  // `getInitialState`, which is what gives `onLoadError` a chance to have
+  // mattered — a caller that forgot its remembered columns retries with the
+  // smaller set. The token is what guarantees a refetch at all: when the caller
+  // hands back the identical slices (a stable array, or nothing persisted to
+  // forget), the revision alone changes nothing useData can see.
+  const handleClickRetry = useCallback(() => {
+    setRevision((r) => r + 1);
+    setRetryToken((t) => t + 1);
+  }, []);
+
   const combinedLoading = loading || externalLoading;
+
+  // Held in a ref so the effect below depends on the error alone. Callers pass
+  // this inline, and a new function identity every render would otherwise mean
+  // one notification per render for as long as the error is on screen.
+  const onLoadErrorRef = useRef(onLoadError);
+  onLoadErrorRef.current = onLoadError;
+
+  useEffect(() => {
+    if (error) {
+      onLoadErrorRef.current(error);
+    }
+  }, [error]);
 
   // Compared against what was last *reported*, not against the initial
   // selection. Comparing against the initial one suppressed every return to it:
@@ -289,17 +334,39 @@ function SliceTable({
         {combinedLoading && (
           <div className={styles.loadingContainer}>
             <Spinner position="static" />
+            {/* Gated on `progress` so a caller's own `isLoading` keeps the
+                bare spinner — it has no column count behind it. */}
+            {progress && (
+              <LoadingProgress
+                loaded={progress.loaded}
+                total={progress.total}
+              />
+            )}
           </div>
         )}
-        {error && (
+        {error && !combinedLoading && (
           <div className={styles.errorContainer}>
-            <p>⚠️ Sorry, there was an error loading the table.</p>
+            <div>
+              <p>⚠️ Sorry, there was an error loading the table.</p>
+              <button
+                type="button"
+                className={cx("btn", "btn-default", styles.retryButton)}
+                onClick={handleClickRetry}
+              >
+                <span className="glyphicon glyphicon-refresh" /> Try again
+              </button>
+            </div>
             <details>{error}</details>
           </div>
         )}
         <ReactTable
           tableRef={tableRef}
-          className={combinedLoading ? styles.hidden : ""}
+          // Hidden rather than unmounted so `tableRef` stays live. An error here
+          // means the index itself couldn't be built, so the table has no rows
+          // to show and no prospect of any — leaving it visible put "There are
+          // no rows to display" under the error message, which reads as a second
+          // unrelated thing having gone wrong.
+          className={combinedLoading || error ? styles.hidden : ""}
           height="100%"
           data={filteredData}
           columns={columns}

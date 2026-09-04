@@ -90,7 +90,7 @@ requests-toolbelt="^1.0.0"
 MarkupSafe="^3.0"
 
 SQLAlchemy="^2.0"
-breadbox-client = {version = "^4.6.0", source = "public-python"}
+breadbox-client = {version = "^4.20.0", source = "public-python"}
 pypatch-and-run = {version = "^1.0.2", source = "public-python"}
 
 pyyaml="^6.0"

@@ -21,6 +21,7 @@ import {
   varianceLowerBound,
 } from "../../../../services/dataExplorerAPI/expansionMembers";
 import {
+  forgetRememberedColumns,
   loadRememberedColumns,
   rememberColumns,
 } from "../../../../utils/rememberedTableColumns";
@@ -345,6 +346,18 @@ function MembersTable({
           })}
           onChangeSlices={(nextSlices: SliceQuery[]) =>
             rememberColumns("expansion-members", slice_type, nextSlices)
+          }
+          // Each remembered column is a full fetch of every entity of the type
+          // (see the implicitFilter HACK above), so a set someone built up over
+          // several sittings can arrive as enough concurrent load for Breadbox
+          // to refuse the batch outright. That failure is deterministic —
+          // reopening, refreshing, or hitting the table's own "Try again"
+          // button replays the identical requests — so the memory has to go for
+          // the retry to have any chance. Dropping it puts the table back to id
+          // and label, which is what a first-time open would have loaded, and
+          // is the set "Try again" then re-reads.
+          onLoadError={() =>
+            forgetRememberedColumns("expansion-members", slice_type)
           }
           onChangeRowSelection={(nextSelection) => {
             const ids = candidateIds.filter((id) => nextSelection[id]);

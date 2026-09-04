@@ -4,7 +4,10 @@ import useScatterPlotData from "@depmap/data-explorer-2/src/components/DataExplo
 import PrototypeScatterPlot from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/PrototypeScatterPlot";
 import SmallMultiplesScatter from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/SmallMultiplesScatter";
 import { useDataExplorerSettings } from "@depmap/data-explorer-2/src/contexts/DataExplorerSettingsContext";
-import { computeFacets } from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
+import {
+  chosenCategoriesFor,
+  computeFacets,
+} from "@depmap/data-explorer-2/src/components/DataExplorerPage/components/plot/prototype/plotUtils";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
@@ -47,7 +50,13 @@ function EmbeddedScatterPlot({
   plotConfig,
 }: Props) {
   const { plotStyles } = useDataExplorerSettings();
-  const { pointSize, pointOpacity, outlineWidth, palette } = plotStyles;
+  const {
+    pointSize,
+    facetedPointSize,
+    pointOpacity,
+    outlineWidth,
+    palette,
+  } = plotStyles;
 
   const {
     formattedData,
@@ -66,10 +75,15 @@ function EmbeddedScatterPlot({
     canShowIdentityLine(data)
   );
 
-  const facetInfo = useMemo(() => computeFacets(data, plotConfig.facet_by), [
-    data,
-    plotConfig.facet_by,
-  ]);
+  // facet_categories is the user's own pick from the category picker, and it
+  // overrides computeFacets' ranking entirely — omit it and an embedded link
+  // carrying one renders a different set of panels than Data Explorer does.
+  const facetChosen = chosenCategoriesFor(plotConfig, "facet");
+
+  const facetInfo = useMemo(
+    () => computeFacets(data, plotConfig.facet_by, "facet", facetChosen),
+    [data, plotConfig.facet_by, facetChosen]
+  );
 
   if (!formattedData) {
     return null;
@@ -113,7 +127,7 @@ function EmbeddedScatterPlot({
             regressionLinesByFacet={regressionLinesByFacet}
             placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
             showIdentityLine={showIdentityLine}
-            pointSize={pointSize}
+            pointSize={facetedPointSize}
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}
             palette={palette}

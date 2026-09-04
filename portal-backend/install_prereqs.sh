@@ -31,7 +31,7 @@ poetry install
 
 # generate python version of shared constants between frontend and backend
 poetry run python ../depmap-shared/generate-py ../depmap-shared/color_palette.json depmap/utilities/_color_palette.py
-poetry run python ../depmap-shared/generate-ts-from-schema.py ../pipeline/preprocessing-pipeline/scripts/format_models.py schema ModelAnnotation ../frontend/packages/portal-frontend/src/cellLine/models/ModelAnnotation.ts
+#poetry run python ../depmap-shared/generate-ts-from-schema.py ../pipeline/preprocessing-pipeline/scripts/format_models.py schema ModelAnnotation ../frontend/packages/portal-frontend/src/cellLine/models/ModelAnnotation.ts
 
 # install modules needed by React frontend
 yarn --cwd ../frontend install

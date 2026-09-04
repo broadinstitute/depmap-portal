@@ -74,7 +74,11 @@ function SlicePreview({
   const column = useMemo(
     () =>
       previewColumns.find(({ meta }) => {
-        return value !== null && areSliceQueriesEqual(meta.sliceQuery, value);
+        return (
+          value != null &&
+          meta.sliceQuery != null &&
+          areSliceQueriesEqual(meta.sliceQuery, value)
+        );
       }),
     [previewColumns, value]
   );

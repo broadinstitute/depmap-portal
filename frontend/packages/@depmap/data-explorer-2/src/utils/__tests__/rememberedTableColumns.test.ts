@@ -1,4 +1,5 @@
 import {
+  forgetRememberedColumns,
   loadRememberedColumns,
   rememberColumns,
 } from "../rememberedTableColumns";
@@ -96,6 +97,32 @@ test("drops slices that have stopped being well-formed", () => {
   expect(loadRememberedColumns("gene-transcripts", "transcript")).toEqual([
     TPM,
   ]);
+});
+
+test("forgetting reads as never-stored, not as an empty set", () => {
+  rememberColumns("expansion-members", "transcript", [TPM, GENE]);
+  forgetRememberedColumns("expansion-members", "transcript");
+
+  // Null rather than [] specifically so the caller's defaults come back — the
+  // whole point of forgetting a set that couldn't be loaded.
+  expect(loadRememberedColumns("expansion-members", "transcript")).toBeNull();
+});
+
+test("forgetting leaves other entries alone", () => {
+  rememberColumns("expansion-members", "transcript", [TPM]);
+  rememberColumns("gene-transcripts", "transcript", [GENE]);
+
+  forgetRememberedColumns("expansion-members", "transcript");
+
+  expect(loadRememberedColumns("gene-transcripts", "transcript")).toEqual([
+    GENE,
+  ]);
+});
+
+test("forgetting something never stored is a no-op", () => {
+  expect(() =>
+    forgetRememberedColumns("expansion-members", "transcript")
+  ).not.toThrow();
 });
 
 test("survives storage holding something that isn't JSON", () => {
