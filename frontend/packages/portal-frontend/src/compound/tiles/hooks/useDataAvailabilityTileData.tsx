@@ -19,7 +19,7 @@ const DATASET_TOOLTIPS: Record<string, string> = {
   Prism_oncology_seq_AUC_collapsed:
     "Compounds screened at 8pt dose series using PRISM Sequencing assay",
   Prism_oncology_unified_AUC_collapsed:
-    'Datasets combining results for all compounds screened in either "PRISM OncRef Lum" and "PRISM OncRef Seq". If a compound was screened in both, the results from the sequencing assay were chosen and Luminex results were ignored',
+    "Contains results from all compounds screened either the PRISM Luminex assay or the PRISM Sequencing assay. If a compound was screened in both assays, the results from the sequencing assay were included and Luminex results were ignored",
 };
 
 const buildDatasetUrl = (dataset: MatrixDataset) => {
