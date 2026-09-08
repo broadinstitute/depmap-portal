@@ -1,16 +1,30 @@
 import React, { useState } from "react";
-import { Tooltip } from "@depmap/common-components";
+import { toStaticUrl } from "@depmap/globals";
 import styles from "../CompoundTiles.scss";
 import useDataAvailabilityTileData from "../hooks/useDataAvailabilityTileData";
 import { MatrixDataset } from "@depmap/types";
 import PlotSpinner from "src/plot/components/PlotSpinner";
 import ErrorLoading from "../ErrorLoading";
+import InfoIcon from "src/common/components/InfoIcon";
 
 interface DatasetAvailabilityTileProps {
   compoundName: string;
   compoundId: string;
   datasets: MatrixDataset[];
 }
+
+const customInfoImg = (
+  <img
+    style={{
+      height: "13px",
+      margin: "1px 3px 4px",
+      cursor: "pointer",
+    }}
+    src={toStaticUrl("img/gene_overview/info_purple.svg")}
+    alt="description of term"
+    className="icon"
+  />
+);
 
 const DatasetName = ({
   datasetUrl,
@@ -20,23 +34,19 @@ const DatasetName = ({
   datasetUrl: string | null;
   datasetDisplayName: string;
   tooltip?: string;
-}) => {
-  const link = <a href={datasetUrl || ""}>{datasetDisplayName}</a>;
-
-  if (!tooltip) {
-    return link;
-  }
-
-  return (
-    <Tooltip
-      id={`data-availability-tooltip-${datasetDisplayName}`}
-      content={tooltip}
-      placement="top"
-    >
-      <span>{link}</span>
-    </Tooltip>
-  );
-};
+}) => (
+  <>
+    <a href={datasetUrl || ""}>{datasetDisplayName}</a>
+    {tooltip && (
+      <InfoIcon
+        target={customInfoImg}
+        popoverContent={<p>{tooltip}</p>}
+        popoverId={`data-availability-tooltip-${datasetDisplayName}`}
+        trigger={["hover", "focus"]}
+      />
+    )}
+  </>
+);
 
 export const DatasetAvailabilityTile: React.FC<DatasetAvailabilityTileProps> = ({
   compoundId,
