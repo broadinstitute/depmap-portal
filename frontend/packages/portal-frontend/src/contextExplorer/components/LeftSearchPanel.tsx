@@ -9,8 +9,6 @@ import {
   GENE_DEP_BETWEEN_1_AND_2,
   GENE_DEP_END,
   GENE_DEP_TEXT_BEFORE_1_HELP_ICON,
-  ONCREF_LUM_SIDEBAR_TEXT,
-  ONCREF_SEQ_SIDEBAR_TEXT,
   ONCREF_UNIFIED_SIDEBAR_TEXT,
   OVERVIEW_SIDEBAR_TEXT,
   REPURPOSING_SIDE_BAR_TEXT,
@@ -368,28 +366,6 @@ const ContextTree = (props: ContextTreeProps) => {
             }}
           />
           <p>{REPURPOSING_SIDE_BAR_TEXT}</p>
-        </>
-      )}
-      {selectedTab === TabTypes.DrugSensitivityOncRefLum && (
-        <>
-          <hr
-            style={{
-              marginTop: "27px",
-              borderTop: "1px solid #000000",
-            }}
-          />
-          <p>{ONCREF_LUM_SIDEBAR_TEXT}</p>
-        </>
-      )}
-      {selectedTab === TabTypes.DrugSensitivityOncRefSeq && (
-        <>
-          <hr
-            style={{
-              marginTop: "27px",
-              borderTop: "1px solid #000000",
-            }}
-          />
-          <p>{ONCREF_SEQ_SIDEBAR_TEXT}</p>
         </>
       )}
       {selectedTab === TabTypes.DrugSensitivityOncRefUnified && (

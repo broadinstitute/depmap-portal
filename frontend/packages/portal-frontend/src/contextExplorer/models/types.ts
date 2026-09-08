@@ -167,8 +167,6 @@ export interface OtherSignificantBoxCardData {
 export enum TabTypes {
   Overview = "Overview",
   GeneDependency = "GeneDependency",
-  DrugSensitivityOncRefSeq = "DrugSensitivityOncRefSeq",
-  DrugSensitivityOncRefLum = "DrugSensitivityOncRefLum",
   DrugSensitivityOncRefUnified = "DrugSensitivityOncRefUnified",
   DrugSensitivityRepurposing = "DrugSensitivityRepurposing",
 }

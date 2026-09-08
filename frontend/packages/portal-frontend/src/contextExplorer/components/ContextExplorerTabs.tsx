@@ -99,9 +99,7 @@ const ContextExplorerTabs = ({
     const map = new Map<number, TabTypes>();
     const allowedTabTypes = Object.values(TabTypes).filter(
       (tabTypeStr) =>
-        (tabTypeStr !== String(TabTypes.DrugSensitivityOncRefLum) &&
-          tabTypeStr !== String(TabTypes.DrugSensitivityOncRefSeq) &&
-          tabTypeStr !== String(TabTypes.DrugSensitivityOncRefUnified)) ||
+        tabTypeStr !== String(TabTypes.DrugSensitivityOncRefUnified) ||
         enabledFeatures.context_explorer_prerelease_datasets
     );
 
@@ -134,26 +132,6 @@ const ContextExplorerTabs = ({
             placement="top"
           />
         </Tab>
-        {enabledFeatures.context_explorer_prerelease_datasets && (
-          <Tab id="oncrefSeq" className={styles.Tab}>
-            OncRef Seq Sensitivity{" "}
-            <PurpleHelpIcon
-              tooltipText="Selective compound sensitivities calculated from the OncRef Sequencing Dataset (viability readout captured via Next Generation Sequencing)."
-              popoverId="oncref-seq-tab-help"
-              placement="top"
-            />
-          </Tab>
-        )}
-        {enabledFeatures.context_explorer_prerelease_datasets && (
-          <Tab id="oncrefLum" className={styles.Tab}>
-            OncRef Lum Sensitivity{" "}
-            <PurpleHelpIcon
-              tooltipText="Selective compound sensitivities calculated from the OncRef Luminex Dataset (viability readout captured via Luminex)."
-              popoverId="oncref-lum-tab-help"
-              placement="top"
-            />
-          </Tab>
-        )}
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <Tab id="oncrefUnified" className={styles.Tab}>
             OncRef Unified Sensitivity{" "}
@@ -223,42 +201,6 @@ const ContextExplorerTabs = ({
             />
           )}
         </TabPanel>
-        {enabledFeatures.context_explorer_prerelease_datasets && (
-          <TabPanel className={styles.TabPanel}>
-            {" "}
-            {!isLoadingInitialData && (
-              <ContextAnalysis
-                selectedContextNode={selectedContextNode}
-                selectedContextNameInfo={selectedContextNameInfo}
-                topContextNameInfo={topContextNameInfo}
-                treeType={treeType}
-                featureType={"compound"}
-                datasetId={
-                  ContextExplorerDatasets.PRISMOncologyReferenceSeqLog2AUCMatrix
-                }
-                customInfoImg={customInfoImg}
-              />
-            )}
-          </TabPanel>
-        )}
-        {enabledFeatures.context_explorer_prerelease_datasets && (
-          <TabPanel className={styles.TabPanel}>
-            {" "}
-            {!isLoadingInitialData && (
-              <ContextAnalysis
-                selectedContextNode={selectedContextNode}
-                selectedContextNameInfo={selectedContextNameInfo}
-                topContextNameInfo={topContextNameInfo}
-                treeType={treeType}
-                featureType={"compound"}
-                datasetId={
-                  ContextExplorerDatasets.PRISMOncologyReferenceLog2AUCMatrix
-                }
-                customInfoImg={customInfoImg}
-              />
-            )}
-          </TabPanel>
-        )}
         {enabledFeatures.context_explorer_prerelease_datasets && (
           <TabPanel className={styles.TabPanel}>
             {" "}
