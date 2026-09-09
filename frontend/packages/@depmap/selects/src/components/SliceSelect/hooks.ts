@@ -13,7 +13,7 @@ import { tokenize } from "./utils";
 // already go through `useSearch` below, which is bounded by the backend's
 // `limit` param, so the *default* (pre-search) list only needs to show a
 // small, useful sample.
-const MAX_DEFAULT_OPTIONS = 100;
+const MAX_DEFAULT_OPTIONS = 20_000;
 
 export const useDefaultOptions = (
   slice_type: string,

@@ -300,6 +300,53 @@ function SliceTable({
     }
   }, [rowSelection, onChangeRowSelection]);
 
+  // Same reason as `defaultSort` below, less severe: as an inline object this
+  // re-ran ReactTable's auto-sizing effect on every render.
+  const columnVisibility = useMemo(
+    () => ({
+      id: !hideIdColumn,
+      label: shouldShowLabelColumn && !hideLabelColumn,
+    }),
+    [hideIdColumn, shouldShowLabelColumn, hideLabelColumn]
+  );
+
+  // Memoized because its IDENTITY is load-bearing, not just its behavior.
+  // ReactTable's `sortedData` is keyed on it, that array is what
+  // `useReactTable` receives as `data`, and TanStack rebuilds every Row object
+  // when that identity changes. Inline, this comparator re-sorted the whole
+  // table and rebuilt the entire row model on every render — invisible on a
+  // few thousand rows, and about two seconds per render at 300K.
+  //
+  // It only bit on column changes: useData starts at `data: []`, so a mount's
+  // whole loading cascade renders against an empty array, while a column add
+  // keeps the previous rows in state and pays full price for every render in
+  // the cascade.
+  const defaultSort = useCallback(
+    (
+      a: Record<string, string | number | undefined>,
+      b: Record<string, string | number | undefined>
+    ) => {
+      const aId = getRowId(a);
+      const bId = getRowId(b);
+
+      const aSelected = initialRowSelection[aId] || false;
+      const bSelected = initialRowSelection[bId] || false;
+
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+
+      const aIdNum = Number(aId);
+      const bIdNum = Number(bId);
+
+      if (!Number.isNaN(aIdNum) && !Number.isNaN(bIdNum)) {
+        return aIdNum < bIdNum ? -1 : 1;
+      }
+
+      return 0;
+    },
+    [initialRowSelection]
+  );
+
   // Apply implicit filter before ReactTable sees the data. This shapes the
   // dataset itself — magnitude bar stats, search, and everything else will
   // be scoped to this subset. Unlike user-visible filters (which are handled
@@ -378,31 +425,10 @@ function SliceTable({
           enableMultiRowSelection={enableMultiRowSelection}
           maxRowSelection={maxRowSelection}
           enableStickyFirstColumn
-          columnVisibility={{
-            id: !hideIdColumn,
-            label: shouldShowLabelColumn && !hideLabelColumn,
-          }}
+          columnVisibility={columnVisibility}
           enableSearch
           rowFilter={rowFilter}
-          defaultSort={(a, b) => {
-            const aId = getRowId(a);
-            const bId = getRowId(b);
-
-            const aSelected = initialRowSelection[aId] || false;
-            const bSelected = initialRowSelection[bId] || false;
-
-            if (aSelected && !bSelected) return -1;
-            if (!aSelected && bSelected) return 1;
-
-            const aIdNum = Number(aId);
-            const bIdNum = Number(bId);
-
-            if (!Number.isNaN(aIdNum) && !Number.isNaN(bIdNum)) {
-              return aIdNum < bIdNum ? -1 : 1;
-            }
-
-            return 0;
-          }}
+          defaultSort={defaultSort}
         />
         {(!hideActions || renderCustomActions) && (
           <Actions

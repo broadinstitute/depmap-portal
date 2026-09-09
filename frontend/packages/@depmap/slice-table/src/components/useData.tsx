@@ -679,6 +679,71 @@ export function transformToTableData(
   };
 }
 
+type TableRow = Record<string, string | number | undefined>;
+
+/**
+ * Fold a freshly built row set into the previous one when the two describe the
+ * same rows, returning the PREVIOUS array so its identity is preserved.
+ *
+ * TanStack memoizes its row model on the `data` array's identity, and building
+ * that model costs roughly 4.7us per row — 1.4s for a 300K-row table, which is
+ * 87% of what adding a column used to cost. Adding or removing a column does
+ * not change which rows exist, only what each one holds, so returning a new
+ * array makes TanStack discard 300K `Row` objects and rebuild identical ones.
+ *
+ * Every value is rewritten, not just the columns that appear to have changed.
+ * Rewriting all of them costs 41ms against the 1.4s rebuild it avoids, and it
+ * means a slice whose values really did change cannot leave a stale cell
+ * behind. Keys belonging to removed columns are deleted, so consumers that
+ * enumerate a row (`hideIncompleteRows` walks `Object.entries`) don't see a
+ * column that is no longer displayed.
+ *
+ * Any difference in the row set at all — a different index type, an added or
+ * removed row, a reordering — falls back to the new array, since then the row
+ * model genuinely does have to be rebuilt.
+ *
+ * One caveat, and the reason this is safe here specifically: a reused `Row`
+ * keeps TanStack's `_valuesCache`, so a cell that was already rendered would
+ * keep its old value if the underlying response changed. Breadbox responses
+ * are immutable at their dataset address — the same invariant the persistent
+ * API cache is built on (see persistentApiCache.ts) — so within a session the
+ * same slice cannot come back with different values.
+ */
+export function reconcileRows(
+  prev: TableRow[] | null,
+  next: TableRow[]
+): TableRow[] {
+  if (!prev || prev.length === 0 || prev.length !== next.length) {
+    return next;
+  }
+
+  for (let i = 0; i < next.length; i += 1) {
+    if (prev[i].id !== next[i].id) {
+      return next;
+    }
+  }
+
+  // Every row carries every column key (transformToTableData assigns
+  // `undefined` rather than skipping), so one row is a faithful sample.
+  const nextKeys = Object.keys(next[0]);
+  const staleKeys = Object.keys(prev[0]).filter((k) => !nextKeys.includes(k));
+
+  for (let i = 0; i < prev.length; i += 1) {
+    const target = prev[i];
+    const source = next[i];
+
+    for (let k = 0; k < nextKeys.length; k += 1) {
+      target[nextKeys[k]] = source[nextKeys[k]];
+    }
+
+    for (let k = 0; k < staleKeys.length; k += 1) {
+      delete target[staleKeys[k]];
+    }
+  }
+
+  return prev;
+}
+
 /**
  * Custom hook for aligning disparate data slices to a shared index.
  *
@@ -717,6 +782,10 @@ export default function useAlignedData({
   // Use refs to store metadata that triggers the data fetch effect
   const indexTypeRef = useRef<DimensionType | null>(null);
   const idColumnDisplayNameRef = useRef<string>("");
+
+  // The row array handed to the table last time, so a column change can reuse
+  // it instead of forcing a full row-model rebuild. See `reconcileRows`.
+  const prevRowsRef = useRef<TableRow[] | null>(null);
 
   // Create CSV export callback that has access to current state.
   // Accepts an optional rowFilter to export only visible rows, or
@@ -1011,9 +1080,12 @@ export default function useAlignedData({
           failures
         );
 
+        const reconciledData = reconcileRows(prevRowsRef.current, data);
+        prevRowsRef.current = reconciledData;
+
         setState((prev) => ({
           ...prev,
-          data,
+          data: reconciledData,
           columns,
           entityLabel: indexType.display_name || indexType.name,
           loading: false,
