@@ -9,6 +9,12 @@ import { isPortal, toPortalLink } from "@depmap/globals";
 import { serializeSliceQuery } from "@depmap/selects";
 import Papa from "papaparse";
 import type { Dataset, DimensionType, SliceQuery } from "@depmap/types";
+import {
+  getProteinStripScale,
+  proteinStripCell,
+  proteinStripHeader,
+  PROTEIN_STRIP_COLUMN_WIDTH,
+} from "./ProteinStrip";
 
 export interface ColumnDisplayOptions {
   header?: ({
@@ -77,6 +83,7 @@ interface AlignedData {
       isViewable: boolean;
       loadFailure?: SliceLoadFailure;
       numericPrecision?: number;
+      suppressValueTooltip?: boolean;
       headerMenuItems?: (
         | {
             label: string;
@@ -594,9 +601,18 @@ export function transformToTableData(
       ? getColumnDisplayOptions(slice)
       : null;
 
+    // Non-null for the handful of columns that hold one character per residue,
+    // which are unreadable as text and render as a colored band instead. Looked
+    // up here rather than left to each consumer so that every SliceTable gets
+    // it -- the columns are addable from the "Add Column" menu of any table
+    // over the right index type, and a band that only appeared in the one table
+    // that remembered to wire it up would be the odd behaviour to explain.
+    const stripScale = getProteinStripScale(slice);
+
     return {
       size:
         displayOptions?.width ??
+        (stripScale ? PROTEIN_STRIP_COLUMN_WIDTH : undefined) ??
         (columnKey === "label" ? ID_AND_LABEL_COLUMN_SIZE : undefined),
       id: columnKey,
       meta: {
@@ -610,6 +626,11 @@ export function transformToTableData(
           .filter(Boolean)
           .join(" | "),
         sliceQuery: slice,
+        // The band replaces the value rather than abbreviating it, so the
+        // table's truncation tooltip has nothing useful to say -- it would pop
+        // up the several-hundred-character string the band exists to spare the
+        // reader.
+        ...(stripScale && { suppressValueTooltip: true }),
         ...(displayOptions?.numericPrecision != null && {
           numericPrecision: displayOptions.numericPrecision,
         }),
@@ -628,18 +649,33 @@ export function transformToTableData(
           </div>
         );
 
-        return displayOptions?.header
-          ? displayOptions.header({
-              label: displayLabel,
-              defaultElement,
-            })
-          : defaultElement;
+        if (displayOptions?.header) {
+          return displayOptions.header({
+            label: displayLabel,
+            defaultElement,
+          });
+        }
+
+        // The band needs its key in the header, since some of its colors are
+        // too low-contrast to carry meaning on their own.
+        if (stripScale) {
+          return proteinStripHeader(stripScale)({ defaultElement });
+        }
+
+        return defaultElement;
       },
       // Custom cell renderer from getColumnDisplayOptions takes highest priority.
       // When provided, it fully overrides the cell (magnitude bars won't apply).
       ...(displayOptions?.cell && {
         cell: displayOptions.cell,
       }),
+      // Built-in cell renderer for per-residue strings (only if no custom
+      // cell). Ahead of the others because a column that qualifies is never
+      // also a reference or a string list.
+      ...(!displayOptions?.cell &&
+        stripScale && {
+          cell: proteinStripCell(stripScale),
+        }),
       // Built-in cell renderer for linkable references (only if no custom cell).
       ...(!displayOptions?.cell &&
         isLinkable(references) && {

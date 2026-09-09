@@ -35,10 +35,25 @@
         {
           "diagnostics": false
         }
+      ],
+      "^.+\\.js$": [
+        "babel-jest",
+        {
+          "presets": [
+            [
+              "@babel/preset-env",
+              {
+                "targets": {
+                  "node": "current"
+                }
+              }
+            ]
+          ]
+        }
       ]
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!depmap-shared)"
+      "node_modules/(?!(?:depmap-shared|d3|d3-[a-z0-9-]+|internmap|delaunator|robust-predicates)/)"
     ],
     "testRegex": ".*/__tests__/.*test.*\\.(ts|tsx|js)$",
     "testEnvironment": "jsdom",

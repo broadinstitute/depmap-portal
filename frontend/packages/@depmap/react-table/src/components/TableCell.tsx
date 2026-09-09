@@ -373,10 +373,19 @@ export function TableCell<T>({
     return renderedContent;
   };
 
+  // The truncation tooltip shows the cell's RAW VALUE, which is only the right
+  // thing to show when the cell is displaying that value as text and ran out of
+  // room. A column that renders its value as something else entirely -- a
+  // graphic, say -- opts out here, because for it the tooltip would reveal a
+  // string the user never saw and never wanted to see.
+  const suppressValueTooltip = Boolean(
+    (cell.column.columnDef.meta as any)?.suppressValueTooltip
+  );
+
   return (
     <CellTooltipWrapper
       cell={cell}
-      shouldShow={isTruncated}
+      shouldShow={isTruncated && !suppressValueTooltip}
       searchQuery={searchQuery}
       isCurrentMatch={highlightStatus.isCurrentMatch}
     >
