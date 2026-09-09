@@ -513,10 +513,17 @@ export function useTableInstance<TData extends RowData>(
   // for display and search. This is memoized separately so both
   // searchMatches and displayRows can share the same filtered set without
   // redundant filtering.
+  //
+  // `enhancedColumns` is a dependency even though it isn't read here. Adding
+  // or removing a column no longer changes `rows` — useData reuses the row
+  // array so TanStack doesn't rebuild 300K Row objects for a row set that
+  // didn't change — but it does change what a row CONTAINS, which is what
+  // predicates like "hide incomplete rows" are looking at.
   const filteredRows = useMemo(() => {
     if (!rowFilter) return rows;
     return rows.filter((row) => rowFilter(row.original));
-  }, [rows, rowFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, rowFilter, enhancedColumns]);
 
   // Helper to get searchable text from a cell value
   const getSearchableText = useCallback((value: unknown): string => {
@@ -594,12 +601,16 @@ export function useTableInstance<TData extends RowData>(
     });
 
     return matches;
+    // `enhancedColumns` for the same reason as in `filteredRows`: a column
+    // added while a search is active has to be searched too.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     enableSearch,
     searchableColumnIds,
     searchQuery,
     getSearchableText,
     filteredRows,
+    enhancedColumns,
     table,
   ]);
 
