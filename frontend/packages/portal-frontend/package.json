@@ -69,6 +69,7 @@
   },
   "devDependencies": {
     "@types/bootstrap": "^3.3.7",
+    "@types/d3": "^3",
     "@types/d3-scale": "^4.0.9",
     "@types/immutability-helper": "2.0.15",
     "@types/js-base64": "^3.3.1",
