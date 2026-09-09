@@ -238,7 +238,89 @@ describe("plotConfigReducer", () => {
     expect(nextPlot.facet_by).toBeUndefined();
     // normalize() strips the now-empty expand_by once the sentinel is gone.
     expect(nextPlot.expand_by).toBeUndefined();
+    expect(nextPlot.dimensions?.x?.aggregation).toBe("first");
+  });
+
+  it("lands a null expand_by on a single slice, keeping the dataset", () => {
+    // The Single/Multiple toggle going back to Single. The state manager
+    // resolves that to raw_slice/"first" with no context, so the reducer has to
+    // land there too — writing an aggregation back instead left the config
+    // saying "aggregated_slice" and useSync snapped the toggle to Multiple,
+    // which read as the toggle being inert.
+    const plot = {
+      plot_type: "scatter" as const,
+      index_type: "depmap_model",
+      facet_by: "expansion" as const,
+      expand_by: [{ slice_type: "transcript", context: {} as any }],
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice" as const,
+          aggregation: "expansion" as const,
+          dataset_id: "transcript_expr",
+          slice_type: "transcript",
+          context: { name: "T", dimension_type: "transcript" } as any,
+        },
+        y: {},
+      },
+    };
+
+    const nextPlot = plotConfigReducer(plot, {
+      type: "select_expansion",
+      payload: { key: "x", expand_by: null },
+    });
+
+    expect(nextPlot.dimensions?.x?.axis_type).toBe("raw_slice");
+    expect(nextPlot.dimensions?.x?.aggregation).toBe("first");
+    // A multi-member context says nothing on an axis plotting one slice, and
+    // leaving it would show the old members in the entity select.
+    expect(nextPlot.dimensions?.x?.context).toBeUndefined();
+    // But the user shouldn't have to rebuild the axis to pick one transcript
+    // out of the dataset they were already expanding.
+    expect(nextPlot.dimensions?.x?.slice_type).toBe("transcript");
+    expect(nextPlot.dimensions?.x?.dataset_id).toBe("transcript_expr");
+  });
+
+  it("tears down the expansion when an axis stops expanding via select_dimension", () => {
+    // The Facet/Aggregate toggle going back to Aggregate does NOT dispatch
+    // select_expansion (see handleExpansionSelection) — the axis keeps its
+    // members and merely stops expanding, so it's an ordinary dimension edit.
+    // The teardown still has to happen, and normalize is what does it.
+    const plot = {
+      plot_type: "scatter" as const,
+      index_type: "depmap_model",
+      facet_by: "expansion" as const,
+      expand_by: [{ slice_type: "transcript", context: {} as any }],
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice" as const,
+          aggregation: "expansion" as const,
+          dataset_id: "transcript_expr",
+          slice_type: "transcript",
+          context: { name: "T", dimension_type: "transcript" } as any,
+        },
+        y: {},
+      },
+    };
+
+    const nextPlot = plotConfigReducer(plot, {
+      type: "select_dimension",
+      payload: {
+        key: "x",
+        dimension: {
+          ...plot.dimensions.x,
+          aggregation: "mean" as const,
+        },
+      },
+    });
+
+    // Still a context axis, still over the same members — only the sentinel is
+    // gone. "The mean over these transcripts" is the whole point of the flip.
+    expect(nextPlot.dimensions?.x?.axis_type).toBe("aggregated_slice");
     expect(nextPlot.dimensions?.x?.aggregation).toBe("mean");
+    expect(nextPlot.dimensions?.x?.context?.name).toBe("T");
+    // Orphaning the sentinel is enough: no caller-side bookkeeping.
+    expect(nextPlot.expand_by).toBeUndefined();
+    expect(nextPlot.facet_by).toBeUndefined();
   });
 
   it("preserves a non-'expansion' facet_by when clearing an expansion", () => {
@@ -679,7 +761,8 @@ describe("plotConfigReducer", () => {
         payload: { key: "x", expand_by: null },
       });
 
-      expect(nextPlot.dimensions?.x?.aggregation).toBe("mean");
+      expect(nextPlot.dimensions?.x?.aggregation).toBe("first");
+      expect(nextPlot.dimensions?.x?.axis_type).toBe("raw_slice");
       // y is still expanding, so the plot is still expanded and still
       // faceted by it.
       expect(nextPlot.expand_by?.length).toBe(1);
