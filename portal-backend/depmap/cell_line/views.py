@@ -250,11 +250,6 @@ def get_compound_sensitivity_data(model_id: str) -> dict:
     if priority1 is not None:
         sensitivities.append(priority1)
 
-    priority2 = _get_compound_sensitivity_for_dataset(model_id=model_id, priority=2)
-
-    if priority2 is not None:
-        sensitivities.append(priority2)
-
     if len(sensitivities) == 0:
         abort(404)
 

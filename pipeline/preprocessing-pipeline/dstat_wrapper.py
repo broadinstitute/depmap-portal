@@ -9,6 +9,8 @@ import re
 
 # based on https://cloud.google.com/batch/docs/reference/rest/v1alpha/projects.locations.jobs#State
 terminal_states = [
+    "SUCCESS",
+    "FAILURE",
     "SUCCEEDED",
     "FAILED",
     "CANCELLED",
@@ -32,15 +34,11 @@ try:
     if status_message is None:  # seems to happen right after job submission
         prefix = "IN_PROGRESS"
     else:
-        m = re.match(
-            "Job state is set from [A-Z_]+ to ([A-Z_]+) for job.*", status_message
-        )
-        assert m is not None
-        state = m.group(1)
+        state = status_message
         if state in terminal_states:
             prefix = "COMPLETED"
         else:
-            assert state in in_progress_state
+            assert state in in_progress_state, f"Unknown state: {state}"
             prefix = "IN_PROGRESS"
 except Exception as ex:
     sys.stderr.write(f"got exception parsing output from command {command}: {stdout}")

@@ -12,6 +12,16 @@ const dataPageHref = `${
   window.location.href.split(encodeURIComponent("compound"))[0]
 }data_page`;
 
+// Keyed by auc_dataset_given_id, which is more stable than display name.
+const DATASET_TOOLTIPS: Record<string, string> = {
+  Prism_oncology_AUC_collapsed:
+    "Compounds screened at 8pt dose series using PRISM Luminex assay",
+  Prism_oncology_seq_AUC_collapsed:
+    "Compounds screened at 8pt dose series using PRISM Sequencing assay",
+  Prism_oncology_unified_AUC_collapsed:
+    "Contains results from all compounds screened either the PRISM Luminex assay or the PRISM Sequencing assay. If a compound was screened in both assays, the results from the sequencing assay were included and Luminex results were ignored",
+};
+
 const buildDatasetUrl = (dataset: MatrixDataset) => {
   const fileInfo = dataset.dataset_metadata?.download_file_info;
 
@@ -96,7 +106,10 @@ const getPrioritizedData = async (
         });
         const record: Record<string, any> = sliceData[compoundId] || {};
 
-        const dataList = Object.values(record).map(Number).filter(Boolean);
+        const dataList = Object.values(record)
+          .filter((value) => value !== null)
+          .map(Number)
+          .filter((value) => !Number.isNaN(value));
 
         return {
           datasetDisplayName: meta.display_name,
@@ -104,6 +117,7 @@ const getPrioritizedData = async (
           cellLineCount: dataList.length,
           doseRangeLabel: doseRange || "N/A",
           assayLabel: meta.assay,
+          tooltip: DATASET_TOOLTIPS[aucId],
         };
       } catch (e) {
         console.error(`Error processing dataset ${aucId}:`, e);
@@ -113,6 +127,7 @@ const getPrioritizedData = async (
           cellLineCount: 0,
           doseRangeLabel: "N/A",
           assayLabel: meta.assay || "N/A",
+          tooltip: DATASET_TOOLTIPS[aucId],
         };
       }
     })

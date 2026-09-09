@@ -36,4 +36,5 @@ export interface DatasetAvailability {
   doseRangeLabel: string;
   assayLabel: string;
   datasetUrl: string | null;
+  tooltip?: string;
 }
