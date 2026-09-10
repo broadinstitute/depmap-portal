@@ -39,6 +39,11 @@ interface Parameters {
   index_type_name: string;
   slices: SliceQuery[]; // Make sure to memoize this!
   viewOnlySlices?: Set<SliceQuery>; // Make sure to memoize this!
+  // The table's universe of rows, when the caller already knows it. Scopes every
+  // fetch instead of pulling whole columns and discarding most of them — the
+  // per-residue annotation columns run to tens of megabytes each, and a table
+  // over one gene wants a handful of rows out of them.
+  rowIds?: Set<string>; // Make sure to memoize this!
   getColumnDisplayOptions?: (
     sliceQuery: SliceQuery
   ) => ColumnDisplayOptions | null;
@@ -275,9 +280,26 @@ function buildSlicesToFetch(
  * This handles all slice types uniformly — tabular columns, matrix
  * features/samples, and reindex_through chains — by delegating to
  * the backend's dimension data endpoint.
+ *
+ * `rowIds` scopes the request to a caller-supplied row set (see `rowIds` in
+ * SliceTable's props). It only applies to plain tabular columns: the backend
+ * rejects indices alongside `reindex_through`, since the IDs would be ambiguous
+ * between the root and the leaf of the chain, and matrix slices are addressed by
+ * dimension rather than by row. Those keep fetching whole, which is what they did
+ * before this existed.
  */
-function createDataFetchPromise(slice: SliceQuery): Promise<SliceResponse> {
-  return cached(breadboxAPI, { persist: true }).getDimensionData(slice);
+function canSubsetSlice(slice: SliceQuery): boolean {
+  return slice.identifier_type === "column" && !slice.reindex_through;
+}
+
+function createDataFetchPromise(
+  slice: SliceQuery,
+  rowIds?: string[]
+): Promise<SliceResponse> {
+  return cached(breadboxAPI, { persist: true }).getDimensionData(
+    slice,
+    rowIds && canSubsetSlice(slice) ? rowIds : undefined
+  );
 }
 
 /**
@@ -400,7 +422,10 @@ export function transformToTableData(
   getColumnDisplayOptions?: Parameters["getColumnDisplayOptions"],
   // Aligned with `slices`. A failed slice gets a stub column (header names
   // the problem, cells stay empty) rather than failing the whole table.
-  failures?: (SliceLoadFailure | null)[]
+  failures?: (SliceLoadFailure | null)[],
+  // True when the caller scoped the table with `rowIds`. Only narrows which
+  // slices get the foreign-ID diagnostic below — dropping is unchanged.
+  isScoped = false
 ) {
   // Step 1: Create unique column keys, validate IDs, and key data by ID.
   //
@@ -412,6 +437,14 @@ export function transformToTableData(
   // coherent) and log loudly so the bug isn't invisible. This usually
   // means a slice that should have been wrapped in `reindex_through`
   // wasn't, or the backend returned IDs in the wrong space.
+  //
+  // Except for the slices a scoped table could not narrow. Under `rowIds` only
+  // plain tabular columns come back subsetted; a matrix slice or a
+  // reindex_through chain still returns the whole dimension type, so every row
+  // outside the scope is "foreign" by this test. Those are dropped exactly as
+  // before — they are outside the table's universe — but they are expected, not
+  // a bug, and the diagnostic would be pure noise. A slice that *was* subsetted
+  // is still checked: if that one comes back out of scope, something is wrong.
   const columnKeys = slices.map(createUniqueColumnKey);
   const labelIds = new Set(dataResponses[0].ids);
   const columnData: Record<string, Record<string, string | number | null>> = {};
@@ -421,7 +454,7 @@ export function transformToTableData(
     const uniqueKey = columnKeys[index];
     const keyed: Record<string, string | number | null> = {};
 
-    if (index > 0) {
+    if (index > 0 && (!isScoped || canSubsetSlice(slices[index]))) {
       const foreign = response.ids.filter((id) => !labelIds.has(id));
       if (foreign.length > 0) {
         const slice = slices[index];
@@ -803,6 +836,7 @@ export default function useAlignedData({
   index_type_name,
   slices,
   viewOnlySlices = undefined,
+  rowIds = undefined,
   getColumnDisplayOptions = undefined,
   retryToken = 0,
 }: Parameters): AlignedData {
@@ -1006,6 +1040,11 @@ export default function useAlignedData({
           progress: { loaded: 0, total: slicesToFetch.length },
         }));
 
+        // Materialized once rather than per slice: `indices` lands in the request
+        // body, which is the persistent cache key, so a stable order across slices
+        // (and across reloads) is what makes those keys hit.
+        const indices = rowIds ? Array.from(rowIds).sort() : undefined;
+
         let loaded = 0;
         const onSliceSettled = () => {
           loaded += 1;
@@ -1043,8 +1082,8 @@ export default function useAlignedData({
               // keeps no `.catch` and fails the whole table via the outer try.
               const dataPromise =
                 i === 0
-                  ? createDataFetchPromise(slice)
-                  : createDataFetchPromise(slice).catch((e) => {
+                  ? createDataFetchPromise(slice, indices)
+                  : createDataFetchPromise(slice, indices).catch((e) => {
                       window.console.warn(
                         "[SliceTable] failed to load slice",
                         slice,
@@ -1119,7 +1158,8 @@ export default function useAlignedData({
           labelColumnDisplayName,
           idToLabelMappings,
           getColumnDisplayOptions,
-          failures
+          failures,
+          rowIds !== undefined
         );
 
         const reconciledData = reconcileRows(prevRowsRef.current, data);
@@ -1161,6 +1201,7 @@ export default function useAlignedData({
     index_type_name,
     slices,
     viewOnlySlices,
+    rowIds,
     // Not read by `loadData` — see `retryToken`'s comment above.
     retryToken,
   ]);
