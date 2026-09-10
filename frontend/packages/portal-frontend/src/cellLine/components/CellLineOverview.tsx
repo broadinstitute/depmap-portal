@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { legacyPortalAPI } from "@depmap/api";
+import { enabledFeatures } from "@depmap/globals";
 import { CellLineDataMatrix, OncogenicAlteration } from "@depmap/types";
 import AsyncTile from "src/common/components/AsyncTile";
 import { CardContainer, CardColumn } from "src/common/components/Card";
@@ -170,17 +171,18 @@ const CellLineOverview = ({ modelId, hasMetMapData }: Props) => {
         )}
       </CardColumn>
       <CardColumn>
-        {pairedScreens && (
-          <React.Suspense
-            fallback={<div className={styles.LoadingTile}>Loading...</div>}
-          >
-            <PairedScreensTile
-              anchorRowIds={pairedScreens.anchorRowIds}
-              resistanceRows={pairedScreens.resistanceRows}
-              resistance={pairedScreens.resistance}
-            />
-          </React.Suspense>
-        )}
+        {enabledFeatures.anchor_and_resistance_screen_dashboards &&
+          pairedScreens && (
+            <React.Suspense
+              fallback={<div className={styles.LoadingTile}>Loading...</div>}
+            >
+              <PairedScreensTile
+                anchorRowIds={pairedScreens.anchorRowIds}
+                resistanceRows={pairedScreens.resistanceRows}
+                resistance={pairedScreens.resistance}
+              />
+            </React.Suspense>
+          )}
         {cellLineDatasets && (
           <React.Suspense
             fallback={<div className={styles.LoadingTile}>Loading...</div>}
