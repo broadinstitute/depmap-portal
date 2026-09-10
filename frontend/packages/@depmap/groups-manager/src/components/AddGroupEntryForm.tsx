@@ -46,6 +46,13 @@ interface EmailEntriesInput {
   readonly emailEntries: string[];
 }
 
+// Email addresses can be separated by whitespace or commas.
+const parseEmails = (value: string) =>
+  value.split(/[\s,]+/).filter((email) => email !== "");
+
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/.test(email);
+
 function AddGroupEntryForm({
   group,
   addGroupEntries,
@@ -102,27 +109,37 @@ function AddGroupEntryForm({
     value: label,
   });
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-    if (!emailEntriesOptions.inputValue) return;
-    const valuesArray = emailEntriesOptions.inputValue
-      .split(",")
-      .map((option) => option.trim());
-    const valueOptions = valuesArray.map((val) => {
-      return createOption(val);
+  // Turns whatever has been typed so far into tags.
+  const commitInputValue = () => {
+    const emails = parseEmails(emailEntriesOptions.inputValue);
+
+    setEmailEntriesOptions({
+      inputValue: "",
+      valueOptions: [
+        ...emailEntriesOptions.valueOptions,
+        ...emails.map(createOption),
+      ],
+      emailEntries: [...emailEntriesOptions.emailEntries, ...emails],
     });
-    switch (e.key) {
-      case "Enter":
-      case "Tab":
-        setEmailEntriesOptions({
-          inputValue: "",
-          valueOptions: [...emailEntriesOptions.valueOptions, ...valueOptions],
-          emailEntries: [...emailEntriesOptions.emailEntries, ...valuesArray],
-        });
-        e.preventDefault();
-        break;
-      default:
-        console.log("Unexpected keu pressed");
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key !== "Enter" && e.key !== "Tab" && e.key !== " ") {
+      return;
     }
+
+    // A space is never part of an email address, so swallow it even when
+    // there's nothing to commit yet.
+    if (e.key === " ") {
+      e.preventDefault();
+    }
+
+    if (parseEmails(emailEntriesOptions.inputValue).length === 0) {
+      return;
+    }
+
+    e.preventDefault();
+    commitInputValue();
   };
 
   const AccessTypeSelector = () => {
@@ -152,36 +169,20 @@ function AddGroupEntryForm({
     addedGroupEntries: string[],
     newGroupEntries: GroupEntry[]
   ) => {
-    if (addedGroupEntries.length === emailEntriesOptions.emailEntries.length) {
-      setEmailEntriesOptions({
-        inputValue: "",
-        valueOptions: [],
-        emailEntries: [],
-      });
-    } else {
-      // Remove email entries already added
-      const indexesToRemove = [];
-      for (let i = 0; i < addedGroupEntries.length; i += 1) {
-        const idxToRemove = emailEntriesOptions.emailEntries.indexOf(
-          addedGroupEntries[i]
-        );
-        if (idxToRemove > -1) {
-          indexesToRemove.push(idxToRemove);
-        }
-      }
+    // Keep whatever wasn't added, so a partial failure leaves the offending
+    // addresses in the input for the user to correct.
+    setEmailEntriesOptions((prev) => {
+      const remaining = [
+        ...prev.emailEntries,
+        ...parseEmails(prev.inputValue),
+      ].filter((email) => !addedGroupEntries.includes(email));
 
-      const emailEntriesToBeAdded = [...emailEntriesOptions.emailEntries];
-      indexesToRemove.map((idx) => emailEntriesToBeAdded.splice(idx, 1));
-
-      const valueOptionsToRemain = emailEntriesToBeAdded.map((emailEntry) => {
-        return createOption(emailEntry);
-      });
-      setEmailEntriesOptions({
+      return {
         inputValue: "",
-        valueOptions: valueOptionsToRemain,
-        emailEntries: emailEntriesToBeAdded,
-      });
-    }
+        valueOptions: remaining.map(createOption),
+        emailEntries: remaining,
+      };
+    });
     setGroupEntryTableData(newGroupEntries);
   };
 
@@ -193,7 +194,16 @@ function AddGroupEntryForm({
     setGroupEntryTableData(newGroupEntries);
   };
 
-  /* TODO: Add validater for email address and check if owner */
+  /* TODO: check if owner */
+
+  // Uncommitted input counts towards the Add button, so a single address
+  // doesn't have to be turned into a tag first. It only counts once it looks
+  // like an email address, otherwise a half-typed one would enable Add.
+  const pendingEmails = parseEmails(emailEntriesOptions.inputValue);
+  const emailsToAdd =
+    pendingEmails.length > 0 && pendingEmails.every(isValidEmail)
+      ? [...emailEntriesOptions.emailEntries, ...pendingEmails]
+      : emailEntriesOptions.emailEntries;
 
   return (
     <>
@@ -211,33 +221,24 @@ function AddGroupEntryForm({
                 inputValue={emailEntriesOptions.inputValue}
                 value={emailEntriesOptions.valueOptions}
                 onInputChange={handleEmailEntriesInputChange}
-                onChange={() => {
-                  if (Array.isArray(emailEntriesOptions.valueOptions)) {
-                    throw new Error(
-                      "Unexpected type passed to ReactSelect onChange handler"
-                    );
-                  }
-                  return handleEmailEntriesChange;
-                }}
+                onChange={handleEmailEntriesChange}
                 onKeyDown={handleKeyDown}
-                placeholder="Type email or comma-separated email addresses and press 'Enter' or 'Tab'"
+                placeholder="Type one or more email addresses, separated by spaces or commas"
               />
               <HelpBlock>{groupEntryErrors?.addGroupEntryError}</HelpBlock>
             </FormGroup>
           </Col>
           <Col xs={6} md={4}>
             <Button
-              disabled={emailEntriesOptions.emailEntries.length === 0}
+              disabled={emailsToAdd.length === 0}
               onClick={() => {
-                const newGroupEntryArgs: GroupEntryArgs[] = [];
-                emailEntriesOptions.emailEntries.forEach((emailEntry) => {
-                  const params: GroupEntryArgs = {
+                const newGroupEntryArgs: GroupEntryArgs[] = emailsToAdd.map(
+                  (emailEntry) => ({
                     email: emailEntry,
                     access_type: AccessType.read,
                     exact_match: true,
-                  };
-                  newGroupEntryArgs.push(params);
-                });
+                  })
+                );
                 addGroupEntries(
                   group.id,
                   newGroupEntryArgs,
