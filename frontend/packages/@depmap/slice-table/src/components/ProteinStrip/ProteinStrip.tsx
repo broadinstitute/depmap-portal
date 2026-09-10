@@ -10,6 +10,13 @@ const STRIP_HEIGHT = 14;
 interface Props {
   sequence: string;
   scale: StripScale;
+  // The residue count the band's full width represents, which is the longest
+  // sequence in the column rather than this row's own. That is what makes the
+  // bands comparable: a short isoform draws a short bar, so you can see at a
+  // glance which transcripts are truncated and where their regions fall
+  // relative to the full-length one. Omitted, each band fills its own cell and
+  // every row looks the same length.
+  axisLength?: number;
 }
 
 // Deliberately no tooltip, native or otherwise. The table already puts one on
@@ -31,9 +38,14 @@ interface Props {
 // reads as solid blocks. It does mean the strip is a picture of the annotation
 // and not a way to read any individual position; that is what the table cell's
 // text value and the transcript detail views are for.
-function ProteinStrip({ sequence, scale }: Props) {
+function ProteinStrip({ sequence, scale, axisLength = undefined }: Props) {
   const ready = useNightingale();
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Never shorter than the sequence itself: Nightingale would clip the band at
+  // the axis end, silently hiding residues. A stale or wrong column maximum
+  // should cost the comparison, not the data.
+  const axis = Math.max(axisLength ?? 0, sequence.length);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -61,10 +73,14 @@ function ProteinStrip({ sequence, scale }: Props) {
     // what makes the band follow the column as the user drags it wider --
     // setting it would freeze the band at whatever the column happened to be
     // when the cell mounted.
+    // `length` is the axis extent, not the sequence's own length. Nightingale
+    // sizes a residue as width/length and draws the sequence from position 1,
+    // so an axis longer than the sequence leaves the remainder of the cell
+    // empty -- which is exactly the short bar we want for a truncated isoform.
     el.setAttribute("height", String(STRIP_HEIGHT));
-    el.setAttribute("length", String(sequence.length));
+    el.setAttribute("length", String(axis));
     el.setAttribute("display-start", "1");
-    el.setAttribute("display-end", String(sequence.length));
+    el.setAttribute("display-end", String(axis));
     el.setAttribute("scale", scale.scale);
     el.setAttribute("color-range", scale.colorRange);
 
@@ -77,7 +93,7 @@ function ProteinStrip({ sequence, scale }: Props) {
     return () => {
       el.remove();
     };
-  }, [ready, sequence, scale]);
+  }, [ready, sequence, scale, axis]);
 
   // Shown while the chunk loads, and permanently if it fails to. Not the
   // sequence itself: that overflows the column, which both widens the cell and
