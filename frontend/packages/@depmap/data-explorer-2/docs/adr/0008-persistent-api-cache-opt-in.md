@@ -120,6 +120,18 @@ hit. Misclassifying in the unsafe direction is the only real hazard, and the eng
 refusal checks cannot catch every case — that is precisely why the opt-in is a human
 assertion.
 
+**There is also a size ceiling, and it is easy to forget.** A single response larger than
+`maxBytes * MAX_ITEM_FRACTION` — 25 MB of the default 250 MB budget, and `maxBytes` is
+itself clamped to 20% of the browser's quota estimate — is refused outright
+(`refusedTooLarge`), no matter how eligible it is. The size proxy is
+`JSON.stringify(value).length`, which over-estimates numeric payloads but is close to
+exact for columns of long strings. So the heaviest responses in the portal, the ones where
+a cache hit would be worth the most, are precisely the ones that never get one. This is
+worth stating because it inverts the obvious remedy: when a heavy response is not being
+persisted, making it _eligible_ is not the fix — making it _smaller_ is, and once it is
+small enough to store it is usually also cheap enough not to need storing. Row subsetting
+(`indices` on the dimension-data endpoint) is the tool for that.
+
 ### 3. The kill switch
 
 The epoch is `v${CACHE_VERSION}:bb${breadboxVersion}`, compared once per page load; any

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, cast
+from typing import List, Optional, cast
 from logging import getLogger
 
 import pandas as pd
@@ -7,7 +7,7 @@ import pandas as pd
 from breadbox.models.dataset import Dataset
 from breadbox.db.session import SessionWithUser
 import breadbox.crud.dataset as dataset_crud
-from breadbox.schemas.dataset import TabularDimensionsInfo
+from breadbox.schemas.dataset import FeatureSampleIdentifier, TabularDimensionsInfo
 from breadbox.schemas.custom_http_exception import (
     ResourceNotFoundError,
     UserError,
@@ -238,18 +238,33 @@ def _resolve_reindex_chain(
 
 
 def get_slice_data(
-    db: SessionWithUser, filestore_location: str, slice_query: SliceQuery
+    db: SessionWithUser,
+    filestore_location: str,
+    slice_query: SliceQuery,
+    indices: Optional[List[str]] = None,
 ) -> pd.Series:
     """
-    Loads data for the given slice query. 
-    The result will be a pandas series indexed by sample/feature ID 
+    Loads data for the given slice query.
+    The result will be a pandas series indexed by sample/feature ID
     (regardless of the identifier_type used in the query).
     Note: the result may contain given_ids which do not exist in the metadata. These should not be returned to users.
 
     If slice_query.reindex_through is set, the result will be reindexed through
     a chain of FK joins, returning data indexed by the root entity IDs.
+
+    `indices` narrows a tabular column to the given dimension IDs. It exists so a
+    caller that already knows which rows it will display doesn't have to transfer the
+    rest -- the per-residue annotation columns run to tens of megabytes each. It is
+    deliberately a separate argument rather than a SliceQuery field: SliceQuery is
+    serialized into saved plot links and remembered table columns, and it is what
+    column identity is derived from, so a row set must not be able to change either.
     """
     if slice_query.reindex_through is not None:
+        if indices is not None:
+            raise UserError(
+                "`indices` may not be combined with `reindex_through`: the IDs would "
+                "be ambiguous between the root and leaf of the chain."
+            )
         return _resolve_reindex_chain(db, filestore_location, slice_query)
 
     dataset_id = slice_query.dataset_id
@@ -262,13 +277,21 @@ def get_slice_data(
             raise UserError(
                 "The slice query identifier type `column` may only be used with tabular datasets."
             )
-        tabular_dimension_info = TabularDimensionsInfo(columns=[slice_query.identifier])
+        tabular_dimension_info = TabularDimensionsInfo(
+            columns=[slice_query.identifier],
+            indices=indices,
+            identifier=FeatureSampleIdentifier.id if indices is not None else None,
+        )
         slice_data = dataset_service.get_subsetted_tabular_dataset_df(
             db=db,
             user=db.user,
             dataset=dataset,
             tabular_dimensions_info=tabular_dimension_info,
             strict=True,
+            # A requested index the dataset has no row for is a coverage hole, not an
+            # error -- the caller's IDs come from the dimension type, which is a
+            # superset of any one dataset's rows. The column check stays strict.
+            strict_indices=False,
         )
 
     elif dataset.format == "tabular_dataset":
@@ -314,5 +337,13 @@ def get_slice_data(
     if slice_data.empty or slice_data is None:
         raise ResourceNotFoundError("No data matches the given slice query.")
 
-    # Convert the single-col/row DataFrame into a series and drop null values
-    return slice_data.squeeze().dropna()
+    # Convert the single-col/row DataFrame into a series and drop null values.
+    #
+    # The axis is named rather than left to `squeeze()` to pick: a bare `squeeze()`
+    # collapses a 1x1 frame all the way to a scalar, and subsetting by `indices`
+    # makes a one-row result an ordinary case rather than a curiosity. Which axis is
+    # the length-1 one depends on the query -- a feature slice and a tabular column
+    # are Nx1, a sample slice is 1xN -- and for a 1x1 frame either choice yields the
+    # same single value, so all that matters is that the result stays a Series.
+    axis = 1 if slice_data.shape[1] == 1 else 0
+    return slice_data.squeeze(axis=axis).dropna()

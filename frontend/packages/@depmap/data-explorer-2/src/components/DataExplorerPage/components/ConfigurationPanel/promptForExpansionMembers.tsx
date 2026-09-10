@@ -304,12 +304,19 @@ function MembersTable({
           index_type_name={slice_type}
           downloadFilename={downloadFilename}
           isLoading={statsById === null}
-          // HACK: this filters client-side, *after* every column has been
-          // fetched for every entity of the type — so scoping to one gene's
-          // transcripts still pulls a quarter of a million rows per column.
-          // showGeneTranscriptTable already pays this, so it isn't new, but the
-          // real fix is teaching Breadbox's /datasets/dimension/data/ to accept
-          // an id list.
+          // The candidates scope the fetch; the no-data check still filters
+          // client-side. Splitting them this way is deliberate: `candidateIds`
+          // is known before the table mounts, so it costs nothing to push down,
+          // and it is where all of the payload savings are — a gene's
+          // transcripts instead of a quarter of a million rows per column.
+          // `hasNoData` depends on stats that arrive later, and narrowing by it
+          // too would only refetch a slightly smaller set of already-small
+          // responses.
+          //
+          // The candidate check stays in the predicate as well. `rowIds` makes
+          // it redundant for the slices Breadbox can subset, but not for a
+          // matrix slice or a reindex_through chain, which still come back whole.
+          rowIds={candidateIdSet}
           implicitFilter={({ id }) => candidateIdSet.has(id) && !hasNoData(id)}
           // Opens sorted by Variance when nothing was hand-picked, because
           // that IS how the shown members were chosen — the header's sort

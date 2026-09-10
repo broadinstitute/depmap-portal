@@ -59,13 +59,19 @@ function SlicePreview({
 }: Props) {
   const slices = useMemo(() => (value ? [value] : []), [value]);
 
+  // Scoped to the table's universe, not the whole dimension type. Without this
+  // the preview is the one place that still pulls a candidate column whole —
+  // which for the per-residue annotation columns means tens of megabytes fetched
+  // to draw a distribution over rows the table will then throw away. When the
+  // table isn't scoped, `unfilteredRowIds` is undefined and this fetches
+  // everything, as it always did.
   const {
     error,
     loading,
     data: previewData,
     columns: previewColumns,
     entityLabel,
-  } = useData({ index_type_name, slices });
+  } = useData({ index_type_name, slices, rowIds: unfilteredRowIds });
 
   // Match by full SliceQuery equality, not just `identifier` — a chained
   // slice (e.g. "label" reached via reindex_through to a different table)
