@@ -14,6 +14,17 @@
   border: 1px solid #ddd;
 }
 
+.deletingSpinner {
+  display: flex;
+  justify-content: center;
+
+  // The shared Spinner has a large `margin: 100px auto` that leaves an
+  // enormous gap inside a modal, so tighten it up here.
+  > div {
+    margin: 10px auto;
+  }
+}
+
 .primaryButtons {
   display: flex;
   padding: 20px;
