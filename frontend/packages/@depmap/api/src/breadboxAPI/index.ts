@@ -32,14 +32,24 @@ export const breadboxAPI = {
 
 type Api = typeof breadboxAPI;
 
-(Object.keys(breadboxAPI) as Array<keyof Api>).forEach((name) => {
-  const originalFn = breadboxAPI[name];
+// Each method gets swapped out for a wrapper that decorates failures with a
+// call-site stack. TypeScript can't check that slot by slot (writing to
+// `breadboxAPI[someUnionOfKeys]` demands a function satisfying *every* method
+// signature at once), so the types are erased for the duration of the loop.
+// The wrapper preserves each method's arguments and return value verbatim, so
+// the declared `Api` types still hold for callers.
+const untypedApi = (breadboxAPI as unknown) as Record<
+  string,
+  (...args: unknown[]) => Promise<unknown>
+>;
 
-  breadboxAPI[name] = async (...args: Parameters<typeof originalFn>) => {
+Object.keys(untypedApi).forEach((name) => {
+  const originalFn = untypedApi[name];
+
+  untypedApi[name] = async (...args: unknown[]) => {
     const callSiteError = new Error(`breadboxAPI method "${name}" failed`);
 
     try {
-      // @ts-expect-error 2556
       return await originalFn(...args);
     } catch (error) {
       const lines = callSiteError.stack?.split("\n") || [];
