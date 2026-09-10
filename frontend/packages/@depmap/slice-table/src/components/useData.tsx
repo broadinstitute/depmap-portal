@@ -24,7 +24,13 @@ export interface ColumnDisplayOptions {
     label: string;
     defaultElement: React.ReactNode;
   }) => React.ReactNode;
-  cell?: ({ getValue }: { getValue: () => unknown }) => React.ReactNode;
+  // `columnStats` is supplied by the table, not the row -- the same aggregate
+  // the magnitude bars use. A renderer that draws its value at a scale shared
+  // with the rest of the column reads it; everything else ignores it.
+  cell?: (args: {
+    getValue: () => unknown;
+    columnStats?: { min: number; max: number; maxLength?: number };
+  }) => React.ReactNode;
   numericPrecision?: number;
   width?: number;
 }

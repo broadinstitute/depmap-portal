@@ -65,6 +65,10 @@ export type ColumnStats = {
   min: number;
   max: number;
   hasVariance: boolean;
+  // Longest string in the column, for cells that draw their value at a scale
+  // shared with the rest of the column rather than filling their own width.
+  // Undefined when the column holds no strings.
+  maxLength?: number;
 };
 
 export function useTableInstance<TData extends RowData>(
@@ -433,6 +437,13 @@ export function useTableInstance<TData extends RowData>(
           if (value < colStats.min) colStats.min = value;
           if (value > colStats.max) colStats.max = value;
         }
+
+        if (typeof value === "string" && value.length > 0) {
+          const colStats = stats[id];
+          if (value.length > (colStats.maxLength ?? 0)) {
+            colStats.maxLength = value.length;
+          }
+        }
       });
     });
 
@@ -440,9 +451,14 @@ export function useTableInstance<TData extends RowData>(
     Object.keys(stats).forEach((colId) => {
       const colStats = stats[colId];
 
-      // If min is still Infinity, no numeric values were found
+      // If min is still Infinity, no numeric values were found. Such a column
+      // is still worth keeping when it recorded a string length, which is the
+      // one stat a non-numeric column can have.
       if (colStats.min === Infinity) {
-        delete stats[colId];
+        if (colStats.maxLength === undefined) {
+          delete stats[colId];
+        }
+
         return;
       }
 

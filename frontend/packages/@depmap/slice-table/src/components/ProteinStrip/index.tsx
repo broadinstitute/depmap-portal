@@ -18,15 +18,33 @@ function asSequence(value: unknown): string | null {
 
 // The cell renderer for a per-residue column, in the shape SliceTable's column
 // definitions expect.
+//
+// `columnStats` comes from the table rather than the row: it is how a cell
+// learns the longest sequence in its column, which is what every band in the
+// column is drawn against. It reflects the rows the table was given, so a
+// table scoped to one gene scales to that gene's longest transcript, and
+// searching within the table does not make the bands jump.
 export function proteinStripCell(scale: StripScale) {
-  return function ProteinStripCell({ getValue }: { getValue: () => unknown }) {
+  return function ProteinStripCell({
+    getValue,
+    columnStats = undefined,
+  }: {
+    getValue: () => unknown;
+    columnStats?: { maxLength?: number };
+  }) {
     const sequence = asSequence(getValue());
 
     if (!sequence) {
       return null;
     }
 
-    return <ProteinStrip sequence={sequence} scale={scale} />;
+    return (
+      <ProteinStrip
+        sequence={sequence}
+        scale={scale}
+        axisLength={columnStats?.maxLength}
+      />
+    );
   };
 }
 
