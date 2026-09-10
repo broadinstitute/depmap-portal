@@ -220,10 +220,19 @@ export function searchDimensions({
   });
 }
 
-export function getDimensionData(sliceQuery: SliceQuery) {
+// `indices` restricts a tabular column to the given dimension IDs, for a caller
+// that already knows which rows it will show. It is a separate argument rather
+// than a SliceQuery field on purpose: SliceQuery is serialized into saved links
+// and remembered table columns, and column identity is derived from it, so a row
+// set must not be able to change either. It still reaches the persistent cache
+// key, since the key is the whole POST body -- one entry per row set.
+export function getDimensionData(sliceQuery: SliceQuery, indices?: string[]) {
   return postJson<{
     ids: string[];
     labels: string[];
     values: string[];
-  }>("/datasets/dimension/data/", sliceQuery);
+  }>(
+    "/datasets/dimension/data/",
+    indices ? { ...sliceQuery, indices } : sliceQuery
+  );
 }

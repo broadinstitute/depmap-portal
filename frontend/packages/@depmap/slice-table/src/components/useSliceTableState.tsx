@@ -62,6 +62,8 @@ interface Props {
     label: string;
     getValue: (sliceQuery: SliceQuery) => unknown;
   }) => boolean;
+  // See `rowIds` in SliceTable's props.
+  rowIds?: Set<string>;
   customColumns?: CustomColumn[];
   customColumnPlacement?: CustomColumnPlacement;
   getColumnDisplayOptions?: (
@@ -200,6 +202,7 @@ export function useSliceTableState({
   downloadFilename,
   tableRef,
   implicitFilter = undefined,
+  rowIds = undefined,
   customColumns = undefined,
   customColumnPlacement = "end",
   getColumnDisplayOptions = undefined,
@@ -300,6 +303,7 @@ export function useSliceTableState({
     index_type_name,
     slices,
     viewOnlySlices,
+    rowIds,
     retryToken,
   });
 
@@ -422,15 +426,20 @@ export function useSliceTableState({
   );
 
   // Build the set of row IDs that pass the implicit filter (i.e. the rows
-  // that would be visible if the user had no filters applied). When there
-  // is no implicit filter, returns undefined — SlicePreview will fall back
+  // that would be visible if the user had no filters applied). When the table
+  // is not scoped at all, returns undefined — SlicePreview will fall back
   // to using the full preview dataset as the baseline. This is passed
   // alongside `visibleRowIds` so the preview can distinguish between
-  // "filtering caused by the (invisible) implicit filter" and "filtering
+  // "filtering caused by the (invisible) scoping" and "filtering
   // the user actually applied themselves".
+  //
+  // `rowIds` is the same claim as an id-testing `implicitFilter` and answers this
+  // directly: it already *is* the table's universe, so there is nothing to
+  // evaluate. A caller may supply both, in which case the predicate still has to
+  // run over what was fetched.
   const getUnfilteredRowIds = useCallback((): Set<string> | undefined => {
     if (!implicitFilter) {
-      return undefined;
+      return rowIds;
     }
 
     const predicate = filterPredicate(
@@ -440,7 +449,7 @@ export function useSliceTableState({
     );
 
     return new Set(data.filter(predicate).map((row) => row.id as string));
-  }, [columns, data, implicitFilter]);
+  }, [columns, data, implicitFilter, rowIds]);
 
   const handleClickAddColumn = useCallback(async () => {
     const visibleRowIds = new Set(tableRef.current?.getDisplayRowIds() || []);

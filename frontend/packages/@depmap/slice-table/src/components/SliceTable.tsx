@@ -128,6 +128,20 @@ interface Props {
     label: string;
     getValue: (sliceQuery: SliceQuery) => unknown;
   }) => boolean;
+  // The table's universe of rows, when the caller already knows it. Prefer this
+  // over an `implicitFilter` that tests `id`: the result is the same, but the row
+  // set is pushed down into the fetch, so only these rows are ever transferred.
+  // That matters for the per-residue annotation columns, which are tens of
+  // megabytes each and were being pulled whole to show a handful of rows. It also
+  // sidesteps the `getValue` trap described above, since there is no predicate.
+  //
+  // Only plain tabular columns can be scoped this way; matrix slices and
+  // `reindex_through` chains still fetch whole and are filtered client-side, so
+  // this is always a display-correct filter and sometimes also a smaller request.
+  //
+  // Memoize it, and hold the table on `isLoading` until it is ready — an empty
+  // Set means "no rows", which is a different claim from "not resolved yet".
+  rowIds?: Set<string>;
   // Optional external loading state. When true, the table shows its loading
   // spinner and disables interactions until the external dependency is ready.
   // Most consumers don't need this — it's only necessary when props like
@@ -170,6 +184,7 @@ function SliceTable({
   controlsClassName = undefined,
   downloadFilename = "",
   implicitFilter = undefined,
+  rowIds = undefined,
   isLoading: externalLoading = false,
   sliceTableRef = undefined,
 }: Props) {
@@ -241,6 +256,7 @@ function SliceTable({
     downloadFilename,
     tableRef,
     implicitFilter,
+    rowIds,
     hiddenDatasets,
     retryToken,
   });
