@@ -65,8 +65,8 @@ RUN ln -s $(pyenv prefix 3.9)/bin/python /usr/local/bin/python3.9 && \
 RUN mkdir -p /root/.taiga && mkdir -p /root/.local/bin
 
 # install dsub in virtual environment and put symlink into /root/.local/bin
-RUN python3.9 -m venv /install/dsub && \
-    /install/dsub/bin/pip install git+https://github.com/pgm/dsub.git@patched-0.4.13 && \
+RUN python3.13 -m venv /install/dsub && \
+    /install/dsub/bin/pip install "dsub>=0.5.5" && \
     ln -s /install/dsub/bin/dsub /root/.local/bin && \
     ln -s /install/dsub/bin/dstat /root/.local/bin 
 
@@ -81,7 +81,7 @@ RUN echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.c
     curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | \
     gpg --dearmor > /usr/share/keyrings/cloud.google.gpg && \
     apt-get update && \
-    apt-get install -y google-cloud-sdk && \
+    apt-get install -y google-cloud-cli && \
     ln -s $(which gsutil) /root/.local/bin/gsutil
 
 # install conseq in virtual environment
