@@ -318,7 +318,11 @@ function DataExplorerDensity1DPlot({
           <StackableSection
             title="Plot Selections"
             minHeight={256}
-            defaultOpen={!plotConfig.expand_by}
+            defaultOpen={
+              !plotConfig.expand_by ||
+              (plotConfig.expand_by && !plotConfig.color_by) ||
+              plotConfig.color_by === "expansion"
+            }
           >
             {isPairGrained ? (
               <ExpandedPlotSelections

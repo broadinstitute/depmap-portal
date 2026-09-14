@@ -18,6 +18,15 @@ import chooseDataSlice from "./chooseDataSlice";
 import chooseFilters from "./chooseFilters";
 import showDataSlicePreview from "./showDataSlicePreview";
 
+const truncateVal = (s: unknown) => {
+  if (typeof s !== "string") {
+    return s;
+  }
+
+  const MAX = 45;
+  return s && s.length > MAX ? `${s.substr(0, MAX)}…` : s;
+};
+
 export interface CellCtx {
   row: Record<"id", string> & { original: Record<string, unknown> };
   table: {
@@ -407,7 +416,7 @@ export function useSliceTableState({
                 typeof c.header === "string"
                   ? c.header
                   : c.meta?.idLabel ?? c.id;
-              lines.push(`${label}: ${val}`);
+              lines.push(`${label}: ${truncateVal(val)}`);
             }
           }
 

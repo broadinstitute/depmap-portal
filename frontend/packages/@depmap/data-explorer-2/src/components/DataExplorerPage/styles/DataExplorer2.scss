@@ -650,12 +650,18 @@
   height: calc(100vh - 298px);
 }
 
+.categoryPickerControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 // The bar defaults to the width the slice table's control strip has room for,
 // which is most of a modal. Narrowed here through the custom property it
 // exposes, rather than by reaching into its input.
 .categoryPickerSearch {
   --search-bar-input-width: 180px;
-  margin-bottom: 8px;
   margin-left: 2px;
 }
 
