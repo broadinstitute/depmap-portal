@@ -65,6 +65,17 @@ export interface CategoryScore {
   score: number;
 }
 
+// A CategoryScore flattened for the picker's table: the `means` array split
+// into named fields, since a column definition needs a key. Lives here rather
+// than in the picker because the CSV builder shapes it too.
+export interface CategoryRow {
+  category: string;
+  count: number;
+  score: number;
+  meanX?: number;
+  meanY?: number;
+}
+
 interface Accumulator {
   count: number;
   sums: number[];
