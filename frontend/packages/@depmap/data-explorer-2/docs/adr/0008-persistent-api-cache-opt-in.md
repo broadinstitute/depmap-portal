@@ -93,27 +93,51 @@ direction. When you add a Data Explorer call site, decide explicitly.
   fails on the _response_ side. Coverage is computed across the caller's entire
   accessible catalog — datasets named nowhere in the request — and user identity
   arrives via proxy headers the cache key can never see. It persists via
-  `persist: { wholeCatalog: true }` instead, which makes the dependency explicit
-  and lets the engine decide per session:
+  `persist: { publicCatalog: true }` instead, paired with `scope=public` on the
+  request:
 
-  - **Only when the caller's entire visible catalog is public.** This is the
-    load-bearing invariant, and it is about BYTES, not keys: IndexedDB is
-    readable wholesale (devtools, shared machines), so no keying scheme can make
-    a private-derived response safe to store. For an all-public caller the full
-    response is derived from public data alone, so storing it discloses nothing.
-    Anyone who can see a private dataset stays in-memory only, permanently.
-  - **Keyed by a fingerprint of the listing.** Coverage depends on what exists
-    _right now_, and datasets are uploaded at runtime where the epoch offers no
-    protection — but the registry is rebuilt from a fresh `getDatasets()` every
-    page load, so folding a hash of the sorted listing UUIDs into the key makes
-    entries self-invalidate on any catalog change, the same way given_id keys
-    do. (Since UUIDs pin contents, the fingerprint pins the entire input.)
+  - **The response must be public-derived, and the request is what makes it so.**
+    This is the load-bearing invariant, and it is about BYTES, not keys:
+    IndexedDB is readable wholesale (devtools, shared machines), so no keying
+    scheme can make a private-derived response safe to store. `scope=public`
+    narrows the count to the public group server-side, so the bytes are
+    public-derived for every caller and the same for all of them. The engine
+    cannot verify this — only the call site knows what it asked for — so
+    `publicCatalog` is an assertion in the same class as `persist: true`.
+  - **Keyed by a fingerprint of the public listing.** Coverage depends on what
+    exists _right now_, and datasets are uploaded at runtime where the epoch
+    offers no protection — but the registry is rebuilt from a fresh
+    `getDatasets()` every page load, so folding a hash of the sorted public
+    UUIDs into the key makes entries self-invalidate on any change to the public
+    catalog, the same way given_id keys do. (Since UUIDs pin contents, the
+    fingerprint pins the entire input.) The public subset, not the whole
+    listing: a private upload cannot change a public-scoped response, so folding
+    it in would evict a still-valid entry, and two users with different private
+    access would key byte-identical responses apart.
 
-  An earlier revision of this bullet presented both objections as absolute. Only
-  the bytes-on-disk one is; the catalog-time one is answerable by the key. If a
-  future endpoint needs full-fidelity persistence for private-visible users too,
-  that requires server-side changes (a public/private scope split) — the client
-  alone cannot express it.
+  **What this replaced, and why.** The first version had no scope parameter. It
+  asked for full-fidelity coverage and persisted the result only for callers
+  whose _entire_ visible catalog was public (`persist: { wholeCatalog: true }`),
+  leaving everyone who could see a private dataset in memory only, permanently —
+  which at the Broad is most internal users, i.e. the rule disabled the cache for
+  the people it was for. An earlier revision of this bullet also presented both
+  objections as absolute. Only the bytes-on-disk one is; the catalog-time one is
+  answerable by the key, and the bytes one is answerable by asking the server a
+  narrower question.
+
+  **The price, accepted deliberately.** A public-scoped response says nothing
+  about private datasets, so the Data Version select cannot coverage-filter them
+  — a private data version stays on offer whether or not it contains the
+  context's entities. That is the pre-coverage behavior, and it fails in the safe
+  direction: over-offering, never stranding the user on an empty list. The
+  filter in `computeOptions.ts` therefore reads "absent from `counts`" two ways,
+  as measured-and-empty for a public dataset and as unmeasured for a private one.
+
+  The full-fidelity alternative — cache the public-scoped call and merge an
+  uncached `scope=private` one over it — was rejected. Both calls pay the
+  context evaluation, which is the expensive half, so a private-visible user
+  would still make a live round trip on every context change: the caching would
+  buy them nothing while doubling cold-load work on the server.
 
 Misclassifying in the safe direction (not persisting something immutable) costs a cache
 hit. Misclassifying in the unsafe direction is the only real hazard, and the engine's
