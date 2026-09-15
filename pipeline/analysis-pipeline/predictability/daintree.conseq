@@ -4,14 +4,17 @@
 # 3. Combine the output config files
 
 let sparkles_path = "PYTHONUNBUFFERED=1 sparkles"
-let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.5.0"
+let daintree_docker_image = "us-central1-docker.pkg.dev/cds-docker-containers/docker/daintree:0.6.0"
 
 # Change the artifact below to run on a small subset of the full config (useful just for testing). Set all to "yes" 
-# for normal operation, or "no" for doing a subset of the normal work
+# for normal operation, or "no" for doing a subset of the normal work.
+# "select_n_features" controls how many features will be chosen per feature-selection prior to RF. Default is 1000,
+# but setting to a small number will make RF run fast. Change to 30 for testing.
 add-if-missing {
     "type": "daintree-test-run-flags", 
     "run_all_configs": "yes",
-    "fit_all_actuals": "no"
+    "fit_all_actuals": "no",
+    "select_n_features": "30"
 }
 
 # creates artifacts for each run of daintree with the parameters daintree will need. Also emits a file containing the model config information that breadbox needs
