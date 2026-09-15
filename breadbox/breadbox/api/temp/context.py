@@ -1,6 +1,6 @@
-from typing import Annotated
+from typing import Annotated, Literal
 from logging import getLogger
-from fastapi import Body, Depends
+from fastapi import Body, Depends, Query
 
 from breadbox.crud.dimension_ids import get_dimension_type_labels_by_id
 from breadbox.api.dependencies import get_db_with_user
@@ -89,6 +89,16 @@ def get_context_dataset_coverage(
     context: Annotated[
         Context, Body(description="A Data Explorer 2 context expression")
     ],
+    scope: Annotated[
+        Literal["all", "public"],
+        Query(
+            description=(
+                "Which datasets to count over. 'all' covers everything the "
+                "caller may see. 'public' covers only the public group, which "
+                "makes the response identical for every caller."
+            )
+        ),
+    ] = "all",
 ):
     """
     How many of a context's entities each visible dataset actually contains.
@@ -104,11 +114,22 @@ def get_context_dataset_coverage(
     whatever the client chose to send.
 
     Datasets with no matching entity are omitted rather than reported as zero.
+
+    `scope=public` exists for callers that want to store the answer. A default
+    `scope=all` response depends on who is asking, so a client cannot write it
+    anywhere another user might read it; a public-scoped one is the same bytes
+    for everyone and carries nothing private. The caller gives up coverage
+    information about its private datasets to get that, which is a trade only
+    it can make -- hence a parameter rather than a server-side policy.
     """
     result = _evaluate(db, settings, context)
 
     counts = dataset_crud.count_dataset_coverage(
-        db, db.user, context.dimension_type, result.ids
+        db,
+        db.user,
+        context.dimension_type,
+        result.ids,
+        public_only=(scope == "public"),
     )
 
     return ContextDatasetCoverageResponse(counts=counts, total=len(result.ids))
