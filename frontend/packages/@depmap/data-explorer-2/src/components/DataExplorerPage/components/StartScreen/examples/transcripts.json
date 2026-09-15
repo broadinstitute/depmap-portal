@@ -1,0 +1,61 @@
+{
+  "cd44-transcripts": {
+    "plot_type": "density_1d",
+    "index_type": "depmap_model",
+    "dimensions": {
+      "x": {
+        "axis_type": "aggregated_slice",
+        "aggregation": "expansion",
+        "context": {
+          "dimension_type": "transcript",
+          "expr": {
+            "==": [
+              {
+                "var": "0"
+              },
+              "CD44"
+            ]
+          },
+          "name": "CD44 Transcripts",
+          "vars": {
+            "0": {
+              "dataset_id": "transcript_metadata",
+              "identifier": "Gene",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
+        },
+        "dataset_id": "OmicsLongReadExpressionTranscriptLogp1HumanAllGenes",
+        "slice_type": "transcript"
+      }
+    },
+    "expand_by": [
+      {
+        "slice_type": "transcript",
+        "context": {
+          "dimension_type": "transcript",
+          "expr": {
+            "==": [
+              {
+                "var": "0"
+              },
+              "CD44"
+            ]
+          },
+          "name": "CD44 Transcripts",
+          "vars": {
+            "0": {
+              "dataset_id": "transcript_metadata",
+              "identifier": "Gene",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
+        }
+      }
+    ],
+    "sort_by": "alphabetical",
+    "facet_by": "expansion"
+  }
+}
