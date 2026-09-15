@@ -22,10 +22,12 @@
 //     entries are unreachable garbage. They go cold, and LRU reclaims them.
 //     LRU is the TTL.
 //
-//   - Only PUBLIC-derived bytes are stored. IndexedDB is origin-global and
-//     user-agnostic: a shared lab machine, a logout, or a user switch all expose
-//     whatever is on disk. Restricting to public data makes that a non-issue,
-//     because the next user was entitled to those bytes anyway. Decided in
+//   - Only bytes somebody has declared safe to leave on disk are stored.
+//     IndexedDB is origin-global and user-agnostic: a shared lab machine, a
+//     logout, or a user switch all expose whatever is on disk. Public data
+//     makes that a non-issue, because the next user was entitled to those bytes
+//     anyway; the named exception is a group whitelist (cacheableGroups.ts) for
+//     pre-release data we are going to publish regardless. Decided in
 //     `buildPersistentKey` rather than at call sites, so it cannot be forgotten
 //     — except for `publicCatalog`, where only the caller knows it asked the
 //     server a public-scoped question, and so must assert it.
@@ -36,6 +38,8 @@
 // correctness and never a privacy leak.
 
 import SparkMD5 from "spark-md5";
+
+import { CACHEABLE_GROUP_NAMES } from "./cacheableGroups";
 
 const DB_NAME = "depmap-api-cache";
 const DB_VERSION = 2;
@@ -102,8 +106,22 @@ let maxBytes = DEFAULT_MAX_BYTES;
 
 /** given_id -> UUID for every dataset visible this session. */
 let versionMap: Map<string, string> | null = null;
-/** UUIDs of datasets in the public group. Nothing else may be written. */
+/**
+ * UUIDs of datasets in the public group.
+ *
+ * Narrower than `cacheableUuids` on purpose, and not interchangeable with it:
+ * this set defines what `publicCatalog` means, and `publicCatalog` is a claim
+ * about a server response fetched at `scope=public`, which covers the public
+ * group and nothing else. Folding whitelisted groups in here would describe a
+ * response the server never sent.
+ */
 let publicUuids: Set<string> | null = null;
+/**
+ * UUIDs a `persist: true` response may be addressed by or depend on: the public
+ * ones, plus datasets in a whitelisted group (see cacheableGroups.ts). This is
+ * the write-eligibility set, and the only place the whitelist has any effect.
+ */
+let cacheableUuids: Set<string> | null = null;
 /**
  * Fingerprint of the PUBLIC subset of this session's listing. It makes
  * `publicCatalog` responses expressible on disk: since UUIDs pin contents, it
@@ -124,7 +142,7 @@ export const persistentCacheStats = {
   bytesWritten: 0,
   evictions: 0,
   bytesEvicted: 0,
-  refusedNotPublic: 0,
+  refusedNotCacheable: 0,
   refusedNoDatasetAddress: 0,
   refusedUnresolvable: 0,
   refusedTooLarge: 0,
@@ -150,6 +168,9 @@ export interface DatasetRegistryEntry {
   id: string;
   given_id?: string | null;
   group_id?: string | null;
+  // Every dataset from `getDatasets()` carries its group, so the whitelist can
+  // be matched by name without a second request.
+  group?: { name?: string | null } | null;
 }
 
 /**
@@ -186,6 +207,7 @@ export function initDatasetRegistry(options: {
 
       const nextVersionMap = new Map<string, string>();
       const nextPublicUuids = new Set<string>();
+      const nextCacheableUuids = new Set<string>();
 
       for (const d of datasets) {
         if (d.given_id) {
@@ -193,6 +215,12 @@ export function initDatasetRegistry(options: {
         }
         if (d.group_id === PUBLIC_GROUP_ID) {
           nextPublicUuids.add(d.id);
+          nextCacheableUuids.add(d.id);
+        } else if (d.group?.name && CACHEABLE_GROUP_NAMES.has(d.group.name)) {
+          // Private, but its group asserts the bytes are safe to leave on disk.
+          // Cacheable only — deliberately NOT added to nextPublicUuids, which
+          // describes what the server means by `scope=public`.
+          nextCacheableUuids.add(d.id);
         }
       }
 
@@ -212,6 +240,7 @@ export function initDatasetRegistry(options: {
 
       versionMap = nextVersionMap;
       publicUuids = nextPublicUuids;
+      cacheableUuids = nextCacheableUuids;
 
       publicCatalogFingerprint = SparkMD5.hash(
         [...nextPublicUuids].sort().join(",")
@@ -278,7 +307,7 @@ function classifyAddress(raw: string): Address {
     return { kind: "givenId", raw, uuid: resolved };
   }
 
-  if (publicUuids && publicUuids.has(raw)) {
+  if (cacheableUuids && cacheableUuids.has(raw)) {
     persistentCacheStats.addressKinds.listedUuid += 1;
     return { kind: "uuid", raw };
   }
@@ -339,7 +368,12 @@ export async function buildPersistentKey(
     await openPromise;
   }
 
-  if (status !== "ready" || versionMap === null || publicUuids === null) {
+  if (
+    status !== "ready" ||
+    versionMap === null ||
+    publicUuids === null ||
+    cacheableUuids === null
+  ) {
     persistentCacheStats.refusedNotReady += 1;
     return null;
   }
@@ -403,10 +437,12 @@ export async function buildPersistentKey(
   }
 
   // Hard requirement: every dataset contributing to this response must be
-  // public. Checked here, once, for both addresses and declared deps.
+  // cacheable — public, or in a group that asserts its data may sit on disk
+  // (cacheableGroups.ts). Checked here, once, for both addresses and declared
+  // deps.
   for (const uuid of involvedUuids) {
-    if (!publicUuids.has(uuid)) {
-      persistentCacheStats.refusedNotPublic += 1;
+    if (!cacheableUuids.has(uuid)) {
+      persistentCacheStats.refusedNotCacheable += 1;
       return null;
     }
   }
@@ -775,6 +811,7 @@ export function __resetForTests(): void {
   maxBytes = DEFAULT_MAX_BYTES;
   versionMap = null;
   publicUuids = null;
+  cacheableUuids = null;
   publicCatalogFingerprint = "";
   touched.clear();
 
@@ -784,7 +821,7 @@ export function __resetForTests(): void {
   persistentCacheStats.bytesWritten = 0;
   persistentCacheStats.evictions = 0;
   persistentCacheStats.bytesEvicted = 0;
-  persistentCacheStats.refusedNotPublic = 0;
+  persistentCacheStats.refusedNotCacheable = 0;
   persistentCacheStats.refusedNoDatasetAddress = 0;
   persistentCacheStats.refusedUnresolvable = 0;
   persistentCacheStats.refusedTooLarge = 0;
@@ -830,6 +867,7 @@ export async function getPersistentApiCacheInfo(): Promise<{
   maxBytes: number;
   totalBytes: number;
   publicDatasets: number;
+  cacheableDatasets: number;
   stats: typeof persistentCacheStats;
 }> {
   if (openPromise) {
@@ -847,6 +885,10 @@ export async function getPersistentApiCacheInfo(): Promise<{
     maxBytes,
     totalBytes,
     publicDatasets: publicUuids ? publicUuids.size : 0,
+    // Cacheable minus public is how many datasets got in on the group
+    // whitelist. A surprising number there means a whitelisted group has grown
+    // beyond what someone reviewed.
+    cacheableDatasets: cacheableUuids ? cacheableUuids.size : 0,
     stats: { ...persistentCacheStats },
   };
 }

@@ -5,8 +5,9 @@
   decision is portal-wide. Recorded here because this is where design decisions live and
   because new Data Explorer call sites are where the question will keep coming up.
 - **Key symbols:** `cached(api, { persist })`, `PersistOption`, `initDatasetRegistry`,
-  `buildPersistentKey`, `CACHE_VERSION`, `evaluateContextPersisted`,
-  `getDimensionTypeIdentifiersPersisted`, `getPersistentApiCacheInfo`
+  `buildPersistentKey`, `CACHE_VERSION`, `CACHEABLE_GROUP_NAMES`,
+  `evaluateContextPersisted`, `getDimensionTypeIdentifiersPersisted`,
+  `getPersistentApiCacheInfo`
 
 ---
 
@@ -155,6 +156,40 @@ worth stating because it inverts the obvious remedy: when a heavy response is no
 persisted, making it _eligible_ is not the fix — making it _smaller_ is, and once it is
 small enough to store it is usually also cheap enough not to need storing. Row subsetting
 (`indices` on the dimension-data endpoint) is the tool for that.
+
+### 2a. The group whitelist — the one exception to "public only"
+
+`CACHEABLE_GROUP_NAMES` in `cacheableGroups.ts` names access groups whose datasets may
+be written despite being private. It feeds `cacheableUuids`, which is what the address
+and dep checks in `buildPersistentKey` test; `publicUuids` remains public-only.
+
+- **Why a group and not a dataset list.** A dataset UUID changes with every version and
+  differs per environment, so a UUID list needs maintenance every time data is revised
+  and in every deployment. A group is stable across both. `Group.name` is `unique=True`
+  in Breadbox and means the same thing in dev, staging and prod, while the id does not —
+  hence matching by name. Every dataset from `getDatasets()` already carries
+  `group: {id, name}`, so this costs no extra request.
+- **Why a group and not `data_type`.** An earlier proposal exempted private
+  `data_type: "metadata"` datasets. It was rejected because `data_type` is uploader-set
+  free text, not an access-control concept, so the carve-out would silently catch future
+  private uploads nobody reviewed. A group has an owner, a membership, and a purpose:
+  asserting something about its contents is a claim someone is positioned to make.
+- **What the assertion costs.** It is a standing exemption, not a per-artifact decision:
+  anyone with write access to a listed group can add a dataset later and it becomes
+  cacheable with no review. That is the residual risk, and it is bounded by who can
+  write to the group rather than by anything in this code. The case it was built for is
+  pre-release data pending review — private only until published, so the disclosure
+  window closes on something that was going to happen anyway. A group holding genuinely
+  sensitive data does not belong on the list.
+- **Removal requires a `CACHE_VERSION` bump in the same commit.** Removing a name stops
+  new writes but evicts nothing; there is no per-entry invalidation by design, so bytes
+  written under an old whitelist stay readable until the epoch rotates. Same rule as any
+  other cache-correctness change.
+- **Do not fold the whitelist into `publicUuids`.** That set also builds
+  `publicCatalogFingerprint` and encodes what the server means by `scope=public`.
+  Merging them would fingerprint a response the server never sent, rotating the coverage
+  key on changes that cannot affect it and splitting byte-identical responses across
+  users with different access to the whitelisted group.
 
 ### 3. The kill switch
 

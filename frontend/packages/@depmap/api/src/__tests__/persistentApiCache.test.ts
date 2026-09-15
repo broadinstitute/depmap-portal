@@ -1,7 +1,19 @@
 import { IDBFactory } from "fake-indexeddb";
+
+const WHITELISTED_GROUP_NAME = "Test Group Of Pre-Release Data";
+
+// Mocked so these tests describe the ENGINE's handling of a whitelist rather
+// than whichever groups production happens to list today. Adding or removing a
+// real group should not touch this file.
+jest.mock("../cacheableGroups", () => ({
+  CACHEABLE_GROUP_NAMES: new Set(["Test Group Of Pre-Release Data"]),
+}));
+
+// eslint-disable-next-line import/first
 import {
   __resetForTests,
   buildPersistentKey,
+  DatasetRegistryEntry,
   getPersistentApiCacheInfo,
   initDatasetRegistry,
   isPersistentApiCacheEnabled,
@@ -19,8 +31,9 @@ const PUBLIC_DEP_UUID_1 = "cccccccc-0000-0000-0000-000000000003";
 const PUBLIC_DEP_UUID_2 = "dddddddd-0000-0000-0000-000000000004";
 const RESOLVED_UUID_V1 = "eeeeeeee-0000-0000-0000-000000000005";
 const RESOLVED_UUID_V2 = "ffffffff-0000-0000-0000-000000000006";
+const WHITELISTED_UUID = "12345678-0000-0000-0000-000000000007";
 
-const defaultDatasets = [
+const defaultDatasets: DatasetRegistryEntry[] = [
   { id: PUBLIC_UUID, given_id: null, group_id: PUBLIC_GROUP_ID },
   { id: PRIVATE_UUID, given_id: null, group_id: PRIVATE_GROUP_ID },
   { id: PUBLIC_DEP_UUID_1, given_id: null, group_id: PUBLIC_GROUP_ID },
@@ -34,7 +47,7 @@ const defaultDatasets = [
 
 async function init(
   options: {
-    datasets?: typeof defaultDatasets;
+    datasets?: DatasetRegistryEntry[];
     breadboxVersion?: string;
     maxBytes?: number;
     reuseIndexedDB?: boolean;
@@ -98,7 +111,70 @@ describe("buildPersistentKey", () => {
     const key = await buildPersistentKey(`GET /data/${PRIVATE_UUID}`, true);
 
     expect(key).toBeNull();
-    expect(persistentCacheStats.refusedNotPublic).toBe(1);
+    expect(persistentCacheStats.refusedNotCacheable).toBe(1);
+  });
+
+  it("persists a private dataset in a whitelisted group", async () => {
+    await init({
+      datasets: [
+        ...defaultDatasets,
+        {
+          id: WHITELISTED_UUID,
+          given_id: null,
+          group_id: PRIVATE_GROUP_ID,
+          group: { name: WHITELISTED_GROUP_NAME },
+        },
+      ],
+    });
+    const key = await buildPersistentKey(`GET /data/${WHITELISTED_UUID}`, true);
+
+    expect(key).not.toBeNull();
+  });
+
+  it("still refuses a private dataset whose group is not whitelisted", async () => {
+    // The same shape as the test above, differing only in the group name, so a
+    // whitelist that accidentally matched everything would fail here.
+    await init({
+      datasets: [
+        ...defaultDatasets,
+        {
+          id: WHITELISTED_UUID,
+          given_id: null,
+          group_id: PRIVATE_GROUP_ID,
+          group: { name: "Some Other Group" },
+        },
+      ],
+    });
+    const key = await buildPersistentKey(`GET /data/${WHITELISTED_UUID}`, true);
+
+    expect(key).toBeNull();
+    expect(persistentCacheStats.refusedNotCacheable).toBe(1);
+  });
+
+  it("keeps a whitelisted group out of the publicCatalog fingerprint", async () => {
+    // The whitelist governs write eligibility only. `publicCatalog` describes a
+    // response the server produced at scope=public, which covers the public
+    // group and nothing else — so a whitelisted dataset must not move its key.
+    const cacheKey = "POST /temp/context/coverage-{}";
+
+    await init();
+    const key1 = await buildPersistentKey(cacheKey, { publicCatalog: true });
+
+    __resetForTests();
+    await init({
+      datasets: [
+        ...defaultDatasets,
+        {
+          id: WHITELISTED_UUID,
+          given_id: null,
+          group_id: PRIVATE_GROUP_ID,
+          group: { name: WHITELISTED_GROUP_NAME },
+        },
+      ],
+    });
+    const key2 = await buildPersistentKey(cacheKey, { publicCatalog: true });
+
+    expect(key1).toEqual(key2);
   });
 
   it("refuses an unresolvable declared dep", async () => {
