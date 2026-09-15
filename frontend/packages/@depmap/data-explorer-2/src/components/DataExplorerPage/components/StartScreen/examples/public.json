@@ -1,4 +1,128 @@
 {
+  "braf-vs-braf-inhibitors": {
+    "plot_type": "scatter",
+    "index_type": "depmap_model",
+    "dimensions": {
+      "x": {
+        "axis_type": "raw_slice",
+        "aggregation": "first",
+        "context": {
+          "dimension_type": "gene",
+          "name": "BRAF",
+          "expr": {
+            "==": [
+              {
+                "var": "given_id"
+              },
+              "673"
+            ]
+          },
+          "vars": {}
+        },
+        "dataset_id": "Chronos_Combined",
+        "slice_type": "gene"
+      },
+      "y": {
+        "axis_type": "aggregated_slice",
+        "aggregation": "expansion",
+        "context": {
+          "dimension_type": "compound_v2",
+          "expr": {
+            "in": [
+              {
+                "var": "0"
+              },
+              [
+                "inhibitor of BRAF and BRAF p.V600E",
+                "inhibitor of BRAF and CRAF (RAF1)",
+                "inhibitor of BRAF, BRAF p.V600E, and CRAF (RAF1)",
+                "inhibitor of BRAF, BRAF p.V600E, CRAF (RAF1), and MEK1 (MAP2K1)",
+                "type II inhibitor of BRAF and RAF1"
+              ]
+            ]
+          },
+          "name": "BRAF inhibitors",
+          "vars": {
+            "0": {
+              "dataset_id": "compound_v2_metadata",
+              "identifier": "TargetOrMechanism",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
+        },
+        "dataset_id": "Rep_all_single_pt_per_compound",
+        "slice_type": "compound_v2"
+      }
+    },
+    "expand_by": [
+      {
+        "slice_type": "compound_v2",
+        "context": {
+          "dimension_type": "compound_v2",
+          "expr": {
+            "in": [
+              {
+                "var": "0"
+              },
+              [
+                "inhibitor of BRAF and BRAF p.V600E",
+                "inhibitor of BRAF and CRAF (RAF1)",
+                "inhibitor of BRAF, BRAF p.V600E, and CRAF (RAF1)",
+                "inhibitor of BRAF, BRAF p.V600E, CRAF (RAF1), and MEK1 (MAP2K1)",
+                "type II inhibitor of BRAF and RAF1"
+              ]
+            ]
+          },
+          "name": "BRAF inhibitors",
+          "vars": {
+            "0": {
+              "dataset_id": "compound_v2_metadata",
+              "identifier": "TargetOrMechanism",
+              "identifier_type": "column",
+              "source": "property"
+            }
+          }
+        }
+      }
+    ],
+    "show_regression_line": true,
+    "facet_by": "expansion"
+  },
+  "expression-distribution-per-lineage": {
+    "plot_type": "density_1d",
+    "index_type": "depmap_model",
+    "dimensions": {
+      "x": {
+        "axis_type": "raw_slice",
+        "aggregation": "first",
+        "context": {
+          "dimension_type": "gene",
+          "name": "SOX10",
+          "expr": {
+            "==": [
+              {
+                "var": "given_id"
+              },
+              "6663"
+            ]
+          },
+          "vars": {}
+        },
+        "dataset_id": "expression",
+        "slice_type": "gene"
+      }
+    },
+    "sort_by": "alphabetical",
+    "facet_by": "property",
+    "metadata": {
+      "facet_property": {
+        "dataset_id": "depmap_model_metadata",
+        "identifier": "OncotreeLineage",
+        "identifier_type": "column"
+      }
+    }
+  },
   "biomarker-relationship": {
     "plot_type": "scatter",
     "index_type": "depmap_model",
