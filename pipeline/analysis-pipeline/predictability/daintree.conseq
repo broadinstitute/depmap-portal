@@ -85,6 +85,7 @@ rule run_fit_models:
     run """python3 {{ inputs.create_workflow_script.filename }} \
         --config {{ inputs.daintree_input_config.filename }} \
         --out workflow.json \
+        --select_n_features {{inputs.is_test_run.select_n_features}} \
         --ncpus 4 \
         --nfolds 5 \
         --models-per-task {{ inputs.daintree_input_config.models_per_task}} {% if inputs.is_test_run.fit_all_actuals == 'no' %}--test-first-n-tasks 10{% endif %} \
