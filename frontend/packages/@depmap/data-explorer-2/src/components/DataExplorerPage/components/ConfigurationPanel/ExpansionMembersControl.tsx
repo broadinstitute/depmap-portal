@@ -100,28 +100,26 @@ function ExpansionMembersControl({
     return null;
   }
 
-  // The control earns its place only when there is a different set of members
-  // the user could be looking at. Two ways there isn't, and in both the whole
-  // thing — summary and button alike — renders away:
-  //
-  //   - Nothing was drawn. Opening the table would offer only members that
-  //     would also draw nothing. Saying so is worse than saying nothing: any
-  //     explanation has to talk about the dataset not tracking the entities the
-  //     context named, and "the context" is an idea the plot never exposes.
-  //   - Everything the dataset tracks is already on screen. Adding is
-  //     impossible and removing is what the legend is for.
+  // Nothing was drawn, so there is nothing to open: the table filters out
+  // members the dataset doesn't measure, and here that's all of them. Saying so
+  // is worse than saying nothing — any explanation has to talk about the
+  // dataset not tracking the entities the context named, and "the context" is
+  // an idea the plot never exposes.
   //
   // `undefined` means nobody told us — the configuration column has no plot
-  // response — and is deliberately not treated as either case.
-  const nothingDrawn = shownCount === 0;
+  // response — and is deliberately not treated as this case.
+  if (shownCount === 0) {
+    return null;
+  }
+
+  // Everything the dataset measures is already on screen. The control stays:
+  // the table is worth opening for the statistics, the annotation columns and
+  // the download, none of which depend on there being something left to add.
+  // Only its promise changes, since "choose" implies a choice that isn't there.
   const nothingLeftToAdd =
     shownCount !== undefined &&
     availableCount !== undefined &&
     shownCount >= availableCount;
-
-  if (nothingDrawn || nothingLeftToAdd) {
-    return null;
-  }
 
   const noun = pluralize(sliceTypeLabel || "member").toLowerCase();
 
@@ -159,8 +157,17 @@ function ExpansionMembersControl({
       );
     }
 
-    // Reaching here means shownCount < availableCount — the equal case returned
-    // above, before this component rendered anything at all.
+    // Worth stating rather than leaving to inference: a complete table looks
+    // exactly like a partial one, so without this the reader has no way to know
+    // the ranking left nothing out.
+    if (nothingLeftToAdd) {
+      return (
+        <>
+          Showing all {shownCount} {noun} that have data.
+        </>
+      );
+    }
+
     return (
       <>
         Showing {shownCount} of {availableCount} {noun} that have data — the
@@ -175,7 +182,7 @@ function ExpansionMembersControl({
         <div className={styles.expansionMembersSummary}>{summary}</div>
       )}
       <Button bsSize="xsmall" onClick={handleClick} bsStyle="info">
-        Choose {noun}…
+        {nothingLeftToAdd ? "See table…" : `Choose ${noun}…`}
       </Button>
     </div>
   );

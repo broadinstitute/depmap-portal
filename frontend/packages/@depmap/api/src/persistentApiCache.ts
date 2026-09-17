@@ -22,11 +22,15 @@
 //     entries are unreachable garbage. They go cold, and LRU reclaims them.
 //     LRU is the TTL.
 //
-//   - Only PUBLIC datasets are stored. IndexedDB is origin-global and
-//     user-agnostic: a shared lab machine, a logout, or a user switch all expose
-//     whatever is on disk. Restricting to public data makes that a non-issue,
-//     because the next user was entitled to those bytes anyway. Enforced here in
-//     `persistentCacheSet` rather than at call sites, so it cannot be forgotten.
+//   - Only bytes somebody has declared safe to leave on disk are stored.
+//     IndexedDB is origin-global and user-agnostic: a shared lab machine, a
+//     logout, or a user switch all expose whatever is on disk. Public data
+//     makes that a non-issue, because the next user was entitled to those bytes
+//     anyway; the named exception is a group whitelist (cacheableGroups.ts) for
+//     pre-release data we are going to publish regardless. Decided in
+//     `buildPersistentKey` rather than at call sites, so it cannot be forgotten
+//     — except for `publicCatalog`, where only the caller knows it asked the
+//     server a public-scoped question, and so must assert it.
 //
 // The module FAILS CLOSED. Until `initDatasetRegistry` has been called with the
 // current dataset listing, `buildPersistentKey` returns null for everything and
@@ -34,6 +38,8 @@
 // correctness and never a privacy leak.
 
 import SparkMD5 from "spark-md5";
+
+import { CACHEABLE_GROUP_NAMES } from "./cacheableGroups";
 
 const DB_NAME = "depmap-api-cache";
 const DB_VERSION = 2;
@@ -52,7 +58,7 @@ const BYTES_KEY = "totalBytes";
 // feat/fix(breadbox) commit bumps that version via commitizen, and cached
 // responses produced by the old server code are cleared on next load. Only
 // deploys that ship no Breadbox change leave caches warm.
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 3;
 
 // Breadbox's well-known public group. See breadbox/crud/access_control.py.
 export const PUBLIC_GROUP_ID = "00000000-0000-0000-0000-000000000000";
@@ -72,13 +78,13 @@ const TOUCH_FLUSH_MS = 15_000;
  * `true` asserts the response is immutable at its own dataset address.
  * `{ deps }` additionally names datasets the response depends on but is not
  * addressed by; they are folded into the key.
- * `{ wholeCatalog: true }` asserts the response depends on every dataset the
- * caller can see. It persists ONLY when that catalog is entirely public — the
- * bytes on disk are then derived from public data alone — keyed by a
- * fingerprint of the listing, so any catalog change rotates the key on the
- * next load.
+ * `{ publicCatalog: true }` asserts the response depends on every PUBLIC
+ * dataset and on nothing private — the caller must have asked the server for a
+ * public-scoped answer. Keyed by a fingerprint of the public listing, so any
+ * change to it rotates the key on the next load, while private uploads (which
+ * cannot affect such a response) leave the key alone.
  */
-export type PersistOption = true | { deps: string[] } | { wholeCatalog: true };
+export type PersistOption = true | { deps: string[] } | { publicCatalog: true };
 
 /** Ambient context threaded from the decorator through createJsonClient. */
 export type RequestCacheContext = { persist?: PersistOption } | null;
@@ -100,16 +106,31 @@ let maxBytes = DEFAULT_MAX_BYTES;
 
 /** given_id -> UUID for every dataset visible this session. */
 let versionMap: Map<string, string> | null = null;
-/** UUIDs of datasets in the public group. Nothing else may be written. */
+/**
+ * UUIDs of datasets in the public group.
+ *
+ * Narrower than `cacheableUuids` on purpose, and not interchangeable with it:
+ * this set defines what `publicCatalog` means, and `publicCatalog` is a claim
+ * about a server response fetched at `scope=public`, which covers the public
+ * group and nothing else. Folding whitelisted groups in here would describe a
+ * response the server never sent.
+ */
 let publicUuids: Set<string> | null = null;
 /**
- * Whether every dataset in this session's listing is public, and a fingerprint
- * of that listing. Together they make `wholeCatalog` responses expressible on
- * disk: all-public means the bytes are public-derived, and the fingerprint —
- * since UUIDs pin contents — pins the entire input that produced them.
+ * UUIDs a `persist: true` response may be addressed by or depend on: the public
+ * ones, plus datasets in a whitelisted group (see cacheableGroups.ts). This is
+ * the write-eligibility set, and the only place the whitelist has any effect.
  */
-let catalogIsAllPublic = false;
-let catalogFingerprint = "";
+let cacheableUuids: Set<string> | null = null;
+/**
+ * Fingerprint of the PUBLIC subset of this session's listing. It makes
+ * `publicCatalog` responses expressible on disk: since UUIDs pin contents, it
+ * pins the entire input that produced such a response. Deliberately not a
+ * fingerprint of the whole listing — a private upload cannot change a
+ * public-scoped response, so folding it in would evict for nothing, and two
+ * users with different private access would key byte-identical responses apart.
+ */
+let publicCatalogFingerprint = "";
 
 const touched = new Set<string>();
 let touchTimer: ReturnType<typeof setInterval> | null = null;
@@ -121,9 +142,8 @@ export const persistentCacheStats = {
   bytesWritten: 0,
   evictions: 0,
   bytesEvicted: 0,
-  refusedNotPublic: 0,
+  refusedNotCacheable: 0,
   refusedNoDatasetAddress: 0,
-  refusedPrivateCatalog: 0,
   refusedUnresolvable: 0,
   refusedTooLarge: 0,
   refusedNotReady: 0,
@@ -148,6 +168,9 @@ export interface DatasetRegistryEntry {
   id: string;
   given_id?: string | null;
   group_id?: string | null;
+  // Every dataset from `getDatasets()` carries its group, so the whitelist can
+  // be matched by name without a second request.
+  group?: { name?: string | null } | null;
 }
 
 /**
@@ -184,6 +207,7 @@ export function initDatasetRegistry(options: {
 
       const nextVersionMap = new Map<string, string>();
       const nextPublicUuids = new Set<string>();
+      const nextCacheableUuids = new Set<string>();
 
       for (const d of datasets) {
         if (d.given_id) {
@@ -191,6 +215,12 @@ export function initDatasetRegistry(options: {
         }
         if (d.group_id === PUBLIC_GROUP_ID) {
           nextPublicUuids.add(d.id);
+          nextCacheableUuids.add(d.id);
+        } else if (d.group?.name && CACHEABLE_GROUP_NAMES.has(d.group.name)) {
+          // Private, but its group asserts the bytes are safe to leave on disk.
+          // Cacheable only — deliberately NOT added to nextPublicUuids, which
+          // describes what the server means by `scope=public`.
+          nextCacheableUuids.add(d.id);
         }
       }
 
@@ -210,15 +240,10 @@ export function initDatasetRegistry(options: {
 
       versionMap = nextVersionMap;
       publicUuids = nextPublicUuids;
+      cacheableUuids = nextCacheableUuids;
 
-      catalogIsAllPublic = datasets.every(
-        (d) => d.group_id === PUBLIC_GROUP_ID
-      );
-      catalogFingerprint = SparkMD5.hash(
-        datasets
-          .map((d) => d.id)
-          .sort()
-          .join(",")
+      publicCatalogFingerprint = SparkMD5.hash(
+        [...nextPublicUuids].sort().join(",")
       );
 
       const idb = await openDb();
@@ -282,7 +307,7 @@ function classifyAddress(raw: string): Address {
     return { kind: "givenId", raw, uuid: resolved };
   }
 
-  if (publicUuids && publicUuids.has(raw)) {
+  if (cacheableUuids && cacheableUuids.has(raw)) {
     persistentCacheStats.addressKinds.listedUuid += 1;
     return { kind: "uuid", raw };
   }
@@ -343,20 +368,25 @@ export async function buildPersistentKey(
     await openPromise;
   }
 
-  if (status !== "ready" || versionMap === null || publicUuids === null) {
+  if (
+    status !== "ready" ||
+    versionMap === null ||
+    publicUuids === null ||
+    cacheableUuids === null
+  ) {
     persistentCacheStats.refusedNotReady += 1;
     return null;
   }
 
-  const wholeCatalog = persist !== true && "wholeCatalog" in persist;
+  const publicCatalog = persist !== true && "publicCatalog" in persist;
   const declaredDeps =
     persist !== true && "deps" in persist ? persist.deps : [];
   const addresses = extractAddresses(cacheKey);
 
-  if (addresses.length === 0 && declaredDeps.length === 0 && !wholeCatalog) {
+  if (addresses.length === 0 && declaredDeps.length === 0 && !publicCatalog) {
     // The call site asserted immutability, but nothing in the request names a
     // dataset, so the assertion can't be checked. Refuse rather than trust it.
-    // (A wholeCatalog assertion is exempt: its dependency is the catalog
+    // (A publicCatalog assertion is exempt: its dependency is the catalog
     // itself, checked and folded into the key below.)
     persistentCacheStats.refusedNoDatasetAddress += 1;
     return null;
@@ -407,28 +437,28 @@ export async function buildPersistentKey(
   }
 
   // Hard requirement: every dataset contributing to this response must be
-  // public. Checked here, once, for both addresses and declared deps.
+  // cacheable — public, or in a group that asserts its data may sit on disk
+  // (cacheableGroups.ts). Checked here, once, for both addresses and declared
+  // deps.
   for (const uuid of involvedUuids) {
-    if (!publicUuids.has(uuid)) {
-      persistentCacheStats.refusedNotPublic += 1;
+    if (!cacheableUuids.has(uuid)) {
+      persistentCacheStats.refusedNotCacheable += 1;
       return null;
     }
   }
 
-  // A wholeCatalog response depends on every dataset the caller can see, so
-  // it is expressible on disk only when that catalog is entirely public — the
-  // stored bytes are then derived from public data alone. This is about
-  // BYTES, not keys: IndexedDB is readable wholesale, so no keying scheme can
-  // make a private-derived response safe to store. The fingerprint pins which
-  // datasets (and, since UUIDs pin contents, which bytes) produced the
-  // response; any listing change rotates the key on the next page load.
-  if (wholeCatalog) {
-    if (!catalogIsAllPublic) {
-      persistentCacheStats.refusedPrivateCatalog += 1;
-      return null;
-    }
-
-    resolvedSuffixes.push(`catalog=${catalogFingerprint}`);
+  // A publicCatalog response depends on every public dataset and on nothing
+  // private, so the stored bytes are public-derived and safe to write for any
+  // caller. That is the load-bearing property, and it is about BYTES, not
+  // keys: IndexedDB is readable wholesale, so no keying scheme could make a
+  // private-derived response safe to store. The engine cannot verify the
+  // assertion — only the call site knows it asked the server for a
+  // public-scoped answer — which is why this is an opt-in and not a default.
+  // The fingerprint pins which public datasets (and, since UUIDs pin contents,
+  // which bytes) produced the response; any change to the public listing
+  // rotates the key on the next page load.
+  if (publicCatalog) {
+    resolvedSuffixes.push(`publicCatalog=${publicCatalogFingerprint}`);
   }
 
   resolvedSuffixes.sort();
@@ -781,8 +811,8 @@ export function __resetForTests(): void {
   maxBytes = DEFAULT_MAX_BYTES;
   versionMap = null;
   publicUuids = null;
-  catalogIsAllPublic = false;
-  catalogFingerprint = "";
+  cacheableUuids = null;
+  publicCatalogFingerprint = "";
   touched.clear();
 
   persistentCacheStats.hits = 0;
@@ -791,9 +821,8 @@ export function __resetForTests(): void {
   persistentCacheStats.bytesWritten = 0;
   persistentCacheStats.evictions = 0;
   persistentCacheStats.bytesEvicted = 0;
-  persistentCacheStats.refusedNotPublic = 0;
+  persistentCacheStats.refusedNotCacheable = 0;
   persistentCacheStats.refusedNoDatasetAddress = 0;
-  persistentCacheStats.refusedPrivateCatalog = 0;
   persistentCacheStats.refusedUnresolvable = 0;
   persistentCacheStats.refusedTooLarge = 0;
   persistentCacheStats.refusedNotReady = 0;
@@ -838,6 +867,7 @@ export async function getPersistentApiCacheInfo(): Promise<{
   maxBytes: number;
   totalBytes: number;
   publicDatasets: number;
+  cacheableDatasets: number;
   stats: typeof persistentCacheStats;
 }> {
   if (openPromise) {
@@ -855,6 +885,10 @@ export async function getPersistentApiCacheInfo(): Promise<{
     maxBytes,
     totalBytes,
     publicDatasets: publicUuids ? publicUuids.size : 0,
+    // Cacheable minus public is how many datasets got in on the group
+    // whitelist. A surprising number there means a whitelisted group has grown
+    // beyond what someone reviewed.
+    cacheableDatasets: cacheableUuids ? cacheableUuids.size : 0,
     stats: { ...persistentCacheStats },
   };
 }
