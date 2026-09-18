@@ -1086,15 +1086,34 @@ export async function makePlotConfigBreadboxModeCompatible(
 
           plot.metadata[key] = nextValue;
 
-          if (key === "color_property" && nextValue) {
+          // Resolving a legacy slice_id can reveal that what was recorded as a
+          // "property" isn't backed by a metadata column at all, which changes
+          // the axis's mode ("property" -> "custom") and, in the matrix-backed
+          // case below, replaces the metadata entry outright with a full
+          // dimension.
+          //
+          // Keyed off the metadata key rather than hardcoding "color_property",
+          // because facet_property reaches this pass by two routes and needs
+          // the identical treatment: the v1 -> v2 migration in
+          // readPlotFromQueryString renames color_property -> facet_property
+          // BEFORE this function runs, and parseShorthandParams mints
+          // facet_property directly for 1D plots. Matching only the color key
+          // silently skipped both, stranding `facet_by: "property"` on a
+          // matrix slice with no dimensions.facet ever built.
+          const axis = ({
+            color_property: "color",
+            facet_property: "facet",
+          } as Record<string, "color" | "facet" | undefined>)[key];
+
+          if (axis && nextValue) {
             if (nextValue.identifier_type === "column") {
-              plot.color_by = nextValue.dataset_id.endsWith("_metadata")
+              plot[`${axis}_by`] = nextValue.dataset_id.endsWith("_metadata")
                 ? "property"
                 : "custom";
             } else if (
               nextValue.dataset_id === wellKnownDatasets.subtype_matrix
             ) {
-              plot.color_by = "property";
+              plot[`${axis}_by`] = "property";
             } else {
               // In some rare cases, what used to be considered a color "property"
               // (was keyed as model metadata) is now now stored in a matrix.
@@ -1106,8 +1125,8 @@ export async function makePlotConfigBreadboxModeCompatible(
                   ? "gene"
                   : null;
 
-              plot.color_by = "custom";
-              plot.dimensions.color = ({
+              plot[`${axis}_by`] = "custom";
+              plot.dimensions[axis] = ({
                 axis_type: "raw_slice",
                 slice_type,
                 aggregation: "first",
@@ -1185,9 +1204,10 @@ export async function readPlotFromQueryString(): Promise<DataExplorerPlotConfig>
   // legacy `entity`/`context` values for color_by/axis_type, no entity_type).
   //
   // Shorthand plots are certified by construction, not by assumption: the parser
-  // only ever writes `color_by` of "aggregated_slice" | "property", `axis_type` of
-  // "raw_slice" | "aggregated_slice", always `slice_type` (never `entity_type`),
-  // and always an object `dimensions`. Phase A was already a no-op on them before
+  // only ever writes `color_by` of "aggregated_slice" | "property" | "facet" |
+  // "uniform" (all canonical — never the legacy "entity"/"context" spellings),
+  // `axis_type` of "raw_slice" | "aggregated_slice", always `slice_type` (never
+  // `entity_type`), and always an object `dimensions`. Phase A was already a no-op on them before
   // they carried a version; stamping simply lets us skip the no-op honestly.
   if (payloadVersion < 1) {
     // `plot.dimensions` used to be an array but now it's an object.
