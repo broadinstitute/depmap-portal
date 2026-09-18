@@ -877,7 +877,7 @@ export default function useAlignedData({
         selectedRowIds?: Set<string>;
         columns?: {
           id: string;
-          meta: { csvHeader: string };
+          meta: { csvHeader: string; numericPrecision?: number };
           accessorFn: (
             row: Record<string, string | number | undefined>
           ) => unknown;
@@ -943,6 +943,13 @@ export default function useAlignedData({
           // Handle null, undefined, and other falsy values
           if (value === null || value === undefined) {
             return "";
+          }
+          // Match what's shown on screen (see TableCell's formatNumber).
+          if (
+            typeof value === "number" &&
+            column.meta.numericPrecision != null
+          ) {
+            return value.toFixed(column.meta.numericPrecision);
           }
           return String(value);
         });
