@@ -513,6 +513,16 @@ export function useTableInstance<TData extends RowData>(
       size: 150,
       minSize: 100,
       maxSize: 1000,
+      // TanStack's own built-in default here is `props =>
+      // props.renderValue()?.toString()`, which would otherwise get baked
+      // into every column's `columnDef.cell` before TableCell ever sees it.
+      // TableCell uses `columnDef.cell`'s presence to tell a column that
+      // renders itself apart from one that doesn't (deciding whether
+      // numericPrecision/magnitude bars may format the value) -- overriding
+      // the default to `undefined` here keeps that signal meaningful. A
+      // column's own `cell`, when it sets one, still wins (it's applied
+      // after this default).
+      cell: undefined,
     },
   });
 

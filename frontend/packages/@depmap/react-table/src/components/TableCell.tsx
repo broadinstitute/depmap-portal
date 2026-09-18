@@ -368,7 +368,11 @@ export function TableCell<T>({
 
       renderedContent = columnDef.cell(contextWithStats);
     } else {
-      renderedContent = flexRender(columnDef.cell, cellContext);
+      // No custom `cell` (see useTableInstance's `defaultColumn`, which
+      // deliberately suppresses TanStack's own default renderer here so
+      // `columnDef.cell` reliably means "this column renders itself").
+      // Replicate that suppressed default: plain stringified value.
+      renderedContent = rawValue == null ? null : String(rawValue);
     }
 
     // If we should highlight, recursively walk the rendered content
