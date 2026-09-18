@@ -3,6 +3,7 @@ import { showInfoModal } from "@depmap/common-components";
 import SliceTable, { CustomColumn } from "@depmap/slice-table";
 import {
   DataExplorerContextV2,
+  DataExplorerExpansion,
   DataExplorerPlotConfig,
   DataExplorerPlotConfigDimension,
   DataExplorerPlotResponse,
@@ -71,20 +72,90 @@ export function buildTableConfig(
     data.index_ids.filter((_, i) => !visible || visible[i])
   );
 
-  const idToIndex = new Map(data.index_ids.map((id, i) => [id, i]));
+  // An expanded plot's arrays are N×M — every index entity repeated once per
+  // expansion member — so a plain id→index map would only be able to address
+  // one member's value per entity. Collect every flat index per entity
+  // instead, in member order, so a dimension that actually varies by member
+  // (e.g. a compound's viability) can be split into one column per member,
+  // while a dimension that doesn't (e.g. model-level metadata, which the
+  // fetcher broadcasts identically across every member) still collapses to a
+  // single column.
+  const idToIndices = new Map<string, number[]>();
+  data.index_ids.forEach((id, i) => {
+    const indices = idToIndices.get(id);
+    if (indices) {
+      indices.push(i);
+    } else {
+      idToIndices.set(id, [i]);
+    }
+  });
 
-  const columnFor = (
+  const expansion = (data as { expansions?: DataExplorerExpansion[] })
+    .expansions?.[0];
+
+  const columnAt = (
     csvHeader: string,
-    values: readonly (string | number | null)[]
+    values: readonly (string | number | null)[],
+    memberOffset: number
   ): CustomColumn => ({
     header: () => csvHeader,
     csvHeader,
     accessorFn: (row) => {
-      const i = idToIndex.get(row.id as string);
+      const i = idToIndices.get(row.id as string)?.[memberOffset];
       return i === undefined ? undefined : values[i];
     },
     cell: (ctx) => (ctx.getValue() as React.ReactNode) ?? "",
   });
+
+  const columnsFor = (
+    csvHeaderBase: string,
+    values: readonly (string | number | null)[]
+  ): CustomColumn[] => {
+    if (!expansion) {
+      return [columnAt(csvHeaderBase, values, 0)];
+    }
+
+    // Scoped to the rows the table will actually show, so a member whose
+    // data only exists on a filtered-out row is treated the same as one
+    // with no data at all.
+    const rowIndices = [...rowIds]
+      .map((id) => idToIndices.get(id))
+      .filter((indices): indices is number[] => !!indices);
+
+    const firstIndices = rowIndices[0];
+
+    if (!firstIndices) {
+      return [columnAt(csvHeaderBase, values, 0)];
+    }
+
+    const varies = rowIndices.some((indices) =>
+      indices.some((i) => values[i] !== values[indices[0]])
+    );
+
+    if (!varies) {
+      return [columnAt(csvHeaderBase, values, 0)];
+    }
+
+    // Drop a member's column outright when the selected dataset has no
+    // value for it on any visible row — otherwise expansion fans out a
+    // column that's blank top to bottom, which is worse than not showing
+    // it at all.
+    return firstIndices
+      .map((flatIndex, memberOffset) => {
+        const hasData = rowIndices.some(
+          (indices) => values[indices[memberOffset]] != null
+        );
+
+        return hasData
+          ? columnAt(
+              `${csvHeaderBase} — ${expansion.labels[flatIndex]}`,
+              values,
+              memberOffset
+            )
+          : null;
+      })
+      .filter((column): column is CustomColumn => column !== null);
+  };
 
   // No id/label column of our own: SliceTable already shows both, natively,
   // for whatever index_type_name it's given (that's what its own
@@ -114,7 +185,7 @@ export function buildTableConfig(
     }
 
     customColumns.push(
-      columnFor(
+      ...columnsFor(
         `${dimension.axis_label} ${dimension.dataset_label}`,
         dimension.values
       )
@@ -135,7 +206,7 @@ export function buildTableConfig(
       return;
     }
 
-    customColumns.push(columnFor(slice.label, slice.values));
+    customColumns.push(...columnsFor(slice.label, slice.values));
   });
 
   return { rowIds, initialSlices, customColumns };

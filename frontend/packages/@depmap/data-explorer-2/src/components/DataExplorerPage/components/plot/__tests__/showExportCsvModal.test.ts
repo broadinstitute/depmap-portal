@@ -177,4 +177,182 @@ describe("buildTableConfig", () => {
     const yColumn = customColumns[0];
     expect(yColumn.accessorFn?.({ id: "ACH-2" })).toBe(-0.5);
   });
+
+  // Regression test: a plot expanded by a set of compounds fans each model
+  // out to one (model, compound) pair per compound. The x axis's values are
+  // per-pair (a different viability per compound), so the CSV should carry
+  // one column per compound rather than one column whose id→index lookup
+  // collapses onto whichever pair happened to be indexed last.
+  test("an expanded axis becomes one CustomColumn per expansion member", () => {
+    const expandedConfig = ({
+      plot_type: "density_1d",
+      index_type: "depmap_model",
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice",
+          aggregation: "expansion",
+          context: {
+            dimension_type: "compound_v2",
+            name: "BRAF inhibitors",
+            expr: true,
+            vars: {},
+          },
+          dataset_id: "Rep_all_single_pt_per_compound",
+          slice_type: "compound_v2",
+        },
+      },
+      expand_by: [
+        {
+          slice_type: "compound_v2",
+          context: {
+            dimension_type: "compound_v2",
+            name: "BRAF inhibitors",
+            expr: true,
+            vars: {},
+          },
+        },
+      ],
+    } as unknown) as DataExplorerPlotConfig;
+
+    // Two models × two compounds, index-major (model repeats, compound
+    // cycles), matching fetchExpandedPlot's layout.
+    const expandedData = ({
+      index_type: "depmap_model",
+      index_ids: ["ACH-1", "ACH-1", "ACH-2", "ACH-2"],
+      index_labels: ["Line 1", "Line 1", "Line 2", "Line 2"],
+      dimensions: {
+        x: {
+          axis_label: "Drug screen (log2 fold change)",
+          dataset_id: "Rep_all_single_pt_per_compound",
+          dataset_label: "PRISM Repurposing Primary (Viability)",
+          slice_type: "compound_v2",
+          values: [0.1, 0.2, -0.3, null],
+          value_type: "continuous",
+          units: "unitless",
+        },
+      },
+      filters: {},
+      metadata: {
+        Lineage: {
+          label: "Lineage",
+          values: ["Skin", "Skin", "Lung", "Lung"],
+          value_type: "categorical",
+        },
+      },
+      expansions: [
+        {
+          slice_type: "compound_v2",
+          ids: ["cpd-A", "cpd-B", "cpd-A", "cpd-B"],
+          labels: ["Compound A", "Compound B", "Compound A", "Compound B"],
+        },
+      ],
+    } as unknown) as DataExplorerPlotResponse;
+
+    const { customColumns } = buildTableConfig(expandedData, expandedConfig);
+
+    const xColumns = customColumns.filter((c) =>
+      c.csvHeader.startsWith("Drug screen")
+    );
+    expect(xColumns.map((c) => c.csvHeader)).toEqual([
+      "Drug screen (log2 fold change) PRISM Repurposing Primary (Viability) — Compound A",
+      "Drug screen (log2 fold change) PRISM Repurposing Primary (Viability) — Compound B",
+    ]);
+    expect(xColumns[0].accessorFn?.({ id: "ACH-1" })).toBe(0.1);
+    expect(xColumns[1].accessorFn?.({ id: "ACH-1" })).toBe(0.2);
+    expect(xColumns[0].accessorFn?.({ id: "ACH-2" })).toBe(-0.3);
+    expect(xColumns[1].accessorFn?.({ id: "ACH-2" })).toBeNull();
+
+    // Broadcast metadata (same value for every member of a given model)
+    // stays a single column instead of being needlessly repeated.
+    const lineageColumns = customColumns.filter(
+      (c) => c.csvHeader === "Lineage"
+    );
+    expect(lineageColumns).toHaveLength(1);
+    expect(lineageColumns[0].accessorFn?.({ id: "ACH-2" })).toBe("Lung");
+  });
+
+  // Regression test: a member the context named but the selected dataset
+  // never measured for any visible row (e.g. a compound never screened
+  // against PRISM) shouldn't get a column at all — a column that's blank
+  // for every row is worse than no column.
+  test("drops an expansion member's column when the dataset has no data for it", () => {
+    const expandedConfig = ({
+      plot_type: "density_1d",
+      index_type: "depmap_model",
+      dimensions: {
+        x: {
+          axis_type: "aggregated_slice",
+          aggregation: "expansion",
+          context: {
+            dimension_type: "compound_v2",
+            name: "BRAF inhibitors",
+            expr: true,
+            vars: {},
+          },
+          dataset_id: "Rep_all_single_pt_per_compound",
+          slice_type: "compound_v2",
+        },
+      },
+      expand_by: [
+        {
+          slice_type: "compound_v2",
+          context: {
+            dimension_type: "compound_v2",
+            name: "BRAF inhibitors",
+            expr: true,
+            vars: {},
+          },
+        },
+      ],
+    } as unknown) as DataExplorerPlotConfig;
+
+    // Compound C has a slot in every block but no value anywhere in the
+    // dataset (unlike Compound B, which is missing for ACH-2 only).
+    const expandedData = ({
+      index_type: "depmap_model",
+      index_ids: ["ACH-1", "ACH-1", "ACH-1", "ACH-2", "ACH-2", "ACH-2"],
+      index_labels: [
+        "Line 1",
+        "Line 1",
+        "Line 1",
+        "Line 2",
+        "Line 2",
+        "Line 2",
+      ],
+      dimensions: {
+        x: {
+          axis_label: "Drug screen (log2 fold change)",
+          dataset_id: "Rep_all_single_pt_per_compound",
+          dataset_label: "PRISM Repurposing Primary (Viability)",
+          slice_type: "compound_v2",
+          values: [0.1, 0.2, null, -0.3, null, null],
+          value_type: "continuous",
+          units: "unitless",
+        },
+      },
+      filters: {},
+      metadata: {},
+      expansions: [
+        {
+          slice_type: "compound_v2",
+          ids: ["cpd-A", "cpd-B", "cpd-C", "cpd-A", "cpd-B", "cpd-C"],
+          labels: [
+            "Compound A",
+            "Compound B",
+            "Compound C",
+            "Compound A",
+            "Compound B",
+            "Compound C",
+          ],
+        },
+      ],
+    } as unknown) as DataExplorerPlotResponse;
+
+    const { customColumns } = buildTableConfig(expandedData, expandedConfig);
+
+    expect(customColumns.map((c) => c.csvHeader)).toEqual([
+      "Drug screen (log2 fold change) PRISM Repurposing Primary (Viability) — Compound A",
+      "Drug screen (log2 fold change) PRISM Repurposing Primary (Viability) — Compound B",
+    ]);
+  });
 });
