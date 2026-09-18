@@ -213,7 +213,7 @@ function MembersTable({
       csvHeader,
       header: () =>
         help ? (
-          <span onClick={(e) => e.stopPropagation()} role="presentation">
+          <span role="presentation">
             {label}
             {help}
           </span>
