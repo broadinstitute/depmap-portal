@@ -13,7 +13,7 @@
 {{ include_theme_snippet("nav.html") }}
 {% include "nav_footer/alert_banner.html" %}
 
-{% if config.get("FEEDBACK_FORM_URL") %}
+{% if config.ENABLED_FEATURES.show_help_tab %}
     <style>
         #help-tab {
             position: fixed;
