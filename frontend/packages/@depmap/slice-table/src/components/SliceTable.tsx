@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import cx from "classnames";
+import type { Button } from "react-bootstrap";
 import { Spinner } from "@depmap/common-components";
 import ReactTable from "@depmap/react-table";
 import type { RowSelectionState, SortingState } from "@depmap/react-table";
@@ -106,6 +107,9 @@ interface Props {
   containerClassName?: string;
   // Use this to apply custom CSS to the controls.
   controlsClassName?: string;
+  // See Controls' own comment: lets a caller for whom "Download data" is
+  // the primary action (rather than one option among several) say so.
+  downloadButtonBsStyle?: React.ComponentProps<typeof Button>["bsStyle"];
   downloadFilename?: string;
   // An implicit filter that is always applied and invisible to the end user.
   // Rows for which this returns false are excluded from the dataset entirely —
@@ -182,6 +186,7 @@ function SliceTable({
   hideActions = false,
   containerClassName = undefined,
   controlsClassName = undefined,
+  downloadButtonBsStyle = undefined,
   downloadFilename = "",
   implicitFilter = undefined,
   rowIds = undefined,
@@ -385,6 +390,7 @@ function SliceTable({
       <div className={cx(styles.SliceTable, containerClassName)}>
         <Controls
           controlsClassName={controlsClassName}
+          downloadButtonBsStyle={downloadButtonBsStyle}
           tableRef={tableRef}
           isLoading={combinedLoading}
           hadError={Boolean(error)}

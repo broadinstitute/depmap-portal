@@ -23,6 +23,9 @@ function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
     pointOpacity,
     outlineWidth,
     palette,
+    annotationFontSize,
+    xAxisFontSize,
+    yAxisFontSize,
   } = plotStyles;
 
   const {
@@ -69,8 +72,9 @@ function DataExplorerWaterfallPlot({ data, height, plotConfig }: Props) {
           data?.metadata?.color_property || data?.metadata?.facet_property
         )}
         palette={palette}
-        xAxisFontSize={13}
-        yAxisFontSize={13}
+        annotationFontSize={annotationFontSize}
+        xAxisFontSize={xAxisFontSize}
+        yAxisFontSize={yAxisFontSize}
       />
     </PlotlyLoaderProvider>
   );
