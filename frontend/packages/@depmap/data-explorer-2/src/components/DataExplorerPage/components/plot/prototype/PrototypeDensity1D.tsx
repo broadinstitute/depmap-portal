@@ -12,17 +12,32 @@ import seedrandom from "seedrandom";
 import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import {
+  AnnotationTail,
+  calcAnnotationArrowWidth,
   calcAnnotationPositions,
+  calcChromeAxisOverrides,
+  calcExtraLinesMargin,
+  calcViolinOutlineWidth,
+  captureAnnotationTail,
+  cloneFigureForExport,
   DataExplorerColorPalette,
+  DEFAULT_CHROME_LINE_WIDTH,
+  DEFAULT_VIOLIN_LINE_WIDTH,
   DEFAULT_PALETTE,
   getRange,
   hexToRgba,
   isEveryValueNull,
+  legendLayoutFor,
+  wantsLegendTraces,
   LEGEND_ALL,
   LegendKey,
   orderColorKeysByCount,
   NEUTRAL_FACET_FILL,
+  onWebglContextRestored,
   orderContinuousPointsByBin,
+  exportMarginFloor,
+  releaseWebglContexts,
+  resolveAnnotationTail,
   truncateFacetLabel,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
@@ -106,6 +121,9 @@ interface Props {
   pointOpacity?: number;
   outlineWidth?: number;
   palette?: DataExplorerColorPalette;
+  // Point labels. Their own setting rather than a ratio of the axis
+  // font: these sit inside the plot area competing with the data.
+  annotationFontSize?: number;
   xAxisFontSize?: number;
   yAxisFontSize?: number;
   // When true, facet tracks whose points are entirely null are kept as
@@ -128,6 +146,13 @@ interface Props {
   // to label. The wrapper threads selection.size (model count under collapse);
   // defaults to the selected-point count when omitted.
   selectionCount?: number;
+  // Transient view state to start from, instead of this instance building
+  // its own up from scratch — see PrototypeScatterPlot's identical props.
+  // Newly added so this renderer can be used as the export modal's hidden
+  // preview instance, which otherwise opens autoranged with every label
+  // back at its default position.
+  initialAxes?: Partial<Layout>;
+  initialAnnotationTails?: Record<string, AnnotationTail>;
 }
 
 const calcPlotHeight = (plot: HTMLDivElement) => {
@@ -238,24 +263,29 @@ function PrototypeDensity1D({
   pointOpacity = 1.0,
   outlineWidth = 0.5,
   palette = DEFAULT_PALETTE,
+  annotationFontSize = 12,
   xAxisFontSize = 14,
   yAxisFontSize = 14,
   placeholderEmptyTracks = false,
   enforceSingleFacetSelection = false,
   pointsToAnnotate,
   selectionCount,
+  initialAxes = undefined,
+  initialAnnotationTails = undefined,
   Plotly,
 }: any) {
   const ref = useRef<ExtendedPlotType>(null);
   usePlotResizer(Plotly, ref);
 
-  const axes = useRef<Partial<Layout>>({
-    xaxis: undefined,
-    yaxis: undefined,
-  });
+  const axes = useRef<Partial<Layout>>(
+    initialAxes ?? {
+      xaxis: undefined,
+      yaxis: undefined,
+    }
+  );
 
-  const annotationTails = useRef<Record<string, { ax: number; ay: number }>>(
-    {}
+  const annotationTails = useRef<Record<string, AnnotationTail>>(
+    initialAnnotationTails ? { ...initialAnnotationTails } : {}
   );
 
   const [dragmode, setDragmode] = useState<Layout["dragmode"]>("zoom");
@@ -270,6 +300,7 @@ function PrototypeDensity1D({
     const plot = ref.current;
     return () => {
       (plot as any)?.__facetSelCleanup?.();
+      releaseWebglContexts(plot as HTMLElement);
       Plotly.purge(plot as HTMLElement);
     };
   }, [Plotly]);
@@ -278,14 +309,35 @@ function PrototypeDensity1D({
 
   // When the type of data changes, we force an autoscale by discarding the
   // stored axes.
+  const hasEverRunXYInvalidation = useRef(false);
+
   useEffect(() => {
+    // Skipped on mount so this doesn't immediately discard `initialAxes` —
+    // see PrototypeScatterPlot's identical guard. Effects always run once,
+    // and there is nothing to autoscale away from on a first render anyway:
+    // either we were seeded (and want to keep it) or the ref is already
+    // empty.
+    if (!hasEverRunXYInvalidation.current) {
+      hasEverRunXYInvalidation.current = true;
+      return;
+    }
+
     axes.current = {
       xaxis: undefined,
       yaxis: undefined,
     };
   }, [data.xLabel, colorData, minX, maxX]);
 
+  const hasEverRunYInvalidation = useRef(false);
+
   useEffect(() => {
+    // Same skip-on-mount reasoning as above, in its own ref since this
+    // effect can fire independently of the one above.
+    if (!hasEverRunYInvalidation.current) {
+      hasEverRunYInvalidation.current = true;
+      return;
+    }
+
     axes.current.yaxis = undefined;
     // hiddenFacetValues.size covers the diverged case (color_by/facet_by
     // independent — toggling a facet in the "Facets" panel doesn't touch
@@ -730,8 +782,9 @@ function PrototypeDensity1D({
       margin: {
         t: 30,
         r: 15,
-        b: 50 + xAxisFontSize * 2.2,
-        l: collapseLeftMargin ? 15 : 50 + yAxisFontSize * 2.2,
+        // Floors; automargin grows them to fit the labels and titles.
+        b: 50,
+        l: collapseLeftMargin ? 15 : 50,
       },
       hovermode: "closest",
       hoverlabel: {
@@ -747,16 +800,21 @@ function PrototypeDensity1D({
         ? { legend: { title: { text: legendTitle } } }
         : {}),
 
-      xaxis: axes.current.xaxis || {
-        title: {
-          text: data.xLabel,
-          font: { size: xAxisFontSize },
-          standoff: 8,
-        } as any,
-        exponentformat: "e",
-        type: "linear",
-        autorange: true,
-        tickfont: { size: xAxisFontSize },
+      xaxis: {
+        // See PrototypeScatterPlot's note on automargin; same reasoning, and
+        // the y axis below has had it all along for its facet-name ticks.
+        automargin: true,
+        ...(axes.current.xaxis || {
+          title: {
+            text: data.xLabel,
+            font: { size: xAxisFontSize },
+            standoff: 8,
+          } as any,
+          exponentformat: "e",
+          type: "linear",
+          autorange: true,
+          tickfont: { size: xAxisFontSize },
+        }),
       },
 
       yaxis: {
@@ -770,6 +828,10 @@ function PrototypeDensity1D({
         tickvals: violinTraces.map((vt) => vt.y0),
         ticktext: violinTraces.map((vt) => truncateFacetLabel(vt.name)),
         tickfont: { size: yAxisFontSize },
+        // These ticks are violin-track category labels, not a value scale —
+        // a horizontal gridline at each one would suggest a meaningful y
+        // value where there isn't one (y is jitter for display only).
+        showgrid: false,
       },
 
       dragmode,
@@ -795,23 +857,42 @@ function PrototypeDensity1D({
                   typeof x[pointIndex] === "number" &&
                   typeof y[pointIndex] === "number"
               )
-              .map((pointIndex) => ({
-                x: x[pointIndex],
-                y: y[pointIndex],
-                text: annotationText[pointIndex],
-                visible: visible[pointIndex],
-                xref: "x",
-                yref: "y",
-                arrowhead: 0,
-                standoff: 4,
-                arrowcolor: "#888",
-                bordercolor: "#c7c7c7",
-                bgcolor: "#fff",
-                pointIndex,
-                // Restore any annotation arrowhead positions the user may have edited.
-                ax: annotationTails.current[`${xKey}-${pointIndex}`]?.ax,
-                ay: annotationTails.current[`${xKey}-${pointIndex}`]?.ay,
-              }))
+              .map((pointIndex) => {
+                // Restore any annotation arrowhead position the user may
+                // have edited, rescaled for the current annotationFontSize
+                // — see resolveAnnotationTail.
+                const tail = resolveAnnotationTail(
+                  // The "y" here is a literal, not this renderer's own y
+                  // (a synthetic jitter value, not a real axis key) — it
+                  // exists purely to match captureTransientState's own
+                  // hardcoded key format (`${xKey}-${yKey}-${pointIndex}`,
+                  // defaulting yKey to "y"), which is what actually seeds
+                  // this ref for the export preview. A mismatch here silently
+                  // drops every seeded tail, which is exactly what was
+                  // happening before this line existed.
+                  annotationTails.current[`${xKey}-y-${pointIndex}`],
+                  annotationFontSize
+                );
+
+                return {
+                  x: x[pointIndex],
+                  y: y[pointIndex],
+                  text: annotationText[pointIndex],
+                  visible: visible[pointIndex],
+                  xref: "x",
+                  yref: "y",
+                  arrowhead: 0,
+                  arrowwidth: calcAnnotationArrowWidth(annotationFontSize),
+                  standoff: 4,
+                  font: { size: annotationFontSize },
+                  arrowcolor: "#888",
+                  bordercolor: "#c7c7c7",
+                  bgcolor: "#fff",
+                  pointIndex,
+                  ax: tail?.ax,
+                  ay: tail?.ay,
+                };
+              })
           : (() => {
               return selectedPoints
                 ? [
@@ -916,7 +997,12 @@ function PrototypeDensity1D({
 
       calcAnnotationPositions(x, y, pointIndices, fullLayout).forEach(
         ({ pointIndex, ax, ay }) => {
-          annotationTails.current[`${xKey}-${pointIndex}`] = { ax, ay };
+          // See the read site's note: the "y" is a literal matching
+          // captureTransientState's own default key format, not this
+          // renderer's y.
+          annotationTails.current[
+            `${xKey}-y-${pointIndex}`
+          ] = captureAnnotationTail(ax, ay, annotationFontSize);
         }
       );
     };
@@ -973,7 +1059,11 @@ function PrototypeDensity1D({
 
         if (ax != null && ay != null) {
           const { pointIndex } = annotation as { pointIndex: number };
-          annotationTails.current[`${xKey}-${pointIndex}`] = { ax, ay };
+          // Same literal "y" as the other two sites — see the read site's
+          // note.
+          annotationTails.current[
+            `${xKey}-y-${pointIndex}`
+          ] = captureAnnotationTail(ax, ay, annotationFontSize);
         }
       });
     });
@@ -1114,6 +1204,13 @@ function PrototypeDensity1D({
       Plotly.redraw(plot);
     });
 
+    // See onWebglContextRestored: complements the handler above for the
+    // case where the context is lost to eviction rather than idling —
+    // there, nothing is drawable again until *this* fires.
+    const stopWatchingContextRestore = onWebglContextRestored(plot, () => {
+      Plotly.redraw(plot);
+    });
+
     // Add a few non-standard methods to the plot for convenience.
     plot.setDragmode = (nextDragmode) => {
       const shouldResetSelection =
@@ -1131,23 +1228,150 @@ function PrototypeDensity1D({
     plot.zoomOut = () => setTimeout(zoom, 0, "out");
     plot.resetZoom = () => setTimeout(zoom, 0, "reset");
 
-    plot.downloadImage = (options) => {
-      const imagePlot = {
-        ...plot,
-        // Under showBuiltinLegend the legend traces are already in plot.data;
-        // appending them again would double every legend entry.
-        data: showBuiltinLegend ? plot.data : [...plot.data, ...legendTraces],
-        layout: {
-          ...plot.layout,
-          showlegend: true,
-          legend: {
-            title: { text: legendTitle },
-            font: { size: 14 },
-          },
-        },
-      };
+    plot.getImageFigure = (options) => {
+      // Position comes from the export config, not from a plot style — see
+      // legendLayoutFor. Called with no options (the SVG path, or any other
+      // caller) it keeps today's right-hand placement.
+      const legendPosition = options?.legendPosition ?? "right";
+      const edgePadding = options?.edgePadding ?? 0;
+      const chromeLineWidth =
+        options?.chromeLineWidth ?? DEFAULT_CHROME_LINE_WIDTH;
+      // `options.dataLineWidth` is accepted by the shared getImageFigure
+      // type but unused here — this renderer draws no identity/regression
+      // lines.
+      const violinLineWidth =
+        options?.violinLineWidth ?? DEFAULT_VIOLIN_LINE_WIDTH;
+      const xAxisLabelOverride = options?.xAxisLabel;
+      // Same reasoning as SmallMultiplesScatter's xLabel: the override text
+      // never reaches the offscreen preview's own props (see
+      // ExportImageModal — it's threaded only into this static figure, at
+      // export time), so the preview's real automargin never converges on
+      // it. Unlike a font-size change (which the preview DOES re-render
+      // for, seeding exportMarginFloor with a real, converged size below),
+      // there's no real prior render of this exact text to seed from, so a
+      // jump from one line to several has to be reserved by hand rather
+      // than trusted to a single-shot Plotly.toImage convergence.
+      const extraXAxisLinesMargin = calcExtraLinesMargin(
+        xAxisLabelOverride ?? data.xLabel,
+        xAxisFontSize
+      );
+      // No yAxisLabel override: the y-axis here is facet/track names via
+      // tickvals/ticktext, not a single title the way x is — nothing for
+      // that option to mean on this renderer.
+      const legendTitleOverride = options?.legendTitle;
+      const legendItemLabelsOverride = options?.legendItemLabels;
 
-      Plotly.downloadImage(imagePlot, options);
+      // Rebuilt rather than reusing the outer `legendTraces` — that one is
+      // fixed at whatever legendTitle/legendDisplayNames were at the last
+      // regular render, with no way to thread an export-only override
+      // through it. Same filter/order as that one, so which items show up
+      // is unaffected — only the names (by index) can differ.
+      const exportLegendTraces = colorKeys
+        .filter((key: LegendKey) => !hiddenLegendValues.has(key))
+        .map((legendKey: LegendKey, i: number) => ({
+          type: "violin",
+          showlegend: true,
+          x: [null],
+          line: { color: "#666" },
+          hoverinfo: "skip",
+          name: legendItemLabelsOverride?.[i] ?? legendDisplayNames[legendKey],
+          fillcolor: colorMap.get(legendKey),
+        }));
+
+      // Overrides the two violin traces' curve widths in place — identified
+      // by reference against violinTraces/violinOutlineTraces, not by
+      // position: plotlyData (and so plot.data, which Plotly builds from it
+      // without cloning) is a `.filter().reverse()` of the concatenation
+      // those two arrays start, so an index-based split would grab the
+      // wrong traces entirely once any track is missing or all-null. At the
+      // default width this is a no-op copy: DEFAULT_VIOLIN_LINE_WIDTH is
+      // `undefined` on templateViolin (Plotly's own default of 2) and
+      // calcViolinOutlineWidth(2) is 4, matching violinOutlineTraces'
+      // existing hardcoded literal exactly.
+      const exportData = plot.data.map((trace) => {
+        if (violinTraces.includes(trace as any)) {
+          return {
+            ...trace,
+            line: { ...(trace as any).line, width: violinLineWidth },
+          };
+        }
+
+        if (violinOutlineTraces.includes(trace as any)) {
+          return {
+            ...trace,
+            line: {
+              ...(trace as any).line,
+              width: calcViolinOutlineWidth(violinLineWidth),
+            },
+          };
+        }
+
+        return trace;
+      });
+
+      return cloneFigureForExport(
+        // Under showBuiltinLegend the legend traces are already in plot.data;
+        // appending them again would double every legend entry. A hidden
+        // legend appends nothing — and when they're already in plot.data,
+        // `showlegend: false` from legendLayoutFor is what hides them.
+        showBuiltinLegend || !wantsLegendTraces(legendPosition)
+          ? exportData
+          : [...exportData, ...exportLegendTraces],
+        {
+          ...plot.layout,
+          // The "inner" half of edgePadding — see PrototypeScatterPlot's
+          // identical treatment. `automargin` stays on; it just measures a
+          // bigger need now that standoff asks for more.
+          xaxis: {
+            ...plot.layout.xaxis,
+            ...calcChromeAxisOverrides(chromeLineWidth),
+            title: {
+              ...(plot.layout.xaxis as any)?.title,
+              ...(xAxisLabelOverride !== undefined
+                ? { text: xAxisLabelOverride }
+                : {}),
+              standoff:
+                ((plot.layout.xaxis as any)?.title?.standoff ?? 8) +
+                edgePadding,
+            },
+          },
+          yaxis: {
+            ...plot.layout.yaxis,
+            ...calcChromeAxisOverrides(chromeLineWidth),
+          },
+          // See exportMarginFloor: seeds the single-shot export render with
+          // the margin this instance already converged to, rather than the
+          // small requested floor that `plot.layout.margin` always holds.
+          // `b` matches the standoff growth above (see PrototypeScatterPlot)
+          // plus extraXAxisLinesMargin — deliberately NOT also added to
+          // standoff above: standoff is the fixed gap before the title
+          // anchor, which a native multi-line title already grows away
+          // from downward on its own (one lineHeight per extra line, the
+          // same quantity calcExtraLinesMargin computes) — adding it to
+          // standoff too pushed the anchor down by that same amount a
+          // second time, leaving the newly reserved room stranded above an
+          // unmoved (bottom-flush) label instead of under it. `l` isn't
+          // grown to match — there's no y-axis label standoff to seed room
+          // for here.
+          margin: exportMarginFloor(plot, {
+            b: edgePadding + extraXAxisLinesMargin,
+          }),
+          // See PrototypeScatterPlot's note: the font follows the axis font
+          // size so the legend scales with everything else in the figure.
+          ...legendLayoutFor(legendPosition, {
+            title: legendTitleOverride ?? legendTitle,
+            fontSize: xAxisFontSize,
+          }),
+        }
+      );
+    };
+
+    plot.downloadImage = (options) => {
+      const figure = plot.getImageFigure();
+
+      if (figure) {
+        Plotly.downloadImage(figure, options);
+      }
     };
 
     plot.isPointInView = (pointIndex: number) => {
@@ -1172,6 +1396,7 @@ function PrototypeDensity1D({
       listeners.forEach(([eventName, callback]) =>
         plot.removeListener?.(eventName, callback)
       );
+      stopWatchingContextRestore();
     };
   }, [
     data,
@@ -1204,6 +1429,7 @@ function PrototypeDensity1D({
     pointOpacity,
     outlineWidth,
     palette,
+    annotationFontSize,
     xAxisFontSize,
     yAxisFontSize,
     placeholderEmptyTracks,
