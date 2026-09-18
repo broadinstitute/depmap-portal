@@ -53,9 +53,12 @@ function EmbeddedScatterPlot({
   const {
     pointSize,
     facetedPointSize,
+    annotationFontSize,
     pointOpacity,
     outlineWidth,
     palette,
+    xAxisFontSize,
+    yAxisFontSize,
   } = plotStyles;
 
   const {
@@ -67,6 +70,7 @@ function EmbeddedScatterPlot({
     regressionLines,
     showIdentityLine,
     regressionLinesByFacet,
+    facetKeysWithNoData,
   } = useScatterPlotData(
     data,
     plotConfig,
@@ -123,7 +127,17 @@ function EmbeddedScatterPlot({
             legendForDownload={legendForDownload}
             facetKeys={facetKeys || []}
             facetOrder={facetOrder}
-            // hiddenFacets={}
+            // Data Explorer seeds its "Facets" panel with these same keys, so
+            // it opens with the no-data facets toggled off. Here they're
+            // hidden permanently: there's no Facets panel in an embed, so
+            // nothing can ever toggle them back on, and without this they'd
+            // render as "(no data)" placeholders that the reader can't
+            // dismiss. Note this is what suppresses them even under
+            // placeholderEmptyFacets below — hiddenFacets is subtracted
+            // first, and deliberately wins over the placeholder behavior.
+            hiddenFacets={
+              (facetKeysWithNoData ?? undefined) as Set<string> | undefined
+            }
             regressionLinesByFacet={regressionLinesByFacet}
             placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
             showIdentityLine={showIdentityLine}
@@ -131,8 +145,9 @@ function EmbeddedScatterPlot({
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}
             palette={palette}
-            xAxisFontSize={12}
-            yAxisFontSize={12}
+            annotationFontSize={annotationFontSize}
+            xAxisFontSize={xAxisFontSize}
+            yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
           />
         ) : (
@@ -165,8 +180,9 @@ function EmbeddedScatterPlot({
             pointOpacity={pointOpacity}
             outlineWidth={outlineWidth}
             palette={palette}
-            xAxisFontSize={12}
-            yAxisFontSize={12}
+            annotationFontSize={annotationFontSize}
+            xAxisFontSize={xAxisFontSize}
+            yAxisFontSize={yAxisFontSize}
             showBuiltinLegend={showBuiltinLegend}
           />
         ))}

@@ -1,8 +1,9 @@
 import React, { useCallback, useMemo } from "react";
-import { downloadCsv } from "@depmap/utils";
 import { getDimensionTypeLabel } from "../../../../utils/misc";
+import { usePlotlyLoader } from "../../../../contexts/PlotlyLoaderContext";
 import PrototypePlotControls from "./prototype/PrototypePlotsControls";
-import plotToLookupTable from "./prototype/plotToLookupTable";
+import { DEFAULT_EXPORT_CONFIG } from "./ExportImageModal/exportDefaults";
+import showExportCsvModal from "./showExportCsvModal";
 
 function isHeatmap(
   data: any
@@ -21,7 +22,10 @@ function DataExplorerPlotControls({
   handleClickPoint,
   onClickUnselectAll,
   hideSelectionTools = false,
+  previewPlot = undefined,
 }: any) {
+  const PlotlyLoader = usePlotlyLoader();
+
   const searchOptions = useMemo(() => {
     if (!data) {
       return [];
@@ -153,10 +157,8 @@ function DataExplorerPlotControls({
       return;
     }
 
-    const { formattedData, indexColumn } = plotToLookupTable(data);
-
-    downloadCsv(formattedData, indexColumn, filename as string);
-  }, [data, filename]);
+    showExportCsvModal(data, plotConfig, filename as string, PlotlyLoader);
+  }, [data, plotConfig, filename, PlotlyLoader]);
 
   const handleSearch = useCallback(
     (selected: { value: string; label: string }) => {
@@ -208,11 +210,16 @@ function DataExplorerPlotControls({
       searchPlaceholder={searchPlaceholder}
       onSearch={handleSearch}
       onDownload={handleDownloadCsv}
+      // Only the SVG path reads these dimensions now — it downloads directly,
+      // with no modal to choose a size in. The PNG path gets its size from the
+      // export config, which remembers what was last used.
       downloadImageOptions={{
         filename: filename as string,
-        width: 1280,
-        height: 1000,
+        width: DEFAULT_EXPORT_CONFIG.width,
+        height: DEFAULT_EXPORT_CONFIG.height,
       }}
+      previewPlot={previewPlot}
+      plotType={plotConfig.plot_type}
       onClickUnselectAll={onClickUnselectAll}
     />
   );

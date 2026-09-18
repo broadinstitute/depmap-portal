@@ -4,6 +4,7 @@ import {
 } from "@depmap/types";
 import {
   calcBins,
+  calcChromeAxisOverrides,
   calcDensityStats,
   calcVisibility,
   collapseCategoricalSeries,
@@ -1864,5 +1865,39 @@ describe("calcVisibility — custom-filter 'neither' bucket", () => {
     );
 
     expect(visible).toEqual([true, true, false]);
+  });
+});
+
+describe("calcChromeAxisOverrides", () => {
+  test("the default width (1) is a byte-for-byte no-op", () => {
+    expect(calcChromeAxisOverrides(1)).toEqual({});
+  });
+
+  test("0 hides grid/zero lines and ticks outright, rather than a zero-width line (which rasterizes as a visible hairline)", () => {
+    const overrides = calcChromeAxisOverrides(0);
+
+    expect(overrides).toEqual({
+      showgrid: false,
+      zeroline: false,
+      ticks: "",
+    });
+  });
+
+  test("a non-default width scales grid and zero lines, but never turns on an axis border or tick marks", () => {
+    const overrides = calcChromeAxisOverrides(3);
+
+    expect(overrides).toMatchObject({
+      gridwidth: 3,
+      zerolinewidth: 3,
+    });
+
+    // Regression guard: an earlier version of this turned on `showline`
+    // (a plot-area border) and `tickwidth` (tick marks) as a side effect
+    // of any non-default width, neither of which had ever appeared on
+    // screen at any width — see the conversation that led to removing
+    // them.
+    expect(overrides).not.toHaveProperty("showline");
+    expect(overrides).not.toHaveProperty("linewidth");
+    expect(overrides).not.toHaveProperty("tickwidth");
   });
 });

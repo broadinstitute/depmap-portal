@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Base64 } from "js-base64";
 import { Typeahead } from "react-bootstrap-typeahead";
 import { Button, DropdownButton, MenuItem } from "react-bootstrap";
 import {
@@ -8,7 +9,10 @@ import {
   Tooltip,
   ZoomIcon,
 } from "@depmap/common-components";
+import type { DataExplorerPlotType } from "@depmap/types";
+import { useDataExplorerSettings } from "../../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
+import ExportImageModal, { PreviewPlotSupport } from "../ExportImageModal";
 import SettingsButton from "./SettingsButton";
 import styles from "../../../styles/PlotControls.scss";
 
@@ -28,6 +32,14 @@ interface Props {
   searchPlaceholder?: string;
   hideSelectionTools?: boolean;
   downloadImageOptions?: DownloadImageOptions;
+  // Lets the export modal draw a second, non-interactive copy of this plot at
+  // styles of the caller's choosing. Supplied by the wrappers that can build
+  // one; when it's absent the modal still previews and resizes the image, it
+  // just can't offer the style controls.
+  previewPlot?: PreviewPlotSupport;
+  // Namespaces the export modal's remembered settings — see
+  // rememberedConfig's own comment on the shared/per-type split.
+  plotType: DataExplorerPlotType;
 }
 
 const toIcon = (dragmode: Dragmode) =>
@@ -84,12 +96,17 @@ function PlotControls({
   onSearch = () => {},
   searchPlaceholder = "Search…",
   hideSelectionTools = false,
+  previewPlot = undefined,
+  plotType,
 }: Props) {
   const [dragmode, setDragmode] = useState<Dragmode>("zoom");
+  const [showExportModal, setShowExportModal] = useState(false);
 
   useEffect(() => {
     plot?.setDragmode(dragmode);
   }, [plot, dragmode]);
+
+  const { plotStyles } = useDataExplorerSettings();
 
   return (
     <div className={styles.PlotControls}>
@@ -168,7 +185,7 @@ function PlotControls({
         <div className={styles.buttonGroup}>
           <Tooltip
             id="download-data-tooltip"
-            content="Download as…"
+            content="Export as…"
             placement="top"
           >
             <DropdownButton
@@ -179,34 +196,43 @@ function PlotControls({
               pullRight
             >
               {downloadImageOptions && (
-                <MenuItem
-                  onClick={() =>
-                    plot!.downloadImage({
-                      ...downloadImageOptions,
-                      format: "png",
-                    })
-                  }
-                >
-                  Image (.png)
+                <MenuItem onClick={() => setShowExportModal(true)}>
+                  Export image…
                 </MenuItem>
               )}
-              {downloadImageOptions && (
-                <MenuItem
-                  onClick={() =>
-                    plot!.downloadImage({
-                      ...downloadImageOptions,
-                      format: "svg",
-                    })
-                  }
-                >
-                  Image (.svg)
-                </MenuItem>
-              )}
-              <MenuItem onClick={onDownload}>Data (.csv)</MenuItem>
+              <MenuItem onClick={onDownload}>Export CSV…</MenuItem>
+              <MenuItem
+                onClick={() => {
+                  const params = new URLSearchParams(window.location.search);
+                  const pParam = params.get("p");
+                  const stylesJson = JSON.stringify(plotStyles);
+                  const encodedStyles = Base64.encode(stylesJson, true);
+
+                  const baseUrl =
+                    process.env.NODE_ENV === "development"
+                      ? "http://localhost:8002/embed"
+                      : "../breadbox/embed";
+
+                  window.open(
+                    `${baseUrl}/plot?p=${pParam}&styles=${encodedStyles}`
+                  );
+                }}
+              >
+                Standalone plot
+              </MenuItem>
             </DropdownButton>
           </Tooltip>
         </div>
       </div>
+      {showExportModal && plot && downloadImageOptions && (
+        <ExportImageModal
+          plot={plot}
+          filename={downloadImageOptions.filename ?? "plot"}
+          previewPlot={previewPlot}
+          plotType={plotType}
+          onHide={() => setShowExportModal(false)}
+        />
+      )}
     </div>
   );
 }
