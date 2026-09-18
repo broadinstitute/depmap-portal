@@ -55,6 +55,14 @@ export interface ScatterPlotData {
   // computed in DataExplorerScatterPlot.tsx, where computeFacets already
   // runs for the small-multiples grid.
   facetLegendState: ReturnType<typeof useLegendState>;
+  // Facet's own analog of legendKeysWithNoData: facet keys with no visible,
+  // plottable point. facetLegendState is *seeded* with this (those facets
+  // start toggled off in the "Facets" panel), so a caller that renders no
+  // such panel — the embeddable plot — can pass it straight through as
+  // SmallMultiplesScatter's hiddenFacets and get the same grid Data Explorer
+  // opens with, permanently. Exposed rather than recomputed by such callers
+  // because it needs facet's own continuous bins, which stay internal here.
+  facetKeysWithNoData: Set<LegendKey> | null;
   colorMap: Map<LegendKey, string>;
   legendForDownload: {
     title: string;
@@ -654,6 +662,7 @@ export default function useScatterPlotData(
     legendKeysWithNoData,
     legendState,
     facetLegendState,
+    facetKeysWithNoData,
     colorMap,
     legendForDownload,
     pointVisibility,

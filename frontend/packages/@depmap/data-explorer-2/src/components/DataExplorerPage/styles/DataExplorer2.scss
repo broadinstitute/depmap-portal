@@ -613,7 +613,7 @@
   border-radius: 4px;
 
   &:focus {
-    background-color: inherit;
+    background-color: #d4d4d4;
     outline: 1px solid #005ecc;
   }
 
@@ -682,4 +682,15 @@
 
 .categoryPickerWarning {
   color: #a94442;
+}
+
+.exportCsvModal {
+  :global .modal-lg {
+    width: calc(100vw - 150px);
+  }
+}
+
+.exportCsvModalBody {
+  display: flex;
+  height: calc(100vh - 209px);
 }

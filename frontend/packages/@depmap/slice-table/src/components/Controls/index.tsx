@@ -28,6 +28,10 @@ interface Props {
   // wants to be able to call it from a custom action.
   onClickAddColumn: () => void;
   controlsClassName?: string;
+  // Lets a caller for whom this button *is* the primary action (e.g. a
+  // modal with no download/export action of its own) make that obvious,
+  // rather than leaving it visually equal to "Filters" every time.
+  downloadButtonBsStyle?: React.ComponentProps<typeof Button>["bsStyle"];
 }
 
 function Controls({
@@ -40,6 +44,7 @@ function Controls({
   numFiltersApplied,
   onClickAddColumn,
   controlsClassName = undefined,
+  downloadButtonBsStyle = undefined,
 }: Props) {
   return (
     <div className={cx(styles.Controls, controlsClassName)}>
@@ -68,6 +73,7 @@ function Controls({
         <Button
           onClick={onClickDownload}
           bsSize="small"
+          bsStyle={downloadButtonBsStyle}
           disabled={isLoading || hadError}
         >
           <i className="glyphicon glyphicon-download-alt" />

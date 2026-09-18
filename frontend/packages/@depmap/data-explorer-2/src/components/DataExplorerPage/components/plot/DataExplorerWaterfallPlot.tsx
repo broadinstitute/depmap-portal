@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
+import type { Layout } from "plotly.js";
+import {
+  Settings,
+  useDataExplorerSettings,
+} from "../../../../contexts/DataExplorerSettingsContext";
 import { isPortal } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
@@ -12,6 +16,7 @@ import {
 } from "@depmap/types";
 import useWaterfallPlotData from "./prototype/useWaterfallPlotData";
 import PrototypeScatterPlot from "./prototype/PrototypeScatterPlot";
+import type { AnnotationTail } from "./prototype/plotUtils";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotLegend from "./PlotLegend";
 import PlotFacets from "./PlotFacets";
@@ -22,6 +27,17 @@ import SectionStack, { StackableSection } from "../SectionStack";
 import promptForSelectionFromContext from "./promptForSelectionFromContext";
 import useSelection from "../../hooks/useSelection";
 import styles from "../../styles/DataExplorer2.scss";
+
+// Lets the export modal render a second, non-interactive copy of this plot
+// at different styles and/or a possibly-seeded view state, and must not be
+// able to wire it up to mutate the real selection.
+interface RenderPlotOptions {
+  plotStyles: Settings["plotStyles"];
+  onLoad: (plot: ExtendedPlotType) => void;
+  interactive: boolean;
+  initialAxes?: Partial<Layout>;
+  initialAnnotationTails?: Record<string, AnnotationTail>;
+}
 
 interface Props {
   data: DataExplorerPlotResponse | null;
@@ -86,15 +102,7 @@ function DataExplorerWaterfallPlot({
   const isPairGrained = isExpanded && plotConfig.facet_by !== "expansion";
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
-  const {
-    pointSize,
-    facetedPointSize,
-    pointOpacity,
-    outlineWidth,
-    palette,
-    xAxisFontSize,
-    yAxisFontSize,
-  } = plotStyles;
+  const { palette } = plotStyles;
 
   const {
     sortedLegendKeys,
@@ -219,6 +227,81 @@ function DataExplorerWaterfallPlot({
     return out;
   }, [data, selection]);
 
+  // Extracted so the export modal can call this a second time, offscreen, at
+  // different styles and/or a seeded view state, without repeating this
+  // whole call site and risking it drifting out of step.
+  const renderPlot = ({
+    plotStyles: styles_,
+    onLoad,
+    interactive,
+    initialAxes,
+    initialAnnotationTails,
+  }: RenderPlotOptions) => {
+    if (!formattedData) {
+      return null;
+    }
+
+    // A preview must not be able to mutate the real selection, so it simply
+    // isn't wired to the handlers that would. Their defaults are no-ops.
+    const interactions = interactive
+      ? {
+          onClickPoint: handleClickPoint,
+          onMultiselect: handleMultiselect,
+          onClickResetSelection: clearSelection,
+        }
+      : {};
+
+    return (
+      <PrototypeScatterPlot
+        data={formattedData}
+        xKey="x"
+        yKey="y"
+        pointVisibility={pointVisibility || undefined}
+        colorKey1="color1"
+        colorKey2="color2"
+        categoricalColorKey="catColorData"
+        continuousColorKey="contColorData"
+        contLegendKeys={contLegendKeys}
+        colorMap={colorMap}
+        hoverTextKey="hoverText"
+        annotationTextKey="annotationText"
+        height="auto"
+        xLabel={formattedData?.xLabel || ""}
+        yLabel={formattedData?.yLabel || ""}
+        onLoad={onLoad}
+        selectedPoints={selectedPoints}
+        showIdentityLine={false}
+        legendForDownload={legendForDownload}
+        enforceSingleFacetSelection={enforceSingleFacetSelection}
+        selectionRegions={selectionRegions}
+        selectionAxis="x"
+        pointsToAnnotate={pointsToAnnotate}
+        selectionCount={selection?.size ?? 0}
+        hasFacetOptionsEnabled={hasFacetOptionsEnabled}
+        initialAxes={initialAxes}
+        initialAnnotationTails={initialAnnotationTails}
+        // Same predicate that drives the x-clustering itself (it's what
+        // facetSide feeds formatDataForWaterfall), so the smaller size
+        // applies exactly when the ranking is split into clusters.
+        pointSize={
+          hasFacetOptionsEnabled ? styles_.facetedPointSize : styles_.pointSize
+        }
+        pointOpacity={styles_.pointOpacity}
+        outlineWidth={styles_.outlineWidth}
+        customHoverinfo="y+text"
+        hideXAxisGrid
+        hideXAxis={Boolean(
+          data?.metadata?.color_property || data?.metadata?.facet_property
+        )}
+        palette={styles_.palette}
+        annotationFontSize={styles_.annotationFontSize}
+        xAxisFontSize={styles_.xAxisFontSize}
+        yAxisFontSize={styles_.yAxisFontSize}
+        {...interactions}
+      />
+    );
+  };
+
   return (
     <div className={styles.DataExplorerScatterPlot}>
       <div className={styles.left}>
@@ -230,56 +313,27 @@ function DataExplorerWaterfallPlot({
             plotElement={plotElement}
             handleClickPoint={handleClickPoint}
             onClickUnselectAll={clearSelection}
+            previewPlot={{
+              render: (options: Omit<RenderPlotOptions, "interactive">) =>
+                renderPlot({ ...options, interactive: false }),
+              pointSizeField: hasFacetOptionsEnabled
+                ? "facetedPointSize"
+                : "pointSize",
+              legend: legendForDownload,
+              // Waterfall never draws an identity or regression line —
+              // showIdentityLine is hardcoded false above and no
+              // regressionLines prop is ever passed.
+              hasDataLines: false,
+            }}
           />
         </div>
         <div className={styles.plot}>
           {showSpinner && <SpinnerOverlay />}
-          {formattedData && (
-            <PrototypeScatterPlot
-              data={formattedData}
-              xKey="x"
-              yKey="y"
-              pointVisibility={pointVisibility || undefined}
-              colorKey1="color1"
-              colorKey2="color2"
-              categoricalColorKey="catColorData"
-              continuousColorKey="contColorData"
-              contLegendKeys={contLegendKeys}
-              colorMap={colorMap}
-              hoverTextKey="hoverText"
-              annotationTextKey="annotationText"
-              height="auto"
-              xLabel={formattedData?.xLabel || ""}
-              yLabel={formattedData?.yLabel || ""}
-              onLoad={setPlotElement}
-              onClickPoint={handleClickPoint}
-              onMultiselect={handleMultiselect}
-              selectedPoints={selectedPoints}
-              showIdentityLine={false}
-              onClickResetSelection={clearSelection}
-              legendForDownload={legendForDownload}
-              enforceSingleFacetSelection={enforceSingleFacetSelection}
-              selectionRegions={selectionRegions}
-              selectionAxis="x"
-              pointsToAnnotate={pointsToAnnotate}
-              selectionCount={selection?.size ?? 0}
-              hasFacetOptionsEnabled={hasFacetOptionsEnabled}
-              // Same predicate that drives the x-clustering itself (it's
-              // what facetSide feeds formatDataForWaterfall), so the smaller
-              // size applies exactly when the ranking is split into clusters.
-              pointSize={hasFacetOptionsEnabled ? facetedPointSize : pointSize}
-              pointOpacity={pointOpacity}
-              outlineWidth={outlineWidth}
-              customHoverinfo="y+text"
-              hideXAxisGrid
-              hideXAxis={Boolean(
-                data?.metadata?.color_property || data?.metadata?.facet_property
-              )}
-              palette={palette}
-              xAxisFontSize={xAxisFontSize}
-              yAxisFontSize={yAxisFontSize}
-            />
-          )}
+          {renderPlot({
+            plotStyles,
+            onLoad: setPlotElement,
+            interactive: true,
+          })}
         </div>
       </div>
       <div className={styles.right}>
