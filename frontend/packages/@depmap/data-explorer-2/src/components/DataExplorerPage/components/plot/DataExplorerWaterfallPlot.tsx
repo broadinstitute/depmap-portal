@@ -293,6 +293,7 @@ function DataExplorerWaterfallPlot({
         hideXAxis={Boolean(
           data?.metadata?.color_property || data?.metadata?.facet_property
         )}
+        xAxisIsRank
         palette={styles_.palette}
         annotationFontSize={styles_.annotationFontSize}
         xAxisFontSize={styles_.xAxisFontSize}
