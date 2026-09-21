@@ -94,6 +94,13 @@ interface Props {
   customHoverinfo?: PlotData["hoverinfo"];
   hideXAxis?: boolean;
   hideXAxisGrid?: boolean;
+  // True only for Waterfall (which renders through this same component):
+  // its x "value" is a rank position, not real data, so once a genuine
+  // title override replaces the default "Rank" text, the tick numbers
+  // below it are dropped too (see getImageFigure). A real scatter plot's
+  // x-axis is actual data — those numbers stay no matter what the title
+  // says — so this must default to false for every other caller.
+  xAxisIsRank?: boolean;
   showBuiltinLegend?: boolean;
   // optional styling
   pointSize?: number;
@@ -216,6 +223,7 @@ function PrototypeScatterPlot({
   customHoverinfo = undefined,
   hideXAxis = false,
   hideXAxisGrid = false,
+  xAxisIsRank = false,
   showBuiltinLegend = false,
   pointSize = 7,
   pointOpacity = 1.0,
@@ -1173,8 +1181,11 @@ function PrototypeScatterPlot({
           // same problem regardless of what the title says, so a genuine
           // override (see ExportImageModal's own comment on why this is
           // never true for the untouched default text) brings back only
-          // the title — ticks and their numbers stay off.
-          ...(xAxisLabelOverride !== undefined
+          // the title — ticks and their numbers stay off. This only makes
+          // sense for `xAxisIsRank` (Waterfall): a real scatter plot's
+          // x-axis is actual data, and those numbers must stay no matter
+          // what the title says.
+          ...(xAxisLabelOverride !== undefined && xAxisIsRank
             ? { visible: true, showticklabels: false, ticks: "" as const }
             : {}),
           title: {
@@ -1306,6 +1317,7 @@ function PrototypeScatterPlot({
     customHoverinfo,
     hideXAxis,
     hideXAxisGrid,
+    xAxisIsRank,
     showBuiltinLegend,
     pointSize,
     pointOpacity,
