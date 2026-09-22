@@ -480,7 +480,6 @@ def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
     """
 
     db = _get_db_connection()
-    user = "some-non-admin-user"
 
     all_dimension_types = types_crud.get_dimension_types(db=db)
 
@@ -491,9 +490,12 @@ def _get_active_data_issues() -> dict[str, data_issues.DataIssue]:
             continue
 
         if dimension_type.axis == "feature":
-            associated_datasets = dataset_crud.get_datasets(db=db, user=user, feature_type=dimension_type.name)
+            associated_datasets = dataset_crud.get_datasets(db=db, user=db.user, feature_type=dimension_type.name)
         else:
-            associated_datasets = dataset_crud.get_datasets(db=db, user=user, sample_type=dimension_type.name)
+            associated_datasets = dataset_crud.get_datasets(db=db, user=db.user, sample_type=dimension_type.name)
+
+        # We're only interested in seeing issues relating to public datasets - filter results to that group
+        associated_datasets = [dataset for dataset in associated_datasets if dataset.group_id == PUBLIC_GROUP_ID]
 
         
         # Get all given IDs belonging to the metadata 
