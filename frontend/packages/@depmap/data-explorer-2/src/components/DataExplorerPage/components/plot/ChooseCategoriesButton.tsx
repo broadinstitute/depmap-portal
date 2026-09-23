@@ -47,6 +47,7 @@ function ChooseCategoriesButton({
 
   const catSlice = data ? findCategoricalSlice(data, mode, target) : null;
   const chosen = chosenCategoriesFor(plotConfig, target) ?? null;
+  const noun = target === "facet" ? "facets" : "categories";
 
   const handleClick = useCallback(async () => {
     if (!data || !catSlice) {
@@ -73,7 +74,10 @@ function ChooseCategoriesButton({
       axisLabels,
       visible,
       chosen,
-      noun: target === "facet" ? "facets" : "categories",
+      noun,
+      // The annotation being broken up, then what the rows are — the same
+      // shape as the member table's "<context> transcripts".
+      downloadFilename: [catSlice.label, noun].filter(Boolean).join(" "),
       // Facets degrade by getting small, which is legible; colors degrade by
       // repeating, which is not, so only color warns about a swatch limit.
       swatchLimit:
@@ -87,7 +91,7 @@ function ChooseCategoriesButton({
     }
 
     onChangeCategories(target, choice.categories);
-  }, [data, catSlice, chosen, target, plotStyles, onChangeCategories]);
+  }, [data, catSlice, chosen, noun, target, plotStyles, onChangeCategories]);
 
   // An expansion-backed panel gets the members control instead: its members
   // decide what is fetched, not merely what is drawn, and they are edited
@@ -106,21 +110,24 @@ function ChooseCategoriesButton({
     chosen
   );
 
-  // Nothing was collapsed and nothing was chosen: the list above is complete,
-  // and offering to trim it would invent a problem.
-  if (!hasRemainder && !chosen) {
-    return null;
-  }
+  // Nothing was collapsed, so the list above is already the whole story. The
+  // control stays anyway — the table is where you read the per-category
+  // statistics and download them, which is worth doing whether or not anything
+  // is hidden — but it stops offering to trim a list that has nothing to trim,
+  // and the summary goes: the list above says the same thing by existing.
+  const nothingCollapsed = !hasRemainder;
 
   return (
     <div className={styles.categoryPickerControl}>
-      <div className={styles.categoryPickerSummary}>
-        {chosen
-          ? `Showing ${shown.size} you chose.`
-          : `Showing ${shown.size} of these — the ones that stand out most on these axes.`}
-      </div>
+      {!nothingCollapsed && (
+        <div className={styles.categoryPickerSummary}>
+          {chosen
+            ? `Showing ${shown.size} you chose.`
+            : `Showing ${shown.size} of these — the ones that stand out most on these axes.`}
+        </div>
+      )}
       <Button bsSize="xsmall" onClick={handleClick} bsStyle="info">
-        Choose…
+        {nothingCollapsed ? "See table…" : "Choose…"}
       </Button>
     </div>
   );

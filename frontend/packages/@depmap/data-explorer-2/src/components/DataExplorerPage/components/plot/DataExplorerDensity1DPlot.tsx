@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
+import type { Layout } from "plotly.js";
+import {
+  Settings,
+  useDataExplorerSettings,
+} from "../../../../contexts/DataExplorerSettingsContext";
 import { isPortal } from "@depmap/globals";
 import SpinnerOverlay from "./SpinnerOverlay";
 import type ExtendedPlotType from "../../ExtendedPlotType";
@@ -13,6 +17,7 @@ import {
 } from "@depmap/types";
 import useDensity1DPlotData from "./prototype/useDensity1DPlotData";
 import PrototypeDensity1D from "./prototype/PrototypeDensity1D";
+import { AnnotationTail, LegendInfo } from "./prototype/plotUtils";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import SectionStack, { StackableSection } from "../SectionStack";
 import PlotLegend from "./PlotLegend";
@@ -23,6 +28,19 @@ import GeneTea from "./integrations/GeneTea";
 import promptForSelectionFromContext from "./promptForSelectionFromContext";
 import useSelection from "../../hooks/useSelection";
 import styles from "../../styles/DataExplorer2.scss";
+
+// What a caller must supply to draw this plot — mirrors
+// DataExplorerScatterPlot's identically-named type, needed here for the
+// same reason: the export modal draws a second, hidden instance at edited
+// styles and possibly-seeded view state, and must not be able to wire it
+// up to mutate the real selection.
+interface RenderPlotOptions {
+  plotStyles: Settings["plotStyles"];
+  onLoad: (plot: ExtendedPlotType) => void;
+  interactive: boolean;
+  initialAxes?: Partial<Layout>;
+  initialAnnotationTails?: Record<string, AnnotationTail>;
+}
 
 interface Props {
   data: DataExplorerPlotResponse | null;
@@ -87,15 +105,11 @@ function DataExplorerDensity1DPlot({
   const isPairGrained = isExpanded && plotConfig.facet_by !== "expansion";
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
-  const {
-    pointSize,
-    facetedPointSize,
-    pointOpacity,
-    outlineWidth,
-    palette,
-    xAxisFontSize,
-    yAxisFontSize,
-  } = plotStyles;
+  // Only `palette` is read directly (useDensity1DPlotData needs it ahead of
+  // the render below) — everything else now comes through renderPlot's own
+  // `plotStyles` param, so the preview can pass its own draft values instead
+  // of always reading the saved ones.
+  const { palette } = plotStyles;
 
   const {
     formattedData,
@@ -224,6 +238,94 @@ function DataExplorerDensity1DPlot({
     return out;
   }, [data, selection]);
 
+  // Extracted so the export modal's hidden preview instance (drawn at
+  // edited styles, and possibly seeded view state) and the main plot are
+  // built from the same ~30-prop call site instead of two that could drift.
+  // Mirrors DataExplorerScatterPlot's identically-named helper.
+  const renderPlot = ({
+    plotStyles: styles_,
+    onLoad,
+    interactive,
+    initialAxes,
+    initialAnnotationTails,
+  }: RenderPlotOptions) => {
+    if (!formattedData) {
+      return null;
+    }
+
+    // A preview must not be able to mutate the real selection, so it simply
+    // isn't wired to the handlers that would. Their defaults are no-ops —
+    // see PrototypeDensity1D's own.
+    const interactions = interactive
+      ? {
+          onClickPoint: handleClickPoint,
+          onMultiselect: handleMultiselect,
+          onClickResetSelection: clearSelection,
+        }
+      : {};
+
+    return (
+      <PrototypeDensity1D
+        data={formattedData}
+        xKey="x"
+        colorMap={colorMap}
+        colorData={colorData}
+        facetData={facetData}
+        groupKeys={sortedFacetKeys}
+        colorMatchesFacet={colorMatchesFacet}
+        continuousColorKey="contColorData"
+        legendDisplayNames={legendDisplayNames}
+        facetDisplayNames={facetDisplayNames}
+        legendTitle={legendTitle}
+        pointVisibility={pointVisibility || undefined}
+        useSemiOpaqueViolins={!plotConfig.hide_points}
+        placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
+        enforceSingleFacetSelection={enforceSingleFacetSelection}
+        pointsToAnnotate={pointsToAnnotate}
+        selectionCount={selection?.size ?? 0}
+        hoverTextKey="hoverText"
+        annotationTextKey="annotationText"
+        height="auto"
+        onLoad={onLoad}
+        selectedPoints={selectedPoints}
+        hiddenLegendValues={hiddenLegendValues}
+        hiddenFacetValues={hiddenFacetValues}
+        // hasFacetOptionsEnabled, not Boolean(sortedFacetKeys): an
+        // unset facet_by still yields one LEGEND_ALL track, so
+        // sortedFacetKeys is never empty and would report every plot
+        // as faceted. See useDensity1DPlotData's own note on this.
+        pointSize={
+          hasFacetOptionsEnabled ? styles_.facetedPointSize : styles_.pointSize
+        }
+        pointOpacity={styles_.pointOpacity}
+        outlineWidth={styles_.outlineWidth}
+        palette={styles_.palette}
+        annotationFontSize={styles_.annotationFontSize}
+        xAxisFontSize={styles_.xAxisFontSize}
+        yAxisFontSize={styles_.yAxisFontSize}
+        initialAxes={initialAxes}
+        initialAnnotationTails={initialAnnotationTails}
+        {...interactions}
+      />
+    );
+  };
+
+  // The same object PrototypeDensity1D builds internally for its own
+  // legend traces (see its getImageFigure) — colorKeys minus whatever's
+  // hidden, named and colored the same way. Duplicated rather than shared
+  // because that derivation lives inside the renderer and isn't exposed;
+  // the underlying colorMap/hiddenLegendValues/legendDisplayNames are the
+  // very same props/state passed to it, so the two can't drift apart.
+  const legendForDownload: LegendInfo = {
+    title: legendTitle ?? "",
+    items: [...colorMap.keys()]
+      .filter((key) => !hiddenLegendValues.has(key))
+      .map((key) => ({
+        name: legendDisplayNames[key] ?? "",
+        hexColor: colorMap.get(key) as string,
+      })),
+  };
+
   return (
     <div className={styles.DataExplorerDensity1DPlot}>
       <div className={styles.left}>
@@ -235,51 +337,28 @@ function DataExplorerDensity1DPlot({
             plotElement={plotElement}
             handleClickPoint={handleClickPoint}
             onClickUnselectAll={clearSelection}
+            previewPlot={{
+              render: (options: Omit<RenderPlotOptions, "interactive">) =>
+                renderPlot({ ...options, interactive: false }),
+              pointSizeField: hasFacetOptionsEnabled
+                ? "facetedPointSize"
+                : "pointSize",
+              legend: legendForDownload,
+              // No y=x/regression lines and no real y-axis title here — the
+              // y-axis is a synthetic jitter value, not a labeled axis.
+              hasDataLines: false,
+              hasYAxisLabel: false,
+              hasViolinLines: true,
+            }}
           />
         </div>
         <div className={styles.plot}>
           {showSpinner && <SpinnerOverlay />}
-          {formattedData && (
-            <PrototypeDensity1D
-              data={formattedData}
-              xKey="x"
-              colorMap={colorMap}
-              colorData={colorData}
-              facetData={facetData}
-              groupKeys={sortedFacetKeys}
-              colorMatchesFacet={colorMatchesFacet}
-              continuousColorKey="contColorData"
-              legendDisplayNames={legendDisplayNames}
-              facetDisplayNames={facetDisplayNames}
-              legendTitle={legendTitle}
-              pointVisibility={pointVisibility || undefined}
-              useSemiOpaqueViolins={!plotConfig.hide_points}
-              placeholderEmptyTracks={Boolean(plotConfig.expand_by?.length)}
-              enforceSingleFacetSelection={enforceSingleFacetSelection}
-              pointsToAnnotate={pointsToAnnotate}
-              selectionCount={selection?.size ?? 0}
-              hoverTextKey="hoverText"
-              annotationTextKey="annotationText"
-              height="auto"
-              onLoad={setPlotElement}
-              onClickPoint={handleClickPoint}
-              onMultiselect={handleMultiselect}
-              selectedPoints={selectedPoints}
-              onClickResetSelection={clearSelection}
-              hiddenLegendValues={hiddenLegendValues}
-              hiddenFacetValues={hiddenFacetValues}
-              // hasFacetOptionsEnabled, not Boolean(sortedFacetKeys): an
-              // unset facet_by still yields one LEGEND_ALL track, so
-              // sortedFacetKeys is never empty and would report every plot
-              // as faceted. See useDensity1DPlotData's own note on this.
-              pointSize={hasFacetOptionsEnabled ? facetedPointSize : pointSize}
-              pointOpacity={pointOpacity}
-              outlineWidth={outlineWidth}
-              palette={palette}
-              xAxisFontSize={xAxisFontSize}
-              yAxisFontSize={yAxisFontSize}
-            />
-          )}
+          {renderPlot({
+            plotStyles,
+            onLoad: setPlotElement,
+            interactive: true,
+          })}
         </div>
       </div>
       <div className={styles.right}>
@@ -318,7 +397,11 @@ function DataExplorerDensity1DPlot({
           <StackableSection
             title="Plot Selections"
             minHeight={256}
-            defaultOpen={!plotConfig.expand_by}
+            defaultOpen={
+              !plotConfig.expand_by ||
+              (plotConfig.expand_by && !plotConfig.color_by) ||
+              plotConfig.color_by === "expansion"
+            }
           >
             {isPairGrained ? (
               <ExpandedPlotSelections

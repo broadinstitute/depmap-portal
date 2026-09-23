@@ -42,14 +42,29 @@ import type {
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
+  AnnotationTail,
+  applyLegendLabelOverrides,
+  calcAnnotationArrowWidth,
   calcAnnotationPositions,
   calcAutoscaleShapes,
+  calcChromeAxisOverrides,
+  calcExtraLinesMargin,
   calcPlotIndicatorLineShapes,
+  captureAnnotationTail,
+  cloneFigureForExport,
   DataExplorerColorPalette,
+  DEFAULT_CHROME_LINE_WIDTH,
+  DEFAULT_DATA_LINE_WIDTH,
   DEFAULT_PALETTE,
+  EXPORT_EDGE_PADDING,
   facetMaskFor,
+  onWebglContextRestored,
+  releaseWebglContexts,
+  resolveAnnotationTail,
   getLegendTraces,
   getRange,
+  legendLayoutFor,
+  wantsLegendTraces,
   getSolidColorGroups,
   hexToRgba,
   LegendInfo,
@@ -58,6 +73,7 @@ import {
   facetLabelBudget,
   truncateFacetLabel,
   RegressionLine,
+  widenExtentsToAxisRange,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
@@ -110,6 +126,9 @@ interface Props {
   pointOpacity?: number;
   outlineWidth?: number;
   palette?: DataExplorerColorPalette;
+  // Point labels. Their own setting rather than a ratio of the axis
+  // font: these sit inside the plot area competing with the data.
+  annotationFontSize?: number;
   xAxisFontSize?: number;
   yAxisFontSize?: number;
   // The points to put text labels on. Same annotation channel as the
@@ -144,19 +163,71 @@ interface Props {
   // this is a deliberate, causal user action: the facet's panel is fully
   // removed from the grid, not grayed out.
   hiddenFacets?: Set<string>;
+  // Transient view state to start from, instead of this instance building its
+  // own up from scratch — see PrototypeScatterPlot's identical pair. Produce
+  // these with `captureTransientState` against the live plot.
+  initialAxes?: Partial<Layout>;
+  initialAnnotationTails?: Record<string, AnnotationTail>;
 }
 
 type PlotlyType = typeof Plotly;
 type PropsWithPlotly = Props & { Plotly: PlotlyType };
 
-const GAP_X = 0.06;
-const GAP_Y = 0.1;
+// Unlike PrototypeScatterPlot, which caches whole axis objects, this renderer
+// caches only the master pair's range and rebuilds everything else (titles,
+// tick fonts, `matches` links) per facet on every render. So a seed is stripped
+// to the range: carrying a captured axis's `tickfont` in would override the
+// font size this instance was asked to render with, which is exactly the thing
+// an export preview exists to let someone change.
+const narrowSeededAxes = (initialAxes: Partial<Layout> | undefined) => {
+  if (!initialAxes) {
+    return {};
+  }
+
+  const narrow = (axis: any) =>
+    axis ? { range: axis.range, autorange: false } : undefined;
+
+  return {
+    xaxis: narrow(initialAxes.xaxis),
+    yaxis: narrow(initialAxes.yaxis),
+  };
+};
+
+// Fractions of the whole grid, tuned against the live plot's own default
+// axis font size (14px) — see gapX/gapY below for why they can't stay fixed
+// constants once the font size varies (a bigger export font, or the global
+// setting itself).
+const DEFAULT_GAP_X = 0.06;
+const DEFAULT_GAP_Y = 0.1;
+const DEFAULT_GAP_AXIS_FONT_SIZE = 14;
 
 // Hoisted out of the layout literal because facetLabelBudget needs the
 // horizontal pair: paper-referenced annotations span the figure minus these,
 // not the figure.
 const MARGIN = { t: 28, r: 16, b: 60, l: 78 };
-const FACET_TITLE_FONT_SIZE = 11;
+// Facet titles follow the x-axis font size rather than a constant of their
+// own, because a constant doesn't scale: an export at 2100 px kept 11 px
+// panel titles and they became unreadable, while every other size in the
+// figure could be adjusted.
+//
+// 0.8 is not arbitrary — it reproduces the 11 px this used to hardcode at the
+// default 14 px axis font, so no existing plot changes appearance. It also
+// flows into facetLabelBudget below, so the character budget tightens as the
+// titles grow and they don't start colliding with the next panel.
+//
+// The x axis rather than the y because these titles run horizontally and
+// compete for horizontal room. PrototypeDensity1D does the same thing off
+// yAxisFontSize, where its facet labels are y-axis ticks.
+const FACET_TITLE_SIZE_RATIO = 0.8;
+const FALLBACK_FACET_TITLE_FONT_SIZE = 11;
+
+const facetTitleFontSize = (xAxisFontSize: number) =>
+  Number.isFinite(xAxisFontSize)
+    ? Math.round(xAxisFontSize * FACET_TITLE_SIZE_RATIO)
+    : // Mid-edit a font size field can be empty, and a NaN would propagate
+      // into facetLabelBudget's arithmetic and out the other side as a
+      // nonsense character budget.
+      FALLBACK_FACET_TITLE_FONT_SIZE;
 
 function SmallMultiplesScatter({
   data,
@@ -187,6 +258,7 @@ function SmallMultiplesScatter({
   pointOpacity = 1,
   outlineWidth = 0.5,
   palette = DEFAULT_PALETTE,
+  annotationFontSize = 12,
   xAxisFontSize = 12,
   yAxisFontSize = 12,
   pointsToAnnotate,
@@ -195,6 +267,8 @@ function SmallMultiplesScatter({
   regressionLinesByFacet,
   placeholderEmptyFacets = false,
   hiddenFacets,
+  initialAxes = undefined,
+  initialAnnotationTails = undefined,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<(HTMLDivElement & ExtendedPlotType) | null>(null);
@@ -215,17 +289,23 @@ function SmallMultiplesScatter({
   const axes = useRef<{
     xaxis?: { range?: number[]; autorange: boolean };
     yaxis?: { range?: number[]; autorange: boolean };
-  }>({});
+  }>(narrowSeededAxes(initialAxes));
   // Identity of the data currently on the axes. When it changes (a new x/y
   // dataset), the preserved zoom is dropped so the plot re-autoranges.
-  const lastDataset = useRef<string | null>(null);
+  //
+  // Pre-seeded when we were handed a zoom to start from, or the first run of
+  // the effect below would see a null dataset key, treat it as a change, and
+  // discard that zoom before it was ever applied.
+  const lastDataset = useRef<string | null>(
+    initialAxes ? `${xLabel} ${yLabel}` : null
+  );
   // User-dragged annotation tail offsets (ax/ay pixel offsets), keyed by point.
   // Mirrors the single-panel plots: restored onto the annotation objects each
   // render and re-captured from plotly_relayout, so a label the user repositions
   // stays put across selection/zoom/data changes. Pixel offsets are relative to
   // the anchor point, so they remain meaningful across zoom and facet layout.
-  const annotationTails = useRef<Record<string, { ax: number; ay: number }>>(
-    {}
+  const annotationTails = useRef<Record<string, AnnotationTail>>(
+    initialAnnotationTails ? { ...initialAnnotationTails } : {}
   );
 
   useEffect(() => {
@@ -234,6 +314,7 @@ function SmallMultiplesScatter({
     const node = ref.current;
     return () => {
       if (node) {
+        releaseWebglContexts(node as HTMLElement);
         Plotly.purge(node as HTMLElement);
       }
     };
@@ -329,6 +410,34 @@ function SmallMultiplesScatter({
         ? height
         : plot.clientHeight || plot.parentElement?.clientHeight || 600;
 
+    const facetTitleSize = facetTitleFontSize(xAxisFontSize);
+
+    // The gap between panels is a fixed fraction of the whole grid, but
+    // what actually has to fit inside it doesn't stay fixed: gapX holds
+    // each row's y-axis tick numbers (sized off yAxisFontSize, drawn in
+    // the horizontal gap between columns), and gapY holds both the x-axis
+    // tick numbers below a panel and the facet title above the next one
+    // (both sized off xAxisFontSize — facetTitleSize is a fixed ratio of
+    // it). Left as constants, a bigger font just encroaches further into
+    // the neighboring panel with nothing to stop it. Scaled by the same
+    // current-vs-tuned-for ratio used throughout this file, so today's
+    // spacing is exactly preserved at the live plot's own default.
+    const gapX = DEFAULT_GAP_X * (yAxisFontSize / DEFAULT_GAP_AXIS_FONT_SIZE);
+    const gapY = DEFAULT_GAP_Y * (xAxisFontSize / DEFAULT_GAP_AXIS_FONT_SIZE);
+
+    // MARGIN is a floor sized for a single line each. The shared axis
+    // labels below are paper-anchored annotations, not native titles, so
+    // nothing grows this on its own for a second or third `<br>`-separated
+    // line the way automargin would for a real title (see
+    // calcExtraLinesMargin) — a multi-line label needs it added by hand,
+    // or it just clips or overlaps the plot. `yLabel` is rotated -90°, so
+    // its extra lines run horizontally once rotated and grow `l`, not `b`.
+    const resolvedMargin = {
+      ...MARGIN,
+      b: MARGIN.b + calcExtraLinesMargin(xLabel, xAxisFontSize),
+      l: MARGIN.l + calcExtraLinesMargin(yLabel, yAxisFontSize),
+    };
+
     // No `width` prop to consult — plotly autosizes to the container — so this
     // is measured, with 0 standing for "not measured yet" (facetLabelBudget
     // treats that as "don't tighten").
@@ -339,14 +448,16 @@ function SmallMultiplesScatter({
     // over the next panel. Falls with `cols`, which is how it falls with the
     // facet count.
     const labelBudget = facetLabelBudget({
-      gridWidth: resolvedWidth ? resolvedWidth - MARGIN.l - MARGIN.r : 0,
+      gridWidth: resolvedWidth
+        ? resolvedWidth - resolvedMargin.l - resolvedMargin.r
+        : 0,
       cols,
-      fontSize: FACET_TITLE_FONT_SIZE,
+      fontSize: facetTitleSize,
     });
 
     const layout: Record<string, any> = {
       height: resolvedHeight,
-      margin: MARGIN,
+      margin: resolvedMargin,
       // Every real trace below sets `showlegend: false` explicitly, so this
       // has no effect unless showBuiltinLegend adds its dummy, named traces
       // (which force `showlegend: true`). Mirrors PrototypeScatterPlot.
@@ -416,12 +527,12 @@ function SmallMultiplesScatter({
       const row = Math.floor(k / cols);
 
       const xDomain: [number, number] = [
-        col / cols + (col === 0 ? 0 : GAP_X / 2),
-        (col + 1) / cols - (col === cols - 1 ? 0 : GAP_X / 2),
+        col / cols + (col === 0 ? 0 : gapX / 2),
+        (col + 1) / cols - (col === cols - 1 ? 0 : gapX / 2),
       ];
       const yTop = 1 - row / rows;
       const yBot = 1 - (row + 1) / rows;
-      const yDomain: [number, number] = [yBot + GAP_Y / 2, yTop - GAP_Y / 2];
+      const yDomain: [number, number] = [yBot + gapY / 2, yTop - gapY / 2];
 
       const suffix = k === 0 ? "" : String(k + 1);
       const xRef = `x${suffix}`;
@@ -601,14 +712,14 @@ function SmallMultiplesScatter({
       (layout.annotations as any[]).push({
         text: truncateFacetLabel(facet, labelBudget),
         x: (xDomain[0] + xDomain[1]) / 2,
-        y: yTop - GAP_Y / 2 + 0.012,
+        y: yTop - gapY / 2 + 0.012,
         xref: "paper",
         yref: "paper",
         xanchor: "center",
         yanchor: "bottom",
         showarrow: false,
         font: {
-          size: FACET_TITLE_FONT_SIZE,
+          size: facetTitleSize,
           color: facetHidden || facetNoData ? "#999" : undefined,
         },
       });
@@ -626,7 +737,7 @@ function SmallMultiplesScatter({
           xanchor: "center",
           yanchor: "middle",
           showarrow: false,
-          font: { size: 12, color: "#999" },
+          font: { size: facetTitleSize, color: "#999" },
         });
       }
 
@@ -641,7 +752,7 @@ function SmallMultiplesScatter({
           xanchor: "center",
           yanchor: "middle",
           showarrow: false,
-          font: { size: 12, color: "#999" },
+          font: { size: facetTitleSize, color: "#999" },
         });
       }
     });
@@ -708,6 +819,14 @@ function SmallMultiplesScatter({
         // Place the label on its own facet's axes (each subplot has its own
         // x{suffix}/y{suffix}); suffix "" is the first panel's x/y.
         const suffix = k === 0 ? "" : String(k + 1);
+        // Restore any annotation arrowhead position the user may have
+        // edited, rescaled for the current annotationFontSize — see
+        // resolveAnnotationTail.
+        const tail = resolveAnnotationTail(
+          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`],
+          annotationFontSize
+        );
+
         (layout.annotations as any[]).push({
           x: x[pointIndex],
           y: y[pointIndex],
@@ -716,7 +835,9 @@ function SmallMultiplesScatter({
           xref: `x${suffix}`,
           yref: `y${suffix}`,
           arrowhead: 0,
+          arrowwidth: calcAnnotationArrowWidth(annotationFontSize),
           standoff: 4,
+          font: { size: annotationFontSize },
           arrowcolor: "#888",
           bordercolor: "#c7c7c7",
           bgcolor: "#fff",
@@ -724,13 +845,14 @@ function SmallMultiplesScatter({
           // for restoring a tail the user dragged. The facet titles and axis
           // labels in this same array carry no pointIndex (and no tail).
           pointIndex,
-          ax: annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ax,
-          ay: annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ay,
+          ax: tail?.ax,
+          ay: tail?.ay,
         });
       });
     } else if (pointsForAnnotation.size > MAX_POINTS_TO_ANNOTATE) {
       (layout.annotations as any[]).push({
         text: `(${annotationCount} selected points)`,
+        font: { size: annotationFontSize },
         xref: "paper",
         yref: "paper",
         x: 1,
@@ -778,10 +900,9 @@ function SmallMultiplesScatter({
           indices,
           facetLayout
         ).forEach(({ pointIndex, ax, ay }) => {
-          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = {
-            ax,
-            ay,
-          };
+          annotationTails.current[
+            `${xKey}-${yKey}-${pointIndex}`
+          ] = captureAnnotationTail(ax, ay, annotationFontSize);
         });
       });
     };
@@ -829,19 +950,34 @@ function SmallMultiplesScatter({
     plot.resetZoom = () => zoom("reset");
     plot.zoomIn = () => zoom("in");
     plot.zoomOut = () => zoom("out");
-    plot.downloadImage = (options) => {
+    plot.getImageFigure = (options) => {
       if (!legendForDownload) {
         window.console.warn("`legendForDownload` is undefined");
-        return;
+        return null;
       }
+
+      // Position comes from the export config, not from a plot style — see
+      // legendLayoutFor. Called with no options (the SVG path, or any other
+      // caller) it keeps today's right-hand placement.
+      const legendPosition = options?.legendPosition ?? "right";
+      const edgePadding = options?.edgePadding ?? EXPORT_EDGE_PADDING;
+      const chromeLineWidth =
+        options?.chromeLineWidth ?? DEFAULT_CHROME_LINE_WIDTH;
+      const dataLineWidth = options?.dataLineWidth ?? DEFAULT_DATA_LINE_WIDTH;
+      const xAxisLabelOverride = options?.xAxisLabel;
+      const yAxisLabelOverride = options?.yAxisLabel;
+      const exportLegend = applyLegendLabelOverrides(
+        legendForDownload,
+        options?.legendTitle,
+        options?.legendItemLabels
+      );
 
       const legendTemplateTrace = {
         marker: { size: pointSize, line: { width: outlineWidth } },
       };
-      const legendTraces = getLegendTraces(
-        legendForDownload,
-        legendTemplateTrace
-      );
+      const legendTraces = wantsLegendTraces(legendPosition)
+        ? getLegendTraces(exportLegend, legendTemplateTrace)
+        : [];
 
       // Recompute per-facet shapes with simulateInfiteLength=false (bounded
       // endpoints for a static image) — mirrors the indicatorShapes loop
@@ -849,38 +985,153 @@ function SmallMultiplesScatter({
       // decoy by this point (see the plotly_afterplot handler below), not
       // the real lines, so a fresh computation is required. Same rationale
       // as PrototypeScatterPlot's own downloadImage.
+      //
+      // See widenExtentsToAxisRange for why bounded still needs to reach
+      // the axis range, not just the data's own extents. One shared range
+      // for every facet: every facet's axis `matches` the master (k === 0),
+      // so they all display the same range regardless of suffix.
+      const exportExtents = widenExtentsToAxisRange(
+        extents,
+        (plot.layout as any).xaxis?.range,
+        (plot.layout as any).yaxis?.range
+      );
       const downloadShapes: NonNullable<Layout["shapes"]> = [];
-      if (showIdentityLine || regressionLinesByFacet) {
-        for (let k = 0; k < facets.length; k += 1) {
-          const suffix = k === 0 ? "" : String(k + 1);
+      // Each facet has its own axis pair (xaxis/yaxis, xaxis2/yaxis2, …), so
+      // chrome line width — unlike edgePadding's single shared MARGIN — has
+      // to be applied per facet rather than once.
+      const chromeAxisOverrides: Record<string, unknown> = {};
+
+      for (let k = 0; k < facets.length; k += 1) {
+        const suffix = k === 0 ? "" : String(k + 1);
+
+        if (showIdentityLine || regressionLinesByFacet) {
           const facetLines = regressionLinesByFacet?.get(facets[k]) ?? null;
           downloadShapes.push(
             ...(calcPlotIndicatorLineShapes(
               showIdentityLine,
               facetLines,
-              extents,
+              exportExtents,
               false,
-              { xref: `x${suffix}`, yref: `y${suffix}` }
+              { xref: `x${suffix}`, yref: `y${suffix}` },
+              dataLineWidth
             ) ?? [])
           );
         }
+
+        const layoutBag = (plot.layout as unknown) as Record<
+          string,
+          Record<string, unknown> | undefined
+        >;
+
+        chromeAxisOverrides[`xaxis${suffix}`] = {
+          ...layoutBag[`xaxis${suffix}`],
+          ...calcChromeAxisOverrides(chromeLineWidth),
+        };
+        chromeAxisOverrides[`yaxis${suffix}`] = {
+          ...layoutBag[`yaxis${suffix}`],
+          ...calcChromeAxisOverrides(chromeLineWidth),
+        };
       }
 
-      const imagePlot = {
-        ...plot,
-        data: [...plot.data, ...legendTraces],
-        layout: {
-          ...plot.layout,
-          shapes: downloadShapes,
-          showlegend: true,
-          legend: {
-            title: { text: legendForDownload.title },
-            font: { size: 14 },
-          },
+      const figure = cloneFigureForExport([...plot.data, ...legendTraces], {
+        ...plot.layout,
+        ...chromeAxisOverrides,
+        // Both axis-label annotations (below) sit a fixed pixel shift into
+        // MARGIN — no `automargin` here to lean on (MARGIN is static), so
+        // the floor has to grow by the same amount the shift below grows
+        // by, or the label just moves deeper into a margin that never got
+        // any bigger and starts crowding the true edge instead of gaining
+        // room. This is the *inner* half — see the shift adjustment below,
+        // and see PrototypeScatterPlot's identical l/b-only formula for
+        // its automargin-based equivalent.
+        //
+        // Starts from the same calcExtraLinesMargin floor the live render
+        // uses (see resolvedMargin above) — but recomputed here rather than
+        // reused, because the export's own label editor can override the
+        // text to something with a different line count than whatever the
+        // live plot is currently showing.
+        margin: {
+          ...MARGIN,
+          l:
+            MARGIN.l +
+            calcExtraLinesMargin(yAxisLabelOverride ?? yLabel, yAxisFontSize) +
+            edgePadding,
+          b:
+            MARGIN.b +
+            calcExtraLinesMargin(xAxisLabelOverride ?? xLabel, xAxisFontSize) +
+            edgePadding,
         },
-      };
+        shapes: downloadShapes,
+        // See PrototypeScatterPlot's note: the font follows the axis font size
+        // so the legend scales with everything else in the figure.
+        ...legendLayoutFor(legendPosition, {
+          title: exportLegend.title,
+          fontSize: xAxisFontSize,
+        }),
+      });
 
-      Plotly.downloadImage(imagePlot, options as any);
+      // The two shared axis-label annotations (pushed once, above — not
+      // per-facet, and not any of the facet titles/placeholders, which
+      // never set a shift at all). Growing their shift by edgePadding is
+      // the inner half: the label moves further from the tick numbers, by
+      // exactly the same amount the margin above just grew, so its
+      // absolute position holds steady while the tick numbers (which do
+      // track the margin) move away from it — see the analogous
+      // standoff/margin pairing in PrototypeScatterPlot for why growing
+      // both by the same amount is what actually opens up the gap rather
+      // than just relocating it.
+      if (figure) {
+        figure.layout.annotations = (
+          (figure.layout.annotations as any[]) ?? []
+        ).map((a) => {
+          // Same discriminator as the shift adjustment: the x-axis label is
+          // the only annotation with a yshift, the y-axis label the only
+          // one with an xshift. `yanchor`/`xanchor` on these is the far
+          // edge from the plot ("bottom" / vertically centered with
+          // rotated text growing outward) — the label grows *away* from
+          // the anchor, toward the plot, so without also pushing the
+          // anchor further out by the same extra-lines amount the margin
+          // just grew by, a second or third line would grow straight into
+          // the tick numbers instead of into the room just reserved for it.
+          if ("yshift" in a) {
+            const labelText = xAxisLabelOverride ?? xLabel;
+
+            return {
+              ...a,
+              yshift:
+                a.yshift -
+                edgePadding -
+                calcExtraLinesMargin(labelText, xAxisFontSize),
+              ...(xAxisLabelOverride !== undefined ? { text: labelText } : {}),
+            };
+          }
+
+          if ("xshift" in a) {
+            const labelText = yAxisLabelOverride ?? yLabel;
+
+            return {
+              ...a,
+              xshift:
+                a.xshift -
+                edgePadding -
+                calcExtraLinesMargin(labelText, yAxisFontSize),
+              ...(yAxisLabelOverride !== undefined ? { text: labelText } : {}),
+            };
+          }
+
+          return a;
+        });
+      }
+
+      return figure;
+    };
+
+    plot.downloadImage = (options) => {
+      const figure = plot.getImageFigure();
+
+      if (figure) {
+        Plotly.downloadImage(figure, options as any);
+      }
     };
     // Faceted: navigating-to-a-point is still off (a safe stub). Per-point
     // annotations are on and their tails ARE draggable (see config.edits and the
@@ -954,6 +1205,19 @@ function SmallMultiplesScatter({
     on("plotly_legendclick", () => false);
     on("plotly_legenddoubleclick", () => false);
 
+    // https://github.com/plotly/plotly.js/blob/55dda47/src/lib/prepare_regl.js
+    // Mirrors PrototypeScatterPlot's handling; this renderer didn't have it.
+    on("plotly_webglcontextlost", () => {
+      Plotly.redraw(plot);
+    });
+
+    // See onWebglContextRestored: complements the handler above for the
+    // case where the context is lost to eviction rather than idling —
+    // there, nothing is drawable again until *this* fires.
+    const stopWatchingContextRestore = onWebglContextRestored(plot, () => {
+      Plotly.redraw(plot);
+    });
+
     on("plotly_afterplot", () => {
       if (
         indicatorShapes.length === 0 ||
@@ -1023,7 +1287,9 @@ function SmallMultiplesScatter({
       plot.layout.annotations?.forEach((annotation) => {
         const { ax, ay, pointIndex } = annotation as any;
         if (ax != null && ay != null && pointIndex != null) {
-          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = { ax, ay };
+          annotationTails.current[
+            `${xKey}-${yKey}-${pointIndex}`
+          ] = captureAnnotationTail(ax, ay, annotationFontSize);
         }
       });
     });
@@ -1041,6 +1307,7 @@ function SmallMultiplesScatter({
           ) => void;
         }).removeListener?.(name, cb)
       );
+      stopWatchingContextRestore();
     };
   }, [
     data,
@@ -1070,6 +1337,7 @@ function SmallMultiplesScatter({
     pointOpacity,
     outlineWidth,
     palette,
+    annotationFontSize,
     xAxisFontSize,
     yAxisFontSize,
     pointsToAnnotate,

@@ -151,12 +151,23 @@ export async function evaluateContext(context: NamelessContext) {
 // Datasets matching nothing are absent from `counts` rather than present with
 // a zero, so a caller wanting the zeroes fills them in from its own dataset
 // list.
-export async function getContextDatasetCoverage(context: NamelessContext) {
+//
+// `scope: "public"` counts over the public group only, which makes the answer
+// the same for every user and so safe to persist — the caller trades coverage
+// information about its private datasets for a response that survives a
+// reload. Pass it together with `persist: { publicCatalog: true }`; neither is
+// correct without the other. The scope rides in the URL rather than the body
+// because the body is the frozen DE2 context format, and because the cache key
+// is built from URL plus body, which keeps the two scopes on disjoint keys.
+export async function getContextDatasetCoverage(
+  context: NamelessContext,
+  scope: "all" | "public" = "all"
+) {
   const response = await postJson<
     | { counts: Record<string, number>; total: number }
     // Same workaround as evaluateContext above: errors come back with a 200.
     | { detail: { message: string; error_type: string } }
-  >("/temp/context/dataset-coverage", context);
+  >(`/temp/context/dataset-coverage?scope=${scope}`, context);
 
   if ("detail" in response) {
     window.console.warn("Could not compute dataset coverage", context);
