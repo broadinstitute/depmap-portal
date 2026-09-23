@@ -1,8 +1,10 @@
 import React from "react";
 import { Spinner } from "@depmap/common-components";
 import { usePredictiveInsightsData } from "../hooks/usePredictiveInsightsData";
+import { getScreenTypeLabel } from "../screenTypeLabel";
 import AggregateScoresChart from "./AggregateScoresChart";
 import GeneTeaTile from "./GeneTeaTile";
+import ModelPerformanceSection from "./ModelPerformanceSection";
 import styles from "../styles/PredictiveInsights.scss";
 
 export interface PredictiveInsightsPageProps {
@@ -46,19 +48,34 @@ export default function PredictiveInsightsPage({
   }
 
   return (
-    <div className={styles.overviewRow}>
-      <article className="card_wrapper">
-        <div className="card_border container_fluid">
-          <h2 className="no_margin cardtitle_text">Aggregate Scores</h2>
-          <AggregateScoresChart configs={configs} screenTypes={screenTypes} />
-        </div>
-      </article>
+    <div>
+      <div className={styles.overviewRow}>
+        <article className="card_wrapper">
+          <div className="card_border container_fluid">
+            <h2 className="no_margin cardtitle_text">Aggregate Scores</h2>
+            <AggregateScoresChart configs={configs} screenTypes={screenTypes} />
+          </div>
+        </article>
+        {screenTypes.map((screenType) => (
+          <GeneTeaTile
+            key={screenType.actualsDatasetId}
+            title={getScreenTypeLabel(screenType)}
+            screenType={screenType}
+            configs={configs}
+          />
+        ))}
+      </div>
+      <h2 className={styles.sectionHeader}>
+        Model Performance — Performance according to{" "}
+        {screenTypes.map(getScreenTypeLabel).join(" and ")}.
+      </h2>
       {screenTypes.map((screenType) => (
-        <GeneTeaTile
+        <ModelPerformanceSection
           key={screenType.actualsDatasetId}
-          title={screenType.actualsDatasetName.split(" ")[0]}
           screenType={screenType}
           configs={configs}
+          dimType={dimType}
+          dimTypeGivenId={dimTypeGivenId}
         />
       ))}
     </div>

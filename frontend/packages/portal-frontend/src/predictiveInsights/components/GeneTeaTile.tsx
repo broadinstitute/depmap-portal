@@ -89,6 +89,9 @@ export default function GeneTeaTile({ title, screenType, configs }: Props) {
               className={styles.toggleSearchTerms}
               onClick={() => setShowSearchTerms((prev) => !prev)}
             >
+              <span className={styles.expandIndicator}>
+                {showSearchTerms ? "−" : "+"}
+              </span>
               {showSearchTerms ? "Hide" : "Show"} search terms
             </button>
             {showSearchTerms && (
