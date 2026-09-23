@@ -1,0 +1,24 @@
+{% extends "full_page.html" %}
+
+{% block page_title %}
+    Predictive Insights test page
+{% endblock %}
+
+{% block content_class %}{% endblock %}
+
+{% block content %}
+    <div class='full-screen-div'>
+        {% include "nav_footer/nav.html" %}
+        <div id="test-pred-component-root"></div>
+    </div>
+    <script id="test-pred-component-data" type="application/json">
+      {
+        "dimType": {{ dim_type|tojson|safe }},
+        "givenId": {{ given_id|tojson|safe }}
+      }
+    </script>
+{% endblock %}
+
+{% block js %}
+    <script src="{{ webpack_url('testPredComponent.js') }}"></script>
+{% endblock %}
