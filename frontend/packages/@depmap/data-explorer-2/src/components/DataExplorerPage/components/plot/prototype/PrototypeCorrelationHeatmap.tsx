@@ -8,9 +8,16 @@ import type {
 } from "plotly.js";
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import {
+  calcChromeAxisOverrides,
   calcMinMax,
+  cloneFigureForExport,
   DataExplorerColorPalette,
+  DEFAULT_CHROME_LINE_WIDTH,
   DEFAULT_PALETTE,
+  DEFAULT_TICK_FONT_SIZE,
+  EXPORT_EDGE_PADDING,
+  exportMarginFloor,
+  releaseWebglContexts,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
@@ -42,6 +49,18 @@ interface Props {
   onLoad?: (plot: ExtendedPlotType) => void;
   palette?: DataExplorerColorPalette;
   xAxisFontSize?: number;
+  // Export-only: row/column tick labels and the colorbar's own ticks (see
+  // ExportImageModal's tickFontSize). Never fed by the live, on-screen
+  // render — only the export preview passes anything other than the
+  // default, so on screen this reproduces today's implicit Plotly default
+  // exactly.
+  tickFontSize?: number;
+  // Reproduces the live plot's own zoom/pan state in a freshly-mounted
+  // instance (the export preview) — see captureTransientState. Only yaxis
+  // is threaded through, matching the only axis this renderer already
+  // preserves across its own re-renders (see the plotly_relayout handler
+  // below); x never has been.
+  initialAxes?: Partial<Layout>;
   distinguish1Label: string | undefined;
   distinguish2Label: string | undefined;
 }
@@ -87,6 +106,8 @@ function PrototypeCorrelationHeatmap({
   onSelectLabels = () => {},
   palette = DEFAULT_PALETTE,
   xAxisFontSize = 14,
+  tickFontSize = DEFAULT_TICK_FONT_SIZE,
+  initialAxes,
   distinguish1Label = undefined,
   distinguish2Label = undefined,
   onLoad = () => {},
@@ -102,10 +123,21 @@ function PrototypeCorrelationHeatmap({
   }, []);
 
   const axes = useRef<Partial<Layout>>({
-    yaxis: undefined,
+    yaxis: initialAxes?.yaxis,
   });
 
+  // Skips the very first run: without this, the reset below would fire on
+  // mount and immediately discard the seeded initialAxes above, before this
+  // instance ever gets a chance to render with it — see the same pattern in
+  // PrototypeDensity1D.
+  const hasEverRunAxesReset = useRef(false);
+
   useEffect(() => {
+    if (!hasEverRunAxesReset.current) {
+      hasEverRunAxesReset.current = true;
+      return;
+    }
+
     axes.current = {
       yaxis: undefined,
     };
@@ -121,7 +153,10 @@ function PrototypeCorrelationHeatmap({
 
   useEffect(() => {
     const plot = ref.current;
-    return () => Plotly.purge(plot as HTMLElement);
+    return () => {
+      releaseWebglContexts(plot as HTMLElement);
+      Plotly.purge(plot as HTMLElement);
+    };
   }, [Plotly]);
 
   useEffect(() => {
@@ -160,6 +195,7 @@ function PrototypeCorrelationHeatmap({
           : null,
         customdata,
         colorscale: palette.sequentialScale,
+        colorbar: { tickfont: { size: tickFontSize } },
         xaxis: "x",
         yaxis: "y",
         hovertemplate: [
@@ -236,13 +272,24 @@ function PrototypeCorrelationHeatmap({
       }
     }
 
-    const yaxis = axes.current.yaxis || {
-      type: "category" as const,
-      automargin: true,
-      autorange: true,
-      tickvals: y,
-      ticktext: yLabels ? yLabels.map(truncate) : y.map(truncate),
-      domain: z2Key ? [0.25, 0.75] : [0, 1],
+    const yaxis = {
+      // `axes.current.yaxis`, once set (by a relayout, or seeded from
+      // initialAxes), is reused as-is on every later render — including
+      // ones where only tickFontSize changed. `tickfont` has to be applied
+      // outside this fallback, not inside it, or the cached object just
+      // keeps whatever font size was baked in the one time this object
+      // literal last ran, which is exactly why only the x-axis (rebuilt
+      // fresh below on every render, with no such cache) ever picked up a
+      // new tickFontSize.
+      ...(axes.current.yaxis || {
+        type: "category" as const,
+        automargin: true,
+        autorange: true,
+        tickvals: y,
+        ticktext: yLabels ? yLabels.map(truncate) : y.map(truncate),
+        domain: z2Key ? [0.25, 0.75] : [0, 1],
+      }),
+      tickfont: { size: tickFontSize },
     };
 
     const layout: Partial<Layout> = {
@@ -255,6 +302,7 @@ function PrototypeCorrelationHeatmap({
         type: "category",
         tickvals: x,
         ticktext: xLabels ? xLabels.map(truncate) : x.map(truncate),
+        tickfont: { size: tickFontSize },
         domain: [0, z2Key ? doubleHeatMapRatio : 1],
         title: { text: zLabel, standoff: 10, font: { size: xAxisFontSize } },
       },
@@ -266,9 +314,10 @@ function PrototypeCorrelationHeatmap({
           type: "category",
           tickvals: x,
           ticktext: xLabels ? xLabels.map(truncate) : x.map(truncate),
+          tickfont: { size: tickFontSize },
           domain: [1 - doubleHeatMapRatio, 1],
           anchor: "y2",
-          title: { text: z2Label, standoff: 10 },
+          title: { text: z2Label, standoff: 10, font: { size: xAxisFontSize } },
         },
       }),
 
@@ -297,7 +346,16 @@ function PrototypeCorrelationHeatmap({
                   line: { width: 2, color: "red" },
                 }
               : null,
-          ]
+            // Plotly.react's live rendering tolerates a `null` entry here
+            // silently (it's simply not part of layout.shapes on the live
+            // plot without a second heatmap), but Plotly.toImage's static
+            // rendering path doesn't: it coerces the `null` into a shape
+            // with every attribute at Plotly's own default — `type: "rect"`,
+            // `xref`/`yref: "paper"`, spanning the full plot 0 to 1, with a
+            // black border — which is exactly the large black rectangle
+            // that only ever showed up in an export, and only without a
+            // second heatmap to fill this slot with a real shape instead.
+          ].filter(Boolean)
         : null,
     };
 
@@ -334,6 +392,76 @@ function PrototypeCorrelationHeatmap({
     plot.zoomIn = () => setTimeout(zoom, 0, "in");
     plot.zoomOut = () => setTimeout(zoom, 0, "out");
     plot.resetZoom = () => setTimeout(zoom, 0, "reset");
+    // Unlike the scatter and density renderers, the heatmap needs no legend
+    // stand-ins or reshaped lines — there are no points, no annotations and
+    // no color-by legend to stand in for. `downloadImage` keeps handing
+    // Plotly this graph div directly (the safer of the two paths — Plotly
+    // deep-copies a div but not a plain figure) for callers that don't need
+    // the export options below; `getImageFigure` clones for those that do.
+    plot.getImageFigure = (options) => {
+      const edgePadding = options?.edgePadding ?? EXPORT_EDGE_PADDING;
+      const chromeLineWidth =
+        options?.chromeLineWidth ?? DEFAULT_CHROME_LINE_WIDTH;
+      // `options.dataLineWidth`/`violinLineWidth` are accepted by the shared
+      // getImageFigure type but unused here — no identity/regression lines
+      // or violins on a heatmap. `options.yAxisLabel` is unused too — the Y
+      // axis is a plain list of row tick labels, not a single title.
+      const xAxisLabelOverride = options?.xAxisLabel;
+      // Only meaningful with z2Key (the "distinguish" split) — otherwise
+      // there's no second panel for it to label.
+      const secondaryXAxisLabelOverride = options?.secondaryXAxisLabel;
+
+      const chromeOverrides = calcChromeAxisOverrides(chromeLineWidth);
+
+      const xaxisOverride = {
+        ...plot.layout.xaxis,
+        ...chromeOverrides,
+        title: {
+          ...(plot.layout.xaxis as any)?.title,
+          ...(xAxisLabelOverride !== undefined
+            ? { text: xAxisLabelOverride }
+            : {}),
+          standoff:
+            ((plot.layout.xaxis as any)?.title?.standoff ?? 10) + edgePadding,
+        },
+      };
+
+      return cloneFigureForExport(plot.data, {
+        ...plot.layout,
+        xaxis: xaxisOverride,
+        yaxis: {
+          ...plot.layout.yaxis,
+          ...chromeOverrides,
+        },
+        // The z2Key ("distinguish" split) case has a second pair of axes
+        // for its own panel. Chrome scales both; the label override has its
+        // own control (secondaryXAxisLabel) and, like the primary axis,
+        // grows standoff by edgePadding to match the margin seeded below.
+        ...(z2Key
+          ? {
+              xaxis2: {
+                ...plot.layout.xaxis2,
+                ...chromeOverrides,
+                title: {
+                  ...(plot.layout.xaxis2 as any)?.title,
+                  ...(secondaryXAxisLabelOverride !== undefined
+                    ? { text: secondaryXAxisLabelOverride }
+                    : {}),
+                  standoff:
+                    ((plot.layout.xaxis2 as any)?.title?.standoff ?? 10) +
+                    edgePadding,
+                },
+              },
+              yaxis2: { ...plot.layout.yaxis2, ...chromeOverrides },
+            }
+          : {}),
+        // See exportMarginFloor: seeds the single-shot export render with
+        // the margin this instance already converged to. `b` matches the
+        // standoff growth above; `l` isn't grown to match — there's no
+        // y-axis title standoff to seed room for here.
+        margin: exportMarginFloor(plot, { b: edgePadding }),
+      });
+    };
     plot.downloadImage = (options) => Plotly.downloadImage(plot, options);
     (plot as any).purge = () => Plotly.purge(plot);
 
@@ -395,6 +523,7 @@ function PrototypeCorrelationHeatmap({
     onSelectLabels,
     palette,
     xAxisFontSize,
+    tickFontSize,
     distinguish1Label,
     distinguish2Label,
     Plotly,

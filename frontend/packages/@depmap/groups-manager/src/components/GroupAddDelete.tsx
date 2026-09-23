@@ -15,6 +15,7 @@ interface GroupAddDeleteProps {
   onAdd: (groupArgs: GroupArgs) => void;
   onDelete: (groupIdsSet: Set<string>) => void;
   errorMessage?: string | null;
+  isDeleting?: boolean;
 }
 
 function GroupAddDelete({
@@ -22,6 +23,7 @@ function GroupAddDelete({
   onAdd,
   onDelete,
   errorMessage = null,
+  isDeleting = false,
 }: GroupAddDeleteProps) {
   const [groupName, setGroupName] = useState<string>("");
 
@@ -57,7 +59,7 @@ function GroupAddDelete({
                 onAdd({ name: groupName });
                 setGroupName("");
               }}
-              disabled={groupName.length === 0}
+              disabled={groupName.length === 0 || isDeleting}
             >
               Add new group
             </Button>
@@ -65,9 +67,9 @@ function GroupAddDelete({
               style={{ marginLeft: 10 }}
               bsStyle="danger"
               onClick={() => onDelete(selectedGroupIds)}
-              disabled={selectedGroupIds.size === 0}
+              disabled={selectedGroupIds.size === 0 || isDeleting}
             >
-              Delete selected
+              {isDeleting ? "Deleting…" : "Delete selected"}
             </Button>
           </Row>
         </Col>

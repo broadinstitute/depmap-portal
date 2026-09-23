@@ -458,6 +458,16 @@ def get_dimension_data(
             description="Optional chain of FK joins to reindex the result by a different dimension type."
         ),
     ] = None,
+    indices: Annotated[
+        Optional[List[str]],
+        Body(
+            description=(
+                "Optional dimension IDs to restrict the result to. Only supported for "
+                "tabular columns, and not in combination with `reindex_through`. IDs "
+                "the dataset has no row for are omitted rather than treated as an error."
+            )
+        ),
+    ] = None,
     db: SessionWithUser = Depends(get_db_with_user),
     settings: Settings = Depends(get_settings),
 ):
@@ -473,7 +483,7 @@ def get_dimension_data(
         else None,
     )
     slice_values_by_id = slice_service.get_slice_data(
-        db, settings.filestore_location, parsed_slice_query
+        db, settings.filestore_location, parsed_slice_query, indices=indices
     )
 
     # When reindex_through is present, the result is indexed by the root's entity IDs,

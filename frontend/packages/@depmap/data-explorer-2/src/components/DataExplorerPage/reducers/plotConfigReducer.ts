@@ -81,7 +81,11 @@ export type PlotConfigReducerAction =
       payload: {
         // The axis making the choice.
         key: DimensionKey;
-        // That axis's selection, or null for "go back to aggregating".
+        // That axis's selection, or null for "go back to a single point per
+        // model" — the Single/Multiple toggle returning to Single. NOT the
+        // Facet/Aggregate toggle returning to Aggregate: that axis stays a
+        // multi-member aggregation and merely stops expanding, which is an
+        // ordinary `select_dimension` (see handleExpansionSelection).
         expand_by: {
           // Ignored when another axis already defines an expansion: this axis
           // is joining that one, and adopting its members is the whole point.
@@ -329,11 +333,32 @@ const normalize = (plot: PartialDataExplorerPlotConfig) => {
   // unfaceted plot they had before expanding — not on some invented default.
   if (!nextPlot.expand_by) {
     if (nextPlot.facet_by === "expansion") {
-      nextPlot = omit(nextPlot, "facet_by");
+      // metadata.facet_property only ever backs a "property" facet_by, so it
+      // has nothing left to say once facet_by is gone — but unlike
+      // select_facet_by (which clears its own stale metadata inline), no
+      // other route scrubs it here. Left behind, it keeps riding along on
+      // the in-memory plot and gets sent to the API / read by the
+      // color/facet lookups as if still live, faceting the plot by a
+      // property the UI no longer shows as selected.
+      nextPlot = {
+        ...omit(nextPlot, "facet_by"),
+        metadata: omit(nextPlot.metadata, "facet_property"),
+      };
     }
 
     if (nextPlot.color_by === "expansion") {
-      nextPlot = omit(nextPlot, "color_by");
+      // Same reasoning as facet_property above, for color.
+      nextPlot = {
+        ...omit(nextPlot, "color_by"),
+        metadata: omit(nextPlot.metadata, "color_property"),
+      };
+    }
+
+    // Mirrors the metadata strip near the top of this function, which only
+    // saw the pre-teardown metadata and so can't have caught an object that
+    // only went empty from the omits just above.
+    if (isEmptyObject(nextPlot.metadata)) {
+      nextPlot = omit(nextPlot, "metadata");
     }
   }
 
@@ -970,9 +995,10 @@ function plotConfigReducer(
     case "select_scatter_y_slice": {
       const { dataset_id, slice_label, slice_type, given_id } = action.payload;
 
-      return {
+      return normalize({
         ...plot,
         plot_type: "scatter",
+        expand_by: [],
         dimensions: {
           ...plot.dimensions,
           y: {
@@ -990,7 +1016,7 @@ function plotConfigReducer(
             },
           },
         },
-      };
+      });
     }
 
     case "select_expansion": {
@@ -1003,18 +1029,34 @@ function plotConfigReducer(
         (k) => k !== key
       );
 
-      // Leave: this axis stops expanding and goes back to a plain aggregation.
-      // We don't stash the pre-expansion dimension, so this resets
-      // `aggregation` to a default rather than restoring prior state;
-      // `slice_type` and `context` are left as-is, which is exactly right —
-      // "the mean over these transcripts" is the sensible thing to land on
-      // after turning off "one point per transcript".
+      // Leave: this axis stops expanding and goes back to a single point per
+      // model. This is the Single/Multiple toggle returning to Single, which is
+      // the only gesture that dispatches a null `expand_by` — so the landing
+      // state is not a choice the reducer makes up, it's the one the toggle
+      // already implies: `raw_slice` with the take-first selection, which is
+      // what the select itself resolves to (resolveNextState).
+      //
+      // `context` goes with it: a multi-member context is meaningless on an
+      // axis that now plots one slice, and leaving it in place would show the
+      // old member set in the entity select. `slice_type` and `dataset_id`
+      // survive, so the user picks a transcript from the same dataset they
+      // were already expanding rather than rebuilding the axis.
+      //
+      // The Facet/Aggregate toggle does NOT come through here — turning off
+      // expansion while staying on a multi-member context is an ordinary
+      // dimension edit, and `normalize` below does the expansion teardown for
+      // it. Keeping that out of this branch is what lets the two gestures land
+      // in different places without the payload having to say which is which.
       if (expand_by === null) {
         const dimension = plot.dimensions?.[key];
         const dimensions = { ...plot.dimensions };
 
         if (dimension) {
-          dimensions[key] = { ...dimension, aggregation: "mean" };
+          dimensions[key] = {
+            ...omit(dimension, "context"),
+            axis_type: "raw_slice",
+            aggregation: "first",
+          };
         }
 
         // If another axis is still expanding, the expansion itself survives

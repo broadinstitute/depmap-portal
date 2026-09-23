@@ -10,6 +10,7 @@ from breadbox.models.dataset import (
     AnnotationType,
     Dataset,
 )
+from breadbox.schemas.dataset import ColumnMetadata
 from fastapi.testclient import TestClient
 
 from tests import factories
@@ -986,3 +987,173 @@ def test_get_dimension_data_not_found(
 
     assert_status_not_ok(response)
     assert response.status_code == 404
+
+
+def _tabular_dataset_for_indices(minimal_db, settings):
+    """A tabular dataset over a dimension type whose metadata has one more entity
+    than the dataset has rows -- so a caller subsetting by dimension-type IDs can
+    ask for a row that doesn't exist."""
+    factories.sample_type(
+        minimal_db,
+        settings.admin_users[0],
+        "transcript",
+        id_column="transcript_id",
+        given_ids=["T1", "T2", "T3", "T4"],
+    )
+
+    return factories.tabular_dataset(
+        minimal_db,
+        settings,
+        index_type_name="transcript",
+        given_id="transcript_annotations",
+        data_df=pd.DataFrame(
+            {
+                "transcript_id": ["T1", "T2", "T3"],
+                "label": ["T1", "T2", "T3"],
+                "sequence": ["MKV", "AAL", "GGP"],
+            }
+        ),
+        columns_metadata={
+            "transcript_id": ColumnMetadata(col_type=AnnotationType.text),
+            "label": ColumnMetadata(col_type=AnnotationType.text),
+            "sequence": ColumnMetadata(col_type=AnnotationType.text),
+        },
+    )
+
+
+def test_get_dimension_data_with_indices(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    _tabular_dataset_for_indices(minimal_db, settings)
+
+    response = client.post(
+        "/datasets/dimension/data",
+        json={
+            "dataset_id": "transcript_annotations",
+            "identifier": "sequence",
+            "identifier_type": "column",
+            "indices": ["T1", "T3"],
+        },
+        headers={"X-Forwarded-User": "some-public-user"},
+    )
+
+    assert_status_ok(response)
+    content = response.json()
+    assert content["ids"] == ["T1", "T3"]
+    assert content["labels"] == ["T1", "T3"]
+    assert content["values"] == ["MKV", "GGP"]
+
+
+def test_get_dimension_data_with_indices_tolerates_missing_rows(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    """T4 exists in the dimension type but has no row in this dataset. That is a
+    coverage hole, not an error -- it is simply omitted from the result."""
+    _tabular_dataset_for_indices(minimal_db, settings)
+
+    response = client.post(
+        "/datasets/dimension/data",
+        json={
+            "dataset_id": "transcript_annotations",
+            "identifier": "sequence",
+            "identifier_type": "column",
+            "indices": ["T1", "T4"],
+        },
+        headers={"X-Forwarded-User": "some-public-user"},
+    )
+
+    assert_status_ok(response)
+    content = response.json()
+    assert content["ids"] == ["T1"]
+    assert content["values"] == ["MKV"]
+
+
+def test_get_dimension_data_without_indices_is_unchanged(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    _tabular_dataset_for_indices(minimal_db, settings)
+
+    response = client.post(
+        "/datasets/dimension/data",
+        json={
+            "dataset_id": "transcript_annotations",
+            "identifier": "sequence",
+            "identifier_type": "column",
+        },
+        headers={"X-Forwarded-User": "some-public-user"},
+    )
+
+    assert_status_ok(response)
+    content = response.json()
+    assert content["ids"] == ["T1", "T2", "T3"]
+    assert content["values"] == ["MKV", "AAL", "GGP"]
+
+
+def test_get_dimension_data_rejects_indices_with_reindex_through(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    _tabular_dataset_for_indices(minimal_db, settings)
+
+    response = client.post(
+        "/datasets/dimension/data",
+        json={
+            "dataset_id": "transcript_annotations",
+            "identifier": "sequence",
+            "identifier_type": "column",
+            "indices": ["T1"],
+            "reindex_through": {
+                "dataset_id": "transcript_annotations",
+                "identifier": "label",
+                "identifier_type": "column",
+            },
+        },
+        headers={"X-Forwarded-User": "some-public-user"},
+    )
+
+    assert_status_not_ok(response)
+
+
+def test_get_dimension_data_with_indices_matching_no_rows(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    """A row set that intersects nothing is an empty result, not a complaint about
+    the column. The strict column check has to consult the dataset's schema rather
+    than the (empty) result frame, or a perfectly valid column name gets reported
+    as missing."""
+    _tabular_dataset_for_indices(minimal_db, settings)
+
+    response = client.post(
+        "/datasets/dimension/data",
+        json={
+            "dataset_id": "transcript_annotations",
+            "identifier": "sequence",
+            "identifier_type": "column",
+            "indices": ["T4"],
+        },
+        headers={"X-Forwarded-User": "some-public-user"},
+    )
+
+    assert_status_not_ok(response)
+    assert response.status_code == 404
+    assert "missing columns" not in response.json()["detail"]
+
+
+def test_get_dimension_data_still_rejects_an_unknown_column(
+    client: TestClient, minimal_db: SessionWithUser, public_group, settings,
+):
+    """The relaxation above must not swallow a genuinely bad column name."""
+    _tabular_dataset_for_indices(minimal_db, settings)
+
+    response = client.post(
+        "/datasets/dimension/data",
+        json={
+            "dataset_id": "transcript_annotations",
+            "identifier": "no_such_column",
+            "identifier_type": "column",
+            "indices": ["T1"],
+        },
+        headers={"X-Forwarded-User": "some-public-user"},
+    )
+
+    assert_status_not_ok(response)
+    assert "no_such_column" in response.json()["detail"]

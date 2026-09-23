@@ -1,4 +1,4 @@
-import { breadboxAPI, cached } from "@depmap/api";
+import { breadboxAPI, cached, PUBLIC_GROUP_ID } from "@depmap/api";
 import {
   compareCaseInsensitive,
   compareDisabledLast,
@@ -93,15 +93,16 @@ async function fetchContextCoverage(dimension: State["dimension"]) {
   }
 
   try {
-    // wholeCatalog, not persist: true — the response spans every dataset the
-    // caller can see, so the engine persists it only for callers whose whole
-    // catalog is public (keyed by a fingerprint of the listing) and keeps it
-    // in-memory-only for anyone who can see a private dataset. See ADR 0008.
+    // Asked at public scope so it can be persisted: a default-scope response
+    // depends on who is asking and could not be written to a disk the next
+    // user of the machine can read. The cost is that private datasets come
+    // back unmeasured, which the filter below accounts for. See ADR 0008.
     const coverage = await cached(breadboxAPI, {
-      persist: { wholeCatalog: true },
+      persist: { publicCatalog: true },
     }).getContextDatasetCoverage(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dimension.context as any
+      dimension.context as any,
+      "public"
     );
 
     // A zero total means either the context resolved to nothing or the request
@@ -124,7 +125,14 @@ async function fetchContextCompatibleDatasets(dimension: State["dimension"]) {
     return datasets;
   }
 
-  return datasets.filter((d) => (coverage.counts[d.id] ?? 0) > 0);
+  // Absent from `counts` means two different things now that coverage is asked
+  // at public scope. For a public dataset it means measured and empty, so drop
+  // it. For a private one it means never measured — the same "no opinion" the
+  // null case above gets — so keep it. Reading that as zero would hide every
+  // private data version from the people who can see them.
+  return datasets.filter((d) =>
+    d.group_id === PUBLIC_GROUP_ID ? (coverage.counts[d.id] ?? 0) > 0 : true
+  );
 }
 
 async function fetchContextCompatibleDataTypes(dimension: State["dimension"]) {

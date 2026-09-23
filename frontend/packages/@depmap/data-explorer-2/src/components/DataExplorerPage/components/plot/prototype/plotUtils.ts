@@ -3294,6 +3294,60 @@ export function calcAutoscaleShapes(
   ];
 }
 
+export const DEFAULT_DATA_LINE_WIDTH = 2;
+
+// calcPlotIndicatorLineShapes's `extents` are the data's own exact min/max
+// (see getRange) — tighter than the axis's displayed range, which autorange
+// pads a little beyond the data on every side. On screen that gap is
+// invisible: the live plot defers its real shapes until *after* autorange
+// has already settled (see the plotly_afterplot handler) and deliberately
+// oversizes them (simulateInfiteLength) so they always reach past whatever
+// the current zoom shows, regardless of range. The export path can't use
+// that trick — it's a single-shot render with no afterplot step to defer
+// to, so an oversized shape would get folded into that one pass's own
+// autorange and blow the scale out, which is why export always passes
+// simulateInfiteLength: false instead. The gap that leaves (a line that
+// stops at the data's own bounds, short of the axis edges) isn't fixed by
+// oversizing — it's fixed by reaching for the plot's own already-fixed axis
+// range instead of the data's exact bounds. That's safe specifically
+// because the range is already fixed (autorange: false, from a completed
+// prior render) by the time export runs, so a shape sized to reach it has
+// nothing left to feed back into.
+export function widenExtentsToAxisRange(
+  extents: {
+    minX: number;
+    maxX: number;
+    minY: number;
+    maxY: number;
+    rangeX: number;
+    rangeY: number;
+  },
+  xRange: [number, number] | null | undefined,
+  yRange: [number, number] | null | undefined
+) {
+  const minX = xRange
+    ? Math.min(extents.minX, xRange[0], xRange[1])
+    : extents.minX;
+  const maxX = xRange
+    ? Math.max(extents.maxX, xRange[0], xRange[1])
+    : extents.maxX;
+  const minY = yRange
+    ? Math.min(extents.minY, yRange[0], yRange[1])
+    : extents.minY;
+  const maxY = yRange
+    ? Math.max(extents.maxY, yRange[0], yRange[1])
+    : extents.maxY;
+
+  return {
+    minX,
+    maxX,
+    minY,
+    maxY,
+    rangeX: maxX - minX,
+    rangeY: maxY - minY,
+  };
+}
+
 export function calcPlotIndicatorLineShapes(
   showIdentityLine: boolean,
   regressionLines: RegressionLine[] | null | undefined,
@@ -3311,7 +3365,12 @@ export function calcPlotIndicatorLineShapes(
   // The faceted renderer passes one panel's pair (e.g. "x2"/"y2") to draw the
   // same shapes inside that subplot; endpoints still span the matches-shared
   // extents, so only the refs (and the per-facet slope/intercept) differ.
-  axisRefs: { xref: string; yref: string } = { xref: "x", yref: "y" }
+  axisRefs: { xref: string; yref: string } = { xref: "x", yref: "y" },
+  // Export-only (see ExportImageModal's dataLineWidth). Every on-screen
+  // caller omits this, so it defaults to exactly today's regression
+  // mainLine width and every derived width below reduces to today's literal
+  // (2 -> main 2, halo 4, identity 1/1).
+  dataLineWidth: number = DEFAULT_DATA_LINE_WIDTH
 ) {
   const shapes: Layout["shapes"] = [];
   const xref = axisRefs.xref as XAxisName;
@@ -3341,8 +3400,15 @@ export function calcPlotIndicatorLineShapes(
       y1: p1,
     };
 
-    const solidLine = { width: 1, color: "#FFFFFF66" };
-    const dottedLine = { width: 1, color: "#444", dash: "dot" as const };
+    // A ratio, not a delta from mainLine below, so identity stays at its
+    // existing 2:1 subtlety relative to regression lines at any width.
+    const identityWidth = dataLineWidth / 2;
+    const solidLine = { width: identityWidth, color: "#FFFFFF66" };
+    const dottedLine = {
+      width: identityWidth,
+      color: "#444",
+      dash: "dot" as const,
+    };
     shapes.push({ ...shape, line: solidLine });
     shapes.push({ ...shape, line: dottedLine });
   }
@@ -3366,8 +3432,11 @@ export function calcPlotIndicatorLineShapes(
         y1: line.m * p1 + line.b,
       };
 
-      const contrastLine = { width: 4, color: "ffffff88" };
-      const mainLine = { width: 2, color: line.color };
+      // A constant halo delta, not a multiplier, so the outline doesn't
+      // blow out at large widths — it's always exactly 2px wider than the
+      // line it outlines.
+      const contrastLine = { width: dataLineWidth + 2, color: "ffffff88" };
+      const mainLine = { width: dataLineWidth, color: line.color };
       shapes.unshift({ ...shape, line: contrastLine });
       shapes.push({ ...shape, line: mainLine });
     });
@@ -3379,6 +3448,27 @@ export function calcPlotIndicatorLineShapes(
 export interface LegendInfo {
   title: string;
   items: { name: string; hexColor: string }[];
+}
+
+// Export-only (see ExportImageModal's legend editor). `itemLabels` is
+// matched by index against `legendForDownload.items` — the set and order
+// of items is derived from the same data/palette/hidden-legend state on
+// every render, so it can't reorder out from under an override while the
+// modal is open. Colors are never part of this: only the two renderers
+// that call this pass their `legendForDownload` through it, right before
+// building the traces/title that actually go in the export.
+export function applyLegendLabelOverrides(
+  legendForDownload: LegendInfo,
+  titleOverride: string | undefined,
+  itemLabelOverrides: string[] | undefined
+): LegendInfo {
+  return {
+    title: titleOverride ?? legendForDownload.title,
+    items: legendForDownload.items.map((item, i) => ({
+      ...item,
+      name: itemLabelOverrides?.[i] ?? item.name,
+    })),
+  };
 }
 
 const truncateLegendName = (s: string) => {
@@ -3413,6 +3503,518 @@ export const getLegendTraces = (
       },
     };
   });
+
+// A plain Plotly figure, detached from any graph div. This is what the
+// renderers' `getImageFigure` returns and what both the export and its preview
+// are rendered from, so that the preview is the exported image by
+// construction rather than by imitation.
+export interface ImageFigure {
+  data: object[];
+  layout: Partial<Layout>;
+}
+
+// Every nested object an export or a preview might write to, copied; every
+// large array shared. Both halves matter.
+//
+// The copying is not defensive programming, it is required. `Plotly.toImage`
+// and `Plotly.downloadImage` deep-copy a *graph div* but NOT a plain figure
+// object (see plotly.js's plot_api/to_image.js: the isPlainObject branch takes
+// `gd.data` and `gd.layout` as-is, then only extendFlats the layout). They then
+// call `newPlot`, which stamps `uid`s onto trace objects and writes
+// autorange-derived ranges back into axis objects. Those objects are shared
+// with the live plot — `plot.layout.xaxis` is the very object the renderers
+// keep in `axes.current`, and each annotation carries the user's dragged
+// `ax`/`ay`. Exporting used to be a one-shot action and got away with it; a
+// preview that re-renders on every edit would corrupt the live plot's zoom and
+// label positions.
+//
+// The sharing matters just as much: `x`, `y`, `text`, `selectedpoints` and a
+// continuous `marker.color` run to tens of thousands of entries and are only
+// ever read. Deep-copying them (or worse, round-tripping through JSON, which
+// would also drag in Plotly's `_`-prefixed internals) would mean megabytes of
+// churn per keystroke.
+const AXIS_KEY = /^[xy]axis\d*$/;
+
+const copyShallow = <T>(obj: T | undefined): T | undefined =>
+  obj ? { ...obj } : obj;
+
+export function cloneFigureForExport(
+  data: readonly object[],
+  layout: Partial<Layout>
+): ImageFigure {
+  const clonedData = data.map((trace) => {
+    const t = { ...trace } as Record<string, any>;
+
+    if (t.marker) {
+      t.marker = { ...t.marker };
+
+      if (t.marker.line) {
+        t.marker.line = { ...t.marker.line };
+      }
+    }
+
+    t.selected = copyShallow(t.selected);
+
+    // Dimming unselected points is a screen-only affordance; it's a
+    // distraction in a static export, which has nothing to explain it, and
+    // the selection-outline trace's ring already marks what's selected
+    // there. Only the traces that implement the dim ever set a non-zero
+    // `unselected.marker.opacity` — the outline trace deliberately uses
+    // exactly `0` to hide itself on unselected points, and must be left
+    // alone, or every point would gain a ring instead of just the selected
+    // ones.
+    t.unselected = copyShallow(t.unselected);
+    if (t.unselected?.marker?.opacity > 0) {
+      t.unselected = {
+        ...t.unselected,
+        marker: {
+          ...t.unselected.marker,
+          opacity: t.selected?.marker?.opacity ?? 1,
+        },
+      };
+    }
+
+    t.hoverlabel = copyShallow(t.hoverlabel);
+
+    return t;
+  });
+
+  const clonedLayout = { ...layout } as Record<string, any>;
+
+  Object.keys(clonedLayout).forEach((key) => {
+    if (AXIS_KEY.test(key) && clonedLayout[key]) {
+      const axis = { ...clonedLayout[key] };
+      axis.title = copyShallow(axis.title);
+      axis.tickfont = copyShallow(axis.tickfont);
+      clonedLayout[key] = axis;
+    }
+  });
+
+  if (clonedLayout.annotations) {
+    clonedLayout.annotations = clonedLayout.annotations.map((a: object) => ({
+      ...a,
+    }));
+  }
+
+  if (clonedLayout.shapes) {
+    clonedLayout.shapes = clonedLayout.shapes.map((s: object) => ({ ...s }));
+  }
+
+  if (clonedLayout.legend) {
+    const legend = { ...clonedLayout.legend };
+    legend.title = copyShallow(legend.title);
+    legend.font = copyShallow(legend.font);
+    clonedLayout.legend = legend;
+  }
+
+  return { data: clonedData, layout: clonedLayout as Partial<Layout> };
+}
+
+// A dragged (or freshly assigned) annotation tail, stored as a vector
+// (direction + distance) rather than the raw ax/ay pixel offset Plotly's
+// annotations actually take. ax/ay are a fixed pixel offset from the point
+// to the label: if the label later renders at a different
+// `annotationFontSize` (e.g. carried over from the live plot into an export
+// whose styles are edited afterward), that same offset leaves
+// proportionally less room around a bigger label than it did around the one
+// it was placed for. Storing distance+angle instead, tagged with the font
+// size the distance made sense at, lets a later render rescale the distance
+// in proportion to how much the font size has changed since — see
+// resolveAnnotationTail — rather than replaying a fixed pixel count that was
+// only ever right for one specific size.
+export interface AnnotationTail {
+  angle: number;
+  distance: number;
+  fontSize: number;
+}
+
+export function captureAnnotationTail(
+  ax: number,
+  ay: number,
+  fontSize: number
+): AnnotationTail {
+  return {
+    angle: Math.atan2(ay, ax),
+    distance: Math.sqrt(ax * ax + ay * ay),
+    fontSize,
+  };
+}
+
+// A tail scaled up without limit can end up well outside the plot — e.g.
+// captured at the live plot's default 12px and resolved at an export's 50px
+// (its upper bound) is a 4x+ jump. There's no general way to keep a label
+// in bounds by adding margin instead (see the discussion this cap came out
+// of): a label anchored to a point in the middle of the plot can be pushed
+// outward in any direction, so it doesn't sit near a boundary that padding
+// could even address. Capping the ratio directly is the targeted fix — it
+// leaves the common case (the live plot's ~12px default growing into an
+// export's ~24-28px default, a 2x ratio) untouched, while bounding the
+// worst case a font-size slider can produce.
+const MAX_ANNOTATION_TAIL_SCALE = 2.5;
+
+// The inverse of captureAnnotationTail, at whatever font size is current
+// now. A tail captured at a 0 or unknown font size (defensive only — every
+// real call site supplies one) is returned unscaled rather than blown up by
+// a division by zero.
+export function resolveAnnotationTail(
+  tail: AnnotationTail | undefined,
+  fontSize: number
+): { ax: number; ay: number } | undefined {
+  if (!tail) {
+    return undefined;
+  }
+
+  const scale =
+    tail.fontSize > 0
+      ? Math.min(fontSize / tail.fontSize, MAX_ANNOTATION_TAIL_SCALE)
+      : 1;
+  const distance = tail.distance * scale;
+
+  return {
+    ax: distance * Math.cos(tail.angle),
+    ay: distance * Math.sin(tail.angle),
+  };
+}
+
+// DEFAULT_SETTINGS.plotStyles.annotationFontSize — duplicated as a literal
+// rather than imported, to avoid a dependency from this file on the
+// settings context for one constant.
+const DEFAULT_ANNOTATION_FONT_SIZE = 12;
+
+// The line connecting a point to its label was hardcoded at Plotly's
+// default width (1) regardless of annotationFontSize, so a bigger label
+// (whether from the global setting or an export's own override) kept the
+// same thin connector — no separate width setting for this; it scales with
+// the font size that already governs the label itself, same idea as
+// resolveAnnotationTail scaling the tail's length. 1px at today's default
+// 12px font, growing or shrinking proportionally from there.
+export function calcAnnotationArrowWidth(annotationFontSize: number) {
+  return annotationFontSize / DEFAULT_ANNOTATION_FONT_SIZE;
+}
+
+// The view state a user builds up by interacting with a plot, read back off
+// the live graph div so it can seed a second instance (the export preview).
+export interface TransientPlotState {
+  axes: Partial<Layout>;
+  annotationTails: Record<string, AnnotationTail>;
+}
+
+// Both renderers hold this state in instance-local refs, so a fresh instance
+// starts with neither. Reading it back out of Plotly's own layout is how the
+// renderers already recover it after a user interaction (see either's
+// `plotly_relayout` handler) — this is the same read, hoisted so a caller can
+// do it once, at the moment a preview opens.
+//
+// Deliberately reads `layout`, not `_fullLayout`: the former holds only what
+// the user actually dragged, while the latter would also hand back Plotly's
+// auto-placement for every other label, freezing positions that a new instance
+// should be free to recompute identically for itself.
+export function captureTransientState(
+  plot: {
+    layout: Partial<Layout>;
+  },
+  xKey = "x",
+  yKey = "y"
+): TransientPlotState {
+  // A graph div always has a layout once it has been plotted, but a caller may
+  // reach for this before that happens; there is simply nothing to carry over
+  // in that case.
+  const layout = (plot.layout ?? {}) as Record<string, any>;
+  const annotationTails: TransientPlotState["annotationTails"] = {};
+
+  (layout.annotations ?? []).forEach((annotation: any) => {
+    const { ax, ay, pointIndex, font } = annotation;
+
+    // `pointIndex` is smuggled onto the annotation objects by the renderers so
+    // labels can be keyed by point rather than by array position. Annotations
+    // without one (the over-cap "N selected points" summary) are not per-point
+    // labels and have no tail to restore.
+    if (ax != null && ay != null && pointIndex != null) {
+      annotationTails[`${xKey}-${yKey}-${pointIndex}`] = captureAnnotationTail(
+        ax,
+        ay,
+        font?.size ?? 12
+      );
+    }
+  });
+
+  return {
+    // autorange off, or the new instance would recompute its own extents and
+    // discard the zoom we are trying to carry over.
+    axes: {
+      xaxis: { ...layout.xaxis, autorange: false },
+      yaxis: { ...layout.yaxis, autorange: false },
+    },
+    annotationTails,
+  };
+}
+
+// Neither `Plotly.purge` nor `regl`'s own `destroy` ever calls the
+// `WEBGL_lose_context` extension — both only remove DOM nodes / free GPU
+// buffers, leaving the actual WebGLRenderingContext for the browser to
+// reclaim whenever it next garbage-collects, on no fixed schedule. Every
+// scattergl instance we mount and discard (a facet toggle, the export
+// modal's hidden preview instance) leaves one more context in that limbo.
+// (`Plotly.toImage()` itself is *not* one of these — every export/image
+// render sets `staticPlot: true`, and gl2d's `Scene2D` reuses a single
+// module-level `STATIC_CONTEXT` singleton for every static plot, never a
+// fresh one per call — see plotly.js/src/plots/gl2d/scene2d.js.) Enough
+// contexts piling up un-GC'd trips the browser's hard cap on live contexts
+// *for the whole renderer process* (other tabs count too), and it evicts
+// the *oldest* one to make room — often the main, still-visible plot's —
+// which is what "Too many active WebGL contexts" followed by a blank plot
+// is. Call this before `Plotly.purge` on every unmount so the context is
+// actually freed there and then, instead of leaking until GC decides to
+// run.
+export function releaseWebglContexts(gd: HTMLElement | null | undefined) {
+  if (!gd) {
+    return;
+  }
+
+  gd.querySelectorAll<HTMLCanvasElement>("canvas.gl-canvas").forEach(
+    (canvas) => {
+      const gl = (canvas.getContext("webgl") ||
+        canvas.getContext(
+          "experimental-webgl"
+        )) as WebGLRenderingContext | null;
+
+      gl?.getExtension("WEBGL_lose_context")?.loseContext();
+    }
+  );
+}
+
+// Belt-and-suspenders alongside `releaseWebglContexts`: if the main plot's
+// own context still gets evicted (e.g. something outside this app — another
+// tab, another plot on the page — was already crowding the browser's
+// per-process context cap), regl recovers its own GPU resources
+// automatically once the browser restores the context (see regl's
+// `handleContextRestored` in regl/dist/regl.js), but Plotly's higher-level
+// scene does not automatically re-issue a draw when that happens — nothing
+// visible happens on its own. Plotly only ever emits a *lost* event
+// (`plotly_webglcontextlost`, see prepare_regl.js) and redrawing at that
+// point is a no-op, since the context is still unusable; there is no
+// `plotly_webglcontextrestored` to catch instead, so this listens for the
+// raw DOM event on the canvas(es) directly, at the moment a redraw can
+// actually do something. Returns a cleanup function for the caller's
+// unmount/re-render teardown.
+export function onWebglContextRestored(
+  gd: HTMLElement | null | undefined,
+  callback: () => void
+) {
+  if (!gd) {
+    return () => {};
+  }
+
+  const canvases = Array.from(
+    gd.querySelectorAll<HTMLCanvasElement>("canvas.gl-canvas")
+  );
+
+  canvases.forEach((canvas) =>
+    canvas.addEventListener("webglcontextrestored", callback, false)
+  );
+
+  return () => {
+    canvases.forEach((canvas) =>
+      canvas.removeEventListener("webglcontextrestored", callback)
+    );
+  };
+}
+
+// A few px of blank space between axis text and the edge of an exported
+// image. On screen, text flush with a margin's floor is fine — there's
+// browser chrome and page background around it. A rasterized PNG has nothing
+// outside its own bounds, so the same floor reads as text cut off at the
+// edge.
+export const EXPORT_EDGE_PADDING = 4;
+
+// Export-only (see ExportImageModal's chromeLineWidth). None of the
+// renderers set gridwidth/gridcolor today — it's all Plotly's own thin
+// defaults (gridwidth effectively 1, no axis border line at all). At the
+// default width this is a no-op, so a default export is unchanged.
+// Deliberately doesn't touch `showline`/`linewidth`/`linecolor` — an axis
+// border was never part of what showed up on screen, and an earlier version
+// of this turned one on as a side effect of any non-default width
+// (including 0), which just looked like an unexplained line appearing out
+// of nowhere the instant the value left its default. Colors are fixed
+// constants, not exposed as a setting — only width is in scope.
+export const DEFAULT_CHROME_LINE_WIDTH = 1;
+const EXPORT_CHROME_GRID_COLOR = "#ddd";
+const EXPORT_CHROME_LINE_COLOR = "#444";
+
+export function calcChromeAxisOverrides(chromeLineWidth: number) {
+  if (chromeLineWidth === DEFAULT_CHROME_LINE_WIDTH) {
+    return {};
+  }
+
+  // A `width: 0` line isn't reliably invisible — rasterizing an SVG stroke
+  // of width 0 to a PNG can draw a one-device-pixel hairline instead of
+  // nothing, which is what showed up as "some width between 1 and 2px"
+  // once that pixel got scaled back down to fit the preview pane. Hiding
+  // each element outright, rather than asking Plotly for a zero-width
+  // version of it, is what actually removes it.
+  if (chromeLineWidth === 0) {
+    return {
+      showgrid: false,
+      zeroline: false,
+      ticks: "" as const,
+    };
+  }
+
+  return {
+    gridwidth: chromeLineWidth,
+    gridcolor: EXPORT_CHROME_GRID_COLOR,
+    // Explicitly forced off, not left alone: on screen `ticks` defaults to
+    // "" (none drawn) precisely because nothing ever sets tickwidth or
+    // tickcolor — see handleTickMarkDefaults in
+    // plotly.js/src/plots/cartesian/tick_mark_defaults.js, which flips its
+    // own default to "outside" the moment either one is merely *present*
+    // in the input layout, regardless of value. So the small perpendicular
+    // tick marks that suddenly appeared at any non-default width here
+    // weren't this width taking effect — they were Plotly reacting to
+    // tickwidth/tickcolor being set at all, on an axis that had never
+    // drawn tick marks before. This scales the zero line and gridlines
+    // only; it never touches tick marks, at any width.
+    ticks: "" as const,
+    // The zero line is a third, separate line Plotly draws on top of the
+    // grid at each axis's 0 value — already more prominent than a regular
+    // gridline by default (a darker line color at the same 1px width), so
+    // leaving it unscaled would flip that: thin next to the now-thickened
+    // gridlines around it. Width/color only — deliberately not `zeroline:
+    // true`, so a renderer that's turned it off (SmallMultiplesScatter)
+    // stays off.
+    zerolinewidth: chromeLineWidth,
+    zerolinecolor: EXPORT_CHROME_LINE_COLOR,
+  };
+}
+
+// Export-only (see ExportImageModal's violinLineWidth). Matches Plotly's
+// own violin `line.width` default (2), and the outline halo's own hardcoded
+// `width: 4` in PrototypeDensity1D — so at the default this reduces to
+// exactly today's two literals, same halo-is-a-fixed-delta reasoning as
+// calcPlotIndicatorLineShapes's dataLineWidth.
+export const DEFAULT_VIOLIN_LINE_WIDTH = 2;
+
+export function calcViolinOutlineWidth(violinLineWidth: number) {
+  return violinLineWidth + 2;
+}
+
+// Export-only (see ExportImageModal's tickFontSize — correlation heatmap
+// only). Matches Plotly's own global default font size, which is what every
+// heatmap tick label and colorbar tick has rendered at all along, since
+// nothing has ever set a `tickfont` on either axis or on the trace's own
+// `colorbar`. At this default, passing it through explicitly is a no-op.
+export const DEFAULT_TICK_FONT_SIZE = 12;
+
+// Plotly's own line-height multiplier (alignment.js) — reused here rather
+// than duplicated, since the goal is to match what a real rendered line
+// actually takes up.
+const LINE_SPACING = 1.3;
+
+// A native Plotly title on an automargin'd axis grows its own reserved
+// space for extra `<br>`-separated lines for free — see approxTitleDepth in
+// plotly.js/src/plots/cartesian/axes.js, which literally counts them. A
+// paper-anchored annotation (SmallMultiplesScatter's own axis labels — see
+// its annotation construction) has no automargin measuring it at all, so a
+// margin sized for one line doesn't grow on its own for a second or third;
+// it just clips or overlaps the plot. This is the same idea, computed by
+// hand: how much *more* space (beyond the first line) a label needs.
+export function calcExtraLinesMargin(text: string, fontSize: number) {
+  const lineCount = (text.match(/<br\s*\/?>/gi) ?? []).length + 1;
+  return (lineCount - 1) * fontSize * LINE_SPACING;
+}
+
+// `plot.layout.margin` never reflects what `automargin` actually grew it to
+// — Plotly keeps that in `margin` only as "the requested floor" and puts the
+// converged, real pixel sizes in `_fullLayout._size` instead (see
+// doAutoMargin in plotly.js/src/plots/plots.js). That distinction is usually
+// invisible, but it matters here: `Plotly.toImage` renders the export figure
+// on a brand-new graph div in a single pass, and for a large jump in font
+// size (exporting at 28px from a floor sized for a ~14px live plot) that one
+// pass doesn't reliably re-grow the margin enough — axis text ends up
+// overlapping the plot area or its own tick marks. `plot` here has already
+// converged through its normal, multi-pass render lifecycle at whatever font
+// size is currently applied to it, so reading its real `_size` and handing
+// that to the export figure as the new floor means the single-shot render
+// has nothing left to converge — it's already correct.
+export function exportMarginFloor(
+  plot: { layout: Partial<Layout> },
+  padding: { l?: number; b?: number } = {}
+) {
+  const size = ((plot as unknown) as { _fullLayout?: Record<string, any> })
+    ._fullLayout?._size;
+  const requested = (plot.layout.margin ?? {}) as Record<string, number>;
+  const base: Record<string, number> = size
+    ? { l: size.l, r: size.r, t: size.t, b: size.b }
+    : requested;
+
+  return {
+    ...base,
+    l: (base.l ?? 0) + (padding.l ?? 0),
+    b: (base.b ?? 0) + (padding.b ?? 0),
+  };
+}
+
+// Where the built-in legend goes in an exported image. Not a plot style: it
+// affects exports only, so it lives in the export config rather than leaking a
+// control into the global settings modal and the embed's `styles` param.
+export type ExportLegendPosition = "right" | "above" | "hidden";
+
+// One mapping, shared by every renderer's `getImageFigure`, so the three can't
+// drift into disagreeing about what "above" means.
+//
+// The trade-off this exists to let someone choose: Plotly reserves margin for
+// the legend either way, so it shrinks the plot rather than overlapping it —
+// what differs is which dimension it spends. A vertical legend takes width and
+// is capped at the plot area's height, and Plotly puts the overflow in a
+// scrollbox, which in a rasterized image means entries a reader can't reach.
+// (Worst case here is 42 entries: HARD_MAX_CATEGORIES plus the remainder and
+// "other" keys.) A horizontal one takes height, wraps to more rows instead of
+// clipping, and is capped at half the figure height.
+//
+// Placed above rather than below the plot: the band below is shared with the
+// x-axis title, whose height (in pixels) grows with the axis font size, while
+// legend position is in paper coordinates (a fraction of plot height) — no
+// fixed offset can reliably clear a pixel-sized, font-dependent band. The
+// band above holds only the fixed top margin, so there's nothing to collide
+// with.
+export function legendLayoutFor(
+  position: ExportLegendPosition,
+  { title, fontSize }: { title: string; fontSize: number }
+) {
+  if (position === "hidden") {
+    return { showlegend: false };
+  }
+
+  const legend: Record<string, unknown> = {
+    // Plotly's own default makes the title font 20% larger than the item
+    // font, which desyncs their baselines (each is vertically positioned
+    // using its own line height — see legend/draw.js). Matching the sizes
+    // keeps title and items on the same baseline.
+    title: { text: title, font: { size: fontSize } },
+    font: { size: fontSize },
+  };
+
+  if (position === "above") {
+    Object.assign(legend, {
+      orientation: "h",
+      // Centered above the plot. Plotly's own horizontal default is x: 0
+      // (left-aligned), which reads worse above a centered axis title.
+      x: 0.5,
+      xanchor: "center",
+      y: 1.02,
+      yanchor: "bottom",
+    });
+  }
+
+  return { showlegend: true, legend };
+}
+
+// The dummy traces exist only to draw the legend, so a hidden legend shouldn't
+// carry them. One of them uses a `type: "indicator"` hack to avoid interfering
+// with the real traces (see getLegendTraces); keeping them around invisible is
+// pointless risk.
+export const wantsLegendTraces = (position: ExportLegendPosition) =>
+  position !== "hidden";
 
 export interface SolidColorGroup {
   color: string;

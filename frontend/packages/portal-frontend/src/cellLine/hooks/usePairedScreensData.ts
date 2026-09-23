@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { breadboxAPI, cached } from "@depmap/api";
-import { enabledFeatures } from "@depmap/globals";
 import getResistanceScreenTable, {
   ResistanceRow,
 } from "../utilities/getResistanceScreenTable";
@@ -64,15 +63,6 @@ export function usePairedScreensData(modelId: string): PairedScreensState {
 
   useEffect(() => {
     let mounted = true;
-
-    if (!enabledFeatures.anchor_and_resistance_screen_dashboards) {
-      setLoading(false);
-      setData(null);
-
-      return () => {
-        mounted = false;
-      };
-    }
 
     setLoading(true);
     setError(null);

@@ -14,23 +14,39 @@ import type {
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
+  AnnotationTail,
+  applyLegendLabelOverrides,
+  calcAnnotationArrowWidth,
   calcAnnotationPositions,
   calcAutoscaleShapes,
+  calcChromeAxisOverrides,
   calcPlotIndicatorLineShapes,
+  captureAnnotationTail,
   categoricalDataToValueCounts,
+  cloneFigureForExport,
   countExclusivelyTrueValues,
   countInclusivelyTrueValues,
   DataExplorerColorPalette,
+  DEFAULT_CHROME_LINE_WIDTH,
+  DEFAULT_DATA_LINE_WIDTH,
   DEFAULT_PALETTE,
+  EXPORT_EDGE_PADDING,
+  exportMarginFloor,
   getLegendTraces,
   getRange,
+  legendLayoutFor,
+  wantsLegendTraces,
   hexToRgba,
   LEGEND_REMAINDER,
   LegendInfo,
   LegendKey,
   NEUTRAL_FACET_FILL,
+  onWebglContextRestored,
   orderContinuousPointsByBin,
+  releaseWebglContexts,
+  resolveAnnotationTail,
   RegressionLine,
+  widenExtentsToAxisRange,
 } from "./plotUtils";
 import usePlotResizer from "./usePlotResizer";
 import installFacetSelectionDragLayer, {
@@ -78,12 +94,22 @@ interface Props {
   customHoverinfo?: PlotData["hoverinfo"];
   hideXAxis?: boolean;
   hideXAxisGrid?: boolean;
+  // True only for Waterfall (which renders through this same component):
+  // its x "value" is a rank position, not real data, so once a genuine
+  // title override replaces the default "Rank" text, the tick numbers
+  // below it are dropped too (see getImageFigure). A real scatter plot's
+  // x-axis is actual data — those numbers stay no matter what the title
+  // says — so this must default to false for every other caller.
+  xAxisIsRank?: boolean;
   showBuiltinLegend?: boolean;
   // optional styling
   pointSize?: number;
   pointOpacity?: number;
   outlineWidth?: number;
   palette?: DataExplorerColorPalette;
+  // Point labels. Their own setting rather than a ratio of the axis
+  // font: these sit inside the plot area competing with the data.
+  annotationFontSize?: number;
   xAxisFontSize?: number;
   yAxisFontSize?: number;
   // When true, box/lasso selection is replaced with a custom drag whose marquee
@@ -110,6 +136,14 @@ interface Props {
   // facet_by to report here (that case already routes to
   // SmallMultiplesScatter instead of this component).
   hasFacetOptionsEnabled?: boolean;
+  // Transient view state to start from, instead of this instance building its
+  // own up from scratch. Both are normally accumulated by interacting with the
+  // plot (zooming, dragging a label's tail) and held in instance-local refs,
+  // so a second instance of the same plot — the export preview — would
+  // otherwise open autoranged with every label back at its default position.
+  // Produce these with `captureTransientState` against the live plot.
+  initialAxes?: Partial<Layout>;
+  initialAnnotationTails?: Record<string, AnnotationTail>;
 }
 
 type PlotlyType = typeof Plotly;
@@ -189,11 +223,13 @@ function PrototypeScatterPlot({
   customHoverinfo = undefined,
   hideXAxis = false,
   hideXAxisGrid = false,
+  xAxisIsRank = false,
   showBuiltinLegend = false,
   pointSize = 7,
   pointOpacity = 1.0,
   outlineWidth = 0.5,
   palette = DEFAULT_PALETTE,
+  annotationFontSize = 12,
   xAxisFontSize = 14,
   yAxisFontSize = 14,
   enforceSingleFacetSelection = false,
@@ -202,6 +238,8 @@ function PrototypeScatterPlot({
   pointsToAnnotate,
   selectionCount,
   hasFacetOptionsEnabled = false,
+  initialAxes = undefined,
+  initialAnnotationTails = undefined,
   Plotly,
 }: PropsWithPlotly) {
   const ref = useRef<ExtendedPlotType>(null);
@@ -212,10 +250,12 @@ function PrototypeScatterPlot({
   // - When the plot is first rendered (and an autorange is calculated)
   // - After each plotly_relayout event (e.g. when the user changes the zoom
   // level).
-  const axes = useRef<Partial<Layout>>({
-    xaxis: undefined,
-    yaxis: undefined,
-  });
+  const axes = useRef<Partial<Layout>>(
+    initialAxes ?? {
+      xaxis: undefined,
+      yaxis: undefined,
+    }
+  );
 
   const extents = useMemo(() => {
     const [minX, maxX] = getRange(data[xKey] as number[]);
@@ -237,8 +277,8 @@ function PrototypeScatterPlot({
     );
   }, [showIdentityLine, regressionLines, extents]);
 
-  const annotationTails = useRef<Record<string, { ax: number; ay: number }>>(
-    {}
+  const annotationTails = useRef<Record<string, AnnotationTail>>(
+    initialAnnotationTails ? { ...initialAnnotationTails } : {}
   );
 
   const [dragmode, setDragmode] = useState<Layout["dragmode"]>("zoom");
@@ -255,13 +295,25 @@ function PrototypeScatterPlot({
     const plot = ref.current;
     return () => {
       (plot as any)?.__facetSelCleanup?.();
+      releaseWebglContexts(plot as HTMLElement);
       Plotly.purge(plot as HTMLElement);
     };
   }, [Plotly]);
 
   // When the columns or underlying data change, we force an autoscale by
   // discarding the stored axes.
+  const hasEverRun = useRef(false);
+
   useEffect(() => {
+    // Skipped on mount so this doesn't immediately discard `initialAxes`.
+    // Effects always run once, and there is nothing to autoscale away from on
+    // a first render anyway: either we were seeded (and want to keep it) or
+    // the ref is already empty.
+    if (!hasEverRun.current) {
+      hasEverRun.current = true;
+      return;
+    }
+
     axes.current = {
       xaxis: undefined,
       yaxis: undefined,
@@ -614,29 +666,51 @@ function PrototypeScatterPlot({
 
     // Restore or initialize axes. We set `autorange` to true on the first render
     // so that Plotly can calculate the extents of the plot for us.
-    const xaxis = axes.current.xaxis || {
-      title: {
-        text: xLabel,
-        font: { size: xAxisFontSize },
-        standoff: 8,
-      } as any,
-      tickfont: { size: xAxisFontSize },
-      exponentformat: "e",
-      type: "linear",
-      autorange: true,
-      visible: !hideXAxis,
-      showgrid: !hideXAxisGrid,
+    // `automargin` measures the rendered tick labels and grows the margin to
+    // fit them. That's the only way to get this right: the space a y axis needs
+    // depends on how many characters its widest tick label has ("-0.00123" vs
+    // "5"), which is a property of the data, not of the font size — so the
+    // arithmetic this replaces could never work for it. The x axis fared better
+    // only because vertical space really is roughly linear in font size.
+    //
+    // It also fixes a second, quieter bug: Plotly derives the axis title's
+    // offset from `ax._depth`, the measured extent of the tick labels, and
+    // `_depth` is only computed when automargin is on. Without it the title
+    // sits a constant distance from the axis line and can land on top of wide
+    // tick labels. The title's own space is reserved too (plotly's
+    // axes.js adds approxTitleDepth + standoff to the push).
+    //
+    // Set outside the cache lookup so it also applies to a restored axis, or
+    // one seeded by captureTransientState from a plot rendered before this.
+    const xaxis = {
+      automargin: true,
+      ...(axes.current.xaxis || {
+        title: {
+          text: xLabel,
+          font: { size: xAxisFontSize },
+          standoff: 8,
+        } as any,
+        tickfont: { size: xAxisFontSize },
+        exponentformat: "e",
+        type: "linear",
+        autorange: true,
+        visible: !hideXAxis,
+        showgrid: !hideXAxisGrid,
+      }),
     };
 
-    const yaxis = axes.current.yaxis || {
-      title: {
-        text: yLabel,
-        font: { size: yAxisFontSize },
-        standoff: 0,
-      } as any,
-      tickfont: { size: yAxisFontSize },
-      exponentformat: "e",
-      autorange: true,
+    const yaxis = {
+      automargin: true,
+      ...(axes.current.yaxis || {
+        title: {
+          text: yLabel,
+          font: { size: yAxisFontSize },
+          standoff: 0,
+        } as any,
+        tickfont: { size: yAxisFontSize },
+        exponentformat: "e",
+        autorange: true,
+      }),
     };
 
     // Annotation channel (expansion-selection): label precisely the contacted
@@ -672,8 +746,10 @@ function PrototypeScatterPlot({
       margin: {
         t: 30,
         r: 30,
-        b: 50 + xAxisFontSize * 2.2,
-        l: 50 + yAxisFontSize * 2.2,
+        // A floor, not a guess: automargin grows these as the labels and
+        // titles require.
+        b: 50,
+        l: 50,
       },
       hovermode: "closest",
 
@@ -697,30 +773,40 @@ function PrototypeScatterPlot({
                   typeof x[pointIndex] === "number" &&
                   typeof y[pointIndex] === "number"
               )
-              .map((pointIndex) => ({
-                x: x[pointIndex],
-                y: y[pointIndex],
-                text: annotationText[pointIndex],
-                visible: visible[pointIndex],
-                xref: "x",
-                yref: "y",
-                arrowhead: 0,
-                standoff: 4,
-                arrowcolor: "#888",
-                bordercolor: "#c7c7c7",
-                bgcolor: "#fff",
-                pointIndex,
-                // Restore any annotation arrowhead positions the user may have edited.
-                ax:
-                  annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ax,
-                ay:
-                  annotationTails.current[`${xKey}-${yKey}-${pointIndex}`]?.ay,
-              }))
+              .map((pointIndex) => {
+                // Restore any annotation arrowhead position the user may
+                // have edited, rescaled for the current annotationFontSize
+                // — see resolveAnnotationTail.
+                const tail = resolveAnnotationTail(
+                  annotationTails.current[`${xKey}-${yKey}-${pointIndex}`],
+                  annotationFontSize
+                );
+
+                return {
+                  x: x[pointIndex],
+                  y: y[pointIndex],
+                  text: annotationText[pointIndex],
+                  visible: visible[pointIndex],
+                  xref: "x",
+                  yref: "y",
+                  arrowhead: 0,
+                  arrowwidth: calcAnnotationArrowWidth(annotationFontSize),
+                  standoff: 4,
+                  font: { size: annotationFontSize },
+                  arrowcolor: "#888",
+                  bordercolor: "#c7c7c7",
+                  bgcolor: "#fff",
+                  pointIndex,
+                  ax: tail?.ax,
+                  ay: tail?.ay,
+                };
+              })
           : (() => {
               return selectedPoints
                 ? [
                     {
                       text: `(${annotationCount} selected points)`,
+                      font: { size: annotationFontSize },
                       arrowcolor: "transparent",
                       bordercolor: "#c7c7c7",
                       bgcolor: "#fff",
@@ -810,7 +896,9 @@ function PrototypeScatterPlot({
 
       calcAnnotationPositions(x, y, pointIndices, fullLayout).forEach(
         ({ pointIndex, ax, ay }) => {
-          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = { ax, ay };
+          annotationTails.current[
+            `${xKey}-${yKey}-${pointIndex}`
+          ] = captureAnnotationTail(ax, ay, annotationFontSize);
         }
       );
     };
@@ -875,7 +963,9 @@ function PrototypeScatterPlot({
 
         if (ax != null && ay != null) {
           const { pointIndex } = annotation as any;
-          annotationTails.current[`${xKey}-${yKey}-${pointIndex}`] = { ax, ay };
+          annotationTails.current[
+            `${xKey}-${yKey}-${pointIndex}`
+          ] = captureAnnotationTail(ax, ay, annotationFontSize);
         }
       });
     });
@@ -1021,6 +1111,13 @@ function PrototypeScatterPlot({
       Plotly.redraw(plot);
     });
 
+    // See onWebglContextRestored: complements the handler above for the
+    // case where the context is lost to eviction rather than idling —
+    // there, nothing is drawable again until *this* fires.
+    const stopWatchingContextRestore = onWebglContextRestored(plot, () => {
+      Plotly.redraw(plot);
+    });
+
     // Add a few non-standard methods to the plot for convenience.
     plot.setDragmode = (nextDragmode) => {
       const shouldResetSelection =
@@ -1038,33 +1135,129 @@ function PrototypeScatterPlot({
     plot.zoomOut = () => zoom("out");
     plot.resetZoom = () => zoom("reset");
 
-    plot.downloadImage = (options) => {
+    plot.getImageFigure = (options) => {
       if (!legendForDownload) {
         window.console.warn("`legendForDownload` is undefined");
-        return;
+        return null;
       }
 
-      const legendTraces = getLegendTraces(legendForDownload, templateTrace);
-      const imagePlot = {
-        ...plot,
-        data: [...plot.data, ...legendTraces],
-        layout: {
-          ...plot.layout,
-          shapes: calcPlotIndicatorLineShapes(
-            showIdentityLine,
-            regressionLines,
-            extents,
-            false
-          ),
-          showlegend: true,
-          legend: {
-            title: { text: legendForDownload.title },
-            font: { size: 14 },
+      // Position comes from the export config, not from a plot style — see
+      // legendLayoutFor. Called with no options (the SVG path, or any other
+      // caller) it keeps today's right-hand placement.
+      const legendPosition = options?.legendPosition ?? "right";
+      const edgePadding = options?.edgePadding ?? EXPORT_EDGE_PADDING;
+      const chromeLineWidth =
+        options?.chromeLineWidth ?? DEFAULT_CHROME_LINE_WIDTH;
+      const dataLineWidth = options?.dataLineWidth ?? DEFAULT_DATA_LINE_WIDTH;
+      const xAxisLabelOverride = options?.xAxisLabel;
+      const yAxisLabelOverride = options?.yAxisLabel;
+      const exportLegend = applyLegendLabelOverrides(
+        legendForDownload,
+        options?.legendTitle,
+        options?.legendItemLabels
+      );
+
+      const legendTraces = wantsLegendTraces(legendPosition)
+        ? getLegendTraces(exportLegend, templateTrace)
+        : [];
+
+      return cloneFigureForExport([...plot.data, ...legendTraces], {
+        ...plot.layout,
+        // The "inner" half of edgePadding: extra room between the tick
+        // labels and the title itself, via the property Plotly actually
+        // defines for that. `automargin` stays on (turning it off, tried
+        // earlier, silently breaks how `_depth` is measured for the title,
+        // asymmetrically between axes) — it just measures a bigger need now
+        // that standoff asks for more, and sizes the margin to fit exactly
+        // that, correctly, with nothing left to renegotiate.
+        xaxis: {
+          ...plot.layout.xaxis,
+          ...calcChromeAxisOverrides(chromeLineWidth),
+          // `hideXAxis` (waterfall, when faceted) sets `visible: false`
+          // because the default "Rank" title is actively misleading once
+          // there's more than one facet — rank position keeps climbing
+          // across facet boundaries instead of restarting, so it can't be
+          // read as a rank past the first one. The tick *values* have the
+          // same problem regardless of what the title says, so a genuine
+          // override (see ExportImageModal's own comment on why this is
+          // never true for the untouched default text) brings back only
+          // the title — ticks and their numbers stay off. This only makes
+          // sense for `xAxisIsRank` (Waterfall): a real scatter plot's
+          // x-axis is actual data, and those numbers must stay no matter
+          // what the title says.
+          ...(xAxisLabelOverride !== undefined && xAxisIsRank
+            ? { visible: true, showticklabels: false, ticks: "" as const }
+            : {}),
+          title: {
+            ...(plot.layout.xaxis as any)?.title,
+            ...(xAxisLabelOverride !== undefined
+              ? { text: xAxisLabelOverride }
+              : {}),
+            standoff:
+              ((plot.layout.xaxis as any)?.title?.standoff ?? 8) + edgePadding,
           },
         },
-      };
+        yaxis: {
+          ...plot.layout.yaxis,
+          ...calcChromeAxisOverrides(chromeLineWidth),
+          title: {
+            ...(plot.layout.yaxis as any)?.title,
+            ...(yAxisLabelOverride !== undefined
+              ? { text: yAxisLabelOverride }
+              : {}),
+            standoff:
+              ((plot.layout.yaxis as any)?.title?.standoff ?? 0) + edgePadding,
+          },
+        },
+        // Seeds the single-shot export render with the margin this instance
+        // already converged to (see exportMarginFloor), plus the same
+        // edgePadding the standoff above just asked the title to consume —
+        // matching the new need exactly is what lets automargin converge in
+        // its one pass rather than needing a second to catch up.
+        //
+        // This buys the *inner* half of "space around the label" only. The
+        // "outer" half — room past the title before the image's true edge —
+        // isn't available through margin at all: automargin always sizes to
+        // fit exactly, with no slack by design, and asking for slack anyway
+        // (a bigger floor with automargin on) triggers the exact
+        // renegotiation this comment already warns about. See
+        // ExportImageModal's own compositing step for how that half is
+        // added instead — as an actual border on the finished image, where
+        // Plotly's layout engine has no say.
+        margin: exportMarginFloor(plot, {
+          l: edgePadding,
+          b: edgePadding,
+        }),
+        shapes: calcPlotIndicatorLineShapes(
+          showIdentityLine,
+          regressionLines,
+          widenExtentsToAxisRange(
+            extents,
+            (plot.layout.xaxis as any)?.range,
+            (plot.layout.yaxis as any)?.range
+          ),
+          false,
+          { xref: "x", yref: "y" },
+          dataLineWidth
+        ),
+        // The font follows the axis font size rather than a constant: at 14 it
+        // is what this hardcoded, and it now scales with the rest (an export
+        // sized for a slide was rendering its legend at ~7 pt, and this is the
+        // only legend a reader of the file gets — ours is HTML and can't be
+        // rasterized).
+        ...legendLayoutFor(legendPosition, {
+          title: exportLegend.title,
+          fontSize: xAxisFontSize,
+        }),
+      });
+    };
 
-      Plotly.downloadImage(imagePlot, options);
+    plot.downloadImage = (options) => {
+      const figure = plot.getImageFigure();
+
+      if (figure) {
+        Plotly.downloadImage(figure, options);
+      }
     };
 
     plot.isPointInView = (pointIndex: number) => {
@@ -1090,6 +1283,7 @@ function PrototypeScatterPlot({
       listeners.forEach(([eventName, callback]) =>
         plot.removeListener?.(eventName, callback)
       );
+      stopWatchingContextRestore();
     };
   }, [
     data,
@@ -1123,11 +1317,13 @@ function PrototypeScatterPlot({
     customHoverinfo,
     hideXAxis,
     hideXAxisGrid,
+    xAxisIsRank,
     showBuiltinLegend,
     pointSize,
     pointOpacity,
     outlineWidth,
     palette,
+    annotationFontSize,
     xAxisFontSize,
     yAxisFontSize,
     enforceSingleFacetSelection,

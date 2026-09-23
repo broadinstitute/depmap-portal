@@ -11,8 +11,7 @@ export function postGroup(groupArgs: GroupArgs) {
 }
 
 export function deleteGroup(id: string) {
-  // TODO: Figure out return type.
-  return deleteJson<any>("/groups", id);
+  return deleteJson<{ message: string }>(uri`/groups/${id}`);
 }
 
 export function postGroupEntry(

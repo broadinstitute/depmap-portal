@@ -14,6 +14,7 @@
     "@depmap/react-table": "1.0.0",
     "@depmap/selects": "1.0.0",
     "@depmap/types": "1.0.0",
+    "@nightingale-elements/nightingale-colored-sequence": "^5.6.0",
     "classnames": "^2.3.1",
     "papaparse": "^5.5.3",
     "react-bootstrap": "^0.32.3"
@@ -38,10 +39,25 @@
         {
           "diagnostics": false
         }
+      ],
+      "^.+\\.js$": [
+        "babel-jest",
+        {
+          "presets": [
+            [
+              "@babel/preset-env",
+              {
+                "targets": {
+                  "node": "current"
+                }
+              }
+            ]
+          ]
+        }
       ]
     },
     "transformIgnorePatterns": [
-      "node_modules/(?!depmap-shared)"
+      "node_modules/(?!(?:depmap-shared|d3|d3-[a-z0-9-]+|internmap|delaunator|robust-predicates)/)"
     ],
     "testRegex": ".*/__tests__/.*test.*\\.(ts|tsx|js)$",
     "testEnvironment": "jsdom",
