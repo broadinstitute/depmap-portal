@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { Tab, Tabs } from "react-bootstrap";
 import { GeneTea } from "@depmap/data-explorer-2";
-import { ModelConfigOut, PredictiveFeature } from "@depmap/types";
+import { ModelConfigOut } from "@depmap/types";
 import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
 import { useDatasetNames } from "../hooks/useDatasetNames";
 import { useFeatureLabels } from "../hooks/useFeatureLabels";
+import { getFeatureLabel } from "../featureLabel";
 import { getModelColor } from "../modelColors";
 import TopFeaturesBarChart, { TopFeatureBarDatum } from "./TopFeaturesBarChart";
 import styles from "../styles/PredictiveInsights.scss";
@@ -16,19 +17,6 @@ interface Props {
 }
 
 const MAX_TOP_FEATURES = 100;
-
-function getFeatureLabel(
-  feature: PredictiveFeature,
-  featureLabels: Record<string, string>
-) {
-  return (
-    featureLabels[
-      `${feature.feature_dataset_id}:${feature.feature_given_id}`
-    ] ||
-    feature.feature_label ||
-    feature.feature_given_id
-  );
-}
 
 export default function GeneTeaTile({ title, screenType, configs }: Props) {
   const [showSearchTerms, setShowSearchTerms] = useState(false);

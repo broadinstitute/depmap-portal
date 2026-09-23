@@ -1,16 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { usePlotlyLoader } from "@depmap/data-explorer-2";
 import type { Config, Layout } from "plotly.js";
 import { ModelConfigOut } from "@depmap/types";
 import { ScreenTypeData } from "../hooks/usePredictiveInsightsData";
+import { useFeatureLabels } from "../hooks/useFeatureLabels";
+import { getFeatureLabel } from "../featureLabel";
 
 interface Props {
   configs: ModelConfigOut[];
   screenTypes: ScreenTypeData[];
 }
 
-function Chart({ configs, screenTypes, Plotly }: Props & { Plotly: any }) {
+function Chart({
+  configs,
+  screenTypes,
+  featureLabels,
+  Plotly,
+}: Props & { featureLabels: Record<string, string>; Plotly: any }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,7 +39,7 @@ function Chart({ configs, screenTypes, Plotly }: Props & { Plotly: any }) {
         const topFeatureLabels = fit
           ? fit.top_features
               .slice(0, 5)
-              .map((f) => f.feature_label || f.feature_given_id)
+              .map((f) => getFeatureLabel(f, featureLabels))
               .join("<br>")
           : "No data";
 
@@ -68,7 +75,7 @@ function Chart({ configs, screenTypes, Plotly }: Props & { Plotly: any }) {
     };
 
     Plotly.react(ref.current, traces, layout, plotlyConfig);
-  }, [configs, screenTypes, Plotly]);
+  }, [configs, screenTypes, featureLabels, Plotly]);
 
   return <div ref={ref} />;
 }
@@ -76,9 +83,25 @@ function Chart({ configs, screenTypes, Plotly }: Props & { Plotly: any }) {
 export default function AggregateScoresChart(props: Props) {
   const PlotlyLoader = usePlotlyLoader();
 
+  const datasetIds = useMemo(
+    () => [
+      ...new Set(
+        props.screenTypes.flatMap((screenType) =>
+          screenType.response.model_fits.flatMap((fit) =>
+            fit.top_features.map((f) => f.feature_dataset_id)
+          )
+        )
+      ),
+    ],
+    [props.screenTypes]
+  );
+  const featureLabels = useFeatureLabels(datasetIds);
+
   return (
     <PlotlyLoader version="module">
-      {(Plotly) => <Chart {...props} Plotly={Plotly} />}
+      {(Plotly) => (
+        <Chart {...props} featureLabels={featureLabels} Plotly={Plotly} />
+      )}
     </PlotlyLoader>
   );
 }
