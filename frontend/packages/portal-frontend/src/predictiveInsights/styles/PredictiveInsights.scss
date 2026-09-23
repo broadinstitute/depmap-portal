@@ -1,0 +1,43 @@
+.overviewRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.overviewRow > article {
+  flex: 1 1 360px;
+  min-width: 360px;
+}
+
+.loading,
+.errorBanner {
+  padding: 24px;
+  font-size: 16px;
+}
+
+.errorBanner {
+  color: #de350b;
+}
+
+.toggleSearchTerms {
+  margin-top: 8px;
+  background: none;
+  border: none;
+  color: #0052cc;
+  cursor: pointer;
+  padding: 0;
+}
+
+.searchTermsTable {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+
+.searchTermsTable th,
+.searchTermsTable td {
+  border-bottom: 1px solid #dfe1e6;
+  padding: 4px 8px;
+  text-align: left;
+  font-size: 12px;
+}

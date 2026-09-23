@@ -31,6 +31,7 @@ module.exports = {
     geneTea: "./src/apps/geneTea.tsx",
     custom_analyses: "./src/apps/custom_analyses.tsx",
     transcriptExplorer: "./src/apps/transcriptExplorer.tsx",
+    testPredComponent: "./src/apps/testPredComponent.tsx",
   },
 
   plugins: [

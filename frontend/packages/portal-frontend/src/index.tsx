@@ -19,7 +19,11 @@ import { DataExplorerContextV2, DatasetOption } from "@depmap/types";
 
 import { EntityType } from "./entity/models/entities";
 import TermsAndConditionsModal from "./common/components/TermsAndConditionsModal";
-import { initializeDevContexts } from "@depmap/data-explorer-2";
+import {
+  initializeDevContexts,
+  PlotlyLoaderProvider,
+} from "@depmap/data-explorer-2";
+import PlotlyLoader from "./plot/components/PlotlyLoader";
 import { EnrichmentTile } from "./contextExplorer/components/EnrichmentTile";
 import { HeatmapTileContainer } from "./compound/tiles/HeatmapTile/HeatmapTileContainer";
 import { StructureAndDetailTile } from "./compound/tiles/StructureAndDetailTile";
@@ -33,6 +37,7 @@ import { SensitivityTile } from "./compound/tiles/SensitivityTile/SensitivityTil
 import { getTopCodependencyDatasetIds } from "./genePage/utils";
 import { PredictabilityTile } from "./compound/tiles/PredictabilityTile/PredictabilityTile";
 import { DatasetAvailabilityTile } from "./compound/tiles/DataAvailabilityTile/DataAvailabilityTile";
+import PredictiveInsightsPage from "./predictiveInsights/components/PredictiveInsightsPage";
 
 export { log, tailLog, getLogCount } from "src/common/utilities/log";
 
@@ -532,6 +537,24 @@ export function initPredictiveTab(
         customDownloadsLink={customDownloadsLink}
         methodologyUrl={methodologyUrl}
       />
+    </React.Suspense>,
+    document.getElementById(elementId) as HTMLElement
+  );
+}
+
+export function initPredictiveInsights(
+  elementId: string,
+  dimTypeGivenId: string,
+  dimType: string
+) {
+  renderWithErrorBoundary(
+    <React.Suspense fallback={<div>Loading...</div>}>
+      <PlotlyLoaderProvider PlotlyLoader={PlotlyLoader}>
+        <PredictiveInsightsPage
+          dimType={dimType}
+          dimTypeGivenId={dimTypeGivenId}
+        />
+      </PlotlyLoaderProvider>
     </React.Suspense>,
     document.getElementById(elementId) as HTMLElement
   );

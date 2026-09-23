@@ -99,6 +99,7 @@ from flask_hunter_profile.flask_blueprint import (
     flask_hunter_profile as flask_hunter_profile_blueprint,
 )
 from depmap.custom_analyses.views import blueprint as custom_analyses_blueprint
+from depmap.predictive_insights.views import blueprint as predictive_insights_blueprint
 
 log = logging.getLogger(__name__)
 
@@ -355,6 +356,7 @@ def register_blueprints(app: Flask):
     app.register_blueprint(resources_v3_blueprint)
     app.register_blueprint(custom_analyses_blueprint)
     app.register_blueprint(transcript_explorer_blueprint)
+    app.register_blueprint(predictive_insights_blueprint)
 
     saved_handlers = app.handle_exception, app.handle_user_exception
     app.register_blueprint(api_blueprint)
