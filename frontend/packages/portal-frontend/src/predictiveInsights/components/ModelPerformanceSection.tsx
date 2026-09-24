@@ -53,8 +53,8 @@ export default function ModelPerformanceSection({
         accordion
         id={`model-performance-${screenType.actualsDatasetId}`}
         activeKey={activeKey}
-        onSelect={(key: string) =>
-          setActiveKey((prevKey) => (prevKey === key ? null : key))
+        onSelect={(key) =>
+          setActiveKey((prevKey) => (prevKey === key ? null : (key as string)))
         }
       >
         {models.map(({ config, fit }) => (
