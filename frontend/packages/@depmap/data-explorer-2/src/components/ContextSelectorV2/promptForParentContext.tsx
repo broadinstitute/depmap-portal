@@ -160,8 +160,12 @@ export default async function promptForParentContext(
         // that is what the endpoint's group-by produces. Good enough for "there
         // is data for these": a stricter reading would need the per-member
         // counts this deliberately throws away.
-        cached(breadboxAPI)
-          .getContextDatasetCoverage(nextContext)
+        // Public scope, same as the Data Version select, so the two share both
+        // the in-memory entry and the persisted one. A user who can see private
+        // datasets gets a slight undercount here, which is an acceptable price
+        // for a parenthetical that is already allowed to render as nothing.
+        cached(breadboxAPI, { persist: { publicCatalog: true } })
+          .getContextDatasetCoverage(nextContext, "public")
           .then(({ counts }) => {
             if (latestRequest.current === requestId) {
               setDatasetCount(Object.keys(counts).length);

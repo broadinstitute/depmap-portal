@@ -53,27 +53,48 @@ export const SwapAxesButton = ({
   );
 };
 
-// Routes an axis edit that involves expansion. Every such edit — turning
-// expansion on, turning it off, or changing the gene/dataset of an axis that's
-// already expanding — is one `select_expansion`, because the reducer has to
+// Routes an axis edit that involves expansion. Turning expansion on, changing
+// the gene/dataset of an axis that's already expanding, or dropping all the way
+// back to a single point is one `select_expansion`, because the reducer has to
 // see the whole thing at once: it decides whether this axis is defining the
 // expansion or joining one, and keeps the plot-level `expand_by` in agreement
 // with the defining axis.
 //
-// Notably this does NOT also dispatch `select_dimension`: `select_expansion`
-// already writes the dimension, and a `select_dimension` afterwards would
-// overwrite it with the raw selection — undoing the members a joining axis
-// just inherited. Nor does it set `facet_by`/`color_by`; the reducer installs
-// `facet_by: "expansion"` as a one-time default on the enable transition and
-// clears it on the last axis leaving, and an absent `color_by` already means
-// "match facet_by" (schema version 2). Setting them here would clobber a
-// deliberate choice the user made afterward.
+// Notably this does NOT also dispatch `select_dimension` on those paths:
+// `select_expansion` already writes the dimension, and a `select_dimension`
+// afterwards would overwrite it with the raw selection — undoing the members a
+// joining axis just inherited. Nor does it set `facet_by`/`color_by`; the
+// reducer installs `facet_by: "expansion"` as a one-time default on the enable
+// transition and clears it on the last axis leaving, and an absent `color_by`
+// already means "match facet_by" (schema version 2). Setting them here would
+// clobber a deliberate choice the user made afterward.
 export const handleExpansionSelection = (
   key: DimensionKey,
   nextDimension: Partial<DataExplorerPlotConfigDimensionV2>,
   dispatch: (action: PlotConfigReducerAction) => void
 ) => {
   if (nextDimension.aggregation !== "expansion") {
+    // Facet -> Aggregate: the axis keeps its context and merely stops
+    // expanding, so nothing about the expansion is being chosen and this is an
+    // ordinary dimension edit. Routing it as one is what keeps a null
+    // `expand_by` meaning exactly one thing (back to Single, below) instead of
+    // two gestures the payload can't tell apart. The teardown still happens:
+    // writing a dimension without the sentinel orphans it, and the reducer's
+    // `normalize` drops `expand_by` — along with `facet_by`/`color_by` of
+    // "expansion" — once no axis carries it. An axis on the OTHER side that is
+    // still expanding keeps the expansion alive, untouched.
+    if (nextDimension.axis_type === "aggregated_slice") {
+      dispatch({
+        type: "select_dimension",
+        payload: { key, dimension: nextDimension },
+      });
+
+      return;
+    }
+
+    // Multiple -> Single. The reducer, not this call site, decides what the
+    // axis lands on, because that has to stay in agreement with the expansion
+    // teardown it does at the same time.
     dispatch({
       type: "select_expansion",
       payload: { key, expand_by: null },

@@ -49,6 +49,11 @@ function DownloadTable({
       PlotlyLoader={PlotlyLoader}
       index_type_name={dimension_type}
       downloadFilename={contextName}
+      // The context's ids are resolved before the table mounts, so they scope
+      // the fetch rather than filtering it afterwards. The predicate stays for
+      // the slices Breadbox can't subset (matrix slices, reindex_through
+      // chains), which still come back whole.
+      rowIds={contextIds ?? undefined}
       implicitFilter={({ id }) => Boolean(contextIds?.has(id))}
       isLoading={!contextIds}
       renderCustomControls={() => {

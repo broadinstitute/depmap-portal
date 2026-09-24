@@ -384,8 +384,7 @@
 // Modal contents.
 .expansionMembersModal {
   :global .modal-lg {
-    width: calc(100vw - 60px);
-    max-width: 1200px;
+    width: calc(100vw - 150px);
   }
 }
 

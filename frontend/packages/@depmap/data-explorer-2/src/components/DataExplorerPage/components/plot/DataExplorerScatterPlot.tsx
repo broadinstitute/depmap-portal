@@ -8,13 +8,21 @@ import {
   LinRegInfo,
   entityRefKey,
 } from "@depmap/types";
-import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
+import type { Layout } from "plotly.js";
+import {
+  Settings,
+  useDataExplorerSettings,
+} from "../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import SpinnerOverlay from "./SpinnerOverlay";
 import useScatterPlotData from "./prototype/useScatterPlotData";
 import PrototypeScatterPlot from "./prototype/PrototypeScatterPlot";
 import SmallMultiplesScatter from "./prototype/SmallMultiplesScatter";
-import { chosenCategoriesFor, computeFacets } from "./prototype/plotUtils";
+import {
+  AnnotationTail,
+  chosenCategoriesFor,
+  computeFacets,
+} from "./prototype/plotUtils";
 import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotLegend from "./PlotLegend";
 import PlotFacets from "./PlotFacets";
@@ -25,6 +33,17 @@ import SectionStack, { StackableSection } from "../SectionStack";
 import promptForSelectionFromContext from "./promptForSelectionFromContext";
 import useSelection from "../../hooks/useSelection";
 import styles from "../../styles/DataExplorer2.scss";
+
+// What a caller must supply to draw this plot: the styles to use, where to
+// send the resulting graph div, whether it may mutate the real selection, and
+// optionally some transient view state to open with.
+export interface RenderPlotOptions {
+  plotStyles: Settings["plotStyles"];
+  onLoad: (plot: ExtendedPlotType) => void;
+  interactive: boolean;
+  initialAxes?: Partial<Layout>;
+  initialAnnotationTails?: Record<string, AnnotationTail>;
+}
 
 interface Props {
   data: DataExplorerPlotResponse | null;
@@ -111,15 +130,7 @@ function DataExplorerScatterPlot({
   const isFaceted = Boolean(facetKeys);
   const [showSpinner, setShowSpinner] = useState(isLoading);
   const { plotStyles } = useDataExplorerSettings();
-  const {
-    pointSize,
-    facetedPointSize,
-    pointOpacity,
-    outlineWidth,
-    palette,
-    xAxisFontSize,
-    yAxisFontSize,
-  } = plotStyles;
+  const { palette } = plotStyles;
 
   const {
     formattedData,
@@ -285,6 +296,99 @@ function DataExplorerScatterPlot({
     return out;
   }, [data, selection]);
 
+  // One definition of "this plot", parameterized by the styles to draw it with
+  // and by whether it is the interactive one. The export preview renders a
+  // second, non-interactive copy at different styles, and would otherwise have
+  // to repeat both ~35-prop call sites below and stay in step with them.
+  const renderPlot = ({
+    plotStyles: styles_,
+    onLoad,
+    interactive,
+    initialAxes,
+    initialAnnotationTails,
+  }: RenderPlotOptions) => {
+    if (!formattedData) {
+      return null;
+    }
+
+    // A preview must not be able to mutate the real selection, so it simply
+    // isn't wired to the handlers that would. Their defaults are no-ops.
+    const interactions = interactive
+      ? {
+          onClickPoint: handleClickPoint,
+          onMultiselect: handleMultiselect,
+          onClickResetSelection: clearSelection,
+        }
+      : {};
+
+    const shared = {
+      data: formattedData,
+      xKey: "x" as const,
+      yKey: "y" as const,
+      xLabel: formattedData?.xLabel || "",
+      yLabel: formattedData?.yLabel || "",
+      pointVisibility: pointVisibility || undefined,
+      colorKey1: "color1" as const,
+      colorKey2: "color2" as const,
+      categoricalColorKey: "catColorData" as const,
+      continuousColorKey: "contColorData" as const,
+      contLegendKeys,
+      colorMap,
+      hoverTextKey: "hoverText" as const,
+      annotationTextKey: "annotationText" as const,
+      legendForDownload,
+      selectedPoints,
+      pointsToAnnotate,
+      selectionCount: selection?.size ?? 0,
+      showIdentityLine,
+      onLoad,
+      initialAxes,
+      initialAnnotationTails,
+      pointOpacity: styles_.pointOpacity,
+      outlineWidth: styles_.outlineWidth,
+      palette: styles_.palette,
+      annotationFontSize: styles_.annotationFontSize,
+      xAxisFontSize: styles_.xAxisFontSize,
+      yAxisFontSize: styles_.yAxisFontSize,
+      ...interactions,
+    };
+
+    return isFaceted ? (
+      <SmallMultiplesScatter
+        {...shared}
+        height="auto"
+        facetKeys={facetKeys ?? []}
+        facetOrder={facetOrder}
+        // When color_by/facet_by have converged, hide via the
+        // Legend's own toggles (translated to facet-key-string
+        // space, see hiddenFacetsFromLegend above); otherwise via
+        // the independent Facets panel's own state
+        // (hiddenFacetValues, already in that string space —
+        // computeFacets always returns plain strings for scatter's
+        // facetKeys/facetOrder, see its own comment on why — so
+        // that's a direct pass-through, not a real conversion).
+        hiddenFacets={
+          (hiddenFacetsFromLegend ?? hiddenFacetValues) as Set<string>
+        }
+        placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
+        regressionLinesByFacet={regressionLinesByFacet}
+        pointSize={styles_.facetedPointSize}
+      />
+    ) : (
+      // hasFacetOptionsEnabled intentionally left unset here: this
+      // branch only renders when !isFaceted, i.e. facet_by has no
+      // real backing (a real facet_by always routes to
+      // SmallMultiplesScatter above instead) — so there's nothing
+      // real for this prop to report at this call site.
+      <PrototypeScatterPlot
+        {...shared}
+        height="auto"
+        regressionLines={regressionLines}
+        pointSize={styles_.pointSize}
+      />
+    );
+  };
+
   return (
     <div className={styles.DataExplorerScatterPlot}>
       <div className={styles.left}>
@@ -296,99 +400,24 @@ function DataExplorerScatterPlot({
             plotElement={plotElement}
             handleClickPoint={handleClickPoint}
             onClickUnselectAll={clearSelection}
+            previewPlot={{
+              render: (options: Omit<RenderPlotOptions, "interactive">) =>
+                renderPlot({ ...options, interactive: false }),
+              // Which of the two point-size settings this plot actually reads
+              // — see the branch in renderPlot above. Only this wrapper knows,
+              // so the export modal can offer just the one that does anything.
+              pointSizeField: isFaceted ? "facetedPointSize" : "pointSize",
+              legend: legendForDownload,
+            }}
           />
         </div>
         <div className={styles.plot}>
           {showSpinner && <SpinnerOverlay />}
-          {formattedData &&
-            (isFaceted ? (
-              <SmallMultiplesScatter
-                data={formattedData}
-                xKey="x"
-                yKey="y"
-                pointVisibility={pointVisibility || undefined}
-                colorKey1="color1"
-                colorKey2="color2"
-                categoricalColorKey="catColorData"
-                continuousColorKey="contColorData"
-                contLegendKeys={contLegendKeys}
-                colorMap={colorMap}
-                hoverTextKey="hoverText"
-                annotationTextKey="annotationText"
-                height="auto"
-                xLabel={formattedData?.xLabel || ""}
-                yLabel={formattedData?.yLabel || ""}
-                legendForDownload={legendForDownload}
-                facetKeys={facetKeys ?? []}
-                facetOrder={facetOrder}
-                // When color_by/facet_by have converged, hide via the
-                // Legend's own toggles (translated to facet-key-string
-                // space, see hiddenFacetsFromLegend above); otherwise via
-                // the independent Facets panel's own state
-                // (hiddenFacetValues, already in that string space —
-                // computeFacets always returns plain strings for scatter's
-                // facetKeys/facetOrder, see its own comment on why — so
-                // that's a direct pass-through, not a real conversion).
-                hiddenFacets={
-                  (hiddenFacetsFromLegend ?? hiddenFacetValues) as Set<string>
-                }
-                placeholderEmptyFacets={Boolean(plotConfig.expand_by?.length)}
-                showIdentityLine={showIdentityLine}
-                regressionLinesByFacet={regressionLinesByFacet}
-                onLoad={setPlotElement}
-                onClickPoint={handleClickPoint}
-                onMultiselect={handleMultiselect}
-                selectedPoints={selectedPoints}
-                pointsToAnnotate={pointsToAnnotate}
-                selectionCount={selection?.size ?? 0}
-                onClickResetSelection={clearSelection}
-                pointSize={facetedPointSize}
-                pointOpacity={pointOpacity}
-                outlineWidth={outlineWidth}
-                palette={palette}
-                xAxisFontSize={xAxisFontSize}
-                yAxisFontSize={yAxisFontSize}
-              />
-            ) : (
-              // hasFacetOptionsEnabled intentionally left unset here: this
-              // branch only renders when !isFaceted, i.e. facet_by has no
-              // real backing (a real facet_by always routes to
-              // SmallMultiplesScatter above instead) — so there's nothing
-              // real for this prop to report at this call site.
-              <PrototypeScatterPlot
-                data={formattedData}
-                xKey="x"
-                yKey="y"
-                pointVisibility={pointVisibility || undefined}
-                colorKey1="color1"
-                colorKey2="color2"
-                categoricalColorKey="catColorData"
-                continuousColorKey="contColorData"
-                contLegendKeys={contLegendKeys}
-                colorMap={colorMap}
-                hoverTextKey="hoverText"
-                annotationTextKey="annotationText"
-                height="auto"
-                xLabel={formattedData?.xLabel || ""}
-                yLabel={formattedData?.yLabel || ""}
-                onLoad={setPlotElement}
-                onClickPoint={handleClickPoint}
-                onMultiselect={handleMultiselect}
-                selectedPoints={selectedPoints}
-                pointsToAnnotate={pointsToAnnotate}
-                selectionCount={selection?.size ?? 0}
-                showIdentityLine={showIdentityLine}
-                regressionLines={regressionLines}
-                onClickResetSelection={clearSelection}
-                legendForDownload={legendForDownload}
-                pointSize={pointSize}
-                pointOpacity={pointOpacity}
-                outlineWidth={outlineWidth}
-                palette={palette}
-                xAxisFontSize={xAxisFontSize}
-                yAxisFontSize={yAxisFontSize}
-              />
-            ))}
+          {renderPlot({
+            plotStyles,
+            onLoad: setPlotElement,
+            interactive: true,
+          })}
         </div>
       </div>
       <div className={styles.right}>
@@ -427,7 +456,11 @@ function DataExplorerScatterPlot({
           <StackableSection
             title="Plot Selections"
             minHeight={256}
-            defaultOpen={!plotConfig.expand_by}
+            defaultOpen={
+              !plotConfig.expand_by ||
+              (plotConfig.expand_by && !plotConfig.color_by) ||
+              plotConfig.color_by === "expansion"
+            }
           >
             {isPairGrained ? (
               <ExpandedPlotSelections

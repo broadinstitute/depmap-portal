@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { Button } from "react-bootstrap";
+import type { Layout } from "plotly.js";
 import {
   DataExplorerPlotConfig,
   DataExplorerPlotResponse,
 } from "@depmap/types";
 import { getDimensionTypeLabel, pluralize } from "../../../../utils/misc";
-import { useDataExplorerSettings } from "../../../../contexts/DataExplorerSettingsContext";
+import {
+  Settings,
+  useDataExplorerSettings,
+} from "../../../../contexts/DataExplorerSettingsContext";
 import type ExtendedPlotType from "../../ExtendedPlotType";
 import Section from "../Section";
 import useCorrelationHeatmapData from "./prototype/useCorrelationHeatmapData";
@@ -14,6 +18,20 @@ import DataExplorerPlotControls from "./DataExplorerPlotControls";
 import PlotSelections from "./PlotSelections";
 import SpinnerOverlay from "./SpinnerOverlay";
 import styles from "../../styles/DataExplorer2.scss";
+
+// Lets the export modal render a second, non-interactive copy of this plot
+// at different styles and/or a seeded view state, and must not be able to
+// wire it up to mutate the real selection. No initialAnnotationTails here —
+// unlike scatter/density, this plot has no per-point annotations.
+interface RenderPlotOptions {
+  plotStyles: Settings["plotStyles"];
+  onLoad: (plot: ExtendedPlotType) => void;
+  interactive: boolean;
+  initialAxes?: Partial<Layout>;
+  // Export-only — see ExportImageModal's tickFontSize. Outside plotStyles
+  // because it isn't a saved setting.
+  tickFontSize?: number;
+}
 
 interface Props {
   data: DataExplorerPlotResponse | null;
@@ -81,7 +99,6 @@ function DataExplorerCorrelationHeatmap({
   const [plotElement, setPlotElement] = useState<ExtendedPlotType | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string> | null>(null);
   const { plotStyles } = useDataExplorerSettings();
-  const { palette, xAxisFontSize } = plotStyles;
 
   const {
     heatmapData,
@@ -92,6 +109,51 @@ function DataExplorerCorrelationHeatmap({
 
   const handleSelectLabels = (labels: string[]) => {
     setSelectedIds(new Set(labels));
+  };
+
+  // Extracted so the export modal can call this a second time, offscreen, at
+  // different styles and/or a seeded view state, without repeating this
+  // whole call site and risking it drifting out of step.
+  const renderPlot = ({
+    plotStyles: styles_,
+    onLoad,
+    interactive,
+    initialAxes,
+    tickFontSize,
+  }: RenderPlotOptions) => {
+    if (!data || isLoading || showWarning) {
+      return null;
+    }
+
+    // A preview must not be able to mutate the real selection, so it simply
+    // isn't wired to the handler that would.
+    const interactions = interactive
+      ? { onSelectLabels: handleSelectLabels }
+      : {};
+
+    return (
+      <PrototypeCorrelationHeatmap
+        data={heatmapData}
+        xLabels={xLabels!}
+        yLabels={yLabels!}
+        xKey="x"
+        yKey="y"
+        zKey="z"
+        z2Key={heatmapData!.z2 ? "z2" : undefined}
+        zLabel={heatmapData!.zLabel}
+        z2Label={heatmapData!.z2Label}
+        height="auto"
+        onLoad={onLoad}
+        selectedLabels={selectedIds || undefined}
+        palette={styles_.palette}
+        xAxisFontSize={styles_.xAxisFontSize}
+        tickFontSize={tickFontSize}
+        initialAxes={initialAxes}
+        distinguish1Label={plotConfig.filters?.distinguish1?.name}
+        distinguish2Label={plotConfig.filters?.distinguish2?.name}
+        {...interactions}
+      />
+    );
   };
 
   return (
@@ -105,6 +167,23 @@ function DataExplorerCorrelationHeatmap({
             plotElement={plotElement}
             onClickUnselectAll={() => setSelectedIds(null)}
             hideSelectionTools
+            previewPlot={{
+              render: (options: Omit<RenderPlotOptions, "interactive">) =>
+                renderPlot({ ...options, interactive: false }),
+              // Unused — no points on a heatmap, so hasPointStyles below
+              // already hides every control this would otherwise drive.
+              pointSizeField: "pointSize",
+              // No `legend` key at all: there's no color-by legend here,
+              // just the colorscale, which the export modal leaves fixed on
+              // the right rather than treating as a legend to place or edit.
+              hasDataLines: false,
+              hasYAxisLabel: false,
+              hasPointStyles: false,
+              hasTickFontSize: true,
+              // Whether there's a second panel to relabel depends on the
+              // current data, not just the plot type.
+              hasSecondaryXAxisLabel: Boolean(heatmapData?.z2),
+            }}
           />
         </div>
         <div className={styles.plot}>
@@ -115,27 +194,11 @@ function DataExplorerCorrelationHeatmap({
               onClickShowDensityFallback={onClickShowDensityFallback}
             />
           )}
-          {data && !isLoading && !showWarning && (
-            <PrototypeCorrelationHeatmap
-              data={heatmapData}
-              xLabels={xLabels!}
-              yLabels={yLabels!}
-              xKey="x"
-              yKey="y"
-              zKey="z"
-              z2Key={heatmapData!.z2 ? "z2" : undefined}
-              zLabel={heatmapData!.zLabel}
-              z2Label={heatmapData!.z2Label}
-              height="auto"
-              onLoad={setPlotElement}
-              onSelectLabels={handleSelectLabels}
-              selectedLabels={selectedIds || undefined}
-              palette={palette}
-              xAxisFontSize={xAxisFontSize}
-              distinguish1Label={plotConfig.filters?.distinguish1?.name}
-              distinguish2Label={plotConfig.filters?.distinguish2?.name}
-            />
-          )}
+          {renderPlot({
+            plotStyles,
+            onLoad: setPlotElement,
+            interactive: true,
+          })}
         </div>
       </div>
       <div className={styles.right}>

@@ -326,27 +326,79 @@ const inferPlotType = (partialPlot: PartialDataExplorerPlotConfig) => {
     : "scatter";
 };
 
+// Legacy `color_property` (or `colorDataset` + `colorFeature`) on a 1D plot
+// meant "one violin track per category, and color those tracks" — under
+// version 1 there was a single axis and it drove coloring and faceting at
+// once. Expressing that same intent post-ADR-0004/0005 takes the two-axis
+// form: the property backs `facet_by`, and `color_by` defers to it via the
+// "facet" sentinel.
+//
+// That translation already exists as the v1 -> v2 migration in
+// readPlotFromQueryString, but this is a MINT POINT that stamps version 2, so
+// the migration is (correctly) skipped here and the shape has to be minted
+// post-migration instead. Nothing else will do it for us.
+//
+// Scoped to density_1d deliberately. On a scatter, a real `facet_by` routes to
+// SmallMultiplesScatter — legacy `color_property` there only ever colored the
+// points, it never exploded them into a panel grid — so scatter keeps
+// `color_by: "property"` and no `facet_by`.
+//
+// The rename is safe only because makePlotConfigBreadboxModeCompatible
+// resolves `facet_property` slice IDs on the same footing as `color_property`
+// (see the `axis` lookup there). That pass, not this one, decides whether the
+// property is really "property" or "custom" — so don't try to be smarter about
+// the mode here.
+const facetOnColorPropertyFor1d = (
+  partialPlot: PartialDataExplorerPlotConfig,
+  plot_type: ReturnType<typeof inferPlotType>
+): PartialDataExplorerPlotConfig => {
+  const { color_property, ...restMetadata } = partialPlot.metadata || {};
+
+  if (plot_type !== "density_1d" || !color_property) {
+    return partialPlot;
+  }
+
+  return {
+    ...partialPlot,
+    facet_by: "property",
+    metadata: { ...restMetadata, facet_property: color_property },
+  };
+};
+
 const inferColorBy = (partialPlot: PartialDataExplorerPlotConfig) => {
   if (partialPlot.filters?.color1 || partialPlot.filters?.color2) {
     return "aggregated_slice";
   }
 
-  if (partialPlot.metadata) {
+  // Defer to the facet_by that facetOnColorPropertyFor1d just set, so the
+  // plot is colored AND faceted off one shared partition.
+  if (partialPlot.metadata?.facet_property) {
+    return "facet";
+  }
+
+  if (partialPlot.metadata?.color_property) {
     return "property";
   }
 
   // This mint point stamps CURRENT_PLOT_VERSION (now 2), so an absent
-  // color_by it emits is read back as "facet" (defer to facet_by) — but
-  // shorthand params have no way to set facet_by, so "nothing to color by"
-  // here always means genuinely uniform, never "match a facet_by that
-  // can't exist." Returning "uniform" explicitly (not null/absent) keeps
-  // shorthand-generated plots rendering exactly as they did pre-flip. See
+  // color_by it emits is read back as "facet" (defer to facet_by). Reaching
+  // here means there is no facet_by either (the arm above would have caught
+  // it), so "nothing to color by" genuinely means uniform, never "match a
+  // facet_by that isn't there." Returning "uniform" explicitly (not
+  // null/absent) keeps such plots rendering exactly as they did pre-flip. See
   // ADR 0001 §7's "worked example" — this is that exact hazard.
   return "uniform";
 };
 
+// Both metadata keys are tested by name rather than by `metadata`'s own
+// truthiness: the bag can now hold either color_property or facet_property,
+// so bag-presence no longer implies a categorical partition exists to sort
+// facets by (ADR 0002 §3's discipline — a field's meaning must not ride on an
+// unrelated key's presence).
 const inferSortBy = (partialPlot: PartialDataExplorerPlotConfig) => {
-  if (partialPlot.metadata) {
+  const { color_property, facet_property } = partialPlot.metadata || {};
+
+  if (color_property || facet_property) {
     return "mean_values_asc" as PartialDataExplorerPlotConfig["sort_by"];
   }
 
@@ -354,15 +406,20 @@ const inferSortBy = (partialPlot: PartialDataExplorerPlotConfig) => {
 };
 
 const inferOtherProps = (
-  plot: PartialDataExplorerPlotConfig | null,
+  partialPlot: PartialDataExplorerPlotConfig | null,
   datasets: Datasets
 ): PartialDataExplorerPlotConfig | null => {
-  if (!plot) {
+  if (!partialPlot) {
     return null;
   }
 
-  const index_type = inferIndexType(plot, datasets);
-  const plot_type = inferPlotType(plot);
+  const index_type = inferIndexType(partialPlot, datasets);
+  const plot_type = inferPlotType(partialPlot);
+
+  // Must happen before color_by/sort_by are inferred: both read the metadata
+  // keys this rewrites.
+  const plot = facetOnColorPropertyFor1d(partialPlot, plot_type);
+
   const color_by = inferColorBy(plot);
   const sort_by = inferSortBy(plot);
 

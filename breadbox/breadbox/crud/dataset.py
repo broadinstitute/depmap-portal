@@ -178,7 +178,11 @@ _ID_CHUNK_SIZE = 900
 
 
 def count_dataset_coverage(
-    db: SessionWithUser, user: str, dimension_type_name: str, given_ids: List[str],
+    db: SessionWithUser,
+    user: str,
+    dimension_type_name: str,
+    given_ids: List[str],
+    public_only: bool = False,
 ) -> Dict[str, int]:
     """How many of `given_ids` each visible matrix dataset actually contains.
 
@@ -190,6 +194,11 @@ def count_dataset_coverage(
     Datasets with no matching id are absent from the result rather than present
     with a zero. Callers who need the zeroes have the dataset list already, and
     the omission keeps the response proportional to what matched.
+
+    `public_only` narrows the count to the public group. The result is then the
+    same for every user, which is what lets a caller store it; see the caller in
+    api/temp/context.py. It narrows what is already visible rather than widening
+    it, so the access check below still applies in full.
     """
     assert (
         db.user == user
@@ -216,6 +225,7 @@ def count_dataset_coverage(
         dataset.id
         for dataset in get_datasets(db, user, **axis_kwarg)  # pyright: ignore
         if isinstance(dataset, MatrixDataset)
+        and (not public_only or is_public_dataset(dataset))
     }
 
     if not visible_dataset_ids or not given_ids:
