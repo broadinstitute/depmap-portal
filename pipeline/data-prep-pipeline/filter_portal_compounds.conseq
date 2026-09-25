@@ -11,6 +11,7 @@ rule filter-portal-compounds:
         repsdrug_log2_viability_collapsed_conditions={"type": "repsdrug_log2_viability_collapsed_conditions"},
         portal_compounds={"type": "portal_compounds"},
         prism_oncology_reference_compound_list=all{"type"~ "prism_oncology_reference_compound_list|stub-artifact"},
+        prism_oncology_reference_unified_log2_auc_matrix=all{"type"~ "prism_oncology_reference_unified_log2_auc_matrix|stub-artifact"},
         script=fileref('scripts/portal_compounds/filter_portal_compounds.py'),
     outputs:
         {
@@ -27,6 +28,6 @@ rule filter-portal-compounds:
         --sample-id-of-table {{(inputs.prism_oncology_reference_compound_list|selectattr('dataset_id', 'defined')|first).dataset_id}} \
         {% endif %} \
         {% if inputs.prism_oncology_reference_unified_log2_auc_matrix|length > 1 %} \
-        --sample-id-of-table {{(inputs.prism_oncology_reference_unified_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
+        --column-of-matrix {{(inputs.prism_oncology_reference_unified_log2_auc_matrix|selectattr('dataset_id', 'defined')|first).dataset_id}} \
         {% endif %} \
         filtered_portal_compounds.csv"
