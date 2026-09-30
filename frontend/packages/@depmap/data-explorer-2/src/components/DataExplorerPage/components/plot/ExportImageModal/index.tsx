@@ -28,6 +28,7 @@ import type ExtendedPlotType from "../../../ExtendedPlotType";
 import {
   captureTransientState,
   ExportLegendPosition,
+  ImageFigure,
   LegendInfo,
 } from "../prototype/plotUtils";
 import LengthInput from "../../../../LengthInput";
@@ -249,6 +250,116 @@ export function padOuterEdgeSvg(
   background.setAttribute("height", String(height));
   background.setAttribute("fill", backgroundColor);
   root.insertBefore(background, root.firstChild);
+
+  const serialized = new XMLSerializer().serializeToString(root);
+  return `data:image/svg+xml,${encodeURIComponent(serialized)}`;
+}
+
+const XLINK_NAMESPACE = "http://www.w3.org/1999/xlink";
+
+// Draws a figure's overlayFigure (see ImageFigure's own comment on why one
+// exists - PrototypeDensity1D's violins, currently the only source of one) on
+// top of it. The two are rendered as separate images and composited here
+// rather than merged into one Plotly figure.
+async function renderWithOverlay(
+  plotly: PlotlyType,
+  figure: ImageFigure,
+  format: ExportImageFormat,
+  width: number,
+  height: number
+): Promise<string> {
+  const { overlayFigure, ...base } = figure;
+
+  const baseUrl = await plotly.toImage(
+    base as Parameters<typeof plotly.toImage>[0],
+    { format, width, height }
+  );
+
+  // The overlay always rasterizes to PNG, regardless of the requested output
+  // format - even for an SVG export.
+  const overlayUrl = await plotly.toImage(
+    (overlayFigure as unknown) as Parameters<typeof plotly.toImage>[0],
+    { format: "png", width, height }
+  );
+
+  return format === "svg"
+    ? embedPngInSvg(baseUrl, overlayUrl, width, height)
+    : compositePngLayers(baseUrl, overlayUrl, width, height);
+}
+
+function compositePngLayers(
+  baseUrl: string,
+  overlayUrl: string,
+  width: number,
+  height: number
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const baseImage = new Image();
+    const overlayImage = new Image();
+    let loadedCount = 0;
+
+    const onBothLoaded = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        resolve(baseUrl);
+        return;
+      }
+
+      ctx.drawImage(baseImage, 0, 0, width, height);
+      ctx.drawImage(overlayImage, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/png"));
+    };
+
+    const onLoad = () => {
+      loadedCount += 1;
+
+      if (loadedCount === 2) {
+        onBothLoaded();
+      }
+    };
+
+    baseImage.onload = onLoad;
+    overlayImage.onload = onLoad;
+    baseImage.onerror = reject;
+    overlayImage.onerror = reject;
+    baseImage.src = baseUrl;
+    overlayImage.src = overlayUrl;
+  });
+}
+
+function embedPngInSvg(
+  baseSvgUrl: string,
+  overlayPngUrl: string,
+  width: number,
+  height: number
+): string {
+  const commaIndex = baseSvgUrl.indexOf(",");
+
+  if (commaIndex === -1) {
+    return baseSvgUrl;
+  }
+
+  const svgString = decodeURIComponent(baseSvgUrl.slice(commaIndex + 1));
+  const doc = new DOMParser().parseFromString(svgString, "image/svg+xml");
+  const root = doc.documentElement;
+
+  if (root.nodeName !== "svg" || doc.querySelector("parsererror")) {
+    return baseSvgUrl;
+  }
+
+  const image = doc.createElementNS(SVG_NAMESPACE, "image");
+  image.setAttribute("x", "0");
+  image.setAttribute("y", "0");
+  image.setAttribute("width", String(width));
+  image.setAttribute("height", String(height));
+  image.setAttributeNS(XLINK_NAMESPACE, "xlink:href", overlayPngUrl);
+  image.setAttribute("href", overlayPngUrl);
+  root.appendChild(image);
 
   const serialized = new XMLSerializer().serializeToString(root);
   return `data:image/svg+xml,${encodeURIComponent(serialized)}`;
@@ -544,19 +655,26 @@ function ExportImageModal({
   // then pads it back out — see padOuterEdge/padOuterEdgeSvg for why the
   // padding isn't just part of the figure already, and why each format
   // needs its own way of adding it back.
-  const renderPaddedImage = async (figure: object) => {
-    const backgroundColor =
-      ((figure as { layout?: { paper_bgcolor?: string } }).layout
-        ?.paper_bgcolor as string) ?? "#fff";
+  const renderPaddedImage = async (figure: ImageFigure) => {
+    const backgroundColor = (figure.layout?.paper_bgcolor as string) ?? "#fff";
+    const renderWidth = Math.max(1, width - edgePadding);
+    const renderHeight = Math.max(1, height - edgePadding);
 
-    const rawUrl = await plotly.toImage(
-      figure as Parameters<typeof plotly.toImage>[0],
-      {
-        format,
-        width: Math.max(1, width - edgePadding),
-        height: Math.max(1, height - edgePadding),
-      }
-    );
+    // See ImageFigure's own comment: an overlayFigure means this plot type
+    // needs a second render composited on top rather than one Plotly call.
+    const rawUrl = figure.overlayFigure
+      ? await renderWithOverlay(
+          plotly,
+          figure,
+          format,
+          renderWidth,
+          renderHeight
+        )
+      : await plotly.toImage(figure as Parameters<typeof plotly.toImage>[0], {
+          format,
+          width: renderWidth,
+          height: renderHeight,
+        });
 
     return format === "svg"
       ? padOuterEdgeSvg(rawUrl, width, height, edgePadding, backgroundColor)
@@ -1190,16 +1308,19 @@ function ExportImageModal({
           <div className={styles.dimension}>
             <label htmlFor="export-edge-padding">extra margin</label>
             <div className={styles.dimensionControls}>
-              <input
+              <LengthInput
                 id="export-edge-padding"
-                type="number"
-                min={EDGE_PADDING_BOUNDS.min}
-                max={EDGE_PADDING_BOUNDS.max}
-                step={1}
-                value={Number.isNaN(edgePadding) ? "" : edgePadding}
-                onChange={(e) => setEdgePadding(e.target.valueAsNumber)}
+                valuePx={edgePadding}
+                minPx={EDGE_PADDING_BOUNDS.min}
+                maxPx={EDGE_PADDING_BOUNDS.max}
+                unit={unit}
+                resolution={resolution}
+                // Tens of pixels, not the canvas's thousands — same reason
+                // PlotStyleFields' lengths use this scale.
+                scale="detail"
+                onChangePx={setEdgePadding}
               />
-              <span>px</span>
+              <span>{UNIT_SUFFIX[unit]}</span>
             </div>
             <p className={styles.hint}>
               Added on top of the space already reserved for axis labels. Raise
@@ -1210,16 +1331,17 @@ function ExportImageModal({
           <div className={styles.dimension}>
             <label htmlFor="export-chrome-line-width">grid lines</label>
             <div className={styles.dimensionControls}>
-              <input
+              <LengthInput
                 id="export-chrome-line-width"
-                type="number"
-                min={CHROME_LINE_WIDTH_BOUNDS.min}
-                max={CHROME_LINE_WIDTH_BOUNDS.max}
-                step={1}
-                value={Number.isNaN(chromeLineWidth) ? "" : chromeLineWidth}
-                onChange={(e) => setChromeLineWidth(e.target.valueAsNumber)}
+                valuePx={chromeLineWidth}
+                minPx={CHROME_LINE_WIDTH_BOUNDS.min}
+                maxPx={CHROME_LINE_WIDTH_BOUNDS.max}
+                unit={unit}
+                resolution={resolution}
+                scale="detail"
+                onChangePx={setChromeLineWidth}
               />
-              <span>px</span>
+              <span>{UNIT_SUFFIX[unit]}</span>
             </div>
             <p className={styles.hint}>
               Gridlines — thin by default like the plot on screen. Raise this
@@ -1232,16 +1354,17 @@ function ExportImageModal({
                 y=x &amp; regression lines
               </label>
               <div className={styles.dimensionControls}>
-                <input
+                <LengthInput
                   id="export-data-line-width"
-                  type="number"
-                  min={DATA_LINE_WIDTH_BOUNDS.min}
-                  max={DATA_LINE_WIDTH_BOUNDS.max}
-                  step={1}
-                  value={Number.isNaN(dataLineWidth) ? "" : dataLineWidth}
-                  onChange={(e) => setDataLineWidth(e.target.valueAsNumber)}
+                  valuePx={dataLineWidth}
+                  minPx={DATA_LINE_WIDTH_BOUNDS.min}
+                  maxPx={DATA_LINE_WIDTH_BOUNDS.max}
+                  unit={unit}
+                  resolution={resolution}
+                  scale="detail"
+                  onChangePx={setDataLineWidth}
                 />
-                <span>px</span>
+                <span>{UNIT_SUFFIX[unit]}</span>
               </div>
               <p className={styles.hint}>
                 The identity line and any regression lines. Their white outline
@@ -1253,16 +1376,17 @@ function ExportImageModal({
             <div className={styles.dimension}>
               <label htmlFor="export-violin-line-width">violin outline</label>
               <div className={styles.dimensionControls}>
-                <input
+                <LengthInput
                   id="export-violin-line-width"
-                  type="number"
-                  min={VIOLIN_LINE_WIDTH_BOUNDS.min}
-                  max={VIOLIN_LINE_WIDTH_BOUNDS.max}
-                  step={1}
-                  value={Number.isNaN(violinLineWidth) ? "" : violinLineWidth}
-                  onChange={(e) => setViolinLineWidth(e.target.valueAsNumber)}
+                  valuePx={violinLineWidth}
+                  minPx={VIOLIN_LINE_WIDTH_BOUNDS.min}
+                  maxPx={VIOLIN_LINE_WIDTH_BOUNDS.max}
+                  unit={unit}
+                  resolution={resolution}
+                  scale="detail"
+                  onChangePx={setViolinLineWidth}
                 />
-                <span>px</span>
+                <span>{UNIT_SUFFIX[unit]}</span>
               </div>
               <p className={styles.hint}>
                 The violin&apos;s curve. Its white contrast outline stays 2px
@@ -1274,16 +1398,17 @@ function ExportImageModal({
             <div className={styles.dimension}>
               <label htmlFor="export-tick-font-size">tick font size</label>
               <div className={styles.dimensionControls}>
-                <input
+                <LengthInput
                   id="export-tick-font-size"
-                  type="number"
-                  min={TICK_FONT_SIZE_BOUNDS.min}
-                  max={TICK_FONT_SIZE_BOUNDS.max}
-                  step={1}
-                  value={Number.isNaN(tickFontSize) ? "" : tickFontSize}
-                  onChange={(e) => setTickFontSize(e.target.valueAsNumber)}
+                  valuePx={tickFontSize}
+                  minPx={TICK_FONT_SIZE_BOUNDS.min}
+                  maxPx={TICK_FONT_SIZE_BOUNDS.max}
+                  unit={unit}
+                  resolution={resolution}
+                  scale="detail"
+                  onChangePx={setTickFontSize}
                 />
-                <span>px</span>
+                <span>{UNIT_SUFFIX[unit]}</span>
               </div>
               <p className={styles.hint}>
                 Row/column labels and the colorbar&apos;s own ticks. A dense
