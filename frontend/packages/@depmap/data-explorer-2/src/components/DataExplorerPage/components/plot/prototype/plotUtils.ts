@@ -3511,6 +3511,16 @@ export const getLegendTraces = (
 export interface ImageFigure {
   data: object[];
   layout: Partial<Layout>;
+  // A second figure to render separately and draw on top of this one, at the
+  // same width/height — for a plot type where two kinds of trace can't share
+  // one single-shot Plotly render (see PrototypeDensity1D's getImageFigure,
+  // the only current source of one, for why: Plotly fixes the relative paint
+  // order of an SVG trace and a WebGL one regardless of trace order, so a
+  // violin can't be made to sit over a scattergl trace by reordering `data`).
+  // ExportImageModal's renderPaddedImage renders and composites it; every
+  // other caller of a figure ignores an extra property it doesn't know about.
+  // Absent for every plot type that has no such conflict.
+  overlayFigure?: ImageFigure;
 }
 
 // Every nested object an export or a preview might write to, copied; every
