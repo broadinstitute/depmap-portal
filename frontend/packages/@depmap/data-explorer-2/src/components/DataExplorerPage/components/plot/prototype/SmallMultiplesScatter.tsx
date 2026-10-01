@@ -43,6 +43,7 @@ import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
   AnnotationTail,
+  applyAnnotationTailOverrides,
   applyLegendLabelOverrides,
   calcAnnotationArrowWidth,
   calcAnnotationPositions,
@@ -1121,6 +1122,17 @@ function SmallMultiplesScatter({
 
           return a;
         });
+
+        // A label dragged in ExportImageModal's own live "Adjust label
+        // positions" preview — applied after the yshift/xshift pass above
+        // so it lands on that pass's own output rather than being bypassed
+        // by it, and always wins over whatever ax/ay the live plot's own
+        // stored tail resolved to.
+        figure.layout.annotations = applyAnnotationTailOverrides(
+          figure.layout.annotations as any[] | undefined,
+          options?.annotationTailOverrides,
+          annotationFontSize
+        );
       }
 
       return figure;

@@ -13,6 +13,7 @@ import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import {
   AnnotationTail,
+  applyAnnotationTailOverrides,
   calcAnnotationArrowWidth,
   calcAnnotationPositions,
   calcChromeAxisOverrides,
@@ -1452,6 +1453,16 @@ function PrototypeDensity1D({
             zeroline: false,
           },
         }
+      );
+
+      // A label dragged in ExportImageModal's own live "Adjust label
+      // positions" preview — applied here, not on pointsLayerFigure: per-point
+      // callouts live only on the violin/overlay layer (see annotations:
+      // undefined above), so this is the one place they actually are.
+      violinLayerFigure.layout.annotations = applyAnnotationTailOverrides(
+        violinLayerFigure.layout.annotations as any[] | undefined,
+        options?.annotationTailOverrides,
+        annotationFontSize
       );
 
       return { ...pointsLayerFigure, overlayFigure: violinLayerFigure };

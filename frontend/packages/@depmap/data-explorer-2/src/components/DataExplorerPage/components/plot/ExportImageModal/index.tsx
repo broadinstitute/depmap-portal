@@ -26,12 +26,14 @@ import {
 import PlotStyleFields from "../../../../SettingsModal/PlotStyleFields";
 import type ExtendedPlotType from "../../../ExtendedPlotType";
 import {
+  AnnotationTail,
   captureTransientState,
   ExportLegendPosition,
   ImageFigure,
   LegendInfo,
 } from "../prototype/plotUtils";
 import LengthInput from "../../../../LengthInput";
+import LiveAnnotationPreview from "./LiveAnnotationPreview";
 import {
   CHROME_LINE_WIDTH_BOUNDS,
   DATA_LINE_WIDTH_BOUNDS,
@@ -605,6 +607,21 @@ function ExportImageModal({
     setPreviewPlotElement,
   ] = useState<ExtendedPlotType | null>(null);
 
+  // A label dragged in the "Adjust label positions" live view below, keyed
+  // by point index. Export-only, like xAxisLabel/legendTitle: never written
+  // back to the live plot's own annotationTails ref, never persisted.
+  const [annotationTailOverrides, setAnnotationTailOverrides] = useState<
+    Record<number, AnnotationTail>
+  >({});
+  const [isAdjustingLabels, setIsAdjustingLabels] = useState(false);
+
+  const handleAnnotationDrag = useCallback(
+    (pointIndex: number, tail: AnnotationTail) => {
+      setAnnotationTailOverrides((prev) => ({ ...prev, [pointIndex]: tail }));
+    },
+    []
+  );
+
   // Read once, on open. The preview is a second instance of the plot, and its
   // zoom, label positions and so on would otherwise start from scratch. Taking
   // the snapshot once (rather than per render) is what guarantees that editing
@@ -632,7 +649,9 @@ function ExportImageModal({
   // state seeded from that same default and never re-seeded, so passing
   // them unconditionally would make every export look "customized" even
   // when nobody touched the field.
-  const buildFigure = () =>
+  const buildFigure = (
+    overrides: Record<number, AnnotationTail> = annotationTailOverrides
+  ) =>
     figureSource?.getImageFigure({
       legendPosition,
       edgePadding,
@@ -646,19 +665,118 @@ function ExportImageModal({
       secondaryXAxisLabel,
       legendTitle,
       legendItemLabels,
+      annotationTailOverrides: overrides,
     }) ?? null;
+
+  // Renders at the true requested size minus edgePadding (added back only
+  // as an outer border on the finished raster — see padOuterEdge/
+  // padOuterEdgeSvg below), shared with the live adjustment view so the two
+  // can't diverge on it.
+  const renderWidth = Math.max(1, width - edgePadding);
+  const renderHeight = Math.max(1, height - edgePadding);
+
+  // Mirrors annotationTailOverrides without being a dependency of
+  // liveFigure below — see that comment for why.
+  const annotationTailOverridesRef = useRef(annotationTailOverrides);
+  annotationTailOverridesRef.current = annotationTailOverrides;
+
+  // Feeds the "Adjust label positions" live view and backs the toggle
+  // button's visibility check. Deliberately NOT a function of
+  // annotationTailOverrides directly: the live instance already reflects a
+  // drag the moment Plotly's own native relayout applies it (see
+  // LiveAnnotationPreview's own comment on this), so recomputing this and
+  // feeding it back in on every single drag would make Plotly re-diff and
+  // repaint the *entire* plot for a change it already made itself — this
+  // was the main source of dragging feeling sluggish. `isAdjustingLabels`
+  // is a dependency instead, so re-entering adjust mode (reading the ref,
+  // which every render keeps current) always starts from every drag made
+  // in a previous session; only a drag made *while already open* is the
+  // thing this skips resyncing for.
+  const liveFigure = useMemo(
+    () => buildFigure(annotationTailOverridesRef.current),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      figureSource,
+      draftStyles,
+      tickFontSize,
+      legendPosition,
+      edgePadding,
+      chromeLineWidth,
+      dataLineWidth,
+      violinLineWidth,
+      xAxisLabel,
+      yAxisLabel,
+      secondaryXAxisLabel,
+      legendTitle,
+      legendItemLabels,
+      isAdjustingLabels,
+    ]
+  );
+
+  const hasPointIndex = (a: unknown): boolean =>
+    typeof (a as { pointIndex?: unknown })?.pointIndex === "number";
+
+  // Density 1D's per-point annotations live on overlayFigure, not on the
+  // top-level figure — see PrototypeDensity1D's getImageFigure, which
+  // composites a violin layer on top of a points layer rather than
+  // returning one merged figure. Must check both places.
+  const hasDraggableAnnotations = Boolean(
+    liveFigure?.layout.annotations?.some(hasPointIndex) ||
+      liveFigure?.overlayFigure?.layout.annotations?.some(hasPointIndex)
+  );
+
+  // Flattened into one interactive-ready figure for LiveAnnotationPreview,
+  // and pinned to the real export's own render size rather than left to
+  // autosize/responsive, which would otherwise fit the figure to the small
+  // preview box and distort automargin's pixel-based reservations relative
+  // to the real export (the main source of this view not looking quite
+  // WYSIWYG) — Plotly keeps an explicit width/height exactly as given
+  // regardless of its container's size, so LiveAnnotationPreview's own
+  // overflow:auto is what makes an oversized result reachable instead.
+  // `dragmode: false` disables Plotly's own click-drag zoom/pan/select,
+  // which otherwise activates whenever a drag starts even slightly off the
+  // annotation's own small hit target (its own source wires tail-dragging
+  // independently of dragmode, so this doesn't touch the one interaction
+  // this view exists for).
+  //
+  // There is no interactive equivalent of overlayFigure's two-raster
+  // composite (see renderWithOverlay below) — this merges both layers'
+  // traces and takes annotations from whichever layer actually has them,
+  // trading away the violin's "always painted over points" guarantee in
+  // this adjustment view only. Annotations still paint above every trace
+  // regardless of trace order, so dragging a label is unaffected; the
+  // final raster export is untouched and still goes through the real
+  // two-layer composite.
+  const interactiveFigure = useMemo(() => {
+    if (!liveFigure) {
+      return null;
+    }
+
+    return {
+      data: liveFigure.overlayFigure
+        ? [...liveFigure.data, ...liveFigure.overlayFigure.data]
+        : liveFigure.data,
+      layout: {
+        ...liveFigure.layout,
+        annotations: liveFigure.overlayFigure
+          ? liveFigure.overlayFigure.layout.annotations
+          : liveFigure.layout.annotations,
+        dragmode: false as const,
+        width: renderWidth,
+        height: renderHeight,
+      },
+    };
+  }, [liveFigure, renderWidth, renderHeight]);
 
   // Both the preview and the save go through this too, for the same reason:
   // the "outer" half of edgePadding is added as a border on top of what
   // Plotly rendered, not by Plotly itself, and the two can't be allowed to
-  // diverge on that either. Renders at the true size minus the padding,
-  // then pads it back out — see padOuterEdge/padOuterEdgeSvg for why the
-  // padding isn't just part of the figure already, and why each format
-  // needs its own way of adding it back.
+  // diverge on that either. Pads back out after rendering at renderWidth/
+  // renderHeight — see padOuterEdge/padOuterEdgeSvg for why the padding
+  // isn't just part of the figure already, and why each format needs its
+  // own way of adding it back.
   const renderPaddedImage = async (figure: ImageFigure) => {
     const backgroundColor = (figure.layout?.paper_bgcolor as string) ?? "#fff";
-    const renderWidth = Math.max(1, width - edgePadding);
-    const renderHeight = Math.max(1, height - edgePadding);
 
     // See ImageFigure's own comment: an overlayFigure means this plot type
     // needs a second render composited on top rather than one Plotly call.
@@ -753,6 +871,7 @@ function ExportImageModal({
     setLegendItemLabels(
       (previewPlot?.legend?.items ?? []).map((item) => item.name)
     );
+    setAnnotationTailOverrides({});
   };
 
   const handleEditAxisLabel = async (
@@ -941,6 +1060,7 @@ function ExportImageModal({
     dataUrl,
     canEditStyles,
     isValid,
+    isAdjustingLabels,
   ]);
 
   const isMeasured = paneSize.width > 0 && paneSize.height > 0;
@@ -1042,7 +1162,11 @@ function ExportImageModal({
   const requestId = useRef(0);
 
   useEffect(() => {
-    if (!isValid || !figureSource) {
+    // While adjusting labels, the visible pane is LiveAnnotationPreview, not
+    // this raster — rasterizing on every drag-driven annotationTailOverrides
+    // change would be pure waste. Toggling isAdjustingLabels back off drops
+    // back below this guard and re-renders through the normal debounce.
+    if (!isValid || !figureSource || isAdjustingLabels) {
       return undefined;
     }
 
@@ -1098,7 +1222,9 @@ function ExportImageModal({
     // `legendItemLabels` likewise aren't read here — buildFigure closes
     // over all ten — but they change the figure, so the preview has to be
     // redrawn for any of them. `format` *is* read directly, by
-    // renderPaddedImage.
+    // renderPaddedImage. `annotationTailOverrides` is also closed over by
+    // buildFigure only, same as those; `isAdjustingLabels` is read directly,
+    // by the guard above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     figureSource,
@@ -1118,6 +1244,8 @@ function ExportImageModal({
     secondaryXAxisLabel,
     legendTitle,
     legendItemLabels,
+    annotationTailOverrides,
+    isAdjustingLabels,
     isValid,
   ]);
 
@@ -1530,61 +1658,88 @@ function ExportImageModal({
         </div>
         <div className={styles.previewPane}>
           <div className={styles.zoomControls}>
-            <ButtonGroup bsSize="xsmall">
-              <Button
-                active={zoomMode === "fit"}
-                onClick={() => setZoomMode("fit")}
-              >
-                Fit to screen
-              </Button>
-              <Button
-                active={zoomMode === "actual"}
-                onClick={() => setZoomMode("actual")}
-              >
-                Actual size
-              </Button>
-            </ButtonGroup>
-            {canPan && <span className={styles.panHint}>drag to pan</span>}
-          </div>
-          {/*
-            A scrolling region, which the jsx-a11y rules have no role for: they
-            see a non-interactive element and object to both the listener and
-            the tabIndex. The tabIndex is the accessible choice rather than a
-            violation — a scrollable region that can't be focused can't be
-            reached by keyboard at all (axe's own scrollable-region-focusable
-            rule requires exactly this). Once focused, the arrow keys scroll it
-            natively, and the drag-to-pan below is a convenience on top.
-          */}
-          {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
-          <div
-            ref={paneRef}
-            className={styles.preview}
-            style={{
-              overflow: zoomMode === "actual" ? "auto" : "hidden",
-              cursor: panCursor,
-            }}
-            onMouseDown={handleMouseDown}
-            role="group"
-            aria-label="Export preview"
-            tabIndex={0}
-          >
-            {error && <p className={styles.error}>{error}</p>}
-            {!error && dataUrl && (
-              <img
-                src={dataUrl}
-                alt="The plot as it will be exported"
-                draggable={false}
-                onLoad={measurePane}
-                style={previewImageStyle}
-              />
+            {!isAdjustingLabels && (
+              <>
+                <ButtonGroup bsSize="xsmall">
+                  <Button
+                    active={zoomMode === "fit"}
+                    onClick={() => setZoomMode("fit")}
+                  >
+                    Fit to screen
+                  </Button>
+                  <Button
+                    active={zoomMode === "actual"}
+                    onClick={() => setZoomMode("actual")}
+                  >
+                    Actual size
+                  </Button>
+                </ButtonGroup>
+                {canPan && <span className={styles.panHint}>drag to pan</span>}
+              </>
             )}
-            {isRendering && (
-              <div className={styles.spinner}>
-                <span className="glyphicon glyphicon-refresh" /> rendering…
-              </div>
+            {hasDraggableAnnotations && (
+              <Button
+                bsSize="xsmall"
+                bsStyle="info"
+                className={styles.adjustLabelsButton}
+                disabled={!isAdjustingLabels && (!isValid || !dataUrl)}
+                onClick={() => setIsAdjustingLabels((prev) => !prev)}
+              >
+                {isAdjustingLabels
+                  ? "Done adjusting"
+                  : "Adjust label positions"}
+              </Button>
             )}
           </div>
-          {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
+          {isAdjustingLabels && interactiveFigure ? (
+            <LiveAnnotationPreview
+              plotly={plotly}
+              figure={interactiveFigure}
+              fallbackFontSize={draftStyles.annotationFontSize}
+              onAnnotationDrag={handleAnnotationDrag}
+            />
+          ) : (
+            /*
+              A scrolling region, which the jsx-a11y rules have no role for:
+              they see a non-interactive element and object to both the
+              listener and the tabIndex. The tabIndex is the accessible
+              choice rather than a violation — a scrollable region that
+              can't be focused can't be reached by keyboard at all (axe's
+              own scrollable-region-focusable rule requires exactly this).
+              Once focused, the arrow keys scroll it natively, and the
+              drag-to-pan below is a convenience on top.
+            */
+            /* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
+            <div
+              ref={paneRef}
+              className={styles.preview}
+              style={{
+                overflow: zoomMode === "actual" ? "auto" : "hidden",
+                cursor: panCursor,
+              }}
+              onMouseDown={handleMouseDown}
+              role="group"
+              aria-label="Export preview"
+              tabIndex={0}
+            >
+              {error && <p className={styles.error}>{error}</p>}
+              {!error && dataUrl && (
+                <img
+                  src={dataUrl}
+                  alt="The plot as it will be exported"
+                  draggable={false}
+                  onLoad={measurePane}
+                  style={previewImageStyle}
+                />
+              )}
+              {isRendering && (
+                <div className={styles.spinner}>
+                  <span className="glyphicon glyphicon-refresh" /> rendering…
+                </div>
+              )}
+            </div>
+            /* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */
+          )}
         </div>
       </Modal.Body>
       <Modal.Footer>

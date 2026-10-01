@@ -15,6 +15,7 @@ import { usePlotlyLoader } from "../../../../../contexts/PlotlyLoaderContext";
 import { MAX_POINTS_TO_ANNOTATE } from "../../../../../constants/plotConstants";
 import {
   AnnotationTail,
+  applyAnnotationTailOverrides,
   applyLegendLabelOverrides,
   calcAnnotationArrowWidth,
   calcAnnotationPositions,
@@ -1161,7 +1162,7 @@ function PrototypeScatterPlot({
         ? getLegendTraces(exportLegend, templateTrace)
         : [];
 
-      return cloneFigureForExport([...plot.data, ...legendTraces], {
+      const figure = cloneFigureForExport([...plot.data, ...legendTraces], {
         ...plot.layout,
         // The "inner" half of edgePadding: extra room between the tick
         // labels and the title itself, via the property Plotly actually
@@ -1250,6 +1251,18 @@ function PrototypeScatterPlot({
           fontSize: xAxisFontSize,
         }),
       });
+
+      // A label dragged in ExportImageModal's own live "Adjust label
+      // positions" preview — applied last so it always wins over whatever
+      // ax/ay the live plot's own stored tail (captured above, via
+      // annotationTails.current) resolved to.
+      figure.layout.annotations = applyAnnotationTailOverrides(
+        figure.layout.annotations as any[] | undefined,
+        options?.annotationTailOverrides,
+        annotationFontSize
+      );
+
+      return figure;
     };
 
     plot.downloadImage = (options) => {

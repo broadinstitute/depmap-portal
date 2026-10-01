@@ -3686,6 +3686,48 @@ export function resolveAnnotationTail(
   };
 }
 
+// Export-only (see ExportImageModal's "Adjust label positions" toggle, which
+// is the only source of `overrides`). Applies a per-point tail nudge, made
+// by dragging a label in the modal's own live preview, to an already-built
+// annotations array — pure and non-mutating: returns the very same array
+// reference when there's nothing to apply (no overrides, or every
+// annotation lacking a `pointIndex` — the paper-anchored "(N selected
+// points)" summary, and SmallMultiplesScatter's own shift-based axis-label
+// annotations, both have none), so this is a safe no-op by default. Called
+// last, after whatever other annotation post-processing a renderer's own
+// getImageFigure already does, so a dragged position always wins.
+export function applyAnnotationTailOverrides<
+  T extends { pointIndex?: number; ax?: number; ay?: number }
+>(
+  annotations: T[] | undefined,
+  overrides: Record<number, AnnotationTail> | undefined,
+  fontSize: number
+): T[] | undefined {
+  if (!annotations || !overrides || Object.keys(overrides).length === 0) {
+    return annotations;
+  }
+
+  return annotations.map((annotation) => {
+    if (typeof annotation.pointIndex !== "number") {
+      return annotation;
+    }
+
+    const override = overrides[annotation.pointIndex];
+
+    if (!override) {
+      return annotation;
+    }
+
+    const tail = resolveAnnotationTail(override, fontSize);
+
+    return {
+      ...annotation,
+      ax: tail?.ax ?? annotation.ax,
+      ay: tail?.ay ?? annotation.ay,
+    };
+  });
+}
+
 // DEFAULT_SETTINGS.plotStyles.annotationFontSize — duplicated as a literal
 // rather than imported, to avoid a dependency from this file on the
 // settings context for one constant.

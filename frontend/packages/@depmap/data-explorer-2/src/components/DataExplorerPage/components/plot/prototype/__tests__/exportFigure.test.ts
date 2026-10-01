@@ -1,8 +1,11 @@
 import type { Layout } from "plotly.js";
 import {
+  AnnotationTail,
+  applyAnnotationTailOverrides,
   captureAnnotationTail,
   captureTransientState,
   cloneFigureForExport,
+  resolveAnnotationTail,
 } from "../plotUtils";
 
 // A stand-in for the live graph div's layout, shaped like the renderers leave
@@ -170,5 +173,57 @@ describe("cloneFigureForExport", () => {
 
   test("tolerates a layout with no axes, annotations, shapes or legend", () => {
     expect(cloneFigureForExport([], {})).toEqual({ data: [], layout: {} });
+  });
+});
+
+describe("applyAnnotationTailOverrides", () => {
+  const annotations = () => makeLayout().annotations as any[];
+  const override: AnnotationTail = captureAnnotationTail(3, 4, 18);
+
+  test("replaces ax/ay for a pointIndex present in overrides", () => {
+    const result = applyAnnotationTailOverrides(
+      annotations(),
+      { 7: override },
+      18
+    );
+
+    expect(result?.find((a) => a.pointIndex === 7)).toMatchObject(
+      resolveAnnotationTail(override, 18)
+    );
+  });
+
+  test("leaves a pointIndex absent from overrides unchanged", () => {
+    const input = annotations();
+    const result = applyAnnotationTailOverrides(input, { 7: override }, 18);
+
+    expect(result?.find((a) => a.pointIndex === 9)).toBe(
+      input.find((a) => a.pointIndex === 9)
+    );
+  });
+
+  test("never touches an annotation with no pointIndex, even if overrides has a matching numeric key", () => {
+    const input = [
+      ...annotations(),
+      { text: "(500 selected points)" },
+    ] as any[];
+    const summary = input[input.length - 1];
+
+    // There is no pointIndex here for `0` to match against.
+    const result = applyAnnotationTailOverrides(input, { 0: override }, 18);
+
+    expect(result?.[result.length - 1]).toBe(summary);
+  });
+
+  test("is a no-op — same array reference — when overrides is undefined or empty", () => {
+    const input = annotations();
+
+    expect(applyAnnotationTailOverrides(input, undefined, 18)).toBe(input);
+    expect(applyAnnotationTailOverrides(input, {}, 18)).toBe(input);
+  });
+
+  test("returns undefined when annotations is undefined", () => {
+    expect(
+      applyAnnotationTailOverrides(undefined, { 7: override }, 18)
+    ).toBeUndefined();
   });
 });

@@ -205,6 +205,12 @@
   color: #777;
 }
 
+.adjustLabelsButton {
+  // Pushes it to the far right of zoomControls regardless of whether the
+  // fit/actual-size buttons and pan hint are present next to it.
+  margin-left: auto;
+}
+
 .preview {
   position: relative;
   display: flex;
@@ -215,6 +221,11 @@
   min-width: 0;
   background-color: #f7f7f7;
   border: 1px solid #ddd;
+  // A safe fallback for any content taller or wider than the fixed height
+  // above — the raster preview pane overrides this inline per its fit/actual
+  // zoom mode, but anything that doesn't should still clip rather than spill
+  // out over whatever sits below it in the modal.
+  overflow: hidden;
 
   // `margin: auto` on a flex child, rather than align/justify on the
   // container. Both center an image that fits, but only this keeps an
