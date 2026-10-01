@@ -44,7 +44,7 @@ class ExternalConfig(RemoteConfig):
         PROJECT_ROOT, "profiling"
     )  # hardcoded mount point in ansible
     DATA_LOAD_CONFIG = external_datasets
-    S3_DIR = "depmap-pipeline/external-26q1"
+    S3_DIR = "depmap-pipeline/external-26q3/preprocessing"
     FEEDBACK_FORM_URL = "https://forum.depmap.org/"
     THEME_PATH = os.path.join(Config.ADDITIONAL_MOUNTS_DIR, "theme")
     RELEASE_NOTES_URL = "https://forum.depmap.org/c/announcements/15"
@@ -73,6 +73,7 @@ class ExternalStagingConfig(ExternalConfig):
     )
     APPLICATION_ROOT = "/depmap-xstaging"
     GOOGLE_ANALYTICS_UA = "UA-52456999-8"
+    TURNSTILE_SITE_KEY = None # Remove this once a proper cookie is set
 
 
 class ExternalProdConfig(ExternalConfig):
