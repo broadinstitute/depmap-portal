@@ -76,7 +76,6 @@ export default function PredictiveInsightsPage({
           screenType={screenType}
           configs={configs}
           dimType={dimType}
-          dimTypeGivenId={dimTypeGivenId}
         />
       ))}
     </div>

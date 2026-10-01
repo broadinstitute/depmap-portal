@@ -13,14 +13,12 @@ interface Props {
   screenType: ScreenTypeData;
   configs: ModelConfigOut[];
   dimType: string;
-  dimTypeGivenId: string;
 }
 
 export default function ModelPerformanceSection({
   screenType,
   configs,
   dimType,
-  dimTypeGivenId,
 }: Props) {
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
@@ -117,7 +115,6 @@ export default function ModelPerformanceSection({
                   <FeatureTable
                     fit={fit}
                     dimType={dimType}
-                    dimTypeGivenId={dimTypeGivenId}
                     actualsDatasetId={screenType.response.actuals_dataset.id}
                     actualsFeatureGivenId={
                       screenType.response.actuals_feature_given_id

@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from "react";
 import type { Config, Layout } from "plotly.js";
 import { Spinner } from "@depmap/common-components";
 import { breadboxAPI } from "@depmap/api";
+import { correlationMatrix } from "@depmap/statistics";
 import { getCorrelationColor } from "@depmap/utils";
 import { usePlotlyLoader } from "../../contexts/PlotlyLoaderContext";
 import styles from "./MiniCorrelationHeatmap.scss";
@@ -86,44 +87,23 @@ function useFeatureVectors(features: MiniCorrelationHeatmapFeature[]) {
 
 // Aligns every feature's values onto the set of ids common to all of them,
 // so the correlation matrix is computed over a consistent set of models.
-function alignOnCommonIds(vectors: FeatureVector[]): number[][] {
+// Keyed by each feature's index (as a string) rather than its label, since
+// labels aren't guaranteed unique.
+function alignOnCommonIds(vectors: FeatureVector[]): Record<string, number[]> {
   const commonIds = vectors
     .map((v) => new Set(v.ids))
     .reduce((a, b) => new Set([...a].filter((id) => b.has(id))));
 
-  return vectors.map((vector) => {
+  const data: Record<string, number[]> = {};
+
+  vectors.forEach((vector, index) => {
     const byId = new Map(vector.ids.map((id, i) => [id, vector.values[i]]));
-    return [...commonIds]
+    data[String(index)] = [...commonIds]
       .map((id) => byId.get(id) as number)
       .filter((value) => Number.isFinite(value));
   });
-}
 
-function pearsonCorrelation(a: number[], b: number[]): number {
-  const n = a.length;
-  const meanA = a.reduce((sum, v) => sum + v, 0) / n;
-  const meanB = b.reduce((sum, v) => sum + v, 0) / n;
-
-  let numerator = 0;
-  let sumSqA = 0;
-  let sumSqB = 0;
-
-  for (let i = 0; i < n; i += 1) {
-    const diffA = a[i] - meanA;
-    const diffB = b[i] - meanB;
-    numerator += diffA * diffB;
-    sumSqA += diffA * diffA;
-    sumSqB += diffB * diffB;
-  }
-
-  const denominator = Math.sqrt(sumSqA * sumSqB);
-  return denominator === 0 ? 0 : numerator / denominator;
-}
-
-function buildCorrelationMatrix(alignedValues: number[][]): number[][] {
-  return alignedValues.map((a) =>
-    alignedValues.map((b) => pearsonCorrelation(a, b))
-  );
+  return data;
 }
 
 // Module-level so the cache survives across heatmap instances, not just one
@@ -250,10 +230,18 @@ export default function MiniCorrelationHeatmap({ features }: Props) {
     );
   }
 
-  const matrix = buildCorrelationMatrix(alignOnCommonIds(vectors));
-  const labels = features.map((f) => f.featureLabel);
-  const datasetNames = features.map(
-    (f) => datasetNamesById[f.datasetId] || f.datasetId
+  // Hierarchical clustering (average-linkage on 1 - abs(correlation)) groups
+  // similar features together instead of leaving them in importance-rank
+  // order — same reordering approach used by Data Explorer's own
+  // correlation heatmap. Needs at least 3 features to be meaningful/stable.
+  const { columns, matrix } = correlationMatrix(
+    alignOnCommonIds(vectors),
+    features.length > 2
+  );
+  const order = columns.map(Number);
+  const labels = order.map((i) => features[i].featureLabel);
+  const datasetNames = order.map(
+    (i) => datasetNamesById[features[i].datasetId] || features[i].datasetId
   );
 
   return (

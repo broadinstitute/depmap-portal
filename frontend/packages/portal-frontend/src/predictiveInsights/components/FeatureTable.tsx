@@ -4,16 +4,12 @@ import CorrelationMeter from "src/predictability/components/CorrelationMeter";
 import { useDatasetNames } from "../hooks/useDatasetNames";
 import { useFeatureLabels } from "../hooks/useFeatureLabels";
 import { getFeatureLabel } from "../featureLabel";
-import { getFeatureRelationship } from "../featureRelationship";
 import FeatureDetailPlots from "./FeatureDetailPlots";
-import FeatureRelationshipIcon from "./FeatureRelationshipIcon";
-import FeatureRelationshipLegend from "./FeatureRelationshipLegend";
 import styles from "../styles/PredictiveInsights.scss";
 
 interface Props {
   fit: ModelFit;
   dimType: string;
-  dimTypeGivenId: string;
   actualsDatasetId: string;
   actualsFeatureGivenId: string;
   actualsFeatureLabel: string;
@@ -22,7 +18,6 @@ interface Props {
 export default function FeatureTable({
   fit,
   dimType,
-  dimTypeGivenId,
   actualsDatasetId,
   actualsFeatureGivenId,
   actualsFeatureLabel,
@@ -40,9 +35,7 @@ export default function FeatureTable({
     <table className={styles.featureTable}>
       <thead>
         <tr>
-          <th>
-            Feature <FeatureRelationshipLegend dimType={dimType} />
-          </th>
+          <th>Feature</th>
           <th>Relative Importance</th>
           <th>Correlation</th>
           <th>Dataset Name</th>
@@ -52,11 +45,6 @@ export default function FeatureTable({
         {fit.top_features.map((feature, index) => {
           const key = `${feature.feature_dataset_id}:${feature.feature_given_id}`;
           const isExpanded = expandedIndex === index;
-          const relationship = getFeatureRelationship(
-            feature,
-            dimType,
-            dimTypeGivenId
-          );
 
           return (
             <React.Fragment key={key}>
@@ -70,7 +58,6 @@ export default function FeatureTable({
                   <span className={styles.expandIndicator}>
                     {isExpanded ? "−" : "+"}
                   </span>
-                  <FeatureRelationshipIcon relationship={relationship} />{" "}
                   {getFeatureLabel(feature, featureLabels)}
                 </td>
                 <td>
