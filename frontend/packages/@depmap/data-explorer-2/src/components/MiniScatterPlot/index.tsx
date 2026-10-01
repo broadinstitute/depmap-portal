@@ -156,22 +156,6 @@ function Chart({
       },
     ];
 
-    if (data.x.length > 0) {
-      const allValues = [...data.x, ...data.y];
-      const min = Math.min(...allValues);
-      const max = Math.max(...allValues);
-
-      traces.push({
-        type: "scatter",
-        mode: "lines",
-        x: [min, max],
-        y: [min, max],
-        line: { color: "#999999", dash: "dash", width: 1 },
-        hoverinfo: "skip",
-        showlegend: false,
-      });
-    }
-
     const layout: Partial<Layout> = {
       height: 320,
       margin: { l: 60, r: 20, t: 20, b: 50 },

@@ -39,7 +39,7 @@ function Chart({ features, Plotly }: Props & { Plotly: any }) {
 
     const layout: Partial<Layout> = {
       height: 400,
-      margin: { l: 280, r: 20, t: 20, b: 40 },
+      margin: { r: 20, t: 20, b: 40 },
       xaxis: { title: "Relative importance" },
       yaxis: { automargin: true, tickfont: { size: 10 } },
     };

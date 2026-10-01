@@ -59,12 +59,13 @@
 .modelHeaderRow {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: left;
   gap: 16px;
 }
 
 .modelHeaderName {
   font-weight: bold;
+  width: 200px;
 }
 
 .modelHeaderGauge {

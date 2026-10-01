@@ -45,7 +45,7 @@ export default function FeatureTable({
           </th>
           <th>Relative Importance</th>
           <th>Correlation</th>
-          <th>Feature Type</th>
+          <th>Dataset Name</th>
         </tr>
       </thead>
       <tbody>

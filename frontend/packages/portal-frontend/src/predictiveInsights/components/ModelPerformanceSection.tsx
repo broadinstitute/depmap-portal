@@ -70,6 +70,9 @@ export default function ModelPerformanceSection({
                     </span>
                     {config.model_config_name}
                   </span>
+                  <span className={styles.modelHeaderGaugeLabel}>
+                    Correlation between observed and predicted
+                  </span>
                   <span className={styles.modelHeaderGauge}>
                     <span className={styles.correlationValue}>
                       {fit.prediction_actual_correlation.toFixed(2)}
@@ -79,9 +82,6 @@ export default function ModelPerformanceSection({
                       useGradedColorScheme
                       showLabel={false}
                     />
-                    <span className={styles.modelHeaderGaugeLabel}>
-                      R between observed and predicted
-                    </span>
                   </span>
                 </div>
               </Panel.Toggle>
